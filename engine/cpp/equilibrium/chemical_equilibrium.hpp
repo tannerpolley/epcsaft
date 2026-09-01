@@ -1,5 +1,7 @@
 #pragma once
 
+#include "eos.hpp"
+
 #include <array>
 #include <cstddef>
 #include <limits>
@@ -83,7 +85,7 @@ struct EquilibriumConstantRecord {
 struct ReactionSystemInput {
     std::vector<std::string> species_ids;
     std::vector<int> charges;
-    std::string provider_fingerprint;
+    std::string eos_fingerprint;
     std::vector<double> molar_masses_kg_per_mol;
     DenseMatrix balance_matrix;
     std::vector<double> conserved_totals;
@@ -98,7 +100,7 @@ struct ReactionSystemInput {
 
 struct CompiledReactionSystem {
     bool ideal_gas = false;
-    std::string provider_fingerprint;
+    std::string eos_fingerprint;
     std::size_t original_species_count = 0;
     std::vector<int> original_charges;
     std::vector<double> original_molar_masses_kg_per_mol;
@@ -159,7 +161,7 @@ struct ReactiveFinitePhaseResult {
     std::string failure_reason;
     std::string numerical_status = "not_adjudicated";
     std::string physical_status = "not_adjudicated";
-    std::string provider_domain_status = "not_adjudicated";
+    std::string eos_domain_status = "not_adjudicated";
     std::vector<std::pair<std::string, double>> resolved_policy;
     std::vector<std::vector<double>> phase_amounts_mol;
     std::vector<double> phase_volumes_m3;
@@ -204,7 +206,7 @@ struct ReactiveFinitePhaseResult {
     std::size_t declared_direction_rank = 0;
     std::size_t admissible_nullity = 0;
     std::size_t optimizer_iterations = 0;
-    std::size_t provider_evaluation_count = 0;
+    std::size_t eos_evaluation_count = 0;
     bool derivative_audits_performed = false;
     std::string derivative_audit_status = "not_requested";
     double objective_gradient_audit_max_relative_error =
@@ -222,9 +224,6 @@ struct ReactiveFinitePhaseResult {
     std::vector<double> chemical_potential_derivatives;
     std::vector<double> log_fugacity_derivatives;
 };
-
-class ProviderContext;
-struct ProviderActiveParameterSet;
 
 struct SourceReferenceTransferEvidence {
     std::string status;
@@ -269,7 +268,7 @@ struct SourceReferenceTransferEvidence {
 
 struct SourceStandardStateResult {
     std::vector<double> standard_offsets;
-    std::vector<double> ln_k_provider_basis;
+    std::vector<double> ln_k_eos_basis;
     std::vector<double> ln_k_pressure_derivatives_per_pa;
     std::vector<double> ln_k_parameter_derivatives;
     double representation_residual_inf_norm = 0.0;
@@ -322,22 +321,22 @@ struct SourceStandardStateResult {
     const std::vector<double>& log_activity_scale_factors,
     const std::vector<std::string>& species_ids,
     const std::vector<int>& charges,
-    const std::string& provider_fingerprint,
+    const std::string& eos_fingerprint,
     double temperature_k,
     double pressure_pa,
     const SourceReferenceTransferEvidence& reference
 );
 
 
-[[nodiscard]] ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
+[[nodiscard]] ReactiveFinitePhaseResult solve_eos_reactive_finite_phases(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<ReactiveFinitePhaseStart>& starts,
     double trace_floor,
-    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters = nullptr,
     int max_iterations = 500,
     bool require_output_derivatives = false,
     bool perform_derivative_audits = false,
@@ -346,31 +345,31 @@ struct SourceStandardStateResult {
     const std::vector<ReactiveFinitePhaseOutput>& outputs = {}
 );
 
-[[nodiscard]] ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
+[[nodiscard]] ReactiveFinitePhaseResult evaluate_eos_reactive_finite_phases_local(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds,
-    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters = nullptr,
     const PhaseDirectionCompilation* phase_directions = nullptr,
     const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
     const std::vector<ReactiveFinitePhaseOutput>& outputs = {}
 );
 
-[[nodiscard]] ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
+[[nodiscard]] ReactiveFinitePhaseResult finalize_eos_reactive_finite_phases_local(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds,
-    const ProviderActiveParameterSet* active_parameters = nullptr,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters = nullptr,
     const PhaseDirectionCompilation* phase_directions = nullptr,
     const std::vector<std::vector<std::size_t>>& phase_support_indices = {},
     const std::vector<ReactiveFinitePhaseOutput>& outputs = {},

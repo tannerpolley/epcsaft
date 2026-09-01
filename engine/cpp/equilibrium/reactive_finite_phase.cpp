@@ -1,5 +1,5 @@
 #include "chemical_equilibrium.hpp"
-#include "provider.hpp"
+#include "eos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -374,7 +374,7 @@ std::vector<PhaseLayout> make_phase_layouts(
         for (std::size_t species : support) {
             if (species >= charges.size() || (previous != charges.size() && species <= previous)) {
                 throw std::invalid_argument(
-                    "reactive finite-phase support indices must be unique Provider-order indices"
+                    "reactive finite-phase support indices must be unique EOS-order indices"
                 );
             }
             previous = species;
@@ -406,18 +406,18 @@ struct PhaseBlock {
     std::vector<double> volume_parameter_direct;
     std::vector<double> pressure_parameter_direct;
     std::vector<double> chemical_potential_parameter_direct;
+    epcsaft::NativeEosEvaluationCounts eos_evaluations;
 };
 
 PhaseBlock evaluate_phase(
-    const ProviderContext& provider,
-    const ProviderActiveParameterSet& active_parameters,
+    const epcsaft::NativeModel& eos,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const PhaseLayout& layout,
     const std::vector<double>& g_ref,
     const std::vector<double>& g_ref_pressure_derivatives_per_pa,
     const std::vector<double>& g_ref_parameter_derivatives,
     double temperature_k,
     double pressure_pa,
-    const std::array<double, 2>& packing_interval,
     const std::vector<double>& variables,
     std::size_t offset
 ) {
@@ -428,7 +428,7 @@ PhaseBlock evaluate_phase(
     const std::size_t amount_dimension = chart.coordinate_count();
     const std::size_t phase_dimension = amount_dimension + 1;
     const std::size_t physical_dimension = support_count + 1;
-    const std::size_t parameter_count = active_parameters.identities.size();
+    const std::size_t parameter_count = active_parameters.size();
     if (!g_ref_parameter_derivatives.empty()
         && g_ref_parameter_derivatives.size() != species_count * parameter_count) {
         throw std::invalid_argument(
@@ -473,8 +473,8 @@ PhaseBlock evaluate_phase(
         throw std::domain_error("reactive finite-phase packing chart is invalid");
     }
 
-    const InversePackingGeometryEvaluation geometry =
-        provider.evaluate_inverse_packing_geometry(
+    const epcsaft::NativeInversePackingGeometryResult geometry =
+        eos.evaluate_state_inverse_packing_geometry(
             temperature_k,
             result.amounts,
             result.log_packing,
@@ -482,27 +482,26 @@ PhaseBlock evaluate_phase(
         );
     const std::size_t geometry_dimension = physical_dimension + parameter_count;
     if (geometry.gradient.size() != geometry_dimension
-        || geometry.hessian.size() != geometry_dimension * geometry_dimension
-        || geometry.supported_component_indices != supported_species) {
+        || geometry.hessian.size() != geometry_dimension * geometry_dimension) {
         throw std::invalid_argument(
             "reactive finite-phase inverse-packing tensor dimensions changed"
         );
     }
     result.volume = geometry.volume_m3;
 
-    const ParameterizedPhaseEvaluation parameterized =
-        provider.evaluate_parameterized_phase(
+    const epcsaft::NativeParameterizedPhaseState parameterized =
+        eos.evaluate_parameterized_phase_state(
             temperature_k,
             result.amounts,
             result.volume,
-            packing_interval[0],
-            packing_interval[1],
             active_parameters
         );
     if (parameterized.supported_component_indices != supported_species) {
-        throw std::invalid_argument("reactive finite-phase Provider support changed");
+        throw std::invalid_argument("reactive finite-phase EOS support changed");
     }
-    MixturePhaseEvaluation mechanical = parameterized.phase;
+    epcsaft::NativeMixturePhaseBlock mechanical = parameterized.phase;
+    result.eos_evaluations += geometry.evaluations;
+    result.eos_evaluations += parameterized.evaluations;
     const std::vector<double>& state_parameter_cross =
         parameterized.state_parameter_derivatives;
     result.pressure_parameter_direct =
@@ -524,7 +523,7 @@ PhaseBlock evaluate_phase(
         || (parameter_count != 0
             && state_parameter_cross.size() != physical_dimension * parameter_count)) {
         throw std::invalid_argument(
-            "reactive finite-phase Provider tensor dimensions changed"
+            "reactive finite-phase EOS tensor dimensions changed"
         );
     }
     result.pressure = mechanical.pressure_pa;
@@ -535,7 +534,8 @@ PhaseBlock evaluate_phase(
         result.physical_gradient[supported] += g_ref[supported_species[supported]];
     }
     result.physical_gradient.back() += pressure_over_rt;
-    result.objective = mechanical.value + pressure_over_rt * result.volume;
+    result.objective = mechanical.helmholtz_over_rt_reference_amount
+        + pressure_over_rt * result.volume;
     for (std::size_t supported = 0; supported < support_count; ++supported) {
         const std::size_t species = supported_species[supported];
         result.objective += g_ref[species] * result.amounts[species];
@@ -954,11 +954,12 @@ struct MultiphaseEvaluation {
     std::vector<double> objective_hessian;
     std::vector<double> lagrangian_hessian;
     std::vector<PhaseBlock> phases;
+    epcsaft::NativeEosEvaluationCounts eos_evaluations;
 };
 
 MultiphaseEvaluation evaluate_multiphase(
-    const ProviderContext& provider,
-    const ProviderActiveParameterSet& active_parameters,
+    const epcsaft::NativeModel& eos,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const CompiledReactionSystem& system,
     const NormalizedBalances& balances,
     double temperature_k,
@@ -1015,7 +1016,7 @@ MultiphaseEvaluation evaluate_multiphase(
                 offset
             )
             : evaluate_phase(
-                provider,
+                eos,
                 active_parameters,
                 layout,
                 phase_reference,
@@ -1023,11 +1024,11 @@ MultiphaseEvaluation evaluate_multiphase(
                 phase_reference_derivatives,
                 temperature_k,
                 pressure_pa,
-                packing_intervals[phase],
                 variables,
                 offset
             ));
         const PhaseBlock& block = result.phases.back();
+        result.eos_evaluations += block.eos_evaluations;
         result.objective += block.objective;
         for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
             result.gradient[offset + coordinate] = block.gradient[coordinate];
@@ -1097,8 +1098,8 @@ MultiphaseEvaluation evaluate_multiphase(
 }
 
 void polish_single_phase_reaction_root(
-    const ProviderContext& provider,
-    const ProviderActiveParameterSet& active_parameters,
+    const epcsaft::NativeModel& eos,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const CompiledReactionSystem& system,
     const NormalizedBalances& balances,
     double temperature_k,
@@ -1121,7 +1122,7 @@ void polish_single_phase_reaction_root(
     const std::size_t reaction_count = system.reaction_matrix.rows;
     auto residual_and_jacobian = [&](const std::vector<double>& point) {
         const MultiphaseEvaluation evaluated = evaluate_multiphase(
-            provider,
+            eos,
             active_parameters,
             system,
             balances,
@@ -1273,8 +1274,9 @@ std::vector<double> lagrangian_gradient(
 
 bool audit_multiphase_derivatives(
     ReactiveFinitePhaseResult& result,
-    const ProviderContext& provider,
-    const ProviderActiveParameterSet& parameters,
+    std::size_t& eos_evaluation_count,
+    const epcsaft::NativeModel& eos,
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters,
     const CompiledReactionSystem& system,
     const NormalizedBalances& balances,
     double temperature_k,
@@ -1288,7 +1290,7 @@ bool audit_multiphase_derivatives(
 ) {
     const std::size_t variable_count = solution.size();
     const MultiphaseEvaluation baseline = evaluate_multiphase(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -1299,6 +1301,7 @@ bool audit_multiphase_derivatives(
         multipliers,
         layouts
     );
+    eos_evaluation_count += baseline.eos_evaluations.total();
     double objective_error = 0.0;
     double constraint_error = 0.0;
     double hessian_error = 0.0;
@@ -1319,7 +1322,7 @@ bool audit_multiphase_derivatives(
         plus_variables[column] += step;
         minus_variables[column] -= step;
         const MultiphaseEvaluation plus = evaluate_multiphase(
-            provider,
+            eos,
             parameters,
             system,
             balances,
@@ -1330,8 +1333,9 @@ bool audit_multiphase_derivatives(
             multipliers,
             layouts
         );
+        eos_evaluation_count += plus.eos_evaluations.total();
         const MultiphaseEvaluation minus = evaluate_multiphase(
-            provider,
+            eos,
             parameters,
             system,
             balances,
@@ -1342,6 +1346,7 @@ bool audit_multiphase_derivatives(
             multipliers,
             layouts
         );
+        eos_evaluation_count += minus.eos_evaluations.total();
         const double inverse_span = 0.5 / step;
         objective_error = std::max(
             objective_error,
@@ -1388,8 +1393,8 @@ bool audit_multiphase_derivatives(
 class ReactiveFinitePhaseTnlp final : public Ipopt::TNLP {
 public:
     ReactiveFinitePhaseTnlp(
-        const ProviderContext& provider,
-        ProviderActiveParameterSet active_parameters,
+        const epcsaft::NativeModel& eos,
+        std::vector<epcsaft::NativeActiveCoordinate> active_parameters,
         const CompiledReactionSystem& system,
         NormalizedBalances balances,
         double temperature_k,
@@ -1400,7 +1405,7 @@ public:
         std::vector<double> upper,
         std::vector<PhaseLayout> layouts
     )
-        : provider_(provider),
+        : eos_(eos),
           active_parameters_(std::move(active_parameters)),
           system_(system),
           balances_(std::move(balances)),
@@ -1657,6 +1662,9 @@ public:
         return callback_failure_kind_;
     }
     [[nodiscard]] std::size_t iterations() const { return iterations_; }
+    [[nodiscard]] std::size_t eos_evaluation_count() const {
+        return eos_evaluation_count_;
+    }
 
 private:
     [[nodiscard]] bool dimensions(Ipopt::Index n, Ipopt::Index m) const {
@@ -1686,7 +1694,7 @@ private:
         if (!cached.has_value() || cached_point != point
             || cached_multipliers != multipliers) {
             cached = evaluate_multiphase(
-                provider_,
+                eos_,
                 active_parameters_,
                 system_,
                 balances_,
@@ -1697,6 +1705,7 @@ private:
                 multipliers,
                 layouts_
             );
+            eos_evaluation_count_ += cached->eos_evaluations.total();
             cached_point = point;
             cached_multipliers = multipliers;
         }
@@ -1708,9 +1717,9 @@ private:
         try {
             callback();
             return true;
-        } catch (const ProviderDomainError& error) {
+        } catch (const epcsaft::EosDomainError& error) {
             callback_error_ = error.what();
-            callback_failure_kind_ = "provider_domain";
+            callback_failure_kind_ = "eos_domain";
             return false;
         } catch (const std::domain_error& error) {
             callback_error_ = error.what();
@@ -1723,8 +1732,8 @@ private:
         }
     }
 
-    const ProviderContext& provider_;
-    ProviderActiveParameterSet active_parameters_;
+    const epcsaft::NativeModel& eos_;
+    std::vector<epcsaft::NativeActiveCoordinate> active_parameters_;
     const CompiledReactionSystem& system_;
     NormalizedBalances balances_;
     double temperature_k_;
@@ -1741,6 +1750,7 @@ private:
     std::string callback_error_;
     std::string callback_failure_kind_ = "none";
     std::size_t iterations_ = 0;
+    mutable std::size_t eos_evaluation_count_ = 0;
     mutable std::vector<double> base_point_;
     mutable std::vector<double> base_multipliers_;
     mutable std::optional<MultiphaseEvaluation> base_evaluation_;
@@ -1920,19 +1930,19 @@ Eigen::MatrixXd populate_kkt_root(
 void populate_kkt_partials(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,
-    const ProviderActiveParameterSet& active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const std::vector<double>& multipliers,
     std::size_t species_count,
     const std::vector<PhaseLayout>& layouts
 ) {
-    const std::size_t active_parameter_count = active_parameters.identities.size();
+    const std::size_t active_parameter_count = active_parameters.size();
     const std::size_t phase_count = evaluation.phases.size();
     const std::size_t kkt_dimension =
         evaluation.gradient.size() + evaluation.constraints.size();
     populate_kkt_root(result, evaluation, multipliers);
-    result.input_order = active_parameters.identities;
+    result.input_order = epcsaft::active_parameter_identities(active_parameters);
     result.input_order.emplace_back("pressure_pa");
-    result.parameter_order = active_parameters.identities;
+    result.parameter_order = epcsaft::active_parameter_identities(active_parameters);
     const std::size_t input_count = active_parameter_count + 1;
     result.kkt_input_jacobian.assign(kkt_dimension * input_count, 0.0);
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
@@ -1974,7 +1984,7 @@ void populate_kkt_partials(
 void populate_sensitivities(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,
-    const ProviderActiveParameterSet& active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const NormalizedBalances& balances,
     const std::vector<double>& g_ref_pressure_derivatives_per_pa,
     const std::vector<double>& g_ref_parameter_derivatives,
@@ -1983,7 +1993,7 @@ void populate_sensitivities(
     std::size_t species_count,
     const std::vector<PhaseLayout>& layouts
 ) {
-    const std::size_t active_parameter_count = active_parameters.identities.size();
+    const std::size_t active_parameter_count = active_parameters.size();
     const std::size_t phase_count = evaluation.phases.size();
     const std::size_t variable_count = evaluation.gradient.size();
     const std::size_t constraint_count = evaluation.constraints.size();
@@ -2069,10 +2079,11 @@ void populate_sensitivities(
         result.input_order.push_back("balance_total[" + std::to_string(row) + "]");
     }
     result.input_order.emplace_back("pressure_pa");
+    const auto active_parameter_ids =
+        epcsaft::active_parameter_identities(active_parameters);
     result.input_order.insert(
         result.input_order.end(),
-        active_parameters.identities.begin(),
-        active_parameters.identities.end()
+        active_parameter_ids.begin(), active_parameter_ids.end()
     );
     result.kkt_input_jacobian.assign(kkt_dimension * input_count, 0.0);
     result.input_amount_derivatives.assign(
@@ -2211,7 +2222,7 @@ void populate_sensitivities(
     }
     result.sensitivity_status = "available";
     result.sensitivity_failure_reason.clear();
-    result.parameter_order = active_parameters.identities;
+    result.parameter_order = epcsaft::active_parameter_identities(active_parameters);
     result.amount_derivatives.assign(
         phase_count * species_count * active_parameter_count, 0.0
     );
@@ -2400,7 +2411,7 @@ std::pair<double, std::vector<double>> contract_output(
 void populate_outputs(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,
-    const ProviderActiveParameterSet& active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
     const std::vector<double>& g_ref_parameter_derivatives,
     double temperature_k,
     double pressure_pa,
@@ -2411,7 +2422,7 @@ void populate_outputs(
     const std::size_t phase_count = evaluation.phases.size();
     const std::size_t species_count = evaluation.phases.front().amounts.size();
     const std::size_t input_count = result.input_order.size();
-    const std::size_t active_count = active_parameters.identities.size();
+    const std::size_t active_count = active_parameters.size();
     const std::size_t primal_count = evaluation.gradient.size();
     const std::size_t local_count = primal_count + evaluation.constraints.size();
     result.output_values.reserve(outputs.size());
@@ -2584,8 +2595,8 @@ void populate_outputs(
 void finalize_reactive_finite_phase_result(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluated,
-    const ProviderContext& provider,
-    const ProviderActiveParameterSet& parameters,
+    const epcsaft::NativeModel& eos,
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters,
     const CompiledReactionSystem& system,
     const NormalizedBalances& balances,
     double temperature_k,
@@ -2820,7 +2831,8 @@ void finalize_reactive_finite_phase_result(
         try {
             audits_pass = audit_multiphase_derivatives(
                 result,
-                provider,
+                result.eos_evaluation_count,
+                eos,
                 parameters,
                 system,
                 balances,
@@ -2898,15 +2910,15 @@ void finalize_reactive_finite_phase_result(
 
 }  // namespace
 
-ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
+ReactiveFinitePhaseResult solve_eos_reactive_finite_phases(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<ReactiveFinitePhaseStart>& starts,
     double trace_floor,
-    const ProviderActiveParameterSet* active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters,
     int max_iterations,
     bool require_output_derivatives,
     bool perform_derivative_audits,
@@ -3006,12 +3018,12 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         || max_iterations < 0) {
         throw std::invalid_argument("reactive finite-phase state controls are invalid");
     }
-    const ProviderActiveParameterSet parameters = active_parameters == nullptr
-        ? ProviderActiveParameterSet{}
+    const std::vector<epcsaft::NativeActiveCoordinate> parameters = active_parameters == nullptr
+        ? std::vector<epcsaft::NativeActiveCoordinate>{}
         : *active_parameters;
-    if (system.ideal_gas && !parameters.identities.empty()) {
+    if (system.ideal_gas && !parameters.empty()) {
         throw std::invalid_argument(
-            "reactive ideal-gas phases do not expose Provider active parameters"
+            "reactive ideal-gas phases do not expose EOS active parameters"
         );
     }
     std::vector<double> initial(variable_count, 0.0);
@@ -3036,6 +3048,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         throw std::invalid_argument("reactive finite-phase feed amount is invalid");
     }
     const double amount_log_scale = std::log(total_feed_amount_mol);
+    std::size_t setup_eos_evaluations = 0;
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         const ReactiveFinitePhaseStart& start = starts[phase];
         const std::array<double, 2>& packing = packing_fraction_intervals[phase];
@@ -3060,7 +3073,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                 system,
                 layout.supported_species,
                 trace_floor,
-                provider.metadata().ion_mole_fraction_max
+                eos.eos_metadata().ion_mole_fraction_max
             );
             if (seed.has_value()) {
                 start_amounts = *seed;
@@ -3081,11 +3094,13 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             start_amounts.begin(), start_amounts.end(), 0.0
         );
         const double volume = total * start.molar_volume_m3_per_mol;
-        const double start_packing = system.ideal_gas
-            ? 0.0
-            : provider.evaluate_packing_fraction(
+        double start_packing = 0.0;
+        if (!system.ideal_gas) {
+            start_packing = eos.evaluate_state_packing_fraction(
                 temperature_k, start_amounts, volume
-            ).value;
+            ).packing_fraction;
+            ++setup_eos_evaluations;
+        }
         if (!system.ideal_gas
             && (start_packing <= packing[0] || start_packing >= packing[1])) {
             throw std::invalid_argument(
@@ -3222,7 +3237,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         ? result.admissible_nullity
         : phase_directions->direction_rank;
     const MultiphaseEvaluation initial_evaluation = evaluate_multiphase(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3233,6 +3248,8 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         std::vector<double>(constraint_count, 0.0),
         layouts
     );
+    result.eos_evaluation_count = setup_eos_evaluations
+        + initial_evaluation.eos_evaluations.total();
     if (inf_norm(initial_evaluation.constraints)
         > kReactiveFinitePhaseStartBalanceTolerance) {
         throw std::invalid_argument(
@@ -3253,13 +3270,11 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             result.local_upper_bounds.end(), constraint_count, 1.0e19
         );
         result.solver_status = "not_started";
-        result.provider_evaluation_count =
-            static_cast<std::size_t>(provider.evaluation_count());
         return result;
     }
 
     ReactiveFinitePhaseTnlp* raw_problem = new ReactiveFinitePhaseTnlp(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3298,17 +3313,17 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     result.callback_error = raw_problem->callback_error();
     result.callback_failure_kind = raw_problem->callback_failure_kind();
     result.optimizer_iterations = raw_problem->iterations();
-    result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
+    result.eos_evaluation_count += raw_problem->eos_evaluation_count();
     if (status != Ipopt::Solve_Succeeded || !result.callback_error.empty()) {
         if (!result.callback_error.empty()) {
-            if (result.callback_failure_kind == "provider_domain") {
-                result.failure_reason = "provider_callback_domain_failed";
-                result.provider_domain_status = "failed";
+            if (result.callback_failure_kind == "eos_domain") {
+                result.failure_reason = "eos_callback_domain_failed";
+                result.eos_domain_status = "failed";
             } else {
                 result.failure_reason = result.callback_failure_kind == "physical_domain"
                     ? "physical_domain_callback_failed"
                     : "internal_callback_failed";
-                result.provider_domain_status = result.callback_failure_kind == "physical_domain"
+                result.eos_domain_status = result.callback_failure_kind == "physical_domain"
                     ? "passed"
                     : "not_adjudicated";
                 if (result.callback_failure_kind == "physical_domain") {
@@ -3319,19 +3334,19 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             }
         } else {
             result.failure_reason = "ipopt_solve_failed";
-            result.provider_domain_status = "passed";
+            result.eos_domain_status = "passed";
             result.numerical_status = "failed";
         }
         return result;
     }
-    result.provider_domain_status = "passed";
+    result.eos_domain_status = "passed";
     result.numerical_status = "passed";
 
     std::vector<double> solution = raw_problem->solution();
     std::vector<double> multipliers = raw_problem->multipliers();
     if (phase_directions == nullptr) {
         polish_single_phase_reaction_root(
-            provider,
+            eos,
             parameters,
             system,
             balances,
@@ -3347,9 +3362,10 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     // Fixed-pressure phase amounts do not depend on the packing coordinate.
     // Polish each phase's scalar packing coordinate after IPOPT so the direct
     // pressure check is as accurate as the otherwise well-scaled KKT solve.
+    std::size_t postsolve_eos_evaluations = 0;
     for (int iteration = 0; iteration < 8; ++iteration) {
         const MultiphaseEvaluation pressure_evaluation = evaluate_multiphase(
-            provider,
+            eos,
             parameters,
             system,
             balances,
@@ -3360,6 +3376,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             multipliers,
             layouts
         );
+        postsolve_eos_evaluations += pressure_evaluation.eos_evaluations.total();
         double maximum_relative_residual = 0.0;
         bool changed = false;
         for (std::size_t phase = 0; phase < phase_count; ++phase) {
@@ -3406,7 +3423,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         }
     }
     const MultiphaseEvaluation polished_primal = evaluate_multiphase(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3417,9 +3434,10 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         multipliers,
         layouts
     );
+    postsolve_eos_evaluations += polished_primal.eos_evaluations.total();
     multipliers = equality_multipliers_at(polished_primal);
     const MultiphaseEvaluation evaluated = evaluate_multiphase(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3430,10 +3448,11 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         multipliers,
         layouts
     );
+    postsolve_eos_evaluations += evaluated.eos_evaluations.total();
     finalize_reactive_finite_phase_result(
         result,
         evaluated,
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3452,14 +3471,14 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         layouts,
         outputs
     );
-    result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
+    result.eos_evaluation_count += postsolve_eos_evaluations;
     return result;
 }
 
 namespace {
 
 struct LocalFinitePhaseEvaluation final {
-    ProviderActiveParameterSet parameters;
+    std::vector<epcsaft::NativeActiveCoordinate> parameters;
     std::vector<PhaseLayout> layouts;
     NormalizedBalances balances;
     double amount_scale;
@@ -3470,19 +3489,19 @@ struct LocalFinitePhaseEvaluation final {
 
 LocalFinitePhaseEvaluation prepare_local_finite_phase_evaluation(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds,
-    const ProviderActiveParameterSet* active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters,
     const PhaseDirectionCompilation* phase_directions,
     const std::vector<std::vector<std::size_t>>& phase_support_indices
 ) {
-    ProviderActiveParameterSet parameters = active_parameters == nullptr
-        ? ProviderActiveParameterSet{}
+    std::vector<epcsaft::NativeActiveCoordinate> parameters = active_parameters == nullptr
+        ? std::vector<epcsaft::NativeActiveCoordinate>{}
         : *active_parameters;
     std::vector<PhaseLayout> layouts = make_phase_layouts(
         system.charges, phase_support_indices
@@ -3513,7 +3532,7 @@ LocalFinitePhaseEvaluation prepare_local_finite_phase_evaluation(
         local_variables.end()
     );
     MultiphaseEvaluation evaluated = evaluate_multiphase(
-        provider,
+        eos,
         parameters,
         system,
         balances,
@@ -3537,23 +3556,23 @@ LocalFinitePhaseEvaluation prepare_local_finite_phase_evaluation(
 
 }  // namespace
 
-ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
+ReactiveFinitePhaseResult evaluate_eos_reactive_finite_phases_local(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds,
-    const ProviderActiveParameterSet* active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters,
     const PhaseDirectionCompilation* phase_directions,
     const std::vector<std::vector<std::size_t>>& phase_support_indices,
     const std::vector<ReactiveFinitePhaseOutput>& outputs
 ) {
     const LocalFinitePhaseEvaluation local = prepare_local_finite_phase_evaluation(
         system,
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         packing_fraction_intervals,
@@ -3567,7 +3586,7 @@ ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
     ReactiveFinitePhaseResult result;
     result.solver_status = "local_evaluation";
     result.numerical_status = "passed";
-    result.provider_domain_status = "passed";
+    result.eos_domain_status = "passed";
     result.local_variables = local_variables;
     result.local_lower_bounds = local_lower_bounds;
     result.local_upper_bounds = local_upper_bounds;
@@ -3626,20 +3645,20 @@ ReactiveFinitePhaseResult evaluate_provider_reactive_finite_phases_local(
     result.local_evaluation_valid = true;
     result.equilibrium_value_valid = false;
     result.physical_status = "not_adjudicated";
-    result.provider_evaluation_count = static_cast<std::size_t>(provider.evaluation_count());
+    result.eos_evaluation_count = local.evaluated.eos_evaluations.total();
     return result;
 }
 
-ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
+ReactiveFinitePhaseResult finalize_eos_reactive_finite_phases_local(
     const CompiledReactionSystem& system,
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::array<double, 2>>& packing_fraction_intervals,
     const std::vector<double>& local_variables,
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds,
-    const ProviderActiveParameterSet* active_parameters,
+    const std::vector<epcsaft::NativeActiveCoordinate>* active_parameters,
     const PhaseDirectionCompilation* phase_directions,
     const std::vector<std::vector<std::size_t>>& phase_support_indices,
     const std::vector<ReactiveFinitePhaseOutput>& outputs,
@@ -3649,7 +3668,7 @@ ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
 ) {
     const LocalFinitePhaseEvaluation local = prepare_local_finite_phase_evaluation(
         system,
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         packing_fraction_intervals,
@@ -3673,11 +3692,11 @@ ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
     ReactiveFinitePhaseResult result;
     result.solver_status = "local_evaluation";
     result.numerical_status = "passed";
-    result.provider_domain_status = "passed";
+    result.eos_domain_status = "passed";
     finalize_reactive_finite_phase_result(
         result,
         local.evaluated,
-        provider,
+        eos,
         local.parameters,
         system,
         local.balances,
@@ -3696,8 +3715,7 @@ ReactiveFinitePhaseResult finalize_provider_reactive_finite_phases_local(
         local.layouts,
         outputs
     );
-    result.provider_evaluation_count =
-        static_cast<std::size_t>(provider.evaluation_count());
+    result.eos_evaluation_count = local.evaluated.eos_evaluations.total();
     return result;
 }
 

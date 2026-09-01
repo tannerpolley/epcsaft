@@ -33,8 +33,8 @@ struct Held2Coordinates {
     std::vector<double> charges;
     std::size_t eliminated_index = 0;
     std::size_t dependent_index = 0;
-    std::vector<std::size_t> paper_to_provider_indices;
-    std::vector<std::size_t> provider_to_paper_indices;
+    std::vector<std::size_t> paper_to_eos_indices;
+    std::vector<std::size_t> eos_to_paper_indices;
     std::vector<std::size_t> compact_to_paper_indices;
     std::vector<std::size_t> retained_indices;
     std::vector<std::size_t> independent_indices;
@@ -49,8 +49,8 @@ struct Held2StepTiming {
     int invocation_count = 0;
     double wall_seconds = 0.0;
     double cpu_seconds = 0.0;
-    // Provider-backed thermodynamic callback invocations.
-    std::uint64_t provider_evaluations = 0;
+    // EOS-backed thermodynamic callback invocations.
+    std::uint64_t eos_evaluations = 0;
     std::uint64_t optimizer_solves = 0;
     std::uint64_t optimizer_iterations = 0;
     std::string terminal_status = "not_run";

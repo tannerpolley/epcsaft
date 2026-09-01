@@ -19,7 +19,7 @@
 \section{Scope and authority}
 
 This document mirrors the current EOS implementation. It is not a runtime
-input and does not override \texttt{docs/science/full-provider-eos.md}. The
+input and does not override \texttt{docs/science/full-eos.md}. The
 legacy catalogue at commit
 \texttt{7920e56dbb0fc1fb418bae44e67ef50f334b75cd}, Git blob
 \texttt{2e970476258558de05391d9d77f31d1736d78de8}, is provenance and structural
@@ -1044,7 +1044,7 @@ l_{11}&\theta\\
 % Source: Exact Jacobian of Eqs.~\eqref{eq:phase_mole_fraction}--\eqref{eq:phase_molar_density}
 % Status: Exact derivation
 % Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
-% Change note: Retained by the Equilibrium provider workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
+% Change note: Retained by the Equilibrium EOS workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
 \begin{equation}
 \frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
 \quad
@@ -1060,7 +1060,7 @@ l_{11}&\theta\\
 % Source: Exact second-order multivariable chain rule
 % Status: Exact derivation
 % Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-% Change note: Retained by the Equilibrium provider workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
+% Change note: Retained by the Equilibrium EOS workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
 \begin{equation}
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}
 =n_\alpha a^r_{y_p}y_{p,\beta}
@@ -1098,11 +1098,11 @@ c_r=\sum_i b_i^{(r)}\ln\phi_i^{\mathrm{ref}},
 % EqID: declared_solvent_source_reference_transfer
 % Source: Exact change of source activity scale on the neutral-reference basis
 % Status: Exact derivation
-% Description: Declared-solvent fugacity and activity-scale contractions transferred to the Provider reference.
+% Description: Declared-solvent fugacity and activity-scale contractions transferred to the EOS reference.
 % Change note: The source pressure is provenance; every fugacity contraction is evaluated at the requested trial pressure.
 \begin{equation}
 \begin{aligned}
-\Delta_r^{\mathrm{src}\rightarrow\mathrm{Provider}}
+\Delta_r^{\mathrm{src}\rightarrow\mathrm{EOS}}
 &=c_r+s_r+\Delta\nu_r\ln\!\left(\frac{P}{\rho^\circ RT}\right),\\
 s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
 \ell_i^{\mathrm{src}}&=

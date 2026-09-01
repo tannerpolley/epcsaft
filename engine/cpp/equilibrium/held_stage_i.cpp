@@ -93,12 +93,13 @@ struct SearchRun {
     int iterations = 0;
     std::array<double, 2> initial_guess{};
     std::array<double, 2> variables{};
+    std::size_t eos_evaluation_count = 0;
 };
 
 class SearchTnlp final : public Ipopt::TNLP {
 public:
     SearchTnlp(
-        const ProviderContext& provider,
+        const epcsaft::NativeModel& eos,
         double temperature_k,
         double pressure_pa,
         const HeldStateEvaluation& reference,
@@ -109,7 +110,7 @@ public:
         std::array<double, 2> lower,
         std::array<double, 2> upper
     )
-        : provider_(provider),
+        : eos_(eos),
           temperature_k_(temperature_k),
           pressure_pa_(pressure_pa),
           reference_(reference),
@@ -286,6 +287,9 @@ public:
 
     [[nodiscard]] const std::array<double, 2>& solution() const { return solution_; }
     [[nodiscard]] const std::string& callback_error() const { return callback_error_; }
+    [[nodiscard]] std::size_t eos_evaluation_count() const {
+        return eos_evaluation_count_;
+    }
 
 private:
     struct ObjectiveEvaluation {
@@ -295,9 +299,10 @@ private:
     };
 
     [[nodiscard]] ObjectiveEvaluation evaluate(const Ipopt::Number* x) const {
+        ++eos_evaluation_count_;
         if (objective_ == StageIObjective::homogeneous) {
             const HeldStateEvaluation evaluation = evaluate_held_state(
-                provider_,
+                eos_,
                 temperature_k_,
                 pressure_pa_,
                 x[0],
@@ -307,7 +312,7 @@ private:
         }
         if (objective_ == StageIObjective::tunneling) {
             const HeldTunnelingEvaluation evaluation = evaluate_held_tunneling(
-                provider_,
+                eos_,
                 temperature_k_,
                 pressure_pa_,
                 reference_,
@@ -319,7 +324,7 @@ private:
             return {evaluation.objective, evaluation.gradient, evaluation.hessian};
         }
         const HeldTpdEvaluation evaluation = evaluate_held_tpd(
-            provider_,
+            eos_,
             temperature_k_,
             pressure_pa_,
             reference_,
@@ -329,7 +334,7 @@ private:
         return {evaluation.d_bar, evaluation.gradient, evaluation.hessian};
     }
 
-    const ProviderContext& provider_;
+    const epcsaft::NativeModel& eos_;
     double temperature_k_;
     double pressure_pa_;
     HeldStateEvaluation reference_;
@@ -341,10 +346,11 @@ private:
     std::array<double, 2> upper_;
     std::array<double, 2> solution_{};
     std::string callback_error_;
+    mutable std::size_t eos_evaluation_count_ = 0;
 };
 
 SearchRun run_search_ipopt(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
@@ -356,7 +362,7 @@ SearchRun run_search_ipopt(
     const std::array<double, 2>& upper
 ) {
     auto* raw_problem = new SearchTnlp(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         reference,
@@ -383,6 +389,7 @@ SearchRun run_search_ipopt(
     result.solver_converged = status == Ipopt::Solve_Succeeded;
     result.variables = raw_problem->solution();
     result.callback_error = raw_problem->callback_error();
+    result.eos_evaluation_count = raw_problem->eos_evaluation_count();
     const Ipopt::SmartPtr<Ipopt::SolveStatistics> statistics = application->Statistics();
     if (IsValid(statistics)) {
         result.iterations = statistics->IterationCount();
@@ -477,7 +484,7 @@ double confirmation_difference(
 }  // namespace
 
 HeldStageIResult solve_held_stage_i(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
@@ -508,7 +515,7 @@ HeldStageIResult solve_held_stage_i(
     double lowest_reference = std::numeric_limits<double>::infinity();
     for (const auto& [role, initial] : reference_starts) {
         const SearchRun run = run_search_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             {},
@@ -519,6 +526,7 @@ HeldStageIResult solve_held_stage_i(
             {feed_x_component_zero, std::log(kVolumeLowerM3PerMol)},
             {feed_x_component_zero, std::log(kVolumeUpperM3PerMol)}
         );
+        result.eos_evaluation_count += run.eos_evaluation_count;
         HeldReferenceAttempt record;
         record.role = role;
         record.initial_log_volume = initial;
@@ -532,12 +540,13 @@ HeldStageIResult solve_held_stage_i(
         if (run.solver_converged && run.callback_error.empty()) {
             try {
                 HeldStateEvaluation candidate = evaluate_held_state(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     feed_x_component_zero,
                     run.variables[1]
                 );
+                result.eos_evaluation_count += candidate.eos.evaluations.total();
                 record.g_bar = candidate.g_bar;
                 record.pressure_stationarity_relative =
                     candidate.pressure_stationarity_relative;
@@ -604,7 +613,7 @@ HeldStageIResult solve_held_stage_i(
         }
 
         SearchRun tunnel = run_search_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             result.reference,
@@ -615,12 +624,13 @@ HeldStageIResult solve_held_stage_i(
             tunnel_lower,
             tunnel_upper
         );
+        result.eos_evaluation_count += tunnel.eos_evaluation_count;
         bool tunnel_accepted = false;
         HeldTunnelingEvaluation tunnel_evaluation;
         if (tunnel.solver_converged && tunnel.callback_error.empty()) {
             try {
                 tunnel_evaluation = evaluate_held_tunneling(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     result.reference,
@@ -629,6 +639,8 @@ HeldStageIResult solve_held_stage_i(
                     tunnel.variables[0],
                     tunnel.variables[1]
                 );
+                result.eos_evaluation_count +=
+                    tunnel_evaluation.tpd.state.eos.evaluations.total();
                 tunnel_accepted = std::isfinite(tunnel_evaluation.objective)
                     && std::abs(
                            tunnel_evaluation.tpd.state.pressure_stationarity_relative
@@ -667,7 +679,7 @@ HeldStageIResult solve_held_stage_i(
             std::log(kVolumeUpperM3PerMol),
         };
         SearchRun polish = run_search_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             result.reference,
@@ -678,18 +690,20 @@ HeldStageIResult solve_held_stage_i(
             search_lower,
             search_upper
         );
+        result.eos_evaluation_count += polish.eos_evaluation_count;
         HeldTpdEvaluation candidate;
         bool polish_accepted = false;
         if (polish.solver_converged && polish.callback_error.empty()) {
             try {
                 candidate = evaluate_held_tpd(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     result.reference,
                     polish.variables[0],
                     polish.variables[1]
                 );
+                result.eos_evaluation_count += candidate.state.eos.evaluations.total();
                 polish_accepted = locally_accepts(polish, candidate);
             } catch (const std::exception& error) {
                 polish_accepted = false;
@@ -732,7 +746,7 @@ HeldStageIResult solve_held_stage_i(
         const bool materially_perturbed = std::abs(composition_shift) >= 0.01
             && std::abs(volume_shift) >= 0.04;
         SearchRun confirmation = run_search_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             result.reference,
@@ -743,18 +757,20 @@ HeldStageIResult solve_held_stage_i(
             search_lower,
             search_upper
         );
+        result.eos_evaluation_count += confirmation.eos_evaluation_count;
         HeldTpdEvaluation confirmed;
         bool confirmation_accepted = false;
         if (confirmation.solver_converged && confirmation.callback_error.empty()) {
             try {
                 confirmed = evaluate_held_tpd(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     result.reference,
                     confirmation.variables[0],
                     confirmation.variables[1]
                 );
+                result.eos_evaluation_count += confirmed.state.eos.evaluations.total();
                 confirmation_accepted = locally_accepts(confirmation, confirmed)
                     && confirmed.d_bar < kTpdNegativeThreshold;
                 if (confirmation_accepted) {

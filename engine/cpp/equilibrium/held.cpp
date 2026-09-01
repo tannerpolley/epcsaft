@@ -42,7 +42,7 @@ double held_tunnel_minimum_finite_exponential_distance() {
 }
 
 HeldStateEvaluation evaluate_held_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double x_component_zero,
@@ -65,14 +65,14 @@ HeldStateEvaluation evaluate_held_state(
     }
 
     const std::array<double, 2> amounts{x_component_zero, 1.0 - x_component_zero};
-    MixturePhaseEvaluation phase = provider.evaluate_mixture(
+    epcsaft::NativePhaseState phase = eos.evaluate_phase_state(
         temperature_k,
         {amounts[0], amounts[1]},
         volume_m3
     );
     const double pressure_over_rt = pressure_pa / (kGasConstantJPerMolK * temperature_k);
-    const auto& provider_gradient = phase.gradient;
-    const auto& provider_hessian = phase.hessian;
+    const auto& eos_gradient = phase.gradient;
+    const auto& eos_hessian = phase.hessian;
 
     HeldStateEvaluation result;
     result.x_component_zero = x_component_zero;
@@ -81,19 +81,19 @@ HeldStateEvaluation evaluate_held_state(
     result.amounts_mol = amounts;
     result.g_bar = phase.value + pressure_over_rt * volume_m3;
     result.gradient = {
-        provider_gradient[0] - provider_gradient[1],
-        volume_m3 * (provider_gradient[2] + pressure_over_rt),
+        eos_gradient[0] - eos_gradient[1],
+        volume_m3 * (eos_gradient[2] + pressure_over_rt),
     };
     result.hessian = {
-        provider_hessian[0] - provider_hessian[1] - provider_hessian[3]
-            + provider_hessian[4],
-        volume_m3 * (provider_hessian[2] - provider_hessian[5]),
-        volume_m3 * (provider_hessian[6] - provider_hessian[7]),
-        volume_m3 * volume_m3 * provider_hessian[8]
-            + volume_m3 * (provider_gradient[2] + pressure_over_rt),
+        eos_hessian[0] - eos_hessian[1] - eos_hessian[3]
+            + eos_hessian[4],
+        volume_m3 * (eos_hessian[2] - eos_hessian[5]),
+        volume_m3 * (eos_hessian[6] - eos_hessian[7]),
+        volume_m3 * volume_m3 * eos_hessian[8]
+            + volume_m3 * (eos_gradient[2] + pressure_over_rt),
     };
     result.pressure_stationarity_relative = (phase.pressure_pa - pressure_pa) / pressure_pa;
-    result.provider = std::move(phase);
+    result.eos = std::move(phase);
     require_finite(result.g_bar, "HELD g_bar");
     require_finite(result.gradient, "HELD gradient");
     require_finite(result.hessian, "HELD Hessian");
@@ -102,7 +102,7 @@ HeldStateEvaluation evaluate_held_state(
 }
 
 HeldTpdEvaluation evaluate_held_tpd(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
@@ -110,7 +110,7 @@ HeldTpdEvaluation evaluate_held_tpd(
     double log_volume
 ) {
     HeldStateEvaluation state = evaluate_held_state(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         x_component_zero,
@@ -132,7 +132,7 @@ HeldTpdEvaluation evaluate_held_tpd(
 }
 
 HeldTunnelingEvaluation evaluate_held_tunneling(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
@@ -151,7 +151,7 @@ HeldTunnelingEvaluation evaluate_held_tunneling(
         );
     }
     HeldTpdEvaluation tpd = evaluate_held_tpd(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         reference,

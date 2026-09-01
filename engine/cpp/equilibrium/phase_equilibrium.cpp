@@ -59,18 +59,19 @@ std::vector<double> independent(
 class HeldLocalAccess {
 public:
     HeldLocalAccess(
-        const ProviderContext& provider,
+        const epcsaft::NativeModel& eos,
         double temperature,
         double pressure,
+        std::size_t& eos_evaluation_count,
         Held2CompositionDomain domain = Held2CompositionDomain::FiniteSearch
     )
-        : provider_(provider),
+        : eos_(eos),
           temperature_(temperature),
           pressure_(pressure),
+          eos_evaluation_count_(eos_evaluation_count),
           domain_(domain),
-          charges_(phase_provider_component_charges(provider)),
           coordinates_(make_held2_coordinates(
-              charges_, phase_provider_component_ids(provider)
+              phase_eos_component_charges(eos), phase_eos_component_ids(eos)
           )) {}
 
     [[nodiscard]] const Held2Coordinates& coordinates() const {
@@ -84,9 +85,10 @@ public:
         const auto physical = held2_lift_independent_fractions(
             coordinates_, composition, domain_
         );
-        const auto phase = evaluate_nonreactive_phase(
-            provider_, charges_, temperature_, physical, std::exp(log_volume)
+        const auto phase = eos_.evaluate_phase_state(
+            temperature_, physical, std::exp(log_volume)
         );
+        eos_evaluation_count_ += phase.evaluations.total();
         return evaluate_held2_phase_block(
             coordinates_,
             composition,
@@ -101,20 +103,22 @@ public:
     [[nodiscard]] std::array<double, 2> volume_bounds(
         const std::vector<double>& composition
     ) const {
-        return provider_.evaluate_molar_volume_bounds(
+        const auto bounds = eos_.evaluate_molar_volume_bounds(
             temperature_,
             held2_lift_independent_fractions(coordinates_, composition, domain_),
             kHeld2PackingFractionMinimum,
             kHeld2PackingFractionMaximum
         );
+        eos_evaluation_count_ += bounds.eos_evaluation_count;
+        return bounds.bounds_m3_per_mol;
     }
 
 private:
-    const ProviderContext& provider_;
+    const epcsaft::NativeModel& eos_;
     double temperature_;
     double pressure_;
+    std::size_t& eos_evaluation_count_;
     Held2CompositionDomain domain_;
-    std::vector<double> charges_;
     Held2Coordinates coordinates_;
 };
 
@@ -124,22 +128,24 @@ struct DeclaredStart {
 };
 
 std::vector<DeclaredStart> discovery_starts(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const FixedTpPhaseProblem& problem,
     const Held2Coordinates& coordinates,
-    const std::vector<double>& feed
+    const std::vector<double>& feed,
+    std::size_t& eos_evaluation_count
 ) {
-    const auto component_charges = phase_provider_component_charges(provider);
+    const auto component_charges = phase_eos_component_charges(eos);
     if (!phase_topology_is_charged(component_charges)
-        && provider.component_count() != 2) {
+        && eos.component_count() != 2) {
         return {};
     }
     FlashResult discovery;
     try {
         discovery = solve_tp_flash(
-            provider,
+            eos,
             {problem.temperature_k, problem.pressure_pa, feed}
         );
+        eos_evaluation_count += discovery.eos_evaluation_count;
     } catch (const std::exception&) {
         return {};
     }
@@ -153,7 +159,7 @@ std::vector<DeclaredStart> discovery_starts(
                 {
                     independent(
                         coordinates,
-                        phase.physical_fractions_provider_order
+                        phase.physical_fractions_eos_order
                     ),
                     phase.volume,
                     std::log(phase.volume),
@@ -355,21 +361,21 @@ std::vector<Held2Problem67Phase> order_phases_from_starts(
 }
 
 PhaseEquilibriumState all_component_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     double temperature,
     const std::vector<double>& composition,
-    double volume
+    double volume,
+    std::size_t* eos_evaluation_count = nullptr
 ) {
-    const auto component_charges = phase_provider_component_charges(provider);
-    const auto phase = evaluate_nonreactive_phase(
-        provider, component_charges, temperature, composition, volume
-    );
+    const auto phase = eos.evaluate_phase_state(temperature, composition, volume);
+    if (eos_evaluation_count != nullptr) {
+        *eos_evaluation_count += phase.evaluations.total();
+    }
     return make_phase_equilibrium_state(
-        provider,
+        eos,
         role,
         PhaseSupport::AllComponents,
-        temperature,
         composition,
         volume,
         phase
@@ -456,12 +462,13 @@ bool roles_certified(
 }
 
 FixedTpPhaseResult one_phase(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const FixedTpPhaseProblem& problem,
     const std::vector<double>& feed
 ) {
     FixedTpPhaseResult result;
-    result.parameter_fingerprint = provider.fingerprint();
+    std::size_t eos_evaluation_count = 0;
+    result.parameter_fingerprint = eos.parameter_fingerprint();
     result.diagnostics.route = "held_pressure_envelope_declared_topology";
     result.diagnostics.certificate_scope = "fixed_tp_declared_topology";
     result.diagnostics.phase_selection_claim =
@@ -482,9 +489,10 @@ FixedTpPhaseResult one_phase(
     };
     result.diagnostics.hint_count = static_cast<int>(problem.hints.size());
     const HeldLocalAccess access(
-        provider,
+        eos,
         problem.temperature_k,
         problem.pressure_pa,
+        eos_evaluation_count,
         Held2CompositionDomain::TraceRefinement
     );
     const auto chart = independent(access.coordinates(), feed);
@@ -496,7 +504,8 @@ FixedTpPhaseResult one_phase(
         },
         48
     );
-    result.diagnostics.provider_evaluation_count = provider.evaluation_count();
+    result.diagnostics.eos_evaluation_count =
+        static_cast<int>(eos_evaluation_count);
     if (envelope.outcome != "selected"
         || envelope.selected_root_index < 0
         || static_cast<std::size_t>(envelope.selected_root_index)
@@ -553,7 +562,8 @@ FixedTpPhaseResult one_phase(
         }
     }
     result.phases.push_back(all_component_state(
-        provider, role, problem.temperature_k, feed, selected->volume
+        eos, role, problem.temperature_k, feed, selected->volume,
+        &eos_evaluation_count
     ));
     const double total = std::accumulate(
         problem.feed_amounts_mol.begin(),
@@ -571,7 +581,8 @@ FixedTpPhaseResult one_phase(
     ) / problem.pressure_pa;
     result.diagnostics.phase_distinctness =
         std::numeric_limits<double>::infinity();
-    result.diagnostics.provider_evaluation_count = provider.evaluation_count();
+    result.diagnostics.eos_evaluation_count =
+        static_cast<int>(eos_evaluation_count);
     return result;
 }
 
@@ -591,14 +602,14 @@ const char* phase_support_name(PhaseSupport support) noexcept {
 }
 
 PhaseEquilibriumState audit_phase_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     double temperature_k,
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol
 ) {
     return all_component_state(
-        provider,
+        eos,
         role,
         temperature_k,
         mole_fractions,
@@ -607,11 +618,12 @@ PhaseEquilibriumState audit_phase_state(
 }
 
 FixedTpPhaseResult solve_declared_fixed_tp(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const FixedTpPhaseProblem& problem
 ) {
     FixedTpPhaseResult result;
-    result.parameter_fingerprint = provider.fingerprint();
+    std::size_t eos_evaluation_count = 0;
+    result.parameter_fingerprint = eos.parameter_fingerprint();
     result.diagnostics.route = "held_step8_declared_topology";
     result.diagnostics.certificate_scope = "fixed_tp_declared_topology";
     result.diagnostics.phase_selection_claim =
@@ -635,8 +647,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
     result.diagnostics.initial_guess_count =
         static_cast<int>(problem.initial_guesses.size());
     try {
-        const auto component_ids = phase_provider_component_ids(provider);
-        const auto component_charges = phase_provider_component_charges(provider);
+        const auto component_ids = phase_eos_component_ids(eos);
+        const auto component_charges = phase_eos_component_charges(eos);
         if (!std::isfinite(problem.temperature_k)
             || problem.temperature_k <= 0.0
             || !std::isfinite(problem.pressure_pa)
@@ -682,10 +694,11 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             coordinates, feed
         ));
         if (problem.phases.size() == 1) {
-            result = one_phase(provider, problem, feed);
+            result = one_phase(eos, problem, feed);
         } else {
             const HeldLocalAccess access(
-                provider, problem.temperature_k, problem.pressure_pa
+                eos, problem.temperature_k, problem.pressure_pa,
+                eos_evaluation_count
             );
             const auto base = independent(coordinates, feed);
             const std::size_t phase_count = problem.phases.size();
@@ -740,7 +753,7 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 }
             } else {
                 starts = discovery_starts(
-                    provider, problem, coordinates, feed
+                    eos, problem, coordinates, feed, eos_evaluation_count
                 );
             }
             const bool local_candidate_starts = starts.size() == phase_count;
@@ -841,8 +854,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                     : 1.0,
                 true
             );
-            result.diagnostics.provider_evaluation_count =
-                provider.evaluation_count();
+            result.diagnostics.eos_evaluation_count =
+                static_cast<int>(eos_evaluation_count);
             result.diagnostics.optimizer_solve_count =
                 solved.stage_iii_solve_count;
             result.diagnostics.optimizer_iteration_count =
@@ -916,11 +929,12 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             );
             for (std::size_t phase = 0; phase < phase_count; ++phase) {
                 result.phases.push_back(all_component_state(
-                    provider,
+                    eos,
                     problem.phases[phase].role,
                     problem.temperature_k,
                     selected[phase].physical_fractions,
-                    selected[phase].volume
+                    selected[phase].volume,
+                    &eos_evaluation_count
                 ));
                 result.phase_fractions.push_back(selected[phase].phase_fraction);
                 result.phase_amounts_mol.push_back(
@@ -931,8 +945,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                     result.phases,
                     result.diagnostics.phase_distinctness
                 )) {
-                result.diagnostics.provider_evaluation_count =
-                    provider.evaluation_count();
+                result.diagnostics.eos_evaluation_count =
+                    static_cast<int>(eos_evaluation_count);
                 result.diagnostics.solver_status = "converged";
                 result.diagnostics.numerical_status = "certified";
                 result.diagnostics.physical_status = "rejected";
@@ -967,8 +981,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 }
             }
             if (!potentials_certified) {
-                result.diagnostics.provider_evaluation_count =
-                    provider.evaluation_count();
+                result.diagnostics.eos_evaluation_count =
+                    static_cast<int>(eos_evaluation_count);
                 result.diagnostics.solver_status = "converged";
                 result.diagnostics.numerical_status = "uncertified";
                 result.diagnostics.physical_status = "rejected";
@@ -984,7 +998,7 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             result.diagnostics.accepted_start_count = 1;
             result.diagnostics.distinct_root_count = 1;
         }
-        if (!provider.active_parameters().identities.empty()
+        if (!eos.active_coordinates().empty()
             && !result.phases.empty()) {
             std::vector<SolvedPhaseState> solved_phases;
             const double total = std::accumulate(
@@ -1006,18 +1020,21 @@ FixedTpPhaseResult solve_declared_fixed_tp(
                 });
             }
             result.sensitivity = evaluate_declared_state_sensitivity(
-                provider,
+                eos,
                 problem.temperature_k,
                 problem.pressure_pa,
                 component_ids,
                 problem.feed_amounts_mol,
                 solved_phases
             );
+            eos_evaluation_count +=
+                result.sensitivity->eos_evaluation_count;
         }
-        result.diagnostics.provider_evaluation_count = provider.evaluation_count();
+        result.diagnostics.eos_evaluation_count =
+            static_cast<int>(eos_evaluation_count);
     } catch (const std::exception& error) {
-        result.diagnostics.provider_evaluation_count =
-            provider.evaluation_count();
+        result.diagnostics.eos_evaluation_count =
+            static_cast<int>(eos_evaluation_count);
         result.phases.clear();
         result.phase_amounts_mol.clear();
         result.phase_fractions.clear();

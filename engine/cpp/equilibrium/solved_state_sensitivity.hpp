@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "provider.hpp"
+#include "eos.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
@@ -36,6 +36,7 @@ struct SolvedStateSensitivity {
     std::vector<double> output_parameter_jacobian;
     std::size_t rank = 0;
     std::size_t dimension = 0;
+    std::size_t eos_evaluation_count = 0;
     double scaled_condition_number_2 = std::numeric_limits<double>::infinity();
     double linear_solve_backward_error = std::numeric_limits<double>::infinity();
     std::size_t reference_phase_index = 0;
@@ -47,7 +48,7 @@ struct SolvedStateSensitivity {
 );
 
 [[nodiscard]] SolvedStateSensitivity evaluate_solved_state_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
@@ -56,7 +57,7 @@ struct SolvedStateSensitivity {
 );
 
 [[nodiscard]] SolvedStateSensitivity evaluate_declared_state_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,

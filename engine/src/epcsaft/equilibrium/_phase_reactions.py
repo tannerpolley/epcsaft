@@ -60,7 +60,7 @@ class PhaseReactionStandardState:
     """Minimal source-neutral standard-state metadata for one reaction row.
 
     The activity-scale identity is deliberately opaque to this structural
-    module.  EOS/provider code owns its interpretation and any reference
+    module.  EOS code owns its interpretation and any reference
     chemical potentials.
     """
 

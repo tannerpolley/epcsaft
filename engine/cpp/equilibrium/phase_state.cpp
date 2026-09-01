@@ -8,27 +8,21 @@
 #include <vector>
 
 namespace epcsaft_engine::equilibrium {
-namespace {
 
-constexpr double kGasConstant = 8.31446261815324;
-constexpr double kMechanicalMargin = 1.0e-6;
-
-}  // namespace
-
-std::vector<std::string> phase_provider_component_ids(
-    const ProviderContext& provider
+std::vector<std::string> phase_eos_component_ids(
+    const epcsaft::NativeModel& eos
 ) {
-    const auto& component_ids = provider.component_ids();
+    const auto& component_ids = eos.component_ids();
     if (component_ids.empty()) {
-        throw std::invalid_argument("phase Provider component identities are incomplete");
+        throw std::invalid_argument("phase EOS component identities are incomplete");
     }
     return component_ids;
 }
 
-std::vector<double> phase_provider_component_charges(
-    const ProviderContext& provider
+std::vector<double> phase_eos_component_charges(
+    const epcsaft::NativeModel& eos
 ) {
-    const auto& charges = provider.component_charges();
+    const auto& charges = eos.charge_numbers();
     std::vector<double> result(charges.size(), 0.0);
     for (std::size_t component = 0; component < charges.size(); ++component) {
         result[component] = static_cast<double>(charges[component]);
@@ -44,86 +38,35 @@ bool phase_topology_is_charged(
     });
 }
 
-MixturePhaseEvaluation evaluate_nonreactive_phase(
-    const ProviderContext& provider,
-    const std::vector<double>& charges,
-    double temperature_k,
-    const std::vector<double>& mole_fractions,
-    double molar_volume_m3_per_mol
-) {
-    if (mole_fractions.size() == 1 && provider.supports_pure_phase()) {
-        const auto pure = provider.evaluate(
-            temperature_k, 1.0, molar_volume_m3_per_mol
-        );
-        MixturePhaseEvaluation result;
-        result.value = pure.provider.helmholtz_over_rt_reference_amount;
-        result.gradient = {
-            pure.provider.gradient[0],
-            pure.provider.gradient[1],
-        };
-        result.hessian.assign(
-            pure.provider.hessian.begin(), pure.provider.hessian.end()
-        );
-        result.pressure_pa = pure.provider.pressure_pa;
-        result.parameter_fingerprint = pure.parameter_fingerprint;
-        return result;
-    }
-    return phase_topology_is_charged(charges)
-        ? provider.evaluate_electrolyte(
-            temperature_k, mole_fractions, molar_volume_m3_per_mol
-        )
-        : provider.evaluate_mixture(
-            temperature_k, mole_fractions, molar_volume_m3_per_mol
-        );
-}
-
-std::string phase_mechanical_class(
-    const MixturePhaseEvaluation& phase,
-    double temperature_k,
-    double molar_volume_m3_per_mol
-) {
-    const std::size_t component_count = phase.gradient.size() - 1;
-    const double derivative = -kGasConstant * temperature_k
-        * molar_volume_m3_per_mol * phase.hessian[
-            component_count * (component_count + 1) + component_count
-        ];
-    const double scale = std::max(1.0, std::abs(phase.pressure_pa));
-    if (derivative < -kMechanicalMargin * scale) {
-        return "strict_stable";
-    }
-    if (derivative > kMechanicalMargin * scale) {
-        return "unstable";
-    }
-    return "marginal";
-}
-
 PhaseEquilibriumState make_phase_equilibrium_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     PhaseSupport support,
-    double temperature_k,
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol,
-    const MixturePhaseEvaluation& phase
+    const epcsaft::NativePhaseState& phase
 ) {
     PhaseEquilibriumState result;
     result.role = role;
     result.support = support;
-    result.supported_component_ids = phase_provider_component_ids(provider);
-    result.mole_fractions = mole_fractions;
+    const auto component_ids = phase_eos_component_ids(eos);
+    result.supported_component_ids.reserve(
+        phase.supported_component_indices.size()
+    );
+    result.mole_fractions.reserve(phase.supported_component_indices.size());
+    for (std::size_t component : phase.supported_component_indices) {
+        result.supported_component_ids.push_back(component_ids[component]);
+        result.mole_fractions.push_back(mole_fractions[component]);
+    }
     result.molar_volume_m3_per_mol = molar_volume_m3_per_mol;
     result.molar_density_mol_m3 = 1.0 / molar_volume_m3_per_mol;
-    result.packing_fraction = provider.evaluate_packing_fraction(
-        temperature_k, mole_fractions, molar_volume_m3_per_mol
-    ).value;
+    result.packing_fraction = phase.packing_fraction;
     result.pressure_pa = phase.pressure_pa;
     result.chemical_potential_component_ids = result.supported_component_ids;
     result.chemical_potential_over_rt.assign(
         phase.gradient.begin(), phase.gradient.end() - 1
     );
-    result.mechanical_class = phase_mechanical_class(
-        phase, temperature_k, molar_volume_m3_per_mol
-    );
+    result.mechanical_class = phase.mechanical_class;
     return result;
 }
 

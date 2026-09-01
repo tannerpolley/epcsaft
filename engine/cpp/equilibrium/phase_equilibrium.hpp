@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "provider.hpp"
+#include "eos.hpp"
 #include "solved_state_sensitivity.hpp"
 
 namespace epcsaft_engine::equilibrium {
@@ -89,7 +89,7 @@ struct PhaseEquilibriumDiagnostics {
     std::vector<std::string> role_evidence;
     int optimizer_solve_count = 0;
     int optimizer_iteration_count = 0;
-    int provider_evaluation_count = 0;
+    int eos_evaluation_count = 0;
     int hint_count = 0;
     int hint_reordered_start_count = 0;
     int initial_guess_count = 0;
@@ -133,55 +133,40 @@ struct FixedTCoexistenceResult {
     std::optional<SolvedStateSensitivity> temperature_sensitivity;
 };
 
-[[nodiscard]] std::vector<std::string> phase_provider_component_ids(
-    const ProviderContext& provider
+[[nodiscard]] std::vector<std::string> phase_eos_component_ids(
+    const epcsaft::NativeModel& eos
 );
 
-[[nodiscard]] std::vector<double> phase_provider_component_charges(
-    const ProviderContext& provider
+[[nodiscard]] std::vector<double> phase_eos_component_charges(
+    const epcsaft::NativeModel& eos
 );
 
 [[nodiscard]] bool phase_topology_is_charged(
     const std::vector<double>& charges
 ) noexcept;
 
-[[nodiscard]] MixturePhaseEvaluation evaluate_nonreactive_phase(
-    const ProviderContext& provider,
-    const std::vector<double>& charges,
-    double temperature_k,
-    const std::vector<double>& mole_fractions,
-    double molar_volume_m3_per_mol
-);
-
-[[nodiscard]] std::string phase_mechanical_class(
-    const MixturePhaseEvaluation& phase,
-    double temperature_k,
-    double molar_volume_m3_per_mol
-);
-
 [[nodiscard]] PhaseEquilibriumState make_phase_equilibrium_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     PhaseSupport support,
-    double temperature_k,
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol,
-    const MixturePhaseEvaluation& phase
+    const epcsaft::NativePhaseState& phase
 );
 
 [[nodiscard]] FixedTpPhaseResult solve_declared_fixed_tp(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const FixedTpPhaseProblem& problem
 );
 
 [[nodiscard]] FixedTCoexistenceResult solve_fixed_t_coexistence(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem
 );
 
 [[nodiscard]] PhaseEquilibriumState audit_phase_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     double temperature_k,
     const std::vector<double>& mole_fractions,

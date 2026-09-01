@@ -183,7 +183,7 @@ def test_temperature_correlated_domain_trial_is_a_structured_rejection(
         assert rejected.initial_affine == pytest.approx(diagnosed_affine, abs=2.0e-15)
         assert not rejected.usable
         assert all(math.isfinite(value) for value in rejected.final_physical)
-        assert rejected.owner_failures[0].code == "provider_domain_rejection"
+        assert rejected.owner_failures[0].code == "eos_domain_rejection"
         assert result.accounting.rejected_row_trials >= 1
         hot_endpoint = next(
             constraint

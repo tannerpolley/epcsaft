@@ -26,7 +26,7 @@ from ._grepe import (
     GeneralReactiveEquilibriumProblem,
     IdealGasModel,
     IntensiveBoundary,
-    ProviderModel,
+    EosModel,
     ReactivePhase,
     ReactivePhaseSupport,
     Solved,
@@ -480,11 +480,11 @@ def _phase(value: object) -> ReactivePhase:
     )
     model_kind = _text(model_item["kind"], "phase model kind")
     interval = model_item["admissible_packing_fraction_interval"]
-    if model_kind == "provider":
+    if model_kind == "eos":
         bounds = _floats(interval, "packing interval")
         if len(bounds) != 2:
-            raise ValueError("provider packing interval requires two bounds")
-        model: ProviderModel | IdealGasModel = ProviderModel(
+            raise ValueError("eos packing interval requires two bounds")
+        model: EosModel | IdealGasModel = EosModel(
             bounds, _text(model_item["reference_id"], "model reference")
         )
     elif model_kind == "ideal_gas" and interval is None:
@@ -750,9 +750,9 @@ def general_reactive_equilibrium_problem_to_mapping(
                 "kind": "declared_components",
                 "component_ids": list(phase.support.component_ids),
             }
-        if isinstance(phase.model, ProviderModel):
+        if isinstance(phase.model, EosModel):
             model: dict[str, object] = {
-                "kind": "provider",
+                "kind": "eos",
                 "reference_id": phase.model.reference_id,
                 "admissible_packing_fraction_interval": list(
                     phase.model.admissible_packing_fraction_interval

@@ -45,12 +45,12 @@ double charge_scale(
 
 std::size_t retained_position(
     const Held2Coordinates& coordinates,
-    std::size_t provider_index
+    std::size_t eos_index
 ) {
     const auto position = std::find(
         coordinates.retained_indices.begin(),
         coordinates.retained_indices.end(),
-        provider_index
+        eos_index
     );
     if (position == coordinates.retained_indices.end()) {
         throw std::invalid_argument("species is absent from HELD2 coordinates");
@@ -127,14 +127,14 @@ std::vector<double> physical_total_ion_coefficients(
     const double eliminated_charge =
         coordinates.charges[coordinates.eliminated_index];
     for (std::size_t compact = 0; compact < coefficients.size(); ++compact) {
-        const std::size_t provider = coordinates.independent_indices[compact];
+        const std::size_t eos = coordinates.independent_indices[compact];
         const double factor = coordinates.modified_factors[
-            retained_position(coordinates, provider)
+            retained_position(coordinates, eos)
         ];
-        if (coordinates.charges[provider] != 0.0) {
+        if (coordinates.charges[eos] != 0.0) {
             coefficients[compact] += 1.0 / factor;
         }
-        coefficients[compact] -= coordinates.charges[provider]
+        coefficients[compact] -= coordinates.charges[eos]
             / (eliminated_charge * factor);
     }
     return coefficients;
@@ -206,9 +206,9 @@ std::vector<double> independent_from_modified(
 ) {
     std::vector<double> independent;
     independent.reserve(coordinates.independent_indices.size());
-    for (std::size_t provider_index : coordinates.independent_indices) {
+    for (std::size_t eos_index : coordinates.independent_indices) {
         independent.push_back(
-            modified[retained_position(coordinates, provider_index)]
+            modified[retained_position(coordinates, eos_index)]
         );
     }
     return independent;
@@ -271,16 +271,16 @@ Held2Coordinates make_held2_coordinates(
         result.charges = charges;
         result.eliminated_index = charges.size();
         result.dependent_index = charges.size() - 1;
-        result.paper_to_provider_indices.resize(charges.size());
-        result.provider_to_paper_indices.resize(charges.size());
+        result.paper_to_eos_indices.resize(charges.size());
+        result.eos_to_paper_indices.resize(charges.size());
         result.retained_indices.resize(charges.size());
         std::iota(
-            result.paper_to_provider_indices.begin(),
-            result.paper_to_provider_indices.end(),
+            result.paper_to_eos_indices.begin(),
+            result.paper_to_eos_indices.end(),
             std::size_t{0}
         );
-        result.provider_to_paper_indices = result.paper_to_provider_indices;
-        result.retained_indices = result.paper_to_provider_indices;
+        result.eos_to_paper_indices = result.paper_to_eos_indices;
+        result.retained_indices = result.paper_to_eos_indices;
         result.modified_factors.assign(charges.size(), 1.0);
         for (std::size_t component = 0;
              component + 1 < charges.size(); ++component) {
@@ -359,10 +359,10 @@ Held2Coordinates make_held2_coordinates(
 
     for (std::size_t index = 0; index < charges.size(); ++index) {
         if (charges[index] != 0.0 && index != eliminated) {
-            result.paper_to_provider_indices.push_back(index);
+            result.paper_to_eos_indices.push_back(index);
         }
     }
-    result.paper_to_provider_indices.push_back(eliminated);
+    result.paper_to_eos_indices.push_back(eliminated);
     for (std::size_t index = 0; index < charges.size(); ++index) {
         if (charges[index] == 0.0) {
             result.dependent_index = index;
@@ -370,23 +370,23 @@ Held2Coordinates make_held2_coordinates(
     }
     for (std::size_t index = 0; index < charges.size(); ++index) {
         if (charges[index] == 0.0 && index != result.dependent_index) {
-            result.paper_to_provider_indices.push_back(index);
+            result.paper_to_eos_indices.push_back(index);
         }
     }
-    result.paper_to_provider_indices.push_back(result.dependent_index);
-    result.provider_to_paper_indices.assign(charges.size(), charges.size());
+    result.paper_to_eos_indices.push_back(result.dependent_index);
+    result.eos_to_paper_indices.assign(charges.size(), charges.size());
     for (std::size_t paper = 0;
-         paper < result.paper_to_provider_indices.size();
+         paper < result.paper_to_eos_indices.size();
          ++paper) {
-        result.provider_to_paper_indices[
-            result.paper_to_provider_indices[paper]
+        result.eos_to_paper_indices[
+            result.paper_to_eos_indices[paper]
         ] = paper;
     }
 
     for (std::size_t paper = 0;
-         paper < result.paper_to_provider_indices.size();
+         paper < result.paper_to_eos_indices.size();
          ++paper) {
-        const std::size_t index = result.paper_to_provider_indices[paper];
+        const std::size_t index = result.paper_to_eos_indices[paper];
         if (index == eliminated) {
             continue;
         }
@@ -456,12 +456,12 @@ Held2Coordinates make_held2_coordinates(
     });
     std::vector<double> eliminated_nonnegative(dimension, 0.0);
     for (std::size_t compact = 0; compact < dimension; ++compact) {
-        const std::size_t provider = result.independent_indices[compact];
+        const std::size_t eos = result.independent_indices[compact];
         const double factor = result.modified_factors[
-            retained_position(result, provider)
+            retained_position(result, eos)
         ];
         eliminated_nonnegative[compact] =
-            charges[provider] / (charges[eliminated] * factor);
+            charges[eos] / (charges[eliminated] * factor);
     }
     result.polytope_constraints.push_back({
         "eliminated_ion_nonnegative",
@@ -680,7 +680,7 @@ Held2Step1Result run_held2_step1(
     double pressure_pa,
     const std::vector<double>& physical_feed,
     const Held2PhysicalVolumeBoundsEvaluator& physical_volume_bounds,
-    std::string provider_fingerprint,
+    std::string eos_fingerprint,
     double total_ion_mole_fraction_max
 ) {
     const auto wall_start = std::chrono::steady_clock::now();
@@ -688,7 +688,7 @@ Held2Step1Result run_held2_step1(
     Held2Step1Result result;
     result.total_ion_mole_fraction_max =
         total_ion_mole_fraction_max;
-    result.provider_fingerprint = std::move(provider_fingerprint);
+    result.eos_fingerprint = std::move(eos_fingerprint);
     const auto finish = [&](const char* reason, int next_step = 0) {
         return finish_step1(
             std::move(result), reason, next_step, wall_start, cpu_start
@@ -700,8 +700,8 @@ Held2Step1Result run_held2_step1(
     if (!std::isfinite(pressure_pa) || pressure_pa <= 0.0) {
         return finish("invalid_pressure");
     }
-    if (result.provider_fingerprint.empty()) {
-        return finish("invalid_provider_fingerprint");
+    if (result.eos_fingerprint.empty()) {
+        return finish("invalid_eos_fingerprint");
     }
     if (
         component_ids.size() != charges.size()
@@ -729,10 +729,10 @@ Held2Step1Result run_held2_step1(
         if (std::isfinite(total_ion_mole_fraction_max)) {
             if (total_ion_mole_fraction_max <= 0.0
                 || total_ion_mole_fraction_max > 1.0) {
-                return finish("invalid_provider_ion_domain");
+                return finish("invalid_eos_ion_domain");
             }
             coordinates.polytope_constraints.push_back({
-                "provider_total_ion_mole_fraction_max",
+                "eos_total_ion_mole_fraction_max",
                 physical_total_ion_coefficients(coordinates),
                 total_ion_mole_fraction_max,
             });
@@ -768,7 +768,7 @@ Held2Step1Result run_held2_step1(
     }
     std::array<double, 2> feed_volume_bounds;
     try {
-        ++result.timing.provider_evaluations;
+        ++result.timing.eos_evaluations;
         feed_volume_bounds = checked_volume_bounds(
             physical_volume_bounds, lifted_feed
         );
@@ -777,10 +777,10 @@ Held2Step1Result run_held2_step1(
         return finish(
             reason == "empty_physical_volume_domain"
             ? "empty_physical_volume_domain"
-            : "provider_volume_domain_failure"
+            : "eos_volume_domain_failure"
         );
     } catch (...) {
-        return finish("provider_volume_domain_failure");
+        return finish("eos_volume_domain_failure");
     }
 
     result.coordinates = coordinates;
@@ -820,7 +820,7 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
             || total_ion_mole_fraction_max <= 0.0
             || total_ion_mole_fraction_max > 1.0)) {
         throw std::invalid_argument(
-            "HELD2 Provider total-ion mole-fraction ceiling is invalid or infeasible"
+            "HELD2 EOS total-ion mole-fraction ceiling is invalid or infeasible"
         );
     }
     for (std::size_t index = 0; index < dimension; ++index) {
@@ -836,7 +836,7 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
         coordinates.polytope_constraints;
     if (std::isfinite(total_ion_mole_fraction_max)) {
         constraints.push_back({
-            "provider_total_ion_mole_fraction_max",
+            "eos_total_ion_mole_fraction_max",
             physical_total_ion_coefficients(coordinates),
             total_ion_mole_fraction_max,
         });
@@ -940,7 +940,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
     const std::size_t component_count = coordinates.charges.size();
     const std::size_t independent_count =
         coordinates.independent_indices.size();
-    const std::size_t provider_coordinate_count = component_count + 1;
+    const std::size_t eos_coordinate_count = component_count + 1;
     const std::size_t reduced_coordinate_count = independent_count + 1;
     if (independent_modified_fractions.size() != independent_count) {
         throw std::invalid_argument(
@@ -958,9 +958,9 @@ Held2StateEvaluation evaluate_held2_phase_block(
             "HELD2 phase state and pressure scales must be finite and positive"
         );
     }
-    if (block.gradient.size() != provider_coordinate_count
+    if (block.gradient.size() != eos_coordinate_count
         || block.hessian.size()
-            != provider_coordinate_count * provider_coordinate_count) {
+            != eos_coordinate_count * eos_coordinate_count) {
         throw std::invalid_argument(
             "HELD2 physical phase block has the wrong tensor dimensions"
         );
@@ -1012,7 +1012,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
     }
 
     std::vector<double> jacobian(
-        provider_coordinate_count * reduced_coordinate_count, 0.0
+        eos_coordinate_count * reduced_coordinate_count, 0.0
     );
     for (std::size_t independent = 0;
          independent < independent_count;
@@ -1063,13 +1063,13 @@ Held2StateEvaluation evaluate_held2_phase_block(
     for (std::size_t reduced = 0;
          reduced < reduced_coordinate_count;
          ++reduced) {
-        for (std::size_t provider = 0;
-             provider < provider_coordinate_count;
-             ++provider) {
+        for (std::size_t eos = 0;
+             eos < eos_coordinate_count;
+             ++eos) {
             result.gradient[reduced] +=
                 jacobian[
-                    provider * reduced_coordinate_count + reduced
-                ] * augmented_gradient[provider];
+                    eos * reduced_coordinate_count + reduced
+                ] * augmented_gradient[eos];
         }
     }
     result.hessian.assign(
@@ -1083,15 +1083,15 @@ Held2StateEvaluation evaluate_held2_phase_block(
              ++column) {
             double value = 0.0;
             for (std::size_t left = 0;
-                 left < provider_coordinate_count;
+                 left < eos_coordinate_count;
                  ++left) {
                 for (std::size_t right = 0;
-                     right < provider_coordinate_count;
+                     right < eos_coordinate_count;
                      ++right) {
                     value += jacobian[
                         left * reduced_coordinate_count + row
                     ] * block.hessian[
-                        left * provider_coordinate_count + right
+                        left * eos_coordinate_count + right
                     ] * jacobian[
                         right * reduced_coordinate_count + column
                     ];

@@ -288,8 +288,8 @@ PYBIND11_MODULE(_core, module) {
             py::arg("site_ids")
         )
         .def(
-            "with_provider_metadata",
-            &epcsaft::NativeModel::with_provider_metadata,
+            "with_eos_metadata",
+            &epcsaft::NativeModel::with_eos_metadata,
             py::arg("parameter_fingerprint"),
             py::arg("temperature_min_k"),
             py::arg("temperature_max_k"),
@@ -324,10 +324,9 @@ PYBIND11_MODULE(_core, module) {
         .def(
             "evaluate_fixed_pressure_composition_derivatives",
             [](const epcsaft::NativeModel& model, double temperature,
-               const std::vector<double>& mole_fractions, double molar_volume,
-               double ion_mole_fraction_max) {
+               const std::vector<double>& mole_fractions, double molar_volume) {
                 const auto block = model.evaluate_fixed_pressure_composition_derivatives(
-                    temperature, mole_fractions, molar_volume, ion_mole_fraction_max
+                    temperature, mole_fractions, molar_volume
                 );
                 py::dict result;
                 result["failure_code"] = block.failure_code;
@@ -344,10 +343,8 @@ PYBIND11_MODULE(_core, module) {
             },
             py::arg("temperature"),
             py::arg("mole_fractions"),
-            py::arg("molar_volume"),
-            py::arg("ion_mole_fraction_max")
+            py::arg("molar_volume")
         )
-        .def("molar_volume_bounds", &epcsaft::NativeModel::molar_volume_bounds)
         .def(
             "molar_density_upper_bound",
             &epcsaft::NativeModel::molar_density_upper_bound

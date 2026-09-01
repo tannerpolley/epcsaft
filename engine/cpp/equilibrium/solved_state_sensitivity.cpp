@@ -1,6 +1,7 @@
 #include "solved_state_sensitivity.hpp"
 
 #include "held2.hpp"
+#include "phase_equilibrium.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -174,7 +175,7 @@ bool validate_phases(
 }
 
 bool validate_defining_equations(
-    const std::vector<ParameterizedPhaseEvaluation>& evaluations,
+    const std::vector<epcsaft::NativeParameterizedPhaseState>& evaluations,
     double pressure_pa,
     std::size_t component_count,
     SolvedStateSensitivity& result
@@ -294,11 +295,11 @@ std::vector<double> held2_independent(
     );
     std::vector<double> result;
     result.reserve(coordinates.independent_indices.size());
-    for (std::size_t provider : coordinates.independent_indices) {
+    for (std::size_t eos : coordinates.independent_indices) {
         const auto retained = std::find(
             coordinates.retained_indices.begin(),
             coordinates.retained_indices.end(),
-            provider
+            eos
         );
         result.push_back(modified[static_cast<std::size_t>(
             retained - coordinates.retained_indices.begin()
@@ -330,25 +331,20 @@ std::vector<double> modified_potential_rows(
 }
 
 SolvedStateSensitivity evaluate_charged_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
     const std::vector<double>& feed_amounts_mol,
     const std::vector<SolvedPhaseState>& phases,
-    const ProviderActiveParameterSet& active
+    const std::vector<epcsaft::NativeActiveCoordinate>& active
 ) {
     SolvedStateSensitivity result;
-    result.parameter_identities = active.identities;
+    result.parameter_identities = epcsaft::active_parameter_identities(active);
     const std::size_t component_count = component_ids.size();
     const std::size_t phase_count = phases.size();
-    const std::size_t parameter_count = active.identities.size();
-    std::vector<double> charges(component_count, 0.0);
-    for (std::size_t component = 0; component < component_count; ++component) {
-        charges[component] = static_cast<double>(
-            provider.component_charges()[component]
-        );
-    }
+    const std::size_t parameter_count = active.size();
+    const std::vector<double> charges = phase_eos_component_charges(eos);
     Held2Coordinates coordinates;
     try {
         coordinates = make_held2_coordinates(charges, component_ids);
@@ -373,7 +369,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
     std::vector<double> molar_volumes;
     std::vector<std::vector<double>> compositions;
     std::vector<std::vector<double>> independent_values;
-    std::vector<ParameterizedPhaseEvaluation> evaluations;
+    std::vector<epcsaft::NativeParameterizedPhaseState> evaluations;
     try {
         for (const auto& phase : phases) {
             const double amount = std::accumulate(
@@ -392,17 +388,16 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
             molar_volumes.push_back(molar_volume);
             compositions.push_back(composition);
             independent_values.push_back(chart);
-            evaluations.push_back(provider.evaluate_parameterized_phase(
+            evaluations.push_back(eos.evaluate_parameterized_phase_state(
                 temperature_k,
                 composition,
                 molar_volume,
-                kPackingFractionMinimum,
-                kPackingFractionMaximum,
                 active
             ));
+            result.eos_evaluation_count += evaluations.back().evaluations.total();
         }
     } catch (const std::exception&) {
-        result.failure_reason = "provider_partial_evaluation_failed";
+        result.failure_reason = "eos_partial_evaluation_failed";
         return result;
     }
     std::vector<std::vector<double>> modified_potentials;
@@ -745,7 +740,7 @@ bool solve_sensitivity_linear_system(
 }
 
 static SolvedStateSensitivity evaluate_state_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
@@ -754,9 +749,9 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
     bool allow_charged_multiphase
 ) {
     SolvedStateSensitivity result;
-    const ProviderActiveParameterSet active = provider.active_parameters();
-    result.parameter_identities = active.identities;
-    if (active.identities.empty()) {
+    const std::vector<epcsaft::NativeActiveCoordinate> active = eos.active_coordinates();
+    result.parameter_identities = epcsaft::active_parameter_identities(active);
+    if (active.empty()) {
         result.failure_reason = "no_active_parameters";
         return result;
     }
@@ -771,11 +766,11 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
     }
     const std::size_t component_count = component_ids.size();
     const std::size_t phase_count = phases.size();
-    const std::size_t parameter_count = active.identities.size();
+    const std::size_t parameter_count = active.size();
     if (phase_count > 1
         && std::any_of(
-            provider.component_charges().begin(),
-            provider.component_charges().end(),
+            eos.charge_numbers().begin(),
+            eos.charge_numbers().end(),
             [](int charge) { return charge != 0; }
         )) {
         if (!allow_charged_multiphase) {
@@ -784,7 +779,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
             return result;
         }
         return evaluate_charged_sensitivity(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             component_ids,
@@ -796,21 +791,20 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
     result.reference_phase_index = phase_count - 1;
     result.dimension = (phase_count - 1) * component_count + phase_count;
     append_identities(result, component_ids, phase_count);
-    std::vector<ParameterizedPhaseEvaluation> evaluations;
+    std::vector<epcsaft::NativeParameterizedPhaseState> evaluations;
     evaluations.reserve(phase_count);
     try {
         for (const auto& phase : phases) {
-            evaluations.push_back(provider.evaluate_parameterized_phase(
+            evaluations.push_back(eos.evaluate_parameterized_phase_state(
                 temperature_k,
                 phase.amounts_mol,
                 phase.volume_m3,
-                kPackingFractionMinimum,
-                kPackingFractionMaximum,
                 active
             ));
+            result.eos_evaluation_count += evaluations.back().evaluations.total();
         }
     } catch (const std::exception&) {
-        result.failure_reason = "provider_partial_evaluation_failed";
+        result.failure_reason = "eos_partial_evaluation_failed";
         return result;
     }
     if (!validate_defining_equations(
@@ -969,7 +963,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
 }
 
 SolvedStateSensitivity evaluate_solved_state_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
@@ -977,7 +971,7 @@ SolvedStateSensitivity evaluate_solved_state_sensitivity(
     const std::vector<SolvedPhaseState>& phases
 ) {
     return evaluate_state_sensitivity(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         component_ids,
@@ -988,7 +982,7 @@ SolvedStateSensitivity evaluate_solved_state_sensitivity(
 }
 
 SolvedStateSensitivity evaluate_declared_state_sensitivity(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::vector<std::string>& component_ids,
@@ -996,7 +990,7 @@ SolvedStateSensitivity evaluate_declared_state_sensitivity(
     const std::vector<SolvedPhaseState>& phases
 ) {
     return evaluate_state_sensitivity(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         component_ids,

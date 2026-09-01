@@ -10,7 +10,7 @@ from epcsaft import equilibrium
 from tests.equilibrium._cases import (
     finite_phase_case,
     ideal_uptake_case,
-    provider_boundary_case,
+    eos_boundary_case,
     reverse_finite_phases,
     solved_pressure_case,
 )
@@ -192,7 +192,7 @@ def test_intensive_boundary_recovers_analytic_open_component_uptake() -> None:
 
 @pytest.mark.slow
 def test_intensive_boundary_total_jacobian_matches_public_parameter_resolves() -> None:
-    parameters, model, problem, identity = provider_boundary_case()
+    parameters, model, problem, identity = eos_boundary_case()
     selected = epcsaft.ActiveParameterSet(parameters, (identity,))
     center = equilibrium.solve(model, problem, active_parameters=selected)
     step = 2.0e-5

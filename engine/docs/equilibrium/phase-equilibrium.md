@@ -137,7 +137,7 @@ packing variables subject to global conservation and exact per-phase charge
 neutrality. The configured phases may use any fluid-role labels. Reaction
 affinities and neutral or electrochemical interphase-potential equalities arise
 from the minimization KKT conditions. Source-standard-state equilibrium
-constants are transformed to the Provider basis before the solve, including
+constants are transformed to the EOS basis before the solve, including
 their selected-parameter derivatives. The result describes the configured
 local minimum; it does not claim that no unconfigured phase is more stable.
 
@@ -146,7 +146,7 @@ phases, GREPE constructs deterministic positive candidates from the declared
 reaction feed. Reaction-product/reactant partitions are tried first, followed
 by neutral-component partitions and an equal split. Every partition preserves
 the total amount of each species; charged species retain an equal split so
-each phase remains electroneutral. A fixed-pressure Provider state supplies
+each phase remains electroneutral. A fixed-pressure EOS state supplies
 each candidate phase volume. Candidates are attempted in stable order until
 one passes the complete numerical and physical checks. Explicit starts bypass
 this generation and remain the way to select a particular known local branch.
@@ -163,7 +163,7 @@ For the Ascani 2023 hypothetical case, 33 of 34 deliberately varied feasible
 starts reached the same two-phase minimum. Successful starts required 7--61
 IPOPT iterations (median 14); the only rejected start drove one configured
 phase to effectively zero amount. The automatic reaction-sign candidate
-reached the same phase compositions in 11 iterations and 286 Provider
+reached the same phase compositions in 11 iterations and 286 EOS
 evaluations before callback caching, and 122 afterward, without using the
 digitized tie-line compositions.
 

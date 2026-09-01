@@ -14,12 +14,12 @@ constexpr int kBisectionIterations = 100;
 
 std::size_t retained_position(
     const Held2Coordinates& coordinates,
-    std::size_t provider
+    std::size_t eos
 ) {
     return static_cast<std::size_t>(std::find(
         coordinates.retained_indices.begin(),
         coordinates.retained_indices.end(),
-        provider
+        eos
     ) - coordinates.retained_indices.begin());
 }
 
@@ -89,15 +89,15 @@ Held2Step10Result run_held2_step10(
     for (Held2Phase& phase : result.phases) {
         const std::vector<double> modified =
             held2_transform_physical_fractions(
-                coordinates, phase.physical_fractions_provider_order
+                coordinates, phase.physical_fractions_eos_order
             );
         for (std::size_t coordinate = 0;
              coordinate < coordinates.independent_indices.size();
              ++coordinate) {
-            const std::size_t provider =
+            const std::size_t eos =
                 coordinates.independent_indices[coordinate];
             const std::size_t retained =
-                retained_position(coordinates, provider);
+                retained_position(coordinates, eos);
             const double lower = kHeld2ModifiedLowerScale
                 * coordinates.modified_factors[retained];
             if (modified[retained] > 10.0 * lower) continue;
@@ -105,25 +105,25 @@ Held2Step10Result run_held2_step10(
             if (std::find(
                     result.trace_component_indices.begin(),
                     result.trace_component_indices.end(),
-                    provider
+                    eos
                 ) == result.trace_component_indices.end()) {
-                result.trace_component_indices.push_back(provider);
+                result.trace_component_indices.push_back(eos);
             }
             const auto reference = std::max_element(
                 result.phases.begin(),
                 result.phases.end(),
                 [&](const Held2Phase& left, const Held2Phase& right) {
                     const double left_amount =
-                        left.physical_fractions_provider_order[provider];
+                        left.physical_fractions_eos_order[eos];
                     const double right_amount =
-                        right.physical_fractions_provider_order[provider];
+                        right.physical_fractions_eos_order[eos];
                     return left_amount == right_amount
                         ? left.stable_id > right.stable_id
                         : left_amount < right_amount;
                 }
             );
             if (reference == result.phases.end()
-                || reference->physical_fractions_provider_order[provider]
+                || reference->physical_fractions_eos_order[eos]
                     <= kTraceMaximum) {
                 result.reason = "trace_reference_absent";
                 return result;
@@ -132,7 +132,7 @@ Held2Step10Result run_held2_step10(
                 reference->independent_modified_fractions,
                 std::log(reference->volume)
             );
-            ++result.timing.provider_evaluations;
+            ++result.timing.eos_evaluations;
             if (retained >= reference_state.modified_potentials.size()) {
                 result.reason = "trace_potential_evidence_missing";
                 return result;
@@ -147,7 +147,7 @@ Held2Step10Result run_held2_step10(
                 const Held2StateEvaluation state = evaluator(
                     trial, std::log(phase.volume)
                 );
-                ++result.timing.provider_evaluations;
+                ++result.timing.eos_evaluations;
                 if (retained >= state.modified_potentials.size()) {
                     throw std::invalid_argument(
                         "trace_potential_evidence_missing"
@@ -163,7 +163,7 @@ Held2Step10Result run_held2_step10(
                 lower_residual = residual(lower_log);
                 upper_residual = residual(upper_log);
             } catch (const std::exception&) {
-                result.reason = "trace_provider_evaluation_failed";
+                result.reason = "trace_eos_evaluation_failed";
                 return result;
             }
             if (!std::isfinite(lower_residual)
@@ -184,7 +184,7 @@ Held2Step10Result run_held2_step10(
                 const double middle = 0.5 * (lower_log + upper_log);
                 const double middle_residual = residual(middle);
                 if (!std::isfinite(middle_residual)) {
-                    result.reason = "trace_provider_evaluation_failed";
+                    result.reason = "trace_eos_evaluation_failed";
                     return result;
                 }
                 root = middle;
@@ -202,11 +202,11 @@ Held2Step10Result run_held2_step10(
                 return result;
             }
             const double initial =
-                phase.physical_fractions_provider_order[provider];
+                phase.physical_fractions_eos_order[eos];
             phase.independent_modified_fractions[coordinate] =
                 coordinates.modified_factors[retained] * std::pow(10.0, root);
             try {
-                phase.physical_fractions_provider_order =
+                phase.physical_fractions_eos_order =
                     held2_lift_independent_fractions(
                         coordinates,
                         phase.independent_modified_fractions,
@@ -218,10 +218,10 @@ Held2Step10Result run_held2_step10(
             }
             result.refinements.push_back({
                 phase.stable_id,
-                provider,
+                eos,
                 reference->stable_id,
                 initial,
-                phase.physical_fractions_provider_order[provider],
+                phase.physical_fractions_eos_order[eos],
                 root_residual,
                 "refined",
             });
@@ -245,11 +245,11 @@ Held2Step10Result run_held2_step10(
              component < material_balance.size();
              ++component) {
             material_balance[component] += phase.phase_fraction
-                * phase.physical_fractions_provider_order[component];
+                * phase.physical_fractions_eos_order[component];
         }
         const std::vector<double> modified =
             held2_transform_physical_fractions(
-                coordinates, phase.physical_fractions_provider_order
+                coordinates, phase.physical_fractions_eos_order
             );
         for (std::size_t component = 0;
              component < modified_balance.size();
@@ -261,14 +261,14 @@ Held2Step10Result run_held2_step10(
             charge,
             std::abs(charge_residual(
                 coordinates.charges,
-                phase.physical_fractions_provider_order
+                phase.physical_fractions_eos_order
             ))
         );
         const Held2StateEvaluation state = evaluator(
             phase.independent_modified_fractions,
             std::log(phase.volume)
         );
-        ++result.timing.provider_evaluations;
+        ++result.timing.eos_evaluations;
         phase.helmholtz_over_rt_reference_amount =
             state.helmholtz_over_rt_reference_amount;
         phase.pressure_pa = state.pressure_pa;
@@ -324,8 +324,8 @@ Held2Step10Result run_held2_step10(
         *step8.total_reduced_gibbs + *step9.free_energy_gap;
     const Held2Step9Result recertified =
         run_held2_step9(bound, refined, evaluator);
-    result.timing.provider_evaluations +=
-        recertified.timing.provider_evaluations;
+    result.timing.eos_evaluations +=
+        recertified.timing.eos_evaluations;
     if (recertified.outcome != Held2Step9Outcome::Converged) {
         result.final_certificate->accepted = false;
         result.reason = "trace_potential_recertification_failed";

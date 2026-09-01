@@ -84,6 +84,8 @@ eos_core = static_library(
   'epcsaft_engine_eos_core',
   cppad_temp_file,
   'src/epcsaft/_native/eos.cpp',
+  'src/epcsaft/_native/eos_access.cpp',
+  'src/epcsaft/_native/eos_source_reference.cpp',
   'src/epcsaft/_native/pure_saturation.cpp',
   cpp_args: native_warnings,
   dependencies: [
@@ -103,8 +105,6 @@ equilibrium_sources = files(
   'cpp/equilibrium/chemical_equilibrium_support.cpp',
   'cpp/equilibrium/reactive_finite_phase.cpp',
   'cpp/equilibrium/grepe.cpp',
-  'cpp/equilibrium/provider.cpp',
-  'cpp/equilibrium/source_reference.cpp',
   'cpp/equilibrium/solved_state_sensitivity.cpp',
   'cpp/equilibrium/phase_equilibrium.cpp',
   'cpp/equilibrium/phase_state.cpp',

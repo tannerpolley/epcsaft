@@ -175,7 +175,7 @@ def _native_owner_diagnostic(batch: _ReactiveBatch, result: object) -> Mapping[s
         "solver_status": str(native.solver_status),
         "numerical_status": str(native.numerical_status),
         "physical_status": str(native.physical_status),
-        "provider_domain_status": str(native.provider_domain_status),
+        "eos_domain_status": str(native.eos_domain_status),
         "failure_code": str(cast(Any, result).failure_code),
         "failure_reason": str(native.failure_reason),
         "local_variables": [finite(value) for value in native.local_variables],

@@ -72,19 +72,19 @@ CompiledReactionSystem expand_species_face(
 }
 
 SourceReferenceTransferEvidence source_evidence(
-    const SourceReferenceResult& source,
+    const epcsaft::NativeSourceReferenceResult& source,
     const GrepeSourceStandardState& standard,
-    const ProviderActiveParameterSet& parameters
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters
 ) {
-    if (source.status != SOURCE_REFERENCE_OK) {
-        const char* code = source.status == SOURCE_REFERENCE_DOMAIN_REJECTION
-            ? "provider_domain_rejection"
-            : source.status == SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE
+    if (source.status != epcsaft::SOURCE_REFERENCE_OK) {
+        const char* code = source.status == epcsaft::SOURCE_REFERENCE_DOMAIN_REJECTION
+            ? "eos_domain_rejection"
+            : source.status == epcsaft::SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE
             ? "source_reference_derivative_unavailable"
-            : source.status == SOURCE_REFERENCE_LIMIT_FAILURE
+            : source.status == epcsaft::SOURCE_REFERENCE_LIMIT_FAILURE
             ? "source_reference_limit_failure"
-            : source.status == SOURCE_REFERENCE_NONFINITE
-                || source.status == SOURCE_REFERENCE_EVALUATION_ERROR
+            : source.status == epcsaft::SOURCE_REFERENCE_NONFINITE
+                || source.status == epcsaft::SOURCE_REFERENCE_EVALUATION_ERROR
             ? "numerical_convergence_failure"
             : "source_reference_failure";
         throw GrepeFailure(
@@ -112,7 +112,7 @@ SourceReferenceTransferEvidence source_evidence(
         result.derivative_availability.push_back("parameters");
     }
     result.pressure_derivatives_per_pa = source.pressure_derivatives_per_pa;
-    result.active_parameter_identities = parameters.identities;
+    result.active_parameter_identities = epcsaft::active_parameter_identities(parameters);
     result.parameter_derivatives = source.parameter_derivatives;
     result.temperature_k = source.temperature_k;
     result.pressure_pa = source.pressure_pa;
@@ -186,10 +186,11 @@ struct GrepeSourceValues final {
 
 void apply_reaction_correlations(
     ReactionSystemInput& input,
-    const ProviderActiveParameterSet& parameters
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters
 ) {
     const std::size_t reaction_count = input.equilibrium_constant_records.size();
-    const std::size_t parameter_count = parameters.identities.size();
+    const std::size_t parameter_count = parameters.size();
+    const auto parameter_identities = epcsaft::active_parameter_identities(parameters);
     input.ln_k_parameter_derivatives.assign(
         reaction_count * parameter_count, 0.0
     );
@@ -214,14 +215,14 @@ void apply_reaction_correlations(
         for (std::size_t coefficient = 0; coefficient < coefficient_count;
              ++coefficient) {
             const auto found = std::find(
-                parameters.identities.begin(), parameters.identities.end(),
+                parameter_identities.begin(), parameter_identities.end(),
                 record.coefficient_identities[coefficient]
             );
-            if (found != parameters.identities.end()) {
+            if (found != parameter_identities.end()) {
                 const std::size_t parameter = static_cast<std::size_t>(
-                    found - parameters.identities.begin()
+                    found - parameter_identities.begin()
                 );
-                coefficients[coefficient] = parameters.values[parameter];
+                coefficients[coefficient] = parameters[parameter].value;
                 input.ln_k_parameter_derivatives[
                     reaction * parameter_count + parameter
                 ] = r4
@@ -243,23 +244,23 @@ void apply_reaction_correlations(
 }
 
 GrepeSourceValues evaluate_source_values(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const ReactionSystemInput& input,
     const GrepeRequest& request,
-    const ProviderActiveParameterSet& parameters
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters
 ) {
     const GrepeSourceStandardState& standard = *request.source;
     for (const EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
         if (record.reference_id != standard.id
             || record.conversion_id
-                != "source-standard-state-to-provider-neutral-reference"
+                != "source-standard-state-to-eos-neutral-reference"
             || record.pressure_pa != standard.reference_pressure_pa) {
             throw std::invalid_argument(
                 "source equilibrium-constant declaration is incompatible"
             );
         }
     }
-    const SourceReferenceResult source = provider.evaluate_source_reference_transfer(
+    const epcsaft::NativeSourceReferenceResult source = eos.evaluate_source_reference_transfer(
         input.temperature_k,
         input.pressure_pa,
         standard.reference
@@ -275,13 +276,13 @@ GrepeSourceValues evaluate_source_values(
         standard.log_activity_scale_factors,
         input.species_ids,
         input.charges,
-        input.provider_fingerprint,
+        input.eos_fingerprint,
         input.temperature_k,
         input.pressure_pa,
         evidence
     );
     GrepeSourceValues result{
-        transformed.ln_k_provider_basis,
+        transformed.ln_k_eos_basis,
         transformed.ln_k_pressure_derivatives_per_pa,
         transformed.ln_k_parameter_derivatives,
         transformed.representation_residual_inf_norm,
@@ -346,15 +347,15 @@ void apply_source_values(
 }
 
 CompiledGrepeFinite compile_finite(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     ReactionSystemInput input,
     const GrepeRequest& request,
     bool ideal_gas
 ) {
     input.temperature_k = request.temperature.value;
     input.pressure_pa = request.pressure.value;
-    input.provider_fingerprint = provider.fingerprint();
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
+    input.eos_fingerprint = eos.parameter_fingerprint();
+    const std::vector<epcsaft::NativeActiveCoordinate> parameters = eos.active_coordinates();
     apply_reaction_correlations(input, parameters);
     const bool configured_directions = request.directions.has_value();
     CompiledGrepeFinite result;
@@ -364,29 +365,29 @@ CompiledGrepeFinite compile_finite(
             record.pressure_pa = input.pressure_pa;
         }
         result.system = compile_reaction_system(input, !configured_directions);
-        if (!parameters.identities.empty()) {
+        if (!parameters.empty()) {
             apply_source_values(
                 result.system,
                 {input.ln_k, {}, input.ln_k_parameter_derivatives, 0.0},
                 input.reaction_matrix.rows,
-                parameters.identities.size()
+                parameters.size()
             );
         }
     } else {
         const GrepeSourceValues source = evaluate_source_values(
-            provider, input, request, parameters
+            eos, input, request, parameters
         );
         result.source_residual = source.representation_residual_inf_norm;
         input.ln_k = source.ln_k;
         for (EquilibriumConstantRecord& record : input.equilibrium_constant_records) {
-            record.reference_id = "provider-helmholtz-coordinate-basis";
-            record.conversion_id = "already-provider-basis";
+            record.reference_id = "eos-helmholtz-coordinate-basis";
+            record.conversion_id = "already-eos-basis";
             record.pressure_pa = input.pressure_pa;
         }
         result.system = compile_reaction_system(input, !configured_directions);
         apply_source_values(
             result.system, source, input.reaction_matrix.rows,
-            parameters.identities.size()
+            parameters.size()
         );
     }
     result.system = expand_species_face(std::move(result.system), input);
@@ -787,7 +788,7 @@ GrepeResult unsupported(const std::string& reason) {
     result.equilibrium.solver_status = "not_started";
     result.equilibrium.numerical_status = "unavailable";
     result.equilibrium.physical_status = "not_adjudicated";
-    result.equilibrium.provider_domain_status = "not_adjudicated";
+    result.equilibrium.eos_domain_status = "not_adjudicated";
     result.equilibrium.failure_reason = reason;
     return result;
 }
@@ -795,10 +796,10 @@ GrepeResult unsupported(const std::string& reason) {
 struct FiniteGrepeContext final {
     std::vector<GrepePhase> phases;
     bool ideal;
-    ProviderContext provider;
+    const epcsaft::NativeModel& eos;
     ReactionSystemInput reaction;
     CompiledGrepeFinite compiled;
-    ProviderActiveParameterSet parameters;
+    std::vector<epcsaft::NativeActiveCoordinate> parameters;
     std::vector<std::array<double, 2>> packing;
     std::vector<std::vector<std::size_t>> supports;
     GrepeResult result;
@@ -824,10 +825,9 @@ std::optional<FiniteGrepeContext> prepare_finite_grepe(
             }))) {
         return std::nullopt;
     }
-    ProviderContext provider(model);
     ReactionSystemInput reaction = effective_reaction(request);
-    CompiledGrepeFinite compiled = compile_finite(provider, reaction, request, ideal);
-    ProviderActiveParameterSet parameters = provider.active_parameters();
+    CompiledGrepeFinite compiled = compile_finite(model, reaction, request, ideal);
+    std::vector<epcsaft::NativeActiveCoordinate> parameters = model.active_coordinates();
     std::vector<std::array<double, 2>> packing;
     std::vector<std::vector<std::size_t>> supports;
     for (const GrepePhase& phase : phases) {
@@ -860,7 +860,7 @@ std::optional<FiniteGrepeContext> prepare_finite_grepe(
     return FiniteGrepeContext{
         std::move(phases),
         ideal,
-        std::move(provider),
+        model,
         std::move(reaction),
         std::move(compiled),
         std::move(parameters),
@@ -876,9 +876,8 @@ FiniteGrepeContext prepare_retained_finite_grepe(
     const GrepeLocalStructure& structure,
     const GrepeLocalPoint& point
 ) {
-    ProviderContext provider(model);
-    ProviderActiveParameterSet parameters = provider.active_parameters();
-    if (parameters.identities != structure.active_parameter_identities) {
+    std::vector<epcsaft::NativeActiveCoordinate> parameters = model.active_coordinates();
+    if (epcsaft::active_parameter_identities(parameters) != structure.active_parameter_identities) {
         throw std::invalid_argument(
             "retained GREPE active parameter identities or order changed"
         );
@@ -895,7 +894,7 @@ FiniteGrepeContext prepare_retained_finite_grepe(
     return {
         structure.phases,
         structure.ideal_gas,
-        std::move(provider),
+        model,
         effective_reaction(request),
         {point.system, point.source_reference_representation_residual_inf_norm},
         std::move(parameters),
@@ -948,7 +947,7 @@ GrepeResult solve_finite_result(
     const bool ideal = context.ideal;
     const ReactionSystemInput& reaction = context.reaction;
     const CompiledGrepeFinite& compiled = context.compiled;
-    const ProviderActiveParameterSet& parameters = context.parameters;
+    const std::vector<epcsaft::NativeActiveCoordinate>& parameters = context.parameters;
     const std::vector<std::array<double, 2>>& packing = context.packing;
     const std::vector<std::vector<std::size_t>>& supports = context.supports;
     GrepeResult& result = context.result;
@@ -967,25 +966,24 @@ GrepeResult solve_finite_result(
         candidates = start_sets(model, request, reaction, phases);
     }
     if (candidates.empty()) {
-        throw std::invalid_argument("Provider could not construct a finite-phase candidate start");
+        throw std::invalid_argument("EOS could not construct a finite-phase candidate start");
     }
     bool selected = false;
     std::size_t total_iterations = 0;
     std::size_t total_evaluations = 0;
     std::pair<int, double> selected_score{};
     for (const auto& starts : candidates) {
-        ProviderContext attempt_provider(model);
         const std::optional<PhaseDirectionCompilation> directions =
             compile_directions(request, starts);
-        ReactiveFinitePhaseResult attempt = solve_provider_reactive_finite_phases(
+        ReactiveFinitePhaseResult attempt = solve_eos_reactive_finite_phases(
             compiled.system,
-            attempt_provider,
+            model,
             request.temperature.value,
             request.pressure.value,
             packing,
             starts,
             request.trace_floor,
-            parameters.identities.empty() ? nullptr : &parameters,
+            parameters.empty() ? nullptr : &parameters,
             500,
             request.require_output_derivatives,
             request.perform_derivative_audits,
@@ -994,7 +992,7 @@ GrepeResult solve_finite_result(
             request.outputs
         );
         total_iterations += attempt.optimizer_iterations;
-        total_evaluations += attempt.provider_evaluation_count;
+        total_evaluations += attempt.eos_evaluation_count;
         const auto score = failure_score(attempt);
         if (!selected || attempt.accepted
             || (attempt.equilibrium_value_valid
@@ -1010,7 +1008,7 @@ GrepeResult solve_finite_result(
         }
     }
     result.equilibrium.optimizer_iterations = total_iterations;
-    result.equilibrium.provider_evaluation_count = total_evaluations;
+    result.equilibrium.eos_evaluation_count = total_evaluations;
     result.branch_kind = "finite_phases_local_minimum";
     const std::string joint_class = ideal ? "analytical_ideal_gas"
         : result.equilibrium.accepted ? "strict_stable_local_minimum"
@@ -1037,8 +1035,8 @@ GrepeResult solve_finite_result(
         "sensitivity_status", result.equilibrium.sensitivity_status
     });
     if (!result.equilibrium.accepted) {
-        result.failure_code = result.equilibrium.provider_domain_status == "failed"
-            ? "provider_domain_rejection"
+        result.failure_code = result.equilibrium.eos_domain_status == "failed"
+            ? "eos_domain_rejection"
             : result.equilibrium.physical_status == "failed"
             ? "physical_rejection"
             : result.equilibrium.sensitivity_status == "unavailable"
@@ -1055,16 +1053,16 @@ GrepeResult evaluate_finite_context(
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds
 ) {
-    context.result.equilibrium = evaluate_provider_reactive_finite_phases_local(
+    context.result.equilibrium = evaluate_eos_reactive_finite_phases_local(
         context.compiled.system,
-        context.provider,
+        context.eos,
         request.temperature.value,
         request.pressure.value,
         context.packing,
         local_variables,
         local_lower_bounds,
         local_upper_bounds,
-        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        context.parameters.empty() ? nullptr : &context.parameters,
         nullptr,
         context.supports,
         request.outputs
@@ -1101,16 +1099,16 @@ GrepeResult finalize_finite_context(
     const std::vector<double>& local_lower_bounds,
     const std::vector<double>& local_upper_bounds
 ) {
-    context.result.equilibrium = finalize_provider_reactive_finite_phases_local(
+    context.result.equilibrium = finalize_eos_reactive_finite_phases_local(
         context.compiled.system,
-        context.provider,
+        context.eos,
         request.temperature.value,
         request.pressure.value,
         context.packing,
         local_variables,
         local_lower_bounds,
         local_upper_bounds,
-        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        context.parameters.empty() ? nullptr : &context.parameters,
         nullptr,
         context.supports,
         request.outputs,
@@ -1174,15 +1172,15 @@ GrepeResult initialize_finite_context(
     const std::vector<ReactiveFinitePhaseStart> starts{*start};
     const std::optional<PhaseDirectionCompilation> directions =
         compile_directions(request, starts);
-    context.result.equilibrium = solve_provider_reactive_finite_phases(
+    context.result.equilibrium = solve_eos_reactive_finite_phases(
         context.compiled.system,
-        context.provider,
+        context.eos,
         request.temperature.value,
         request.pressure.value,
         context.packing,
         starts,
         request.trace_floor,
-        context.parameters.identities.empty() ? nullptr : &context.parameters,
+        context.parameters.empty() ? nullptr : &context.parameters,
         0,
         false,
         false,
@@ -1434,8 +1432,8 @@ LiquidEvaluation evaluate_liquid(
     result.solved = solve_finite_result(model, liquid);
     if (!result.solved.equilibrium.accepted) {
         const ReactiveFinitePhaseResult& failed = result.solved.equilibrium;
-        const std::string code = failed.provider_domain_status == "failed"
-            ? "provider_domain_rejection"
+        const std::string code = failed.eos_domain_status == "failed"
+            ? "eos_domain_rejection"
             : "numerical_convergence_failure";
         throw GrepeFailure(
             code,
@@ -1528,10 +1526,11 @@ struct VaporPoint {
     double packing_fraction = 0.0;
     double pressure_log_volume = 0.0;
     bool strict_local_minimum = false;
+    std::size_t eos_evaluation_count = 0;
 };
 
 VaporPoint evaluate_vapor(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const GrepeRequest& request,
     const GrepePhase& vapor,
     const std::vector<double>& log_ratios,
@@ -1542,13 +1541,14 @@ VaporPoint evaluate_vapor(
     VaporPoint result;
     result.fractions = softmax_reference(log_ratios);
     result.volume_m3 = std::exp(log_volume);
-    const auto bounds = provider.evaluate_molar_volume_bounds(
+    const auto bounds = eos.evaluate_molar_volume_bounds(
         request.temperature.value,
         result.fractions,
         vapor.packing_fraction_interval[0],
         vapor.packing_fraction_interval[1]
     );
-    if (!(bounds[0] < result.volume_m3 && result.volume_m3 < bounds[1])) {
+    if (!(bounds.bounds_m3_per_mol[0] < result.volume_m3
+          && result.volume_m3 < bounds.bounds_m3_per_mol[1])) {
         if (!require_fixed_pressure_projection) {
             throw std::domain_error(
                 "declared vapor volume left its packing-fraction chart"
@@ -1559,19 +1559,23 @@ VaporPoint evaluate_vapor(
             "declared vapor volume left its packing-fraction chart"
         );
     }
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
-    const ParameterizedPhaseEvaluation block = provider.evaluate_parameterized_phase(
+    const std::vector<epcsaft::NativeActiveCoordinate> parameters = eos.active_coordinates();
+    const epcsaft::NativeParameterizedPhaseState block = eos.evaluate_parameterized_phase_state(
         request.temperature.value,
         result.fractions,
         result.volume_m3,
-        vapor.packing_fraction_interval[0],
-        vapor.packing_fraction_interval[1],
+        parameters
+    );
+    const auto packing = eos.evaluate_parameterized_packing_fraction(
+        request.temperature.value,
+        result.fractions,
+        result.volume_m3,
         parameters
     );
     const std::size_t count = result.fractions.size();
     const std::size_t reference = count - 1;
     const std::size_t state_count = count + 1;
-    const std::size_t provider_parameter_count = parameters.identities.size();
+    const std::size_t eos_parameter_count = parameters.size();
     const std::size_t parameter_count = parameter_identities.size();
     bool ordered_support = block.supported_component_indices.size() == count;
     for (std::size_t index = 0; ordered_support && index < count; ++index) {
@@ -1581,10 +1585,10 @@ VaporPoint evaluate_vapor(
         || block.phase.gradient.size() != state_count
         || block.phase.hessian.size() != state_count * state_count
         || block.chemical_potential_parameter_derivatives_over_rt.size()
-            != count * provider_parameter_count
-        || block.pressure_parameter_derivatives_pa.size() != provider_parameter_count) {
+            != count * eos_parameter_count
+        || block.pressure_parameter_derivatives_pa.size() != eos_parameter_count) {
         throw GrepeFailure(
-            "owner_contract_failure", "vapor Provider derivative layout changed"
+            "owner_contract_failure", "vapor EOS derivative layout changed"
         );
     }
     const double h_vv = block.phase.hessian[count * state_count + count];
@@ -1620,7 +1624,7 @@ VaporPoint evaluate_vapor(
             request.temperature.value,
             result.fractions,
             result.volume_m3,
-            provider.component_charges(),
+            eos.charge_numbers(),
             block.phase.hessian
         );
         if (!projection.failure_code.empty()) {
@@ -1656,27 +1660,28 @@ VaporPoint evaluate_vapor(
     result.mu_parameters.assign(count * parameter_count, 0.0);
     result.mu_parameters_at_fixed_volume.assign(count * parameter_count, 0.0);
     result.pressure_parameters.assign(parameter_count, 0.0);
+    const auto eos_parameter_identities =
+        epcsaft::active_parameter_identities(parameters);
     for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
         const auto found = std::find(
-            parameters.identities.begin(),
-            parameters.identities.end(),
+            eos_parameter_identities.begin(), eos_parameter_identities.end(),
             parameter_identities[parameter]
         );
-        if (found == parameters.identities.end()) {
+        if (found == eos_parameter_identities.end()) {
             continue;
         }
-        const std::size_t provider_parameter = static_cast<std::size_t>(
-            found - parameters.identities.begin()
+        const std::size_t eos_parameter = static_cast<std::size_t>(
+            found - eos_parameter_identities.begin()
         );
         const double volume_parameter =
-            block.pressure_parameter_derivatives_pa[provider_parameter] / (rt * h_vv);
+            block.pressure_parameter_derivatives_pa[eos_parameter] / (rt * h_vv);
         result.pressure_parameters[parameter] =
-            block.pressure_parameter_derivatives_pa[provider_parameter];
+            block.pressure_parameter_derivatives_pa[eos_parameter];
         for (std::size_t component = 0; component < count; ++component) {
             result.mu_parameters_at_fixed_volume[
                 component * parameter_count + parameter
             ] = block.chemical_potential_parameter_derivatives_over_rt[
-                component * provider_parameter_count + provider_parameter
+                component * eos_parameter_count + eos_parameter
             ];
             result.mu_parameters[component * parameter_count + parameter] =
                 result.mu_parameters_at_fixed_volume[
@@ -1687,12 +1692,14 @@ VaporPoint evaluate_vapor(
         }
     }
     result.pressure_pa = block.phase.pressure_pa;
-    result.packing_fraction = block.packing.value;
+    result.packing_fraction = packing.packing.packing_fraction;
+    result.eos_evaluation_count = bounds.eos_evaluation_count
+        + block.evaluations.total() + packing.evaluations.total();
     return result;
 }
 
 VaporPoint solve_vapor(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     const GrepeRequest& request,
     const GrepePhase& vapor,
     double pressure_pa,
@@ -1744,23 +1751,32 @@ VaporPoint solve_vapor(
     }
     std::vector<std::pair<VaporPoint, double>> accepted;
     std::optional<GrepeFailure> last_failure;
+    std::size_t eos_evaluation_count = 0;
     for (const std::vector<double>& fractions : starts) {
         std::vector<double> coordinates(reference + 1, 0.0);
         for (std::size_t index = 0; index < reference; ++index) {
             coordinates[index] = std::log(fractions[index] / fractions[reference]);
         }
-        const auto bounds = provider.evaluate_molar_volume_bounds(
+        const auto bounds = eos.evaluate_molar_volume_bounds(
             request.temperature.value,
             fractions,
             vapor.packing_fraction_interval[0],
             vapor.packing_fraction_interval[1]
         );
+        eos_evaluation_count += bounds.eos_evaluation_count;
         const double proposed = continued
             ? continuation_volume
             : kGasConstant * request.temperature.value / pressure_pa;
         const double volume = std::min(
-            std::nextafter(bounds[1], bounds[0]),
-            std::max(std::nextafter(bounds[0], bounds[1]), proposed)
+            std::nextafter(
+                bounds.bounds_m3_per_mol[1], bounds.bounds_m3_per_mol[0]
+            ),
+            std::max(
+                std::nextafter(
+                    bounds.bounds_m3_per_mol[0], bounds.bounds_m3_per_mol[1]
+                ),
+                proposed
+            )
         );
         coordinates.back() = std::log(volume);
         std::optional<VaporPoint> point;
@@ -1768,13 +1784,14 @@ VaporPoint solve_vapor(
         try {
             for (int iteration = 0; iteration < 36; ++iteration) {
                 point = evaluate_vapor(
-                    provider,
+                    eos,
                     request,
                     vapor,
                     std::vector<double>(coordinates.begin(), coordinates.end() - 1),
                     coordinates.back(),
                     parameter_identities
                 );
+                eos_evaluation_count += point->eos_evaluation_count;
                 std::vector<double> residual(count, 0.0);
                 for (std::size_t row = 0; row < reference; ++row) {
                     residual[row] = point->chemical_potentials[row]
@@ -1841,22 +1858,24 @@ VaporPoint solve_vapor(
                         for (std::size_t index = 0; index < count; ++index) {
                             midpoint[index] = 0.5 * (coordinates[index] + candidate[index]);
                         }
-                        static_cast<void>(evaluate_vapor(
-                            provider,
+                        const VaporPoint midpoint_point = evaluate_vapor(
+                            eos,
                             request,
                             vapor,
                             std::vector<double>(midpoint.begin(), midpoint.end() - 1),
                             midpoint.back(),
                             parameter_identities
-                        ));
+                        );
+                        eos_evaluation_count += midpoint_point.eos_evaluation_count;
                         const VaporPoint trial = evaluate_vapor(
-                            provider,
+                            eos,
                             request,
                             vapor,
                             std::vector<double>(candidate.begin(), candidate.end() - 1),
                             candidate.back(),
                             parameter_identities
                         );
+                        eos_evaluation_count += trial.eos_evaluation_count;
                         double trial_norm = std::abs(std::log(trial.pressure_pa / pressure_pa));
                         for (std::size_t row = 0; row < reference; ++row) {
                             trial_norm = std::max(
@@ -1958,7 +1977,7 @@ VaporPoint solve_vapor(
         } catch (const GrepeFailure& error) {
             last_failure = error;
         } catch (const std::domain_error& error) {
-            last_failure = GrepeFailure("provider_domain_rejection", error.what());
+            last_failure = GrepeFailure("eos_domain_rejection", error.what());
         }
     }
     if (accepted.empty()) {
@@ -1997,6 +2016,7 @@ VaporPoint solve_vapor(
         );
     }
     if (continued) {
+        accepted.front().first.eos_evaluation_count = eos_evaluation_count;
         return std::move(accepted.front().first);
     }
     std::sort(accepted.begin(), accepted.end(), [&](const auto& left, const auto& right) {
@@ -2021,6 +2041,7 @@ VaporPoint solve_vapor(
             );
         }
     }
+    accepted.front().first.eos_evaluation_count = eos_evaluation_count;
     return std::move(accepted.front().first);
 }
 
@@ -2122,10 +2143,9 @@ IncipientClosure incipient_closure(
         return closure;
     }
 
-    ProviderContext provider(incipient_model);
     try {
         closure.vapor = solve_vapor(
-            provider,
+            incipient_model,
             request,
             vapor,
             pressure_pa,
@@ -2138,7 +2158,7 @@ IncipientClosure incipient_closure(
             incipient_liquid_partial(request, closure.liquid, pressure_pa)
         );
     }
-    closure.vapor_evaluations = static_cast<std::size_t>(provider.evaluation_count());
+    closure.vapor_evaluations = closure.vapor.eos_evaluation_count;
     closure.vapor_fractions = closure.vapor.fractions;
     closure.vapor_pressure_pa = closure.vapor.pressure_pa;
     closure.vapor_volume_m3 = closure.vapor.volume_m3;
@@ -2221,14 +2241,14 @@ double incipient_distance(
 struct IncipientSolve {
     IncipientClosure closure;
     std::size_t closure_count = 0;
-    std::size_t provider_evaluations = 0;
+    std::size_t eos_evaluations = 0;
     std::size_t accepted_count = 0;
 };
 
 std::size_t incipient_failure_priority(const std::string& code) {
     static constexpr std::array<std::string_view, 13> priority = {
         "multiple_unresolved_branches", "branch_loss", "active_bound_ambiguity",
-        "parameter_topology_mismatch", "provider_domain_rejection",
+        "parameter_topology_mismatch", "eos_domain_rejection",
         "ill_conditioned_sensitivity", "singular_sensitivity",
         "first_order_failure", "second_order_failure", "physical_rejection",
         "no_incipient_phase", "numerical_convergence_failure", "owner_contract_failure",
@@ -2261,7 +2281,7 @@ IncipientSolve solve_incipient_pressure(
     std::vector<IncipientClosure> accepted;
     std::vector<GrepeFailure> failures;
     std::size_t closure_count = 0;
-    std::size_t provider_evaluations = 0;
+    std::size_t eos_evaluations = 0;
     std::size_t accepted_count = 0;
     for (std::size_t start_index = 0; start_index < starts.size(); ++start_index) {
         double pressure = starts[start_index];
@@ -2274,7 +2294,7 @@ IncipientSolve solve_incipient_pressure(
                     model, incipient_model, request, pressure
                 );
                 ++closure_count;
-                provider_evaluations += current->liquid.solved.equilibrium.provider_evaluation_count
+                eos_evaluations += current->liquid.solved.equilibrium.eos_evaluation_count
                     + current->vapor_evaluations;
                 if (std::abs(current->residual) <= 2.0e-10) {
                     final = std::move(*current);
@@ -2315,7 +2335,7 @@ IncipientSolve solve_incipient_pressure(
                 break;
             } catch (const std::domain_error& error) {
                 failure = GrepeFailure(
-                    "provider_domain_rejection", error.what(), std::nullopt, start_index
+                    "eos_domain_rejection", error.what(), std::nullopt, start_index
                 );
                 break;
             }
@@ -2398,7 +2418,7 @@ IncipientSolve solve_incipient_pressure(
         );
     }
     return {
-        std::move(accepted.front()), closure_count, provider_evaluations, accepted_count
+        std::move(accepted.front()), closure_count, eos_evaluations, accepted_count
     };
 }
 
@@ -2519,7 +2539,7 @@ GrepeResult incipient_value_result(
         static_cast<std::size_t>(vapor_position - request.phases.begin()),
     };
     set_output_availability(result, request.outputs.size(), false, false);
-    equilibrium.provider_evaluation_count = solved.provider_evaluations;
+    equilibrium.eos_evaluation_count = solved.eos_evaluations;
     result.evidence.insert(result.evidence.end(), {
         {"bubble_log_closure_abs", std::abs(closure.residual)},
         {"bubble_log_pressure_derivative", closure.residual_log_pressure_derivative},
@@ -2530,7 +2550,7 @@ GrepeResult incipient_value_result(
             equilibrium.phase_pressures_pa[0] - equilibrium.phase_pressures_pa[1]
         )},
         {"closure_evaluation_count", static_cast<double>(solved.closure_count)},
-        {"provider_evaluation_count", static_cast<double>(solved.provider_evaluations)},
+        {"eos_evaluation_count", static_cast<double>(solved.eos_evaluations)},
         {"accepted_candidate_count", static_cast<double>(solved.accepted_count)},
         {"distinct_branch_count", 1.0},
     });
@@ -2764,7 +2784,7 @@ GrepeResult failed_result(
         result.equilibrium.physical_status = failure.code() == "physical_rejection"
             || failure.code() == "second_order_failure"
             ? "failed" : "not_adjudicated";
-        result.equilibrium.provider_domain_status = failure.code() == "provider_domain_rejection"
+        result.equilibrium.eos_domain_status = failure.code() == "eos_domain_rejection"
             ? "failed" : "not_adjudicated";
     }
     return result;
@@ -2783,7 +2803,7 @@ std::vector<double> feed_input_direction(
     }
     std::vector<double> result(equilibrium.input_order.size(), 0.0);
     ReactionSystemInput input = request.reaction;
-    input.provider_fingerprint = ProviderContext(model).fingerprint();
+    input.eos_fingerprint = model.parameter_fingerprint();
     input.temperature_k = request.temperature.value;
     input.pressure_pa = request.pressure.value;
     const CompiledReactionSystem compiled = expand_species_face(
@@ -2814,14 +2834,14 @@ GrepeResult solve_fixed_pressure_incipient_boundary(
     const double lower = feed.coordinates[0].bounds[0];
     const double upper = feed.coordinates[0].bounds[1];
     std::size_t evaluations = 0;
-    std::size_t provider_evaluations = 0;
+    std::size_t eos_evaluations = 0;
     auto evaluate = [&](double coordinate) {
         GrepeRequest resolved = resolved_request(request, coordinate);
         IncipientClosure closure = incipient_closure(
             model, incipient_model, resolved, boundary.target
         );
         ++evaluations;
-        provider_evaluations += closure.liquid.solved.equilibrium.provider_evaluation_count
+        eos_evaluations += closure.liquid.solved.equilibrium.eos_evaluation_count
             + closure.vapor_evaluations;
         const std::vector<double> direction = feed_input_direction(
             model, request, closure.liquid.solved.equilibrium
@@ -2882,7 +2902,7 @@ GrepeResult solve_fixed_pressure_incipient_boundary(
         );
     }
     IncipientSolve solved{
-        std::move(std::get<1>(*state)), evaluations, provider_evaluations, 1
+        std::move(std::get<1>(*state)), evaluations, eos_evaluations, 1
     };
     GrepeResult result = incipient_result(
         std::get<0>(*state),
@@ -2924,8 +2944,8 @@ GrepeResult solve_homogeneous_boundary(
         GrepeResult owner = solve_finite_result(model, resolved);
         if (!owner.equilibrium.accepted) {
             throw GrepeFailure(
-                owner.equilibrium.provider_domain_status == "failed"
-                    ? "provider_domain_rejection" : "numerical_convergence_failure",
+                owner.equilibrium.eos_domain_status == "failed"
+                    ? "eos_domain_rejection" : "numerical_convergence_failure",
                 owner.equilibrium.failure_reason.empty()
                     ? owner.equilibrium.solver_status
                     : owner.equilibrium.failure_reason
@@ -3114,17 +3134,15 @@ GrepeResult solve_temperature_boundary(
     }
     const double target_pressure = request.pressure.value;
     std::size_t evaluation_count = 0;
-    std::size_t provider_evaluations = 0;
+    std::size_t eos_evaluations = 0;
     auto evaluate = [&](double temperature_k) {
-        ProviderContext reference_provider(model);
-        ProviderContext partner_provider(model);
         problem.temperature_k = temperature_k;
         FixedTCoexistenceResult solved = solve_fixed_t_coexistence(
-            reference_provider, partner_provider, problem
+            model, model, problem
         );
         ++evaluation_count;
-        provider_evaluations += static_cast<std::size_t>(
-            std::max(0, solved.diagnostics.provider_evaluation_count)
+        eos_evaluations += static_cast<std::size_t>(
+            std::max(0, solved.diagnostics.eos_evaluation_count)
         );
         if (solved.diagnostics.physical_status != "accepted"
             || solved.phases.size() != 2) {
@@ -3132,9 +3150,9 @@ GrepeResult solve_temperature_boundary(
                 ? "fixed-temperature coexistence was not certified"
                 : solved.diagnostics.failure_reason;
             throw GrepeFailure(
-                reason.find("provider") != std::string::npos
+                reason.find("eos") != std::string::npos
                     || reason.find("domain") != std::string::npos
-                    ? "provider_domain_rejection" : "physical_rejection",
+                    ? "eos_domain_rejection" : "physical_rejection",
                 reason
             );
         }
@@ -3196,12 +3214,12 @@ GrepeResult solve_temperature_boundary(
         if (!(interval[0] < solved.phases[phase].packing_fraction
               && solved.phases[phase].packing_fraction < interval[1])) {
             throw GrepeFailure(
-                "provider_domain_rejection",
+                "eos_domain_rejection",
                 "fixed-pressure coexistence left a declared packing-fraction interval"
             );
         }
     }
-    const std::size_t parameter_count = ProviderContext(model).active_parameters().identities.size();
+    const std::size_t parameter_count = model.active_coordinates().size();
     if (parameter_count != 0
         && (!solved.sensitivity.has_value() || solved.sensitivity->status != "available")) {
         throw GrepeFailure(
@@ -3229,8 +3247,8 @@ GrepeResult solve_temperature_boundary(
     equilibrium.solver_status = "converged";
     equilibrium.numerical_status = "passed";
     equilibrium.physical_status = "passed";
-    equilibrium.provider_domain_status = "passed";
-    equilibrium.parameter_order = ProviderContext(model).active_parameters().identities;
+    equilibrium.eos_domain_status = "passed";
+    equilibrium.parameter_order = model.active_parameter_identities();
     equilibrium.input_order = equilibrium.parameter_order;
     for (const PhaseEquilibriumState& phase : solved.phases) {
         equilibrium.phase_amounts_mol.push_back(phase.mole_fractions);
@@ -3308,12 +3326,12 @@ GrepeResult solve_temperature_boundary(
                 fixed[parameter] + temperature_partial * temperature_parameters[parameter];
         }
     }
-    equilibrium.provider_evaluation_count = provider_evaluations;
+    equilibrium.eos_evaluation_count = eos_evaluations;
     result.evidence = {
         {"temperature_k", coordinate},
         {"pressure_residual_inf", std::abs(std::get<1>(*selected))},
         {"optimizer_solve_count", static_cast<double>(evaluation_count)},
-        {"provider_evaluation_count", static_cast<double>(provider_evaluations)},
+        {"eos_evaluation_count", static_cast<double>(eos_evaluations)},
     };
     return result;
 }
@@ -3376,7 +3394,7 @@ GrepeResult solve_grepe(
         );
     } catch (const std::invalid_argument& error) {
         const std::string diagnostic = error.what();
-        if (diagnostic.find("Provider") == std::string::npos
+        if (diagnostic.find("EOS") == std::string::npos
             && diagnostic.find("source domain") == std::string::npos
             && diagnostic.find("packing interval") == std::string::npos) {
             throw;
@@ -3384,13 +3402,13 @@ GrepeResult solve_grepe(
         GrepeResult result;
         result.formulation = "finite";
         result.certificate_scope = "fixed_TP_configured_finite_phases_local_minimum";
-        result.failure_code = "provider_domain_rejection";
+        result.failure_code = "eos_domain_rejection";
         result.temperature_k = request.temperature.value;
         result.pressure_pa = request.pressure.value;
         result.equilibrium.solver_status = "not_started";
         result.equilibrium.numerical_status = "not_adjudicated";
         result.equilibrium.physical_status = "not_adjudicated";
-        result.equilibrium.provider_domain_status = "failed";
+        result.equilibrium.eos_domain_status = "failed";
         result.equilibrium.failure_reason = diagnostic;
         return result;
     }
@@ -3432,7 +3450,7 @@ GrepeLocalStructure compile_grepe_local_structure(
         prepared->ideal,
         std::move(prepared->packing),
         std::move(prepared->supports),
-        std::move(prepared->parameters.identities),
+        epcsaft::active_parameter_identities(prepared->parameters),
         finite_incipient,
         finite_incipient
             ? static_cast<std::size_t>(vapor - request.phases.begin()) : 0,
@@ -3446,12 +3464,12 @@ GrepeLocalPoint evaluate_grepe_local_point(
     const GrepeRequest& request,
     const GrepeLocalStructure& structure
 ) {
-    ProviderContext provider(model);
-    const ProviderActiveParameterSet parameters = provider.active_parameters();
-    if (parameters.identities != structure.active_parameter_identities
-        || provider.fingerprint() != structure.system.provider_fingerprint) {
+    const std::vector<epcsaft::NativeActiveCoordinate> parameters =
+        model.active_coordinates();
+    if (epcsaft::active_parameter_identities(parameters) != structure.active_parameter_identities
+        || model.parameter_fingerprint() != structure.system.eos_fingerprint) {
         throw std::invalid_argument(
-            "retained GREPE provider or active parameter order changed"
+            "retained GREPE eos or active parameter order changed"
         );
     }
     GrepeLocalPoint point{structure.system, 0.0};
@@ -3465,15 +3483,15 @@ GrepeLocalPoint evaluate_grepe_local_point(
     ReactionSystemInput input = effective_reaction(request);
     input.temperature_k = request.temperature.value;
     input.pressure_pa = pressure;
-    input.provider_fingerprint = provider.fingerprint();
+    input.eos_fingerprint = model.parameter_fingerprint();
     const GrepeSourceValues source = evaluate_source_values(
-        provider, input, request, parameters
+        model, input, request, parameters
     );
     point.source_reference_representation_residual_inf_norm =
         source.representation_residual_inf_norm;
     apply_source_values(
         point.system, source, input.reaction_matrix.rows,
-        parameters.identities.size()
+        parameters.size()
     );
     return point;
 }
@@ -3541,18 +3559,19 @@ GrepeResult initialize_grepe_local(
                 lower.push_back(-460.0);
                 upper.push_back(460.0);
             }
-            ProviderContext provider(incipient_model);
-            const auto volume_bounds = provider.evaluate_molar_volume_bounds(
+            const auto volume_bounds = incipient_model.evaluate_molar_volume_bounds(
                 request.temperature.value,
                 vapor_fractions,
                 structure.vapor_phase.packing_fraction_interval[0],
                 structure.vapor_phase.packing_fraction_interval[1]
             );
             const double volume_lower = std::nextafter(
-                std::log(volume_bounds[0]), std::numeric_limits<double>::infinity()
+                std::log(volume_bounds.bounds_m3_per_mol[0]),
+                std::numeric_limits<double>::infinity()
             );
             const double volume_upper = std::nextafter(
-                std::log(volume_bounds[1]), -std::numeric_limits<double>::infinity()
+                std::log(volume_bounds.bounds_m3_per_mol[1]),
+                -std::numeric_limits<double>::infinity()
             );
             local.push_back(std::clamp(
                 std::log(vapor_volume_m3), volume_lower, volume_upper
@@ -3785,9 +3804,8 @@ void evaluate_grepe_local_blocks(
                 local_variables.begin() + static_cast<std::ptrdiff_t>(pressure_column + 1),
                 local_variables.end() - 1
             );
-            ProviderContext provider(incipient_model);
             vapor = evaluate_vapor(
-                provider, request, structure.vapor_phase, vapor_log_ratios,
+                incipient_model, request, structure.vapor_phase, vapor_log_ratios,
                 local_variables.back(), structure.active_parameter_identities, false
             );
             vapor_fractions = vapor->fractions;

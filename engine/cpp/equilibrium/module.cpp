@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <numeric>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -42,8 +43,7 @@ py::dict source_reference_transfer(
     double source_reference_pressure_pa,
     std::uint32_t required_derivatives
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
-    const auto result = provider.evaluate_source_reference_transfer(
+    const auto result = model.evaluate_source_reference_transfer(
         temperature_k,
         pressure_pa,
         {
@@ -66,7 +66,8 @@ py::dict source_reference_transfer(
     py::dict value;
     value["status"] = result.status;
     value["error"] = result.error;
-    if (result.status != epcsaft_engine::equilibrium::SOURCE_REFERENCE_OK) {
+    value["eos_evaluation_count"] = result.evaluations.total();
+    if (result.status != epcsaft::SOURCE_REFERENCE_OK) {
         return value;
     }
     value["component_count"] = result.component_count;
@@ -118,19 +119,36 @@ py::dict evaluate_parameterized_phase(
     double packing_fraction_min,
     double packing_fraction_max
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
-    const auto active_parameters = provider.active_parameters();
-    const auto evaluation = provider.evaluate_parameterized_phase(
+    const auto active_parameters = model.active_coordinates();
+    const auto evaluation = model.evaluate_parameterized_phase_state(
         temperature_k,
         amounts_mol,
         volume_m3,
-        packing_fraction_min,
-        packing_fraction_max,
         active_parameters
     );
+    const auto packing = model.evaluate_parameterized_packing_fraction(
+        temperature_k,
+        amounts_mol,
+        volume_m3,
+        active_parameters
+    );
+    const double total_amount = std::accumulate(
+        amounts_mol.begin(), amounts_mol.end(), 0.0
+    );
+    std::vector<double> composition(amounts_mol.size());
+    std::transform(
+        amounts_mol.begin(), amounts_mol.end(), composition.begin(),
+        [total_amount](double amount) { return amount / total_amount; }
+    );
+    const auto bounds = model.evaluate_molar_volume_bounds(
+        temperature_k,
+        composition,
+        packing_fraction_min,
+        packing_fraction_max
+    );
     py::dict result;
-    result["active_parameter_identities"] = active_parameters.identities;
-    result["value"] = evaluation.phase.value;
+    result["active_parameter_identities"] = epcsaft::active_parameter_identities(active_parameters);
+    result["value"] = evaluation.phase.helmholtz_over_rt_reference_amount;
     result["state_gradient"] = evaluation.phase.gradient;
     result["state_hessian"] = evaluation.phase.hessian;
     result["parameter_derivatives"] = evaluation.parameter_derivatives;
@@ -141,16 +159,22 @@ py::dict evaluate_parameterized_phase(
         evaluation.pressure_parameter_derivatives_pa;
     result["chemical_potential_parameter_derivatives_over_rt"] =
         evaluation.chemical_potential_parameter_derivatives_over_rt;
-    result["packing_fraction"] = evaluation.packing.value;
-    result["packing_state_gradient"] = evaluation.packing.gradient;
-    result["packing_state_hessian"] = evaluation.packing.hessian;
+    result["packing_fraction"] = packing.packing.packing_fraction;
+    result["packing_state_gradient"] = packing.packing.gradient;
+    result["packing_state_hessian"] = packing.packing.hessian;
     result["packing_parameter_derivatives"] =
-        evaluation.packing_parameter_derivatives;
+        packing.parameter_derivatives;
     result["molar_volume_bounds_m3_per_mol"] =
-        evaluation.molar_volume_bounds_m3_per_mol;
+        bounds.bounds_m3_per_mol;
     result["molar_volume_bound_parameter_derivatives_m3_per_mol"] =
-        evaluation.molar_volume_bound_parameter_derivatives_m3_per_mol;
+        bounds.parameter_derivatives_m3_per_mol;
     result["topology_fingerprint"] = evaluation.topology_fingerprint;
+    result["state_evaluation_count"] = evaluation.evaluations.state;
+    result["packing_evaluation_count"] = packing.evaluations.packing;
+    result["volume_bound_evaluation_count"] = bounds.eos_evaluation_count;
+    result["eos_evaluation_count"] =
+        evaluation.evaluations.total() + packing.evaluations.total()
+        + bounds.eos_evaluation_count;
     return result;
 }
 
@@ -162,11 +186,10 @@ py::dict evaluate_solved_state_sensitivity(
     const std::vector<std::vector<double>>& phase_amounts_mol,
     const std::vector<double>& phase_volumes_m3
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     if (phase_amounts_mol.size() != phase_volumes_m3.size()) {
         throw py::value_error("phase amount and volume counts must match");
     }
-    const std::vector<std::string> component_ids = provider.component_ids();
+    const std::vector<std::string> component_ids = model.component_ids();
     std::vector<epcsaft_engine::equilibrium::SolvedPhaseState> phases;
     phases.reserve(phase_amounts_mol.size());
     for (std::size_t phase = 0; phase < phase_amounts_mol.size(); ++phase) {
@@ -174,7 +197,7 @@ py::dict evaluate_solved_state_sensitivity(
     }
     const auto sensitivity =
         epcsaft_engine::equilibrium::evaluate_solved_state_sensitivity(
-            provider,
+            model,
             temperature_k,
             pressure_pa,
             component_ids,
@@ -338,7 +361,7 @@ py::dict phase_diagnostics_to_dict(
     result["role_evidence"] = value.role_evidence;
     result["optimizer_solve_count"] = value.optimizer_solve_count;
     result["optimizer_iteration_count"] = value.optimizer_iteration_count;
-    result["provider_evaluation_count"] = value.provider_evaluation_count;
+    result["eos_evaluation_count"] = value.eos_evaluation_count;
     result["hint_count"] = value.hint_count;
     result["hint_reordered_start_count"] =
         value.hint_reordered_start_count;
@@ -452,17 +475,17 @@ py::dict neutral_phase_to_dict(
     };
     result["volume_m3"] = phase.volume_m3;
     result["molar_density_mol_m3"] = amount_mol / phase.volume_m3;
-    result["pressure_pa"] = phase.provider.pressure_pa;
+    result["pressure_pa"] = phase.eos.pressure_pa;
     result["chemical_potential_over_rt"] = std::array<double, 2>{
-        phase.provider.gradient[0],
-        phase.provider.gradient[1],
+        phase.eos.gradient[0],
+        phase.eos.gradient[1],
     };
     return result;
 }
 
 py::dict neutral_discovery_to_dict(
     const epcsaft_engine::equilibrium::FlashResult& flash,
-    int provider_evaluation_count
+    int eos_evaluation_count
 ) {
     using epcsaft_engine::equilibrium::HeldResult;
     const HeldResult& solve = std::get<HeldResult>(flash.solve);
@@ -500,7 +523,7 @@ py::dict neutral_discovery_to_dict(
     result["chemical_potential_max_relative"] = py::none();
     result["search_profiles"] = std::move(profiles);
     result["globality_certificate"] = "not_guaranteed";
-    result["provider_evaluation_count"] = provider_evaluation_count;
+    result["eos_evaluation_count"] = eos_evaluation_count;
     result["solver_status"] = "not_adjudicated";
     result["numerical_status"] = "not_adjudicated";
     result["physical_status"] = "not_adjudicated";
@@ -574,9 +597,9 @@ py::dict neutral_discovery_to_dict(
         phase["mole_fractions"] = state.amounts_mol;
         phase["volume_m3"] = state.volume_m3;
         phase["molar_density_mol_m3"] = 1.0 / state.volume_m3;
-        phase["pressure_pa"] = state.provider.pressure_pa;
+        phase["pressure_pa"] = state.eos.pressure_pa;
         phase["chemical_potential_over_rt"] = std::array<double, 2>{
-            state.provider.gradient[0], state.provider.gradient[1]
+            state.eos.gradient[0], state.eos.gradient[1]
         };
         phases.append(std::move(phase));
         phase_fractions.append(1.0);
@@ -624,7 +647,7 @@ py::dict held2_phase_to_dict(
 ) {
     py::dict result;
     result["phase_fraction"] = phase.phase_fraction;
-    result["mole_fractions"] = phase.physical_fractions_provider_order;
+    result["mole_fractions"] = phase.physical_fractions_eos_order;
     result["molar_volume_m3_mol"] = phase.volume;
     result["pressure_pa"] = phase.pressure_pa;
     result["chemical_potential_over_rt"] = phase.chemical_potentials_over_rt;
@@ -633,7 +656,7 @@ py::dict held2_phase_to_dict(
 
 py::dict held2_discovery_to_dict(
     const epcsaft_engine::equilibrium::FlashResult& flash,
-    int provider_evaluation_count
+    int eos_evaluation_count
 ) {
     using epcsaft_engine::equilibrium::Held2AlgorithmResult;
     const Held2AlgorithmResult& solve =
@@ -647,7 +670,7 @@ py::dict held2_discovery_to_dict(
     result["failure_reason"] = solve.failure_reason.empty()
         ? py::none() : py::cast(solve.failure_reason);
     result["globality_certificate"] = solve.globality_certificate;
-    result["provider_evaluation_count"] = provider_evaluation_count;
+    result["eos_evaluation_count"] = eos_evaluation_count;
     std::uint64_t optimizer_solves = 0;
     std::uint64_t optimizer_iterations = 0;
     for (const auto& timing : solve.step_timings) {
@@ -709,7 +732,6 @@ py::dict solve_declared_fixed_tp(
     const std::vector<double>& initial_guess_densities,
     const std::vector<double>& initial_guess_phase_fractions
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     const auto declared_phases = parse_declared_phases(roles, supports);
     const auto phase_hints = parse_phase_hints(
         hint_indices, hint_compositions, hint_densities
@@ -724,7 +746,7 @@ py::dict solve_declared_fixed_tp(
     {
         py::gil_scoped_release release;
         solved = epcsaft_engine::equilibrium::solve_declared_fixed_tp(
-            provider,
+            model,
             {
                 temperature_k,
                 pressure_pa,
@@ -766,13 +788,12 @@ py::dict audit_phase_state(
     const std::vector<double>& mole_fractions,
     double molar_volume_m3_per_mol
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     const auto parsed_role = parse_phase_role(role);
     epcsaft_engine::equilibrium::PhaseEquilibriumState audited;
     {
         py::gil_scoped_release release;
         audited = epcsaft_engine::equilibrium::audit_phase_state(
-            provider,
+            model,
             parsed_role,
             temperature_k,
             mole_fractions,
@@ -796,12 +817,6 @@ py::dict solve_fixed_t_coexistence(
     const std::vector<std::vector<double>>& hint_compositions,
     const std::vector<double>& hint_densities
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext reference_provider(
-        reference_model
-    );
-    const epcsaft_engine::equilibrium::ProviderContext partner_provider(
-        partner_model
-    );
     const auto declared_phases = parse_declared_phases(roles, supports);
     const auto phase_hints = parse_phase_hints(
         hint_indices, hint_compositions, hint_densities
@@ -810,8 +825,8 @@ py::dict solve_fixed_t_coexistence(
     {
         py::gil_scoped_release release;
         solved = epcsaft_engine::equilibrium::solve_fixed_t_coexistence(
-            reference_provider,
-            partner_provider,
+            reference_model,
+            partner_model,
             {
                 temperature_k,
                 declared_phases,
@@ -868,12 +883,11 @@ py::dict solve_held_discovery(
     double pressure_pa,
     const std::vector<double>& overall_mole_fractions
 ) {
-    const epcsaft_engine::equilibrium::ProviderContext provider(model);
     epcsaft_engine::equilibrium::FlashResult flash;
     {
         py::gil_scoped_release release;
         flash = epcsaft_engine::equilibrium::solve_tp_flash(
-            provider,
+            model,
             {
                 temperature_k,
                 pressure_pa,
@@ -881,13 +895,13 @@ py::dict solve_held_discovery(
             }
         );
     }
-    const int provider_evaluation_count = provider.evaluation_count();
+    const int eos_evaluation_count = static_cast<int>(flash.eos_evaluation_count);
     if (std::holds_alternative<
             epcsaft_engine::equilibrium::Held2AlgorithmResult
         >(flash.solve)) {
-        return held2_discovery_to_dict(flash, provider_evaluation_count);
+        return held2_discovery_to_dict(flash, eos_evaluation_count);
     }
-    return neutral_discovery_to_dict(flash, provider_evaluation_count);
+    return neutral_discovery_to_dict(flash, eos_evaluation_count);
 }
 
 py::dict held2_audit_farkas_certificate(

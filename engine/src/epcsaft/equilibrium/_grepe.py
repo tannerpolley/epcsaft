@@ -117,7 +117,7 @@ class Solved:
 
 
 @dataclass(frozen=True, slots=True)
-class ProviderModel:
+class EosModel:
     """Installed EOS model declaration for one phase role."""
 
     admissible_packing_fraction_interval: tuple[float, float]
@@ -131,7 +131,7 @@ class ProviderModel:
             or not 0.0 <= interval[0] < interval[1] < 1.0
             or not self.reference_id
         ):
-            raise ValueError("provider phase model requires a physical packing interval")
+            raise ValueError("eos phase model requires a physical packing interval")
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,7 +145,7 @@ class IdealGasModel:
             raise ValueError("ideal-gas phase model requires a reference identity")
 
 
-type ReactivePhaseModel = ProviderModel | IdealGasModel
+type ReactivePhaseModel = EosModel | IdealGasModel
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,7 +189,7 @@ class ReactivePhase:
                 self.support,
                 (AllComponents, NeutralComponents, DeclaredNeutralComponents, DeclaredComponents),
             )
-            or not isinstance(self.model, (ProviderModel, IdealGasModel))
+            or not isinstance(self.model, (EosModel, IdealGasModel))
         ):
             raise ValueError("reactive phase declaration is invalid")
         if self.amount_role == "incipient" and self.start is not None:
@@ -510,7 +510,7 @@ class GeneralReactiveEquilibriumResult:
     solver_status: str
     numerical_status: str
     physical_status: str
-    provider_domain_status: str
+    eos_domain_status: str
     rows: tuple[GeneralEquilibriumRowResult, ...]
     phases: tuple[EquilibriumPhaseState, ...]
     failure: NonEvaluableTrial | None
@@ -577,7 +577,7 @@ def _result_evidence(owner: object | None) -> tuple[tuple[str, float | int | str
             "declared_direction_rank",
             "admissible_nullity",
             "optimizer_iterations",
-            "provider_evaluation_count",
+            "eos_evaluation_count",
         )
         return tuple((name, cast(float | int, getattr(owner, name))) for name in names)
     return ()
@@ -641,7 +641,7 @@ def _preflight(model: epcsaft.Mixture, problem: GeneralReactiveEquilibriumProble
     reaction = _effective_reaction_system(problem)
     component_ids = model.component_ids
     if reaction.species_ids != component_ids:
-        raise ValueError("GREPE species order must equal the Provider component order")
+        raise ValueError("GREPE species order must equal the EOS component order")
     component_count = len(component_ids)
     phase_supports = {
         phase.identity: frozenset(
@@ -840,9 +840,9 @@ def _phase_payload(phase: ReactivePhase) -> dict[str, object]:
         support = {"kind": "neutral_components", "component_ids": ()}
     else:
         support = {"kind": "all_components", "component_ids": ()}
-    if isinstance(phase.model, ProviderModel):
+    if isinstance(phase.model, EosModel):
         model: dict[str, object] = {
-            "kind": "provider",
+            "kind": "eos",
             "reference_id": phase.model.reference_id,
             "admissible_packing_fraction_interval": (
                 phase.model.admissible_packing_fraction_interval
@@ -1035,7 +1035,7 @@ def _unavailable_formulation(
         solver_status="not_started",
         numerical_status="unavailable",
         physical_status="not_adjudicated",
-        provider_domain_status="not_adjudicated",
+        eos_domain_status="not_adjudicated",
         rows=tuple(
             GeneralEquilibriumRowResult(
                 output.identity,
@@ -1080,7 +1080,7 @@ class _FinitePhaseOwnerResult:
     declared_direction_rank: int
     admissible_nullity: int
     optimizer_iterations: int
-    provider_evaluation_count: int
+    eos_evaluation_count: int
     branch_signature: tuple[object, ...]
 
 
@@ -1278,7 +1278,7 @@ def _finite_phase_owner_descriptor(
             "packing_intervals": tuple(
                 (
                     phase.model.admissible_packing_fraction_interval
-                    if isinstance(phase.model, ProviderModel)
+                    if isinstance(phase.model, EosModel)
                     else None
                 )
                 for phase in problem.phases
@@ -1405,7 +1405,7 @@ def _finite_incipient_owner_descriptor(
             "packing": tuple(
                 phase.model.admissible_packing_fraction_interval
                 for phase in problem.phases
-                if isinstance(phase.model, ProviderModel)
+                if isinstance(phase.model, EosModel)
             ),
         },
     )
@@ -1540,7 +1540,7 @@ def _temperature_boundary_owner_descriptor(
             ],
             "pressure_pa": _quantity(cast(Fixed, problem.pressure).value, "pascal", "pressure"),
             "packing_intervals": tuple(
-                cast(ProviderModel, phase.model).admissible_packing_fraction_interval
+                cast(EosModel, phase.model).admissible_packing_fraction_interval
                 for phase in problem.phases
             ),
         },
@@ -1688,7 +1688,7 @@ def _describe_general_reactive_equilibrium(
         and not _effective_reaction_system(problem).reaction_matrix
         and not problem.reaction_phase_ids
         and problem.phase_reactions is None
-        and all(isinstance(phase.model, ProviderModel) for phase in problem.phases)
+        and all(isinstance(phase.model, EosModel) for phase in problem.phases)
         and all(isinstance(phase.support, AllComponents) for phase in problem.phases)
         and {phase.fluid_role for phase in problem.phases} == {"liquid", "vapor"}
     ):
@@ -1729,7 +1729,7 @@ def _describe_general_reactive_equilibrium(
 
     if finite and not incipient and isinstance(problem.pressure, Fixed):
         pressure_pa = _quantity(problem.pressure.value, "pascal", "pressure")
-        if all(isinstance(phase.model, ProviderModel) for phase in finite):
+        if all(isinstance(phase.model, EosModel) for phase in finite):
             supported = tuple(
                 _phase_supported_component_ids(
                     phase,
@@ -1778,10 +1778,10 @@ def _describe_general_reactive_equilibrium(
         and isinstance(finite[0].support, AllComponents)
         and isinstance(incipient[0].support, DeclaredNeutralComponents)
     ):
-        if not isinstance(finite[0].model, ProviderModel):
-            return "the configured finite reacting liquid requires the Provider EOS"
-        if finite[0].model.reference_id != "installed-provider-eos":
-            return "GREPE provider model reference is not registered"
+        if not isinstance(finite[0].model, EosModel):
+            return "the configured finite reacting liquid requires the EOS"
+        if finite[0].model.reference_id != "installed-eos":
+            return "GREPE eos model reference is not registered"
         lower, upper = (
             _quantity(value, "pascal", "pressure bound") for value in problem.pressure.bounds
         )
@@ -1858,7 +1858,7 @@ def _finite_phase_failed(
         "numerical_convergence_failure",
         "first_order_failure",
         "singular_sensitivity",
-        "provider_domain_rejection",
+        "eos_domain_rejection",
         "owner_contract_failure",
     ],
     diagnostic: str,
@@ -1866,7 +1866,7 @@ def _finite_phase_failed(
     solver_status: str,
     numerical_status: str,
     physical_status: str,
-    provider_domain_status: str,
+    eos_domain_status: str,
     phases: tuple[EquilibriumPhaseState, ...] = (),
     rows: tuple[GeneralEquilibriumRowResult, ...] | None = None,
     evidence: tuple[tuple[str, float | int | str], ...] = (),
@@ -1879,7 +1879,7 @@ def _finite_phase_failed(
         solver_status=solver_status,
         numerical_status=numerical_status,
         physical_status=physical_status,
-        provider_domain_status=provider_domain_status,
+        eos_domain_status=eos_domain_status,
         rows=(
             tuple(
                 replace(row, status="non_evaluable", jacobian=None, reason=diagnostic)
@@ -1942,7 +1942,7 @@ def _native_grepe_failure(
         solver_status=native.solver_status,
         numerical_status=native.numerical_status,
         physical_status=native.physical_status,
-        provider_domain_status=native.provider_domain_status,
+        eos_domain_status=native.eos_domain_status,
         phases=phases,
         rows=_finite_phase_rows(
             problem,
@@ -1967,7 +1967,7 @@ def _native_evidence(native_result: object) -> tuple[tuple[str, float | str], ..
 
 
 def _failure_axes(failure: NonEvaluableTrial) -> tuple[str, str, str]:
-    if failure.code == "provider_domain_rejection":
+    if failure.code == "eos_domain_rejection":
         return "not_adjudicated", "not_adjudicated", "failed"
     if failure.code in {"physical_rejection", "no_incipient_phase", "branch_loss"}:
         return "passed", "failed", "passed"
@@ -2164,7 +2164,7 @@ def _map_native_incipient_result(
         native.solver_status,
         native.numerical_status,
         native.physical_status,
-        native.provider_domain_status,
+        native.eos_domain_status,
         rows,
         phases,
         None,
@@ -2230,7 +2230,7 @@ def _map_native_boundary_result(
         ("kkt_stationarity_inf_norm", native.kkt_stationarity_inf_norm),
         ("reduced_hessian_min_eigenvalue", native.reduced_hessian_min_eigenvalue),
         ("optimizer_iterations", native.optimizer_iterations),
-        ("provider_evaluation_count", native.provider_evaluation_count),
+        ("eos_evaluation_count", native.eos_evaluation_count),
     )
     return GeneralReactiveEquilibriumResult(
         problem,
@@ -2239,7 +2239,7 @@ def _map_native_boundary_result(
         native.solver_status,
         native.numerical_status,
         native.physical_status,
-        native.provider_domain_status,
+        native.eos_domain_status,
         rows,
         phases,
         None,
@@ -2276,7 +2276,7 @@ def _map_native_temperature_result(
         diagnostic = str(native.failure_reason or native.solver_status)
         code = str(cast(Any, native_result).failure_code or "physical_rejection")
         failure = NonEvaluableTrial(cast(Any, code), diagnostic)
-        numerical, physical, provider = _failure_axes(failure)
+        numerical, physical, eos = _failure_axes(failure)
         return GeneralReactiveEquilibriumResult(
             problem,
             descriptor,
@@ -2284,7 +2284,7 @@ def _map_native_temperature_result(
             native.solver_status,
             numerical,
             physical,
-            provider,
+            eos,
             tuple(
                 GeneralEquilibriumRowResult(
                     output.identity,
@@ -2314,7 +2314,7 @@ def _map_native_temperature_result(
         native.solver_status,
         native.numerical_status,
         native.physical_status,
-        native.provider_domain_status,
+        native.eos_domain_status,
         _finite_phase_rows(problem, descriptor, native),
         phases,
         None,
@@ -2451,7 +2451,7 @@ def _map_native_finite_result(
             solver_status=native.solver_status,
             numerical_status=native.numerical_status,
             physical_status=native.physical_status,
-            provider_domain_status=native.provider_domain_status,
+            eos_domain_status=native.eos_domain_status,
         )
     rows = _finite_phase_rows(
         problem,
@@ -2504,7 +2504,7 @@ def _map_native_finite_result(
         native.declared_direction_rank,
         native.admissible_nullity,
         native.optimizer_iterations,
-        native.provider_evaluation_count,
+        native.eos_evaluation_count,
         branch_signature,
     )
     return GeneralReactiveEquilibriumResult(
@@ -2514,7 +2514,7 @@ def _map_native_finite_result(
         solver_status=native.solver_status,
         numerical_status=native.numerical_status,
         physical_status=native.physical_status,
-        provider_domain_status=native.provider_domain_status,
+        eos_domain_status=native.eos_domain_status,
         rows=rows,
         phases=phases,
         failure=None,
@@ -2542,7 +2542,7 @@ def _native_general_reactive_equilibrium_inputs(
         (
             phase
             for phase in problem.phases
-            if phase.amount_role == "incipient" and isinstance(phase.model, ProviderModel)
+            if phase.amount_role == "incipient" and isinstance(phase.model, EosModel)
         ),
         None,
     )
@@ -2743,7 +2743,7 @@ def _general_receipt_payload(
                 "reason": "GREPE owner receipt is not a fit acceptance decision",
             },
         },
-        "provider_domain_status": result.provider_domain_status,
+        "eos_domain_status": result.eos_domain_status,
         "resolved_policy": result.resolved_policy,
         "trial": {
             "parameter_fingerprint": trial.parameter_fingerprint,
@@ -2840,7 +2840,7 @@ def validate_general_reactive_equilibrium_receipt(
         or payload.get("formulation") != descriptor.formulation
         or payload.get("certificate_scope") != descriptor.certificate_scope
         or payload.get("globality_claim") != "not_established"
-        or payload.get("provider_domain_status") not in {"passed", "not_adjudicated"}
+        or payload.get("eos_domain_status") not in {"passed", "not_adjudicated"}
         or problem.identity != descriptor.problem_identity
         or tuple(phase.identity for phase in problem.phases) != descriptor.phase_identities
         or not isinstance(trial, dict)
@@ -2950,7 +2950,7 @@ __all__ = (
     "GeneralReactiveEquilibriumResult",
     "IdealGasModel",
     "IntensiveBoundary",
-    "ProviderModel",
+    "EosModel",
     "ReactivePhase",
     "Solved",
     "general_reactive_equilibrium_descriptor",

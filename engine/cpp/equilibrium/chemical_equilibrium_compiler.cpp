@@ -1,5 +1,5 @@
 #include "chemical_equilibrium.hpp"
-#include "provider.hpp"
+#include "eos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,7 +15,7 @@ namespace {
 
 constexpr double kResidualMultiplier = 4096.0;
 constexpr double kGasConstantJPerMolK = 8.31446261815324;
-constexpr double kProviderReferenceDensityMolPerM3 = 1.0;
+constexpr double kEOSReferenceDensityMolPerM3 = 1.0;
 
 void require_finite(double value, const char* field) {
     if (!std::isfinite(value)) {
@@ -330,8 +330,8 @@ void validate_identities(const ReactionSystemInput& input) {
     if (input.charges.size() != species_count) {
         throw std::invalid_argument("species charges do not match species count");
     }
-    if (input.provider_fingerprint.empty()) {
-        throw std::invalid_argument("Provider fingerprint is incomplete");
+    if (input.eos_fingerprint.empty()) {
+        throw std::invalid_argument("EOS fingerprint is incomplete");
     }
 }
 
@@ -351,14 +351,14 @@ void validate_reference_records(const ReactionSystemInput& input) {
                 "equilibrium constant reaction orientation must be products_positive"
             );
         }
-        if (record.conversion_id != "already-provider-basis") {
+        if (record.conversion_id != "already-eos-basis") {
             throw std::invalid_argument(
-                "equilibrium constant conversion provenance is not already-provider-basis"
+                "equilibrium constant conversion provenance is not already-eos-basis"
             );
         }
-        if (record.reference_id != "provider-helmholtz-coordinate-basis") {
+        if (record.reference_id != "eos-helmholtz-coordinate-basis") {
             throw std::invalid_argument(
-                "equilibrium constant reference is not the Provider chemical basis"
+                "equilibrium constant reference is not the EOS chemical basis"
             );
         }
         if (!record.dimensionless) {
@@ -909,7 +909,7 @@ CompiledReactionSystem compile_reaction_system(
         // Preserve the validated species metadata here without requiring a
         // redundant species-only reaction basis.
         CompiledReactionSystem result;
-        result.provider_fingerprint = input.provider_fingerprint;
+        result.eos_fingerprint = input.eos_fingerprint;
         result.original_species_count = species_count;
         result.original_charges = input.charges;
         result.original_molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
@@ -967,7 +967,7 @@ CompiledReactionSystem compile_reaction_system(
             }
         }
         CompiledReactionSystem result;
-        result.provider_fingerprint = input.provider_fingerprint;
+        result.eos_fingerprint = input.eos_fingerprint;
         result.species_count = species_count;
         result.charges = input.charges;
         result.molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
@@ -1027,7 +1027,7 @@ CompiledReactionSystem compile_reaction_system(
                 constant_residual, constant_scale, dimension
             )) {
             throw std::invalid_argument(
-                "reaction constant cycle is inconsistent after Provider-basis conversion"
+                "reaction constant cycle is inconsistent after EOS-basis conversion"
             );
         }
     }
@@ -1073,7 +1073,7 @@ CompiledReactionSystem compile_reaction_system(
         }
     }
     CompiledReactionSystem result;
-    result.provider_fingerprint = input.provider_fingerprint;
+    result.eos_fingerprint = input.eos_fingerprint;
     result.species_count = species_count;
     result.charges = input.charges;
     result.molar_masses_kg_per_mol = input.molar_masses_kg_per_mol;
@@ -1128,7 +1128,7 @@ SourceStandardStateResult transform_source_standard_state(
     const std::vector<double>& log_activity_scale_factors,
     const std::vector<std::string>& species_ids,
     const std::vector<int>& charges,
-    const std::string& provider_fingerprint,
+    const std::string& eos_fingerprint,
     double temperature_k,
     double pressure_pa,
     const SourceReferenceTransferEvidence& reference
@@ -1154,14 +1154,14 @@ SourceStandardStateResult transform_source_standard_state(
             "source/reference standard-state dimensions are inconsistent"
         );
     }
-    if (provider_fingerprint.empty()
-        || provider_fingerprint != reference.parameter_fingerprint
+    if (eos_fingerprint.empty()
+        || eos_fingerprint != reference.parameter_fingerprint
         || reference.helmholtz_basis_id
-            != PROVIDER_HELMHOLTZ_BASIS_ID
+            != epcsaft::EOS_HELMHOLTZ_BASIS_ID
         || reference.status != "ok"
         || reference.domain_status != "admitted-domain"
         || reference.convergence_status != "converged-limit") {
-        throw std::invalid_argument("Provider source-reference identity is incompatible");
+        throw std::invalid_argument("EOS source-reference identity is incompatible");
     }
     if (!reference.candidate_qualification.empty()
         && (reference.candidate_qualification != "candidate_extrapolation"
@@ -1171,7 +1171,7 @@ SourceStandardStateResult transform_source_standard_state(
             || pressure_pa < reference.candidate_pressure_min_pa
             || pressure_pa > reference.candidate_pressure_max_pa)) {
         throw std::invalid_argument(
-            "Provider candidate source-reference domain is incompatible"
+            "EOS candidate source-reference domain is incompatible"
         );
     }
     const bool pressure_derivative_available = std::find(
@@ -1199,7 +1199,7 @@ SourceStandardStateResult transform_source_standard_state(
         || (parameter_derivative_available
             && reference.active_parameter_identities.empty())) {
         throw std::invalid_argument(
-            "Provider source-reference derivative availability is inconsistent"
+            "EOS source-reference derivative availability is inconsistent"
         );
     }
     if (temperature_k != reference.temperature_k
@@ -1264,7 +1264,7 @@ SourceStandardStateResult transform_source_standard_state(
     }
     if (minimum_diagonal / maximum_diagonal < 1.0e-10) {
         throw std::invalid_argument(
-            "Provider neutral-reference basis conditioning is unacceptable"
+            "EOS neutral-reference basis conditioning is unacceptable"
         );
     }
     SourceStandardStateResult result{
@@ -1313,7 +1313,7 @@ SourceStandardStateResult transform_source_standard_state(
                 reaction_matrix.columns
             )) {
             throw std::invalid_argument(
-                "source reaction is outside the Provider neutral-reference span"
+                "source reaction is outside the EOS neutral-reference span"
             );
         }
         const double declared_activity_offset = std::inner_product(
@@ -1337,7 +1337,7 @@ SourceStandardStateResult transform_source_standard_state(
                 reaction_matrix.columns
             )) {
             throw std::invalid_argument(
-                "source activity-scale conversion is inconsistent with Provider transfer"
+                "source activity-scale conversion is inconsistent with EOS transfer"
             );
         }
         const double reference_offset = std::inner_product(
@@ -1351,7 +1351,7 @@ SourceStandardStateResult transform_source_standard_state(
         );
         const double pressure_density_offset = delta_nu * std::log(
             pressure_pa
-            / (kProviderReferenceDensityMolPerM3
+            / (kEOSReferenceDensityMolPerM3
                 * kGasConstantJPerMolK * temperature_k)
         );
         const double offset = reference_offset + pressure_density_offset;
@@ -1362,7 +1362,7 @@ SourceStandardStateResult transform_source_standard_state(
             );
         }
         result.standard_offsets[reaction] = offset;
-        result.ln_k_provider_basis[reaction] = source_ln_k[reaction] + offset;
+        result.ln_k_eos_basis[reaction] = source_ln_k[reaction] + offset;
         if (pressure_derivative_available) {
             result.ln_k_pressure_derivatives_per_pa[reaction] =
                 std::inner_product(

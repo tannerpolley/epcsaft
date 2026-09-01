@@ -89,10 +89,12 @@ struct PressureDensityState final {
 
 PressureDensityState pressure_density_state(
     const NativeModel &model, double temperature, double density,
-    const std::vector<double> &composition) {
+    const std::vector<double> &composition,
+    const std::vector<std::size_t> &supported_component_indices) {
   const auto phase = model.evaluate_supported_phase_derivatives(
       temperature, composition, 1.0 / density,
-      std::numeric_limits<double>::quiet_NaN(), {});
+      std::numeric_limits<double>::quiet_NaN(), {},
+      supported_component_indices);
   const std::size_t volume = phase.gradient.size() - 1;
   return {phase.pressure_pa,
           detail::GAS_CONSTANT * temperature *
@@ -103,13 +105,15 @@ PressureDensityState pressure_density_state(
 std::pair<double, std::size_t> polished_pressure_density(
     const NativeModel &model, double temperature, double pressure,
     const std::vector<double> &composition, double density,
-    double lower_density, double upper_density) {
+    double lower_density, double upper_density,
+    std::size_t &eos_evaluation_count) {
   double best_density = density;
   double best_residual = std::numeric_limits<double>::infinity();
   std::size_t iterations = 0;
   for (std::size_t iteration = 0; iteration < 5; ++iteration) {
     ++iterations;
     const auto state = model.evaluate(temperature, density, composition);
+    eos_evaluation_count += state.eos_evaluation_count;
     const double residual = state.pressure - pressure;
     if (std::abs(residual) < best_residual) {
       best_density = density;
@@ -141,8 +145,9 @@ std::pair<double, std::size_t> polished_pressure_density(
       if (candidate <= lower_density || candidate >= upper_density) {
         break;
       }
-      const double residual =
-          model.evaluate(temperature, candidate, composition).pressure - pressure;
+      const auto state = model.evaluate(temperature, candidate, composition);
+      eos_evaluation_count += state.eos_evaluation_count;
+      const double residual = state.pressure - pressure;
       if (std::abs(residual) < best_residual) {
         best_density = candidate;
         best_residual = std::abs(residual);
@@ -487,12 +492,12 @@ NativeModel NativeModel::with_parameter_identities(
   NativeModel result(parameters_);
   result.component_ids_ = component_ids;
   result.site_ids_ = site_ids;
-  result.provider_metadata_ = provider_metadata_;
+  result.eos_metadata_ = eos_metadata_;
   result.active_coordinates_ = active_coordinates_;
   return result;
 }
 
-NativeModel NativeModel::with_provider_metadata(
+NativeModel NativeModel::with_eos_metadata(
     std::string parameter_fingerprint, double temperature_min_k,
     double temperature_max_k, double ion_mole_fraction_max,
     double pressure_min_pa, double pressure_max_pa,
@@ -504,7 +509,7 @@ NativeModel NativeModel::with_provider_metadata(
     std::string candidate_source_fingerprint) const {
   if (component_ids_.size() != component_count()) {
     throw std::invalid_argument(
-        "native provider requires resolved component identities");
+        "native eos requires resolved component identities");
   }
   if (!sha256_fingerprint_valid(parameter_fingerprint)) {
     throw std::invalid_argument("invalid parameter fingerprint");
@@ -515,7 +520,7 @@ NativeModel NativeModel::with_provider_metadata(
                                   &artifact_fingerprint,
                                   &candidate_source_fingerprint}) {
     if (!fingerprint->empty() && !sha256_fingerprint_valid(*fingerprint)) {
-      throw std::invalid_argument("invalid provider fingerprint");
+      throw std::invalid_argument("invalid eos fingerprint");
     }
   }
   if (!valid_optional_domain(temperature_min_k) ||
@@ -526,13 +531,13 @@ NativeModel NativeModel::with_provider_metadata(
       (!std::isnan(ion_mole_fraction_max) &&
        (!std::isfinite(ion_mole_fraction_max) ||
         ion_mole_fraction_max <= 0.0 || ion_mole_fraction_max > 1.0))) {
-    throw std::invalid_argument("invalid provider temperature domain");
+    throw std::invalid_argument("invalid eos temperature domain");
   }
   if (!valid_optional_domain(pressure_min_pa) ||
       !valid_optional_domain(pressure_max_pa) ||
       (std::isfinite(pressure_min_pa) && std::isfinite(pressure_max_pa) &&
        pressure_min_pa > pressure_max_pa)) {
-    throw std::invalid_argument("invalid provider pressure domain");
+    throw std::invalid_argument("invalid eos pressure domain");
   }
   if (!valid_optional_domain(source_temperature_min_k) ||
       !valid_optional_domain(source_temperature_max_k) ||
@@ -547,12 +552,12 @@ NativeModel NativeModel::with_provider_metadata(
       (candidate_qualification.empty() != candidate_source_fingerprint.empty()) ||
       (!candidate_qualification.empty() &&
        candidate_qualification != "candidate_extrapolation")) {
-    throw std::invalid_argument("invalid provider candidate-domain identity");
+    throw std::invalid_argument("invalid eos candidate-domain identity");
   }
   validate_pair_temperature_domain(parameters_, temperature_min_k,
                                    temperature_max_k);
   NativeModel result(*this);
-  result.provider_metadata_ = NativeProviderMetadata{
+  result.eos_metadata_ = NativeEosMetadata{
       std::move(parameter_fingerprint),
       std::move(topology_fingerprint),
       std::move(component_order_fingerprint),
@@ -687,24 +692,24 @@ NativeModel NativeModel::with_active_coordinates(
       break;
     }
   }
-  if (provider_metadata_.has_value()) {
+  if (eos_metadata_.has_value()) {
     validate_pair_temperature_domain(
-        updated, provider_metadata_->temperature_min_k,
-        provider_metadata_->temperature_max_k);
+        updated, eos_metadata_->temperature_min_k,
+        eos_metadata_->temperature_max_k);
   }
   NativeModel result(std::move(updated));
   result.component_ids_ = component_ids_;
   result.site_ids_ = site_ids_;
-  result.provider_metadata_ = provider_metadata_;
+  result.eos_metadata_ = eos_metadata_;
   result.active_coordinates_ = active_coordinates;
   return result;
 }
 
-const NativeProviderMetadata &NativeModel::provider_metadata() const {
-  if (!provider_metadata_.has_value()) {
-    throw std::logic_error("native provider metadata is unavailable");
+const NativeEosMetadata &NativeModel::eos_metadata() const {
+  if (!eos_metadata_.has_value()) {
+    throw std::logic_error("native eos metadata is unavailable");
   }
-  return *provider_metadata_;
+  return *eos_metadata_;
 }
 
 const std::vector<std::string> &NativeModel::component_ids() const {
@@ -719,9 +724,9 @@ NativeModel::active_coordinates() const {
 std::vector<NativeActiveParameterConstraint>
 NativeModel::active_parameter_constraints() const {
   std::vector<NativeActiveParameterConstraint> result;
-  if (!provider_metadata_.has_value() ||
-      !std::isfinite(provider_metadata_->temperature_min_k) ||
-      !std::isfinite(provider_metadata_->temperature_max_k)) {
+  if (!eos_metadata_.has_value() ||
+      !std::isfinite(eos_metadata_->temperature_min_k) ||
+      !std::isfinite(eos_metadata_->temperature_max_k)) {
     return result;
   }
 
@@ -765,8 +770,8 @@ NativeModel::active_parameter_constraints() const {
     }
     const double slope =
         parameters_.k_ij_reciprocal_temperature_slope[matrix_index];
-    const std::array temperatures{provider_metadata_->temperature_min_k,
-                                  provider_metadata_->temperature_max_k};
+    const std::array temperatures{eos_metadata_->temperature_min_k,
+                                  eos_metadata_->temperature_max_k};
     for (std::size_t endpoint = 0; endpoint < temperatures.size(); ++endpoint) {
       const double temperature = temperatures[endpoint];
       if (endpoint != 0 && temperature == temperatures[0]) {
@@ -1234,7 +1239,7 @@ NativeModel::evaluate_mixture_phase(double temperature,
                                     double volume) const {
   if (supports_fixed_topology_associating_mixture()) {
     return detail::fixed_topology_parameterized_mixture_phase_block(
-        temperature, amounts, volume, {}, parameters_);
+        temperature, amounts, volume, {}, parameters_, {});
   }
   return detail::mixture_phase_block(temperature, amounts, volume, parameters_);
 }
@@ -1245,6 +1250,8 @@ NativeModel::evaluate_phase_derivatives(
     double temperature, const std::vector<double> &amounts, double volume,
     const std::vector<NativeActiveCoordinate> &coordinates,
     std::size_t derivative_order) const {
+  validate_temperature(temperature);
+  static_cast<void>(validate_amounts(amounts, volume));
   if (derivative_order != 2) {
     throw std::invalid_argument(
         "phase derivative order must be exactly two");
@@ -1260,7 +1267,7 @@ NativeModel::evaluate_phase_derivatives(
     resolved.push_back(resolve_active_coordinate(coordinate));
   }
   return detail::fixed_topology_parameterized_mixture_phase_block(
-      temperature, amounts, volume, resolved, parameters_);
+      temperature, amounts, volume, resolved, parameters_, {});
 }
 
 // EqExclude: transport and buffer mechanics
@@ -1272,19 +1279,11 @@ NativeMixturePhaseBlock NativeModel::evaluate_electrolyte_phase(
 }
 
 // EqExclude: transport and buffer mechanics
-NativeMixturePhaseBlock NativeModel::evaluate_parameterized_phase(
-    double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max,
-    const std::vector<NativeActiveCoordinate> &active_parameters) const {
-  return evaluate_supported_phase_derivatives(
-      temperature, amounts, volume, ion_mole_fraction_max, active_parameters);
-}
-
-// EqExclude: transport and buffer mechanics
 NativeMixturePhaseBlock NativeModel::evaluate_supported_phase_derivatives(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
-    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+    const std::vector<NativeActiveCoordinate> &active_parameters,
+    const std::vector<std::size_t> &supported_component_indices) const {
   if (component_ids_.size() != parameters_.segment_count.size()) {
     throw std::invalid_argument(
         "supported phase derivatives require resolved component identities");
@@ -1296,18 +1295,20 @@ NativeMixturePhaseBlock NativeModel::evaluate_supported_phase_derivatives(
   }
   return detail::support_aware_parameterized_mixture_phase_block(
       temperature, amounts, volume, ion_mole_fraction_max, resolved,
-      parameters_);
+      supported_component_indices, parameters_);
 }
 
 NativeMixturePhaseBlock NativeModel::evaluate_temperature_phase_derivatives(
     double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max) const {
+    double ion_mole_fraction_max,
+    const std::vector<std::size_t> &supported_component_indices) const {
   if (component_ids_.size() != parameters_.segment_count.size()) {
     throw std::invalid_argument(
         "temperature phase derivatives require resolved component identities");
   }
   return detail::support_aware_temperature_mixture_phase_block(
-      temperature, amounts, volume, ion_mole_fraction_max, parameters_);
+      temperature, amounts, volume, ion_mole_fraction_max,
+      supported_component_indices, parameters_);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -1321,16 +1322,16 @@ NativePackingFractionBlock NativeModel::evaluate_packing_fraction(
 // EqExclude: transport and buffer mechanics
 NativePackingFractionBlock NativeModel::evaluate_packing_fraction_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max,
-    const std::vector<NativeActiveCoordinate> &active_parameters) const {
+    const std::vector<NativeActiveCoordinate> &active_parameters,
+    const std::vector<std::size_t> &supported_component_indices) const {
   std::vector<NativeFixedTopologyParameter> resolved;
   resolved.reserve(active_parameters.size());
   for (const auto &coordinate : active_parameters) {
     resolved.push_back(resolve_active_coordinate(coordinate));
   }
   return detail::packing_fraction_block_active_parameters(
-      temperature, amounts, volume, ion_mole_fraction_max, parameters_,
-      resolved);
+      temperature, amounts, volume, parameters_, resolved,
+      supported_component_indices);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -1354,25 +1355,19 @@ NativeMolarVolumeBoundsParameterBlock
 NativeModel::molar_volume_bounds_parameters(
     double temperature, const std::vector<double> &mole_fractions,
     double packing_fraction_min, double packing_fraction_max,
-    double ion_mole_fraction_max,
     const std::vector<NativeActiveCoordinate> &active_parameters) const {
   if (active_parameters.empty()) {
     return {molar_volume_bounds(temperature, mole_fractions,
-                                packing_fraction_min, packing_fraction_max,
-                                ion_mole_fraction_max),
+                                packing_fraction_min, packing_fraction_max),
             {}};
   }
-  const auto bounds = with_active_coordinates(active_parameters)
-                          .molar_volume_bounds(temperature, mole_fractions,
-                                               packing_fraction_min,
-                                               packing_fraction_max,
-                                               ion_mole_fraction_max);
+  const auto bounds = molar_volume_bounds(
+      temperature, mole_fractions, packing_fraction_min,
+      packing_fraction_max);
+  const auto supported = validate_amounts(mole_fractions, 1.0);
   const auto coefficient = evaluate_packing_fraction_parameters(
-      temperature, mole_fractions, 1.0, ion_mole_fraction_max,
-      active_parameters);
-  const std::size_t support_count = static_cast<std::size_t>(std::count_if(
-      mole_fractions.begin(), mole_fractions.end(),
-      [](double value) { return value > 0.0; }));
+      temperature, mole_fractions, 1.0, active_parameters, supported);
+  const std::size_t support_count = supported.size();
   const std::size_t parameter_offset = support_count + 1;
   std::vector<double> derivatives(2 * active_parameters.size());
   for (std::size_t parameter = 0; parameter < active_parameters.size();
@@ -1431,12 +1426,10 @@ NativeReferenceSequence NativeModel::electrolyte_reference_sequence(
 // EqID: packing_volume_bounds
 std::array<double, 2> NativeModel::molar_volume_bounds(
     double temperature, const std::vector<double> &mole_fractions,
-    double packing_fraction_min, double packing_fraction_max,
-    double ion_mole_fraction_max) const {
-  const std::size_t components = parameters_.segment_count.size();
-  if (!std::isfinite(temperature) || temperature <= 0.0 ||
-      mole_fractions.size() != components ||
-      !std::isfinite(packing_fraction_min) ||
+    double packing_fraction_min, double packing_fraction_max) const {
+  validate_temperature(temperature);
+  validate_composition(mole_fractions);
+  if (!std::isfinite(packing_fraction_min) ||
       !std::isfinite(packing_fraction_max) || packing_fraction_min <= 0.0 ||
       packing_fraction_min >= packing_fraction_max) {
     throw std::invalid_argument("invalid molar-volume bound inputs");
@@ -1444,28 +1437,6 @@ std::array<double, 2> NativeModel::molar_volume_bounds(
   if (packing_fraction_max >= detail::close_packing_fraction()) {
     throw std::invalid_argument(
         "packing-fraction upper bound is outside the model domain");
-  }
-
-  double total_fraction = 0.0;
-  double charge_fraction = 0.0;
-  double ion_fraction = 0.0;
-  for (std::size_t component = 0; component < components; ++component) {
-    const double fraction = mole_fractions[component];
-    if (!std::isfinite(fraction) || fraction < 0.0) {
-      throw std::invalid_argument("invalid model composition");
-    }
-    total_fraction += fraction;
-    const int charge = parameters_.charge_number[component];
-    charge_fraction += fraction * static_cast<double>(charge);
-    if (charge != 0) {
-      ion_fraction += fraction;
-    }
-  }
-  if (std::abs(total_fraction - 1.0) > 1.0e-12 ||
-      std::abs(charge_fraction) > 1.0e-12 ||
-      (std::isfinite(ion_mole_fraction_max) &&
-       ion_fraction > ion_mole_fraction_max + 1.0e-12)) {
-    throw std::invalid_argument("composition is outside the model domain");
   }
 
   const double coefficient = detail::packing_fraction_coefficient(
@@ -1488,18 +1459,17 @@ double NativeModel::molar_density_upper_bound(
     double temperature, const std::vector<double> &mole_fractions) const {
   const auto bounds =
       molar_volume_bounds(temperature, mole_fractions, 1.0e-12,
-                          std::nextafter(detail::close_packing_fraction(), 0.0),
-                          std::numeric_limits<double>::quiet_NaN());
+                          std::nextafter(detail::close_packing_fraction(), 0.0));
   return 1.0 / bounds[0];
 }
 
 NativeResult
 NativeModel::evaluate(double temperature, double molar_density,
                       const std::vector<double> &mole_fractions) const {
+  validate_temperature(temperature);
+  validate_composition(mole_fractions);
   const std::size_t components = parameters_.segment_count.size();
-  if (!std::isfinite(temperature) || temperature <= 0.0 ||
-      !std::isfinite(molar_density) || molar_density <= 0.0 ||
-      mole_fractions.size() != components || !finite(mole_fractions)) {
+  if (!std::isfinite(molar_density) || molar_density <= 0.0) {
     throw std::invalid_argument("invalid native state");
   }
   const auto sigma = detail::segment_sigma(temperature, parameters_);
@@ -1604,12 +1574,9 @@ NativeResult
 NativeModel::evaluate_pressure(double temperature, double pressure,
                                const std::vector<double> &mole_fractions,
                                const std::string &phase) const {
-  const std::size_t components = parameters_.segment_count.size();
-  if (!std::isfinite(temperature) || temperature <= 0.0 ||
-      !std::isfinite(pressure) || pressure <= 0.0 ||
-      mole_fractions.size() != components || !finite(mole_fractions)) {
-    throw std::invalid_argument("invalid native pressure state");
-  }
+  validate_temperature(temperature);
+  validate_pressure(pressure);
+  validate_composition(mole_fractions);
   // EqID: density_upper_bound
   const double packing_coefficient = detail::packing_fraction_coefficient(
       temperature, mole_fractions, parameters_);
@@ -1623,20 +1590,25 @@ NativeModel::evaluate_pressure(double temperature, double pressure,
       detail::close_packing_fraction() / packing_coefficient * 0.999;
   const double minimum_stable_slope =
       1.0e-10 * pressure / ideal_density;
+  std::size_t eos_evaluation_count = 0;
+  const auto evaluate_at = [this, temperature, &mole_fractions,
+                            &eos_evaluation_count](double density) {
+    auto result = evaluate(temperature, density, mole_fractions);
+    eos_evaluation_count += result.eos_evaluation_count;
+    return result;
+  };
   auto root = detail::solve_density(
       pressure,
       // EqID: ideal_gas_density
       ideal_density,
       detail::close_packing_fraction() / packing_coefficient, phase,
-      [this, temperature, &mole_fractions](double density) {
-        return evaluate(temperature, density, mole_fractions);
-      });
+      evaluate_at);
   const auto [polished_density, polishing_iterations] = polished_pressure_density(
       *this, temperature, pressure, mole_fractions, root.molar_density,
-      lower_domain, upper_domain);
+      lower_domain, upper_domain, eos_evaluation_count);
   root.molar_density = polished_density;
   root.iterations += polishing_iterations;
-  auto result = evaluate(temperature, root.molar_density, mole_fractions);
+  auto result = evaluate_at(root.molar_density);
   root.pressure_residual = result.pressure - pressure;
   root.pressure_density_derivative = result.pressure_density_derivative;
   root.stable = std::isfinite(root.pressure_density_derivative) &&
@@ -1645,6 +1617,7 @@ NativeModel::evaluate_pressure(double temperature, double pressure,
     throw detail::DensityDomainError(
         "polished density root is not strict-stable");
   }
+  result.eos_evaluation_count = eos_evaluation_count;
   result.density_diagnostics = NativeDensityDiagnostics{
       root.bracket_lower,
       root.bracket_upper,
@@ -1673,11 +1646,10 @@ NativeResult NativeModel::evaluate_pressure_continuation(
     double reference_molar_density, const std::string &phase,
     std::size_t certified_stable_root_index,
     double certified_origin_molar_density) const {
-  const std::size_t components = parameters_.segment_count.size();
-  if (!std::isfinite(temperature) || temperature <= 0.0 ||
-      !std::isfinite(pressure) || pressure <= 0.0 ||
-      mole_fractions.size() != components || !finite(mole_fractions) ||
-      !std::isfinite(reference_molar_density) ||
+  validate_temperature(temperature);
+  validate_pressure(pressure);
+  const auto supported = validate_amounts(mole_fractions, 1.0);
+  if (!std::isfinite(reference_molar_density) ||
       reference_molar_density <= 0.0 ||
       (phase != "vapor" && phase != "liquid") ||
       !std::isfinite(certified_origin_molar_density) ||
@@ -1698,8 +1670,12 @@ NativeResult NativeModel::evaluate_pressure_continuation(
     throw detail::DensityDomainError(
         "continued density reference is outside the model domain");
   }
-  const auto evaluate_at = [this, temperature, &mole_fractions](double density) {
-    return pressure_density_state(*this, temperature, density, mole_fractions);
+  std::size_t eos_evaluation_count = 0;
+  const auto evaluate_at = [this, temperature, &mole_fractions,
+                            &supported, &eos_evaluation_count](double density) {
+    ++eos_evaluation_count;
+    return pressure_density_state(
+        *this, temperature, density, mole_fractions, supported);
   };
   const double minimum_stable_slope =
       1.0e-10 * pressure / ideal_density;
@@ -1721,6 +1697,8 @@ NativeResult NativeModel::evaluate_pressure_continuation(
     root.branch = phase;
     root.stable_root_count = 1;
     root.selected_stable_root_index = 0;
+    eos_evaluation_count += result.eos_evaluation_count;
+    result.eos_evaluation_count = eos_evaluation_count;
     result.density_diagnostics = NativeDensityDiagnostics{
         root.bracket_lower, root.bracket_upper, root.pressure_residual,
         root.pressure_density_derivative, root.iterations, root.stable,
@@ -1731,9 +1709,10 @@ NativeResult NativeModel::evaluate_pressure_continuation(
   };
   const auto [candidate_density, candidate_iterations] = polished_pressure_density(
       *this, temperature, pressure, mole_fractions, reference_molar_density,
-      lower_domain, upper_domain);
+      lower_domain, upper_domain, eos_evaluation_count);
   const auto candidate_state =
       evaluate(temperature, candidate_density, mole_fractions);
+  eos_evaluation_count += candidate_state.eos_evaluation_count;
   const double candidate_residual = candidate_state.pressure - pressure;
   if (candidate_density > lower_domain && candidate_density < upper_domain &&
       std::abs(std::log(candidate_density / reference_molar_density)) <=
@@ -1798,7 +1777,7 @@ NativeResult NativeModel::evaluate_pressure_continuation(
   auto root = continued_roots.front();
   const auto [polished_density, polishing_iterations] = polished_pressure_density(
       *this, temperature, pressure, mole_fractions, root.molar_density,
-      lower_domain, upper_domain);
+      lower_domain, upper_domain, eos_evaluation_count);
   root.molar_density = polished_density;
   root.iterations += polishing_iterations;
   return finish(root, "unique_scanned_root");
@@ -1828,7 +1807,7 @@ FixedPressureCompositionProjection fixed_pressure_composition_projection(
                   [](double value) {
                     return !std::isfinite(value) || value <= 0.0;
                   })) {
-    return reject("provider_domain_rejection");
+    return reject("eos_domain_rejection");
   }
   double fraction_sum = 0.0;
   double charge_sum = 0.0;
@@ -1840,7 +1819,7 @@ FixedPressureCompositionProjection fixed_pressure_composition_projection(
   }
   if (std::abs(fraction_sum - 1.0) > 1.0e-10 ||
       (charged && std::abs(charge_sum) > 1.0e-10)) {
-    return reject("provider_domain_rejection");
+    return reject("eos_domain_rejection");
   }
 
   std::vector<double> log_basis;
@@ -1977,9 +1956,12 @@ FixedPressureCompositionProjection fixed_pressure_composition_projection(
 FixedPressureCompositionProjection
 NativeModel::evaluate_fixed_pressure_composition_derivatives(
     double temperature, const std::vector<double> &mole_fractions,
-    double molar_volume, double ion_mole_fraction_max) const {
+    double molar_volume) const {
+  validate_temperature(temperature);
+  const auto supported = validate_amounts(mole_fractions, molar_volume);
   const auto phase = evaluate_supported_phase_derivatives(
-      temperature, mole_fractions, molar_volume, ion_mole_fraction_max, {});
+      temperature, mole_fractions, molar_volume,
+      eos_metadata().ion_mole_fraction_max, {}, supported);
   return fixed_pressure_composition_projection(
       temperature, mole_fractions, molar_volume, parameters_.charge_number,
       phase.hessian);

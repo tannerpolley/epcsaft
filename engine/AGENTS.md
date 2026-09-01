@@ -8,7 +8,7 @@ This directory owns the sole `epcsaft` distribution and its public
 `epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression` modules. Keep
 one Python build, one Meson graph, one version, one wheel, and one installed
 module origin. Do not add compatibility imports, alternate package identities,
-installed-provider discovery, hidden physical defaults, duplicate equation
+installed-EOS discovery, hidden physical defaults, duplicate equation
 owners, or a public C++ ABI without a real external consumer.
 
 An Engine-accountable task owns its full scientific slice across the exact

@@ -6,10 +6,10 @@ ordered neutral vapor support, pressure interval and starts, observation rows,
 and immutable local continuation anchor. Charged components cannot enter the
 vapor support.
 
-`ProviderNonidealVapor` is the primary model. `IdealGasVaporComparison` is an
+`EOSNonidealVapor` is the primary model. `IdealGasVaporComparison` is an
 explicit comparison type and is never selected as a fallback. A measured
 partial pressure row evaluates `y_i P`; phase equilibrium continues to use the
-Provider fugacity.
+EOS fugacity.
 
 The declared phase count and roles are inputs: one certified reacting liquid
 and one incipient vapor. The bubble owner does not run phase discovery or ask a
@@ -31,20 +31,20 @@ dP*/dtheta = -H_theta / H_P
 Liquid amount derivatives are normalized by the quotient rule. Every reported
 liquid, vapor, and pressure output receives its direct derivative plus its
 pressure-propagation term. Source-reference pressure dependence is inside
-the liquid pressure sensitivity; direct Provider parameter effects enter each
+the liquid pressure sensitivity; direct EOS parameter effects enter each
 liquid or vapor tangent exactly once.
 
 An evaluated result carries the exact certified chemical `(T,n,V)` state as its
 liquid phase and verifies component order, normalized composition, molar
 volume, phase role, active trial, topology, and branch identity. It also binds
-the ordered vapor support and partner Provider fingerprint. Declared starts
+the ordered vapor support and partner EOS fingerprint. Declared starts
 search only pressure/vapor closure outcomes; they never search for a second
 liquid state. The result is a certified local equilibrium only. Search
 completeness and global equilibrium are not claimed.
 
 The owner fails closed with the public Non-Evaluable Trial vocabulary for no
 incipient vapor, unresolved branches, branch loss, support loss or active-bound
-ambiguity, Provider/domain rejection, topology mismatch, source-reference
+ambiguity, EOS/domain rejection, topology mismatch, source-reference
 failure, and singular or ill-conditioned sensitivity. It never returns a
 numeric penalty for those states.
 

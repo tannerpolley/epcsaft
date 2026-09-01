@@ -153,7 +153,7 @@ class HeldDiagnostics:
     chemical_potential_max_relative: float | None
     search_profiles: tuple[str, ...]
     globality_certificate: str
-    provider_evaluation_count: int
+    eos_evaluation_count: int
     failure_reason: str
 
 
@@ -174,7 +174,7 @@ class Held2Diagnostics:
     pressure_stationarity_max_relative: float | None
     kkt_stationarity_max_abs: float | None
     globality_certificate: str
-    provider_evaluation_count: int
+    eos_evaluation_count: int
     failure_reason: str
 
 
@@ -436,7 +436,7 @@ class PhaseEquilibriumDiagnostics:
     role_evidence: tuple[str, ...]
     optimizer_solve_count: int
     optimizer_iteration_count: int
-    provider_evaluation_count: int
+    eos_evaluation_count: int
     hint_count: int
     hint_reordered_start_count: int
     initial_guess_count: int
@@ -878,7 +878,7 @@ def _held_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
         chemical_potential_max_relative=_optional_float(payload, "chemical_potential_max_relative"),
         search_profiles=tuple(str(profile) for profile in profiles),
         globality_certificate=str(payload["globality_certificate"]),
-        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
+        eos_evaluation_count=int(cast(int, payload["eos_evaluation_count"])),
         failure_reason=str(payload["failure_reason"]),
     )
 
@@ -898,7 +898,7 @@ def _failed_held_diagnostics(outcome: str, search_status: str, reason: str) -> H
         chemical_potential_max_relative=None,
         search_profiles=(),
         globality_certificate="not_guaranteed",
-        provider_evaluation_count=0,
+        eos_evaluation_count=0,
         failure_reason=reason,
     )
 
@@ -935,7 +935,7 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
         ),
         kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
         globality_certificate=str(payload["globality_certificate"]),
-        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
+        eos_evaluation_count=int(cast(int, payload["eos_evaluation_count"])),
         failure_reason="" if failure is None else str(failure),
     )
 
@@ -984,7 +984,7 @@ def _held2_result(
         reason = diagnostics.failure_reason or "HELD2 did not return a certified equilibrium"
         raise _HeldDiscoveryError(reason, diagnostics)
     if str(native["parameter_fingerprint"]) != fingerprint:
-        raise ValueError("native HELD2 result has the wrong Provider fingerprint")
+        raise ValueError("native HELD2 result has the wrong EOS fingerprint")
     sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
 
     phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
@@ -1302,7 +1302,7 @@ def _held_discovery(
         if not math.isclose(sum(phase_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-10):
             raise ValueError("native HELD phase fractions do not sum to one")
         if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
-            raise ValueError("native HELD result has the wrong provider fingerprint")
+            raise ValueError("native HELD result has the wrong eos fingerprint")
         sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
         return _HeldDiscoveryResult(
             phases=phases,
@@ -1347,7 +1347,7 @@ def _native_phase_diagnostics(
         ),
         optimizer_solve_count=int(cast(int, payload["optimizer_solve_count"])),
         optimizer_iteration_count=int(cast(int, payload["optimizer_iteration_count"])),
-        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
+        eos_evaluation_count=int(cast(int, payload["eos_evaluation_count"])),
         hint_count=int(cast(int, payload["hint_count"])),
         hint_reordered_start_count=int(cast(int, payload["hint_reordered_start_count"])),
         initial_guess_count=int(cast(int, payload["initial_guess_count"])),
@@ -1595,7 +1595,7 @@ def _protected_discovery_diagnostics(
         role_evidence=role_evidence,
         optimizer_solve_count=optimizer_solve_count,
         optimizer_iteration_count=optimizer_iteration_count,
-        provider_evaluation_count=retained.provider_evaluation_count,
+        eos_evaluation_count=retained.eos_evaluation_count,
         hint_count=hint_count,
         hint_reordered_start_count=0,
         initial_guess_count=0,
@@ -2164,7 +2164,7 @@ def _fixed_p_coexistence(
         )
 
     evaluation_count = 0
-    provider_evaluations = 0
+    eos_evaluations = 0
 
     def evaluate(
         temperature_k: float,
@@ -2173,7 +2173,7 @@ def _fixed_p_coexistence(
         _ReferenceDirectionSensitivity,
         float,
     ]:
-        nonlocal evaluation_count, provider_evaluations
+        nonlocal evaluation_count, eos_evaluations
         fixed_problem = PhaseEquilibriumProblem(
             FixedTCoexistence(
                 temperature_k * epcsaft.unit_registry.kelvin,
@@ -2193,7 +2193,7 @@ def _fixed_p_coexistence(
         if not isinstance(solved.extent, IncipientBoundary):
             raise TypeError("fixed-temperature coexistence returned the wrong extent")
         evaluation_count += 1
-        provider_evaluations += solved.diagnostics.provider_evaluation_count
+        eos_evaluations += solved.diagnostics.eos_evaluation_count
         return solved, temperature_direction, solved.extent.pressure_pa - pressure_pa
 
     initial = (
@@ -2248,7 +2248,7 @@ def _fixed_p_coexistence(
                 else "declared_temperature_bracket;64_iterations"
             ),
             optimizer_iteration_count=(0 if error.reason == "not_bracketed" else 64),
-            provider_evaluation_count=provider_evaluations,
+            eos_evaluation_count=eos_evaluations,
         )
         raise PhaseEquilibriumError(
             diagnostics.failure_reason or "fixed-pressure boundary did not converge",
@@ -2267,13 +2267,13 @@ def _fixed_p_coexistence(
             solver_status="converged",
             numerical_status="certified",
             physical_status="rejected",
-            failure_stage="provider_domain",
-            failure_reason="provider_domain_rejection",
+            failure_stage="eos_domain",
+            failure_reason="eos_domain_rejection",
             certificate_scope="fixed_p_declared_coexistence",
-            provider_evaluation_count=provider_evaluations,
+            eos_evaluation_count=eos_evaluations,
         )
         raise PhaseEquilibriumError(
-            "fixed-pressure coexistence root is outside a declared Provider domain",
+            "fixed-pressure coexistence root is outside a declared EOS domain",
             diagnostics,
             solved.phases,
         )
@@ -2287,7 +2287,7 @@ def _fixed_p_coexistence(
             failure_stage="intensive_boundary_sensitivity",
             failure_reason=temperature_direction.failure_reason,
             certificate_scope="fixed_p_declared_coexistence",
-            provider_evaluation_count=provider_evaluations,
+            eos_evaluation_count=eos_evaluations,
         )
         raise PhaseEquilibriumError(
             diagnostics.failure_reason or "fixed-pressure derivative is unavailable",
@@ -2310,7 +2310,7 @@ def _fixed_p_coexistence(
             search_budget=f"2_endpoints;64_iteration_limit;{evaluation_count}_evaluations",
             optimizer_solve_count=evaluation_count,
             optimizer_iteration_count=max(0, evaluation_count - 2),
-            provider_evaluation_count=provider_evaluations,
+            eos_evaluation_count=eos_evaluations,
             pressure_residual_inf=abs(residual) / max(1.0, pressure_pa),
         ),
         sensitivity=_fixed_p_coexistence_sensitivity(solved.sensitivity, temperature_direction),
@@ -2331,7 +2331,7 @@ def _source_reference_transfer(
     if standard_state.source_reference_component_ids != species_ids:
         raise ValueError("source-reference component order does not match the reaction system")
     if tuple(model.component_ids) != species_ids:
-        raise ValueError("source-reference component order does not match the installed Provider")
+        raise ValueError("source-reference component order does not match the installed EOS")
     if len(standard_state.log_activity_scale_factors) != len(species_ids):
         raise ValueError("source activity-scale factors do not match the species order")
     required_derivatives = (
@@ -2372,7 +2372,7 @@ def _source_reference_transfer(
         or transfer.pressure_pa != pressure_pa
         or transfer.source_reference_pressure_pa != standard_state.reference_pressure_pa
     ):
-        raise ValueError("installed Provider source-reference receipt is incompatible")
+        raise ValueError("installed EOS source-reference receipt is incompatible")
     return transfer
 
 

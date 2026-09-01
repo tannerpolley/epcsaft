@@ -1,6 +1,6 @@
 version: 11
 status: unified-monorepo-active
-governance_doctrine_revision: 24
+governance_doctrine_revision: 25
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -16,7 +16,7 @@ owners:
   scientific_records:
     map: docs/scientific
     decisions: docs/scientific/adr
-    formulation: docs/science/full-provider-eos.md
+    formulation: docs/science/full-eos.md
     equation_registry: docs/equations_registry.yaml
     generated_equation_views: docs/latex
     public_api_guide: docs/python-api.md
@@ -33,6 +33,8 @@ owners:
     observable_block: epcsaft.ObservableBlock
     equation_kernel: src/epcsaft/_native/helmholtz.hpp
     selected_parameter_derivatives: src/epcsaft/_native/phase_block.hpp
+    access_boundary: src/epcsaft/_native/eos_access.cpp
+    source_reference_transfer: src/epcsaft/_native/eos_source_reference.cpp
     density_closure: src/epcsaft/_native/density.hpp
     pure_saturation: src/epcsaft/_native/pure_saturation.cpp
     reference_states: src/epcsaft/reference.py
@@ -153,7 +155,7 @@ build_invariants:
   meson_roots: 1
   editable_downstream_dependencies: forbidden
   compatibility_aliases: forbidden
-  installed_provider_discovery: forbidden
+  installed_eos_discovery: forbidden
   mutable_wheel_inputs: forbidden
   development_wheel_cache: content_addressed_and_verified
   third_party_cmake_use: nlopt_subproject_only

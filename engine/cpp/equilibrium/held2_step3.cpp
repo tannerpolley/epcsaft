@@ -102,7 +102,7 @@ Held2Step3Result run_held2_step3(
             } catch (...) {
                 return fail("appendix_c_pressure_root_failed");
             }
-            ++result.timing.provider_evaluations;
+            ++result.timing.eos_evaluations;
             if (envelope.outcome != "selected"
                 || envelope.selected_root_index < 0) {
                 return fail(
@@ -135,11 +135,11 @@ Held2Step3Result run_held2_step3(
         }
         std::vector<double> witness_independent;
         witness_independent.reserve(dimension);
-        for (std::size_t provider : coordinates.independent_indices) {
+        for (std::size_t eos : coordinates.independent_indices) {
             const auto position = std::find(
                 coordinates.retained_indices.begin(),
                 coordinates.retained_indices.end(),
-                provider
+                eos
             );
             if (position == coordinates.retained_indices.end()) {
                 return fail("negative_witness_coordinate_missing");

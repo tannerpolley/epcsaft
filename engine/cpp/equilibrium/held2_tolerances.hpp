@@ -67,7 +67,7 @@ inline constexpr Held2Tolerance kHeld2RootStationary{
     Held2ToleranceRelation::AbsAtMost, 1.0e-9, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2RootBoundary{
-    "root_boundary", "root", "root is indistinguishable from Provider boundary",
+    "root_boundary", "root", "root is indistinguishable from EOS boundary",
     Held2ToleranceRelation::AbsAtMost, 1.0e-8, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2RootDuplicate{
@@ -76,7 +76,7 @@ inline constexpr Held2Tolerance kHeld2RootDuplicate{
 };
 inline constexpr Held2Tolerance kHeld2JointVolumeConsistency{
     "joint_volume_consistency", "representation",
-    "Provider state does not match the requested joint-search molar volume",
+    "EOS state does not match the requested joint-search molar volume",
     Held2ToleranceRelation::AbsAtMost, 1.0e-10, 0.0,
 };
 inline constexpr Held2Tolerance kHeld2MechanicalMargin{

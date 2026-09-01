@@ -35,7 +35,7 @@ _SOURCE_REFERENCE_ERRORS = {
     2: "invalid-source-composition",
     3: "component-order-mismatch",
     4: "missing-parameter-or-topology",
-    5: "provider-domain-rejection",
+    5: "eos-domain-rejection",
     6: "reference-limit-convergence-failure",
     7: "derivative-unavailable",
     8: "nonfinite-source-reference-state",
@@ -150,7 +150,7 @@ class SourceReferenceDeclaration:
 
 @dataclass(frozen=True, slots=True)
 class SourceReferenceTransfer:
-    """Charge-neutral source-to-Provider transfer and immutable EOS receipt."""
+    """Charge-neutral source-to-EOS transfer and immutable EOS receipt."""
 
     status: Literal["ok"]
     domain_status: Literal["admitted-domain"]
@@ -188,6 +188,7 @@ class SourceReferenceTransfer:
     domain_fingerprint: str
     artifact_fingerprint: str
     helmholtz_basis_id: str
+    eos_evaluation_count: int
 
 
 def source_reference_transfer(
@@ -388,6 +389,7 @@ def source_reference_transfer(
         domain_fingerprint=str(value["domain_fingerprint"]),
         artifact_fingerprint=str(value["artifact_fingerprint"]),
         helmholtz_basis_id=str(value["helmholtz_basis_id"]),
+        eos_evaluation_count=int(value["eos_evaluation_count"]),
     )
 
 

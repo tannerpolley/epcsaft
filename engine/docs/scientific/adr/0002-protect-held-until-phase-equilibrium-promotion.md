@@ -34,7 +34,7 @@ separate physical solver. During the transition:
 
 - both public operations remain explicit and neither automatically falls back
   to the other;
-- both use the same HELD/HELD2 numerical core and canonical EOS provider;
+- both use the same HELD/HELD2 numerical core and canonical EOS owner;
 - `tp_flash` retains its result, diagnostics, active-parameter sensitivity,
   source-domain admission, and HELD2 certificate behavior unchanged;
 - `phase_equilibrium` may add typed feed amounts, phase roles, and constrained

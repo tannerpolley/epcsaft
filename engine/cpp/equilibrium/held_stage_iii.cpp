@@ -39,7 +39,7 @@ std::size_t lower_index(std::size_t row, std::size_t column) {
 }
 
 HeldStageIIIPhaseEvaluation evaluate_phase(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     const std::array<double, 2>& amounts_mol,
     double log_volume
@@ -49,7 +49,7 @@ HeldStageIIIPhaseEvaluation evaluate_phase(
     if (amounts_mol[0] <= 0.0 || amounts_mol[1] <= 0.0 || volume_m3 <= 0.0) {
         throw std::invalid_argument("phase amounts and volume must be positive");
     }
-    MixturePhaseEvaluation evaluation = provider.evaluate_mixture(
+    epcsaft::NativePhaseState evaluation = eos.evaluate_phase_state(
         temperature_k,
         {amounts_mol[0], amounts_mol[1]},
         volume_m3
@@ -64,24 +64,24 @@ void add_phase_derivatives(
     std::array<double, 6>& gradient,
     std::array<double, 21>& hessian_lower
 ) {
-    const auto& provider_gradient = phase.provider.gradient;
-    const auto& provider_hessian = phase.provider.hessian;
+    const auto& eos_gradient = phase.eos.gradient;
+    const auto& eos_hessian = phase.eos.hessian;
     const double volume = phase.volume_m3;
-    gradient[offset] = provider_gradient[0];
-    gradient[offset + 1] = provider_gradient[1];
-    gradient[offset + 2] = (provider_gradient[2] + pressure_over_rt) * volume;
+    gradient[offset] = eos_gradient[0];
+    gradient[offset + 1] = eos_gradient[1];
+    gradient[offset + 2] = (eos_gradient[2] + pressure_over_rt) * volume;
 
     for (std::size_t row = 0; row < 2; ++row) {
         for (std::size_t column = 0; column <= row; ++column) {
             hessian_lower[lower_index(offset + row, offset + column)] =
-                provider_hessian[row * 3 + column];
+                eos_hessian[row * 3 + column];
         }
         hessian_lower[lower_index(offset + 2, offset + row)] =
-            provider_hessian[2 * 3 + row] * volume;
+            eos_hessian[2 * 3 + row] * volume;
     }
     hessian_lower[lower_index(offset + 2, offset + 2)] =
-        provider_hessian[8] * volume * volume
-        + (provider_gradient[2] + pressure_over_rt) * volume;
+        eos_hessian[8] * volume * volume
+        + (eos_gradient[2] + pressure_over_rt) * volume;
 }
 
 std::string ipopt_status_name(Ipopt::ApplicationReturnStatus status) {
@@ -136,12 +136,13 @@ struct AttemptResult {
     std::array<double, 2> equality_multipliers{};
     std::array<double, 6> lower_bound_multipliers{};
     std::array<double, 6> upper_bound_multipliers{};
+    std::size_t eos_evaluation_count = 0;
 };
 
 class HeldStageIIITnlp final : public Ipopt::TNLP {
 public:
     HeldStageIIITnlp(
-        const ProviderContext& provider,
+        const epcsaft::NativeModel& eos,
         double temperature_k,
         double pressure_pa,
         std::array<double, 2> overall_mole_fractions,
@@ -149,7 +150,7 @@ public:
         std::array<double, 6> lower,
         std::array<double, 6> upper
     )
-        : provider_(provider),
+        : eos_(eos),
           temperature_k_(temperature_k),
           pressure_pa_(pressure_pa),
           overall_mole_fractions_(overall_mole_fractions),
@@ -369,11 +370,15 @@ public:
         return upper_bound_multipliers_;
     }
     [[nodiscard]] const std::string& callback_error() const { return callback_error_; }
+    [[nodiscard]] std::size_t eos_evaluation_count() const {
+        return eos_evaluation_count_;
+    }
 
 private:
     [[nodiscard]] HeldStageIIINlpEvaluation evaluate(const Ipopt::Number* x) const {
+        eos_evaluation_count_ += 2;
         return evaluate_held_stage_iii_nlp(
-            provider_,
+            eos_,
             temperature_k_,
             pressure_pa_,
             overall_mole_fractions_,
@@ -381,7 +386,7 @@ private:
         );
     }
 
-    const ProviderContext& provider_;
+    const epcsaft::NativeModel& eos_;
     double temperature_k_;
     double pressure_pa_;
     std::array<double, 2> overall_mole_fractions_;
@@ -393,10 +398,11 @@ private:
     std::array<double, 6> lower_bound_multipliers_{};
     std::array<double, 6> upper_bound_multipliers_{};
     std::string callback_error_;
+    mutable std::size_t eos_evaluation_count_ = 0;
 };
 
 AttemptResult run_ipopt(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::array<double, 2>& overall_mole_fractions,
@@ -405,7 +411,7 @@ AttemptResult run_ipopt(
     const std::array<double, 6>& upper
 ) {
     auto* raw_problem = new HeldStageIIITnlp(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         overall_mole_fractions,
@@ -444,6 +450,7 @@ AttemptResult run_ipopt(
     result.lower_bound_multipliers = raw_problem->lower_bound_multipliers();
     result.upper_bound_multipliers = raw_problem->upper_bound_multipliers();
     result.callback_error = raw_problem->callback_error();
+    result.eos_evaluation_count = raw_problem->eos_evaluation_count();
     const Ipopt::SmartPtr<Ipopt::SolveStatistics> statistics = application->Statistics();
     if (IsValid(statistics)) {
         result.iterations = statistics->IterationCount();
@@ -512,16 +519,16 @@ bool physical_acceptance(
         std::abs(evaluation.constraints[1])
     );
     result.pressure_stationarity_max_relative = std::max(
-        std::abs(evaluation.liquid.provider.pressure_pa - pressure_pa) / pressure_pa,
-        std::abs(evaluation.vapor.provider.pressure_pa - pressure_pa) / pressure_pa
+        std::abs(evaluation.liquid.eos.pressure_pa - pressure_pa) / pressure_pa,
+        std::abs(evaluation.vapor.eos.pressure_pa - pressure_pa) / pressure_pa
     );
     result.chemical_potential_max_abs = 0.0;
     for (std::size_t component = 0; component < 2; ++component) {
         result.chemical_potential_max_abs = std::max(
             result.chemical_potential_max_abs,
             std::abs(
-                evaluation.liquid.provider.gradient[component]
-                - evaluation.vapor.provider.gradient[component]
+                evaluation.liquid.eos.gradient[component]
+                - evaluation.vapor.eos.gradient[component]
             )
         );
     }
@@ -606,7 +613,7 @@ double confirmation_difference(
 }  // namespace
 
 HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::array<double, 2>& overall_mole_fractions,
@@ -625,13 +632,13 @@ HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
     }
 
     HeldStageIIIPhaseEvaluation liquid = evaluate_phase(
-        provider,
+        eos,
         temperature_k,
         {variables[0], variables[1]},
         variables[2]
     );
     HeldStageIIIPhaseEvaluation vapor = evaluate_phase(
-        provider,
+        eos,
         temperature_k,
         {variables[3], variables[4]},
         variables[5]
@@ -639,7 +646,7 @@ HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
     const double pressure_over_rt = pressure_pa / (kGasConstantJPerMolK * temperature_k);
 
     HeldStageIIINlpEvaluation result;
-    result.objective = liquid.provider.value + vapor.provider.value
+    result.objective = liquid.eos.value + vapor.eos.value
         + pressure_over_rt * (liquid.volume_m3 + vapor.volume_m3);
     result.constraints = {
         variables[0] + variables[3] - overall_mole_fractions[0],
@@ -826,7 +833,7 @@ HeldStageIIIAcceptanceDecision classify_held_stage_iii(
 }
 
 HeldStageIIIResult solve_held_stage_iii(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -851,7 +858,7 @@ HeldStageIIIResult solve_held_stage_iii(
     const auto& lower = result.initialization.lower_bounds;
     const auto& upper = result.initialization.upper_bounds;
     AttemptResult attempt = run_ipopt(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed,
@@ -859,6 +866,7 @@ HeldStageIIIResult solve_held_stage_iii(
         lower,
         upper
     );
+    result.eos_evaluation_count += attempt.eos_evaluation_count;
     result.local.attempts = 1;
     result.local.solver_lower_bounds = lower;
     result.local.solver_upper_bounds = upper;
@@ -884,12 +892,13 @@ HeldStageIIIResult solve_held_stage_iii(
 
     try {
         result.local.evaluation = evaluate_held_stage_iii_nlp(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             feed,
             attempt.variables
         );
+        result.eos_evaluation_count += 2;
     } catch (const std::exception& error) {
         result.failure_reason = error.what();
         result.local.attempt_log.back().callback_error = error.what();
@@ -915,12 +924,12 @@ HeldStageIIIResult solve_held_stage_iii(
     }
     result.chemical_potential_max_relative = held_stage_iii_mu_difference(
         {
-            result.local.evaluation.liquid.provider.gradient[0],
-            result.local.evaluation.liquid.provider.gradient[1],
+            result.local.evaluation.liquid.eos.gradient[0],
+            result.local.evaluation.liquid.eos.gradient[1],
         },
         {
-            result.local.evaluation.vapor.provider.gradient[0],
-            result.local.evaluation.vapor.provider.gradient[1],
+            result.local.evaluation.vapor.eos.gradient[0],
+            result.local.evaluation.vapor.eos.gradient[1],
         }
     );
     result.composition_distance = std::abs(
@@ -968,7 +977,7 @@ HeldStageIIIResult solve_held_stage_iii(
     confirmation_seed[2] += 0.05;
     confirmation_seed[5] -= 0.05;
     AttemptResult confirmation = run_ipopt(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed,
@@ -976,6 +985,7 @@ HeldStageIIIResult solve_held_stage_iii(
         lower,
         upper
     );
+    result.eos_evaluation_count += confirmation.eos_evaluation_count;
     ++result.local.attempts;
     ++result.local.confirmation_solves;
     result.local.attempt_log.push_back({
@@ -992,12 +1002,13 @@ HeldStageIIIResult solve_held_stage_iii(
     if (confirmation.solver_converged && confirmation.callback_error.empty()) {
         try {
             confirmed = evaluate_held_stage_iii_nlp(
-                provider,
+                eos,
                 temperature_k,
                 pressure_pa,
                 feed,
                 confirmation.variables
             );
+            result.eos_evaluation_count += 2;
             result.confirmation_succeeded = physical_acceptance(
                 confirmation,
                 confirmed,

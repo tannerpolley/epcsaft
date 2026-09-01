@@ -223,6 +223,6 @@ def test_boundary_returns_typed_failure_without_matrices() -> None:
     ).fixed_pressure_composition_derivatives
     assert block is not None and block["status"] == "non_evaluable"
     assert isinstance(block["failure"], NonEvaluableTrial)
-    assert block["failure"].code == "provider_domain_rejection"
+    assert block["failure"].code == "eos_domain_rejection"
     assert "log_composition_basis" not in block
     assert "chemical_potential_derivatives_over_rt" not in block
