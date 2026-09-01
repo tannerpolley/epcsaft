@@ -147,13 +147,6 @@ void append_field(std::string& payload, const std::string& value) {
 
 void append_json_string(std::string& payload, const std::string& value) {
     constexpr char digits[] = "0123456789abcdef";
-    const auto append_hex4 = [&](std::uint16_t code_unit) {
-        payload += "\\u";
-        payload.push_back(digits[(code_unit >> 12) & 0x0f]);
-        payload.push_back(digits[(code_unit >> 8) & 0x0f]);
-        payload.push_back(digits[(code_unit >> 4) & 0x0f]);
-        payload.push_back(digits[code_unit & 0x0f]);
-    };
     payload.push_back('"');
     for (std::size_t index = 0; index < value.size();) {
         const unsigned char character = static_cast<unsigned char>(value[index]);
@@ -192,13 +185,7 @@ void append_json_string(std::string& payload, const std::string& value) {
                 || (codepoint >= 0xd800 && codepoint <= 0xdfff)) {
                 throw std::invalid_argument("source specification string is not valid UTF-8");
             }
-            if (codepoint <= 0xffff) {
-                append_hex4(static_cast<std::uint16_t>(codepoint));
-            } else {
-                codepoint -= 0x10000;
-                append_hex4(static_cast<std::uint16_t>(0xd800 + (codepoint >> 10)));
-                append_hex4(static_cast<std::uint16_t>(0xdc00 + (codepoint & 0x3ff)));
-            }
+            payload.append(value, index, width);
             index += width;
             continue;
         }
