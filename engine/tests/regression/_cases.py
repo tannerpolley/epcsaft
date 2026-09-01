@@ -15,7 +15,7 @@ from epcsaft.parameters import Parameters
 from tests.eos._cases import MULTINEUTRAL_REACTIVE, NEUTRAL_BINARY, neutral_ternary_pairs
 from tests.equilibrium._cases import (
     multineutral_reaction,
-    provider_boundary_case,
+    eos_boundary_case,
     solved_pressure_case,
 )
 
@@ -371,7 +371,7 @@ def full_space_fit_case(
         "liquid",
         "finite",
         equilibrium.AllComponents(),
-        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+        equilibrium.EosModel((1.0e-6, 0.74), "installed-eos"),
     )
     output = equilibrium.EquilibriumOutput(
         "cation-fraction",
@@ -639,7 +639,7 @@ def boundary_fit_case(
     str,
     equilibrium.GeneralReactiveEquilibriumResult,
 ]:
-    parameters, model, problem, default_identity = provider_boundary_case()
+    parameters, model, problem, default_identity = eos_boundary_case()
     output = replace(
         problem.outputs[0],
         aggregate_identity="boundary-output-group",

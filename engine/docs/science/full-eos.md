@@ -1,4 +1,4 @@
-# Full EOS EOS Scientific Specification
+# Full EOS Scientific Specification
 
 Status: scientific equation authority for the accepted full-EOS scope.
 

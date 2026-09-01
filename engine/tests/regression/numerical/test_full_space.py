@@ -205,7 +205,7 @@ def test_finite_owner_full_space_recovers_truth_with_complete_certificate(
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("ideal_vapor", [True, False], ids=("ideal", "provider"))
+@pytest.mark.parametrize("ideal_vapor", [True, False], ids=("ideal", "eos"))
 def test_solved_pressure_full_space_derivatives_match_independent_resolves(
     tmp_path: Path,
     ideal_vapor: bool,

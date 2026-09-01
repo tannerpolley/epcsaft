@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "provider.hpp"
+#include "eos.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
@@ -21,13 +21,13 @@ struct HeldStateEvaluation {
     std::array<double, 2> gradient{};
     std::array<double, 4> hessian{};
     double pressure_stationarity_relative = 0.0;
-    MixturePhaseEvaluation provider{};
+    epcsaft::NativePhaseState eos{};
 };
 
 struct HeldStageIIIPhaseEvaluation {
     std::array<double, 2> amounts_mol{};
     double volume_m3 = 0.0;
-    MixturePhaseEvaluation provider{};
+    epcsaft::NativePhaseState eos{};
 };
 
 struct HeldStageIIINlpEvaluation {
@@ -41,7 +41,7 @@ struct HeldStageIIINlpEvaluation {
 };
 
 [[nodiscard]] HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const std::array<double, 2>& overall_mole_fractions,
@@ -99,7 +99,7 @@ struct HeldTunnelingEvaluation {
 };
 
 [[nodiscard]] HeldStateEvaluation evaluate_held_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double x_component_zero,
@@ -107,7 +107,7 @@ struct HeldTunnelingEvaluation {
 );
 
 [[nodiscard]] HeldTpdEvaluation evaluate_held_tpd(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
@@ -116,7 +116,7 @@ struct HeldTunnelingEvaluation {
 );
 
 [[nodiscard]] HeldTunnelingEvaluation evaluate_held_tunneling(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     const HeldStateEvaluation& reference,
@@ -173,6 +173,7 @@ struct HeldStageIResult {
     double confirmation_max_difference = 0.0;
     double best_tpd = 0.0;
     bool has_reference = false;
+    std::size_t eos_evaluation_count = 0;
     HeldStateEvaluation reference{};
     HeldStateEvaluation best_state{};
 };
@@ -200,7 +201,7 @@ struct HeldLowerEvaluation {
 };
 
 [[nodiscard]] HeldLowerEvaluation evaluate_held_lower(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -241,6 +242,7 @@ struct HeldStageIIInitialization {
     std::vector<HeldStageIIAttempt> attempts;
     std::vector<HeldStageIICut> cuts;
     HeldOuterResult outer{};
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct HeldStageIILowerSearch {
@@ -251,6 +253,7 @@ struct HeldStageIILowerSearch {
     std::vector<HeldStageIIAttempt> attempts;
     std::vector<HeldStageIICut> accepted_cuts;
     int starts_completed = 0;
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct HeldCandidateInput {
@@ -304,6 +307,7 @@ struct HeldStageIIResult {
     std::vector<HeldStageIICut> cuts;
     std::vector<HeldStageIICut> candidates;
     std::vector<HeldStageIITrace> trace;
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct HeldStageIIICandidate {
@@ -355,6 +359,7 @@ struct HeldStageIIIResult {
     double composition_distance = 0.0;
     bool inactive_bounds = false;
     bool confirmation_succeeded = false;
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct HeldStageIIIAttempt {
@@ -368,6 +373,7 @@ struct HeldResult {
     HeldStageIResult stage_i{};
     HeldStageIIResult stage_ii{};
     std::vector<HeldStageIIIAttempt> stage_iii_attempts;
+    std::size_t eos_evaluation_count = 0;
 };
 
 [[nodiscard]] HeldOuterResult solve_held_outer_envelope(
@@ -375,14 +381,14 @@ struct HeldResult {
 );
 
 [[nodiscard]] HeldStageIIInitialization initialize_held_stage_ii_cuts(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
 );
 
 [[nodiscard]] HeldStageIILowerSearch search_held_stage_ii_lower(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -406,7 +412,7 @@ struct HeldResult {
 );
 
 [[nodiscard]] HeldStageIIResult solve_held_stage_ii(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
@@ -427,7 +433,7 @@ struct HeldResult {
 );
 
 [[nodiscard]] HeldStageIIIResult solve_held_stage_iii(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -436,14 +442,14 @@ struct HeldResult {
 );
 
 [[nodiscard]] HeldResult solve_held(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
 );
 
 [[nodiscard]] HeldStageIResult solve_held_stage_i(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero

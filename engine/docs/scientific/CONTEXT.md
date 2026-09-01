@@ -11,7 +11,7 @@ chemistry, parameter adoption, and downstream claims remain outside Engine.
 
 - Engine terminology and capability boundary: `engine/CONTEXT.md`
 - Stable semantic facts: `engine/ARCHITECTURE.yaml`
-- Formulation authority: `engine/docs/science/full-provider-eos.md`
+- Formulation authority: `engine/docs/science/full-eos.md`
 - Equation registry and synchronized views: `engine/docs/equations_registry.yaml`
   and `engine/docs/latex/`
 - Public API guide: `engine/docs/python-api.md`

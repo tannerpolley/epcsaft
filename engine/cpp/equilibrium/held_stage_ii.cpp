@@ -111,12 +111,13 @@ struct LowerRun {
     int iterations = 0;
     std::array<double, 2> initial_guess{};
     std::array<double, 2> variables{};
+    std::size_t eos_evaluation_count = 0;
 };
 
 class LowerTnlp final : public Ipopt::TNLP {
 public:
     LowerTnlp(
-        const ProviderContext& provider,
+        const epcsaft::NativeModel& eos,
         double temperature_k,
         double pressure_pa,
         double feed_x_component_zero,
@@ -125,7 +126,7 @@ public:
         std::array<double, 2> lower,
         std::array<double, 2> upper
     )
-        : provider_(provider),
+        : eos_(eos),
           temperature_k_(temperature_k),
           pressure_pa_(pressure_pa),
           feed_x_component_zero_(feed_x_component_zero),
@@ -301,11 +302,15 @@ public:
 
     [[nodiscard]] const std::array<double, 2>& solution() const { return solution_; }
     [[nodiscard]] const std::string& callback_error() const { return callback_error_; }
+    [[nodiscard]] std::size_t eos_evaluation_count() const {
+        return eos_evaluation_count_;
+    }
 
 private:
     [[nodiscard]] HeldLowerEvaluation evaluate(const Ipopt::Number* x) const {
+        ++eos_evaluation_count_;
         return evaluate_held_lower(
-            provider_,
+            eos_,
             temperature_k_,
             pressure_pa_,
             feed_x_component_zero_,
@@ -315,7 +320,7 @@ private:
         );
     }
 
-    const ProviderContext& provider_;
+    const epcsaft::NativeModel& eos_;
     double temperature_k_;
     double pressure_pa_;
     double feed_x_component_zero_;
@@ -325,10 +330,11 @@ private:
     std::array<double, 2> upper_;
     std::array<double, 2> solution_{};
     std::string callback_error_;
+    mutable std::size_t eos_evaluation_count_ = 0;
 };
 
 LowerRun run_lower_ipopt(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -338,7 +344,7 @@ LowerRun run_lower_ipopt(
     const std::array<double, 2>& upper
 ) {
     auto* raw_problem = new LowerTnlp(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed_x_component_zero,
@@ -363,6 +369,7 @@ LowerRun run_lower_ipopt(
     result.solver_converged = status == Ipopt::Solve_Succeeded;
     result.variables = raw_problem->solution();
     result.callback_error = raw_problem->callback_error();
+    result.eos_evaluation_count = raw_problem->eos_evaluation_count();
     const Ipopt::SmartPtr<Ipopt::SolveStatistics> statistics = application->Statistics();
     if (IsValid(statistics)) {
         result.iterations = statistics->IterationCount();
@@ -474,7 +481,7 @@ double relative_density_difference(double left_volume, double right_volume) {
 }  // namespace
 
 HeldLowerEvaluation evaluate_held_lower(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -486,7 +493,7 @@ HeldLowerEvaluation evaluate_held_lower(
         throw std::invalid_argument("HELD lower feed and multiplier must be finite");
     }
     HeldStateEvaluation state = evaluate_held_state(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         x_component_zero,
@@ -603,7 +610,7 @@ HeldOuterResult solve_held_outer_envelope(const std::vector<HeldOuterCut>& cuts)
 }
 
 HeldStageIIInitialization initialize_held_stage_ii_cuts(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
@@ -634,7 +641,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
 
     for (const auto& [role, endpoint, composition, initial_log_volume] : starts) {
         LowerRun run = run_lower_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             feed_x_component_zero,
@@ -643,6 +650,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
             {composition, std::log(kVolumeLowerM3PerMol)},
             {composition, std::log(kVolumeUpperM3PerMol)}
         );
+        result.eos_evaluation_count += run.eos_evaluation_count;
         HeldStageIIAttempt attempt;
         attempt.role = role;
         attempt.initial_guess = run.initial_guess;
@@ -654,7 +662,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
         if (run.solver_converged && run.callback_error.empty()) {
             try {
                 evaluation = evaluate_held_lower(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     feed_x_component_zero,
@@ -662,6 +670,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
                     composition,
                     run.variables[1]
                 );
+                result.eos_evaluation_count += evaluation.state.eos.evaluations.total();
                 attempt.accepted = locally_accepts(run, evaluation);
                 if (attempt.accepted) {
                     attempt.objective = evaluation.objective;
@@ -719,7 +728,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
 }
 
 HeldStageIILowerSearch search_held_stage_ii_lower(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -756,7 +765,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
     for (std::size_t index = 0; index < result.planned_starts.size(); ++index) {
         const HeldStageIIStart& start = result.planned_starts[index];
         LowerRun run = run_lower_ipopt(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             feed_x_component_zero,
@@ -765,6 +774,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
             lower,
             upper
         );
+        result.eos_evaluation_count += run.eos_evaluation_count;
         HeldStageIIAttempt attempt;
         attempt.role = start.role;
         attempt.initial_guess = run.initial_guess;
@@ -776,7 +786,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
         if (run.solver_converged && run.callback_error.empty()) {
             try {
                 evaluation = evaluate_held_lower(
-                    provider,
+                    eos,
                     temperature_k,
                     pressure_pa,
                     feed_x_component_zero,
@@ -784,6 +794,7 @@ HeldStageIILowerSearch search_held_stage_ii_lower(
                     run.variables[0],
                     run.variables[1]
                 );
+                result.eos_evaluation_count += evaluation.state.eos.evaluations.total();
                 attempt.accepted = locally_accepts(run, evaluation);
                 if (attempt.accepted) {
                     attempt.objective = evaluation.objective;
@@ -919,7 +930,7 @@ std::string held_stage_ii_budget_status(
 namespace {
 
 HeldStageIIResult solve_held_stage_ii_impl(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero,
@@ -927,11 +938,12 @@ HeldStageIIResult solve_held_stage_ii_impl(
 ) {
     HeldStageIIResult result;
     const HeldStageIResult stage_i = solve_held_stage_i(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed_x_component_zero
     );
+    result.eos_evaluation_count = stage_i.eos_evaluation_count;
     if (controller != nullptr) {
         controller->stage_i = stage_i;
     }
@@ -947,11 +959,12 @@ HeldStageIIResult solve_held_stage_ii_impl(
     }
 
     HeldStageIIInitialization initialization = initialize_held_stage_ii_cuts(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed_x_component_zero
     );
+    result.eos_evaluation_count += initialization.eos_evaluation_count;
     result.endpoint_attempts = std::move(initialization.attempts);
     result.cuts = std::move(initialization.cuts);
     if (initialization.status != "initialized") {
@@ -986,7 +999,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
             "major_" + (major_iteration < 10 ? std::string("0") : std::string())
             + std::to_string(major_iteration);
         HeldStageIILowerSearch lower = search_held_stage_ii_lower(
-            provider,
+            eos,
             temperature_k,
             pressure_pa,
             feed_x_component_zero,
@@ -995,6 +1008,7 @@ HeldStageIIResult solve_held_stage_ii_impl(
             previous_states,
             identity_prefix
         );
+        result.eos_evaluation_count += lower.eos_evaluation_count;
         std::vector<std::string> accepted_cut_ids;
         accepted_cut_ids.reserve(lower.accepted_cuts.size());
         for (HeldStageIICut& cut : lower.accepted_cuts) {
@@ -1086,13 +1100,14 @@ HeldStageIIResult solve_held_stage_ii_impl(
                 });
             }
             HeldStageIIIResult refinement = solve_held_stage_iii(
-                provider,
+                eos,
                 temperature_k,
                 pressure_pa,
                 feed_x_component_zero,
                 result.upper_bound,
                 stage_iii_candidates
             );
+            result.eos_evaluation_count += refinement.eos_evaluation_count;
             result.trace.back().stage_iii_outcome = refinement.outcome;
             result.trace.back().stage_iii_failure_reason = refinement.failure_reason;
             controller->stage_iii_attempts.push_back({std::move(refinement)});
@@ -1124,13 +1139,13 @@ HeldStageIIResult solve_held_stage_ii_impl(
 }  // namespace
 
 HeldStageIIResult solve_held_stage_ii(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
 ) {
     return solve_held_stage_ii_impl(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed_x_component_zero,
@@ -1139,19 +1154,20 @@ HeldStageIIResult solve_held_stage_ii(
 }
 
 HeldResult solve_held(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     double temperature_k,
     double pressure_pa,
     double feed_x_component_zero
 ) {
     HeldResult result;
     result.stage_ii = solve_held_stage_ii_impl(
-        provider,
+        eos,
         temperature_k,
         pressure_pa,
         feed_x_component_zero,
         &result
     );
+    result.eos_evaluation_count = result.stage_ii.eos_evaluation_count;
     result.search_status = result.stage_ii.search_status;
     result.failure_reason = result.stage_ii.failure_reason;
     if (result.stage_ii.outcome == "not_required") {

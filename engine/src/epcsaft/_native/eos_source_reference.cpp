@@ -1,4 +1,4 @@
-#include "provider.hpp"
+#include "eos.hpp"
 
 #include "density.hpp"
 #include "electrolyte_reference.hpp"
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace epcsaft_engine::equilibrium {
+namespace epcsaft {
 namespace {
 
 struct NeutralReferenceBasis final {
@@ -190,36 +190,36 @@ bool sha256_fingerprint_valid(const std::string& fingerprint) {
 }  // namespace
 
 // EqID: declared_solvent_source_reference_transfer
-SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
+NativeSourceReferenceResult NativeModel::evaluate_source_reference_transfer(
     double temperature_k,
     double pressure_pa,
-    const SourceReferenceRequest& request
+    const NativeSourceReferenceRequest& request
 ) const {
-    SourceReferenceResult result;
+    NativeSourceReferenceResult result;
     const auto fail = [&](int status, const std::string& message) {
         result.status = status;
         result.error = message;
         return result;
     };
-    if (!model_.supports_electrolyte_transport()
-        || metadata().topology_fingerprint.empty()
-        || !std::isfinite(metadata().temperature_min_k)
-        || !std::isfinite(metadata().temperature_max_k)
-        || !std::isfinite(metadata().pressure_min_pa)
-        || !std::isfinite(metadata().pressure_max_pa)) {
+    if (!supports_electrolyte_transport()
+        || eos_metadata().topology_fingerprint.empty()
+        || !std::isfinite(eos_metadata().temperature_min_k)
+        || !std::isfinite(eos_metadata().temperature_max_k)
+        || !std::isfinite(eos_metadata().pressure_min_pa)
+        || !std::isfinite(eos_metadata().pressure_max_pa)) {
         return fail(
             SOURCE_REFERENCE_MISSING_MODEL,
             "source-reference model identity is incompatible"
         );
     }
-    const bool candidate = !metadata().candidate_qualification.empty();
+    const bool candidate = !eos_metadata().candidate_qualification.empty();
     if (candidate && (
-            metadata().candidate_qualification != "candidate_extrapolation"
-            || !sha256_fingerprint_valid(metadata().candidate_source_fingerprint)
-            || !std::isfinite(metadata().source_temperature_min_k)
-            || !std::isfinite(metadata().source_temperature_max_k)
-            || !std::isfinite(metadata().source_pressure_min_pa)
-            || !std::isfinite(metadata().source_pressure_max_pa))) {
+            eos_metadata().candidate_qualification != "candidate_extrapolation"
+            || !sha256_fingerprint_valid(eos_metadata().candidate_source_fingerprint)
+            || !std::isfinite(eos_metadata().source_temperature_min_k)
+            || !std::isfinite(eos_metadata().source_temperature_max_k)
+            || !std::isfinite(eos_metadata().source_pressure_min_pa)
+            || !std::isfinite(eos_metadata().source_pressure_max_pa))) {
         return fail(
             SOURCE_REFERENCE_MISSING_MODEL,
             "candidate source-reference identity is incomplete"
@@ -232,16 +232,16 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             "source-reference temperature and pressure must be positive and finite"
         );
     }
-    if (temperature_k < metadata().temperature_min_k
-        || temperature_k > metadata().temperature_max_k
-        || pressure_pa < metadata().pressure_min_pa
-        || pressure_pa > metadata().pressure_max_pa) {
+    if (temperature_k < eos_metadata().temperature_min_k
+        || temperature_k > eos_metadata().temperature_max_k
+        || pressure_pa < eos_metadata().pressure_min_pa
+        || pressure_pa > eos_metadata().pressure_max_pa) {
         return fail(
             SOURCE_REFERENCE_DOMAIN_REJECTION,
-            "source-reference trial state is outside the Provider domain"
+            "source-reference trial state is outside the EOS domain"
         );
     }
-    const std::size_t component_count = model_.component_count();
+    const std::size_t component_count = this->component_count();
     const std::size_t row_count = component_count - 1u;
     if (request.component_ids.size() != component_count
         || request.source_solvent_mole_fractions.size() != component_count
@@ -253,7 +253,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             "source-reference component dimensions do not match"
         );
     }
-    if (request.component_ids != model_.component_ids()) {
+    if (request.component_ids != component_ids()) {
         return fail(
             SOURCE_REFERENCE_COMPONENT_MISMATCH,
             "source-reference component order does not match"
@@ -290,14 +290,14 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
         (request.required_derivatives & parameter_derivative) != 0u;
     if ((request.required_derivatives & ~supported_derivatives) != 0u
         || (parameter_derivatives_requested
-            && model_.active_coordinates().empty())) {
+            && active_coordinates().empty())) {
         return fail(
             SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE,
             "required source-reference derivative is unavailable"
         );
     }
     const std::size_t active_parameter_count =
-        model_.active_coordinates().size();
+        active_coordinates().size();
     try {
         std::vector<double> source_composition(
             request.source_solvent_mole_fractions
@@ -306,7 +306,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
         for (std::size_t component = 0; component < component_count; ++component) {
             const double fraction = source_composition[component];
             if (!std::isfinite(fraction) || fraction < 0.0
-                || (model_.charge_numbers()[component] != 0
+                || (charge_numbers()[component] != 0
                     && fraction != 0.0)) {
                 return fail(
                     SOURCE_REFERENCE_INVALID_SOURCE,
@@ -336,7 +336,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             const std::size_t component = request.pure_component_indices[index];
             const std::string& phase = request.pure_component_phases[index];
             if (component >= component_count
-                || model_.charge_numbers()[component] != 0
+                || charge_numbers()[component] != 0
                 || pure_component[component]
                 || (phase != "liquid" && phase != "vapor")) {
                 return fail(
@@ -366,8 +366,8 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             });
         }
         const auto reference_basis = make_neutral_reference_basis(
-            model_.component_ids(),
-            model_.charge_numbers(),
+            component_ids(),
+            charge_numbers(),
             source_composition,
             ion_pairs
         );
@@ -377,7 +377,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                 "source-reference ion pairs do not define a full neutral basis"
             );
         }
-        const auto& molar_masses = model_.molar_masses_kg_per_mol();
+        const auto& molar_masses = molar_masses_kg_per_mol();
         const double solvent_molar_mass = std::inner_product(
             source_composition.begin(),
             source_composition.end(),
@@ -445,14 +445,16 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             const std::vector<double> density_anchor_composition =
                 reference_composition(
                     neutral_trace_stoichiometry,
-                    epcsaft::detail::REFERENCE_MOLALITIES[2]
+                    detail::REFERENCE_MOLALITIES[2]
                 );
-            density_anchor = model_.evaluate_pressure(
+            const NativeResult anchor = evaluate_pressure(
                 temperature_k,
                 pressure_pa,
                 density_anchor_composition,
                 "liquid"
             );
+            result.evaluations.state += anchor.eos_evaluation_count;
+            density_anchor = anchor;
         }
         const auto phase_fugacity_derivatives =
             [&](const std::vector<double>& composition,
@@ -460,7 +462,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                 bool use_density_anchor) {
                 const auto state = density_anchor.has_value()
                         && use_density_anchor
-                    ? model_.evaluate_pressure_continuation(
+                    ? evaluate_pressure_continuation(
                         temperature_k,
                         pressure_pa,
                         composition,
@@ -471,12 +473,13 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                         density_anchor->density_diagnostics
                             ->certified_origin_molar_density
                     )
-                    : model_.evaluate_pressure(
+                    : evaluate_pressure(
                         temperature_k,
                         pressure_pa,
                         composition,
                         phase_branch
                     );
+                result.evaluations.state += state.eos_evaluation_count;
                 if (!state.log_fugacity_coefficient.has_value()) {
                     throw std::runtime_error(
                         "source-reference fugacity is unavailable"
@@ -500,12 +503,15 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                 std::vector<std::size_t> support_coordinates(
                     component_count, absent_coordinate
                 );
+                std::vector<std::size_t> supported_component_indices;
+                supported_component_indices.reserve(component_count);
                 std::size_t support_count = 0u;
                 for (std::size_t component = 0;
                      component < component_count;
                      ++component) {
                     if (composition[component] > 0.0) {
                         support_coordinates[component] = support_count++;
+                        supported_component_indices.push_back(component);
                     }
                     std::fill(
                         values.begin()
@@ -520,14 +526,16 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                     );
                 }
                 const double volume_m3 = 1.0 / state.molar_density;
-                const epcsaft::NativeMixturePhaseBlock phase =
-                    model_.evaluate_supported_phase_derivatives(
+                const NativeMixturePhaseBlock phase =
+                    evaluate_supported_phase_derivatives(
                         temperature_k,
                         composition,
                         volume_m3,
-                        metadata().ion_mole_fraction_max,
-                        model_.active_coordinates()
+                        eos_metadata().ion_mole_fraction_max,
+                        active_coordinates(),
+                        supported_component_indices
                     );
+                ++result.evaluations.state;
                 const std::size_t state_count = support_count + 1u;
                 const std::size_t width =
                     state_count + active_parameter_count;
@@ -538,7 +546,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                 }
                 const std::size_t volume_coordinate = support_count;
                 const double pressure_volume_derivative =
-                    -epcsaft::detail::GAS_CONSTANT * temperature_k
+                    -detail::GAS_CONSTANT * temperature_k
                     * phase.hessian[
                         volume_coordinate * width + volume_coordinate
                     ];
@@ -635,7 +643,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             }
         };
         double reference_molality =
-            epcsaft::detail::REFERENCE_MOLALITIES.back();
+            detail::REFERENCE_MOLALITIES.back();
         double convergence_error = 0.0;
         std::vector<double> neutral_values(
             reference_basis.neutral_components.size() * derivative_stride,
@@ -697,8 +705,8 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             };
             return pressure_derivatives_requested
                     || parameter_derivatives_requested
-                ? epcsaft::detail::reference_limit_terminal_pair(evaluate_limit)
-                : epcsaft::detail::reference_limit_sequence(evaluate_limit);
+                ? detail::reference_limit_terminal_pair(evaluate_limit)
+                : detail::reference_limit_sequence(evaluate_limit);
         };
         const double neutral_trace_formula_moles = std::accumulate(
             neutral_trace_stoichiometry.begin(),
@@ -846,29 +854,29 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
         result.solvent_molar_mass_kg_per_mol = solvent_molar_mass;
         result.reference_limit_molality_mol_per_kg = reference_molality;
         result.reference_convergence_error = convergence_error;
-        result.source_temperature_min_k = metadata().source_temperature_min_k;
-        result.source_temperature_max_k = metadata().source_temperature_max_k;
-        result.source_pressure_min_pa = metadata().source_pressure_min_pa;
-        result.source_pressure_max_pa = metadata().source_pressure_max_pa;
-        result.candidate_temperature_min_k = metadata().temperature_min_k;
-        result.candidate_temperature_max_k = metadata().temperature_max_k;
-        result.candidate_pressure_min_pa = metadata().pressure_min_pa;
-        result.candidate_pressure_max_pa = metadata().pressure_max_pa;
-        result.candidate_qualification = metadata().candidate_qualification;
+        result.source_temperature_min_k = eos_metadata().source_temperature_min_k;
+        result.source_temperature_max_k = eos_metadata().source_temperature_max_k;
+        result.source_pressure_min_pa = eos_metadata().source_pressure_min_pa;
+        result.source_pressure_max_pa = eos_metadata().source_pressure_max_pa;
+        result.candidate_temperature_min_k = eos_metadata().temperature_min_k;
+        result.candidate_temperature_max_k = eos_metadata().temperature_max_k;
+        result.candidate_pressure_min_pa = eos_metadata().pressure_min_pa;
+        result.candidate_pressure_max_pa = eos_metadata().pressure_max_pa;
+        result.candidate_qualification = eos_metadata().candidate_qualification;
         result.candidate_source_fingerprint =
-            metadata().candidate_source_fingerprint;
-        result.parameter_fingerprint = metadata().parameter_fingerprint;
-        result.topology_fingerprint = metadata().topology_fingerprint;
+            eos_metadata().candidate_source_fingerprint;
+        result.parameter_fingerprint = eos_metadata().parameter_fingerprint;
+        result.topology_fingerprint = eos_metadata().topology_fingerprint;
         result.component_order_fingerprint =
-            metadata().component_order_fingerprint;
+            eos_metadata().component_order_fingerprint;
         result.reference_state_fingerprint =
             request.reference_state_fingerprint;
-        result.domain_fingerprint = metadata().domain_fingerprint;
-        result.artifact_fingerprint = metadata().artifact_fingerprint;
-        result.helmholtz_basis_id = PROVIDER_HELMHOLTZ_BASIS_ID;
+        result.domain_fingerprint = eos_metadata().domain_fingerprint;
+        result.artifact_fingerprint = eos_metadata().artifact_fingerprint;
+        result.helmholtz_basis_id = EOS_HELMHOLTZ_BASIS_ID;
         result.status = SOURCE_REFERENCE_OK;
         return result;
-    } catch (const epcsaft::detail::DensityDomainError& error) {
+    } catch (const detail::DensityDomainError& error) {
         return fail(SOURCE_REFERENCE_DOMAIN_REJECTION, error.what());
     } catch (const std::invalid_argument& error) {
         return fail(SOURCE_REFERENCE_INVALID_SOURCE, error.what());
@@ -893,4 +901,4 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
     }
 }
 
-}  // namespace epcsaft_engine::equilibrium
+}  // namespace epcsaft

@@ -17,7 +17,7 @@ struct Held2Phase {
     std::uint64_t stable_id = 0;
     double phase_fraction = 0.0;
     std::vector<double> independent_modified_fractions;
-    std::vector<double> physical_fractions_provider_order;
+    std::vector<double> physical_fractions_eos_order;
     double volume = 0.0;
     double packing_fraction = 0.0;
     double helmholtz_over_rt_reference_amount = 0.0;
@@ -50,9 +50,9 @@ struct Held2Step8Result {
     double neighborhood_radius = kHeld2Problem67InitialRadius;
     bool warm_start_used = false;
     bool cold_fallback_used = false;
-    std::uint64_t provider_state_evaluations = 0;
-    std::uint64_t provider_volume_bound_evaluations = 0;
-    std::uint64_t provider_packing_evaluations = 0;
+    std::uint64_t eos_state_evaluations = 0;
+    std::uint64_t eos_volume_bound_evaluations = 0;
+    std::uint64_t eos_packing_evaluations = 0;
     std::optional<double> total_reduced_gibbs;
     double ordinary_balance_inf = std::numeric_limits<double>::infinity();
     double electroneutrality_inf = std::numeric_limits<double>::infinity();
@@ -68,13 +68,13 @@ struct Held2Step8Result {
 class Held2AlgorithmCache {
 public:
     Held2AlgorithmCache(
-        std::string provider_fingerprint,
+        std::string eos_fingerprint,
         Held2StateEvaluator state_evaluator,
         Held2VolumeBoundsEvaluator volume_bounds_evaluator,
         Held2PackingFractionEvaluator packing_fraction_evaluator
     );
-    [[nodiscard]] const std::string& provider_fingerprint() const noexcept {
-        return provider_fingerprint_;
+    [[nodiscard]] const std::string& eos_fingerprint() const noexcept {
+        return eos_fingerprint_;
     }
     [[nodiscard]] Held2StateEvaluation evaluate_state(
         const std::vector<double>& composition,
@@ -90,18 +90,18 @@ public:
         const std::vector<double>& composition,
         std::array<double, 2> bounds
     );
-    [[nodiscard]] std::uint64_t provider_state_evaluations() const {
-        return provider_state_evaluations_;
+    [[nodiscard]] std::uint64_t eos_state_evaluations() const {
+        return eos_state_evaluations_;
     }
-    [[nodiscard]] std::uint64_t provider_volume_bound_evaluations() const {
-        return provider_volume_bound_evaluations_;
+    [[nodiscard]] std::uint64_t eos_volume_bound_evaluations() const {
+        return eos_volume_bound_evaluations_;
     }
     [[nodiscard]] double evaluate_packing_fraction(
         const std::vector<double>& composition,
         double volume
     );
-    [[nodiscard]] std::uint64_t provider_packing_evaluations() const {
-        return provider_packing_evaluations_;
+    [[nodiscard]] std::uint64_t eos_packing_evaluations() const {
+        return eos_packing_evaluations_;
     }
     [[nodiscard]] const Held2Step8Result* find_problem(
         const std::vector<std::uint64_t>& candidate_ids,
@@ -185,10 +185,10 @@ private:
     > volume_bounds_;
     std::unordered_map<PackingKey, double, PackingHash> packing_fractions_;
     std::unordered_map<ProblemKey, Held2Step8Result, ProblemHash> problems_;
-    std::uint64_t provider_state_evaluations_ = 0;
-    std::uint64_t provider_volume_bound_evaluations_ = 0;
-    std::uint64_t provider_packing_evaluations_ = 0;
-    std::string provider_fingerprint_;
+    std::uint64_t eos_state_evaluations_ = 0;
+    std::uint64_t eos_volume_bound_evaluations_ = 0;
+    std::uint64_t eos_packing_evaluations_ = 0;
+    std::string eos_fingerprint_;
     Held2StateEvaluator state_evaluator_;
     Held2VolumeBoundsEvaluator volume_bounds_evaluator_;
     Held2PackingFractionEvaluator packing_fraction_evaluator_;

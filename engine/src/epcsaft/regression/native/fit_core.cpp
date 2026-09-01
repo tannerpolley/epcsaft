@@ -252,8 +252,8 @@ OwnerEvaluation select_grepe(const GrepeExperiment &experiment,
   if (!equilibrium.accepted) {
     std::string code = native.failure_code;
     if (code.empty()) {
-      code = equilibrium.provider_domain_status == "failed"
-                 ? "provider_domain_rejection"
+      code = equilibrium.eos_domain_status == "failed"
+                 ? "eos_domain_rejection"
                  : equilibrium.physical_status == "failed"
                        ? "physical_rejection"
                        : "numerical_convergence_failure";
@@ -389,7 +389,7 @@ public:
       }
       return reject(error.code(), error.what(), current_failure);
     } catch (const std::domain_error &error) {
-      return reject("provider_domain_rejection", error.what(), current_failure);
+      return reject("eos_domain_rejection", error.what(), current_failure);
     }
   }
 
@@ -1504,8 +1504,8 @@ private:
       return true;
     } catch (const epcsaft_engine::equilibrium::GrepeFailure &error) {
       return reject(error.code(), error.what());
-    } catch (const epcsaft_engine::equilibrium::ProviderDomainError &error) {
-      return reject("provider_domain_rejection", error.what());
+    } catch (const epcsaft::EosDomainError &error) {
+      return reject("eos_domain_rejection", error.what());
     } catch (const std::invalid_argument &error) {
       return reject("owner_contract_failure", error.what());
     }

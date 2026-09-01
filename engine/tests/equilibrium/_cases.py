@@ -56,7 +56,7 @@ def finite_phase_case() -> tuple[
                 "liquid",
                 "finite",
                 equilibrium.AllComponents(),
-                equilibrium.ProviderModel((1.0e-8, 0.74), "installed-provider-eos"),
+                equilibrium.EosModel((1.0e-8, 0.74), "installed-eos"),
                 equilibrium.FinitePhaseStart(
                     amounts,
                     1.0 / float(state.molar_density.to("mole / meter**3").magnitude),
@@ -133,9 +133,9 @@ def ionic_reaction_case(
             equilibrium.ChemicalEquilibriumConstant(
                 math.log(4.0),
                 "manufactured-reaction",
-                "provider-helmholtz-coordinate-basis",
+                "eos-helmholtz-coordinate-basis",
                 "products_positive",
-                "already-provider-basis",
+                "already-eos-basis",
                 True,
             ),
         ),
@@ -146,7 +146,7 @@ def ionic_reaction_case(
         "vapor",
         "finite",
         equilibrium.AllComponents(),
-        equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis"),
+        equilibrium.IdealGasModel("eos-helmholtz-coordinate-basis"),
         equilibrium.FinitePhaseStart(
             tuple(0.2 if identity == "water" else 0.9 for identity in order), 1.0
         ),
@@ -191,9 +191,9 @@ def multineutral_reaction() -> equilibrium.ChemicalEquilibriumProblem:
             equilibrium.ChemicalEquilibriumConstant(
                 -269.6037501925047,
                 "manufactured-reaction",
-                "provider-helmholtz-coordinate-basis",
+                "eos-helmholtz-coordinate-basis",
                 "products_positive",
-                "already-provider-basis",
+                "already-eos-basis",
                 True,
             ),
         ),
@@ -217,16 +217,16 @@ def solved_pressure_case(
             "liquid",
             "finite",
             equilibrium.AllComponents(),
-            equilibrium.ProviderModel((1.0e-6, 0.70), "installed-provider-eos"),
+            equilibrium.EosModel((1.0e-6, 0.70), "installed-eos"),
         ),
         equilibrium.ReactivePhase(
             "incipient-vapor",
             "vapor",
             "incipient",
             equilibrium.DeclaredNeutralComponents(("solvent", "cosolvent")),
-            equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis")
+            equilibrium.IdealGasModel("eos-helmholtz-coordinate-basis")
             if ideal_vapor
-            else equilibrium.ProviderModel((1.0e-6, 0.70), "installed-provider-eos"),
+            else equilibrium.EosModel((1.0e-6, 0.70), "installed-eos"),
         ),
     )
     outputs = (
@@ -291,7 +291,7 @@ def ideal_uptake_case() -> tuple[
         "vapor",
         "finite",
         equilibrium.AllComponents(),
-        equilibrium.IdealGasModel("provider-helmholtz-coordinate-basis"),
+        equilibrium.IdealGasModel("eos-helmholtz-coordinate-basis"),
     )
     problem = equilibrium.GeneralReactiveEquilibriumProblem(
         "analytic-open-component",
@@ -332,7 +332,7 @@ def ideal_uptake_case() -> tuple[
     return model, problem, expected
 
 
-def provider_boundary_case() -> tuple[
+def eos_boundary_case() -> tuple[
     epcsaft.Parameters,
     epcsaft.Mixture,
     equilibrium.GeneralReactiveEquilibriumProblem,
@@ -346,7 +346,7 @@ def provider_boundary_case() -> tuple[
         "liquid",
         "finite",
         equilibrium.AllComponents(),
-        equilibrium.ProviderModel((1.0e-6, 0.74), "installed-provider-eos"),
+        equilibrium.EosModel((1.0e-6, 0.74), "installed-eos"),
     )
     problem = equilibrium.GeneralReactiveEquilibriumProblem(
         "open-component-response",
@@ -405,7 +405,7 @@ def temperature_boundary_case(
             role,
             "finite" if index == reference_index else "incipient",
             equilibrium.AllComponents(),
-            equilibrium.ProviderModel((1.0e-9, 0.74), "installed-provider-eos"),
+            equilibrium.EosModel((1.0e-9, 0.74), "installed-eos"),
         )
         for index, role in enumerate(("liquid", "vapor"))
     )

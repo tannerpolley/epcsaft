@@ -98,7 +98,7 @@ class NativeModel:
     def with_parameter_identities(
         self, component_ids: Sequence[str], site_ids: Sequence[str]
     ) -> NativeModel: ...
-    def with_provider_metadata(
+    def with_eos_metadata(
         self,
         parameter_fingerprint: str,
         temperature_min_k: float,
@@ -133,16 +133,7 @@ class NativeModel:
         temperature: float,
         mole_fractions: Sequence[float],
         molar_volume: float,
-        ion_mole_fraction_max: float,
     ) -> Mapping[str, Any]: ...
-    def molar_volume_bounds(
-        self,
-        temperature_k: float,
-        composition: Sequence[float],
-        packing_fraction_min: float,
-        packing_fraction_max: float,
-        ion_mole_fraction_max: float,
-    ) -> Sequence[float]: ...
     def molar_density_upper_bound(
         self, temperature_k: float, composition: Sequence[float]
     ) -> float: ...
@@ -258,7 +249,7 @@ class _ReactiveFinitePhaseResult:
     failure_reason: str
     numerical_status: str
     physical_status: str
-    provider_domain_status: str
+    eos_domain_status: str
     resolved_policy: Sequence[tuple[str, float]]
     phase_amounts_mol: Sequence[Sequence[float]]
     phase_volumes_m3: Sequence[float]
@@ -301,7 +292,7 @@ class _ReactiveFinitePhaseResult:
     declared_direction_rank: int
     admissible_nullity: int
     optimizer_iterations: int
-    provider_evaluation_count: int
+    eos_evaluation_count: int
     derivative_audits_performed: bool
     derivative_audit_status: str
     objective_gradient_audit_max_relative_error: float

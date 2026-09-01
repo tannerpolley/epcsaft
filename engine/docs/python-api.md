@@ -2,7 +2,7 @@
 
 `epcsaft` owns one strict parameter document, one EOS, and one installed wheel.
 It does not discover catalogs, sibling checkouts, callbacks, or alternate
-providers.
+EOS implementations.
 
 ## Parameters
 
@@ -191,4 +191,4 @@ public route.
 The compiled EOS and solver code is private to the wheel. Python consumers use
 `Parameters`, `Pure`, `Mixture`, `State`, and the public Equilibrium and
 Regression modules. Raw native slots, capability callbacks, C headers, and
-provider capsules are not public interfaces.
+eos capsules are not public interfaces.

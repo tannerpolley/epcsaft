@@ -269,10 +269,10 @@ bool same_coordinates(
     if (left.charges != right.charges
         || left.eliminated_index != right.eliminated_index
         || left.dependent_index != right.dependent_index
-        || left.paper_to_provider_indices
-            != right.paper_to_provider_indices
-        || left.provider_to_paper_indices
-            != right.provider_to_paper_indices
+        || left.paper_to_eos_indices
+            != right.paper_to_eos_indices
+        || left.eos_to_paper_indices
+            != right.eos_to_paper_indices
         || left.compact_to_paper_indices
             != right.compact_to_paper_indices
         || left.retained_indices != right.retained_indices
@@ -1452,12 +1452,12 @@ Held2Step5Result run_held2_step5(
             const std::vector<double>& composition,
             double log_volume
         ) {
-            ++result.timing.provider_evaluations;
+            ++result.timing.eos_evaluations;
             return evaluator(composition, log_volume);
         };
     const Held2VolumeBoundsEvaluator counted_volume_bounds =
         [&step1, &result](const std::vector<double>& composition) {
-            ++result.timing.provider_evaluations;
+            ++result.timing.eos_evaluations;
             return (*step1.volume_bounds)(composition);
         };
     if (!state.step5_volume_bounds) {
@@ -1674,7 +1674,7 @@ Held2Step5Result run_held2_step5(
                     face_evidence.coordinate_indices.push_back(
                         coordinate
                     );
-                    face_evidence.provider_component_indices.push_back(
+                    face_evidence.eos_component_indices.push_back(
                         coordinates.independent_indices[coordinate]
                     );
                     face_evidence.lower_bound_distances.push_back(

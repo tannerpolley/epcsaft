@@ -3,6 +3,7 @@ Kind: computational-architecture
 
 - Status: accepted
 - Date: 2026-08-27
+- Amended: 2026-08-31 for issue #156
 
 ## Context
 
@@ -23,6 +24,15 @@ and `regression_core`. Equilibrium may consume EOS; Regression may consume EOS
 and Equilibrium; `_core` consumes all three. Reverse and sibling edges are
 forbidden. Python C-API, pybind11, GIL, capsule, private-transport ABI, and
 iterative Python callback edges are forbidden inside the three libraries.
+
+Within that graph, immutable `epcsaft::NativeModel` is the sole EOS evaluation
+owner. `eos_core` validates EOS domains and metadata, selects pure, neutral,
+associating, or electrolyte kernels, returns named physical EOS quantities and
+requested exact partials, performs source-reference transfer, and reports
+primitive evaluation counts. Equilibrium combines those named results into
+HELD, HELD2, Problem (67), GREPE, conservation, KKT, continuation,
+certification, and solved-state sensitivity calculations; it does not own a
+second EOS façade, route selector, physical projection, or mutable EOS counter.
 
 The compiled GREPE request structure is source-linked and lives for one public
 solve or one distinct concrete Regression experiment structure. Retained

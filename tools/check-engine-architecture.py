@@ -205,16 +205,16 @@ def validate_sibling_edges(
         for owner, fields in archives.items()
     }
     intersections = {
-        (consumer, provider): undefined[consumer] & defined[provider]
+        (consumer, eos): undefined[consumer] & defined[eos]
         for consumer in archives
-        for provider in archives
-        if consumer != provider
+        for eos in archives
+        if consumer != eos
     }
-    for (consumer, provider), symbols in intersections.items():
-        expected = provider in EXPECTED_SIBLING_EDGES[consumer]
+    for (consumer, eos), symbols in intersections.items():
+        expected = eos in EXPECTED_SIBLING_EDGES[consumer]
         require(
             bool(symbols) == expected,
-            f"{consumer} -> {provider} symbol edge is "
+            f"{consumer} -> {eos} symbol edge is "
             f"{'missing' if expected else 'forbidden'}",
         )
     return intersections
@@ -599,8 +599,8 @@ def main() -> None:
     print(
         "sibling archive symbol intersections: "
         + ", ".join(
-            f"{consumer} -> {provider}={len(symbols)}"
-            for (consumer, provider), symbols in intersections.items()
+            f"{consumer} -> {eos}={len(symbols)}"
+            for (consumer, eos), symbols in intersections.items()
         )
     )
     print(

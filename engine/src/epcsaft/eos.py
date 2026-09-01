@@ -625,7 +625,7 @@ class _EosModel:
             parameters.component_ids,
             tuple(f"{component}/{site}" for component, site in model.site_ids),
         )
-        native = native.with_provider_metadata(
+        native = native.with_eos_metadata(
             parameters.fingerprint,
             math.nan if model.temperature_min_k is None else model.temperature_min_k,
             math.nan if model.temperature_max_k is None else model.temperature_max_k,
@@ -2206,7 +2206,6 @@ def _fixed_pressure_composition_derivatives(
 ) -> Mapping[str, object]:
     component_ids = owner._component_ids
     charge_numbers = owner._model.charge_number
-    ion_mole_fraction_max = owner._model.ion_mole_fraction_max
     charged = any(charge != 0 for charge in charge_numbers)
     constraints = ("normalization", "electroneutrality") if charged else ("normalization",)
     artifact = _python_native_artifact_fingerprint()
@@ -2226,13 +2225,12 @@ def _fixed_pressure_composition_derivatives(
         )
 
     if any(fraction <= 0.0 for fraction in fractions):
-        return unavailable("provider_domain_rejection")
+        return unavailable("eos_domain_rejection")
     try:
         projected = evaluator.evaluate_fixed_pressure_composition_derivatives(
             temperature_k,
             fractions,
             1.0 / molar_density,
-            math.nan if ion_mole_fraction_max is None else ion_mole_fraction_max,
         )
     except (RuntimeError, ValueError) as exc:
         return unavailable("native_residual_failure", diagnostic=str(exc))

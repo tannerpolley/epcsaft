@@ -2,7 +2,7 @@
 
 #include "chemical_equilibrium.hpp"
 #include "phase_equilibrium.hpp"
-#include "provider.hpp"
+#include "eos.hpp"
 
 #include <array>
 #include <cstddef>
@@ -48,7 +48,7 @@ struct GrepeSourceStandardState {
     std::string id;
     std::vector<double> log_activity_scale_factors;
     double reference_pressure_pa = 0.0;
-    SourceReferenceRequest reference;
+    epcsaft::NativeSourceReferenceRequest reference;
 };
 
 struct GrepeFeedCoordinate {

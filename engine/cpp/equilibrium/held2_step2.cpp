@@ -121,7 +121,7 @@ double direct_objective(
 Held2StageIDirectResult run_direct_search(
     std::size_t joint_dimension,
     int search_work_budget,
-    int provider_evaluations_per_trial,
+    int eos_evaluations_per_trial,
     const Held2StageIJointEvaluator& evaluator
 ) {
     Held2StageIDirectResult result;
@@ -130,7 +130,7 @@ Held2StageIDirectResult run_direct_search(
     optimizer.set_lower_bounds(std::vector<double>(joint_dimension, 0.0));
     optimizer.set_upper_bounds(std::vector<double>(joint_dimension, 1.0));
     optimizer.set_maxeval(
-        search_work_budget / provider_evaluations_per_trial
+        search_work_budget / eos_evaluations_per_trial
     );
     optimizer.set_min_objective(direct_objective, &context);
     std::vector<double> initial(joint_dimension, 0.5);
@@ -222,13 +222,13 @@ Held2Step2Result run_held2_step2(
     const std::vector<double>& feed = *step1.independent_feed;
     const Held2StateEvaluator counted = [&](const auto& composition,
                                              double log_volume) {
-        ++result.timing.provider_evaluations;
+        ++result.timing.eos_evaluations;
         return evaluator(composition, log_volume);
     };
     const auto enumerate_pressure_roots = [&](
         const std::vector<double>& composition
     ) {
-        ++result.timing.provider_evaluations;
+        ++result.timing.eos_evaluations;
         const std::array<double, 2> physical_bounds =
             (*step1.volume_bounds)(composition);
         return evaluate_held2_pressure_envelope(
@@ -309,7 +309,7 @@ Held2Step2Result run_held2_step2(
     const std::size_t dimension =
         step1.coordinates->independent_indices.size();
     const auto volume_bounds = [&](const auto& independent) {
-        ++result.timing.provider_evaluations;
+        ++result.timing.eos_evaluations;
         return (*step1.volume_bounds)(independent);
     };
     const auto evaluate_at = [&](
@@ -372,7 +372,7 @@ Held2Step2Result run_held2_step2(
                     )
                 ).passed) {
                 throw std::invalid_argument(
-                    "Step-2 joint state exceeds Provider ion domain"
+                    "Step-2 joint state exceeds EOS ion domain"
                 );
             }
             evaluation.tpd = evaluate_held2_tpd(
@@ -564,7 +564,7 @@ Held2Step2Result run_held2_step2(
         );
     };
     const std::uint64_t preparation_allowance_begin =
-        result.timing.provider_evaluations;
+        result.timing.eos_evaluations;
     ++result.timing.optimizer_solves;
     const Held2StageIJointEvaluation complete_witness = assess_search(
         run_direct_search(
@@ -586,11 +586,11 @@ Held2Step2Result run_held2_step2(
         }
         constexpr int kPreparationVolumeSamples = 65;
         constexpr int kPreparationRootRefinementLimit = 64;
-        constexpr int kPreparationProviderEvaluations =
+        constexpr int kPreparationEOSEvaluations =
             1 + kPreparationVolumeSamples
             + kPreparationRootRefinementLimit;
         const std::uint64_t preparation_allowance_consumed =
-            result.timing.provider_evaluations
+            result.timing.eos_evaluations
                 - preparation_allowance_begin;
         const int preparation_budget = preparation_allowance_consumed
                 >= static_cast<std::uint64_t>(search_work_budget)
@@ -598,7 +598,7 @@ Held2Step2Result run_held2_step2(
             : search_work_budget
                 - static_cast<int>(preparation_allowance_consumed);
         Held2StageIJointEvaluation prepared_witness;
-        if (preparation_budget >= kPreparationProviderEvaluations) {
+        if (preparation_budget >= kPreparationEOSEvaluations) {
             constexpr double kPromisingPreparationTpd = 0.2;
             const Held2StageIJointEvaluator prepare_composition = [
                 &evaluate_at,
@@ -710,7 +710,7 @@ Held2Step2Result run_held2_step2(
                 run_direct_search(
                     dimension,
                     preparation_budget,
-                    kPreparationProviderEvaluations,
+                    kPreparationEOSEvaluations,
                     prepare_composition
                 );
             prepared_witness = assess_search(

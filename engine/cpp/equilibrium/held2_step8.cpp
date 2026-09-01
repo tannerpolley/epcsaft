@@ -14,11 +14,11 @@ std::vector<double> independent(
 ) {
     std::vector<double> result;
     result.reserve(coordinates.independent_indices.size());
-    for (std::size_t provider : coordinates.independent_indices) {
+    for (std::size_t eos : coordinates.independent_indices) {
         const auto position = std::find(
             coordinates.retained_indices.begin(),
             coordinates.retained_indices.end(),
-            provider
+            eos
         );
         result.push_back(modified[static_cast<std::size_t>(
             position - coordinates.retained_indices.begin()
@@ -67,10 +67,10 @@ bool same_coordinates(
     if (left.charges != right.charges
         || left.eliminated_index != right.eliminated_index
         || left.dependent_index != right.dependent_index
-        || left.paper_to_provider_indices
-            != right.paper_to_provider_indices
-        || left.provider_to_paper_indices
-            != right.provider_to_paper_indices
+        || left.paper_to_eos_indices
+            != right.paper_to_eos_indices
+        || left.eos_to_paper_indices
+            != right.eos_to_paper_indices
         || left.compact_to_paper_indices
             != right.compact_to_paper_indices
         || left.retained_indices != right.retained_indices
@@ -116,8 +116,8 @@ void mix_coordinates(std::size_t& seed, const Held2Coordinates& coordinates) {
     mix_values(seed, coordinates.charges);
     mix_hash(seed, coordinates.eliminated_index);
     mix_hash(seed, coordinates.dependent_index);
-    mix_values(seed, coordinates.paper_to_provider_indices);
-    mix_values(seed, coordinates.provider_to_paper_indices);
+    mix_values(seed, coordinates.paper_to_eos_indices);
+    mix_values(seed, coordinates.eos_to_paper_indices);
     mix_values(seed, coordinates.compact_to_paper_indices);
     mix_values(seed, coordinates.retained_indices);
     mix_values(seed, coordinates.independent_indices);
@@ -189,19 +189,19 @@ std::size_t Held2AlgorithmCache::PackingHash::operator()(
 }
 
 Held2AlgorithmCache::Held2AlgorithmCache(
-    std::string provider_fingerprint,
+    std::string eos_fingerprint,
     Held2StateEvaluator state_evaluator,
     Held2VolumeBoundsEvaluator volume_bounds_evaluator,
     Held2PackingFractionEvaluator packing_fraction_evaluator
 )
-    : provider_fingerprint_(std::move(provider_fingerprint)),
+    : eos_fingerprint_(std::move(eos_fingerprint)),
       state_evaluator_(std::move(state_evaluator)),
       volume_bounds_evaluator_(std::move(volume_bounds_evaluator)),
       packing_fraction_evaluator_(std::move(packing_fraction_evaluator)) {
-    if (provider_fingerprint_.empty() || !state_evaluator_
+    if (eos_fingerprint_.empty() || !state_evaluator_
         || !volume_bounds_evaluator_ || !packing_fraction_evaluator_) {
         throw std::invalid_argument(
-            "HELD2 cache requires immutable Provider context access"
+            "HELD2 cache requires immutable EOS context access"
         );
     }
 }
@@ -219,7 +219,7 @@ double Held2AlgorithmCache::evaluate_packing_fraction(
             return retained->second;
         }
     }
-    ++provider_packing_evaluations_;
+    ++eos_packing_evaluations_;
     const double packing = packing_fraction_evaluator_(composition, volume);
     if (cacheable) {
         packing_fractions_.insert_or_assign(std::move(key), packing);
@@ -241,7 +241,7 @@ Held2StateEvaluation Held2AlgorithmCache::evaluate_state(
             return retained->second;
         }
     }
-    ++provider_state_evaluations_;
+    ++eos_state_evaluations_;
     Held2StateEvaluation state = state_evaluator_(composition, log_volume);
     if (cacheable) {
         states_.insert_or_assign(std::move(key), state);
@@ -255,7 +255,7 @@ std::array<double, 2> Held2AlgorithmCache::evaluate_volume_bounds(
     if (const auto* retained = find_volume_bounds(composition)) {
         return *retained;
     }
-    ++provider_volume_bound_evaluations_;
+    ++eos_volume_bound_evaluations_;
     const std::array<double, 2> bounds = volume_bounds_evaluator_(composition);
     retain_volume_bounds(composition, bounds);
     return bounds;
@@ -354,8 +354,8 @@ Held2Step8Result run_held2_step8(
         result.reason = "invalid_step8_input";
         return result;
     }
-    if (step1.provider_fingerprint != cache.provider_fingerprint()) {
-        result.reason = "provider_fingerprint_mismatch";
+    if (step1.eos_fingerprint != cache.eos_fingerprint()) {
+        result.reason = "eos_fingerprint_mismatch";
         result.timing.terminal_status = "indeterminate";
         result.timing.terminal_reason = result.reason;
         return result;
@@ -477,9 +477,9 @@ Held2Step8Result run_held2_step8(
         unchanged.attempted_candidate_ids = result.attempted_candidate_ids;
         unchanged.warm_start_used = false;
         unchanged.cold_fallback_used = false;
-        unchanged.provider_state_evaluations = 0;
-        unchanged.provider_volume_bound_evaluations = 0;
-        unchanged.provider_packing_evaluations = 0;
+        unchanged.eos_state_evaluations = 0;
+        unchanged.eos_volume_bound_evaluations = 0;
+        unchanged.eos_packing_evaluations = 0;
         unchanged.timing = {};
         unchanged.timing.invocation_count = 1;
         unchanged.timing.terminal_status =
@@ -501,32 +501,32 @@ Held2Step8Result run_held2_step8(
     candidates.reserve(selected_points.size());
     bounds.reserve(selected_points.size());
     const std::uint64_t shared_states_before =
-        cache.provider_state_evaluations();
+        cache.eos_state_evaluations();
     const std::uint64_t shared_volume_bounds_before =
-        cache.provider_volume_bound_evaluations();
+        cache.eos_volume_bound_evaluations();
     const std::uint64_t shared_packing_before =
-        cache.provider_packing_evaluations();
-    const auto record_provider_work = [&] {
-        const std::uint64_t provider_state_evaluations =
-            cache.provider_state_evaluations() - shared_states_before;
-        const std::uint64_t provider_volume_bound_evaluations =
-            cache.provider_volume_bound_evaluations()
+        cache.eos_packing_evaluations();
+    const auto record_eos_work = [&] {
+        const std::uint64_t eos_state_evaluations =
+            cache.eos_state_evaluations() - shared_states_before;
+        const std::uint64_t eos_volume_bound_evaluations =
+            cache.eos_volume_bound_evaluations()
             - shared_volume_bounds_before;
-        const std::uint64_t provider_packing_evaluations =
-            cache.provider_packing_evaluations() - shared_packing_before;
-        result.timing.provider_evaluations =
-            provider_state_evaluations
-            + provider_volume_bound_evaluations
-            + provider_packing_evaluations;
-        result.provider_state_evaluations =
-            provider_state_evaluations;
-        result.provider_volume_bound_evaluations =
-            provider_volume_bound_evaluations;
-        result.provider_packing_evaluations =
-            provider_packing_evaluations;
+        const std::uint64_t eos_packing_evaluations =
+            cache.eos_packing_evaluations() - shared_packing_before;
+        result.timing.eos_evaluations =
+            eos_state_evaluations
+            + eos_volume_bound_evaluations
+            + eos_packing_evaluations;
+        result.eos_state_evaluations =
+            eos_state_evaluations;
+        result.eos_volume_bound_evaluations =
+            eos_volume_bound_evaluations;
+        result.eos_packing_evaluations =
+            eos_packing_evaluations;
     };
-    const auto provider_failure = [&](const char* reason) {
-        record_provider_work();
+    const auto eos_failure = [&](const char* reason) {
+        record_eos_work();
         result.active_phases.clear();
         result.outcome = Held2Step8Outcome::Indeterminate;
         result.reason = reason;
@@ -553,7 +553,7 @@ Held2Step8Result run_held2_step8(
             });
         }
     } catch (...) {
-        return provider_failure("provider_volume_bounds_failed");
+        return eos_failure("eos_volume_bounds_failed");
     }
     const Held2StateEvaluator counted_evaluator =
         [&cache](
@@ -724,9 +724,9 @@ Held2Step8Result run_held2_step8(
             solved = std::move(cold);
         }
     } catch (...) {
-        return provider_failure("problem_67_provider_evaluation_failed");
+        return eos_failure("problem_67_eos_evaluation_failed");
     }
-    record_provider_work();
+    record_eos_work();
     result.timing.optimizer_solves =
         static_cast<std::uint64_t>(solved.stage_iii_solve_count);
     result.timing.optimizer_iterations =
@@ -825,9 +825,9 @@ Held2Step8Result run_held2_step8(
             });
         }
     } catch (...) {
-        return provider_failure("provider_phase_certification_failed");
+        return eos_failure("eos_phase_certification_failed");
     }
-    record_provider_work();
+    record_eos_work();
     std::sort(
         result.active_phases.begin(),
         result.active_phases.end(),

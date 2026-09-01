@@ -31,11 +31,11 @@ std::vector<double> chart_coordinates(
         coordinates, physical
     );
     std::vector<double> result;
-    for (std::size_t provider : coordinates.independent_indices) {
+    for (std::size_t eos : coordinates.independent_indices) {
         const auto found = std::find(
             coordinates.retained_indices.begin(),
             coordinates.retained_indices.end(),
-            provider
+            eos
         );
         result.push_back(modified[static_cast<std::size_t>(
             found - coordinates.retained_indices.begin()
@@ -47,12 +47,11 @@ std::vector<double> chart_coordinates(
 struct LocalPhase {
     std::vector<double> composition;
     double volume = 0.0;
-    MixturePhaseEvaluation block;
+    epcsaft::NativePhaseState block;
 };
 
 LocalPhase evaluate_local(
-    const ProviderContext& provider,
-    const std::vector<double>& charges,
+    const epcsaft::NativeModel& eos,
     const Held2Coordinates& coordinates,
     double temperature,
     const std::vector<double>& independent,
@@ -63,24 +62,22 @@ LocalPhase evaluate_local(
         coordinates, independent
     );
     result.volume = std::exp(log_volume);
-    result.block = evaluate_nonreactive_phase(
-        provider, charges, temperature, result.composition, result.volume
+    result.block = eos.evaluate_phase_state(
+        temperature, result.composition, result.volume
     );
     return result;
 }
 
 PhaseEquilibriumState make_state(
-    const ProviderContext& provider,
+    const epcsaft::NativeModel& eos,
     PhaseRole role,
     PhaseSupport support,
-    double temperature,
     const LocalPhase& local
 ) {
     return make_phase_equilibrium_state(
-        provider,
+        eos,
         role,
         support,
-        temperature,
         local.composition,
         local.volume,
         local.block
@@ -128,6 +125,7 @@ struct Evaluation {
     LocalPhase partner;
     std::vector<double> residual;
     Eigen::MatrixXd jacobian;
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct PotentialRows {
@@ -199,8 +197,8 @@ PotentialRows potential_rows(
 }
 
 Evaluation evaluate_system(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     const std::vector<double>& reference_charges,
     const std::vector<double>& partner_charges,
@@ -222,8 +220,7 @@ Evaluation evaluate_system(
     );
     Evaluation result;
     result.reference = evaluate_local(
-        reference_provider,
-        reference_charges,
+        reference_eos,
         reference_coordinates,
         problem.temperature_k,
         chart_coordinates(
@@ -232,8 +229,7 @@ Evaluation evaluate_system(
         variables.front()
     );
     result.partner = evaluate_local(
-        partner_provider,
-        partner_charges,
+        partner_eos,
         partner_coordinates,
         problem.temperature_k,
         partner_independent,
@@ -350,6 +346,8 @@ Evaluation evaluate_system(
     ) = rt * result.partner.block.hessian[
         partner_count * partner_state_count + partner_count
     ] * result.partner.volume / pressure_scale;
+    result.eos_evaluation_count = result.reference.block.evaluations.total()
+        + result.partner.block.evaluations.total();
     return result;
 }
 
@@ -362,11 +360,12 @@ double norm_inf(const std::vector<double>& values) {
 }
 
 bool admissible(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     const Held2Coordinates& partner_coordinates,
-    const std::vector<double>& variables
+    const std::vector<double>& variables,
+    std::size_t& eos_evaluation_count
 ) {
     try {
         const std::size_t dimension =
@@ -379,33 +378,35 @@ bool admissible(
             partner_coordinates, independent
         );
         const auto reference_bounds =
-            reference_provider.evaluate_molar_volume_bounds(
+            reference_eos.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 problem.reference_mole_fractions,
                 kHeld2PackingFractionMinimum,
                 kHeld2PackingFractionMaximum
             );
         const auto partner_bounds =
-            partner_provider.evaluate_molar_volume_bounds(
+            partner_eos.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 composition,
                 kHeld2PackingFractionMinimum,
                 kHeld2PackingFractionMaximum
             );
+        eos_evaluation_count += reference_bounds.eos_evaluation_count
+            + partner_bounds.eos_evaluation_count;
         const double reference_volume = std::exp(variables.front());
         const double partner_volume = std::exp(variables.back());
-        return reference_volume > reference_bounds[0]
-            && reference_volume < reference_bounds[1]
-            && partner_volume > partner_bounds[0]
-            && partner_volume < partner_bounds[1];
+        return reference_volume > reference_bounds.bounds_m3_per_mol[0]
+            && reference_volume < reference_bounds.bounds_m3_per_mol[1]
+            && partner_volume > partner_bounds.bounds_m3_per_mol[0]
+            && partner_volume < partner_bounds.bounds_m3_per_mol[1];
     } catch (const std::exception&) {
         return false;
     }
 }
 
 SolvedStateSensitivity coexistence_sensitivity(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
     const Held2Coordinates& reference_coordinates,
@@ -413,15 +414,19 @@ SolvedStateSensitivity coexistence_sensitivity(
     const Evaluation& solved
 ) {
     SolvedStateSensitivity result;
-    const auto reference_active = reference_provider.active_parameters();
-    result.parameter_identities = reference_active.identities;
+    const auto reference_active = reference_eos.active_coordinates();
+    result.parameter_identities = epcsaft::active_parameter_identities(reference_active);
     result.reference_phase_index = problem.reference_phase_index;
-    if (reference_active.identities.empty()) {
+    if (reference_active.empty()) {
         result.failure_reason = "no_active_parameters";
         return result;
     }
-    const auto partner_active = partner_provider.active_parameters();
-    const std::size_t parameter_count = reference_active.identities.size();
+    const auto partner_active = partner_eos.active_coordinates();
+    const auto reference_identities =
+        epcsaft::active_parameter_identities(reference_active);
+    const auto partner_identities =
+        epcsaft::active_parameter_identities(partner_active);
+    const std::size_t parameter_count = reference_active.size();
     const std::size_t partner_count = partner_to_reference.size();
     const std::size_t independent_count =
         partner_coordinates.independent_indices.size();
@@ -436,44 +441,41 @@ SolvedStateSensitivity coexistence_sensitivity(
     const std::size_t reference_count =
         reference_coordinates.charges.size();
     std::vector<std::size_t> partner_parameter_index(
-        parameter_count, partner_active.identities.size()
+        parameter_count, partner_active.size()
     );
     for (std::size_t parameter = 0;
          parameter < parameter_count; ++parameter) {
         const auto found = std::find(
-            partner_active.identities.begin(),
-            partner_active.identities.end(),
-            reference_active.identities[parameter]
+            partner_identities.begin(), partner_identities.end(),
+            reference_identities[parameter]
         );
-        if (found != partner_active.identities.end()) {
+        if (found != partner_identities.end()) {
             partner_parameter_index[parameter] = static_cast<std::size_t>(
-                found - partner_active.identities.begin()
+                found - partner_identities.begin()
             );
         }
     }
-    ParameterizedPhaseEvaluation reference;
-    std::optional<ParameterizedPhaseEvaluation> partner;
+    epcsaft::NativeParameterizedPhaseState reference;
+    std::optional<epcsaft::NativeParameterizedPhaseState> partner;
     try {
-        reference = reference_provider.evaluate_parameterized_phase(
+        reference = reference_eos.evaluate_parameterized_phase_state(
             problem.temperature_k,
             solved.reference.composition,
             solved.reference.volume,
-            kHeld2PackingFractionMinimum,
-            kHeld2PackingFractionMaximum,
             reference_active
         );
-        if (!partner_active.identities.empty()) {
-            partner = partner_provider.evaluate_parameterized_phase(
+        result.eos_evaluation_count += reference.evaluations.total();
+        if (!partner_active.empty()) {
+            partner = partner_eos.evaluate_parameterized_phase_state(
                 problem.temperature_k,
                 solved.partner.composition,
                 solved.partner.volume,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum,
                 partner_active
             );
+            result.eos_evaluation_count += partner->evaluations.total();
         }
     } catch (const std::exception&) {
-        result.failure_reason = "provider_partial_evaluation_failed";
+        result.failure_reason = "eos_partial_evaluation_failed";
         return result;
     }
     result.residual_state_jacobian.assign(
@@ -492,7 +494,7 @@ SolvedStateSensitivity coexistence_sensitivity(
     result.residual_parameter_jacobian.assign(
         result.dimension * parameter_count, 0.0
     );
-    const auto partner_ids = phase_provider_component_ids(partner_provider);
+    const auto partner_ids = phase_eos_component_ids(partner_eos);
     for (std::size_t row = 0; row < potentials.count; ++row) {
         const std::size_t identity_component =
             phase_topology_is_charged(partner_coordinates.charges)
@@ -525,14 +527,14 @@ SolvedStateSensitivity coexistence_sensitivity(
             const std::size_t partner_parameter =
                 partner_parameter_index[parameter];
             if (partner.has_value()
-                && partner_parameter < partner_active.identities.size()) {
+                && partner_parameter < partner_active.size()) {
                 for (std::size_t component = 0;
                      component < partner_count; ++component) {
                     derivative -= potentials.partner[
                         row * partner_count + component
                     ] * partner
                         ->chemical_potential_parameter_derivatives_over_rt[
-                            component * partner_active.identities.size()
+                            component * partner_active.size()
                             + partner_parameter
                         ];
                 }
@@ -561,7 +563,7 @@ SolvedStateSensitivity coexistence_sensitivity(
         const std::size_t partner_parameter =
             partner_parameter_index[parameter];
         if (partner.has_value()
-            && partner_parameter < partner_active.identities.size()) {
+            && partner_parameter < partner_active.size()) {
             derivative -= partner->pressure_parameter_derivatives_pa[
                 partner_parameter
             ];
@@ -591,7 +593,7 @@ SolvedStateSensitivity coexistence_sensitivity(
         return result;
     }
     const std::size_t output_count = 1
-        + phase_provider_component_ids(reference_provider).size() + 1
+        + phase_eos_component_ids(reference_eos).size() + 1
         + partner_ids.size() + 1;
     result.output_parameter_jacobian.assign(
         output_count * parameter_count, 0.0
@@ -613,7 +615,7 @@ SolvedStateSensitivity coexistence_sensitivity(
             ];
     }
     ++output;
-    const auto reference_ids = phase_provider_component_ids(reference_provider);
+    const auto reference_ids = phase_eos_component_ids(reference_eos);
     for (const auto& id : reference_ids) {
         result.output_identities.push_back(
             "phase[" + std::to_string(problem.reference_phase_index)
@@ -678,8 +680,8 @@ SolvedStateSensitivity coexistence_sensitivity(
 }
 
 SolvedStateSensitivity coexistence_reference_direction_sensitivity(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
     const Held2Coordinates& reference_coordinates,
@@ -724,7 +726,7 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
     result.residual_parameter_jacobian.assign(
         result.dimension * direction_count, 0.0
     );
-    const auto partner_ids = phase_provider_component_ids(partner_provider);
+    const auto partner_ids = phase_eos_component_ids(partner_eos);
     const std::size_t reference_state_count = reference_count + 1;
     for (std::size_t row = 0; row < potentials.count; ++row) {
         const std::size_t identity_component =
@@ -816,7 +818,7 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
     if (!solve_sensitivity_linear_system(result, direction_count)) {
         return result;
     }
-    const auto reference_ids = phase_provider_component_ids(reference_provider);
+    const auto reference_ids = phase_eos_component_ids(reference_eos);
     const std::size_t output_count = 1 + reference_ids.size() + 1
         + partner_ids.size() + 1;
     result.output_parameter_jacobian.assign(
@@ -911,8 +913,8 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
 }
 
 SolvedStateSensitivity coexistence_temperature_sensitivity(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
     const Held2Coordinates& reference_coordinates,
@@ -934,21 +936,23 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
         result.failure_reason = "coexistence_residual_layout_changed";
         return result;
     }
-    TemperaturePhaseEvaluation reference;
-    TemperaturePhaseEvaluation partner;
+    epcsaft::NativeTemperaturePhaseDerivatives reference;
+    epcsaft::NativeTemperaturePhaseDerivatives partner;
     try {
-        reference = reference_provider.evaluate_temperature_phase(
+        reference = reference_eos.evaluate_temperature_phase(
             problem.temperature_k,
             solved.reference.composition,
             solved.reference.volume
         );
-        partner = partner_provider.evaluate_temperature_phase(
+        partner = partner_eos.evaluate_temperature_phase(
             problem.temperature_k,
             solved.partner.composition,
             solved.partner.volume
         );
+        result.eos_evaluation_count = reference.evaluations.total()
+            + partner.evaluations.total();
     } catch (const std::exception&) {
-        result.failure_reason = "provider_temperature_partial_evaluation_failed";
+        result.failure_reason = "eos_temperature_partial_evaluation_failed";
         return result;
     }
     if (reference.chemical_potential_temperature_derivatives_over_rt_per_k.size()
@@ -971,7 +975,7 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
         }
     }
     result.residual_parameter_jacobian.assign(result.dimension, 0.0);
-    const auto partner_ids = phase_provider_component_ids(partner_provider);
+    const auto partner_ids = phase_eos_component_ids(partner_eos);
     for (std::size_t row = 0; row < potentials.count; ++row) {
         const std::size_t identity_component =
             phase_topology_is_charged(partner_coordinates.charges)
@@ -1033,7 +1037,7 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
     if (!solve_sensitivity_linear_system(result, 1)) {
         return result;
     }
-    const auto reference_ids = phase_provider_component_ids(reference_provider);
+    const auto reference_ids = phase_eos_component_ids(reference_eos);
     const std::size_t output_count = 1 + reference_ids.size() + 1
         + partner_ids.size() + 1;
     result.output_parameter_jacobian.assign(output_count, 0.0);
@@ -1086,18 +1090,18 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
 }
 
 void validate_problem(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem,
     std::vector<std::size_t>& partner_to_reference
 ) {
-    const auto reference_ids = phase_provider_component_ids(reference_provider);
-    const auto partner_ids = phase_provider_component_ids(partner_provider);
-    const auto reference_charges = phase_provider_component_charges(
-        reference_provider
+    const auto reference_ids = phase_eos_component_ids(reference_eos);
+    const auto partner_ids = phase_eos_component_ids(partner_eos);
+    const auto reference_charges = phase_eos_component_charges(
+        reference_eos
     );
-    const auto partner_charges = phase_provider_component_charges(
-        partner_provider
+    const auto partner_charges = phase_eos_component_charges(
+        partner_eos
     );
     if (!std::isfinite(problem.temperature_k)
         || problem.temperature_k <= 0.0
@@ -1196,7 +1200,7 @@ void validate_problem(
     }
     if (support == PhaseSupport::AllComponents && partner_ids != reference_ids) {
         throw std::invalid_argument(
-            "all-component coexistence requires identical Provider component order"
+            "all-component coexistence requires identical EOS component order"
         );
     }
     if (support == PhaseSupport::AllComponents
@@ -1277,15 +1281,15 @@ void validate_problem(
 }  // namespace
 
 FixedTCoexistenceResult solve_fixed_t_coexistence(
-    const ProviderContext& reference_provider,
-    const ProviderContext& partner_provider,
+    const epcsaft::NativeModel& reference_eos,
+    const epcsaft::NativeModel& partner_eos,
     const FixedTCoexistenceProblem& problem
 ) {
     FixedTCoexistenceResult result;
     result.reference_phase_index = problem.reference_phase_index;
-    result.parameter_fingerprint = reference_provider.fingerprint();
-    result.partner_parameter_fingerprint = partner_provider.fingerprint();
-    result.partner_component_ids = phase_provider_component_ids(partner_provider);
+    result.parameter_fingerprint = reference_eos.parameter_fingerprint();
+    result.partner_parameter_fingerprint = partner_eos.parameter_fingerprint();
+    result.partner_component_ids = phase_eos_component_ids(partner_eos);
     result.diagnostics.route = "held_fixed_t_coexistence";
     result.diagnostics.certificate_scope =
         "fixed_t_declared_coexistence";
@@ -1306,40 +1310,42 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
         "ordered_molar_volume_branch",
     };
     result.diagnostics.hint_count = static_cast<int>(problem.hints.size());
+    std::size_t eos_evaluation_count = 0;
     try {
         std::vector<std::size_t> partner_to_reference;
         validate_problem(
-            reference_provider,
-            partner_provider,
+            reference_eos,
+            partner_eos,
             problem,
             partner_to_reference
         );
-        const auto reference_charges = phase_provider_component_charges(
-            reference_provider
+        const auto reference_charges = phase_eos_component_charges(
+            reference_eos
         );
-        const auto partner_charges = phase_provider_component_charges(
-            partner_provider
+        const auto partner_charges = phase_eos_component_charges(
+            partner_eos
         );
         const auto reference_coordinates = make_held2_coordinates(
-            reference_charges, phase_provider_component_ids(reference_provider)
+            reference_charges, phase_eos_component_ids(reference_eos)
         );
         const auto partner_coordinates = make_held2_coordinates(
-            partner_charges, phase_provider_component_ids(partner_provider)
+            partner_charges, phase_eos_component_ids(partner_eos)
         );
         const auto partner_composition = projected_composition(
             problem.reference_mole_fractions, partner_to_reference
         );
         const auto reference_bounds =
-            reference_provider.evaluate_molar_volume_bounds(
+            reference_eos.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 problem.reference_mole_fractions,
                 kHeld2PackingFractionMinimum,
                 kHeld2PackingFractionMaximum
             );
+        eos_evaluation_count += reference_bounds.eos_evaluation_count;
         const std::size_t partner_phase = 1 - problem.reference_phase_index;
         const double reference_volume = volume_seed(
             problem.phases[problem.reference_phase_index].role,
-            reference_bounds
+            reference_bounds.bounds_m3_per_mol
         );
         std::vector<std::vector<double>> start_compositions{
             partner_composition,
@@ -1413,8 +1419,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                      iteration < kIterationLimit; ++iteration) {
                     ++result.diagnostics.optimizer_iteration_count;
                     Evaluation evaluation = evaluate_system(
-                        reference_provider,
-                        partner_provider,
+                        reference_eos,
+                        partner_eos,
                         problem,
                         reference_charges,
                         partner_charges,
@@ -1423,6 +1429,7 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                         partner_to_reference,
                         variables
                     );
+                    eos_evaluation_count += evaluation.eos_evaluation_count;
                     const double current_norm = norm_inf(
                         evaluation.residual
                     );
@@ -1470,16 +1477,17 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                             ];
                         }
                         if (admissible(
-                                reference_provider,
-                                partner_provider,
+                                reference_eos,
+                                partner_eos,
                                 problem,
                                 partner_coordinates,
-                                trial
+                                trial,
+                                eos_evaluation_count
                             )) {
                             try {
                                 const auto candidate = evaluate_system(
-                                    reference_provider,
-                                    partner_provider,
+                                    reference_eos,
+                                    partner_eos,
                                     problem,
                                     reference_charges,
                                     partner_charges,
@@ -1488,6 +1496,7 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                                     partner_to_reference,
                                     trial
                                 );
+                                eos_evaluation_count += candidate.eos_evaluation_count;
                                 if (norm_inf(candidate.residual)
                                     < current_norm) {
                                     variables = std::move(trial);
@@ -1542,12 +1551,13 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             const auto chart = chart_coordinates(
                 partner_coordinates, composition
             );
-            const auto bounds = partner_provider.evaluate_molar_volume_bounds(
+            const auto bounds = partner_eos.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 composition,
                 kHeld2PackingFractionMinimum,
                 kHeld2PackingFractionMaximum
             );
+            eos_evaluation_count += bounds.eos_evaluation_count;
             std::vector<double> variables{
                 std::log(reference_volume),
             };
@@ -1555,13 +1565,15 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             const double partner_volume =
                 problem.phases[partner_phase].role == PhaseRole::Liquid
                 ? std::exp(
-                    std::log(bounds[0])
+                    std::log(bounds.bounds_m3_per_mol[0])
                     + 0.05 * (
-                        std::log(bounds[1]) - std::log(bounds[0])
+                        std::log(bounds.bounds_m3_per_mol[1])
+                        - std::log(bounds.bounds_m3_per_mol[0])
                     )
                 )
                 : volume_seed(
-                    problem.phases[partner_phase].role, bounds
+                    problem.phases[partner_phase].role,
+                    bounds.bounds_m3_per_mol
                 );
             variables.push_back(std::log(partner_volume));
             auto candidate = solve_start(std::move(variables));
@@ -1569,17 +1581,15 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                 continue;
             }
             const auto reference_state = make_state(
-                reference_provider,
+                reference_eos,
                 problem.phases[problem.reference_phase_index].role,
                 PhaseSupport::AllComponents,
-                problem.temperature_k,
                 candidate->reference
             );
             const auto partner_state = make_state(
-                partner_provider,
+                partner_eos,
                 problem.phases[partner_phase].role,
                 problem.phases[partner_phase].support,
-                problem.temperature_k,
                 candidate->partner
             );
             const bool stable =
@@ -1618,9 +1628,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             );
         }
         if (accepted.size() != 1) {
-            result.diagnostics.provider_evaluation_count =
-                reference_provider.evaluation_count()
-                + partner_provider.evaluation_count();
+            result.diagnostics.eos_evaluation_count =
+                static_cast<int>(eos_evaluation_count);
             result.diagnostics.solver_status = "converged";
             result.diagnostics.numerical_status = "certified";
             result.diagnostics.physical_status = "rejected";
@@ -1629,9 +1638,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                 "multiple_unresolved_coexistence_branches";
             return result;
         }
-        result.diagnostics.provider_evaluation_count =
-            reference_provider.evaluation_count()
-            + partner_provider.evaluation_count();
+        result.diagnostics.eos_evaluation_count =
+            static_cast<int>(eos_evaluation_count);
         const auto& solved = accepted.front();
         const double pressure_scale = std::max({
             1.0,
@@ -1658,17 +1666,15 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             problem.phases[partner_phase].support;
         result.phases.resize(2);
         result.phases[problem.reference_phase_index] = make_state(
-            reference_provider,
+            reference_eos,
             problem.phases[problem.reference_phase_index].role,
             PhaseSupport::AllComponents,
-            problem.temperature_k,
             solved.reference
         );
         result.phases[partner_phase] = make_state(
-            partner_provider,
+            partner_eos,
             problem.phases[partner_phase].role,
             partner_support,
-            problem.temperature_k,
             solved.partner
         );
         const auto& reference_state =
@@ -1724,9 +1730,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
         if (!stable || !ordered
             || result.diagnostics.phase_distinctness
                 <= kDistinctTolerance) {
-            result.diagnostics.provider_evaluation_count =
-                reference_provider.evaluation_count()
-                + partner_provider.evaluation_count();
+            result.diagnostics.eos_evaluation_count =
+                static_cast<int>(eos_evaluation_count);
             result.phases.clear();
             result.diagnostics.solver_status = "converged";
             result.diagnostics.numerical_status = "certified";
@@ -1741,9 +1746,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             || result.diagnostics.chemical_potential_residual_inf
                 > kPotentialTolerance
             || !charge_certified) {
-            result.diagnostics.provider_evaluation_count =
-                reference_provider.evaluation_count()
-                + partner_provider.evaluation_count();
+            result.diagnostics.eos_evaluation_count =
+                static_cast<int>(eos_evaluation_count);
             result.phases.clear();
             result.diagnostics.solver_status = "converged";
             result.diagnostics.numerical_status = "uncertified";
@@ -1756,22 +1760,24 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
         result.diagnostics.solver_status = "converged";
         result.diagnostics.numerical_status = "certified";
         result.diagnostics.physical_status = "accepted";
-        if (!reference_provider.active_parameters().identities.empty()) {
+        if (!reference_eos.active_coordinates().empty()) {
             result.sensitivity = coexistence_sensitivity(
-                reference_provider,
-                partner_provider,
+                reference_eos,
+                partner_eos,
                 problem,
                 partner_to_reference,
                 reference_coordinates,
                 partner_coordinates,
                 solved
             );
+            eos_evaluation_count +=
+                result.sensitivity->eos_evaluation_count;
         }
         if (!problem.reference_composition_directions.empty()) {
             result.reference_direction_sensitivity =
                 coexistence_reference_direction_sensitivity(
-                    reference_provider,
-                    partner_provider,
+                    reference_eos,
+                    partner_eos,
                     problem,
                     partner_to_reference,
                     reference_coordinates,
@@ -1780,21 +1786,21 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
                 );
         }
         result.temperature_sensitivity = coexistence_temperature_sensitivity(
-            reference_provider,
-            partner_provider,
+            reference_eos,
+            partner_eos,
             problem,
             partner_to_reference,
             reference_coordinates,
             partner_coordinates,
             solved
         );
-        result.diagnostics.provider_evaluation_count =
-            reference_provider.evaluation_count()
-            + partner_provider.evaluation_count();
+        eos_evaluation_count +=
+            result.temperature_sensitivity->eos_evaluation_count;
+        result.diagnostics.eos_evaluation_count =
+            static_cast<int>(eos_evaluation_count);
     } catch (const std::exception& error) {
-        result.diagnostics.provider_evaluation_count =
-            reference_provider.evaluation_count()
-            + partner_provider.evaluation_count();
+        result.diagnostics.eos_evaluation_count =
+            static_cast<int>(eos_evaluation_count);
         result.phases.clear();
         result.diagnostics.solver_status = "failed";
         result.diagnostics.numerical_status = "not_certified";

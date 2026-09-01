@@ -11,7 +11,7 @@ struct Held2Step1Result {
     std::string reason = "not_run";
     double total_ion_mole_fraction_max =
         std::numeric_limits<double>::quiet_NaN();
-    std::string provider_fingerprint;
+    std::string eos_fingerprint;
     std::optional<Held2Coordinates> coordinates;
     std::optional<std::vector<double>> independent_feed;
     std::optional<std::array<double, 2>> feed_volume_bounds;
@@ -26,7 +26,7 @@ struct Held2Step1Result {
     double pressure_pa,
     const std::vector<double>& physical_feed,
     const Held2PhysicalVolumeBoundsEvaluator& physical_volume_bounds,
-    std::string provider_fingerprint,
+    std::string eos_fingerprint,
     double total_ion_mole_fraction_max =
         std::numeric_limits<double>::quiet_NaN()
 );

@@ -67,7 +67,7 @@ MATH_OWNER_FILES = (
     "src/epcsaft/_native/electrolyte_reference.hpp",
     "src/epcsaft/_native/eos.cpp",
     "src/epcsaft/_native/phase_block.hpp",
-    "cpp/equilibrium/source_reference.cpp",
+    "src/epcsaft/_native/eos_source_reference.cpp",
     "src/epcsaft/eos.py",
     "src/epcsaft/reference.py",
 )
@@ -230,9 +230,10 @@ def _cpp_function_spans(path: Path) -> list[_FunctionSpan]:
         ):
             continue
         prefix = stripped.split("(", 1)[0]
-        if "=" in prefix or "[" in prefix:
+        declaration_prefix = re.sub(r"^(?:\[\[[^]]+\]\]\s*)+", "", prefix)
+        if "=" in declaration_prefix or "[" in declaration_prefix:
             continue
-        name_match = CPP_NAME_PATTERN.search(prefix)
+        name_match = CPP_NAME_PATTERN.search(declaration_prefix)
         if not name_match:
             continue
         name = name_match.group(1)
@@ -242,8 +243,8 @@ def _cpp_function_spans(path: Path) -> list[_FunctionSpan]:
         class_body_method = name.removeprefix("~") in class_names
         if (
             (
-                not CPP_DECLARATION_PREFIX_PATTERN.match(prefix)
-                or not any(character.isspace() for character in prefix)
+                not CPP_DECLARATION_PREFIX_PATTERN.match(declaration_prefix)
+                or not any(character.isspace() for character in declaration_prefix)
             )
             and not constructor
             and not qualified_definition

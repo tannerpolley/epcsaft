@@ -541,11 +541,9 @@ std::vector<Scalar> active_packing_diameters(
 // EqExclude: CppAD-generated derivative machinery
 inline NativePackingFractionBlock packing_fraction_block_active_parameters(
     double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max, const NativeParameters &parameters,
-    const std::vector<NativeFixedTopologyParameter> &active_parameters) {
-  const std::vector<std::size_t> coordinate_components =
-      validate_reduced_support_phase_state(temperature, amounts, volume,
-                                           ion_mole_fraction_max, parameters);
+    const NativeParameters &parameters,
+    const std::vector<NativeFixedTopologyParameter> &active_parameters,
+    const std::vector<std::size_t> &coordinate_components) {
   std::vector<double> values;
   values.reserve(active_parameters.size());
   for (const auto &parameter : active_parameters) {
@@ -816,6 +814,7 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
     double temperature, const std::vector<double> &amounts, double volume,
     const std::vector<NativeFixedTopologyParameter> &active_parameters,
     const NativeParameters &base_parameters,
+    const std::vector<std::size_t> &reduced_support,
     bool reduce_zero_amount_support = false,
     double ion_mole_fraction_max = std::numeric_limits<double>::infinity(),
     bool differentiate_temperature = false) {
@@ -828,8 +827,10 @@ inline NativeMixturePhaseBlock fixed_topology_parameterized_mixture_phase_block(
                                        [](int charge) { return charge != 0; });
   std::vector<std::size_t> coordinate_components;
   if (reduce_zero_amount_support) {
-    coordinate_components = validate_reduced_support_phase_state(
-        temperature, amounts, volume, ion_mole_fraction_max, base_parameters);
+    if (reduced_support.empty()) {
+      throw std::logic_error("reduced phase support was not resolved");
+    }
+    coordinate_components = reduced_support;
   } else if (electrolyte) {
     validate_electrolyte_phase_state(temperature, amounts, volume,
                                      ion_mole_fraction_max,
@@ -1444,18 +1445,21 @@ inline NativeMixturePhaseBlock support_aware_parameterized_mixture_phase_block(
     double temperature, const std::vector<double> &amounts, double volume,
     double ion_mole_fraction_max,
     const std::vector<NativeFixedTopologyParameter> &active_parameters,
+    const std::vector<std::size_t> &supported_component_indices,
     const NativeParameters &base_parameters) {
   return fixed_topology_parameterized_mixture_phase_block(
-      temperature, amounts, volume, active_parameters, base_parameters, true,
-      ion_mole_fraction_max);
+      temperature, amounts, volume, active_parameters, base_parameters,
+      supported_component_indices, true, ion_mole_fraction_max);
 }
 
 inline NativeMixturePhaseBlock support_aware_temperature_mixture_phase_block(
     double temperature, const std::vector<double> &amounts, double volume,
-    double ion_mole_fraction_max, const NativeParameters &base_parameters) {
+    double ion_mole_fraction_max,
+    const std::vector<std::size_t> &supported_component_indices,
+    const NativeParameters &base_parameters) {
   return fixed_topology_parameterized_mixture_phase_block(
-      temperature, amounts, volume, {}, base_parameters, true,
-      ion_mole_fraction_max, true);
+      temperature, amounts, volume, {}, base_parameters,
+      supported_component_indices, true, ion_mole_fraction_max, true);
 }
 
 // EqExclude: transport and buffer mechanics
@@ -1467,7 +1471,7 @@ inline NativeFixedTopologyPhaseBlock fixed_topology_parameterized_pure_phase_blo
     throw std::logic_error("active pure parameters require one component");
   }
   const auto block = fixed_topology_parameterized_mixture_phase_block(
-      temperature, {amount}, volume, active_parameters, base_parameters);
+      temperature, {amount}, volume, active_parameters, base_parameters, {});
   return {
       block.helmholtz_over_rt_reference_amount,
       block.gradient,
@@ -1488,7 +1492,7 @@ inline NativeMixturePhaseBlock electrolyte_phase_block(
   validate_electrolyte_phase_state(temperature, amounts, volume,
                                    ion_mole_fraction_max, parameters);
   return fixed_topology_parameterized_mixture_phase_block(
-      temperature, amounts, volume, {}, parameters);
+      temperature, amounts, volume, {}, parameters, {});
 }
 
 } // namespace detail

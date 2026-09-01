@@ -1,7 +1,7 @@
 #include "chemical_equilibrium.hpp"
 #include "grepe.hpp"
 #include "grepe_pybind.hpp"
-#include "provider.hpp"
+#include "eos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -351,7 +351,7 @@ std::optional<GrepeSourceStandardState> grepe_source(
     result.reference_pressure_pa = py::cast<double>(
         standard.attr("reference_pressure_pa")
     );
-    SourceReferenceRequest& request = result.reference;
+    epcsaft::NativeSourceReferenceRequest& request = result.reference;
     request.component_ids = py::cast<std::vector<std::string>>(
         standard.attr("source_reference_component_ids")
     );
@@ -712,7 +712,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         .def_readonly("numerical_status", &ReactiveFinitePhaseResult::numerical_status)
         .def_readonly("physical_status", &ReactiveFinitePhaseResult::physical_status)
         .def_readonly(
-            "provider_domain_status", &ReactiveFinitePhaseResult::provider_domain_status
+            "eos_domain_status", &ReactiveFinitePhaseResult::eos_domain_status
         )
         .def_readonly("resolved_policy", &ReactiveFinitePhaseResult::resolved_policy)
         .def_readonly("phase_amounts_mol", &ReactiveFinitePhaseResult::phase_amounts_mol)
@@ -800,7 +800,7 @@ void bind_chemical_equilibrium(py::module_& module) {
         .def_readonly("admissible_nullity", &ReactiveFinitePhaseResult::admissible_nullity)
         .def_readonly("optimizer_iterations", &ReactiveFinitePhaseResult::optimizer_iterations)
         .def_readonly(
-            "provider_evaluation_count", &ReactiveFinitePhaseResult::provider_evaluation_count
+            "eos_evaluation_count", &ReactiveFinitePhaseResult::eos_evaluation_count
         )
         .def_readonly(
             "derivative_audits_performed",

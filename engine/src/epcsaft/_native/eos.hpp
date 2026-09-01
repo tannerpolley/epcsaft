@@ -1,10 +1,13 @@
 #pragma once
 
 #include "model.hpp"
+#include "phase_block.hpp"
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -50,6 +53,7 @@ struct NativeResult final {
     double molar_density;
     double pressure_density_derivative;
     std::optional<NativeDensityDiagnostics> density_diagnostics;
+    std::size_t eos_evaluation_count = 1;
 };
 
 struct NativePurePhaseBlock;
@@ -69,6 +73,7 @@ struct NativeReferenceSequence final {
 struct NativeMolarVolumeBoundsParameterBlock final {
     std::array<double, 2> bounds_m3_per_mol;
     std::vector<double> parameter_derivatives_m3_per_mol;
+    std::size_t eos_evaluation_count = 0;
 };
 
 struct FixedPressureCompositionProjection final {
@@ -102,6 +107,10 @@ struct NativeActiveCoordinate final {
     double reference_temperature_k;
 };
 
+[[nodiscard]] std::vector<std::string> active_parameter_identities(
+    const std::vector<NativeActiveCoordinate>& coordinates
+);
+
 struct NativeActiveParameterConstraint final {
     std::string identity;
     double temperature_k;
@@ -110,7 +119,7 @@ struct NativeActiveParameterConstraint final {
     double upper;
 };
 
-struct NativeProviderMetadata final {
+struct NativeEosMetadata final {
     std::string parameter_fingerprint;
     std::string topology_fingerprint;
     std::string component_order_fingerprint;
@@ -127,6 +136,146 @@ struct NativeProviderMetadata final {
     double source_temperature_max_k;
     double source_pressure_min_pa;
     double source_pressure_max_pa;
+};
+
+inline constexpr const char* EOS_HELMHOLTZ_BASIS_ID =
+    "A_over_RT_reference_amount:n_ref=1mol:rho_ref=1mol_per_m3";
+
+class EosDomainError final : public std::domain_error {
+public:
+    using std::domain_error::domain_error;
+};
+
+struct NativeEosEvaluationCounts final {
+    std::size_t state = 0;
+    std::size_t volume_bound = 0;
+    std::size_t packing = 0;
+
+    [[nodiscard]] std::size_t total() const noexcept {
+        return state + volume_bound + packing;
+    }
+
+    NativeEosEvaluationCounts& operator+=(
+        const NativeEosEvaluationCounts& other
+    ) noexcept {
+        state += other.state;
+        volume_bound += other.volume_bound;
+        packing += other.packing;
+        return *this;
+    }
+};
+
+struct NativePhaseState final {
+    double value = 0.0;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
+    double pressure_pa = 0.0;
+    double packing_fraction = 0.0;
+    std::string mechanical_class;
+    std::vector<std::size_t> supported_component_indices;
+    std::string topology_fingerprint;
+    NativeEosEvaluationCounts evaluations;
+};
+
+struct NativeParameterizedPhaseState final {
+    NativeMixturePhaseBlock phase;
+    std::vector<std::size_t> supported_component_indices;
+    std::string topology_fingerprint;
+    std::vector<double> parameter_derivatives;
+    std::vector<double> state_parameter_derivatives;
+    std::vector<double> pressure_parameter_derivatives_pa;
+    std::vector<double> chemical_potential_parameter_derivatives_over_rt;
+    NativeEosEvaluationCounts evaluations;
+};
+
+struct NativeParameterizedPackingFraction final {
+    NativePackingFractionBlock packing;
+    std::vector<double> parameter_derivatives;
+    NativeEosEvaluationCounts evaluations;
+};
+
+struct NativeTemperaturePhaseDerivatives final {
+    std::vector<double> chemical_potential_temperature_derivatives_over_rt_per_k;
+    double pressure_temperature_derivative_pa_per_k = 0.0;
+    NativeEosEvaluationCounts evaluations;
+};
+
+struct NativeInversePackingGeometryResult final {
+    double volume_m3 = 0.0;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
+    NativeEosEvaluationCounts evaluations;
+};
+
+enum NativeSourceReferenceStatus {
+    SOURCE_REFERENCE_OK = 0,
+    SOURCE_REFERENCE_UNSUPPORTED = 1,
+    SOURCE_REFERENCE_INVALID_SOURCE = 2,
+    SOURCE_REFERENCE_COMPONENT_MISMATCH = 3,
+    SOURCE_REFERENCE_MISSING_MODEL = 4,
+    SOURCE_REFERENCE_DOMAIN_REJECTION = 5,
+    SOURCE_REFERENCE_LIMIT_FAILURE = 6,
+    SOURCE_REFERENCE_DERIVATIVE_UNAVAILABLE = 7,
+    SOURCE_REFERENCE_NONFINITE = 8,
+    SOURCE_REFERENCE_IDENTITY_MISMATCH = 9,
+    SOURCE_REFERENCE_EVALUATION_ERROR = 10,
+};
+
+struct NativeSourceReferenceRequest final {
+    std::vector<std::string> component_ids;
+    std::vector<double> source_solvent_mole_fractions;
+    std::vector<std::array<std::size_t, 2>> ion_pair_indices;
+    std::vector<std::array<int, 2>> ion_pair_stoichiometry;
+    std::vector<std::size_t> pure_component_indices;
+    std::vector<std::string> pure_component_phases;
+    std::string phase;
+    std::string reference_convention;
+    std::string reference_state_id;
+    std::string activity_convention_id;
+    std::string reference_state_fingerprint;
+    double standard_molality_mol_per_kg;
+    double source_reference_pressure_pa;
+    std::uint32_t required_derivatives;
+};
+
+struct NativeSourceReferenceResult final {
+    int status = SOURCE_REFERENCE_OK;
+    std::string error;
+    std::size_t component_count = 0;
+    std::size_t neutral_basis_row_count = 0;
+    std::vector<double> neutral_basis;
+    std::vector<double> log_fugacity_contractions;
+    std::vector<double> activity_scale_log_contractions;
+    std::vector<double> transfer_log_contractions;
+    std::vector<double> source_composition;
+    std::uint32_t derivative_availability = 0;
+    std::vector<double> pressure_derivatives_per_pa;
+    std::vector<double> parameter_derivatives;
+    double temperature_k = 0.0;
+    double pressure_pa = 0.0;
+    double source_reference_pressure_pa = 0.0;
+    double standard_molality_mol_per_kg = 0.0;
+    double solvent_molar_mass_kg_per_mol = 0.0;
+    double reference_limit_molality_mol_per_kg = 0.0;
+    double reference_convergence_error = 0.0;
+    double source_temperature_min_k = 0.0;
+    double source_temperature_max_k = 0.0;
+    double source_pressure_min_pa = 0.0;
+    double source_pressure_max_pa = 0.0;
+    double candidate_temperature_min_k = 0.0;
+    double candidate_temperature_max_k = 0.0;
+    double candidate_pressure_min_pa = 0.0;
+    double candidate_pressure_max_pa = 0.0;
+    std::string candidate_qualification;
+    std::string candidate_source_fingerprint;
+    std::string parameter_fingerprint;
+    std::string topology_fingerprint;
+    std::string component_order_fingerprint;
+    std::string reference_state_fingerprint;
+    std::string domain_fingerprint;
+    std::string artifact_fingerprint;
+    std::string helmholtz_basis_id;
+    NativeEosEvaluationCounts evaluations;
 };
 
 class NativeModel final {
@@ -171,7 +320,7 @@ public:
         const std::vector<std::string>& component_ids,
         const std::vector<std::string>& site_ids
     ) const;
-    NativeModel with_provider_metadata(
+    NativeModel with_eos_metadata(
         std::string parameter_fingerprint,
         double temperature_min_k,
         double temperature_max_k,
@@ -192,7 +341,55 @@ public:
     NativeModel with_active_coordinates(
         const std::vector<NativeActiveCoordinate>& active_coordinates
     ) const;
-    const NativeProviderMetadata& provider_metadata() const;
+    const NativeEosMetadata& eos_metadata() const;
+    [[nodiscard]] const std::string& parameter_fingerprint() const;
+    [[nodiscard]] std::vector<std::string> active_parameter_identities() const;
+    [[nodiscard]] std::string parameterized_topology_fingerprint() const;
+    [[nodiscard]] NativePhaseState evaluate_phase_state(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume
+    ) const;
+    [[nodiscard]] NativeMolarVolumeBoundsParameterBlock evaluate_molar_volume_bounds(
+        double temperature,
+        const std::vector<double>& mole_fractions,
+        double packing_fraction_min,
+        double packing_fraction_max
+    ) const;
+    [[nodiscard]] NativePackingFractionBlock evaluate_state_packing_fraction(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume
+    ) const;
+    [[nodiscard]] NativeParameterizedPhaseState evaluate_parameterized_phase_state(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        const std::vector<NativeActiveCoordinate>& active_parameters
+    ) const;
+    [[nodiscard]] NativeParameterizedPackingFraction
+    evaluate_parameterized_packing_fraction(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume,
+        const std::vector<NativeActiveCoordinate>& active_parameters
+    ) const;
+    [[nodiscard]] NativeTemperaturePhaseDerivatives evaluate_temperature_phase(
+        double temperature,
+        const std::vector<double>& amounts,
+        double volume
+    ) const;
+    [[nodiscard]] NativeInversePackingGeometryResult evaluate_state_inverse_packing_geometry(
+        double temperature,
+        const std::vector<double>& amounts,
+        double log_packing_fraction,
+        const std::vector<NativeActiveCoordinate>& active_parameters
+    ) const;
+    [[nodiscard]] NativeSourceReferenceResult evaluate_source_reference_transfer(
+        double temperature,
+        double pressure,
+        const NativeSourceReferenceRequest& request
+    ) const;
     const std::vector<std::string>& component_ids() const;
     const std::vector<NativeActiveCoordinate>& active_coordinates() const;
     std::vector<NativeActiveParameterConstraint>
@@ -221,39 +418,32 @@ public:
         double volume,
         double ion_mole_fraction_max
     ) const;
-    NativeMixturePhaseBlock evaluate_parameterized_phase(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume,
-        double ion_mole_fraction_max,
-        const std::vector<NativeActiveCoordinate>& active_parameters
-    ) const;
     NativeMixturePhaseBlock evaluate_supported_phase_derivatives(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
         double ion_mole_fraction_max,
-        const std::vector<NativeActiveCoordinate>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters,
+        const std::vector<std::size_t>& supported_component_indices
     ) const;
     FixedPressureCompositionProjection
     evaluate_fixed_pressure_composition_derivatives(
         double temperature,
         const std::vector<double>& mole_fractions,
-        double molar_volume,
-        double ion_mole_fraction_max
+        double molar_volume
     ) const;
     NativeMixturePhaseBlock evaluate_temperature_phase_derivatives(
         double temperature,
         const std::vector<double>& amounts,
         double volume,
-        double ion_mole_fraction_max
+        double ion_mole_fraction_max,
+        const std::vector<std::size_t>& supported_component_indices
     ) const;
     std::array<double, 2> molar_volume_bounds(
         double temperature,
         const std::vector<double>& mole_fractions,
         double packing_fraction_min,
-        double packing_fraction_max,
-        double ion_mole_fraction_max
+        double packing_fraction_max
     ) const;
     double molar_density_upper_bound(
         double temperature,
@@ -269,8 +459,8 @@ public:
         double temperature,
         const std::vector<double>& amounts,
         double volume,
-        double ion_mole_fraction_max,
-        const std::vector<NativeActiveCoordinate>& active_parameters
+        const std::vector<NativeActiveCoordinate>& active_parameters,
+        const std::vector<std::size_t>& supported_component_indices
     ) const;
     NativeInversePackingGeometryBlock evaluate_inverse_packing_geometry(
         double temperature,
@@ -283,7 +473,6 @@ public:
         const std::vector<double>& mole_fractions,
         double packing_fraction_min,
         double packing_fraction_max,
-        double ion_mole_fraction_max,
         const std::vector<NativeActiveCoordinate>& active_parameters
     ) const;
     std::vector<double> reference_composition(
@@ -301,6 +490,13 @@ public:
         const std::string& phase
     ) const;
 private:
+    void validate_temperature(double temperature) const;
+    void validate_pressure(double pressure) const;
+    void validate_composition(const std::vector<double>& mole_fractions) const;
+    [[nodiscard]] std::vector<std::size_t> validate_amounts(
+        const std::vector<double>& amounts,
+        double volume
+    ) const;
     NativeFixedTopologyParameter resolve_fixed_topology_parameter(
         const std::string& identity,
         double value
@@ -311,7 +507,7 @@ private:
     const NativeParameters parameters_;
     std::vector<std::string> component_ids_;
     std::vector<std::string> site_ids_;
-    std::optional<NativeProviderMetadata> provider_metadata_;
+    std::optional<NativeEosMetadata> eos_metadata_;
     std::vector<NativeActiveCoordinate> active_coordinates_;
 };
 

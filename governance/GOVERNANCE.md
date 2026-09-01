@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 24
+Doctrine revision: 25
 
-Approved: 2026-08-25
+Approved: 2026-08-31
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -135,13 +135,13 @@ implemented by issue #31. Equilibrium owns the coupled liquid-reaction,
 liquid-state, vapor-state, and bubble-pressure value problem; exact total
 Schur-complement derivatives; ordered neutral vapor support; immutable local
 branch and exact-trial receipts; certification; and typed Non-Evaluable Trial
-outcomes. The primary vapor path is a nonideal Provider EOS. An ideal-gas vapor
+outcomes. The primary vapor path is a nonideal EOS. An ideal-gas vapor
 is available only as an explicitly typed comparison model. Regression consumes
 the owner values and exact Jacobians through the existing
 `ParameterFit`/`FitResult` route. Admission is source-neutral and local: it
 makes no global-equilibrium or parameter-promotion claim, and it fails closed
 on unresolved branches, disappearing liquid support, no incipient vapor,
-Provider-domain rejection, or singular/ill-conditioned coupled sensitivity.
+EOS-domain rejection, or singular/ill-conditioned coupled sensitivity.
 The accepted receipt is
 `governance/receipts/cap-13-reactive-bubble-vle-admission.json`.
 
@@ -598,6 +598,16 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
+Revision 25 records the narrow EOS ownership and naming decision D-041.
+`eos_core` and its immutable `NativeModel` own EOS validation, route selection,
+named physical projections, exact requested partials, source-reference
+transfer, and primitive evaluation counts. Equilibrium consumes those named
+results while retaining HELD, HELD2, Problem (67), GREPE, conservation, KKT,
+continuation, topology, certification, and solved-state sensitivity authority.
+This revision does not reinstate the reverted issue-#154 unified
+phase-stability proposal or alter D-030, D-032, discovery behavior, equations,
+budgets, certificates, or claims.
+
 Revision 24 records two user-approved consolidations. D-039 makes Ipopt the
 sole reduced-space Regression optimizer after fixed-state, saturation, and
 GREPE numerical parity; removes Ceres and glog from the native graph; and
@@ -629,7 +639,7 @@ authority-neutral candidate parameter export. It admits no unimplemented
 reactive LLE, electrochemical multiphase, or parameter-promotion capability.
 
 Revision 20 records the user-approved issue-#31 admission. D-035 admits the
-fixed-topology reactive bubble/VLE Observation Family, its nonideal Provider
+fixed-topology reactive bubble/VLE Observation Family, its nonideal EOS
 vapor path, exact total Schur Jacobian, local branch/support certification, and
 canonical Regression integration. It does not admit nonreactive
 phase-equilibrium observations or any global-equilibrium or parameter-promotion
@@ -737,9 +747,10 @@ Historical plans and receipts retain their original names.
 | D-032 Complete the scientific capability hard cutover | Explicit user instruction on 2026-08-12 to apply the recommended CAP sequence through final closure | Accept CAP-11 subject `a8efa571d52c32f5a697f15dd7f4623b7e3613fd`, its bounded retirement scan, one-wheel verification, independent reviews, and final receipt; close CAP root #10 while leaving issues #6, #30, and #31 as detached post-cutover work | Removes the last superseded live design, executable Lab duplicate, split-header remnants, literal-component internal names, author-named live diagnostics, and dead legacy switches without deleting canonical HELD/HELD2 discovery or historical provenance | No | Engine and Management |
 | D-033 Build first and keep developer verification fast | Explicit user instruction on 2026-08-12 that the private in-development Engine must support rapid downstream iteration and that tests must not block wheel build/install | Build and install the sole wheel before tests; make `check-affected.sh` and `check-all.sh` latency-bounded installed-wheel gates with a warm target below ten seconds; keep slow Engine stress evidence, Validation campaigns/figures, full native analysis, and sanitizers behind explicit owner commands | Reduces the measured warm gate from 821.09 seconds to 8.96 seconds while retaining every slow scientific falsifier in its owner tier | No | Engine, Validation, and Management |
 | D-034 Admit homogeneous reactive observations | Explicit user instruction through issue #30 and the reviewed CAP-12 correction/admission gates on 2026-08-13 | Admit only the fixed-T,P homogeneous reactive Observation Family and its canonical Regression integration; require immutable role-certified continuation anchors, exact total Jacobians, closed typed failures, exact trial/branch receipts, and local/no-global semantics; retain phase-equilibrium and coupled reactive-VLE families as unadmitted | Enables the first source-neutral reactive regression tracer without weakening D-031's prohibition on variable-topology or insufficiently certified phase-equilibrium fitting | No | Engine, Validation, Regression, and Management |
-| D-035 Admit reactive bubble/VLE observations | Explicit user instruction through issue #31 and the reviewed CAP-13 correction/admission gates on 2026-08-13 | Admit only the fixed-topology reactive bubble/VLE Observation Family and its canonical Regression integration; require exact same-liquid-state binding, ordered neutral vapor support, nonideal Provider vapor as the primary path, exact total Schur derivatives, immutable local branch receipts, and typed fail-closed outcomes | Enables coupled pressure/speciation regression without weakening D-031's prohibition on unqualified variable-topology phase-equilibrium fitting or making a global-equilibrium claim | No | Engine, Validation, Regression, and Management |
+| D-035 Admit reactive bubble/VLE observations | Explicit user instruction through issue #31 and the reviewed CAP-13 correction/admission gates on 2026-08-13 | Admit only the fixed-topology reactive bubble/VLE Observation Family and its canonical Regression integration; require exact same-liquid-state binding, ordered neutral vapor support, nonideal EOS vapor as the primary path, exact total Schur derivatives, immutable local branch receipts, and typed fail-closed outcomes | Enables coupled pressure/speciation regression without weakening D-031's prohibition on unqualified variable-topology phase-equilibrium fitting or making a global-equilibrium claim | No | Engine, Validation, Regression, and Management |
 | D-036 General Reactive Equilibrium and Phase Equilibrium target | User-confirmed GREPE design and two independent read-only sanity reviews on 2026-08-14 | Evolve the sole public `phase_equilibrium` owner through declarative finite/incipient reacting-phase blocks; use one nonduplicated Gibbs/KKT encoding, phase-aware reaction standards, exact Ipopt Hessians, exact outer-Ceres Jacobians, local declared-phase certificates, generic Regression evaluation, and authority-neutral candidate export | Establishes one staged architecture for homogeneous reaction, reactive bubble/dew/VLE, neutral reactive LLE, and later electrochemical LLE without admitting unimplemented capability or adding an application-specific route | Architecture target only; each runtime slice requires its own accepted receipt | Engine, Validation, Regression, Data, downstream applications, and Management |
 | D-037 Admit the GREPE proven core | Explicit user instruction on 2026-08-18 to combine the reviewed generic Engine work, retain only the proven core, reproduce the removed specialized path's results, and use an exact receipt before updating main | Admit declared finite/incipient supports, phase-scoped dielectric solvent selection, temperature-dependent permittivity, generic affine-feed intensive boundaries over the existing homogeneous/reactive-bubble owners, exact total derivatives, typed failures, and hash-bound nested receipts at subject commit `25cd674bb32611bac89d0ffb4ab8e1d953cbe09f` | Replaces a specialized fixed-pressure incipient implementation with the smaller generic owner while preserving its numerical results; excludes the other issue-48 dirty application/reference/saturation layer | No; later globality, phase discovery, and application parameter promotion remain separate | Engine, Validation, Regression, downstream applications, and Management |
 | D-038 Official downstream applications | Explicit user instruction on 2026-08-20 to maintain MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction as official Engine applications while preserving Engine/application ownership | Remove the D-024 quarantine for the three named repositories; keep them as separate sibling Git repositories; authorize cross-repository vertical-slice work; require immutable Engine-wheel identity and separate repository histories | Makes cross-repository work durable without nested repositories, submodules, sibling-source imports, or automatic scientific admission | No | Engine, downstream application owners, and Management |
 | D-039 Reduced-space Ipopt Regression | Explicit user instruction through issue #60 to prototype Ipopt, compare it with Ceres on every admitted reduced-space owner, and retain one optimizer | Make Ipopt the sole reduced-space Regression optimizer; preserve exact owner residual Jacobians, `J^T r`, bounds, typed trial failures, immutable results, and scientific tolerances; remove Ceres and glog; keep simultaneous full-space Regression outside this decision | Removes a second native optimizer dependency while retaining fixed-state, saturation, and GREPE numerical parity and improving the expensive GREPE reference runtime | No | Engine, Regression, Validation, and downstream applications |
 | D-040 Remove the active Lab area | Explicit user instruction on 2026-08-25 to delete the Lab subtree and all live routing while retaining required provenance | Remove `lab/` from the governed topology, ownership manifest, checks, and live instructions; retain former Lab names and paths only in historical decisions, receipts, source identities, and scientific provenance | Removes a non-production project area without creating a replacement scratch framework or weakening Engine, Data, or Validation ownership | No | Governance and Management |
+| D-041 Make `eos_core` the sole EOS evaluation owner | Explicit user instruction through issue #156 on 2026-08-31 | Put EOS-domain validation, kernel selection, named physical projections, requested exact partials, source-reference transfer, immutable metadata, and primitive evaluation accounting on `NativeModel`; remove the Equilibrium EOS façade and use EOS vocabulary in live schemas | Removes duplicate EOS ownership without changing HELD/HELD2, Problem (67), GREPE, discovery, equations, certificates, or scientific claims | No | Engine, Equilibrium, Regression-interface text, and Management |

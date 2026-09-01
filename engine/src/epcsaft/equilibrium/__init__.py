@@ -1,4 +1,4 @@
-"""Bounded local equilibrium routes over the public ePC-SAFT provider."""
+"""Bounded local equilibrium routes over the public ePC-SAFT eos."""
 
 from ._api import (
     AllComponents,
@@ -61,7 +61,7 @@ from ._grepe import (
     GeneralReactiveEquilibriumResult,
     IdealGasModel,
     IntensiveBoundary,
-    ProviderModel,
+    EosModel,
     ReactivePhase,
     Solved,
     general_reactive_equilibrium_descriptor,
@@ -134,7 +134,7 @@ __all__ = [
     "PhaseSpeciesTerm",
     "PhaseSpecification",
     "Product",
-    "ProviderModel",
+    "EosModel",
     "Ratio",
     "ReactivePhase",
     "ResolvedFeed",

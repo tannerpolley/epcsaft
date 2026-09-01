@@ -37,6 +37,27 @@ def test_malformed_compositions_fail_closed(composition) -> None:
     assert captured.value.code == "invalid-state"
 
 
+def test_native_model_enforces_resolved_eos_domain() -> None:
+    native = Mixture(Parameters.from_mapping(AQUEOUS_ELECTROLYTE))._native
+
+    with pytest.raises(ValueError):
+        native.evaluate(298.14, 1000.0, (0.98, 0.01, 0.01))
+    with pytest.raises(ValueError):
+        native.evaluate_pressure(298.15, 100001.0, (0.98, 0.01, 0.01), "liquid")
+    with pytest.raises(ValueError):
+        native.evaluate(298.15, 1000.0, (0.98, 0.02, 0.0))
+    with pytest.raises(ValueError):
+        native.evaluate(298.15, 1000.0, (0.5, 0.25, 0.25))
+    with pytest.raises(ValueError):
+        native.evaluate_phase_derivatives(
+            298.14, (0.98, 0.01, 0.01), 1.0e-3, (), 2
+        )
+    with pytest.raises(ValueError):
+        native.evaluate_fixed_pressure_composition_derivatives(
+            298.15, (0.98, 0.02, 0.0), 1.0e-3
+        )
+
+
 def test_impossible_density_request_fails_closed() -> None:
     model = Pure(Parameters.from_mapping(neutral_pure("propane")))
 

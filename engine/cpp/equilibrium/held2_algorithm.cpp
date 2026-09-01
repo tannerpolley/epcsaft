@@ -30,17 +30,17 @@ auto run_cached_thermodynamic_step(
     Held2AlgorithmCache& cache
 ) {
     const std::uint64_t states_before =
-        cache.provider_state_evaluations();
+        cache.eos_state_evaluations();
     const std::uint64_t bounds_before =
-        cache.provider_volume_bound_evaluations();
+        cache.eos_volume_bound_evaluations();
     const std::uint64_t packing_before =
-        cache.provider_packing_evaluations();
+        cache.eos_packing_evaluations();
     return run_step(step, [&] {
         auto result = callable();
-        result.timing.provider_evaluations =
-            cache.provider_state_evaluations() - states_before
-            + cache.provider_volume_bound_evaluations() - bounds_before
-            + cache.provider_packing_evaluations() - packing_before;
+        result.timing.eos_evaluations =
+            cache.eos_state_evaluations() - states_before
+            + cache.eos_volume_bound_evaluations() - bounds_before
+            + cache.eos_packing_evaluations() - packing_before;
         return result;
     });
 }
@@ -92,7 +92,7 @@ Held2AlgorithmResult run_held2_algorithm(
         result.failure_reason = reason;
         return result;
     };
-    if (thermodynamics.provider_fingerprint.empty()
+    if (thermodynamics.eos_fingerprint.empty()
         || !thermodynamics.evaluate
         || !thermodynamics.volume_bounds_physical
         || !thermodynamics.packing_fraction) {
@@ -106,7 +106,7 @@ Held2AlgorithmResult run_held2_algorithm(
             input.pressure_pa,
             input.overall_mole_fractions,
             thermodynamics.volume_bounds_physical,
-            thermodynamics.provider_fingerprint,
+            thermodynamics.eos_fingerprint,
             thermodynamics.total_ion_mole_fraction_max
         );
     });
@@ -118,7 +118,7 @@ Held2AlgorithmResult run_held2_algorithm(
     const Held2VolumeBoundsEvaluator uncached_volume_bounds =
         *result.step1.volume_bounds;
     Held2AlgorithmCache cache(
-        thermodynamics.provider_fingerprint,
+        thermodynamics.eos_fingerprint,
         thermodynamics.evaluate,
         uncached_volume_bounds,
         thermodynamics.packing_fraction
@@ -156,15 +156,21 @@ Held2AlgorithmResult run_held2_algorithm(
     if (result.step2->outcome
         == Held2Step2Outcome::NoNegativeWitnessDetected) {
         const Held2StateEvaluation& reference = *result.step2->reference;
+        const std::uint64_t packing_before = cache.eos_packing_evaluations();
+        const double reference_packing_fraction = packing_fraction(
+            *cached_step1.independent_feed, reference.volume
+        );
+        const std::uint64_t packing_evaluations =
+            cache.eos_packing_evaluations() - packing_before;
+        result.step2->timing.eos_evaluations += packing_evaluations;
+        result.step_timings.back().eos_evaluations += packing_evaluations;
         result.phases = {{
             0,
             1.0,
             *cached_step1.independent_feed,
             input.overall_mole_fractions,
             reference.volume,
-            packing_fraction(
-                *cached_step1.independent_feed, reference.volume
-            ),
+            reference_packing_fraction,
             reference.helmholtz_over_rt_reference_amount,
             reference.pressure_pa,
             reference.chemical_potentials_over_rt,
@@ -186,15 +192,15 @@ Held2AlgorithmResult run_held2_algorithm(
     };
     result.step3 = run_step(3, [&] {
         const std::uint64_t states_before =
-            cache.provider_state_evaluations();
+            cache.eos_state_evaluations();
         const std::uint64_t bounds_before =
-            cache.provider_volume_bound_evaluations();
+            cache.eos_volume_bound_evaluations();
         Held2Step3Result step3 = run_held2_step3(
             cached_step1, *result.step2, pressure_roots
         );
-        step3.timing.provider_evaluations =
-            cache.provider_state_evaluations() - states_before
-            + cache.provider_volume_bound_evaluations() - bounds_before;
+        step3.timing.eos_evaluations =
+            cache.eos_state_evaluations() - states_before
+            + cache.eos_volume_bound_evaluations() - bounds_before;
         return step3;
     });
     result.step_timings.push_back(result.step3->timing);
