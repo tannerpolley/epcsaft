@@ -439,7 +439,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
             }
             return composition;
         };
-        std::optional<double> density_anchor;
+        std::optional<epcsaft::NativeResult> density_anchor;
         if (pressure_derivatives_requested
             || parameter_derivatives_requested) {
             const std::vector<double> density_anchor_composition =
@@ -452,7 +452,7 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                 pressure_pa,
                 density_anchor_composition,
                 "liquid"
-            ).molar_density;
+            );
         }
         const auto phase_fugacity_derivatives =
             [&](const std::vector<double>& composition,
@@ -464,7 +464,12 @@ SourceReferenceResult ProviderContext::evaluate_source_reference_transfer(
                         temperature_k,
                         pressure_pa,
                         composition,
-                        *density_anchor
+                        density_anchor->molar_density,
+                        phase_branch,
+                        density_anchor->density_diagnostics
+                            ->selected_stable_root_index,
+                        density_anchor->density_diagnostics
+                            ->certified_origin_molar_density
                     )
                     : model_.evaluate_pressure(
                         temperature_k,

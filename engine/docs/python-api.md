@@ -58,6 +58,14 @@ state = mixture.state(
 receives an explicit composition. Both return `State`. A state accepts exactly
 one of molar density or pressure; `phase` selects a pressure-closure branch.
 
+Nearby fixed-pressure mixture states may reuse the preceding immutable state
+with `density_anchor=state`. This requires `P` and an explicit `phase`; the
+anchor must match the model, component order, temperature, pressure, and
+certified phase branch. Invalid, mismatched, or locally unreachable anchors
+raise `EosError` with a stable `density-anchor-*` code and never fall back to a
+cold branch solve. `State.density_diagnostics` records the source identity,
+local 1% reachability certificate, and pressure closure.
+
 `State.ares`, `ures`, `hres`, `gres`, `sres`, `cvres`, and `cpres` return Pint
 molar quantities by default and reduced scalars with `basis="reduced"`.
 `State.fugacity` preserves component order. `Pure.saturation` returns the

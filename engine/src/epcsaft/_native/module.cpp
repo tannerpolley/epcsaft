@@ -42,6 +42,35 @@ PYBIND11_MODULE(_core, module) {
         .def_readonly(
             "selected_stable_root_index",
             &epcsaft::NativeDensityDiagnostics::selected_stable_root_index
+        )
+        .def_readonly(
+            "requested_phase", &epcsaft::NativeDensityDiagnostics::requested_phase
+        )
+        .def_readonly(
+            "certificate_kind", &epcsaft::NativeDensityDiagnostics::certificate_kind
+        )
+        .def_readonly(
+            "local_search_outcome",
+            &epcsaft::NativeDensityDiagnostics::local_search_outcome
+        )
+        .def_readonly(
+            "local_root_count", &epcsaft::NativeDensityDiagnostics::local_root_count
+        )
+        .def_readonly(
+            "reachability_log_density_limit",
+            &epcsaft::NativeDensityDiagnostics::reachability_log_density_limit
+        )
+        .def_readonly(
+            "reachability_scan_interval_count",
+            &epcsaft::NativeDensityDiagnostics::reachability_scan_interval_count
+        )
+        .def_readonly(
+            "certified_stable_root_index",
+            &epcsaft::NativeDensityDiagnostics::certified_stable_root_index
+        )
+        .def_readonly(
+            "certified_origin_molar_density",
+            &epcsaft::NativeDensityDiagnostics::certified_origin_molar_density
         );
 
     py::class_<epcsaft::NativeResult>(module, "NativeResult")
@@ -241,6 +270,17 @@ PYBIND11_MODULE(_core, module) {
         }))
         .def("evaluate", &epcsaft::NativeModel::evaluate)
         .def("evaluate_pressure", &epcsaft::NativeModel::evaluate_pressure)
+        .def(
+            "evaluate_pressure_continuation",
+            &epcsaft::NativeModel::evaluate_pressure_continuation,
+            py::arg("temperature"),
+            py::arg("pressure"),
+            py::arg("mole_fractions"),
+            py::arg("reference_molar_density"),
+            py::arg("phase"),
+            py::arg("certified_stable_root_index"),
+            py::arg("certified_origin_molar_density")
+        )
         .def(
             "with_parameter_identities",
             &epcsaft::NativeModel::with_parameter_identities,

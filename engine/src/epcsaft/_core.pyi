@@ -11,6 +11,14 @@ class NativeDensityDiagnostics:
     branch: str
     stable_root_count: int
     selected_stable_root_index: int
+    requested_phase: str
+    certificate_kind: str
+    local_search_outcome: str
+    local_root_count: int
+    reachability_log_density_limit: float
+    reachability_scan_interval_count: int
+    certified_stable_root_index: int
+    certified_origin_molar_density: float
 
 class NativeResult:
     hard_chain: float
@@ -76,6 +84,16 @@ class NativeModel:
         pressure_pa: float,
         composition: Sequence[float],
         phase: str,
+    ) -> NativeResult: ...
+    def evaluate_pressure_continuation(
+        self,
+        temperature_k: float,
+        pressure_pa: float,
+        composition: Sequence[float],
+        reference_molar_density: float,
+        phase: str,
+        certified_stable_root_index: int,
+        certified_origin_molar_density: float,
     ) -> NativeResult: ...
     def with_parameter_identities(
         self, component_ids: Sequence[str], site_ids: Sequence[str]
