@@ -3,7 +3,7 @@
 - Status: configured finite-phase GREPE implemented
 - Date: 2026-08-14
 - Owner: Equilibrium vertical-slice task
-- Authority: Governance D-036, doctrine revision 21
+- Authority: ADR 0007 mapping of the retained D-036 decision
 - Public owner: `epcsaft.equilibrium.phase_equilibrium`
 
 ## Outcome
@@ -255,7 +255,7 @@ identifiability, parameter-selection, promotion, or scientific-adoption claim.
   evidence, and the one installed wheel.
 - Data owns reusable canonical parameter and observation packets with source,
   units, domain, transformation, use basis, and hashes.
-- Validation owns durable installed-wheel literature and cross-module evidence.
+- Analysis sets own durable installed-wheel literature and cross-module evidence.
 - A downstream MEA or lithium application owns its system configuration,
   selected rows and mappings, campaign controls, analysis, plots, fit-quality
   bands, and parameter-adoption decision. It pins immutable Data inputs and an

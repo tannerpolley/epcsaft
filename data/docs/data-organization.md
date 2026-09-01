@@ -13,16 +13,16 @@ That includes two kinds of packets:
    units, independent conditions, source locators, and uncertainty fields when
    the source provides them.
 
-Validation owns campaign evidence. Paper- or figure-specific tables, digitized
+Analysis sets own question-specific evidence. Paper- or figure-specific tables, digitized
 curves, direct experimental records retained only to reproduce a named paper,
 campaign inputs, fitted alternatives, generated results, plots, and receipts
-remain in Validation. A numeric table does not become a Data packet merely
+remain under `analyses/`. A numeric table does not become a Data packet merely
 because it has been normalized. It must be reusable independently of one
 campaign and have a defensible source and use basis.
 
-EOS owns equations, algorithms, and any separately admitted self-contained
-runtime copy. Regression owns fitting workflows and fitting results. Neither
-package may import from or fetch Data at runtime. Consumers materialize a
+Engine owns equations, algorithms, and any separately admitted self-contained
+runtime copy; its Regression module owns fitting workflows and fitting results.
+The installed package may not import from or fetch Data at runtime. Consumers materialize a
 packet from an immutable Data commit and record its packet fingerprint.
 
 ## Packet layout
@@ -70,29 +70,24 @@ The repository currently contains the project’s reviewed parameter families:
 | `held-cameretti-sadowski-2008` | Held/Cameretti/Sadowski electrolyte bundle |
 | `khudaida-2026-figure-2-electrolyte-lle` | Khudaida Figure 2 parameter bundle |
 
-The EOS copies referenced by the ownership manifest are runtime
-materializations or legacy copies pending the EOS hard cutover. They are not
-additional Data ownership locations.
+Engine runtime materializations are not additional Data ownership locations.
 
 ## Current reusable property packet
 
 `nist-srd69-pure-saturation-properties/1` is a reviewed reusable packet with
 three pure-component property tables. It currently has no live consumer or
-Governance lock:
+packet lock:
 
 - methane, NIST SRD 69, 100–180 K;
 - ethane, NIST SRD 69, 100–280 K; and
 - propane, NIST SRD 69 auxiliary reference-equation values, 100–360 K.
 
 The direct Glos 2004 propane experiment is intentionally not in this packet;
-it remains Validation campaign evidence. The same rule applies to the Figiel,
+it remains reproduction-analysis evidence. The same rule applies to the Figiel,
 Khudaida, Crespo, Ascani, and other paper/figure-specific target matrices.
 Those records may be promoted later only through a separate source and
 ownership review.
 
-The older Khudaida Data packet versions are immutable historical admissions
-and include Figure 2 observation copies because existing Data and Management
-locks point to them. They must not be rewritten in place. Version 4 is the
-parameter-only successor: it carries the same reviewed bundle bytes and no
-Figure 2 observations. Validation and Management locks must be updated to
-version 4 before it becomes the project default.
+Older Khudaida packet versions are immutable historical admissions and must not
+be rewritten in place. `data/packet-locks.json` identifies the current packet
+version for new analysis materializations.

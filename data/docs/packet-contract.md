@@ -18,8 +18,8 @@ appears only when needed under `parameters/`, `observations/`, `sources/`, or
 `provenance/`. Empty placeholder directories and unlisted files are invalid.
 
 Full papers, broad extraction corpora, rejected experiments, and exploratory
-notebooks are outside Data. Generated campaign results, plots, and receipts
-remain in Validation.
+notebooks are outside Data. Generated results, plots, and receipts remain in
+their owning analysis set.
 
 ## Property-data admission boundary
 
@@ -32,7 +32,7 @@ names and packet metadata make the units and meaning unambiguous.
 
 Paper- or figure-specific matrices, digitized curves, direct experimental rows
 kept only to reproduce a named publication, fitted targets, campaign-specific
-partitions, and generated results remain in Validation. Normalizing a table or
+partitions, and generated results remain under `analyses/`. Normalizing a table or
 copying it into CSV does not change that ownership. Promotion of a campaign
 record requires a separate review and a new packet version or family; existing
 immutable packets and consumer locks are never rewritten in place.
@@ -85,7 +85,7 @@ claiming a false single-repository origin.
 
 ## Consumer lock
 
-The live Governance manifest records the monorepo identity, repository-relative
+The live `data/packet-locks.json` manifest records the monorepo identity, repository-relative
 packet path, packet ID and version, and a fingerprint over the complete packet
 directory. The smallest lock record is:
 
@@ -103,10 +103,10 @@ The fingerprint is the raw 64-hex `packet_fingerprint` value emitted after
 display-only `sha256:` prefix). A consumer may add its campaign or runtime
 purpose and the exact materialization destination, but must not omit the
 repository-relative path or fingerprint. `materialization` is
-`byte-for-byte` for Validation or Regression packet materialization,
+`byte-for-byte` for analysis or Regression packet materialization,
 `subset-copy` for a self-contained admitted EOS subset copied from the packet,
 or `subset-generated` when EOS generates an admitted self-contained subset.
-EOS runtime copies must be self-contained. Validation and Regression
+EOS runtime copies must be self-contained. Analysis sets and Regression
 materialize the packet before execution. Runtime fetching is forbidden.
 
 The live lock manifest deliberately does not contain a commit field. A tracked

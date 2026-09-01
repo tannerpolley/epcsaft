@@ -58,7 +58,7 @@ The pair-parameter scientific basis is recorded in
 8. Generated parameter templates write every required neutral identity value.
    Loaders reject omission rather than inferring defaults.
 9. Engine tests remain compact numerical falsification checks. Named literature
-   replays belong in Validation. No contract, compatibility, snapshot, prose,
+   replays belong under `analyses/`. No contract, compatibility, snapshot, prose,
    source-specific, or legacy tests are introduced.
 
 ## Canonical ownership
@@ -317,6 +317,6 @@ Governance D-032 completes the cutover. All three owner plans, the D-030 phase
 promotion, and the D-031 Equilibrium-observation decision are complete. The
 single wheel contains one parameter and derivative system, source- or
 case-specific runtime routes are absent, compact numerical evidence passes,
-installed-wheel Validation owns literature acceptance, and the final
-Governance receipt binds the exact accepted tree and its justified provenance
-exceptions.
+installed-wheel analysis sets own literature acceptance, and the retained
+CAP-11 receipt binds the exact accepted tree and its justified provenance
+exceptions. ADR 0007 maps the former decision identifiers.

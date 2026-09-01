@@ -186,8 +186,8 @@ Equilibrium observation family is admitted to Regression by this plan.
    The accepted receipt makes `phase_equilibrium` the sole public owner and
    retires the fixed-flash Python surface, source bounds, and incumbent schemas
    while retaining HELD/HELD2 as the internal discovery algorithm.
-9. **Validation relocation.** Keep named literature and application campaigns
-   in Validation against the installed wheel; Engine retains only compact
+9. **Analysis relocation.** Keep named literature and application campaigns
+   under `analyses/` against the installed wheel; Engine retains only compact
    algorithmic/numerical evidence.
 10. **Future seam review.** Document how homogeneous chemical equilibrium
     states/reactions could join the phase seam later, without adding a dormant
@@ -214,7 +214,7 @@ Persistent Equilibrium checks must cover:
 - explicit failure for instability, unavailable topology, singularity,
   nonconvergence, and uncertified globality.
 
-Named publication matrices and broad phase envelopes belong in Validation. A
+Named publication matrices and broad phase envelopes belong under `analyses/`. A
 looser literature acceptance tolerance cannot weaken local balance,
 stationarity, derivative, or certificate tolerances.
 
