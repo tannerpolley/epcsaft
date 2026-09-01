@@ -1,5 +1,5 @@
-#include "held2_step1.hpp"
-#include "held2_tolerances.hpp"
+#include "phase_stability_stage1.hpp"
+#include "phase_stability_tolerances.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -44,7 +44,7 @@ double charge_scale(
 }
 
 std::size_t retained_position(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     std::size_t provider_index
 ) {
     const auto position = std::find(
@@ -53,7 +53,7 @@ std::size_t retained_position(
         provider_index
     );
     if (position == coordinates.retained_indices.end()) {
-        throw std::invalid_argument("species is absent from HELD2 coordinates");
+        throw std::invalid_argument("species is absent from PHASE_STABILITY coordinates");
     }
     return static_cast<std::size_t>(
         position - coordinates.retained_indices.begin()
@@ -61,18 +61,18 @@ std::size_t retained_position(
 }
 
 void require_complete_polytope(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& independent,
-    Held2CompositionDomain domain = Held2CompositionDomain::FiniteSearch
+    PhaseStabilityCompositionDomain domain = PhaseStabilityCompositionDomain::FiniteSearch
 ) {
     for (std::size_t constraint_index = 0;
          constraint_index < coordinates.polytope_constraints.size();
          ++constraint_index) {
-        const Held2PolytopeConstraint& constraint =
+        const PhaseStabilityPolytopeConstraint& constraint =
             coordinates.polytope_constraints[constraint_index];
         if (constraint.coefficients.size() != independent.size()) {
             throw std::invalid_argument(
-                "HELD2 Step-1 polytope dimensions are invalid"
+                "PHASE_STABILITY Step-1 polytope dimensions are invalid"
             );
         }
         const double value = std::inner_product(
@@ -89,7 +89,7 @@ void require_complete_polytope(
             && coordinates.charges[
                 coordinates.independent_indices[compact]
             ] != 0.0;
-        if (domain == Held2CompositionDomain::TraceRefinement
+        if (domain == PhaseStabilityCompositionDomain::TraceRefinement
             && constraint_index % 2 == 0 && charged_coordinate
             && independent[compact] <= 0.0) {
             throw std::invalid_argument(
@@ -97,12 +97,12 @@ void require_complete_polytope(
             );
         }
         const bool charged_trace_lower_bound =
-            domain == Held2CompositionDomain::TraceRefinement
+            domain == PhaseStabilityCompositionDomain::TraceRefinement
             && constraint_index % 2 == 0 && charged_coordinate
             && independent[compact] > 0.0;
         if (!std::isfinite(value) || (
-            !audit_held2_tolerance(
-                kHeld2PolytopeFeasibility, violation
+            !audit_phase_stability_tolerance(
+                kPhaseStabilityPolytopeFeasibility, violation
             ).passed && !charged_trace_lower_bound
         )) {
             throw std::invalid_argument(
@@ -114,16 +114,19 @@ void require_complete_polytope(
 }
 
 std::vector<double> independent_from_modified(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& modified
 );
 
 std::vector<double> physical_total_ion_coefficients(
-    const Held2Coordinates& coordinates
+    const PhaseStabilityCoordinates& coordinates
 ) {
     std::vector<double> coefficients(
         coordinates.independent_indices.size(), 0.0
     );
+    if (coordinates.eliminated_index == coordinates.charges.size()) {
+        return coefficients;
+    }
     const double eliminated_charge =
         coordinates.charges[coordinates.eliminated_index];
     for (std::size_t compact = 0; compact < coefficients.size(); ++compact) {
@@ -141,7 +144,7 @@ std::vector<double> physical_total_ion_coefficients(
 }
 
 std::vector<double> polytope_anchor(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     double total_ion_mole_fraction_max
 ) {
     std::size_t positive_count = 0;
@@ -151,6 +154,16 @@ std::vector<double> polytope_anchor(
         positive_count += charge > 0.0 ? 1U : 0U;
         negative_count += charge < 0.0 ? 1U : 0U;
         neutral_count += charge == 0.0 ? 1U : 0U;
+    }
+    if (positive_count == 0 && negative_count == 0) {
+        const std::vector<double> physical(
+            coordinates.charges.size(),
+            1.0 / static_cast<double>(coordinates.charges.size())
+        );
+        return independent_from_modified(
+            coordinates,
+            phase_stability_transform_physical_fractions(coordinates, physical)
+        );
     }
     const double ion_total = std::isfinite(total_ion_mole_fraction_max)
         ? 0.5 * total_ion_mole_fraction_max
@@ -182,12 +195,12 @@ std::vector<double> polytope_anchor(
     }
     return independent_from_modified(
         coordinates,
-        held2_transform_physical_fractions(coordinates, physical)
+        phase_stability_transform_physical_fractions(coordinates, physical)
     );
 }
 
 std::array<double, 2> checked_volume_bounds(
-    const Held2PhysicalVolumeBoundsEvaluator& evaluator,
+    const PhaseStabilityPhysicalVolumeBoundsEvaluator& evaluator,
     const std::vector<double>& physical
 ) {
     const std::array<double, 2> bounds = evaluator(physical);
@@ -201,7 +214,7 @@ std::array<double, 2> checked_volume_bounds(
 }
 
 std::vector<double> independent_from_modified(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& modified
 ) {
     std::vector<double> independent;
@@ -214,8 +227,8 @@ std::vector<double> independent_from_modified(
     return independent;
 }
 
-Held2Step1Result finish_step1(
-    Held2Step1Result result,
+PhaseStabilityStage1Result finish_step1(
+    PhaseStabilityStage1Result result,
     const char* reason,
     int next_step,
     const std::chrono::steady_clock::time_point& wall_start,
@@ -239,7 +252,7 @@ Held2Step1Result finish_step1(
 
 }  // namespace
 
-Held2Coordinates make_held2_coordinates(
+PhaseStabilityCoordinates make_phase_stability_coordinates(
     const std::vector<double>& charges,
     const std::vector<std::string>& component_ids
 ) {
@@ -267,7 +280,7 @@ Held2Coordinates make_held2_coordinates(
     }
     if (charged_count == 0) {
         constexpr double neutral_lower_scale = 1.0e-14;
-        Held2Coordinates result;
+        PhaseStabilityCoordinates result;
         result.charges = charges;
         result.eliminated_index = charges.size();
         result.dependent_index = charges.size() - 1;
@@ -320,7 +333,7 @@ Held2Coordinates make_held2_coordinates(
     }
     if (charged_count < 2 || neutral_count < 1) {
         throw std::invalid_argument(
-            "HELD2 requires at least two charged species and one molecular species"
+            "PHASE_STABILITY requires at least two charged species and one molecular species"
         );
     }
 
@@ -352,7 +365,7 @@ Held2Coordinates make_held2_coordinates(
         );
     }
 
-    Held2Coordinates result;
+    PhaseStabilityCoordinates result;
     result.charges = charges;
     result.eliminated_index = eliminated;
     result.dependent_index = charges.size();
@@ -401,7 +414,7 @@ Held2Coordinates make_held2_coordinates(
         result.independent_indices.push_back(index);
         const double factor = result.modified_factors.back();
         result.independent_lower_bounds.push_back(
-            kHeld2ModifiedLowerScale * factor
+            kPhaseStabilityModifiedLowerScale * factor
         );
         if (charges[index] == 0.0) {
             result.independent_upper_bounds.push_back(1.0);
@@ -445,7 +458,7 @@ Held2Coordinates make_held2_coordinates(
             result.independent_upper_bounds[compact],
         });
     }
-    const double dependent_lower = kHeld2ModifiedLowerScale
+    const double dependent_lower = kPhaseStabilityModifiedLowerScale
         * result.modified_factors[
             retained_position(result, result.dependent_index)
         ];
@@ -471,8 +484,8 @@ Held2Coordinates make_held2_coordinates(
     return result;
 }
 
-std::vector<double> held2_transform_physical_fractions(
-    const Held2Coordinates& coordinates,
+std::vector<double> phase_stability_transform_physical_fractions(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& physical_fractions
 ) {
     if (physical_fractions.size() != coordinates.charges.size()) {
@@ -493,13 +506,13 @@ std::vector<double> held2_transform_physical_fractions(
     const double total = std::accumulate(
         physical_fractions.begin(), physical_fractions.end(), 0.0
     );
-    if (!audit_held2_tolerance(kHeld2CompositionSum, total - 1.0).passed) {
+    if (!audit_phase_stability_tolerance(kPhaseStabilityCompositionSum, total - 1.0).passed) {
         throw std::invalid_argument(
             "physical mole fractions must sum to one"
         );
     }
-    if (!audit_held2_tolerance(
-            kHeld2ChargeBalance,
+    if (!audit_phase_stability_tolerance(
+            kPhaseStabilityChargeBalance,
             charge_residual(coordinates.charges, physical_fractions),
             charge_scale(coordinates.charges, physical_fractions)
         ).passed) {
@@ -518,8 +531,8 @@ std::vector<double> held2_transform_physical_fractions(
     const double modified_total = std::accumulate(
         modified.begin(), modified.end(), 0.0
     );
-    if (!audit_held2_tolerance(
-            kHeld2CompositionSum, modified_total - 1.0
+    if (!audit_phase_stability_tolerance(
+            kPhaseStabilityCompositionSum, modified_total - 1.0
         ).passed) {
         throw std::invalid_argument(
             "modified mole fractions do not sum to one"
@@ -528,8 +541,8 @@ std::vector<double> held2_transform_physical_fractions(
     return modified;
 }
 
-static std::vector<double> held2_lift_modified_fractions(
-    const Held2Coordinates& coordinates,
+static std::vector<double> phase_stability_lift_modified_fractions(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& modified_fractions
 ) {
     if (modified_fractions.size() != coordinates.retained_indices.size()) {
@@ -547,8 +560,8 @@ static std::vector<double> held2_lift_modified_fractions(
         }
         modified_total += value;
     }
-    if (!audit_held2_tolerance(
-            kHeld2CompositionSum, modified_total - 1.0
+    if (!audit_phase_stability_tolerance(
+            kPhaseStabilityCompositionSum, modified_total - 1.0
         ).passed) {
         throw std::invalid_argument(
             "modified mole fractions must sum to one"
@@ -574,8 +587,8 @@ static std::vector<double> held2_lift_modified_fractions(
             * physical[index];
     }
     if (eliminated < 0.0
-        && !audit_held2_tolerance(
-            kHeld2ReconstructedIon, eliminated
+        && !audit_phase_stability_tolerance(
+            kPhaseStabilityReconstructedIon, eliminated
         ).passed) {
         throw std::invalid_argument(
             "eliminated ion amount must be nonnegative"
@@ -585,16 +598,16 @@ static std::vector<double> held2_lift_modified_fractions(
     return physical;
 }
 
-std::vector<double> held2_lift_independent_fractions(
-    const Held2Coordinates& coordinates,
+std::vector<double> phase_stability_lift_independent_fractions(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& independent_modified_fractions,
-    Held2CompositionDomain domain
+    PhaseStabilityCompositionDomain domain
 ) {
     const std::size_t independent_count =
         coordinates.independent_indices.size();
     if (independent_modified_fractions.size() != independent_count) {
         throw std::invalid_argument(
-            "independent modified composition size does not match the HELD2 chart"
+            "independent modified composition size does not match the PHASE_STABILITY chart"
         );
     }
     require_finite_vector(
@@ -622,13 +635,13 @@ std::vector<double> held2_lift_independent_fractions(
         coordinates, coordinates.dependent_index
     );
     modified_fractions[dependent_retained] = 1.0 - independent_sum;
-    return held2_lift_modified_fractions(
+    return phase_stability_lift_modified_fractions(
         coordinates, modified_fractions
     );
 }
 
-std::vector<double> held2_physical_fraction_jacobian(
-    const Held2Coordinates& coordinates
+std::vector<double> phase_stability_physical_fraction_jacobian(
+    const PhaseStabilityCoordinates& coordinates
 ) {
     const std::size_t component_count = coordinates.charges.size();
     const std::size_t independent_count =
@@ -673,19 +686,19 @@ std::vector<double> held2_physical_fraction_jacobian(
     return jacobian;
 }
 
-Held2Step1Result run_held2_step1(
+PhaseStabilityStage1Result run_phase_stability_stage1(
     const std::vector<std::string>& component_ids,
     const std::vector<double>& charges,
     double temperature_k,
     double pressure_pa,
     const std::vector<double>& physical_feed,
-    const Held2PhysicalVolumeBoundsEvaluator& physical_volume_bounds,
+    const PhaseStabilityPhysicalVolumeBoundsEvaluator& physical_volume_bounds,
     std::string provider_fingerprint,
     double total_ion_mole_fraction_max
 ) {
     const auto wall_start = std::chrono::steady_clock::now();
     const std::clock_t cpu_start = std::clock();
-    Held2Step1Result result;
+    PhaseStabilityStage1Result result;
     result.total_ion_mole_fraction_max =
         total_ion_mole_fraction_max;
     result.provider_fingerprint = std::move(provider_fingerprint);
@@ -723,9 +736,9 @@ Held2Step1Result run_held2_step1(
         }
     }
 
-    Held2Coordinates coordinates;
+    PhaseStabilityCoordinates coordinates;
     try {
-        coordinates = make_held2_coordinates(charges, component_ids);
+        coordinates = make_phase_stability_coordinates(charges, component_ids);
         if (std::isfinite(total_ion_mole_fraction_max)) {
             if (total_ion_mole_fraction_max <= 0.0
                 || total_ion_mole_fraction_max > 1.0) {
@@ -755,9 +768,9 @@ Held2Step1Result run_held2_step1(
     std::vector<double> lifted_feed;
     try {
         const std::vector<double> modified =
-            held2_transform_physical_fractions(coordinates, physical_feed);
+            phase_stability_transform_physical_fractions(coordinates, physical_feed);
         independent_feed = independent_from_modified(coordinates, modified);
-        lifted_feed = held2_lift_independent_fractions(
+        lifted_feed = phase_stability_lift_independent_fractions(
             coordinates, independent_feed
         );
     } catch (const std::invalid_argument&) {
@@ -786,21 +799,21 @@ Held2Step1Result run_held2_step1(
     result.coordinates = coordinates;
     result.independent_feed = independent_feed;
     result.feed_volume_bounds = feed_volume_bounds;
-    result.volume_bounds = Held2VolumeBoundsEvaluator(
+    result.volume_bounds = PhaseStabilityVolumeBoundsEvaluator(
         [coordinates, physical_volume_bounds](
             const std::vector<double>& independent
         ) {
             return checked_volume_bounds(
                 physical_volume_bounds,
-                held2_lift_independent_fractions(coordinates, independent)
+                phase_stability_lift_independent_fractions(coordinates, independent)
             );
         }
     );
     return finish("step1_complete", 2);
 }
 
-std::vector<double> held2_map_unit_cube_to_independent_fractions(
-    const Held2Coordinates& coordinates,
+std::vector<double> phase_stability_map_unit_cube_to_independent_fractions(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& unit_cube_coordinates,
     double total_ion_mole_fraction_max
 ) {
@@ -809,30 +822,30 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
         || coordinates.independent_lower_bounds.size() != dimension
         || coordinates.independent_upper_bounds.size() != dimension) {
         throw std::invalid_argument(
-            "HELD2 simplex chart dimensions are invalid"
+            "PHASE_STABILITY simplex chart dimensions are invalid"
         );
     }
     require_finite_vector(
-        unit_cube_coordinates, "HELD2 simplex cube coordinates"
+        unit_cube_coordinates, "PHASE_STABILITY simplex cube coordinates"
     );
     if (!std::isnan(total_ion_mole_fraction_max)
         && (!std::isfinite(total_ion_mole_fraction_max)
             || total_ion_mole_fraction_max <= 0.0
             || total_ion_mole_fraction_max > 1.0)) {
         throw std::invalid_argument(
-            "HELD2 Provider total-ion mole-fraction ceiling is invalid or infeasible"
+            "PHASE_STABILITY Provider total-ion mole-fraction ceiling is invalid or infeasible"
         );
     }
     for (std::size_t index = 0; index < dimension; ++index) {
         if (unit_cube_coordinates[index] < 0.0
             || unit_cube_coordinates[index] > 1.0) {
             throw std::invalid_argument(
-                "HELD2 simplex cube coordinate is outside [0, 1]"
+                "PHASE_STABILITY simplex cube coordinate is outside [0, 1]"
             );
         }
     }
 
-    std::vector<Held2PolytopeConstraint> constraints =
+    std::vector<PhaseStabilityPolytopeConstraint> constraints =
         coordinates.polytope_constraints;
     if (std::isfinite(total_ion_mole_fraction_max)) {
         constraints.push_back({
@@ -860,7 +873,7 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
         value /= radial_fraction;
     }
     double boundary_distance = std::numeric_limits<double>::infinity();
-    for (const Held2PolytopeConstraint& constraint : constraints) {
+    for (const PhaseStabilityPolytopeConstraint& constraint : constraints) {
         const double anchor_value = std::inner_product(
             constraint.coefficients.begin(),
             constraint.coefficients.end(),
@@ -882,7 +895,7 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
     }
     if (!std::isfinite(boundary_distance) || boundary_distance < 0.0) {
         throw std::invalid_argument(
-            "HELD2 complete polytope has no radial boundary"
+            "PHASE_STABILITY complete polytope has no radial boundary"
         );
     }
     std::vector<double> independent = anchor;
@@ -894,8 +907,8 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
     return independent;
 }
 
-std::vector<double> held2_transform_modified_potentials(
-    const Held2Coordinates& coordinates,
+std::vector<double> phase_stability_transform_modified_potentials(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& chemical_potentials
 ) {
     if (chemical_potentials.size() != coordinates.charges.size()) {
@@ -928,14 +941,14 @@ std::vector<double> held2_transform_modified_potentials(
     return modified;
 }
 
-Held2StateEvaluation evaluate_held2_phase_block(
-    const Held2Coordinates& coordinates,
+PhaseStabilityStateEvaluation evaluate_phase_stability_phase_block(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& independent_modified_fractions,
     double log_volume,
     double pressure_over_rt,
     double target_pressure_pa,
-    const Held2PhysicalPhaseBlock& block,
-    Held2CompositionDomain domain
+    const PhaseStabilityPhysicalPhaseBlock& block,
+    PhaseStabilityCompositionDomain domain
 ) {
     const std::size_t component_count = coordinates.charges.size();
     const std::size_t independent_count =
@@ -944,7 +957,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
     const std::size_t reduced_coordinate_count = independent_count + 1;
     if (independent_modified_fractions.size() != independent_count) {
         throw std::invalid_argument(
-            "independent modified composition size does not match the HELD2 chart"
+            "independent modified composition size does not match the PHASE_STABILITY chart"
         );
     }
     require_finite_vector(
@@ -955,30 +968,30 @@ Held2StateEvaluation evaluate_held2_phase_block(
         || !std::isfinite(target_pressure_pa) || pressure_over_rt <= 0.0
         || target_pressure_pa <= 0.0) {
         throw std::invalid_argument(
-            "HELD2 phase state and pressure scales must be finite and positive"
+            "PHASE_STABILITY phase state and pressure scales must be finite and positive"
         );
     }
     if (block.gradient.size() != provider_coordinate_count
         || block.hessian.size()
             != provider_coordinate_count * provider_coordinate_count) {
         throw std::invalid_argument(
-            "HELD2 physical phase block has the wrong tensor dimensions"
+            "PHASE_STABILITY physical phase block has the wrong tensor dimensions"
         );
     }
     require_finite_vector(
-        block.gradient, "HELD2 physical phase gradient"
+        block.gradient, "PHASE_STABILITY physical phase gradient"
     );
     require_finite_vector(
-        block.hessian, "HELD2 physical phase Hessian"
+        block.hessian, "PHASE_STABILITY physical phase Hessian"
     );
     if (!std::isfinite(block.helmholtz_over_rt)
         || !std::isfinite(block.pressure_pa)) {
         throw std::invalid_argument(
-            "HELD2 physical phase block scalars must be finite"
+            "PHASE_STABILITY physical phase block scalars must be finite"
         );
     }
 
-    Held2StateEvaluation result;
+    PhaseStabilityStateEvaluation result;
     result.modified_fractions.resize(
         coordinates.retained_indices.size(), 0.0
     );
@@ -992,7 +1005,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
         );
         result.modified_fractions[retained] = value;
     }
-    result.physical_amounts = held2_lift_independent_fractions(
+    result.physical_amounts = phase_stability_lift_independent_fractions(
         coordinates, independent_modified_fractions, domain
     );
     const std::size_t dependent_retained = retained_position(
@@ -1007,7 +1020,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
     result.volume = std::exp(log_volume);
     if (!std::isfinite(result.volume) || result.volume <= 0.0) {
         throw std::invalid_argument(
-            "HELD2 phase volume must be finite and positive"
+            "PHASE_STABILITY phase volume must be finite and positive"
         );
     }
 
@@ -1108,7 +1121,7 @@ Held2StateEvaluation evaluate_held2_phase_block(
         block.gradient.begin(), block.gradient.end() - 1
     );
     result.modified_potentials =
-        held2_transform_modified_potentials(
+        phase_stability_transform_modified_potentials(
             coordinates, physical_potentials
         );
     result.pressure_stationarity_relative =

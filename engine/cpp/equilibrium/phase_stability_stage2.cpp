@@ -1,5 +1,5 @@
-#include "held2_step2.hpp"
-#include "held2_tolerances.hpp"
+#include "phase_stability_stage2.hpp"
+#include "phase_stability_tolerances.hpp"
 
 #include <nlopt.hpp>
 
@@ -14,9 +14,9 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-struct Held2StageIJointEvaluation {
+struct PhaseStabilityStageIJointEvaluation {
     std::vector<double> independent_modified_fractions;
-    Held2StateEvaluation state;
+    PhaseStabilityStateEvaluation state;
     double normalized_volume = 0.0;
     double physical_total_ion_mole_fraction =
         std::numeric_limits<double>::quiet_NaN();
@@ -26,49 +26,49 @@ struct Held2StageIJointEvaluation {
     std::string failure_reason;
 };
 
-using Held2StageIJointEvaluator = std::function<Held2StageIJointEvaluation(
+using PhaseStabilityStageIJointEvaluator = std::function<PhaseStabilityStageIJointEvaluation(
     const std::vector<double>&
 )>;
 
-struct Held2StageIDirectResult {
+struct PhaseStabilityStageIDirectResult {
     std::string failure_reason;
     int evaluation_count = 0;
     double minimum_tpd = std::numeric_limits<double>::infinity();
-    std::optional<Held2StageIJointEvaluation> negative_candidate;
+    std::optional<PhaseStabilityStageIJointEvaluation> negative_candidate;
 };
 
 struct DirectContext {
-    const Held2StageIJointEvaluator* evaluator = nullptr;
-    Held2StageIDirectResult* result = nullptr;
+    const PhaseStabilityStageIJointEvaluator* evaluator = nullptr;
+    PhaseStabilityStageIDirectResult* result = nullptr;
     nlopt::opt* optimizer = nullptr;
     bool stop_requested = false;
 };
 
-double pressure_residual(const Held2StageIJointEvaluation& evaluation) {
+double pressure_residual(const PhaseStabilityStageIJointEvaluation& evaluation) {
     return evaluation.state.pressure_stationarity_relative;
 }
 
-bool is_valid(const Held2StageIJointEvaluation& evaluation) {
+bool is_valid(const PhaseStabilityStageIJointEvaluation& evaluation) {
     return std::isfinite(evaluation.tpd);
 }
 
-bool is_strict_negative(const Held2StageIJointEvaluation& evaluation) {
+bool is_strict_negative(const PhaseStabilityStageIJointEvaluation& evaluation) {
     return is_valid(evaluation)
-        && audit_held2_tolerance(
-            kHeld2TpdNegativeMargin, evaluation.tpd
+        && audit_phase_stability_tolerance(
+            kPhaseStabilityTpdNegativeMargin, evaluation.tpd
         ).passed;
 }
 
 bool is_strict_stable_root(
-    const Held2StageIJointEvaluation& evaluation
+    const PhaseStabilityStageIJointEvaluation& evaluation
 ) {
     return is_valid(evaluation)
-        && audit_held2_tolerance(
-            kHeld2RootPressure,
+        && audit_phase_stability_tolerance(
+            kPhaseStabilityRootPressure,
             pressure_residual(evaluation)
         ).passed
-        && audit_held2_tolerance(
-            kHeld2MechanicalMargin,
+        && audit_phase_stability_tolerance(
+            kPhaseStabilityMechanicalMargin,
             std::min(
                 std::abs(
                     evaluation.state
@@ -93,9 +93,9 @@ double direct_objective(
         return 0.0;
     }
     if (!gradient.empty()) {
-        throw std::invalid_argument("HELD2 DIRECT-L requested an unexpected gradient");
+        throw std::invalid_argument("PHASE_STABILITY DIRECT-L requested an unexpected gradient");
     }
-    Held2StageIJointEvaluation evaluation =
+    PhaseStabilityStageIJointEvaluation evaluation =
         (*context.evaluator)(chart_coordinates);
     ++context.result->evaluation_count;
     if (!is_valid(evaluation)) {
@@ -118,13 +118,13 @@ double direct_objective(
     return evaluation.tpd;
 }
 
-Held2StageIDirectResult run_direct_search(
+PhaseStabilityStageIDirectResult run_direct_search(
     std::size_t joint_dimension,
     int search_work_budget,
     int provider_evaluations_per_trial,
-    const Held2StageIJointEvaluator& evaluator
+    const PhaseStabilityStageIJointEvaluator& evaluator
 ) {
-    Held2StageIDirectResult result;
+    PhaseStabilityStageIDirectResult result;
     nlopt::opt optimizer(nlopt::GN_DIRECT_L, joint_dimension);
     DirectContext context{&evaluator, &result, &optimizer, false};
     optimizer.set_lower_bounds(std::vector<double>(joint_dimension, 0.0));
@@ -149,10 +149,10 @@ Held2StageIDirectResult run_direct_search(
 
 }  // namespace
 
-Held2TpdEvaluation evaluate_held2_tpd(
-    const Held2StateEvaluation& reference,
+PhaseStabilityTpdEvaluation evaluate_phase_stability_tpd(
+    const PhaseStabilityStateEvaluation& reference,
     const std::vector<double>& feed,
-    const Held2StateEvaluation& trial,
+    const PhaseStabilityStateEvaluation& trial,
     const std::vector<double>& independent
 ) {
     const std::size_t dimension = feed.size();
@@ -162,9 +162,9 @@ Held2TpdEvaluation evaluate_held2_tpd(
         || trial.hessian.size() != (dimension + 1) * (dimension + 1)
         || !std::isfinite(reference.objective)
         || !std::isfinite(trial.objective)) {
-        throw std::invalid_argument("HELD2 Step-2 TPD evidence is incomplete");
+        throw std::invalid_argument("PHASE_STABILITY Step-2 TPD evidence is incomplete");
     }
-    Held2TpdEvaluation result;
+    PhaseStabilityTpdEvaluation result;
     result.value = trial.objective - reference.objective;
     result.gradient = trial.gradient;
     for (std::size_t index = 0; index < dimension; ++index) {
@@ -176,17 +176,17 @@ Held2TpdEvaluation evaluate_held2_tpd(
     return result;
 }
 
-Held2Step2Result run_held2_step2(
-    const Held2Step1Result& step1,
-    const Held2StateEvaluator& evaluator,
+PhaseStabilityStage2Result run_phase_stability_stage2(
+    const PhaseStabilityStage1Result& step1,
+    const PhaseStabilityStateEvaluator& evaluator,
     int search_work_budget
 ) {
     constexpr int kPressureIntervals = 64;
     constexpr int kPressureSubdivisionDepth = 8;
     const auto wall_start = std::chrono::steady_clock::now();
     const std::clock_t cpu_start = std::clock();
-    Held2Step2Result result;
-    const auto finish = [&](Held2Step2Outcome outcome,
+    PhaseStabilityStage2Result result;
+    const auto finish = [&](PhaseStabilityStage2Outcome outcome,
                             const std::string& reason) {
         result.outcome = outcome;
         result.reason = reason;
@@ -198,12 +198,12 @@ Held2Step2Result run_held2_step2(
             std::clock() - cpu_start
         ) / static_cast<double>(CLOCKS_PER_SEC);
         result.timing.terminal_status =
-            outcome == Held2Step2Outcome::Indeterminate
+            outcome == PhaseStabilityStage2Outcome::Indeterminate
             ? "indeterminate"
             : "complete";
         result.timing.terminal_reason = reason;
         result.timing.next_step =
-            outcome == Held2Step2Outcome::NegativeWitness ? 3 : 0;
+            outcome == PhaseStabilityStage2Outcome::NegativeWitness ? 3 : 0;
         return result;
     };
     const auto record_minimum = [&](double tpd) {
@@ -216,11 +216,11 @@ Held2Step2Result run_held2_step2(
         || !step1.independent_feed || !step1.volume_bounds
         || !evaluator || search_work_budget < 2) {
         return finish(
-            Held2Step2Outcome::Indeterminate, "invalid_step2_input"
+            PhaseStabilityStage2Outcome::Indeterminate, "invalid_step2_input"
         );
     }
     const std::vector<double>& feed = *step1.independent_feed;
-    const Held2StateEvaluator counted = [&](const auto& composition,
+    const PhaseStabilityStateEvaluator counted = [&](const auto& composition,
                                              double log_volume) {
         ++result.timing.provider_evaluations;
         return evaluator(composition, log_volume);
@@ -231,7 +231,7 @@ Held2Step2Result run_held2_step2(
         ++result.timing.provider_evaluations;
         const std::array<double, 2> physical_bounds =
             (*step1.volume_bounds)(composition);
-        return evaluate_held2_pressure_envelope(
+        return evaluate_phase_stability_pressure_envelope(
             composition,
             physical_bounds,
             counted,
@@ -244,31 +244,31 @@ Held2Step2Result run_held2_step2(
         result.reference_envelope = enumerate_pressure_roots(feed);
     } catch (...) {
         return finish(
-            Held2Step2Outcome::Indeterminate,
+            PhaseStabilityStage2Outcome::Indeterminate,
             "reference_evaluation_failed"
         );
     }
-    const Held2PressureEnvelopeResult& reference_envelope =
+    const PhaseStabilityPressureEnvelopeResult& reference_envelope =
         *result.reference_envelope;
     if (reference_envelope.outcome != "selected"
         || reference_envelope.selected_root_index < 0) {
         return finish(
-            Held2Step2Outcome::Indeterminate,
+            PhaseStabilityStage2Outcome::Indeterminate,
             reference_envelope.failure_reason.empty()
             ? "reference_root_indeterminate"
             : reference_envelope.failure_reason
         );
     }
-    const Held2PressureRoot& selected = reference_envelope.roots[
+    const PhaseStabilityPressureRoot& selected = reference_envelope.roots[
         static_cast<std::size_t>(reference_envelope.selected_root_index)
     ];
-    for (const Held2PressureScanPoint& point :
+    for (const PhaseStabilityPressureScanPoint& point :
          reference_envelope.scan_points) {
-        const bool boundary = audit_held2_tolerance(
-            kHeld2RootBoundary,
+        const bool boundary = audit_phase_stability_tolerance(
+            kPhaseStabilityRootBoundary,
             point.log_volume - reference_envelope.lower_log_volume
-        ).passed || audit_held2_tolerance(
-            kHeld2RootBoundary,
+        ).passed || audit_phase_stability_tolerance(
+            kPhaseStabilityRootBoundary,
             reference_envelope.upper_log_volume - point.log_volume
         ).passed;
         if (!boundary) {
@@ -276,7 +276,7 @@ Held2Step2Result run_held2_step2(
         }
         if (!point.valid) {
             return finish(
-                Held2Step2Outcome::Indeterminate,
+                PhaseStabilityStage2Outcome::Indeterminate,
                 "reference_boundary_evaluation_failed"
             );
         }
@@ -284,26 +284,26 @@ Held2Step2Result run_held2_step2(
             std::abs(point.objective), std::abs(selected.objective)
         );
         if (point.objective < selected.objective
-            || audit_held2_tolerance(
-                kHeld2StableObjectiveTie,
+            || audit_phase_stability_tolerance(
+                kPhaseStabilityStableObjectiveTie,
                 point.objective - selected.objective,
                 scale
             ).passed) {
             return finish(
-                Held2Step2Outcome::Indeterminate,
+                PhaseStabilityStage2Outcome::Indeterminate,
                 "reference_boundary_truncation"
             );
         }
     }
     result.reference = selected.state;
-    if (!audit_held2_tolerance(
-            kHeld2TpdReferenceZero,
-            evaluate_held2_tpd(
+    if (!audit_phase_stability_tolerance(
+            kPhaseStabilityTpdReferenceZero,
+            evaluate_phase_stability_tpd(
                 *result.reference, feed, *result.reference, feed
             ).value
         ).passed) {
         return finish(
-            Held2Step2Outcome::Indeterminate, "reference_tpd_nonzero"
+            PhaseStabilityStage2Outcome::Indeterminate, "reference_tpd_nonzero"
         );
     }
     const std::size_t dimension =
@@ -317,7 +317,7 @@ Held2Step2Result run_held2_step2(
         double normalized_volume,
         const std::array<double, 2>& physical_bounds
     ) {
-        Held2StageIJointEvaluation evaluation;
+        PhaseStabilityStageIJointEvaluation evaluation;
         evaluation.independent_modified_fractions = independent;
         evaluation.normalized_volume = normalized_volume;
         try {
@@ -338,8 +338,8 @@ Held2Step2Result run_held2_step2(
             evaluation.state = counted(independent, log_volume);
             if (!std::isfinite(evaluation.state.volume)
                 || evaluation.state.volume <= 0.0
-                || !audit_held2_tolerance(
-                    kHeld2JointVolumeConsistency,
+                || !audit_phase_stability_tolerance(
+                    kPhaseStabilityJointVolumeConsistency,
                     std::log(evaluation.state.volume) - log_volume
                 ).passed
                 || !std::isfinite(
@@ -350,7 +350,7 @@ Held2Step2Result run_held2_step2(
                 );
             }
             const std::vector<double> physical =
-                held2_lift_independent_fractions(
+                phase_stability_lift_independent_fractions(
                     *step1.coordinates, independent
                 );
             evaluation.physical_total_ion_mole_fraction = 0.0;
@@ -363,8 +363,8 @@ Held2Step2Result run_held2_step2(
             evaluation.total_ion_mole_fraction_max =
                 step1.total_ion_mole_fraction_max;
             if (std::isfinite(step1.total_ion_mole_fraction_max)
-                && !audit_held2_tolerance(
-                    kHeld2PolytopeFeasibility,
+                && !audit_phase_stability_tolerance(
+                    kPhaseStabilityPolytopeFeasibility,
                     std::max(
                         0.0,
                         evaluation.physical_total_ion_mole_fraction
@@ -375,7 +375,7 @@ Held2Step2Result run_held2_step2(
                     "Step-2 joint state exceeds Provider ion domain"
                 );
             }
-            evaluation.tpd = evaluate_held2_tpd(
+            evaluation.tpd = evaluate_phase_stability_tpd(
                 *result.reference,
                 feed,
                 evaluation.state,
@@ -395,29 +395,29 @@ Held2Step2Result run_held2_step2(
                 volume_bounds(independent)
             );
         } catch (...) {
-            Held2StageIJointEvaluation evaluation;
+            PhaseStabilityStageIJointEvaluation evaluation;
             evaluation.independent_modified_fractions = independent;
             evaluation.normalized_volume = normalized_volume;
             return evaluation;
         }
     };
-    const auto recertify = [&](const Held2StageIJointEvaluation& candidate) {
+    const auto recertify = [&](const PhaseStabilityStageIJointEvaluation& candidate) {
         return evaluate_independent(
             candidate.independent_modified_fractions,
             candidate.normalized_volume
         );
     };
     const auto refine_stationary_witness = [&](
-        const Held2StageIJointEvaluation& certified
+        const PhaseStabilityStageIJointEvaluation& certified
     ) {
-        if (audit_held2_tolerance(
-                kHeld2RootPressure,
+        if (audit_phase_stability_tolerance(
+                kPhaseStabilityRootPressure,
                 pressure_residual(certified)
             ).passed) {
             return certified;
         }
         try {
-            const Held2PressureEnvelopeResult envelope =
+            const PhaseStabilityPressureEnvelopeResult envelope =
                 enumerate_pressure_roots(
                     certified.independent_modified_fractions
                 );
@@ -425,7 +425,7 @@ Held2Step2Result run_held2_step2(
                 || envelope.selected_root_index < 0) {
                 return certified;
             }
-            const Held2PressureRoot& root = envelope.roots[
+            const PhaseStabilityPressureRoot& root = envelope.roots[
                 static_cast<std::size_t>(
                     envelope.selected_root_index
                 )
@@ -434,7 +434,7 @@ Held2Step2Result run_held2_step2(
                 certified.independent_modified_fractions
             );
             const double lower_log_volume = std::log(bounds[0]);
-            Held2StageIJointEvaluation stationary = evaluate_at(
+            PhaseStabilityStageIJointEvaluation stationary = evaluate_at(
                 certified.independent_modified_fractions,
                 (std::log(root.volume) - lower_log_volume)
                     / (std::log(bounds[1]) - lower_log_volume),
@@ -446,11 +446,11 @@ Held2Step2Result run_held2_step2(
         } catch (...) {}
         return certified;
     };
-    const auto make_witness = [&](const Held2StageIJointEvaluation& witness) {
-        return Held2StageICandidate{
-            held2_transform_physical_fractions(
+    const auto make_witness = [&](const PhaseStabilityStageIJointEvaluation& witness) {
+        return PhaseStabilityStageICandidate{
+            phase_stability_transform_physical_fractions(
                 *step1.coordinates,
-                held2_lift_independent_fractions(
+                phase_stability_lift_independent_fractions(
                     *step1.coordinates,
                     witness.independent_modified_fractions
                 )
@@ -462,12 +462,12 @@ Held2Step2Result run_held2_step2(
         };
     };
     const auto accept_witness = [&](
-        const Held2StageIJointEvaluation& witness,
+        const PhaseStabilityStageIJointEvaluation& witness,
         const char* reason
     ) {
         record_minimum(witness.tpd);
         result.negative_witness = make_witness(witness);
-        return finish(Held2Step2Outcome::NegativeWitness, reason);
+        return finish(PhaseStabilityStage2Outcome::NegativeWitness, reason);
     };
     std::vector<double> trace = feed;
     bool has_independent_charge = false;
@@ -490,12 +490,12 @@ Held2Step2Result run_held2_step2(
             trace_bounds = volume_bounds(trace);
         } catch (...) {
             return finish(
-                Held2Step2Outcome::Indeterminate,
+                PhaseStabilityStage2Outcome::Indeterminate,
                 "trace_boundary_evaluation_failed"
             );
         }
         for (int sample = 0; sample <= kTraceVolumeIntervals; ++sample) {
-            const Held2StageIJointEvaluation boundary = evaluate_at(
+            const PhaseStabilityStageIJointEvaluation boundary = evaluate_at(
                 trace,
                 static_cast<double>(sample)
                     / static_cast<double>(kTraceVolumeIntervals),
@@ -503,7 +503,7 @@ Held2Step2Result run_held2_step2(
             );
             if (!is_valid(boundary)) {
                 return finish(
-                    Held2Step2Outcome::Indeterminate,
+                    PhaseStabilityStage2Outcome::Indeterminate,
                     "trace_boundary_evaluation_failed"
                 );
             }
@@ -511,15 +511,15 @@ Held2Step2Result run_held2_step2(
             if (!is_strict_negative(boundary)) {
                 continue;
             }
-            const Held2StageIJointEvaluation certified =
+            const PhaseStabilityStageIJointEvaluation certified =
                 recertify(boundary);
             if (!is_strict_negative(certified)) {
                 return finish(
-                    Held2Step2Outcome::Indeterminate,
+                    PhaseStabilityStage2Outcome::Indeterminate,
                     "negative_witness_recertification_failed"
                 );
             }
-            const Held2StageIJointEvaluation witness =
+            const PhaseStabilityStageIJointEvaluation witness =
                 refine_stationary_witness(certified);
             return accept_witness(
                 witness,
@@ -527,13 +527,13 @@ Held2Step2Result run_held2_step2(
             );
         }
     }
-    const auto assess_search = [&](const Held2StageIDirectResult& search) {
+    const auto assess_search = [&](const PhaseStabilityStageIDirectResult& search) {
         result.timing.optimizer_iterations +=
             static_cast<std::uint64_t>(search.evaluation_count);
         record_minimum(search.minimum_tpd);
-        Held2StageIJointEvaluation assessment;
+        PhaseStabilityStageIJointEvaluation assessment;
         if (search.negative_candidate) {
-            const Held2StageIJointEvaluation certified = recertify(
+            const PhaseStabilityStageIJointEvaluation certified = recertify(
                 *search.negative_candidate
             );
             if (!is_strict_negative(certified)) {
@@ -546,7 +546,7 @@ Held2Step2Result run_held2_step2(
         assessment.failure_reason = search.failure_reason;
         return assessment;
     };
-    const Held2StageIJointEvaluator complete_joint = [
+    const PhaseStabilityStageIJointEvaluator complete_joint = [
         &evaluate_independent,
         &step1
     ](const auto& cube) {
@@ -555,7 +555,7 @@ Held2Step2Result run_held2_step2(
             cube.end()
         );
         return evaluate_independent(
-            held2_map_unit_cube_to_independent_fractions(
+            phase_stability_map_unit_cube_to_independent_fractions(
                 *step1.coordinates,
                 composition_cube,
                 step1.total_ion_mole_fraction_max
@@ -566,7 +566,7 @@ Held2Step2Result run_held2_step2(
     const std::uint64_t preparation_allowance_begin =
         result.timing.provider_evaluations;
     ++result.timing.optimizer_solves;
-    const Held2StageIJointEvaluation complete_witness = assess_search(
+    const PhaseStabilityStageIJointEvaluation complete_witness = assess_search(
         run_direct_search(
             dimension + 1,
             search_work_budget,
@@ -575,7 +575,7 @@ Held2Step2Result run_held2_step2(
         )
     );
     if (is_valid(complete_witness)) {
-        const Held2StageIJointEvaluation direct_stationary_witness =
+        const PhaseStabilityStageIJointEvaluation direct_stationary_witness =
             refine_stationary_witness(complete_witness);
         if (is_strict_stable_root(direct_stationary_witness)
             && is_strict_negative(direct_stationary_witness)) {
@@ -597,18 +597,18 @@ Held2Step2Result run_held2_step2(
             ? 0
             : search_work_budget
                 - static_cast<int>(preparation_allowance_consumed);
-        Held2StageIJointEvaluation prepared_witness;
+        PhaseStabilityStageIJointEvaluation prepared_witness;
         if (preparation_budget >= kPreparationProviderEvaluations) {
             constexpr double kPromisingPreparationTpd = 0.2;
-            const Held2StageIJointEvaluator prepare_composition = [
+            const PhaseStabilityStageIJointEvaluator prepare_composition = [
                 &evaluate_at,
                 &volume_bounds,
                 &step1
             ](const auto& cube) {
-                Held2StageIJointEvaluation best;
+                PhaseStabilityStageIJointEvaluation best;
                 try {
                     const std::vector<double> independent =
-                        held2_map_unit_cube_to_independent_fractions(
+                        phase_stability_map_unit_cube_to_independent_fractions(
                             *step1.coordinates,
                             cube,
                             step1.total_ion_mole_fraction_max
@@ -616,10 +616,10 @@ Held2Step2Result run_held2_step2(
                     const std::array<double, 2> bounds =
                         volume_bounds(independent);
                     std::optional<std::pair<
-                        Held2StageIJointEvaluation,
-                        Held2StageIJointEvaluation
+                        PhaseStabilityStageIJointEvaluation,
+                        PhaseStabilityStageIJointEvaluation
                     >> promising_bracket;
-                    Held2StageIJointEvaluation previous;
+                    PhaseStabilityStageIJointEvaluation previous;
                     const auto brackets_zero = [](double left,
                                                   double right) {
                         return (left <= 0.0 && right >= 0.0)
@@ -628,7 +628,7 @@ Held2Step2Result run_held2_step2(
                     for (int sample = 0;
                          sample < kPreparationVolumeSamples;
                          ++sample) {
-                        const Held2StageIJointEvaluation evaluation =
+                        const PhaseStabilityStageIJointEvaluation evaluation =
                             evaluate_at(
                                 independent,
                                 static_cast<double>(sample)
@@ -668,8 +668,8 @@ Held2Step2Result run_held2_step2(
                         for (int iteration = 0;
                              iteration < kPreparationRootRefinementLimit;
                              ++iteration) {
-                            if (audit_held2_tolerance(
-                                    kHeld2RootPressure,
+                            if (audit_phase_stability_tolerance(
+                                    kPhaseStabilityRootPressure,
                                     pressure_residual(root)
                                 ).passed) {
                                 break;
@@ -706,7 +706,7 @@ Held2Step2Result run_held2_step2(
                 return best;
             };
             ++result.timing.optimizer_solves;
-            const Held2StageIDirectResult preparation_search =
+            const PhaseStabilityStageIDirectResult preparation_search =
                 run_direct_search(
                     dimension,
                     preparation_budget,
@@ -718,12 +718,12 @@ Held2Step2Result run_held2_step2(
             );
             if (!prepared_witness.failure_reason.empty()) {
                 return finish(
-                    Held2Step2Outcome::Indeterminate,
+                    PhaseStabilityStage2Outcome::Indeterminate,
                     prepared_witness.failure_reason
                 );
             }
         }
-        const Held2StageIJointEvaluation witness =
+        const PhaseStabilityStageIJointEvaluation witness =
             refine_stationary_witness(
                 is_valid(prepared_witness)
                 ? prepared_witness
@@ -733,12 +733,12 @@ Held2Step2Result run_held2_step2(
     }
     if (!complete_witness.failure_reason.empty()) {
         return finish(
-            Held2Step2Outcome::Indeterminate,
+            PhaseStabilityStage2Outcome::Indeterminate,
             complete_witness.failure_reason
         );
     }
     return finish(
-        Held2Step2Outcome::NoNegativeWitnessDetected,
+        PhaseStabilityStage2Outcome::NoNegativeWitnessDetected,
         "declared_search_complete"
     );
 }

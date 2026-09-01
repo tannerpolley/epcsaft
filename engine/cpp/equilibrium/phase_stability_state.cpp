@@ -1,5 +1,5 @@
-#include "held2.hpp"
-#include "held2_tolerances.hpp"
+#include "phase_stability_coordinates.hpp"
+#include "phase_stability_tolerances.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -24,39 +24,39 @@ void require_finite_vector(const std::vector<double>& values, const char* name) 
 
 }  // namespace
 
-Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
+PhaseStabilityPressureEnvelopeResult evaluate_phase_stability_pressure_envelope(
     const std::vector<double>& independent_modified_fractions,
     const std::array<double, 2>& molar_volume_bounds,
-    const Held2StateEvaluator& evaluator,
+    const PhaseStabilityStateEvaluator& evaluator,
     int initial_interval_count,
     int maximum_subdivision_depth
 ) {
     if (independent_modified_fractions.empty()) {
         throw std::invalid_argument(
-            "HELD2 pressure envelope requires independent composition coordinates"
+            "PHASE_STABILITY pressure envelope requires independent composition coordinates"
         );
     }
     require_finite_vector(
         independent_modified_fractions,
-        "HELD2 pressure-envelope composition"
+        "PHASE_STABILITY pressure-envelope composition"
     );
     if (!std::isfinite(molar_volume_bounds[0])
         || !std::isfinite(molar_volume_bounds[1])
         || molar_volume_bounds[0] <= 0.0
         || molar_volume_bounds[1] <= molar_volume_bounds[0]) {
         throw std::invalid_argument(
-            "HELD2 pressure-envelope volume bounds must be finite, positive, and ordered"
+            "PHASE_STABILITY pressure-envelope volume bounds must be finite, positive, and ordered"
         );
     }
     if (initial_interval_count < 1 || maximum_subdivision_depth < 0) {
         throw std::invalid_argument(
-            "HELD2 pressure-envelope scan controls must be nonnegative"
+            "PHASE_STABILITY pressure-envelope scan controls must be nonnegative"
         );
     }
 
     struct EvaluatedPoint {
-        Held2PressureScanPoint diagnostic;
-        Held2StateEvaluation state;
+        PhaseStabilityPressureScanPoint diagnostic;
+        PhaseStabilityStateEvaluation state;
     };
     struct WorkingInterval {
         double lower = 0.0;
@@ -68,7 +68,7 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
         double upper = 0.0;
     };
 
-    Held2PressureEnvelopeResult result;
+    PhaseStabilityPressureEnvelopeResult result;
     std::map<double, EvaluatedPoint> cache;
     const auto evaluate_point = [
         &cache,
@@ -98,7 +98,7 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
                 || point.state.hessian.empty()
                 || !std::isfinite(point.state.hessian.back())) {
                 throw std::invalid_argument(
-                    "HELD2 pressure-envelope evaluation returned incomplete evidence"
+                    "PHASE_STABILITY pressure-envelope evaluation returned incomplete evidence"
                 );
             }
             point.diagnostic.volume = point.state.volume;
@@ -183,12 +183,12 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
         const bool left_stationary = stationary_bracketed(left, middle);
         const bool right_stationary = stationary_bracketed(middle, right);
         const auto joint_root = [](const EvaluatedPoint& point) {
-            return audit_held2_tolerance(
-                       kHeld2RootPressure,
+            return audit_phase_stability_tolerance(
+                       kPhaseStabilityRootPressure,
                        point.diagnostic.pressure_residual
                    ).passed
-                && audit_held2_tolerance(
-                       kHeld2RootStationary,
+                && audit_phase_stability_tolerance(
+                       kPhaseStabilityRootStationary,
                        point.diagnostic.pressure_derivative_log_volume
                    ).passed;
         };
@@ -259,14 +259,14 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
             return std::nullopt;
         }
         const double tolerance = stationary
-            ? kHeld2RootStationary.atol
-            : kHeld2RootPressure.atol;
+            ? kPhaseStabilityRootStationary.atol
+            : kPhaseStabilityRootPressure.atol;
         EvaluatedPoint best = std::abs(residual(left)) <= std::abs(residual(right))
             ? left
             : right;
         for (int iteration = 0; iteration < 120; ++iteration) {
-            if (audit_held2_tolerance(
-                    kHeld2RootLogVolumeWidth,
+            if (audit_phase_stability_tolerance(
+                    kPhaseStabilityRootLogVolumeWidth,
                     bracket.upper - bracket.lower
                 ).passed
                 && (stationary || std::abs(residual(best)) <= tolerance)) {
@@ -300,12 +300,12 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
         return std::nullopt;
     };
 
-    std::vector<Held2PressureRoot> candidates;
+    std::vector<PhaseStabilityPressureRoot> candidates;
     const auto make_root = [lower_log_volume, upper_log_volume](
         const EvaluatedPoint& point,
         std::string origin
     ) {
-        Held2PressureRoot root;
+        PhaseStabilityPressureRoot root;
         root.log_volume = point.diagnostic.log_volume;
         root.volume = point.state.volume;
         root.objective = point.state.objective;
@@ -314,12 +314,12 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
             point.state.pressure_stationarity_derivative_log_volume;
         root.objective_curvature_log_volume = point.state.hessian.back();
         root.origin = std::move(origin);
-        root.boundary = audit_held2_tolerance(
-                            kHeld2RootBoundary,
+        root.boundary = audit_phase_stability_tolerance(
+                            kPhaseStabilityRootBoundary,
                             root.log_volume - lower_log_volume
                         ).passed
-            || audit_held2_tolerance(
-                   kHeld2RootBoundary,
+            || audit_phase_stability_tolerance(
+                   kPhaseStabilityRootBoundary,
                    upper_log_volume - root.log_volume
                ).passed;
         root.state = point.state;
@@ -344,7 +344,7 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
             [&stationary](double retained) {
                 return std::abs(
                     retained - stationary->diagnostic.log_volume
-                ) <= kHeld2RootDuplicate.atol;
+                ) <= kPhaseStabilityRootDuplicate.atol;
             }
         );
         if (duplicate) {
@@ -352,8 +352,8 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
         }
         stationary_points.push_back(stationary->diagnostic.log_volume);
         ++result.stationary_point_count;
-        if (audit_held2_tolerance(
-                kHeld2RootPressure,
+        if (audit_phase_stability_tolerance(
+                kPhaseStabilityRootPressure,
                 stationary->diagnostic.pressure_residual
             ).passed) {
             ++result.tangential_root_count;
@@ -364,15 +364,15 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
     std::sort(
         candidates.begin(),
         candidates.end(),
-        [](const Held2PressureRoot& left, const Held2PressureRoot& right) {
+        [](const PhaseStabilityPressureRoot& left, const PhaseStabilityPressureRoot& right) {
             return left.log_volume < right.log_volume;
         }
     );
-    for (Held2PressureRoot& candidate : candidates) {
+    for (PhaseStabilityPressureRoot& candidate : candidates) {
         if (!result.roots.empty()
             && std::abs(
                 result.roots.back().log_volume - candidate.log_volume
-            ) <= kHeld2RootDuplicate.atol) {
+            ) <= kPhaseStabilityRootDuplicate.atol) {
             result.roots.back().boundary = result.roots.back().boundary
                 || candidate.boundary;
             if (candidate.origin == "tangential") {
@@ -387,7 +387,7 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
     std::vector<int> stable_indices;
     bool unclassified = false;
     for (std::size_t index = 0; index < result.roots.size(); ++index) {
-        Held2PressureRoot& root = result.roots[index];
+        PhaseStabilityPressureRoot& root = result.roots[index];
         if (root.boundary) {
             ++result.boundary_root_count;
         }
@@ -395,8 +395,8 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
             std::abs(root.pressure_derivative_log_volume),
             std::abs(root.objective_curvature_log_volume)
         );
-        const bool mechanical_margin_passed = audit_held2_tolerance(
-            kHeld2MechanicalMargin,
+        const bool mechanical_margin_passed = audit_phase_stability_tolerance(
+            kPhaseStabilityMechanicalMargin,
             mechanical_margin
         ).passed;
         const bool marginal = !mechanical_margin_passed;
@@ -442,8 +442,8 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
             const double objective =
                 result.roots[static_cast<std::size_t>(index)].objective;
             const double scale = std::max(std::abs(objective), std::abs(lowest_objective));
-            if (audit_held2_tolerance(
-                    kHeld2StableObjectiveTie,
+            if (audit_phase_stability_tolerance(
+                    kPhaseStabilityStableObjectiveTie,
                     objective - lowest_objective,
                     scale
                 ).passed) {
@@ -462,8 +462,8 @@ Held2PressureEnvelopeResult evaluate_held2_pressure_envelope(
     std::sort(
         result.intervals.begin(),
         result.intervals.end(),
-        [](const Held2PressureScanInterval& left,
-           const Held2PressureScanInterval& right) {
+        [](const PhaseStabilityPressureScanInterval& left,
+           const PhaseStabilityPressureScanInterval& right) {
             return left.lower_log_volume < right.lower_log_volume;
         }
     );

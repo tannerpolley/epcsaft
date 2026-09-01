@@ -1,4 +1,4 @@
-#include "held2_step3.hpp"
+#include "phase_stability_stage3.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,13 +10,13 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 std::vector<double> bounding_point(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& feed,
     std::size_t coordinate,
     double direction
 ) {
     double distance = std::numeric_limits<double>::infinity();
-    for (const Held2PolytopeConstraint& constraint :
+    for (const PhaseStabilityPolytopeConstraint& constraint :
          coordinates.polytope_constraints) {
         const double slope =
             direction * constraint.coefficients[coordinate];
@@ -41,7 +41,7 @@ std::vector<double> bounding_point(
     }
     std::vector<double> point = feed;
     point[coordinate] += 0.5 * direction * distance;
-    static_cast<void>(held2_lift_independent_fractions(
+    static_cast<void>(phase_stability_lift_independent_fractions(
         coordinates, point
     ));
     return point;
@@ -49,12 +49,12 @@ std::vector<double> bounding_point(
 
 }  // namespace
 
-Held2Step3Result run_held2_step3(
-    const Held2Step1Result& step1,
-    const Held2Step2Result& step2,
-    const Held2PressureRootEvaluator& pressure_roots
+PhaseStabilityStage3Result run_phase_stability_stage3(
+    const PhaseStabilityStage1Result& step1,
+    const PhaseStabilityStage2Result& step2,
+    const PhaseStabilityPressureRootEvaluator& pressure_roots
 ) {
-    Held2Step3Result result;
+    PhaseStabilityStage3Result result;
     result.timing.invocation_count = 1;
     const auto fail = [&](const char* reason) {
         result.reason = reason;
@@ -64,13 +64,13 @@ Held2Step3Result run_held2_step3(
     };
     if (step1.status != "complete" || !step1.coordinates
         || !step1.independent_feed || !pressure_roots
-        || step2.outcome != Held2Step2Outcome::NegativeWitness
+        || step2.outcome != PhaseStabilityStage2Outcome::NegativeWitness
         || !step2.reference) {
         return fail("invalid_step3_input");
     }
-    const Held2Coordinates& coordinates = *step1.coordinates;
+    const PhaseStabilityCoordinates& coordinates = *step1.coordinates;
     const std::size_t dimension = coordinates.independent_indices.size();
-    Held2PersistentState state;
+    PhaseStabilityPersistentState state;
     state.coordinates = coordinates;
     state.feed = *step1.independent_feed;
     state.feed_reduced_gibbs = step2.reference->objective;
@@ -96,7 +96,7 @@ Held2Step3Result run_held2_step3(
             } catch (...) {
                 return fail("appendix_c_state_outside_domain");
             }
-            Held2PressureEnvelopeResult envelope;
+            PhaseStabilityPressureEnvelopeResult envelope;
             try {
                 envelope = pressure_roots(independent);
             } catch (...) {
@@ -111,7 +111,7 @@ Held2Step3Result run_held2_step3(
                     : envelope.failure_reason.c_str()
                 );
             }
-            const Held2PressureRoot& root = envelope.roots[
+            const PhaseStabilityPressureRoot& root = envelope.roots[
                 static_cast<std::size_t>(envelope.selected_root_index)
             ];
             state.M.push_back({

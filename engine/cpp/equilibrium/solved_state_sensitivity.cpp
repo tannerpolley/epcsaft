@@ -1,6 +1,6 @@
 #include "solved_state_sensitivity.hpp"
 
-#include "held2.hpp"
+#include "phase_stability_coordinates.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -285,11 +285,11 @@ RankRevealingSolve solve_total_derivatives(
     return result;
 }
 
-std::vector<double> held2_independent(
-    const Held2Coordinates& coordinates,
+std::vector<double> phase_stability_independent(
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& physical
 ) {
-    const auto modified = held2_transform_physical_fractions(
+    const auto modified = phase_stability_transform_physical_fractions(
         coordinates, physical
     );
     std::vector<double> result;
@@ -308,7 +308,7 @@ std::vector<double> held2_independent(
 }
 
 std::vector<double> modified_potential_rows(
-    const Held2Coordinates& coordinates
+    const PhaseStabilityCoordinates& coordinates
 ) {
     const std::size_t component_count = coordinates.charges.size();
     std::vector<double> result(
@@ -349,9 +349,9 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
             provider.component_charges()[component]
         );
     }
-    Held2Coordinates coordinates;
+    PhaseStabilityCoordinates coordinates;
     try {
-        coordinates = make_held2_coordinates(charges, component_ids);
+        coordinates = make_phase_stability_coordinates(charges, component_ids);
     } catch (const std::exception&) {
         result.failure_reason = "unsupported_charged_coordinate_chart";
         return result;
@@ -367,7 +367,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
         feed_amounts_mol.begin(), feed_amounts_mol.end(), 0.0
     );
     const auto composition_jacobian =
-        held2_physical_fraction_jacobian(coordinates);
+        phase_stability_physical_fraction_jacobian(coordinates);
     const auto potential_rows = modified_potential_rows(coordinates);
     std::vector<double> phase_amounts;
     std::vector<double> molar_volumes;
@@ -383,8 +383,8 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
             for (double& value : composition) {
                 value /= amount;
             }
-            const auto chart = held2_independent(coordinates, composition);
-            static_cast<void>(held2_lift_independent_fractions(
+            const auto chart = phase_stability_independent(coordinates, composition);
+            static_cast<void>(phase_stability_lift_independent_fractions(
                 coordinates, chart
             ));
             const double molar_volume = phase.volume_m3 / amount;
@@ -407,7 +407,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
     }
     std::vector<std::vector<double>> modified_potentials;
     for (const auto& evaluation : evaluations) {
-        modified_potentials.push_back(held2_transform_modified_potentials(
+        modified_potentials.push_back(phase_stability_transform_modified_potentials(
             coordinates,
             std::vector<double>(
                 evaluation.phase.gradient.begin(),
@@ -470,7 +470,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
         }
         return value;
     }();
-    const auto feed_independent = held2_independent(
+    const auto feed_independent = phase_stability_independent(
         coordinates, feed_composition
     );
     if (std::abs(

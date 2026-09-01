@@ -176,6 +176,13 @@ struct GrepeLocalBlocks final {
     std::size_t output_parameter_jacobian_count;
 };
 
+[[nodiscard]] ReactionSystemInput make_nonreactive_reaction_system(
+    const ProviderContext& provider,
+    double temperature_k,
+    double pressure_pa,
+    const std::vector<double>& feed_amounts_mol
+);
+
 [[nodiscard]] GrepeResult solve_grepe(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,

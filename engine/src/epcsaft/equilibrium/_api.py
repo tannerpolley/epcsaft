@@ -125,8 +125,8 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class _HeldPhaseState:
-    """One explicit phase state returned by the retained HELD route."""
+class _DiscoveredPhaseState:
+    """One explicit phase state returned by phase-stability discovery."""
 
     amount_mol: float
     mole_fractions: tuple[float, ...]
@@ -137,29 +137,8 @@ class _HeldPhaseState:
 
 
 @dataclass(frozen=True)
-class HeldDiagnostics:
-    """Compact evidence from the bounded HELD search and local refinement."""
-
-    outcome: str
-    search_status: str
-    solver_status: str
-    numerical_status: str
-    physical_status: str
-    attempts: int
-    major_iterations: int
-    material_balance_max_abs: float | None
-    pressure_stationarity_max_relative: float | None
-    kkt_stationarity_max_abs: float | None
-    chemical_potential_max_relative: float | None
-    search_profiles: tuple[str, ...]
-    globality_certificate: str
-    provider_evaluation_count: int
-    failure_reason: str
-
-
-@dataclass(frozen=True)
-class Held2Diagnostics:
-    """Compact evidence from the retained HELD2 controller."""
+class PhaseStabilityDiagnostics:
+    """Compact evidence from the retained PHASE_STABILITY controller."""
 
     outcome: str
     failure_stage: str | None
@@ -244,7 +223,7 @@ class DeclaredTopology:
 
 @dataclass(frozen=True, slots=True)
 class FixedTPFeed:
-    """Fixed-T,P feed; omitted topology selects HELD/HELD2 discovery."""
+    """Fixed-T,P feed; omitted topology selects phase-stability discovery."""
 
     temperature: Quantity[Any]
     pressure: Quantity[Any]
@@ -321,7 +300,7 @@ class DeclaredPhaseInitialGuess:
 
 @dataclass(frozen=True, slots=True)
 class PhaseEquilibriumProblem:
-    """One typed HELD-lineage feed or coexistence specification."""
+    """One typed phase-equilibrium feed or coexistence specification."""
 
     specification: PhaseEquilibriumSpecification
     hints: tuple[PhaseHint, ...] = ()
@@ -504,24 +483,24 @@ class _ReferenceDirectionSensitivity:
 
 
 @dataclass(frozen=True)
-class _HeldDiscoveryResult:
-    """Internal certified result from the HELD or HELD2 controller."""
+class _DiscoveryResult:
+    """Internal certified result from phase-stability discovery and GREPE."""
 
-    phases: tuple[_HeldPhaseState, ...]
+    phases: tuple[_DiscoveredPhaseState, ...]
     phase_fractions: tuple[float, ...]
     total_free_energy_over_rt: float
     parameter_fingerprint: str
-    diagnostics: HeldDiagnostics | Held2Diagnostics
+    diagnostics: PhaseStabilityDiagnostics
     sensitivity: PhaseEquilibriumSensitivity | None
 
 
-class _HeldDiscoveryError(RuntimeError):
-    """Raised when internal HELD discovery cannot return an accepted result."""
+class _DiscoveryError(RuntimeError):
+    """Raised when phase-stability discovery cannot return an accepted result."""
 
     def __init__(
         self,
         message: str,
-        diagnostics: HeldDiagnostics | Held2Diagnostics,
+        diagnostics: PhaseStabilityDiagnostics,
     ) -> None:
         super().__init__(message)
         self.diagnostics = diagnostics
@@ -570,7 +549,7 @@ class PhaseEquilibriumResult:
 
 
 class PhaseEquilibriumError(RuntimeError):
-    """Raised when HELD fails or its retained state violates the role scope."""
+    """Raised when discovery fails or its retained state violates the role scope."""
 
     def __init__(
         self,
@@ -780,8 +759,8 @@ class ActiveParameterTrialReceipt:
 _GAS_CONSTANT_J_MOL_K = 8.31446261815324
 _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM = 0.25
 _VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM = 0.45
-_HELD2_PACKING_FRACTION_MINIMUM = 1.0e-6
-_HELD2_PACKING_FRACTION_MAXIMUM = 0.74
+_PHASE_STABILITY_PACKING_FRACTION_MINIMUM = 1.0e-6
+_PHASE_STABILITY_PACKING_FRACTION_MAXIMUM = 0.74
 
 
 def _float_tuple(payload: object) -> tuple[float, ...]:
@@ -798,14 +777,14 @@ def _vector(payload: object, size: int, name: str) -> tuple[float, ...]:
     return values
 
 
-def _phase(payload: Mapping[str, object]) -> _HeldPhaseState:
+def _phase(payload: Mapping[str, object]) -> _DiscoveredPhaseState:
     mole_fractions = _float_tuple(payload.get("mole_fractions", (1.0,)))
     chemical_potential = _vector(
         payload["chemical_potential_over_rt"],
         len(mole_fractions),
         "phase chemical-potential vector",
     )
-    return _HeldPhaseState(
+    return _DiscoveredPhaseState(
         amount_mol=float(cast(float, payload["amount_mol"])),
         mole_fractions=mole_fractions,
         volume_m3=float(cast(float, payload["volume_m3"])),
@@ -851,59 +830,7 @@ def _optional_float(payload: Mapping[str, object], name: str) -> float | None:
     return None if value is None else float(cast(float, value))
 
 
-def _held_diagnostics(payload: Mapping[str, object]) -> HeldDiagnostics:
-    profiles = cast(Sequence[object], payload["search_profiles"])
-    statuses = tuple(
-        payload[name] for name in ("solver_status", "numerical_status", "physical_status")
-    )
-    if not all(
-        isinstance(status, str) and status in {"passed", "failed", "not_adjudicated"}
-        for status in statuses
-    ):
-        raise ValueError("native HELD payload has an invalid status vocabulary")
-    typed_statuses = cast(tuple[str, str, str], statuses)
-    return HeldDiagnostics(
-        outcome=str(payload["outcome"]),
-        search_status=str(payload["search_status"]),
-        solver_status=typed_statuses[0],
-        numerical_status=typed_statuses[1],
-        physical_status=typed_statuses[2],
-        attempts=int(cast(int, payload["attempts"])),
-        major_iterations=int(cast(int, payload["major_iterations"])),
-        material_balance_max_abs=_optional_float(payload, "material_balance_max_abs"),
-        pressure_stationarity_max_relative=_optional_float(
-            payload, "pressure_stationarity_max_relative"
-        ),
-        kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
-        chemical_potential_max_relative=_optional_float(payload, "chemical_potential_max_relative"),
-        search_profiles=tuple(str(profile) for profile in profiles),
-        globality_certificate=str(payload["globality_certificate"]),
-        provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
-        failure_reason=str(payload["failure_reason"]),
-    )
-
-
-def _failed_held_diagnostics(outcome: str, search_status: str, reason: str) -> HeldDiagnostics:
-    return HeldDiagnostics(
-        outcome=outcome,
-        search_status=search_status,
-        solver_status="not_adjudicated",
-        numerical_status="not_adjudicated",
-        physical_status="not_adjudicated",
-        attempts=0,
-        major_iterations=0,
-        material_balance_max_abs=None,
-        pressure_stationarity_max_relative=None,
-        kkt_stationarity_max_abs=None,
-        chemical_potential_max_relative=None,
-        search_profiles=(),
-        globality_certificate="not_guaranteed",
-        provider_evaluation_count=0,
-        failure_reason=reason,
-    )
-
-
-def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
+def _phase_stability_diagnostics(payload: Mapping[str, object]) -> PhaseStabilityDiagnostics:
     outcome = str(payload["outcome"])
     accepted = outcome == "physical_equilibrium_accepted"
     one_phase = outcome == "one_phase_no_negative_witness_detected"
@@ -917,7 +844,7 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
         if payload["material_balance_max_abs"] is not None
         else "not_adjudicated"
     )
-    return Held2Diagnostics(
+    return PhaseStabilityDiagnostics(
         outcome=outcome,
         failure_stage=(
             None if payload.get("failure_stage") is None else str(payload["failure_stage"])
@@ -940,21 +867,21 @@ def _held2_diagnostics(payload: Mapping[str, object]) -> Held2Diagnostics:
     )
 
 
-def _held2_phase_state(
+def _phase_stability_phase_state(
     component_count: int,
     payload: Mapping[str, object],
-) -> _HeldPhaseState:
-    fractions = _vector(payload["mole_fractions"], component_count, "HELD2 phase composition")
+) -> _DiscoveredPhaseState:
+    fractions = _vector(payload["mole_fractions"], component_count, "PHASE_STABILITY phase composition")
     phase_fraction = float(cast(float, payload["phase_fraction"]))
     molar_volume = float(cast(float, payload["molar_volume_m3_mol"]))
     if not math.isfinite(phase_fraction) or phase_fraction <= 0.0:
-        raise ValueError("native HELD2 phase fraction must be positive and finite")
+        raise ValueError("native PHASE_STABILITY phase fraction must be positive and finite")
     if not math.isfinite(molar_volume) or molar_volume <= 0.0:
-        raise ValueError("native HELD2 phase volume must be positive and finite")
+        raise ValueError("native PHASE_STABILITY phase volume must be positive and finite")
     pressure_pa = float(cast(float, payload["pressure_pa"]))
     if not math.isfinite(pressure_pa):
-        raise ValueError("native HELD2 phase pressure must be finite")
-    return _HeldPhaseState(
+        raise ValueError("native PHASE_STABILITY phase pressure must be finite")
+    return _DiscoveredPhaseState(
         amount_mol=phase_fraction,
         mole_fractions=fractions,
         volume_m3=phase_fraction * molar_volume,
@@ -963,42 +890,42 @@ def _held2_phase_state(
         chemical_potential_over_rt=_vector(
             payload["chemical_potential_over_rt"],
             component_count,
-            "HELD2 chemical-potential vector",
+            "PHASE_STABILITY chemical-potential vector",
         ),
     )
 
 
-def _held2_result(
+def _phase_stability_result(
     feed: tuple[float, ...],
     fingerprint: str,
     native: Mapping[str, object],
     active_parameters: epcsaft.ActiveParameterSet | None,
-) -> _HeldDiscoveryResult:
-    diagnostics = _held2_diagnostics(native)
+) -> _DiscoveryResult:
+    diagnostics = _phase_stability_diagnostics(native)
     if diagnostics.globality_certificate != "not_guaranteed":
-        raise ValueError("native HELD2 result has an invalid globality certificate")
+        raise ValueError("native PHASE_STABILITY result has an invalid globality certificate")
     if diagnostics.outcome not in {
         "one_phase_no_negative_witness_detected",
         "physical_equilibrium_accepted",
     }:
-        reason = diagnostics.failure_reason or "HELD2 did not return a certified equilibrium"
-        raise _HeldDiscoveryError(reason, diagnostics)
+        reason = diagnostics.failure_reason or "PHASE_STABILITY did not return a certified equilibrium"
+        raise _DiscoveryError(reason, diagnostics)
     if str(native["parameter_fingerprint"]) != fingerprint:
-        raise ValueError("native HELD2 result has the wrong Provider fingerprint")
+        raise ValueError("native PHASE_STABILITY result has the wrong Provider fingerprint")
     sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
 
     phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
-    phases = tuple(_held2_phase_state(len(feed), payload) for payload in phase_payloads)
+    phases = tuple(_phase_stability_phase_state(len(feed), payload) for payload in phase_payloads)
     phase_fractions = tuple(phase.amount_mol for phase in phases)
     expected_phase_count = 1 if diagnostics.outcome.startswith("one_phase") else 2
     if len(phases) != expected_phase_count or not math.isclose(
         math.fsum(phase_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-10
     ):
-        raise ValueError("native HELD2 phase result is incomplete")
+        raise ValueError("native PHASE_STABILITY phase result is incomplete")
     total_gibbs = float(cast(float, native["total_free_energy_over_rt"]))
     if not math.isfinite(total_gibbs):
-        raise ValueError("native HELD2 objective must be finite")
-    return _HeldDiscoveryResult(
+        raise ValueError("native PHASE_STABILITY objective must be finite")
+    return _DiscoveryResult(
         phases=phases,
         phase_fractions=phase_fractions,
         total_free_energy_over_rt=total_gibbs,
@@ -1230,94 +1157,56 @@ def _reference_direction_sensitivity(
     )
 
 
-def _held_discovery(
+def _failed_phase_stability_diagnostics(reason: str, stage: str) -> PhaseStabilityDiagnostics:
+    return PhaseStabilityDiagnostics(
+        outcome="error",
+        failure_stage=stage,
+        solver_status="not_adjudicated",
+        numerical_status="not_adjudicated",
+        physical_status="not_adjudicated",
+        optimizer_solves=0,
+        optimizer_iterations=0,
+        major_iterations=0,
+        material_balance_max_abs=None,
+        electroneutrality_inf=None,
+        pressure_stationarity_max_relative=None,
+        kkt_stationarity_max_abs=None,
+        globality_certificate="not_guaranteed",
+        provider_evaluation_count=0,
+        failure_reason=reason,
+    )
+
+
+def _phase_stability_discovery(
     model: epcsaft.Mixture,
     temperature_k: float,
     pressure_pa: float,
     feed: tuple[float, ...],
     active_parameters: epcsaft.ActiveParameterSet | None = None,
-) -> _HeldDiscoveryResult:
-    """Run the internal bounded HELD or strong-electrolyte HELD2 controller."""
+) -> _DiscoveryResult:
+    """Run source-neutral phase-stability discovery followed by GREPE."""
 
     try:
         native_model = model._native_model(active_parameters)
-    except (TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("invalid_input", "input_rejected", str(error))
-        raise _HeldDiscoveryError(str(error), diagnostics) from error
-
-    try:
         native = cast(
             Mapping[str, object],
-            _core._solve_held_discovery(
-                native_model,
-                temperature_k,
-                pressure_pa,
-                feed,
+            _core._solve_phase_stability_discovery(
+                native_model, temperature_k, pressure_pa, feed
             ),
         )
-    except (RuntimeError, TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("error", "native_exception", str(error))
-        raise _HeldDiscoveryError(str(error), diagnostics) from error
-
-    controller = native.get("controller")
-    if controller == "held2_steps_1_to_10_v1":
-        try:
-            return _held2_result(
-                feed,
-                model.parameter_fingerprint,
-                native,
-                active_parameters,
-            )
-        except _HeldDiscoveryError:
-            raise
-        except (KeyError, TypeError, ValueError) as error:
-            diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-            raise _HeldDiscoveryError(
-                "native HELD2 payload does not match the typed contract", diagnostics
-            ) from error
-
-    if controller != "held_binary_v1":
-        diagnostics = _failed_held_diagnostics(
-            "error",
-            "payload_error",
-            f"unknown native HELD controller: {controller!r}",
+        if native.get("controller") != "phase_stability_stages_1_to_7_grepe_v1":
+            raise ValueError("unknown native phase-stability controller")
+        return _phase_stability_result(
+            feed, model.parameter_fingerprint, native, active_parameters
         )
-        raise _HeldDiscoveryError(
-            "native HELD payload has an unknown controller",
-            diagnostics,
-        )
-
-    try:
-        diagnostics = _held_diagnostics(native)
-        if diagnostics.globality_certificate != "not_guaranteed":
-            raise ValueError("native HELD result has an invalid globality certificate")
-        if diagnostics.outcome not in {"one_phase", "accepted"}:
-            reason = diagnostics.failure_reason or "HELD search did not return an accepted result"
-            raise _HeldDiscoveryError(reason, diagnostics)
-        phase_payloads = cast(Sequence[Mapping[str, object]], native["phases"])
-        phases = tuple(_phase(payload) for payload in phase_payloads)
-        phase_fractions = _float_tuple(native["phase_fractions"])
-        if len(phases) != len(phase_fractions):
-            raise ValueError("native HELD phase count does not match its outcome")
-        if not math.isclose(sum(phase_fractions), 1.0, rel_tol=0.0, abs_tol=1.0e-10):
-            raise ValueError("native HELD phase fractions do not sum to one")
-        if str(native["parameter_fingerprint"]) != model.parameter_fingerprint:
-            raise ValueError("native HELD result has the wrong provider fingerprint")
-        sensitivity = _phase_equilibrium_sensitivity(native.get("sensitivity"), active_parameters)
-        return _HeldDiscoveryResult(
-            phases=phases,
-            phase_fractions=phase_fractions,
-            total_free_energy_over_rt=float(cast(float, native["total_free_energy_over_rt"])),
-            parameter_fingerprint=str(native["parameter_fingerprint"]),
-            diagnostics=diagnostics,
-            sensitivity=sensitivity,
-        )
-    except _HeldDiscoveryError:
+    except _DiscoveryError:
         raise
-    except (KeyError, TypeError, ValueError) as error:
-        diagnostics = _failed_held_diagnostics("error", "payload_error", str(error))
-        raise _HeldDiscoveryError(
-            "native HELD payload does not match the typed contract", diagnostics
+    except (KeyError, RuntimeError, TypeError, ValueError) as error:
+        diagnostics = _failed_phase_stability_diagnostics(
+            str(error), "native_boundary"
+        )
+        raise _DiscoveryError(
+            "native phase-stability discovery failed", diagnostics
         ) from error
 
 
@@ -1537,7 +1426,7 @@ def _validated_phase_initial_guesses(
 
 
 def _protected_discovery_diagnostics(
-    retained: HeldDiagnostics | Held2Diagnostics,
+    retained: PhaseStabilityDiagnostics,
     hint_count: int,
     *,
     numerical_status: str | None = None,
@@ -1547,54 +1436,35 @@ def _protected_discovery_diagnostics(
     phase_selection_claim: str,
     role_evidence: tuple[str, ...] = (),
 ) -> PhaseEquilibriumDiagnostics:
-    search_exclusions: tuple[str, ...]
-    if isinstance(retained, Held2Diagnostics):
-        route = "held2_discovery"
-        native_failure_stage = retained.failure_stage
-        search_scope = "retained_held2_steps_1_to_10_finite_domain"
-        search_budget = (
-            f"optimizer_solves={retained.optimizer_solves};"
-            f"optimizer_iterations={retained.optimizer_iterations}"
-        )
-        search_exclusions = (
-            "three_or_more_phase_topologies",
-            "reactive_phases",
-            "solid_phases",
-        )
-        optimizer_solve_count = retained.optimizer_solves
-        optimizer_iteration_count = retained.optimizer_iterations
-    else:
-        route = "held_discovery"
-        native_failure_stage = None
-        search_scope = "retained_held_profiles:" + ",".join(retained.search_profiles)
-        search_budget = f"attempts={retained.attempts};major_iterations={retained.major_iterations}"
-        search_exclusions = (
-            "charged_topologies",
-            "three_or_more_phase_topologies",
-        )
-        optimizer_solve_count = retained.attempts
-        optimizer_iteration_count = retained.major_iterations
+    search_budget = (
+        f"optimizer_solves={retained.optimizer_solves};"
+        f"optimizer_iterations={retained.optimizer_iterations}"
+    )
     return PhaseEquilibriumDiagnostics(
-        route=route,
+        route="phase_stability_discovery",
         solver_status=retained.solver_status,
         numerical_status=(
             retained.numerical_status if numerical_status is None else numerical_status
         ),
         physical_status=(retained.physical_status if physical_status is None else physical_status),
-        failure_stage=(native_failure_stage if failure_stage is None else failure_stage),
+        failure_stage=(retained.failure_stage if failure_stage is None else failure_stage),
         failure_reason=failure_reason,
-        certificate_scope="protected_held_finite_discovery",
+        certificate_scope="phase_stability_discovery_then_grepe",
         phase_selection_claim=phase_selection_claim,
         globality_claim="not_established",
-        search_scope=search_scope,
+        search_scope="phase_stability_stages_1_to_7_then_grepe",
         search_budget=search_budget,
-        search_exclusions=search_exclusions,
+        search_exclusions=(
+            "three_or_more_discovered_phase_topologies",
+            "reactive_phases",
+            "solid_phases",
+        ),
         completeness_criterion=(
             "retained_controller_terminal_certificate;global_completeness_not_established"
         ),
         role_evidence=role_evidence,
-        optimizer_solve_count=optimizer_solve_count,
-        optimizer_iteration_count=optimizer_iteration_count,
+        optimizer_solve_count=retained.optimizer_solves,
+        optimizer_iteration_count=retained.optimizer_iterations,
         provider_evaluation_count=retained.provider_evaluation_count,
         hint_count=hint_count,
         hint_reordered_start_count=0,
@@ -1607,15 +1477,9 @@ def _protected_discovery_diagnostics(
         pre_correction_residual_inf=0.0,
         post_correction_residual_inf=0.0,
         material_balance_inf=retained.material_balance_max_abs or 0.0,
-        electroneutrality_inf=(
-            retained.electroneutrality_inf or 0.0 if isinstance(retained, Held2Diagnostics) else 0.0
-        ),
+        electroneutrality_inf=retained.electroneutrality_inf or 0.0,
         pressure_residual_inf=retained.pressure_stationarity_max_relative or 0.0,
-        chemical_potential_residual_inf=(
-            retained.chemical_potential_max_relative or 0.0
-            if isinstance(retained, HeldDiagnostics)
-            else 0.0
-        ),
+        chemical_potential_residual_inf=0.0,
         kkt_stationarity_inf=retained.kkt_stationarity_max_abs or 0.0,
         dual_sign_violation_inf=0.0,
         complementarity_inf=0.0,
@@ -1635,14 +1499,14 @@ def _discovery_result(
     total = math.fsum(feed)
     normalized = tuple(value / total for value in feed)
     try:
-        retained = _held_discovery(
+        retained = _phase_stability_discovery(
             model,
             temperature_k,
             pressure_pa,
             normalized,
             active_parameters,
         )
-    except _HeldDiscoveryError as error:
+    except _DiscoveryError as error:
         retained_diagnostics = error.diagnostics
         diagnostics = _protected_discovery_diagnostics(
             retained_diagnostics,
@@ -1650,7 +1514,7 @@ def _discovery_result(
             physical_status="rejected",
             failure_stage=(
                 retained_diagnostics.failure_stage
-                if isinstance(retained_diagnostics, Held2Diagnostics)
+                if isinstance(retained_diagnostics, PhaseStabilityDiagnostics)
                 else "protected_discovery"
             ),
             failure_reason=str(error),
@@ -1692,7 +1556,7 @@ def _discovery_result(
                 numerical_status="uncertified",
                 physical_status="rejected",
                 failure_stage="phase_role_certificate",
-                failure_reason="retained HELD phase role is thermodynamically inconclusive",
+                failure_reason="discovered phase role is thermodynamically inconclusive",
                 phase_selection_claim="no_phase_role_claim",
             )
             raise PhaseEquilibriumError(
@@ -1739,7 +1603,7 @@ def _discovery_result(
             numerical_status="uncertified",
             physical_status="rejected",
             failure_stage="phase_role_certificate",
-            failure_reason="retained HELD phase is not mechanically strict-stable",
+            failure_reason="discovered phase is not mechanically strict-stable",
             phase_selection_claim="no_phase_role_claim",
         )
         raise PhaseEquilibriumError(
@@ -1750,7 +1614,7 @@ def _discovery_result(
     diagnostics = _protected_discovery_diagnostics(
         retained.diagnostics,
         len(problem.hints),
-        phase_selection_claim="protected_held_finite_discovery_result",
+        phase_selection_claim="phase_stability_discovery_then_grepe_result",
         role_evidence=(
             "native_pressure_derivative_strict_stability",
             "compressibility_branch_with_fail_closed_gap",
@@ -2235,7 +2099,7 @@ def _fixed_p_coexistence(
         )
         diagnostics = replace(
             solved.diagnostics,
-            route="held_fixed_p_coexistence",
+            route="phase_stability_fixed_p_coexistence",
             solver_status="failed",
             numerical_status="not_certified",
             physical_status="rejected",
@@ -2263,7 +2127,7 @@ def _fixed_p_coexistence(
     ):
         diagnostics = replace(
             solved.diagnostics,
-            route="held_fixed_p_coexistence",
+            route="phase_stability_fixed_p_coexistence",
             solver_status="converged",
             numerical_status="certified",
             physical_status="rejected",
@@ -2280,7 +2144,7 @@ def _fixed_p_coexistence(
     if temperature_direction.status != "available":
         diagnostics = replace(
             solved.diagnostics,
-            route="held_fixed_p_coexistence",
+            route="phase_stability_fixed_p_coexistence",
             solver_status="converged",
             numerical_status="uncertified",
             physical_status="rejected",
@@ -2304,7 +2168,7 @@ def _fixed_p_coexistence(
         ),
         diagnostics=replace(
             solved.diagnostics,
-            route="held_fixed_p_coexistence",
+            route="phase_stability_fixed_p_coexistence",
             certificate_scope="fixed_p_declared_coexistence",
             search_scope="declared_temperature_bracket",
             search_budget=f"2_endpoints;64_iteration_limit;{evaluation_count}_evaluations",

@@ -1,7 +1,7 @@
 #include "phase_equilibrium.hpp"
 
-#include "held2.hpp"
-#include "held2_tolerances.hpp"
+#include "phase_stability_coordinates.hpp"
+#include "phase_stability_tolerances.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -24,10 +24,10 @@ constexpr double kDistinctTolerance = 1.0e-5;
 constexpr int kIterationLimit = 100;
 
 std::vector<double> chart_coordinates(
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     const std::vector<double>& physical
 ) {
-    const auto modified = held2_transform_physical_fractions(
+    const auto modified = phase_stability_transform_physical_fractions(
         coordinates, physical
     );
     std::vector<double> result;
@@ -53,13 +53,13 @@ struct LocalPhase {
 LocalPhase evaluate_local(
     const ProviderContext& provider,
     const std::vector<double>& charges,
-    const Held2Coordinates& coordinates,
+    const PhaseStabilityCoordinates& coordinates,
     double temperature,
     const std::vector<double>& independent,
     double log_volume
 ) {
     LocalPhase result;
-    result.composition = held2_lift_independent_fractions(
+    result.composition = phase_stability_lift_independent_fractions(
         coordinates, independent
     );
     result.volume = std::exp(log_volume);
@@ -114,7 +114,7 @@ std::vector<double> projected_composition(
         return result;
     }
     for (double& value : result) {
-        value = std::max(value / total, kHeld2ModifiedLowerScale);
+        value = std::max(value / total, kPhaseStabilityModifiedLowerScale);
     }
     total = std::accumulate(result.begin(), result.end(), 0.0);
     for (double& value : result) {
@@ -137,7 +137,7 @@ struct PotentialRows {
 };
 
 std::vector<double> modified_potential_transform(
-    const Held2Coordinates& coordinates
+    const PhaseStabilityCoordinates& coordinates
 ) {
     const std::size_t component_count = coordinates.charges.size();
     if (coordinates.eliminated_index == component_count) {
@@ -166,8 +166,8 @@ std::vector<double> modified_potential_transform(
 }
 
 PotentialRows potential_rows(
-    const Held2Coordinates& reference_coordinates,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& reference_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const std::vector<std::size_t>& partner_to_reference
 ) {
     PotentialRows result;
@@ -204,8 +204,8 @@ Evaluation evaluate_system(
     const FixedTCoexistenceProblem& problem,
     const std::vector<double>& reference_charges,
     const std::vector<double>& partner_charges,
-    const Held2Coordinates& reference_coordinates,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& reference_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const std::vector<std::size_t>& partner_to_reference,
     const std::vector<double>& variables
 ) {
@@ -247,7 +247,7 @@ Evaluation evaluate_system(
         reference_coordinates, partner_coordinates, partner_to_reference
     );
     const std::size_t residual_count = potentials.count + 1;
-    const auto chart = held2_physical_fraction_jacobian(
+    const auto chart = phase_stability_physical_fraction_jacobian(
         partner_coordinates
     );
     result.residual.assign(residual_count, 0.0);
@@ -365,7 +365,7 @@ bool admissible(
     const ProviderContext& reference_provider,
     const ProviderContext& partner_provider,
     const FixedTCoexistenceProblem& problem,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const std::vector<double>& variables
 ) {
     try {
@@ -375,22 +375,22 @@ bool admissible(
             variables.begin() + 1,
             variables.begin() + static_cast<std::ptrdiff_t>(1 + dimension)
         );
-        const auto composition = held2_lift_independent_fractions(
+        const auto composition = phase_stability_lift_independent_fractions(
             partner_coordinates, independent
         );
         const auto reference_bounds =
             reference_provider.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 problem.reference_mole_fractions,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum
+                kPhaseStabilityPackingFractionMinimum,
+                kPhaseStabilityPackingFractionMaximum
             );
         const auto partner_bounds =
             partner_provider.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 composition,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum
+                kPhaseStabilityPackingFractionMinimum,
+                kPhaseStabilityPackingFractionMaximum
             );
         const double reference_volume = std::exp(variables.front());
         const double partner_volume = std::exp(variables.back());
@@ -408,8 +408,8 @@ SolvedStateSensitivity coexistence_sensitivity(
     const ProviderContext& partner_provider,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
-    const Held2Coordinates& reference_coordinates,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& reference_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const Evaluation& solved
 ) {
     SolvedStateSensitivity result;
@@ -458,8 +458,8 @@ SolvedStateSensitivity coexistence_sensitivity(
             problem.temperature_k,
             solved.reference.composition,
             solved.reference.volume,
-            kHeld2PackingFractionMinimum,
-            kHeld2PackingFractionMaximum,
+            kPhaseStabilityPackingFractionMinimum,
+            kPhaseStabilityPackingFractionMaximum,
             reference_active
         );
         if (!partner_active.identities.empty()) {
@@ -467,8 +467,8 @@ SolvedStateSensitivity coexistence_sensitivity(
                 problem.temperature_k,
                 solved.partner.composition,
                 solved.partner.volume,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum,
+                kPhaseStabilityPackingFractionMinimum,
+                kPhaseStabilityPackingFractionMaximum,
                 partner_active
             );
         }
@@ -634,7 +634,7 @@ SolvedStateSensitivity coexistence_sensitivity(
         ];
     }
     ++output;
-    const auto chart = held2_physical_fraction_jacobian(
+    const auto chart = phase_stability_physical_fraction_jacobian(
         partner_coordinates
     );
     for (std::size_t component = 0;
@@ -682,8 +682,8 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
     const ProviderContext& partner_provider,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
-    const Held2Coordinates& reference_coordinates,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& reference_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const Evaluation& solved
 ) {
     SolvedStateSensitivity result;
@@ -867,7 +867,7 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
             * result.state_parameter_jacobian[direction];
     }
     ++output;
-    const auto chart = held2_physical_fraction_jacobian(
+    const auto chart = phase_stability_physical_fraction_jacobian(
         partner_coordinates
     );
     for (std::size_t component = 0;
@@ -915,8 +915,8 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
     const ProviderContext& partner_provider,
     const FixedTCoexistenceProblem& problem,
     const std::vector<std::size_t>& partner_to_reference,
-    const Held2Coordinates& reference_coordinates,
-    const Held2Coordinates& partner_coordinates,
+    const PhaseStabilityCoordinates& reference_coordinates,
+    const PhaseStabilityCoordinates& partner_coordinates,
     const Evaluation& solved
 ) {
     SolvedStateSensitivity result;
@@ -1061,7 +1061,7 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
     );
     result.output_parameter_jacobian[output++] =
         solved.reference.volume * result.state_parameter_jacobian[0];
-    const auto chart = held2_physical_fraction_jacobian(partner_coordinates);
+    const auto chart = phase_stability_physical_fraction_jacobian(partner_coordinates);
     for (std::size_t component = 0; component < partner_ids.size(); ++component) {
         result.output_identities.push_back(
             "phase[" + std::to_string(1 - problem.reference_phase_index)
@@ -1238,7 +1238,7 @@ void validate_problem(
         scale += std::abs(reference_charges[component])
             * problem.reference_mole_fractions[component];
     }
-    if (!audit_held2_tolerance(kHeld2ChargeBalance, charge, scale).passed) {
+    if (!audit_phase_stability_tolerance(kPhaseStabilityChargeBalance, charge, scale).passed) {
         throw std::invalid_argument(
             "coexistence reference composition is not electroneutral"
         );
@@ -1286,7 +1286,7 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
     result.parameter_fingerprint = reference_provider.fingerprint();
     result.partner_parameter_fingerprint = partner_provider.fingerprint();
     result.partner_component_ids = phase_provider_component_ids(partner_provider);
-    result.diagnostics.route = "held_fixed_t_coexistence";
+    result.diagnostics.route = "phase_stability_fixed_t_coexistence";
     result.diagnostics.certificate_scope =
         "fixed_t_declared_coexistence";
     result.diagnostics.phase_selection_claim =
@@ -1320,10 +1320,10 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
         const auto partner_charges = phase_provider_component_charges(
             partner_provider
         );
-        const auto reference_coordinates = make_held2_coordinates(
+        const auto reference_coordinates = make_phase_stability_coordinates(
             reference_charges, phase_provider_component_ids(reference_provider)
         );
-        const auto partner_coordinates = make_held2_coordinates(
+        const auto partner_coordinates = make_phase_stability_coordinates(
             partner_charges, phase_provider_component_ids(partner_provider)
         );
         const auto partner_composition = projected_composition(
@@ -1333,8 +1333,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             reference_provider.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 problem.reference_mole_fractions,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum
+                kPhaseStabilityPackingFractionMinimum,
+                kPhaseStabilityPackingFractionMaximum
             );
         const std::size_t partner_phase = 1 - problem.reference_phase_index;
         const double reference_volume = volume_seed(
@@ -1545,8 +1545,8 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             const auto bounds = partner_provider.evaluate_molar_volume_bounds(
                 problem.temperature_k,
                 composition,
-                kHeld2PackingFractionMinimum,
-                kHeld2PackingFractionMaximum
+                kPhaseStabilityPackingFractionMinimum,
+                kPhaseStabilityPackingFractionMaximum
             );
             std::vector<double> variables{
                 std::log(reference_volume),
@@ -1699,11 +1699,11 @@ FixedTCoexistenceResult solve_fixed_t_coexistence(
             std::abs(reference_charge), std::abs(partner_charge)
         );
         const bool charge_certified =
-            audit_held2_tolerance(
-                kHeld2ChargeBalance, reference_charge, charge_scale
+            audit_phase_stability_tolerance(
+                kPhaseStabilityChargeBalance, reference_charge, charge_scale
             ).passed
-            && audit_held2_tolerance(
-                kHeld2ChargeBalance,
+            && audit_phase_stability_tolerance(
+                kPhaseStabilityChargeBalance,
                 partner_charge,
                 partner_charge_scale
             ).passed;

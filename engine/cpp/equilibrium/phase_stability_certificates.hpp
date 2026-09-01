@@ -9,7 +9,7 @@
 
 namespace epcsaft_engine::equilibrium {
 
-struct Held2FarkasCertificate {
+struct PhaseStabilityFarkasCertificate {
     std::string reason = "not_audited";
     std::vector<double> row_multipliers;
     double normalization = 0.0;
@@ -23,7 +23,7 @@ struct Held2FarkasCertificate {
     bool accepted = false;
 };
 
-struct Held2Step5KktCertificate {
+struct PhaseStabilityStage5KktCertificate {
     std::string reason = "not_audited";
     int major_iteration = -1;
     std::uint64_t start_ordinal = 0;
@@ -64,7 +64,7 @@ struct Held2Step5KktCertificate {
     bool accepted = false;
 };
 
-[[nodiscard]] Held2FarkasCertificate audit_held2_farkas_certificate(
+[[nodiscard]] PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& row_lower,
     const std::vector<double>& row_upper,
@@ -73,12 +73,12 @@ struct Held2Step5KktCertificate {
     const std::vector<double>& row_ray
 );
 
-[[nodiscard]] std::string adjudicate_held2_farkas_status(
+[[nodiscard]] std::string adjudicate_phase_stability_farkas_status(
     bool solver_infeasible,
-    const std::optional<Held2FarkasCertificate>& certificate
+    const std::optional<PhaseStabilityFarkasCertificate>& certificate
 );
 
-[[nodiscard]] Held2Step5KktCertificate audit_held2_step5_kkt(
+[[nodiscard]] PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,

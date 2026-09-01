@@ -40,12 +40,12 @@ owners:
     public_module: epcsaft.equilibrium
     python_api: src/epcsaft/equilibrium/_api.py
     native_sources: cpp/equilibrium
-    nonreactive_numerical_core: held_held2
+    nonreactive_numerical_core: phase_stability_discovery_plus_grepe
     public_route: solve
     promotion_status: accepted
     promotion_receipt: ../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
-    transition_decision: docs/scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md
-    promotion_decision: governance_D-030
+    transition_decision: docs/scientific/adr/0005-native-engine-ownership-and-generated-evidence.md
+    promotion_decision: governance_D-041
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
     phase_modes: [omitted_topology_discovery, declared_topology_solve]
     phase_kinds: [liquid, vapor]

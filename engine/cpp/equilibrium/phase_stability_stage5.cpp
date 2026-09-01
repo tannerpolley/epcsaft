@@ -1,5 +1,5 @@
-#include "held2_step5.hpp"
-#include "held2_tolerances.hpp"
+#include "phase_stability_stage5.hpp"
+#include "phase_stability_tolerances.hpp"
 
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
@@ -36,7 +36,7 @@ bool finite_values(const std::vector<double>& values) {
     );
 }
 
-bool finite_step5_terminal(const Held2StateEvaluation& terminal) {
+bool finite_step5_terminal(const PhaseStabilityStateEvaluation& terminal) {
     return std::isfinite(terminal.volume)
         && terminal.volume > 0.0
         && std::isfinite(terminal.objective)
@@ -72,7 +72,7 @@ Step5Assessment assess_step5(
     } else if (local_value <= upper_bound) {
         result.qualified = true;
         result.reason = "lower_not_above_upper";
-    } else if (audit_held2_tolerance(kHeld2Step6Gap, result.gap).passed) {
+    } else if (audit_phase_stability_tolerance(kPhaseStabilityStage6Gap, result.gap).passed) {
         result.qualified = true;
         result.reason = "lower_equal_within_step6_gate";
     } else {
@@ -82,15 +82,15 @@ Step5Assessment assess_step5(
 }
 
 bool representation_equivalent(
-    const Held2MPoint& left,
-    const Held2MPoint& right
+    const PhaseStabilityMPoint& left,
+    const PhaseStabilityMPoint& right
 ) {
     if (left.independent_modified_fractions.size()
         != right.independent_modified_fractions.size()
         || !std::isfinite(left.volume) || left.volume <= 0.0
         || !std::isfinite(right.volume) || right.volume <= 0.0
-        || !audit_held2_tolerance(
-            kHeld2MRepresentationEquivalent,
+        || !audit_phase_stability_tolerance(
+            kPhaseStabilityMRepresentationEquivalent,
             std::log(left.volume) - std::log(right.volume)
         ).passed) {
         return false;
@@ -100,8 +100,8 @@ bool representation_equivalent(
         left.independent_modified_fractions.end(),
         right.independent_modified_fractions.begin(),
         [](double left_value, double right_value) {
-            return audit_held2_tolerance(
-                kHeld2MRepresentationEquivalent,
+            return audit_phase_stability_tolerance(
+                kPhaseStabilityMRepresentationEquivalent,
                 left_value - right_value
             ).passed;
         }
@@ -155,8 +155,8 @@ std::vector<double> space_filling_point(
 }
 
 Step5Start make_step5_start(
-    const Held2Coordinates& coordinates,
-    const Held2PersistentState& state,
+    const PhaseStabilityCoordinates& coordinates,
+    const PhaseStabilityPersistentState& state,
     const std::vector<double>& random_point,
     const std::array<double, 2>& volume_bounds,
     double total_ion_mole_fraction_max,
@@ -185,7 +185,7 @@ Step5Start make_step5_start(
         ? space_filling_point(space_filling_bases, space_filling_ordinal)
         : random_point;
     const std::vector<double> random_independent =
-        held2_map_unit_cube_to_independent_fractions(
+        phase_stability_map_unit_cube_to_independent_fractions(
             coordinates,
             std::vector<double>(
                 deterministic_point.begin(),
@@ -219,7 +219,7 @@ Step5Start make_step5_start(
         const std::uint64_t retained_ordinal =
             structured_ordinal
             - boundary_start_count;
-        const Held2MPoint& retained = state.M[
+        const PhaseStabilityMPoint& retained = state.M[
             static_cast<std::size_t>(retained_ordinal)
                 % state.M.size()
         ];
@@ -244,7 +244,7 @@ Step5Start make_step5_start(
         static_cast<std::size_t>(boundary_ordinal) % dimension
     ] = ((boundary_ordinal / dimension) % 2 == 0) ? 0.0 : 1.0;
     const std::vector<double> boundary =
-        held2_map_unit_cube_to_independent_fractions(
+        phase_stability_map_unit_cube_to_independent_fractions(
             coordinates, boundary_cube, total_ion_mole_fraction_max
         );
     std::vector<double> boundary_aware(dimension, 0.0);
@@ -263,8 +263,8 @@ Step5Start make_step5_start(
 }
 
 bool same_coordinates(
-    const Held2Coordinates& left,
-    const Held2Coordinates& right
+    const PhaseStabilityCoordinates& left,
+    const PhaseStabilityCoordinates& right
 ) {
     if (left.charges != right.charges
         || left.eliminated_index != right.eliminated_index
@@ -289,9 +289,9 @@ bool same_coordinates(
     for (std::size_t index = 0;
          index < left.polytope_constraints.size();
          ++index) {
-        const Held2PolytopeConstraint& left_constraint =
+        const PhaseStabilityPolytopeConstraint& left_constraint =
             left.polytope_constraints[index];
-        const Held2PolytopeConstraint& right_constraint =
+        const PhaseStabilityPolytopeConstraint& right_constraint =
             right.polytope_constraints[index];
         if (left_constraint.name != right_constraint.name
             || left_constraint.coefficients
@@ -404,7 +404,7 @@ EqualityGaugeFit fit_physical_equality_gauges(
     const double determinant =
         count * charge_square_sum - charge_sum * charge_sum;
     if (!std::isfinite(determinant)
-        || determinant <= kHeld2Stage2KktRankPivot.atol) {
+        || determinant <= kPhaseStabilityStage2KktRankPivot.atol) {
         return result;
     }
     result.normalization_multiplier = (
@@ -442,8 +442,8 @@ struct Step5LocalRun {
 class Step5Tnlp final : public Ipopt::TNLP {
 public:
     Step5Tnlp(
-        Held2StateEvaluator objective,
-        std::vector<Held2PolytopeConstraint> constraints,
+        PhaseStabilityStateEvaluator objective,
+        std::vector<PhaseStabilityPolytopeConstraint> constraints,
         std::vector<double> initial,
         std::vector<double> lower,
         std::vector<double> upper
@@ -532,7 +532,7 @@ public:
         Ipopt::Number* gradient
     ) override {
         try {
-            const Held2StateEvaluation& state = evaluate(n, x);
+            const PhaseStabilityStateEvaluation& state = evaluate(n, x);
             std::copy(state.gradient.begin(), state.gradient.end(), gradient);
             return true;
         } catch (const std::exception& error) {
@@ -621,7 +621,7 @@ public:
             return true;
         }
         try {
-            const Held2StateEvaluation& state = evaluate(n, x);
+            const PhaseStabilityStateEvaluation& state = evaluate(n, x);
             for (Ipopt::Index row = 0; row < n; ++row) {
                 for (Ipopt::Index column = 0; column <= row; ++column) {
                     values[position++] = objective_factor * state.hessian[
@@ -694,13 +694,13 @@ public:
     }
 
 private:
-    const Held2StateEvaluation& evaluate(
+    const PhaseStabilityStateEvaluation& evaluate(
         Ipopt::Index n,
         const Ipopt::Number* x
     ) const {
         if (n != static_cast<Ipopt::Index>(initial_.size())) {
             throw std::invalid_argument(
-                "HELD2 Step-5 variable count changed"
+                "PHASE_STABILITY Step-5 variable count changed"
             );
         }
         const std::vector<double> variables(x, x + n);
@@ -714,13 +714,13 @@ private:
         return *cached_state_;
     }
 
-    Held2StateEvaluator objective_;
-    std::vector<Held2PolytopeConstraint> constraints_;
+    PhaseStabilityStateEvaluator objective_;
+    std::vector<PhaseStabilityPolytopeConstraint> constraints_;
     std::vector<double> initial_;
     std::vector<double> lower_;
     std::vector<double> upper_;
     mutable std::vector<double> cached_variables_;
-    mutable std::optional<Held2StateEvaluation> cached_state_;
+    mutable std::optional<PhaseStabilityStateEvaluation> cached_state_;
     bool converged_ = false;
     std::string status_ = "not_run";
     std::vector<double> variables_;
@@ -730,14 +730,14 @@ private:
     int iterations_ = 0;
 };
 
-Held2Step5KktCertificate certify_step5_terminal(
-    const Held2Coordinates& coordinates,
-    const Held2Step4Result& step4,
-    const Held2PersistentState& state,
+PhaseStabilityStage5KktCertificate certify_step5_terminal(
+    const PhaseStabilityCoordinates& coordinates,
+    const PhaseStabilityStage4Result& step4,
+    const PhaseStabilityPersistentState& state,
     std::uint64_t start_ordinal,
     const Step5LocalRun& run,
     const std::vector<double>& audited_solver_variables,
-    const Held2StateEvaluation& terminal,
+    const PhaseStabilityStateEvaluation& terminal,
     const std::vector<double>& composition_lower,
     const std::vector<double>& composition_upper,
     const std::array<double, 2>& volume_bounds
@@ -769,7 +769,7 @@ Held2Step5KktCertificate certify_step5_terminal(
     );
     const auto canonical_variable_bound = [
         &composition_lower, &composition_upper, dimension
-    ](const Held2PolytopeConstraint& constraint)
+    ](const PhaseStabilityPolytopeConstraint& constraint)
         -> std::optional<std::pair<std::size_t, double>> {
         if (constraint.coefficients.size() != dimension) {
             return std::nullopt;
@@ -779,7 +779,7 @@ Held2Step5KktCertificate certify_step5_terminal(
              coordinate < dimension;
              ++coordinate) {
             if (std::abs(constraint.coefficients[coordinate])
-                <= kHeld2PolytopeFeasibility.atol) {
+                <= kPhaseStabilityPolytopeFeasibility.atol) {
                 continue;
             }
             if (candidate) {
@@ -799,8 +799,8 @@ Held2Step5KktCertificate certify_step5_terminal(
             : composition_lower[*candidate];
         if (!std::isfinite(implied_bound)
             || !std::isfinite(variable_bound)
-            || !audit_held2_tolerance(
-                kHeld2BoundActivity,
+            || !audit_phase_stability_tolerance(
+                kPhaseStabilityBoundActivity,
                 implied_bound - variable_bound
             ).passed) {
             return std::nullopt;
@@ -810,7 +810,7 @@ Held2Step5KktCertificate certify_step5_terminal(
     for (std::size_t index = 0;
          index < coordinates.polytope_constraints.size();
          ++index) {
-        const Held2PolytopeConstraint& constraint =
+        const PhaseStabilityPolytopeConstraint& constraint =
             coordinates.polytope_constraints[index];
         if (const auto canonical = canonical_variable_bound(constraint)) {
             canonical_bound_constraints.push_back({
@@ -840,32 +840,32 @@ Held2Step5KktCertificate certify_step5_terminal(
     if (lower_multipliers.size() == variables.size()
         && upper_multipliers.size() == variables.size()) {
         for (std::size_t index = 0; index < variables.size(); ++index) {
-            if (!audit_held2_tolerance(
-                    kHeld2BoundActivity,
+            if (!audit_phase_stability_tolerance(
+                    kPhaseStabilityBoundActivity,
                     variables[index] - lower[index]
                 ).passed
                 && std::isfinite(lower_multipliers[index])
                 && (
                     std::abs(run.lower_bound_multipliers[index])
-                        <= kHeld2Stage2KktDualSign.atol
-                    || audit_held2_tolerance(
-                        kHeld2Stage2KktComplementarity,
+                        <= kPhaseStabilityStage2KktDualSign.atol
+                    || audit_phase_stability_tolerance(
+                        kPhaseStabilityStage2KktComplementarity,
                         lower_multipliers[index]
                             * (variables[index] - lower[index])
                     ).passed
                 )) {
                 lower_multipliers[index] = 0.0;
             }
-            if (!audit_held2_tolerance(
-                    kHeld2BoundActivity,
+            if (!audit_phase_stability_tolerance(
+                    kPhaseStabilityBoundActivity,
                     upper[index] - variables[index]
                 ).passed
                 && std::isfinite(upper_multipliers[index])
                 && (
                     std::abs(run.upper_bound_multipliers[index])
-                        <= kHeld2Stage2KktDualSign.atol
-                    || audit_held2_tolerance(
-                        kHeld2Stage2KktComplementarity,
+                        <= kPhaseStabilityStage2KktDualSign.atol
+                    || audit_phase_stability_tolerance(
+                        kPhaseStabilityStage2KktComplementarity,
                         upper_multipliers[index]
                             * (upper[index] - variables[index])
                     ).passed
@@ -895,19 +895,19 @@ Held2Step5KktCertificate certify_step5_terminal(
                 run.constraint_multipliers[
                     canonical.constraint_index
                 ];
-            const Held2PolytopeConstraint& constraint =
+            const PhaseStabilityPolytopeConstraint& constraint =
                 coordinates.polytope_constraints[
                     canonical.constraint_index
                 ];
             const double slack = constraint.upper_bound
                 - canonical.coefficient
                     * variables[canonical.coordinate];
-            if (!audit_held2_tolerance(
-                    kHeld2BoundActivity, slack
+            if (!audit_phase_stability_tolerance(
+                    kPhaseStabilityBoundActivity, slack
                 ).passed
                 && std::isfinite(multiplier)
-                && audit_held2_tolerance(
-                    kHeld2Stage2KktComplementarity,
+                && audit_phase_stability_tolerance(
+                    kPhaseStabilityStage2KktComplementarity,
                     multiplier * slack
                 ).passed) {
                 multiplier = 0.0;
@@ -927,13 +927,13 @@ Held2Step5KktCertificate certify_step5_terminal(
                 constraints[row].begin(), constraints[row].end(),
                 variables.begin(), 0.0
             );
-            if (!audit_held2_tolerance(
-                    kHeld2BoundActivity,
+            if (!audit_phase_stability_tolerance(
+                    kPhaseStabilityBoundActivity,
                     constraint_upper[row] - value
                 ).passed
                 && std::isfinite(constraint_multipliers[row])
-                && audit_held2_tolerance(
-                    kHeld2Stage2KktComplementarity,
+                && audit_phase_stability_tolerance(
+                    kPhaseStabilityStage2KktComplementarity,
                     constraint_multipliers[row]
                         * (constraint_upper[row] - value)
                 ).passed) {
@@ -947,7 +947,7 @@ Held2Step5KktCertificate certify_step5_terminal(
     double pullback_scale = 0.0;
     try {
         const std::vector<double> modified_potentials =
-            held2_transform_modified_potentials(
+            phase_stability_transform_modified_potentials(
                 coordinates, terminal.chemical_potentials_over_rt
             );
         const auto dependent = std::find(
@@ -959,7 +959,7 @@ Held2Step5KktCertificate certify_step5_terminal(
             || terminal.gradient.size() != dimension + 1
             || state.multipliers.size() != dimension) {
             throw std::invalid_argument(
-                "HELD2 Step-5 pullback dimensions changed"
+                "PHASE_STABILITY Step-5 pullback dimensions changed"
             );
         }
         const std::size_t dependent_position =
@@ -977,7 +977,7 @@ Held2Step5KktCertificate certify_step5_terminal(
             );
             if (independent == coordinates.retained_indices.end()) {
                 throw std::invalid_argument(
-                    "HELD2 Step-5 independent chart changed"
+                    "PHASE_STABILITY Step-5 independent chart changed"
                 );
             }
             const std::size_t independent_position =
@@ -1010,8 +1010,8 @@ Held2Step5KktCertificate certify_step5_terminal(
         && volume_bounds[0] > 0.0
         && volume_bounds[0] < volume_bounds[1]
         && audited_solver_variables.size() == dimension + 1
-        && audit_held2_tolerance(
-            kHeld2JointVolumeConsistency,
+        && audit_phase_stability_tolerance(
+            kPhaseStabilityJointVolumeConsistency,
             audited_solver_variables.back()
                 - std::log(terminal.volume)
         ).passed;
@@ -1021,16 +1021,16 @@ Held2Step5KktCertificate certify_step5_terminal(
             step4_certificate_valid =
                 step4.certificate->primal_feasible
                 && step4.certificate->dual_feasible
-                && audit_held2_tolerance(
-                    kHeld2LpPrimal,
+                && audit_phase_stability_tolerance(
+                    kPhaseStabilityLpPrimal,
                     step4.certificate->primal_residual_inf
                 ).passed
-                && audit_held2_tolerance(
-                    kHeld2LpDual,
+                && audit_phase_stability_tolerance(
+                    kPhaseStabilityLpDual,
                     step4.certificate->dual_residual_inf
                 ).passed
-                && audit_held2_tolerance(
-                    kHeld2LpComplementarity,
+                && audit_phase_stability_tolerance(
+                    kPhaseStabilityLpComplementarity,
                     step4.certificate->complementarity_inf
                 ).passed;
         } catch (...) {
@@ -1048,14 +1048,14 @@ Held2Step5KktCertificate certify_step5_terminal(
             for (std::size_t index = 0;
                  index < step4.cut_snapshot.size();
                  ++index) {
-                const Held2Step4CutEvidence& cut =
+                const PhaseStabilityStage4CutEvidence& cut =
                     step4.cut_snapshot[index];
                 int expected_id = -1;
                 double expected_intercept =
                     state.feed_reduced_gibbs;
                 std::vector<double> expected_slopes(dimension, 0.0);
                 if (index < state.M.size()) {
-                    const Held2MPoint& point = state.M[index];
+                    const PhaseStabilityMPoint& point = state.M[index];
                     expected_id =
                         static_cast<int>(point.insertion_id);
                     expected_intercept = point.reduced_gibbs;
@@ -1087,8 +1087,8 @@ Held2Step5KktCertificate certify_step5_terminal(
                     value += cut.slopes[coordinate]
                         * (*step4.multipliers)[coordinate];
                 }
-                if (audit_held2_tolerance(
-                        kHeld2LpActiveCut,
+                if (audit_phase_stability_tolerance(
+                        kPhaseStabilityLpActiveCut,
                         value - *step4.upper_bound
                     ).passed) {
                     reconstructed_active_ids.push_back(cut.id);
@@ -1115,7 +1115,7 @@ Held2Step5KktCertificate certify_step5_terminal(
         && step4.upper_solve_count == state.upper_solve_count
         && *step4.upper_bound == state.upper_bound
         && *step4.multipliers == state.multipliers;
-    Held2Step5KktCertificate certificate = audit_held2_step5_kkt(
+    PhaseStabilityStage5KktCertificate certificate = audit_phase_stability_stage5_kkt(
         variables,
         lower,
         upper,
@@ -1144,7 +1144,7 @@ Held2Step5KktCertificate certify_step5_terminal(
             || upper_multipliers.size() < dimension
             || constraint_multipliers.size() != constraints.size()) {
             throw std::invalid_argument(
-                "HELD2 Step-5 physical evidence dimensions changed"
+                "PHASE_STABILITY Step-5 physical evidence dimensions changed"
             );
         }
         const double normalization = std::accumulate(
@@ -1167,19 +1167,19 @@ Held2Step5KktCertificate certify_step5_terminal(
                 + static_cast<std::ptrdiff_t>(dimension)
         );
         const std::vector<double> reconstructed_physical =
-            held2_lift_independent_fractions(
+            phase_stability_lift_independent_fractions(
                 coordinates, audited_composition
             );
         if (reconstructed_physical.size()
             != terminal.physical_amounts.size()) {
             throw std::invalid_argument(
-                "HELD2 Step-5 reconstructed composition changed"
+                "PHASE_STABILITY Step-5 reconstructed composition changed"
             );
         }
         for (double amount : terminal.physical_amounts) {
             if (!std::isfinite(amount)) {
                 throw std::invalid_argument(
-                    "HELD2 Step-5 physical composition is nonfinite"
+                    "PHASE_STABILITY Step-5 physical composition is nonfinite"
                 );
             }
             physical_composition_residual = std::max(
@@ -1229,7 +1229,7 @@ Held2Step5KktCertificate certify_step5_terminal(
             );
             if (retained == coordinates.retained_indices.end()) {
                 throw std::invalid_argument(
-                    "HELD2 Step-5 physical pullback chart changed"
+                    "PHASE_STABILITY Step-5 physical pullback chart changed"
                 );
             }
             const std::size_t retained_position =
@@ -1260,15 +1260,15 @@ Held2Step5KktCertificate certify_step5_terminal(
         physical_stationarity.charge_multiplier;
     if (certificate.accepted) {
         if (!std::isfinite(physical_composition_residual)
-            || !audit_held2_tolerance(
-                kHeld2CompositionSum,
+            || !audit_phase_stability_tolerance(
+                kPhaseStabilityCompositionSum,
                 physical_composition_residual
             ).passed) {
             certificate.reason = "physical_composition_failed";
             certificate.accepted = false;
         } else if (!std::isfinite(physical_stationarity.residual_inf)
-            || !audit_held2_tolerance(
-                kHeld2Stage2KktStationarity,
+            || !audit_phase_stability_tolerance(
+                kPhaseStabilityStage2KktStationarity,
                 physical_stationarity.residual_inf
             ).passed) {
             certificate.reason = "physical_stationarity_failed";
@@ -1299,8 +1299,8 @@ Held2Step5KktCertificate certify_step5_terminal(
 }
 
 Step5LocalRun solve_step5_local(
-    Held2StateEvaluator objective,
-    const std::vector<Held2PolytopeConstraint>& constraints,
+    PhaseStabilityStateEvaluator objective,
+    const std::vector<PhaseStabilityPolytopeConstraint>& constraints,
     const std::vector<double>& initial,
     const std::vector<double>& lower,
     const std::vector<double>& upper,
@@ -1320,7 +1320,7 @@ Step5LocalRun solve_step5_local(
     application->Options()->SetStringValue("sb", "yes");
     application->Options()->SetIntegerValue("max_iter", 300);
     application->Options()->SetNumericValue(
-        "tol", kHeld2IpoptTarget.atol
+        "tol", kPhaseStabilityIpoptTarget.atol
     );
     application->Options()->SetStringValue(
         "jacobian_approximation", "exact"
@@ -1329,7 +1329,7 @@ Step5LocalRun solve_step5_local(
         "hessian_approximation", "exact"
     );
     application->Options()->SetNumericValue(
-        "constr_viol_tol", kHeld2IpoptConstraint.atol
+        "constr_viol_tol", kPhaseStabilityIpoptConstraint.atol
     );
     application->Options()->SetStringValue(
         "nlp_scaling_method", "gradient-based"
@@ -1356,14 +1356,14 @@ Step5LocalRun solve_step5_local(
 
 }  // namespace
 
-bool retain_held2_m_point(
-    Held2PersistentState& state,
-    Held2MPoint& point
+bool retain_phase_stability_m_point(
+    PhaseStabilityPersistentState& state,
+    PhaseStabilityMPoint& point
 ) {
     const auto equivalent = std::find_if(
         state.M.begin(),
         state.M.end(),
-        [&point](const Held2MPoint& member) {
+        [&point](const PhaseStabilityMPoint& member) {
             return representation_equivalent(member, point);
         }
     );
@@ -1376,14 +1376,14 @@ bool retain_held2_m_point(
     return true;
 }
 
-Held2Step5Result run_held2_step5(
-    const Held2Step1Result& step1,
-    const Held2Step4Result& step4,
-    Held2PersistentState& state,
-    const Held2StateEvaluator& evaluator,
-    const Held2ResourceProfile& resources
+PhaseStabilityStage5Result run_phase_stability_stage5(
+    const PhaseStabilityStage1Result& step1,
+    const PhaseStabilityStage4Result& step4,
+    PhaseStabilityPersistentState& state,
+    const PhaseStabilityStateEvaluator& evaluator,
+    const PhaseStabilityResourceProfile& resources
 ) {
-    Held2Step5Result result;
+    PhaseStabilityStage5Result result;
     result.timing.invocation_count = 1;
     if (step4.status != "complete" || !step4.certificate
         || !step4.certificate->primal_feasible
@@ -1405,7 +1405,7 @@ Held2Step5Result run_held2_step5(
         result.reason = "invalid_step5_input";
         return result;
     }
-    const Held2Coordinates& coordinates = *step1.coordinates;
+    const PhaseStabilityCoordinates& coordinates = *step1.coordinates;
     const std::size_t dimension = state.feed.size();
     const std::size_t recovery_capacity = static_cast<std::size_t>(
         resources.step5_recovery_start_cap
@@ -1447,7 +1447,7 @@ Held2Step5Result run_held2_step5(
             value = unit(random);
         }
     }
-    const Held2StateEvaluator counted_evaluator =
+    const PhaseStabilityStateEvaluator counted_evaluator =
         [&evaluator, &result](
             const std::vector<double>& composition,
             double log_volume
@@ -1455,7 +1455,7 @@ Held2Step5Result run_held2_step5(
             ++result.timing.provider_evaluations;
             return evaluator(composition, log_volume);
         };
-    const Held2VolumeBoundsEvaluator counted_volume_bounds =
+    const PhaseStabilityVolumeBoundsEvaluator counted_volume_bounds =
         [&step1, &result](const std::vector<double>& composition) {
             ++result.timing.provider_evaluations;
             return (*step1.volume_bounds)(composition);
@@ -1469,7 +1469,7 @@ Held2Step5Result run_held2_step5(
                 const std::vector<double>& point =
                     starts[static_cast<std::size_t>(index)];
                 const std::array<double, 2> local = counted_volume_bounds(
-                    held2_map_unit_cube_to_independent_fractions(
+                    phase_stability_map_unit_cube_to_independent_fractions(
                         coordinates,
                         std::vector<double>(
                             point.begin(),
@@ -1489,8 +1489,8 @@ Held2Step5Result run_held2_step5(
         state.step5_volume_bounds = bounds;
     }
     double best = std::numeric_limits<double>::infinity();
-    Held2MPoint best_point;
-    std::optional<Held2MPoint> selected_new_point;
+    PhaseStabilityMPoint best_point;
+    std::optional<PhaseStabilityMPoint> selected_new_point;
     for (int attempt = 0;
          attempt < attempt_cap;
         ++attempt) {
@@ -1510,7 +1510,7 @@ Held2Step5Result run_held2_step5(
             ordinal,
             space_filling_bases
         );
-        Held2LocalCertificate certificate;
+        PhaseStabilityLocalCertificate certificate;
         certificate.start_ordinal = ordinal;
         certificate.start_family = start.family;
         std::array<double, 2> start_volume_bounds;
@@ -1540,12 +1540,12 @@ Held2Step5Result run_held2_step5(
         std::vector<double> solver_upper = upper;
         solver_lower.push_back(std::log(solve_volume_bounds[0]));
         solver_upper.push_back(std::log(solve_volume_bounds[1]));
-        const Held2StateEvaluator objective = [
+        const PhaseStabilityStateEvaluator objective = [
             &counted_evaluator,
             feed = state.feed,
             multipliers = state.multipliers
         ](const std::vector<double>& composition, double log_volume) {
-            Held2StateEvaluation evaluated =
+            PhaseStabilityStateEvaluation evaluated =
                 counted_evaluator(composition, log_volume);
             for (std::size_t coordinate = 0;
                  coordinate < composition.size();
@@ -1573,7 +1573,7 @@ Held2Step5Result run_held2_step5(
                 [](double value) { return std::isfinite(value); }
             )) {
             if (run.converged) {
-                certificate.kkt = Held2Step5KktCertificate{};
+                certificate.kkt = PhaseStabilityStage5KktCertificate{};
                 certificate.kkt->reason = "nonfinite_evidence";
             }
             result.attempts.push_back(certificate);
@@ -1583,13 +1583,13 @@ Held2Step5Result run_held2_step5(
         std::vector<double> independent(
             run.variables.begin(), run.variables.end() - 1
         );
-        Held2StateEvaluation terminal;
+        PhaseStabilityStateEvaluation terminal;
         try {
             terminal = counted_evaluator(
                 independent, run.variables.back()
             );
         } catch (...) {
-            certificate.kkt = Held2Step5KktCertificate{};
+            certificate.kkt = PhaseStabilityStage5KktCertificate{};
             certificate.kkt->reason = "terminal_evaluation_failed";
             result.attempts.push_back(certificate);
             continue;
@@ -1611,7 +1611,7 @@ Held2Step5Result run_held2_step5(
             } catch (...) {
                 certificate.finite_and_in_domain = false;
                 certificate.accepted = false;
-                certificate.kkt = Held2Step5KktCertificate{};
+                certificate.kkt = PhaseStabilityStage5KktCertificate{};
                 certificate.kkt->reason =
                     "terminal_volume_bounds_failed";
                 return;
@@ -1645,16 +1645,16 @@ Held2Step5Result run_held2_step5(
             std::vector<double> face_initial = run.variables;
             bool near_dilute_face = false;
             const double face_radius = std::sqrt(
-                kHeld2Stage2KktComplementarity.atol
+                kPhaseStabilityStage2KktComplementarity.atol
             );
-            Held2DiluteFaceRestartEvidence face_evidence;
+            PhaseStabilityDiluteFaceRestartEvidence face_evidence;
             face_evidence.face_radius = face_radius;
             face_evidence.bound_activity_atol =
-                kHeld2BoundActivity.atol;
+                kPhaseStabilityBoundActivity.atol;
             face_evidence.dual_sign_atol =
-                kHeld2Stage2KktDualSign.atol;
+                kPhaseStabilityStage2KktDualSign.atol;
             face_evidence.complementarity_atol =
-                kHeld2Stage2KktComplementarity.atol;
+                kPhaseStabilityStage2KktComplementarity.atol;
             for (std::size_t coordinate = 0;
                  coordinate < dimension;
                  ++coordinate) {
@@ -1664,11 +1664,11 @@ Held2Step5Result run_held2_step5(
                     run.lower_bound_multipliers[coordinate];
                 if (std::isfinite(distance)
                     && std::isfinite(multiplier)
-                    && distance > kHeld2BoundActivity.atol
+                    && distance > kPhaseStabilityBoundActivity.atol
                     && distance <= face_radius
-                    && multiplier > kHeld2Stage2KktDualSign.atol
+                    && multiplier > kPhaseStabilityStage2KktDualSign.atol
                     && multiplier * distance
-                        <= kHeld2Stage2KktComplementarity.atol) {
+                        <= kPhaseStabilityStage2KktComplementarity.atol) {
                     face_initial[coordinate] = solver_lower[coordinate];
                     near_dilute_face = true;
                     face_evidence.coordinate_indices.push_back(
@@ -1716,7 +1716,7 @@ Held2Step5Result run_held2_step5(
                             face_run.variables.begin(),
                             face_run.variables.end() - 1
                         );
-                        Held2StateEvaluation face_terminal =
+                        PhaseStabilityStateEvaluation face_terminal =
                             counted_evaluator(
                                 face_independent,
                                 face_run.variables.back()
@@ -1746,13 +1746,13 @@ Held2Step5Result run_held2_step5(
                     const std::vector<double> composition(
                         polished.begin(), polished.end() - 1
                     );
-                    const Held2StateEvaluation polished_state =
+                    const PhaseStabilityStateEvaluation polished_state =
                         objective(composition, polished.back());
                     const double derivative =
                         polished_state
                             .pressure_stationarity_derivative_log_volume;
-                    if (!audit_held2_tolerance(
-                            kHeld2RootPressure,
+                    if (!audit_phase_stability_tolerance(
+                            kPhaseStabilityRootPressure,
                             polished_state.pressure_stationarity_relative
                         ).passed) {
                         if (!std::isfinite(derivative)
@@ -1771,7 +1771,7 @@ Held2Step5Result run_held2_step5(
                             solver_upper.back()
                         );
                     }
-                    const Held2StateEvaluation composition_state =
+                    const PhaseStabilityStateEvaluation composition_state =
                         objective(
                             std::vector<double>(
                                 polished.begin(), polished.end() - 1
@@ -1783,12 +1783,12 @@ Held2Step5Result run_held2_step5(
                         composition_state.gradient.begin()
                             + static_cast<std::ptrdiff_t>(dimension)
                     );
-                    if (audit_held2_tolerance(
-                            kHeld2Stage2KktStationarity,
+                    if (audit_phase_stability_tolerance(
+                            kPhaseStabilityStage2KktStationarity,
                             maximum_abs(composition_gradient)
                         ).passed
-                        && audit_held2_tolerance(
-                            kHeld2RootPressure,
+                        && audit_phase_stability_tolerance(
+                            kPhaseStabilityRootPressure,
                             composition_state.pressure_stationarity_relative
                         ).passed) {
                         break;
@@ -1842,7 +1842,7 @@ Held2Step5Result run_held2_step5(
                                 && candidate[coordinate] >= lower[coordinate]
                                 && candidate[coordinate] <= upper[coordinate];
                         }
-                        for (const Held2PolytopeConstraint& constraint :
+                        for (const PhaseStabilityPolytopeConstraint& constraint :
                              coordinates.polytope_constraints) {
                             feasible = feasible
                                 && std::inner_product(
@@ -1872,10 +1872,10 @@ Held2Step5Result run_held2_step5(
                     const std::vector<double> composition(
                         polished.begin(), polished.end() - 1
                     );
-                    const Held2StateEvaluation pressure_state =
+                    const PhaseStabilityStateEvaluation pressure_state =
                         counted_evaluator(composition, polished.back());
-                    if (audit_held2_tolerance(
-                            kHeld2RootPressure,
+                    if (audit_phase_stability_tolerance(
+                            kPhaseStabilityRootPressure,
                             pressure_state.pressure_stationarity_relative
                         ).passed) {
                         break;
@@ -1898,10 +1898,10 @@ Held2Step5Result run_held2_step5(
                 const std::vector<double> polished_composition(
                     polished.begin(), polished.end() - 1
                 );
-                const Held2StateEvaluation polished_terminal =
+                const PhaseStabilityStateEvaluation polished_terminal =
                     counted_evaluator(polished_composition, polished.back());
-                if (audit_held2_tolerance(
-                        kHeld2RootPressure,
+                if (audit_phase_stability_tolerance(
+                        kPhaseStabilityRootPressure,
                         polished_terminal.pressure_stationarity_relative
                     ).passed) {
                     audited_variables = std::move(polished);
@@ -1921,7 +1921,7 @@ Held2Step5Result run_held2_step5(
             ).qualified) {
             continue;
         }
-        Held2MPoint qualified_point{
+        PhaseStabilityMPoint qualified_point{
             static_cast<std::uint64_t>(state.M.size()),
             independent,
             terminal.volume,
@@ -1937,7 +1937,7 @@ Held2Step5Result run_held2_step5(
         const bool changes_persistent_set = std::none_of(
             state.M.begin(),
             state.M.end(),
-            [&qualified_point](const Held2MPoint& member) {
+            [&qualified_point](const PhaseStabilityMPoint& member) {
                 return representation_equivalent(member, qualified_point);
             }
         );
@@ -1963,11 +1963,11 @@ Held2Step5Result run_held2_step5(
         result.timing.terminal_reason = result.reason;
         return result;
     }
-    Held2MPoint terminal_point = selected_new_point
+    PhaseStabilityMPoint terminal_point = selected_new_point
         ? std::move(*selected_new_point) : best_point;
     state.lower_value = best;
     result.lower_value = best;
-    if (!retain_held2_m_point(state, terminal_point)) {
+    if (!retain_phase_stability_m_point(state, terminal_point)) {
         terminal_point.origin = "step5_equivalent_member";
         result.reason = "equivalent_member";
     } else {
