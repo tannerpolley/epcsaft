@@ -181,6 +181,68 @@ std::size_t named_index(const std::vector<std::string> &names,
   return static_cast<std::size_t>(found - names.begin());
 }
 
+void validate_active_coordinate_family(
+    const NativeActiveCoordinate &coordinate,
+    const NativeFixedTopologyParameter &resolved,
+    const NativeParameters &parameters) {
+  std::string expected_family;
+  switch (resolved.kind) {
+  case NativeFixedTopologyParameterKind::SegmentCount:
+    expected_family = "segment_count";
+    break;
+  case NativeFixedTopologyParameterKind::SegmentDiameter:
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationConstant:
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationAmplitude:
+    expected_family = "segment_diameter";
+    break;
+  case NativeFixedTopologyParameterKind::SegmentDiameterCorrelationExponent:
+    expected_family = "exponential_temperature_coefficient";
+    break;
+  case NativeFixedTopologyParameterKind::DispersionEnergyOverK:
+    expected_family = "dispersion_energy_over_k";
+    break;
+  case NativeFixedTopologyParameterKind::AssociationEnergyOverK:
+    expected_family = "association_energy_over_k";
+    break;
+  case NativeFixedTopologyParameterKind::AssociationVolume:
+    expected_family = "association_volume";
+    break;
+  case NativeFixedTopologyParameterKind::RelativePermittivity:
+    expected_family = "relative_permittivity";
+    break;
+  case NativeFixedTopologyParameterKind::RelativePermittivityCorrelationCoefficient:
+    if (resolved.correlation_term < parameters.permittivity_term_power.size()) {
+      expected_family = "temperature_polynomial_coefficient_" +
+                        std::to_string(
+                            parameters.permittivity_term_power[resolved.correlation_term]);
+    }
+    break;
+  case NativeFixedTopologyParameterKind::BornDiameter:
+    expected_family = "born_diameter";
+    break;
+  case NativeFixedTopologyParameterKind::SolvationFactor:
+  case NativeFixedTopologyParameterKind::SolvationFactorCorrelationConstant:
+    expected_family = "solvation_factor";
+    break;
+  case NativeFixedTopologyParameterKind::IonFractionSuppressionCoefficient:
+    expected_family = "ion_fraction_suppression_coefficient";
+    break;
+  case NativeFixedTopologyParameterKind::IonicRegionRelativePermittivity:
+    expected_family = "ionic_region_relative_permittivity";
+    break;
+  case NativeFixedTopologyParameterKind::ReactionCorrelation:
+  case NativeFixedTopologyParameterKind::PairDispersion:
+  case NativeFixedTopologyParameterKind::PairDispersionReciprocalTemperatureSlope:
+  case NativeFixedTopologyParameterKind::PairSize:
+  case NativeFixedTopologyParameterKind::CrossAssociationEnergyCorrection:
+    break;
+  }
+  if (coordinate.family != expected_family) {
+    throw std::invalid_argument(
+        "active coordinate family does not match its resolved native kind");
+  }
+}
+
 std::optional<double> single_solvent_log_fugacity(
     const NativeModel &model, double temperature, double pressure,
     const std::vector<double> &solvent_fractions, const std::string &phase) {
@@ -1113,6 +1175,7 @@ NativeFixedTopologyParameter NativeModel::resolve_active_coordinate(
 
   const auto resolved =
       resolve_fixed_topology_parameter(coordinate.identity, coordinate.value);
+  validate_active_coordinate_family(coordinate, resolved, parameters_);
   std::string expected_application;
   std::vector<std::size_t> expected_indices;
   switch (resolved.kind) {

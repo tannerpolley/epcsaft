@@ -1,0 +1,56 @@
+{
+  "schema_version": "epcsaft-eos-regression-evaluator-evidence-v1",
+  "status": "candidate",
+  "issue": 151,
+  "pull_request": 164,
+  "subject": {
+    "base_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24",
+    "source_commit": "9c8b42a4436ded1be78b725ae1cce236ce5636bc",
+    "files": [
+      "engine/src/epcsaft/_native/eos.cpp",
+      "engine/src/epcsaft/_native/eos_regression_evaluator.cpp",
+      "engine/src/epcsaft/_native/eos_regression_evaluator.hpp"
+    ],
+    "private_unregistered_translation_units": true
+  },
+  "build_provenance": {
+    "eos_core_archive": "~/.codex/worktrees/0cb9/ePC-SAFT-project/build/engine-meson/cpython-313-linux-x86_64-x86_64-ad7b04df3dc8cbafbb10255b1cf307664e9b8e7b6d4114458df39608fb7901be/libepcsaft_engine_eos_core.a",
+    "eos_core_archive_sha256": "b6cede28bfb296e35d1a97e6e43e0ae5a5795ae4b868e260f5c59fec97178b0b",
+    "source_archive_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24"
+  },
+  "direct_check": {
+    "schema_version": "issue151-direct-check-v2",
+    "temporary_harness_path": "engine/.issue151_evaluator_check.cpp",
+    "temporary_harness_sha256": "86e1e302a24920298aa7aa10e8d31ba152a16bf0dda1364672294010f18f7453",
+    "temporary_harness_removed_after_run": true,
+    "source": "#include \"eos_regression_evaluator.hpp\"\n#include \"pure_saturation.hpp\"\n\n#include <cassert>\n#include <cmath>\n#include <iostream>\n#include <limits>\n#include <stdexcept>\n#include <string>\n#include <utility>\n#include <variant>\n\nusing epcsaft::EosRegressionFamily;\nusing epcsaft::EosRegressionSpec;\nusing epcsaft::NativeActiveCoordinate;\nusing epcsaft::NativeModel;\nusing epcsaft::NativeParameters;\nusing epcsaft_engine::interfaces::Evaluation;\nusing epcsaft_engine::interfaces::EvaluationFailure;\n\nnamespace {\n\nstd::string digest(char value) { return \"sha256:\" + std::string(64, value); }\n\nNativeModel model() {\n    NativeParameters parameters;\n    parameters.segment_count = {2.002};\n    parameters.sigma_constant = {3.6184};\n    parameters.dispersion_energy_over_k = {208.11};\n    parameters.k_ij = {0.0};\n    parameters.k_ij_reciprocal_temperature_slope = {0.0};\n    parameters.k_ij_reference_temperature_k = {0.0};\n    parameters.l_ij = {0.0};\n    parameters.molar_mass_kg_per_mol = {0.044096};\n    parameters.charge_number = {0};\n    parameters.relative_permittivity = {0.0};\n    parameters.permittivity_reference_temperature_k = {0.0};\n    parameters.ion_fraction_suppression_coefficient = 0.0;\n    parameters.packing_diameter_angstrom = {0.0};\n    parameters.debye_huckel_diameter_angstrom = {0.0};\n    parameters.born_diameter_angstrom = {0.0};\n    parameters.solvation_factor = {0.0};\n    parameters.ionic_region_relative_permittivity = 0.0;\n    parameters.born_c_shell = 0.0;\n    parameters.born_c_dielectric = 0.0;\n    parameters.electrolyte_model = epcsaft::ELECTROLYTE_MODEL_NONE;\n    parameters.dielectric_volume_m3_per_mol = {0.0};\n    parameters.dielectric_temperature_k = {0.0};\n    parameters.ion_specific_suppression_coefficient = {0.0};\n    parameters.dipole_scaling_debye2 = {0.0};\n    parameters.polarizability_scaling_angstrom3 = {0.0};\n    parameters.correlation_integral_parameter = {0.0};\n    parameters.relative_permittivity_formulation =\n        epcsaft::RELATIVE_PERMITTIVITY_FORMULATION_NONE;\n    return NativeModel(std::move(parameters))\n        .with_parameter_identities({\"propane\"}, {})\n        .with_eos_metadata(\n            digest('a'), std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(), digest('b'), digest('c'),\n            digest('d'), digest('e'), std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(),\n            std::numeric_limits<double>::quiet_NaN(), \"\", \"\");\n}\n\nNativeActiveCoordinate active() {\n    return {\"component/propane/segment_count\", \"segment_count\",\n            \"component-property\", {0}, {}, {}, 2.002, 0.0};\n}\n\nEosRegressionSpec spec(\n    EosRegressionFamily family, std::vector<std::string> rows,\n    std::vector<double> composition = {1.0}\n) {\n    const auto coordinate = active();\n    return {\n        family, 300.0, 1200.0, std::move(composition),\n        {coordinate.identity}, {\"dimensionless\"}, {\"physical\"},\n        std::move(rows),\n        \"sha256:8cc74e4f68f6f7754e5b16d7ef05cc4997d7b6379513cd3f8811f8a5260beff0\",\n        digest('1'), digest('2')\n    };\n}\n\nconst Evaluation& accepted(\n    const epcsaft_engine::interfaces::EvaluationResult& result\n) {\n    assert(std::holds_alternative<Evaluation>(result));\n    return std::get<Evaluation>(result);\n}\n\nvoid rejects_invalid_contracts(const NativeModel& baseline) {\n    const auto coordinate = active();\n    auto forged = spec(EosRegressionFamily::FixedState, {\"pressure_pa\"});\n    forged.parameter_contract_fingerprint = digest('f');\n    bool contract_rejected = false;\n    try {\n        static_cast<void>(epcsaft::compile_eos_regression_evaluator(\n            baseline, forged, {coordinate}));\n    } catch (const std::invalid_argument&) {\n        contract_rejected = true;\n    }\n    assert(contract_rejected);\n\n    auto mismatched = coordinate;\n    mismatched.family = \"dispersion_energy_over_k\";\n    bool family_rejected = false;\n    try {\n        static_cast<void>(epcsaft::compile_eos_regression_evaluator(\n            baseline, spec(EosRegressionFamily::FixedState, {\"pressure_pa\"}),\n            {mismatched}));\n    } catch (const std::invalid_argument&) {\n        family_rejected = true;\n    }\n    assert(family_rejected);\n\n    bool normalized_rejected = false;\n    try {\n        static_cast<void>(epcsaft::compile_eos_regression_evaluator(\n            baseline, spec(EosRegressionFamily::FixedState, {\"pressure_pa\"},\n                           {0.4}), {coordinate}));\n    } catch (const std::invalid_argument&) {\n        normalized_rejected = true;\n    }\n    assert(normalized_rejected);\n}\n\nvoid fixed_state() {\n    const auto coordinate = active();\n    const auto baseline = model();\n    auto compiled = epcsaft::compile_eos_regression_evaluator(\n        baseline,\n        spec(EosRegressionFamily::FixedState,\n             {\"pressure_pa\", \"helmholtz_over_rt_reference_amount\"}),\n        {coordinate});\n    const auto* owner = dynamic_cast<const epcsaft::EosOwnerEvaluator*>(\n        compiled.evaluator.get());\n    assert(owner != nullptr && compiled.sidecar.get() == &owner->sidecar());\n    const auto exact_result = compiled.evaluator->evaluate({2.002}, true);\n    const auto& exact = accepted(exact_result);\n    const auto direct = baseline.with_active_coordinates({coordinate})\n        .evaluate_phase_derivatives(300.0, {1.0}, 1.0 / 1200.0,\n                                    {coordinate}, 2);\n    assert(exact.predictions[0] == direct.pressure_pa);\n    assert(exact.predictions[1] == direct.helmholtz_over_rt_reference_amount);\n    assert(exact.jacobian[0] == -8.31446261815324 * 300.0\n        * direct.hessian[1 * 3 + 2]);\n    assert(exact.jacobian[1] == direct.gradient[2]);\n    const auto bad = compiled.evaluator->evaluate(\n        {std::numeric_limits<double>::quiet_NaN()}, true);\n    assert(std::get<EvaluationFailure>(bad).code == \"eos_domain_rejection\");\n    rejects_invalid_contracts(baseline);\n}\n\nvoid pure_saturation() {\n    const auto coordinate = active();\n    const auto baseline = model();\n    auto compiled = epcsaft::compile_eos_regression_evaluator(\n        baseline,\n        spec(EosRegressionFamily::PureSaturation,\n             {\"saturation_pressure_pa\", \"vapor_molar_density_mol_per_m3\",\n              \"liquid_molar_density_mol_per_m3\"}),\n        {coordinate});\n    const auto exact_result = compiled.evaluator->evaluate({2.002}, true);\n    const auto& exact = accepted(exact_result);\n    const auto direct = epcsaft::solve_local_saturation_active(\n        baseline, 300.0, {coordinate});\n    assert(direct.solve.accepted);\n    assert(exact.predictions[0] == direct.solve.evaluation.saturation_pressure_pa);\n    assert(exact.predictions[1] == 1.0 / direct.solve.evaluation.vapor.volume_m3);\n    assert(exact.predictions[2] == 1.0 / direct.solve.evaluation.liquid.volume_m3);\n    for (std::size_t index = 0; index < exact.jacobian.size(); ++index) {\n        assert(exact.jacobian[index] == direct.derivatives[index]);\n    }\n}\n\n}  // namespace\n\nint main() {\n    fixed_state();\n    pure_saturation();\n    std::cout << \"issue151_direct_check: PASS\\n\";\n}\n",
+    "command": [
+      "BASE=~/.codex/worktrees/0cb9/ePC-SAFT-project/build/engine-meson/cpython-313-linux-x86_64-x86_64-ad7b04df3dc8cbafbb10255b1cf307664e9b8e7b6d4114458df39608fb7901be/libepcsaft_engine_eos_core.a",
+      "CPPAD=~/.codex/worktrees/0cb9/ePC-SAFT-project/engine/build/subprojects/CppAD-20250000.3/include",
+      "CXXFLAGS=\"-std=c++17 -w -O0 -Iengine/src/epcsaft/_native -Iengine/cpp/interfaces -I$CPPAD $(pkg-config --cflags ipopt eigen3)\"",
+      "c++ $CXXFLAGS -c engine/src/epcsaft/_native/eos.cpp -o /tmp/issue151-eos.o",
+      "c++ $CXXFLAGS -c engine/src/epcsaft/_native/eos_regression_evaluator.cpp -o /tmp/issue151-evaluator.o",
+      "c++ $CXXFLAGS engine/.issue151_evaluator_check.cpp /tmp/issue151-evaluator.o /tmp/issue151-eos.o \"$BASE\" $(pkg-config --libs ipopt eigen3) -pthread -o /tmp/issue151-evaluator-check",
+      "/tmp/issue151-evaluator-check"
+    ],
+    "output": "issue151_direct_check: PASS",
+    "checked": [
+      "fixed-state values and exact physical Jacobians",
+      "pure-saturation values and exact physical Jacobians",
+      "aliased immutable sidecar lifetime",
+      "nonfinite input refusal with eos_domain_rejection",
+      "non-normalized composition refusal",
+      "forged contract refusal",
+      "caller family-kind mismatch refusal"
+    ]
+  },
+  "syntax_only": {
+    "result": "passed",
+    "command": "c++ -std=c++17 -Wno-unused-parameter -fsyntax-only -Iengine/src/epcsaft/_native -Iengine/cpp/interfaces -I$CPPAD $(pkg-config --cflags ipopt eigen3) engine/src/epcsaft/_native/eos_regression_evaluator.cpp"
+  },
+  "claim_boundary": [
+    "No Meson registration or native shared-module binding is claimed before issue 153.",
+    "No installed-wheel, Regression, Equilibrium, Khudaida, or broad campaign result is claimed.",
+    "The receipt records focused direct evidence only; Validation admission remains pending."
+  ]
+}
