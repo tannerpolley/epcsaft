@@ -146,8 +146,62 @@ void append_field(std::string& payload, const std::string& value) {
 }
 
 void append_json_string(std::string& payload, const std::string& value) {
+    constexpr char digits[] = "0123456789abcdef";
+    const auto append_hex4 = [&](std::uint16_t code_unit) {
+        payload += "\\u";
+        payload.push_back(digits[(code_unit >> 12) & 0x0f]);
+        payload.push_back(digits[(code_unit >> 8) & 0x0f]);
+        payload.push_back(digits[(code_unit >> 4) & 0x0f]);
+        payload.push_back(digits[code_unit & 0x0f]);
+    };
     payload.push_back('"');
-    for (const unsigned char character : value) {
+    for (std::size_t index = 0; index < value.size();) {
+        const unsigned char character = static_cast<unsigned char>(value[index]);
+        if (character >= 0x80) {
+            std::uint32_t codepoint = 0;
+            std::size_t width = 0;
+            if (character >= 0xc2 && character <= 0xdf) {
+                codepoint = character & 0x1f;
+                width = 2;
+            } else if (character >= 0xe0 && character <= 0xef) {
+                codepoint = character & 0x0f;
+                width = 3;
+            } else if (character >= 0xf0 && character <= 0xf4) {
+                codepoint = character & 0x07;
+                width = 4;
+            } else {
+                throw std::invalid_argument("source specification string is not valid UTF-8");
+            }
+            if (index + width > value.size()) {
+                throw std::invalid_argument("source specification string is not valid UTF-8");
+            }
+            for (std::size_t continuation = 1; continuation < width; ++continuation) {
+                const unsigned char next = static_cast<unsigned char>(
+                    value[index + continuation]
+                );
+                if ((next & 0xc0) != 0x80) {
+                    throw std::invalid_argument(
+                        "source specification string is not valid UTF-8"
+                    );
+                }
+                codepoint = (codepoint << 6) | (next & 0x3f);
+            }
+            if ((width == 3 && codepoint < 0x800)
+                || (width == 4 && codepoint < 0x10000)
+                || codepoint > 0x10ffff
+                || (codepoint >= 0xd800 && codepoint <= 0xdfff)) {
+                throw std::invalid_argument("source specification string is not valid UTF-8");
+            }
+            if (codepoint <= 0xffff) {
+                append_hex4(static_cast<std::uint16_t>(codepoint));
+            } else {
+                codepoint -= 0x10000;
+                append_hex4(static_cast<std::uint16_t>(0xd800 + (codepoint >> 10)));
+                append_hex4(static_cast<std::uint16_t>(0xdc00 + (codepoint & 0x3ff)));
+            }
+            index += width;
+            continue;
+        }
         switch (character) {
         case '"': payload += "\\\""; break;
         case '\\': payload += "\\\\"; break;
@@ -158,7 +212,6 @@ void append_json_string(std::string& payload, const std::string& value) {
         case '\t': payload += "\\t"; break;
         default:
             if (character < 0x20) {
-                constexpr char digits[] = "0123456789abcdef";
                 payload += "\\u00";
                 payload.push_back(digits[character >> 4]);
                 payload.push_back(digits[character & 0x0f]);
@@ -166,6 +219,7 @@ void append_json_string(std::string& payload, const std::string& value) {
                 payload.push_back(static_cast<char>(character));
             }
         }
+        ++index;
     }
     payload.push_back('"');
 }
