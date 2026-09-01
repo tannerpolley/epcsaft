@@ -647,7 +647,7 @@ parameters remain outside this version-1 parameterized block.
 
 The first regression formulation fixes each phase amount at `1 mol`, uses
 volume as the only row-local phase coordinate, and must reject coalesced or
-mechanically unstable candidate phases. Its immutable receipt retains the
+mechanically unstable candidate phases. Its immutable result retains the
 actual parameter tuple, units, transforms/scales, bounds, and source
 fingerprint; the EOS's returned fingerprint continues to identify the
 source model rather than the mutable trial point.

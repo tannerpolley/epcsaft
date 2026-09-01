@@ -260,7 +260,7 @@ authority-confusing. Analyses own:
 - competing topology, induced-association, cross-association, and `k_ij`
   strategy comparisons;
 - mixture, caloric, electrolyte, reactive, held-out, and stress transfer;
-- reproducibility receipts, independent review, and promotion evidence.
+- reproducibility results, independent review, and promotion evidence.
 
 Every retained analysis, profile surface, uncertainty distribution,
 plot, and comparison table must carry an immutable repository/commit/path

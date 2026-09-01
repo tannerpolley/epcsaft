@@ -28,7 +28,7 @@ equilibrium but does not implement that coupled problem.
 
 ## Promotion outcome
 
-Governance D-030 and the accepted CAP-09 receipt make `phase_equilibrium` the
+Governance D-030 and the accepted CAP-09 result make `phase_equilibrium` the
 sole public route. Omitted fixed-T,P topology invokes the retained internal
 HELD/HELD2 discovery controller. Declared one-to-three-phase all-component
 fixed-T,P solves, with at most one vapor, and fixed-T coexistence with all- or
@@ -183,7 +183,7 @@ Equilibrium observation family is admitted to Regression by this plan.
 8. **Reviewed promotion.** Compare one installed candidate wheel against the
    protected `tp_flash` incumbent over every admitted workflow, then require
    independent phase-science and solver-architecture review plus user approval.
-   The accepted receipt makes `phase_equilibrium` the sole public owner and
+   The accepted result makes `phase_equilibrium` the sole public owner and
    retires the fixed-flash Python surface, source bounds, and incumbent schemas
    while retaining HELD/HELD2 as the internal discovery algorithm.
 9. **Analysis relocation.** Keep named literature and application campaigns
@@ -241,7 +241,7 @@ Do not publish these units until the four canonical plans are approved.
 | EQ-05 | Constrained 1–3 phase solve | EQ-04 | Declared liquid/vapor topologies solve and certify only their claim |
 | EQ-06 | Retained one-/two-phase discovery | EQ-05 | Stable one-phase and two-phase outcomes carry bounded search evidence |
 | EQ-07 | Exact solved-state sensitivities | EQ-05, EOS-07 | Active-set ordered Jacobians pass independent differences |
-| EQ-08 | Reviewed public promotion and dead-surface audit | EQ-06, EQ-07 | Completed by Governance D-030 and the accepted CAP-09 promotion receipt |
+| EQ-08 | Reviewed public promotion and dead-surface audit | EQ-06, EQ-07 | Completed by Governance D-030 and the accepted CAP-09 promotion result |
 | EQ-09 | Reactive-phase seam note | EQ-08 | Future state/phase/sensitivity boundary is explicit; no dormant solver exists |
 
 ## Done definition

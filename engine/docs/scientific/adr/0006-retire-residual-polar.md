@@ -23,7 +23,7 @@ compatibility route.
 Keep `dipolar-density-perturbation`, `dipole_scaling`,
 `polarizability_scaling`, `correlation_integral_parameter`,
 `bulk_relative_permittivity`, and their temperature and density derivative
-behavior in the electrolyte relative-permittivity owner. Historical receipts,
+behavior in the electrolyte relative-permittivity owner. Historical results,
 source transcriptions, accepted plans, and ADR 0003 remain provenance.
 
 This record supersedes only the final consequence of ADR 0003 that required

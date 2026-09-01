@@ -28,6 +28,9 @@ fi
 paths="$(printf '%s\n' "${changed[@]}")"
 architecture_inputs=false
 prepare_native_build=0
+if grep -Eq '^(analyses/|engine/)' <<<"$paths"; then
+    .venv/bin/python tools/check-analysis-layout.py
+fi
 if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|cpp/|src/|docs/scientific/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     architecture_inputs=true
     prepare_native_build=1
@@ -96,7 +99,6 @@ if grep -q '^engine/' <<<"$paths"; then
     fi
 fi
 if grep -q '^analyses/' <<<"$paths"; then
-    .venv/bin/python tools/check-analysis-layout.py
     echo "Analysis replay is explicit; run only the changed scientific claim or tools/run-slice.sh khudaida"
 fi
 if [[ "$source_only" == 1 ]]; then

@@ -28,7 +28,7 @@ component order, and applicability—not allowlisted fingerprints.
 Reusable parameter/property packets and provenance are owned by Data.
 An analysis may retain paper-, table-, or figure-specific extracts when they are
 local evidence for its question. The immutable transfer inventory is recorded in
-`docs/receipts/parameter-catalog-cutover.json`.
+`docs/results/parameter-catalog-cutover.json`.
 
 ## Consequences
 

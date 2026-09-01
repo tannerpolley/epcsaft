@@ -18,7 +18,7 @@ appears only when needed under `parameters/`, `observations/`, `sources/`, or
 `provenance/`. Empty placeholder directories and unlisted files are invalid.
 
 Full papers, broad extraction corpora, rejected experiments, and exploratory
-notebooks are outside Data. Generated results, plots, and receipts remain in
+notebooks are outside Data. Generated results and plots remain in
 their owning analysis set.
 
 ## Property-data admission boundary
@@ -75,11 +75,11 @@ packet. `repository-migration-v1` is for a packet copied from one immutable
 repository source and records one source bundle manifest. Mixed-source
 property packets use `source-record-provenance-v1`; each retained non-
 provenance file then records its own origin repository, commit, tree, path, and
-SHA-256. This distinction prevents a single synthetic origin receipt from
+SHA-256. This distinction prevents a single synthetic origin record from
 concealing a cross-repository migration.
 
 Project-derived parameter documents use `derived-record-provenance-v1`. The
-receipt hashes every derived packet file, names the transformations, and hashes
+source record hashes every derived packet file, names the transformations, and hashes
 each retained repository input so mixed-source fits remain reproducible without
 claiming a false single-repository origin.
 
@@ -113,6 +113,6 @@ The live lock manifest deliberately does not contain a commit field. A tracked
 manifest cannot name the commit that first contains itself, and inventing or
 retaining an earlier commit would falsely claim that new packet bytes exist in
 that revision. The containing `tannerpolley/ePC-SAFT` commit binds the lock,
-packet, and in-repository materialization receipt atomically. An exported or
-post-commit receipt may additionally record that containing commit after it
+packet and in-repository materialization record atomically. An exported or
+post-commit record may additionally record that containing commit after it
 exists; it never replaces the packet fingerprint.

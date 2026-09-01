@@ -302,7 +302,7 @@ $$
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.7), with source-receipted l_ij extension
+- Source: \cite{Gross2001}, Eq.~(A.7), with source-resulted l_ij extension
 - Description: Unlike-pair segment diameter including the distinct l_ij family.
 - Change note: Makes the current l_ij semantics explicit.
 - LaTeX: `docs/latex/equations.tex:85`
@@ -1521,7 +1521,7 @@ $$
 
 - Section: Parameter setup
 - Status: Bounded empirical relation
-- Source: Source-receipted component correlation represented by the EOS parameter schema
+- Source: Source-resulted component correlation represented by the EOS parameter schema
 - Description: Evaluate a component segment-size correlation from its constant and exponential terms.
 - Change note: Mirrors the general sparse correlation implemented by segment_sigma.
 - LaTeX: `docs/latex/equations.tex:54`

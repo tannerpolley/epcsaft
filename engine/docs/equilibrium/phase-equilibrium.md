@@ -5,14 +5,14 @@ Status: public nonreactive owner and configured two-phase GREPE
 `epcsaft.equilibrium.solve` is the only public equilibrium evaluator.
 The D-030 decision retained by
 [ADR 0007](../scientific/adr/0007-retire-governance-and-validation-owners.md) and the
-[CAP-09 promotion receipt](../../../analyses/reproduction/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
+[CAP-09 promotion result](../../../analyses/reproduction/2026-khudaida/results/khudaida-2026-figure-2-held2-summary.json)
 complete the protected transition defined by
 [ADR 0002](../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md).
 `ARCHITECTURE.yaml` records the machine-readable boundary and the
 [general plan](plans/2026-08-07-general-phase-equilibrium.md) records the target
 design.
 
-Historical research, source locators, results, and receipts retain their
+Historical research, source locators, results and provenance retain their
 original HELD, HELD2, and `tp_flash` names as provenance. The HELD/HELD2 native
 controller also remains the internal discovery and start-generation algorithm;
 the retired name is no longer a Python API.
@@ -114,7 +114,7 @@ order, strict-stable role selection, neutral and charged one-/two-/three-phase
 declared solves, component and declared-phase permutation, non-authoritative
 hints, structural neutral-only partner support, and exact implicit
 sensitivities against centered re-solves. Perdomo source packets, results, and
-receipts remain historical cross-EOS provenance; they are not a current
+results remain historical cross-EOS provenance; they are not a current
 installed-wheel campaign because the paper used SAFT-gamma-Mie.
 
 The unrelated scratch Gibbs solver remains removed. The private HELD/HELD2
@@ -176,7 +176,7 @@ phase, solved temperature with fixed pressure compiles to fixed-pressure
 coexistence. Either phase can be the fixed-composition reference, so the same
 public request represents Bubble-T or Dew-T. The caller supplies the local
 temperature bracket and optional start; exact implicit total derivatives flow
-through the same output rows and Regression owner receipt. Every configuration
+through the same output rows and Regression owner result. Every configuration
 is attempted according to its declared mathematical variables; a missing
 formulation or failed solve is returned directly and is never decided by an
 application or source name.

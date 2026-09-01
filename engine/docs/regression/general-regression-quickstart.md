@@ -36,7 +36,7 @@ def fit_pressure(model, parameters, active_identity, observation_pa, bounds):
 `result.physical_jacobian` are physical outputs. `result.optimizer_jacobian`
 is independently retained after the exact affine and residual-scale chain
 rule. `result.counters`, `result.failures`, `result.covariance`, and native
-solver options preserve the complete diagnostic receipt. `curve_fit` is a
+solver options preserve the complete diagnostic result. `curve_fit` is a
 small alias for the same owner-neutral core.
 
 Equilibrium owners are compiled with

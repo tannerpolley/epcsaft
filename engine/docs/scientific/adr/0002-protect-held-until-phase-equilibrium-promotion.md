@@ -50,12 +50,12 @@ fixed-T coexistence with all-component or neutral-component partner support,
 non-authoritative start ordering, and exact fixed-topology sensitivities. This implementation status does
 not itself promote the candidate. Until the installed-wheel campaign, two
 independent reviews, remaining-tree audit, and explicit user approval are bound
-to one accepted receipt, `phase_equilibrium` is not the sole owner and must not
+to one accepted result, `phase_equilibrium` is not the sole owner and must not
 claim the completed ADR 0001 boundary.
 
 ## Promotion gate
 
-Retiring `tp_flash` requires a reviewed, user-approved receipt over one exact
+Retiring `tp_flash` requires a reviewed, user-approved result over one exact
 installed wheel that proves:
 
 1. every admitted HELD/HELD2 incumbent workflow is accepted by the candidate

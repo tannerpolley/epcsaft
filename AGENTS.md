@@ -59,13 +59,15 @@ specific risk or scientific claim requires them; a changed tool or document
 must not silently invoke them. `tools/run-slice.sh khudaida` owns the canonical
 phase-equilibrium vertical slice.
 
-Use Numerical Verification-Driven Development.
+Use Numerical Verification-Driven Development. Retain homogeneous calculation
+rows once in CSV/TSV and keep JSON results compact, diagnostic, provenance-,
+failure-, and claim-bound.
 Persistent tests must falsify numerical claims; expensive installed-artifact
 replays belong in analyses; builds, lint, typing, schemas, hashes, manifests,
 environments, and path audits are readiness checks. Do not add contract,
 compatibility, legacy, snapshot, prose, mock, or coverage-only tests.
 
-Historical plans, receipts, results, evidence, source locators, old repository
+Historical plans, results, results, evidence, source locators, old repository
 names, and old package names are provenance and must not be normalized as live
 instructions. This project has no CI/CD. Run the applicable root checks before
 handoff. `codex-cleanup.sh` is an agent closeout action: agents run it, never ask

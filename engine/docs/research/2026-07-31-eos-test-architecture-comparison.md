@@ -264,7 +264,7 @@ tests/
 Keep full literature grids, all-species catalog sweeps, plots, and cross-package
 acceptance in `ePC-SAFT-validation`. Keep reusable canonical parameter packets
 and their exhaustive schema/provenance checks in `ePC-SAFT-data`. EOS should
-retain only the compact runtime-copy receipt checks, generic numerical tests,
+retain only the compact runtime-copy result checks, generic numerical tests,
 and a few scientific anchors required to falsify its equations.
 
 ### 2. Adopt claim-oriented names
@@ -390,7 +390,7 @@ equation family, topology, derivative order, root structure, or admission rule.
 - retire checks of exact private wording, helper layout, or source path where a
   public behavior or generated consistency command already fails closed; and
 - retire duplicated source-number copies that are neither independent oracles
-  nor runtime-data receipt checks.
+  nor runtime-data result checks.
 
 ### 6. Preserve the risks that raw parameters cannot cover
 

@@ -12,8 +12,8 @@ import epcsaft._core as _native_core
 
 from ._canonical import _canonical_json
 from .eos import (
-    EosError,
     _MOLAR_GAS_CONSTANT,
+    EosError,
     _eos_error,
     _state_magnitude,
 )
@@ -150,7 +150,7 @@ class SourceReferenceDeclaration:
 
 @dataclass(frozen=True, slots=True)
 class SourceReferenceTransfer:
-    """Charge-neutral source-to-EOS transfer and immutable EOS receipt."""
+    """Charge-neutral source-to-EOS transfer and immutable EOS source-reference result."""
 
     status: Literal["ok"]
     domain_status: Literal["admitted-domain"]

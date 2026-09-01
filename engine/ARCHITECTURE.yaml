@@ -44,7 +44,7 @@ owners:
     nonreactive_numerical_core: held_held2
     public_route: solve
     promotion_status: accepted
-    promotion_receipt: ../analyses/reproduction/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
+    promotion_result: ../analyses/reproduction/2026-khudaida/results/khudaida-2026-figure-2-held2-summary.json
     transition_decision: docs/scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md
     promotion_decision: scientific_adr_0007_D-030
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
@@ -134,7 +134,7 @@ final_cutover:
   decision: scientific_adr_0007_D-032
   subject_commit: a8efa571d52c32f5a697f15dd7f4623b7e3613fd
   subject_tree: c710bec469f7442952979e096a260cccb5a84246
-  receipt: ../analyses/engine-capability-admissions/results/cap-11-hard-cutover-retirement.json
+  result: ../analyses/phase-stability-cutover/results/phase-stability-summary.json
 
 scientific_boundaries:
   reusable_packets: data
@@ -166,7 +166,7 @@ evidence:
   required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
   installed_wheel_readiness: ../tools/verify-installed-wheel.py
   phase_equilibrium_campaign: ../analyses/reproduction/2026-khudaida/tests/test_phase_equilibrium_campaign.py
-  phase_equilibrium_promotion: accepted_cap_09_receipt
+  phase_equilibrium_promotion: accepted_cap_09_result
   developer_gate: build_first_parallel_installed_wheel_under_10_seconds_warm
   slow_numerical_evidence: explicit_owner_command
   installed_wheel_analyses: explicit_analysis_owner_command

@@ -397,7 +397,7 @@ def main() -> None:
             "co2_source_fit_temperature_k": [216.0, 304.0],
             "cai_fit_temperature_k": [362.81, 431.85],
             "cai_fit_pressure_pa": [66660.0, 101330.0],
-            "source_qualified": "record-specific; Provider receipt is 313.15 K and R4/R5 above 323 K are extrapolated",
+            "source_qualified": "record-specific; Provider result is 313.15 K and R4/R5 above 323 K are extrapolated",
             "validated_pressure": None,
             "validated_speciation": None,
         },
