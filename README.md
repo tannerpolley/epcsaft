@@ -71,7 +71,7 @@ bash engine/tools/check-native.sh
 bash engine/tools/check-native-sanitizers.sh
 ```
 
-The first command builds both private extensions with Clang and runs the full
+The first command builds the native extension with Clang and runs the full
 clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
 its compact numerical tests. Run slow Engine tests or a Validation campaign
 only when the changed scientific claim requires that evidence.
