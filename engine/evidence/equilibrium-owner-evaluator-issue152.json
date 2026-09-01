@@ -6,7 +6,7 @@
   "subject": {
     "issue_base_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24",
     "rebased_base_commit": "47ef1c253825363b74abe5c0b5f00f128a34b15b",
-    "source_commit": "9d022a3259037a5f44bf6cef7de7ac56fb7c6e3b",
+    "source_commit": "6edb496872b17da30ab895eddbf774b952eb4522",
     "files": [
       "engine/cpp/equilibrium/grepe.cpp",
       "engine/cpp/equilibrium/grepe.hpp",
