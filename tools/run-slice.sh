@@ -11,5 +11,5 @@ fi
 
 bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
-(cd validation && ../.venv/bin/python -m pytest -q -m campaign \
-    campaigns/2026-khudaida/tests/test_phase_equilibrium_campaign.py)
+(cd analyses/reproduction/2026-khudaida && ../../../.venv/bin/python -m pytest -q -m campaign \
+    tests/test_phase_equilibrium_campaign.py)

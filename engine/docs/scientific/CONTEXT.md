@@ -19,8 +19,8 @@ chemistry, parameter adoption, and downstream claims remain outside Engine.
   `engine/docs/equilibrium/phase-equilibrium.md`
 - Accepted scientific decisions: `engine/docs/scientific/adr/`
 - Compact numerical falsifiers: `engine/tests/`
-- Installed-wheel campaigns: `validation/`
-- Governance decisions and receipts: `governance/`
+- Installed-wheel analyses: `analyses/`
+- Accepted decisions: `engine/docs/scientific/adr/`
 
 ## Source authority
 

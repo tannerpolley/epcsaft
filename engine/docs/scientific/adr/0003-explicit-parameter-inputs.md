@@ -26,13 +26,13 @@ native capabilities are admitted from resolved topology, required fields,
 component order, and applicability—not allowlisted fingerprints.
 
 Reusable parameter/property packets and provenance are owned by Data.
-Validation may retain paper-, table-, or figure-specific extracts when they are
-local evidence for a campaign. The immutable transfer inventory is recorded in
+An analysis may retain paper-, table-, or figure-specific extracts when they are
+local evidence for its question. The immutable transfer inventory is recorded in
 `docs/receipts/parameter-catalog-cutover.json`.
 
 ## Consequences
 
-- A cloned EOS checkout runs its complete test suite without Data, Validation,
+- A cloned EOS checkout runs its complete test suite without Data, analyses,
   network access, or a sibling source tree.
 - Applications choose whether to use in-memory raw values or materialize a
   source-traceable external packet.

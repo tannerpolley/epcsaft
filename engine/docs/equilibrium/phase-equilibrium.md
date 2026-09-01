@@ -3,8 +3,9 @@
 Status: public nonreactive owner and configured two-phase GREPE
 
 `epcsaft.equilibrium.solve` is the only public equilibrium evaluator.
-Governance D-030 and the
-[CAP-09 promotion receipt](../../../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
+The D-030 decision retained by
+[ADR 0007](../scientific/adr/0007-retire-governance-and-validation-owners.md) and the
+[CAP-09 promotion receipt](../../../analyses/reproduction/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
 complete the protected transition defined by
 [ADR 0002](../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md).
 `ARCHITECTURE.yaml` records the machine-readable boundary and the

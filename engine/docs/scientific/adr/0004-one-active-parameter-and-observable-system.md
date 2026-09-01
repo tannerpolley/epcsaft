@@ -48,14 +48,14 @@ schemas, aliases, and fallbacks are deleted with their replacement.
 - Mixed component, pair, association, Born/solvation, auxiliary-model, and typed
   correlation coefficients can share one active set when EOS supports them.
 - Regression cannot implement EOS or Equilibrium observation families.
-- Governance D-034 and D-035 admit the Equilibrium-owned fixed-T,P homogeneous
+- D-034 and D-035, retained by ADR 0007, admit the Equilibrium-owned fixed-T,P homogeneous
   reactive and fixed-topology reactive bubble/VLE families through the same
   owner-neutral Ceres route. D-031 continues to defer unqualified
   phase-equilibrium observations.
 - Generated templates provide explicit required neutral identity values;
   loaders do not infer omissions.
 - Engine tests falsify numerical claims; literature acceptance remains in
-  Validation.
+  analysis sets.
 
 The execution authority is
 [`../../plans/2026-08-07-general-scientific-capability-hard-cutover.md`](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md).

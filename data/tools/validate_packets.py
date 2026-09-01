@@ -286,7 +286,7 @@ def _validate_derived_record_provenance(
         packet_member = _safe_relative_path(source.get("packet_member"))
         repository_source = retained is not None and retained.parts[0] in {
             "data",
-            "validation",
+            "analyses",
         }
         packet_source = (
             _nonempty_string(packet_id)

@@ -6,7 +6,7 @@ do not replace current issue state.
 
 ## Completed CAP program
 
-Root issue #10 and CAP-01 through CAP-11 are complete under Governance D-030
+Root issue #10 and CAP-01 through CAP-11 are complete under the D-030
 through D-033. `solve` is the sole public equilibrium route;
 omitted fixed-T,P topology uses the retained internal HELD/HELD2 discovery
 algorithm. D-034 admits the issue-#30 fixed-T,P homogeneous reactive
@@ -24,13 +24,13 @@ hash-bound admission receipts.
 
 Build and install the immutable wheel before tests. `tools/check-all.sh` is the
 parallel installed-wheel gate with a warm target below ten seconds. Slow Engine
-stress cases, Validation campaigns and figure reproduction, full native
+stress cases, analysis reproductions and figures, full native
 clang-tidy, and sanitizers run only when the scientific claim or native risk
 requires them.
 
 ## Task strategy
 
-Use one accountable writer for each Data–Engine–Validation slice and independent
+Use one accountable writer for each Data–Engine–analysis slice and independent
 read-only reviewers where the risk warrants them. Persistent tests must
 falsify numerical claims; readiness checks, schemas, imports, paths, prose, API
 shape, and coverage targets do not become scientific tests. This project has

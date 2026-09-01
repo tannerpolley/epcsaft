@@ -1,14 +1,14 @@
 # Project Context
 
 `tannerpolley/ePC-SAFT` is the private, single-repository home of the active
-ePC-SAFT scientific project. Governance doctrine revision 26 applies. Agents
+ePC-SAFT scientific project. Agents
 operate only in the checkout or worktree attached to their Codex task; no
 absolute filesystem path grants project or Git authority.
 
 The repository contains one runtime distribution, `epcsaft`, under `engine/`.
 EOS, equilibrium, and regression are modules of that distribution, not
-separate packages. Data packets, production code, installed-artifact campaigns,
-and independent oracles retain distinct directory ownership while sharing one
+separate packages. Data packets, production code, installed-wheel analysis
+sets, and independent reference cases retain distinct directory ownership while sharing one
 branch, one root environment, and one issue tracker.
 
 Current priorities are rapid scientific revision, end-to-end vertical slices,

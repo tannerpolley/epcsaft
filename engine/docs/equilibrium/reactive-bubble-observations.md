@@ -57,4 +57,4 @@ coordinates, bounds, caller starts, optimizer accounting, and covariance
 availability.
 
 Admission evidence is recorded in
-`governance/receipts/cap-13-reactive-bubble-vle-admission.json`.
+`analyses/engine-capability-admissions/results/cap-13-reactive-bubble-vle-admission.json`.

@@ -7,20 +7,20 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
-CAMPAIGN = ROOT / "validation/campaigns/2026-mea-parameter-estimation"
+CAMPAIGN = ROOT / "analyses/2026-mea-parameter-estimation"
 PACKET = ROOT / "data" / "packets" / "mea-co2-h2o-nine-species-estimation" / "1"
-MATERIALIZED = CAMPAIGN / "data/mea-co2-h2o-nine-species-estimation/1"
+MATERIALIZED = CAMPAIGN / "inputs/data/mea-co2-h2o-nine-species-estimation/1"
 SELECTED = CAMPAIGN / "inputs/neutral-selected-parameters.json"
 ACTIVE = CAMPAIGN / "inputs/active-bundle.json"
 SELECTION = CAMPAIGN / "results/selection-ladder.json"
 FAILURE = CAMPAIGN / "results/failure-analysis.json"
-LOCKS = ROOT / "governance/manifests/data-packet-locks.json"
+LOCKS = ROOT / "data/packet-locks.json"
 GROSS_PARAMETERS = (
     ROOT / "data" / "packets" / "gross-sadowski-2001" / "1" / "parameters/single.csv"
 )
 CAI_OBSERVATIONS = (
     CAMPAIGN
-    / "source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
+    / "inputs/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
 )
 
 
@@ -274,7 +274,7 @@ sha256 = "{sha256(runtime)}"
 [[sources]]
 source_id = "neutral-selected-parameters"
 role = "2B-selected base parameter document and MEA-water fit"
-retained_path = "validation/campaigns/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json"
+retained_path = "analyses/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json"
 sha256 = "{sha256(SELECTED)}"
 
 [[sources]]
@@ -288,7 +288,7 @@ sha256 = "{sha256(GROSS_PARAMETERS)}"
 [[sources]]
 role = "MEA-water fit observations"
 source_id = "cai-1996-neutral-refit"
-retained_path = "validation/campaigns/2026-mea-parameter-estimation/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
+retained_path = "analyses/2026-mea-parameter-estimation/inputs/source/library/observations/vapor_liquid_equilibrium/Cai_1996_MEA_H2O_VLE.csv"
 sha256 = "{sha256(CAI_OBSERVATIONS)}"
 ''',
         encoding="utf-8",
@@ -348,17 +348,17 @@ sha256 = "{sha256(CAI_OBSERVATIONS)}"
         },
     )
     write_json(
-        CAMPAIGN / "data/mea-co2-h2o-nine-species-estimation/materialization-v1.json",
+        CAMPAIGN / "inputs/data/mea-co2-h2o-nine-species-estimation/materialization-v1.json",
         {
             "schema_version": 3,
             "repository": "tannerpolley/ePC-SAFT",
-            "lock_manifest": "governance/manifests/data-packet-locks.json",
+            "lock_manifest": "data/packet-locks.json",
             "packet_id": "mea-co2-h2o-nine-species-estimation",
             "packet_version": "1",
             "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
             "packet_fingerprint": fingerprint,
             "materialization_mode": "byte-for-byte-validation-input",
-            "destination": "validation/campaigns/2026-mea-parameter-estimation/data/mea-co2-h2o-nine-species-estimation/1",
+            "destination": "analyses/2026-mea-parameter-estimation/inputs/data/mea-co2-h2o-nine-species-estimation/1",
             "files": [
                 {"path": str(path), "sha256": sha256(PACKET / path)}
                 for path in (
@@ -384,7 +384,7 @@ def main() -> None:
         "bundle_version": 1,
         "lifecycle": "active_provisional",
         "scientific_status": "diagnostic_candidate",
-        "parameter_document": "validation/campaigns/2026-mea-parameter-estimation/data/mea-co2-h2o-nine-species-estimation/1/parameters/parameters.json",
+        "parameter_document": "analyses/2026-mea-parameter-estimation/inputs/data/mea-co2-h2o-nine-species-estimation/1/parameters/parameters.json",
         "parameter_document_sha256": sha256(PACKET / "parameters/parameters.json"),
         "packet_fingerprint": fingerprint,
         "species_ids": reaction["species_ids"],

@@ -51,7 +51,7 @@ meson compile -C build/engine-dev
 ```
 
 The Meson graph has no standalone test targets. Run Python tests against the
-installed wheel through the root validation commands. Do not use `meson
+installed wheel through the root check commands. Do not use `meson
 install`; the wheel is the installation boundary.
 
 Create and install wheels only through root setup. When the root environment is
@@ -61,9 +61,9 @@ wheel build and installation.
 ## Native dependency graph
 
 The package owns one Meson graph and no installed cross-module SDK. Data
-packet materializations are explicit and hash-bound. Installed-wheel campaigns
-live in `validation/`. See `AGENTS.md`, `ARCHITECTURE.yaml`, and
-`../governance/GOVERNANCE.md`.
+packet materializations are explicit and hash-bound. Installed-wheel analyses
+live in `../analyses/`. See `AGENTS.md`, `ARCHITECTURE.yaml`, and
+`docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
 through pkg-config. Exact archive wraps own Boost 1.88.0, CppAD
@@ -91,8 +91,8 @@ EOS and Equilibrium compile their own immutable owner handles and sidecars.
 Regression owns only ordered observations, caller-defined discrepancy weights,
 affine coordinates, bounds, and solver accounting. The result retains both
 physical owner Jacobians and weighted optimizer-coordinate Jacobians; it never
-promotes or adopts parameters. Installed-artifact literature evidence remains
-owned by `validation/`.
+promotes or adopts parameters. Installed-wheel literature evidence remains
+owned by `../analyses/reproduction/`.
 
 The canonical capability cutover and its EOS, Regression, and Equilibrium owner
 plans begin at
