@@ -6,13 +6,13 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from os import PathLike
+from pathlib import Path
 from typing import Any, Literal, SupportsFloat, cast
 
 import pint
 
 from ._canonical import _document_fingerprint, _selected_document_fingerprint
 from ._dictionary_io import _records_from_mapping
-from ._document_io import _load_json
 from .records import (
     AssociationTopology,
     ComponentRecord,
@@ -653,7 +653,19 @@ class _ParameterDocument:
 
     @classmethod
     def from_json(cls, path: str | PathLike[str]) -> _ParameterDocument:
-        return cls.from_mapping(_load_json(path))
+        try:
+            document_path = Path(path)
+        except TypeError as exc:
+            raise _error("invalid-value", field="path", value=path) from exc
+        if document_path.suffix.lower() != ".json" or not document_path.is_file():
+            raise _error("missing-record", field="parameters_json", value=document_path)
+        try:
+            value = json.loads(document_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise _error("invalid-schema", field="parameters_json", value=document_path) from exc
+        if not isinstance(value, dict) or any(type(key) is not str for key in value):
+            raise _error("invalid-schema", field="parameters_json", expected="object")
+        return cls.from_mapping(value)
 
     @classmethod
     def from_mapping(cls, mapping: Mapping[str, object]) -> _ParameterDocument:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "model.hpp"
+#include "physical_constants.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -13,8 +14,6 @@
 
 namespace epcsaft::detail {
 
-inline constexpr double AVOGADRO = 6.02214076e23;
-inline constexpr double GAS_CONSTANT = 8.31446261815324;
 inline constexpr double PI = 3.141592653589793238462643383279502884;
 
 inline constexpr std::array<double, 7> A0 = {
@@ -150,7 +149,7 @@ Scalar packing_fraction_from_geometry(
             * parameters.segment_count[component]
             * diameter[component] * diameter[component] * diameter[component];
     }
-    return (PI / 6.0) * molar_density * (AVOGADRO / 1.0e30) * moment;
+    return (PI / 6.0) * molar_density * (PHYSICAL_AVOGADRO / 1.0e30) * moment;
 }
 
 template <typename Parameters>
@@ -213,7 +212,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
 ) {
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
-    const Scalar number_density = molar_density * (AVOGADRO / 1.0e30);
+    const Scalar number_density = molar_density * (PHYSICAL_AVOGADRO / 1.0e30);
     // EqID: mean_segment_count
     Scalar mean_segment_count = Scalar(0.0);
     for (std::size_t i = 0; i < size; ++i) {

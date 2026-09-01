@@ -1,4 +1,5 @@
 #include "grepe.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -12,7 +13,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstant = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 
 CompiledReactionSystem expand_species_face(
     CompiledReactionSystem compiled,
@@ -960,7 +961,7 @@ GrepeResult solve_finite_result(
         } else {
             start.amounts_mol = reaction.feed_amounts;
             start.molar_volume_m3_per_mol =
-                kGasConstant * request.temperature.value / request.pressure.value;
+                GAS_CONSTANT * request.temperature.value / request.pressure.value;
         }
         candidates = {{std::move(start)}};
     } else {
@@ -1605,7 +1606,7 @@ VaporPoint evaluate_vapor(
     result.chemical_potentials.assign(block.phase.gradient.begin(), block.phase.gradient.begin() + static_cast<std::ptrdiff_t>(count));
     result.mu_log_ratio_at_fixed_volume.assign(count * reference, 0.0);
     result.pressure_log_ratio.assign(reference, 0.0);
-    const double rt = kGasConstant * request.temperature.value;
+    const double rt = GAS_CONSTANT * request.temperature.value;
     for (std::size_t coordinate = 0; coordinate < reference; ++coordinate) {
         for (std::size_t species = 0; species < count; ++species) {
             const double composition_derivative = result.fractions[species]
@@ -1769,7 +1770,7 @@ VaporPoint solve_vapor(
         eos_evaluation_count += bounds.eos_evaluation_count;
         const double proposed = continued
             ? continuation_volume
-            : kGasConstant * request.temperature.value / pressure_pa;
+            : GAS_CONSTANT * request.temperature.value / pressure_pa;
         const double volume = std::min(
             std::nextafter(
                 bounds.bounds_m3_per_mol[1], bounds.bounds_m3_per_mol[0]
@@ -2090,7 +2091,7 @@ IncipientClosure incipient_closure(
     const std::size_t width = liquid.input_order.size();
     const std::size_t parameter_count = liquid.parameter_order.size();
     std::vector<double> liquid_potentials(count);
-    const double log_rt = std::log(kGasConstant * request.temperature.value);
+    const double log_rt = std::log(GAS_CONSTANT * request.temperature.value);
     for (std::size_t supported = 0; supported < count; ++supported) {
         liquid_potentials[supported] = liquid.phase_log_fugacities[0][
             vapor.support_indices[supported]
@@ -2135,7 +2136,7 @@ IncipientClosure incipient_closure(
             }
         }
         closure.vapor_pressure_pa = boundary_pressure;
-        closure.vapor_volume_m3 = kGasConstant * request.temperature.value / boundary_pressure;
+        closure.vapor_volume_m3 = GAS_CONSTANT * request.temperature.value / boundary_pressure;
         closure.vapor_packing_fraction = 0.0;
         closure.residual = std::log(boundary_pressure / pressure_pa);
         const std::size_t pressure = input_index(liquid, "pressure_pa");
@@ -2476,7 +2477,7 @@ GrepeResult incipient_value_result(
     for (std::size_t component = 0; component < component_count; ++component) {
         equilibrium.phase_chemical_potentials_over_rt[0][component] =
             equilibrium.phase_log_fugacities[0][component]
-            - std::log(kGasConstant * request.temperature.value);
+            - std::log(GAS_CONSTANT * request.temperature.value);
     }
     equilibrium.phase_amounts_mol.resize(2);
     equilibrium.phase_volumes_m3.resize(2);
@@ -2494,7 +2495,7 @@ GrepeResult incipient_value_result(
             closure.vapor.chemical_potentials[supported];
         equilibrium.phase_log_fugacities[1][component] =
             closure.vapor.chemical_potentials[supported]
-            + std::log(kGasConstant * request.temperature.value);
+            + std::log(GAS_CONSTANT * request.temperature.value);
     }
     equilibrium.phase_volumes_m3[1] = closure.vapor_volume_m3;
     equilibrium.phase_pressures_pa[1] = closure.vapor_pressure_pa;
@@ -3267,7 +3268,7 @@ GrepeResult solve_temperature_boundary(
         );
         std::vector<double> log_fugacity = phase.chemical_potential_over_rt;
         for (double& value : log_fugacity) {
-            value += std::log(kGasConstant * coordinate);
+            value += std::log(GAS_CONSTANT * coordinate);
         }
         equilibrium.phase_log_fugacities.push_back(std::move(log_fugacity));
         result.phase_mechanical_classes.push_back(phase.mechanical_class);
@@ -3985,7 +3986,7 @@ void evaluate_grepe_local_blocks(
         }
 
         const std::size_t finite_output_count = liquid.output_values.size() - species_count;
-        const double log_rt = std::log(kGasConstant * request.temperature.value);
+        const double log_rt = std::log(GAS_CONSTANT * request.temperature.value);
         const auto liquid_log_fugacity_pressure = [&](std::size_t species) {
             const std::size_t output = finite_output_count + species;
             return pressure_pa * liquid.output_input_derivatives[

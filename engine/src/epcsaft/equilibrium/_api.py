@@ -15,6 +15,7 @@ from pint.errors import DimensionalityError
 import epcsaft
 
 from .. import _core
+from ..eos import _MOLAR_GAS_CONSTANT
 
 
 class _ScalarBoundarySolveError(ValueError):
@@ -777,7 +778,6 @@ class ActiveParameterTrialReceipt:
     fingerprint: str
 
 
-_GAS_CONSTANT_J_MOL_K = 8.31446261815324
 _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM = 0.25
 _VAPOR_COMPRESSIBILITY_FACTOR_MINIMUM = 0.45
 _HELD2_PACKING_FRACTION_MINIMUM = 1.0e-6
@@ -1677,7 +1677,7 @@ def _discovery_result(
     roles: list[PhaseRole] = []
     for phase in retained.phases:
         molar_volume = phase.volume_m3 / phase.amount_mol
-        compressibility = pressure_pa * molar_volume / (_GAS_CONSTANT_J_MOL_K * temperature_k)
+        compressibility = pressure_pa * molar_volume / (_MOLAR_GAS_CONSTANT * temperature_k)
         role: PhaseRole = (
             "liquid"
             if compressibility <= _LIQUID_COMPRESSIBILITY_FACTOR_MAXIMUM

@@ -1,4 +1,5 @@
 #include "pure_saturation.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -13,7 +14,7 @@ namespace epcsaft {
 
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kVaporDensityLower = 1.0e-8;
 constexpr double kVaporDensityUpper = 5.0e3;
 constexpr double kLiquidDensityLower = 5.001e3;
@@ -51,7 +52,7 @@ PhaseDerivatives evaluate_phase_derivatives(const NativeModel &model,
       volume_m3,
       model.evaluate_pure_phase(temperature_k, 1.0, volume_m3),
   };
-  const double rt = kGasConstantJPerMolK * temperature_k;
+  const double rt = GAS_CONSTANT * temperature_k;
   const double h_nv = phase.eos.hessian[1];
   const double h_vv = phase.eos.hessian[3];
   const double t_nvv = phase.eos.third[3];
@@ -112,7 +113,7 @@ evaluate_saturation_state(const NativeModel &model, double temperature_k,
         },
     };
     const double pressure_q =
-        kGasConstantJPerMolK * temperature_k * block.hessian[3] * volume;
+        GAS_CONSTANT * temperature_k * block.hessian[3] * volume;
     const double chemical_potential_q = -block.hessian[1] * volume;
     return std::tuple{std::move(value), pressure_q, chemical_potential_q};
   };
@@ -330,7 +331,7 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
           std::log(vapor_density),
           std::log(liquid_density),
           std::log(
-              std::max(vapor_density * kGasConstantJPerMolK * temperature_k,
+              std::max(vapor_density * GAS_CONSTANT * temperature_k,
                        kPressureLowerPa)),
       };
       AttemptResult attempt = run_saturation_newton(
@@ -551,7 +552,7 @@ SaturationSensitivityResult solve_local_saturation_active(
     const std::size_t width = count + 2;
     for (std::size_t parameter = 0; parameter < count; ++parameter) {
       const std::size_t coordinate = parameter + 2;
-      pressure[parameter] = -kGasConstantJPerMolK * temperature_k *
+      pressure[parameter] = -GAS_CONSTANT * temperature_k *
                             block.hessian[width + coordinate];
       chemical_potential[parameter] = block.hessian[coordinate];
     }

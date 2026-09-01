@@ -1,4 +1,5 @@
 #include "held.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <array>
@@ -15,7 +16,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kCompositionLower = 1.0e-8;
 constexpr double kCompositionUpper = 1.0 - 1.0e-8;
 constexpr double kVolumeLowerM3PerMol = 1.0e-5;
@@ -418,7 +419,7 @@ std::vector<HeldStageIStart> make_planned_starts(
 ) {
     const double liquid_log_volume = std::log(1.0 / 20'000.0);
     const double vapor_volume = std::clamp(
-        2.0 * kGasConstantJPerMolK * temperature_k / pressure_pa,
+        2.0 * GAS_CONSTANT * temperature_k / pressure_pa,
         1.01 * kVolumeLowerM3PerMol,
         0.99 * kVolumeUpperM3PerMol
     );
@@ -507,7 +508,7 @@ HeldStageIResult solve_held_stage_i(
     const std::array<std::pair<std::string, double>, 2> reference_starts{{
         {"liquid", std::log(1.0 / 20'000.0)},
         {"vapor", std::log(std::clamp(
-            2.0 * kGasConstantJPerMolK * temperature_k / pressure_pa,
+            2.0 * GAS_CONSTANT * temperature_k / pressure_pa,
             1.01 * kVolumeLowerM3PerMol,
             0.99 * kVolumeUpperM3PerMol
         ))},

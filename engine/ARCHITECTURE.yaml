@@ -21,7 +21,7 @@ owners:
     public_api_guide: docs/python-api.md
   parameters:
     input: epcsaft.Parameters
-    persistence: src/epcsaft/_document_io.py
+    persistence: src/epcsaft/parameters.py
     resolution: src/epcsaft/_resolve.py
     active_set: epcsaft.ActiveParameterSet
   eos:

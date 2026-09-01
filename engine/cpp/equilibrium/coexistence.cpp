@@ -2,6 +2,7 @@
 
 #include "held2.hpp"
 #include "held2_tolerances.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +18,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstant = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kPotentialTolerance = 2.0e-8;
 constexpr double kPressureTolerance = 1.0e-8;
 constexpr double kDistinctTolerance = 1.0e-5;
@@ -318,7 +319,7 @@ Evaluation evaluate_system(
     result.residual[pressure_row] =
         (result.reference.block.pressure_pa
          - result.partner.block.pressure_pa) / pressure_scale;
-    const double rt = kGasConstant * problem.temperature_k;
+    const double rt = GAS_CONSTANT * problem.temperature_k;
     result.jacobian(
         static_cast<Eigen::Index>(pressure_row), 0
     ) = -rt * result.reference.block.hessian[
@@ -601,7 +602,7 @@ SolvedStateSensitivity coexistence_sensitivity(
     std::size_t output = 0;
     result.output_identities.push_back("boundary.pressure_pa");
     const std::size_t reference_state_count = reference_count + 1;
-    const double rt = kGasConstant * problem.temperature_k;
+    const double rt = GAS_CONSTANT * problem.temperature_k;
     const double pressure_log_volume = -rt
         * reference.phase.hessian[
             reference_count * reference_state_count + reference_count
@@ -783,7 +784,7 @@ SolvedStateSensitivity coexistence_reference_direction_sensitivity(
         std::abs(solved.reference.block.pressure_pa),
         std::abs(solved.partner.block.pressure_pa),
     });
-    const double rt = kGasConstant * problem.temperature_k;
+    const double rt = GAS_CONSTANT * problem.temperature_k;
     const std::size_t pressure_row = potentials.count;
     for (std::size_t direction = 0;
          direction < direction_count; ++direction) {
@@ -1044,7 +1045,7 @@ SolvedStateSensitivity coexistence_temperature_sensitivity(
     std::size_t output = 0;
     result.output_identities.push_back("boundary.pressure_pa");
     const std::size_t reference_state_count = reference_count + 1;
-    const double rt = kGasConstant * problem.temperature_k;
+    const double rt = GAS_CONSTANT * problem.temperature_k;
     const double pressure_log_volume = -rt
         * solved.reference.block.hessian[
             reference_count * reference_state_count + reference_count

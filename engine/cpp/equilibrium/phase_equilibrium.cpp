@@ -4,6 +4,7 @@
 #include "held2.hpp"
 #include "held2_step8.hpp"
 #include "held2_tolerances.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +18,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstant = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kRoleZSplit = 0.35;
 constexpr double kChemicalPotentialResidualMax = 1.0e-6;
 constexpr double kDistinctTolerance = 1.0e-5;
@@ -93,7 +94,7 @@ public:
             coordinates_,
             composition,
             log_volume,
-            pressure_ / (kGasConstant * temperature_),
+            pressure_ / (GAS_CONSTANT * temperature_),
             pressure_,
             {phase.value, phase.gradient, phase.hessian, phase.pressure_pa},
             domain_
@@ -549,7 +550,7 @@ FixedTpPhaseResult one_phase(
             "single_detected_root_compressibility_role_split_z_0.35"
         );
         const double z = problem.pressure_pa * selected->volume
-            / (kGasConstant * problem.temperature_k);
+            / (GAS_CONSTANT * problem.temperature_k);
         if ((role == PhaseRole::Liquid && z >= kRoleZSplit)
             || (role == PhaseRole::Vapor && z <= kRoleZSplit)) {
             result.diagnostics.solver_status = "converged";

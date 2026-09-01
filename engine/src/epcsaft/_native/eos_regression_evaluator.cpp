@@ -1,5 +1,6 @@
 #include "eos_regression_evaluator.hpp"
 
+#include "physical_constants.hpp"
 #include "pure_saturation.hpp"
 
 #include <algorithm>
@@ -16,7 +17,7 @@
 namespace epcsaft {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr std::size_t kMaximumFailureCodeLength = 128;
 constexpr std::size_t kMaximumFailureReasonLength = 1024;
 
@@ -583,7 +584,7 @@ EvaluationResult EosOwnerEvaluator::evaluate_fixed_state(
             value = block.pressure_pa;
             if (exact_jacobian) {
                 for (std::size_t parameter = 0; parameter < parameters; ++parameter) {
-                    derivatives[parameter] = -kGasConstantJPerMolK
+                    derivatives[parameter] = -GAS_CONSTANT
                         * specification_.temperature_k
                         * block.hessian[components * width + components + 1 + parameter];
                 }

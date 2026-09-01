@@ -3,6 +3,7 @@
 #include "held2_algorithm.hpp"
 #include "held2_tolerances.hpp"
 #include "phase_equilibrium.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <array>
@@ -16,7 +17,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 void require_mixture_eos(const epcsaft::NativeModel& eos) {
     if (!eos.supports_mixture_transport()
         && !eos.supports_fixed_topology_associating_mixture()) {
@@ -70,7 +71,7 @@ public:
               eos.eos_metadata().ion_mole_fraction_max
           ),
           pressure_over_rt_(
-              input.pressure_pa / (kGasConstantJPerMolK * input.temperature_k)
+              input.pressure_pa / (GAS_CONSTANT * input.temperature_k)
           ) {
         static_cast<void>(held2_map_unit_cube_to_independent_fractions(
             coordinates_,
