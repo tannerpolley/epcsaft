@@ -643,6 +643,11 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
       } else {
         result.status = "failed";
         result.message = "final scaled residuals or optimizer Jacobian are not finite";
+        result.parameters.clear();
+        result.predictions.clear();
+        result.residuals.clear();
+        result.physical_jacobian.clear();
+        result.optimizer_jacobian.clear();
       }
     } else {
       result.status = "failed";

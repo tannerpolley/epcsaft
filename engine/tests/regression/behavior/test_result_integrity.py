@@ -7,6 +7,7 @@ import pytest
 
 import epcsaft
 from epcsaft import eos, equilibrium, regression
+from tests.eos._cases import neutral_pure
 from tests.equilibrium._cases import solved_pressure_case
 
 
@@ -200,5 +201,184 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     )
     assert not invalid_initial.usable
     assert invalid_initial.parameters == invalid_initial.predictions == ()
+
+    rejected = regression.least_squares(
+        (eos_owner,),
+        (eos_observation * 1000.0,),
+        active.values,
+        bounds=((-10000.0,), (10000.0,)),
+        maximum_iterations=20,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert rejected.usable
+    assert rejected.status == "limit_reached"
+    assert rejected.counters["iteration_limit_reached"]
+    assert rejected.counters["typed_trial_failures"] > 0
+    assert any(
+        failure["evaluation_phase"] == "ceres_trial"
+        and failure["code"] == "eos_domain_rejection"
+        for failure in rejected.failures
+    )
+
+    required_jacobian_failed = regression.least_squares(
+        (eos_owner,),
+        (eos_observation,),
+        (active.values[0] + 0.05,),
+        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+        maximum_iterations=20,
+        maximum_elapsed_time_seconds=2.0,
+        maximum_uncached_owner_calls=2,
+    )
+    assert not required_jacobian_failed.usable
+    assert required_jacobian_failed.parameters == required_jacobian_failed.predictions == ()
+    assert required_jacobian_failed.message == "a required owner Jacobian evaluation failed"
+    assert required_jacobian_failed.failures[-1]["evaluation_phase"] == "ceres_trial"
+
+    elapsed_limited = regression.least_squares(
+        (eos_owner,),
+        (eos_observation,),
+        (active.values[0] + 0.05,),
+        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+        maximum_iterations=1000,
+        maximum_elapsed_time_seconds=1.0e-9,
+    )
+    assert elapsed_limited.usable
+    assert elapsed_limited.status == "limit_reached"
+    assert elapsed_limited.counters["elapsed_time_limit_reached"]
+
+    starts = ((active.values[0] - 0.05,), (active.values[0] + 0.05,))
+
+    def solve_start(start: tuple[float, ...]) -> regression.LeastSquaresResult:
+        return regression.least_squares(
+            (eos_owner,),
+            (eos_observation,),
+            start,
+            bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+            maximum_iterations=20,
+            maximum_elapsed_time_seconds=2.0,
+        )
+
+    forward = {start: solve_start(start) for start in starts}
+    reverse = {start: solve_start(start) for start in reversed(starts)}
+    for start in starts:
+        assert forward[start].parameters == reverse[start].parameters
+        assert forward[start].predictions == reverse[start].predictions
+        assert forward[start].physical_jacobian == reverse[start].physical_jacobian
+
     with pytest.raises(TypeError, match="requires an epcsaft EOS model"):
         eos.compile_regression_evaluator({}, active)
+
+
+def test_pure_saturation_fit_preserves_owner_values_and_jacobian() -> None:
+    parameters = epcsaft.Parameters.from_mapping(neutral_pure("propane"))
+    model = epcsaft.Pure(parameters)
+    active = epcsaft.ActiveParameterSet(
+        parameters,
+        (
+            "component/propane/segment_count",
+            "component/propane/segment_diameter",
+        ),
+    )
+    block = model.observable_block(
+        active,
+        identity="eos.pure-saturation",
+        T=300.0 * epcsaft.unit_registry.kelvin,
+    )
+    observations = tuple(float(value) for value in block.values if value is not None)[:3]
+    owner = eos.compile_regression_evaluator(
+        {
+            "model": model,
+            "family": "pure-saturation",
+            "temperature_k": 300.0,
+            "row_identities": (
+                "saturation_pressure_pa",
+                "vapor_molar_density_mol_per_m3",
+                "liquid_molar_density_mol_per_m3",
+            ),
+        },
+        active,
+    )
+    result = regression.least_squares(
+        (owner,),
+        observations,
+        (active.values[0] + 0.01, active.values[1] - 0.01),
+        bounds=((1.0, 1.0), (5.0, 5.0)),
+        residual_scales=observations,
+        maximum_iterations=20,
+        maximum_elapsed_time_seconds=2.0,
+    )
+
+    assert result.usable
+    assert result.parameters == pytest.approx(active.values, abs=5.0e-10)
+    assert result.predictions == pytest.approx(observations)
+    for actual, expected in zip(result.physical_jacobian, block.jacobian[:3], strict=True):
+        assert actual == pytest.approx(expected)
+
+
+def test_multiple_kij_coordinates_preserve_permutation_and_fit() -> None:
+    parameters, model, problem = solved_pressure_case()
+    baseline = equilibrium.solve(model, problem)
+    assert baseline.status == "evaluated", baseline.failure
+    liquid = baseline.phases[0]
+    identities = (
+        "pair/anion/cosolvent/k_ij",
+        "pair/cation/solvent/k_ij",
+        "pair/cosolvent/solvent/k_ij",
+    )
+    rows = ("pressure_pa",) + tuple(
+        f"chemical_potential_over_rt/{component}" for component in model.component_ids
+    )
+
+    def solve(order: tuple[str, ...]) -> tuple[regression.LeastSquaresResult, tuple[tuple[float, ...], ...]]:
+        active = epcsaft.ActiveParameterSet(parameters, order)
+        block = model.observable_block(
+            active,
+            identity="eos.fixed-state",
+            T=313.15 * epcsaft.unit_registry.kelvin,
+            rho=liquid.molar_density_mol_m3
+            * epcsaft.unit_registry.mole
+            / epcsaft.unit_registry.meter**3,
+            x=liquid.mole_fractions,
+        )
+        indexes = tuple(block.descriptor.row_identities.index(row) for row in rows)
+        observations = tuple(
+            float(block.values[index])
+            for index in indexes
+            if block.values[index] is not None
+        )
+        jacobian = tuple(
+            tuple(block.jacobian[index] or ()) for index in indexes
+        )
+        owner = eos.compile_regression_evaluator(
+            {
+                "model": model,
+                "family": "fixed-state",
+                "temperature_k": 313.15,
+                "molar_density_mol_m3": liquid.molar_density_mol_m3,
+                "mole_fractions": liquid.mole_fractions,
+                "row_identities": rows,
+            },
+            active,
+        )
+        result = regression.least_squares(
+            (owner,),
+            observations,
+            tuple(value + 0.01 for value in active.values),
+            bounds=((-0.5,) * 3, (0.5,) * 3),
+            residual_scales=(abs(observations[0]), 1.0, 1.0, 1.0, 1.0),
+            maximum_iterations=20,
+            maximum_elapsed_time_seconds=2.0,
+        )
+        assert result.usable
+        assert result.parameters == pytest.approx(active.values, abs=2.0e-11)
+        for actual, expected in zip(result.physical_jacobian, jacobian, strict=True):
+            assert actual == pytest.approx(expected)
+        return result, jacobian
+
+    ordered, _ = solve(identities)
+    permuted, _ = solve(tuple(reversed(identities)))
+    assert permuted.predictions == pytest.approx(ordered.predictions)
+    for actual, expected in zip(
+        permuted.physical_jacobian, ordered.physical_jacobian, strict=True
+    ):
+        assert actual == pytest.approx(tuple(reversed(expected)))

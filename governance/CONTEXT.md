@@ -31,8 +31,8 @@ The canonical generic design is
 `engine/docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`.
 Current work is tracked only in native GitHub issues. GREPE owns declared
 temperature-solved Bubble-T and Dew-T observations through the generic
-  fixed-pressure coexistence formulation. Issue #51 owns the simultaneous
-sparse multi-experiment backend, and issue #54 owns the active Bülow 2021
+fixed-pressure coexistence formulation. The simultaneous sparse backend from
+closed issue #51 is historical; issue #54 owns the active Bülow 2021
 reproduction and integration. Historical plans, completed issues, campaign
 reports, and issue mirrors retain evidence but are not parallel work queues.
 
