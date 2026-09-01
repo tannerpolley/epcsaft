@@ -1,0 +1,53 @@
+{
+  "schema_version": "epcsaft-eos-regression-evaluator-evidence-v1",
+  "status": "candidate",
+  "issue": 151,
+  "pull_request": 164,
+  "subject": {
+    "base_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24",
+    "source_commit": "d5de3ec0020dc2adbc3000ced4c319759b2ce617",
+    "files": [
+      "engine/src/epcsaft/_native/eos_regression_evaluator.cpp",
+      "engine/src/epcsaft/_native/eos_regression_evaluator.hpp"
+    ],
+    "private_unregistered_translation_units": true
+  },
+  "build_provenance": {
+    "eos_core_archive": "~/.codex/worktrees/0cb9/ePC-SAFT-project/build/engine-meson/cpython-313-linux-x86_64-x86_64-ad7b04df3dc8cbafbb10255b1cf307664e9b8e7b6d4114458df39608fb7901be/libepcsaft_engine_eos_core.a",
+    "eos_core_archive_sha256": "b6cede28bfb296e35d1a97e6e43e0ae5a5795ae4b868e260f5c59fec97178b0b",
+    "source_archive_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24"
+  },
+  "direct_check": {
+    "schema_version": "issue151-direct-check-v2",
+    "temporary_harness_path": "engine/.issue151_evaluator_check.cpp",
+    "temporary_harness_sha256": "86e1e302a24920298aa7aa10e8d31ba152a16bf0dda1364672294010f18f7453",
+    "temporary_harness_removed_after_run": true,
+    "command": [
+      "BASE=~/.codex/worktrees/0cb9/ePC-SAFT-project/build/engine-meson/cpython-313-linux-x86_64-x86_64-ad7b04df3dc8cbafbb10255b1cf307664e9b8e7b6d4114458df39608fb7901be/libepcsaft_engine_eos_core.a",
+      "CPPAD=~/.codex/worktrees/0cb9/ePC-SAFT-project/engine/build/subprojects/CppAD-20250000.3/include",
+      "CXXFLAGS=\"-std=c++17 -w -O0 -Iengine/src/epcsaft/_native -Iengine/cpp/interfaces -I$CPPAD $(pkg-config --cflags ipopt eigen3)\"",
+      "c++ $CXXFLAGS -c engine/src/epcsaft/_native/eos_regression_evaluator.cpp -o /tmp/issue151-evaluator.o",
+      "c++ $CXXFLAGS engine/.issue151_evaluator_check.cpp /tmp/issue151-evaluator.o \"$BASE\" $(pkg-config --libs ipopt eigen3) -pthread -o /tmp/issue151-evaluator-check",
+      "/tmp/issue151-evaluator-check"
+    ],
+    "output": "issue151_direct_check: PASS",
+    "checked": [
+      "fixed-state values and exact physical Jacobians",
+      "pure-saturation values and exact physical Jacobians",
+      "aliased immutable sidecar lifetime",
+      "nonfinite input refusal with eos_domain_rejection",
+      "non-normalized composition refusal",
+      "forged contract refusal",
+      "caller family-kind mismatch refusal"
+    ]
+  },
+  "syntax_only": {
+    "result": "passed",
+    "command": "c++ -std=c++17 -Wno-unused-parameter -fsyntax-only -Iengine/src/epcsaft/_native -Iengine/cpp/interfaces -I$CPPAD $(pkg-config --cflags ipopt eigen3) engine/src/epcsaft/_native/eos_regression_evaluator.cpp"
+  },
+  "claim_boundary": [
+    "No Meson registration or native shared-module binding is claimed before issue 153.",
+    "No installed-wheel, Regression, Equilibrium, Khudaida, or broad campaign result is claimed.",
+    "The receipt records focused direct evidence only; Validation admission remains pending."
+  ]
+}
