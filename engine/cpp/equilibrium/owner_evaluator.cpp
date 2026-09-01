@@ -273,23 +273,12 @@ std::vector<std::string> identities(
     return epcsaft::active_parameter_identities(coordinates);
 }
 
-void hash_field(std::uint64_t& state, const std::string& field) {
-    for (const unsigned char value : field) {
-        state ^= value;
-        state *= 1099511628211ULL;
-    }
-    state ^= 0xffU;
-    state *= 1099511628211ULL;
-}
-
 std::string canonical_hash(const std::vector<std::string>& fields) {
-    std::uint64_t state = 14695981039346656037ULL;
+    std::string payload = "epcsaft.equilibrium-owner.v1|";
     for (const auto& field : fields) {
-        hash_field(state, field);
+        append_field(payload, field);
     }
-    std::ostringstream rendered;
-    rendered << "fnv1a64:" << std::hex << std::setw(16) << std::setfill('0') << state;
-    return rendered.str();
+    return "sha256:" + sha256_digest(payload);
 }
 
 std::string canonical_double(double value) {
