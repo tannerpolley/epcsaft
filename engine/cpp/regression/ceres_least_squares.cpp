@@ -1,7 +1,5 @@
 #include "ceres_least_squares.hpp"
 
-#include <Eigen/Dense>
-#include <Eigen/SVD>
 #include <ceres/ceres.h>
 #include <ceres/covariance.h>
 
@@ -362,26 +360,6 @@ std::vector<double> expand_residual_scales(const LeastSquaresRequest &request) {
   return request.residual_scales;
 }
 
-bool covariance_rank_deficient(const std::vector<double> &jacobian,
-                               std::size_t rows, std::size_t columns) {
-  if (rows < columns) {
-    return true;
-  }
-  using Matrix =
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  const Eigen::Map<const Matrix> matrix(jacobian.data(),
-                                        static_cast<Eigen::Index>(rows),
-                                        static_cast<Eigen::Index>(columns));
-  const Eigen::JacobiSVD<Matrix> decomposition(matrix);
-  const auto singular_values = decomposition.singularValues();
-  if (singular_values.size() == 0 || singular_values[0] == 0.0) {
-    return true;
-  }
-  const double ratio = singular_values[singular_values.size() - 1] /
-                       singular_values[0];
-  return ratio * ratio < 1.0e-14;
-}
-
 } // namespace
 
 LeastSquaresResult solve(const LeastSquaresRequest &request) {
@@ -707,13 +685,8 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
         result.covariance.optimizer_coordinates.clear();
         result.covariance.physical_coordinates.clear();
       } else {
-        const bool rank_deficient = covariance_rank_deficient(
-            result.optimizer_jacobian, output_count, parameter_count);
-        result.covariance.status = rank_deficient
-                                       ? "rank_deficient"
-                                       : (result.covariance.active_bound
-                                              ? "active_bound"
-                                              : "well_conditioned");
+        result.covariance.status =
+            result.covariance.active_bound ? "active_bound" : "available";
       }
     }
   }
