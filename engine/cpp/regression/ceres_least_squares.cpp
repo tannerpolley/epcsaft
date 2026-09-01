@@ -2,6 +2,7 @@
 
 #include <ceres/ceres.h>
 #include <ceres/covariance.h>
+#include <Eigen/Dense>
 
 #include <algorithm>
 #include <cmath>
@@ -659,9 +660,19 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
 
   if (result.usable) {
     cost_function.set_phase("covariance");
+    using RowMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>;
+    const Eigen::Map<const RowMatrix> jacobian(
+        result.optimizer_jacobian.data(), static_cast<Eigen::Index>(output_count),
+        static_cast<Eigen::Index>(parameter_count));
+    Eigen::JacobiSVD<RowMatrix> decomposition(jacobian);
+    decomposition.setThreshold(
+        result.covariance.minimum_reciprocal_condition_number);
+    result.covariance.null_space_rank =
+        static_cast<int>(parameter_count) - decomposition.rank();
     ceres::Covariance::Options covariance_options;
     covariance_options.algorithm_type = ceres::DENSE_SVD;
-    covariance_options.null_space_rank = -1;
+    covariance_options.null_space_rank = result.covariance.null_space_rank;
     covariance_options.apply_loss_function = true;
     covariance_options.num_threads = 1;
     covariance_options.min_reciprocal_condition_number = 1.0e-14;
@@ -674,7 +685,8 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     }
     result.covariance.optimizer_coordinates.resize(parameter_count *
                                                     parameter_count);
-    if (!covariance.Compute({optimizer_parameters.data()}, &problem) ||
+    if (result.covariance.null_space_rank > 0 ||
+        !covariance.Compute({optimizer_parameters.data()}, &problem) ||
         !covariance.GetCovarianceBlock(
             optimizer_parameters.data(), optimizer_parameters.data(),
             result.covariance.optimizer_coordinates.data()) ||

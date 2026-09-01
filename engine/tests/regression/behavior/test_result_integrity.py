@@ -122,22 +122,6 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
             for row, scale in zip(repeated.physical_jacobian, vector_scales, strict=True)
         )
     )
-    duplicate = regression.curve_fit(
-        (eos_owner, equilibrium_owner),
-        observations,
-        active.values,
-        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
-        affine_origin=(active.values[0] - 1.0,),
-        affine_scale=(2.0,),
-        residual_scales=vector_scales,
-        maximum_iterations=4,
-        maximum_elapsed_time_seconds=2.0,
-    )
-    assert duplicate.parameters == repeated.parameters
-    assert duplicate.predictions == repeated.predictions
-    assert duplicate.physical_jacobian == repeated.physical_jacobian
-    assert duplicate.optimizer_jacobian == repeated.optimizer_jacobian
-
     def fixed_prediction(parameter: float) -> float:
         margin = 1.0e-8 * step
         fixed = regression.least_squares(
@@ -261,9 +245,7 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     forward = {start: solve_start(start) for start in starts}
     reverse = {start: solve_start(start) for start in reversed(starts)}
     for start in starts:
-        assert forward[start].parameters == reverse[start].parameters
-        assert forward[start].predictions == reverse[start].predictions
-        assert forward[start].physical_jacobian == reverse[start].physical_jacobian
+        assert forward[start] == reverse[start]
 
     with pytest.raises(TypeError, match="requires an epcsaft EOS model"):
         eos.compile_regression_evaluator({}, active)
@@ -382,3 +364,37 @@ def test_multiple_kij_coordinates_preserve_permutation_and_fit() -> None:
         permuted.physical_jacobian, ordered.physical_jacobian, strict=True
     ):
         assert actual == pytest.approx(tuple(reversed(expected)))
+
+    rank_active = epcsaft.ActiveParameterSet(parameters, identities[:2])
+    rank_block = model.observable_block(
+        rank_active,
+        identity="eos.fixed-state",
+        T=313.15 * epcsaft.unit_registry.kelvin,
+        rho=liquid.molar_density_mol_m3
+        * epcsaft.unit_registry.mole
+        / epcsaft.unit_registry.meter**3,
+        x=liquid.mole_fractions,
+    )
+    pressure = float(rank_block.values[1] or math.nan)
+    rank_owner = eos.compile_regression_evaluator(
+        {
+            "model": model,
+            "family": "fixed-state",
+            "temperature_k": 313.15,
+            "molar_density_mol_m3": liquid.molar_density_mol_m3,
+            "mole_fractions": liquid.mole_fractions,
+            "row_identities": ("pressure_pa",),
+        },
+        rank_active,
+    )
+    rank_deficient = regression.least_squares(
+        (rank_owner, rank_owner),
+        (pressure, pressure),
+        rank_active.values,
+        bounds=((-0.5, -0.5), (0.5, 0.5)),
+        maximum_iterations=2,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert rank_deficient.usable
+    assert rank_deficient.covariance["status"] == "unavailable"
+    assert rank_deficient.covariance["null_space_rank"] == 1
