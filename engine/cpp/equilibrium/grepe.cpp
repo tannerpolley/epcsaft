@@ -3338,6 +3338,153 @@ GrepeResult solve_temperature_boundary(
 
 }  // namespace
 
+namespace {
+
+bool valid_anchor(
+    const GrepeContinuationPhase& anchor,
+    const GrepePhase& phase,
+    std::size_t support_count
+) {
+    if (anchor.identity != phase.identity
+        || anchor.mole_fractions.size() != support_count
+        || !std::isfinite(anchor.molar_volume_m3_per_mol)
+        || !(anchor.molar_volume_m3_per_mol > 0.0)
+        || !std::all_of(
+            anchor.mole_fractions.begin(), anchor.mole_fractions.end(),
+            [](double value) { return std::isfinite(value) && value > 0.0; }
+        )) {
+        return false;
+    }
+    const double total = std::accumulate(
+        anchor.mole_fractions.begin(), anchor.mole_fractions.end(), 0.0
+    );
+    return std::isfinite(total) && std::abs(total - 1.0) <= 2.0e-10;
+}
+
+bool valid_start(const GrepePhase& phase, std::size_t species_count) {
+    if (!phase.start.has_value()
+        || phase.start->amounts_mol.size() != species_count
+        || !std::isfinite(phase.start->molar_volume_m3_per_mol)
+        || !(phase.start->molar_volume_m3_per_mol > 0.0)) {
+        return false;
+    }
+    return std::all_of(
+        phase.start->amounts_mol.begin(), phase.start->amounts_mol.end(),
+        [](double value) { return std::isfinite(value) && value > 0.0; }
+    );
+}
+
+bool unique_indices(const std::vector<std::size_t>& indices) {
+    std::vector<std::size_t> sorted = indices;
+    std::sort(sorted.begin(), sorted.end());
+    return std::adjacent_find(sorted.begin(), sorted.end()) == sorted.end();
+}
+
+bool neutral_support(
+    const std::vector<std::size_t>& indices,
+    const std::vector<int>& charges
+) {
+    return !indices.empty() && unique_indices(indices) && std::all_of(
+        indices.begin(), indices.end(), [&](std::size_t index) {
+            return index < charges.size() && charges[index] == 0;
+        }
+    );
+}
+
+} // namespace
+
+bool admits_declared_homogeneous_reactive(const GrepeRequest& request) {
+    if (request.temperature.solved || request.pressure.solved
+        || request.boundary.has_value() || request.directions.has_value()
+        || !request.declared_starts_only || request.phases.size() != 1
+        || !request.phases[0].finite
+        || (request.feed.has_value() && request.feed->affine)
+        || request.continuation_phases.size() != 1) {
+        return false;
+    }
+    const GrepePhase& phase = request.phases[0];
+    if (!request.reaction_phase_ids.empty()
+        && request.reaction_phase_ids != std::vector<std::string>{phase.identity}) {
+        return false;
+    }
+    return std::isfinite(request.temperature.value)
+        && request.temperature.value > 0.0
+        && std::isfinite(request.pressure.value)
+        && request.pressure.value > 0.0
+        && valid_start(phase, request.reaction.species_ids.size())
+        && valid_anchor(
+            request.continuation_phases[0], phase,
+            request.reaction.species_ids.size()
+        );
+}
+
+bool admits_declared_bubble_vle(const GrepeRequest& request) {
+    if (request.temperature.solved || !request.pressure.solved
+        || request.boundary.has_value() || request.directions.has_value()
+        || request.feed.has_value() || !request.declared_starts_only
+        || request.phases.size() != 2 || request.continuation_phases.size() != 2) {
+        return false;
+    }
+    const auto finite_phase = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return phase.finite;
+        }
+    );
+    const auto incipient_phase = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return !phase.finite;
+        }
+    );
+    std::vector<std::size_t> expected_support(request.reaction.species_ids.size());
+    std::iota(expected_support.begin(), expected_support.end(), 0);
+    if (finite_phase == request.phases.end() || incipient_phase == request.phases.end()
+        || finite_phase->role != PhaseRole::Liquid
+        || incipient_phase->role != PhaseRole::Vapor
+        || incipient_phase->ideal_gas
+        || finite_phase->support_indices != expected_support
+        || !neutral_support(incipient_phase->support_indices, request.reaction.charges)
+        || !valid_start(*finite_phase, request.reaction.species_ids.size())) {
+        return false;
+    }
+    if (!request.reaction_phase_ids.empty()
+        && request.reaction_phase_ids != std::vector<std::string>{finite_phase->identity}) {
+        return false;
+    }
+    const auto finite_anchor = std::find_if(
+        request.continuation_phases.begin(), request.continuation_phases.end(),
+        [&](const GrepeContinuationPhase& anchor) {
+            return anchor.identity == finite_phase->identity;
+        }
+    );
+    const auto incipient_anchor = std::find_if(
+        request.continuation_phases.begin(), request.continuation_phases.end(),
+        [&](const GrepeContinuationPhase& anchor) {
+            return anchor.identity == incipient_phase->identity;
+        }
+    );
+    return std::isfinite(request.temperature.value)
+        && request.temperature.value > 0.0
+        && std::isfinite(request.pressure.value)
+        && request.pressure.value > 0.0
+        && std::isfinite(request.continuation_pressure_pa)
+        && request.continuation_pressure_pa >= request.pressure.bounds[0]
+        && request.continuation_pressure_pa <= request.pressure.bounds[1]
+        && std::isfinite(request.pressure.bounds[0])
+        && std::isfinite(request.pressure.bounds[1])
+        && request.pressure.bounds[0] > 0.0
+        && request.pressure.bounds[0] < request.pressure.bounds[1]
+        && finite_anchor != request.continuation_phases.end()
+        && incipient_anchor != request.continuation_phases.end()
+        && valid_anchor(
+            *finite_anchor, *finite_phase,
+            request.reaction.species_ids.size()
+        )
+        && valid_anchor(
+            *incipient_anchor, *incipient_phase,
+            incipient_phase->support_indices.size()
+        );
+}
+
 GrepeResult solve_grepe(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
@@ -3418,10 +3565,7 @@ GrepeResult solve_declared_homogeneous_reactive(
     const epcsaft::NativeModel& model,
     const GrepeRequest& request
 ) {
-    if (request.temperature.solved || request.pressure.solved
-        || request.boundary.has_value() || request.directions.has_value()
-        || request.phases.size() != 1 || !request.phases[0].finite
-        || (request.feed.has_value() && request.feed->affine)) {
+    if (!admits_declared_homogeneous_reactive(request)) {
         return unsupported("declared homogeneous reactive topology is unavailable");
     }
     try {
@@ -3441,23 +3585,7 @@ GrepeResult solve_declared_bubble_vle(
     const epcsaft::NativeModel& incipient_model,
     const GrepeRequest& request
 ) {
-    const auto finite_phase = std::find_if(
-        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
-            return phase.finite;
-        }
-    );
-    const auto incipient_phase = std::find_if(
-        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
-            return !phase.finite;
-        }
-    );
-    if (request.temperature.solved || !request.pressure.solved
-        || request.boundary.has_value() || request.directions.has_value()
-        || request.feed.has_value() || request.phases.size() != 2
-        || finite_phase == request.phases.end()
-        || incipient_phase == request.phases.end()
-        || finite_phase->role != PhaseRole::Liquid
-        || incipient_phase->role != PhaseRole::Vapor) {
+    if (!admits_declared_bubble_vle(request)) {
         return unsupported("declared bubble reactive topology is unavailable");
     }
     try {

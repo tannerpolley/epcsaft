@@ -195,6 +195,14 @@ struct GrepeLocalBlocks final {
     const GrepeRequest& request
 );
 
+[[nodiscard]] bool admits_declared_homogeneous_reactive(
+    const GrepeRequest& request
+);
+
+[[nodiscard]] bool admits_declared_bubble_vle(
+    const GrepeRequest& request
+);
+
 [[nodiscard]] GrepeLocalStructure compile_grepe_local_structure(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,

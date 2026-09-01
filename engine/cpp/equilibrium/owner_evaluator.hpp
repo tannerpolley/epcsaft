@@ -28,14 +28,15 @@ struct EvaluatorPhase final {
     std::string support;
     std::vector<std::size_t> support_indices;
     bool finite;
+    bool ideal_gas;
 };
 
 struct EquilibriumEvaluatorSetup final {
     std::string owner_kind;
     std::string parameter_baseline_digest;
     std::string source_spec_digest;
-    std::string parameter_contract_fingerprint;
-    std::string evaluator_fingerprint;
+    std::string anchor_identity;
+    std::string anchor_receipt_identity;
     std::string derivative_provenance;
     std::string topology_policy;
     std::string branch_policy;
@@ -50,6 +51,8 @@ struct EquilibriumEvaluatorSidecar final {
     std::string owner_kind;
     std::string parameter_baseline_digest;
     std::string source_spec_digest;
+    std::string anchor_identity;
+    std::string anchor_receipt_identity;
     std::vector<std::string> active_parameter_identities;
     std::vector<std::string> active_parameter_units;
     std::vector<std::string> active_parameter_bases;
@@ -99,8 +102,6 @@ private:
         epcsaft::NativeModel model,
         epcsaft::NativeModel incipient_model,
         GrepeRequest request,
-        std::vector<epcsaft::NativeActiveCoordinate> active_parameters,
-        std::vector<epcsaft::NativeActiveCoordinate> incipient_parameters,
         EquilibriumEvaluatorSidecar sidecar,
         bool bubble_vle
     );
@@ -108,15 +109,12 @@ private:
     epcsaft::NativeModel model_;
     epcsaft::NativeModel incipient_model_;
     GrepeRequest request_;
-    std::vector<epcsaft::NativeActiveCoordinate> active_parameters_;
-    std::vector<epcsaft::NativeActiveCoordinate> incipient_parameters_;
     EquilibriumEvaluatorSidecar sidecar_;
     bool bubble_vle_;
 };
 
 struct EquilibriumEvaluatorCompilation final {
     std::shared_ptr<const EquilibriumOwnerEvaluator> evaluator;
-    EquilibriumEvaluatorSidecar sidecar;
 };
 
 [[nodiscard]] EquilibriumEvaluatorCompilation compile_equilibrium_owner(

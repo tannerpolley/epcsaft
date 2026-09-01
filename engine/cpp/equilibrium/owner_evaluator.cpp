@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <limits>
-#include <numeric>
+#include <cstdint>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -42,74 +43,6 @@ bool unique_nonempty(const std::vector<std::string>& values) {
     return std::adjacent_find(sorted.begin(), sorted.end()) == sorted.end();
 }
 
-bool all_neutral(
-    const std::vector<std::size_t>& indices,
-    const std::vector<int>& charges
-) {
-    return !indices.empty() && std::all_of(
-        indices.begin(), indices.end(), [&](std::size_t index) {
-            return index < charges.size() && charges[index] == 0;
-        }
-    );
-}
-
-bool unique_indices(const std::vector<std::size_t>& indices) {
-    std::vector<std::size_t> sorted = indices;
-    std::sort(sorted.begin(), sorted.end());
-    return std::adjacent_find(sorted.begin(), sorted.end()) == sorted.end();
-}
-
-bool is_homogeneous_request(const GrepeRequest& request) {
-    if (request.temperature.solved || request.pressure.solved
-        || request.boundary.has_value() || request.directions.has_value()
-        || request.phases.size() != 1 || !request.phases[0].finite
-        || (request.feed.has_value() && request.feed->affine)) {
-        return false;
-    }
-    if (!request.reaction_phase_ids.empty()
-        && request.reaction_phase_ids != std::vector<std::string>{request.phases[0].identity}) {
-        return false;
-    }
-    return std::isfinite(request.temperature.value)
-        && request.temperature.value > 0.0
-        && std::isfinite(request.pressure.value)
-        && request.pressure.value > 0.0;
-}
-
-bool is_bubble_request(const GrepeRequest& request) {
-    if (request.temperature.solved || !request.pressure.solved
-        || request.boundary.has_value() || request.directions.has_value()
-        || request.feed.has_value() || request.phases.size() != 2) {
-        return false;
-    }
-    const auto finite_phase = std::find_if(
-        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
-            return phase.finite;
-        }
-    );
-    const auto incipient_phase = std::find_if(
-        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
-            return !phase.finite;
-        }
-    );
-    std::vector<std::size_t> expected_support(request.reaction.species_ids.size());
-    std::iota(expected_support.begin(), expected_support.end(), 0);
-    if (finite_phase == request.phases.end() || incipient_phase == request.phases.end()
-        || finite_phase->role != PhaseRole::Liquid
-        || incipient_phase->role != PhaseRole::Vapor
-        || finite_phase->support_indices != expected_support
-        || !unique_indices(incipient_phase->support_indices)
-        || !all_neutral(incipient_phase->support_indices, request.reaction.charges)) {
-        return false;
-    }
-    return (request.reaction_phase_ids.empty()
-        || request.reaction_phase_ids == std::vector<std::string>{finite_phase->identity})
-        && std::isfinite(request.temperature.value)
-        && request.temperature.value > 0.0
-        && std::isfinite(request.pressure.value)
-        && request.pressure.value > 0.0;
-}
-
 std::string failure_code(const GrepeResult& result) {
     if (!result.failure_code.empty()) {
         return result.failure_code;
@@ -137,42 +70,196 @@ interfaces::EvaluationFailure invalid_result(
     return failure(domain ? "eos_domain_rejection" : "owner_failure", reason);
 }
 
-std::vector<epcsaft::NativeActiveCoordinate> updated_coordinates(
-    const std::vector<epcsaft::NativeActiveCoordinate>& baseline,
-    const std::vector<epcsaft::NativeActiveCoordinate>& active,
-    const std::vector<double>& values
-) {
-    std::vector<epcsaft::NativeActiveCoordinate> result = baseline;
-    for (auto& coordinate : result) {
-        const auto found = std::find_if(
-            active.begin(), active.end(), [&](const auto& candidate) {
-                return candidate.identity == coordinate.identity;
-            }
-        );
-        if (found == active.end()) {
-            throw std::invalid_argument("active parameter order changed");
-        }
-        coordinate.value = values[static_cast<std::size_t>(found - active.begin())];
-    }
-    return result;
-}
-
 epcsaft::NativeModel model_at(
     const epcsaft::NativeModel& model,
-    const std::vector<epcsaft::NativeActiveCoordinate>& baseline,
-    const std::vector<epcsaft::NativeActiveCoordinate>& active,
     const std::vector<double>& values
 ) {
-    if (baseline.empty()) {
+    std::vector<epcsaft::NativeActiveCoordinate> coordinates = model.active_coordinates();
+    if (coordinates.size() != values.size()) {
+        throw std::invalid_argument("active parameter dimensions changed");
+    }
+    if (coordinates.empty()) {
         return model;
     }
-    return model.with_active_coordinates(updated_coordinates(baseline, active, values));
+    for (std::size_t index = 0; index < coordinates.size(); ++index) {
+        coordinates[index].value = values[index];
+    }
+    return model.with_active_coordinates(coordinates);
+}
+
+std::vector<double> values_for_model(
+    const epcsaft::NativeModel& model,
+    const std::vector<std::string>& parameter_ids,
+    const std::vector<double>& values
+) {
+    std::vector<double> result;
+    for (const auto& coordinate : model.active_coordinates()) {
+        const auto found = std::find(
+            parameter_ids.begin(), parameter_ids.end(), coordinate.identity
+        );
+        if (found == parameter_ids.end()) {
+            throw std::invalid_argument("active parameter order changed");
+        }
+        result.push_back(values[static_cast<std::size_t>(found - parameter_ids.begin())]);
+    }
+    return result;
 }
 
 std::vector<std::string> identities(
     const std::vector<epcsaft::NativeActiveCoordinate>& coordinates
 ) {
     return epcsaft::active_parameter_identities(coordinates);
+}
+
+void hash_field(std::uint64_t& state, const std::string& field) {
+    for (const unsigned char value : field) {
+        state ^= value;
+        state *= 1099511628211ULL;
+    }
+    state ^= 0xffU;
+    state *= 1099511628211ULL;
+}
+
+std::string canonical_hash(const std::vector<std::string>& fields) {
+    std::uint64_t state = 14695981039346656037ULL;
+    for (const auto& field : fields) {
+        hash_field(state, field);
+    }
+    std::ostringstream rendered;
+    rendered << "fnv1a64:" << std::hex << std::setw(16) << std::setfill('0') << state;
+    return rendered.str();
+}
+
+std::string canonical_double(double value) {
+    std::ostringstream rendered;
+    rendered << std::setprecision(17) << value;
+    return rendered.str();
+}
+
+void append_doubles(std::vector<std::string>& fields, const std::vector<double>& values) {
+    for (const double value : values) {
+        fields.push_back(canonical_double(value));
+    }
+}
+
+void append_indices(std::vector<std::string>& fields, const std::vector<std::size_t>& values) {
+    for (const std::size_t value : values) {
+        fields.push_back(std::to_string(value));
+    }
+}
+
+void append_matrix(std::vector<std::string>& fields, const DenseMatrix& matrix) {
+    fields.push_back(std::to_string(matrix.rows));
+    fields.push_back(std::to_string(matrix.columns));
+    append_doubles(fields, matrix.values);
+}
+
+std::string canonical_parameter_contract(
+    const epcsaft::NativeModel& model,
+    const std::vector<EvaluatorParameter>& parameters
+) {
+    std::vector<std::string> fields{"parameter-contract-v1", model.parameter_fingerprint()};
+    for (const auto& parameter : parameters) {
+        fields.insert(fields.end(), {parameter.identity, parameter.unit, parameter.basis});
+    }
+    return canonical_hash(fields);
+}
+
+std::string canonical_evaluator_fingerprint(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request,
+    const EquilibriumEvaluatorSidecar& sidecar
+) {
+    std::vector<std::string> fields{
+        "equilibrium-owner-v1",
+        model.parameter_fingerprint(),
+        request.identity,
+        sidecar.owner_kind,
+        sidecar.source_spec_digest,
+        sidecar.anchor_identity,
+        sidecar.anchor_receipt_identity,
+        sidecar.temperature_role,
+        sidecar.pressure_role,
+        sidecar.derivative_provenance,
+        sidecar.topology_policy,
+        sidecar.branch_policy,
+        sidecar.conditioning_policy,
+    };
+    fields.insert(fields.end(), sidecar.active_parameter_identities.begin(),
+        sidecar.active_parameter_identities.end());
+    fields.insert(fields.end(), sidecar.active_parameter_units.begin(),
+        sidecar.active_parameter_units.end());
+    fields.insert(fields.end(), sidecar.active_parameter_bases.begin(),
+        sidecar.active_parameter_bases.end());
+    for (const auto& phase : sidecar.phases) {
+        fields.insert(fields.end(), {
+            phase.identity, phase.role, phase.support,
+            phase.finite ? "finite" : "incipient",
+            phase.ideal_gas ? "ideal-gas" : "eos"
+        });
+        append_indices(fields, phase.support_indices);
+    }
+    fields.insert(fields.end(), model.component_ids().begin(), model.component_ids().end());
+    for (const int charge : model.charge_numbers()) {
+        fields.push_back(std::to_string(charge));
+    }
+    fields.insert(fields.end(), sidecar.reaction_identities.begin(),
+        sidecar.reaction_identities.end());
+    fields.insert(fields.end(), sidecar.reaction_phase_identities.begin(),
+        sidecar.reaction_phase_identities.end());
+    fields.insert(fields.end(), request.reaction.species_ids.begin(),
+        request.reaction.species_ids.end());
+    for (const int charge : request.reaction.charges) {
+        fields.push_back(std::to_string(charge));
+    }
+    fields.push_back(request.reaction.eos_fingerprint);
+    append_doubles(fields, request.reaction.molar_masses_kg_per_mol);
+    append_matrix(fields, request.reaction.balance_matrix);
+    append_matrix(fields, request.reaction.reaction_matrix);
+    append_doubles(fields, request.reaction.feed_amounts);
+    append_doubles(fields, request.reaction.ln_k);
+    append_doubles(fields, request.reaction.ln_k_parameter_derivatives);
+    for (std::size_t index = 0; index < sidecar.output_row_identities.size(); ++index) {
+        fields.insert(fields.end(), {
+            sidecar.output_row_identities[index], sidecar.output_row_units[index],
+            sidecar.output_row_bases[index]
+        });
+        const auto& output = request.outputs[index];
+        fields.insert(fields.end(), {output.selector, std::to_string(output.phase_index)});
+        append_doubles(fields, output.coefficients);
+        append_doubles(fields, output.solvent_mass_coefficients_kg_per_mol);
+    }
+    fields.push_back(canonical_double(request.temperature.value));
+    fields.push_back(canonical_double(request.pressure.value));
+    append_doubles(fields, {
+        request.temperature.bounds[0], request.temperature.bounds[1],
+        request.pressure.bounds[0], request.pressure.bounds[1]
+    });
+    append_doubles(fields, request.temperature.starts);
+    append_doubles(fields, request.pressure.starts);
+    fields.push_back(canonical_double(request.continuation_pressure_pa));
+    fields.push_back(canonical_double(request.trace_floor));
+    fields.push_back(request.declared_starts_only ? "declared-starts-only" : "generated-starts");
+    for (const auto& anchor : request.continuation_phases) {
+        fields.push_back(anchor.identity);
+        append_doubles(fields, anchor.mole_fractions);
+        fields.push_back(canonical_double(anchor.molar_volume_m3_per_mol));
+    }
+    for (const auto& phase : request.phases) {
+        fields.insert(fields.end(), {
+            phase.model_reference_id,
+            phase.ideal_gas ? "ideal-gas" : "eos",
+            phase.finite ? "finite" : "incipient",
+        });
+        append_doubles(fields, {
+            phase.packing_fraction_interval[0], phase.packing_fraction_interval[1]
+        });
+        if (phase.start.has_value()) {
+            append_doubles(fields, phase.start->amounts_mol);
+            fields.push_back(canonical_double(phase.start->molar_volume_m3_per_mol));
+        }
+    }
+    return canonical_hash(fields);
 }
 
 EquilibriumEvaluatorSidecar make_sidecar(
@@ -203,9 +290,9 @@ EquilibriumEvaluatorSidecar make_sidecar(
     }
     if (setup.parameter_baseline_digest.empty()
         || setup.source_spec_digest.empty()
-        || setup.parameter_contract_fingerprint.empty()
-        || setup.evaluator_fingerprint.empty()) {
-        throw std::invalid_argument("equilibrium evaluator fingerprints are incomplete");
+        || setup.anchor_identity.empty()
+        || setup.anchor_receipt_identity.empty()) {
+        throw std::invalid_argument("equilibrium evaluator identity metadata is incomplete");
     }
     std::vector<std::string> output_identities;
     output_identities.reserve(setup.output_rows.size());
@@ -221,6 +308,8 @@ EquilibriumEvaluatorSidecar make_sidecar(
         : setup.owner_kind;
     result.parameter_baseline_digest = std::move(setup.parameter_baseline_digest);
     result.source_spec_digest = std::move(setup.source_spec_digest);
+    result.anchor_identity = std::move(setup.anchor_identity);
+    result.anchor_receipt_identity = std::move(setup.anchor_receipt_identity);
     result.active_parameter_identities = active;
     for (const auto& parameter : setup.active_parameters) {
         result.active_parameter_units.push_back(parameter.unit);
@@ -242,6 +331,7 @@ EquilibriumEvaluatorSidecar make_sidecar(
             phase.support_name,
             phase.support_indices,
             phase.finite,
+            phase.ideal_gas,
         });
     }
     result.temperature_role = "fixed";
@@ -259,9 +349,12 @@ EquilibriumEvaluatorSidecar make_sidecar(
     result.conditioning_policy = setup.conditioning_policy.empty()
         ? "typed-refusal-on-singular-or-ill-conditioned-sensitivity"
         : std::move(setup.conditioning_policy);
-    result.parameter_contract_fingerprint =
-        std::move(setup.parameter_contract_fingerprint);
-    result.evaluator_fingerprint = std::move(setup.evaluator_fingerprint);
+    result.parameter_contract_fingerprint = canonical_parameter_contract(
+        model, setup.active_parameters
+    );
+    result.evaluator_fingerprint = canonical_evaluator_fingerprint(
+        model, request, result
+    );
     return result;
 }
 
@@ -334,15 +427,11 @@ EquilibriumOwnerEvaluator::EquilibriumOwnerEvaluator(
     epcsaft::NativeModel model,
     epcsaft::NativeModel incipient_model,
     GrepeRequest request,
-    std::vector<epcsaft::NativeActiveCoordinate> active_parameters,
-    std::vector<epcsaft::NativeActiveCoordinate> incipient_parameters,
     EquilibriumEvaluatorSidecar sidecar,
     bool bubble_vle
 )
     : model_(std::move(model)), incipient_model_(std::move(incipient_model)),
-      request_(std::move(request)), active_parameters_(std::move(active_parameters)),
-      incipient_parameters_(std::move(incipient_parameters)),
-      sidecar_(std::move(sidecar)), bubble_vle_(bubble_vle) {}
+      request_(std::move(request)), sidecar_(std::move(sidecar)), bubble_vle_(bubble_vle) {}
 
 std::size_t EquilibriumOwnerEvaluator::parameter_count() const noexcept {
     return sidecar_.active_parameter_identities.size();
@@ -373,11 +462,12 @@ interfaces::EvaluationResult EquilibriumOwnerEvaluator::evaluate(
         if (!finite(physical_parameters)) {
             return failure("invalid_parameter", "active parameters must be finite");
         }
-        const epcsaft::NativeModel model = model_at(
-            model_, active_parameters_, active_parameters_, physical_parameters
+        const epcsaft::NativeModel model = model_at(model_, physical_parameters);
+        const std::vector<double> incipient_values = values_for_model(
+            incipient_model_, sidecar_.active_parameter_identities, physical_parameters
         );
         const epcsaft::NativeModel incipient_model = model_at(
-            incipient_model_, incipient_parameters_, active_parameters_, physical_parameters
+            incipient_model_, incipient_values
         );
         GrepeRequest request = request_;
         request.require_output_derivatives = exact_jacobian;
@@ -398,8 +488,8 @@ EquilibriumEvaluatorCompilation compile_equilibrium_owner(
     GrepeRequest request,
     EquilibriumEvaluatorSetup setup
 ) {
-    const bool bubble_vle = is_bubble_request(request);
-    const bool homogeneous = is_homogeneous_request(request);
+    const bool bubble_vle = admits_declared_bubble_vle(request);
+    const bool homogeneous = admits_declared_homogeneous_reactive(request);
     if (!bubble_vle && !homogeneous) {
         throw std::invalid_argument("only admitted declared reactive topologies are supported");
     }
@@ -435,15 +525,11 @@ EquilibriumEvaluatorCompilation compile_equilibrium_owner(
             model,
             incipient_model,
             std::move(request),
-            std::vector<epcsaft::NativeActiveCoordinate>(active.begin(), active.end()),
-            std::vector<epcsaft::NativeActiveCoordinate>(
-                incipient_active.begin(), incipient_active.end()
-            ),
             sidecar,
             bubble_vle
         )
     );
-    return {std::move(evaluator), sidecar};
+    return {std::move(evaluator)};
 }
 
 } // namespace epcsaft_engine::equilibrium
