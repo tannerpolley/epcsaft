@@ -93,6 +93,7 @@ eos_core = static_library(
   dependencies: [
     threads_dep,
     ipopt_dep,
+    eigen_dep,
     cppad_headers_dep,
   ],
   include_directories: [eos_inc, interfaces_inc],
@@ -146,7 +147,7 @@ equilibrium_core = static_library(
     boost_headers_dep,
     cppad_headers_dep,
   ],
-  include_directories: [equilibrium_inc, eos_inc],
+  include_directories: [equilibrium_inc, eos_inc, interfaces_inc],
   install: false,
   link_with: eos_core,
   pic: true,

@@ -161,12 +161,10 @@ const char* typed_failure_code(const std::string& reason) {
     if (reason == "association solve did not converge"
         || reason == "density root refinement did not converge"
         || reason == "density root pressure residual is too large"
-        || reason == "line_search_failed"
         || reason == "maximum_iterations_exceeded"
         || reason == "evaluation_failed"
-        || reason == "no Newton seed produced a certified local boundary"
-        || reason == "Newton solution failed local physical acceptance"
-        || reason == "perturbed Newton solves did not confirm the boundary") {
+        || reason == "no finite in-domain saturation candidate"
+        || reason == "coexistence feasibility or local physical checks failed") {
         return "numerical_convergence_failure";
     }
     if (reason == "association solve left physical domain"
@@ -529,23 +527,32 @@ EvaluationResult EosOwnerEvaluator::evaluate_pure_saturation(
     bool exact_jacobian
 ) const {
     const auto current_coordinates = coordinates(physical_parameters);
-    const auto current_model = model_.with_active_coordinates(current_coordinates);
-    const double upper_density = current_model.molar_density_upper_bound(
-        specification_.temperature_k, {1.0});
-    const auto solve = exact_jacobian
-        ? solve_local_saturation_active(model_, specification_.temperature_k,
-                                        current_coordinates)
-        : SaturationSensitivityResult{
-              solve_local_saturation(current_model, specification_.temperature_k,
-                                     upper_density),
-              {},
-              {},
-          };
+    SaturationSensitivityResult solve;
+    if (exact_jacobian) {
+        solve = solve_local_saturation_active(model_, specification_.temperature_k,
+                                              current_coordinates);
+    } else {
+        const auto current_model = model_.with_active_coordinates(current_coordinates);
+        const double upper_density = current_model.molar_density_upper_bound(
+            specification_.temperature_k, {1.0});
+        solve = SaturationSensitivityResult{
+            solve_local_saturation(current_model, specification_.temperature_k,
+                                   upper_density),
+            {},
+            {},
+        };
+    }
     if (!solve.solve.accepted) {
         const auto reason = solve.solve.failure_reason.empty()
             ? solve.solve.rejection_status
             : solve.solve.failure_reason;
         return failure(saturation_failure_code(solve.solve), reason);
+    }
+    if (exact_jacobian && solve.sensitivity_status != "available") {
+        return failure("sensitivity_unavailable",
+                       solve.sensitivity_failure_reason.empty()
+                           ? "saturation sensitivity is unavailable"
+                           : solve.sensitivity_failure_reason);
     }
     const std::size_t parameters = active_parameters_.size();
     if (exact_jacobian

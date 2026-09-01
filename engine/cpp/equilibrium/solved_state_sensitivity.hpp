@@ -6,16 +6,17 @@
 #include <vector>
 
 #include "eos.hpp"
+#include "sensitivity_linear_solve.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
-inline constexpr double kSolvedStateSensitivityConditionNumberMax = 1.0e8;
+inline constexpr double kSolvedStateSensitivityConditionNumberMax =
+    interfaces::kSolvedStateSensitivityConditionNumberMax;
 
 [[nodiscard]] inline double solved_state_sensitivity_backward_error_max(
     std::size_t dimension
 ) {
-    return 8192.0 * std::numeric_limits<double>::epsilon()
-        * static_cast<double>(dimension);
+    return interfaces::solved_state_sensitivity_backward_error_max(dimension);
 }
 
 struct SolvedPhaseState {

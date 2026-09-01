@@ -5,9 +5,9 @@ from copy import deepcopy
 
 import pytest
 
-from epcsaft import ActiveParameterSet, Parameters, Pure
+from epcsaft import ActiveParameterSet, Parameters, Pure, SaturationStart
 from epcsaft import unit_registry as u
-from tests.eos._cases import neutral_pure, set_component_values
+from tests.eos._cases import ASSOCIATING_PURE, neutral_pure, set_component_values
 
 PURE_SATURATION_PARAMETERS = {
     "methane": neutral_pure("methane"),
@@ -48,9 +48,7 @@ def _saturation_values(mapping: dict[str, object]) -> tuple[float, float, float]
 
 
 def _scaled_error(exact: float, finite_difference: float) -> float:
-    return abs(exact - finite_difference) / max(
-        abs(exact), abs(finite_difference), 2.0e-9
-    )
+    return abs(exact - finite_difference) / max(abs(exact), abs(finite_difference), 2.0e-9)
 
 
 def test_public_saturation_returns_distinct_stable_equal_potential_branches() -> None:
@@ -80,16 +78,42 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     )
     assert math.log(result.vapor.molar_density_mol_m3) + vapor.residual_chemical_potential_over_rt[
         0
-    ] == pytest.approx(
-        result.vapor.chemical_potential_over_rt, rel=2.0e-12, abs=2.0e-12
-    )
-    assert math.log(result.liquid.molar_density_mol_m3) + liquid.residual_chemical_potential_over_rt[
-        0
-    ] == pytest.approx(
+    ] == pytest.approx(result.vapor.chemical_potential_over_rt, rel=2.0e-12, abs=2.0e-12)
+    assert math.log(
+        result.liquid.molar_density_mol_m3
+    ) + liquid.residual_chemical_potential_over_rt[0] == pytest.approx(
         result.liquid.chemical_potential_over_rt, rel=2.0e-12, abs=2.0e-12
     )
     assert result.vapor.chemical_potential_over_rt == pytest.approx(
         result.liquid.chemical_potential_over_rt, abs=1.0e-10
+    )
+
+    uncertified = model.saturation(T=100.0 * u.kelvin)
+    assert uncertified.diagnostics.candidate_available
+    assert not uncertified.certified
+    assert uncertified.diagnostics.sensitivity_status == "not_requested"
+    assert uncertified.vapor.molar_density_mol_m3 > 0.0
+    assert uncertified.liquid.molar_density_mol_m3 > 0.0
+
+    associated = Pure(Parameters.from_mapping(ASSOCIATING_PURE))
+    neighbor = associated.saturation(T=290.0 * u.kelvin)
+    candidate = associated.saturation(T=300.0 * u.kelvin)
+    assert candidate.diagnostics.candidate_available
+    assert candidate.certified
+    assert candidate.saturation_pressure_pa > 0.0
+    assert candidate.vapor.molar_density_mol_m3 < candidate.liquid.molar_density_mol_m3
+    assert candidate.diagnostics.sensitivity_status == "not_requested"
+    reused = associated.saturation(
+        T=300.0 * u.kelvin,
+        start=SaturationStart(
+            neighbor.vapor.molar_density_mol_m3 * u.mole / u.meter**3,
+            neighbor.liquid.molar_density_mol_m3 * u.mole / u.meter**3,
+            neighbor.saturation_pressure_pa * u.pascal,
+        ),
+    )
+    assert reused.certified
+    assert reused.saturation_pressure_pa == pytest.approx(
+        candidate.saturation_pressure_pa, rel=1.0e-10
     )
 
 
@@ -127,9 +151,7 @@ def test_public_saturation_parameter_derivatives_match_resolved_boundaries() -> 
         _set_parameter(upper, identity, value + step)
         numerical = tuple(
             (high - low) / (2.0 * step)
-            for low, high in zip(
-                _saturation_values(lower), _saturation_values(upper), strict=True
-            )
+            for low, high in zip(_saturation_values(lower), _saturation_values(upper), strict=True)
         )
         for row, expected in enumerate(numerical):
             derivative = block.jacobian[row]
