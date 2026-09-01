@@ -23,6 +23,11 @@ bool finite(const std::vector<double> &values) {
                      [](double value) { return std::isfinite(value); });
 }
 
+bool finite_or_infinite(const std::vector<double> &values) {
+  return std::all_of(values.begin(), values.end(),
+                     [](double value) { return !std::isnan(value); });
+}
+
 std::string bounded(std::string value, std::size_t maximum) {
   if (value.size() > maximum) {
     value.resize(maximum);
@@ -386,8 +391,10 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     return values.size() == parameter_count && finite(values);
   };
   if (!vectors_have_parameter_count(request.initial_parameters) ||
-      !vectors_have_parameter_count(request.lower_bounds) ||
-      !vectors_have_parameter_count(request.upper_bounds) ||
+      request.lower_bounds.size() != parameter_count ||
+      request.upper_bounds.size() != parameter_count ||
+      !finite_or_infinite(request.lower_bounds) ||
+      !finite_or_infinite(request.upper_bounds) ||
       !vectors_have_parameter_count(request.affine_origins) ||
       !vectors_have_parameter_count(request.affine_scales) ||
       !finite(request.observations)) {
@@ -489,9 +496,9 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
         (request.upper_bounds[index] - request.affine_origins[index]) /
         request.affine_scales[index];
   }
-  if (!finite(optimizer_parameters) || !finite(optimizer_lower) ||
-      !finite(optimizer_upper)) {
-    result.message = "affine optimizer coordinates and bounds must be finite";
+  if (!finite(optimizer_parameters) || !finite_or_infinite(optimizer_lower) ||
+      !finite_or_infinite(optimizer_upper)) {
+    result.message = "affine optimizer coordinates and bounds must not be NaN";
     result.failures = state.failures();
     result.counters = state.counters();
     return result;
@@ -618,6 +625,7 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     if (const auto *evaluation = std::get_if<CombinedEvaluation>(&final)) {
       result.parameters = std::move(physical);
       result.predictions = evaluation->predictions;
+      result.physical_jacobian = evaluation->jacobian;
       result.optimizer_jacobian.resize(output_count * parameter_count);
       result.residuals.resize(output_count);
       for (std::size_t row = 0; row < output_count; ++row) {

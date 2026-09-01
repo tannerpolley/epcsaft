@@ -937,10 +937,11 @@ std::shared_ptr<const EquilibriumOwnerEvaluator> compile_equilibrium_owner(
     const auto incipient_active = incipient_model.active_coordinates();
     const auto primary_ids = identities(active);
     const auto incipient_ids = identities(incipient_active);
-    if (bubble_vle
-        && model.parameter_fingerprint() != incipient_model.parameter_fingerprint()) {
-        throw std::invalid_argument("bubble evaluator model fingerprints do not match");
-    }
+    // A declared neutral vapor may use a support-projected NativeModel.  Its
+    // document fingerprint is therefore narrower than the primary mixture's
+    // fingerprint, while the active coordinates must still be the same
+    // ordered contract (checked below).  The primary model remains the
+    // authority for the owner sidecar and source identity.
     if (!unique_nonempty(primary_ids) || !unique_nonempty(incipient_ids)) {
         throw std::invalid_argument("equilibrium active parameter identities are invalid");
     }

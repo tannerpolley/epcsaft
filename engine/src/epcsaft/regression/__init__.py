@@ -1,11 +1,10 @@
-from ._fit import FitPreflightError, fit
-from ._model import ParameterFit
-from ._result import EvaluatedFitRow, FitResult
+"""Owner-neutral native regression APIs."""
+
+from ._api import CompiledEvaluator, LeastSquaresResult, curve_fit, least_squares
 
 __all__ = (
-    "EvaluatedFitRow",
-    "FitPreflightError",
-    "FitResult",
-    "ParameterFit",
-    "fit",
+    "CompiledEvaluator",
+    "LeastSquaresResult",
+    "curve_fit",
+    "least_squares",
 )

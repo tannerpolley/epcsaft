@@ -48,11 +48,13 @@ ambiguity, EOS/domain rejection, topology mismatch, source-reference
 failure, and singular or ill-conditioned sensitivity. It never returns a
 numeric penalty for those states.
 
-Regression consumes this family through the existing `ParameterFit`, `fit`,
-and `FitResult` path. Equilibrium owns values, exact total Jacobians, physical
-branch identity, certification, and opaque receipt validation. Regression owns
-targets, residual transforms, weights, affine coordinates, bounds, caller
-starts, optimizer accounting, and parameter-space optimizer clusters.
+Regression consumes this family through
+`equilibrium.compile_regression_evaluator` and the owner-neutral
+`regression.least_squares`/`curve_fit` APIs. Equilibrium owns values, exact total
+Jacobians, physical branch identity, certification, and opaque receipt
+validation. Regression owns ordered observations, discrepancy weights, affine
+coordinates, bounds, caller starts, optimizer accounting, and covariance
+availability.
 
 Admission evidence is recorded in
 `governance/receipts/cap-13-reactive-bubble-vle-admission.json`.

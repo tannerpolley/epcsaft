@@ -113,6 +113,10 @@ struct LeastSquaresResult final {
   std::vector<double> parameters;
   std::vector<double> predictions;
   std::vector<double> residuals;
+  // Prediction derivatives stay in physical parameter coordinates.  The
+  // optimizer Jacobian is the independently weighted, affine-transformed
+  // derivative consumed by Ceres.
+  std::vector<double> physical_jacobian;
   std::vector<double> optimizer_jacobian;
   std::vector<FailureEvent> failures;
   CeresOptionsRecord requested_options;

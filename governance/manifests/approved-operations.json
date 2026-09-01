@@ -1,16 +1,6 @@
 {
   "schema_version": 1,
   "operations": {
-    "reduced-space-ipopt-regression-2026-08-25": {
-      "subject": {
-        "operation": "replace-reduced-space-ceres-with-ipopt",
-        "repository": "tannerpolley/ePC-SAFT",
-        "issue": 60,
-        "doctrine_revision": 24,
-        "phase": "approved-after-parity"
-      },
-      "approval_source": "explicit Codex task request on 2026-08-25"
-    },
     "official-downstream-applications-2026-08-20": {
       "subject": {
         "operation": "establish-official-downstream-applications",

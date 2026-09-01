@@ -1,6 +1,6 @@
 # Engine Context
 
-`governance_doctrine_revision: 25`
+`governance_doctrine_revision: 26`
 
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
@@ -8,11 +8,10 @@ and regression. All native modules share one Meson graph and wheel.
 
 Reusable packets remain owned by `data/` and are materialized with exact
 commit, packet, fingerprint, and file hashes. Regression returns an immutable
-`FitResult`. D-036 requires the promotion-gated transfer to become an explicit
-candidate export that creates a new provenance-linked `Parameters` document
-without accepting, admitting, promoting, or adopting it. No package, SDK,
-filesystem, or legacy compatibility handoff exists between the three runtime
-modules.
+`LeastSquaresResult` from native owner handles. EOS and Equilibrium retain
+parameter transfer and thermodynamic ownership; Regression never accepts,
+promotes, or adopts fitted values. No package, SDK, filesystem, or legacy
+compatibility handoff exists between the three runtime modules.
 
 Application observations, including phase-equilibrium and extraction
 observations, may be declared Regression targets when their units, basis,
@@ -255,30 +254,27 @@ caloric property
 EOS owns fixed-state and pure-fluid property values, domains, and exact
 selected-parameter derivatives. Equilibrium owns mixture and reactive solved
 property values, domains, and exact selected-parameter derivatives. Regression
-may discover only capabilities admitted by the current Regression Cutover
-Boundary, maps observations, forms scaled residuals, and routes them through
-its one Ipopt owner: simultaneous full-space where local exact derivatives are
-available, reduced-space otherwise.
+maps ordered observations, forms caller-defined scaled residuals, and routes
+native owners through one Ceres least-squares core. It discovers no topology or
+thermodynamic capability.
 _Avoid_: Regression property implementation, Regression-owned thermodynamic
 derivative, duplicated observation solver
 
 **Regression Cutover Boundary**:
-The hard cutover admits EOS-owned fixed-state and Pure Saturation State
-Observation Families plus the D-034 fixed-T,P homogeneous reactive and D-035
-fixed-topology reactive bubble/VLE families. Every admitted Equilibrium family
-owns its descriptor, values, exact total Jacobians, branch certificate, and
-typed Non-Evaluable Trial result. D-036 approves GREPE as the next target
-architecture but admits no reactive LLE, electrochemical multiphase, reaction-
-coefficient fit, or other future capability without its own executable
-evidence and receipt.
+The hard cutover admits EOS-owned fixed-state and pure-saturation owners plus
+the D-034 fixed-T,P homogeneous reactive and D-035 fixed-topology reactive
+bubble/VLE owners. Every admitted Equilibrium owner retains its descriptor,
+values, exact total Jacobians, branch certificate, and typed Non-Evaluable Trial
+result. Unsupported topologies, unanchored requests, and future reaction
+coefficient fits refuse before Ceres is built.
 _Avoid_: Family-specific Regression thermodynamics, reaction fit coordinate,
 target architecture presented as current admission
 
 **Non-Evaluable Trial**:
 A bounded optimizer point at which a required owner evaluation cannot produce
 its declared value, certificate, and exact derivative. The evaluation returns
-structured failure without a fabricated residual, Ipopt may backtrack, and the
-affected multistart outcome remains in FitResult diagnostics.
+structured failure without a fabricated residual, Ceres may backtrack, and the
+affected fit remains in LeastSquaresResult diagnostics.
 _Avoid_: Fixed scientific penalty, silent clipping, whole-fit first-failure abort
 
 **Pure Saturation State**:

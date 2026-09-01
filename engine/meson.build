@@ -80,12 +80,14 @@ nlopt_project = cmake.subproject('nlopt', options: nlopt_options)
 nlopt_dep = nlopt_project.dependency('nlopt')
 
 eos_inc = include_directories('src/epcsaft/_native')
+interfaces_inc = include_directories('cpp/interfaces')
 eos_core = static_library(
   'epcsaft_engine_eos_core',
   cppad_temp_file,
   'src/epcsaft/_native/eos.cpp',
   'src/epcsaft/_native/eos_access.cpp',
   'src/epcsaft/_native/eos_source_reference.cpp',
+  'src/epcsaft/_native/eos_regression_evaluator.cpp',
   'src/epcsaft/_native/pure_saturation.cpp',
   cpp_args: native_warnings,
   dependencies: [
@@ -93,12 +95,13 @@ eos_core = static_library(
     ipopt_dep,
     cppad_headers_dep,
   ],
-  include_directories: eos_inc,
+  include_directories: [eos_inc, interfaces_inc],
   install: false,
   pic: true,
 )
 
 equilibrium_sources = files(
+  'cpp/equilibrium/owner_evaluator.cpp',
   'cpp/equilibrium/chemical_equilibrium.cpp',
   'cpp/equilibrium/chemical_equilibrium_compiler.cpp',
   'cpp/equilibrium/phase_direction_compiler.cpp',
@@ -149,7 +152,6 @@ equilibrium_core = static_library(
   pic: true,
 )
 
-interfaces_inc = include_directories('cpp/interfaces')
 regression_private_inc = include_directories('cpp/regression')
 ceres_kernel_source = files('cpp/regression/ceres_least_squares.cpp')
 cpp.compiles(
@@ -164,23 +166,17 @@ cpp.compiles(
 )
 regression_core = static_library(
   'epcsaft_engine_regression_core',
-  'src/epcsaft/regression/native/fit_core.cpp',
   ceres_kernel_source,
   cpp_args: native_warnings,
   dependencies: [
     ceres_dep,
-    ipopt_dep,
     eigen_dep,
   ],
   include_directories: [
     interfaces_inc,
     regression_private_inc,
-    equilibrium_inc,
-    eos_inc,
-    include_directories('src/epcsaft/regression/native'),
   ],
   install: false,
-  link_with: [eos_core, equilibrium_core],
   pic: true,
 )
 
@@ -188,7 +184,7 @@ py.extension_module(
   '_core',
   'src/epcsaft/_native/module.cpp',
   'src/epcsaft/_native/saturation_pybind.cpp',
-  'src/epcsaft/regression/native/fit_pybind.cpp',
+  'src/epcsaft/_native/regression_pybind.cpp',
   'cpp/equilibrium/module.cpp',
   'cpp/equilibrium/chemical_equilibrium_bindings.cpp',
   cpp_args: native_warnings,
@@ -199,9 +195,10 @@ py.extension_module(
     cppad_headers_dep,
   ],
   include_directories: [
+    interfaces_inc,
+    regression_private_inc,
     equilibrium_inc,
     eos_inc,
-    include_directories('src/epcsaft/regression/native'),
   ],
   install: true,
   link_args: release_link_args,
@@ -216,7 +213,6 @@ install_subdir(
     '_native',
     'equilibrium/__pycache__',
     'regression/__pycache__',
-    'regression/native',
   ],
   install_dir: py.get_install_dir(),
 )

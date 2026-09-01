@@ -1,85 +1,155 @@
 from __future__ import annotations
 
-from pathlib import Path
+import math
+from dataclasses import replace
 
 import pytest
 
-from epcsaft.regression import FitResult, fit
-from tests.regression._cases import (
-    PAIR_IDENTITY,
-    fixed_state_fit_case,
-    parameter_value,
-    pressure,
-)
+import epcsaft
+from epcsaft import eos, equilibrium, regression
+from tests.equilibrium._cases import solved_pressure_case
 
 
-def test_fit_result_candidate_re_evaluates_rows_and_preserves_identity(
-    tmp_path: Path,
-) -> None:
-    """Falsify candidate, row, provenance, diagnostic, or fingerprint drift."""
-
-    mapping, input_parameters, states = fixed_state_fit_case(tmp_path)
-    mapping["acceptance"] = {"maximum_cost": 1.0e-12}
-    result = fit(mapping, base_path=tmp_path)
-    assert isinstance(result, FitResult)
-    accepted = result.best_usable_start
-    assert accepted is not None
-    assert accepted is min(
-        (start for start in result.starts if start.usable),
-        key=lambda start: (start.cost, start.start_identity),
+def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
+    parameters, model, problem = solved_pressure_case()
+    active = epcsaft.ActiveParameterSet(parameters, (parameters.parameter_specs[0].identity,))
+    baseline = equilibrium.solve(model, problem, active_parameters=active)
+    assert baseline.status == "evaluated", baseline.failure
+    assert baseline.continuation_state is not None
+    finite_state = baseline.continuation_state.phase(problem.phases[0].identity)
+    finite_total = None
+    for row, conserved in zip(
+        problem.reaction_system.balance_matrix,
+        problem.reaction_system.conserved_totals,
+        strict=True,
+    ):
+        balance = math.fsum(
+            coefficient * fraction
+            for coefficient, fraction in zip(row, finite_state.mole_fractions, strict=True)
+        )
+        if abs(balance) > 1.0e-12:
+            finite_total = conserved / balance
+            break
+    assert finite_total is not None
+    anchored_phases = tuple(
+        replace(
+            phase,
+            start=equilibrium.FinitePhaseStart(
+                tuple(finite_total * fraction for fraction in state.mole_fractions),
+                state.molar_volume_m3_per_mol,
+            ),
+        )
+        if phase.amount_role == "finite"
+        else phase
+        for phase, state in zip(
+            problem.phases,
+            baseline.continuation_state.phases,
+            strict=True,
+        )
     )
-    assert tuple(start.start_identity for start in result.starts) == (
-        "input",
-        "confirmation",
+    anchored = replace(
+        problem,
+        phases=anchored_phases,
+        continuation_state=baseline.continuation_state,
     )
-    assert accepted.owner_failures == ()
-    assert accepted.owner_receipts == ()
-    assert accepted.rank == 1
-    assert accepted.physical_jacobian
-    assert accepted.singular_values
-    outcomes = result.outcomes
-    assert outcomes is not None
-    assert {name: outcome["status"] for name, outcome in outcomes.items()} == {
-        "solver_convergence": "converged",
-        "numerical_convergence": "converged",
-        "physical_certification": "certified",
-        "scientific_fit_acceptance": "accepted",
-    }
-    assert outcomes["scientific_fit_acceptance"]["achieved"] == accepted.cost
-    assert outcomes["scientific_fit_acceptance"]["threshold"] == 1.0e-12
-
-    candidate = result.export_candidate_parameters()
-    assert parameter_value(input_parameters, PAIR_IDENTITY) == pytest.approx(-0.02)
-    assert parameter_value(candidate, PAIR_IDENTITY) == pytest.approx(accepted.final_physical[0])
-    assert candidate.fingerprint != input_parameters.fingerprint
-    re_evaluated = tuple(
-        pressure(candidate, temperature, density, composition)
-        for temperature, density, composition, _ in states
+    liquid = baseline.phases[0]
+    eos_owner = eos.compile_regression_evaluator(
+        {
+            "model": model,
+            "family": "fixed-state",
+            "temperature_k": 313.15,
+            "molar_density_mol_m3": liquid.molar_density_mol_m3,
+            "mole_fractions": liquid.mole_fractions,
+            "row_identities": ("pressure_pa",),
+        },
+        active,
     )
-    assert re_evaluated == pytest.approx(accepted.predictions, rel=2.0e-6, abs=2.0e-8)
-
-    rows = result.evaluated_rows
-    assert tuple(row.identity for row in rows) == result.specification.row_identities
-    assert tuple(row.predicted for row in rows) == accepted.predictions
-    assert tuple(row.scaled_residual for row in rows) == accepted.residuals
-    assert all(row.selector == "pressure" for row in rows)
-    assert all(row.unit == "pascal" and row.basis == "absolute" for row in rows)
-    assert all(row.source_identity and row.source_hash.startswith("sha256:") for row in rows)
-    assert all(
-        row.candidate_parameter_identity == result.candidate_parameter_identity for row in rows
+    equilibrium_owner = equilibrium.compile_regression_evaluator(
+        {"model": model, "problem": anchored}, active
     )
-    assert result.candidate_parameter_identity.startswith("sha256:")
-    assert result.evaluated_row_table_hash.startswith("sha256:")
-    assert result.artifact_fingerprint.startswith("sha256:")
-    assert result.package_fingerprint.startswith("sha256:")
-    assert result.digest.startswith("sha256:")
-    assert result.accounting.failed_starts == 0
-    assert result.accounting.rejected_row_trials == 0
-    assert result.accounting.failed_row_trials == 0
+    eos_observation = model.state(
+        T=313.15 * epcsaft.unit_registry.kelvin,
+        rho=liquid.molar_density_mol_m3
+        * epcsaft.unit_registry.mole
+        / epcsaft.unit_registry.meter**3,
+        x=liquid.mole_fractions,
+    ).pressure.to("pascal").magnitude
+    observations = (eos_observation,) + tuple(float(value) for value in baseline.values)
+    result = regression.least_squares(
+        (eos_owner, equilibrium_owner),
+        observations,
+        (active.values[0] + 0.05,),
+        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+        affine_origin=(active.values[0] - 1.0,),
+        affine_scale=(2.0,),
+        residual_scales=(10.0,),
+        maximum_iterations=20,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert result.usable, (result.message, result.failures)
+    assert result.parameters == pytest.approx(active.values, abs=1.0e-8)
+    assert result.predictions == pytest.approx(observations)
+    assert result.residuals == pytest.approx((0.0,) * len(observations), abs=1.0e-8)
+    assert tuple(
+        (row["row_begin"], row["row_end"]) for row in result.evaluator_rows
+    ) == ((0, 1), (1, len(observations)))
+    assert all(math.isfinite(row[0]) for row in result.physical_jacobian)
+    assert tuple(row[0] for row in result.optimizer_jacobian) == pytest.approx(
+        tuple(row[0] * 2.0 / 10.0 for row in result.physical_jacobian)
+    )
+    assert result.diagnostics["residual_scale_metadata"] == "caller-defined discrepancy weights"
+    assert result.covariance["status"] in {"available", "active_bound", "unavailable"}
+    assert result.counters["uncached_jacobian_owner_attempts"] >= 4
 
-    assert accepted.cost > 0.0
-    mapping["acceptance"] = {"maximum_cost": accepted.cost / 2.0}
-    rejected = fit(mapping, base_path=tmp_path)
-    rejected_outcomes = rejected.outcomes
-    assert rejected_outcomes is not None
-    assert rejected_outcomes["scientific_fit_acceptance"]["status"] == "rejected"
+    vector_scales = tuple(float(index + 1) for index in range(len(observations)))
+    repeated = regression.curve_fit(
+        (eos_owner, equilibrium_owner),
+        observations,
+        active.values,
+        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+        affine_origin=(active.values[0] - 1.0,),
+        affine_scale=(2.0,),
+        residual_scales=vector_scales,
+        maximum_iterations=4,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert repeated.usable
+    assert repeated.parameters == pytest.approx(active.values)
+    assert tuple(row[0] for row in repeated.optimizer_jacobian) == pytest.approx(
+        tuple(
+            row[0] * 2.0 / scale
+            for row, scale in zip(repeated.physical_jacobian, vector_scales, strict=True)
+        )
+    )
+
+    active_bound = regression.least_squares(
+        (eos_owner,),
+        (eos_observation,),
+        active.values,
+        bounds=(active.values, (active.values[0] + 5.0,)),
+        maximum_iterations=2,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert active_bound.usable
+    assert active_bound.covariance["status"] == "active_bound"
+
+    owner_limited = regression.least_squares(
+        (eos_owner, equilibrium_owner),
+        observations,
+        active.values,
+        maximum_uncached_owner_calls=1,
+    )
+    assert not owner_limited.usable
+    assert owner_limited.parameters == owner_limited.predictions == ()
+    assert owner_limited.failures[0]["code"] == "owner_call_limit"
+
+    invalid_initial = regression.least_squares(
+        (eos_owner,),
+        (eos_observation,),
+        (active.values[0] + 2.0,),
+        bounds=((active.values[0] - 1.0,), (active.values[0] + 1.0,)),
+    )
+    assert not invalid_initial.usable
+    assert invalid_initial.parameters == invalid_initial.predictions == ()
+    with pytest.raises(TypeError, match="requires an epcsaft EOS model"):
+        eos.compile_regression_evaluator({}, active)
