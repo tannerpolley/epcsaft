@@ -183,9 +183,64 @@ void append_json_number(std::string& payload, double value) {
         throw std::invalid_argument("source specification number is not representable");
     }
     std::string rendered(buffer.data(), end);
-    if (rendered.find('.') == std::string::npos
-        && rendered.find('e') == std::string::npos
-        && rendered.find('E') == std::string::npos) {
+    const std::size_t exponent_marker = rendered.find_first_of("eE");
+    if (exponent_marker != std::string::npos) {
+        std::string mantissa = rendered.substr(0, exponent_marker);
+        bool exponent_negative = false;
+        std::size_t exponent_start = exponent_marker + 1;
+        if (rendered[exponent_start] == '+' || rendered[exponent_start] == '-') {
+            exponent_negative = rendered[exponent_start] == '-';
+            ++exponent_start;
+        }
+        int exponent = 0;
+        for (; exponent_start < rendered.size(); ++exponent_start) {
+            exponent = exponent * 10 + (rendered[exponent_start] - '0');
+        }
+        if (exponent_negative) {
+            exponent = -exponent;
+        }
+        // Python's JSON encoder uses fixed notation for -4 <= exponent < 16.
+        if (exponent >= -4 && exponent < 16) {
+            bool negative = !mantissa.empty() && mantissa.front() == '-';
+            if (negative) {
+                mantissa.erase(0, 1);
+            }
+            const std::size_t dot = mantissa.find('.');
+            const int decimal_position = static_cast<int>(
+                dot == std::string::npos ? mantissa.size() : dot
+            );
+            if (dot != std::string::npos) {
+                mantissa.erase(dot, 1);
+            }
+            const int target = decimal_position + exponent;
+            if (target <= 0) {
+                rendered = "0." + std::string(static_cast<std::size_t>(-target), '0')
+                    + mantissa;
+            } else if (target >= static_cast<int>(mantissa.size())) {
+                rendered = mantissa + std::string(
+                    static_cast<std::size_t>(target - mantissa.size()), '0'
+                );
+            } else {
+                rendered = mantissa.substr(0, static_cast<std::size_t>(target))
+                    + "." + mantissa.substr(static_cast<std::size_t>(target));
+            }
+            if (rendered.find('.') == std::string::npos) {
+                rendered += ".0";
+            }
+            if (negative) {
+                rendered.insert(0, 1, '-');
+            }
+        } else {
+            std::string exponent_digits = std::to_string(
+                exponent < 0 ? -exponent : exponent
+            );
+            if (exponent_digits.size() < 2) {
+                exponent_digits.insert(0, 1, '0');
+            }
+            rendered = mantissa + "e" + (exponent < 0 ? "-" : "+")
+                + exponent_digits;
+        }
+    } else if (rendered.find('.') == std::string::npos) {
         rendered += ".0";
     }
     payload += rendered;
