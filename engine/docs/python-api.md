@@ -161,6 +161,7 @@ fallbacks.
 ## Regression
 
 ```python
+import epcsaft
 from epcsaft import regression
 
 owner = epcsaft.eos.compile_regression_evaluator(specification, active_parameters)

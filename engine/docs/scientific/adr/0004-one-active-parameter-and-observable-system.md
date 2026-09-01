@@ -44,14 +44,14 @@ schemas, aliases, and fallbacks are deleted with their replacement.
 
 ## Consequences
 
-- One fitted coordinate has one identity from input through `FitResult`.
+- One fitted coordinate has one identity from input through `LeastSquaresResult`.
 - Mixed component, pair, association, Born/solvation, auxiliary-model, and typed
   correlation coefficients can share one active set when EOS supports them.
 - Regression cannot implement EOS or Equilibrium observation families.
 - Governance D-034 and D-035 admit the Equilibrium-owned fixed-T,P homogeneous
   reactive and fixed-topology reactive bubble/VLE families through the same
-  fit/result route. D-031 continues to defer nonreactive phase-equilibrium
-  observations.
+  owner-neutral Ceres route. D-031 continues to defer unqualified
+  phase-equilibrium observations.
 - Generated templates provide explicit required neutral identity values;
   loaders do not infer omissions.
 - Engine tests falsify numerical claims; literature acceptance remains in

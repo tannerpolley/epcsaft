@@ -8,27 +8,28 @@ structured failure diagnostics; Ceres receives only native owner handles.
 import epcsaft
 from epcsaft import eos, regression
 
-active = epcsaft.ActiveParameterSet(parameters, ("pair/a/b/k_ij",))
-owner = eos.compile_regression_evaluator(
-    {
-        "model": model,
-        "family": "fixed-state",
-        "temperature_k": 310.0,
-        "molar_density_mol_m3": 1050.0,
-        "mole_fractions": (0.4, 0.6),
-        "row_identities": ("pressure_pa",),
-    },
-    active,
-)
-result = regression.least_squares(
-    (owner,),
-    observations=(101325.0,),
-    initial_parameters=active.values,
-    bounds=((-1.0,), (1.0,)),
-    affine_origin=(0.0,),
-    affine_scale=(1.0,),
-    residual_scales=(1000.0,),
-)
+def fit_pressure(model, parameters, active_identity, observation_pa, bounds):
+    active = epcsaft.ActiveParameterSet(parameters, (active_identity,))
+    owner = eos.compile_regression_evaluator(
+        {
+            "model": model,
+            "family": "fixed-state",
+            "temperature_k": 310.0,
+            "molar_density_mol_m3": 1050.0,
+            "mole_fractions": (0.4, 0.6),
+            "row_identities": ("pressure_pa",),
+        },
+        active,
+    )
+    return regression.least_squares(
+        (owner,),
+        observations=(observation_pa,),
+        initial_parameters=active.values,
+        bounds=bounds,
+        affine_origin=(0.0,),
+        affine_scale=(1.0,),
+        residual_scales=(1000.0,),
+    )
 ```
 
 `result.parameters`, `result.predictions`, `result.residuals`, and

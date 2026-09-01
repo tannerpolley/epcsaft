@@ -223,56 +223,31 @@ Regression consumes one owner-published evaluator protocol:
 2. evaluate each unique thermodynamic condition once for all requested rows;
 3. return typed values, exact Jacobian rows, certificates, and failures.
 
-Regression owns observation mapping, residual transforms and covariance
-whitening, parameter coordinates/bounds/ties, multistart, Ipopt, optimizer
-accounting, and descriptive/statistical diagnostics. It contains no species,
-reaction, phase, bubble, LLE, or application-specific thermodynamic branch.
-Current homogeneous and bubble family dispatch will be removed after the
-generic protocol proves equivalent; no future LLE `isinstance` branch is
-added.
+Regression owns ordered differences, optional diagonal discrepancy scales,
+physical bounds, affine coordinates, one start, native Ceres controls, and
+optimizer accounting. It contains no species, reaction, phase, bubble, LLE,
+application-specific branch, multistart, or Python iteration callback.
 
-Derivative-capable local GREPE states and shared parameters may enter one
-simultaneous sparse Regression/Ipopt problem. Unsupported formulations retain
-the reduced-space Ipopt route using GREPE's exact total Jacobian. Both routes
-evaluate the same GREPE thermodynamic equations.
-
-An invalid trial returns a typed failure so Ipopt rejects or shrinks the step.
-Regression does not fabricate penalties or drop failed rows. No usable
-certified point produces a typed fit failure.
+Only compiled EOS and anchored local D-034/D-035 Equilibrium owners enter the
+current route. Unsupported formulations refuse before Ceres is constructed.
+An invalid owner trial returns a typed failure; Regression does not fabricate
+penalties or stale fitted values. A usable result exists only after a fresh,
+cache-bypassing final owner value/Jacobian evaluation.
 
 ## Observation, fit-quality, and plotting contract
 
-Every observation declares row/source/series identity, target selector,
-physical unit and basis, uncertainty/covariance or preregistered residual
-scale, partition, and grouping metadata. Structural zeros, measured zeros, and
-censoring are distinct. Composition residuals use a closure-aware `N-1`
-contrast while retaining every raw reported component.
+Each compiled owner sidecar retains ordered row identities, units, bases,
+source and evaluator fingerprints, and topology/branch evidence. A
+`LeastSquaresResult` retains ordered observations, predictions, raw and scaled
+differences, physical and optimizer-coordinate Jacobians, final parameters,
+bounds, solver options, failures, counters, and local covariance availability.
+Diagonal residual scales remain caller-defined discrepancy weights unless the
+caller independently establishes a stronger statistical meaning.
 
-`FitResult` stores an immutable evaluated-row table containing at least the row
-and source IDs, selector, series metadata, observed and predicted values, raw
-difference, scaled residual, unit/basis, evaluation status, candidate parameter
-identity, and table hash. Generic plotting reads that exact table and never
-re-evaluates thermodynamics. A CO2 pressure plot is therefore an ordinary
-`vapor.partial_pressure(species_id)` output plot, not a CO2 code path.
-
-Fit diagnostics include overall and grouped SSE, RMSE, AARD, valid-equilibrium
-coverage, rank, conditioning, parameter correlation, active bounds, and
-multistart clusters. Chi-square, covariance, and confidence intervals appear
-only when declared uncertainty and rank assumptions justify them. A downstream
-dataset may preregister descriptive fit-quality bands; Regression reports them
-without deciding parameter adoption.
-
-`FitResult` exposes one explicit candidate-export method. It creates a new
-provenance-linked parameter document and never overwrites the source. An
-exportable point requires a certified owner evaluation and exact Jacobian for
-every required fit row; failed-row subsets never define a partial SSE. Among
-complete usable starts, deterministic lowest objective and then stable start
-identity select the candidate. Its immutable evaluated-row-table hash is bound
-to the export. A budget-limited or nonconverged fit may export and plot that
-complete certified point with its exact termination label. Partial evaluated
-rows may remain diagnostics but cannot be exported as the fit candidate. No
-complete certified point means no export. Regression has no parameter
-parameter-selection or scientific-adoption authority.
+Campaign statistics, grouped fit quality, plots, multistart orchestration,
+candidate document export, and parameter adoption belong to the calling
+application or analysis. Regression makes no globality, uncertainty,
+identifiability, parameter-selection, promotion, or scientific-adoption claim.
 
 ## Ownership
 
@@ -293,24 +268,19 @@ explicit owner commands and do not enter that gate.
 
 ## Staged implementation
 
-Implementation checkpoint on this branch: stages 1--3 use the generic owner
-and evaluator, and stage 4 uses the configured finite-phase Gibbs formulation
-for neutral and charged systems. The retained specialized homogeneous and
-bubble entry points remain temporarily callable because downstream MEA work
-still imports them; their thermodynamic and Regression ownership has already
-moved behind GREPE. Removing those names is a coordinated downstream cutover,
-not part of the neutral-LLE numerical claim.
+The generic GREPE owner and configured finite-phase Gibbs formulation remain
+the Equilibrium authority. Native Regression compiles only the admitted,
+anchored local D-034/D-035 slices; later formulations require their own
+implementation issue and numerical evidence.
 
-1. **Generic seam and schema.** Add role-based request/result types, strict
-   loaders, phase-aware reaction preflight, generic evaluator protocol, exact
-   evaluated-row table, authority-neutral candidate export, and unambiguous
-   `best_usable_start` optimizer vocabulary. Retain current implemented algorithms
-   as evidence, not alternate public owners.
+1. **Generic seam and schema.** Role-based request/result types, strict
+   loaders, phase-aware reaction preflight, and the generic evaluator protocol
+   are retained. Campaign tables and candidate export remain outside Engine
+   Regression.
 2. **Reactive bubble first.** Route the D-035 full nonideal-vapor bubble solve
    through the evolved public owner and generic evaluator. Prove identical
    physical values, certificates, and exact Jacobians. Cut MEA pressure work to
-   `y_i P` and retire the reduced liquid-fugacity tracer guidance and family-
-   specific Regression dispatch.
+   `y_i P`; family-specific Regression dispatch is retired.
 3. **Homogeneous reaction.** Route the D-034 fixed-T,P owner through the same
    finite-phase compiler and evaluator, preserve its source-reference and
    local-branch evidence, then remove its specialized public route.
