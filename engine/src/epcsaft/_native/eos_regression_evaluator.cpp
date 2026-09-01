@@ -159,195 +159,38 @@ bool ends_with(const std::string& value, const char* suffix) {
         && value.compare(value.size() - length, length, suffix) == 0;
 }
 
-bool starts_with(const std::string& value, const char* prefix) {
-    const std::size_t length = std::char_traits<char>::length(prefix);
-    return value.size() >= length && value.compare(0, length, prefix) == 0;
-}
-
-enum class EosParameterKind {
-    Dimensionless,
-    SegmentDiameter,
-    SegmentDiameterExponent,
-    DispersionEnergyOverK,
-    AssociationEnergyOverK,
-    PairDispersionSlope,
-    ReactionCorrelation,
-    TemperaturePolynomialCoefficient,
-};
-
-EosParameterKind resolved_parameter_kind(
-    const NativeActiveCoordinate& coordinate
-) {
-    const auto& identity = coordinate.identity;
-    const auto& family = coordinate.family;
-    const auto family_mismatch = [] {
-        throw std::invalid_argument(
-            "EOS active parameter family does not match its identity");
-    };
-    if (ends_with(identity, "/segment_count")) {
-        if (family != "segment_count") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (ends_with(identity, "/segment_diameter")) {
-        if (family != "segment_diameter") {
-            family_mismatch();
-        }
-        return EosParameterKind::SegmentDiameter;
-    }
-    if (identity.find("/segment_diameter/") != std::string::npos) {
-        if (ends_with(identity, "/exponent_coefficient")) {
-            if (family != "exponential_temperature_coefficient") {
-                family_mismatch();
-            }
-            return EosParameterKind::SegmentDiameterExponent;
-        }
-        if (ends_with(identity, "/constant") || ends_with(identity, "/amplitude")) {
-            if (family != "segment_diameter") {
-                family_mismatch();
-            }
-            return EosParameterKind::SegmentDiameter;
-        }
-    }
-    if (ends_with(identity, "/dispersion_energy_over_k")) {
-        if (family != "dispersion_energy_over_k") {
-            family_mismatch();
-        }
-        return EosParameterKind::DispersionEnergyOverK;
-    }
-    if (ends_with(identity, "/born_diameter")) {
-        if (family != "born_diameter") {
-            family_mismatch();
-        }
-        return EosParameterKind::SegmentDiameter;
-    }
-    if (ends_with(identity, "/relative_permittivity")
-        || ends_with(identity, "/relative_permittivity/constant")) {
-        if (family != "relative_permittivity") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (identity.find("/relative_permittivity/term-") != std::string::npos
-        && ends_with(identity, "/coefficient")) {
-        constexpr char prefix[] = "temperature_polynomial_coefficient_";
-        if (!starts_with(family, prefix)
-            || family.size() == sizeof(prefix) - 1
-            || !std::all_of(family.begin() + (sizeof(prefix) - 1), family.end(),
-                            [](char value) { return value >= '0' && value <= '9'; })) {
-            family_mismatch();
-        }
-        return EosParameterKind::TemperaturePolynomialCoefficient;
-    }
-    if (ends_with(identity, "/solvation_factor")
-        || ends_with(identity, "/solvation_factor/constant")) {
-        if (family != "solvation_factor") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (ends_with(identity, "/k_ij/reciprocal_temperature_slope")) {
-        if (family != "k_ij_reciprocal_temperature_slope") {
-            family_mismatch();
-        }
-        return EosParameterKind::PairDispersionSlope;
-    }
-    if (ends_with(identity, "/k_ij")) {
-        if (family != "k_ij") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (ends_with(identity, "/l_ij")) {
-        if (family != "l_ij") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (ends_with(identity, "/k_hb_ij")) {
-        if (family != "k_hb_ij") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (ends_with(identity, "/energy_over_k")) {
-        if (family != "association_energy_over_k") {
-            family_mismatch();
-        }
-        return EosParameterKind::AssociationEnergyOverK;
-    }
-    if (ends_with(identity, "/volume")) {
-        if (family != "association_volume") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (identity == "model/relative_permittivity/ion_fraction_suppression_coefficient") {
-        if (family != "ion_fraction_suppression_coefficient") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (identity == "model/relative_permittivity/ionic_region_relative_permittivity") {
-        if (family != "ionic_region_relative_permittivity") {
-            family_mismatch();
-        }
-        return EosParameterKind::Dimensionless;
-    }
-    if (starts_with(identity, "reaction:")) {
-        if (family != "reaction_correlation") {
-            family_mismatch();
-        }
-        return EosParameterKind::ReactionCorrelation;
-    }
-    throw std::invalid_argument("unsupported EOS active parameter identity");
-}
-
-std::vector<EosParameterKind> resolved_parameter_kinds(
-    const std::vector<NativeActiveCoordinate>& coordinates
-) {
-    std::vector<EosParameterKind> result;
-    result.reserve(coordinates.size());
-    for (const auto& coordinate : coordinates) {
-        result.push_back(resolved_parameter_kind(coordinate));
-    }
-    return result;
-}
-
 std::vector<std::string> canonical_parameter_units(
     const std::vector<NativeActiveCoordinate>& coordinates
 ) {
-    const auto kinds = resolved_parameter_kinds(coordinates);
     std::vector<std::string> result;
     result.reserve(coordinates.size());
-    for (std::size_t index = 0; index < coordinates.size(); ++index) {
-        const auto& coordinate = coordinates[index];
-        switch (kinds[index]) {
-        case EosParameterKind::SegmentDiameter:
+    for (const auto& coordinate : coordinates) {
+        const auto& family = coordinate.family;
+        if (family == "segment_diameter" || family == "born_diameter") {
             result.push_back("angstrom");
-            break;
-        case EosParameterKind::SegmentDiameterExponent:
-            result.push_back("1 / kelvin");
-            break;
-        case EosParameterKind::DispersionEnergyOverK:
-        case EosParameterKind::AssociationEnergyOverK:
-        case EosParameterKind::PairDispersionSlope:
+        } else if (family == "dispersion_energy_over_k"
+                   || family == "association_energy_over_k"
+                   || family == "k_ij_reciprocal_temperature_slope") {
             result.push_back("kelvin");
-            break;
-        case EosParameterKind::TemperaturePolynomialCoefficient:
-            result.push_back("1 / kelvin ** " + coordinate.family.substr(35));
-            break;
-        case EosParameterKind::ReactionCorrelation: {
+        } else if (family == "exponential_temperature_coefficient") {
+            result.push_back("1 / kelvin");
+        } else if (family.rfind("temperature_polynomial_coefficient_", 0) == 0) {
+            result.push_back("1 / kelvin ** " + family.substr(35));
+        } else if (family == "reaction_correlation") {
             const auto& identity = coordinate.identity;
             result.push_back(ends_with(identity, "_per_k") ? "1 / kelvin"
                 : ends_with(identity, "_k") ? "kelvin"
                 : "dimensionless");
-            break;
-        }
-        case EosParameterKind::Dimensionless:
+        } else if (family == "segment_count" || family == "relative_permittivity"
+                   || family == "solvation_factor" || family == "association_volume"
+                   || family == "k_ij" || family == "l_ij" || family == "k_hb_ij"
+                   || family == "ion_fraction_suppression_coefficient"
+                   || family == "ionic_region_relative_permittivity"
+                   || family == "ion_specific_suppression_coefficient"
+                   || family == "correlation_integral_parameter") {
             result.push_back("dimensionless");
-            break;
+        } else {
+            throw std::invalid_argument("unsupported EOS parameter unit family");
         }
     }
     return result;
@@ -356,7 +199,6 @@ std::vector<std::string> canonical_parameter_units(
 std::vector<std::string> canonical_parameter_bases(
     const std::vector<NativeActiveCoordinate>& coordinates
 ) {
-    static_cast<void>(resolved_parameter_kinds(coordinates));
     return std::vector<std::string>(coordinates.size(), "physical");
 }
 
@@ -365,7 +207,6 @@ std::vector<NativeActiveCoordinate> validated_active_parameters(
     std::vector<NativeActiveCoordinate> coordinates
 ) {
     static_cast<void>(model.with_active_coordinates(coordinates));
-    static_cast<void>(resolved_parameter_kinds(coordinates));
     return coordinates;
 }
 
