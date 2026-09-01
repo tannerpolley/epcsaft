@@ -19,6 +19,7 @@ export PATH="$repo_root/.venv/bin:$PATH"
 read -r -a cc_command <<<"${CC:-cc}"
 read -r -a cxx_command <<<"${CXX:-c++}"
 for required_command in uv meson cmake ninja patchelf pkg-config sha256sum readlink flock xargs \
+    dpkg dpkg-query ldd mktemp \
     "${cc_command[0]}" "${cxx_command[0]}"; do
     if ! command -v "$required_command" >/dev/null 2>&1; then
         echo "missing required command: $required_command" >&2
@@ -41,6 +42,86 @@ check_native_dependency() {
 
 check_native_dependency ipopt 3.11.9
 check_native_dependency eigen3 3.4
+
+ceres_probe_dir="$(mktemp -d)"
+trap 'rm -rf -- "$ceres_probe_dir"' EXIT
+printf '%s\n' \
+    'cmake_minimum_required(VERSION 3.25)' \
+    'project(epcsaft_ceres_identity LANGUAGES CXX)' \
+    'find_package(Ceres 2.2 CONFIG REQUIRED)' \
+    'if(Ceres_VERSION VERSION_LESS 2.2 OR NOT Ceres_VERSION VERSION_LESS 2.3)' \
+    '  message(FATAL_ERROR "Ceres 2.2.x is required, found ${Ceres_VERSION}")' \
+    'endif()' \
+    'get_target_property(ceres_includes Ceres::ceres INTERFACE_INCLUDE_DIRECTORIES)' \
+    'get_target_property(ceres_links Ceres::ceres INTERFACE_LINK_LIBRARIES)' \
+    'get_target_property(ceres_features Ceres::ceres INTERFACE_COMPILE_FEATURES)' \
+    'get_target_property(ceres_configurations Ceres::ceres IMPORTED_CONFIGURATIONS)' \
+    'set(ceres_locations "")' \
+    'foreach(configuration IN LISTS ceres_configurations)' \
+    '  get_target_property(location Ceres::ceres IMPORTED_LOCATION_${configuration})' \
+    '  list(APPEND ceres_locations "${location}")' \
+    'endforeach()' \
+    'file(WRITE "${CMAKE_BINARY_DIR}/ceres-identity.txt"' \
+    '  "version=${Ceres_VERSION}\nconfig=${Ceres_DIR}\nincludes=${ceres_includes}\n"' \
+    '  "links=${ceres_links}\nfeatures=${ceres_features}\n"' \
+    '  "configurations=${ceres_configurations}\nlocations=${ceres_locations}\n")' \
+    >"$ceres_probe_dir/CMakeLists.txt"
+cmake -S "$ceres_probe_dir" -B "$ceres_probe_dir/build" >/dev/null
+ceres_identity="$ceres_probe_dir/build/ceres-identity.txt"
+[[ -f "$ceres_identity" ]] || { echo "Ceres identity probe did not produce metadata" >&2; exit 1; }
+ceres_version="$(sed -n 's/^version=//p' "$ceres_identity")"
+ceres_config_dir="$(sed -n 's/^config=//p' "$ceres_identity")"
+ceres_include_dirs="$(sed -n 's/^includes=//p' "$ceres_identity")"
+ceres_locations="$(sed -n 's/^locations=//p' "$ceres_identity")"
+ceres_library=""
+while IFS= read -r candidate; do
+    if [[ -f "$candidate" ]]; then
+        ceres_library="$(readlink -f "$candidate")"
+        break
+    fi
+done < <(tr ';' '\n' <<<"$ceres_locations")
+[[ -n "$ceres_library" ]] || { echo "Ceres::ceres has no resolved imported library" >&2; exit 1; }
+ceres_include_root=""
+while IFS= read -r candidate; do
+    if [[ -f "$candidate/ceres/version.h" ]]; then
+        ceres_include_root="$(readlink -f "$candidate")"
+        break
+    fi
+done < <(tr ';' '\n' <<<"$ceres_include_dirs")
+[[ -n "$ceres_include_root" ]] || { echo "Ceres::ceres has no resolved header tree" >&2; exit 1; }
+[[ -d "$ceres_config_dir" ]] || { echo "Ceres package metadata is unavailable" >&2; exit 1; }
+for package in libceres-dev libceres4t64; do
+    dpkg-query -W -f='${Status}\n' "$package" 2>/dev/null | grep -qx 'install ok installed' || {
+        echo "missing Ubuntu Ceres package: $package" >&2
+        exit 1
+    }
+done
+ceres_dev_version="$(dpkg-query -W -f='${Version}' libceres-dev)"
+ceres_runtime_version="$(dpkg-query -W -f='${Version}' libceres4t64)"
+ceres_architecture="$(dpkg --print-architecture)"
+if [[ "$ceres_dev_version" != "$ceres_runtime_version" ]] \
+    || [[ "$(dpkg-query -W -f='${Architecture}' libceres-dev)" != "$ceres_architecture" ]] \
+    || [[ "$(dpkg-query -W -f='${Architecture}' libceres4t64)" != "$ceres_architecture" ]]; then
+    echo "Ubuntu Ceres development/runtime package identity is inconsistent" >&2
+    exit 1
+fi
+dpkg-query -S "$ceres_config_dir/CeresConfig.cmake" | grep -Eq '^libceres-dev(:[^:]+)?:' || {
+    echo "Ceres package metadata is not owned by libceres-dev" >&2
+    exit 1
+}
+dpkg-query -S "$ceres_include_root/ceres/version.h" | grep -Eq '^libceres-dev(:[^:]+)?:' || {
+    echo "Ceres headers are not owned by libceres-dev" >&2
+    exit 1
+}
+dpkg-query -S "$ceres_library" | grep -Eq '^libceres4t64(:[^:]+)?:' || {
+    echo "Ceres imported library is not owned by libceres4t64" >&2
+    exit 1
+}
+ceres_runtime_links="$(ldd "$ceres_library")"
+if grep -q '=> not found' <<<"$ceres_runtime_links"; then
+    echo "Ceres has unresolved runtime libraries" >&2
+    exit 1
+fi
 
 fingerprint_tree() {
     local label="$1"
@@ -151,6 +232,20 @@ PY
     done
     fingerprint_tree eigen-headers "$(pkg-config --variable=prefix eigen3)/include/eigen3/Eigen"
     fingerprint_tree ipopt-headers "$(pkg-config --variable=includedir ipopt)"
+    printf 'ceres-imported-target=%s\n' "$(sha256sum "$ceres_identity" | cut -d ' ' -f 1)"
+    printf 'ceres-version=%s\n' "$ceres_version"
+    printf 'ceres-packages=%s\n' "$({
+        dpkg-query -W -f='${Package}=${Version}\n' libceres-dev libceres4t64
+    } | sort | tr '\n' ' ')"
+    fingerprint_tree ceres-cmake-metadata "$ceres_config_dir"
+    fingerprint_tree ceres-headers "$ceres_include_root/ceres"
+    printf 'ceres-library=%s:%s\n' "$(basename "$ceres_library")" \
+        "$(sha256sum "$ceres_library" | cut -d ' ' -f 1)"
+    while IFS= read -r library_path; do
+        library_path="$(readlink -f "$library_path")"
+        printf 'ceres-runtime-library=%s:%s\n' "$(basename "$library_path")" \
+            "$(sha256sum "$library_path" | cut -d ' ' -f 1)"
+    done < <(awk '/=> \/[^ ]+/{print $3}' <<<"$ceres_runtime_links" | sort -u)
     for library in ipopt; do
         library_path="$("${cxx_command[@]}" -print-file-name="lib$library.so")"
         [[ "$library_path" != "lib$library.so" && -f "$library_path" ]] || {

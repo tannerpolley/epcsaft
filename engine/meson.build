@@ -22,6 +22,12 @@ release_link_args = get_option('buildtype') == 'release' \
 threads_dep = dependency('threads')
 ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '>=3.11.9')
 eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4')
+ceres_dep = dependency(
+  'Ceres',
+  method: 'cmake',
+  modules: ['Ceres::ceres'],
+  version: ['>=2.2.0', '<2.3.0'],
+)
 pybind11_include = run_command(
   py,
   '-c',
@@ -143,15 +149,32 @@ equilibrium_core = static_library(
   pic: true,
 )
 
+interfaces_inc = include_directories('cpp/interfaces')
+regression_private_inc = include_directories('cpp/regression')
+ceres_kernel_source = files('cpp/regression/ceres_least_squares.cpp')
+cpp.compiles(
+  ceres_kernel_source[0],
+  name: 'owner-neutral Ceres kernel',
+  args: native_warnings + [
+    '-I' + meson.current_source_dir() / 'cpp/interfaces',
+    '-I' + meson.current_source_dir() / 'cpp/regression',
+  ],
+  dependencies: [ceres_dep, eigen_dep],
+  required: true,
+)
 regression_core = static_library(
   'epcsaft_engine_regression_core',
   'src/epcsaft/regression/native/fit_core.cpp',
+  ceres_kernel_source,
   cpp_args: native_warnings,
   dependencies: [
+    ceres_dep,
     ipopt_dep,
     eigen_dep,
   ],
   include_directories: [
+    interfaces_inc,
+    regression_private_inc,
     equilibrium_inc,
     eos_inc,
     include_directories('src/epcsaft/regression/native'),
