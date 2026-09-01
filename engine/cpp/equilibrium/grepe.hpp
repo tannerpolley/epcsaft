@@ -182,6 +182,19 @@ struct GrepeLocalBlocks final {
     const GrepeRequest& request
 );
 
+// These two entry points are the only declared reactive routes used by the
+// private owner evaluator.  Each accepts one admitted topology only.
+[[nodiscard]] GrepeResult solve_declared_homogeneous_reactive(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+);
+
+[[nodiscard]] GrepeResult solve_declared_bubble_vle(
+    const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
+    const GrepeRequest& request
+);
+
 [[nodiscard]] GrepeLocalStructure compile_grepe_local_structure(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,

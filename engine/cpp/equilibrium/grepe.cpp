@@ -3414,6 +3414,67 @@ GrepeResult solve_grepe(
     }
 }
 
+GrepeResult solve_declared_homogeneous_reactive(
+    const epcsaft::NativeModel& model,
+    const GrepeRequest& request
+) {
+    if (request.temperature.solved || request.pressure.solved
+        || request.boundary.has_value() || request.directions.has_value()
+        || request.phases.size() != 1 || !request.phases[0].finite
+        || (request.feed.has_value() && request.feed->affine)) {
+        return unsupported("declared homogeneous reactive topology is unavailable");
+    }
+    try {
+        return solve_finite_result(model, request);
+    } catch (const GrepeFailure& failure) {
+        return failed_result(
+            request,
+            "finite",
+            "fixed_TP_single_finite_reacting_phase",
+            failure
+        );
+    }
+}
+
+GrepeResult solve_declared_bubble_vle(
+    const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
+    const GrepeRequest& request
+) {
+    const auto finite_phase = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return phase.finite;
+        }
+    );
+    const auto incipient_phase = std::find_if(
+        request.phases.begin(), request.phases.end(), [](const GrepePhase& phase) {
+            return !phase.finite;
+        }
+    );
+    if (request.temperature.solved || !request.pressure.solved
+        || request.boundary.has_value() || request.directions.has_value()
+        || request.feed.has_value() || request.phases.size() != 2
+        || finite_phase == request.phases.end()
+        || incipient_phase == request.phases.end()
+        || finite_phase->role != PhaseRole::Liquid
+        || incipient_phase->role != PhaseRole::Vapor) {
+        return unsupported("declared bubble reactive topology is unavailable");
+    }
+    try {
+        return incipient_result(
+            request,
+            solve_incipient_pressure(model, incipient_model, request)
+        );
+    } catch (const GrepeFailure& failure) {
+        return failed_result(
+            request,
+            "finite_incipient",
+            "fixed_T_one_finite_liquid_one_incipient_vapor",
+            failure
+        );
+    }
+}
+
 GrepeLocalStructure compile_grepe_local_structure(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel&,

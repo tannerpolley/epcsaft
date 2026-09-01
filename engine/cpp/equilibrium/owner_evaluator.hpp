@@ -1,0 +1,129 @@
+#pragma once
+
+#include "../interfaces/owner_evaluator.hpp"
+#include "grepe.hpp"
+
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace epcsaft_engine::equilibrium {
+
+struct EvaluatorParameter final {
+    std::string identity;
+    std::string unit;
+    std::string basis;
+};
+
+struct EvaluatorOutput final {
+    std::string identity;
+    std::string unit;
+    std::string basis;
+};
+
+struct EvaluatorPhase final {
+    std::string identity;
+    std::string role;
+    std::string support;
+    std::vector<std::size_t> support_indices;
+    bool finite;
+};
+
+struct EquilibriumEvaluatorSetup final {
+    std::string owner_kind;
+    std::string parameter_baseline_digest;
+    std::string source_spec_digest;
+    std::string parameter_contract_fingerprint;
+    std::string evaluator_fingerprint;
+    std::string derivative_provenance;
+    std::string topology_policy;
+    std::string branch_policy;
+    std::string conditioning_policy;
+    std::vector<EvaluatorParameter> active_parameters;
+    std::vector<EvaluatorOutput> output_rows;
+};
+
+struct EquilibriumEvaluatorCompilation;
+
+struct EquilibriumEvaluatorSidecar final {
+    std::string owner_kind;
+    std::string parameter_baseline_digest;
+    std::string source_spec_digest;
+    std::vector<std::string> active_parameter_identities;
+    std::vector<std::string> active_parameter_units;
+    std::vector<std::string> active_parameter_bases;
+    std::vector<std::string> output_row_identities;
+    std::vector<std::string> output_row_units;
+    std::vector<std::string> output_row_bases;
+    std::string derivative_provenance;
+    std::vector<EvaluatorPhase> phases;
+    std::string temperature_role;
+    std::string pressure_role;
+    std::vector<std::string> reaction_identities;
+    std::vector<std::string> reaction_phase_identities;
+    std::string topology_policy;
+    std::string branch_policy;
+    std::string conditioning_policy;
+    std::string parameter_contract_fingerprint;
+    std::string evaluator_fingerprint;
+};
+
+class EquilibriumOwnerEvaluator final
+    : public interfaces::OwnerEvaluator {
+public:
+    [[nodiscard]] std::size_t parameter_count() const noexcept override;
+    [[nodiscard]] std::size_t output_count() const noexcept override;
+    [[nodiscard]] const std::string& parameter_contract_fingerprint()
+        const noexcept override;
+    [[nodiscard]] const std::string& evaluator_fingerprint()
+        const noexcept override;
+    [[nodiscard]] interfaces::EvaluationResult evaluate(
+        const std::vector<double>& physical_parameters,
+        bool exact_jacobian
+    ) const noexcept override;
+
+    [[nodiscard]] const EquilibriumEvaluatorSidecar& sidecar() const noexcept {
+        return sidecar_;
+    }
+
+private:
+    friend EquilibriumEvaluatorCompilation compile_equilibrium_owner(
+        const epcsaft::NativeModel&,
+        const epcsaft::NativeModel&,
+        GrepeRequest,
+        EquilibriumEvaluatorSetup
+    );
+
+    EquilibriumOwnerEvaluator(
+        epcsaft::NativeModel model,
+        epcsaft::NativeModel incipient_model,
+        GrepeRequest request,
+        std::vector<epcsaft::NativeActiveCoordinate> active_parameters,
+        std::vector<epcsaft::NativeActiveCoordinate> incipient_parameters,
+        EquilibriumEvaluatorSidecar sidecar,
+        bool bubble_vle
+    );
+
+    epcsaft::NativeModel model_;
+    epcsaft::NativeModel incipient_model_;
+    GrepeRequest request_;
+    std::vector<epcsaft::NativeActiveCoordinate> active_parameters_;
+    std::vector<epcsaft::NativeActiveCoordinate> incipient_parameters_;
+    EquilibriumEvaluatorSidecar sidecar_;
+    bool bubble_vle_;
+};
+
+struct EquilibriumEvaluatorCompilation final {
+    std::shared_ptr<const EquilibriumOwnerEvaluator> evaluator;
+    EquilibriumEvaluatorSidecar sidecar;
+};
+
+[[nodiscard]] EquilibriumEvaluatorCompilation compile_equilibrium_owner(
+    const epcsaft::NativeModel& model,
+    const epcsaft::NativeModel& incipient_model,
+    GrepeRequest request,
+    EquilibriumEvaluatorSetup setup
+);
+
+} // namespace epcsaft_engine::equilibrium
