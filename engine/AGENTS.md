@@ -1,8 +1,8 @@
 # Engine Directory Agent Contract
 
 Read root `AGENTS.md`, `docs/scientific/README.md`,
-`docs/scientific/CONTEXT.md`, and `CONTEXT.md` before material work. For CAP work, also read
-`docs/agents/issue-tracker.md` before selecting or executing a leaf.
+`docs/scientific/CONTEXT.md`, `CONTEXT.md`, and the relevant accepted ADR
+before material work.
 
 This directory owns the sole `epcsaft` distribution and its public
 `epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression` modules. Keep

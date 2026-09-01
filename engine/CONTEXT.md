@@ -1,7 +1,5 @@
 # Engine Context
 
-`governance_doctrine_revision: 26`
-
 `engine/` is the sole runtime owner inside `tannerpolley/ePC-SAFT`. It
 builds one Python 3.13 distribution, `epcsaft`, containing EOS, equilibrium,
 and regression. All native modules share one Meson graph and wheel.
