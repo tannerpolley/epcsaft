@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from typing import Any, Literal, cast
 
@@ -2581,6 +2582,80 @@ def _native_general_reactive_equilibrium_inputs(
     )
 
 
+def compile_regression_evaluator(
+    specification: Mapping[str, object],
+    active_parameters: epcsaft.ActiveParameterSet,
+) -> object:
+    """Compile one anchored D-034/D-035 GREPE owner for native regression."""
+
+    if not isinstance(specification, Mapping):
+        raise TypeError("equilibrium regression specification must be a mapping")
+    model = specification.get("model")
+    problem = specification.get("problem")
+    if not isinstance(model, epcsaft.Mixture):
+        raise TypeError("equilibrium regression specification requires an epcsaft.Mixture")
+    if not isinstance(problem, GeneralReactiveEquilibriumProblem):
+        raise TypeError(
+            "equilibrium regression specification requires a GeneralReactiveEquilibriumProblem"
+        )
+    if not isinstance(active_parameters, epcsaft.ActiveParameterSet):
+        raise TypeError("active_parameters must be an ActiveParameterSet")
+    if problem.intensive_boundaries:
+        raise ValueError("equilibrium regression owners do not compile intensive boundaries")
+    if problem.continuation_state is None:
+        raise ValueError("equilibrium regression owners require a declared continuation anchor")
+    if any(phase.amount_role == "finite" and phase.start is None for phase in problem.phases):
+        raise ValueError("equilibrium regression owners require starts for every finite phase")
+    described = _describe_general_reactive_equilibrium(model, problem, active_parameters)
+    if isinstance(described, str):
+        raise ValueError(described)  # noqa: TRY004 - an unsupported value, not a wrong type
+    descriptor, owner = described
+    if descriptor.formulation not in {"finite", "finite_incipient"}:
+        raise ValueError("only local D-034/D-035 equilibrium owners are supported")
+    incipient_model, native_problem, source_fingerprint = (
+        _native_general_reactive_equilibrium_inputs(
+            model, problem, active_parameters=active_parameters
+        )
+    )
+    setup = {
+        "owner_kind": (
+            "D-035.fixed_topology_reactive_bubble_vle"
+            if descriptor.formulation == "finite_incipient"
+            else "D-034.fixed_TP_homogeneous_reactive"
+        ),
+        "parameter_baseline_digest": model.parameter_fingerprint,
+        "source_spec_digest": source_fingerprint,
+        "anchor_identity": descriptor.problem_fingerprint,
+        "anchor_receipt_identity": descriptor.reference_fingerprint,
+        "derivative_provenance": "equilibrium-solved-state-exact-total-derivative",
+        "topology_policy": "declared-topology-only",
+        "branch_policy": "immutable-declared-local-branch",
+        "conditioning_policy": "typed-refusal-on-singular-or-ill-conditioned-sensitivity",
+        "active_parameters": tuple(
+            {
+                "identity": coordinate.identity,
+                "unit": coordinate.unit,
+                "basis": "physical",
+            }
+            for coordinate in active_parameters.coordinates
+        ),
+        "output_rows": tuple(
+            {"identity": output.identity, "unit": output.unit, "basis": output.basis}
+            for output in owner.rows
+        ),
+    }
+    native = _core._compile_equilibrium_regression_evaluator(
+        model._native_model(active_parameters),
+        incipient_model,
+        native_problem,
+        source_fingerprint,
+        setup,
+    )
+    from ..regression._api import CompiledEvaluator
+
+    return CompiledEvaluator.from_native(native)
+
+
 def _map_native_general_reactive_equilibrium(
     model: epcsaft.Mixture,
     problem: GeneralReactiveEquilibriumProblem,
@@ -2940,6 +3015,7 @@ def validate_general_reactive_equilibrium_receipt(
 
 
 __all__ = (
+    "EosModel",
     "EquilibriumOutput",
     "FinitePhaseStart",
     "Fixed",
@@ -2950,7 +3026,6 @@ __all__ = (
     "GeneralReactiveEquilibriumResult",
     "IdealGasModel",
     "IntensiveBoundary",
-    "EosModel",
     "ReactivePhase",
     "Solved",
     "general_reactive_equilibrium_descriptor",

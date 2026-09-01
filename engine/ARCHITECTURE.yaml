@@ -1,6 +1,6 @@
 version: 11
 status: unified-monorepo-active
-governance_doctrine_revision: 25
+governance_doctrine_revision: 26
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -81,19 +81,17 @@ owners:
       admission: governance_D-037_proven_core
   regression:
     public_module: epcsaft.regression
-    parameter_fit: epcsaft.regression.ParameterFit
-    schema_owner: src/epcsaft/regression/_model.py
-    resolution: src/epcsaft/regression/_resolve.py
-    fit: epcsaft.regression.fit
-    result: epcsaft.regression.FitResult
-    native_fit: src/epcsaft/regression/native/fit_core.cpp
-    native_binding: src/epcsaft/regression/native/fit_pybind.cpp
-    native_sources: src/epcsaft/regression/native
-    optimizer: ipopt
+    least_squares: epcsaft.regression.least_squares
+    curve_fit: epcsaft.regression.curve_fit
+    result: epcsaft.regression.LeastSquaresResult
+    native_fit: cpp/regression/ceres_least_squares.cpp
+    native_binding: src/epcsaft/_native/regression_pybind.cpp
+    native_sources: [cpp/regression, src/epcsaft/_native/regression_pybind.cpp]
+    optimizer: ceres
     scientific_values: owner_provided_only
-    experiment_kinds: [direct_eos, grepe]
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, grepe_declared_topology]
-    grepe_transfer_owner: src/epcsaft/regression/_equilibrium_owner.py
+    experiment_kinds: [eos, equilibrium]
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, D-034, D-035]
+    grepe_transfer_owner: cpp/equilibrium/owner_evaluator.cpp
     grepe_request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
     grepe_native_owner: cpp/equilibrium/grepe.cpp
     grepe_feed_null_source: reaction_system.feed_amounts_mol
@@ -110,9 +108,9 @@ owners:
       extension: _core
     permitted_internal_links:
       equilibrium_core: [eos_core]
-      regression_core: [eos_core, equilibrium_core]
+      regression_core: []
       extension: [eos_core, equilibrium_core, regression_core]
-    binding_sources: [src/epcsaft/_native, cpp/equilibrium, src/epcsaft/regression/native/fit_pybind.cpp]
+    binding_sources: [src/epcsaft/_native, cpp/equilibrium, cpp/regression]
     internal_types: direct_cpp
     python_inside_static_libraries: forbidden
     private_transport_abi: forbidden
@@ -121,9 +119,8 @@ owners:
     installed_headers: forbidden
     state_lifetimes:
       public_grepe_compilation: once_per_request
-      regression_grepe_structure: once_per_distinct_concrete_experiment_structure
-      regression_source_values: once_per_exact_optimizer_coordinate
-      full_space_accepted_state: finalized_once_after_convergence
+      regression_owner_compilation: once_per_distinct_concrete_evaluator
+      regression_owner_values: once_per_exact_optimizer_coordinate
       thread_and_tape_policy: measured_no_change_issue_86_comment_5442040189
 
 canonical_plans:

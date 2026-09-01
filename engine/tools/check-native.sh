@@ -37,4 +37,4 @@ run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
     -quiet \
-    '(src/epcsaft/_native|src/epcsaft/regression/native|cpp/equilibrium)/.*\.cpp$'
+    '(src/epcsaft/_native|cpp/regression|cpp/equilibrium)/.*\.cpp$'

@@ -3,27 +3,28 @@ Kind: computational-architecture
 
 - Status: accepted
 - Date: 2026-08-27
-- Amended: 2026-08-31 for issue #156
+- Amended: 2026-09-01 for issues #156 and #153
 
 ## Context
 
 The Engine formerly separated EOS and Equilibrium across private extension
 modules and transported EOS operations through a C table and capsule. The
-accepted direct-C++ cutover removed that surface, then made the native
-Equilibrium and Regression libraries own their complete calculations. Retaining
-separate extensions, a renamed function table, a public C++ ABI, iterative
-Python callbacks, or generated documentation as authority would recreate the
+accepted direct-C++ cutover removed that surface. Regression then carried a
+second thermodynamic/IPOPT lifecycle beside its owners. Retaining separate
+extensions, a renamed function table, a public C++ ABI, iterative Python
+callbacks, or generated documentation as authority would recreate the
 displaced ownership.
 
 ## Decision
 
 `epcsaft._core` is the sole Python/native extension boundary. Python validates
-and maps one public request, crosses that boundary once, and maps one final
+and maps one owner request, crosses that boundary once, and maps one final
 result. The Python-free native libraries are `eos_core`, `equilibrium_core`,
-and `regression_core`. Equilibrium may consume EOS; Regression may consume EOS
-and Equilibrium; `_core` consumes all three. Reverse and sibling edges are
-forbidden. Python C-API, pybind11, GIL, capsule, private-transport ABI, and
-iterative Python callback edges are forbidden inside the three libraries.
+and the Ceres-only `regression_core`. Equilibrium may consume EOS;
+Regression consumes only `cpp/interfaces/owner_evaluator.hpp`; `_core` consumes
+all three. Reverse and sibling edges are forbidden. Python C-API, pybind11,
+GIL, capsule, private-transport ABI, and iterative Python callback edges are
+forbidden inside the three libraries.
 
 Within that graph, immutable `epcsaft::NativeModel` is the sole EOS evaluation
 owner. `eos_core` validates EOS domains and metadata, selects pure, neutral,
@@ -35,14 +36,12 @@ certification, and solved-state sensitivity calculations; it does not own a
 second EOS façade, route selector, physical projection, or mutable EOS counter.
 
 The compiled GREPE request structure is source-linked and lives for one public
-solve or one distinct concrete Regression experiment structure. Retained
-source-block structure lives with that compiled Regression experiment;
-source-standard-state values and partials are evaluated once per exact optimizer
-coordinate. Direct physical parameter coordinates, bounds, and diagnostics
-remain the optimizer representation. Solver state lives within its solve;
-simultaneous full-space Regression retains each accepted experiment state and
-finalizes its values, sensitivities, certificates, and receipt once after
-convergence. Source files remain the concrete lifetime authority.
+solve or one distinct concrete Regression evaluator. Owner source values and
+partials are evaluated once per exact optimizer coordinate. Direct physical
+parameter coordinates, bounds, and diagnostics remain the optimizer
+representation. Solver state lives within its solve, and a fresh final owner
+value/Jacobian validation bypasses trial caches. Source files remain the
+concrete lifetime authority.
 
 HELD and HELD2 remain distinct retained phase-discovery algorithms inside the
 one Equilibrium owner. No diagram, API page, or other generated view may merge,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass, replace
@@ -11,6 +10,7 @@ import pint
 
 import epcsaft._core as _native_core
 
+from ._canonical import _canonical_json
 from .eos import (
     EosError,
     _eos_error,
@@ -260,12 +260,7 @@ def source_reference_transfer(
         reference_fingerprint = (
             "sha256:"
             + hashlib.sha256(
-                json.dumps(
-                    payload,
-                    allow_nan=False,
-                    separators=(",", ":"),
-                    sort_keys=True,
-                ).encode("utf-8")
+                _canonical_json(payload).encode("utf-8")
             ).hexdigest()
         )
         value = _native_core.source_reference_transfer(

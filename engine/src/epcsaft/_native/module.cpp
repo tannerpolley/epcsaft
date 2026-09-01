@@ -1,5 +1,4 @@
 #include "eos.hpp"
-#include "fit_pybind.hpp"
 #include "phase_block.hpp"
 
 #include <pybind11/pybind11.h>
@@ -13,6 +12,7 @@ namespace py = pybind11;
 
 void bind_pure_saturation(py::module_& module);
 void bind_equilibrium(py::module_& module);
+void bind_regression(py::module_& module);
 
 PYBIND11_MODULE(_core, module) {
     py::class_<epcsaft::NativeDensityDiagnostics>(module, "NativeDensityDiagnostics")
@@ -372,5 +372,5 @@ PYBIND11_MODULE(_core, module) {
 
     bind_equilibrium(module);
     bind_pure_saturation(module);
-    bind_parameter_fit(module);
+    bind_regression(module);
 }

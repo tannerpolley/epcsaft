@@ -304,6 +304,83 @@ class ObservableBlock:
     saturation_branches: tuple[SaturationBranchEvidence, ...] = ()
 
 
+def compile_regression_evaluator(
+    specification: Mapping[str, Any],
+    active_parameters: ActiveParameterSet,
+) -> object:
+    """Compile one EOS observation specification into a native owner.
+
+    ``specification`` is deliberately a small mapping so source packets can
+    carry it without importing the runtime. It requires canonical ``family``,
+    state, and ``row_identities`` fields.
+    """
+
+    if not isinstance(specification, Mapping):
+        raise TypeError("EOS regression specification must be a mapping")
+    model = specification.get("model")
+    if not isinstance(model, _EosModel):
+        raise TypeError("EOS regression specification requires an epcsaft EOS model")
+    model._validate_active_parameters(active_parameters)
+    family = specification.get("family")
+    if family not in {"fixed-state", "pure-saturation"}:
+        raise ValueError("unsupported EOS regression family")
+    rows = tuple(cast(Iterable[str], specification.get("row_identities", ())))
+    if not rows:
+        raise ValueError("EOS regression specification requires row_identities")
+    temperature = specification.get("temperature_k")
+    if temperature is None:
+        raise ValueError("EOS regression specification requires temperature_k")
+    temperature_k = float(temperature)
+    if not math.isfinite(temperature_k):
+        raise ValueError("temperature must be finite")
+    from .regression._api import CompiledEvaluator
+
+    native_spec: dict[str, object] = {
+        "family": family,
+        "temperature_k": temperature_k,
+        "row_identities": rows,
+        "active_parameter_identities": active_parameters.identities,
+        "active_parameter_units": tuple(
+            coordinate.unit for coordinate in active_parameters.coordinates
+        ),
+        "active_parameter_bases": tuple("physical" for _ in active_parameters.coordinates),
+    }
+    if family == "fixed-state":
+        density = specification.get("molar_density_mol_m3")
+        if density is None:
+            raise ValueError("fixed-state EOS regression requires molar density")
+        native_spec["molar_density_mol_m3"] = float(density)
+        composition = specification.get("mole_fractions")
+        if composition is None:
+            raise ValueError("fixed-state EOS regression requires mole_fractions")
+        native_spec["mole_fractions"] = tuple(
+            float(value) for value in cast(Iterable[Any], composition)
+        )
+    source_payload = {
+        "family": family,
+        "temperature_k": temperature_k,
+        "molar_density_mol_m3": native_spec.get("molar_density_mol_m3"),
+        "mole_fractions": native_spec.get("mole_fractions"),
+        "rows": rows,
+    }
+    native_spec["source_spec_fingerprint"] = specification.get(
+        "source_spec_fingerprint", _native_identity_fingerprint("epcsaft.eos-regression-source-v1", source_payload)
+    )
+    native_spec["evaluator_fingerprint"] = specification.get(
+        "evaluator_fingerprint",
+        _native_identity_fingerprint(
+            "epcsaft.eos-regression-evaluator-v1",
+            {"source": native_spec["source_spec_fingerprint"], "rows": rows},
+        ),
+    )
+    native = _native_core._compile_eos_regression_evaluator(
+        model._native_model(active_parameters),
+        native_spec,
+        model._active_coordinates(active_parameters),
+    )
+    return CompiledEvaluator.from_native(native)
+
+
 def _accepted_observable_block(
     descriptor: ObservableDescriptor,
     state: ObservableState,

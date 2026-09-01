@@ -1,3 +1,4 @@
+from . import regression
 from ._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrial, NonEvaluableTrialCode
 from .eos import (
     DensityDiagnostics,
@@ -78,6 +79,7 @@ __all__ = (
     "State",
     "TransferFreeEnergy",
     "ValidityDomain",
+    "regression",
     "source_reference_transfer",
     "unit_registry",
 )

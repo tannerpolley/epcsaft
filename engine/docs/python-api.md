@@ -161,30 +161,28 @@ fallbacks.
 ## Regression
 
 ```python
-from epcsaft.regression import FitResult, ParameterFit, fit
+import epcsaft
+from epcsaft import regression
 
-specification = ParameterFit.from_json("parameter-fit.json")
-result: FitResult = fit(specification, base_path="campaign")
-candidate_parameters = result.to_parameters()
+owner = epcsaft.eos.compile_regression_evaluator(specification, active_parameters)
+result: regression.LeastSquaresResult = regression.least_squares(
+    (owner,), observations, active_parameters.values
+)
 ```
 
-`ParameterFit` declares one parameter document, model kind, active selectors,
-bounds, scales, ties, observations, source hashes, residuals, multistart policy,
-and optional optimizer controls. Defaults are 25 maximum iterations and `1e-6`
-function, gradient, and parameter stopping tolerances. `fit` resolves each
-observation against an owner descriptor, sends
-the owner's values and exact ordered Jacobian blocks through the private native
-Ipopt core, and returns every start without mutating the input parameters.
-Each start retains predictions, scaled residuals and Jacobians, rank and
-conditioning, active bounds, and typed owner-evaluation failures.
-`FitResult.to_parameters()` creates a new immutable candidate parameter
-document with fit provenance. It does not accept, promote, or adopt the values.
+EOS and Equilibrium own compilation of source-neutral observation descriptors;
+Regression receives only opaque native owners. `least_squares` and `curve_fit`
+use one Ceres core, release the GIL during native evaluation, and retain ordered
+predictions, discrepancy-weighted residuals, physical owner Jacobians, weighted
+optimizer-coordinate Jacobians, failures, resource counters, and covariance
+availability. Bounds, affine origins/scales, and residual scales are explicit
+caller inputs; no starts, topology, or thermodynamic callbacks are synthesized.
 
 Selectable coordinates include continuous component and association parameters
 and supported pair or model coefficients when the chosen owner output has the
-required exact derivative. Generic configured-equilibrium outputs use the same
-fit path; Regression does not select a phase topology or create a case-specific
-public route.
+required exact derivative. Equilibrium regression compilation is limited to
+anchored local D-034 and D-035 owners and refuses unsupported topologies before
+an optimizer is built.
 
 ## Native boundary
 

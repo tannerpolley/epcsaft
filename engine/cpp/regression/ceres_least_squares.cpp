@@ -2,6 +2,7 @@
 
 #include <ceres/ceres.h>
 #include <ceres/covariance.h>
+#include <Eigen/Dense>
 
 #include <algorithm>
 #include <cmath>
@@ -21,6 +22,11 @@ constexpr std::size_t kMaximumFailureReasonLength = 512;
 bool finite(const std::vector<double> &values) {
   return std::all_of(values.begin(), values.end(),
                      [](double value) { return std::isfinite(value); });
+}
+
+bool finite_or_infinite(const std::vector<double> &values) {
+  return std::all_of(values.begin(), values.end(),
+                     [](double value) { return !std::isnan(value); });
 }
 
 std::string bounded(std::string value, std::size_t maximum) {
@@ -386,8 +392,10 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     return values.size() == parameter_count && finite(values);
   };
   if (!vectors_have_parameter_count(request.initial_parameters) ||
-      !vectors_have_parameter_count(request.lower_bounds) ||
-      !vectors_have_parameter_count(request.upper_bounds) ||
+      request.lower_bounds.size() != parameter_count ||
+      request.upper_bounds.size() != parameter_count ||
+      !finite_or_infinite(request.lower_bounds) ||
+      !finite_or_infinite(request.upper_bounds) ||
       !vectors_have_parameter_count(request.affine_origins) ||
       !vectors_have_parameter_count(request.affine_scales) ||
       !finite(request.observations)) {
@@ -489,9 +497,9 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
         (request.upper_bounds[index] - request.affine_origins[index]) /
         request.affine_scales[index];
   }
-  if (!finite(optimizer_parameters) || !finite(optimizer_lower) ||
-      !finite(optimizer_upper)) {
-    result.message = "affine optimizer coordinates and bounds must be finite";
+  if (!finite(optimizer_parameters) || !finite_or_infinite(optimizer_lower) ||
+      !finite_or_infinite(optimizer_upper)) {
+    result.message = "affine optimizer coordinates and bounds must not be NaN";
     result.failures = state.failures();
     result.counters = state.counters();
     return result;
@@ -618,6 +626,7 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     if (const auto *evaluation = std::get_if<CombinedEvaluation>(&final)) {
       result.parameters = std::move(physical);
       result.predictions = evaluation->predictions;
+      result.physical_jacobian = evaluation->jacobian;
       result.optimizer_jacobian.resize(output_count * parameter_count);
       result.residuals.resize(output_count);
       for (std::size_t row = 0; row < output_count; ++row) {
@@ -635,6 +644,11 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
       } else {
         result.status = "failed";
         result.message = "final scaled residuals or optimizer Jacobian are not finite";
+        result.parameters.clear();
+        result.predictions.clear();
+        result.residuals.clear();
+        result.physical_jacobian.clear();
+        result.optimizer_jacobian.clear();
       }
     } else {
       result.status = "failed";
@@ -646,9 +660,19 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
 
   if (result.usable) {
     cost_function.set_phase("covariance");
+    using RowMatrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>;
+    const Eigen::Map<const RowMatrix> jacobian(
+        result.optimizer_jacobian.data(), static_cast<Eigen::Index>(output_count),
+        static_cast<Eigen::Index>(parameter_count));
+    Eigen::JacobiSVD<RowMatrix> decomposition(jacobian);
+    decomposition.setThreshold(
+        result.covariance.minimum_reciprocal_condition_number);
+    result.covariance.null_space_rank =
+        static_cast<int>(parameter_count) - decomposition.rank();
     ceres::Covariance::Options covariance_options;
     covariance_options.algorithm_type = ceres::DENSE_SVD;
-    covariance_options.null_space_rank = -1;
+    covariance_options.null_space_rank = result.covariance.null_space_rank;
     covariance_options.apply_loss_function = true;
     covariance_options.num_threads = 1;
     covariance_options.min_reciprocal_condition_number = 1.0e-14;
@@ -661,7 +685,8 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
     }
     result.covariance.optimizer_coordinates.resize(parameter_count *
                                                     parameter_count);
-    if (!covariance.Compute({optimizer_parameters.data()}, &problem) ||
+    if (result.covariance.null_space_rank > 0 ||
+        !covariance.Compute({optimizer_parameters.data()}, &problem) ||
         !covariance.GetCovarianceBlock(
             optimizer_parameters.data(), optimizer_parameters.data(),
             result.covariance.optimizer_coordinates.data()) ||

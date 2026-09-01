@@ -26,10 +26,7 @@ EXPECTED_ARCHIVE_ORDER = tuple(STATIC_TARGETS.values())
 EXPECTED_SIBLING_EDGES = {
     "epcsaft_engine_eos_core": set(),
     "epcsaft_engine_equilibrium_core": {"epcsaft_engine_eos_core"},
-    "epcsaft_engine_regression_core": {
-        "epcsaft_engine_eos_core",
-        "epcsaft_engine_equilibrium_core",
-    },
+    "epcsaft_engine_regression_core": set(),
 }
 NATIVE_TARGET_TYPES = {"static library", "shared library", "shared module"}
 RETIRED_SOURCE_IDENTIFIERS = {
@@ -378,7 +375,7 @@ def run_regression_falsification_gate() -> None:
                 == 1,
                 f"temporary {family} falsifier did not fail",
             )
-    print("Regression GREPE-only falsification gate passed: 5 discovery edges rejected")
+    print("Regression owner-boundary falsification gate passed: 5 discovery edges rejected")
 
 
 def run_falsification_gate(verifier: Path) -> None:
@@ -473,13 +470,10 @@ def run_falsification_gate(verifier: Path) -> None:
                 ("eos_api", "U"),
                 ("equilibrium_api", "T"),
             ],
-            "epcsaft_engine_regression_core": [
-                ("eos_api", "U"),
-                ("equilibrium_api", "U"),
-            ],
+            "epcsaft_engine_regression_core": [],
         }
         forbidden_edge = {owner: fields.copy() for owner, fields in valid_edges.items()}
-        forbidden_edge["epcsaft_engine_eos_core"].append(("equilibrium_api", "U"))
+        forbidden_edge["epcsaft_engine_regression_core"].append(("eos_api", "U"))
         require(
             rejection_code(lambda: validate_sibling_edges(forbidden_edge)) == 1,
             "temporary forbidden sibling-edge falsifier did not fail",
@@ -593,9 +587,7 @@ def main() -> None:
 
     print(run([sys.executable, str(verifier), "--wheel", str(wheel)]).strip())
     print("root native products: " + ", ".join((*STATIC_TARGETS, "epcsaft._core")))
-    print(
-        "internal links: equilibrium -> EOS; regression -> equilibrium + EOS; _core -> all three"
-    )
+    print("internal links: equilibrium -> EOS; regression standalone; _core -> all three")
     print(
         "sibling archive symbol intersections: "
         + ", ".join(

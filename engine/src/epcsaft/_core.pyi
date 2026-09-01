@@ -365,13 +365,36 @@ def _solve_saturation_active(
     temperature_k: float,
     active_parameters: Sequence[NativeActiveCoordinate],
 ) -> dict[str, Any]: ...
-def _fit_resolved(
-    active_parameter_count: int,
-    identity_coordinates: Sequence[int],
-    coordinates: Sequence[Mapping[str, object]],
-    observations: Sequence[Mapping[str, object]],
+class CompiledOwner:
+    parameter_count: int
+    output_count: int
+    parameter_contract_fingerprint: str
+    evaluator_fingerprint: str
+    sidecar: Mapping[str, object]
+
+def _compile_eos_regression_evaluator(
+    model: NativeModel,
+    specification: Mapping[str, object],
+    active_parameters: Sequence[NativeActiveCoordinate],
+) -> CompiledOwner: ...
+
+def _compile_equilibrium_regression_evaluator(
+    model: NativeModel,
+    incipient_model: NativeModel,
+    problem: object,
+    source_reference_fingerprint: str,
+    setup: Mapping[str, object],
+) -> CompiledOwner: ...
+
+def _solve_least_squares(
+    evaluators: Sequence[CompiledOwner],
+    observations: Sequence[float],
+    residual_scales: Sequence[float],
+    residual_scale_metadata: str,
+    initial_parameters: Sequence[float],
+    lower_bounds: Sequence[float],
+    upper_bounds: Sequence[float],
+    affine_origins: Sequence[float],
+    affine_scales: Sequence[float],
     controls: Mapping[str, object],
-    failure_codes: Sequence[str],
-    experiments: Sequence[Mapping[str, object]],
-    evaluation_strategy: str = ...,
-) -> dict[str, Any]: ...
+) -> dict[str, object]: ...

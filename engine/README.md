@@ -78,21 +78,21 @@ and never enter the wheel.
 
 ## Regression example
 
-Regression exports only `ParameterFit`, `FitResult`, and `fit`:
+Regression exports owner-neutral native `least_squares` and `curve_fit`:
 
 ```python
-from epcsaft.regression import fit
+from epcsaft import regression
 
-result = fit("parameter-fit.json")
-candidate_parameters = result.to_parameters()
+result = regression.least_squares(owners, observations, initial_parameters)
+print(result.parameters, result.physical_jacobian)
 ```
 
-The fit request owns the selected parameter identities, data hashes, units,
-residuals, bounds, scales, ties, and multistart policy. `to_parameters()` is an
-explicit authority-neutral candidate export; it does not accept or adopt the
-values. Engine owns the exact derivatives and one private native solver;
-Validation owns installed-artifact literature evidence, and the downstream
-scientific campaign owns any parameter-adoption decision.
+EOS and Equilibrium compile their own immutable owner handles and sidecars.
+Regression owns only ordered observations, caller-defined discrepancy weights,
+affine coordinates, bounds, and solver accounting. The result retains both
+physical owner Jacobians and weighted optimizer-coordinate Jacobians; it never
+promotes or adopts parameters. Installed-artifact literature evidence remains
+owned by `validation/`.
 
 The canonical capability cutover and its EOS, Regression, and Equilibrium owner
 plans begin at

@@ -2,7 +2,7 @@
 
 Repository Profile: scientific-computing
 
-Governance doctrine revision 25 applies.
+Governance doctrine revision 26 applies.
 
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Read `governance/GOVERNANCE.md`, `governance/manifests/management.json`,

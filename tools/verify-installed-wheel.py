@@ -11,7 +11,12 @@ from urllib.parse import unquote, urlparse
 from zipfile import ZipFile
 
 PUBLIC_MODULES = ("epcsaft", "epcsaft.equilibrium", "epcsaft.regression")
-NATIVE_ENTRYPOINTS = ("_fit_resolved", "_solve_grepe")
+NATIVE_ENTRYPOINTS = (
+    "_compile_eos_regression_evaluator",
+    "_compile_equilibrium_regression_evaluator",
+    "_solve_grepe",
+    "_solve_least_squares",
+)
 NATIVE_MEMBER_PREFIX = "epcsaft/_core."
 TRANSIENT_WHEEL_RUNPATH = b"/wheel/platlib/lib"
 
