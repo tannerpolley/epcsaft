@@ -69,7 +69,7 @@ The pair-parameter scientific basis is recorded in
 | Fixed-state and pure-saturation quantities | EOS | Observable value, units/basis, domain, exact selected-parameter Jacobian, structured failure |
 | Nonreactive solved phase quantities | Equilibrium | Certified phase result and exact total sensitivity from EOS partials |
 | Observations, residual scaling, bounds, ties, multistart, Ipopt, fit receipt | Regression | Immutable `FitResult` and explicit candidate `Parameters` export |
-| Literature and application acceptance | Validation | Installed-wheel evidence |
+| Literature and application acceptance | Analysis sets | Installed-wheel evidence |
 | Reusable parameters and observations | Data | Explicit source-traceable packets |
 
 No owner may duplicate an upstream equation, parameter identity registry, or

@@ -84,7 +84,7 @@
       "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
       "packet_version": "5",
       "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
-      "packet_fingerprint": "2ea461e90eadcd53ff4c58b10e6a3f7610a35d7804eee702a092c04832a001d3",
+      "packet_fingerprint": "52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2",
       "materialization": "byte-for-byte"
     },
     {

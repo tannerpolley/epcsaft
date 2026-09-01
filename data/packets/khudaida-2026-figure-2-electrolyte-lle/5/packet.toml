@@ -33,7 +33,7 @@ use_basis = "Cross-association combining rules evaluated once at 293.15 K with n
 [[sources]]
 source_id = "validation-campaign"
 citation = "ePC-SAFT/ePC-SAFT-validation, Khudaida campaign at commit dc1841fc8c7b837d92b7fed9d976a22ba6d5b2e6."
-use_basis = "Migration provenance for the reviewed parameter bundle only; Validation remains the owner of campaign observations and generated evidence."
+use_basis = "Migration provenance for the reviewed parameter bundle only; the Khudaida reproduction analysis owns its observations and generated evidence."
 
 [[domains]]
 domain_id = "khudaida-293-15-k-0-1-mpa"

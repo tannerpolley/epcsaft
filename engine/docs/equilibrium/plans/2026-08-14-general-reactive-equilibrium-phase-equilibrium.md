@@ -316,7 +316,7 @@ Before a slice can broaden current capability, Engine evidence must falsify:
 - equivalence to every displaced route within physically justified
   tolerances.
 
-Installed-wheel Validation then owns bounded physical/literature comparisons,
+Installed-wheel analysis sets then own bounded physical/literature comparisons,
 exact plotted-data tables, and figures where required.
 
 ## Completion criteria
