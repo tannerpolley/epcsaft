@@ -1,5 +1,6 @@
 #include "chemical_equilibrium.hpp"
 #include "eos.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,7 +15,7 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 constexpr double kResidualMultiplier = 4096.0;
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kEOSReferenceDensityMolPerM3 = 1.0;
 
 void require_finite(double value, const char* field) {
@@ -1352,7 +1353,7 @@ SourceStandardStateResult transform_source_standard_state(
         const double pressure_density_offset = delta_nu * std::log(
             pressure_pa
             / (kEOSReferenceDensityMolPerM3
-                * kGasConstantJPerMolK * temperature_k)
+                * GAS_CONSTANT * temperature_k)
         );
         const double offset = reference_offset + pressure_density_offset;
         if (!std::isfinite(offset)

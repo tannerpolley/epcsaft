@@ -1,4 +1,5 @@
 #include "held.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -15,7 +16,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kAmountLowerMol = 1.0e-10;
 constexpr double kStageIIIVolumeLowerM3 = 1.0e-5;
 constexpr double kVolumeUpperM3 = 1.0e-1;
@@ -643,7 +644,7 @@ HeldStageIIINlpEvaluation evaluate_held_stage_iii_nlp(
         {variables[3], variables[4]},
         variables[5]
     );
-    const double pressure_over_rt = pressure_pa / (kGasConstantJPerMolK * temperature_k);
+    const double pressure_over_rt = pressure_pa / (GAS_CONSTANT * temperature_k);
 
     HeldStageIIINlpEvaluation result;
     result.objective = liquid.eos.value + vapor.eos.value

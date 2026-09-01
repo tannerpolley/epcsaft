@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, Protocol, cast
+from typing import Any, ClassVar, Literal, Protocol, cast, get_args
 
 import pint
 
@@ -78,37 +78,16 @@ class _CandidateOwner(Protocol):
     def source_sha256(self) -> str | None: ...
 
 
-_DOMAIN_KINDS = frozenset({"fit-range", "reported-conditions", "unknown"})
-_SINGLE_FAMILIES = frozenset(
-    {
-        "molar_mass",
-        "segment_count",
-        "segment_diameter",
-        "dispersion_energy_over_k",
-        "charge_number",
-        "relative_permittivity",
-        "packing_diameter",
-        "debye_huckel_diameter",
-        "born_diameter",
-        "solvation_factor",
-        "dielectric_volume",
-        "dielectric_temperature",
-        "ion_specific_suppression_coefficient",
-        "dipole_scaling",
-        "polarizability_scaling",
-        "correlation_integral_parameter",
-    }
+_DOMAIN_KINDS = frozenset(get_args(DomainKind.__value__))
+_SINGLE_FAMILIES = frozenset(get_args(SingleParameterFamily.__value__))
+_PAIR_FAMILIES = frozenset(get_args(PairParameterFamily.__value__))
+_ASSOCIATION_FAMILIES = frozenset(get_args(AssociationParameterFamily.__value__))
+_MODEL_FAMILIES = frozenset(get_args(ModelParameterFamily.__value__))
+_CORRELATION_FAMILIES = frozenset(get_args(CorrelationFamily.__value__))
+_ASSOCIATION_PRESETS = frozenset(get_args(AssociationPreset.__value__))
+_ASSOCIATION_COMBINING_RULES = frozenset(
+    get_args(AssociationCombiningRuleId.__value__)
 )
-_PAIR_FAMILIES = frozenset(
-    {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
-)
-_ASSOCIATION_FAMILIES = frozenset({"association_energy_over_k", "association_volume"})
-_MODEL_FAMILIES = frozenset(
-    {"ion_fraction_suppression_coefficient", "ionic_region_relative_permittivity"}
-)
-_CORRELATION_FAMILIES = frozenset({"segment_diameter", "relative_permittivity", "solvation_factor"})
-_ASSOCIATION_PRESETS = frozenset({"1a", "2b", "3b", "4c"})
-_ASSOCIATION_COMBINING_RULES = frozenset({"arithmetic-energy-geometric-volume"})
 _DIMENSIONAL_UNITS = {
     "molar_mass": "kilogram / mole",
     "segment_diameter": "angstrom",

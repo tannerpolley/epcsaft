@@ -2,6 +2,7 @@
 
 #include "held2.hpp"
 #include "phase_equilibrium.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -18,7 +19,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kPackingFractionMinimum = 1.0e-6;
 constexpr double kPackingFractionMaximum = 0.74;
 constexpr double kChemicalPotentialResidualMax = 1.0e-6;
@@ -573,7 +574,7 @@ SolvedStateSensitivity evaluate_charged_sensitivity(
             ++residual;
         }
     }
-    const double rt = kGasConstantJPerMolK * temperature_k;
+    const double rt = GAS_CONSTANT * temperature_k;
     for (std::size_t phase = 0; phase < phase_count; ++phase) {
         result.residual_identities.push_back(
             "phase[" + std::to_string(phase)
@@ -872,7 +873,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
                 result.residual_state_jacobian[
                     residual * result.dimension
                     + amount_state_index(phase, component, component_count)
-                ] = -kGasConstantJPerMolK * temperature_k
+                ] = -GAS_CONSTANT * temperature_k
                     * evaluations[phase].phase.hessian[
                         component_count * physical_count + component
                     ] / pressure_pa;
@@ -883,7 +884,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
                     result.residual_state_jacobian[
                         residual * result.dimension
                         + amount_state_index(independent, component, component_count)
-                    ] = kGasConstantJPerMolK * temperature_k
+                    ] = GAS_CONSTANT * temperature_k
                         * evaluations[reference].phase.hessian[
                             component_count * physical_count + component
                         ] / pressure_pa;
@@ -893,7 +894,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
         result.residual_state_jacobian[
             residual * result.dimension
             + volume_state_index(phase, phase_count, component_count)
-        ] = -kGasConstantJPerMolK * temperature_k
+        ] = -GAS_CONSTANT * temperature_k
             * evaluations[phase].phase.hessian[
                 component_count * physical_count + component_count
             ] / pressure_pa;

@@ -1,4 +1,5 @@
 #include "held.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <array>
@@ -18,7 +19,7 @@ namespace epcsaft_engine::equilibrium {
 namespace {
 
 constexpr double kFloatingPointAllowance = 256.0 * std::numeric_limits<double>::epsilon();
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kCompositionLower = 1.0e-8;
 constexpr double kCompositionUpper = 1.0 - 1.0e-8;
 constexpr double kVolumeLowerM3PerMol = 1.0e-5;
@@ -423,7 +424,7 @@ std::vector<HeldStageIIStart> make_lower_starts(
 ) {
     const double liquid_log_volume = std::log(1.0 / 20'000.0);
     const double vapor_log_volume = std::log(std::clamp(
-        2.0 * kGasConstantJPerMolK * temperature_k / pressure_pa,
+        2.0 * GAS_CONSTANT * temperature_k / pressure_pa,
         1.01 * kVolumeLowerM3PerMol,
         0.99 * kVolumeUpperM3PerMol
     ));
@@ -628,7 +629,7 @@ HeldStageIIInitialization initialize_held_stage_ii_cuts(
 
     const double liquid_log_volume = std::log(1.0 / 20'000.0);
     const double vapor_log_volume = std::log(std::clamp(
-        2.0 * kGasConstantJPerMolK * temperature_k / pressure_pa,
+        2.0 * GAS_CONSTANT * temperature_k / pressure_pa,
         1.01 * kVolumeLowerM3PerMol,
         0.99 * kVolumeUpperM3PerMol
     ));

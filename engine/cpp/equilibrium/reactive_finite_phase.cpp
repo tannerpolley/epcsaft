@@ -1,5 +1,6 @@
 #include "chemical_equilibrium.hpp"
 #include "eos.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -20,7 +21,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 constexpr double kReactiveFinitePhaseStartBalanceTolerance = 1.0e-8;
 constexpr double kReactiveFinitePhaseSolverTolerance = 1.0e-10;
 constexpr double kReactiveFinitePhaseAcceptableTolerance = 1.0e-8;
@@ -529,7 +530,7 @@ PhaseBlock evaluate_phase(
     result.pressure = mechanical.pressure_pa;
     result.physical_hessian = mechanical.hessian;
     result.physical_gradient = mechanical.gradient;
-    const double pressure_over_rt = pressure_pa / (kGasConstantJPerMolK * temperature_k);
+    const double pressure_over_rt = pressure_pa / (GAS_CONSTANT * temperature_k);
     for (std::size_t supported = 0; supported < support_count; ++supported) {
         result.physical_gradient[supported] += g_ref[supported_species[supported]];
     }
@@ -697,7 +698,7 @@ PhaseBlock evaluate_phase(
     for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
         result.objective_pressure_cross[coordinate] =
             result.state_jacobian[species_count * phase_dimension + coordinate]
-            / (kGasConstantJPerMolK * temperature_k);
+            / (GAS_CONSTANT * temperature_k);
         if (!g_ref_pressure_derivatives_per_pa.empty()) {
             for (std::size_t species = 0; species < species_count; ++species) {
                 result.objective_pressure_cross[coordinate] +=
@@ -831,8 +832,8 @@ PhaseBlock evaluate_ideal_phase(
         result.amounts.begin(), result.amounts.end(), 0.0
     );
     const double pressure_over_rt = pressure_pa
-        / (kGasConstantJPerMolK * temperature_k);
-    result.pressure = kGasConstantJPerMolK * temperature_k
+        / (GAS_CONSTANT * temperature_k);
+    result.pressure = GAS_CONSTANT * temperature_k
         * total / result.volume;
     result.physical_gradient.assign(physical_dimension, 0.0);
     result.physical_hessian.assign(
@@ -934,7 +935,7 @@ PhaseBlock evaluate_ideal_phase(
     for (std::size_t coordinate = 0; coordinate < phase_dimension; ++coordinate) {
         result.objective_pressure_cross[coordinate] = result.state_jacobian[
             species_count * phase_dimension + coordinate
-        ] / (kGasConstantJPerMolK * temperature_k);
+        ] / (GAS_CONSTANT * temperature_k);
         if (!g_ref_pressure_derivatives_per_pa.empty()) {
             for (std::size_t species = 0; species < species_count; ++species) {
                 result.objective_pressure_cross[coordinate] +=
@@ -1193,7 +1194,7 @@ void polish_single_phase_reaction_root(
                 jacobian(
                     static_cast<Eigen::Index>(pressure_row),
                     static_cast<Eigen::Index>(column)
-                ) -= kGasConstantJPerMolK * temperature_k / pressure_pa
+                ) -= GAS_CONSTANT * temperature_k / pressure_pa
                     * phase.physical_hessian[
                         support_count * physical_dimension + physical
                     ]
@@ -2209,7 +2210,7 @@ void populate_sensitivities(
             for (std::size_t physical = 0;
                  physical < physical_dimension;
                  ++physical) {
-                pressure_response -= kGasConstantJPerMolK * temperature_k
+                pressure_response -= GAS_CONSTANT * temperature_k
                     * block.physical_hessian[
                         support_count * physical_dimension + physical
                     ] * (physical == support_count
@@ -2356,7 +2357,7 @@ std::pair<double, std::vector<double>> contract_output(
     }
     if (output.selector == "phase.compressibility_factor") {
         const double value = pressure_pa * volume
-            / (total * kGasConstantJPerMolK * temperature_k);
+            / (total * GAS_CONSTANT * temperature_k);
         for (std::size_t derivative = 0; derivative < derivative_count; ++derivative) {
             double dtotal = 0.0;
             for (std::size_t species = 0; species < species_count; ++species) {
@@ -2515,7 +2516,7 @@ void populate_outputs(
             }
             double derivative = 0.0;
             for (std::size_t physical = 0; physical < physical_dimension; ++physical) {
-                derivative -= kGasConstantJPerMolK * temperature_k
+                derivative -= GAS_CONSTANT * temperature_k
                     * block.physical_hessian[
                         support_count * physical_dimension + physical
                     ] * (physical == support_count
@@ -2565,7 +2566,7 @@ void populate_outputs(
                         ? 0.0
                         : g_ref_parameter_derivatives[species * active_count + active]);
             }
-            pressure_direct -= kGasConstantJPerMolK * temperature_k
+            pressure_direct -= GAS_CONSTANT * temperature_k
                 * block.physical_hessian.back() * volume_direct;
             parameter_pressures[active] = pressure_direct;
         }
@@ -2679,7 +2680,7 @@ void finalize_reactive_finite_phase_result(
         std::vector<double> log_fugacities = block.chemical_potentials;
         for (std::size_t species = 0; species < species_count; ++species) {
             log_fugacities[species] += std::log(
-                kGasConstantJPerMolK * temperature_k
+                GAS_CONSTANT * temperature_k
             ) - system.g_ref[species];
         }
         result.phase_log_fugacities.push_back(std::move(log_fugacities));
@@ -3190,7 +3191,7 @@ ReactiveFinitePhaseResult solve_eos_reactive_finite_phases(
         );
         if (system.ideal_gas) {
             const double minimum_volume = 0.01 * trace_floor
-                * kGasConstantJPerMolK * temperature_k
+                * GAS_CONSTANT * temperature_k
                 / (pressure_pa * total_feed_amount_mol);
             const double maximum_amount = total_feed_mass_kg
                 / *std::min_element(
@@ -3198,7 +3199,7 @@ ReactiveFinitePhaseResult solve_eos_reactive_finite_phases(
                     system.molar_masses_kg_per_mol.end()
                 );
             const double maximum_volume = 100.0 * maximum_amount
-                * kGasConstantJPerMolK * temperature_k
+                * GAS_CONSTANT * temperature_k
                 / (pressure_pa * total_feed_amount_mol);
             initial[offset + amount_dimension] = std::log(
                 volume / total_feed_amount_mol
@@ -3393,7 +3394,7 @@ ReactiveFinitePhaseResult solve_eos_reactive_finite_phases(
                 species_count * phase_dimension + amount_dimension
             ];
             const double pressure_derivative =
-                -kGasConstantJPerMolK * temperature_k
+                -GAS_CONSTANT * temperature_k
                 * block.physical_hessian[
                     support_count * (support_count + 1) + support_count
                 ]
@@ -3605,7 +3606,7 @@ ReactiveFinitePhaseResult evaluate_eos_reactive_finite_phases_local(
         std::vector<double> log_fugacities = block.chemical_potentials;
         for (std::size_t species = 0; species < system.species_count; ++species) {
             log_fugacities[species] += std::log(
-                kGasConstantJPerMolK * temperature_k
+                GAS_CONSTANT * temperature_k
             ) - system.g_ref[species];
         }
         result.phase_log_fugacities.push_back(std::move(log_fugacities));

@@ -1,4 +1,5 @@
 #include "held.hpp"
+#include "physical_constants.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +11,7 @@
 namespace epcsaft_engine::equilibrium {
 namespace {
 
-constexpr double kGasConstantJPerMolK = 8.31446261815324;
+using epcsaft::detail::GAS_CONSTANT;
 
 void require_finite(double value, const char* name) {
     if (!std::isfinite(value)) {
@@ -70,7 +71,7 @@ HeldStateEvaluation evaluate_held_state(
         {amounts[0], amounts[1]},
         volume_m3
     );
-    const double pressure_over_rt = pressure_pa / (kGasConstantJPerMolK * temperature_k);
+    const double pressure_over_rt = pressure_pa / (GAS_CONSTANT * temperature_k);
     const auto& eos_gradient = phase.gradient;
     const auto& eos_hessian = phase.hessian;
 

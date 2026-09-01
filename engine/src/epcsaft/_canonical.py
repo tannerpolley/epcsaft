@@ -3,20 +3,12 @@ from __future__ import annotations
 import hashlib
 import json
 import unicodedata
-from decimal import Decimal
 
 _TAG = "epcsaft-parameters-v1"
 
 
 def _string(value: str) -> str:
     return unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n"))
-
-
-def _decimal(value: object) -> str:
-    number = Decimal(str(value))
-    if number.is_zero():
-        return "0"
-    return format(number.normalize(), "f")
 
 
 def _normalize(value: object) -> object:
@@ -37,10 +29,6 @@ def _canonical_json(value: object) -> str:
         separators=(",", ":"),
         allow_nan=False,
     )
-
-
-def _canonical_json_bytes(value: object) -> bytes:
-    return _canonical_json(value).encode("utf-8")
 
 
 def _json(value: object) -> str:

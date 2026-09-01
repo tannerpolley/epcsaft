@@ -13,6 +13,7 @@ import epcsaft._core as _native_core
 from ._canonical import _canonical_json
 from .eos import (
     EosError,
+    _MOLAR_GAS_CONSTANT,
     _eos_error,
     _state_magnitude,
 )
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
     from .eos import Mixture, State
 
 
-_MOLAR_GAS_CONSTANT = 8.31446261815324
 _SOURCE_REFERENCE_DERIVATIVES = {
     "temperature": 1,
     "pressure": 2,
