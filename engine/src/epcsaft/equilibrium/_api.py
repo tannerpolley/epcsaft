@@ -769,7 +769,7 @@ def _contract_phase_output(
 
 
 @dataclass(frozen=True, slots=True)
-class ActiveParameterTrialReceipt:
+class ActiveParameterTrial:
     parameter_fingerprint: str
     identities: tuple[str, ...]
     values: tuple[float, ...]
@@ -2372,7 +2372,7 @@ def _source_reference_transfer(
         or transfer.pressure_pa != pressure_pa
         or transfer.source_reference_pressure_pa != standard_state.reference_pressure_pa
     ):
-        raise ValueError("installed EOS source-reference receipt is incompatible")
+        raise ValueError("installed EOS source-reference result is incompatible")
     return transfer
 
 

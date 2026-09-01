@@ -14,11 +14,11 @@ Observation Family, and D-035 admits the issue-#31 fixed-topology reactive
 bubble/VLE Observation Family. Nonreactive phase-equilibrium observations
 remain unadmitted.
 
-Historical CAP plans, receipts, results, reviews, and source identities remain
+Historical CAP plans, results, reviews, and source identities remain
 provenance. They are not a live execution queue. Issue #6 was superseded when
 D-038 established MEA-Thermodynamics as the official downstream application.
 Issues #30 and #31 are completed detached post-cutover capabilities with
-hash-bound admission receipts.
+hash-bound admission results.
 
 ## Private development feedback
 

@@ -53,8 +53,6 @@ from ._grepe import (
     Solved,
     compile_regression_evaluator,
     general_reactive_equilibrium_descriptor,
-    serialize_general_reactive_equilibrium_receipt,
-    validate_general_reactive_equilibrium_receipt,
 )
 from ._grepe_io import (
     general_reactive_equilibrium_problem_from_mapping,
@@ -128,8 +126,6 @@ __all__ = [
     "mole_fractions",
     "phase_species_coordinate_order",
     "preflight_phase_reaction_system",
-    "serialize_general_reactive_equilibrium_receipt",
     "solve",
     "solvent_composition_molalities",
-    "validate_general_reactive_equilibrium_receipt",
 ]

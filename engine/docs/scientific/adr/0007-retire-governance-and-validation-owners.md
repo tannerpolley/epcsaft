@@ -36,13 +36,36 @@ The former decision identifiers map as follows:
   CAP-09 Khudaida result.
 - D-031, D-034, D-035, D-036, D-037, and D-042 retain their exact observation,
   topology, derivative, failure, and claim limits through ADRs 0004 and 0005,
-  Engine source, and the retained CAP-12 through CAP-14 results. Their old
-  identifiers remain historical locators, not a second authority sequence.
-- D-032 and D-033 remain represented by ADR 0005, the retained CAP-11 result,
-  and the build-first fast root checks.
+  Engine source, and the surviving owners below. Their old identifiers remain
+  historical locators, not a second authority sequence.
+- D-032 and D-033 remain represented by ADR 0005 and the build-first fast root
+  checks named for CAP-11 above.
 - D-038 remains the named downstream-application rule in root `AGENTS.md`.
   D-039 is superseded by D-042; D-040 is complete; D-041 remains represented by
   ADR 0005 and the sole `NativeModel` EOS owner.
+
+The current evidence owners for the former capability claims are:
+
+- CAP-11: `tools/check-analysis-layout.py`, `tools/check-all.sh`, and the
+  current architecture/documentation files; no standalone administrative
+  result is an active owner.
+- CAP-12: the homogeneous row in
+  `analyses/2026-grepe-hard-cut/results/validation-gates.csv`.
+- CAP-13: the reactive-bubble row in
+  `analyses/2026-grepe-hard-cut/results/validation-gates.csv`.
+- CAP-14: `engine/ARCHITECTURE.yaml` and
+  `engine/tests/equilibrium/numerical/test_grepe.py`.
+
+The 1998 Chase validation ladder is aggregated by
+`analyses/reproduction/1998-chase/results/chemical-equilibrium-validation.json`;
+its detailed N2O4/NO2 and water-gas-shift results are owned by
+`analyses/reproduction/1998-chase/results/n2o4-no2-equilibrium.json` and
+`analyses/reproduction/1998-chase/results/water-gas-shift-equilibrium.json`.
+The corresponding IAPWS and Belov result owners are
+`analyses/reproduction/2019-iapws/results/water-self-ionization.json` and
+`analyses/reproduction/2023-belov/results/test-01-equilibrium.json`.
+Former per-case `result.json`, receipt, and migration paths are historical
+provenance only and are not promised as current evidence owners.
 
 ## Consequences and validity boundary
 

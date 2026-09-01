@@ -36,7 +36,7 @@ struct EquilibriumEvaluatorSetup final {
     std::string parameter_baseline_digest;
     std::string source_spec_digest;
     std::string anchor_identity;
-    std::string anchor_receipt_identity;
+    std::string anchor_reference_fingerprint;
     std::string derivative_provenance;
     std::string topology_policy;
     std::string branch_policy;
@@ -50,7 +50,7 @@ struct EquilibriumEvaluatorSidecar final {
     std::string parameter_baseline_digest;
     std::string source_spec_digest;
     std::string anchor_identity;
-    std::string anchor_receipt_identity;
+    std::string anchor_reference_fingerprint;
     std::vector<EvaluatorParameter> active_parameters;
     std::vector<EvaluatorOutput> output_rows;
     std::string derivative_provenance;

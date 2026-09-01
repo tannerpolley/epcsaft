@@ -51,10 +51,10 @@ numeric penalty for those states.
 Regression consumes this family through
 `equilibrium.compile_regression_evaluator` and the owner-neutral
 `regression.least_squares`/`curve_fit` APIs. Equilibrium owns values, exact total
-Jacobians, physical branch identity, certification, and opaque receipt
+Jacobians, physical branch identity, certification, and opaque result
 validation. Regression owns ordered observations, discrepancy weights, affine
 coordinates, bounds, caller starts, optimizer accounting, and covariance
 availability.
 
-Admission evidence is recorded in
-`analyses/engine-capability-admissions/results/cap-13-reactive-bubble-vle-admission.json`.
+Compact tracer values and residuals are recorded in
+`analyses/2026-grepe-hard-cut/results/validation-gates.csv`.

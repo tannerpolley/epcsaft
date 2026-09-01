@@ -14,7 +14,7 @@ Kind: computational-architecture
 The destination is implemented. [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md)
 protected the HELD/HELD2 transition until the D-030 decision retained by
 [ADR 0007](0007-retire-governance-and-validation-owners.md) accepted the
-promotion receipt and made `phase_equilibrium` the sole public route.
+promotion result and made `phase_equilibrium` the sole public route.
 
 ## Context
 

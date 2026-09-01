@@ -18,7 +18,9 @@ monorepo commit binds copied Data fixtures to their packet lock; every
 materialization also requires the packet fingerprint and exact file hashes.
 Analysis reproductions must exercise the installed wheel through public APIs.
 
-Use Numerical Verification-Driven Development. Retain compact tests
+Use Numerical Verification-Driven Development. Retain homogeneous calculation
+rows once in CSV/TSV and keep JSON results compact, diagnostic, provenance-,
+failure-, and claim-bound. Retain compact tests
 only for numerical values, identities, derivatives, limits, solver or
 equilibrium certificates, manufactured solutions, metamorphic relations, and
 source-backed benchmarks. No API-contract, compatibility, legacy, mock,
@@ -27,5 +29,5 @@ snapshot, prose, solver-label, iteration-count, or coverage-only tests.
 The sole environment is `../.codex/environments/environment.toml`. Run the
 applicable root affected/all checks. `codex-cleanup.sh` is an agent closeout
 action: agents run it, never ask the user to run it, and remove only task-created
-ignored caches or exact user-authorized candidates. Historical plans, receipts,
+ignored caches or exact user-authorized candidates. Historical plans, source records,
 results, and old names are immutable provenance. No CI/CD.

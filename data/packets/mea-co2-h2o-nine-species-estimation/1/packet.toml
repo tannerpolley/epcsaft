@@ -28,7 +28,7 @@ use_basis = "Provisional MEA-water k_ij fit to 25 admitted rows; not reactive ac
 
 [[domains]]
 domain_id = "mea-provider-source-qualified-313-15-k"
-description = "Original installed Provider source-transfer executable receipt at 313.15 K and 100 kPa; not the candidate support claim."
+description = "Original installed Provider source-transfer executable result at 313.15 K and 100 kPa; not the candidate support claim."
 
 [[domains]]
 domain_id = "mea-candidate-293-15-to-393-15-k"

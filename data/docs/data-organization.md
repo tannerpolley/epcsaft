@@ -15,7 +15,7 @@ That includes two kinds of packets:
 
 Analysis sets own question-specific evidence. Paper- or figure-specific tables, digitized
 curves, direct experimental records retained only to reproduce a named paper,
-campaign inputs, fitted alternatives, generated results, plots, and receipts
+campaign inputs, fitted alternatives, generated results, plots, and provenance
 remain under `analyses/`. A numeric table does not become a Data packet merely
 because it has been normalized. It must be reusable independently of one
 campaign and have a defensible source and use basis.

@@ -50,7 +50,7 @@ The pair-parameter scientific basis is recorded in
    topology retains the admitted HELD/HELD2 discovery boundary; declared
    constrained specification supports one to three liquid/vapor phases and
    indexed non-authoritative hints. Governance D-030 accepts the reviewed
-   promotion receipt, retains exact HELD/HELD2 internally for discovery, and
+   promotion result, retains exact HELD/HELD2 internally for discovery, and
    retires its redundant public Python route.
 7. Homogeneous chemical equilibrium remained separate for this completed
    cutover. Governance D-036 now uses its state, phase, parameter, and
@@ -68,7 +68,7 @@ The pair-parameter scientific basis is recorded in
 | Parameter identity, values, domains, topology, correlation coefficients | `Parameters` | Resolved ordered `ActiveParameterSet` |
 | Fixed-state and pure-saturation quantities | EOS | Observable value, units/basis, domain, exact selected-parameter Jacobian, structured failure |
 | Nonreactive solved phase quantities | Equilibrium | Certified phase result and exact total sensitivity from EOS partials |
-| Observations, residual scaling, bounds, ties, multistart, Ipopt, fit receipt | Regression | Immutable `FitResult` and explicit candidate `Parameters` export |
+| Observations, residual scaling, bounds, ties, multistart, Ipopt, fit result | Regression | Immutable `FitResult` and explicit candidate `Parameters` export |
 | Literature and application acceptance | Analysis sets | Installed-wheel evidence |
 | Reusable parameters and observations | Data | Explicit source-traceable packets |
 
@@ -138,7 +138,7 @@ active-parameter representation while waiting for EOS.
 - Make `CONTEXT.md`, `ARCHITECTURE.yaml`, and these plans the only live design
   authority.
 - CAP-11 performs one bounded retirement scan against the exact committed
-  cutover tree. A machine-generated Governance receipt records the exact
+  cutover tree. A machine-generated Governance result records the exact
   command and runtime, include/exclude scopes, pattern and case semantics,
   scanned-file-list hash, every match and justified exception, terminal counts,
   and one-wheel, sanitizer, readiness, and cleanup results. The one-shot
@@ -151,7 +151,7 @@ active-parameter representation while waiting for EOS.
   2--3 are bounded dielectric-curve evidence while Figures 4--9 remain
   unadjudicated. Delete the executable package, local `pyproject.toml`, Cython
   sources, runners, duplicate EOS/controller code, generated figures, and local
-  receipts; Git history preserves the complete experiment.
+  results; Git history preserves the complete experiment.
 - Remove superseded plans, designs, implementation reviews, and source-specific
   runtime guidance. Retain only citations, research, source locators, raw data,
   results, and numerical evidence still consumed by live authority; provenance
@@ -159,8 +159,8 @@ active-parameter representation while waiting for EOS.
 
 Completion: every remaining live instruction points to the new owner model and
 no deleted document is linked as current guidance. The cutover implementation,
-documentation, and Lab deletion are committed first; the scan and receipt bind
-that exact commit/tree, and the receipt is committed separately so it does not
+documentation, and Lab deletion are committed first; the scan and result bind
+that exact commit/tree, and the result is committed separately so it does not
 claim itself as accepted subject evidence.
 
 ### Phase 1 — Canonical parameter identity
@@ -309,7 +309,7 @@ blocked-by state is the lifecycle authority; this table defines scope and order.
 | CAP-08 | Equilibrium exact solved-state sensitivities | CAP-07 | Implicit Jacobians match independent differences away from singularities |
 | CAP-09 | Protected HELD-derived `phase_equilibrium` promotion | CAP-07 | Completed by Governance D-030: the campaign and constrained claims pass, `phase_equilibrium` is sole public, and HELD/HELD2 remains internal discovery |
 | CAP-10 | Equilibrium observation admission review | CAP-08, CAP-09 | Completed by Governance D-031: discovery, declared fixed-T,P splits, and fixed-T coexistence remain deferred from Regression |
-| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | Completed by Governance D-032: retired surfaces are absent and the final receipt binds the clean cutover tree and bounded scan |
+| CAP-11 | Final dead-surface and documentation audit | CAP-04, CAP-06, CAP-10 | Completed by Governance D-032: retired surfaces are absent and the final result binds the clean cutover tree and bounded scan |
 
 ## Done definition
 
@@ -318,5 +318,5 @@ promotion, and the D-031 Equilibrium-observation decision are complete. The
 single wheel contains one parameter and derivative system, source- or
 case-specific runtime routes are absent, compact numerical evidence passes,
 installed-wheel analysis sets own literature acceptance, and the retained
-CAP-11 receipt binds the exact accepted tree and its justified provenance
+CAP-11 result binds the exact accepted tree and its justified provenance
 exceptions. ADR 0007 maps the former decision identifiers.

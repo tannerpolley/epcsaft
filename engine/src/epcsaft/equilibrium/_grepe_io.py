@@ -20,13 +20,13 @@ from ._api import (
 )
 from ._feed import AffineFeed, FeedCoordinate, ResolvedFeed
 from ._grepe import (
+    EosModel,
     EquilibriumOutput,
     FinitePhaseStart,
     Fixed,
     GeneralReactiveEquilibriumProblem,
     IdealGasModel,
     IntensiveBoundary,
-    EosModel,
     ReactivePhase,
     ReactivePhaseSupport,
     Solved,

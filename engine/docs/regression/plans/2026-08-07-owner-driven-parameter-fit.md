@@ -107,7 +107,7 @@ never fabricates a scientific penalty value.
 - Equilibrium-owned fixed-T,P homogeneous reactive rows with immutable local
   continuation anchors, exact total Jacobians, and diagnostic-only results.
 - Equilibrium-owned fixed-topology reactive bubble/VLE rows with immutable
-  local branch receipts, exact total Jacobians, and typed failures.
+  local branch results, exact total Jacobians, and typed failures.
 
 ### Deferred
 
@@ -253,7 +253,7 @@ Do not publish these units until the four canonical plans are approved.
 | REG-03 | Generic EOS fixed-state residual block | REG-02 | Arbitrary supported active sets and component counts fit |
 | REG-04 | EOS pure-saturation residual block | REG-02 | Co-located outputs share one solve and exact sensitivities |
 | REG-05 | Native Ceres core reduction | REG-03, REG-04 | Native code owns owner-neutral optimization only |
-| REG-06 | LeastSquaresResult diagnostics | REG-05 | Complete identity/value/Jacobian/failure receipt is immutable |
+| REG-06 | LeastSquaresResult diagnostics | REG-05 | Complete identity/value/Jacobian/failure result is immutable |
 | REG-07 | Regression dead-surface audit | REG-06 | Duplicated dispatch, source routes, and legacy docs/tests are absent |
 | REG-08 | Equilibrium admission review | EQ-08 | D-031 deferred phase families; D-034 admits only fixed-T,P homogeneous reactive observations |
 

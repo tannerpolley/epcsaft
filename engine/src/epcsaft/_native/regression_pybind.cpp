@@ -136,7 +136,7 @@ epcsaft_engine::equilibrium::EquilibriumEvaluatorSetup parse_equilibrium_setup(
     result.parameter_baseline_digest = required<std::string>(value, "parameter_baseline_digest");
     result.source_spec_digest = required<std::string>(value, "source_spec_digest");
     result.anchor_identity = required<std::string>(value, "anchor_identity");
-    result.anchor_receipt_identity = required<std::string>(value, "anchor_receipt_identity");
+    result.anchor_reference_fingerprint = required<std::string>(value, "anchor_reference_fingerprint");
     result.derivative_provenance = optional_text(value, "derivative_provenance");
     result.topology_policy = optional_text(value, "topology_policy");
     result.branch_policy = optional_text(value, "branch_policy");
@@ -166,7 +166,7 @@ py::dict equilibrium_sidecar(
     result["parameter_baseline_digest"] = value.parameter_baseline_digest;
     result["source_spec_digest"] = value.source_spec_digest;
     result["anchor_identity"] = value.anchor_identity;
-    result["anchor_receipt_identity"] = value.anchor_receipt_identity;
+    result["anchor_reference_fingerprint"] = value.anchor_reference_fingerprint;
     py::list parameters;
     for (const auto& parameter : value.active_parameters) {
         parameters.append(py::dict("identity"_a = parameter.identity,

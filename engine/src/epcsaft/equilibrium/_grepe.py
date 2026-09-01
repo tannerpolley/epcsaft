@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import math
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
@@ -15,7 +14,7 @@ from .. import _core
 from .._canonical import _canonical_json
 from .._trials import NON_EVALUABLE_TRIAL_CODES, NonEvaluableTrial
 from ._api import (
-    ActiveParameterTrialReceipt,
+    ActiveParameterTrial,
     AllComponents,
     ChemicalEquilibriumProblem,
     ChemicalStandardState,
@@ -517,7 +516,7 @@ class GeneralReactiveEquilibriumResult:
     failure: NonEvaluableTrial | None
     certificate_scope: str
     globality_claim: Literal["not_established"]
-    trial: ActiveParameterTrialReceipt | None
+    trial: ActiveParameterTrial | None
     branch_signature: tuple[object, ...] | None
     evidence: tuple[tuple[str, float | int | str], ...]
     resolved_policy: tuple[tuple[str, float], ...]
@@ -1066,7 +1065,7 @@ class _FinitePhaseOwnerResult:
     descriptor: _FinitePhaseOwnerDescriptor
     rows: tuple[GeneralEquilibriumRowResult, ...]
     phases: tuple[EquilibriumPhaseState, ...]
-    trial: ActiveParameterTrialReceipt
+    trial: ActiveParameterTrial
     temperature_k: float
     pressure_pa: float
     objective_over_rt: float
@@ -1821,7 +1820,7 @@ def general_reactive_equilibrium_descriptor(
 def _finite_phase_trial(
     descriptor: _FinitePhaseOwnerDescriptor,
     active_parameters: epcsaft.ActiveParameterSet | None,
-) -> ActiveParameterTrialReceipt:
+) -> ActiveParameterTrial:
     identities = () if active_parameters is None else active_parameters.identities
     values = () if active_parameters is None else active_parameters.values
     units = (
@@ -1841,7 +1840,7 @@ def _finite_phase_trial(
         "units": units,
         "active_parameter_fingerprint": active_fingerprint,
     }
-    return ActiveParameterTrialReceipt(
+    return ActiveParameterTrial(
         descriptor.parameter_fingerprint,
         identities,
         values,
@@ -2626,7 +2625,7 @@ def compile_regression_evaluator(
         "parameter_baseline_digest": model.parameter_fingerprint,
         "source_spec_digest": source_fingerprint,
         "anchor_identity": descriptor.problem_fingerprint,
-        "anchor_receipt_identity": descriptor.reference_fingerprint,
+        "anchor_reference_fingerprint": descriptor.reference_fingerprint,
         "derivative_provenance": "equilibrium-solved-state-exact-total-derivative",
         "topology_policy": "declared-topology-only",
         "branch_policy": "immutable-declared-local-branch",
@@ -2753,267 +2752,6 @@ def _solve_general_reactive_equilibrium(
     )
 
 
-def _owner_observation_payload(
-    observation: GeneralEquilibriumOwnerObservation,
-) -> dict[str, object]:
-    return {
-        "target_identity": observation.target_identity,
-        "prediction_identity": observation.prediction_identity,
-        "aggregate_identity": observation.aggregate_identity,
-        "covariance_identity": observation.covariance_identity,
-    }
-
-
-def _validated_observation_selection(
-    descriptor: GeneralReactiveEquilibriumDescriptor,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> tuple[GeneralEquilibriumOwnerObservation, ...]:
-    selected = tuple(observations)
-    outputs = {output.identity: output for output in descriptor.outputs}
-    if not selected or len({item.target_identity for item in selected}) != len(selected):
-        raise ValueError("GREPE owner observations must be nonempty and target-unique")
-    for observation in selected:
-        output = outputs.get(observation.prediction_identity)
-        if (
-            output is None
-            or output.aggregate_identity != observation.aggregate_identity
-            or output.covariance_identity != observation.covariance_identity
-        ):
-            raise ValueError("GREPE owner observation selection is inconsistent")
-    return selected
-
-
-def _general_receipt_payload(
-    result: GeneralReactiveEquilibriumResult,
-    batch_identity: str,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> dict[str, object]:
-    descriptor = cast(GeneralReactiveEquilibriumDescriptor, result.descriptor)
-    trial = cast(ActiveParameterTrialReceipt, result.trial)
-    selected_rows = {row.identity: row for row in result.rows}
-    return {
-        "schema": "epcsaft.grepe-owner-receipt.v3",
-        "batch_identity": batch_identity,
-        "descriptor_fingerprint": descriptor.fingerprint,
-        "problem_fingerprint": descriptor.problem_fingerprint,
-        "reaction_fingerprint": descriptor.reaction_fingerprint,
-        "topology_fingerprint": descriptor.topology_fingerprint,
-        "reference_fingerprint": descriptor.reference_fingerprint,
-        "domain_fingerprint": descriptor.domain_fingerprint,
-        "formulation": descriptor.formulation,
-        "certificate_scope": descriptor.certificate_scope,
-        "globality_claim": result.globality_claim,
-        "outcomes": {
-            "solver_convergence": {"status": "passed", "reason": result.solver_status},
-            "numerical_convergence": {
-                "status": "passed",
-                "reason": result.numerical_status,
-            },
-            "physical_certification": {
-                "status": "passed",
-                "reason": result.physical_status,
-            },
-            "scientific_fit_acceptance": {
-                "status": "not_applicable",
-                "reason": "GREPE owner receipt is not a fit acceptance decision",
-            },
-        },
-        "eos_domain_status": result.eos_domain_status,
-        "resolved_policy": result.resolved_policy,
-        "trial": {
-            "parameter_fingerprint": trial.parameter_fingerprint,
-            "identities": trial.identities,
-            "values": trial.values,
-            "units": trial.units,
-            "active_parameter_fingerprint": trial.active_parameter_fingerprint,
-            "fingerprint": trial.fingerprint,
-        },
-        "branch_signature": result.branch_signature,
-        "evidence": result.evidence,
-        "phases": tuple(
-            {
-                "identity": phase.identity,
-                "role": state.role,
-                "support": state.support,
-                "supported_component_ids": state.supported_component_ids,
-                "mole_fractions": state.mole_fractions,
-                "molar_volume_m3_per_mol": state.molar_volume_m3_per_mol,
-                "molar_density_mol_m3": state.molar_density_mol_m3,
-                "packing_fraction": state.packing_fraction,
-                "pressure_pa": state.pressure_pa,
-                "chemical_potential_component_ids": state.chemical_potential_component_ids,
-                "chemical_potential_over_rt": state.chemical_potential_over_rt,
-                "mechanical_class": state.mechanical_class,
-            }
-            for phase, state in zip(result.problem.phases, result.phases)
-        ),
-        "observations": tuple(
-            {
-                **_owner_observation_payload(observation),
-                "selector": selected_rows[observation.prediction_identity].selector,
-                "unit": selected_rows[observation.prediction_identity].unit,
-                "value": selected_rows[observation.prediction_identity].value,
-                "jacobian": selected_rows[observation.prediction_identity].jacobian,
-            }
-            for observation in observations
-        ),
-    }
-
-
-def serialize_general_reactive_equilibrium_receipt(
-    result: GeneralReactiveEquilibriumResult,
-    *,
-    batch_identity: str,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> str:
-    """Serialize one canonical opaque GREPE owner receipt."""
-
-    descriptor = result.descriptor
-    if result.status != "evaluated" or descriptor is None or result.trial is None:
-        raise ValueError("only evaluated GREPE results have owner receipts")
-    selected = _validated_observation_selection(descriptor, observations)
-    return _canonical_json(_general_receipt_payload(result, batch_identity, selected))
-
-
-def validate_general_reactive_equilibrium_receipt(
-    receipt_json: str,
-    *,
-    descriptor: GeneralReactiveEquilibriumDescriptor,
-    problem: GeneralReactiveEquilibriumProblem,
-    batch_identity: str,
-    active_parameters: epcsaft.ActiveParameterSet,
-    observations: tuple[GeneralEquilibriumOwnerObservation, ...],
-) -> str:
-    """Validate canonical GREPE owner bytes and return their SHA-256 identity."""
-
-    payload = json.loads(receipt_json)
-    if not isinstance(payload, dict) or _canonical_json(payload) != receipt_json:
-        raise ValueError("GREPE owner receipt is not canonical JSON")
-    selected = _validated_observation_selection(descriptor, observations)
-    trial = payload.get("trial")
-    rows = payload.get("observations")
-    phases = payload.get("phases")
-    evidence = payload.get("evidence")
-    outcomes = payload.get("outcomes")
-    resolved_policy = payload.get("resolved_policy")
-    expected_trial = {
-        "parameter_fingerprint": descriptor.parameter_fingerprint,
-        "identities": active_parameters.identities,
-        "values": active_parameters.values,
-        "units": tuple(parameter.unit for parameter in active_parameters.coordinates),
-        "active_parameter_fingerprint": active_parameters.fingerprint,
-    }
-    if (
-        payload.get("schema") != "epcsaft.grepe-owner-receipt.v3"
-        or payload.get("batch_identity") != batch_identity
-        or payload.get("descriptor_fingerprint") != descriptor.fingerprint
-        or payload.get("problem_fingerprint") != descriptor.problem_fingerprint
-        or payload.get("reaction_fingerprint") != descriptor.reaction_fingerprint
-        or payload.get("topology_fingerprint") != descriptor.topology_fingerprint
-        or payload.get("reference_fingerprint") != descriptor.reference_fingerprint
-        or payload.get("domain_fingerprint") != descriptor.domain_fingerprint
-        or payload.get("formulation") != descriptor.formulation
-        or payload.get("certificate_scope") != descriptor.certificate_scope
-        or payload.get("globality_claim") != "not_established"
-        or payload.get("eos_domain_status") not in {"passed", "not_adjudicated"}
-        or problem.identity != descriptor.problem_identity
-        or tuple(phase.identity for phase in problem.phases) != descriptor.phase_identities
-        or not isinstance(trial, dict)
-        or not isinstance(rows, list)
-        or not isinstance(phases, list)
-        or not isinstance(evidence, list)
-        or not isinstance(outcomes, dict)
-        or not isinstance(resolved_policy, list)
-        or len(rows) != len(selected)
-    ):
-        raise ValueError("GREPE owner receipt identity or observations do not match")
-    if (
-        trial.get("parameter_fingerprint") != expected_trial["parameter_fingerprint"]
-        or tuple(trial.get("identities", ())) != active_parameters.identities
-        or tuple(float(value) for value in trial.get("values", ())) != active_parameters.values
-        or tuple(trial.get("units", ())) != expected_trial["units"]
-        or trial.get("active_parameter_fingerprint") != active_parameters.fingerprint
-        or trial.get("fingerprint")
-        != _fingerprint("epcsaft.active-parameter-trial", expected_trial)
-    ):
-        raise ValueError("GREPE owner receipt trial does not match")
-    expected_outcome_statuses = {
-        "solver_convergence": "passed",
-        "numerical_convergence": "passed",
-        "physical_certification": "passed",
-        "scientific_fit_acceptance": "not_applicable",
-    }
-    if set(outcomes) != set(expected_outcome_statuses) or any(
-        not isinstance(outcome, dict)
-        or outcome.get("status") != expected_outcome_statuses[name]
-        or not isinstance(outcome.get("reason"), str)
-        or not outcome["reason"]
-        for name, outcome in outcomes.items()
-    ):
-        raise ValueError("GREPE owner receipt outcomes are invalid")
-    policy_records = tuple(
-        (str(record[0]), float(record[1]))
-        for record in resolved_policy
-        if isinstance(record, list) and len(record) == 2
-    )
-    if len(policy_records) != len(resolved_policy) or (
-        policy_records
-        and (
-            len({name for name, _ in policy_records}) != len(policy_records)
-            or any(
-                not name or not math.isfinite(value) or value < 0.0
-                for name, value in policy_records
-            )
-        )
-    ):
-        raise ValueError("GREPE owner receipt numerical policy is invalid")
-    output_by_identity = {output.identity: output for output in descriptor.outputs}
-    for record, observation in zip(rows, selected, strict=True):
-        output = output_by_identity[observation.prediction_identity]
-        if (
-            not isinstance(record, dict)
-            or record.get("target_identity") != observation.target_identity
-            or record.get("prediction_identity") != observation.prediction_identity
-            or record.get("aggregate_identity") != observation.aggregate_identity
-            or record.get("covariance_identity") != observation.covariance_identity
-            or record.get("selector") != output.selector
-            or record.get("unit") != output.unit
-            or not isinstance(record.get("value"), (int, float))
-            or not math.isfinite(float(record["value"]))
-            or not isinstance(record.get("jacobian"), list)
-            or len(cast(list[object], record["jacobian"])) != len(active_parameters.identities)
-            or any(
-                not isinstance(value, (int, float)) or not math.isfinite(float(value))
-                for value in cast(list[object], record["jacobian"])
-            )
-        ):
-            raise ValueError("GREPE owner receipt observation does not match")
-    if phases:
-        for record, phase in zip(phases, problem.phases, strict=True):
-            if (
-                not isinstance(record, dict)
-                or record.get("identity") != phase.identity
-                or record.get("role") != phase.fluid_role
-                or not isinstance(record.get("mole_fractions"), list)
-                or not math.isclose(
-                    math.fsum(float(value) for value in record["mole_fractions"]),
-                    1.0,
-                    rel_tol=0.0,
-                    abs_tol=2.0e-12,
-                )
-            ):
-                raise ValueError("GREPE owner receipt phase does not match")
-    if len(phases) not in {0, len(problem.phases)} or any(
-        not isinstance(item, list)
-        or len(item) != 2
-        or not isinstance(item[0], str)
-        or not isinstance(item[1], (int, float, str))
-        for item in evidence
-    ):
-        raise ValueError("GREPE owner receipt evidence is invalid")
-    return f"sha256:{hashlib.sha256(receipt_json.encode('utf-8')).hexdigest()}"
-
-
 __all__ = (
     "EosModel",
     "EquilibriumOutput",
@@ -3029,6 +2767,4 @@ __all__ = (
     "ReactivePhase",
     "Solved",
     "general_reactive_equilibrium_descriptor",
-    "serialize_general_reactive_equilibrium_receipt",
-    "validate_general_reactive_equilibrium_receipt",
 )
