@@ -2,9 +2,9 @@
 
 Status: canonical
 
-Doctrine revision: 25
+Doctrine revision: 24
 
-Approved: 2026-08-31
+Approved: 2026-08-25
 
 Owner: `tannerpolley/ePC-SAFT:governance/`
 
@@ -90,11 +90,17 @@ retired only after a reviewed, user-approved promotion receipt proves that the
 candidate preserves every admitted incumbent workflow within its declared
 tolerances and satisfies its additional constrained-phase claims.
 
-D-030 completed the public-route transition. `phase_equilibrium` is the sole
-public nonreactive phase-equilibrium route. D-041 supersedes only D-030's
-requirement for distinct internal HELD/HELD2 discovery algorithms; its public
-omitted-topology discovery, declared-topology no-fallback rule, result surface,
-and accepted CAP-09 lineage evidence remain in force.
+D-030 completes that transition. `phase_equilibrium` is the sole public
+nonreactive phase-equilibrium route. A fixed-T,P feed without a declared
+topology requests the retained HELD/HELD2 discovery algorithm; a declared
+one-to-three-phase topology requests only that constrained solve and may not
+fall back to discovery. Phase compositions and densities are non-authoritative
+hints for declared phases, never implicit topology. The HELD/HELD2 numerical
+core remains the internal discovery and start-generation owner; `tp_flash` and
+its dedicated Python result, error, state, and discovery-marker surface are
+retired. The accepted CAP-09 promotion receipt records the user-approved
+`1e-4` historical lineage comparison while preserving the stricter physical,
+certificate, and derivative gates.
 
 D-031 keeps the Regression cutover boundary EOS-only after the CAP-10
 Equilibrium-observation admission review. Omitted-topology discovery is not an
@@ -106,12 +112,10 @@ current interfaces do not provide the owner-published batch descriptor,
 optimizer-domain branch policy, nonuniqueness policy, or family-level
 Non-Evaluable Trial semantics required by Regression. No dormant Equilibrium
 Observation Family schema, enum, resolver branch, or evaluator is admitted
-into Regression. The live `phase_equilibrium` problem/result interface and its
-internal discovery and start-generation implementation remain
-Equilibrium-owned. D-041 supersedes only D-031's historical identification of
-that implementation as HELD/HELD2; the Regression exclusion is unchanged. A
-later family requires a new implementation issue and independent numerical
-evidence rather than silently expanding Regression.
+into Regression. The live `phase_equilibrium` problem/result interface and
+internal HELD/HELD2 discovery and start-generation implementation remain
+Equilibrium-owned. A later family requires a new implementation issue and
+independent numerical evidence rather than silently expanding Regression.
 
 D-034 admits the fixed-T,P homogeneous reactive Observation Family implemented
 by issue #30. Equilibrium owns its closed descriptor, exact total derivatives,
@@ -191,49 +195,19 @@ perturbation solves also verify those derivatives. No other uncommitted issue-
 admitted. The accepted receipt is
 `governance/receipts/cap-14-grepe-proven-core-admission.json`.
 
-D-032 completed the general scientific capability hard cutover. D-041
-supersedes only D-032's requirement to retain distinct HELD/HELD2 algorithms
-selected by charge topology. The accepted CAP-11 subject commit, retirement
-scan, one-wheel verification, and cleanup evidence remain historical
-acceptance evidence. The receipt at
+D-032 completes the general scientific capability hard cutover. The accepted
+CAP-11 subject commit removes the superseded live permittivity design, the
+executable Cython HELD2 experiment, retired split-header packaging entries,
+literal-component private HELD coordinates, and dead legacy switches while
+retaining the HELD/HELD2 numerical algorithms selected by charge topology and
+conditioning. One exact-commit retirement scan records every match and
+justified provenance exception; one installed wheel passes the complete root,
+native, sanitizer, and installed-wheel Validation matrix. The receipt at
 `governance/receipts/cap-11-hard-cutover-retirement.json` is the final program
 acceptance record. Future scientific campaigns, including issue #6, are
 separate post-cutover Validation work rather than CAP blockers. Issues #30 and
 #31 are likewise detached post-cutover reactive-observation follow-ons, not
 children or acceptance gates of root issue #10.
-
-D-041 unifies omitted-topology nonreactive phase discovery. One source-neutral
-Phase-Stability Discovery sequence retains the admitted HELD2-derived search
-Stages 1--7 for neutral and electroneutral electrolyte charts, then hands each
-admitted candidate topology to GREPE's
-configured finite-phase Gibbs/KKT owner. Declared fixed-T,P topology enters
-GREPE directly and cannot discover or fall back. The cutover removes the
-distinct neutral controller, HELD2 Stages 8--10, Problem (67), duplicate result
-mappers, and live author-named runtime keys while preserving the public
-`equilibrium.solve` request/result surface, typed domain and numerical
-failures, exact fixed-topology sensitivities, and bounded-search claim limits.
-The retained charts may differ by charge constraints; component order, source,
-provider fingerprint, paper, and application never select an algorithm.
-
-Discovery proves only completion of its declared finite schedule and locally
-certified GREPE candidates. It does not claim exhaustive pressure-root
-enumeration, global tangent-plane or Gibbs minimization, boundary-face
-stability, reactions during discovery, solids, or more than three fluid
-phases. Two-phase discovery remains the admitted maximum unless an independent
-three-basin oracle and all three-phase gates accept the optional three-phase
-extension; GREPE's existing declared three-phase capability is independent of
-that discovery admission. ADR 0005 owns the accepted algorithm/lifetime decision and
-`engine/docs/equilibrium/phase-equilibrium.md` owns the equations, stages,
-limits, failures, evidence map, and public-result path.
-
-D-041 authorizes the implementation branch to remove the displaced runtime
-only after this authority amendment receives independent review. The cutover
-MUST NOT merge or become accepted runtime authority until a reviewed #154
-receipt binds the final commit and installed wheel to numerical parity,
-Khudaida lineage, declared-topology no-fallback evidence, the supported
-discovery phase-count boundary, performance acceptance, retirement scans, and
-the final architecture metadata. A supported negative retains the separate
-owner and current architecture outcome.
 
 D-033 makes low-latency private development an explicit project invariant.
 Environment setup builds and installs the sole non-editable Engine wheel before
@@ -624,15 +598,6 @@ Amending this doctrine requires explicit user approval, a new revision, a
 decision-ledger entry, and updates to affected repository pointers. Runtime
 authority changes only through accepted promotion receipts.
 
-Revision 25 records the user-approved unified phase-stability discovery
-cutover. D-041 supersedes D-030, D-031, and D-032 where they require or name
-distinct live HELD/HELD2 implementations, retains one source-neutral Stages
-1--7 candidate search,
-routes every admitted topology through GREPE, preserves declared-topology
-no-fallback behavior and public results, and deletes the displaced controllers,
-Problem (67), Steps 8--10, and duplicate mappings after bounded numerical and
-performance evidence.
-
 Revision 24 records two user-approved consolidations. D-039 makes Ipopt the
 sole reduced-space Regression optimizer after fixed-state, saturation, and
 GREPE numerical parity; removes Ceres and glog from the native graph; and
@@ -778,4 +743,3 @@ Historical plans and receipts retain their original names.
 | D-038 Official downstream applications | Explicit user instruction on 2026-08-20 to maintain MEA-Thermodynamics, MEA-Absorption-Column, and Lithium_Extraction as official Engine applications while preserving Engine/application ownership | Remove the D-024 quarantine for the three named repositories; keep them as separate sibling Git repositories; authorize cross-repository vertical-slice work; require immutable Engine-wheel identity and separate repository histories | Makes cross-repository work durable without nested repositories, submodules, sibling-source imports, or automatic scientific admission | No | Engine, downstream application owners, and Management |
 | D-039 Reduced-space Ipopt Regression | Explicit user instruction through issue #60 to prototype Ipopt, compare it with Ceres on every admitted reduced-space owner, and retain one optimizer | Make Ipopt the sole reduced-space Regression optimizer; preserve exact owner residual Jacobians, `J^T r`, bounds, typed trial failures, immutable results, and scientific tolerances; remove Ceres and glog; keep simultaneous full-space Regression outside this decision | Removes a second native optimizer dependency while retaining fixed-state, saturation, and GREPE numerical parity and improving the expensive GREPE reference runtime | No | Engine, Regression, Validation, and downstream applications |
 | D-040 Remove the active Lab area | Explicit user instruction on 2026-08-25 to delete the Lab subtree and all live routing while retaining required provenance | Remove `lab/` from the governed topology, ownership manifest, checks, and live instructions; retain former Lab names and paths only in historical decisions, receipts, source identities, and scientific provenance | Removes a non-production project area without creating a replacement scratch framework or weakening Engine, Data, or Validation ownership | No | Governance and Management |
-| D-041 Unified Phase-Stability Discovery | Explicit user authorization on 2026-08-31 through issue #154 after three material-design reviews and a fresh integration review | Supersede D-030, D-031, and D-032 only where they require or name distinct live HELD/HELD2 discovery algorithms; retain source-neutral search Stages 1--7 across neutral and charged charts, hand every admitted candidate topology to GREPE, preserve omitted-topology discovery and declared-topology no-fallback behavior, and delete the displaced controllers, Problem (67), Steps 8--10, author-named runtime keys, and duplicate result mapping after authority review; require a reviewed final-commit and installed-wheel #154 receipt before merge or runtime admission | One finite discovery schedule and one configured finite-phase minimizer remove duplicate owners without expanding the globality, support, conditionally admitted phase-count, reaction, solid, or predictive claim | No | Engine Equilibrium, Governance, and installed-wheel Validation evidence |

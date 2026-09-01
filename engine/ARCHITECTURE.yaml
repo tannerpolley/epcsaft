@@ -1,6 +1,6 @@
 version: 11
 status: unified-monorepo-active
-governance_doctrine_revision: 25
+governance_doctrine_revision: 24
 
 artifact:
   repository: tannerpolley/ePC-SAFT
