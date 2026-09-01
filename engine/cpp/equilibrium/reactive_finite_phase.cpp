@@ -3107,9 +3107,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         std::fill(
             lower.begin() + static_cast<std::ptrdiff_t>(offset),
             lower.begin() + static_cast<std::ptrdiff_t>(offset + amount_dimension),
-            trace_floor > 0.0
-                ? std::log(0.1 * trace_floor)
-                : std::log(std::numeric_limits<double>::min())
+            trace_floor > 0.0 ? std::log(0.1 * trace_floor) : -1.0e19
         );
         std::fill(
             upper.begin() + static_cast<std::ptrdiff_t>(offset),

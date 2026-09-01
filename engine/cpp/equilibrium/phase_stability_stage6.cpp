@@ -96,7 +96,7 @@ PhaseStabilityStage6Result run_phase_stability_stage6(
         : "insufficient_candidates";
     result.timing.terminal_status = result.status;
     result.timing.terminal_reason = result.reason;
-    result.timing.next_step = 7;
+    result.timing.next_step = result.candidates.size() >= 2 ? 8 : 7;
     return result;
 }
 

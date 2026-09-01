@@ -812,38 +812,6 @@ std::vector<std::vector<ReactiveFinitePhaseStart>> start_sets(
             }
         }
     }
-    if (!request.start_order_hints.empty()) {
-        const auto score = [&](const auto& starts) {
-            double value = 0.0;
-            for (const auto& hint : request.start_order_hints) {
-                if (hint.phase_index >= starts.size()
-                    || hint.mole_fractions.size()
-                        != starts[hint.phase_index].amounts_mol.size()
-                    || !(hint.molar_volume_m3_per_mol > 0.0)) {
-                    throw std::invalid_argument("invalid GREPE start-order hint");
-                }
-                const auto& start = starts[hint.phase_index];
-                const double total = std::accumulate(
-                    start.amounts_mol.begin(), start.amounts_mol.end(), 0.0
-                );
-                for (std::size_t component = 0;
-                     component < start.amounts_mol.size(); ++component) {
-                    const double difference = start.amounts_mol[component] / total
-                        - hint.mole_fractions[component];
-                    value += difference * difference;
-                }
-                const double volume_difference = std::log(
-                    start.molar_volume_m3_per_mol
-                    / hint.molar_volume_m3_per_mol
-                );
-                value += volume_difference * volume_difference;
-            }
-            return value;
-        };
-        std::stable_sort(result.begin(), result.end(), [&](const auto& left, const auto& right) {
-            return score(left) < score(right);
-        });
-    }
     return result;
 }
 

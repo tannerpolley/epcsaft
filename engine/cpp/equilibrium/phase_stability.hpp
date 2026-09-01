@@ -53,12 +53,6 @@ struct PhaseStabilityDiscoveryResult {
     std::vector<PhaseStabilityStage7Result> step7_history;
     std::vector<PhaseStabilityPhase> phases;
     std::optional<double> total_free_energy_over_rt;
-    std::optional<double> material_balance_inf;
-    std::optional<double> electroneutrality_inf;
-    std::optional<double> pressure_residual_inf;
-    std::optional<double> chemical_potential_residual_inf;
-    std::optional<double> kkt_stationarity_inf;
-    std::optional<double> phase_distinctness;
     std::vector<PhaseStabilityStageTiming> step_timings;
 };
 
