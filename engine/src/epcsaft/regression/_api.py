@@ -11,7 +11,7 @@ import math
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from epcsaft import _core
 
@@ -44,25 +44,6 @@ def _bound_vector(value: Iterable[Any], name: str) -> tuple[float, ...]:
     return result
 
 
-def _append_field(payload: str, value: str) -> str:
-    return f"{payload}{len(value)}:{value}|"
-
-
-def _eos_parameter_contract(model: Any, active: Any) -> str:
-    import hashlib
-
-    model_fingerprint = str(model.parameter_fingerprint)
-    coordinates = tuple(active.coordinates)
-    payload = "epcsaft.eos-owner-parameter-contract.v1|"
-    payload = _append_field(payload, model_fingerprint)
-    for coordinate in coordinates:
-        payload = _append_field(payload, str(coordinate.identity))
-        payload = _append_field(payload, format(float(coordinate.value), ".17e"))
-        payload = _append_field(payload, str(coordinate.unit))
-        payload = _append_field(payload, "physical")
-    return f"sha256:{hashlib.sha256(payload.encode()).hexdigest()}"
-
-
 def _native_evaluators(evaluators: Iterable[CompiledEvaluator]) -> tuple[_core.CompiledOwner, ...]:
     result = tuple(evaluators)
     if not result or any(not isinstance(item, CompiledEvaluator) for item in result):
@@ -75,13 +56,12 @@ class CompiledEvaluator:
     """One immutable opaque native owner and its audit sidecar."""
 
     _native: Any
-    kind: Literal["eos", "equilibrium"]
     sidecar: Mapping[str, object]
 
     @classmethod
-    def from_native(cls, native: Any, kind: Literal["eos", "equilibrium"]) -> CompiledEvaluator:
+    def from_native(cls, native: Any) -> CompiledEvaluator:
         sidecar = cast(Mapping[str, object], native.sidecar)
-        return cls(native, kind, cast(Mapping[str, object], _freeze(sidecar)))
+        return cls(native, cast(Mapping[str, object], _freeze(sidecar)))
 
     @property
     def parameter_count(self) -> int:
@@ -130,7 +110,6 @@ class LeastSquaresResult:
     resolved_options: Mapping[str, object]
     counters: Mapping[str, object]
     covariance: Mapping[str, object]
-    diagnostics: Mapping[str, object]
 
     @property
     def success(self) -> bool:
@@ -192,7 +171,6 @@ def _result(
     optimizer_jacobian = _matrix(
         cast(Sequence[object], native["optimizer_jacobian"]), len(predictions), parameter_count
     )
-    diagnostics = cast(Mapping[str, object], _freeze(native))
     return LeastSquaresResult(
         str(native["status"]),
         str(native["termination"]),
@@ -220,7 +198,6 @@ def _result(
         resolved,
         counters,
         covariance,
-        diagnostics,
     )
 
 
@@ -230,8 +207,6 @@ def least_squares(
     initial_parameters: Iterable[Any],
     *,
     bounds: tuple[Iterable[Any], Iterable[Any]] | None = None,
-    lower_bounds: Iterable[Any] | None = None,
-    upper_bounds: Iterable[Any] | None = None,
     affine_origin: Iterable[Any] | None = None,
     affine_scale: Iterable[Any] | None = None,
     residual_scales: Iterable[Any] | None = None,
@@ -256,22 +231,12 @@ def least_squares(
     y = _vector(observations, "observations")
     if not y:
         raise ValueError("observations must not be empty")
-    if bounds is not None and (lower_bounds is not None or upper_bounds is not None):
-        raise ValueError("supply bounds or lower_bounds/upper_bounds, not both")
     if bounds is not None:
         lower = _bound_vector(bounds[0], "lower_bounds")
         upper = _bound_vector(bounds[1], "upper_bounds")
     else:
-        lower = (
-            _bound_vector(lower_bounds, "lower_bounds")
-            if lower_bounds is not None
-            else tuple(-math.inf for _ in initial)
-        )
-        upper = (
-            _bound_vector(upper_bounds, "upper_bounds")
-            if upper_bounds is not None
-            else tuple(math.inf for _ in initial)
-        )
+        lower = tuple(-math.inf for _ in initial)
+        upper = tuple(math.inf for _ in initial)
     if len(lower) != parameter_count or len(upper) != parameter_count:
         raise ValueError("bounds must match initial_parameters")
     if any(math.isnan(value) for value in (*lower, *upper)):

@@ -2653,7 +2653,7 @@ def compile_regression_evaluator(
     )
     from ..regression._api import CompiledEvaluator
 
-    return CompiledEvaluator.from_native(native, "equilibrium")
+    return CompiledEvaluator.from_native(native)
 
 
 def _map_native_general_reactive_equilibrium(

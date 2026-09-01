@@ -97,7 +97,7 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     assert tuple(row[0] for row in result.optimizer_jacobian) == pytest.approx(
         tuple(row[0] * 2.0 / 10.0 for row in result.physical_jacobian)
     )
-    assert result.diagnostics["residual_scale_metadata"] == "caller-defined discrepancy weights"
+    assert result.residual_scale_metadata == "caller-defined discrepancy weights"
     assert result.covariance["status"] in {"available", "active_bound", "unavailable"}
     assert result.counters["uncached_jacobian_owner_attempts"] >= 4
 

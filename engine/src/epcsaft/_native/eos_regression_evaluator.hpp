@@ -24,7 +24,6 @@ struct EosRegressionSpec final {
     std::vector<std::string> active_parameter_units;
     std::vector<std::string> active_parameter_bases;
     std::vector<std::string> row_identities;
-    std::string parameter_contract_fingerprint;
     std::string source_spec_fingerprint;
     std::string evaluator_fingerprint;
 };

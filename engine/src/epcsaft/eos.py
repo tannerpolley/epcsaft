@@ -311,9 +311,8 @@ def compile_regression_evaluator(
     """Compile one EOS observation specification into a native owner.
 
     ``specification`` is deliberately a small mapping so source packets can
-    carry it without importing the runtime.  It must contain ``model`` and a
-    ``family``/``identity`` (``eos.fixed-state`` or ``eos.pure-saturation``);
-    state values and row identities are explicit fields in the mapping.
+    carry it without importing the runtime. It requires canonical ``family``,
+    state, and ``row_identities`` fields.
     """
 
     if not isinstance(specification, Mapping):
@@ -322,45 +321,19 @@ def compile_regression_evaluator(
     if not isinstance(model, _EosModel):
         raise TypeError("EOS regression specification requires an epcsaft EOS model")
     model._validate_active_parameters(active_parameters)
-    identity = cast(
-        ObservableIdentity,
-        str(specification.get("identity", specification.get("family", ""))),
-    )
-    if identity in {"fixed-state", "eos.fixed-state"}:
-        family = "fixed-state"
-        identity = "eos.fixed-state"
-    elif identity in {"pure-saturation", "eos.pure-saturation"}:
-        family = "pure-saturation"
-        identity = "eos.pure-saturation"
-    else:
+    family = specification.get("family")
+    if family not in {"fixed-state", "pure-saturation"}:
         raise ValueError("unsupported EOS regression family")
-    descriptor = specification.get("descriptor")
-    descriptor_rows = (
-        ()
-        if descriptor is None
-        else tuple(cast(Iterable[str], getattr(descriptor, "row_identities", ())))
-    )
-    rows = tuple(
-        cast(
-            Iterable[str],
-            specification.get("row_identities", specification.get("rows", descriptor_rows)),
-        )
-    )
+    rows = tuple(cast(Iterable[str], specification.get("row_identities", ())))
     if not rows:
-        rows = tuple(
-            model.observable_descriptor(active_parameters, identity=identity).row_identities
-        )
-    temperature = specification.get("temperature_k", specification.get("temperature"))
+        raise ValueError("EOS regression specification requires row_identities")
+    temperature = specification.get("temperature_k")
     if temperature is None:
         raise ValueError("EOS regression specification requires temperature_k")
-    temperature_k = (
-        _quantity_magnitude(temperature, "kelvin")
-        if hasattr(temperature, "to")
-        else float(temperature)
-    )
+    temperature_k = float(temperature)
     if not math.isfinite(temperature_k):
         raise ValueError("temperature must be finite")
-    from .regression._api import CompiledEvaluator, _eos_parameter_contract
+    from .regression._api import CompiledEvaluator
 
     native_spec: dict[str, object] = {
         "family": family,
@@ -371,31 +344,20 @@ def compile_regression_evaluator(
             coordinate.unit for coordinate in active_parameters.coordinates
         ),
         "active_parameter_bases": tuple("physical" for _ in active_parameters.coordinates),
-        "parameter_contract_fingerprint": specification.get(
-            "parameter_contract_fingerprint", _eos_parameter_contract(model, active_parameters)
-        ),
     }
     if family == "fixed-state":
-        density = specification.get(
-            "molar_density_mol_m3", specification.get("rho", specification.get("density"))
-        )
+        density = specification.get("molar_density_mol_m3")
         if density is None:
             raise ValueError("fixed-state EOS regression requires molar density")
-        native_spec["molar_density_mol_m3"] = (
-            _quantity_magnitude(density, "mole / meter ** 3")
-            if hasattr(density, "to")
-            else float(density)
-        )
-        composition = specification.get("mole_fractions", specification.get("composition"))
+        native_spec["molar_density_mol_m3"] = float(density)
+        composition = specification.get("mole_fractions")
         if composition is None:
-            composition = (1.0,) if isinstance(model, Pure) else None
-        if composition is None:
-            raise ValueError("mixture fixed-state EOS regression requires composition")
+            raise ValueError("fixed-state EOS regression requires mole_fractions")
         native_spec["mole_fractions"] = tuple(
             float(value) for value in cast(Iterable[Any], composition)
         )
     source_payload = {
-        "identity": identity,
+        "family": family,
         "temperature_k": temperature_k,
         "molar_density_mol_m3": native_spec.get("molar_density_mol_m3"),
         "mole_fractions": native_spec.get("mole_fractions"),
@@ -416,7 +378,7 @@ def compile_regression_evaluator(
         native_spec,
         model._active_coordinates(active_parameters),
     )
-    return CompiledEvaluator.from_native(native, "eos")
+    return CompiledEvaluator.from_native(native)
 
 
 def _accepted_observable_block(

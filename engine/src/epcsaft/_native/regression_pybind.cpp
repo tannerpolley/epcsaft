@@ -57,9 +57,9 @@ epcsaft::EosRegressionSpec parse_eos_spec(
 ) {
     const std::string family = required<std::string>(value, "family");
     epcsaft::EosRegressionSpec result;
-    if (family == "fixed-state" || family == "eos.fixed-state") {
+    if (family == "fixed-state") {
         result.family = epcsaft::EosRegressionFamily::FixedState;
-    } else if (family == "pure-saturation" || family == "eos.pure-saturation") {
+    } else if (family == "pure-saturation") {
         result.family = epcsaft::EosRegressionFamily::PureSaturation;
     } else {
         throw std::invalid_argument("unsupported EOS evaluator family");
@@ -72,8 +72,6 @@ epcsaft::EosRegressionSpec parse_eos_spec(
         value, "active_parameter_units");
     result.active_parameter_bases = required<std::vector<std::string>>(
         value, "active_parameter_bases");
-    result.parameter_contract_fingerprint = required<std::string>(
-        value, "parameter_contract_fingerprint");
     result.source_spec_fingerprint = required<std::string>(
         value, "source_spec_fingerprint");
     result.evaluator_fingerprint = required<std::string>(

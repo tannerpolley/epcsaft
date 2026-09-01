@@ -454,10 +454,6 @@ EosOwnerEvaluator::EosOwnerEvaluator(
                          sidecar_.active_parameter_bases)) {
         throw std::invalid_argument("EOS evaluator active parameter metadata is not canonical");
     }
-    if (specification_.parameter_contract_fingerprint
-        != sidecar_.parameter_contract_fingerprint) {
-        throw std::invalid_argument("EOS evaluator parameter contract fingerprint changed");
-    }
     require_digest(specification_.source_spec_fingerprint,
                    "source specification fingerprint");
     require_digest(specification_.evaluator_fingerprint,
