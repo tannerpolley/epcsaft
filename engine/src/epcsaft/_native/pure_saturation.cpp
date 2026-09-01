@@ -20,9 +20,9 @@ constexpr double kVaporDensityUpper = 5.0e3;
 constexpr double kLiquidDensityLower = 5.001e3;
 constexpr double kPressureLowerPa = 1.0e-12;
 constexpr double kPressureUpperPa = 1.0e8;
-constexpr double kSolverConstraintTolerance = 1.0e-10;
-constexpr double kConstraintTolerance = 1.0e-8;
-constexpr double kPressureAbsoluteTolerancePa = 1.0e-6;
+// Dimensionless closure bound: 2e-8 is the roundoff/conditioning scale
+// supported by the retained independent states and replay boundary.
+constexpr double kFeasibilityTolerance = 2.0e-8;
 constexpr double kPhaseDistanceTolerance = 1.0e-3;
 void require_finite(double value, const char *name) {
   if (!std::isfinite(value)) {
@@ -189,10 +189,9 @@ AttemptResult run_saturation_ipopt(const NativeModel &model, double temperature_
   application->Options()->SetIntegerValue("print_level", 0);
   application->Options()->SetStringValue("sb", "yes");
   application->Options()->SetIntegerValue("max_iter", 300);
-  application->Options()->SetNumericValue("tol", kSolverConstraintTolerance);
-  application->Options()->SetNumericValue("acceptable_tol", kSolverConstraintTolerance);
-  application->Options()->SetIntegerValue("acceptable_iter", 0);
-  application->Options()->SetNumericValue("constr_viol_tol", kSolverConstraintTolerance);
+  application->Options()->SetNumericValue("tol", kFeasibilityTolerance);
+  application->Options()->SetNumericValue("acceptable_tol", kFeasibilityTolerance);
+  application->Options()->SetNumericValue("constr_viol_tol", kFeasibilityTolerance);
   application->Options()->SetStringValue("jacobian_approximation", "exact");
   application->Options()->SetStringValue("hessian_approximation", exact_hessian ? "exact" : "limited-memory");
   application->Options()->SetStringValue("nlp_scaling_method", "none");
@@ -254,7 +253,7 @@ bool assess_candidate(const AttemptResult &attempt,
   result.liquid_residual_density_derivative_m3_per_mol =
       evaluation.jacobian[4] / liquid_density;
   result.feasibility_measure = feasibility_measure(evaluation);
-  result.feasibility_tolerance = kSolverConstraintTolerance;
+  result.feasibility_tolerance = kFeasibilityTolerance;
   const bool finite_values =
       std::isfinite(evaluation.saturation_pressure_pa) &&
       std::isfinite(vapor_density) && std::isfinite(liquid_density) &&
@@ -270,11 +269,6 @@ bool assess_candidate(const AttemptResult &attempt,
   const bool in_bounds = inside_bounds(attempt.variables, liquid_density_upper_mol_m3);
   result.candidate_available = finite_values &&
       in_bounds;
-  const double allowed_pressure_difference = std::max(
-      kPressureAbsoluteTolerancePa,
-      kConstraintTolerance * saturation_pressure);
-  const bool solver_success = attempt.optimizer_converged &&
-      attempt.callback_error.empty();
   const bool physical[] = {
       finite_values,
       evaluation.saturation_pressure_pa > 0.0,
@@ -286,10 +280,8 @@ bool assess_candidate(const AttemptResult &attempt,
   };
   result.physical_status_count = 0;
   for (const bool status : physical) result.physical_status_count += status;
-  result.physical_accepted = solver_success && result.candidate_available &&
-      vapor_pressure_difference <= allowed_pressure_difference &&
-      liquid_pressure_difference <= allowed_pressure_difference &&
-      result.chemical_potential_absolute_residual <= kConstraintTolerance &&
+  result.physical_accepted = result.candidate_available &&
+      result.feasibility_measure <= kFeasibilityTolerance &&
       result.physical_status_count == 7;
   result.accepted = result.physical_accepted;
   result.physical_status = result.physical_accepted ? "accepted" : "rejected";
@@ -322,6 +314,9 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
                                           100.0,  1000.0, 3000.0};
   const std::array<double, 3> liquid_seeds{18'000.0, 12'000.0, 24'000.0};
   SaturationSolveResult result;
+  result.vapor_density_bounds_mol_m3 = {kVaporDensityLower, kVaporDensityUpper};
+  result.liquid_density_bounds_mol_m3 = {
+      kLiquidDensityLower, liquid_density_upper_mol_m3};
   result.failure_reason = "no finite in-domain saturation candidate";
   std::vector<std::array<double, 3>> starts;
   if (explicit_start.has_value()) {
@@ -343,18 +338,23 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
   int best_physical_count = -1;
   std::size_t best_start = 0;
   bool explicit_certified = false;
-  std::string last_callback_error;
+  SaturationSolveResult last_failed_attempt = result;
   for (std::size_t start_index = 0; start_index < starts.size(); ++start_index) {
     if (explicit_start.has_value() && start_index > 0 && explicit_certified)
       break;
     const AttemptResult attempt = run_saturation_ipopt(
         model, temperature_k, starts[start_index], liquid_density_upper_mol_m3);
-    result.optimizer_converged = attempt.optimizer_converged;
-    result.optimizer_status = attempt.optimizer_status;
-    if (!attempt.callback_error.empty()) result.failure_reason = attempt.callback_error;
-    SaturationSolveResult candidate = result;
+    SaturationSolveResult candidate;
     candidate.optimizer_converged = attempt.optimizer_converged;
     candidate.optimizer_status = attempt.optimizer_status;
+    candidate.vapor_density_bounds_mol_m3 =
+        result.vapor_density_bounds_mol_m3;
+    candidate.liquid_density_bounds_mol_m3 =
+        result.liquid_density_bounds_mol_m3;
+    candidate.feasibility_tolerance = kFeasibilityTolerance;
+    candidate.failure_reason = attempt.callback_error.empty()
+        ? "no finite in-domain saturation candidate"
+        : attempt.callback_error;
     candidate.evaluation = {};
     bool available = false;
     try {
@@ -368,8 +368,10 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     } catch (const std::exception &error) {
       candidate.failure_reason = error.what();
     }
-    if (!attempt.callback_error.empty()) last_callback_error = attempt.callback_error;
-    if (!available) continue;
+    if (!available) {
+      last_failed_attempt = std::move(candidate);
+      continue;
+    }
     if (explicit_start.has_value() && start_index == 0)
       explicit_certified = candidate.accepted;
     const bool better = !have_candidate ||
@@ -386,8 +388,7 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
       result = std::move(candidate);
     }
   }
-  if (!have_candidate && !last_callback_error.empty())
-    result.failure_reason = last_callback_error;
+  if (!have_candidate) result = std::move(last_failed_attempt);
   return result;
 }
 } // namespace

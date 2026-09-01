@@ -197,26 +197,28 @@ class SaturationDiagnostics:
     candidate_available: bool
     optimizer_converged: bool
     optimizer_status: str
-    feasibility_measure: float
-    feasibility_tolerance: float
+    vapor_density_bounds_mol_m3: tuple[float, float] | None
+    liquid_density_bounds_mol_m3: tuple[float, float] | None
+    feasibility_measure: float | None
+    feasibility_tolerance: float | None
     physical_accepted: bool
     physical_status: str
-    physical_status_count: int
-    pressure_relative_residual: float
-    chemical_potential_absolute_residual: float
-    phase_density_distance: float
-    vapor_pressure_relative_residual: float
-    liquid_pressure_relative_residual: float
-    vapor_residual_density_derivative_m3_per_mol: float
-    liquid_residual_density_derivative_m3_per_mol: float
+    physical_status_count: int | None
+    pressure_relative_residual: float | None
+    chemical_potential_absolute_residual: float | None
+    phase_density_distance: float | None
+    vapor_pressure_relative_residual: float | None
+    liquid_pressure_relative_residual: float | None
+    vapor_residual_density_derivative_m3_per_mol: float | None
+    liquid_residual_density_derivative_m3_per_mol: float | None
     rejection_status: Literal["none", "solve-failure", "root-swap", "coalescence", "branch-loss"]
     exact_derivatives: bool
     sensitivity_status: str
     sensitivity_failure_reason: str
-    sensitivity_rank: int
-    sensitivity_dimension: int
-    sensitivity_condition_number: float
-    sensitivity_backward_error: float
+    sensitivity_rank: int | None
+    sensitivity_dimension: int | None
+    sensitivity_condition_number: float | None
+    sensitivity_backward_error: float | None
     globality_certificate: bool
     failure_reason: str
 
@@ -430,8 +432,12 @@ def _accepted_observable_block(
 
 def _saturation_branch_evidence(
     diagnostics: SaturationDiagnostics,
-    liquid_density_upper_mol_per_m3: float,
 ) -> tuple[SaturationBranchEvidence, ...]:
+    if (
+        diagnostics.vapor_density_bounds_mol_m3 is None
+        or diagnostics.liquid_density_bounds_mol_m3 is None
+    ):
+        return ()
     vapor_residual = diagnostics.vapor_pressure_relative_residual
     liquid_residual = diagnostics.liquid_pressure_relative_residual
     vapor_derivative = diagnostics.vapor_residual_density_derivative_m3_per_mol
@@ -439,16 +445,24 @@ def _saturation_branch_evidence(
     return (
         SaturationBranchEvidence(
             "vapor",
-            (1.0e-8, 5.0e3),
-            vapor_residual if math.isfinite(vapor_residual) else None,
-            vapor_derivative if math.isfinite(vapor_derivative) else None,
+            diagnostics.vapor_density_bounds_mol_m3,
+            vapor_residual
+            if vapor_residual is not None and math.isfinite(vapor_residual)
+            else None,
+            vapor_derivative
+            if vapor_derivative is not None and math.isfinite(vapor_derivative)
+            else None,
             diagnostics.rejection_status,
         ),
         SaturationBranchEvidence(
             "liquid",
-            (5.001e3, liquid_density_upper_mol_per_m3),
-            liquid_residual if math.isfinite(liquid_residual) else None,
-            liquid_derivative if math.isfinite(liquid_derivative) else None,
+            diagnostics.liquid_density_bounds_mol_m3,
+            liquid_residual
+            if liquid_residual is not None and math.isfinite(liquid_residual)
+            else None,
+            liquid_derivative
+            if liquid_derivative is not None and math.isfinite(liquid_derivative)
+            else None,
             diagnostics.rejection_status,
         ),
     )
@@ -458,7 +472,6 @@ def _rejected_saturation_block(
     descriptor: ObservableDescriptor,
     temperature_k: float,
     diagnostics: SaturationDiagnostics,
-    liquid_density_upper_mol_per_m3: float,
 ) -> ObservableBlock:
     reason = diagnostics.failure_reason or diagnostics.rejection_status
     return ObservableBlock(
@@ -483,9 +496,7 @@ def _rejected_saturation_block(
             reason,
         ),
         saturation_diagnostics=diagnostics,
-        saturation_branches=_saturation_branch_evidence(
-            diagnostics, liquid_density_upper_mol_per_m3
-        ),
+        saturation_branches=_saturation_branch_evidence(diagnostics),
     )
 
 
@@ -1515,7 +1526,6 @@ class Pure(_EosModel):
         temperature_k = self._saturation_temperature(T)
         coordinates = self._active_coordinates(active_parameters)
         try:
-            liquid_density_upper = self._native.molar_density_upper_bound(temperature_k, (1.0,))
             native = cast(
                 Mapping[str, object],
                 _native_core._solve_saturation_active(
@@ -1529,9 +1539,7 @@ class Pure(_EosModel):
             raise SaturationError(str(exc), failure) from exc
         diagnostics = _saturation_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
         if not bool(native["accepted"]) or not diagnostics.exact_derivatives:
-            return _rejected_saturation_block(
-                descriptor, temperature_k, diagnostics, liquid_density_upper
-            )
+            return _rejected_saturation_block(descriptor, temperature_k, diagnostics)
         result = self._saturation_result(native, temperature_k)
         parameter_count = len(coordinates)
         flat = tuple(float(value) for value in cast(Iterable[SupportsFloat], native["derivatives"]))
@@ -1575,7 +1583,7 @@ class Pure(_EosModel):
             derivatives,
             scope="shared-solve",
             saturation_diagnostics=diagnostics,
-            saturation_branches=_saturation_branch_evidence(diagnostics, liquid_density_upper),
+            saturation_branches=_saturation_branch_evidence(diagnostics),
         )
 
     def observable_descriptor(
@@ -1775,43 +1783,69 @@ def evaluate_observable(
 
 
 def _saturation_diagnostics(payload: Mapping[str, object]) -> SaturationDiagnostics:
+    def optional_float(key: str) -> float | None:
+        value = payload[key]
+        if value is None:
+            return None
+        numeric = float(cast(float, value))
+        return numeric if math.isfinite(numeric) else None
+
+    def optional_bounds(key: str) -> tuple[float, float] | None:
+        value = payload[key]
+        if value is None:
+            return None
+        return cast(
+            tuple[float, float],
+            tuple(float(item) for item in cast(Iterable[SupportsFloat], value)),
+        )
+
+    candidate_available = bool(payload["candidate_available"])
+    sensitivity_status = str(payload["sensitivity_status"])
     return SaturationDiagnostics(
-        candidate_available=bool(payload["candidate_available"]),
+        candidate_available=candidate_available,
         optimizer_converged=bool(payload["optimizer_converged"]),
         optimizer_status=str(payload["optimizer_status"]),
-        feasibility_measure=float(cast(float, payload["feasibility_measure"])),
-        feasibility_tolerance=float(cast(float, payload["feasibility_tolerance"])),
+        vapor_density_bounds_mol_m3=optional_bounds("vapor_density_bounds_mol_m3"),
+        liquid_density_bounds_mol_m3=optional_bounds("liquid_density_bounds_mol_m3"),
+        feasibility_measure=optional_float("feasibility_measure"),
+        feasibility_tolerance=optional_float("feasibility_tolerance"),
         physical_accepted=bool(payload["physical_accepted"]),
         physical_status=str(payload["physical_status"]),
-        physical_status_count=int(cast(int, payload["physical_status_count"])),
-        pressure_relative_residual=float(cast(float, payload["pressure_relative_residual"])),
-        vapor_pressure_relative_residual=float(
-            cast(float, payload["vapor_pressure_relative_residual"])
+        physical_status_count=(
+            None
+            if not candidate_available or payload["physical_status_count"] is None
+            else int(cast(int, payload["physical_status_count"]))
         ),
-        liquid_pressure_relative_residual=float(
-            cast(float, payload["liquid_pressure_relative_residual"])
+        pressure_relative_residual=optional_float("pressure_relative_residual"),
+        vapor_pressure_relative_residual=optional_float("vapor_pressure_relative_residual"),
+        liquid_pressure_relative_residual=optional_float("liquid_pressure_relative_residual"),
+        chemical_potential_absolute_residual=optional_float("chemical_potential_absolute_residual"),
+        phase_density_distance=optional_float("phase_density_distance"),
+        vapor_residual_density_derivative_m3_per_mol=optional_float(
+            "vapor_residual_density_derivative_m3_per_mol"
         ),
-        chemical_potential_absolute_residual=float(
-            cast(float, payload["chemical_potential_absolute_residual"])
-        ),
-        phase_density_distance=float(cast(float, payload["phase_density_distance"])),
-        vapor_residual_density_derivative_m3_per_mol=float(
-            cast(float, payload["vapor_residual_density_derivative_m3_per_mol"])
-        ),
-        liquid_residual_density_derivative_m3_per_mol=float(
-            cast(float, payload["liquid_residual_density_derivative_m3_per_mol"])
+        liquid_residual_density_derivative_m3_per_mol=optional_float(
+            "liquid_residual_density_derivative_m3_per_mol"
         ),
         rejection_status=cast(
             Literal["none", "solve-failure", "root-swap", "coalescence", "branch-loss"],
             str(payload["rejection_status"]),
         ),
         exact_derivatives=bool(payload["exact_derivatives"]),
-        sensitivity_status=str(payload["sensitivity_status"]),
+        sensitivity_status=sensitivity_status,
         sensitivity_failure_reason=str(payload["sensitivity_failure_reason"]),
-        sensitivity_rank=int(cast(int, payload["sensitivity_rank"])),
-        sensitivity_dimension=int(cast(int, payload["sensitivity_dimension"])),
-        sensitivity_condition_number=float(cast(float, payload["sensitivity_condition_number"])),
-        sensitivity_backward_error=float(cast(float, payload["sensitivity_backward_error"])),
+        sensitivity_rank=(
+            None
+            if sensitivity_status == "not_requested" or payload["sensitivity_rank"] is None
+            else int(cast(int, payload["sensitivity_rank"]))
+        ),
+        sensitivity_dimension=(
+            None
+            if sensitivity_status == "not_requested" or payload["sensitivity_dimension"] is None
+            else int(cast(int, payload["sensitivity_dimension"]))
+        ),
+        sensitivity_condition_number=optional_float("sensitivity_condition_number"),
+        sensitivity_backward_error=optional_float("sensitivity_backward_error"),
         globality_certificate=bool(payload["globality_certificate"]),
         failure_reason=str(payload["failure_reason"]),
     )
@@ -1835,26 +1869,28 @@ def _failed_saturation_diagnostics(reason: str) -> dict[str, object]:
         "candidate_available": False,
         "optimizer_converged": False,
         "optimizer_status": "native_exception",
-        "feasibility_measure": math.inf,
-        "feasibility_tolerance": math.inf,
+        "vapor_density_bounds_mol_m3": None,
+        "liquid_density_bounds_mol_m3": None,
+        "feasibility_measure": None,
+        "feasibility_tolerance": None,
         "physical_accepted": False,
         "physical_status": "not_adjudicated",
-        "physical_status_count": 0,
-        "pressure_relative_residual": math.inf,
-        "vapor_pressure_relative_residual": math.inf,
-        "liquid_pressure_relative_residual": math.inf,
-        "chemical_potential_absolute_residual": math.inf,
-        "phase_density_distance": 0.0,
-        "vapor_residual_density_derivative_m3_per_mol": math.nan,
-        "liquid_residual_density_derivative_m3_per_mol": math.nan,
+        "physical_status_count": None,
+        "pressure_relative_residual": None,
+        "vapor_pressure_relative_residual": None,
+        "liquid_pressure_relative_residual": None,
+        "chemical_potential_absolute_residual": None,
+        "phase_density_distance": None,
+        "vapor_residual_density_derivative_m3_per_mol": None,
+        "liquid_residual_density_derivative_m3_per_mol": None,
         "rejection_status": "solve-failure",
         "exact_derivatives": False,
         "sensitivity_status": "unavailable",
         "sensitivity_failure_reason": "native_exception",
-        "sensitivity_rank": 0,
-        "sensitivity_dimension": 0,
-        "sensitivity_condition_number": math.inf,
-        "sensitivity_backward_error": math.inf,
+        "sensitivity_rank": None,
+        "sensitivity_dimension": None,
+        "sensitivity_condition_number": None,
+        "sensitivity_backward_error": None,
         "globality_certificate": False,
         "failure_reason": reason,
     }

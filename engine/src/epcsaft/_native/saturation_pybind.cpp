@@ -50,6 +50,8 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
   diagnostics["candidate_available"] = solve.candidate_available;
   diagnostics["optimizer_converged"] = solve.optimizer_converged;
   diagnostics["optimizer_status"] = solve.optimizer_status;
+  diagnostics["vapor_density_bounds_mol_m3"] = solve.vapor_density_bounds_mol_m3;
+  diagnostics["liquid_density_bounds_mol_m3"] = solve.liquid_density_bounds_mol_m3;
   diagnostics["feasibility_measure"] = solve.feasibility_measure;
   diagnostics["feasibility_tolerance"] = solve.feasibility_tolerance;
   diagnostics["physical_accepted"] = solve.physical_accepted;

@@ -96,6 +96,14 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert uncertified.liquid.molar_density_mol_m3 > 0.0
 
     associated = Pure(Parameters.from_mapping(ASSOCIATING_PURE))
+    failed_candidate = associated.saturation(T=180.0 * u.kelvin)
+    assert failed_candidate.diagnostics.candidate_available
+    assert not failed_candidate.diagnostics.optimizer_converged
+    assert not failed_candidate.certified
+    assert (
+        failed_candidate.diagnostics.feasibility_measure
+        > failed_candidate.diagnostics.feasibility_tolerance
+    )
     neighbor = associated.saturation(T=290.0 * u.kelvin)
     candidate = associated.saturation(T=300.0 * u.kelvin)
     assert candidate.diagnostics.candidate_available

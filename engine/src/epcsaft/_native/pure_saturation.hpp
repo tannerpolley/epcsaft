@@ -37,6 +37,8 @@ struct SaturationSolveResult {
   bool optimizer_converged = false;
   bool physical_accepted = false;
   std::string optimizer_status;
+  std::array<double, 2> vapor_density_bounds_mol_m3{};
+  std::array<double, 2> liquid_density_bounds_mol_m3{};
   double feasibility_measure = std::numeric_limits<double>::infinity();
   double feasibility_tolerance = std::numeric_limits<double>::infinity();
   double pressure_relative_residual = std::numeric_limits<double>::infinity();
