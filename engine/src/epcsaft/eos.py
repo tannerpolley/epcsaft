@@ -595,6 +595,9 @@ def _native_arguments(
 class _EosModel:
     _component_ids: tuple[str, ...]
     _parameter_fingerprint: str
+    _topology_fingerprint: str
+    _component_order_fingerprint: str
+    _artifact_fingerprint: str
     _parameters: Parameters
     _model: _ResolvedModel
     _native: _native_core.NativeModel
@@ -606,6 +609,18 @@ class _EosModel:
         object.__setattr__(self, "_parameter_fingerprint", parameters.fingerprint)
         object.__setattr__(self, "_parameters", parameters)
         object.__setattr__(self, "_model", model)
+        topology_fingerprint = _native_topology_fingerprint(self)
+        component_order_fingerprint = _native_identity_fingerprint(
+            "epcsaft-native-component-order-v1",
+            {
+                "component_ids": parameters.component_ids,
+                "charges": tuple(model.charge_number),
+            },
+        )
+        artifact_fingerprint = _python_native_artifact_fingerprint()
+        object.__setattr__(self, "_topology_fingerprint", topology_fingerprint)
+        object.__setattr__(self, "_component_order_fingerprint", component_order_fingerprint)
+        object.__setattr__(self, "_artifact_fingerprint", artifact_fingerprint)
         native = _native_core.NativeModel(*native_arguments).with_parameter_identities(
             parameters.component_ids,
             tuple(f"{component}/{site}" for component, site in model.site_ids),
@@ -617,14 +632,8 @@ class _EosModel:
             math.nan if model.ion_mole_fraction_max is None else model.ion_mole_fraction_max,
             math.nan if model.pressure_min_pa is None else model.pressure_min_pa,
             math.nan if model.pressure_max_pa is None else model.pressure_max_pa,
-            _native_topology_fingerprint(self),
-            _native_identity_fingerprint(
-                "epcsaft-native-component-order-v1",
-                {
-                    "component_ids": parameters.component_ids,
-                    "charges": tuple(model.charge_number),
-                },
-            ),
+            topology_fingerprint,
+            component_order_fingerprint,
             _native_identity_fingerprint(
                 "epcsaft-native-source-domain-v1",
                 {
@@ -641,7 +650,7 @@ class _EosModel:
                     "source_pressure_max_pa": model.source_pressure_max_pa,
                 },
             ),
-            _python_native_artifact_fingerprint(),
+            artifact_fingerprint,
             math.nan if model.source_temperature_min_k is None else model.source_temperature_min_k,
             math.nan if model.source_temperature_max_k is None else model.source_temperature_max_k,
             math.nan if model.source_pressure_min_pa is None else model.source_pressure_min_pa,
@@ -787,6 +796,7 @@ class _EosModel:
         P: object | None = None,
         x: object,
         phase: str | None = None,
+        density_anchor: object | None = None,
         native_model: _native_core.NativeModel | None = None,
     ) -> State:
         """Create one immutable state at explicit density or specified pressure.
@@ -801,6 +811,11 @@ class _EosModel:
             raise _eos_error("invalid-state", field="phase")
         if rho is not None and phase is not None:
             raise _eos_error("invalid-state", field="phase")
+        if density_anchor is not None and (rho is not None or P is None or phase is None):
+            raise _eos_error(
+                "invalid-density-anchor",
+                reason="requires-pressure-closure-and-explicit-phase",
+            )
         temperature_k = _state_magnitude(T, "kelvin", "T")
         try:
             fractions = tuple(
@@ -880,6 +895,7 @@ class _EosModel:
                 )
 
         evaluator = self._native if native_model is None else native_model
+        anchor: State | None = None
         if rho is not None:
             density_molar = _state_magnitude(rho, "mole / meter ** 3", "rho")
             try:
@@ -888,18 +904,70 @@ class _EosModel:
                 raise _eos_error("evaluation-failed", reason=str(exc)) from exc
         else:
             pressure_pa = _state_magnitude(P, "pascal", "P")
-            try:
-                native = evaluator.evaluate_pressure(
-                    temperature_k, pressure_pa, fractions, phase or ""
+            if density_anchor is None:
+                try:
+                    native = evaluator.evaluate_pressure(
+                        temperature_k, pressure_pa, fractions, phase or ""
+                    )
+                except (RuntimeError, ValueError) as exc:
+                    raise _eos_error("evaluation-failed", reason=str(exc)) from exc
+            else:
+                anchor = _validate_density_anchor(
+                    self,
+                    density_anchor,
+                    temperature_k,
+                    pressure_pa,
+                    cast(str, phase),
                 )
-            except (RuntimeError, ValueError) as exc:
-                raise _eos_error("evaluation-failed", reason=str(exc)) from exc
+                certified = cast(Mapping[str, object], anchor.certified_branch)
+                try:
+                    native = evaluator.evaluate_pressure_continuation(
+                        temperature_k,
+                        pressure_pa,
+                        fractions,
+                        float(anchor.molar_density.to("mole / meter ** 3").magnitude),
+                        cast(str, phase),
+                        int(str(certified["stable_root_index"])),
+                        float.fromhex(str(certified["origin_molar_density_hex"])),
+                    )
+                except (RuntimeError, ValueError) as exc:
+                    raise _eos_error(
+                        "density-anchor-branch-unreachable",
+                        reason=str(exc),
+                        max_abs_log_density=math.log1p(1.0e-2),
+                        centered_scan_intervals=5,
+                        domain_scan_intervals=360,
+                    ) from exc
         diagnostics = native.density_diagnostics
+        certified_branch = (
+            anchor.certified_branch
+            if anchor is not None
+            else _certified_branch(diagnostics, phase)
+        )
+        state_identity = _state_identity(
+            artifact_fingerprint=self._artifact_fingerprint,
+            parameter_fingerprint=self._parameter_fingerprint,
+            topology_fingerprint=self._topology_fingerprint,
+            component_order_fingerprint=self._component_order_fingerprint,
+            component_ids=self._component_ids,
+            temperature_k=temperature_k,
+            pressure_pa=pressure_pa if P is not None else native.pressure,
+            mole_fractions=fractions,
+            molar_density=native.molar_density,
+            requested_phase=phase,
+            certified_branch=certified_branch,
+        )
         return State(
             component_ids=self._component_ids,
             temperature=temperature_k * unit_registry.kelvin,
             mole_fractions=fractions,
             parameter_fingerprint=self._parameter_fingerprint,
+            topology_fingerprint=self._topology_fingerprint,
+            component_order_fingerprint=self._component_order_fingerprint,
+            artifact_fingerprint=self._artifact_fingerprint,
+            requested_phase=cast(Phase | None, phase),
+            certified_branch=certified_branch,
+            state_identity=state_identity,
             hard_chain=native.hard_chain,
             dispersion=native.dispersion,
             association=native.association,
@@ -944,6 +1012,7 @@ class _EosModel:
                 * unit_registry.mole
                 / unit_registry.meter**3,
                 pressure_residual=diagnostics.pressure_residual * unit_registry.pascal,
+                requested_pressure=pressure_pa * unit_registry.pascal,
                 pressure_density_derivative=diagnostics.pressure_density_derivative
                 * unit_registry.pascal
                 * unit_registry.meter**3
@@ -951,6 +1020,33 @@ class _EosModel:
                 iterations=diagnostics.iterations,
                 stable=diagnostics.stable,
                 branch=diagnostics.branch,
+                stable_root_count=(
+                    None if anchor is not None else diagnostics.stable_root_count
+                ),
+                selected_stable_root_index=(
+                    None if anchor is not None else diagnostics.selected_stable_root_index
+                ),
+                anchor_status="accepted" if anchor is not None else "not_supplied",
+                anchor_density=None if anchor is None else anchor.molar_density,
+                anchor_source_composition=None if anchor is None else anchor.mole_fractions,
+                anchor_source_state_identity=None if anchor is None else anchor.state_identity,
+                requested_phase=cast(Phase | None, phase),
+                certified_branch=certified_branch,
+                certificate_kind=diagnostics.certificate_kind,
+                local_search_outcome=diagnostics.local_search_outcome,
+                local_root_count=(diagnostics.local_root_count if anchor is not None else None),
+                reachability_envelope=(
+                    MappingProxyType(
+                        {
+                            "schema": "epcsaft-density-anchor-envelope-v1",
+                            "max_abs_log_density": diagnostics.reachability_log_density_limit,
+                            "centered_scan_intervals": diagnostics.reachability_scan_interval_count,
+                            "domain_scan_intervals": 360,
+                        }
+                    )
+                    if anchor is not None
+                    else None
+                ),
             ),
             fixed_pressure_composition_derivatives=(
                 _fixed_pressure_composition_derivatives(
@@ -1449,6 +1545,7 @@ class Mixture(_EosModel):
         P: None = None,
         x: Iterable[SupportsFloat],
         phase: None = None,
+        density_anchor: None = None,
     ) -> State: ...
 
     @overload
@@ -1459,7 +1556,8 @@ class Mixture(_EosModel):
         rho: None = None,
         P: pint.Quantity[Any],
         x: Iterable[SupportsFloat],
-        phase: Phase | None = None,
+        phase: Phase,
+        density_anchor: State | None = None,
     ) -> State: ...
 
     def state(
@@ -1470,8 +1568,17 @@ class Mixture(_EosModel):
         P: object | None = None,
         x: object,
         phase: str | None = None,
+        density_anchor: object | None = None,
     ) -> State:
-        return _EosModel._state(self, T=T, rho=rho, P=P, x=x, phase=phase)
+        return _EosModel._state(
+            self,
+            T=T,
+            rho=rho,
+            P=P,
+            x=x,
+            phase=phase,
+            density_anchor=density_anchor,
+        )
 
     def observable_block(
         self,
@@ -1803,6 +1910,12 @@ class State:
     temperature: pint.Quantity[float]
     mole_fractions: tuple[float, ...]
     parameter_fingerprint: str
+    topology_fingerprint: str
+    component_order_fingerprint: str
+    artifact_fingerprint: str
+    requested_phase: Phase | None
+    certified_branch: Mapping[str, object] | None
+    state_identity: str
     hard_chain: float
     dispersion: float
     association: float
@@ -1953,10 +2066,135 @@ class DensityDiagnostics:
     bracket_lower: pint.Quantity[float]
     bracket_upper: pint.Quantity[float]
     pressure_residual: pint.Quantity[float]
+    requested_pressure: pint.Quantity[float]
     pressure_density_derivative: pint.Quantity[float]
     iterations: int
     stable: bool
     branch: str
+    stable_root_count: int | None
+    selected_stable_root_index: int | None
+    anchor_status: Literal["not_supplied", "accepted"]
+    anchor_density: pint.Quantity[float] | None
+    anchor_source_composition: tuple[float, ...] | None
+    anchor_source_state_identity: str | None
+    requested_phase: Phase | None
+    certified_branch: Mapping[str, object] | None
+    certificate_kind: str
+    local_search_outcome: str
+    local_root_count: int | None
+    reachability_envelope: Mapping[str, object] | None
+
+
+def _certified_branch(
+    diagnostics: _native_core.NativeDensityDiagnostics | None,
+    phase: str | None,
+) -> Mapping[str, object] | None:
+    if diagnostics is None or phase is None:
+        return None
+    return MappingProxyType(
+        {
+            "schema": "epcsaft-certified-density-branch-v1",
+            "requested_phase": phase,
+            "stable_root_index": diagnostics.certified_stable_root_index,
+            "origin_molar_density_hex": diagnostics.certified_origin_molar_density.hex(),
+        }
+    )
+
+
+def _state_identity(
+    *,
+    artifact_fingerprint: str,
+    parameter_fingerprint: str,
+    topology_fingerprint: str,
+    component_order_fingerprint: str,
+    component_ids: tuple[str, ...],
+    temperature_k: float,
+    pressure_pa: float,
+    mole_fractions: tuple[float, ...],
+    molar_density: float,
+    requested_phase: str | None,
+    certified_branch: Mapping[str, object] | None,
+) -> str:
+    encoded = json.dumps(
+        {
+            "schema": "epcsaft-state-identity-v1",
+            "artifact_fingerprint": artifact_fingerprint,
+            "parameter_fingerprint": parameter_fingerprint,
+            "topology_fingerprint": topology_fingerprint,
+            "component_order_fingerprint": component_order_fingerprint,
+            "component_ids": component_ids,
+            "temperature_k": temperature_k.hex(),
+            "pressure_pa": pressure_pa.hex(),
+            "mole_fractions": tuple(value.hex() for value in mole_fractions),
+            "molar_density_mol_per_m3": molar_density.hex(),
+            "requested_phase": requested_phase,
+            "certified_branch": None if certified_branch is None else dict(certified_branch),
+        },
+        allow_nan=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _validate_density_anchor(
+    owner: _EosModel,
+    candidate: object,
+    temperature_k: float,
+    pressure_pa: float,
+    phase: str,
+) -> State:
+    if not isinstance(candidate, State):
+        raise _eos_error("invalid-density-anchor", reason="expected-State")
+    try:
+        density = float(candidate.molar_density.to("mole / meter ** 3").magnitude)
+        certified = cast(Mapping[str, object], candidate.certified_branch)
+        origin_density = float.fromhex(str(certified["origin_molar_density_hex"]))
+        diagnostics = candidate.density_diagnostics
+        if diagnostics is None:
+            raise ValueError("missing density diagnostics")
+        requested_pressure = float(diagnostics.requested_pressure.to("pascal").magnitude)
+        expected_identity = _state_identity(
+            artifact_fingerprint=candidate.artifact_fingerprint,
+            parameter_fingerprint=candidate.parameter_fingerprint,
+            topology_fingerprint=candidate.topology_fingerprint,
+            component_order_fingerprint=candidate.component_order_fingerprint,
+            component_ids=candidate.component_ids,
+            temperature_k=float(candidate.temperature.to("kelvin").magnitude),
+            pressure_pa=requested_pressure,
+            mole_fractions=candidate.mole_fractions,
+            molar_density=density,
+            requested_phase=candidate.requested_phase,
+            certified_branch=certified,
+        )
+    except (AttributeError, KeyError, TypeError, ValueError):
+        raise _eos_error("invalid-density-anchor", reason="missing-or-invalid-identity") from None
+    if (
+        not math.isfinite(density)
+        or density <= 0.0
+        or not math.isfinite(origin_density)
+        or origin_density <= 0.0
+        or candidate.state_identity != expected_identity
+        or certified.get("schema") != "epcsaft-certified-density-branch-v1"
+    ):
+        raise _eos_error("invalid-density-anchor", reason="missing-or-invalid-identity")
+    if (
+        candidate.parameter_fingerprint != owner._parameter_fingerprint
+        or candidate.component_ids != owner._component_ids
+        or candidate.topology_fingerprint != owner._topology_fingerprint
+        or candidate.component_order_fingerprint != owner._component_order_fingerprint
+        or candidate.artifact_fingerprint != owner._artifact_fingerprint
+    ):
+        raise _eos_error("density-anchor-model-mismatch")
+    anchor_temperature = float(candidate.temperature.to("kelvin").magnitude)
+    if anchor_temperature != temperature_k or requested_pressure != pressure_pa:
+        raise _eos_error("density-anchor-state-mismatch")
+    if (
+        candidate.requested_phase != phase
+        or certified.get("requested_phase") != phase
+    ):
+        raise _eos_error("density-anchor-phase-mismatch")
+    return candidate
 
 
 def _fixed_pressure_composition_derivatives(

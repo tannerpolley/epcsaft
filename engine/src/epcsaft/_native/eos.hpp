@@ -20,6 +20,14 @@ struct NativeDensityDiagnostics final {
     std::string branch;
     std::size_t stable_root_count;
     std::size_t selected_stable_root_index;
+    std::string requested_phase;
+    std::string certificate_kind;
+    std::string local_search_outcome;
+    std::size_t local_root_count;
+    double reachability_log_density_limit;
+    std::size_t reachability_scan_interval_count;
+    std::size_t certified_stable_root_index;
+    double certified_origin_molar_density;
 };
 
 struct NativeResult final {
@@ -139,7 +147,10 @@ public:
         double temperature,
         double pressure,
         const std::vector<double>& mole_fractions,
-        double reference_molar_density
+        double reference_molar_density,
+        const std::string& phase,
+        std::size_t certified_stable_root_index,
+        double certified_origin_molar_density
     ) const;
     bool supports_pure_transport() const;
     bool supports_fixed_topology_associating_mixture() const;
