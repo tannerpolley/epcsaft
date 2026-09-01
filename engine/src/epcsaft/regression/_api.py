@@ -111,20 +111,6 @@ class LeastSquaresResult:
     counters: Mapping[str, object]
     covariance: Mapping[str, object]
 
-    @property
-    def success(self) -> bool:
-        return self.usable
-
-    @property
-    def x(self) -> tuple[float, ...]:
-        """SciPy-compatible fitted coordinate spelling."""
-        return self.parameters
-
-    @property
-    def cost(self) -> float | None:
-        return 0.5 * math.fsum(value * value for value in self.residuals) if self.usable else None
-
-
 def _matrix(values: Sequence[Any], rows: int, columns: int) -> tuple[tuple[float, ...], ...]:
     flat = tuple(float(value) for value in values)
     if not flat:
@@ -303,12 +289,4 @@ def least_squares(
     )
 
 
-def curve_fit(
-    evaluators: Iterable[CompiledEvaluator],
-    observations: Iterable[object],
-    initial_parameters: Iterable[object],
-    **kwargs: Any,
-) -> LeastSquaresResult:
-    """Small curve-fitting spelling over the same owner-neutral least-squares core."""
-
-    return least_squares(evaluators, observations, initial_parameters, **kwargs)
+curve_fit = least_squares

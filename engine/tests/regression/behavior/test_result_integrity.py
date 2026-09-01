@@ -179,7 +179,6 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     assert not owner_limited.usable
     assert owner_limited.parameters == owner_limited.predictions == ()
     assert owner_limited.failures[0]["code"] == "owner_call_limit"
-    assert owner_limited.cost is None
 
     final_validation_limited = regression.least_squares(
         (eos_owner,),
@@ -192,7 +191,6 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     assert final_validation_limited.parameters == final_validation_limited.predictions == ()
     assert final_validation_limited.failures[-1]["evaluation_phase"] == "final_validation"
     assert final_validation_limited.failures[-1]["code"] == "owner_call_limit"
-    assert final_validation_limited.cost is None
 
     invalid_initial = regression.least_squares(
         (eos_owner,),
@@ -202,6 +200,5 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     )
     assert not invalid_initial.usable
     assert invalid_initial.parameters == invalid_initial.predictions == ()
-    assert invalid_initial.cost is None
     with pytest.raises(TypeError, match="requires an epcsaft EOS model"):
         eos.compile_regression_evaluator({}, active)
