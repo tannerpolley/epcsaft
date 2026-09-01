@@ -20,8 +20,7 @@ constexpr double kVaporDensityUpper = 5.0e3;
 constexpr double kLiquidDensityLower = 5.001e3;
 constexpr double kPressureLowerPa = 1.0e-12;
 constexpr double kPressureUpperPa = 1.0e8;
-// Dimensionless closure bound: 2e-8 is the roundoff/conditioning scale
-// supported by the retained independent states and replay boundary.
+// Dimensionless closure bound: 2e-8 is the retained roundoff/conditioning scale.
 constexpr double kFeasibilityTolerance = 2.0e-8;
 constexpr double kPhaseDistanceTolerance = 1.0e-3;
 void require_finite(double value, const char *name) {
@@ -315,8 +314,7 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
   const std::array<double, 3> liquid_seeds{18'000.0, 12'000.0, 24'000.0};
   SaturationSolveResult result;
   result.vapor_density_bounds_mol_m3 = {kVaporDensityLower, kVaporDensityUpper};
-  result.liquid_density_bounds_mol_m3 = {
-      kLiquidDensityLower, liquid_density_upper_mol_m3};
+  result.liquid_density_bounds_mol_m3 = {kLiquidDensityLower, liquid_density_upper_mol_m3};
   result.failure_reason = "no finite in-domain saturation candidate";
   std::vector<std::array<double, 3>> starts;
   if (explicit_start.has_value()) {
@@ -347,10 +345,8 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     SaturationSolveResult candidate;
     candidate.optimizer_converged = attempt.optimizer_converged;
     candidate.optimizer_status = attempt.optimizer_status;
-    candidate.vapor_density_bounds_mol_m3 =
-        result.vapor_density_bounds_mol_m3;
-    candidate.liquid_density_bounds_mol_m3 =
-        result.liquid_density_bounds_mol_m3;
+    candidate.vapor_density_bounds_mol_m3 = result.vapor_density_bounds_mol_m3;
+    candidate.liquid_density_bounds_mol_m3 = result.liquid_density_bounds_mol_m3;
     candidate.feasibility_tolerance = kFeasibilityTolerance;
     candidate.failure_reason = attempt.callback_error.empty()
         ? "no finite in-domain saturation candidate"

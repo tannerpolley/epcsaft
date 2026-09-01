@@ -1785,18 +1785,18 @@ def evaluate_observable(
 def _saturation_diagnostics(payload: Mapping[str, object]) -> SaturationDiagnostics:
     def optional_float(key: str) -> float | None:
         value = payload[key]
-        if value is None:
-            return None
-        numeric = float(cast(float, value))
-        return numeric if math.isfinite(numeric) else None
+        return (
+            None
+            if value is None or not math.isfinite(float(cast(float, value)))
+            else float(cast(float, value))
+        )
 
     def optional_bounds(key: str) -> tuple[float, float] | None:
         value = payload[key]
         if value is None:
             return None
         return cast(
-            tuple[float, float],
-            tuple(float(item) for item in cast(Iterable[SupportsFloat], value)),
+            tuple[float, float], tuple(float(item) for item in cast(Iterable[SupportsFloat], value))
         )
 
     candidate_available = bool(payload["candidate_available"])
