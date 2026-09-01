@@ -7,6 +7,7 @@
     "base_commit": "e65029111479c5b243b7ea37dcb4f946bd981c24",
     "source_commit": "a7280de56bc6cdc0c4938759d7878d8e25c69407",
     "files": [
+      "engine/src/epcsaft/_native/eos.cpp",
       "engine/src/epcsaft/_native/eos_regression_evaluator.cpp",
       "engine/src/epcsaft/_native/eos_regression_evaluator.hpp"
     ],
@@ -26,8 +27,9 @@
       "BASE=~/.codex/worktrees/0cb9/ePC-SAFT-project/build/engine-meson/cpython-313-linux-x86_64-x86_64-ad7b04df3dc8cbafbb10255b1cf307664e9b8e7b6d4114458df39608fb7901be/libepcsaft_engine_eos_core.a",
       "CPPAD=~/.codex/worktrees/0cb9/ePC-SAFT-project/engine/build/subprojects/CppAD-20250000.3/include",
       "CXXFLAGS=\"-std=c++17 -w -O0 -Iengine/src/epcsaft/_native -Iengine/cpp/interfaces -I$CPPAD $(pkg-config --cflags ipopt eigen3)\"",
+      "c++ $CXXFLAGS -c engine/src/epcsaft/_native/eos.cpp -o /tmp/issue151-eos.o",
       "c++ $CXXFLAGS -c engine/src/epcsaft/_native/eos_regression_evaluator.cpp -o /tmp/issue151-evaluator.o",
-      "c++ $CXXFLAGS engine/.issue151_evaluator_check.cpp /tmp/issue151-evaluator.o \"$BASE\" $(pkg-config --libs ipopt eigen3) -pthread -o /tmp/issue151-evaluator-check",
+      "c++ $CXXFLAGS engine/.issue151_evaluator_check.cpp /tmp/issue151-evaluator.o /tmp/issue151-eos.o \"$BASE\" $(pkg-config --libs ipopt eigen3) -pthread -o /tmp/issue151-evaluator-check",
       "/tmp/issue151-evaluator-check"
     ],
     "output": "issue151_direct_check: PASS",
