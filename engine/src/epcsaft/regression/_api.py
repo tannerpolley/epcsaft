@@ -121,8 +121,8 @@ class LeastSquaresResult:
         return self.parameters
 
     @property
-    def cost(self) -> float:
-        return 0.5 * math.fsum(value * value for value in self.residuals)
+    def cost(self) -> float | None:
+        return 0.5 * math.fsum(value * value for value in self.residuals) if self.usable else None
 
 
 def _matrix(values: Sequence[Any], rows: int, columns: int) -> tuple[tuple[float, ...], ...]:

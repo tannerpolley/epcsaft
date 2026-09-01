@@ -121,6 +121,43 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
             for row, scale in zip(repeated.physical_jacobian, vector_scales, strict=True)
         )
     )
+    duplicate = regression.curve_fit(
+        (eos_owner, equilibrium_owner),
+        observations,
+        active.values,
+        bounds=((active.values[0] - 5.0,), (active.values[0] + 5.0,)),
+        affine_origin=(active.values[0] - 1.0,),
+        affine_scale=(2.0,),
+        residual_scales=vector_scales,
+        maximum_iterations=4,
+        maximum_elapsed_time_seconds=2.0,
+    )
+    assert duplicate.parameters == repeated.parameters
+    assert duplicate.predictions == repeated.predictions
+    assert duplicate.physical_jacobian == repeated.physical_jacobian
+    assert duplicate.optimizer_jacobian == repeated.optimizer_jacobian
+
+    def fixed_prediction(parameter: float) -> float:
+        margin = 1.0e-8 * step
+        fixed = regression.least_squares(
+            (eos_owner,),
+            (eos_observation,),
+            (parameter,),
+            bounds=((parameter - margin,), (parameter + margin,)),
+            maximum_iterations=2,
+            maximum_elapsed_time_seconds=2.0,
+        )
+        assert fixed.usable, (fixed.message, fixed.failures)
+        return fixed.predictions[0]
+
+    step = 1.0e-5 * max(1.0, abs(active.values[0]))
+    finite_difference = (
+        fixed_prediction(active.values[0] + step)
+        - fixed_prediction(active.values[0] - step)
+    ) / (2.0 * step)
+    assert result.physical_jacobian[0][0] == pytest.approx(
+        finite_difference, rel=2.0e-5, abs=1.0e-6
+    )
 
     active_bound = regression.least_squares(
         (eos_owner,),
@@ -142,6 +179,20 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     assert not owner_limited.usable
     assert owner_limited.parameters == owner_limited.predictions == ()
     assert owner_limited.failures[0]["code"] == "owner_call_limit"
+    assert owner_limited.cost is None
+
+    final_validation_limited = regression.least_squares(
+        (eos_owner,),
+        (eos_observation,),
+        active.values,
+        maximum_iterations=2,
+        maximum_uncached_owner_calls=2,
+    )
+    assert not final_validation_limited.usable
+    assert final_validation_limited.parameters == final_validation_limited.predictions == ()
+    assert final_validation_limited.failures[-1]["evaluation_phase"] == "final_validation"
+    assert final_validation_limited.failures[-1]["code"] == "owner_call_limit"
+    assert final_validation_limited.cost is None
 
     invalid_initial = regression.least_squares(
         (eos_owner,),
@@ -151,5 +202,6 @@ def test_mixed_native_owner_fit_retains_order_and_both_jacobians() -> None:
     )
     assert not invalid_initial.usable
     assert invalid_initial.parameters == invalid_initial.predictions == ()
+    assert invalid_initial.cost is None
     with pytest.raises(TypeError, match="requires an epcsaft EOS model"):
         eos.compile_regression_evaluator({}, active)
