@@ -95,4 +95,4 @@ media_type = "application/yaml"
 sha256 = "e4d93b64c67b0b78bce73a64d72259d1089c0cab416c011ec49919ca68494d44"
 source_refs = ["nist-webbook-srd69-propane-reference-eos-auxiliary"]
 domain_refs = ["nist-propane-reference-saturation-100-360-k"]
-units_basis = "Source citation, reference-equation identity, query receipt, uncertainty meaning, transformation, and claim-boundary metadata are non-numeric source records."
+units_basis = "Source citation, reference-equation identity, query record, uncertainty meaning, transformation, and claim-boundary metadata are non-numeric source records."

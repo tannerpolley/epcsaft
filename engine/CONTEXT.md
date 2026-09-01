@@ -25,7 +25,7 @@ the downstream repository.
 Engine retains compact numerical evidence. Installed-wheel physical and
 literature work belongs in `analyses/`. Superseded live plans, designs,
 implementation reviews, and source-specific runtime guidance are deleted.
-Primary citations, research, source locators, raw data, receipts, results, and
+Primary citations, research, source locators, raw data, source records, results, and
 still-relevant numerical evidence retain historical identities as provenance.
 
 The canonical cross-module execution plan is
@@ -197,7 +197,7 @@ _Avoid_: Physically inert site class, inferred chemistry, universal edge ban
 The single declared origin of an active edge's association energy and volume:
 either explicit values or one Association Combining Rule. Preflight rejects
 missing, competing, and project-default sources, then materializes the resolved
-values and their exact parameter derivative chain for evaluation and receipts.
+values and their exact parameter derivative chain for evaluation and source records.
 _Avoid_: Source precedence, implicit default rule, unresolved cross edge
 
 **Association Combining Rule**:
@@ -323,12 +323,12 @@ _Avoid_: Arbitrary expression, uncited formula, homologous-series parameter fit
 The normalized continuous-domain squared residual for a Published Observation
 Correlation. Preflight increases a deterministic Gaussian quadrature order
 until the objective and exact Jacobian converge, then freezes the nodes and
-weights for Regression. The fit receipt retains the correlation identity, domain,
+weights for Regression. The fit result retains the correlation identity, domain,
 measure, quadrature, convergence evidence, predictions, residuals, and Jacobian
 rows. Explicit points remain valid for tabulated sources or selected operating
 conditions.
 _Avoid_: Hidden uniform grid, quadrature adaptation during optimization, unnormalized
-row-count weighting, summary-only receipt
+row-count weighting, summary-only result
 
 **Optimizer Coordinate**:
 An affine-scaled physical ePC-SAFT parameter with explicit transformed bounds.
