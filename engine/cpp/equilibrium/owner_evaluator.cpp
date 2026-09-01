@@ -1,10 +1,12 @@
 #include "owner_evaluator.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -30,6 +32,164 @@ bool finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value);
     });
+}
+
+bool sha256_fingerprint(const std::string& value) {
+    return value.size() == 71 && value.rfind("sha256:", 0) == 0
+        && std::all_of(value.begin() + 7, value.end(),
+            [](unsigned char character) { return std::isxdigit(character) != 0; });
+}
+
+std::string sha256_digest(const std::string& input) {
+    constexpr std::array<std::uint32_t, 64> constants{
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+        0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+        0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+        0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+        0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+    };
+    std::array<std::uint32_t, 8> state{
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    };
+    std::vector<unsigned char> bytes(input.begin(), input.end());
+    const std::uint64_t bit_count = static_cast<std::uint64_t>(bytes.size()) * 8;
+    bytes.push_back(0x80);
+    while ((bytes.size() + 8) % 64 != 0) {
+        bytes.push_back(0);
+    }
+    for (int shift = 56; shift >= 0; shift -= 8) {
+        bytes.push_back(static_cast<unsigned char>(bit_count >> shift));
+    }
+    const auto rotate_right = [](std::uint32_t value, unsigned amount) {
+        return (value >> amount) | (value << (32 - amount));
+    };
+    for (std::size_t offset = 0; offset < bytes.size(); offset += 64) {
+        std::array<std::uint32_t, 64> words{};
+        for (std::size_t index = 0; index < 16; ++index) {
+            const std::size_t position = offset + index * 4;
+            words[index] = (static_cast<std::uint32_t>(bytes[position]) << 24)
+                | (static_cast<std::uint32_t>(bytes[position + 1]) << 16)
+                | (static_cast<std::uint32_t>(bytes[position + 2]) << 8)
+                | static_cast<std::uint32_t>(bytes[position + 3]);
+        }
+        for (std::size_t index = 16; index < words.size(); ++index) {
+            const auto s0 = rotate_right(words[index - 15], 7)
+                ^ rotate_right(words[index - 15], 18)
+                ^ (words[index - 15] >> 3);
+            const auto s1 = rotate_right(words[index - 2], 17)
+                ^ rotate_right(words[index - 2], 19)
+                ^ (words[index - 2] >> 10);
+            words[index] = words[index - 16] + s0 + words[index - 7] + s1;
+        }
+        std::uint32_t a = state[0];
+        std::uint32_t b = state[1];
+        std::uint32_t c = state[2];
+        std::uint32_t d = state[3];
+        std::uint32_t e = state[4];
+        std::uint32_t f = state[5];
+        std::uint32_t g = state[6];
+        std::uint32_t h = state[7];
+        for (std::size_t index = 0; index < words.size(); ++index) {
+            const auto sum1 = rotate_right(e, 6) ^ rotate_right(e, 11)
+                ^ rotate_right(e, 25);
+            const auto choice = (e & f) ^ ((~e) & g);
+            const auto temporary1 = h + sum1 + choice + constants[index]
+                + words[index];
+            const auto sum0 = rotate_right(a, 2) ^ rotate_right(a, 13)
+                ^ rotate_right(a, 22);
+            const auto majority = (a & b) ^ (a & c) ^ (b & c);
+            const auto temporary2 = sum0 + majority;
+            h = g;
+            g = f;
+            f = e;
+            e = d + temporary1;
+            d = c;
+            c = b;
+            b = a;
+            a = temporary1 + temporary2;
+        }
+        state[0] += a;
+        state[1] += b;
+        state[2] += c;
+        state[3] += d;
+        state[4] += e;
+        state[5] += f;
+        state[6] += g;
+        state[7] += h;
+    }
+    std::ostringstream result;
+    result << std::hex << std::setfill('0');
+    for (const auto word : state) {
+        result << std::setw(8) << word;
+    }
+    return result.str();
+}
+
+void append_field(std::string& payload, const std::string& value) {
+    payload += std::to_string(value.size());
+    payload.push_back(':');
+    payload += value;
+    payload.push_back('|');
+}
+
+bool ends_with(const std::string& value, const char* suffix) {
+    const std::size_t length = std::char_traits<char>::length(suffix);
+    return value.size() >= length
+        && value.compare(value.size() - length, length, suffix) == 0;
+}
+
+std::vector<std::string> canonical_parameter_units(
+    const std::vector<epcsaft::NativeActiveCoordinate>& coordinates
+) {
+    std::vector<std::string> result;
+    result.reserve(coordinates.size());
+    for (const auto& coordinate : coordinates) {
+        const auto& family = coordinate.family;
+        if (family == "segment_diameter" || family == "born_diameter") {
+            result.push_back("angstrom");
+        } else if (family == "dispersion_energy_over_k"
+                   || family == "association_energy_over_k"
+                   || family == "k_ij_reciprocal_temperature_slope") {
+            result.push_back("kelvin");
+        } else if (family == "exponential_temperature_coefficient") {
+            result.push_back("1 / kelvin");
+        } else if (family.rfind("temperature_polynomial_coefficient_", 0) == 0) {
+            result.push_back("1 / kelvin ** " + family.substr(35));
+        } else if (family == "reaction_correlation") {
+            result.push_back(ends_with(coordinate.identity, "_per_k") ? "1 / kelvin"
+                : ends_with(coordinate.identity, "_k") ? "kelvin"
+                : "dimensionless");
+        } else if (family == "segment_count" || family == "relative_permittivity"
+                   || family == "solvation_factor" || family == "association_volume"
+                   || family == "k_ij" || family == "l_ij" || family == "k_hb_ij"
+                   || family == "ion_fraction_suppression_coefficient"
+                   || family == "ionic_region_relative_permittivity"
+                   || family == "ion_specific_suppression_coefficient"
+                   || family == "correlation_integral_parameter") {
+            result.push_back("dimensionless");
+        } else {
+            throw std::invalid_argument("unsupported EOS parameter unit family");
+        }
+    }
+    return result;
+}
+
+std::vector<std::string> canonical_parameter_bases(
+    const std::vector<epcsaft::NativeActiveCoordinate>& coordinates
+) {
+    return std::vector<std::string>(coordinates.size(), "physical");
 }
 
 bool unique_nonempty(const std::vector<std::string>& values) {
@@ -89,18 +249,20 @@ epcsaft::NativeModel model_at(
 
 std::vector<double> values_for_model(
     const epcsaft::NativeModel& model,
-    const std::vector<std::string>& parameter_ids,
+    const std::vector<EvaluatorParameter>& parameters,
     const std::vector<double>& values
 ) {
     std::vector<double> result;
     for (const auto& coordinate : model.active_coordinates()) {
-        const auto found = std::find(
-            parameter_ids.begin(), parameter_ids.end(), coordinate.identity
+        const auto found = std::find_if(
+            parameters.begin(), parameters.end(), [&](const EvaluatorParameter& parameter) {
+                return parameter.identity == coordinate.identity;
+            }
         );
-        if (found == parameter_ids.end()) {
+        if (found == parameters.end()) {
             throw std::invalid_argument("active parameter order changed");
         }
-        result.push_back(values[static_cast<std::size_t>(found - parameter_ids.begin())]);
+        result.push_back(values[static_cast<std::size_t>(found - parameters.begin())]);
     }
     return result;
 }
@@ -158,11 +320,36 @@ std::string canonical_parameter_contract(
     const epcsaft::NativeModel& model,
     const std::vector<EvaluatorParameter>& parameters
 ) {
-    std::vector<std::string> fields{"parameter-contract-v1", model.parameter_fingerprint()};
-    for (const auto& parameter : parameters) {
-        fields.insert(fields.end(), {parameter.identity, parameter.unit, parameter.basis});
+    const auto coordinates = model.active_coordinates();
+    if (coordinates.size() != parameters.size()) {
+        throw std::invalid_argument("active parameter metadata does not match model");
     }
-    return canonical_hash(fields);
+    const auto units = canonical_parameter_units(coordinates);
+    const auto bases = canonical_parameter_bases(coordinates);
+    std::string payload = "epcsaft.eos-owner-parameter-contract.v1|";
+    append_field(payload, model.parameter_fingerprint());
+    for (std::size_t index = 0; index < coordinates.size(); ++index) {
+        const auto& parameter = parameters[index];
+        if (parameter.identity != coordinates[index].identity
+            || parameter.unit != units[index] || parameter.basis != bases[index]) {
+            throw std::invalid_argument("active parameter metadata is not canonical");
+        }
+        append_field(payload, coordinates[index].identity);
+        std::ostringstream value;
+        value << std::scientific << std::setprecision(
+            std::numeric_limits<double>::max_digits10
+        ) << coordinates[index].value;
+        append_field(payload, value.str());
+        append_field(payload, units[index]);
+        append_field(payload, bases[index]);
+    }
+    return "sha256:" + sha256_digest(payload);
+}
+
+void require_digest(const std::string& value, const char* name) {
+    if (!sha256_fingerprint(value)) {
+        throw std::invalid_argument(std::string(name) + " must be a sha256 fingerprint");
+    }
 }
 
 std::string canonical_evaluator_fingerprint(
@@ -185,12 +372,11 @@ std::string canonical_evaluator_fingerprint(
         sidecar.branch_policy,
         sidecar.conditioning_policy,
     };
-    fields.insert(fields.end(), sidecar.active_parameter_identities.begin(),
-        sidecar.active_parameter_identities.end());
-    fields.insert(fields.end(), sidecar.active_parameter_units.begin(),
-        sidecar.active_parameter_units.end());
-    fields.insert(fields.end(), sidecar.active_parameter_bases.begin(),
-        sidecar.active_parameter_bases.end());
+    for (const auto& parameter : sidecar.active_parameters) {
+        fields.insert(fields.end(), {
+            parameter.identity, parameter.unit, parameter.basis
+        });
+    }
     for (const auto& phase : sidecar.phases) {
         fields.insert(fields.end(), {
             phase.identity, phase.role, phase.support,
@@ -219,10 +405,10 @@ std::string canonical_evaluator_fingerprint(
     append_doubles(fields, request.reaction.feed_amounts);
     append_doubles(fields, request.reaction.ln_k);
     append_doubles(fields, request.reaction.ln_k_parameter_derivatives);
-    for (std::size_t index = 0; index < sidecar.output_row_identities.size(); ++index) {
+    for (std::size_t index = 0; index < sidecar.output_rows.size(); ++index) {
+        const auto& row = sidecar.output_rows[index];
         fields.insert(fields.end(), {
-            sidecar.output_row_identities[index], sidecar.output_row_units[index],
-            sidecar.output_row_bases[index]
+            row.identity, row.unit, row.basis
         });
         const auto& output = request.outputs[index];
         fields.insert(fields.end(), {output.selector, std::to_string(output.phase_index)});
@@ -272,11 +458,14 @@ EquilibriumEvaluatorSidecar make_sidecar(
     if (setup.active_parameters.size() != active.size()) {
         throw std::invalid_argument("active parameter metadata does not match model");
     }
+    const auto coordinates = model.active_coordinates();
+    const auto canonical_units = canonical_parameter_units(coordinates);
+    const auto canonical_bases = canonical_parameter_bases(coordinates);
     for (std::size_t index = 0; index < active.size(); ++index) {
         if (setup.active_parameters[index].identity != active[index]
-            || setup.active_parameters[index].unit.empty()
-            || setup.active_parameters[index].basis.empty()) {
-            throw std::invalid_argument("active parameter metadata order changed");
+            || setup.active_parameters[index].unit != canonical_units[index]
+            || setup.active_parameters[index].basis != canonical_bases[index]) {
+            throw std::invalid_argument("active parameter metadata is not canonical");
         }
     }
     if (setup.output_rows.size() != request.outputs.size()
@@ -288,12 +477,11 @@ EquilibriumEvaluatorSidecar make_sidecar(
             throw std::invalid_argument("output metadata is incomplete");
         }
     }
-    if (setup.parameter_baseline_digest.empty()
-        || setup.source_spec_digest.empty()
-        || setup.anchor_identity.empty()
-        || setup.anchor_receipt_identity.empty()) {
+    if (setup.anchor_identity.empty() || setup.anchor_receipt_identity.empty()) {
         throw std::invalid_argument("equilibrium evaluator identity metadata is incomplete");
     }
+    require_digest(setup.parameter_baseline_digest, "parameter baseline digest");
+    require_digest(setup.source_spec_digest, "source specification digest");
     std::vector<std::string> output_identities;
     output_identities.reserve(setup.output_rows.size());
     for (const auto& row : setup.output_rows) {
@@ -310,16 +498,8 @@ EquilibriumEvaluatorSidecar make_sidecar(
     result.source_spec_digest = std::move(setup.source_spec_digest);
     result.anchor_identity = std::move(setup.anchor_identity);
     result.anchor_receipt_identity = std::move(setup.anchor_receipt_identity);
-    result.active_parameter_identities = active;
-    for (const auto& parameter : setup.active_parameters) {
-        result.active_parameter_units.push_back(parameter.unit);
-        result.active_parameter_bases.push_back(parameter.basis);
-    }
-    for (const auto& row : setup.output_rows) {
-        result.output_row_identities.push_back(row.identity);
-        result.output_row_units.push_back(row.unit);
-        result.output_row_bases.push_back(row.basis);
-    }
+    result.active_parameters = std::move(setup.active_parameters);
+    result.output_rows = std::move(setup.output_rows);
     result.derivative_provenance = setup.derivative_provenance.empty()
         ? "equilibrium-solved-state-exact-total-derivative"
         : std::move(setup.derivative_provenance);
@@ -350,7 +530,7 @@ EquilibriumEvaluatorSidecar make_sidecar(
         ? "typed-refusal-on-singular-or-ill-conditioned-sensitivity"
         : std::move(setup.conditioning_policy);
     result.parameter_contract_fingerprint = canonical_parameter_contract(
-        model, setup.active_parameters
+        model, result.active_parameters
     );
     result.evaluator_fingerprint = canonical_evaluator_fingerprint(
         model, request, result
@@ -369,9 +549,17 @@ interfaces::EvaluationResult map_result(
             ? "declared equilibrium owner rejected the trial"
             : equilibrium.failure_reason);
     }
-    const std::size_t output_count = sidecar.output_row_identities.size();
-    const std::size_t parameter_count = sidecar.active_parameter_identities.size();
-    if (equilibrium.parameter_order != sidecar.active_parameter_identities
+    const std::size_t output_count = sidecar.output_rows.size();
+    const std::size_t parameter_count = sidecar.active_parameters.size();
+    const bool parameter_order_matches = equilibrium.parameter_order.size() == parameter_count
+        && std::equal(
+            equilibrium.parameter_order.begin(), equilibrium.parameter_order.end(),
+            sidecar.active_parameters.begin(),
+            [](const std::string& identity, const EvaluatorParameter& parameter) {
+                return identity == parameter.identity;
+            }
+        );
+    if (!parameter_order_matches
         || equilibrium.output_values.size() != output_count
         || !finite(equilibrium.output_values)) {
         return failure("owner_contract_failure", "equilibrium output contract changed");
@@ -404,7 +592,7 @@ interfaces::EvaluationResult map_result(
         for (std::size_t parameter = 0; parameter < parameter_count; ++parameter) {
             const auto found = std::find(
                 equilibrium.input_order.begin(), equilibrium.input_order.end(),
-                sidecar.active_parameter_identities[parameter]
+                sidecar.active_parameters[parameter].identity
             );
             if (found == equilibrium.input_order.end()) {
                 return failure("owner_contract_failure", "equilibrium parameter order changed");
@@ -434,11 +622,11 @@ EquilibriumOwnerEvaluator::EquilibriumOwnerEvaluator(
       request_(std::move(request)), sidecar_(std::move(sidecar)), bubble_vle_(bubble_vle) {}
 
 std::size_t EquilibriumOwnerEvaluator::parameter_count() const noexcept {
-    return sidecar_.active_parameter_identities.size();
+    return sidecar_.active_parameters.size();
 }
 
 std::size_t EquilibriumOwnerEvaluator::output_count() const noexcept {
-    return sidecar_.output_row_identities.size();
+    return sidecar_.output_rows.size();
 }
 
 const std::string& EquilibriumOwnerEvaluator::parameter_contract_fingerprint()
@@ -463,17 +651,22 @@ interfaces::EvaluationResult EquilibriumOwnerEvaluator::evaluate(
             return failure("invalid_parameter", "active parameters must be finite");
         }
         const epcsaft::NativeModel model = model_at(model_, physical_parameters);
-        const std::vector<double> incipient_values = values_for_model(
-            incipient_model_, sidecar_.active_parameter_identities, physical_parameters
-        );
-        const epcsaft::NativeModel incipient_model = model_at(
-            incipient_model_, incipient_values
-        );
-        GrepeRequest request = request_;
-        request.require_output_derivatives = exact_jacobian;
-        const GrepeResult result = bubble_vle_
-            ? solve_declared_bubble_vle(model, incipient_model, request)
-            : solve_declared_homogeneous_reactive(model, request);
+        GrepeResult result;
+        if (bubble_vle_) {
+            const std::vector<double> incipient_values = values_for_model(
+                incipient_model_, sidecar_.active_parameters, physical_parameters
+            );
+            const epcsaft::NativeModel incipient_model = model_at(
+                incipient_model_, incipient_values
+            );
+            result = solve_declared_bubble_vle(
+                model, incipient_model, request_, exact_jacobian
+            );
+        } else {
+            result = solve_declared_homogeneous_reactive(
+                model, request_, exact_jacobian
+            );
+        }
         return map_result(result, sidecar_, exact_jacobian);
     } catch (const std::exception& error) {
         return invalid_result(error);
@@ -482,7 +675,7 @@ interfaces::EvaluationResult EquilibriumOwnerEvaluator::evaluate(
     }
 }
 
-EquilibriumEvaluatorCompilation compile_equilibrium_owner(
+std::shared_ptr<const EquilibriumOwnerEvaluator> compile_equilibrium_owner(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
     GrepeRequest request,
@@ -529,7 +722,7 @@ EquilibriumEvaluatorCompilation compile_equilibrium_owner(
             bubble_vle
         )
     );
-    return {std::move(evaluator)};
+    return evaluator;
 }
 
 } // namespace epcsaft_engine::equilibrium

@@ -186,13 +186,15 @@ struct GrepeLocalBlocks final {
 // private owner evaluator.  Each accepts one admitted topology only.
 [[nodiscard]] GrepeResult solve_declared_homogeneous_reactive(
     const epcsaft::NativeModel& model,
-    const GrepeRequest& request
+    const GrepeRequest& request,
+    bool require_output_derivatives
 );
 
 [[nodiscard]] GrepeResult solve_declared_bubble_vle(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
-    const GrepeRequest& request
+    const GrepeRequest& request,
+    bool require_output_derivatives
 );
 
 [[nodiscard]] bool admits_declared_homogeneous_reactive(

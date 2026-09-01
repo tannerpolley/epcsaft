@@ -45,20 +45,14 @@ struct EquilibriumEvaluatorSetup final {
     std::vector<EvaluatorOutput> output_rows;
 };
 
-struct EquilibriumEvaluatorCompilation;
-
 struct EquilibriumEvaluatorSidecar final {
     std::string owner_kind;
     std::string parameter_baseline_digest;
     std::string source_spec_digest;
     std::string anchor_identity;
     std::string anchor_receipt_identity;
-    std::vector<std::string> active_parameter_identities;
-    std::vector<std::string> active_parameter_units;
-    std::vector<std::string> active_parameter_bases;
-    std::vector<std::string> output_row_identities;
-    std::vector<std::string> output_row_units;
-    std::vector<std::string> output_row_bases;
+    std::vector<EvaluatorParameter> active_parameters;
+    std::vector<EvaluatorOutput> output_rows;
     std::string derivative_provenance;
     std::vector<EvaluatorPhase> phases;
     std::string temperature_role;
@@ -91,7 +85,7 @@ public:
     }
 
 private:
-    friend EquilibriumEvaluatorCompilation compile_equilibrium_owner(
+    friend std::shared_ptr<const EquilibriumOwnerEvaluator> compile_equilibrium_owner(
         const epcsaft::NativeModel&,
         const epcsaft::NativeModel&,
         GrepeRequest,
@@ -113,11 +107,7 @@ private:
     bool bubble_vle_;
 };
 
-struct EquilibriumEvaluatorCompilation final {
-    std::shared_ptr<const EquilibriumOwnerEvaluator> evaluator;
-};
-
-[[nodiscard]] EquilibriumEvaluatorCompilation compile_equilibrium_owner(
+[[nodiscard]] std::shared_ptr<const EquilibriumOwnerEvaluator> compile_equilibrium_owner(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,
     GrepeRequest request,
