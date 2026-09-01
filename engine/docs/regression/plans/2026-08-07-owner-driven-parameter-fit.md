@@ -233,7 +233,8 @@ Compact Regression checks must establish:
 - parameter ties apply one optimizer coordinate to several exact identities;
 - pure-saturation rows share one owner solve and preserve distinct outputs;
 - non-evaluable trials remain typed diagnostics and do not become penalties;
-- rank deficiency and active bounds remain visible; and
+- active bounds remain visible, while singular covariance truncation remains
+  Ceres-owned without an Engine rank label; and
 - candidate parameter export does not mutate the input document or assert
   scientific adoption.
 

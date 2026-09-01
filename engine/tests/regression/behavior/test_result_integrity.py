@@ -364,37 +364,3 @@ def test_multiple_kij_coordinates_preserve_permutation_and_fit() -> None:
         permuted.physical_jacobian, ordered.physical_jacobian, strict=True
     ):
         assert actual == pytest.approx(tuple(reversed(expected)))
-
-    rank_active = epcsaft.ActiveParameterSet(parameters, identities[:2])
-    rank_block = model.observable_block(
-        rank_active,
-        identity="eos.fixed-state",
-        T=313.15 * epcsaft.unit_registry.kelvin,
-        rho=liquid.molar_density_mol_m3
-        * epcsaft.unit_registry.mole
-        / epcsaft.unit_registry.meter**3,
-        x=liquid.mole_fractions,
-    )
-    pressure = float(rank_block.values[1] or math.nan)
-    rank_owner = eos.compile_regression_evaluator(
-        {
-            "model": model,
-            "family": "fixed-state",
-            "temperature_k": 313.15,
-            "molar_density_mol_m3": liquid.molar_density_mol_m3,
-            "mole_fractions": liquid.mole_fractions,
-            "row_identities": ("pressure_pa",),
-        },
-        rank_active,
-    )
-    rank_deficient = regression.least_squares(
-        (rank_owner, rank_owner),
-        (pressure, pressure),
-        rank_active.values,
-        bounds=((-0.5, -0.5), (0.5, 0.5)),
-        maximum_iterations=2,
-        maximum_elapsed_time_seconds=2.0,
-    )
-    assert rank_deficient.usable
-    assert rank_deficient.covariance["status"] == "unavailable"
-    assert rank_deficient.covariance["null_space_rank"] == 1
