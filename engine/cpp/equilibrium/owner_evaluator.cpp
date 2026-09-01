@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -142,6 +143,145 @@ void append_field(std::string& payload, const std::string& value) {
     payload.push_back(':');
     payload += value;
     payload.push_back('|');
+}
+
+void append_json_string(std::string& payload, const std::string& value) {
+    payload.push_back('"');
+    for (const unsigned char character : value) {
+        switch (character) {
+        case '"': payload += "\\\""; break;
+        case '\\': payload += "\\\\"; break;
+        case '\b': payload += "\\b"; break;
+        case '\f': payload += "\\f"; break;
+        case '\n': payload += "\\n"; break;
+        case '\r': payload += "\\r"; break;
+        case '\t': payload += "\\t"; break;
+        default:
+            if (character < 0x20) {
+                constexpr char digits[] = "0123456789abcdef";
+                payload += "\\u00";
+                payload.push_back(digits[character >> 4]);
+                payload.push_back(digits[character & 0x0f]);
+            } else {
+                payload.push_back(static_cast<char>(character));
+            }
+        }
+    }
+    payload.push_back('"');
+}
+
+void append_json_number(std::string& payload, double value) {
+    if (!std::isfinite(value)) {
+        throw std::invalid_argument("source specification number must be finite");
+    }
+    std::array<char, 64> buffer{};
+    const auto [end, error] = std::to_chars(
+        buffer.data(), buffer.data() + buffer.size(), value,
+        std::chars_format::general
+    );
+    if (error != std::errc()) {
+        throw std::invalid_argument("source specification number is not representable");
+    }
+    std::string rendered(buffer.data(), end);
+    if (rendered.find('.') == std::string::npos
+        && rendered.find('e') == std::string::npos
+        && rendered.find('E') == std::string::npos) {
+        rendered += ".0";
+    }
+    payload += rendered;
+}
+
+template <typename Append>
+void append_json_array(std::string& payload, std::size_t count, Append append) {
+    payload.push_back('[');
+    for (std::size_t index = 0; index < count; ++index) {
+        if (index != 0) {
+            payload.push_back(',');
+        }
+        append(index);
+    }
+    payload.push_back(']');
+}
+
+std::string canonical_source_specification_fingerprint(
+    const GrepeRequest& request,
+    bool active_parameters_requested
+) {
+    if (!request.source.has_value()) {
+        return {};
+    }
+    const GrepeSourceStandardState& source = *request.source;
+    const epcsaft::NativeSourceReferenceRequest& reference = source.reference;
+    const std::uint32_t expected_derivatives =
+        2u | (active_parameters_requested ? 8u : 0u);
+    if (reference.required_derivatives != expected_derivatives) {
+        throw std::invalid_argument("source specification derivative contract changed");
+    }
+    const auto component_identity = [&](std::size_t index) -> const std::string& {
+        if (index >= reference.component_ids.size()) {
+            throw std::invalid_argument("source specification component index is invalid");
+        }
+        return reference.component_ids[index];
+    };
+    std::string payload = "{";
+    payload += "\"activity_convention_id\":";
+    append_json_string(payload, reference.activity_convention_id);
+    payload += ",\"component_ids\":";
+    append_json_array(payload, reference.component_ids.size(), [&](std::size_t index) {
+        append_json_string(payload, reference.component_ids[index]);
+    });
+    payload += ",\"ion_pairs\":";
+    if (reference.ion_pair_indices.size() != reference.ion_pair_stoichiometry.size()) {
+        throw std::invalid_argument("source specification ion-pair metadata is inconsistent");
+    }
+    append_json_array(payload, reference.ion_pair_indices.size(), [&](std::size_t index) {
+        payload.push_back('[');
+        append_json_array(payload, 2, [&](std::size_t member) {
+            append_json_string(payload, component_identity(
+                reference.ion_pair_indices[index][member]
+            ));
+        });
+        payload.push_back(',');
+        append_json_array(payload, 2, [&](std::size_t member) {
+            payload += std::to_string(
+                reference.ion_pair_stoichiometry[index][member]
+            );
+        });
+        payload.push_back(']');
+    });
+    payload += ",\"phase\":";
+    append_json_string(payload, reference.phase);
+    payload += ",\"pure_components\":";
+    if (reference.pure_component_indices.size() != reference.pure_component_phases.size()) {
+        throw std::invalid_argument("source specification pure-component metadata is inconsistent");
+    }
+    append_json_array(payload, reference.pure_component_indices.size(), [&](std::size_t index) {
+        payload.push_back('[');
+        append_json_string(payload, component_identity(reference.pure_component_indices[index]));
+        payload.push_back(',');
+        append_json_string(payload, reference.pure_component_phases[index]);
+        payload.push_back(']');
+    });
+    payload += ",\"reference_convention\":";
+    append_json_string(payload, reference.reference_convention);
+    payload += ",\"reference_pressure_pa\":";
+    append_json_number(payload, reference.source_reference_pressure_pa);
+    payload += ",\"reference_state_id\":";
+    append_json_string(payload, reference.reference_state_id);
+    payload += ",\"required_derivatives\":[";
+    append_json_string(payload, "pressure");
+    if (active_parameters_requested) {
+        payload.push_back(',');
+        append_json_string(payload, "parameters");
+    }
+    payload += "],\"schema\":\"epcsaft-source-reference-declaration-v1\",\"solvent_mole_fractions\":";
+    append_json_array(payload, reference.source_solvent_mole_fractions.size(), [&](std::size_t index) {
+        append_json_number(payload, reference.source_solvent_mole_fractions[index]);
+    });
+    payload += ",\"standard_molality_mol_per_kg\":";
+    append_json_number(payload, reference.standard_molality_mol_per_kg);
+    payload.push_back('}');
+    return "sha256:" + sha256_digest(payload);
 }
 
 bool ends_with(const std::string& value, const char* suffix) {
@@ -469,8 +609,19 @@ EquilibriumEvaluatorSidecar make_sidecar(
     if (setup.anchor_identity.empty() || setup.anchor_receipt_identity.empty()) {
         throw std::invalid_argument("equilibrium evaluator identity metadata is incomplete");
     }
-    require_digest(setup.parameter_baseline_digest, "parameter baseline digest");
-    require_digest(setup.source_spec_digest, "source specification digest");
+    if (setup.parameter_baseline_digest != model.parameter_fingerprint()) {
+        throw std::invalid_argument("parameter baseline digest does not match model");
+    }
+    const std::string expected_source_digest =
+        canonical_source_specification_fingerprint(
+            request, !model.active_coordinates().empty()
+        );
+    if (setup.source_spec_digest != expected_source_digest) {
+        throw std::invalid_argument("source specification digest does not match request");
+    }
+    if (!expected_source_digest.empty()) {
+        require_digest(setup.source_spec_digest, "source specification digest");
+    }
     std::vector<std::string> output_identities;
     output_identities.reserve(setup.output_rows.size());
     for (const auto& row : setup.output_rows) {
