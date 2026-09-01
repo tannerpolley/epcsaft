@@ -162,8 +162,7 @@ private:
       } else {
         ++counters_.uncached_residual_owner_attempts;
       }
-      result = request_.evaluators[index].evaluator->evaluate(parameters,
-                                                               exact_jacobian);
+      result = request_.evaluators[index]->evaluate(parameters, exact_jacobian);
       result = validate(index, exact_jacobian, std::move(result));
     }
     cache = {true, exact_jacobian, parameters, result};
@@ -189,7 +188,7 @@ private:
     }
     const auto &evaluation = std::get<interfaces::Evaluation>(result);
     const std::size_t outputs =
-        request_.evaluators[index].evaluator->output_count();
+        request_.evaluators[index]->output_count();
     if (evaluation.predictions.size() != outputs ||
         !finite(evaluation.predictions)) {
       return failure("owner_contract_failure",
@@ -455,7 +454,7 @@ LeastSquaresResult solve(const LeastSquaresRequest &request) {
   std::string parameter_contract_fingerprint;
   result.evaluator_rows.reserve(request.evaluators.size());
   for (std::size_t index = 0; index < request.evaluators.size(); ++index) {
-    const auto &evaluator = request.evaluators[index].evaluator;
+    const auto &evaluator = request.evaluators[index];
     if (!evaluator || evaluator->parameter_count() != parameter_count ||
         evaluator->output_count() == 0 ||
         evaluator->parameter_contract_fingerprint().empty() ||

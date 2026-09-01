@@ -8,10 +8,6 @@
 
 namespace epcsaft_engine::regression {
 
-struct EvaluatorHandle final {
-  interfaces::OwnerEvaluatorHandle evaluator;
-};
-
 struct SolverControls final {
   double function_tolerance;
   double gradient_tolerance;
@@ -22,7 +18,7 @@ struct SolverControls final {
 };
 
 struct LeastSquaresRequest final {
-  std::vector<EvaluatorHandle> evaluators;
+  std::vector<interfaces::OwnerEvaluatorHandle> evaluators;
   std::vector<double> observations;
   std::vector<double> residual_scales;
   std::string residual_scale_metadata;
