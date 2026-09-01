@@ -1,0 +1,30 @@
+schema_version: 1
+dataset_id: hamer-wu-1972-aqueous-alkali-halides
+title: Osmotic Coefficients and Mean Activity Coefficients of Uni-univalent Electrolytes in Water at 25 C
+authors: [Walter J. Hamer, Yung-Chi Wu]
+journal: Journal of Physical and Chemical Reference Data
+year: 1972
+doi: 10.1063/1.3253108
+official_source: https://srd.nist.gov/jpcrdreprint/1.3253108.pdf
+official_source_sha256: 8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb
+conditions:
+  temperature_K: 298.15
+  solvent: water
+  quantity: molality-scale stoichiometric mean ionic activity coefficient
+  quantity_symbol: gamma_pm_m
+  quantity_unit: dimensionless
+  concentration: formula-unit molality
+  concentration_unit: mol/kg
+tables:
+  LiCl: 9
+  LiBr: 10
+  NaCl: 16
+  NaBr: 17
+  KCl: 28
+  KBr: 29
+transformation:
+  method: Manual transcription of the molality and mean activity coefficient columns, independently checked against the official PDF and the retained Figiel 2025 analysis tables.
+  retained_range: 0.001 <= molality <= 6 mol/kg
+  retained_rows: 164
+  rationale: Figiel et al. 2025 Figure 5 evaluates its aqueous alkali-halide model curves through 6 mol/kg; rows beyond that overlap are outside this campaign.
+use_basis: Critically evaluated factual tabular data retained with full citation for noncommercial scientific validation.

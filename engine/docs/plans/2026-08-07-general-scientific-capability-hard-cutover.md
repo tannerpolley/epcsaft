@@ -58,7 +58,7 @@ The pair-parameter scientific basis is recorded in
 8. Generated parameter templates write every required neutral identity value.
    Loaders reject omission rather than inferring defaults.
 9. Engine tests remain compact numerical falsification checks. Named literature
-   replays belong in Validation. No contract, compatibility, snapshot, prose,
+   replays belong under `analyses/`. No contract, compatibility, snapshot, prose,
    source-specific, or legacy tests are introduced.
 
 ## Canonical ownership
@@ -69,7 +69,7 @@ The pair-parameter scientific basis is recorded in
 | Fixed-state and pure-saturation quantities | EOS | Observable value, units/basis, domain, exact selected-parameter Jacobian, structured failure |
 | Nonreactive solved phase quantities | Equilibrium | Certified phase result and exact total sensitivity from EOS partials |
 | Observations, residual scaling, bounds, ties, multistart, Ipopt, fit receipt | Regression | Immutable `FitResult` and explicit candidate `Parameters` export |
-| Literature and application acceptance | Validation | Installed-wheel evidence |
+| Literature and application acceptance | Analysis sets | Installed-wheel evidence |
 | Reusable parameters and observations | Data | Explicit source-traceable packets |
 
 No owner may duplicate an upstream equation, parameter identity registry, or
@@ -317,6 +317,6 @@ Governance D-032 completes the cutover. All three owner plans, the D-030 phase
 promotion, and the D-031 Equilibrium-observation decision are complete. The
 single wheel contains one parameter and derivative system, source- or
 case-specific runtime routes are absent, compact numerical evidence passes,
-installed-wheel Validation owns literature acceptance, and the final
-Governance receipt binds the exact accepted tree and its justified provenance
-exceptions.
+installed-wheel analysis sets own literature acceptance, and the retained
+CAP-11 receipt binds the exact accepted tree and its justified provenance
+exceptions. ADR 0007 maps the former decision identifiers.

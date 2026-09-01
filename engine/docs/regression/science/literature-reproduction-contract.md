@@ -246,11 +246,11 @@ Each retained numerical sentinel:
 The matrix is parameterized where cases share one scientific invariant. It is
 not expanded into one broad literature campaign per parameter family.
 
-## Validation campaign evidence
+## Analysis evidence
 
-The sibling Validation repository owns durable installed-artifact evidence
+Question-specific analysis sets own durable installed-artifact evidence
 whose breadth would make Regression tests slow, source-heavy, or
-authority-confusing. Validation owns:
+authority-confusing. Analyses own:
 
 - full literature data grids and exact or reconstructed author objectives;
 - broad temperature, pressure, composition, component-family, and property
@@ -262,13 +262,13 @@ authority-confusing. Validation owns:
 - mixture, caloric, electrolyte, reactive, held-out, and stress transfer;
 - reproducibility receipts, independent review, and promotion evidence.
 
-Every retained Validation campaign, profile surface, uncertainty distribution,
+Every retained analysis, profile surface, uncertainty distribution,
 plot, and comparison table must carry an immutable repository/commit/path
 reference and content hash together with the exact installed EOS and Regression
 artifact identities. Regression result records retain those immutable
 references and hashes when the artifacts apply; absence is explicit.
 
-Validation consumes the immutable installed Unified Engine wheel and
+An analysis consumes the immutable installed Engine wheel and
 materialized Data packets. It does not import the Engine source checkout or
 turn a reconstructed literature campaign into author-method evidence.
 

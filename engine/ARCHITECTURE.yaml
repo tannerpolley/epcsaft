@@ -1,6 +1,5 @@
-version: 11
+version: 12
 status: unified-monorepo-active
-governance_doctrine_revision: 26
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -45,9 +44,9 @@ owners:
     nonreactive_numerical_core: held_held2
     public_route: solve
     promotion_status: accepted
-    promotion_receipt: ../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
+    promotion_receipt: ../analyses/reproduction/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json
     transition_decision: docs/scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md
-    promotion_decision: governance_D-030
+    promotion_decision: scientific_adr_0007_D-030
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
     phase_modes: [omitted_topology_discovery, declared_topology_solve]
     phase_kinds: [liquid, vapor]
@@ -78,7 +77,7 @@ owners:
       component_support: request_declared
       formulation: total_gibbs_with_global_conservation
       globality_claim: configured_local_minimum_only
-      admission: governance_D-037_proven_core
+      admission: scientific_adr_0007_D-037_proven_core
   regression:
     public_module: epcsaft.regression
     least_squares: epcsaft.regression.least_squares
@@ -90,7 +89,7 @@ owners:
     optimizer: ceres
     scientific_values: owner_provided_only
     experiment_kinds: [eos, equilibrium]
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, D-034, D-035]
+    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, adr_0007_D-034, adr_0007_D-035]
     grepe_transfer_owner: cpp/equilibrium/owner_evaluator.cpp
     grepe_request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
     grepe_native_owner: cpp/equilibrium/grepe.cpp
@@ -132,14 +131,14 @@ canonical_plans:
 
 final_cutover:
   status: accepted
-  decision: governance_D-032
+  decision: scientific_adr_0007_D-032
   subject_commit: a8efa571d52c32f5a697f15dd7f4623b7e3613fd
   subject_tree: c710bec469f7442952979e096a260cccb5a84246
-  receipt: ../governance/receipts/cap-11-hard-cutover-retirement.json
+  receipt: ../analyses/engine-capability-admissions/results/cap-11-hard-cutover-retirement.json
 
 scientific_boundaries:
   reusable_packets: data
-  installed_artifact_evidence: validation
+  installed_artifact_evidence: analyses
   packet_access: explicit_materialization_only
   sibling_discovery: forbidden
   regression_transfer: explicit_authority_neutral_candidate_parameters
@@ -159,17 +158,17 @@ build_invariants:
   source_specific_runtime_routes: forbidden
   inferred_parameter_defaults: forbidden
 
-validation:
+evidence:
   retained_tests: numerical_algorithm_and_scientific_workflow_only
   normal_test_routing: affected_scientific_domain
   full_test_routing: default_plus_slow_numerical_evidence
   package_test_mode: installed_wheel
   required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
   installed_wheel_readiness: ../tools/verify-installed-wheel.py
-  phase_equilibrium_campaign: ../validation/campaigns/2026-khudaida/tests/test_phase_equilibrium_campaign.py
+  phase_equilibrium_campaign: ../analyses/reproduction/2026-khudaida/tests/test_phase_equilibrium_campaign.py
   phase_equilibrium_promotion: accepted_cap_09_receipt
   developer_gate: build_first_parallel_installed_wheel_under_10_seconds_warm
   slow_numerical_evidence: explicit_owner_command
-  installed_wheel_campaigns: explicit_validation_owner_command
+  installed_wheel_analyses: explicit_analysis_owner_command
   native_quality_and_sanitizers: explicit_risk_based_owner_command
-  external_authority_gate: governance_g7
+  external_authority_gate: explicit_user_approval

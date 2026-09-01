@@ -1,8 +1,8 @@
 # Engine Directory Agent Contract
 
-Read `../governance/GOVERNANCE.md`, `../governance/manifests/management.json`,
-root `AGENTS.md`, and `CONTEXT.md` before material work. For CAP work, also read
-`docs/agents/issue-tracker.md` before selecting or executing a leaf.
+Read root `AGENTS.md`, `docs/scientific/README.md`,
+`docs/scientific/CONTEXT.md`, `CONTEXT.md`, and the relevant accepted ADR
+before material work.
 
 This directory owns the sole `epcsaft` distribution and its public
 `epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression` modules. Keep
@@ -12,13 +12,13 @@ installed-EOS discovery, hidden physical defaults, duplicate equation
 owners, or a public C++ ABI without a real external consumer.
 
 An Engine-accountable task owns its full scientific slice across the exact
-needed `data/`, `engine/`, and `validation/` files in one branch. Engine
+needed `data/`, `engine/`, and `analyses/` files in one branch. Engine
 runtime and tests never discover sibling source dynamically. The containing
 monorepo commit binds copied Data fixtures to their packet lock; every
 materialization also requires the packet fingerprint and exact file hashes.
-Validation must exercise the installed wheel through public APIs.
+Analysis reproductions must exercise the installed wheel through public APIs.
 
-Use Governance Numerical Verification-Driven Development. Retain compact tests
+Use Numerical Verification-Driven Development. Retain compact tests
 only for numerical values, identities, derivatives, limits, solver or
 equilibrium certificates, manufactured solutions, metamorphic relations, and
 source-backed benchmarks. No API-contract, compatibility, legacy, mock,

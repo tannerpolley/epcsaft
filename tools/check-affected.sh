@@ -38,7 +38,7 @@ fi
 if grep -q '^data/' <<<"$paths"; then
     python3 data/tools/validate_packets.py
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/|docs/scientific/)|validation/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/|docs/scientific/)|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then
@@ -95,13 +95,10 @@ if grep -q '^engine/' <<<"$paths"; then
         bash -n engine/tools/*.sh
     fi
 fi
-if [[ "$source_only" == 0 ]] && grep -q '^validation/campaigns/' <<<"$paths"; then
-    echo "Validation campaign replay is explicit; run only the changed campaign claim or tools/run-slice.sh khudaida"
+if grep -q '^analyses/' <<<"$paths"; then
+    .venv/bin/python tools/check-analysis-layout.py
+    echo "Analysis replay is explicit; run only the changed scientific claim or tools/run-slice.sh khudaida"
 fi
 if [[ "$source_only" == 1 ]]; then
     echo "source-only affected checks passed; no wheel build or installed-artifact tests ran"
-fi
-if grep -q '^governance/' <<<"$paths"; then
-    python3 governance/tools/management_preflight.py check
-    python3 governance/tools/artifact_store.py check
 fi

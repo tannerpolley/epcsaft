@@ -50,8 +50,7 @@ run_check engine-equilibrium bash -c 'cd "$1/engine" && ../.venv/bin/python -m p
 run_check engine-regression bash -c 'cd "$1/engine" && ../.venv/bin/python -m pytest -q -m "not slow and not expensive" tests/regression' _ "$repo_root"
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
-run_check management python3 governance/tools/management_preflight.py check
-run_check artifacts python3 governance/tools/artifact_store.py check
+run_check analysis-layout .venv/bin/python tools/check-analysis-layout.py
 run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
 
 failed=0
@@ -81,4 +80,4 @@ if ((failed)); then
 fi
 
 echo "fast installed-wheel checks passed"
-echo "slow Engine evidence, Validation campaigns, clang-tidy, and sanitizers run only by explicit owner command"
+echo "slow Engine evidence, analysis reproductions, clang-tidy, and sanitizers run only by explicit owner command"

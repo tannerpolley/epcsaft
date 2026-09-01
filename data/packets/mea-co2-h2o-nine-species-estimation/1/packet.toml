@@ -4,7 +4,7 @@ packet_version = "1"
 title = "Nine-species CO2-MEA-H2O estimation candidate"
 description = "Complete reusable nine-species ePC-SAFT baseline with fail-closed source and candidate model domains and typed R4/R5 correlations."
 license_or_use_basis = "Project-authorized mixed-source parameter synthesis from the pinned MEA-Thermodynamics authority, retained Gross-Sadowski CO2 record, and project-authored Cai fit; no publisher full text is included."
-tolerance_rationale = "The packet asserts no fit tolerance. Source values are immutable inputs; Validation owns diagnostic scales, scoring, and candidate status."
+tolerance_rationale = "The packet asserts no fit tolerance. Source values are immutable inputs; the consuming analysis owns diagnostic scales, scoring, and candidate status."
 
 [[sources]]
 source_id = "mea-thermodynamics-authority"
@@ -55,7 +55,7 @@ units_basis = "Every coefficient has an explicit canonical unit; reaction coeffi
 path = "provenance/source-origin.toml"
 role = "provenance"
 media_type = "application/toml"
-sha256 = "ccaffdfb46a918274a4df8bcefbe7bd4844b7be751b3e0addfb9902a28d105b5"
+sha256 = "a2d60d686b98896c5488198c8b81c6bbd795d6d779948147363f4659cfc61e15"
 source_refs = ["mea-thermodynamics-authority", "gross-sadowski-2001", "cai-1996-neutral-refit"]
 domain_refs = ["mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k"]
 units_basis = "Derived-output, neutral-selection, Gross-Sadowski, and Cai SHA-256 identities plus transformation names are non-numeric provenance."

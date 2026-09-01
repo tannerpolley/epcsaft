@@ -12,7 +12,8 @@ migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
 Kind: computational-architecture
 
 The destination is implemented. [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md)
-protected the HELD/HELD2 transition until Governance D-030 accepted the
+protected the HELD/HELD2 transition until the D-030 decision retained by
+[ADR 0007](0007-retire-governance-and-validation-owners.md) accepted the
 promotion receipt and made `phase_equilibrium` the sole public route.
 
 ## Context
@@ -50,7 +51,7 @@ electrolyte routes.
 - Callers may supply expected phase count/types when known or request discovery.
 - Equilibrium consumes the canonical `ActiveParameterSet` and obtains EOS
   partials for exact implicit solved-state sensitivities.
-- Named literature cases remain Validation evidence, not runtime identities.
+- Named literature cases remain analysis evidence, not runtime identities.
 
 The execution authority is
 [`../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md`](../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md).

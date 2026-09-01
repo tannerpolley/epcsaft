@@ -67,6 +67,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "hamer-wu-1972-aqueous-alkali-halides",
+      "packet_version": "1",
+      "packet_path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1",
+      "packet_fingerprint": "41df247ea3c3de03df9f17daa69dc8f9c834d5de61a7270a986e2a89db9e4bdc",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "held-cameretti-sadowski-2008",
       "packet_version": "2",
       "packet_path": "data/packets/held-cameretti-sadowski-2008/2",
@@ -77,14 +84,14 @@
       "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
       "packet_version": "5",
       "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/5",
-      "packet_fingerprint": "2ea461e90eadcd53ff4c58b10e6a3f7610a35d7804eee702a092c04832a001d3",
+      "packet_fingerprint": "52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "mea-co2-h2o-nine-species-estimation",
       "packet_version": "1",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
-      "packet_fingerprint": "63c4b91619e5f7de669c1cbbf07af39bf11acfb8c5018e2b4aa8bd933578d8aa",
+      "packet_fingerprint": "d02c109c035c79ea27905eb115a9a107afa4d5299abb6f17492285142f0a7b32",
       "materialization": "byte-for-byte"
     }
   ]

@@ -47,5 +47,5 @@ tolerance: they assert public exception/status types and stable codes, never
 exact messages, private shapes, iteration counts, or solver labels.
 
 Broad fluid, literature, phase-equilibrium, fitting, and application evidence
-is intentionally absent. It remains under explicit installed-wheel Validation
-campaign commands.
+is intentionally absent. It remains under explicit installed-wheel analysis
+commands.

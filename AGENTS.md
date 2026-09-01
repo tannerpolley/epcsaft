@@ -2,15 +2,15 @@
 
 Repository Profile: scientific-computing
 
-Governance doctrine revision 26 applies.
-
 This private repository is the single Git and Codex home for the ePC-SAFT
-project. Read `governance/GOVERNANCE.md`, `governance/manifests/management.json`,
-and the nearest subtree `AGENTS.md` before material work.
+project. Read `engine/docs/scientific/README.md`,
+`engine/docs/scientific/CONTEXT.md`, the relevant accepted ADR, and the nearest
+subtree `AGENTS.md` before material scientific work. Use the installed CSE
+skills to select the smallest applicable workflow stage.
 
 One scientific slice has one accountable agent from input to evidence. That
 agent may change the exact files needed across `data/`, `engine/`, and
-`validation/` in one branch. Keep one writer per file and do not create nested
+`analyses/` in one branch. Keep one writer per file and do not create nested
 Git repositories, submodules, sibling-repository dependencies, or separate
 package installations.
 
@@ -38,12 +38,13 @@ file across the participating repositories.
 
 Directory ownership remains strict:
 
-- `governance/`: doctrine, topology, manifests, ledgers, and operation receipts.
-- `engine/`: the sole `epcsaft` runtime, including EOS, equilibrium, regression,
-  compact numerical evidence, and one native build.
-- `data/`: canonical reusable scientific packets and packet readiness checks.
-- `validation/`: installed-wheel literature, experimental, and cross-module
-  scientific campaigns.
+- `engine/`: the sole `epcsaft` runtime, executable topology, scientific
+  context, accepted ADRs, compact numerical evidence, and one native build.
+- `data/`: canonical reusable scientific packets, packet locks, and readiness
+  checks.
+- `analyses/`: retained one-question scientific inputs, scripts, results,
+  figures, optional checks, and reviewed notebooks. Reproductions live under
+  `analyses/reproduction/<short-id>/`.
 
 The root `.codex/environments/environment.toml` is the only Codex environment.
 It creates one root `.venv`, builds `engine/` into one non-editable wheel, and
@@ -52,15 +53,15 @@ in-development scientific engine used by downstream applications, so the
 wheel is built and installed before any test process starts. Use
 `tools/check-affected.sh` for normal work and `tools/check-all.sh` for the
 parallel fast installed-wheel gate, with a warm-wheel target below ten seconds.
-Slow or expensive Engine evidence, Validation campaigns, full native
+Slow or expensive Engine evidence, analysis reproductions, full native
 clang-tidy, and sanitizers run only by an explicit owner command when their
 specific risk or scientific claim requires them; a changed tool or document
 must not silently invoke them. `tools/run-slice.sh khudaida` owns the canonical
 phase-equilibrium vertical slice.
 
-Use Numerical Verification-Driven Development from Governance section 7.
+Use Numerical Verification-Driven Development.
 Persistent tests must falsify numerical claims; expensive installed-artifact
-replays belong in Validation; builds, lint, typing, schemas, hashes, manifests,
+replays belong in analyses; builds, lint, typing, schemas, hashes, manifests,
 environments, and path audits are readiness checks. Do not add contract,
 compatibility, legacy, snapshot, prose, mock, or coverage-only tests.
 

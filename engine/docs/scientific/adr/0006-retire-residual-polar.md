@@ -37,4 +37,4 @@ relative-permittivity equation and derivatives, state identities, density
 closure, saturation, reference behavior, and active parameter derivatives.
 Source, include, configured Meson/link, and symbol scans prove that the deleted
 header and residual surface are absent. These checks do not validate broad
-fluid or literature domains, which remain Validation evidence.
+fluid or literature domains, which remain analysis evidence.

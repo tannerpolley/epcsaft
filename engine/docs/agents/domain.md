@@ -10,6 +10,6 @@ reviews. Surface an ADR conflict before implementation; lifecycle state remains
 in GitHub rather than being copied into domain documents.
 
 The runtime lives under `engine/src/epcsaft/`, compact numerical falsifiers under
-`engine/tests/`, and installed-wheel literature evidence under `validation/`.
-One Engine-accountable task may change the exact Data, Engine, and Validation
+`engine/tests/`, and installed-wheel literature evidence under `analyses/`.
+One Engine-accountable task may change the exact Data, Engine, and analysis
 files required by its vertical slice.

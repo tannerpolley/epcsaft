@@ -240,7 +240,7 @@ Compact Regression checks must establish:
 
 Tests may use compact manufactured or carefully selected numerical cases. Named
 literature recovery, broad temperature tables, and workflow acceptance belong
-in installed-wheel Validation.
+in installed-wheel analysis sets.
 
 ## Issue-ready decomposition
 

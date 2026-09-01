@@ -11,4 +11,4 @@ The returned `LeastSquaresResult` keeps physical owner Jacobians separate from
 the weighted optimizer-coordinate Jacobian, along with native failures,
 resource counters, covariance availability, and solver options. No result
 promotes or adopts parameters. Quantitative literature or held-out claims
-remain installed-wheel Validation evidence.
+remain installed-wheel analysis evidence.

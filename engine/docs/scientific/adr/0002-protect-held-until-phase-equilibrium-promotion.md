@@ -2,7 +2,7 @@
 status: fulfilled
 date: 2026-08-10
 amends: 0001-one-general-phase-equilibrium-owner.md
-fulfilled_by: governance D-030 and CAP-09 promotion receipt
+fulfilled_by: ADR 0007 retained D-030 and CAP-09 promotion result
 migration_source_path: engine/docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
 migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
@@ -89,7 +89,8 @@ gate; its atomic-retirement sequencing is superseded by this decision.
 
 On 2026-08-12 the complete installed-wheel Khudaida promotion campaign passed
 under the user-approved `1e-4` lineage-only tolerance while every stricter
-physical and derivative gate remained unchanged. Governance D-030 therefore
+physical and derivative gate remained unchanged. The D-030 decision retained
+by ADR 0007 therefore
 made `phase_equilibrium` the sole public route, mapped omitted fixed-T,P
 topology to the retained internal discovery controller, prohibited fallback
 for declared topology, and retired the transitional Python `tp_flash` surface.

@@ -1,7 +1,7 @@
 # ePC-SAFT
 
-Private scientific monorepo for the unified ePC-SAFT engine and its governed
-data, numerical evidence, validation campaigns, and research oracles.
+Private scientific monorepo for the unified ePC-SAFT engine, canonical data,
+compact numerical evidence, and retained scientific analyses.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ applications install an explicitly identified wheel and record its SHA-256.
 See [`engine/README.md`](engine/README.md) for direct Meson compile diagnostics
 and canonical wheel build and installation guidance.
 
-## Validation
+## Checks
 
 Run the affected-area gate during normal development:
 
@@ -56,12 +56,12 @@ Run the parallel fast installed-wheel gate with:
 bash tools/check-all.sh
 ```
 
-`check-affected.sh` selects checks from the changed paths. Data, governance, or
+`check-affected.sh` selects checks from the changed paths. Data, analysis, or
 documentation-only changes can stop at readiness checks without building or
-installing the wheel; selected Engine or Validation checks run setup first.
+installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, regression, static,
-and readiness checks. It excludes Validation campaigns and slow or expensive
+and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence.
 
 Native C++ changes use the explicit owner commands:
@@ -73,7 +73,7 @@ bash engine/tools/check-native-sanitizers.sh
 
 The first command builds the native extension with Clang and runs the full
 clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
-its compact numerical tests. Run slow Engine tests or a Validation campaign
+its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
 
 Run a canonical end-to-end workflow with:
@@ -82,5 +82,6 @@ Run a canonical end-to-end workflow with:
 bash tools/run-slice.sh khudaida
 ```
 
-See `AGENTS.md` for agent routing and `governance/GOVERNANCE.md` for the
-scientific and architectural doctrine.
+See `AGENTS.md`, `engine/ARCHITECTURE.yaml`, and
+`engine/docs/scientific/CONTEXT.md` for execution, architecture, and scientific
+ownership.

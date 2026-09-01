@@ -233,8 +233,8 @@ Persistent EOS checks must falsify numerical claims, including:
 - structured failures at domain, topology, density, and association-solve
   boundaries without fabricated values.
 
-Named literature datasets and broad matrices move to installed-wheel
-Validation. Tests must not assert callback names, exception class or prose,
+Named literature datasets and broad matrices move to installed-wheel analysis
+sets. Tests must not assert callback names, exception class or prose,
 loader mechanics, schema wording, compatibility, or provenance labels.
 
 ## Failure semantics
