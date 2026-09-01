@@ -161,6 +161,19 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             problem.feed_amounts_mol
         );
         request.trace_floor = 0.0;
+        for (const auto& hint : problem.hints) {
+            if (hint.phase_index >= problem.phases.size()
+                || hint.mole_fractions.size() != provider.component_count()
+                || !std::isfinite(hint.molar_density_mol_m3)
+                || hint.molar_density_mol_m3 <= 0.0) {
+                throw std::invalid_argument("declared phase hint is invalid");
+            }
+            request.start_order_hints.push_back({
+                hint.phase_index,
+                normalize(hint.mole_fractions),
+                1.0 / hint.molar_density_mol_m3,
+            });
+        }
         std::vector<std::size_t> support(provider.component_count());
         std::iota(support.begin(), support.end(), 0);
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
@@ -177,6 +190,7 @@ FixedTpPhaseResult solve_declared_fixed_tp(
             request.phases.push_back(std::move(declared));
         }
         if (!problem.initial_guesses.empty()) {
+            request.declared_starts_only = true;
             std::vector<bool> assigned(problem.phases.size(), false);
             double fraction_sum = 0.0;
             for (const auto& guess : problem.initial_guesses) {
@@ -288,6 +302,8 @@ FixedTpPhaseResult solve_declared_fixed_tp(
         result.diagnostics.physical_status = "accepted";
         result.diagnostics.accepted_start_count = 1;
         result.diagnostics.distinct_root_count = 1;
+        result.diagnostics.hint_reordered_start_count =
+            static_cast<int>(problem.hints.size());
         if (!provider.active_parameters().identities.empty()) {
             result.sensitivity = evaluate_declared_state_sensitivity(
                 provider,

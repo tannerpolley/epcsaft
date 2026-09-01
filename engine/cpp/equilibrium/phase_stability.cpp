@@ -73,21 +73,37 @@ std::optional<PhaseRole> mechanical_role(
     return std::nullopt;
 }
 
-std::optional<std::array<double, 2>> feasible_pair_seed_fractions(
+std::optional<std::array<double, 2>> balanced_pair_seed_fractions(
     const std::vector<double>& feed,
-    const std::vector<double>& first
+    const std::vector<double>& first,
+    const std::vector<double>& second
 ) {
-    double first_fraction = 0.5;
+    if (feed.size() != first.size() || feed.size() != second.size()) {
+        return std::nullopt;
+    }
+    std::size_t pivot = feed.size();
+    double largest_difference = 0.0;
     for (std::size_t component = 0; component < feed.size(); ++component) {
-        if (first[component] > 0.0) {
-            first_fraction = std::min(
-                first_fraction,
-                0.5 * feed[component] / first[component]
-            );
+        const double difference = std::abs(first[component] - second[component]);
+        if (difference > largest_difference) {
+            largest_difference = difference;
+            pivot = component;
         }
     }
+    if (pivot == feed.size()) {
+        return std::nullopt;
+    }
+    const double first_fraction = (feed[pivot] - second[pivot])
+        / (first[pivot] - second[pivot]);
     if (!(first_fraction > 0.0 && first_fraction < 1.0)) {
         return std::nullopt;
+    }
+    for (std::size_t component = 0; component < feed.size(); ++component) {
+        const double reconstructed = first_fraction * first[component]
+            + (1.0 - first_fraction) * second[component];
+        if (std::abs(reconstructed - feed[component]) > 1.0e-8) {
+            return std::nullopt;
+        }
     }
     return std::array<double, 2>{first_fraction, 1.0 - first_fraction};
 }
@@ -116,6 +132,7 @@ std::optional<CandidateSolve> solve_candidate(
         input.overall_mole_fractions
     );
     request.trace_floor = 0.0;
+    request.declared_starts_only = true;
     std::vector<std::size_t> support(input.overall_mole_fractions.size());
     std::iota(support.begin(), support.end(), 0);
     CandidateSolve result;
@@ -136,7 +153,8 @@ std::optional<CandidateSolve> solve_candidate(
             coordinates, candidate.independent_modified_fractions
         );
         GrepePhase declared;
-        declared.identity = "phase_" + std::to_string(phase);
+        declared.identity = "phase_stability_card_"
+            + std::to_string(selected[phase]);
         declared.role = *role;
         declared.model_reference_id = thermodynamics.provider_fingerprint;
         declared.support_name = "all_components";
@@ -154,31 +172,38 @@ std::optional<CandidateSolve> solve_candidate(
         request.phases.push_back(std::move(declared));
         result.stable_ids.push_back(candidate.insertion_id);
     }
-    auto& closure = request.phases.back().start->amounts_mol;
-    for (std::size_t component = 0;
-         component < input.overall_mole_fractions.size(); ++component) {
-        double retained = input.overall_mole_fractions[component];
-        for (std::size_t phase = 0;
-             phase + 1 < request.phases.size(); ++phase) {
-            retained -= request.phases[phase].start->amounts_mol[component];
-        }
-        if (!(retained > 0.0)) {
-            return std::nullopt;
-        }
-        closure[component] = retained;
-    }
     try {
         result.solved = solve_grepe(
             thermodynamics.provider->model(),
             thermodynamics.provider->model(),
             request
         );
-    } catch (const std::exception&) {
-        return std::nullopt;
+    } catch (const std::exception& error) {
+        throw std::runtime_error(
+            std::string("candidate_grepe_failure: ") + error.what()
+        );
     }
-    return result.solved.equilibrium.accepted
-        ? std::optional<CandidateSolve>(std::move(result))
-        : std::nullopt;
+    if (!result.solved.equilibrium.accepted) {
+        const auto& equilibrium = result.solved.equilibrium;
+        throw std::runtime_error(
+            "candidate_grepe_rejected: "
+            + equilibrium.failure_reason
+            + "; solver=" + equilibrium.solver_status
+            + "; iterations=" + std::to_string(equilibrium.optimizer_iterations)
+            + "; seed_fraction_0=" + std::to_string(fractions.front())
+            + "; balance=" + std::to_string(equilibrium.balance_inf_norm)
+            + "; pressure=" + std::to_string(equilibrium.pressure_relative_inf_norm)
+            + "; transfer=" + std::to_string(
+                equilibrium.transfer_chemical_potential_inf_norm
+            )
+            + "; kkt=" + std::to_string(equilibrium.kkt_stationarity_inf_norm)
+            + "; distinct=" + std::to_string(equilibrium.phase_distinctness)
+            + (equilibrium.callback_error.empty()
+                ? std::string{}
+                : "; callback=" + equilibrium.callback_error)
+        );
+    }
+    return result;
 }
 
 std::vector<PhaseStabilityPhase> map_phases(
@@ -213,6 +238,13 @@ std::vector<PhaseStabilityPhase> map_phases(
             state.gradient,
         });
     }
+    if (std::any_of(phases.begin(), phases.end(), [&](const auto& phase) {
+            return !mechanical_role(
+                input.pressure_pa, input.temperature_k, phase.volume
+            ).has_value();
+        })) {
+        throw std::runtime_error("role_classification_ambiguous");
+    }
     std::stable_sort(phases.begin(), phases.end(), [&](const auto& left, const auto& right) {
         const auto left_role = mechanical_role(
             input.pressure_pa, input.temperature_k, left.volume
@@ -224,6 +256,32 @@ std::vector<PhaseStabilityPhase> map_phases(
             < std::pair(*right_role == PhaseRole::Vapor, right.volume);
     });
     return phases;
+}
+
+void retain_grepe_evidence(
+    PhaseStabilityDiscoveryResult& result,
+    const CandidateSolve& candidate,
+    const std::vector<double>& charges
+) {
+    const auto& equilibrium = candidate.solved.equilibrium;
+    result.material_balance_inf = equilibrium.balance_inf_norm;
+    result.pressure_residual_inf = equilibrium.pressure_relative_inf_norm;
+    result.chemical_potential_residual_inf =
+        equilibrium.transfer_chemical_potential_inf_norm;
+    result.kkt_stationarity_inf = equilibrium.kkt_stationarity_inf_norm;
+    result.phase_distinctness = equilibrium.phase_distinctness;
+    double charge_inf = 0.0;
+    for (const auto& amounts : equilibrium.phase_amounts_mol) {
+        const double total = std::accumulate(
+            amounts.begin(), amounts.end(), 0.0
+        );
+        double charge = 0.0;
+        for (std::size_t component = 0; component < amounts.size(); ++component) {
+            charge += charges[component] * amounts[component] / total;
+        }
+        charge_inf = std::max(charge_inf, std::abs(charge));
+    }
+    result.electroneutrality_inf = charge_inf;
 }
 
 }  // namespace
@@ -276,6 +334,13 @@ PhaseStabilityDiscoveryResult run_phase_stability(
     const auto& coordinates = *result.step1.coordinates;
     if (result.step2->outcome
         == PhaseStabilityStage2Outcome::NoNegativeWitnessDetected) {
+        for (int stage = 3; stage <= 7; ++stage) {
+            PhaseStabilityStageTiming skipped;
+            skipped.step = stage;
+            skipped.terminal_status = "not_applicable";
+            skipped.terminal_reason = "skipped_after_no_witness";
+            result.step_timings.push_back(std::move(skipped));
+        }
         PhaseStabilityMPoint reference{
             0,
             *result.step1.independent_feed,
@@ -288,15 +353,25 @@ PhaseStabilityDiscoveryResult run_phase_stability(
             result.step2->reference->gradient,
             "feed_reference",
         };
-        const auto solved = solve_candidate(
-            thermodynamics, input, coordinates, {reference}, {0}, {1.0}
-        );
+        std::optional<CandidateSolve> solved;
+        try {
+            solved = solve_candidate(
+                thermodynamics, input, coordinates, {reference}, {0}, {1.0}
+            );
+        } catch (const std::exception& error) {
+            return fail("grepe", error.what());
+        }
         if (!solved.has_value()) {
             return fail("grepe", "feed_reference_grepe_rejected");
         }
-        result.phases = map_phases(
-            thermodynamics, input, coordinates, *solved
-        );
+        retain_grepe_evidence(result, *solved, thermodynamics.charges);
+        try {
+            result.phases = map_phases(
+                thermodynamics, input, coordinates, *solved
+            );
+        } catch (const std::exception& error) {
+            return fail("grepe", error.what());
+        }
         result.total_free_energy_over_rt =
             solved->solved.equilibrium.objective_over_rt;
         result.outcome = "one_phase_no_negative_witness_detected";
@@ -357,37 +432,111 @@ PhaseStabilityDiscoveryResult run_phase_stability(
         if (stage6.status != "complete") {
             return fail("stage6", stage6.reason);
         }
+        std::vector<PhaseStabilityMPoint> qualified_candidates{{
+            0,
+            *result.step1.independent_feed,
+            result.step2->reference->volume,
+            thermodynamics.packing_fraction(
+                *result.step1.independent_feed,
+                result.step2->reference->volume
+            ),
+            result.step2->reference->objective,
+            result.step2->reference->gradient,
+            "feed_reference",
+        }};
+        for (const auto& candidate : stage6.candidates) {
+            try {
+                const auto envelope = pressure_roots(
+                    candidate.independent_modified_fractions
+                );
+                const double candidate_log_volume = std::log(candidate.volume);
+                const std::size_t matches = static_cast<std::size_t>(std::count_if(
+                    envelope.roots.begin(),
+                    envelope.roots.end(),
+                    [&](const auto& root) {
+                        return std::abs(root.log_volume - candidate_log_volume)
+                            <= 1.0e-8;
+                    }
+                ));
+                const bool duplicate = std::any_of(
+                    qualified_candidates.begin(),
+                    qualified_candidates.end(),
+                    [&](const auto& retained) {
+                        if (std::abs(
+                                candidate.packing_fraction
+                                - retained.packing_fraction
+                            ) >= kPhaseStabilityPaperStep6PackingDistinct.atol) {
+                            return false;
+                        }
+                        for (std::size_t coordinate = 0;
+                             coordinate
+                                < candidate.independent_modified_fractions.size();
+                             ++coordinate) {
+                            if (std::abs(
+                                    candidate.independent_modified_fractions[coordinate]
+                                    - retained.independent_modified_fractions[coordinate]
+                                ) >= kPhaseStabilityPaperStep6CompositionDistinct.atol) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                );
+                if (matches == 1 && !duplicate) {
+                    qualified_candidates.push_back(candidate);
+                }
+            } catch (const std::exception&) {
+                continue;
+            }
+        }
         std::optional<CandidateSolve> selected;
-        const std::size_t limit = std::min(
-            stage6.candidates.size(), kCandidatePoolLimit
-        );
-        std::size_t attempted_topologies = 0;
+        const std::size_t limit = qualified_candidates.size();
+        const std::size_t topology_count = limit < 2
+            ? 0
+            : limit * (limit - 1) / 2;
+        if (topology_count > kCandidatePoolLimit) {
+            return fail(
+                "stage7",
+                "candidate_subset_budget_exhausted: candidates="
+                    + std::to_string(limit)
+                    + ", topologies=" + std::to_string(topology_count)
+            );
+        }
+        std::vector<std::string> candidate_failures;
         for (std::size_t left = 0;
-             left < limit && attempted_topologies < kCandidatePoolLimit;
+             left < limit;
              ++left) {
             const auto left_physical = phase_stability_lift_independent_fractions(
                 coordinates,
-                stage6.candidates[left].independent_modified_fractions
+                qualified_candidates[left].independent_modified_fractions
             );
             for (std::size_t right = left + 1; right < limit; ++right) {
-                const auto fractions = feasible_pair_seed_fractions(
-                    input.overall_mole_fractions, left_physical
+                const auto right_physical = phase_stability_lift_independent_fractions(
+                    coordinates,
+                    qualified_candidates[right].independent_modified_fractions
+                );
+                const auto fractions = balanced_pair_seed_fractions(
+                    input.overall_mole_fractions,
+                    left_physical,
+                    right_physical
                 );
                 if (!fractions.has_value()) {
                     continue;
                 }
-                if (attempted_topologies >= kCandidatePoolLimit) {
-                    break;
+                std::optional<CandidateSolve> solved;
+                try {
+                    solved = solve_candidate(
+                        thermodynamics,
+                        input,
+                        coordinates,
+                        qualified_candidates,
+                        {left, right},
+                        {(*fractions)[0], (*fractions)[1]}
+                    );
+                } catch (const std::exception& error) {
+                    candidate_failures.push_back(error.what());
+                    continue;
                 }
-                ++attempted_topologies;
-                auto solved = solve_candidate(
-                    thermodynamics,
-                    input,
-                    coordinates,
-                    stage6.candidates,
-                    {left, right},
-                    {(*fractions)[0], (*fractions)[1]}
-                );
                 if (solved.has_value()
                     && (!selected.has_value()
                         || solved->solved.equilibrium.objective_over_rt
@@ -397,9 +546,20 @@ PhaseStabilityDiscoveryResult run_phase_stability(
             }
         }
         if (selected.has_value()) {
-            result.phases = map_phases(
-                thermodynamics, input, coordinates, *selected
-            );
+            PhaseStabilityStageTiming handoff;
+            handoff.step = 7;
+            handoff.invocation_count = 1;
+            handoff.terminal_status = "complete";
+            handoff.terminal_reason = "handoff_to_grepe";
+            result.step_timings.push_back(std::move(handoff));
+            retain_grepe_evidence(result, *selected, thermodynamics.charges);
+            try {
+                result.phases = map_phases(
+                    thermodynamics, input, coordinates, *selected
+                );
+            } catch (const std::exception& error) {
+                return fail("grepe", error.what());
+            }
             result.total_free_energy_over_rt =
                 selected->solved.equilibrium.objective_over_rt;
             result.outcome = "physical_equilibrium_accepted";
@@ -412,6 +572,9 @@ PhaseStabilityDiscoveryResult run_phase_stability(
         }));
         result.step_timings.push_back(result.step7_history.back().timing);
         if (result.step7_history.back().status != "complete") {
+            if (!candidate_failures.empty()) {
+                return fail("grepe", candidate_failures.back());
+            }
             return fail("stage7", result.step7_history.back().reason);
         }
     }

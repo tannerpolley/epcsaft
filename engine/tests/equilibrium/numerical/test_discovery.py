@@ -44,6 +44,11 @@ def test_neutral_discovery_certifies_feed_equilibrium_stability_and_scaling() ->
         assert result.diagnostics.pressure_residual_inf <= 1.0e-8
         assert result.diagnostics.chemical_potential_residual_inf <= 1.0e-6
         assert result.diagnostics.kkt_stationarity_inf <= 1.0e-7
+        assert result.diagnostics.route == "phase_stability_discovery"
+        assert result.diagnostics.globality_claim == "not_established"
+        assert "stage_3:not_applicable:skipped_after_no_witness" in (
+            result.diagnostics.search_budget
+        )
         for phase in result.phases:
             assert phase.pressure_pa == pytest.approx(1.0e5, rel=1.0e-8)
             assert phase.mechanical_class == "strict_stable"
@@ -114,3 +119,14 @@ def test_charged_discovery_certifies_charge_support_and_component_permutation() 
     )
     permuted_composition = dict(zip(permuted_ids, permuted.phases[0].mole_fractions, strict=True))
     assert permuted_composition == pytest.approx(canonical_composition, abs=2.0e-10)
+
+
+@pytest.mark.parametrize("feed", ((0.0, 1.0), (-1.0, 2.0)))
+def test_discovery_rejects_nonpositive_feed_before_native_search(
+    feed: tuple[float, float],
+) -> None:
+    problem = equilibrium.PhaseEquilibriumProblem(
+        equilibrium.FixedTPFeed(300.0 * u.kelvin, 1.0e5 * u.pascal, feed)
+    )
+    with pytest.raises(ValueError, match="feed amounts must be positive and finite"):
+        equilibrium.solve(Mixture(Parameters.from_mapping(NEUTRAL_BINARY)), problem)

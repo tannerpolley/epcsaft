@@ -16,10 +16,10 @@ PhaseStabilityStage7Result run_phase_stability_stage7(
     }
     ++state.major_iteration;
     if (state.major_iteration >= resources.step7_major_iteration_cap) {
-        result.reason = "stage_ii_major_iteration_limit";
+        result.reason = "major_iteration_limit";
     } else {
         result.status = "complete";
-        result.reason = "continue_stage_ii";
+        result.reason = "continue_candidate_search";
     }
     result.timing.terminal_status = result.status;
     result.timing.terminal_reason = result.reason;

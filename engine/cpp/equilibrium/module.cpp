@@ -474,6 +474,14 @@ py::dict phase_stability_discovery_to_dict(
         optimizer_solves += timing.optimizer_solves;
         optimizer_iterations += timing.optimizer_iterations;
     }
+    py::list stage_evidence;
+    for (const auto& timing : solve.step_timings) {
+        stage_evidence.append(
+            "stage_" + std::to_string(timing.step) + ":"
+            + timing.terminal_status + ":" + timing.terminal_reason
+        );
+    }
+    result["stage_evidence"] = std::move(stage_evidence);
     result["optimizer_solves"] = optimizer_solves;
     result["optimizer_iterations"] = optimizer_iterations;
     int major_iterations = 0;
@@ -481,10 +489,28 @@ py::dict phase_stability_discovery_to_dict(
         major_iterations = std::max(major_iterations, step.major_iteration + 1);
     }
     result["major_iterations"] = major_iterations;
-    result["material_balance_max_abs"] = py::none();
-    result["electroneutrality_inf"] = py::none();
-    result["pressure_stationarity_max_relative"] = py::none();
-    result["kkt_stationarity_max_abs"] = py::none();
+    set_optional_double(
+        result, "material_balance_max_abs", solve.material_balance_inf
+    );
+    set_optional_double(
+        result, "electroneutrality_inf", solve.electroneutrality_inf
+    );
+    set_optional_double(
+        result,
+        "pressure_stationarity_max_relative",
+        solve.pressure_residual_inf
+    );
+    set_optional_double(
+        result,
+        "chemical_potential_residual_inf",
+        solve.chemical_potential_residual_inf
+    );
+    set_optional_double(
+        result, "kkt_stationarity_max_abs", solve.kkt_stationarity_inf
+    );
+    set_optional_double(
+        result, "phase_distinctness", solve.phase_distinctness
+    );
     py::list phases;
     for (const auto& phase : solve.phases) {
         phases.append(phase_stability_phase_to_dict(phase));

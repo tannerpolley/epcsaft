@@ -151,9 +151,12 @@ class PhaseStabilityDiagnostics:
     material_balance_max_abs: float | None
     electroneutrality_inf: float | None
     pressure_stationarity_max_relative: float | None
+    chemical_potential_residual_inf: float | None
     kkt_stationarity_max_abs: float | None
+    phase_distinctness: float | None
     globality_certificate: str
     provider_evaluation_count: int
+    stage_evidence: tuple[str, ...]
     failure_reason: str
 
 
@@ -860,9 +863,14 @@ def _phase_stability_diagnostics(payload: Mapping[str, object]) -> PhaseStabilit
         pressure_stationarity_max_relative=_optional_float(
             payload, "pressure_stationarity_max_relative"
         ),
+        chemical_potential_residual_inf=_optional_float(
+            payload, "chemical_potential_residual_inf"
+        ),
         kkt_stationarity_max_abs=_optional_float(payload, "kkt_stationarity_max_abs"),
+        phase_distinctness=_optional_float(payload, "phase_distinctness"),
         globality_certificate=str(payload["globality_certificate"]),
         provider_evaluation_count=int(cast(int, payload["provider_evaluation_count"])),
+        stage_evidence=tuple(str(value) for value in cast(Sequence[object], payload["stage_evidence"])),
         failure_reason="" if failure is None else str(failure),
     )
 
@@ -1170,9 +1178,12 @@ def _failed_phase_stability_diagnostics(reason: str, stage: str) -> PhaseStabili
         material_balance_max_abs=None,
         electroneutrality_inf=None,
         pressure_stationarity_max_relative=None,
+        chemical_potential_residual_inf=None,
         kkt_stationarity_max_abs=None,
+        phase_distinctness=None,
         globality_certificate="not_guaranteed",
         provider_evaluation_count=0,
+        stage_evidence=(),
         failure_reason=reason,
     )
 
@@ -1438,7 +1449,8 @@ def _protected_discovery_diagnostics(
 ) -> PhaseEquilibriumDiagnostics:
     search_budget = (
         f"optimizer_solves={retained.optimizer_solves};"
-        f"optimizer_iterations={retained.optimizer_iterations}"
+        f"optimizer_iterations={retained.optimizer_iterations};"
+        f"stage_evidence={','.join(retained.stage_evidence)}"
     )
     return PhaseEquilibriumDiagnostics(
         route="phase_stability_discovery",
@@ -1476,14 +1488,38 @@ def _protected_discovery_diagnostics(
         final_correction_iteration_count=0,
         pre_correction_residual_inf=0.0,
         post_correction_residual_inf=0.0,
-        material_balance_inf=retained.material_balance_max_abs or 0.0,
-        electroneutrality_inf=retained.electroneutrality_inf or 0.0,
-        pressure_residual_inf=retained.pressure_stationarity_max_relative or 0.0,
-        chemical_potential_residual_inf=0.0,
-        kkt_stationarity_inf=retained.kkt_stationarity_max_abs or 0.0,
-        dual_sign_violation_inf=0.0,
-        complementarity_inf=0.0,
-        phase_distinctness=0.0,
+        material_balance_inf=(
+            retained.material_balance_max_abs
+            if retained.material_balance_max_abs is not None
+            else math.nan
+        ),
+        electroneutrality_inf=(
+            retained.electroneutrality_inf
+            if retained.electroneutrality_inf is not None
+            else math.nan
+        ),
+        pressure_residual_inf=(
+            retained.pressure_stationarity_max_relative
+            if retained.pressure_stationarity_max_relative is not None
+            else math.nan
+        ),
+        chemical_potential_residual_inf=(
+            retained.chemical_potential_residual_inf
+            if retained.chemical_potential_residual_inf is not None
+            else math.nan
+        ),
+        kkt_stationarity_inf=(
+            retained.kkt_stationarity_max_abs
+            if retained.kkt_stationarity_max_abs is not None
+            else math.nan
+        ),
+        dual_sign_violation_inf=math.nan,
+        complementarity_inf=math.nan,
+        phase_distinctness=(
+            retained.phase_distinctness
+            if retained.phase_distinctness is not None
+            else math.nan
+        ),
     )
 
 

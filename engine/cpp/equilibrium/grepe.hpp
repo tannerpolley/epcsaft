@@ -80,6 +80,12 @@ struct GrepeContinuationPhase {
     double molar_volume_m3_per_mol = 0.0;
 };
 
+struct GrepeStartOrderHint {
+    std::size_t phase_index = 0;
+    std::vector<double> mole_fractions;
+    double molar_volume_m3_per_mol = 0.0;
+};
+
 struct GrepeRequest {
     std::string identity;
     GrepeIntensive temperature;
@@ -94,6 +100,7 @@ struct GrepeRequest {
     std::optional<GrepeFeed> feed;
     std::optional<GrepeIntensiveBoundary> boundary;
     std::vector<GrepeContinuationPhase> continuation_phases;
+    std::vector<GrepeStartOrderHint> start_order_hints;
     double continuation_pressure_pa = 0.0;
     bool require_output_derivatives = false;
     bool perform_derivative_audits = false;

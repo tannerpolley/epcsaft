@@ -36,6 +36,40 @@ def test_declared_one_phase_certifies_pressure_feed_stability_and_role() -> None
     assert phase.mechanical_class == "strict_stable"
 
 
+def test_declared_hint_reorders_grepe_generated_starts_without_discovery() -> None:
+    model = Mixture(Parameters.from_mapping(NEUTRAL_BINARY))
+    state = model.state(
+        T=300.0 * u.kelvin,
+        P=1.0e5 * u.pascal,
+        x=(0.5, 0.5),
+        phase="vapor",
+    )
+    result = equilibrium.solve(
+        model,
+        equilibrium.PhaseEquilibriumProblem(
+            equilibrium.FixedTPFeed(
+                300.0 * u.kelvin,
+                1.0e5 * u.pascal,
+                (1.0, 1.0),
+                equilibrium.DeclaredTopology(
+                    (equilibrium.PhaseSpecification("vapor", equilibrium.AllComponents()),)
+                ),
+            ),
+            hints=(
+                equilibrium.PhaseHint(
+                    0,
+                    (0.5, 0.5),
+                    float(state.molar_density.to("mole / meter**3").magnitude),
+                ),
+            ),
+        ),
+    )
+
+    assert result.diagnostics.route == "grepe_declared_topology"
+    assert result.diagnostics.hint_count == 1
+    assert result.diagnostics.hint_reordered_start_count == 1
+
+
 def test_declared_multiphase_certifies_balance_equilibrium_curvature_and_permutation() -> None:
     parameters = Parameters.from_mapping(NEUTRAL_TERNARY_IMMISCIBLE)
     model = Mixture(parameters)

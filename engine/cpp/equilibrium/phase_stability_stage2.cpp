@@ -465,6 +465,13 @@ PhaseStabilityStage2Result run_phase_stability_stage2(
         const PhaseStabilityStageIJointEvaluation& witness,
         const char* reason
     ) {
+        if (!is_strict_stable_root(witness)
+            || !is_strict_negative(witness)) {
+            return finish(
+                PhaseStabilityStage2Outcome::Indeterminate,
+                "negative_witness_pressure_root_not_certified"
+            );
+        }
         record_minimum(witness.tpd);
         result.negative_witness = make_witness(witness);
         return finish(PhaseStabilityStage2Outcome::NegativeWitness, reason);
