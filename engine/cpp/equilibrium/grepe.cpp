@@ -10,43 +10,6 @@
 #include <utility>
 
 namespace epcsaft_engine::equilibrium {
-
-ReactionSystemInput make_nonreactive_reaction_system(
-    const ProviderContext& provider,
-    double temperature_k,
-    double pressure_pa,
-    const std::vector<double>& feed_amounts_mol
-) {
-    const std::size_t count = provider.component_count();
-    if (feed_amounts_mol.size() != count) {
-        throw std::invalid_argument(
-            "nonreactive GREPE feed size must match the provider"
-        );
-    }
-    ReactionSystemInput result;
-    result.species_ids = provider.component_ids();
-    result.charges = provider.component_charges();
-    result.provider_fingerprint = provider.fingerprint();
-    result.molar_masses_kg_per_mol =
-        provider.model().molar_masses_kg_per_mol();
-    for (double& molar_mass : result.molar_masses_kg_per_mol) {
-        if (!std::isfinite(molar_mass) || molar_mass <= 0.0) {
-            // Nonreactive identity balances and phase splits do not use mass.
-            molar_mass = 1.0;
-        }
-    }
-    result.balance_matrix = {count, count, std::vector<double>(count * count, 0.0)};
-    for (std::size_t index = 0; index < count; ++index) {
-        result.balance_matrix(index, index) = 1.0;
-    }
-    result.conserved_totals = feed_amounts_mol;
-    result.reaction_matrix = {0, count, {}};
-    result.feed_amounts = feed_amounts_mol;
-    result.temperature_k = temperature_k;
-    result.pressure_pa = pressure_pa;
-    return result;
-}
-
 namespace {
 
 constexpr double kGasConstant = 8.31446261815324;
@@ -546,23 +509,6 @@ std::vector<std::vector<std::vector<double>>> generated_allocations(
             });
             candidates.push_back({std::move(first), std::move(second)});
         }
-    }
-    if (phase_count > 2 && phase_count <= component_count
-        && std::all_of(
-            reaction.charges.begin(), reaction.charges.end(),
-            [](int charge) { return charge == 0; }
-        )) {
-        std::vector<std::vector<double>> separated(
-            phase_count,
-            std::vector<double>(
-                component_count,
-                0.2 / static_cast<double>(phase_count - 1)
-            )
-        );
-        for (std::size_t phase = 0; phase < phase_count; ++phase) {
-            separated[phase][phase] = 0.8;
-        }
-        candidates.push_back(std::move(separated));
     }
     candidates.push_back(std::vector<std::vector<double>>(
         phase_count,

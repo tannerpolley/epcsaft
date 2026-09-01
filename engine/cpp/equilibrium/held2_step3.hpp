@@ -1,6 +1,6 @@
 #pragma once
 
-#include "phase_stability_stage2.hpp"
+#include "held2_step2.hpp"
 
 #include <array>
 #include <cstdint>
@@ -9,7 +9,7 @@
 
 namespace epcsaft_engine::equilibrium {
 
-struct PhaseStabilityMPoint {
+struct Held2MPoint {
     std::uint64_t insertion_id = 0;
     std::vector<double> independent_modified_fractions;
     double volume = 0.0;
@@ -19,7 +19,7 @@ struct PhaseStabilityMPoint {
     std::string origin;
 };
 
-struct PhaseStabilityPersistentState {
+struct Held2PersistentState {
     int major_iteration = 0;
     int upper_solve_count = 0;
     double feed_reduced_gibbs = 0.0;
@@ -28,27 +28,27 @@ struct PhaseStabilityPersistentState {
     std::uint64_t next_start_ordinal = 0;
     bool step5_requires_new_member = false;
     std::optional<std::array<double, 2>> step5_volume_bounds;
-    std::optional<PhaseStabilityCoordinates> coordinates;
+    std::optional<Held2Coordinates> coordinates;
     std::vector<double> feed;
     std::vector<double> multipliers;
-    std::vector<PhaseStabilityMPoint> M;
+    std::vector<Held2MPoint> M;
 };
 
-using PhaseStabilityPressureRootEvaluator = std::function<PhaseStabilityPressureEnvelopeResult(
+using Held2PressureRootEvaluator = std::function<Held2PressureEnvelopeResult(
     const std::vector<double>&
 )>;
 
-struct PhaseStabilityStage3Result {
+struct Held2Step3Result {
     std::string status = "indeterminate";
     std::string reason = "not_run";
-    std::optional<PhaseStabilityPersistentState> state;
-    PhaseStabilityStageTiming timing;
+    std::optional<Held2PersistentState> state;
+    Held2StepTiming timing;
 };
 
-[[nodiscard]] PhaseStabilityStage3Result run_phase_stability_stage3(
-    const PhaseStabilityStage1Result& step1,
-    const PhaseStabilityStage2Result& step2,
-    const PhaseStabilityPressureRootEvaluator& pressure_roots
+[[nodiscard]] Held2Step3Result run_held2_step3(
+    const Held2Step1Result& step1,
+    const Held2Step2Result& step2,
+    const Held2PressureRootEvaluator& pressure_roots
 );
 
 }  // namespace epcsaft_engine::equilibrium

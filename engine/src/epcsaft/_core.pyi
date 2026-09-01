@@ -198,13 +198,13 @@ def _solve_fixed_t_coexistence(
     hint_compositions: tuple[tuple[float, ...], ...],
     hint_densities_mol_m3: tuple[float, ...],
 ) -> dict[str, Any]: ...
-def _solve_phase_stability_discovery(
+def _solve_held_discovery(
     model: NativeModel,
     temperature_k: float,
     pressure_pa: float,
     overall_mole_fractions: tuple[float, ...],
 ) -> dict[str, Any]: ...
-def _phase_stability_audit_farkas_certificate(
+def _held2_audit_farkas_certificate(
     matrix: list[list[float]],
     row_lower: list[float],
     row_upper: list[float],
@@ -212,7 +212,7 @@ def _phase_stability_audit_farkas_certificate(
     column_upper: list[float],
     row_ray: list[float],
 ) -> dict[str, Any]: ...
-def _phase_stability_audit_step5_kkt(
+def _held2_audit_step5_kkt(
     variables: list[float],
     lower: list[float],
     upper: list[float],

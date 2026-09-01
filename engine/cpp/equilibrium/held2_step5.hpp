@@ -6,24 +6,24 @@
 #include <string>
 #include <vector>
 
-#include "phase_stability_stage4.hpp"
-#include "phase_stability_certificates.hpp"
+#include "held2_step4.hpp"
+#include "held2_certificates.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
-using PhaseStabilityPackingFractionEvaluator = std::function<double(
+using Held2PackingFractionEvaluator = std::function<double(
     const std::vector<double>&,
     double
 )>;
 
-struct PhaseStabilityResourceProfile {
+struct Held2ResourceProfile {
     int step2_search_work_budget = 6500;
     int step5_start_cap = 128;
     int step7_major_iteration_cap = 128;
     int step5_recovery_start_cap = 2048;
 };
 
-struct PhaseStabilityDiluteFaceRestartEvidence {
+struct Held2DiluteFaceRestartEvidence {
     double face_radius = 0.0;
     double bound_activity_atol = 0.0;
     double dual_sign_atol = 0.0;
@@ -38,38 +38,38 @@ struct PhaseStabilityDiluteFaceRestartEvidence {
     bool accepted = false;
 };
 
-struct PhaseStabilityLocalCertificate {
+struct Held2LocalCertificate {
     std::uint64_t start_ordinal = 0;
     std::string start_family;
     std::string solver_status;
     std::optional<double> local_value;
     bool finite_and_in_domain = false;
-    std::optional<PhaseStabilityStage5KktCertificate> kkt;
-    std::optional<PhaseStabilityDiluteFaceRestartEvidence> dilute_face_restart;
+    std::optional<Held2Step5KktCertificate> kkt;
+    std::optional<Held2DiluteFaceRestartEvidence> dilute_face_restart;
     bool accepted = false;
 };
 
-struct PhaseStabilityStage5Result {
+struct Held2Step5Result {
     std::string status = "indeterminate";
     std::string reason = "not_run";
     std::optional<double> lower_value;
-    std::optional<PhaseStabilityMPoint> terminal;
+    std::optional<Held2MPoint> terminal;
     std::uint64_t starts_consumed = 0;
-    std::vector<PhaseStabilityLocalCertificate> attempts;
-    PhaseStabilityStageTiming timing;
+    std::vector<Held2LocalCertificate> attempts;
+    Held2StepTiming timing;
 };
 
-[[nodiscard]] bool retain_phase_stability_m_point(
-    PhaseStabilityPersistentState& state,
-    PhaseStabilityMPoint& point
+[[nodiscard]] bool retain_held2_m_point(
+    Held2PersistentState& state,
+    Held2MPoint& point
 );
 
-[[nodiscard]] PhaseStabilityStage5Result run_phase_stability_stage5(
-    const PhaseStabilityStage1Result& step1,
-    const PhaseStabilityStage4Result& step4,
-    PhaseStabilityPersistentState& state,
-    const PhaseStabilityStateEvaluator& evaluator,
-    const PhaseStabilityResourceProfile& resources
+[[nodiscard]] Held2Step5Result run_held2_step5(
+    const Held2Step1Result& step1,
+    const Held2Step4Result& step4,
+    Held2PersistentState& state,
+    const Held2StateEvaluator& evaluator,
+    const Held2ResourceProfile& resources
 );
 
 }  // namespace epcsaft_engine::equilibrium

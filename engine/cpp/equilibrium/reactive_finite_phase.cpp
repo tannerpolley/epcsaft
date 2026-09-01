@@ -3002,7 +3002,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
     }
     if (!std::isfinite(temperature_k) || temperature_k <= 0.0
         || !std::isfinite(pressure_pa) || pressure_pa <= 0.0
-        || !std::isfinite(trace_floor) || trace_floor < 0.0
+        || !std::isfinite(trace_floor) || trace_floor <= 0.0
         || max_iterations < 0) {
         throw std::invalid_argument("reactive finite-phase state controls are invalid");
     }
@@ -3107,7 +3107,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
         std::fill(
             lower.begin() + static_cast<std::ptrdiff_t>(offset),
             lower.begin() + static_cast<std::ptrdiff_t>(offset + amount_dimension),
-            trace_floor > 0.0 ? std::log(0.1 * trace_floor) : -1.0e19
+            -40.0
         );
         std::fill(
             upper.begin() + static_cast<std::ptrdiff_t>(offset),
@@ -3120,6 +3120,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                  ++supported_index) {
                 const std::size_t species =
                     layout.supported_species[supported_index];
+                lower[offset + supported_index] = std::log(0.1 * trace_floor);
                 upper[offset + supported_index] = std::log(std::nextafter(
                     2.0 * total_feed_mass_kg
                         / system.molar_masses_kg_per_mol[species],
@@ -3142,6 +3143,7 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                     "ionic charge-equivalent upper bound is invalid"
                 );
             }
+            lower[offset] = std::log(0.1 * trace_floor);
             upper[offset] = std::log(charge_equivalent_upper);
             const std::size_t neutral_offset =
                 1 + chart.cation_indices.size() - 1
@@ -3152,8 +3154,10 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
                 const std::size_t species = layout.supported_species[
                     chart.neutral_indices[neutral]
                 ];
-                upper[offset + neutral_offset + neutral] =
-                    std::log(std::nextafter(
+                lower[offset + neutral_offset + neutral] =
+                    std::log(0.1 * trace_floor);
+                    upper[offset + neutral_offset + neutral] =
+                        std::log(std::nextafter(
                         2.0 * total_feed_mass_kg
                             / system.molar_masses_kg_per_mol[species],
                         std::numeric_limits<double>::infinity()
@@ -3170,11 +3174,9 @@ ReactiveFinitePhaseResult solve_provider_reactive_finite_phases(
             chart, upper, offset, -amount_log_scale
         );
         if (system.ideal_gas) {
-            const double minimum_volume = std::max(
-                std::numeric_limits<double>::min(),
-                0.01 * trace_floor * kGasConstantJPerMolK * temperature_k
-                    / (pressure_pa * total_feed_amount_mol)
-            );
+            const double minimum_volume = 0.01 * trace_floor
+                * kGasConstantJPerMolK * temperature_k
+                / (pressure_pa * total_feed_amount_mol);
             const double maximum_amount = total_feed_mass_kg
                 / *std::min_element(
                     system.molar_masses_kg_per_mol.begin(),

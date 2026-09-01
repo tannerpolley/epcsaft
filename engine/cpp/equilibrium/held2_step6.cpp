@@ -1,30 +1,30 @@
-#include "phase_stability_stage6.hpp"
-#include "phase_stability_tolerances.hpp"
+#include "held2_step6.hpp"
+#include "held2_tolerances.hpp"
 
 #include <algorithm>
 #include <cmath>
 
 namespace epcsaft_engine::equilibrium {
 
-PhaseStabilityStage6Result run_phase_stability_stage6(
-    const PhaseStabilityStage1Result& step1,
-    const PhaseStabilityStage4Result& step4,
-    const PhaseStabilityPersistentState& state,
-    const PhaseStabilityPackingFractionEvaluator& packing_fraction
+Held2Step6Result run_held2_step6(
+    const Held2Step1Result& step1,
+    const Held2Step4Result& step4,
+    const Held2PersistentState& state,
+    const Held2PackingFractionEvaluator& packing_fraction
 ) {
-    PhaseStabilityStage6Result result;
+    Held2Step6Result result;
     result.timing.invocation_count = 1;
     if (step4.status != "complete" || !step1.coordinates
         || !packing_fraction) {
         result.reason = "invalid_step6_input";
         return result;
     }
-    for (const PhaseStabilityMPoint& point : state.M) {
+    for (const Held2MPoint& point : state.M) {
         if (point.reduced_gibbs_gradient.size() < state.feed.size()) {
             result.reason = "missing_step6_gradient";
             return result;
         }
-        PhaseStabilityCandidateDecision decision;
+        Held2CandidateDecision decision;
         decision.insertion_id = point.insertion_id;
         double lower = point.reduced_gibbs;
         for (std::size_t index = 0; index < state.feed.size(); ++index) {
@@ -33,19 +33,19 @@ PhaseStabilityStage6Result run_phase_stability_stage6(
                 - point.independent_modified_fractions[index]
             );
         }
-        decision.gap_passed = audit_phase_stability_tolerance(
-            kPhaseStabilityPaperStep6Gap, state.upper_bound - lower
+        decision.gap_passed = audit_held2_tolerance(
+            kHeld2PaperStep6Gap, state.upper_bound - lower
         ).passed;
         decision.derivative_passed = true;
         for (std::size_t index = 0; index < state.feed.size(); ++index) {
             if (point.independent_modified_fractions[index]
                 <= step1.coordinates->independent_lower_bounds[index]
-                    + kPhaseStabilityBoundActivity.atol) {
+                    + kHeld2BoundActivity.atol) {
                 continue;
             }
             decision.derivative_passed = decision.derivative_passed
-                && audit_phase_stability_tolerance(
-                    kPhaseStabilityPaperStep6Derivative,
+                && audit_held2_tolerance(
+                    kHeld2PaperStep6Derivative,
                     point.reduced_gibbs_gradient[index]
                         - state.multipliers[index],
                     std::abs(state.multipliers[index])
@@ -58,25 +58,25 @@ PhaseStabilityStage6Result run_phase_stability_stage6(
             result.decisions.push_back(std::move(decision));
             continue;
         }
-        PhaseStabilityMPoint candidate = point;
+        Held2MPoint candidate = point;
         candidate.packing_fraction = packing_fraction(
             point.independent_modified_fractions, point.volume
         );
         decision.pairwise_distinct = std::all_of(
             result.candidates.begin(),
             result.candidates.end(),
-            [&](const PhaseStabilityMPoint& retained) {
+            [&](const Held2MPoint& retained) {
                 if (std::abs(
                         candidate.packing_fraction
                         - retained.packing_fraction
-                    ) >= kPhaseStabilityPaperStep6PackingDistinct.atol) {
+                    ) >= kHeld2PaperStep6PackingDistinct.atol) {
                     return true;
                 }
                 for (std::size_t index = 0; index < state.feed.size(); ++index) {
                     if (std::abs(
                             candidate.independent_modified_fractions[index]
                             - retained.independent_modified_fractions[index]
-                        ) >= kPhaseStabilityPaperStep6CompositionDistinct.atol) {
+                        ) >= kHeld2PaperStep6CompositionDistinct.atol) {
                         return true;
                     }
                 }

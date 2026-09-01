@@ -1,14 +1,14 @@
-#include "phase_stability_stage7.hpp"
+#include "held2_step7.hpp"
 
 namespace epcsaft_engine::equilibrium {
 
-PhaseStabilityStage7Result run_phase_stability_stage7(
-    PhaseStabilityPersistentState& state,
-    const PhaseStabilityStage5Result& step5,
-    const PhaseStabilityStage6Result& step6,
-    const PhaseStabilityResourceProfile& resources
+Held2Step7Result run_held2_step7(
+    Held2PersistentState& state,
+    const Held2Step5Result& step5,
+    const Held2Step6Result& step6,
+    const Held2ResourceProfile& resources
 ) {
-    PhaseStabilityStage7Result result;
+    Held2Step7Result result;
     result.timing.invocation_count = 1;
     if (step5.status != "complete" || step6.status != "complete") {
         result.reason = "invalid_step7_input";

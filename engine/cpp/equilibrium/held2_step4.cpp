@@ -1,5 +1,5 @@
-#include "phase_stability_stage4.hpp"
-#include "phase_stability_tolerances.hpp"
+#include "held2_step4.hpp"
+#include "held2_tolerances.hpp"
 
 #include <Highs.h>
 
@@ -34,7 +34,7 @@ void validate_cuts(const std::vector<UpperCut>& cuts, std::size_t dimension) {
             || !std::all_of(cut.slopes.begin(), cut.slopes.end(), [](double value) {
                 return std::isfinite(value);
             })) {
-            throw std::invalid_argument("PHASE_STABILITY upper LP cut data are invalid");
+            throw std::invalid_argument("HELD2 upper LP cut data are invalid");
         }
     }
 }
@@ -94,11 +94,11 @@ UpperResult solve_upper_highs(
         || highs.setOptionValue("threads", 1) == HighsStatus::kError
         || highs.setOptionValue(
                "primal_feasibility_tolerance",
-               kPhaseStabilityIpoptTarget.atol
+               kHeld2IpoptTarget.atol
            ) == HighsStatus::kError
         || highs.setOptionValue(
                "dual_feasibility_tolerance",
-               kPhaseStabilityIpoptTarget.atol
+               kHeld2IpoptTarget.atol
            ) == HighsStatus::kError
         || highs.passModel(model) == HighsStatus::kError) {
         return result;
@@ -141,7 +141,7 @@ UpperResult solve_upper_highs(
         });
         result.cut_slacks.push_back(slack);
         primal_residual = std::max(primal_residual, std::max(0.0, -slack));
-        if (audit_phase_stability_tolerance(kPhaseStabilityLpActiveCut, slack).passed) {
+        if (audit_held2_tolerance(kHeld2LpActiveCut, slack).passed) {
             result.active_cut_ids.push_back(cut.id);
         }
     }
@@ -179,13 +179,13 @@ UpperResult solve_upper_highs(
     }
     result.dual_residual_inf = dual_residual;
     result.complementarity_inf = complementarity;
-    result.primal_feasible = audit_phase_stability_tolerance(
-        kPhaseStabilityLpPrimal, primal_residual, primal_scale
+    result.primal_feasible = audit_held2_tolerance(
+        kHeld2LpPrimal, primal_residual, primal_scale
     ).passed;
-    result.dual_feasible = audit_phase_stability_tolerance(
-        kPhaseStabilityLpDual, dual_residual, dual_scale
-    ).passed && audit_phase_stability_tolerance(
-        kPhaseStabilityLpComplementarity, complementarity
+    result.dual_feasible = audit_held2_tolerance(
+        kHeld2LpDual, dual_residual, dual_scale
+    ).passed && audit_held2_tolerance(
+        kHeld2LpComplementarity, complementarity
     ).passed;
     if (!result.primal_feasible || !result.dual_feasible) {
         result.multipliers.clear();
@@ -195,14 +195,14 @@ UpperResult solve_upper_highs(
 
 }  // namespace
 
-PhaseStabilityStage4Result run_phase_stability_stage4(PhaseStabilityPersistentState& state) {
-    PhaseStabilityStage4Result result;
+Held2Step4Result run_held2_step4(Held2PersistentState& state) {
+    Held2Step4Result result;
     result.major_iteration = state.major_iteration;
     result.coordinate_snapshot = state.coordinates;
     result.timing.invocation_count = 1;
     const std::size_t dimension = state.feed.size();
     std::vector<UpperCut> cuts;
-    for (const PhaseStabilityMPoint& point : state.M) {
+    for (const Held2MPoint& point : state.M) {
         std::vector<double> slopes(dimension);
         for (std::size_t index = 0; index < dimension; ++index) {
             slopes[index] =
@@ -224,7 +224,7 @@ PhaseStabilityStage4Result run_phase_stability_stage4(PhaseStabilityPersistentSt
         });
     }
     const UpperResult upper = solve_upper_highs(cuts, dimension);
-    result.certificate = PhaseStabilityLpCertificate{
+    result.certificate = Held2LpCertificate{
         upper.primal_feasible,
         upper.dual_feasible,
         upper.primal_residual_inf,

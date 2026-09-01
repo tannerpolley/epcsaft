@@ -1,6 +1,6 @@
 #pragma once
 
-#include "phase_stability_stage3.hpp"
+#include "held2_step3.hpp"
 
 #include <limits>
 #include <optional>
@@ -9,7 +9,7 @@
 
 namespace epcsaft_engine::equilibrium {
 
-struct PhaseStabilityLpCertificate {
+struct Held2LpCertificate {
     bool primal_feasible = false;
     bool dual_feasible = false;
     double primal_residual_inf = std::numeric_limits<double>::infinity();
@@ -17,13 +17,13 @@ struct PhaseStabilityLpCertificate {
     double complementarity_inf = std::numeric_limits<double>::infinity();
 };
 
-struct PhaseStabilityStage4CutEvidence {
+struct Held2Step4CutEvidence {
     int id = -1;
     double intercept = std::numeric_limits<double>::quiet_NaN();
     std::vector<double> slopes;
 };
 
-struct PhaseStabilityStage4Result {
+struct Held2Step4Result {
     std::string status = "indeterminate";
     std::string reason = "not_run";
     int major_iteration = -1;
@@ -31,14 +31,14 @@ struct PhaseStabilityStage4Result {
     std::optional<double> upper_bound;
     std::optional<std::vector<double>> multipliers;
     std::vector<int> active_cut_ids;
-    std::vector<PhaseStabilityStage4CutEvidence> cut_snapshot;
-    std::optional<PhaseStabilityCoordinates> coordinate_snapshot;
-    std::optional<PhaseStabilityLpCertificate> certificate;
-    PhaseStabilityStageTiming timing;
+    std::vector<Held2Step4CutEvidence> cut_snapshot;
+    std::optional<Held2Coordinates> coordinate_snapshot;
+    std::optional<Held2LpCertificate> certificate;
+    Held2StepTiming timing;
 };
 
-[[nodiscard]] PhaseStabilityStage4Result run_phase_stability_stage4(
-    PhaseStabilityPersistentState& state
+[[nodiscard]] Held2Step4Result run_held2_step4(
+    Held2PersistentState& state
 );
 
 }  // namespace epcsaft_engine::equilibrium

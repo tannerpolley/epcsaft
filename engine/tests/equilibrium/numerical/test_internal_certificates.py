@@ -6,7 +6,7 @@ from epcsaft import _core
 
 
 def test_farkas_certificate_accepts_a_contradiction_and_rejects_an_invalid_ray() -> None:
-    accepted = _core._phase_stability_audit_farkas_certificate(
+    accepted = _core._held2_audit_farkas_certificate(
         [[1.0], [1.0]],
         [float("-inf"), 1.0],
         [0.0, float("inf")],
@@ -14,7 +14,7 @@ def test_farkas_certificate_accepts_a_contradiction_and_rejects_an_invalid_ray()
         [1.0],
         [1.0, -1.0],
     )
-    permuted = _core._phase_stability_audit_farkas_certificate(
+    permuted = _core._held2_audit_farkas_certificate(
         [[1.0], [1.0]],
         [1.0, float("-inf")],
         [float("inf"), 0.0],
@@ -22,7 +22,7 @@ def test_farkas_certificate_accepts_a_contradiction_and_rejects_an_invalid_ray()
         [1.0],
         [-1.0, 1.0],
     )
-    rejected = _core._phase_stability_audit_farkas_certificate(
+    rejected = _core._held2_audit_farkas_certificate(
         [[2.0e-10]],
         [float("-inf")],
         [-1.0],
@@ -38,7 +38,7 @@ def test_farkas_certificate_accepts_a_contradiction_and_rejects_an_invalid_ray()
 
 
 def test_step5_kkt_certificate_accepts_valid_bounds_and_rejects_bad_closure() -> None:
-    accepted = _core._phase_stability_audit_step5_kkt(
+    accepted = _core._held2_audit_step5_kkt(
         [0.0, 0.5],
         [0.0, 0.0],
         [1.0, 1.0],
@@ -55,7 +55,7 @@ def test_step5_kkt_certificate_accepts_valid_bounds_and_rejects_bad_closure() ->
         True,
         True,
     )
-    rejected = _core._phase_stability_audit_step5_kkt(
+    rejected = _core._held2_audit_step5_kkt(
         [0.0, 0.5],
         [0.0, 0.0],
         [1.0, 1.0],

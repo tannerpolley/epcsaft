@@ -1,6 +1,6 @@
-#include "phase_stability_certificates.hpp"
+#include "held2_certificates.hpp"
 
-#include "phase_stability_tolerances.hpp"
+#include "held2_tolerances.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -63,8 +63,8 @@ std::size_t matrix_rank(std::vector<std::vector<double>> matrix) {
             }
         }
         const double pivot_value = std::abs(matrix[pivot][column]);
-        if (!audit_phase_stability_tolerance(
-                kPhaseStabilityStage2KktRankPivot,
+        if (!audit_held2_tolerance(
+                kHeld2Stage2KktRankPivot,
                 pivot_value,
                 scale
             ).passed) {
@@ -85,7 +85,7 @@ std::size_t matrix_rank(std::vector<std::vector<double>> matrix) {
 
 }  // namespace
 
-PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
+Held2FarkasCertificate audit_held2_farkas_certificate(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& row_lower,
     const std::vector<double>& row_upper,
@@ -93,7 +93,7 @@ PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
     const std::vector<double>& column_upper,
     const std::vector<double>& row_ray
 ) {
-    PhaseStabilityFarkasCertificate result;
+    Held2FarkasCertificate result;
     const std::size_t rows = matrix.size();
     const std::size_t columns = column_lower.size();
     if (rows != row_lower.size() || rows != row_upper.size()
@@ -144,8 +144,8 @@ PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
             );
         }
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityFarkasRowSign, result.row_sign_violation_inf
+    if (!audit_held2_tolerance(
+            kHeld2FarkasRowSign, result.row_sign_violation_inf
         ).passed) {
         result.reason = "row_sign_failed";
         return result;
@@ -215,8 +215,8 @@ PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
         return result;
     }
     if (result.dual_feasibility_violation_inf > 0.0
-        || !audit_phase_stability_tolerance(
-            kPhaseStabilityFarkasDual, result.dual_feasibility_violation_inf
+        || !audit_held2_tolerance(
+            kHeld2FarkasDual, result.dual_feasibility_violation_inf
         ).passed) {
         result.reason = "dual_feasibility_failed";
         return result;
@@ -229,8 +229,8 @@ PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
     result.contradiction_scale = std::max(
         {1.0, std::abs(column_minimum), std::abs(row_support)}
     );
-    const PhaseStabilityToleranceAudit contradiction = audit_phase_stability_tolerance(
-        kPhaseStabilityFarkasContradiction,
+    const Held2ToleranceAudit contradiction = audit_held2_tolerance(
+        kHeld2FarkasContradiction,
         result.contradiction_margin,
         result.contradiction_scale
     );
@@ -244,15 +244,15 @@ PhaseStabilityFarkasCertificate audit_phase_stability_farkas_certificate(
     return result;
 }
 
-std::string adjudicate_phase_stability_farkas_status(
+std::string adjudicate_held2_farkas_status(
     bool solver_infeasible,
-    const std::optional<PhaseStabilityFarkasCertificate>& certificate
+    const std::optional<Held2FarkasCertificate>& certificate
 ) {
     return solver_infeasible && certificate && certificate->accepted
         ? "certified_infeasible" : "indeterminate";
 }
 
-PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
+Held2Step5KktCertificate audit_held2_step5_kkt(
     const std::vector<double>& variables,
     const std::vector<double>& lower,
     const std::vector<double>& upper,
@@ -269,7 +269,7 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
     bool step4_binding_valid,
     bool pressure_branch_valid
 ) {
-    PhaseStabilityStage5KktCertificate result;
+    Held2Step5KktCertificate result;
     const std::size_t dimension = variables.size();
     result.same_major_iteration = same_major_iteration;
     result.step4_binding_valid = step4_binding_valid;
@@ -332,16 +332,16 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
             0.0,
         });
         if (std::isfinite(lower[index])
-            && audit_phase_stability_tolerance(
-                kPhaseStabilityBoundActivity, variables[index] - lower[index]
+            && audit_held2_tolerance(
+                kHeld2BoundActivity, variables[index] - lower[index]
             ).passed) {
             std::vector<double> row(dimension, 0.0);
             row[index] = -1.0;
             active_rows.push_back(std::move(row));
         }
         if (std::isfinite(upper[index])
-            && audit_phase_stability_tolerance(
-                kPhaseStabilityBoundActivity, upper[index] - variables[index]
+            && audit_held2_tolerance(
+                kHeld2BoundActivity, upper[index] - variables[index]
             ).passed) {
             std::vector<double> row(dimension, 0.0);
             row[index] = 1.0;
@@ -357,12 +357,12 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
         result.primal_residual_inf = std::max(
             result.primal_residual_inf, -slack
         );
-        if (audit_phase_stability_tolerance(kPhaseStabilityBoundActivity, slack).passed) {
+        if (audit_held2_tolerance(kHeld2BoundActivity, slack).passed) {
             active_rows.push_back(constraints[row]);
         }
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityStage2KktPrimal, result.primal_residual_inf
+    if (!audit_held2_tolerance(
+            kHeld2Stage2KktPrimal, result.primal_residual_inf
         ).passed) {
         result.reason = "primal_feasibility_failed";
         return result;
@@ -390,20 +390,20 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
             result.dual_sign_violation_inf, -value
         );
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityStage2KktDualSign, result.dual_sign_violation_inf
+    if (!audit_held2_tolerance(
+            kHeld2Stage2KktDualSign, result.dual_sign_violation_inf
         ).passed) {
         result.reason = "dual_sign_failed";
         return result;
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityStage2KktPullback, pullback_residual, pullback_scale
+    if (!audit_held2_tolerance(
+            kHeld2Stage2KktPullback, pullback_residual, pullback_scale
         ).passed) {
         result.reason = "pullback_failed";
         return result;
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityRootPressure, pressure_residual
+    if (!audit_held2_tolerance(
+            kHeld2RootPressure, pressure_residual
         ).passed) {
         result.reason = "pressure_stationarity_failed";
         return result;
@@ -421,8 +421,8 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
         }
     }
     result.stationarity_residual_inf = maximum_abs(stationarity);
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityStage2KktStationarity,
+    if (!audit_held2_tolerance(
+            kHeld2Stage2KktStationarity,
             result.stationarity_residual_inf
         ).passed) {
         result.reason = "stationarity_failed";
@@ -459,8 +459,8 @@ PhaseStabilityStage5KktCertificate audit_phase_stability_stage5_kkt(
             )
         );
     }
-    if (!audit_phase_stability_tolerance(
-            kPhaseStabilityStage2KktComplementarity,
+    if (!audit_held2_tolerance(
+            kHeld2Stage2KktComplementarity,
             result.complementarity_inf
         ).passed) {
         result.reason = "complementarity_failed";
