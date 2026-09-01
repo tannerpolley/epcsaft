@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-08-07
-amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md
+amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md, 0005-native-engine-ownership-and-generated-evidence.md
 migration_source_path: engine/docs/equilibrium/adr/0001-one-general-phase-equilibrium-owner.md
 migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
@@ -25,12 +25,12 @@ and source-case assumptions.
 ## Decision
 
 `phase_equilibrium` is the sole nonreactive phase-equilibrium owner. Omitted
-fixed-T,P topology retains the admitted HELD/HELD2 discovery boundary: binary
-neutral mixtures and one- or two-phase charged results. Declared fixed-T,P
-topology supports one to three ordered liquid/vapor phases. Hints may reorder
-work but cannot change the scientific claim. Neutral and charged systems use
-the same physical owner; neutral topology simply omits charge/electrolyte
-operations.
+fixed-T,P topology runs the source-neutral Phase-Stability Discovery sequence
+selected by D-041. Declared fixed-T,P topology enters GREPE directly for one to
+three ordered liquid/vapor phases and never falls back to discovery. Hints may
+reorder declared-topology work but cannot change the scientific claim. Neutral
+and charged systems share the same discovery stages and GREPE owner; charge
+topology selects only the required coordinate chart and constraints.
 
 Physical formulations and specialized numerical kernels may remain distinct
 internally when selected by typed topology or conditioning. Author, paper,
@@ -45,8 +45,8 @@ electrolyte routes.
 
 ## Consequences
 
-- HELD/HELD2 remain internal topology-appropriate numerical kernels; their
-  fingerprint-qualified Python route and duplicate public schema are removed.
+- HELD, HELD2, Mitsos--Barton, and Perdomo remain citations and historical
+  lineage, not runtime keys or public types.
 - Callers may supply expected phase count/types when known or request discovery.
 - Equilibrium consumes the canonical `ActiveParameterSet` and obtains EOS
   partials for exact implicit solved-state sensitivities.

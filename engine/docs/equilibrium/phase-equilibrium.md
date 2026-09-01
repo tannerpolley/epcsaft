@@ -7,14 +7,18 @@ Governance D-030 and the
 [CAP-09 promotion receipt](../../../validation/campaigns/2026-khudaida/results/receipts/cap-09-phase-equilibrium-promotion.json)
 complete the protected transition defined by
 [ADR 0002](../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md).
+Governance D-041 and
+[ADR 0005](../scientific/adr/0005-native-engine-ownership-and-generated-evidence.md)
+now authorize the source-neutral Phase-Stability Discovery cutover, subject to
+the final #154 installed-wheel receipt.
 `ARCHITECTURE.yaml` records the machine-readable boundary and the
 [general plan](plans/2026-08-07-general-phase-equilibrium.md) records the target
 design.
 
 Historical research, source locators, results, and receipts retain their
-original HELD, HELD2, and `tp_flash` names as provenance. The HELD/HELD2 native
-controller also remains the internal discovery and start-generation algorithm;
-the retired name is no longer a Python API.
+original HELD, HELD2, and `tp_flash` names as provenance. Under D-041 those are
+historical lineage terms, not live runtime keys: source-neutral discovery
+Stages 1--7 qualify candidates and GREPE owns configured finite-phase solves.
 
 ## Ownership
 
@@ -30,16 +34,17 @@ the retired name is no longer a Python API.
 `FixedTPFeed` owns positive component amounts at fixed temperature and pressure.
 Its `topology` is optional:
 
-- omitted topology runs the retained HELD/HELD2 finite discovery controller;
-- `DeclaredTopology` solves exactly one to three ordered all-component phases,
-  with at most one vapor, and certifies only that topology.
+- omitted topology runs bounded source-neutral Phase-Stability Discovery
+  Stages 1--7 and hands admitted candidate topologies to GREPE;
+- `DeclaredTopology` enters GREPE directly for exactly one to three ordered
+  all-component phases, with at most one vapor, and never falls back.
 
-Discovery retains the incumbent algorithm's implemented binary-neutral and
-one-/two-phase charged search boundary and reports `not_established` globality.
+Discovery admits the full-support neutral and charged one-/two-phase boundary
+and reports `not_established` globality. Three-phase discovery remains
+conditional on its independent three-basin oracle and additional gates.
 A declared solve never falls back to discovery after failure and never turns a
-local certificate into a global claim. One phase selects a mechanically
-strict-stable pressure root. Two or three phases use the HELD2 Step-8 material,
-composition, volume, and phase-fraction formulation.
+local certificate into a global claim. GREPE supplies the one configured
+finite-phase Gibbs/KKT formulation for singleton and admitted multiphase cards.
 
 `PhaseHint` supplies non-authoritative composition and density ordering advice
 for an explicitly declared phase index. It may reorder the generated finite
@@ -81,11 +86,11 @@ the applicable material and charge balances, pressure stationarity, KKT and
 bound conditions, phase distinctness, native mechanical stability and ordered
 volume-branch identity, and ordinary or charge-constrained modified-potential
 equality. Fixed-T coexistence uses all configured neutral-potential equalities or
-the charged HELD2 `C-1` modified-potential basis plus common pressure. Exact
+the charged `C-1` modified-potential basis plus common pressure. Exact
 implicit sensitivities differentiate those defining equations in the selected
 parameter order.
 
-After the declared fixed-T,P Stage-III terminal and pressure update, a state
+After the declared fixed-T,P GREPE terminal and pressure update, a state
 whose modified-potential mismatch exceeds the existing `1e-6` certificate
 enters an interior
 exact-derivative Newton correction of the equality-constrained KKT system with
@@ -103,7 +108,7 @@ or globality claim.
 The user-approved promotion tolerance is `1e-4` for candidate-versus-incumbent
 historical state lineage only. It does not relax conservation, charge,
 pressure, KKT, modified-potential, or stability checks. The public installed-
-wheel campaign retains two HELD2 claims over all eight Khudaida Figure 2 feeds:
+wheel campaign retains two historical-lineage claims over all eight Khudaida Figure 2 feeds:
 declared two-liquid continuation and omitted-topology discovery. Both compare
 the packet-v5 state lineage and physical certificates without asserting private
 routes, work counts, predictive cutoffs, or globality.
@@ -116,10 +121,9 @@ sensitivities against centered re-solves. Perdomo source packets, results, and
 receipts remain historical cross-EOS provenance; they are not a current
 installed-wheel campaign because the paper used SAFT-gamma-Mie.
 
-The unrelated scratch Gibbs solver remains removed. The private HELD/HELD2
-sources and their algorithmic certification evidence remain because they are
-the live discovery core, not a second public route. Homogeneous reaction is a
-GREPE formulation, not a separate public evaluator.
+The unrelated scratch Gibbs solver remains removed. Historical HELD/HELD2
+research and evidence remain provenance; live author-named runtime owners do
+not. Homogeneous reaction is a GREPE formulation, not a separate public evaluator.
 
 ## General reactive equilibrium
 

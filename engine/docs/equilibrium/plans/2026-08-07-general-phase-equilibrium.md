@@ -6,10 +6,11 @@
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)
 - Decisions: [one general phase-equilibrium owner](../../scientific/adr/0001-one-general-phase-equilibrium-owner.md), [protected HELD promotion](../../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md)
 
-Governance D-036 supersedes only this plan's future boundary that kept
-homogeneous chemistry permanently separate. The accepted nonreactive
-capability and HELD/HELD2 discovery lineage remain unchanged while the GREPE
-target evolves the same public owner.
+Governance D-036 supersedes this plan's future boundary that kept homogeneous
+chemistry permanently separate. Governance D-041 additionally supersedes the
+live dispatch and distinct-algorithm wording below: source-neutral discovery
+Stages 1--7 now hand candidate topologies to GREPE while the public boundary
+and historical lineage evidence remain unchanged.
 
 ## Outcome
 
@@ -29,23 +30,23 @@ equilibrium but does not implement that coupled problem.
 ## Promotion outcome
 
 Governance D-030 and the accepted CAP-09 receipt make `phase_equilibrium` the
-sole public route. Omitted fixed-T,P topology invokes the retained internal
-HELD/HELD2 discovery controller. Declared one-to-three-phase all-component
-fixed-T,P solves, with at most one vapor, and fixed-T coexistence with all- or
-neutral-component partner support use the same numerical lineage. Hints are
+sole public route. Under D-041, omitted fixed-T,P topology invokes the bounded
+source-neutral discovery sequence followed by GREPE. Declared one-to-three-
+phase all-component fixed-T,P solves enter GREPE directly, with at most one
+vapor; fixed-T coexistence retains its shared owner. Hints are
 non-authoritative and require declared phases. A declared solve never falls
 back to discovery. Exact fixed-topology sensitivities preserve selected
-parameter order. The native HELD/HELD2 core remains the discovery algorithm;
-only its redundant Python interface and source-specific admission gate were
-retired.
+parameter order. HELD and HELD2 remain historical lineage terms rather than
+live runtime identities.
 
 ## Public problem modes
 
 ### Discovery
 
-The caller does not declare phase count/types. The retained HELD/HELD2 owner
-performs stability and phase finding and may certify one stable phase or a
-two-phase split using liquid and vapor phases.
+The caller does not declare phase count/types. The source-neutral discovery
+owner performs the bounded candidate search, then GREPE may certify one stable
+phase or a two-phase split. Three-phase discovery is admitted only after its
+independent oracle passes.
 
 ### Constrained specification
 
@@ -70,18 +71,15 @@ global result.
 
 ## Retained and retired boundary
 
-Governance D-030 retains the private HELD/HELD2 numerical implementations for
-omitted-topology discovery and candidate starts. Their selection is determined
-by typed charge topology and numerical conditioning, never a source,
-fingerprint, application, or literal component identity. The binary HELD
-coordinate is source-neutral component-zero composition; component names do
-not participate in dispatch.
+Governance D-041 retains only the source-neutral Stages 1--7 mathematics for
+omitted-topology discovery and candidate starts. Charge topology selects a
+coordinate chart and constraints, never an algorithm, source, fingerprint,
+application, or literal component identity.
 
 The public flash facade, source admission bounds, fixed species ordering,
 limited parameter transport, duplicate provider mappings, progress lifecycle,
-and paper/source-specific runtime selectors are retired. The remaining staged
-HELD/HELD2 internals are the canonical private implementation behind
-`phase_equilibrium`, not a compatibility or fallback route.
+and paper/source-specific runtime selectors are retired. GREPE is the sole
+configured finite-phase minimizer behind `phase_equilibrium`, not a fallback.
 
 ## Retained physical distinctions
 
@@ -184,8 +182,9 @@ Equilibrium observation family is admitted to Regression by this plan.
    protected `tp_flash` incumbent over every admitted workflow, then require
    independent phase-science and solver-architecture review plus user approval.
    The accepted receipt makes `phase_equilibrium` the sole public owner and
-   retires the fixed-flash Python surface, source bounds, and incumbent schemas
-   while retaining HELD/HELD2 as the internal discovery algorithm.
+   retires the fixed-flash Python surface, source bounds, and incumbent schemas.
+   D-041 later supersedes its distinct internal algorithm retention with
+   source-neutral discovery Stages 1--7 followed by GREPE.
 9. **Validation relocation.** Keep named literature and application campaigns
    in Validation against the installed wheel; Engine retains only compact
    algorithmic/numerical evidence.

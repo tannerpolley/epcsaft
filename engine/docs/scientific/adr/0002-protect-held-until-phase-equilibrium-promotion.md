@@ -3,6 +3,7 @@ status: fulfilled
 date: 2026-08-10
 amends: 0001-one-general-phase-equilibrium-owner.md
 fulfilled_by: governance D-030 and CAP-09 promotion receipt
+superseded_in_part_by: governance D-041 and 0005-native-engine-ownership-and-generated-evidence.md
 migration_source_path: engine/docs/equilibrium/adr/0002-protect-held-until-phase-equilibrium-promotion.md
 migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
@@ -94,3 +95,11 @@ made `phase_equilibrium` the sole public route, mapped omitted fixed-T,P
 topology to the retained internal discovery controller, prohibited fallback
 for declared topology, and retired the transitional Python `tp_flash` surface.
 The HELD/HELD2 numerical core remains live internally as required by this ADR.
+
+## Later supersession
+
+Governance D-041 and [ADR 0005](0005-native-engine-ownership-and-generated-evidence.md)
+supersede only this fulfilled decision's requirement to keep distinct live
+HELD/HELD2 discovery algorithms. Its promotion history, CAP-09 comparison,
+public-route decision, declared-topology no-fallback rule, and retained
+scientific provenance remain historical evidence.

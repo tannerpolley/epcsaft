@@ -8,8 +8,9 @@ do not replace current issue state.
 
 Root issue #10 and CAP-01 through CAP-11 are complete under Governance D-030
 through D-033. `solve` is the sole public equilibrium route;
-omitted fixed-T,P topology uses the retained internal HELD/HELD2 discovery
-algorithm. D-034 admits the issue-#30 fixed-T,P homogeneous reactive
+omitted fixed-T,P topology uses the source-neutral Phase-Stability Discovery
+Stages 1--7 followed by GREPE; declared topology enters GREPE directly and
+cannot discover or fall back. D-034 admits the issue-#30 fixed-T,P homogeneous reactive
 Observation Family, and D-035 admits the issue-#31 fixed-topology reactive
 bubble/VLE Observation Family. Nonreactive phase-equilibrium observations
 remain unadmitted.

@@ -1,6 +1,6 @@
 # Governance Directory Agent Contract
 
-Read `GOVERNANCE.md` revision 24 and `manifests/management.json` before
+Read `GOVERNANCE.md` revision 25 and `manifests/management.json` before
 project-wide planning or authority changes. Root `AGENTS.md` governs execution.
 
 This directory owns doctrine, directory topology, policy, manifests, ledgers,
