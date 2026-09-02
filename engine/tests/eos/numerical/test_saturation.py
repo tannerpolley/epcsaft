@@ -167,7 +167,7 @@ def test_public_saturation_parameter_derivatives_match_resolved_boundaries() -> 
             assert _scaled_error(derivative[column], expected) <= 5.0e-5
 
 
-def test_supercritical_saturation_refuses_without_fabricated_rows() -> None:
+def test_supercritical_saturation_retains_candidate_values_without_sensitivities() -> None:
     parameters = Parameters.from_mapping(PURE_SATURATION_PARAMETERS["methane"])
     block = Pure(parameters).observable_block(
         ActiveParameterSet(parameters, ("component/methane/segment_count",)),
