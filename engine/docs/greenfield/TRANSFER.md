@@ -264,8 +264,11 @@ trips. Eleven exports. Parameters are validated once, in the native constructor;
 three Python validation passes are not written.
 
 **Gate:** oracle case `aqueous_alkali_halide_activity` (24 rows, LiCl/NaCl/KCl mean ionic
-activity coefficients) reproduced through `Mixture.reference` within its recorded
-convergence errors; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in ≤ Stage 2's measured native case-A wall + 50 µs (today 5,250 µs; the
+activity coefficients) reproduced through `Mixture.reference` within
+`derived(activity_reproduction_tolerance)` — the rows carry `measured_...` and the
+conditions, and nothing else; the "recorded convergence errors" this first named were a
+computed column the oracle rebuild deleted. The brief constructs the factor from the
+parameter set's own reported deviation on these salts; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in ≤ Stage 2's measured native case-A wall + 50 µs (today 5,250 µs; the
 ≤ 0.7 ms this first said is below Stage 2's own ≤ 1.0 ms native floor — Python cannot
 beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380–1,690).
 `grep` finds no `numpy` arithmetic in `src/epcsaft/*.py` outside array marshalling.
