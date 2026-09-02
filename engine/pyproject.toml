@@ -9,7 +9,7 @@ description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
-dependencies = ["Pint>=0.25.3"]
+dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

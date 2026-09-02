@@ -121,7 +121,7 @@ inline epcsaft::Parameters nine_species() {
     p.sigma_term_component = {0, 0};
     p.sigma_term_amplitude = {10.11, -1.417};
     p.sigma_term_exponent = {-0.01775, -0.01146};
-    p.dispersion_energy_over_k = {353.95, 277.174, 169.21, 232.687201645,
+    p.dispersion_energy_over_k = {353.95, 277.174, 173.44025, 232.687201645,
                                   453.265244384, 70.0, 249.26, 500.0, 650.0};
     p.molar_mass_kg_per_mol = {0.01801528, 0.06108, 0.04401, 0.06209, 0.10408,
                                0.0610168, 0.06001, 0.01902, 0.01701};
@@ -132,11 +132,12 @@ inline epcsaft::Parameters nine_species() {
     p.born_diameter_angstrom = {0, 0, 0, 3.53322927146, 3.54107030822, 3, 3,
                                 1.218, 3.08107689400404};
     p.solvation_factor = {1.5, 1, 1, 1, 1, 1, 1, 1, 1};
-    p.relative_permittivity = {78.41043478578715, 32, 1.4122, 0, 0, 0, 0, 0, 0};
+    p.relative_permittivity = {78.41043478578715, 32, 0, 0, 0, 0, 0, 0, 0};
     p.permittivity_term_component = {0, 0};
     p.permittivity_term_coefficient = {-0.36133766233691506, 0.00076555618295};
     p.permittivity_term_power = {1, 2};
-    p.ion_suppression_coefficient = {0, 0, 0, 2.6, 7.01, 7.89, 7.89, 9.55, 13.96};
+    p.ion_suppression_coefficient = {0, 0, 0, 0, 0, 0, 0, 0, 0};  // revision 2 declares solvent-only; the physics layer spells that IonSuppression with alpha = 0
+    p.k_ij[2 * 9 + 0] = p.k_ij[0 * 9 + 2] = 0.013262879176919628;
     p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
     p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
     p.ionic_region_relative_permittivity = 8.0;

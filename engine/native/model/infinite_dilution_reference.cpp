@@ -33,7 +33,7 @@ std::vector<double> formula_composition(
         if (!std::isfinite(solvent_fractions[component])
             || solvent_fractions[component] < 0.0
             || !std::isfinite(molar_masses[component])
-            || molar_masses[component] <= 0.0) {
+            || (solvent_fractions[component] > 0.0 && molar_masses[component] <= 0.0)) {
             throw std::invalid_argument("invalid reference solvent fractions");
         }
         fraction_sum += solvent_fractions[component];
@@ -197,6 +197,7 @@ ElectrolyteActivity electrolyte_activity(
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
+    result.mean_ionic_molality_scale = std::exp(mean_log_m);
     if (reference.pure_solvent_log_fugacity.has_value()) {
         std::size_t solvent_index = solvent_fractions.size();
         for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {

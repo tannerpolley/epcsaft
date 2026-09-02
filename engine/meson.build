@@ -96,6 +96,7 @@ model_sources = files(
   'native/model/helmholtz_model.cpp',
   'native/model/density.cpp',
   'native/model/infinite_dilution_reference.cpp',
+  'native/model/parameter_builder.cpp',
 )
 # Stages 4, 5, 6
 equilibrium_sources = files()
@@ -128,7 +129,7 @@ epcsaft_native = static_library(
 # Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
 py.extension_module(
   '_core',
-  files(),
+  files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp'),
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,

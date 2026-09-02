@@ -150,6 +150,7 @@ struct ElectrolyteActivity final {
     std::array<double, 2> single_ion{};
     double mean_ionic_mole_fraction_scale = 0.0;
     double mean_ionic_log_molality_scale = 0.0;
+    double mean_ionic_molality_scale = 0.0;
     std::optional<double> osmotic_coefficient;
 };
 
