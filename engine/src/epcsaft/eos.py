@@ -471,8 +471,10 @@ def _rejected_saturation_block(
     descriptor: ObservableDescriptor,
     temperature_k: float,
     diagnostics: SaturationDiagnostics,
+    values: tuple[float, ...] | None = None,
 ) -> ObservableBlock:
     reason = diagnostics.failure_reason or diagnostics.rejection_status
+    retained_values = tuple(None for _ in descriptor.row_identities) if values is None else values
     return ObservableBlock(
         descriptor=descriptor,
         state=ObservableState(
@@ -483,7 +485,7 @@ def _rejected_saturation_block(
             phase=None,
             reference=descriptor.reference,
         ),
-        values=tuple(None for _ in descriptor.row_identities),
+        values=retained_values,
         jacobian=tuple(None for _ in descriptor.row_identities),
         row_statuses=tuple(
             ObservableRowStatus(identity, "rejected", reason)
@@ -1537,14 +1539,9 @@ class Pure(_EosModel):
             failure = _saturation_diagnostics(_failed_saturation_diagnostics(str(exc)))
             raise SaturationError(str(exc), failure) from exc
         diagnostics = _saturation_diagnostics(cast(Mapping[str, object], native["diagnostics"]))
-        if not bool(native["accepted"]) or not diagnostics.exact_derivatives:
+        if not diagnostics.candidate_available:
             return _rejected_saturation_block(descriptor, temperature_k, diagnostics)
         result = self._saturation_result(native, temperature_k)
-        parameter_count = len(coordinates)
-        flat = tuple(float(value) for value in cast(Iterable[SupportsFloat], native["derivatives"]))
-        derivatives = tuple(
-            flat[row * parameter_count : (row + 1) * parameter_count] for row in range(3)
-        )
         values: tuple[float, ...] = (
             result.saturation_pressure_pa,
             result.vapor.molar_density_mol_m3,
@@ -1556,17 +1553,21 @@ class Pure(_EosModel):
                 result.vapor.molar_density_mol_m3 * molar_mass,
                 result.liquid.molar_density_mol_m3 * molar_mass,
             )
-            mass_derivatives = (
-                tuple(value * molar_mass for value in derivatives[1]),
-                tuple(value * molar_mass for value in derivatives[2]),
-            )
             values = (
                 *values,
                 *mass_values,
             )
+        if not bool(native["accepted"]) or not diagnostics.exact_derivatives:
+            return _rejected_saturation_block(descriptor, temperature_k, diagnostics, values)
+        parameter_count = len(coordinates)
+        flat = tuple(float(value) for value in cast(Iterable[SupportsFloat], native["derivatives"]))
+        derivatives = tuple(
+            flat[row * parameter_count : (row + 1) * parameter_count] for row in range(3)
+        )
+        if molar_mass is not None:
             derivatives = (
                 *derivatives,
-                *mass_derivatives,
+                *(tuple(value * molar_mass for value in derivatives[row]) for row in (1, 2)),
             )
         return _accepted_observable_block(
             descriptor,

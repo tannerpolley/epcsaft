@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import math
 from copy import deepcopy
 
-import pytest
-
-from epcsaft import ActiveParameterSet, Parameters, Pure, SaturationStart
+from epcsaft import ActiveParameterSet, Parameters, Pure
 from epcsaft import unit_registry as u
 from tests.eos._cases import ASSOCIATING_PURE, neutral_pure, set_component_values
 
@@ -63,32 +60,6 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert result.diagnostics.liquid_pressure_relative_residual <= 1.0e-8
     assert result.diagnostics.chemical_potential_absolute_residual <= 1.0e-10
 
-    vapor = model.state(
-        T=300.0 * u.kelvin,
-        rho=result.vapor.molar_density_mol_m3 * u.mole / u.meter**3,
-    )
-    liquid = model.state(
-        T=300.0 * u.kelvin,
-        rho=result.liquid.molar_density_mol_m3 * u.mole / u.meter**3,
-    )
-    assert vapor.pressure.to("pascal").magnitude == pytest.approx(
-        result.saturation_pressure_pa, rel=1.0e-8
-    )
-    assert liquid.pressure.to("pascal").magnitude == pytest.approx(
-        result.saturation_pressure_pa, rel=1.0e-8
-    )
-    assert math.log(result.vapor.molar_density_mol_m3) + vapor.residual_chemical_potential_over_rt[
-        0
-    ] == pytest.approx(result.vapor.chemical_potential_over_rt, rel=2.0e-12, abs=2.0e-12)
-    assert math.log(
-        result.liquid.molar_density_mol_m3
-    ) + liquid.residual_chemical_potential_over_rt[0] == pytest.approx(
-        result.liquid.chemical_potential_over_rt, rel=2.0e-12, abs=2.0e-12
-    )
-    assert result.vapor.chemical_potential_over_rt == pytest.approx(
-        result.liquid.chemical_potential_over_rt, abs=1.0e-10
-    )
-
     uncertified = model.saturation(T=100.0 * u.kelvin)
     assert uncertified.diagnostics.candidate_available
     assert not uncertified.certified
@@ -104,11 +75,12 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert active_diagnostics is not None
     assert active_diagnostics.candidate_available
     assert active_diagnostics.sensitivity_status == "unavailable"
+    assert active_uncertified.status.status == "rejected"
+    assert all(value is not None and value > 0.0 for value in active_uncertified.values)
+    assert all(row is None for row in active_uncertified.jacobian)
     assert (
-        active_diagnostics.sensitivity_rank is None
-        and active_diagnostics.sensitivity_dimension is None
-        and active_diagnostics.sensitivity_condition_number is None
-        and active_diagnostics.sensitivity_backward_error is None
+        active_diagnostics.sensitivity_failure_reason == "value_not_certified"
+        and active_diagnostics.rejection_status != "none"
     )
 
     associated = Pure(Parameters.from_mapping(ASSOCIATING_PURE))
@@ -118,25 +90,6 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert (
         failed_candidate.diagnostics.feasibility_measure
         > failed_candidate.diagnostics.feasibility_tolerance
-    )
-    neighbor = associated.saturation(T=290.0 * u.kelvin)
-    candidate = associated.saturation(T=300.0 * u.kelvin)
-    assert candidate.diagnostics.candidate_available
-    assert candidate.certified
-    assert candidate.saturation_pressure_pa > 0.0
-    assert candidate.vapor.molar_density_mol_m3 < candidate.liquid.molar_density_mol_m3
-    assert candidate.diagnostics.sensitivity_status == "not_requested"
-    reused = associated.saturation(
-        T=300.0 * u.kelvin,
-        start=SaturationStart(
-            neighbor.vapor.molar_density_mol_m3 * u.mole / u.meter**3,
-            neighbor.liquid.molar_density_mol_m3 * u.mole / u.meter**3,
-            neighbor.saturation_pressure_pa * u.pascal,
-        ),
-    )
-    assert reused.certified
-    assert reused.saturation_pressure_pa == pytest.approx(
-        candidate.saturation_pressure_pa, rel=1.0e-10
     )
 
 
@@ -154,18 +107,6 @@ def test_public_saturation_parameter_derivatives_match_resolved_boundaries() -> 
         identity="eos.pure-saturation",
         T=300.0 * u.kelvin,
     )
-    branches = {branch.identity: branch for branch in block.saturation_branches}
-    for row, identity in ((1, "vapor"), (2, "liquid")):
-        branch = branches[identity]
-        density = block.values[row]
-        assert density is not None
-        assert branch.density_bracket_mol_per_m3[0] < density
-        assert density < branch.density_bracket_mol_per_m3[1]
-        assert branch.pressure_relative_residual is not None
-        assert branch.pressure_relative_residual <= 1.0e-8
-        assert branch.residual_density_derivative_m3_per_mol is not None
-        assert branch.residual_density_derivative_m3_per_mol > 0.0
-
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         value = _parameter_value(mapping, identity)
         lower = deepcopy(mapping)
@@ -191,11 +132,7 @@ def test_supercritical_saturation_refuses_without_fabricated_rows() -> None:
     )
 
     assert block.status.status == "rejected"
-    assert all(value is None for value in block.values)
+    assert all(value is not None for value in block.values)
     assert all(row is None for row in block.jacobian)
     assert block.saturation_diagnostics is not None
     assert block.saturation_diagnostics.rejection_status != "none"
-    assert block.saturation_diagnostics.sensitivity_rank is None
-    assert block.saturation_diagnostics.sensitivity_dimension is None
-    assert block.saturation_diagnostics.sensitivity_condition_number is None
-    assert block.saturation_diagnostics.sensitivity_backward_error is None

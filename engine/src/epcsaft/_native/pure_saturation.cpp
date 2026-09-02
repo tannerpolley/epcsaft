@@ -55,6 +55,7 @@ PhaseDerivatives evaluate_phase_derivatives(const NativeModel &model,
           -h_nv * volume_m3, h_nv * volume_m3 + t_nvv * volume_m3 * volume_m3};
 }
 struct AttemptResult {
+  bool solution_available = false;
   bool optimizer_converged = false;
   std::string optimizer_status;
   std::string callback_error;
@@ -162,8 +163,14 @@ public:
   void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n, const Ipopt::Number *x,
                          const Ipopt::Number *, const Ipopt::Number *, Ipopt::Index,
                          const Ipopt::Number *, const Ipopt::Number *, Ipopt::Number,
-                         const Ipopt::IpoptData *, Ipopt::IpoptCalculatedQuantities *) override { if (x) std::copy(x, x + n, solution_.begin()); }
+                         const Ipopt::IpoptData *, Ipopt::IpoptCalculatedQuantities *) override {
+    if (x) {
+      std::copy(x, x + n, solution_.begin());
+      solution_available_ = true;
+    }
+  }
   [[nodiscard]] const std::array<double, 3> &solution() const { return solution_; }
+  [[nodiscard]] bool solution_available() const { return solution_available_; }
   [[nodiscard]] const std::string &callback_error() const { return callback_error_; }
 private:
   bool evaluate(const Ipopt::Number *x, NlpEvaluation &result) {
@@ -176,6 +183,7 @@ private:
   SaturationBounds bounds_;
   bool exact_hessian_;
   std::array<double, 3> solution_{};
+  bool solution_available_ = false;
   std::string callback_error_;
 };
 AttemptResult run_saturation_ipopt(const NativeModel &model, double temperature_k,
@@ -208,7 +216,8 @@ AttemptResult run_saturation_ipopt(const NativeModel &model, double temperature_
   const auto status = application->OptimizeTNLP(problem);
   result.optimizer_status = ipopt_status_name(status);
   result.optimizer_converged = status == Ipopt::Solve_Succeeded;
-  result.variables = raw_problem->solution();
+  result.solution_available = raw_problem->solution_available();
+  if (result.solution_available) result.variables = raw_problem->solution();
   result.callback_error = raw_problem->callback_error();
   return result;
 }
@@ -353,7 +362,7 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     candidate.evaluation = {};
     bool available = false;
     try {
-      if (inside_bounds(attempt.variables, bounds)) {
+      if (attempt.solution_available && inside_bounds(attempt.variables, bounds)) {
         const auto evaluation = evaluate_saturation_state(
             model, temperature_k, attempt.variables);
         candidate.evaluation = evaluation;
@@ -506,8 +515,16 @@ SaturationSensitivityResult solve_local_saturation_active(
     }
     return std::pair{std::move(pressure), std::move(chemical_potential)};
   };
-  const auto vapor = phase_partials(result.solve.evaluation.vapor.volume_m3);
-  const auto liquid = phase_partials(result.solve.evaluation.liquid.volume_m3);
+  std::pair<std::vector<double>, std::vector<double>> vapor;
+  std::pair<std::vector<double>, std::vector<double>> liquid;
+  try {
+    vapor = phase_partials(result.solve.evaluation.vapor.volume_m3);
+    liquid = phase_partials(result.solve.evaluation.liquid.volume_m3);
+  } catch (const std::exception &error) {
+    result.sensitivity_status = "unavailable";
+    result.sensitivity_failure_reason = error.what();
+    return result;
+  }
   const double saturation_pressure =
       result.solve.evaluation.saturation_pressure_pa;
   result.derivatives.resize(3 * count);
@@ -529,6 +546,12 @@ SaturationSensitivityResult solve_local_saturation_active(
       epcsaft_engine::interfaces::solve_rank_revealing_linear_system(
           residual_state_jacobian, residual_parameter_jacobian,
           sensitivity_dimension, count);
+  result.sensitivity_rank = sensitivity.rank;
+  result.sensitivity_dimension = sensitivity_dimension;
+  if (std::isfinite(sensitivity.condition_number))
+    result.sensitivity_condition_number = sensitivity.condition_number;
+  if (std::isfinite(sensitivity.backward_error))
+    result.sensitivity_backward_error = sensitivity.backward_error;
   const bool sensitivity_available = sensitivity.solution.size() ==
       sensitivity_dimension * count;
   result.sensitivity_status = sensitivity_available ? "available" : "unavailable";
@@ -544,10 +567,6 @@ SaturationSensitivityResult solve_local_saturation_active(
     result.derivatives.clear();
     return result;
   }
-  result.sensitivity_rank = sensitivity.rank;
-  result.sensitivity_dimension = sensitivity_dimension;
-  result.sensitivity_condition_number = sensitivity.condition_number;
-  result.sensitivity_backward_error = sensitivity.backward_error;
   result.sensitivity_failure_reason.clear();
   for (std::size_t parameter = 0; parameter < count; ++parameter) {
     result.derivatives[parameter] = saturation_pressure *
