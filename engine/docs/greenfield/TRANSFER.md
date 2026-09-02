@@ -131,13 +131,27 @@ when the caller has one. The 360-interval scan and the 64×depth-8 pressure enve
 not written; a value-plus-`dP/dρ` path (4 sweeps) serves the root iteration, not a full
 Hessian set.
 
-**Gate:** derivatives against centred finite differences elementwise to 1e-10, including
-the association block; the nine-species case at 313.15 K, ρ = 3.0e4 in **≤ 1.0 ms** for
-value + gradient + Hessian + parameter Jacobian, at **≤ 23 + 2P sweeps** and **≤ 1
-Hessian call** per evaluation; the associating binary at 376.88 K in **≤ 5 association
-iterations** per solve (today 126). Counters exposed as `_core._instrumentation()`.
-Measurement: `oracle/measure_floor.py`, median of 20 after 3 warm-ups,
-`OMP_NUM_THREADS=1`, with the wheel SHA-256 / commit / `ldd` / compiler / CPU record.
+**Gate, correctness:** derivatives against centred finite differences elementwise to
+1e-10, including the association block; the `(S+1)`-Hessian tensor and the one-Lagrangian
+-Hessian tensor agree elementwise to 1e-10 on the nine-species case — this is the check
+that licenses the 7× and it is the only thing in Stage 2 that can invalidate the floor.
+
+**Gate, performance (reported, not pass/fail — `TESTING.md`):** the nine-species MEA model
+at 313.15 K, ρ = 3.0e4 with one active parameter, value + gradient + Hessian + parameter
+Jacobian in **≤ 1.0 ms**, at **≤ 23 + 2P sweeps** and **≤ 1 Hessian call** per evaluation;
+the associating binary at 376.88 K in **≤ 5 association iterations** per solve (today 126).
+
+**Measurement is a native harness, `tests/native/model_floor.cpp`, not
+`oracle/measure_floor.py`.** The Python script opens `import epcsaft` and reads its
+counters from `_core._instrumentation()` (`measure_floor.py:12,21`), and `_core` is built
+from `bindings/` at Stage 3 — so the gate as first written could not run at the stage that
+makes the claim. The harness times and counts the tape directly, on the same case, median
+of 20 after 3 warm-ups, `OMP_NUM_THREADS=1`, recording commit, compiler and CPU. Stage 3
+re-runs the same case through `measure_floor.py` and the two must agree; a divergence is
+marshalling, which is Stage 3's to account for.
+
+*This defect was found by executing the plan's own claims against the tree before Stage 2
+began, which is the mechanism described in `ORCHESTRATION.md`.*
 
 ---
 
