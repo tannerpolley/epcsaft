@@ -201,7 +201,6 @@ class SaturationDiagnostics:
     liquid_density_bounds_mol_m3: tuple[float, float] | None
     feasibility_measure: float | None
     feasibility_tolerance: float | None
-    physical_accepted: bool
     physical_status: str
     physical_status_count: int | None
     pressure_relative_residual: float | None
@@ -1809,7 +1808,6 @@ def _saturation_diagnostics(payload: Mapping[str, object]) -> SaturationDiagnost
         liquid_density_bounds_mol_m3=optional_bounds("liquid_density_bounds_mol_m3"),
         feasibility_measure=optional_float("feasibility_measure"),
         feasibility_tolerance=optional_float("feasibility_tolerance"),
-        physical_accepted=bool(payload["physical_accepted"]),
         physical_status=str(payload["physical_status"]),
         physical_status_count=(
             None
@@ -1873,7 +1871,6 @@ def _failed_saturation_diagnostics(reason: str) -> dict[str, object]:
         "liquid_density_bounds_mol_m3": None,
         "feasibility_measure": None,
         "feasibility_tolerance": None,
-        "physical_accepted": False,
         "physical_status": "not_adjudicated",
         "physical_status_count": None,
         "pressure_relative_residual": None,

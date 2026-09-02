@@ -1,7 +1,6 @@
 #include "pure_saturation.hpp"
 
 #include <array>
-#include <limits>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -40,21 +39,18 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
                             double temperature_k, bool exact_derivatives,
                             const std::string &sensitivity_status = "not_requested",
                             const std::string &sensitivity_failure_reason = "not_requested",
-                            std::size_t sensitivity_rank = 0,
-                            std::size_t sensitivity_dimension = 0,
-                            double sensitivity_condition_number =
-                                std::numeric_limits<double>::infinity(),
-                            double sensitivity_backward_error =
-                                std::numeric_limits<double>::infinity()) {
+                            std::optional<std::size_t> sensitivity_rank = std::nullopt,
+                            std::optional<std::size_t> sensitivity_dimension = std::nullopt,
+                            std::optional<double> sensitivity_condition_number = std::nullopt,
+                            std::optional<double> sensitivity_backward_error = std::nullopt) {
   py::dict diagnostics;
   diagnostics["candidate_available"] = solve.candidate_available;
   diagnostics["optimizer_converged"] = solve.optimizer_converged;
   diagnostics["optimizer_status"] = solve.optimizer_status;
-  diagnostics["vapor_density_bounds_mol_m3"] = solve.vapor_density_bounds_mol_m3;
-  diagnostics["liquid_density_bounds_mol_m3"] = solve.liquid_density_bounds_mol_m3;
+  diagnostics["vapor_density_bounds_mol_m3"] = solve.bounds.vapor_density_mol_m3;
+  diagnostics["liquid_density_bounds_mol_m3"] = solve.bounds.liquid_density_mol_m3;
   diagnostics["feasibility_measure"] = solve.feasibility_measure;
   diagnostics["feasibility_tolerance"] = solve.feasibility_tolerance;
-  diagnostics["physical_accepted"] = solve.physical_accepted;
   diagnostics["physical_status"] = solve.physical_status;
   diagnostics["physical_status_count"] = solve.physical_status_count;
   diagnostics["pressure_relative_residual"] = solve.pressure_relative_residual;

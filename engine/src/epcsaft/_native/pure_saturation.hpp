@@ -31,14 +31,19 @@ evaluate_saturation_nlp(const NativeModel &model, double temperature_k,
                         const std::array<double, 3> &variables,
                         const std::array<double, 3> &multipliers);
 
+struct SaturationBounds {
+  std::array<double, 3> solver_lower{};
+  std::array<double, 3> solver_upper{};
+  std::array<double, 2> vapor_density_mol_m3{};
+  std::array<double, 2> liquid_density_mol_m3{};
+};
+
 struct SaturationSolveResult {
   bool accepted = false;
   bool candidate_available = false;
   bool optimizer_converged = false;
-  bool physical_accepted = false;
   std::string optimizer_status;
-  std::array<double, 2> vapor_density_bounds_mol_m3{};
-  std::array<double, 2> liquid_density_bounds_mol_m3{};
+  SaturationBounds bounds{};
   double feasibility_measure = std::numeric_limits<double>::infinity();
   double feasibility_tolerance = std::numeric_limits<double>::infinity();
   double pressure_relative_residual = std::numeric_limits<double>::infinity();
@@ -66,12 +71,10 @@ struct SaturationSensitivityResult {
   std::vector<double> derivatives;
   std::string sensitivity_status = "unavailable";
   std::string sensitivity_failure_reason = "not_requested";
-  std::size_t sensitivity_rank = 0;
-  std::size_t sensitivity_dimension = 0;
-  double sensitivity_condition_number =
-      std::numeric_limits<double>::infinity();
-  double sensitivity_backward_error =
-      std::numeric_limits<double>::infinity();
+  std::optional<std::size_t> sensitivity_rank;
+  std::optional<std::size_t> sensitivity_dimension;
+  std::optional<double> sensitivity_condition_number;
+  std::optional<double> sensitivity_backward_error;
 };
 
 [[nodiscard]] SaturationSolveResult

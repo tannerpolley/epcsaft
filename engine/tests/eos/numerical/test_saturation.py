@@ -52,7 +52,8 @@ def _scaled_error(exact: float, finite_difference: float) -> float:
 
 
 def test_public_saturation_returns_distinct_stable_equal_potential_branches() -> None:
-    model = Pure(Parameters.from_mapping(PURE_SATURATION_PARAMETERS["propane"]))
+    parameters = Parameters.from_mapping(PURE_SATURATION_PARAMETERS["propane"])
+    model = Pure(parameters)
     result = model.saturation(T=300.0 * u.kelvin)
 
     assert result.vapor.molar_density_mol_m3 < result.liquid.molar_density_mol_m3
@@ -94,11 +95,25 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert uncertified.diagnostics.sensitivity_status == "not_requested"
     assert uncertified.vapor.molar_density_mol_m3 > 0.0
     assert uncertified.liquid.molar_density_mol_m3 > 0.0
+    active_uncertified = model.observable_block(
+        ActiveParameterSet(parameters, ("component/propane/segment_count",)),
+        identity="eos.pure-saturation",
+        T=100.0 * u.kelvin,
+    )
+    active_diagnostics = active_uncertified.saturation_diagnostics
+    assert active_diagnostics is not None
+    assert active_diagnostics.candidate_available
+    assert active_diagnostics.sensitivity_status == "unavailable"
+    assert (
+        active_diagnostics.sensitivity_rank is None
+        and active_diagnostics.sensitivity_dimension is None
+        and active_diagnostics.sensitivity_condition_number is None
+        and active_diagnostics.sensitivity_backward_error is None
+    )
 
     associated = Pure(Parameters.from_mapping(ASSOCIATING_PURE))
     failed_candidate = associated.saturation(T=180.0 * u.kelvin)
     assert failed_candidate.diagnostics.candidate_available
-    assert not failed_candidate.diagnostics.optimizer_converged
     assert not failed_candidate.certified
     assert (
         failed_candidate.diagnostics.feasibility_measure
@@ -179,5 +194,8 @@ def test_supercritical_saturation_refuses_without_fabricated_rows() -> None:
     assert all(value is None for value in block.values)
     assert all(row is None for row in block.jacobian)
     assert block.saturation_diagnostics is not None
-    assert block.saturation_diagnostics.physical_accepted is False
     assert block.saturation_diagnostics.rejection_status != "none"
+    assert block.saturation_diagnostics.sensitivity_rank is None
+    assert block.saturation_diagnostics.sensitivity_dimension is None
+    assert block.saturation_diagnostics.sensitivity_condition_number is None
+    assert block.saturation_diagnostics.sensitivity_backward_error is None

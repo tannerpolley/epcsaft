@@ -60,13 +60,15 @@ struct AttemptResult {
   std::string callback_error;
   std::array<double, 3> variables{};
 };
-std::array<double, 3> solver_lower_bounds() {
-  return {std::log(kVaporDensityLower), std::log(kLiquidDensityLower),
-          std::log(kPressureLowerPa)};
-}
-std::array<double, 3> solver_upper_bounds(double liquid_density_upper_mol_m3) {
-  return {std::log(kVaporDensityUpper), std::log(liquid_density_upper_mol_m3),
-          std::log(kPressureUpperPa)};
+SaturationBounds saturation_bounds(double liquid_density_upper_mol_m3) {
+  return {
+      {std::log(kVaporDensityLower), std::log(kLiquidDensityLower),
+       std::log(kPressureLowerPa)},
+      {std::log(kVaporDensityUpper), std::log(liquid_density_upper_mol_m3),
+       std::log(kPressureUpperPa)},
+      {kVaporDensityLower, kVaporDensityUpper},
+      {kLiquidDensityLower, liquid_density_upper_mol_m3},
+  };
 }
 NlpEvaluation
 evaluate_saturation_state(const NativeModel &model, double temperature_k,
@@ -113,17 +115,18 @@ class SaturationTnlp final : public Ipopt::TNLP {
 public:
   SaturationTnlp(const NativeModel &model, double temperature_k,
                  std::array<double, 3> initial,
-                 std::array<double, 3> lower, std::array<double, 3> upper,
+                 SaturationBounds bounds,
                  bool exact_hessian)
       : model_(model), temperature_k_(temperature_k), initial_(initial),
-        lower_(lower), upper_(upper), exact_hessian_(exact_hessian) {}
+        bounds_(std::move(bounds)), exact_hessian_(exact_hessian) {}
   bool get_nlp_info(Ipopt::Index &n, Ipopt::Index &m, Ipopt::Index &nnz_jac_g,
                     Ipopt::Index &nnz_h_lag, IndexStyleEnum &style) override {
     n = m = 3; nnz_jac_g = 9; nnz_h_lag = 6; style = TNLP::C_STYLE; return true;
   }
   bool get_bounds_info(Ipopt::Index, Ipopt::Number *x_l, Ipopt::Number *x_u,
                        Ipopt::Index m, Ipopt::Number *g_l, Ipopt::Number *g_u) override {
-    std::copy(lower_.begin(), lower_.end(), x_l); std::copy(upper_.begin(), upper_.end(), x_u);
+    std::copy(bounds_.solver_lower.begin(), bounds_.solver_lower.end(), x_l);
+    std::copy(bounds_.solver_upper.begin(), bounds_.solver_upper.end(), x_u);
     std::fill(g_l, g_l + m, 0.0); std::fill(g_u, g_u + m, 0.0); return true;
   }
   bool get_starting_point(Ipopt::Index, bool init_x, Ipopt::Number *x, bool init_z,
@@ -170,26 +173,26 @@ private:
   const NativeModel &model_;
   double temperature_k_;
   std::array<double, 3> initial_;
-  std::array<double, 3> lower_;
-  std::array<double, 3> upper_;
+  SaturationBounds bounds_;
   bool exact_hessian_;
   std::array<double, 3> solution_{};
   std::string callback_error_;
 };
 AttemptResult run_saturation_ipopt(const NativeModel &model, double temperature_k,
                                    const std::array<double, 3> &initial,
-                                   double liquid_density_upper_mol_m3) {
+                                   const SaturationBounds &bounds) {
   const bool exact_hessian = model.site_components().empty();
   auto *raw_problem = new SaturationTnlp(
-      model, temperature_k, initial, solver_lower_bounds(),
-      solver_upper_bounds(liquid_density_upper_mol_m3), exact_hessian);
+      model, temperature_k, initial, bounds, exact_hessian);
   Ipopt::SmartPtr<Ipopt::TNLP> problem = raw_problem;
   Ipopt::SmartPtr<Ipopt::IpoptApplication> application = IpoptApplicationFactory();
   application->Options()->SetIntegerValue("print_level", 0);
   application->Options()->SetStringValue("sb", "yes");
-  application->Options()->SetIntegerValue("max_iter", 300);
+  application->Options()->SetIntegerValue("max_iter", 50);
   application->Options()->SetNumericValue("tol", kFeasibilityTolerance);
   application->Options()->SetNumericValue("acceptable_tol", kFeasibilityTolerance);
+  application->Options()->SetNumericValue("acceptable_constr_viol_tol",
+                                          kFeasibilityTolerance);
   application->Options()->SetNumericValue("constr_viol_tol", kFeasibilityTolerance);
   application->Options()->SetStringValue("jacobian_approximation", "exact");
   application->Options()->SetStringValue("hessian_approximation", exact_hessian ? "exact" : "limited-memory");
@@ -210,12 +213,10 @@ AttemptResult run_saturation_ipopt(const NativeModel &model, double temperature_
   return result;
 }
 bool inside_bounds(const std::array<double, 3> &variables,
-                   double liquid_density_upper_mol_m3) {
-  const std::array<double, 3> lower = solver_lower_bounds();
-  const std::array<double, 3> upper =
-      solver_upper_bounds(liquid_density_upper_mol_m3);
+                   const SaturationBounds &bounds) {
   for (std::size_t index = 0; index < variables.size(); ++index) {
-    if (variables[index] < lower[index] || variables[index] > upper[index]) {
+    if (variables[index] < bounds.solver_lower[index] ||
+        variables[index] > bounds.solver_upper[index]) {
       return false;
     }
   }
@@ -227,7 +228,7 @@ double feasibility_measure(const NlpEvaluation &evaluation) {
 }
 bool assess_candidate(const AttemptResult &attempt,
                       const NlpEvaluation &evaluation,
-                      double liquid_density_upper_mol_m3,
+                      const SaturationBounds &bounds,
                       SaturationSolveResult &result) {
   const double vapor_density = 1.0 / evaluation.vapor.volume_m3;
   const double liquid_density = 1.0 / evaluation.liquid.volume_m3;
@@ -265,7 +266,7 @@ bool assess_candidate(const AttemptResult &attempt,
       std::isfinite(result.liquid_residual_density_derivative_m3_per_mol);
   const bool locally_stable = finite_stability &&
       evaluation.jacobian[0] > 0.0 && evaluation.jacobian[4] > 0.0;
-  const bool in_bounds = inside_bounds(attempt.variables, liquid_density_upper_mol_m3);
+  const bool in_bounds = inside_bounds(attempt.variables, bounds);
   result.candidate_available = finite_values &&
       in_bounds;
   const bool physical[] = {
@@ -279,12 +280,11 @@ bool assess_candidate(const AttemptResult &attempt,
   };
   result.physical_status_count = 0;
   for (const bool status : physical) result.physical_status_count += status;
-  result.physical_accepted = result.candidate_available &&
+  result.accepted = result.candidate_available &&
       result.feasibility_measure <= kFeasibilityTolerance &&
       result.physical_status_count == 7;
-  result.accepted = result.physical_accepted;
-  result.physical_status = result.physical_accepted ? "accepted" : "rejected";
-  if (result.physical_accepted) {
+  result.physical_status = result.accepted ? "accepted" : "rejected";
+  if (result.accepted) {
     result.rejection_status = "none";
   } else if (finite_values && liquid_density <= vapor_density) {
     result.rejection_status = "root-swap";
@@ -295,7 +295,7 @@ bool assess_candidate(const AttemptResult &attempt,
   } else {
     result.rejection_status = "solve-failure";
   }
-  if (!result.physical_accepted) {
+  if (!result.accepted) {
     result.failure_reason = result.rejection_status == "solve-failure"
         ? (result.candidate_available ? "coexistence feasibility or local physical checks failed"
                                       : "candidate was not finite and in-domain")
@@ -312,9 +312,9 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
   const std::array<double, 7> vapor_seeds{1.0e-5, 1.0e-3, 0.1,   10.0,
                                           100.0,  1000.0, 3000.0};
   const std::array<double, 3> liquid_seeds{18'000.0, 12'000.0, 24'000.0};
+  const SaturationBounds bounds = saturation_bounds(liquid_density_upper_mol_m3);
   SaturationSolveResult result;
-  result.vapor_density_bounds_mol_m3 = {kVaporDensityLower, kVaporDensityUpper};
-  result.liquid_density_bounds_mol_m3 = {kLiquidDensityLower, liquid_density_upper_mol_m3};
+  result.bounds = bounds;
   result.failure_reason = "no finite in-domain saturation candidate";
   std::vector<std::array<double, 3>> starts;
   if (explicit_start.has_value()) {
@@ -341,12 +341,11 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     if (explicit_start.has_value() && start_index > 0 && explicit_certified)
       break;
     const AttemptResult attempt = run_saturation_ipopt(
-        model, temperature_k, starts[start_index], liquid_density_upper_mol_m3);
+        model, temperature_k, starts[start_index], bounds);
     SaturationSolveResult candidate;
     candidate.optimizer_converged = attempt.optimizer_converged;
     candidate.optimizer_status = attempt.optimizer_status;
-    candidate.vapor_density_bounds_mol_m3 = result.vapor_density_bounds_mol_m3;
-    candidate.liquid_density_bounds_mol_m3 = result.liquid_density_bounds_mol_m3;
+    candidate.bounds = bounds;
     candidate.feasibility_tolerance = kFeasibilityTolerance;
     candidate.failure_reason = attempt.callback_error.empty()
         ? "no finite in-domain saturation candidate"
@@ -354,12 +353,12 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     candidate.evaluation = {};
     bool available = false;
     try {
-      if (inside_bounds(attempt.variables, liquid_density_upper_mol_m3)) {
+      if (inside_bounds(attempt.variables, bounds)) {
         const auto evaluation = evaluate_saturation_state(
             model, temperature_k, attempt.variables);
         candidate.evaluation = evaluation;
         available = assess_candidate(attempt, evaluation,
-                                     liquid_density_upper_mol_m3, candidate);
+                                     bounds, candidate);
       }
     } catch (const std::exception &error) {
       candidate.failure_reason = error.what();
@@ -487,7 +486,7 @@ SaturationSensitivityResult solve_local_saturation_active(
     result.sensitivity_failure_reason = "value_not_certified";
     return result;
   }
-  result.sensitivity_dimension = 3;
+  const std::size_t sensitivity_dimension = 3;
   const std::size_t count = active_parameters.size();
   result.parameter_identities.reserve(count);
   for (const auto &parameter : active_parameters) {
@@ -529,16 +528,13 @@ SaturationSensitivityResult solve_local_saturation_active(
   const auto sensitivity =
       epcsaft_engine::interfaces::solve_rank_revealing_linear_system(
           residual_state_jacobian, residual_parameter_jacobian,
-          result.sensitivity_dimension, count);
+          sensitivity_dimension, count);
   const bool sensitivity_available = sensitivity.solution.size() ==
-      result.sensitivity_dimension * count;
-  result.sensitivity_rank = sensitivity.rank;
-  result.sensitivity_condition_number = sensitivity.condition_number;
-  result.sensitivity_backward_error = sensitivity.backward_error;
+      sensitivity_dimension * count;
   result.sensitivity_status = sensitivity_available ? "available" : "unavailable";
   if (!sensitivity_available) {
     result.sensitivity_failure_reason = sensitivity.rank !=
-            result.sensitivity_dimension
+            sensitivity_dimension
         ? "singular_residual_jacobian"
         : sensitivity.condition_number >
                 epcsaft_engine::interfaces::
@@ -548,6 +544,10 @@ SaturationSensitivityResult solve_local_saturation_active(
     result.derivatives.clear();
     return result;
   }
+  result.sensitivity_rank = sensitivity.rank;
+  result.sensitivity_dimension = sensitivity_dimension;
+  result.sensitivity_condition_number = sensitivity.condition_number;
+  result.sensitivity_backward_error = sensitivity.backward_error;
   result.sensitivity_failure_reason.clear();
   for (std::size_t parameter = 0; parameter < count; ++parameter) {
     result.derivatives[parameter] = saturation_pressure *
