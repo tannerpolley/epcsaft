@@ -1,6 +1,7 @@
 #include "pure_saturation.hpp"
 
 #include <array>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -21,24 +22,6 @@ py::dict phase_to_dict(const epcsaft::SaturationPhaseEvaluation &phase) {
   return result;
 }
 
-py::list attempt_log_to_list(
-    const std::vector<epcsaft::SaturationSolveResult::AttemptRecord>
-        &attempts) {
-  py::list result;
-  for (const auto &attempt : attempts) {
-    py::dict item;
-    item["role"] = attempt.role;
-    item["initial_guess"] = attempt.initial_guess;
-    item["solver_converged"] = attempt.solver_converged;
-    item["solver_status"] = attempt.solver_status;
-    item["iterations"] = attempt.iterations;
-    item["constraint_violation"] = attempt.constraint_violation;
-    item["callback_error"] = attempt.callback_error;
-    result.append(std::move(item));
-  }
-  return result;
-}
-
 py::dict evaluate_saturation_nlp(const epcsaft::NativeModel &model,
                                  double temperature_k,
                                  const std::array<double, 3> &variables,
@@ -46,8 +29,6 @@ py::dict evaluate_saturation_nlp(const epcsaft::NativeModel &model,
   const auto evaluation = epcsaft::evaluate_saturation_nlp(
       model, temperature_k, variables, multipliers);
   py::dict result;
-  result["objective"] = evaluation.objective;
-  result["objective_gradient"] = evaluation.objective_gradient;
   result["constraints"] = evaluation.constraints;
   result["jacobian"] = evaluation.jacobian;
   result["lagrangian_hessian_lower"] = evaluation.lagrangian_hessian_lower;
@@ -55,23 +36,23 @@ py::dict evaluate_saturation_nlp(const epcsaft::NativeModel &model,
 }
 
 py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
-                            double temperature_k,
-                            bool exact_derivatives) {
+                            double temperature_k, bool exact_derivatives,
+                            const std::string &sensitivity_status = "not_requested",
+                            const std::string &sensitivity_failure_reason = "not_requested",
+                            std::optional<std::size_t> sensitivity_rank = std::nullopt,
+                            std::optional<std::size_t> sensitivity_dimension = std::nullopt,
+                            std::optional<double> sensitivity_condition_number = std::nullopt,
+                            std::optional<double> sensitivity_backward_error = std::nullopt) {
   py::dict diagnostics;
-  diagnostics["solver_converged"] = solve.solver_converged;
-  diagnostics["solver_status"] = solve.solver_status;
-  diagnostics["iterations"] = solve.iterations;
-  diagnostics["attempts"] = solve.attempts;
-  diagnostics["attempt_log"] = attempt_log_to_list(solve.attempt_log);
-  diagnostics["solver_lower_bounds"] = solve.solver_lower_bounds;
-  diagnostics["solver_upper_bounds"] = solve.solver_upper_bounds;
-  diagnostics["solver_constraint_violation"] =
-      solve.solver_constraint_violation;
-  diagnostics["numerical_converged"] = solve.numerical_converged;
-  diagnostics["confirmation_solves"] = solve.confirmation_solves;
-  diagnostics["confirmation_max_relative_difference"] =
-      solve.confirmation_max_relative_difference;
-  diagnostics["physical_accepted"] = solve.physical_accepted;
+  diagnostics["candidate_available"] = solve.candidate_available;
+  diagnostics["optimizer_converged"] = solve.optimizer_converged;
+  diagnostics["optimizer_status"] = solve.optimizer_status;
+  diagnostics["vapor_density_bounds_mol_m3"] = solve.bounds.vapor_density_mol_m3;
+  diagnostics["liquid_density_bounds_mol_m3"] = solve.bounds.liquid_density_mol_m3;
+  diagnostics["feasibility_measure"] = solve.feasibility_measure;
+  diagnostics["feasibility_tolerance"] = solve.feasibility_tolerance;
+  diagnostics["physical_status"] = solve.physical_status;
+  diagnostics["physical_status_count"] = solve.physical_status_count;
   diagnostics["pressure_relative_residual"] = solve.pressure_relative_residual;
   diagnostics["vapor_pressure_relative_residual"] =
       solve.vapor_pressure_relative_residual;
@@ -86,6 +67,12 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
       solve.liquid_residual_density_derivative_m3_per_mol;
   diagnostics["rejection_status"] = solve.rejection_status;
   diagnostics["exact_derivatives"] = exact_derivatives;
+  diagnostics["sensitivity_status"] = sensitivity_status;
+  diagnostics["sensitivity_failure_reason"] = sensitivity_failure_reason;
+  diagnostics["sensitivity_rank"] = sensitivity_rank;
+  diagnostics["sensitivity_dimension"] = sensitivity_dimension;
+  diagnostics["sensitivity_condition_number"] = sensitivity_condition_number;
+  diagnostics["sensitivity_backward_error"] = sensitivity_backward_error;
   diagnostics["globality_certificate"] = false;
   diagnostics["failure_reason"] = solve.failure_reason;
 
@@ -93,7 +80,7 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
   result["accepted"] = solve.accepted;
   result["temperature_k"] = temperature_k;
   result["diagnostics"] = diagnostics;
-  if (solve.accepted) {
+  if (solve.candidate_available) {
     result["saturation_pressure_pa"] = solve.evaluation.saturation_pressure_pa;
     result["vapor"] = phase_to_dict(solve.evaluation.vapor);
     result["liquid"] = phase_to_dict(solve.evaluation.liquid);
@@ -103,14 +90,16 @@ py::dict saturation_to_dict(const epcsaft::SaturationSolveResult &solve,
 
 py::dict solve_saturation(const epcsaft::NativeModel &model,
                           double temperature_k,
-                          double liquid_density_upper_mol_m3) {
+                          double liquid_density_upper_mol_m3,
+                          std::optional<std::array<double, 3>> explicit_start) {
   epcsaft::SaturationSolveResult solve;
   {
     py::gil_scoped_release release;
     solve = epcsaft::solve_local_saturation(model, temperature_k,
-                                            liquid_density_upper_mol_m3);
+                                            liquid_density_upper_mol_m3,
+                                            explicit_start);
   }
-  return saturation_to_dict(solve, temperature_k, solve.accepted);
+  return saturation_to_dict(solve, temperature_k, false);
 }
 
 py::dict solve_saturation_active(
@@ -123,11 +112,17 @@ py::dict solve_saturation_active(
         model, temperature_k, active_parameters);
   }
   const bool exact_derivatives =
-      sensitivity.solve.accepted &&
+      sensitivity.sensitivity_status == "available" &&
       sensitivity.parameter_identities.size() == active_parameters.size() &&
       sensitivity.derivatives.size() == 3 * active_parameters.size();
   py::dict result =
-      saturation_to_dict(sensitivity.solve, temperature_k, exact_derivatives);
+      saturation_to_dict(sensitivity.solve, temperature_k, exact_derivatives,
+                         sensitivity.sensitivity_status,
+                         sensitivity.sensitivity_failure_reason,
+                         sensitivity.sensitivity_rank,
+                         sensitivity.sensitivity_dimension,
+                         sensitivity.sensitivity_condition_number,
+                         sensitivity.sensitivity_backward_error);
   result["parameter_identities"] = sensitivity.parameter_identities;
   result["derivatives"] = sensitivity.derivatives;
   return result;
@@ -140,7 +135,8 @@ void bind_pure_saturation(py::module_ &module) {
              py::arg("model"), py::arg("temperature_k"), py::arg("variables"),
              py::arg("multipliers"));
   module.def("_solve_saturation", &solve_saturation, py::arg("model"),
-             py::arg("temperature_k"), py::arg("liquid_density_upper_mol_m3"));
+             py::arg("temperature_k"), py::arg("liquid_density_upper_mol_m3"),
+             py::arg("explicit_start") = std::nullopt);
   module.def("_solve_saturation_active", &solve_saturation_active,
              py::arg("model"), py::arg("temperature_k"),
              py::arg("active_parameters"));

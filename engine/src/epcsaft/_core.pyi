@@ -359,6 +359,7 @@ def _solve_saturation(
     model: NativeModel,
     temperature_k: float,
     liquid_density_upper_mol_m3: float,
+    explicit_start: tuple[float, float, float] | None = ...,
 ) -> dict[str, Any]: ...
 def _solve_saturation_active(
     model: NativeModel,

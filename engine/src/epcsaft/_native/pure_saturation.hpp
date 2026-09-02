@@ -2,6 +2,7 @@
 
 #include <array>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,8 +18,6 @@ struct SaturationPhaseEvaluation {
 };
 
 struct NlpEvaluation {
-  double objective = 0.0;
-  std::array<double, 3> objective_gradient{};
   std::array<double, 3> constraints{};
   std::array<double, 9> jacobian{};
   std::array<double, 6> lagrangian_hessian_lower{};
@@ -32,32 +31,21 @@ evaluate_saturation_nlp(const NativeModel &model, double temperature_k,
                         const std::array<double, 3> &variables,
                         const std::array<double, 3> &multipliers);
 
+struct SaturationBounds {
+  std::array<double, 3> solver_lower{};
+  std::array<double, 3> solver_upper{};
+  std::array<double, 2> vapor_density_mol_m3{};
+  std::array<double, 2> liquid_density_mol_m3{};
+};
+
 struct SaturationSolveResult {
   bool accepted = false;
-  bool solver_converged = false;
-  bool numerical_converged = false;
-  bool physical_accepted = false;
-  std::string failure_reason;
-  std::string solver_status;
-  int iterations = 0;
-  int attempts = 0;
-  int confirmation_solves = 0;
-  std::array<double, 3> solver_lower_bounds{};
-  std::array<double, 3> solver_upper_bounds{};
-  struct AttemptRecord {
-    std::string role;
-    std::array<double, 3> initial_guess{};
-    bool solver_converged = false;
-    std::string solver_status;
-    int iterations = 0;
-    double constraint_violation = 0.0;
-    std::string callback_error;
-  };
-  std::vector<AttemptRecord> attempt_log;
-  double solver_constraint_violation =
-      std::numeric_limits<double>::infinity();
-  double confirmation_max_relative_difference =
-      std::numeric_limits<double>::infinity();
+  bool candidate_available = false;
+  bool optimizer_converged = false;
+  std::string optimizer_status;
+  SaturationBounds bounds{};
+  double feasibility_measure = std::numeric_limits<double>::infinity();
+  double feasibility_tolerance = std::numeric_limits<double>::infinity();
   double pressure_relative_residual = std::numeric_limits<double>::infinity();
   double vapor_pressure_relative_residual =
       std::numeric_limits<double>::infinity();
@@ -70,7 +58,10 @@ struct SaturationSolveResult {
       std::numeric_limits<double>::quiet_NaN();
   double liquid_residual_density_derivative_m3_per_mol =
       std::numeric_limits<double>::quiet_NaN();
+  int physical_status_count = 0;
+  std::string physical_status = "not_adjudicated";
   std::string rejection_status = "solve-failure";
+  std::string failure_reason;
   NlpEvaluation evaluation{};
 };
 
@@ -78,11 +69,19 @@ struct SaturationSensitivityResult {
   SaturationSolveResult solve;
   std::vector<std::string> parameter_identities;
   std::vector<double> derivatives;
+  std::string sensitivity_status = "unavailable";
+  std::string sensitivity_failure_reason = "not_requested";
+  std::optional<std::size_t> sensitivity_rank;
+  std::optional<std::size_t> sensitivity_dimension;
+  std::optional<double> sensitivity_condition_number;
+  std::optional<double> sensitivity_backward_error;
 };
 
 [[nodiscard]] SaturationSolveResult
 solve_local_saturation(const NativeModel &model, double temperature_k,
-                       double liquid_density_upper_mol_m3);
+                       double liquid_density_upper_mol_m3,
+                       std::optional<std::array<double, 3>> explicit_start =
+                           std::nullopt);
 
 [[nodiscard]] SaturationSensitivityResult solve_local_saturation_active(
     const NativeModel &model, double temperature_k,
