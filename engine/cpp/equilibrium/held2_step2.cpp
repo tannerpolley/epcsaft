@@ -149,6 +149,7 @@ Held2StageIDirectResult run_direct_search(
 
 }  // namespace
 
+// EqID: tangent_plane_distance
 Held2TpdEvaluation evaluate_held2_tpd(
     const Held2StateEvaluation& reference,
     const std::vector<double>& feed,

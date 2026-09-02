@@ -410,6 +410,9 @@ struct PhaseBlock {
     epcsaft::NativeEosEvaluationCounts eos_evaluations;
 };
 
+// EqID: phase_helmholtz_amount_volume
+// EqID: system_gibbs_helmholtz_coordinates
+// EqID: phase_packing_volume
 PhaseBlock evaluate_phase(
     const epcsaft::NativeModel& eos,
     const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
@@ -958,6 +961,8 @@ struct MultiphaseEvaluation {
     epcsaft::NativeEosEvaluationCounts eos_evaluations;
 };
 
+// EqID: material_balance
+// EqID: phase_electroneutrality
 MultiphaseEvaluation evaluate_multiphase(
     const epcsaft::NativeModel& eos,
     const std::vector<epcsaft::NativeActiveCoordinate>& active_parameters,
@@ -1258,6 +1263,10 @@ double relative_difference(double analytic, double numerical) {
         / std::max({1.0, std::abs(analytic), std::abs(numerical)});
 }
 
+// EqID: chemical_potential_stationarity
+// EqID: pressure_equality
+// EqID: interphase_potential_equality
+// EqID: reaction_affinity
 std::vector<double> lagrangian_gradient(
     const MultiphaseEvaluation& evaluation,
     const std::vector<double>& multipliers
@@ -1823,6 +1832,7 @@ std::vector<double> equality_multipliers_at(
     return std::vector<double>(recovered.data(), recovered.data() + recovered.size());
 }
 
+// EqID: reduced_hessian_stability
 std::pair<double, double> reduced_hessian_minimum(
     const MultiphaseEvaluation& evaluation,
     std::size_t variable_count,
@@ -1982,6 +1992,7 @@ void populate_kkt_partials(
     );
 }
 
+// EqID: implicit_sensitivity
 void populate_sensitivities(
     ReactiveFinitePhaseResult& result,
     const MultiphaseEvaluation& evaluation,

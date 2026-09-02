@@ -48,6 +48,7 @@ bool AmountChart::ionic() const {
     return !cation_indices.empty() || !anion_indices.empty();
 }
 
+// EqID: electroneutral_amount_chart
 AmountChart make_amount_chart(const std::vector<int>& charges) {
     if (charges.empty()) {
         throw std::invalid_argument("amount chart requires at least one species");

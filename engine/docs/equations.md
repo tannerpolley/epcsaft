@@ -51,7 +51,7 @@ $$
 - Change note: Uses the current EOS Avogadro constant and angstrom conversion.
 - LaTeX: `docs/latex/equations.tex:42`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \widehat{\rho}=\rho_m\,N_A\,10^{-30}.
@@ -87,7 +87,7 @@ $$
 - Change note: Uses explicit site multiplicity from the resolved model.
 - LaTeX: `docs/latex/equations.tex:363`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 a^{assoc}=\sum_A x_{i(A)}\nu_A
@@ -188,6 +188,22 @@ a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
 \label{eq:born_residual_helmholtz}
 $$
 
+## `chemical_potential_stationarity`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} Eq. 5; \cite{Gross2001} Eq. (A.33)
+- Description: Stationarity in phase amounts with balance and charge multipliers.
+- Change note: Phase equilibrium and reaction affinity follow from this row.
+- LaTeX: `docs/latex/equations.tex:1208`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1270` (`lagrangian_gradient`)
+
+$$
+\mu_{p,i}=\boldsymbol\lambda\cdot\mathbf{B}_{i}+z_i\,\varphi_p,\qquad i\in S_p.
+\label{eq:chemical_potential_stationarity}
+$$
+
 ## `close_packing_fraction`
 
 - Section: Density and packing
@@ -197,7 +213,7 @@ $$
 - Change note: Mirrors close_packing_fraction without introducing solver policy.
 - LaTeX: `docs/latex/equations.tex:151`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:135` (`close_packing_fraction`)
+  - `src/epcsaft/_native/helmholtz.hpp:134` (`close_packing_fraction`)
 
 $$
 \eta_{\mathrm{cp}}=\frac{\pi}{3\sqrt{2}}.
@@ -249,7 +265,7 @@ $$
 - Change note: Uses molar density as the independent density coordinate.
 - LaTeX: `docs/latex/equations.tex:393`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 Z=1+\rho_m a_\rho,
@@ -289,7 +305,7 @@ $$
 - Change note: Keeps k_ij semantically distinct from l_ij and association data.
 - LaTeX: `docs/latex/equations.tex:95`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \frac{\epsilon_{ij}}{k_B}
@@ -307,7 +323,7 @@ $$
 - Change note: Makes the current l_ij semantics explicit.
 - LaTeX: `docs/latex/equations.tex:85`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \sigma_{ij}=\frac{\sigma_i+\sigma_j}{2}(1-l_{ij}).
@@ -464,7 +480,7 @@ $$
 - Change note: Reuses the sole EOS packing geometry owner.
 - LaTeX: `docs/latex/equations.tex:567`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1574` (`evaluate_pressure`)
+  - `src/epcsaft/_native/eos.cpp:1637` (`evaluate_pressure`)
 
 $$
 \rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
@@ -514,7 +530,7 @@ $$
 - Change note: Mirrors the current A0/A1/A2 and B0/B1/B2 arrays.
 - LaTeX: `docs/latex/equations.tex:228`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \begin{aligned}
@@ -537,7 +553,7 @@ $$
 - Change note: Mirrors the current rational expression.
 - LaTeX: `docs/latex/equations.tex:275`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 C_1=\left[
@@ -558,7 +574,7 @@ $$
 - Change note: Includes current segment counts and cross diameter.
 - LaTeX: `docs/latex/equations.tex:290`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 M_1=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
@@ -575,7 +591,7 @@ $$
 - Change note: Reconciled to the current angstrom number-density basis.
 - LaTeX: `docs/latex/equations.tex:312`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 a^{disp}=-2\pi\widehat{\rho}I_1M_1
@@ -592,7 +608,7 @@ $$
 - Change note: Evaluated through the shared polynomial owner.
 - LaTeX: `docs/latex/equations.tex:255`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 I_1(\eta,\overline m)=\sum_{k=0}^{6}a_k(\overline m)\eta^k.
@@ -608,7 +624,7 @@ $$
 - Change note: Evaluated through the shared polynomial owner.
 - LaTeX: `docs/latex/equations.tex:265`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 I_2(\eta,\overline m)=\sum_{k=0}^{6}b_k(\overline m)\eta^k.
@@ -624,7 +640,7 @@ $$
 - Change note: Documents the real arithmetic performed by polynomial.
 - LaTeX: `docs/latex/equations.tex:245`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:83` (`polynomial`)
+  - `src/epcsaft/_native/helmholtz.hpp:82` (`polynomial`)
 
 $$
 \mathcal{P}(\boldsymbol{c},\eta)=\sum_{k=0}^{6}c_k\eta^k.
@@ -640,12 +656,28 @@ $$
 - Change note: Includes the squared reduced pair energy.
 - LaTeX: `docs/latex/equations.tex:301`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 M_2=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
 \left(\frac{\epsilon_{ij}/k_B}{T}\right)^2.
 \label{eq:dispersion_second_moment}
+$$
+
+## `dual_inner_problem`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} Eqs. 9--11
+- Description: Inner problem of the Lagrangian dual: the one-phase minimizer with a linear term and no balance rows.
+- Change note: Lower bound on the reduced Gibbs energy.
+- LaTeX: `docs/latex/equations.tex:1258`
+- Implementation:
+  - `cpp/equilibrium/held2_step5.cpp:1380` (`run_held2_step5`)
+
+$$
+q(\boldsymbol\lambda)=\min_{\boldsymbol x,v}\left[g(\boldsymbol x,v)-\boldsymbol\lambda\cdot\boldsymbol x\right]\le\frac{G^{*}}{N}.
+\label{eq:dual_inner_problem}
 $$
 
 ## `effective_dipolar_density`
@@ -714,6 +746,22 @@ a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
 \label{eq:electrolyte_phase_hessian_chain_rule}
 $$
 
+## `electroneutral_amount_chart`
+
+- Section: Equilibrium
+- Status: Implementation convention
+- Source: \cite{Pereira2012}; Perdomo et al. 2025 (Perdomo2025) Section 3
+- Description: Independent amount coordinates for a charged phase after eliminating one ion by electroneutrality; a neutral phase keeps the ordinary chart.
+- Change note: C-2 independent coordinates per charged phase.
+- LaTeX: `docs/latex/equations.tex:1158`
+- Implementation:
+  - `cpp/equilibrium/chemical_equilibrium.cpp:52` (`make_amount_chart`)
+
+$$
+n_{p,e}=-\frac{1}{z_e}\sum_{i\neq e} z_i\,n_{p,i}.
+\label{eq:electroneutral_amount_chart}
+$$
+
 ## `fixed_pressure_fugacity_correction`
 
 - Section: Thermodynamic properties
@@ -742,8 +790,8 @@ $$
 - Change note: Applied by the generic EOS active-coordinate block, including canonical Born, solvation, and permittivity coordinates.
 - LaTeX: `docs/latex/equations.tex:531`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1787` (`fixed_pressure_composition_projection`)
-  - `src/epcsaft/eos.py:1145` (`_fixed_pressure_fugacity_observable_block`)
+  - `src/epcsaft/_native/eos.cpp:1850` (`fixed_pressure_composition_projection`)
+  - `src/epcsaft/eos.py:1234` (`_fixed_pressure_fugacity_observable_block`)
 
 $$
 \left.\frac{dQ}{d\theta}\right|_{P}
@@ -763,7 +811,7 @@ $$
 - LaTeX: `docs/latex/equations.tex:820`
 - Implementation:
   - `src/epcsaft/_native/electrolyte_reference.hpp:137` (`formula_composition`)
-  - `src/epcsaft/_native/eos.cpp:1385` (`reference_composition`)
+  - `src/epcsaft/_native/eos.cpp:1448` (`reference_composition`)
 
 $$
 \begin{aligned}
@@ -785,7 +833,7 @@ $$
 - Change note: Mirrors the site-independent chain term.
 - LaTeX: `docs/latex/equations.tex:215`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 a^{hc}=\overline{m}\,a^{hs}
@@ -802,7 +850,7 @@ $$
 - Change note: Uses the current pure-component contact diameter d_i/2.
 - LaTeX: `docs/latex/equations.tex:202`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 g_{ii}^{hs}=
@@ -821,7 +869,7 @@ $$
 - Change note: Mirrors the current zeta-based expression.
 - LaTeX: `docs/latex/equations.tex:188`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 a^{hs}=\frac{1}{\zeta_0}\left[
@@ -841,11 +889,44 @@ $$
 - Change note: This is a numerical scale, not a replacement EOS.
 - LaTeX: `docs/latex/equations.tex:557`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1574` (`evaluate_pressure`)
+  - `src/epcsaft/_native/eos.cpp:1637` (`evaluate_pressure`)
 
 $$
 \rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
 \label{eq:ideal_gas_density}
+$$
+
+## `implicit_sensitivity`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: Implicit-function theorem on the KKT system
+- Description: Total derivative of the solved state with respect to active parameters.
+- Change note: Rank and conditioning decide availability; values stay available.
+- LaTeX: `docs/latex/equations.tex:1268`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1996` (`populate_sensitivities`)
+  - `cpp/equilibrium/solved_state_sensitivity.cpp:882` (`evaluate_solved_state_sensitivity`)
+
+$$
+\frac{\mathrm d\boldsymbol y}{\mathrm d\boldsymbol\theta}=-\mathbf{F}_{\boldsymbol y}^{-1}\,\mathbf{F}_{\boldsymbol\theta}.
+\label{eq:implicit_sensitivity}
+$$
+
+## `incipient_normalization`
+
+- Section: Equilibrium
+- Status: Implementation convention
+- Source: Zero-amount phase composition closure
+- Description: Composition normalization of an incipient phase whose amount is zero.
+- Change note: Replaces the material-balance contribution of a zero-amount phase.
+- LaTeX: `docs/latex/equations.tex:1188`
+- Implementation:
+  - `cpp/equilibrium/grepe.cpp:2071` (`incipient_closure`)
+
+$$
+\sum_i x_{\mathrm{inc},i}=1.
+\label{eq:incipient_normalization}
 $$
 
 ## `infinite_dilution_solvation_energy`
@@ -857,12 +938,28 @@ $$
 - Change note: Uses the terminal reference-sequence log fugacity.
 - LaTeX: `docs/latex/equations.tex:899`
 - Implementation:
-  - `src/epcsaft/reference.py:416` (`solvation_free_energy`)
+  - `src/epcsaft/reference.py:411` (`solvation_free_energy`)
 
 $$
 \Delta G_{i,\mathrm{solv}}^\infty
 =RT\ln\phi_i^\infty.
 \label{eq:infinite_dilution_solvation_energy}
+$$
+
+## `interphase_potential_equality`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: Consequence of chemical_potential_stationarity
+- Description: Equal chemical potential for neutral species and equal electrochemical potential for ions in two supports.
+- Change note: Not imposed a second time.
+- LaTeX: `docs/latex/equations.tex:1218`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1270` (`lagrangian_gradient`)
+
+$$
+\mu_{p,i}-\mu_{q,i}=z_i\,(\varphi_p-\varphi_q).
+\label{eq:interphase_potential_equality}
 $$
 
 ## `ion_fraction_suppressed_bulk_permittivity`
@@ -912,7 +1009,7 @@ $$
 - Change note: Removes the Born-selector dependency and keeps packing, Debye--Huckel, and Born lengths independently declarable.
 - LaTeX: `docs/latex/equations.tex:75`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:112` (`segment_diameter`)
+  - `src/epcsaft/_native/helmholtz.hpp:111` (`segment_diameter`)
 
 $$
 d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\qquad d_i^{\mathrm{pack}}>0.
@@ -944,7 +1041,7 @@ $$
 - Change note: Available only when the compressibility factor is positive.
 - LaTeX: `docs/latex/equations.tex:439`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 \ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
@@ -972,6 +1069,22 @@ $$
 \label{eq:log_fugacity_density_derivative}
 $$
 
+## `material_balance`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} Eq. 3
+- Description: Conserved-moiety balance over all phases; B is the identity when no reaction is declared.
+- Change note: Rank of B is the number of balance rows.
+- LaTeX: `docs/latex/equations.tex:1168`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:966` (`evaluate_multiphase`)
+
+$$
+\sum_p \mathbf{B}\,\boldsymbol n_p=\mathbf{B}\,\boldsymbol n_{\mathrm{feed}}.
+\label{eq:material_balance}
+$$
+
 ## `mean_ionic_activity_coefficient`
 
 - Section: Electrolyte reference states and reported activities
@@ -981,7 +1094,7 @@ $$
 - Change note: Supports the one-formula-unit cation/anion topology.
 - LaTeX: `docs/latex/equations.tex:861`
 - Implementation:
-  - `src/epcsaft/reference.py:431` (`state`)
+  - `src/epcsaft/reference.py:426` (`state`)
 
 $$
 \ln\gamma_\pm^{(x)}
@@ -999,7 +1112,7 @@ $$
 - Change note: Reconciled to the current residual Helmholtz owner.
 - LaTeX: `docs/latex/equations.tex:119`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \overline{m}=\sum_i x_i m_i.
@@ -1034,7 +1147,7 @@ $$
 - Change note: Uses salt-free solvent molar mass in kilograms per mole.
 - LaTeX: `docs/latex/equations.tex:873`
 - Implementation:
-  - `src/epcsaft/reference.py:431` (`state`)
+  - `src/epcsaft/reference.py:426` (`state`)
 
 $$
 \gamma_\pm^{(m)}=
@@ -1079,7 +1192,7 @@ $$
 - Change note: Reconciled to the current neutral diameter branch.
 - LaTeX: `docs/latex/equations.tex:64`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:112` (`segment_diameter`)
+  - `src/epcsaft/_native/helmholtz.hpp:111` (`segment_diameter`)
 
 $$
 d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
@@ -1096,7 +1209,7 @@ $$
 - Change note: Shared by Helmholtz evaluation and EOS domain owners.
 - LaTeX: `docs/latex/equations.tex:140`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:141` (`packing_fraction_from_geometry`)
+  - `src/epcsaft/_native/helmholtz.hpp:140` (`packing_fraction_from_geometry`)
 
 $$
 \eta=\zeta_3
@@ -1113,7 +1226,7 @@ $$
 - Change note: Mirrors the value-only volume-domain helper.
 - LaTeX: `docs/latex/equations.tex:161`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:158` (`packing_fraction_coefficient`)
+  - `src/epcsaft/_native/helmholtz.hpp:157` (`packing_fraction_coefficient`)
 
 $$
 c_\eta(T,\boldsymbol{x})=
@@ -1131,7 +1244,7 @@ $$
 - Change note: Uses the current angstrom number-density basis.
 - LaTeX: `docs/latex/equations.tex:129`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \zeta_n=\frac{\pi}{6}\widehat{\rho}\sum_i x_i m_i d_i^n,
@@ -1148,8 +1261,8 @@ $$
 - Change note: The EOS owns c_eta while the caller owns eta_min and eta_max.
 - LaTeX: `docs/latex/equations.tex:979`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1355` (`molar_volume_bounds_parameters`)
-  - `src/epcsaft/_native/eos.cpp:1427` (`molar_volume_bounds`)
+  - `src/epcsaft/_native/eos.cpp:1418` (`molar_volume_bounds_parameters`)
+  - `src/epcsaft/_native/eos.cpp:1490` (`molar_volume_bounds`)
 
 $$
 V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
@@ -1178,6 +1291,38 @@ $$
 \right]
 +\frac{n}{n_{\mathrm{ref}}}a^r(T,\rho_m,\boldsymbol{x}).
 \label{eq:phase_dimensionless_helmholtz}
+$$
+
+## `phase_electroneutrality`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: Perdomo et al. 2025 (Perdomo2025) Eq. 35, electroneutral form of \cite{Pereira2012} Eq. 3
+- Description: Per-phase charge neutrality for every phase with charged support.
+- Change note: One row per charged phase.
+- LaTeX: `docs/latex/equations.tex:1178`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:966` (`evaluate_multiphase`)
+
+$$
+\boldsymbol z\cdot\boldsymbol n_p=0.
+\label{eq:phase_electroneutrality}
+$$
+
+## `phase_helmholtz_amount_volume`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: \cite{Gross2001} Appendix A with the ideal-gas mixing term
+- Description: Phase Helmholtz energy over RT in amount and volume coordinates.
+- Change note: Reference density contributes a species-linear constant only.
+- LaTeX: `docs/latex/equations.tex:1128`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:416` (`evaluate_phase`)
+
+$$
+\frac{A_p}{RT}=\sum_i n_{p,i}\left[\ln\frac{n_{p,i}}{V_p\rho_{\mathrm{ref}}}-1\right]+N_p\,a^{r}\!\left(T,\frac{N_p}{V_p},\frac{\boldsymbol n_p}{N_p}\right).
+\label{eq:phase_helmholtz_amount_volume}
 $$
 
 ## `phase_molar_density`
@@ -1222,7 +1367,7 @@ $$
 - Change note: Mirrors the native phase-domain derivative owner.
 - LaTeX: `docs/latex/equations.tex:173`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:179` (`phase_packing_fraction`)
+  - `src/epcsaft/_native/helmholtz.hpp:178` (`phase_packing_fraction`)
   - `src/epcsaft/_native/phase_block.hpp:484` (`apply_active_packing_parameters`)
   - `src/epcsaft/_native/phase_block.hpp:542` (`packing_fraction_block_active_parameters`)
   - `src/epcsaft/_native/phase_block.hpp:623` (`inverse_packing_geometry_block`)
@@ -1231,6 +1376,22 @@ $$
 \eta(T,\boldsymbol{n},V)=
 \frac{\pi}{6}\frac{N_A10^{-30}}{V}\sum_i n_i m_i d_i(T)^3.
 \label{eq:phase_packing_fraction}
+$$
+
+## `phase_packing_volume`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: Packing-fraction definition, \cite{Gross2001} Eq. (A.8)
+- Description: Phase volume from the logarithmic packing coordinate.
+- Change note: Closed form; no tape is required.
+- LaTeX: `docs/latex/equations.tex:1148`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:416` (`evaluate_phase`)
+
+$$
+V_p=\frac{\pi}{6\,\eta_p}\sum_i n_{p,i}\,m_i\,d_i^{3}.
+\label{eq:phase_packing_volume}
 $$
 
 ## `phase_pressure`
@@ -1278,7 +1439,7 @@ $$
 - Change note: Defined only for the admitted single-active-solvent aqueous path.
 - LaTeX: `docs/latex/equations.tex:885`
 - Implementation:
-  - `src/epcsaft/reference.py:431` (`state`)
+  - `src/epcsaft/reference.py:426` (`state`)
 
 $$
 \Phi=
@@ -1298,7 +1459,7 @@ $$
 - Change note: Returns pressure in pascals on the SI molar-density basis.
 - LaTeX: `docs/latex/equations.tex:405`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 P=\rho_mRTZ.
@@ -1314,7 +1475,7 @@ $$
 - Change note: Transforms CppAD density partials without expanding the EOS derivative.
 - LaTeX: `docs/latex/equations.tex:415`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 \left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}
@@ -1322,6 +1483,22 @@ $$
 \qquad
 Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
 \label{eq:pressure_density_derivative}
+$$
+
+## `pressure_equality`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} Eq. 6; \cite{Gross2001} Eq. (A.24)
+- Description: Stationarity in phase volume: every EOS phase is at the system pressure.
+- Change note: A stationarity row of the same minimization.
+- LaTeX: `docs/latex/equations.tex:1198`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1270` (`lagrangian_gradient`)
+
+$$
+-\frac{\partial A_p}{\partial V_p}=P.
+\label{eq:pressure_equality}
 $$
 
 ## `pure_active_parameter_mapping`
@@ -1333,7 +1510,7 @@ $$
 - Change note: No generic mutable parameter overlay is introduced.
 - LaTeX: `docs/latex/equations.tex:1035`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:582` (`with_active_coordinates`)
+  - `src/epcsaft/_native/eos.cpp:644` (`with_active_coordinates`)
 
 $$
 \boldsymbol{\theta}_{\mathrm{pure}}
@@ -1341,6 +1518,38 @@ $$
 \qquad
 \boldsymbol{k}=\boldsymbol{l}=(0).
 \label{eq:pure_active_parameter_mapping}
+$$
+
+## `reaction_affinity`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: Consequence of chemical_potential_stationarity with $\mathbf{B}\boldsymbol\nu=0$
+- Description: Vanishing affinity for every reaction in the nullspace of the balance matrix.
+- Change note: A problem with B = I has no affinity row.
+- LaTeX: `docs/latex/equations.tex:1228`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1270` (`lagrangian_gradient`)
+
+$$
+\sum_i\nu_i\,\mu_{p,i}=\boldsymbol\lambda\cdot(\mathbf{B}\boldsymbol\nu)+\varphi_p\,(\boldsymbol z\cdot\boldsymbol\nu)=0.
+\label{eq:reaction_affinity}
+$$
+
+## `reduced_hessian_stability`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: Second-order sufficient condition for a constrained local minimum
+- Description: Reduced Lagrangian Hessian over the constraint nullspace is positive definite.
+- Change note: Certifies a local minimum only.
+- LaTeX: `docs/latex/equations.tex:1238`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:1836` (`reduced_hessian_minimum`)
+
+$$
+\mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
+\label{eq:reduced_hessian_stability}
 $$
 
 ## `reference_molality_sequence`
@@ -1356,7 +1565,7 @@ $$
   - `src/epcsaft/_native/electrolyte_reference.hpp:101` (`reference_limit_sequence`)
   - `src/epcsaft/_native/electrolyte_reference.hpp:124` (`reference_limit_terminal_pair`)
   - `src/epcsaft/_native/electrolyte_reference.hpp:185` (`electrolyte_reference_sequence`)
-  - `src/epcsaft/_native/eos.cpp:1395` (`electrolyte_reference_sequence`)
+  - `src/epcsaft/_native/eos.cpp:1458` (`electrolyte_reference_sequence`)
 
 $$
 \mathcal{M}_{\mathrm{ref}}=
@@ -1376,7 +1585,7 @@ $$
 - Change note: Mirrors the current constant-temperature, constant-density mixture convention.
 - LaTeX: `docs/latex/equations.tex:428`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 \frac{\mu_i^r}{RT}
@@ -1393,7 +1602,7 @@ $$
 - Change note: Includes the residual pressure-volume term Z-1.
 - LaTeX: `docs/latex/equations.tex:469`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 h^r=RT\left[-Ta_T+(Z-1)\right].
@@ -1409,7 +1618,7 @@ $$
 - Change note: Does not silently change to a same-pressure ideal-gas reference.
 - LaTeX: `docs/latex/equations.tex:449`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 s_V^r=-R\left(a^r+Ta_T\right).
@@ -1425,7 +1634,7 @@ $$
 - Change note: The final minus one removes the ideal-gas cp-cv contribution.
 - LaTeX: `docs/latex/equations.tex:489`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 \frac{c_p^r}{R}
@@ -1443,7 +1652,7 @@ $$
 - Change note: Transforms CppAD first and second temperature partials.
 - LaTeX: `docs/latex/equations.tex:479`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
@@ -1459,7 +1668,7 @@ $$
 - Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 - LaTeX: `docs/latex/equations.tex:376`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
@@ -1475,7 +1684,7 @@ $$
 - Change note: Uses the CppAD temperature partial at fixed density and composition.
 - LaTeX: `docs/latex/equations.tex:459`
 - Implementation:
-  - `src/epcsaft/_native/eos.cpp:1467` (`evaluate`)
+  - `src/epcsaft/_native/eos.cpp:1530` (`evaluate`)
 
 $$
 u^r=-RT^2a_T.
@@ -1510,7 +1719,7 @@ $$
 - Change note: The caller selects all ion pairs or same-sign exclusion as part of the electrolyte model family.
 - LaTeX: `docs/latex/equations.tex:107`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:202` (`residual_helmholtz`)
+  - `src/epcsaft/_native/helmholtz.hpp:201` (`residual_helmholtz`)
 
 $$
 \epsilon_{ij}=\begin{cases}\sqrt{\epsilon_i\epsilon_j}(1-k_{ij}),&z_iz_j\leq 0\ \text{or all-ion-pair dispersion},\\0,&z_iz_j>0\ \text{and same-sign exclusion}.\end{cases}
@@ -1526,7 +1735,7 @@ $$
 - Change note: Mirrors the general sparse correlation implemented by segment_sigma.
 - LaTeX: `docs/latex/equations.tex:54`
 - Implementation:
-  - `src/epcsaft/_native/helmholtz.hpp:93` (`segment_sigma`)
+  - `src/epcsaft/_native/helmholtz.hpp:92` (`segment_sigma`)
 
 $$
 \sigma_i(T)=\sigma_{i,0}+\sum_{q\in\mathcal{Q}_i} A_q\exp(b_qT).
@@ -1542,12 +1751,44 @@ $$
 - Change note: Exposes the exponential of the finite-minus-reference log fugacity.
 - LaTeX: `docs/latex/equations.tex:850`
 - Implementation:
-  - `src/epcsaft/reference.py:431` (`state`)
+  - `src/epcsaft/reference.py:426` (`state`)
 
 $$
 \gamma_i^{(x)}=
 \exp\left(\ln\phi_i-\ln\phi_i^\infty\right).
 \label{eq:single_ion_activity_coefficient}
+$$
+
+## `system_gibbs_helmholtz_coordinates`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: \cite{Pereira2012} Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
+- Description: System Gibbs energy at fixed T and P written in Helmholtz coordinates with standard-state offsets.
+- Change note: Pressure equality becomes a stationarity row instead of an inner density solve.
+- LaTeX: `docs/latex/equations.tex:1138`
+- Implementation:
+  - `cpp/equilibrium/reactive_finite_phase.cpp:416` (`evaluate_phase`)
+
+$$
+\frac{G}{RT}=\sum_p\left[\frac{A_p(T,V_p,\boldsymbol n_p)}{RT}+\frac{PV_p}{RT}\right]+\sum_p\sum_i n_{p,i}\frac{g^{\circ}_i}{RT}.
+\label{eq:system_gibbs_helmholtz_coordinates}
+$$
+
+## `tangent_plane_distance`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
+- Description: Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion.
+- Change note: A negative value is a one-sided instability witness.
+- LaTeX: `docs/latex/equations.tex:1248`
+- Implementation:
+  - `cpp/equilibrium/held2_step2.cpp:153` (`evaluate_held2_tpd`)
+
+$$
+\mathrm{TPD}(\boldsymbol x,v)=g(\boldsymbol x,v)-g(\boldsymbol x^{0},v^{0})-\nabla_{\boldsymbol x}g(\boldsymbol x^{0},v^{0})\cdot(\boldsymbol x-\boldsymbol x^{0}).
+\label{eq:tangent_plane_distance}
 $$
 
 ## `transfer_free_energy`
@@ -1559,7 +1800,7 @@ $$
 - Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
 - LaTeX: `docs/latex/equations.tex:910`
 - Implementation:
-  - `src/epcsaft/reference.py:518` (`transfer_to`)
+  - `src/epcsaft/reference.py:513` (`transfer_to`)
 
 $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
@@ -1584,33 +1825,33 @@ $$
 - `src/epcsaft/_native/eos.cpp:24` (`positive_finite`): input and domain validation
 - `src/epcsaft/_native/eos.cpp:32` (`nonnegative_finite`): input and domain validation
 - `src/epcsaft/_native/eos.cpp:39` (`finite`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:212` (`NativeModel`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:1169` (`supports_pure_transport`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:1174` (`supports_fixed_topology_associating_mixture`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:1181` (`supports_mixture_transport`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:1186` (`supports_electrolyte_transport`): input and domain validation
-- `src/epcsaft/_native/eos.cpp:1191` (`component_count`): serialization
-- `src/epcsaft/_native/eos.cpp:1196` (`charge_numbers`): serialization
-- `src/epcsaft/_native/eos.cpp:1201` (`site_components`): serialization
-- `src/epcsaft/_native/eos.cpp:1206` (`site_multiplicities`): serialization
-- `src/epcsaft/_native/eos.cpp:1211` (`association_active_pairs`): serialization
-- `src/epcsaft/_native/eos.cpp:1216` (`molar_masses_kg_per_mol`): serialization
-- `src/epcsaft/_native/eos.cpp:1221` (`evaluate_pure_phase`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1228` (`evaluate_fixed_topology_association`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1237` (`evaluate_mixture_phase`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1249` (`evaluate_phase_derivatives`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1274` (`evaluate_electrolyte_phase`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1282` (`evaluate_supported_phase_derivatives`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1315` (`evaluate_packing_fraction`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1323` (`evaluate_packing_fraction_parameters`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1339` (`evaluate_inverse_packing_geometry`): transport and buffer mechanics
-- `src/epcsaft/_native/eos.cpp:1957` (`evaluate_fixed_pressure_composition_derivatives`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:274` (`NativeModel`): input and domain validation
+- `src/epcsaft/_native/eos.cpp:1232` (`supports_pure_transport`): input and domain validation
+- `src/epcsaft/_native/eos.cpp:1237` (`supports_fixed_topology_associating_mixture`): input and domain validation
+- `src/epcsaft/_native/eos.cpp:1244` (`supports_mixture_transport`): input and domain validation
+- `src/epcsaft/_native/eos.cpp:1249` (`supports_electrolyte_transport`): input and domain validation
+- `src/epcsaft/_native/eos.cpp:1254` (`component_count`): serialization
+- `src/epcsaft/_native/eos.cpp:1259` (`charge_numbers`): serialization
+- `src/epcsaft/_native/eos.cpp:1264` (`site_components`): serialization
+- `src/epcsaft/_native/eos.cpp:1269` (`site_multiplicities`): serialization
+- `src/epcsaft/_native/eos.cpp:1274` (`association_active_pairs`): serialization
+- `src/epcsaft/_native/eos.cpp:1279` (`molar_masses_kg_per_mol`): serialization
+- `src/epcsaft/_native/eos.cpp:1284` (`evaluate_pure_phase`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1291` (`evaluate_fixed_topology_association`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1300` (`evaluate_mixture_phase`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1312` (`evaluate_phase_derivatives`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1337` (`evaluate_electrolyte_phase`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1345` (`evaluate_supported_phase_derivatives`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1378` (`evaluate_packing_fraction`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1386` (`evaluate_packing_fraction_parameters`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:1402` (`evaluate_inverse_packing_geometry`): transport and buffer mechanics
+- `src/epcsaft/_native/eos.cpp:2020` (`evaluate_fixed_pressure_composition_derivatives`): transport and buffer mechanics
 - `src/epcsaft/_native/eos_source_reference.cpp:36` (`row_count`): input and domain validation
 - `src/epcsaft/_native/eos_source_reference.cpp:44` (`full_row_rank`): input and domain validation
 - `src/epcsaft/_native/eos_source_reference.cpp:178` (`sha256_fingerprint_valid`): input and domain validation
-- `src/epcsaft/_native/helmholtz.hpp:56` (`scalar_log`): scalar utility dispatch
-- `src/epcsaft/_native/helmholtz.hpp:65` (`scalar_exp`): scalar utility dispatch
-- `src/epcsaft/_native/helmholtz.hpp:74` (`scalar_sqrt`): scalar utility dispatch
+- `src/epcsaft/_native/helmholtz.hpp:55` (`scalar_log`): scalar utility dispatch
+- `src/epcsaft/_native/helmholtz.hpp:64` (`scalar_exp`): scalar utility dispatch
+- `src/epcsaft/_native/helmholtz.hpp:73` (`scalar_sqrt`): scalar utility dispatch
 - `src/epcsaft/_native/phase_block.hpp:95` (`supports_pure_phase_block`): input and domain validation
 - `src/epcsaft/_native/phase_block.hpp:103` (`supports_fixed_topology_associating_phase_block`): input and domain validation
 - `src/epcsaft/_native/phase_block.hpp:144` (`supports_fixed_topology_associating_mixture_phase_block`): input and domain validation

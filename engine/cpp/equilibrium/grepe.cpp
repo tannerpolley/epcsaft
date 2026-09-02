@@ -2067,6 +2067,7 @@ struct IncipientClosure {
     bool ideal = false;
 };
 
+// EqID: incipient_normalization
 IncipientClosure incipient_closure(
     const epcsaft::NativeModel& model,
     const epcsaft::NativeModel& incipient_model,

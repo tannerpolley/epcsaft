@@ -878,6 +878,7 @@ static SolvedStateSensitivity evaluate_state_sensitivity(
     return result;
 }
 
+// EqID: implicit_sensitivity
 SolvedStateSensitivity evaluate_solved_state_sensitivity(
     const epcsaft::NativeModel& eos,
     double temperature_k,

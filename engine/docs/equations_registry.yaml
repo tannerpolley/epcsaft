@@ -45,8 +45,8 @@ equations:
     tex_line: 42
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 215
+        line: 201
+        comment_line: 214
         symbol: "residual_helmholtz"
   - eqid: "association_contact"
     section: "Contribution intermediates"
@@ -77,8 +77,8 @@ equations:
     tex_line: 363
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 345
+        line: 201
+        comment_line: 344
         symbol: "residual_helmholtz"
   - eqid: "association_mass_action"
     section: "Contribution intermediates"
@@ -168,6 +168,22 @@ equations:
         line: 15
         comment_line: 80
         symbol: "born_contribution"
+  - eqid: "chemical_potential_stationarity"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:chemical_potential_stationarity"
+    source: "\\cite{Pereira2012} Eq. 5; \\cite{Gross2001} Eq. (A.33)"
+    status: "Source equation"
+    description: "Stationarity in phase amounts with balance and charge multipliers."
+    change_note: "Phase equilibrium and reaction affinity follow from this row."
+    latex: "\\mu_{p,i}=\\boldsymbol\\lambda\\cdot\\mathbf{B}_{i}+z_i\\,\\varphi_p,\\qquad i\\in S_p.\n\\label{eq:chemical_potential_stationarity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1208
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1270
+        comment_line: 1266
+        symbol: "lagrangian_gradient"
   - eqid: "close_packing_fraction"
     section: "Density and packing"
     subsection: ""
@@ -181,8 +197,8 @@ equations:
     tex_line: 151
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 135
-        comment_line: 134
+        line: 134
+        comment_line: 133
         symbol: "close_packing_fraction"
   - eqid: "component_mixed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -233,8 +249,8 @@ equations:
     tex_line: 393
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1497
+        line: 1530
+        comment_line: 1560
         symbol: "evaluate"
   - eqid: "cross_association_energy_correction"
     section: "Native phase coordinates"
@@ -265,8 +281,8 @@ equations:
     tex_line: 95
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 320
+        line: 201
+        comment_line: 319
         symbol: "residual_helmholtz"
   - eqid: "cross_segment_diameter"
     section: "Parameter setup"
@@ -281,8 +297,8 @@ equations:
     tex_line: 85
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 308
+        line: 201
+        comment_line: 307
         symbol: "residual_helmholtz"
   - eqid: "debye_finite_size_chi"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -409,8 +425,8 @@ equations:
     tex_line: 567
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1574
-        comment_line: 1580
+        line: 1637
+        comment_line: 1643
         symbol: "evaluate_pressure"
   - eqid: "dipolar_correlation_integral"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -461,8 +477,8 @@ equations:
     tex_line: 228
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 276
+        line: 201
+        comment_line: 275
         symbol: "residual_helmholtz"
   - eqid: "dispersion_compressibility_factor"
     section: "Contribution intermediates"
@@ -477,8 +493,8 @@ equations:
     tex_line: 275
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 294
+        line: 201
+        comment_line: 293
         symbol: "residual_helmholtz"
   - eqid: "dispersion_first_moment"
     section: "Contribution intermediates"
@@ -493,8 +509,8 @@ equations:
     tex_line: 290
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 333
+        line: 201
+        comment_line: 332
         symbol: "residual_helmholtz"
   - eqid: "dispersion_helmholtz"
     section: "Contribution intermediates"
@@ -509,8 +525,8 @@ equations:
     tex_line: 312
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 340
+        line: 201
+        comment_line: 339
         symbol: "residual_helmholtz"
   - eqid: "dispersion_integral_one"
     section: "Contribution intermediates"
@@ -525,8 +541,8 @@ equations:
     tex_line: 255
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 287
+        line: 201
+        comment_line: 286
         symbol: "residual_helmholtz"
   - eqid: "dispersion_integral_two"
     section: "Contribution intermediates"
@@ -541,8 +557,8 @@ equations:
     tex_line: 265
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 289
+        line: 201
+        comment_line: 288
         symbol: "residual_helmholtz"
   - eqid: "dispersion_polynomial"
     section: "Contribution intermediates"
@@ -557,8 +573,8 @@ equations:
     tex_line: 245
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 83
-        comment_line: 82
+        line: 82
+        comment_line: 81
         symbol: "polynomial"
   - eqid: "dispersion_second_moment"
     section: "Contribution intermediates"
@@ -573,9 +589,25 @@ equations:
     tex_line: 301
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 335
+        line: 201
+        comment_line: 334
         symbol: "residual_helmholtz"
+  - eqid: "dual_inner_problem"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:dual_inner_problem"
+    source: "\\cite{Pereira2012} Eqs. 9--11"
+    status: "Source equation"
+    description: "Inner problem of the Lagrangian dual: the one-phase minimizer with a linear term and no balance rows."
+    change_note: "Lower bound on the reduced Gibbs energy."
+    latex: "q(\\boldsymbol\\lambda)=\\min_{\\boldsymbol x,v}\\left[g(\\boldsymbol x,v)-\\boldsymbol\\lambda\\cdot\\boldsymbol x\\right]\\le\\frac{G^{*}}{N}.\n\\label{eq:dual_inner_problem}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1258
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step5.cpp"
+        line: 1380
+        comment_line: 1379
+        symbol: "run_held2_step5"
   - eqid: "effective_dipolar_density"
     section: "Electrolyte dielectric and Debye--Huckel relations"
     subsection: ""
@@ -628,6 +660,22 @@ equations:
         line: 813
         comment_line: 811
         symbol: "fixed_topology_parameterized_mixture_phase_block"
+  - eqid: "electroneutral_amount_chart"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:electroneutral_amount_chart"
+    source: "\\cite{Pereira2012}; Perdomo et al. 2025 (Perdomo2025) Section 3"
+    status: "Implementation convention"
+    description: "Independent amount coordinates for a charged phase after eliminating one ion by electroneutrality; a neutral phase keeps the ordinary chart."
+    change_note: "C-2 independent coordinates per charged phase."
+    latex: "n_{p,e}=-\\frac{1}{z_e}\\sum_{i\\neq e} z_i\\,n_{p,i}.\n\\label{eq:electroneutral_amount_chart}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1158
+    implementation_refs:
+      - file: "cpp/equilibrium/chemical_equilibrium.cpp"
+        line: 52
+        comment_line: 51
+        symbol: "make_amount_chart"
   - eqid: "fixed_pressure_fugacity_correction"
     section: "Thermodynamic properties"
     subsection: ""
@@ -653,12 +701,12 @@ equations:
     tex_line: 531
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1787
-        comment_line: 1786
+        line: 1850
+        comment_line: 1849
         symbol: "fixed_pressure_composition_projection"
       - file: "src/epcsaft/eos.py"
-        line: 1145
-        comment_line: 1201
+        line: 1234
+        comment_line: 1290
         symbol: "_fixed_pressure_fugacity_observable_block"
   - eqid: "formula_unit_composition"
     section: "Electrolyte reference states and reported activities"
@@ -677,8 +725,8 @@ equations:
         comment_line: 136
         symbol: "formula_composition"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1385
-        comment_line: 1384
+        line: 1448
+        comment_line: 1447
         symbol: "reference_composition"
   - eqid: "hard_chain_helmholtz"
     section: "Contribution intermediates"
@@ -693,8 +741,8 @@ equations:
     tex_line: 215
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 261
+        line: 201
+        comment_line: 260
         symbol: "residual_helmholtz"
   - eqid: "hard_sphere_contact"
     section: "Contribution intermediates"
@@ -709,8 +757,8 @@ equations:
     tex_line: 202
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 265
+        line: 201
+        comment_line: 264
         symbol: "residual_helmholtz"
   - eqid: "hard_sphere_helmholtz"
     section: "Contribution intermediates"
@@ -725,8 +773,8 @@ equations:
     tex_line: 188
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 252
+        line: 201
+        comment_line: 251
         symbol: "residual_helmholtz"
   - eqid: "ideal_gas_density"
     section: "Density closure and mechanical domain"
@@ -741,9 +789,45 @@ equations:
     tex_line: 557
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1574
-        comment_line: 1602
+        line: 1637
+        comment_line: 1665
         symbol: "evaluate_pressure"
+  - eqid: "implicit_sensitivity"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:implicit_sensitivity"
+    source: "Implicit-function theorem on the KKT system"
+    status: "Exact derivation"
+    description: "Total derivative of the solved state with respect to active parameters."
+    change_note: "Rank and conditioning decide availability; values stay available."
+    latex: "\\frac{\\mathrm d\\boldsymbol y}{\\mathrm d\\boldsymbol\\theta}=-\\mathbf{F}_{\\boldsymbol y}^{-1}\\,\\mathbf{F}_{\\boldsymbol\\theta}.\n\\label{eq:implicit_sensitivity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1268
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1996
+        comment_line: 1995
+        symbol: "populate_sensitivities"
+      - file: "cpp/equilibrium/solved_state_sensitivity.cpp"
+        line: 882
+        comment_line: 881
+        symbol: "evaluate_solved_state_sensitivity"
+  - eqid: "incipient_normalization"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:incipient_normalization"
+    source: "Zero-amount phase composition closure"
+    status: "Implementation convention"
+    description: "Composition normalization of an incipient phase whose amount is zero."
+    change_note: "Replaces the material-balance contribution of a zero-amount phase."
+    latex: "\\sum_i x_{\\mathrm{inc},i}=1.\n\\label{eq:incipient_normalization}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1188
+    implementation_refs:
+      - file: "cpp/equilibrium/grepe.cpp"
+        line: 2071
+        comment_line: 2070
+        symbol: "incipient_closure"
   - eqid: "infinite_dilution_solvation_energy"
     section: "Electrolyte reference states and reported activities"
     subsection: ""
@@ -757,9 +841,25 @@ equations:
     tex_line: 899
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 416
-        comment_line: 419
+        line: 411
+        comment_line: 414
         symbol: "solvation_free_energy"
+  - eqid: "interphase_potential_equality"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:interphase_potential_equality"
+    source: "Consequence of chemical_potential_stationarity"
+    status: "Exact derivation"
+    description: "Equal chemical potential for neutral species and equal electrochemical potential for ions in two supports."
+    change_note: "Not imposed a second time."
+    latex: "\\mu_{p,i}-\\mu_{q,i}=z_i\\,(\\varphi_p-\\varphi_q).\n\\label{eq:interphase_potential_equality}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1218
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1270
+        comment_line: 1268
+        symbol: "lagrangian_gradient"
   - eqid: "ion_fraction_suppressed_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
     subsection: ""
@@ -805,8 +905,8 @@ equations:
     tex_line: 75
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 112
-        comment_line: 111
+        line: 111
+        comment_line: 110
         symbol: "segment_diameter"
   - eqid: "ionic_strength_charge_sum"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -837,8 +937,8 @@ equations:
     tex_line: 439
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1515
+        line: 1530
+        comment_line: 1578
         symbol: "evaluate"
   - eqid: "log_fugacity_density_derivative"
     section: "Thermodynamic properties"
@@ -852,6 +952,22 @@ equations:
     tex_file: "docs/latex/equations.tex"
     tex_line: 501
     implementation_refs:
+  - eqid: "material_balance"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:material_balance"
+    source: "\\cite{Pereira2012} Eq. 3"
+    status: "Source equation"
+    description: "Conserved-moiety balance over all phases; B is the identity when no reaction is declared."
+    change_note: "Rank of B is the number of balance rows."
+    latex: "\\sum_p \\mathbf{B}\\,\\boldsymbol n_p=\\mathbf{B}\\,\\boldsymbol n_{\\mathrm{feed}}.\n\\label{eq:material_balance}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1168
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 966
+        comment_line: 964
+        symbol: "evaluate_multiphase"
   - eqid: "mean_ionic_activity_coefficient"
     section: "Electrolyte reference states and reported activities"
     subsection: ""
@@ -865,8 +981,8 @@ equations:
     tex_line: 861
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 431
-        comment_line: 467
+        line: 426
+        comment_line: 462
         symbol: "state"
   - eqid: "mean_segment_count"
     section: "Density and packing"
@@ -881,8 +997,8 @@ equations:
     tex_line: 119
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 217
+        line: 201
+        comment_line: 216
         symbol: "residual_helmholtz"
   - eqid: "mechanical_stability"
     section: "Density closure and mechanical domain"
@@ -913,8 +1029,8 @@ equations:
     tex_line: 873
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 431
-        comment_line: 484
+        line: 426
+        comment_line: 479
         symbol: "state"
   - eqid: "neutral_reference_stoichiometric_basis"
     section: "Native phase coordinates"
@@ -945,8 +1061,8 @@ equations:
     tex_line: 64
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 112
-        comment_line: 110
+        line: 111
+        comment_line: 109
         symbol: "segment_diameter"
   - eqid: "packing_fraction"
     section: "Density and packing"
@@ -961,8 +1077,8 @@ equations:
     tex_line: 140
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 141
-        comment_line: 140
+        line: 140
+        comment_line: 139
         symbol: "packing_fraction_from_geometry"
   - eqid: "packing_fraction_coefficient"
     section: "Density and packing"
@@ -977,8 +1093,8 @@ equations:
     tex_line: 161
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 158
-        comment_line: 157
+        line: 157
+        comment_line: 156
         symbol: "packing_fraction_coefficient"
   - eqid: "packing_moments"
     section: "Density and packing"
@@ -993,8 +1109,8 @@ equations:
     tex_line: 129
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 223
+        line: 201
+        comment_line: 222
         symbol: "residual_helmholtz"
   - eqid: "packing_volume_bounds"
     section: "Native phase coordinates"
@@ -1009,12 +1125,12 @@ equations:
     tex_line: 979
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1355
-        comment_line: 1353
+        line: 1418
+        comment_line: 1416
         symbol: "molar_volume_bounds_parameters"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1427
-        comment_line: 1426
+        line: 1490
+        comment_line: 1489
         symbol: "molar_volume_bounds"
   - eqid: "phase_dimensionless_helmholtz"
     section: "Native phase coordinates"
@@ -1036,6 +1152,38 @@ equations:
         line: 701
         comment_line: 714
         symbol: "pure_phase_helmholtz_over_rt_reference_amount"
+  - eqid: "phase_electroneutrality"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:phase_electroneutrality"
+    source: "Perdomo et al. 2025 (Perdomo2025) Eq. 35, electroneutral form of \\cite{Pereira2012} Eq. 3"
+    status: "Source equation"
+    description: "Per-phase charge neutrality for every phase with charged support."
+    change_note: "One row per charged phase."
+    latex: "\\boldsymbol z\\cdot\\boldsymbol n_p=0.\n\\label{eq:phase_electroneutrality}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1178
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 966
+        comment_line: 965
+        symbol: "evaluate_multiphase"
+  - eqid: "phase_helmholtz_amount_volume"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:phase_helmholtz_amount_volume"
+    source: "\\cite{Gross2001} Appendix A with the ideal-gas mixing term"
+    status: "Exact derivation"
+    description: "Phase Helmholtz energy over RT in amount and volume coordinates."
+    change_note: "Reference density contributes a species-linear constant only."
+    latex: "\\frac{A_p}{RT}=\\sum_i n_{p,i}\\left[\\ln\\frac{n_{p,i}}{V_p\\rho_{\\mathrm{ref}}}-1\\right]+N_p\\,a^{r}\\!\\left(T,\\frac{N_p}{V_p},\\frac{\\boldsymbol n_p}{N_p}\\right).\n\\label{eq:phase_helmholtz_amount_volume}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1128
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 416
+        comment_line: 413
+        symbol: "evaluate_phase"
   - eqid: "phase_molar_density"
     section: "Native phase coordinates"
     subsection: ""
@@ -1085,8 +1233,8 @@ equations:
     tex_line: 173
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 179
-        comment_line: 178
+        line: 178
+        comment_line: 177
         symbol: "phase_packing_fraction"
       - file: "src/epcsaft/_native/phase_block.hpp"
         line: 484
@@ -1100,6 +1248,22 @@ equations:
         line: 623
         comment_line: 621
         symbol: "inverse_packing_geometry_block"
+  - eqid: "phase_packing_volume"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:phase_packing_volume"
+    source: "Packing-fraction definition, \\cite{Gross2001} Eq. (A.8)"
+    status: "Exact derivation"
+    description: "Phase volume from the logarithmic packing coordinate."
+    change_note: "Closed form; no tape is required."
+    latex: "V_p=\\frac{\\pi}{6\\,\\eta_p}\\sum_i n_{p,i}\\,m_i\\,d_i^{3}.\n\\label{eq:phase_packing_volume}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1148
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 416
+        comment_line: 415
+        symbol: "evaluate_phase"
   - eqid: "phase_pressure"
     section: "Native phase coordinates"
     subsection: ""
@@ -1157,8 +1321,8 @@ equations:
     tex_line: 885
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 431
-        comment_line: 493
+        line: 426
+        comment_line: 488
         symbol: "state"
   - eqid: "pressure"
     section: "Thermodynamic properties"
@@ -1173,8 +1337,8 @@ equations:
     tex_line: 405
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1550
+        line: 1530
+        comment_line: 1613
         symbol: "evaluate"
   - eqid: "pressure_density_derivative"
     section: "Thermodynamic properties"
@@ -1189,9 +1353,25 @@ equations:
     tex_line: 415
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1567
+        line: 1530
+        comment_line: 1630
         symbol: "evaluate"
+  - eqid: "pressure_equality"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:pressure_equality"
+    source: "\\cite{Pereira2012} Eq. 6; \\cite{Gross2001} Eq. (A.24)"
+    status: "Source equation"
+    description: "Stationarity in phase volume: every EOS phase is at the system pressure."
+    change_note: "A stationarity row of the same minimization."
+    latex: "-\\frac{\\partial A_p}{\\partial V_p}=P.\n\\label{eq:pressure_equality}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1198
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1270
+        comment_line: 1267
+        symbol: "lagrangian_gradient"
   - eqid: "pure_active_parameter_mapping"
     section: "Native phase coordinates"
     subsection: ""
@@ -1205,9 +1385,41 @@ equations:
     tex_line: 1035
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 582
-        comment_line: 581
+        line: 644
+        comment_line: 643
         symbol: "with_active_coordinates"
+  - eqid: "reaction_affinity"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:reaction_affinity"
+    source: "Consequence of chemical_potential_stationarity with $\\mathbf{B}\\boldsymbol\\nu=0$"
+    status: "Exact derivation"
+    description: "Vanishing affinity for every reaction in the nullspace of the balance matrix."
+    change_note: "A problem with B = I has no affinity row."
+    latex: "\\sum_i\\nu_i\\,\\mu_{p,i}=\\boldsymbol\\lambda\\cdot(\\mathbf{B}\\boldsymbol\\nu)+\\varphi_p\\,(\\boldsymbol z\\cdot\\boldsymbol\\nu)=0.\n\\label{eq:reaction_affinity}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1228
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1270
+        comment_line: 1269
+        symbol: "lagrangian_gradient"
+  - eqid: "reduced_hessian_stability"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:reduced_hessian_stability"
+    source: "Second-order sufficient condition for a constrained local minimum"
+    status: "Exact derivation"
+    description: "Reduced Lagrangian Hessian over the constraint nullspace is positive definite."
+    change_note: "Certifies a local minimum only."
+    latex: "\\mathbf{Z}^{\\mathsf T}\\,\\nabla^{2}\\mathcal{L}\\,\\mathbf{Z}\\succ 0.\n\\label{eq:reduced_hessian_stability}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1238
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 1836
+        comment_line: 1835
+        symbol: "reduced_hessian_minimum"
   - eqid: "reference_molality_sequence"
     section: "Electrolyte reference states and reported activities"
     subsection: ""
@@ -1237,8 +1449,8 @@ equations:
         comment_line: 184
         symbol: "electrolyte_reference_sequence"
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1395
-        comment_line: 1394
+        line: 1458
+        comment_line: 1457
         symbol: "electrolyte_reference_sequence"
   - eqid: "residual_chemical_potential"
     section: "Thermodynamic properties"
@@ -1253,8 +1465,8 @@ equations:
     tex_line: 428
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1510
+        line: 1530
+        comment_line: 1573
         symbol: "evaluate"
   - eqid: "residual_enthalpy"
     section: "Thermodynamic properties"
@@ -1269,8 +1481,8 @@ equations:
     tex_line: 469
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1560
+        line: 1530
+        comment_line: 1623
         symbol: "evaluate"
   - eqid: "residual_entropy"
     section: "Thermodynamic properties"
@@ -1285,8 +1497,8 @@ equations:
     tex_line: 449
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1554
+        line: 1530
+        comment_line: 1617
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cp"
     section: "Thermodynamic properties"
@@ -1301,8 +1513,8 @@ equations:
     tex_line: 489
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1530
+        line: 1530
+        comment_line: 1593
         symbol: "evaluate"
   - eqid: "residual_heat_capacity_cv"
     section: "Thermodynamic properties"
@@ -1317,8 +1529,8 @@ equations:
     tex_line: 479
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1563
+        line: 1530
+        comment_line: 1626
         symbol: "evaluate"
   - eqid: "residual_helmholtz"
     section: "Residual Helmholtz energy"
@@ -1333,8 +1545,8 @@ equations:
     tex_line: 376
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 354
+        line: 201
+        comment_line: 353
         symbol: "residual_helmholtz"
   - eqid: "residual_internal_energy"
     section: "Thermodynamic properties"
@@ -1349,8 +1561,8 @@ equations:
     tex_line: 459
     implementation_refs:
       - file: "src/epcsaft/_native/eos.cpp"
-        line: 1467
-        comment_line: 1557
+        line: 1530
+        comment_line: 1620
         symbol: "evaluate"
   - eqid: "salt_free_solvent_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"
@@ -1385,8 +1597,8 @@ equations:
     tex_line: 107
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 202
-        comment_line: 321
+        line: 201
+        comment_line: 320
         symbol: "residual_helmholtz"
   - eqid: "segment_sigma_correlation"
     section: "Parameter setup"
@@ -1401,8 +1613,8 @@ equations:
     tex_line: 54
     implementation_refs:
       - file: "src/epcsaft/_native/helmholtz.hpp"
-        line: 93
-        comment_line: 92
+        line: 92
+        comment_line: 91
         symbol: "segment_sigma"
   - eqid: "single_ion_activity_coefficient"
     section: "Electrolyte reference states and reported activities"
@@ -1417,9 +1629,41 @@ equations:
     tex_line: 850
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 431
-        comment_line: 464
+        line: 426
+        comment_line: 459
         symbol: "state"
+  - eqid: "system_gibbs_helmholtz_coordinates"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:system_gibbs_helmholtz_coordinates"
+    source: "\\cite{Pereira2012} Eqs. 2--4; exact derivation from $G=\\min_V[A+PV]$"
+    status: "Exact derivation"
+    description: "System Gibbs energy at fixed T and P written in Helmholtz coordinates with standard-state offsets."
+    change_note: "Pressure equality becomes a stationarity row instead of an inner density solve."
+    latex: "\\frac{G}{RT}=\\sum_p\\left[\\frac{A_p(T,V_p,\\boldsymbol n_p)}{RT}+\\frac{PV_p}{RT}\\right]+\\sum_p\\sum_i n_{p,i}\\frac{g^{\\circ}_i}{RT}.\n\\label{eq:system_gibbs_helmholtz_coordinates}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1138
+    implementation_refs:
+      - file: "cpp/equilibrium/reactive_finite_phase.cpp"
+        line: 416
+        comment_line: 414
+        symbol: "evaluate_phase"
+  - eqid: "tangent_plane_distance"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:tangent_plane_distance"
+    source: "\\cite{Pereira2012} Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40"
+    status: "Source equation"
+    description: "Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion."
+    change_note: "A negative value is a one-sided instability witness."
+    latex: "\\mathrm{TPD}(\\boldsymbol x,v)=g(\\boldsymbol x,v)-g(\\boldsymbol x^{0},v^{0})-\\nabla_{\\boldsymbol x}g(\\boldsymbol x^{0},v^{0})\\cdot(\\boldsymbol x-\\boldsymbol x^{0}).\n\\label{eq:tangent_plane_distance}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1248
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step2.cpp"
+        line: 153
+        comment_line: 152
+        symbol: "evaluate_held2_tpd"
   - eqid: "transfer_free_energy"
     section: "Electrolyte reference states and reported activities"
     subsection: ""
@@ -1433,8 +1677,8 @@ equations:
     tex_line: 910
     implementation_refs:
       - file: "src/epcsaft/reference.py"
-        line: 518
-        comment_line: 536
+        line: 513
+        comment_line: 531
         symbol: "transfer_to"
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"
@@ -1498,87 +1742,87 @@ source_exclusions:
     symbol: "finite"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 212
+    line: 274
     symbol: "NativeModel"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1169
+    line: 1232
     symbol: "supports_pure_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1174
+    line: 1237
     symbol: "supports_fixed_topology_associating_mixture"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1181
+    line: 1244
     symbol: "supports_mixture_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1186
+    line: 1249
     symbol: "supports_electrolyte_transport"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1191
+    line: 1254
     symbol: "component_count"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1196
+    line: 1259
     symbol: "charge_numbers"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1201
+    line: 1264
     symbol: "site_components"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1206
+    line: 1269
     symbol: "site_multiplicities"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1211
+    line: 1274
     symbol: "association_active_pairs"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1216
+    line: 1279
     symbol: "molar_masses_kg_per_mol"
     reason: "serialization"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1221
+    line: 1284
     symbol: "evaluate_pure_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1228
+    line: 1291
     symbol: "evaluate_fixed_topology_association"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1237
+    line: 1300
     symbol: "evaluate_mixture_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1249
+    line: 1312
     symbol: "evaluate_phase_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1274
+    line: 1337
     symbol: "evaluate_electrolyte_phase"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1282
+    line: 1345
     symbol: "evaluate_supported_phase_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1315
+    line: 1378
     symbol: "evaluate_packing_fraction"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1323
+    line: 1386
     symbol: "evaluate_packing_fraction_parameters"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1339
+    line: 1402
     symbol: "evaluate_inverse_packing_geometry"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos.cpp"
-    line: 1957
+    line: 2020
     symbol: "evaluate_fixed_pressure_composition_derivatives"
     reason: "transport and buffer mechanics"
   - file: "src/epcsaft/_native/eos_source_reference.cpp"
@@ -1594,15 +1838,15 @@ source_exclusions:
     symbol: "sha256_fingerprint_valid"
     reason: "input and domain validation"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 56
+    line: 55
     symbol: "scalar_log"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 65
+    line: 64
     symbol: "scalar_exp"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/helmholtz.hpp"
-    line: 74
+    line: 73
     symbol: "scalar_sqrt"
     reason: "scalar utility dispatch"
   - file: "src/epcsaft/_native/phase_block.hpp"

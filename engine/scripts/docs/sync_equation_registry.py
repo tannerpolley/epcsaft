@@ -70,6 +70,12 @@ MATH_OWNER_FILES = (
     "src/epcsaft/_native/eos_source_reference.cpp",
     "src/epcsaft/eos.py",
     "src/epcsaft/reference.py",
+    "cpp/equilibrium/reactive_finite_phase.cpp",
+    "cpp/equilibrium/chemical_equilibrium.cpp",
+    "cpp/equilibrium/held2_step2.cpp",
+    "cpp/equilibrium/held2_step5.cpp",
+    "cpp/equilibrium/grepe.cpp",
+    "cpp/equilibrium/solved_state_sensitivity.cpp",
 )
 
 
