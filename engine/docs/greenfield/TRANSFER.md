@@ -92,7 +92,7 @@ Replacement rows, all real measured data already transcribed with source hashes 
 
 | oracle case | source | gates |
 |---|---|---|
-| `aqueous_amine_binary_vle` | Cai 1996, isobaric T-x-y at 101.33 kPa | 5a — boundary rows on a neutral associating binary, no ions, no reactions |
+| `aqueous_amine_binary_vle` | Cai 1996, isobaric T-x-y at 101.33 kPa | 5a — boundary rows on a neutral associating binary, no ions, no reactions; carries the Baygi reproduction |
 | `aqueous_amine_carbon_dioxide_speciation` | Jakobsen 2005 / Böttinger 2008 NMR, 293–353 K | 4 |
 | `aqueous_amine_carbon_dioxide_reactive_vle` | Jou 1995, Hilliard 2008, Xu 2011, 313–393 K | 5a |
 | `loaded_amine_density` | Amundsen 2009, ±0.0005 g/cm³ | 3, 4 — the measured counterpart of the computed density the baseline pinned |
@@ -101,10 +101,22 @@ Replacement rows, all real measured data already transcribed with source hashes 
 off in rmse-factor on pCO₂, so they cannot be pass/fail on agreement. Within `TESTING.md`
 they can gate three things: that every row *solves*; that the solved point satisfies its own
 equations (equal chemical potentials, conservation, charge, Σy = 1 to 1e-10); and a
-**published-model reproduction** — Uyan, Sadowski & Held 2015 ePC-SAFT MEA–CO₂–H₂O, whose
-parameters and reported values sit on `codex/bulow-2021-fit-reproduction`. Reproducing a
-published paper with its published parameters is a fact about the world, in the same sense
-as the Khudaida tie-lines.
+**published-model reproduction** — a fact about the world in the same sense as the
+Khudaida tie-lines.
+
+*Corrected 2026-09-02.* This first named Uyan, Sadowski & Held 2015. That paper is
+**MDEA**–CO₂–H₂O, not MEA, and the campaign that attempted it
+(`codex/bulow-2021-fit-reproduction:validation/campaigns/2015-uyan/analysis.yaml`) records
+its own failure: `grepe_ard_percent: 118.98`, `promotion_status: not-promotable`. It fails
+as a gate on both the system and the evidence.
+
+The replacement is **Baygi & Pahlavanzadeh 2015** (PC-SAFT, MEA–H₂O; MEA 3B, water 4C,
+`k_ij = −0.0520`; Table 3 reports AAD 3.54% in x_MEA and 1.54% in y_MEA against Cai 1996).
+Its parameters are *already* the Stage 2 associating-binary fixture — `2383.4744`,
+`0.118488`, `k_ij = −0.052` in `strongly_associating_binary.json` **is** Baygi's model — so
+the reproduction costs no new data. One item to read before asserting: whether Baygi's
+Eq. 11 cross-association rule matches the fixture's Wolbach–Sandler volume
+`0.1540467874409226`.
 
 ## Build order
 
@@ -252,8 +264,9 @@ three Python validation passes are not written.
 
 **Gate:** oracle case `aqueous_alkali_halide_activity` (24 rows, LiCl/NaCl/KCl mean ionic
 activity coefficients) reproduced through `Mixture.reference` within its recorded
-convergence errors; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in
-≤ 0.7 ms (today 5,250); `Mixture.state` P nine species in ≤ 5 ms (today 380–1,690).
+convergence errors; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in ≤ Stage 2's measured native case-A wall + 50 µs (today 5,250 µs; the
+≤ 0.7 ms this first said is below Stage 2's own ≤ 1.0 ms native floor — Python cannot
+beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380–1,690).
 `grep` finds no `numpy` arithmetic in `src/epcsaft/*.py` outside array marshalling.
 
 ---
