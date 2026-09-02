@@ -13,10 +13,19 @@ migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
 Kind: numerical-method
 
 Naming note (2026-09-02): this record originally labelled the protected
-incumbent by its authors. The code it refers to is now named for what it
-computes — phase stability discovery. The method is due to Held et al.; that
-attribution belongs in the source citation, not in an identifier. Provenance
-front matter and the historical route name `tp_flash` are unchanged.
+incumbent `HELD`. The code it refers to is now named for what it computes —
+phase stability discovery.
+
+`HELD` here is the name of a phase stability algorithm, **not** an attribution
+to Christoph Held, who is an ePC-SAFT author in this repository's parameter
+references (`Ji2012`, `FigielYuHeld2025`, `AscaniHeld2021`). The two are a name
+collision, and that collision is the reason the label is being removed. The
+algorithm name reached this repository through Perdomo et al. 2025
+(`10.1016/j.compchemeng.2024.108977`), which took it from earlier work; the
+algorithm's own primary citation is not recorded anywhere in this repository.
+Establishing it is open work, tracked with the naming change.
+
+Provenance front matter and the historical route name `tp_flash` are unchanged.
 
 ## Context
 
