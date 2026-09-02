@@ -1,0 +1,46 @@
+schema_version = 2
+packet_id = "zuber-2014-electrolyte-permittivity"
+packet_version = "1"
+title = "Ion-specific dielectric suppression coefficients in water, methanol and ethanol"
+description = "The alpha_i of Zuber et al. (2014) Eq. 9, D = D_solvent / (1 + sum_i alpha_i x_i), transcribed from the paper: thirty ion-specific values across three solvents, and six charge-class fallbacks for ions the paper does not fit."
+license_or_use_basis = "Numerical parameter values transcribed from the published tables; no publisher full text is included."
+tolerance_rationale = "The packet asserts no tolerance. These are fitted coefficients of an empirical correlation; the paper reports its own average relative deviations on dielectric constant (3.62% water, 3.58% methanol, 3.95% ethanol over 346, 82 and 7 points) and those are properties of the correlation, not acceptance criteria for a consumer."
+
+[[sources]]
+source_id = "zuber-2014"
+citation = "Zuber, Cardozo-Filho, Cabral, Checoni and Castier, An empirical equation for the dielectric constant in aqueous and nonaqueous electrolyte mixtures, Fluid Phase Equilibria 376 (2014) 116-123, doi:10.1016/j.fluid.2014.05.037."
+use_basis = "Fitted ion-specific coefficients of Eq. 9 (Tables 2-4) and the general charge-class parameters of Table 9."
+
+[[domains]]
+domain_id = "aqueous-single-salt-298-15-k"
+description = "Water, 35 single-salt solutions, 346 dielectric-constant points, mostly 298.15 K; per-salt maximum molalities 0.50-19.15 mol/kg (Table 6)."
+
+[[domains]]
+domain_id = "methanol-single-salt-293-15-to-298-15-k"
+description = "Methanol, 9 single-salt solutions, 82 points, 293.15-298.15 K, maximum molality 0.13-2.67 mol/kg (Table 7)."
+
+[[domains]]
+domain_id = "ethanol-single-salt-293-15-k"
+description = "Ethanol, 3 single-salt solutions, 7 points, 293.15 K, maximum molality 0.34-2.18 mol/kg (Table 8)."
+
+[[domains]]
+domain_id = "charge-class-fallback"
+description = "Table 9 general cation and anion parameters, fitted across every salt of the corresponding solvent. The paper reports higher deviations for these (5.57% water, 4.76% methanol, 28.20% ethanol) and recommends them only where an ion-specific value is unavailable."
+
+[[files]]
+path = "parameters/ion-suppression.csv"
+role = "parameters"
+media_type = "text/csv"
+sha256 = "f12e5a9c77edfe1c04ba7c19ac6e19cc1dfa9fa472d584d7b03f54816850f3d7"
+source_refs = ["zuber-2014"]
+domain_refs = ["aqueous-single-salt-298-15-k", "methanol-single-salt-293-15-to-298-15-k", "ethanol-single-salt-293-15-k", "charge-class-fallback"]
+units_basis = "The coefficient multiplies an ion mole fraction in the denominator of Eq. 9 and is dimensionless. Negative values are published as fitted (calcium and sulfate in water) and are retained unchanged."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "031e59f32a77e6186d2cc99d317c383ce9296b902ada4cadb58facfd3f955623"
+source_refs = ["zuber-2014"]
+domain_refs = ["aqueous-single-salt-298-15-k"]
+units_basis = "Retained-file identity and source locator are non-numeric provenance."

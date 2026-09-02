@@ -526,16 +526,21 @@ Hessian callbacks; today each callback re-evaluates, about ten tapes per counted
 which is worth 5–10× on the reactive solve on its own.
 
 The Ipopt driver and Stage 7's Newton are two consumers of *one* assembly, not two row sets.
-S10 is the check that holds them — and the implicit sensitivity — to one matrix.
+The assembly is Stage 6's, in `request_compile.cpp`, which rule 7 covers from Stage 6; that
+placement, not a check, is what holds the two drivers and the implicit sensitivity to one
+matrix (`SPECIFICATION-SPACE.md` §5). Their rows differ by a factor `N_p` per phase, so no
+elementwise comparison between them is possible; S10 is a finite-difference agreement.
 
 **Gate:** `SPECIFICATION-SPACE.md` §4.2 solve tier on the flash cells. S1 every solved
 cell's residual within `derived(minimizer_convergence_tolerance)` on every row, *including
 rows the driver did not iterate on* — reaction affinity, and Euler's `g_p = λ·Bx_p` per
 phase. S2 the reduced Hessian positive definite. S6 the instability certificate `G₂ < G₁`.
-S7 lever rule to 1e-8. S8 extensivity under feed doubling. S10 Ipopt's `eval_h` equal
-elementwise to 1e-12 to the boundary driver's Jacobian block and the sensitivity's. S11 the
-ideal-gas limit `K = exp(−Δg°/RT)`. Conservation and charge residuals ≤ 1e-10. Each with
-the named mutation from that table.
+S7 lever rule to 1e-8. S8 extensivity under feed doubling. S10 the assembly's `F_y` against
+centred differences of `F`, and Ipopt's `eval_h` against centred differences of the
+Lagrangian gradient, both to 1e-6. S11 the ideal-gas limit `x_β / x_α = exp(−Δg°/RT)` on
+the isomerisation. S13 the single-phase cell on every fixture. S15 a declared phase that
+vanishes ends in a named `Stop`. Conservation and charge residuals ≤ 1e-10. Each with the
+named mutation from that table.
 
 ---
 
