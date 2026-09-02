@@ -82,6 +82,60 @@ PRs target `greenfield`. Three of its policies are adopted verbatim, at no cost:
 2. a worker's own summary is never acceptance;
 3. a correction goes to the same worker, not a replacement.
 
+## Running Codex: the verified invocation
+
+Established by probing before Stage 2, not by reading documentation. Each line
+below cost something to find.
+
+```bash
+cd <worktree>
+codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
+  --output-schema <schema.json> -o <result.json> "$(cat brief.md)" \
+  < /dev/null > events.log 2>&1 &
+```
+
+| flag / step | why |
+|---|---|
+| `--add-dir "$HOME/.cache"` | `workspace-write` grants `[workdir, /tmp, $TMPDIR]` and **not** `$HOME`. Meson's CMake dependency lookup writes under `~/.cache`, so without this `find_package(Ceres)` returns `PACKAGE_FOUND is false` and configure dies at `meson.build:26`. Reproduced locally with a read-only HOME; granting `.cmake` alone does not fix it, granting `.cache` alone does. Verified end to end: configure, compile and test all pass inside the sandbox with it. |
+| `< /dev/null` | without it `codex exec` blocks on "Reading additional input from stdin..." even when the prompt is an argument, and does nothing until killed. |
+| run in background | a stage takes hours; the orchestrator's shell tool caps at ten minutes. Backgrounding also keeps the orchestrator available to the user mid-stage. |
+| `-s workspace-write`, never `danger-full-access` | the narrow grant above is sufficient for this build. |
+
+### Worktree setup, per stage
+
+```bash
+git worktree add -b stage-N ~/.codex/worktrees/gf-stage-N greenfield
+cp -r <greenfield>/engine/build/subprojects <worktree>/engine/build/    # gitignored
+cd <worktree> && uv sync                                                # never copy a venv
+```
+
+`engine/build/` is gitignored, so a fresh worktree has only `.wrap` files and
+Meson would refetch CppAD, HiGHS, Boost and NLopt.
+
+**Never copy a `.venv` between worktrees.** A copied venv keeps the source venv's
+absolute path in every script shebang, so a wheel installed through it lands in
+the *other* worktree's environment. This project has already lost a working
+environment to exactly that, by symlink rather than by copy. `uv sync` builds an
+independent one in seconds.
+
+## Environment failure is a stop, not a repair
+
+Add `environment_broken` to the stop conditions, alongside `gate_impossible` and
+`source_contradicted`.
+
+The sandbox probe showed why. A code-writing agent that hits "Ceres not found"
+mid-stage does not stop -- it helps. The plausible repair from inside that
+sandbox is to edit `meson.build` and drop or guard the Ceres dependency, after
+which everything configures, compiles, passes the physics checks, and reports
+success with the regression backend quietly amputated. That is the Stage 1
+failure shape again: a faithful agent producing a confident wrong result because
+its environment lied to it.
+
+So the brief must say, and the schema must allow: **an implementer may not modify
+`meson.build`'s dependency block, the virtual environment, the subprojects, or
+the sandbox invocation to make a build succeed.** A build that fails for
+environmental reasons is the orchestrator's problem. Stop and name it.
+
 ## Sequencing
 
 Stage 2 runs **by hand**: Opus writes the brief and drives one `codex exec` directly, so
