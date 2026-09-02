@@ -171,10 +171,14 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>& mole_fractions,
     const Parameters& parameters,
     const std::vector<double>& sigma,
-    const std::vector<double>& diameter
+    const std::vector<double>& diameter,
+    std::size_t* iterations = nullptr
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
+        if (iterations != nullptr) {
+            *iterations = 0;
+        }
         return {};
     }
     const auto delta = association_delta_values(
@@ -299,6 +303,9 @@ inline std::vector<double> solve_site_fractions(
         }
         fractions = std::move(next);
         if (residual_norm <= tolerance) {
+            if (iterations != nullptr) {
+                *iterations = iteration + 1;
+            }
             return fractions;
         }
     }
