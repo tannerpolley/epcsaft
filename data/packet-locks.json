@@ -89,9 +89,9 @@
     },
     {
       "packet_id": "mea-co2-h2o-nine-species-estimation",
-      "packet_version": "1",
-      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/1",
-      "packet_fingerprint": "d02c109c035c79ea27905eb115a9a107afa4d5299abb6f17492285142f0a7b32",
+      "packet_version": "2",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/2",
+      "packet_fingerprint": "f58eabf45a149ecce312a1c49e4095a57bb6f399fa7d6da731439597058dabd0",
       "materialization": "byte-for-byte"
     }
   ]
