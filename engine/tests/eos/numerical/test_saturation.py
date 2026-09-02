@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import math
 from copy import deepcopy
 
-from epcsaft import ActiveParameterSet, Parameters, Pure
+import pytest
+
+from epcsaft import ActiveParameterSet, Parameters, Pure, SaturationStart
 from epcsaft import unit_registry as u
 from tests.eos._cases import ASSOCIATING_PURE, neutral_pure, set_component_values
 
@@ -59,6 +62,20 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
     assert result.diagnostics.vapor_pressure_relative_residual <= 1.0e-8
     assert result.diagnostics.liquid_pressure_relative_residual <= 1.0e-8
     assert result.diagnostics.chemical_potential_absolute_residual <= 1.0e-10
+    for phase, density, chemical_potential in (
+        ("vapor", result.vapor.molar_density_mol_m3, result.vapor.chemical_potential_over_rt),
+        ("liquid", result.liquid.molar_density_mol_m3, result.liquid.chemical_potential_over_rt),
+    ):
+        state = model.state(T=300.0 * u.kelvin, rho=density * u.mole / u.meter**3)
+        assert state.pressure.to("pascal").magnitude == pytest.approx(
+            result.saturation_pressure_pa, rel=1.0e-8
+        )
+        assert math.log(density) + state.residual_chemical_potential_over_rt[0] == pytest.approx(
+            chemical_potential, rel=2.0e-12, abs=2.0e-12
+        )
+    assert result.vapor.chemical_potential_over_rt == pytest.approx(
+        result.liquid.chemical_potential_over_rt, abs=1.0e-10
+    )
 
     uncertified = model.saturation(T=100.0 * u.kelvin)
     assert uncertified.diagnostics.candidate_available
@@ -91,6 +108,21 @@ def test_public_saturation_returns_distinct_stable_equal_potential_branches() ->
         failed_candidate.diagnostics.feasibility_measure
         > failed_candidate.diagnostics.feasibility_tolerance
     )
+    neighbor = associated.saturation(T=290.0 * u.kelvin)
+    candidate = associated.saturation(T=300.0 * u.kelvin)
+    assert candidate.certified
+    reused = associated.saturation(
+        T=300.0 * u.kelvin,
+        start=SaturationStart(
+            neighbor.vapor.molar_density_mol_m3 * u.mole / u.meter**3,
+            neighbor.liquid.molar_density_mol_m3 * u.mole / u.meter**3,
+            neighbor.saturation_pressure_pa * u.pascal,
+        ),
+    )
+    assert reused.certified
+    assert reused.saturation_pressure_pa == pytest.approx(
+        candidate.saturation_pressure_pa, rel=1.0e-10
+    )
 
 
 def test_public_saturation_parameter_derivatives_match_resolved_boundaries() -> None:
@@ -107,6 +139,18 @@ def test_public_saturation_parameter_derivatives_match_resolved_boundaries() -> 
         identity="eos.pure-saturation",
         T=300.0 * u.kelvin,
     )
+    branches = {branch.identity: branch for branch in block.saturation_branches}
+    for row, identity in ((1, "vapor"), (2, "liquid")):
+        branch = branches[identity]
+        density = block.values[row]
+        assert density is not None
+        assert branch.density_bracket_mol_per_m3[0] < density < branch.density_bracket_mol_per_m3[1]
+        assert (
+            branch.pressure_relative_residual is not None
+            and branch.pressure_relative_residual <= 1.0e-8
+        )
+        assert branch.residual_density_derivative_m3_per_mol is not None
+        assert branch.residual_density_derivative_m3_per_mol > 0.0
     for column, (identity, step) in enumerate(zip(identities, steps, strict=True)):
         value = _parameter_value(mapping, identity)
         lower = deepcopy(mapping)
