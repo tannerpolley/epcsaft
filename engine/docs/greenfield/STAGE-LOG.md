@@ -3,7 +3,11 @@
 What each stage actually cost against `TRANSFER.md`'s estimate, and the decisions
 taken while writing it. Estimates are predictions; this file is the record.
 
-## Stage 0 — tree, build, checker
+Stage numbers below are the current ones (`TRANSFER.md` §"Crosswalk"). The commit
+messages of the three closed stages still carry the numbering they were written under —
+0, 1 and 2 for what are now 1, 2 and 3.
+
+## Stage 1 — tree, build, checker
 
 | item | estimate | actual |
 |---|---|---|
@@ -13,17 +17,17 @@ taken while writing it. Estimates are predictions; this file is the record.
 
 Decisions:
 
-- **`meson setup` configures at Stage 0 after all.** The gate said it would not,
+- **`meson setup` configures at Stage 1 after all.** The gate said it would not,
   because an archive with no sources is an error. It has one: CppAD's
   `temp_file.cpp`, which the archive already needed. The build configures and
-  links from Stage 0, with `_core` empty.
-- **`_core` has no sources until Stage 3**, and Meson warns that it allows this
+  links from Stage 1, with `_core` empty.
+- **`_core` has no sources until Stage 4**, and Meson warns that it allows this
   only through a bug whose support will be removed. Accepted for two stages
   rather than writing a stub module to silence it.
 - **Five rules, not four.** The regression boundary is its own rule because it is
   a symbol rule, not an include rule.
 
-## Stage 1 — physics
+## Stage 2 — physics
 
 | file | estimate | actual | note |
 |---|---|---|---|
@@ -99,4 +103,4 @@ verified by mutation — perturbing the Carnahan-Starling coefficient from 3.0 t
 - **Tape.** The kernels instantiate on `CppAD::AD<double>`, and the recorded
   tape's density derivative matches a centred difference of the double path to
   1e-7 while reproducing its value to 1e-14. Nothing else instantiates the
-  templates on an AD type until Stage 2, so this is checked here.
+  templates on an AD type until Stage 3, so this is checked here.

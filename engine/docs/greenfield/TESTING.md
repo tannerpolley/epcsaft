@@ -62,7 +62,7 @@ test-first development and it does not shape the design: the code is already
 written when the mutation runs. It answers one question that a green suite
 cannot -- *is this suite checking anything at all?*
 
-It is not hypothetical. Stage 1's first suite passed while checking nothing: the
+It is not hypothetical. Stage 2's first suite passed while checking nothing: the
 build sets `b_ndebug=if-release` with `buildtype=release`, `NDEBUG` erased every
 `assert`, and `meson test` reported the physics suite green. The mutation caught
 it; nothing else would have. See `STAGE-LOG.md`.

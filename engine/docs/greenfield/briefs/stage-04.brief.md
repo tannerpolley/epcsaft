@@ -1,10 +1,10 @@
-# Stage 3 — `bindings/` and the Python EOS surface
+# Stage 4 — `bindings/` and the Python EOS surface
 
-You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-3`).
+You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-3`).
 You have no one to ask. Read, in order, before writing anything:
 
 1. `engine/docs/greenfield/TESTING.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 3", §"Units: C++ resolves them, Python only
+2. `engine/docs/greenfield/TRANSFER.md` §"Stage 4", §"Units: C++ resolves them, Python only
    reads the file", §"The MEA parameter set is the living bundle", §"Naming"
 3. `engine/docs/greenfield/STAGE-LOG.md` — Stages 0–2 decisions; you build on them
 4. `engine/native/model/helmholtz_model.hpp` completely — it is the surface you bind

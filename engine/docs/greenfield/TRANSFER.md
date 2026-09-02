@@ -16,16 +16,16 @@ data and counters, never against the old code.
 
 | issue | migration content | survives as | writing work |
 |---|---|---|---|
-| #195 layout and gate | move `_native/` → `native/`, reconcile three archives to one, fix the checker's contradicted module ban | the tree shape and the four checker rules | Stage 0, ~180 lines (checker + meson) |
-| #186 numerical policy | find 15 `R` definitions, 12 duplicated names, unify | `physical_constants.hpp` + `numerical_policy.hpp` written before any consumer | Stage 1, 280 lines |
-| #189 EOS derivatives | replace `(S+1)` Hessians, add tape cache, Newton association | one Lagrangian Hessian, site elimination, cached `ADFun` | Stage 2, 350 lines |
-| #190 EOS Python | strip numerics from Python, cut exports to 11, replace `py::dict` round trips | Python as a pure mapping layer, `py::class_` bindings | Stage 3, 1,100 lines |
-| #191 Problem/Result | collapse 6 specification types and 2 request families | one degrees-of-freedom `Problem`, one `EquilibriumResult` | Stage 4, 1,050 lines |
-| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, `solve_phase_boundary` as its rows | Stage 5, 1,650 lines |
-| #188 phase stability | delete HELD v1 (3,051) and HELD2 steps 8–10 (3,338); fix the neutral-chart sentinel | `find_phases` written to Pereira 2012 | Stage 6, 1,100 lines |
-| #192 regression | remove owner compilation from the fit path | `fit(model, observations)` on Ceres | Stage 7, 890 lines |
-| #196 consumers | migrate analyses and two downstream repos, rename result fields | the same migration — this one does not change | Stage 8, unchanged scope |
-| #181 policy-edit gate | reject unreviewed solver-policy edits | folds into Stage 1's duplicate-constant gate | — |
+| #195 layout and gate | move `_native/` → `native/`, reconcile three archives to one, fix the checker's contradicted module ban | the tree shape and the four checker rules | Stage 1, ~180 lines (checker + meson) |
+| #186 numerical policy | find 15 `R` definitions, 12 duplicated names, unify | `physical_constants.hpp` + `numerical_policy.hpp` written before any consumer | Stage 2, 280 lines |
+| #189 EOS derivatives | replace `(S+1)` Hessians, add tape cache, Newton association | one Lagrangian Hessian, site elimination, cached `ADFun` | Stage 3, 350 lines |
+| #190 EOS Python | strip numerics from Python, cut exports to 11, replace `py::dict` round trips | Python as a pure mapping layer, `py::class_` bindings | Stage 4, 1,100 lines |
+| #191 Problem/Result | collapse 6 specification types and 2 request families | one degrees-of-freedom `Problem`, one `EquilibriumResult` | Stage 6, 1,050 lines |
+| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, `solve_phase_boundary` as its rows | Stage 7, 1,650 lines |
+| #188 phase stability | delete HELD v1 (3,051) and HELD2 steps 8–10 (3,338); fix the neutral-chart sentinel | `find_phases` written to Pereira 2012 | Stage 11, 1,100 lines |
+| #192 regression | remove owner compilation from the fit path | `fit(model, observations)` on Ceres | Stage 10, 890 lines |
+| #196 consumers | migrate analyses and two downstream repos, rename result fields | the same migration — this one does not change | Stage 12, unchanged scope |
+| #181 policy-edit gate | reject unreviewed solver-policy edits | folds into Stage 2's duplicate-constant gate | — |
 | #178 build retention | bound build-tree and wheel-cache growth | orthogonal to the tree; stays on `main` | — |
 
 Two issues are wholly absorbed (#181 into #186's gate, #178 unaffected). Six lose their
@@ -46,62 +46,87 @@ overrun is recorded here rather than absorbed silently.
 
 ## Execution order
 
-Revised 2026-09-02. Stage *numbers* are names — they are in commit messages, `STAGE-LOG.md`,
-the briefs and the checker — so the numbers stay and only the run order changes. The order
-is the include direction (`physics ← model ← equilibrium ← regression ← bindings`) with two
-deliberate exceptions: saturation runs directly after the EOS, and bindings land early so
-that every later stage is testable from Python against the oracle. No workload is
-prioritised; the engine is built inside-out.
+One number per stage. There is no separate "run" and "stage" numbering any more: the
+sequence below *is* the identifier, and the old numbering (which kept `TRANSFER.md`'s first
+draft order as names) is retired. §"Crosswalk" maps the old labels for the three closed
+stages, whose commit messages still carry them.
 
-| run | stage | writes | state |
-|---|---|---|---|
-| 1 | **0** tree, build, checker | layer tree, one archive, seven rules | closed `e4d964c` |
-| 2 | **1** `physics/` | six carried kernels, the policy header | closed `8bc6419` |
-| 3 | **2** `model/` | one tape per topology, one Lagrangian Hessian, density | closed `a2a2ac5` |
-| 4 | **5b** saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | planned |
-| 5 | **3** bindings and Python EOS | `bindings/`, `src/epcsaft/` as a mapping layer, Pint removed | running; brief `stage-3.brief.*`, base `e4122b3` |
-| 6 | **T** tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` as the one record every solver returns; the three floors the tree can already measure (association pivot ratio, tape gradient floor, density root) | designed — `TOLERANCES.md` |
-| 7 | **4** specification and minimizer | `problem.hpp`, `stoichiometry`, `request_compile`, `gibbs_minimizer` | designed; skeleton lattice in progress |
-| 8 | **5a** phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; T or P unknown | designed |
-| 9 | **7** `regression/` | `fit(model, observations)` on Ceres, covariance | planned |
-| 10 | **6** phase stability | `find_phases` written to Pereira 2012 | planned |
-| 11 | **8** composite gate and merge | every layer at once; one merge of `greenfield` into `main` | planned |
+The order is the include direction (`physics ← model ← equilibrium ← regression ←
+bindings`) with two deliberate departures: bindings land early so every later stage is
+testable from Python against the oracle, and saturation is the first equilibrium stage —
+the first thing built on the rows, before the flash. No workload is prioritised; the engine
+is built inside-out.
 
-**Saturation before the minimizer.** Pure saturation is two rows — equal chemical
-potential and equal pressure between two phases of one component — over the density
-closure Stage 2 already provides. It needs nothing from the minimizer, so it is written
-first, as the one-component form of the boundary system. Stage 5a then adds the
-multicomponent rows to the *same* file and the same system; saturation is not
-reimplemented, it is the case the general rows reduce to. The Stage 5 gate text
-below still reads as one stage; 5b takes the saturation half, 5a the boundary half.
+Every stage owns exactly one brief pair, `briefs/stage-NN.brief.{md,json}`, written by the
+planner and preflighted before a worker starts. Where a stage needs a design document
+larger than a brief, it is named here and is the brief's specification.
 
-**Stage 4 versus Stage 5, disambiguated.** §"Problem as a degrees-of-freedom specification"
-lists "fixed T with an incipient partner solving P" among the patterns that fall out without
-a branch, and Stage 4's gate *accepts* that pattern in the well-posedness check. But it
-cannot be a row of the minimizer: an incipient phase has zero amount, and `ln n_p` is `ln 0`.
-Its rows are boundary rows, so they belong to 5a.
+| # | stage | writes | design document | state |
+|---|---|---|---|---|
+| 1 | tree, build, checker | layer tree, one archive, seven rules | — | **closed** `e4d964c` |
+| 2 | `physics/` | six carried kernels, the policy header written fresh | — | **closed** `8bc6419` |
+| 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `performance_floor.md` | **closed** `a2a2ac5` |
+| 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | — | **running** — brief base `e4122b3` |
+| 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
+| 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` (to re-land) | designed |
+| 7 | saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §4.2 | designed |
+| 8 | Gibbs minimizer | `gibbs_minimizer.{hpp,cpp}` — the Ipopt driver for the flash | `SPECIFICATION-SPACE.md` | designed |
+| 9 | phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; `T` or `P` free | `SPECIFICATION-SPACE.md` | designed |
+| 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
+| 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
+| 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
 
-**Stage T is a core, not a layer.** `TOLERANCES.md` is its specification. It sits in the
-run order between 3 and 4 because everything it adds to `physics/` and `model/` can be
-written and mutation-tested against the tree that exists after Stage 3, and everything
-Stage 4, 5a and 7 must then do — the running maximum of the gradient floor, `κ_KKT` from
-the sensitivity factorisation, the aggregate fit floor — is a commitment those briefs
-inherit rather than a mechanism they invent. Its gate is the one the document names: a
-`derived()` tighter than its input does not compile; every solver result carries
-`residual`, `tolerance`, `floor`, `amplification` and a named stop; the old tree's
-`3e-10 > 2e-10` inversion is rejected by the nominal floor with factor one.
+**Saturation before the flash, and why it is Stage 7 and not Stage 4.** Pure saturation is
+the `k = 1`, `f = 1` cell of the one row system: one phase pinned at zero amount, `P` free
+(`SPECIFICATION-SPACE.md` §2.3). It is two rows over the density closure Stage 3 already
+provides and it needs no flash seed — a Clausius–Clapeyron estimate is enough. What it does
+need is the row assembly and the compile step, because writing its own chemical-potential
+residuals would be the second route the whole rebuild exists to remove
+(`SPECIFICATION-SPACE.md` §7.1). So it runs as early as it can: immediately after the
+specification stage, before the minimizer, and Stage 9 adds the multicomponent rows to the
+same file. Saturation is never reimplemented; it is the case the general rows reduce to.
 
-**Outside the engine, but staged.** Two pieces of work need planning, a brief and
-acceptance like a stage, and touch the engine without being a layer of it:
+**Why the specification and the minimizer are two stages.** They were one 2,250-line stage.
+`SPECIFICATION-SPACE.md` §9 splits them at a seam it identifies itself: the compile tier's
+checks C1–C8 are green on the compile step alone, before any solver exists, and it
+recommends writing them first for exactly that reason. Splitting there gives Stage 6 a gate
+that needs no driver, and lets saturation sit between the two.
 
-| stage | writes | gate |
+**Stage 5 is a core, not a layer.** `TOLERANCES.md` is its specification. It sits between 4
+and 6 because everything it adds to `physics/` and `model/` can be written and
+mutation-tested against the tree that exists after Stage 4, and everything Stages 8, 9 and
+10 must then do — the running maximum of the gradient floor, `κ_KKT` from the sensitivity
+factorisation, the aggregate fit floor — is a commitment those briefs inherit rather than a
+mechanism they invent. Its gate is the one the document names: a `derived()` tighter than
+its input does not compile; every solver result carries `residual`, `tolerance`, `floor`,
+`amplification` and a named stop; the old tree's `3e-10 > 2e-10` inversion is rejected by
+the nominal floor at factor one.
+
+### Outside the engine
+
+Work that needs a brief, a gate and acceptance exactly like a stage, but is not a layer of
+the engine. Lettered, not numbered, so the engine sequence stays unbroken.
+
+| # | stage | writes | design document | gate |
+|---|---|---|---|---|
+| P | packet contract cut | one provenance form (`origin: {repo, commit, path, sha256}` per file); the lock manifest removed; the manifest's duplicated header dropped where the data file carries it; `validate_packets.py` and `data/docs/packet-contract.md` rewritten; the 14 packets migrated | `PACKET-CONTRACT-CUT.md` (to write) | every packet validates; every hash the old form recorded still resolves; the in-place edit found on 2026-09-02 is rejected by the new check |
+| C | consumers (#196) | `analyses/`, the MEA and Lithium repositories, result field names, packet names | — | each consumer's own suite green on the greenfield wheel |
+
+### Crosswalk
+
+Commit messages, `STAGE-LOG.md` headings and the three closed stages' briefs carry the old
+labels. Nothing else does.
+
+| old | new | note |
 |---|---|---|
-| **P** packet contract cut | one provenance form (`origin: {repo, commit, path, sha256}` per file); the lock manifest removed; the manifest's duplicated header dropped where the data file carries it; `validate_packets.py` and `packet-contract.md` rewritten; the 14 packets migrated | every packet validates; every hash the old form recorded still resolves; the in-place edit found on 2026-09-02 is rejected by the new check |
-| **C** consumers (#196) | `analyses/`, the MEA and Lithium repositories, result field names, packet names | each consumer's own suite green on the greenfield wheel |
-
-**Consumers are not an engine stage.** Migrating `analyses/`, the MEA and Lithium repositories,
-result field names and packet names (#196) is owed regardless of the rebuild and happens
-against the finished engine. It is tracked under "Outside the engine", not in this table.
+| 0, 1, 2 | 1, 2, 3 | closed; commit messages unchanged |
+| 3 | 4 | brief renamed `stage-04.brief.*`; the in-flight worker holds its own copy |
+| T | 5 | never had a number |
+| 4 | 6 and 8 | split at the compile/driver seam |
+| 5b, 5a | 7, 9 | were halves of one "Stage 5" |
+| 7 | 10 | regression |
+| 6 | 11 | phase stability |
+| 8 | 12 | composite gate and merge |
 
 ## Oracle
 
@@ -127,13 +152,13 @@ set is the model under development and a threshold would test the fit, not the c
 The rows do not name stages and stages do not name rows: a stage's gate says which
 *capability* it makes available, and whichever oracle cases exercise that capability run
 from then on. A case that a stage makes solvable stays in the run for every later stage.
-Stage 3's brief resolved the activity tolerance above; the saturation and analytic-reaction
-constructors are owed by the 5b and 4 briefs.
+Stage 4's brief resolved the activity tolerance above; the saturation constructor is owed
+by Stage 7's brief and the analytic-reaction constructor by Stage 8's.
 
-## Correction: the Stage 8 reactive gate is a golden file
+## Correction: the Stage 12 reactive gate is a golden file
 
 `TESTING.md` bans golden files of computed output — "a number that came out of this code is
-not evidence that this code is right." The Stage 8 gate as first written pins the liquid
+not evidence that this code is right." The Stage 12 gate as first written pins the liquid
 molar densities from `reactive_vle_baseline.json` (46,425–47,148 mol/m³), which are exactly
 that: this engine's own output. The rule catches the plan that introduced it.
 
@@ -142,9 +167,9 @@ Replacement rows, all real measured data already transcribed with source hashes 
 
 | oracle case | source | gates |
 |---|---|---|
-| `aqueous_amine_binary_vle` | Cai 1996, isobaric T-x-y at 101.33 kPa | 5a — boundary rows on a neutral associating binary, no ions, no reactions; carries the Baygi reproduction |
+| `aqueous_amine_binary_vle` | Cai 1996, isobaric T-x-y at 101.33 kPa | 9 — boundary rows on a neutral associating binary, no ions, no reactions; carries the Baygi reproduction |
 | `aqueous_amine_carbon_dioxide_speciation` | Jakobsen 2005 / Böttinger 2008 NMR, 293–353 K | 4 |
-| `aqueous_amine_carbon_dioxide_reactive_vle` | Jou 1995, Hilliard 2008, Xu 2011, 313–393 K | 5a |
+| `aqueous_amine_carbon_dioxide_reactive_vle` | Jou 1995, Hilliard 2008, Xu 2011, 313–393 K | 9 |
 | `loaded_amine_density` | Amundsen 2009, ±0.0005 g/cm³ | 3, 4 — the measured counterpart of the computed density the baseline pinned |
 
 **These rows test the parameter set as much as the code**, and the current bundle is 2.26×
@@ -162,7 +187,7 @@ as a gate on both the system and the evidence.
 
 The replacement is **Baygi & Pahlavanzadeh 2015** (PC-SAFT, MEA–H₂O; MEA 3B, water 4C,
 `k_ij = −0.0520`; Table 3 reports AAD 3.54% in x_MEA and 1.54% in y_MEA against Cai 1996).
-Its parameters are *already* the Stage 2 associating-binary fixture — `2383.4744`,
+Its parameters are *already* the Stage 3 associating-binary fixture — `2383.4744`,
 `0.118488`, `k_ij = −0.052` in `strongly_associating_binary.json` **is** Baygi's model — so
 the reproduction costs no new data. One item to read before asserting: whether Baygi's
 Eq. 11 cross-association rule matches the fixture's Wolbach–Sandler volume
@@ -170,17 +195,14 @@ Eq. 11 cross-association rule matches the fixture's Wolbach–Sandler volume
 
 ## Build order
 
-The order is forced by the include direction (`physics ← model ← equilibrium ← regression
-← bindings`) except that bindings and the Python mapping layer land early, at Stage 3, so
-that every later stage is testable from Python against the oracle. Nothing is written
-without a way to run it.
-
-Each stage is one PR onto `greenfield`. A stage closes when its gate passes; no stage
-begins before the previous one's gate passes.
+Detail per stage, in the run order of §"Execution order". Each stage is one PR onto
+`greenfield`, owns one brief pair `briefs/stage-NN.brief.{md,json}`, and closes when its
+gate passes and every mutation has been shown to make it red. No stage begins before the
+previous one's gate passes. Line counts are predictions; `STAGE-LOG.md` records the actual.
 
 ---
 
-### Stage 0 — Tree, build, checker
+### Stage 1 — Tree, build, checker
 
 Write: `engine/native/{physics,model,equilibrium,regression,bindings}/` (empty),
 `meson.build` producing one static archive `epcsaft_native` and one extension `_core`,
@@ -202,17 +224,17 @@ differentiable residuals, and a discovered phase count is not one.
 Delete in the same commit: `engine/src/epcsaft/_native/`, `engine/cpp/`,
 `engine/tests/*/numerical/`, `engine/tests/*/behavior/`, and every Python module except
 the three that survive (`CARRY-OVER.md` §4). The branch does not build after this commit
-and is not expected to until Stage 3.
+and is not expected to until Stage 4.
 
 **Gate:** the checker reports every rule green over the emptied tree, and each rule
-is shown to fail on a deliberate violation. Stage 0 landed five; rules 6 (no threshold
-literals) and 7 (solvers are case-blind) landed later and are held to the same standard. `meson setup` does not configure until Stage 1
+is shown to fail on a deliberate violation. Stage 1 landed five; rules 6 (no threshold
+literals) and 7 (solvers are case-blind) landed later and are held to the same standard. `meson setup` does not configure until Stage 2
 supplies the first sources — a Meson archive with no source files is an error — so the
-build gate begins at Stage 1.
+build gate begins at Stage 2.
 
 ---
 
-### Stage 1 — `physics/` (950 lines)
+### Stage 2 — `physics/` (950 lines)
 
 `physical_constants.hpp` (30), `numerical_policy.hpp` (250), `helmholtz.hpp` (200),
 `association.hpp` (150), `electrolyte.hpp` (260), `born.hpp` (60).
@@ -225,7 +247,7 @@ category (1 physical constant / 2 thermodynamic constraint / 3 algorithm toleran
 4 unjustified legacy). Category-4 entries are not carried; each one is either justified
 into category 3 with a source or replaced with the paper's value.
 
-The HELD2 tolerance drift is resolved here, not in Stage 6: the candidate gap `ε_b`
+The HELD2 tolerance drift is resolved here, not in Stage 11: the candidate gap `ε_b`
 enters as the paper's `1e-2` (not the drifted `5e-2`), and the composition floor as
 `1e-8` (not `1e-10·f_k`). The seven density-root tolerances that HELD2 owned
 (`root_*`, `mechanical_margin`, `stable_objective_tie`) enter as `model/density` entries.
@@ -236,7 +258,7 @@ or a solver.
 
 ---
 
-### Stage 2 — `model/` (1,810 lines)
+### Stage 3 — `model/` (1,810 lines)
 
 `helmholtz_tape.hpp` (350), `helmholtz_model.{hpp,cpp}` (750), `density.cpp` (250),
 `infinite_dilution_reference.cpp` (450).
@@ -258,7 +280,7 @@ Hessian set.
 
 **Gate, correctness:** the `(S+1)`-Hessian tensor and the one-Lagrangian-Hessian tensor
 agree elementwise to **1e-10** on the nine-species case — two exact AD formulations, so the
-threshold is real. This licenses the 7× and is the only thing in Stage 2 that can
+threshold is real. This licenses the 7× and is the only thing in Stage 3 that can
 invalidate the floor. Derivatives against centred finite differences agree to **1e-6**,
 not 1e-10: centred FD in double precision bottoms out near 1e-8, so the tighter figure this
 gate first carried was unreachable by construction.
@@ -272,13 +294,13 @@ Three conditions the floor depends on, which the original gate stated as bare nu
 - **"One `ADFun` per topology" is an insufficient cache key.** Two predicates in
   `physics/electrolyte.hpp` are evaluated from `double` inputs *while recording* and baked
   into the tape: the `finite_size_chi` series switch per ion (`:332`) and the
-  `reference_charge_square_sum == 0.0` branch (`:242`). Both flip inside Stage 2's own
+  `reference_charge_square_sum == 0.0` branch (`:242`). Both flip inside Stage 3's own
   scope — the dilute end of the molality ladder takes the series, a pure-solvent state
   inside an electrolyte model takes the no-ion branch. A tape keyed on topology alone is
   silently wrong across them, with no error raised. Key on (active set, predicate
   signature) and re-record when it changes.
 - **Association iteration counts need a three-line physics edit** — an optional
-  `std::size_t*` out-parameter on `solve_site_fractions`. Stage 1 removed the kernel
+  `std::size_t*` out-parameter on `solve_site_fractions`. Stage 2 removed the kernel
   counters on the grounds that the tape owns evaluation accounting; without this the row is
   reported as unmeasured.
 
@@ -290,18 +312,18 @@ the associating binary at 376.88 K in **≤ 5 association iterations** per solve
 **Measurement is a native harness, `tests/native/model_floor.cpp`, not
 `oracle/measure_floor.py`.** The Python script opens `import epcsaft` and reads its
 counters from `_core._instrumentation()` (`measure_floor.py:12,21`), and `_core` is built
-from `bindings/` at Stage 3 — so the gate as first written could not run at the stage that
+from `bindings/` at Stage 4 — so the gate as first written could not run at the stage that
 makes the claim. The harness times and counts the tape directly, on the same case, median
-of 20 after 3 warm-ups, `OMP_NUM_THREADS=1`, recording commit, compiler and CPU. Stage 3
+of 20 after 3 warm-ups, `OMP_NUM_THREADS=1`, recording commit, compiler and CPU. Stage 4
 re-runs the same case through `measure_floor.py` and the two must agree; a divergence is
-marshalling, which is Stage 3's to account for.
+marshalling, which is Stage 4's to account for.
 
-*This defect was found by executing the plan's own claims against the tree before Stage 2
+*This defect was found by executing the plan's own claims against the tree before Stage 3
 began, which is the mechanism described in `ORCHESTRATION.md`.*
 
 ---
 
-### Stage 3 — `bindings/` and Python EOS (1,100 + 1,240 lines)
+### Stage 4 — `bindings/` and Python EOS (1,100 + 1,240 lines)
 
 `bindings/{module,eos_bindings}.cpp` (550), and `src/epcsaft/` `__init__.py`, `units.py`,
 `parameters.py`, `eos.py`, `reference.py`, `_core.pyi`.
@@ -318,74 +340,178 @@ activity coefficients) reproduced through `Mixture.reference` within
 `derived(activity_reproduction_tolerance)` — the rows carry `measured_...` and the
 conditions, and nothing else; the "recorded convergence errors" this first named were a
 computed column the oracle rebuild deleted. The brief constructs the factor from the
-parameter set's own reported deviation on these salts; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in ≤ Stage 2's measured native case-A wall + 50 µs (today 5,250 µs; the
-≤ 0.7 ms this first said is below Stage 2's own ≤ 1.0 ms native floor — Python cannot
+parameter set's own reported deviation on these salts; `Mixture.state` ρ neutral in ≤ 110 µs (today 460), nine species in ≤ Stage 3's measured native case-A wall + 50 µs (today 5,250 µs; the
+≤ 0.7 ms this first said is below Stage 3's own ≤ 1.0 ms native floor — Python cannot
 beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380–1,690).
 `grep` finds no `numpy` arithmetic in `src/epcsaft/*.py` outside array marshalling.
 
 ---
 
-### Stage 4 — `equilibrium/` specification and minimizer (2,250 lines)
+### Stage 5 — tolerance core (260 lines)
 
-`problem.hpp` (300), `stoichiometry.{hpp,cpp}` (920), `request_compile.cpp` (600),
-`gibbs_minimizer.{hpp,cpp}` (1,350) — and `problem.py` (450), `loader.py` (250).
+`numerical_policy.hpp` (+80), `association.hpp` (+15), `helmholtz_model.hpp` (+10),
+`density.cpp` (+35), plus `tests/native/tolerance_checks.cpp` (120).
 
-This is #191 plus the core of #187. One objective:
+`TOLERANCES.md` is the specification. A nested stopping test cannot demand more accuracy
+than its inputs carry: the outer residual's **floor** is the sum of the inner tolerances
+amplified through their own conditioning at the solved point. The old tree tested a bubble
+residual against `2e-10` while its two inner solves carried `3e-10` between them, so
+eighteen *successful* closures were reported as iteration-limit failures.
 
-    G = Σ_p [A_p(T, V_p, n_p) + P V_p] + Σ g° n     over (ln n_p, ln η_p)
+Three parts. `derived(upstream, factor, why)` is `consteval` and refuses a tolerance
+tighter than its input, making the inversion unwritable rather than discouraged. Every
+solver returns one `Convergence` record — achieved `residual`, the `tolerance` it was tested
+against, the `floor` its inputs allow, and the `amplification` that produced it — so a
+declared factor is a hypothesis the runtime can falsify. `Stop` replaces "iteration limit
+reached" with seven named outcomes, of which `converged_to_floor` is a success with a
+stated accuracy.
 
-Phase equilibrium, chemical equilibrium, and the coupled problem are the same KKT system
-with `B = I`, one phase, or both; the affinity vanishes because `Bν = 0`. Pressure
-equality is a stationarity row, not an inner density solve.
+The three floors this stage can already measure are all quantities the tree computes
+anyway: the association Newton's pivot ratio, the tape's gradient floor from the Schur
+product `Φ_yX Φ_XX⁻¹` already formed for the Hessian, and the density root's `1/|dr/dρ|`.
+Stages 8, 9 and 10 inherit the rest as commitments.
 
-`Problem` is the activation matrix the user specified, not a union of route classes: the
-caller declares which variables are specified, and the equation set is forced.
-`compile_phase_direction_system` is the well-posedness check — unknowns against
-independent equations, failing by naming the deficiency. Fixed T,P; fixed T with an
-incipient partner solving P; fixed P solving T; reactive; nonreactive as `B = I`;
-electrolyte as the charge row; omitted topology as `Π` unknown — all fall out without a
-branch. Six `Ipopt::TNLP` subclasses become one `GibbsMinimizer`.
-
-One state evaluation per Ipopt iteration, served to the objective, gradient, constraint
-Jacobian, and Hessian callbacks. Today each callback re-evaluates: ~10 tapes per counted
-evaluation. This is worth 5–10× on the reactive solve on its own.
-
-**Gate:** the well-posedness check accepts each of the seven patterns above and rejects a
-deficient one by name; conservation and charge residuals ≤ 1e-10; the homogeneous
-analytic reaction case to `derived(minimizer_convergence_tolerance)` — the closed form is
-exact, the solve that reaches it is not, and a gate written below the minimizer's own
-convergence floor tests the floor rather than the equations. The brief constructs the
-factor; no literal appears in the check (rule 6).
+**Gate:** a `derived()` call tighter than its input fails to compile; the old tree's
+`3e-10 > 2e-10` shape is rejected by the nominal floor at factor one; every solver result
+carries the four numbers and a named stop; a solve driven below its floor reports
+`converged_to_floor` rather than a failure.
 
 ---
 
-### Stage 5 — `phase_boundary` and saturation (550 lines)
+### Stage 6 — `equilibrium/` specification (1,000 lines)
 
-`phase_boundary.cpp` (300), `implicit_sensitivity.cpp` (250).
+`problem.hpp` (300), `stoichiometry.{hpp,cpp}` (920 → range 600–900), `request_compile.cpp`
+(600) — and `problem.py` (450). No driver, no solve.
 
-Saturation is not a file. `solve_saturation` is the one-component, two-phase call of
-`solve_phase_boundary`; `Pure.saturation` in Python calls that binding. The three Newton
+This is #191. `SPECIFICATION-SPACE.md` is the specification. One row system, compiled from a
+specification by one rule:
+
+    rows − unknowns = k − f
+
+with `k` pinned phases and `f` free intensives; square iff `f = k`, and rank at a generic
+point is the sufficient check. The flash is `k = f = 0`; a boundary is `k = f = 1`; a
+three-phase point is `k = f = 2`. No route is named anywhere — bubble and dew differ only
+in *which* phase is pinned.
+
+`Problem` is data with no method that solves. `request_compile.cpp` is the one file allowed
+to branch, and only on status flags: it resolves the feed basis to amounts (natively —
+mass-fraction and molality conversion is arithmetic, which Python may not do), builds `B`
+from the reaction span by SVD, applies the count rule, assembles the active row list with
+its `EqID`s, takes the rank, and either returns a `CompiledSystem` or throws naming the
+deficiency.
+
+**Gate:** the compile-tier lattice of `SPECIFICATION-SPACE.md` §4.1, walked exhaustively —
+about 3,200 specifications from four enums, none sampled. C1 count rule against a predictor
+built from the specification alone; C2 every unreachable cell rejected by a message naming
+the offending phase, reaction or species; C3 nullity 0 on every square cell and ≥ 1 where
+all phases are pinned; C4 feed-basis invariance across four bases to 1e-12; C5
+reaction-basis invariance under any invertible mixing; C6 the pinned specification's
+residual equals the flash's at the same point with `N_q = 0`; C7 permutation to 1e-14; C8
+an electrolyte flash compiles with nullity 0. Each with the named mutation from that table.
+
+---
+
+### Stage 7 — saturation (300 lines)
+
+`phase_boundary.cpp` (300) opens with its one-component rows; `implicit_sensitivity.cpp`
+(250) lands with it.
+
+Saturation is not a file and not a route. `solve_saturation` is the `C = 1`, `k = 1`,
+`f = 1` call of `solve_phase_boundary`: one phase pinned at zero amount, `P` free, over the
+rows Stage 6 compiled. `Pure.saturation` in Python calls that binding. The three Newton
 systems in the old tree (`density.hpp`, `pure_saturation.cpp`, `incipient_closure` +
-`coexistence.cpp`) are rows of the one system, selected by which variables are unknown.
-The one exception kept as distinct numerics: the 1-D density root keeps its bracketed
-scalar solver, because multiple roots need branch selection.
+`coexistence.cpp`) are rows of the one system, selected by which variables are unknown. The
+one exception kept as distinct numerics: the 1-D density root keeps its bracketed scalar
+solver, because multiple roots need branch selection.
 
 The 21-start grid (7 vapour × 3 liquid) is not written. Two or three seeds from a
 Clausius–Clapeyron estimate, and continuation from the previous point when the caller is
 sweeping — the change that took the existing fit from 3,509 ms to 330 ms with identical
 fitted parameters.
 
-**Gate:** oracle case `light_alkane_saturation` (10 rows: ethane against NIST SRD 69)
-to `measured_pressure_pa` and `measured_liquid_density_kg_m3` — the two
-columns the rows actually carry — within `derived(saturation_reproduction_tolerance)`,
-constructed in the brief from the parameter set's own reported deviation, not from what
-this engine happens to return; `Pure.saturation` cold in
-**≤ 1 ms** (today 454) at **≤ 25 evaluations** (today 5,422); bubble/dew Jacobians
-against centred differences.
+If this stage writes its own chemical-potential residuals rather than calling Stage 6's
+assembly, the rebuild has failed in the exact way it exists to prevent
+(`SPECIFICATION-SPACE.md` §7.1). The gate's S5 and S9 are what see it.
+
+**Gate:** oracle case `light_alkane_saturation` (10 rows: ethane against NIST SRD 69) to
+`measured_pressure_pa` and `measured_liquid_density_kg_m3` — the two columns the rows
+actually carry — within `derived(saturation_reproduction_tolerance)`, constructed in the
+brief from the parameter set's own reported deviation, not from what this engine happens to
+return. S5 round trip: solve `P` at fixed `T`, then `T` at that `P`, and recover `T`. S9
+sensitivity against centred differences to 1e-6. **Reported, not pass/fail:**
+`Pure.saturation` cold in ≤ 1 ms (today 454) at ≤ 25 evaluations (today 5,422).
 
 ---
 
-### Stage 6 — `phase_stability.cpp` (1,100 lines, range 950–1,300)
+### Stage 8 — Gibbs minimizer (1,350 lines)
+
+`gibbs_minimizer.{hpp,cpp}` (1,350) — and `loader.py` shrinks, because the feed-basis
+arithmetic it was budgeted for moved into Stage 6's compile.
+
+This is the core of #187. One objective:
+
+    G = Σ_p [A_p(T, V_p, n_p) + P V_p] + Σ g° n
+
+Six `Ipopt::TNLP` subclasses become one `GibbsMinimizer`, the driver for `k = 0`. One state
+evaluation per Ipopt iteration, served to the objective, gradient, constraint Jacobian and
+Hessian callbacks; today each callback re-evaluates, about ten tapes per counted evaluation,
+which is worth 5–10× on the reactive solve on its own.
+
+The Ipopt driver and Stage 7's Newton are two consumers of *one* assembly, not two row sets.
+S10 is the check that holds them — and the implicit sensitivity — to one matrix.
+
+**Gate:** `SPECIFICATION-SPACE.md` §4.2 solve tier on the flash cells. S1 every solved
+cell's residual within `derived(minimizer_convergence_tolerance)` on every row, *including
+rows the driver did not iterate on* — reaction affinity, and Euler's `g_p = λ·Bx_p` per
+phase. S2 the reduced Hessian positive definite. S6 the instability certificate `G₂ < G₁`.
+S7 lever rule to 1e-8. S8 extensivity under feed doubling. S10 Ipopt's `eval_h` equal
+elementwise to 1e-12 to the boundary driver's Jacobian block and the sensitivity's. S11 the
+ideal-gas limit `K = exp(−Δg°/RT)`. Conservation and charge residuals ≤ 1e-10. Each with
+the named mutation from that table.
+
+---
+
+### Stage 9 — phase boundary (250 lines)
+
+`phase_boundary.cpp` completes: the multicomponent rows, `T` or `P` free, `k ≥ 1`.
+
+The same file and the same assembly Stage 7 opened, now with more than one component and
+more than two phases: bubble, dew, cloud point and the fixed-fraction flash are one cell
+family distinguished only by which phase is pinned and which intensive is free. Seeded from
+the flash solution Stage 8 provides, or from the previous boundary point when sweeping.
+
+**Commitment carried from `TOLERANCES.md` §6.** The boundary is written as *rows of the
+KKT system*, never as an outer Newton over `P` around `solve_equilibrium`. That is the one
+design choice that makes the old tree's failure mode disappear rather than reappear: an
+outer Newton reintroduces exactly the nested-tolerance coupling of §1, and this brief would
+then have to carry the minimizer's floor through it.
+
+**Gate:** `SPECIFICATION-SPACE.md` §4.2 on the boundary cells. S3 dew ↔ bubble: bubble from
+liquid `x` at `T` gives `(P*, y*)`; dew from `y*` must return `(P*, x)`. S4 the
+fixed-fraction flash at `β = 10⁻², 10⁻⁴, 10⁻⁶` approaches the bubble point's `T` at the
+expected first-order rate. S5 and S9 extended to the multicomponent cells. Oracle case
+`aqueous_amine_binary_vle` within its row uncertainties, carrying the published-model
+reproduction. Each with the named mutation.
+
+---
+
+### Stage 10 — `regression/` (890 + 200 lines)
+
+`least_squares.{hpp,cpp}` (490), `eos_observable.cpp` (150),
+`equilibrium_observable.cpp` (250), `regression.py` (200).
+
+This is #192: `fit(model, observations)` with covariance, no owner compilation. Ceres
+kernel, `ResidualBlock`, `PredictionCache`. The saturation continuation from Stage 7 is
+what makes a parameter fit affordable: 140,562 recordings for a three-parameter
+saturation fit today, because each of 26 residual evaluations is a cold 21-start solve.
+
+**Gate:** NIST parameter recovery on the `light_alkane_saturation` rows; the Jacobian
+against centred differences; permutation invariance; the three-parameter saturation fit
+in **≤ 400 ms** (today 11,705) at **≤ 200 recordings** (today 140,562).
+
+---
+
+### Stage 11 — `phase_stability.cpp` (1,100 lines, range 950–1,300)
 
 `phase_stability.hpp` (150), `phase_stability.cpp` (1,100). This is #188, and the
 findings in `held2-stage-i-ii-findings.md` are its specification. Written to Pereira 2012
@@ -421,7 +547,7 @@ The findings, as build instructions:
   Fourteen result structs, 30 reason strings, and a per-invocation timing struct — from
   which six scalars were exported — become one type.
 - **Candidates go to the Gibbs minimizer** rather than a from-scratch Stage III re-solve
-  (finding 1), and `ε_b` is the paper's `1e-2`, set in Stage 1. On the Khudaida feeds
+  (finding 1), and `ε_b` is the paper's `1e-2`, set in Stage 2. On the Khudaida feeds
   Stage III took 14–42% of evaluations and had 60–90% of its solutions rejected by the
   Eq. 12 test.
 
@@ -442,23 +568,7 @@ gate claim.
 
 ---
 
-### Stage 7 — `regression/` (890 + 200 lines)
-
-`least_squares.{hpp,cpp}` (490), `eos_observable.cpp` (150),
-`equilibrium_observable.cpp` (250), `regression.py` (200).
-
-This is #192: `fit(model, observations)` with covariance, no owner compilation. Ceres
-kernel, `ResidualBlock`, `PredictionCache`. The saturation continuation from Stage 5 is
-what makes a parameter fit affordable: 140,562 recordings for a three-parameter
-saturation fit today, because each of 26 residual evaluations is a cold 21-start solve.
-
-**Gate:** NIST parameter recovery on the `light_alkane_saturation` rows; the Jacobian
-against centred differences; permutation invariance; the three-parameter saturation fit
-in **≤ 400 ms** (today 11,705) at **≤ 200 recordings** (today 140,562).
-
----
-
-### Stage 8 — Composite gate and merge
+### Stage 12 — Composite gate and merge
 
 The reactive case, which touches every layer, is the last gate — it is the one problem
 that exercises finite electrolyte liquid, incipient neutral vapour, two reactions, and a
@@ -503,26 +613,26 @@ name, and fills the array.
 Why not Pint in Python, and why not a Python-side table:
 
 - **It is validation, and validation happens once, natively.** A wrong unit is the same
-  class of error as a negative segment count, which the Stage 2 constructor already rejects
+  class of error as a negative segment count, which the Stage 3 constructor already rejects
   by field name. The tree this replaces ran three validation passes in two languages; one
   pass in one language is the point.
 - **Python stays arithmetic-free with no exception clause.** A unit multiply in
   `parameters.py` is small, but it is the first crack in a rule whose value is that it has
   none.
 - **It is testable without Python.** The same `CHECK` harness as the rest of parameter
-  validation, and Stage 3's are the first gates that need a Python install at all.
+  validation, and Stage 4's are the first gates that need a Python install at all.
 - **Pint leaves the hot path.** `Mixture.state(T=313.15*ureg.kelvin, ...)` unwraps a
   quantity per call today, inside the measured ~590 µs of Python overhead on a call whose
   native work is 67 µs. The public API takes and returns SI floats: K, Pa, mol/m³, mole
   fractions, J/mol.
 
 Cost: about 40 lines of table and dimension check in `model/`, and `Pint` leaves
-`engine/pyproject.toml`. It is not installed in the greenfield venv today, so any Stage 3
+`engine/pyproject.toml`. It is not installed in the greenfield venv today, so any Stage 4
 gate importing `epcsaft` would have failed on `units.py` regardless.
 
 ## The MEA parameter set is the living bundle, not an estimation input
 
-Stage 2's nine-species fixture was transcribed from
+Stage 3's nine-species fixture was transcribed from
 `analyses/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json`, an older
 estimation input. The current set is
 `MEA-Thermodynamics/analyses/mea_parameter_bundle/results/selected-current-best-parameters.json`,
@@ -530,22 +640,22 @@ tabulated in that analysis's `results/notebook.pdf` page 3 with a provenance cla
 value (1 confirmed foundation, 2 literature-backed candidate, 3 local fit awaiting
 promotion, 4 missing or default). Three values differ:
 
-| | Stage 2 fixture | current bundle |
+| | Stage 3 fixture | current bundle |
 |---|---|---|
 | CO₂ ε/k | 169.21 | **173.44025** |
 | CO₂–water k_ij | absent | **0.013262879176919628** |
 | permittivity formulation | ion suppression, per-ion α | **solvent-only** (α = 0 everywhere) |
 
-Stage 2 is unaffected: its checks are closed forms, exact symmetries, limits and derivative
+Stage 3 is unaffected: its checks are closed forms, exact symmetries, limits and derivative
 agreement, which hold for any parameter set — which is what `TESTING.md`'s rule buys. But
-every MEA claim from Stage 3 onward reads the living bundle, and the fixture is refreshed
-when Stage 3 lands.
+every MEA claim from Stage 4 onward reads the living bundle, and the fixture is refreshed
+when Stage 4 lands.
 
 **Two different roles, not two candidates.** Baygi & Pahlavanzadeh 2015 is a *published
 model reproduced*: PC-SAFT, MEA–H₂O, no electrolyte, its own reported AAD, and therefore a
 pass/fail gate — a fact about the world. The living bundle is the *model under development*:
 nine species with electrolyte and reactions, currently 2.26× off in rmse-factor on pCO₂, so
-its deviations are reported and never asserted. Baygi gates the binary boundary rows at 5a;
+its deviations are reported and never asserted. Baygi gates the binary boundary rows at Stage 9;
 the bundle is what every reactive case is evaluated with.
 
 ## Order of the performance work, corrected
@@ -553,13 +663,13 @@ the bundle is what every reactive case is evaluated with.
 The audit put tape caching first. The measurements put it last. Written into the stages
 above, in the order the levers actually matter:
 
-1. Hessian count per evaluation, `(S+1)` → 1, plus site elimination — Stage 2, ~10×.
+1. Hessian count per evaluation, `(S+1)` → 1, plus site elimination — Stage 3, ~10×.
 2. Tapes per counted evaluation, ~10 → 1, by one state evaluation per Ipopt iteration —
-   Stage 4, 5–10× on the reactive solve, no derivative code involved.
-3. Evaluation count in discovery, 4,631 → ≤150 — Stage 6, 30–100×.
-4. Evaluation count in saturation, 5,422 → ≤25, and continuation in fits — Stage 5.
-5. Recording — Stage 2, ≤10%.
-6. Python marshalling, `Mixture.state` only, 590 µs per call — Stage 3.
+   Stage 8, 5–10× on the reactive solve, no derivative code involved.
+3. Evaluation count in discovery, 4,631 → ≤150 — Stage 11, 30–100×.
+4. Evaluation count in saturation, 5,422 → ≤25, and continuation in fits — Stage 7.
+5. Recording — Stage 3, ≤10%.
+6. Python marshalling, `Mixture.state` only, 590 µs per call — Stage 4.
 
 The remaining ~10× to the compiled-tape endpoints (CppADCodeGen) is orthogonal to the
 rebuild and is not in scope. It stays available because the tape is one object with one
@@ -578,14 +688,14 @@ bibliography, where Christoph Held is a parameter source (`Ji2012`, `Figiel2025`
 ## What could invalidate this plan
 
 - **The one-Hessian equivalence.** If `a + λ·H` does not reproduce the `(S+1)` tensor
-  elementwise to 1e-10, Stage 2's 7× is not available and the whole floor moves.
-  Falsifiable at Stage 2's gate, before anything depends on it.
+  elementwise to 1e-10, Stage 3's 7× is not available and the whole floor moves.
+  Falsifiable at Stage 3's gate, before anything depends on it.
 - **The ~10 tapes per evaluation.** Inferred from 1,759 recordings / 183 evaluations. If
   the extra tapes are distinct states (line search, vapour closure) rather than
-  re-evaluations of one, Stage 4's 5–10× shrinks to 2–3×. Instrument the callback
-  sequence at Stage 4 before relying on it.
+  re-evaluations of one, Stage 8's 5–10× shrinks to 2–3×. Instrument the callback
+  sequence at Stage 8 before relying on it.
 - **The reduced start set.** If 40–150 evaluations cannot decide a binary, or the eight
-  LLE feeds find the wrong phase count from a fixed start list, Stage 6 keeps DIRECT-L
+  LLE feeds find the wrong phase count from a fixed start list, Stage 11 keeps DIRECT-L
   (+80 lines for the NLopt adapter) and its budget becomes a named, justified stop rather
   than an accident.
 - **`stoichiometry.cpp`'s standard-state transform** reads EOS reference quantities

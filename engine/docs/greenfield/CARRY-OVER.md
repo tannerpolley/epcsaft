@@ -21,7 +21,7 @@ physics headers — because the equation registry (`equations_registry.yaml`,
 | `association.hpp` | `_native/association.hpp` **on `perf/association-newton` @a248de6**, not `main` | 265 → 150 | carried from the branch. The hybrid Newton/successive-substitution solver with the analytic Jacobian `∂F_a/∂X_b = X_a ρ_N x_{c(b)} n_b Δ_ab + δ_ab (1 + ρ_N B_a)`. Measured: 264→7, 486→8, 31,056→645 iterations, agreement 1.5e-14. `main` still has the damped-substitution version at 1,000 iterations — do not copy that one. |
 | `electrolyte.hpp` | `_native/electrolyte.hpp` | 399 → 260 | carried with one merge: five permittivity formulations become four, because Figiel is Zuber with `α_i = C` for every ion, and solvent-only is ion suppression with `α = 0`. The four that remain are distinct published equations — ion suppression `ε_sf/(1 + Σ α_i x_i)`, linear mixing (Ascani), density–temperature (Schreckenberg), dipolar perturbation (Rueben) — selected by the coefficient set in the parameter record rather than by a formulation enum. |
 | `born.hpp` | `_native/born.hpp` | 87 → 60 | carried nearly verbatim. |
-| `numerical_policy.hpp` | — | 0 → 250 | **written**. Every tolerance as a `Tolerance` entry with its category. See TRANSFER.md Stage 1 for the HELD2 drift resolved here. |
+| `numerical_policy.hpp` | — | 0 → 250 | **written**. Every tolerance as a `Tolerance` entry with its category. See TRANSFER.md Stage 2 for the HELD2 drift resolved here. |
 
 ## 2. `model/` — algorithms carry, code does not
 
@@ -46,7 +46,7 @@ What carries is the objective, already written down and registered:
 This is `reactive_finite_phase.cpp`'s objective (3,723 lines) and Pereira 2012's, and it
 is documented with 15 registered equations in
 `engine/docs/equilibrium/formulation.md` (PR #194, branch `docs/equilibrium-formulation`)
-— **merge that branch before Stage 4 begins**; it is the specification the stage is
+— **merge that branch before Stage 6 begins**; it is the specification the stage is
 written against.
 
 | what carries as an algorithm | from | note |
@@ -92,7 +92,7 @@ Carried, as the acceptance contract rather than as test code:
 
 `reactive_equilibrium_reachability` (2 rows) is not a target — it is a record that both
 downstream repositories cannot construct a model against `main` at all. It is the
-evidence for Stage 8, not a gate.
+evidence for Stage 12, not a gate.
 
 Two synthetic fixtures carry into `tests/fixtures/` (250 lines): the immiscible ternary
 and the associating binary. Everything else is written against the oracle rows, on the
@@ -104,7 +104,7 @@ or flags.
 `data/packets/`, `analyses/`, `docs/scientific/adr/`, `docs/latex/`,
 `equations_registry.yaml`, `scripts/docs/sync_bibliography.py`, `scripts/docs/
 sync_equation_registry.py`, and the Zotero export path are not part of the transfer.
-`analyses/` is migrated at Stage 8 when the field names change.
+`analyses/` is migrated at Stage 12 when the field names change.
 
 ## 7. Two branches to land before their stage
 
@@ -115,9 +115,9 @@ sync_equation_registry.py`, and the Zotero export path are not part of the trans
   Either merge it to `main` first or copy from the branch; do not carry `main`'s
   damped-substitution solver.
 - **`docs/equilibrium-formulation` (PR #194)** — `formulation.md`, 15 registered
-  equations, the written specification for Stage 4. Merge before Stage 4.
+  equations, the written specification for Stage 6. Merge before Stage 6.
 
 The saturation-continuation change (`eos_regression_evaluator.cpp`, fit 3,509 ms → 330 ms
 with identical fitted parameters `[2.001999999999, 3.618400000002]`) is on the same perf
-work; it does not carry as code — Stage 5 writes continuation into `phase_boundary.cpp` —
+work; it does not carry as code — Stage 7 writes continuation into `phase_boundary.cpp` —
 but it carries as the evidence that the 21-start grid is unnecessary.

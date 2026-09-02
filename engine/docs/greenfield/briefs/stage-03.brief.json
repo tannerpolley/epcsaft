@@ -1,0 +1,307 @@
+{
+  "stage": 3,
+  "branch": "stage-03",
+  "base": "greenfield@87a33d4",
+  "source_commit": "9eccbfd",
+  "stop_conditions": [
+    "budget_ceiling",
+    "gate_impossible",
+    "source_contradicted",
+    "environment_broken"
+  ],
+  "preconditions": [
+    "git cat-file -e 9eccbfd^{commit}",
+    "ls engine/native/physics/association.hpp engine/native/physics/born.hpp engine/native/physics/electrolyte.hpp engine/native/physics/helmholtz.hpp engine/native/physics/numerical_policy.hpp engine/native/physics/parameters.hpp engine/native/physics/physical_constants.hpp engine/native/physics/scalar.hpp",
+    "test ! -e engine/native/model/helmholtz_tape.hpp",
+    "test -x .venv/bin/meson",
+    "pkg-config --exists eigen3 && pkg-config --exists ipopt",
+    "test -d engine/build/subprojects/CppAD-20250000.3",
+    "grep -q 'void Independent(ADVector& x, ADVector& dynamic)' engine/build/subprojects/CppAD-20250000.3/include/cppad/core/independent/independent.hpp",
+    "test -f engine/build/greenfield/build.ninja || .venv/bin/meson setup engine/build/greenfield engine",
+    ".venv/bin/meson compile -C engine/build/greenfield",
+    ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics",
+    "python3 tools/check-engine-architecture.py",
+    "grep -qF 'return Scalar(1.0) - 0.75 * reduced + 0.6 * reduced_2' engine/native/physics/electrolyte.hpp",
+    "grep -qF 'if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {' engine/native/physics/helmholtz.hpp",
+    "grep -qF '217800.69494692178' engine/tests/oracle/oracle.json",
+    "grep -qF 'x[ids.index(\"water\")] = 0.80' engine/tests/oracle/measure_floor.py"
+  ],
+  "sources": [
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/derivatives.hpp",
+      "must_contain": [
+        "function.Hessian(point, 1 + site)",
+        "independent[coordinates + site] = site_fractions[site]",
+        "site_sensitivity[coordinate]"
+      ],
+      "purpose": "the (S+1)-Hessian implicit-function algebra; reproduced in the test as the reference tensor, never copied into model/"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/density.hpp",
+      "must_contain": [
+        "constexpr std::size_t scan_intervals = 360;",
+        "refine_density_root(",
+        "density root is ambiguous"
+      ],
+      "purpose": "bracket + safeguarded Newton + stable-root branch selection carry as an algorithm; the 360 intervals and string diagnostics do not"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/helmholtz.hpp",
+      "must_contain": [
+        "EqID: packing_fraction_coefficient",
+        "EqID: phase_packing_fraction",
+        "PHYSICAL_AVOGADRO"
+      ],
+      "purpose": "the two helpers Stage 1 deferred; PHYSICAL_AVOGADRO distinguishes this from the greenfield physics file, which has neither"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/electrolyte_reference.hpp",
+      "must_contain": [
+        "1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12,",
+        "REFERENCE_CONVERGENCE_WITNESS_MOLALITY = 1.0e-14",
+        "REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5",
+        "EqID: formula_unit_composition"
+      ],
+      "purpose": "molality ladder, witness, convergence threshold, composition from molality"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/eos.cpp",
+      "must_contain": [
+        "EqID: residual_chemical_potential",
+        "EqID: log_fugacity_coefficient",
+        "EqID: residual_heat_capacity_cp",
+        "EqID: pressure_density_derivative",
+        "EqID: ideal_gas_density"
+      ],
+      "purpose": "state closed forms and the reference sequence driver; EqIDs carry"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/reference.py",
+      "must_contain": [
+        "# EqID: single_ion_activity_coefficient",
+        "# EqID: mean_ionic_activity_coefficient",
+        "# EqID: molality_activity_conversion",
+        "# EqID: practical_osmotic_coefficient"
+      ],
+      "purpose": "the activity definitions, Python on main, native here"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_native/eos_source_reference.cpp",
+      "must_contain": [
+        "EqID: neutral_reference_stoichiometric_basis",
+        "reference_limit_terminal_pair("
+      ],
+      "purpose": "read only for the anchored-density pattern in the reference loop"
+    },
+    {
+      "ref": "main@9eccbfd:analyses/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json",
+      "must_contain": [
+        "\"rule_id\": \"arithmetic-energy-geometric-volume\"",
+        "\"magnitude\": -0.07352749874985018",
+        "78.41043478578715"
+      ],
+      "purpose": "nine-species case; values transcribed in the brief, confirm only"
+    },
+    {
+      "ref": "main@9eccbfd:analyses/2026-fixed-pressure-anchor/inputs/fixtures/strongly_associating_binary.json",
+      "must_contain": [
+        "2383.4744",
+        "0.1540467874409226",
+        "\"magnitude\": -0.052"
+      ],
+      "purpose": "associating binary; transcribed in the brief"
+    },
+    {
+      "ref": "main@9eccbfd:analyses/2026-fixed-pressure-anchor/inputs/fixtures/aqueous_electrolyte.json",
+      "must_contain": [
+        "\"magnitude\": 7.01",
+        "\"component_id\": \"sodium-cation\"",
+        "\"magnitude\": 78.09"
+      ],
+      "purpose": "aqueous NaCl case; transcribed in the brief"
+    },
+    {
+      "ref": "main@9eccbfd:data/packets/gross-2001-methane-ethane/1/parameters/single.csv",
+      "must_contain": [
+        "ethane-segment-count,ethane,segment_count,1.6069",
+        "ethane-dispersion-energy,ethane,dispersion_energy_over_k,191.42"
+      ],
+      "purpose": "ethane parameters for the NIST density checks"
+    }
+  ],
+  "writes": [
+    {
+      "path": "engine/native/model/helmholtz_tape.hpp",
+      "lines": {
+        "low": 300,
+        "estimate": 380,
+        "ceiling": 520
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.hpp",
+      "lines": {
+        "low": 150,
+        "estimate": 200,
+        "ceiling": 300
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "lines": {
+        "low": 380,
+        "estimate": 520,
+        "ceiling": 750
+      }
+    },
+    {
+      "path": "engine/native/model/density.cpp",
+      "lines": {
+        "low": 150,
+        "estimate": 210,
+        "ceiling": 320
+      }
+    },
+    {
+      "path": "engine/native/model/infinite_dilution_reference.cpp",
+      "lines": {
+        "low": 180,
+        "estimate": 260,
+        "ceiling": 420
+      }
+    },
+    {
+      "path": "engine/tests/native/model_support.hpp",
+      "lines": {
+        "low": 220,
+        "estimate": 300,
+        "ceiling": 380
+      }
+    },
+    {
+      "path": "engine/tests/native/model_checks.cpp",
+      "lines": {
+        "low": 380,
+        "estimate": 480,
+        "ceiling": 620
+      }
+    },
+    {
+      "path": "engine/tests/native/model_floor.cpp",
+      "lines": {
+        "low": 150,
+        "estimate": 210,
+        "ceiling": 300
+      }
+    },
+    {
+      "path": "engine/meson.build",
+      "edit": "add model_sources and two executables only",
+      "lines": {
+        "low": 25,
+        "estimate": 30,
+        "ceiling": 45
+      }
+    },
+    {
+      "path": "engine/native/physics/numerical_policy.hpp",
+      "edit": "new entries only",
+      "lines": {
+        "low": 30,
+        "estimate": 45,
+        "ceiling": 70
+      }
+    },
+    {
+      "path": "engine/native/physics/association.hpp",
+      "edit": "optional trailing std::size_t* iterations = nullptr",
+      "lines": {
+        "low": 3,
+        "estimate": 4,
+        "ceiling": 8
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": "build",
+      "command": ".venv/bin/meson compile -C engine/build/greenfield",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "1i #include \"equilibrium/problem.hpp\"",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "checks_pass_and_tape_matches_double_path",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/helmholtz.hpp",
+        "sed": "s|if (zeta\\[3\\] >= policy::CLOSE_PACKING_FRACTION.value) {|zeta[3] *= 1.001; if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {|",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "one_hessian_equals_S_plus_1_hessians",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/numerical_policy.hpp",
+        "sed": "s/2.0e-13,/2.0e-1,/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "density_root_accuracy",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/numerical_policy.hpp",
+        "sed": "s/1.0e-12,/1.0e-1,/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "density_branch_selection",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/numerical_policy.hpp",
+        "sed": "s|PI / (3.0 \\* 1.4142135623730951),|0.30,|",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "reference_debye_huckel_tail",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/electrolyte.hpp",
+        "sed": "s/return Scalar(1.0) - 0.75 \\* reduced + 0.6 \\* reduced_2/return Scalar(0.5) - 0.75 * reduced + 0.6 * reduced_2/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "architecture_rules",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.hpp",
+        "sed": "$a inline constexpr double PI = 3.0;",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "floor_runs_and_reports",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/physics/numerical_policy.hpp",
+        "sed": "s/    50.0,/    1.0,/",
+        "expect": "abort"
+      }
+    }
+  ]
+}

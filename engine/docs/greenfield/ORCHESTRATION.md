@@ -53,10 +53,10 @@ is the failure.
 
 ## Why this is the answer to "who reviews the planner"
 
-Not another model reading the plan. Stage 1's plan was read carefully and was still wrong
+Not another model reading the plan. Stage 2's plan was read carefully and was still wrong
 three ways. What catches a wrong plan is running its claims:
 
-| Stage 1 failure | caught by preflight? |
+| Stage 2 failure | caught by preflight? |
 |---|---|
 | source named a commit that did not contain the solver | **yes** — `git show <sha>:<path> \| grep -F <marker>` fails, *if* the marker distinguishes it |
 | 950 lines budgeted, 1,349 honest | **flagged, not caught** — no check predicts line count; the ceiling and the `budget_ceiling` stop govern the outcome instead |
@@ -66,10 +66,10 @@ three ways. What catches a wrong plan is running its claims:
 Two of four, one flagged, one that plan review cannot reach. Stated plainly because a
 mechanism claiming four of four would be the thing to distrust.
 
-It has already paid for itself: applying the path check to Stage 2 as written showed its
+It has already paid for itself: applying the path check to Stage 3 as written showed its
 performance gate could not run, because `measure_floor.py` imports `epcsaft` and reads
-`_core._instrumentation()` while `_core` is not built until Stage 3. Corrected in
-`TRANSFER.md` before Stage 2 began.
+`_core._instrumentation()` while `_core` is not built until Stage 4. Corrected in
+`TRANSFER.md` before Stage 3 began.
 
 ## The `orchestrate` skill
 
@@ -84,7 +84,7 @@ PRs target `greenfield`. Three of its policies are adopted verbatim, at no cost:
 
 ## Running Codex: the verified invocation
 
-Established by probing before Stage 2, not by reading documentation. Each line
+Established by probing before Stage 3, not by reading documentation. Each line
 below cost something to find.
 
 ```bash
@@ -100,15 +100,19 @@ codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
 | `< /dev/null` | without it `codex exec` blocks on "Reading additional input from stdin..." even when the prompt is an argument, and does nothing until killed. |
 | run in background | a stage takes hours; the orchestrator's shell tool caps at ten minutes. Backgrounding also keeps the orchestrator available to the user mid-stage. |
 | `-s workspace-write`, never `danger-full-access` | the narrow grant above is sufficient for this build. |
-| `PATH` must lead with the worktree's `.venv/bin` | Meson re-resolves `python3` during *regeneration*, which any `meson.build` edit triggers — and a stage always edits it to add its sources. Configure-time PATH is not remembered. Without this, regeneration finds `/usr/bin/python3`, `import pybind11` fails, and the build dies at `meson.build:33` **after** the stage has written all its files. Stage 2 hit exactly this. |
+| `PATH` must lead with the worktree's `.venv/bin` | Meson re-resolves `python3` during *regeneration*, which any `meson.build` edit triggers — and a stage always edits it to add its sources. Configure-time PATH is not remembered. Without this, regeneration finds `/usr/bin/python3`, `import pybind11` fails, and the build dies at `meson.build:33` **after** the stage has written all its files. Stage 3 hit exactly this. |
 
 ### Worktree setup, per stage
 
 ```bash
-git worktree add -b stage-N ~/.codex/worktrees/gf-stage-N greenfield
+git worktree add -b stage-NN ~/.codex/worktrees/gf-stage-NN greenfield
 cp -r <greenfield>/engine/build/subprojects <worktree>/engine/build/    # gitignored
 cd <worktree> && uv sync                                                # never copy a venv
 ```
+
+`NN` is the two-digit stage number from `TRANSFER.md`'s execution table, and it is the same
+`NN` as the brief pair `briefs/stage-NN.brief.{md,json}`. One number names the stage, its
+brief, its branch and its worktree; nothing else numbers a stage.
 
 `engine/build/` is gitignored, so a fresh worktree has only `.wrap` files and
 Meson would refetch CppAD, HiGHS, Boost and NLopt.
@@ -121,7 +125,7 @@ independent one in seconds.
 
 ## The stop condition earned itself on its first use
 
-Stage 2 stopped with `environment_broken` after writing all eight of its files. It had
+Stage 3 stopped with `environment_broken` after writing all eight of its files. It had
 verified all 36 source markers, run every precondition, and confirmed the baseline built
 and tested clean; then `meson compile` failed on the pybind11 lookup above. It did not
 touch the dependency block.
@@ -145,7 +149,7 @@ The sandbox probe showed why. A code-writing agent that hits "Ceres not found"
 mid-stage does not stop -- it helps. The plausible repair from inside that
 sandbox is to edit `meson.build` and drop or guard the Ceres dependency, after
 which everything configures, compiles, passes the physics checks, and reports
-success with the regression backend quietly amputated. That is the Stage 1
+success with the regression backend quietly amputated. That is the Stage 2
 failure shape again: a faithful agent producing a confident wrong result because
 its environment lied to it.
 
@@ -156,11 +160,11 @@ environmental reasons is the orchestrator's problem. Stop and name it.
 
 ## Sequencing
 
-Stage 2 runs **by hand**: Opus writes the brief and drives one `codex exec` directly, so
+Stage 3 runs **by hand**: Opus writes the brief and drives one `codex exec` directly, so
 the tooling is built against what actually breaks — sandbox friction, latency, where a
 brief was underspecified — rather than against a prediction of it. The scripts
 (`preflight.sh`, `run-stage.sh`, `accept-stage.sh`, two schemas, ~350 lines under
-`tools/greenfield/`) are written after Stage 2, from that evidence.
+`tools/greenfield/`) are written after Stage 3, from that evidence.
 
 ## Signals that this is not working
 
@@ -170,3 +174,26 @@ brief was underspecified — rather than against a prediction of it. The scripts
   acceptance, the mismatch is the finding
 - two stages in a row with zero deviations and zero preflight findings — either the
   planner became perfect or the checks stopped checking; assume the second
+
+## The result schema
+
+`--output-schema` is enforced strictly: **every** property of every object must appear in
+its `required` array, and every object needs `additionalProperties: false`. A schema that
+omits one optional field is rejected by the API with `invalid_json_schema` before the
+worker starts, which costs a launch. The stage schema is
+`stage-NN.result.schema.json` in the worktree, alongside the brief:
+
+```json
+{"outcome": "complete | budget_ceiling | gate_impossible | source_contradicted | environment_broken",
+ "files_written": [{"path": "...", "lines": 0}],
+ "gates": [{"id": "...", "ran": true, "passed": true, "note": "..."}],
+ "deviations": ["..."],
+ "stop_detail": "..."}
+```
+
+## Preflight
+
+`preflight.py` runs the brief's own claims against the worktree before the worker starts:
+every source resolves at its sha and contains every marker; every gate has a mutation whose
+file exists or is in `writes`; every precondition exits zero. It is the check that a brief
+is executable rather than merely written, and it costs seconds.

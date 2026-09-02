@@ -7,12 +7,29 @@ where they disagree, they are canonical and the page is stale.
 
 | document | what it owns |
 |---|---|
-| `TRANSFER.md` | the stages: order, scope, budgets, gates |
+| `TRANSFER.md` | **the map of the work**: the twelve stages in run order, each one's writes, design document and gate; the oracle; the crosswalk from the old numbering |
 | `ORCHESTRATION.md` | who does what, the verified `codex exec` invocation, stop conditions, environment traps |
 | `TESTING.md` | what may be tested, and what may not |
-| `CARRY-OVER.md` | what is copied, what is written fresh |
+| `CARRY-OVER.md` | what is copied, what is written fresh, what has no successor |
 | `STAGE-LOG.md` | estimate vs actual per stage, and every decision taken while writing it |
-| `briefs/stage-N.brief.{md,json}` | one stage: sources with markers, budgets with ceilings, gates with mutations |
+| `target-layout.md` | the finished tree, file by file, with line budgets |
+
+Design documents. Each is the specification of one or more stages, larger than a brief and
+written before it:
+
+| document | stages | what it owns |
+|---|---|---|
+| `TOLERANCES.md` | 5 | how nested solver tolerances stay consistent: the measured floor, the `derived()` guard, the named stops |
+| `SPECIFICATION-SPACE.md` | 6, 7, 8, 9, 11 | how the equilibrium routes prove they are general: the count rule, the lattice, what each check may assert |
+| `held2-stage-i-ii-findings.md` | 11 | the HELD2 kernel read against Pereira 2012, finding by finding |
+| `performance_floor.md` | 3, and every reported timing | what the tree costs today, measured, with the counters that produced it |
+| `PACKET-CONTRACT-CUT.md` | P | *(to write)* the lighter packet contract |
+
+Per stage, and the data:
+
+| | what it owns |
+|---|---|
+| `briefs/stage-NN.brief.{md,json}` | one stage: sources with markers, budgets with ceilings, gates with mutations. `NN` is the stage number in `TRANSFER.md` |
 | `../../tests/oracle/oracle.json` | the acceptance data: measured rows only |
 | `../../../tools/check-engine-architecture.py` | the seven rules |
 
