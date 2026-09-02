@@ -7,7 +7,7 @@ The D-030 decision retained by
 [ADR 0007](../scientific/adr/0007-retire-governance-and-validation-owners.md) and the
 [CAP-09 promotion result](../../../analyses/reproduction/2026-khudaida/results/khudaida-2026-figure-2-held2-summary.json)
 complete the protected transition defined by
-[ADR 0002](../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md).
+[ADR 0002](../scientific/adr/0002-protect-phase-stability-until-promotion.md).
 `ARCHITECTURE.yaml` records the machine-readable boundary and the
 [general plan](plans/2026-08-07-general-phase-equilibrium.md) records the target
 design.

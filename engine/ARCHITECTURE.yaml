@@ -45,7 +45,7 @@ owners:
     public_route: solve
     promotion_status: accepted
     promotion_result: ../analyses/reproduction/2026-khudaida/results/khudaida-2026-figure-2-held2-summary.json
-    transition_decision: docs/scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md
+    transition_decision: docs/scientific/adr/0002-protect-phase-stability-until-promotion.md
     promotion_decision: scientific_adr_0007_D-030
     phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
     phase_modes: [omitted_topology_discovery, declared_topology_solve]

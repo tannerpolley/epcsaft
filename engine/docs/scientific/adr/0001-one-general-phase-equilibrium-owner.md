@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-08-07
-amended_by: 0002-protect-held-until-phase-equilibrium-promotion.md
+amended_by: 0002-protect-phase-stability-until-promotion.md
 migration_source_path: engine/docs/equilibrium/adr/0001-one-general-phase-equilibrium-owner.md
 migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
@@ -11,7 +11,7 @@ migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
 
 Kind: computational-architecture
 
-The destination is implemented. [ADR 0002](0002-protect-held-until-phase-equilibrium-promotion.md)
+The destination is implemented. [ADR 0002](0002-protect-phase-stability-until-promotion.md)
 protected the HELD/HELD2 transition until the D-030 decision retained by
 [ADR 0007](0007-retire-governance-and-validation-owners.md) accepted the
 promotion result and made `phase_equilibrium` the sole public route.

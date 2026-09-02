@@ -4,7 +4,7 @@
 - Date: 2026-08-07
 - Owner: Equilibrium
 - Parent: [General scientific capability hard cutover](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md)
-- Decisions: [one general phase-equilibrium owner](../../scientific/adr/0001-one-general-phase-equilibrium-owner.md), [protected HELD promotion](../../scientific/adr/0002-protect-held-until-phase-equilibrium-promotion.md)
+- Decisions: [one general phase-equilibrium owner](../../scientific/adr/0001-one-general-phase-equilibrium-owner.md), [protected phase stability promotion](../../scientific/adr/0002-protect-phase-stability-until-promotion.md)
 
 Governance D-036 supersedes only this plan's future boundary that kept
 homogeneous chemistry permanently separate. The accepted nonreactive
