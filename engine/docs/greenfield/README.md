@@ -21,6 +21,7 @@ written before it:
 |---|---|---|
 | `TOLERANCES.md` | 5 | how nested solver tolerances stay consistent: the measured floor, the `derived()` guard, the named stops |
 | `SPECIFICATION-SPACE.md` | 6, 7, 8, 9, 11 | how the equilibrium routes prove they are general: the count rule, the lattice, what each check may assert |
+| `DIELECTRIC-SUPPRESSION.md` | 10, and any electrolyte activity claim | where the ion suppression coefficient comes from, why one number is not a free parameter, and what the activity gate measures |
 | `held2-stage-i-ii-findings.md` | 11 | the HELD2 kernel read against Pereira 2012, finding by finding |
 | `performance_floor.md` | 3, and every reported timing | what the tree costs today, measured, with the counters that produced it |
 | `PACKET-CONTRACT-CUT.md` | P | *(to write)* the lighter packet contract |

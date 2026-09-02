@@ -158,6 +158,17 @@ tolerance.
 
 ### Open finding: the activity rows agree at low molality and diverge at high
 
+**Corrected 2026-09-02, and superseded by `DIELECTRIC-SUPPRESSION.md`.** The account below
+compared six oracle rows against `figiel-2025-miac.csv`, whose rows carry a *different
+parameter fingerprint per salt* — a per-salt fitted comparison, not one model. Against the
+one consistent superseded run, over 21 points per salt, this engine is comparable or better
+on four of six salts and matches the literature to 0.02-0.34 % at low molality where the
+superseded engine returned exactly 1.0000. The "1.8-2.9x worse" and "missing a qualitative
+feature" claims are both withdrawn. What survives is the drift itself: every deviation is
+one-signed and grows with molality, the upturn is too weak, and the mapping has been ruled
+out as the cause. The original text is kept below because the numbers in it are real and the
+error was in what they were compared against.
+
 The gate passes — per-salt AARD 5.1–7.1 % against the source's own 10 % adequacy
 criterion. But compared row by row with the superseded engine
 (`analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv`, evidence only, never
