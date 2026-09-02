@@ -188,6 +188,22 @@ a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
 \label{eq:born_residual_helmholtz}
 $$
 
+## `candidate_phase_criteria`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} system PP with tolerances of Section 4
+- Description: A retained point is a candidate stable phase when its lower value is within the gap tolerance of the upper bound, its reduced gradient agrees with the multipliers on every coordinate away from the lower bound, and it is separated from every other candidate in packing fraction or in composition.
+- Change note: Gap 5e-2, relative derivative 0.5, packing and composition distinctness 1e-3, as in the source.
+- LaTeX: `docs/latex/equations.tex:1308`
+- Implementation:
+  - `cpp/equilibrium/held2_step6.cpp:10` (`run_held2_step6`)
+
+$$
+\mathrm{UBD} - L^{m} \le \varepsilon_b,\qquad \frac{|\partial g/\partial \tilde{x}_i^{m} - \lambda_i|}{|\lambda_i|} \le \varepsilon_\lambda\ (\tilde{x}_i^{m} > \tilde{x}^{l}),\qquad |\eta^{m} - \eta^{n}| \ge \varepsilon_\eta\ \text{or}\ \max_i |\tilde{x}_i^{m} - \tilde{x}_i^{n}| \ge \varepsilon_x.
+\label{eq:candidate_phase_criteria}
+$$
+
 ## `chemical_potential_stationarity`
 
 - Section: Equilibrium
@@ -880,6 +896,21 @@ a^{hs}=\frac{1}{\zeta_0}\left[
 \label{eq:hard_sphere_helmholtz}
 $$
 
+## `helmholtz_lagrangian_dual`
+
+- Section: Equilibrium
+- Status: Documentation-only
+- Source: \cite{Pereira2012} problem D and Eq. 6
+- Description: The Lagrangian dual of the one-phase minimization in volume-composition coordinates; its value is the equilibrium free energy and its inner minimizers are the stable phases. Realized by alternating outer_approximation_bound and dual_inner_problem; no single function owns it.
+- Change note: Convergence to the dual optimum needs a global inner minimizer; the implementation certifies nothing beyond finite bounds.
+- LaTeX: `docs/latex/equations.tex:1318`
+- Implementation:
+
+$$
+G^{D} = \max_{\boldsymbol\lambda}\ \min_{\tilde{\boldsymbol x},\,v}\ \Big[ g(\tilde{\boldsymbol x}, v) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}) \Big],\qquad g = \frac{A + P V}{R T}.
+\label{eq:helmholtz_lagrangian_dual}
+$$
+
 ## `ideal_gas_density`
 
 - Section: Density closure and mechanical domain
@@ -1138,6 +1169,22 @@ P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
 \label{eq:mechanical_stability}
 $$
 
+## `modified_fraction_chart`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: \cite{Pereira2012} composition chart extended to charged species per Perdomo et al. 2025 (Perdomo2025) Section 3
+- Description: Modified mole fractions of a charged phase after eliminating one ion by electroneutrality; the modified fractions sum to one and the eliminated ion is reconstructed from the retained ones.
+- Change note: Owner of the phase-stability composition chart; the ordinary chart is the case with no charged species (all factors one, no eliminated ion).
+- LaTeX: `docs/latex/equations.tex:1278`
+- Implementation:
+  - `cpp/equilibrium/held2_step1.cpp:475` (`held2_transform_physical_fractions`)
+
+$$
+\tilde{x}_i = f_i\,x_i,\qquad f_i = 1 - \frac{q_i}{q_e}\ (i \neq e),\qquad \sum_{i \neq e}\tilde{x}_i = 1,\qquad x_e = -\frac{1}{q_e}\sum_{i \neq e} q_i x_i,\qquad x_i = \frac{\tilde{x}_i}{f_i}.
+\label{eq:modified_fraction_chart}
+$$
+
 ## `molality_activity_conversion`
 
 - Section: Electrolyte reference states and reported activities
@@ -1154,6 +1201,22 @@ $$
 \frac{\gamma_\pm^{(x)}}
 {1+\overline M_s\,m(\nu_++\nu_-)}.
 \label{eq:molality_activity_conversion}
+$$
+
+## `multiplier_potential_link`
+
+- Section: Equilibrium
+- Status: Exact derivation
+- Source: \cite{Pereira2012} Eq. 7 in the modified chart of Perdomo et al. 2025 (Perdomo2025)
+- Description: At a solution of the inner problem the multipliers equal the reduced gradient of the phase free energy in the independent modified coordinates: the modified potential of the coordinate minus that of the dependent species.
+- Change note: The modified potentials are conjugate to the modified fractions so that the phase free energy is unchanged by the chart.
+- LaTeX: `docs/latex/equations.tex:1288`
+- Implementation:
+  - `cpp/equilibrium/held2_step1.cpp:899` (`held2_transform_modified_potentials`)
+
+$$
+\tilde{\mu}_i = \frac{\mu_i - (q_i/q_e)\,\mu_e}{f_i},\qquad \sum_{i \neq e}\tilde{\mu}_i\tilde{x}_i = \sum_i \mu_i x_i,\qquad \lambda_k = \tilde{\mu}_k - \tilde{\mu}_{d},\quad k \in \text{independent},\ d = \text{dependent species}.
+\label{eq:multiplier_potential_link}
 $$
 
 ## `neutral_reference_stoichiometric_basis`
@@ -1198,6 +1261,22 @@ $$
 d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
 \qquad z_i=0.
 \label{eq:neutral_segment_diameter}
+$$
+
+## `outer_approximation_bound`
+
+- Section: Equilibrium
+- Status: Source equation
+- Source: \cite{Pereira2012} problem OP; \cite{Pereira2012} Section 2 after Mitsos and Barton 2007 (MitsosBarton2007)
+- Description: Finite outer approximation of the semi-infinite dual: maximize a scalar bounded by every retained cut and by the feed free energy; the optimum is an upper bound on the dual value and its multipliers drive the next inner problem.
+- Change note: Solved as a linear program over the retained set M; the feed cut has zero slope.
+- LaTeX: `docs/latex/equations.tex:1298`
+- Implementation:
+  - `cpp/equilibrium/held2_step4.cpp:199` (`run_held2_step4`)
+
+$$
+\mathrm{UBD} = \max_{v,\boldsymbol\lambda}\ v\quad \text{s.t.}\quad v \le g(\tilde{\boldsymbol x}^{m}, v^{m}) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}^{m})\ \ \forall m \in \mathcal M,\qquad v \le g(\tilde{\boldsymbol x}^{0}, v^{0}).
+\label{eq:outer_approximation_bound}
 $$
 
 ## `packing_fraction`
@@ -1806,6 +1885,21 @@ $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
 =RT\left(\ln\phi_{i,B}^{\infty}-\ln\phi_{i,A}^{\infty}\right).
 \label{eq:transfer_free_energy}
+$$
+
+## `tunneling_transform`
+
+- Section: Equilibrium
+- Status: Documentation-only
+- Source: \cite{Pereira2012} Eq. 10 and 11
+- Description: Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Not implemented: the current search samples the tangent-plane distance with a bounded DIRECT-L run instead.
+- Change note: Recorded so the deviation from the source is visible; a rewrite may adopt either search.
+- LaTeX: `docs/latex/equations.tex:1328`
+- Implementation:
+
+$$
+f_T(\tilde{\boldsymbol x}, v) = \big(\mathrm{TPD}(\tilde{\boldsymbol x}, v) - d^{*}\big)\exp\!\Big(\frac{p^{*}}{\|\tilde{\boldsymbol x} - \tilde{\boldsymbol x}^{*}\|}\Big),\qquad p^{*} = 10^{-3}.
+\label{eq:tunneling_transform}
 $$
 
 ## Audited source exclusions

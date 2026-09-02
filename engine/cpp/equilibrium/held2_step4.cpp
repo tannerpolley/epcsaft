@@ -195,6 +195,7 @@ UpperResult solve_upper_highs(
 
 }  // namespace
 
+// EqID: outer_approximation_bound
 Held2Step4Result run_held2_step4(Held2PersistentState& state) {
     Held2Step4Result result;
     result.major_iteration = state.major_iteration;

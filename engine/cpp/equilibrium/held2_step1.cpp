@@ -471,6 +471,7 @@ Held2Coordinates make_held2_coordinates(
     return result;
 }
 
+// EqID: modified_fraction_chart
 std::vector<double> held2_transform_physical_fractions(
     const Held2Coordinates& coordinates,
     const std::vector<double>& physical_fractions
@@ -894,6 +895,7 @@ std::vector<double> held2_map_unit_cube_to_independent_fractions(
     return independent;
 }
 
+// EqID: multiplier_potential_link
 std::vector<double> held2_transform_modified_potentials(
     const Held2Coordinates& coordinates,
     const std::vector<double>& chemical_potentials

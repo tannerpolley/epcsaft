@@ -168,6 +168,22 @@ equations:
         line: 15
         comment_line: 80
         symbol: "born_contribution"
+  - eqid: "candidate_phase_criteria"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:candidate_phase_criteria"
+    source: "\\cite{Pereira2012} system PP with tolerances of Section 4"
+    status: "Source equation"
+    description: "A retained point is a candidate stable phase when its lower value is within the gap tolerance of the upper bound, its reduced gradient agrees with the multipliers on every coordinate away from the lower bound, and it is separated from every other candidate in packing fraction or in composition."
+    change_note: "Gap 5e-2, relative derivative 0.5, packing and composition distinctness 1e-3, as in the source."
+    latex: "\\mathrm{UBD} - L^{m} \\le \\varepsilon_b,\\qquad \\frac{|\\partial g/\\partial \\tilde{x}_i^{m} - \\lambda_i|}{|\\lambda_i|} \\le \\varepsilon_\\lambda\\ (\\tilde{x}_i^{m} > \\tilde{x}^{l}),\\qquad |\\eta^{m} - \\eta^{n}| \\ge \\varepsilon_\\eta\\ \\text{or}\\ \\max_i |\\tilde{x}_i^{m} - \\tilde{x}_i^{n}| \\ge \\varepsilon_x.\n\\label{eq:candidate_phase_criteria}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1308
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step6.cpp"
+        line: 10
+        comment_line: 9
+        symbol: "run_held2_step6"
   - eqid: "chemical_potential_stationarity"
     section: "Equilibrium"
     subsection: ""
@@ -776,6 +792,18 @@ equations:
         line: 201
         comment_line: 251
         symbol: "residual_helmholtz"
+  - eqid: "helmholtz_lagrangian_dual"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:helmholtz_lagrangian_dual"
+    source: "\\cite{Pereira2012} problem D and Eq. 6"
+    status: "Documentation-only"
+    description: "The Lagrangian dual of the one-phase minimization in volume-composition coordinates; its value is the equilibrium free energy and its inner minimizers are the stable phases. Realized by alternating outer_approximation_bound and dual_inner_problem; no single function owns it."
+    change_note: "Convergence to the dual optimum needs a global inner minimizer; the implementation certifies nothing beyond finite bounds."
+    latex: "G^{D} = \\max_{\\boldsymbol\\lambda}\\ \\min_{\\tilde{\\boldsymbol x},\\,v}\\ \\Big[ g(\\tilde{\\boldsymbol x}, v) + \\boldsymbol\\lambda\\cdot(\\tilde{\\boldsymbol x}^{0} - \\tilde{\\boldsymbol x}) \\Big],\\qquad g = \\frac{A + P V}{R T}.\n\\label{eq:helmholtz_lagrangian_dual}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1318
+    implementation_refs:
   - eqid: "ideal_gas_density"
     section: "Density closure and mechanical domain"
     subsection: ""
@@ -1016,6 +1044,22 @@ equations:
         line: 109
         comment_line: 107
         symbol: "solve_density"
+  - eqid: "modified_fraction_chart"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:modified_fraction_chart"
+    source: "\\cite{Pereira2012} composition chart extended to charged species per Perdomo et al. 2025 (Perdomo2025) Section 3"
+    status: "Exact derivation"
+    description: "Modified mole fractions of a charged phase after eliminating one ion by electroneutrality; the modified fractions sum to one and the eliminated ion is reconstructed from the retained ones."
+    change_note: "Owner of the phase-stability composition chart; the ordinary chart is the case with no charged species (all factors one, no eliminated ion)."
+    latex: "\\tilde{x}_i = f_i\\,x_i,\\qquad f_i = 1 - \\frac{q_i}{q_e}\\ (i \\neq e),\\qquad \\sum_{i \\neq e}\\tilde{x}_i = 1,\\qquad x_e = -\\frac{1}{q_e}\\sum_{i \\neq e} q_i x_i,\\qquad x_i = \\frac{\\tilde{x}_i}{f_i}.\n\\label{eq:modified_fraction_chart}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1278
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step1.cpp"
+        line: 475
+        comment_line: 474
+        symbol: "held2_transform_physical_fractions"
   - eqid: "molality_activity_conversion"
     section: "Electrolyte reference states and reported activities"
     subsection: ""
@@ -1032,6 +1076,22 @@ equations:
         line: 426
         comment_line: 479
         symbol: "state"
+  - eqid: "multiplier_potential_link"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:multiplier_potential_link"
+    source: "\\cite{Pereira2012} Eq. 7 in the modified chart of Perdomo et al. 2025 (Perdomo2025)"
+    status: "Exact derivation"
+    description: "At a solution of the inner problem the multipliers equal the reduced gradient of the phase free energy in the independent modified coordinates: the modified potential of the coordinate minus that of the dependent species."
+    change_note: "The modified potentials are conjugate to the modified fractions so that the phase free energy is unchanged by the chart."
+    latex: "\\tilde{\\mu}_i = \\frac{\\mu_i - (q_i/q_e)\\,\\mu_e}{f_i},\\qquad \\sum_{i \\neq e}\\tilde{\\mu}_i\\tilde{x}_i = \\sum_i \\mu_i x_i,\\qquad \\lambda_k = \\tilde{\\mu}_k - \\tilde{\\mu}_{d},\\quad k \\in \\text{independent},\\ d = \\text{dependent species}.\n\\label{eq:multiplier_potential_link}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1288
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step1.cpp"
+        line: 899
+        comment_line: 898
+        symbol: "held2_transform_modified_potentials"
   - eqid: "neutral_reference_stoichiometric_basis"
     section: "Native phase coordinates"
     subsection: ""
@@ -1064,6 +1124,22 @@ equations:
         line: 111
         comment_line: 109
         symbol: "segment_diameter"
+  - eqid: "outer_approximation_bound"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:outer_approximation_bound"
+    source: "\\cite{Pereira2012} problem OP; \\cite{Pereira2012} Section 2 after Mitsos and Barton 2007 (MitsosBarton2007)"
+    status: "Source equation"
+    description: "Finite outer approximation of the semi-infinite dual: maximize a scalar bounded by every retained cut and by the feed free energy; the optimum is an upper bound on the dual value and its multipliers drive the next inner problem."
+    change_note: "Solved as a linear program over the retained set M; the feed cut has zero slope."
+    latex: "\\mathrm{UBD} = \\max_{v,\\boldsymbol\\lambda}\\ v\\quad \\text{s.t.}\\quad v \\le g(\\tilde{\\boldsymbol x}^{m}, v^{m}) + \\boldsymbol\\lambda\\cdot(\\tilde{\\boldsymbol x}^{0} - \\tilde{\\boldsymbol x}^{m})\\ \\ \\forall m \\in \\mathcal M,\\qquad v \\le g(\\tilde{\\boldsymbol x}^{0}, v^{0}).\n\\label{eq:outer_approximation_bound}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1298
+    implementation_refs:
+      - file: "cpp/equilibrium/held2_step4.cpp"
+        line: 199
+        comment_line: 198
+        symbol: "run_held2_step4"
   - eqid: "packing_fraction"
     section: "Density and packing"
     subsection: ""
@@ -1680,6 +1756,18 @@ equations:
         line: 513
         comment_line: 531
         symbol: "transfer_to"
+  - eqid: "tunneling_transform"
+    section: "Equilibrium"
+    subsection: ""
+    label: "eq:tunneling_transform"
+    source: "\\cite{Pereira2012} Eq. 10 and 11"
+    status: "Documentation-only"
+    description: "Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Not implemented: the current search samples the tangent-plane distance with a bounded DIRECT-L run instead."
+    change_note: "Recorded so the deviation from the source is visible; a rewrite may adopt either search."
+    latex: "f_T(\\tilde{\\boldsymbol x}, v) = \\big(\\mathrm{TPD}(\\tilde{\\boldsymbol x}, v) - d^{*}\\big)\\exp\\!\\Big(\\frac{p^{*}}{\\|\\tilde{\\boldsymbol x} - \\tilde{\\boldsymbol x}^{*}\\|}\\Big),\\qquad p^{*} = 10^{-3}.\n\\label{eq:tunneling_transform}"
+    tex_file: "docs/latex/equations.tex"
+    tex_line: 1328
+    implementation_refs:
 source_exclusions:
   - file: "src/epcsaft/_native/association.hpp"
     line: 23

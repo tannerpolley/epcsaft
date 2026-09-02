@@ -6,6 +6,7 @@
 
 namespace epcsaft_engine::equilibrium {
 
+// EqID: candidate_phase_criteria
 Held2Step6Result run_held2_step6(
     const Held2Step1Result& step1,
     const Held2Step4Result& step4,
