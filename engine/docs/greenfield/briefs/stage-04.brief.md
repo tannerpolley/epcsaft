@@ -63,13 +63,36 @@ how you were invoked, in order to make a build succeed. `pip`, `uv pip`, `uv syn
 worktree's `.venv/bin`; `$HOME/.cache` is writable; the build directory's `prefix` is the
 worktree's `.venv`.
 
-**Model and physics are closed.** Three edits permitted in `native/model/` and none in
+**Model and physics are closed.** Five edits permitted in `native/model/` and none in
 `native/physics/`: (a) the new `parameter_builder.{hpp,cpp}`; (b) one field
 `double mean_ionic_molality_scale = 0.0;` added to `ElectrolyteActivity` in
 `helmholtz_model.hpp`; (c) one assignment `result.mean_ionic_molality_scale =
 std::exp(mean_log_m);` beside the existing `result.mean_ionic_log_molality_scale = mean_log_m;`
-in `infinite_dilution_reference.cpp`. Python must not `exp()` a log; the native side hands
-over the number the oracle is stated in.
+in `infinite_dilution_reference.cpp`; (d) in `helmholtz_model.cpp`, the line
+`require(positive_vector(parameters_.molar_mass_kg_per_mol), "molar_mass");` becomes
+
+```cpp
+    for (std::size_t component = 0; component < components; ++component) {
+        const double mass = parameters_.molar_mass_kg_per_mol[component];
+        require(std::isfinite(mass) && mass >= 0.0, "molar_mass");
+        require(parameters_.charge_number[component] != 0 || mass > 0.0, "molar_mass");
+    }
+```
+
+(a charged component may carry 0.0, meaning not provided; a neutral one may not); (e) in
+`formula_composition`, the condition `|| molar_masses[component] <= 0.0` becomes
+`|| (solvent_fractions[component] > 0.0 && molar_masses[component] <= 0.0)` — a mass is
+required where a solvent fraction reads it, and nowhere else. Python must not `exp()` a
+log; the native side hands over the number the oracle is stated in.
+
+**Why (d) and (e).** Molar mass never enters the Helmholtz energy. Every native consumer
+reads solvent masses only: the three permittivity-mixing sites in `physics/electrolyte.hpp`
+are all inside `dielectric_solvent_component()`, which returns false for any charged
+component, and both `infinite_dilution_reference.cpp` sites multiply by a solvent fraction
+the reference composition forces to zero for the ions. Requiring a charged component's mass
+is a false rejection of sufficient data, and it is what stopped this stage's first attempt.
+These are relaxations of Stage 3's validation, not new arithmetic; every existing fixture
+carries positive masses, so the Stage 3 checks stay green under them.
 
 ## 1. Stop conditions — stopping is a first-class outcome
 
@@ -137,7 +160,7 @@ assigned by Python in document order.
 
 | `field` | `index` | unit | fills | required |
 |---|---|---|---|---|
-| `molar_mass` | `[i]` | molar mass | `molar_mass_kg_per_mol[i]` | every component |
+| `molar_mass` | `[i]` | molar mass | `molar_mass_kg_per_mol[i]` | every component with `charge_number == 0`; a charged component may omit it and the builder stores 0.0 — molar mass never enters the Helmholtz energy and every native consumer (solvent permittivity mixing, molality) reads solvent masses only; an operation that needs a charged component's mass rejects by name at its own boundary |
 | `charge_number` | `[i]` | charge | `charge_number[i]` | every component |
 | `segment_count` | `[i]` | dimensionless | `segment_count[i]` | every component |
 | `sigma_constant` | `[i]` | length | `sigma_constant[i]` | every component, exactly once (a `segment_diameter` coefficient, or the `constant` of a `segment_diameter` correlation) |
@@ -160,6 +183,13 @@ assigned by Python in document order.
 | `association_combining_rule` | `[s, t, s1, t1, s2, t2]` | (magnitude and unit ignored) | see below | per combining-rule edge |
 | `ionic_region_relative_permittivity` | `[]` | dimensionless | the scalar | under `born` |
 | `born_c_shell`, `born_c_dielectric` | `[]` | dimensionless | the two scalars | under `born` |
+
+**Unconsumed records are rejected.** A record whose field the declared choices do not read
+is a probable transcription loss and is rejected by identity: `ion_suppression_coefficient`
+(either origin) under `none` or `solvent-only`; `ionic_region_relative_permittivity`,
+`born_c_shell`, `born_c_dielectric`, `born_diameter`, `solvation_factor` under an
+electrolyte choice other than `born`. A present coefficient whose value is zero is data —
+packets retain printed zeros — and is never rejected for being zero.
 
 Symmetric fills must be written as two assignments, e.g. `k_ij[i * components + j] = value;`
 and `k_ij[j * components + i] = value;`. A field given twice at the same index is a
@@ -247,7 +277,7 @@ class Parameters:
 means document order. It emits one `ParameterEntry` per numeric value in §2.1's table —
 `identity` from the JSON, `field` from the table, `index` from `component_ids.index(...)` and
 `site_ids.index(...)`, `magnitude` and `unit` copied — plus the structural lists, and calls
-`_core.build_parameters`. What it reads: `components[].fixed.{molar_mass,charge_number}`,
+`_core.build_parameters`. What it reads: `components[].fixed.{charge_number, and molar_mass when present}`,
 `components[].coefficients[]`, `pairs[]` (a pair is emitted only when both components are
 selected; `component_id_a < component_id_b` in the document and the pair index is `[i, j]`
 in selection positions; `k_ij_reciprocal_temperature_slope` carries a sibling
@@ -408,7 +438,10 @@ and its citation comment. Print the 24 deviations under `-s` so acceptance can r
    the source does not report that cell and the packet has no record for it; (b) the
    methane–ethane mapping with ethane's `fixed.molar_mass.unit` rewritten to `"gram"` raises
    `ParameterError` naming `component/ethane/molar_mass` and `gram`; (c)
-   `Mixture.state(..., P=1e5, x=..., phase="gas")` raises `ParameterError`.
+   `Mixture.state(..., P=1e5, x=..., phase="gas")` raises `ParameterError`; (d) the
+   methane–ethane mapping with ethane's `fixed.molar_mass` deleted raises `ParameterError`
+   naming `component/ethane/molar_mass` — a neutral must carry its mass; the oracle gate is
+   the evidence that a charged component need not.
 
 `tests/packets.py` (≤ 40 lines): `PACKETS = Path(__file__).resolve().parents[2] / "data" /
 "packets"`, `ORACLE = Path(__file__).resolve().parent / "oracle" / "oracle.json"`, and
@@ -466,7 +499,7 @@ installed copy is the failure mode this avoids. Never `pip install`, never `PYTH
 `dispersion_energy_over_k[2]` `169.21` → `173.44025`; `relative_permittivity[2]` `1.4122` →
 `0` (revision 2 has no permittivity record for carbon dioxide; it is no longer a dielectric
 solvent in the mixing rule); `k_ij[2 * 9 + 0] = k_ij[0 * 9 + 2] = 0.013262879176919628`;
-`ion_suppression_coefficient` all zero (`solvent-only`). `born_c_shell = born_c_dielectric =
+`ion_suppression_coefficient` all zero (`solvent-only`), and the fixture carries the comment `// revision 2 declares solvent-only; the physics layer spells that IonSuppression with alpha = 0` on that line. `born_c_shell = born_c_dielectric =
 0` already matches revision 2. Then `meson test physics model` must still pass — every Stage
 2 check is parameter-independent.
 

@@ -36,7 +36,8 @@
     "grep -qF 'LiBr,2.0,1.012,1.1143454847451237' analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv",
     "grep -qF 'result.mean_ionic_log_molality_scale = mean_log_m;' engine/native/model/infinite_dilution_reference.cpp",
     "grep -qxF '  files(),' engine/meson.build",
-    "grep -qF 'Pint>=0.25.3' engine/pyproject.toml"
+    "grep -qF 'Pint>=0.25.3' engine/pyproject.toml",
+    ".venv/bin/python -c \"import json; c={x['component_id']: x['fixed'] for x in json.load(open('data/packets/figiel-2025-reference-electrolytes/2/parameters/parameters.json'))['components']}; assert 'molar_mass' not in c['lithium-cation'] and 'molar_mass' in c['water']\""
   ],
   "sources": [
     {
@@ -242,11 +243,11 @@
     },
     {
       "path": "engine/native/model/infinite_dilution_reference.cpp",
-      "edit": "add result.mean_ionic_molality_scale = std::exp(mean_log_m); only",
+      "edit": "add mean_ionic_molality_scale; relax the molar-mass check to components with nonzero solvent fraction",
       "lines": {
         "low": 1,
         "estimate": 1,
-        "ceiling": 3
+        "ceiling": 5
       }
     },
     {
@@ -380,6 +381,15 @@
         "low": 4,
         "estimate": 6,
         "ceiling": 12
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "molar_mass rule: neutral > 0, charged >= 0 (0 = not provided); nothing else",
+      "lines": {
+        "low": 4,
+        "estimate": 5,
+        "ceiling": 8
       }
     }
   ],
