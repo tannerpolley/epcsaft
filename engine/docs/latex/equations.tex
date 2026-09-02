@@ -1116,6 +1116,220 @@ s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
 \end{equation}
 
 \nocite{*}
+\section{Equilibrium}
+
+One constrained minimization covers phase, chemical, and coupled reactive-phase equilibrium; see \texttt{docs/equilibrium/formulation.md}.
+
+% EqID: phase_helmholtz_amount_volume
+% Source: \cite{Gross2001} Appendix A with the ideal-gas mixing term
+% Status: Exact derivation
+% Description: Phase Helmholtz energy over RT in amount and volume coordinates.
+% Change note: Reference density contributes a species-linear constant only.
+\begin{equation}
+\frac{A_p}{RT}=\sum_i n_{p,i}\left[\ln\frac{n_{p,i}}{V_p\rho_{\mathrm{ref}}}-1\right]+N_p\,a^{r}\!\left(T,\frac{N_p}{V_p},\frac{\boldsymbol n_p}{N_p}\right).
+\label{eq:phase_helmholtz_amount_volume}
+\end{equation}
+
+% EqID: system_gibbs_helmholtz_coordinates
+% Source: \cite{Pereira2012} Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
+% Status: Exact derivation
+% Description: System Gibbs energy at fixed T and P written in Helmholtz coordinates with standard-state offsets.
+% Change note: Pressure equality becomes a stationarity row instead of an inner density solve.
+\begin{equation}
+\frac{G}{RT}=\sum_p\left[\frac{A_p(T,V_p,\boldsymbol n_p)}{RT}+\frac{PV_p}{RT}\right]+\sum_p\sum_i n_{p,i}\frac{g^{\circ}_i}{RT}.
+\label{eq:system_gibbs_helmholtz_coordinates}
+\end{equation}
+
+% EqID: phase_packing_volume
+% Source: Packing-fraction definition, \cite{Gross2001} Eq. (A.8)
+% Status: Exact derivation
+% Description: Phase volume from the logarithmic packing coordinate.
+% Change note: Closed form; no tape is required.
+\begin{equation}
+V_p=\frac{\pi}{6\,\eta_p}\sum_i n_{p,i}\,m_i\,d_i^{3}.
+\label{eq:phase_packing_volume}
+\end{equation}
+
+% EqID: electroneutral_amount_chart
+% Source: \cite{Pereira2012}; Perdomo et al. 2025 (Perdomo2025) Section 3
+% Status: Implementation convention
+% Description: Independent amount coordinates for a charged phase after eliminating one ion by electroneutrality; a neutral phase keeps the ordinary chart.
+% Change note: C-2 independent coordinates per charged phase.
+\begin{equation}
+n_{p,e}=-\frac{1}{z_e}\sum_{i\neq e} z_i\,n_{p,i}.
+\label{eq:electroneutral_amount_chart}
+\end{equation}
+
+% EqID: material_balance
+% Source: \cite{Pereira2012} Eq. 3
+% Status: Source equation
+% Description: Conserved-moiety balance over all phases; B is the identity when no reaction is declared.
+% Change note: Rank of B is the number of balance rows.
+\begin{equation}
+\sum_p \mathbf{B}\,\boldsymbol n_p=\mathbf{B}\,\boldsymbol n_{\mathrm{feed}}.
+\label{eq:material_balance}
+\end{equation}
+
+% EqID: phase_electroneutrality
+% Source: Perdomo et al. 2025 (Perdomo2025) Eq. 35, electroneutral form of \cite{Pereira2012} Eq. 3
+% Status: Source equation
+% Description: Per-phase charge neutrality for every phase with charged support.
+% Change note: One row per charged phase.
+\begin{equation}
+\boldsymbol z\cdot\boldsymbol n_p=0.
+\label{eq:phase_electroneutrality}
+\end{equation}
+
+% EqID: incipient_normalization
+% Source: Zero-amount phase composition closure
+% Status: Implementation convention
+% Description: Composition normalization of an incipient phase whose amount is zero.
+% Change note: Replaces the material-balance contribution of a zero-amount phase.
+\begin{equation}
+\sum_i x_{\mathrm{inc},i}=1.
+\label{eq:incipient_normalization}
+\end{equation}
+
+% EqID: pressure_equality
+% Source: \cite{Pereira2012} Eq. 6; \cite{Gross2001} Eq. (A.24)
+% Status: Source equation
+% Description: Stationarity in phase volume: every EOS phase is at the system pressure.
+% Change note: A stationarity row of the same minimization.
+\begin{equation}
+-\frac{\partial A_p}{\partial V_p}=P.
+\label{eq:pressure_equality}
+\end{equation}
+
+% EqID: chemical_potential_stationarity
+% Source: \cite{Pereira2012} Eq. 5; \cite{Gross2001} Eq. (A.33)
+% Status: Source equation
+% Description: Stationarity in phase amounts with balance and charge multipliers.
+% Change note: Phase equilibrium and reaction affinity follow from this row.
+\begin{equation}
+\mu_{p,i}=\boldsymbol\lambda\cdot\mathbf{B}_{i}+z_i\,\varphi_p,\qquad i\in S_p.
+\label{eq:chemical_potential_stationarity}
+\end{equation}
+
+% EqID: interphase_potential_equality
+% Source: Consequence of chemical_potential_stationarity
+% Status: Exact derivation
+% Description: Equal chemical potential for neutral species and equal electrochemical potential for ions in two supports.
+% Change note: Not imposed a second time.
+\begin{equation}
+\mu_{p,i}-\mu_{q,i}=z_i\,(\varphi_p-\varphi_q).
+\label{eq:interphase_potential_equality}
+\end{equation}
+
+% EqID: reaction_affinity
+% Source: Consequence of chemical_potential_stationarity with $\mathbf{B}\boldsymbol\nu=0$
+% Status: Exact derivation
+% Description: Vanishing affinity for every reaction in the nullspace of the balance matrix.
+% Change note: A problem with B = I has no affinity row.
+\begin{equation}
+\sum_i\nu_i\,\mu_{p,i}=\boldsymbol\lambda\cdot(\mathbf{B}\boldsymbol\nu)+\varphi_p\,(\boldsymbol z\cdot\boldsymbol\nu)=0.
+\label{eq:reaction_affinity}
+\end{equation}
+
+% EqID: reduced_hessian_stability
+% Source: Second-order sufficient condition for a constrained local minimum
+% Status: Exact derivation
+% Description: Reduced Lagrangian Hessian over the constraint nullspace is positive definite.
+% Change note: Certifies a local minimum only.
+\begin{equation}
+\mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
+\label{eq:reduced_hessian_stability}
+\end{equation}
+
+% EqID: tangent_plane_distance
+% Source: \cite{Pereira2012} Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
+% Status: Source equation
+% Description: Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion.
+% Change note: A negative value is a one-sided instability witness.
+\begin{equation}
+\mathrm{TPD}(\boldsymbol x,v)=g(\boldsymbol x,v)-g(\boldsymbol x^{0},v^{0})-\nabla_{\boldsymbol x}g(\boldsymbol x^{0},v^{0})\cdot(\boldsymbol x-\boldsymbol x^{0}).
+\label{eq:tangent_plane_distance}
+\end{equation}
+
+% EqID: dual_inner_problem
+% Source: \cite{Pereira2012} Eqs. 9--11
+% Status: Source equation
+% Description: Inner problem of the Lagrangian dual: the one-phase minimizer with a linear term and no balance rows.
+% Change note: Lower bound on the reduced Gibbs energy.
+\begin{equation}
+q(\boldsymbol\lambda)=\min_{\boldsymbol x,v}\left[g(\boldsymbol x,v)-\boldsymbol\lambda\cdot\boldsymbol x\right]\le\frac{G^{*}}{N}.
+\label{eq:dual_inner_problem}
+\end{equation}
+
+% EqID: implicit_sensitivity
+% Source: Implicit-function theorem on the KKT system
+% Status: Exact derivation
+% Description: Total derivative of the solved state with respect to active parameters.
+% Change note: Rank and conditioning decide availability; values stay available.
+\begin{equation}
+\frac{\mathrm d\boldsymbol y}{\mathrm d\boldsymbol\theta}=-\mathbf{F}_{\boldsymbol y}^{-1}\,\mathbf{F}_{\boldsymbol\theta}.
+\label{eq:implicit_sensitivity}
+\end{equation}
+
+% EqID: modified_fraction_chart
+% Source: \cite{Pereira2012} composition chart extended to charged species per Perdomo et al. 2025 (Perdomo2025) Section 3
+% Status: Exact derivation
+% Description: Modified mole fractions of a charged phase after eliminating one ion by electroneutrality; the modified fractions sum to one and the eliminated ion is reconstructed from the retained ones.
+% Change note: Owner of the phase-stability composition chart; the ordinary chart is the case with no charged species (all factors one, no eliminated ion).
+\begin{equation}
+\tilde{x}_i = f_i\,x_i,\qquad f_i = 1 - \frac{q_i}{q_e}\ (i \neq e),\qquad \sum_{i \neq e}\tilde{x}_i = 1,\qquad x_e = -\frac{1}{q_e}\sum_{i \neq e} q_i x_i,\qquad x_i = \frac{\tilde{x}_i}{f_i}.
+\label{eq:modified_fraction_chart}
+\end{equation}
+
+% EqID: multiplier_potential_link
+% Source: \cite{Pereira2012} Eq. 7 in the modified chart of Perdomo et al. 2025 (Perdomo2025)
+% Status: Exact derivation
+% Description: At a solution of the inner problem the multipliers equal the reduced gradient of the phase free energy in the independent modified coordinates: the modified potential of the coordinate minus that of the dependent species.
+% Change note: The modified potentials are conjugate to the modified fractions so that the phase free energy is unchanged by the chart.
+\begin{equation}
+\tilde{\mu}_i = \frac{\mu_i - (q_i/q_e)\,\mu_e}{f_i},\qquad \sum_{i \neq e}\tilde{\mu}_i\tilde{x}_i = \sum_i \mu_i x_i,\qquad \lambda_k = \tilde{\mu}_k - \tilde{\mu}_{d},\quad k \in \text{independent},\ d = \text{dependent species}.
+\label{eq:multiplier_potential_link}
+\end{equation}
+
+% EqID: outer_approximation_bound
+% Source: \cite{Pereira2012} problem OP; \cite{Pereira2012} Section 2 after Mitsos and Barton 2007 (MitsosBarton2007)
+% Status: Source equation
+% Description: Finite outer approximation of the semi-infinite dual: maximize a scalar bounded by every retained cut and by the feed free energy; the optimum is an upper bound on the dual value and its multipliers drive the next inner problem.
+% Change note: Solved as a linear program over the retained set M; the feed cut has zero slope.
+\begin{equation}
+\mathrm{UBD} = \max_{v,\boldsymbol\lambda}\ v\quad \text{s.t.}\quad v \le g(\tilde{\boldsymbol x}^{m}, v^{m}) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}^{m})\ \ \forall m \in \mathcal M,\qquad v \le g(\tilde{\boldsymbol x}^{0}, v^{0}).
+\label{eq:outer_approximation_bound}
+\end{equation}
+
+% EqID: candidate_phase_criteria
+% Source: \cite{Pereira2012} system PP with tolerances of Section 4
+% Status: Source equation
+% Description: A retained point is a candidate stable phase when its lower value is within the gap tolerance of the upper bound, its reduced gradient agrees with the multipliers on every coordinate away from the lower bound, and it is separated from every other candidate in packing fraction or in composition.
+% Change note: Gap 5e-2, relative derivative 0.5, packing and composition distinctness 1e-3, as in the source.
+\begin{equation}
+\mathrm{UBD} - L^{m} \le \varepsilon_b,\qquad \frac{|\partial g/\partial \tilde{x}_i^{m} - \lambda_i|}{|\lambda_i|} \le \varepsilon_\lambda\ (\tilde{x}_i^{m} > \tilde{x}^{l}),\qquad |\eta^{m} - \eta^{n}| \ge \varepsilon_\eta\ \text{or}\ \max_i |\tilde{x}_i^{m} - \tilde{x}_i^{n}| \ge \varepsilon_x.
+\label{eq:candidate_phase_criteria}
+\end{equation}
+
+% EqID: helmholtz_lagrangian_dual
+% Source: \cite{Pereira2012} problem D and Eq. 6
+% Status: Documentation-only
+% Description: The Lagrangian dual of the one-phase minimization in volume-composition coordinates; its value is the equilibrium free energy and its inner minimizers are the stable phases. Realized by alternating outer_approximation_bound and dual_inner_problem; no single function owns it.
+% Change note: Convergence to the dual optimum needs a global inner minimizer; the implementation certifies nothing beyond finite bounds.
+\begin{equation}
+G^{D} = \max_{\boldsymbol\lambda}\ \min_{\tilde{\boldsymbol x},\,v}\ \Big[ g(\tilde{\boldsymbol x}, v) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}) \Big],\qquad g = \frac{A + P V}{R T}.
+\label{eq:helmholtz_lagrangian_dual}
+\end{equation}
+
+% EqID: tunneling_transform
+% Source: \cite{Pereira2012} Eq. 10 and 11
+% Status: Documentation-only
+% Description: Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Not implemented: the current search samples the tangent-plane distance with a bounded DIRECT-L run instead.
+% Change note: Recorded so the deviation from the source is visible; a rewrite may adopt either search.
+\begin{equation}
+f_T(\tilde{\boldsymbol x}, v) = \big(\mathrm{TPD}(\tilde{\boldsymbol x}, v) - d^{*}\big)\exp\!\Big(\frac{p^{*}}{\|\tilde{\boldsymbol x} - \tilde{\boldsymbol x}^{*}\|}\Big),\qquad p^{*} = 10^{-3}.
+\label{eq:tunneling_transform}
+\end{equation}
+
 \printbibliography
 
 \end{document}
