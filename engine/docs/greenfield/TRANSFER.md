@@ -193,10 +193,31 @@ when the caller has one. The 360-interval scan and the 64×depth-8 pressure enve
 not written; a value-plus-`dP/dρ` path (4 sweeps) serves the root iteration, not a full
 Hessian set.
 
-**Gate, correctness:** derivatives against centred finite differences elementwise to
-1e-10, including the association block; the `(S+1)`-Hessian tensor and the one-Lagrangian
--Hessian tensor agree elementwise to 1e-10 on the nine-species case — this is the check
-that licenses the 7× and it is the only thing in Stage 2 that can invalidate the floor.
+**Gate, correctness:** the `(S+1)`-Hessian tensor and the one-Lagrangian-Hessian tensor
+agree elementwise to **1e-10** on the nine-species case — two exact AD formulations, so the
+threshold is real. This licenses the 7× and is the only thing in Stage 2 that can
+invalidate the floor. Derivatives against centred finite differences agree to **1e-6**,
+not 1e-10: centred FD in double precision bottoms out near 1e-8, so the tighter figure this
+gate first carried was unreachable by construction.
+
+Three conditions the floor depends on, which the original gate stated as bare numbers:
+
+- **`≤ 23 + 2P` sweeps holds only if `CppAD::ADFun::Hessian` is not used.** It discards the
+  `Forward(1)` outputs, forcing `S` extra reverse sweeps for `Φ_Xy` (31 at nine species).
+  The count is met only by driving `Forward(1)`/`Reverse(2)` directly and reading `Φ_Xy`
+  off the forward sweeps.
+- **"One `ADFun` per topology" is an insufficient cache key.** Two predicates in
+  `physics/electrolyte.hpp` are evaluated from `double` inputs *while recording* and baked
+  into the tape: the `finite_size_chi` series switch per ion (`:332`) and the
+  `reference_charge_square_sum == 0.0` branch (`:242`). Both flip inside Stage 2's own
+  scope — the dilute end of the molality ladder takes the series, a pure-solvent state
+  inside an electrolyte model takes the no-ion branch. A tape keyed on topology alone is
+  silently wrong across them, with no error raised. Key on (active set, predicate
+  signature) and re-record when it changes.
+- **Association iteration counts need a three-line physics edit** — an optional
+  `std::size_t*` out-parameter on `solve_site_fractions`. Stage 1 removed the kernel
+  counters on the grounds that the tape owns evaluation accounting; without this the row is
+  reported as unmeasured.
 
 **Gate, performance (reported, not pass/fail — `TESTING.md`):** the nine-species MEA model
 at 313.15 K, ρ = 3.0e4 with one active parameter, value + gradient + Hessian + parameter
