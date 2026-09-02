@@ -146,3 +146,48 @@ rules over 17 sources, no-arithmetic — do pass on re-run.
 Left uncommitted in `~/.codex/worktrees/gf-stage-3` so the correction can go to the same
 Codex session by `resume` rather than to a fresh worker.
 
+**Closed `b14851f`, second attempt.** Accepted independently: build directory wiped and
+reconfigured, all nine gates re-run by the coordinator, all nine mutations shown to turn
+their gate red. The worker's second report gave each gate its actual exit code, which was
+the correction asked for.
+
+Two deviations it declared, both accepted: `units.py` deleted as specified, and the state
+identity check uses the full CODATA gas constant `8.31446261815324` because the native
+constant carries that value and the abbreviated `8.314462618` cannot meet a 1e-12 relative
+tolerance.
+
+### Open finding: the activity rows agree at low molality and diverge at high
+
+The gate passes — per-salt AARD 5.1–7.1 % against the source's own 10 % adequacy
+criterion. But compared row by row with the superseded engine
+(`analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv`, evidence only, never
+an oracle) the two agree to under 1 % below 0.1 mol/kg and then separate, in opposite
+directions:
+
+| salt | m | measured | superseded | this engine |
+|---|---|---|---|---|
+| LiCl | 2.0 | 0.924 | 1.003 (+8.5 %) | 0.730 (−21.0 %) |
+| LiBr | 2.0 | 1.012 | 1.114 (+10.1 %) | 0.773 (−23.6 %) |
+| KCl | 2.0 | 0.573 | 0.615 (+7.3 %) | 0.462 (−19.3 %) |
+| KBr | 2.0 | 0.593 | 0.621 (+4.8 %) | 0.445 (−24.9 %) |
+
+Per-salt AARD: superseded 2.4–4.1 %, this engine 5.1–7.1 %.
+
+The sharp form of it: a mean ionic activity coefficient passes through a minimum and rises
+again, and at 2 mol/kg the measured LiBr value is **1.012**, above one. The superseded
+engine reproduces that upturn (1.114). This one does not — it falls monotonically on three
+of the four salts. A missing qualitative feature, not a scale error.
+
+Ruled out: the permittivity mapping. The packet declares `ion-fraction-suppression` and
+carries its coefficient at model level
+(`model/relative_permittivity/ion_fraction_suppression_coefficient = 7.01`, Eq. 11) rather
+than per component, and `parameter_builder.cpp:366-370` reads it and applies it to every
+charged component. The decrement is present.
+
+Not a gate failure and not a merge blocker: `TESTING.md` is explicit that a number out of
+the old engine is not evidence the new one is wrong, and the criterion the planner chose
+came from the parameter source rather than from this comparison. But an average over six
+rows cannot see a missing upturn in the last one, and a check that a wrong physics passes is
+the thing `TESTING.md` exists to prevent. Raised with the planner: whether the criterion
+should carry a shape condition alongside the average, and what accounts for the divergence.
+

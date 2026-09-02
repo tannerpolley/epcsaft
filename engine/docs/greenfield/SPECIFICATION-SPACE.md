@@ -65,10 +65,13 @@ written **intensively** — the stationarity row in `n_{p,i}` divided by `N_p`:
 | pressure equality | `−∂A_p/∂V_p − P = 0` | one per phase | `pressure_equality` |
 | material balance | `Σ_p N_p B x_p − B n_feed = 0` | `rank B` | `material_balance` |
 | electroneutrality | `z · x_p = 0` | one per phase whose support carries charge | `phase_electroneutrality` |
-| normalisation | `Σ_i x_{p,i} − 1 = 0` | one per **pinned** phase | `incipient_normalization` |
+| normalisation | `Σ_i x_{p,i} − 1 = 0` | one per phase | `incipient_normalization` |
 
-For a free phase, normalisation is implied by the definition `N_p = Σ_i n_{p,i}` and is not
-a row. For a pinned phase it is the row that replaces the missing amount variable. The
+The normalisation row is active for **every** phase, so the coordinates `(N_p, x_p, V_p)`
+are the same for every phase and a pinned phase differs from a free one by exactly one
+removed variable — nothing else changes. (Writing a free phase in `n_{p,i}` and dropping
+its normalisation row is a legitimate implementation choice with the same nullity; it is
+not the same *statement*, and the statement is what the checks assert.) The
 chemical-potential row is the *same equation* for a free and a pinned phase because `μ` is
 intensive; only the intensive normalisation makes that literal. Euler's relation then
 gives, for every phase, `g_p = λ·B x_p + φ_p z·x_p` as a consequence — which for a pinned
@@ -127,6 +130,53 @@ three ways: Ipopt's objective/constraint/Jacobian/Hessian callbacks are views of
 boundary Newton iterates on it; `implicit_sensitivity.cpp` inverts it. The Hessian is
 consumed in all three. §4.3 has the check that the three see one matrix.
 
+### 2.5 Three levels, one row set — and the two cells the design might quietly skip
+
+    flash (feed, T, P)        every N_p free                      k = 0, f = 0
+      bubble / dew            one N_p pinned at 0, T or P freed   k = 1, f = 1
+        saturation            the same, at C = 1                  k = 1, f = 1
+
+The nesting is a claim about rows, so it is checked as one. Count the `C = 1` boundary
+cell — one component, `{V, L}`, `V` pinned at zero, `P` free — against §2.1–2.2 with no
+special case anywhere: unknowns `x_V, V_V, x_L, N_L, V_L, λ, P` (seven); rows: two
+chemical-potential, two pressure-equality, one balance (`B = I₁`), two normalisation
+(seven). Square. The normalisation rows make both `x` equal to one, the balance makes
+`N_L` the feed, the two chemical-potential rows together say `μ_V = μ_L`, and the two
+pressure rows say `P_V = P_L = P`: three equations of substance in `V_V, V_L, P`. That is
+pure saturation, reached with **no reaction span, no charge row, no stability, no phase
+count above two** — the active subset is exactly seven registered rows and no others,
+which is the evidence that a regression fit of pure-component parameters depends on
+`equilibrium/` lightly (one compile, one assembly, one Newton) rather than structurally.
+**derived**; S14 asserts the subset, and pin exchange at `C = 1` (pin `L` instead of `V`)
+must give the same `P*`, which is the sharpest available test that "which phase is pinned"
+is a specification entry and not a route. If the engine needs a distinct saturation solver,
+it is visible here without solving: the compiled row multiset for ethane would differ from
+the multiset the rule predicts.
+
+The single-phase flash, `Π = 1`, `k = f = 0`, is the other cell a two-phase habit skips.
+Unknowns `x (C), N, V, λ (C)`: `2C + 2`; rows: `C` chemical-potential, one pressure, one
+normalisation, `C` balance: `2C + 2`. Square, and its solution is forced — `x` is the feed,
+`N` is the feed amount, `V` is the density root of the pressure row, `λ` is `μ`. A single
+phase is a density solve plus stationarity, and anything in a start, a distinctness test, a
+K-value seed or a branch hint that indexes a second phase is a genericity defect of the
+bubble-point family. With reactions the cell is not trivial (`x` moves in the reaction
+span) and is S11's ideal-gas limit. S13 exercises `Π = 1` on every fixture. **derived**
+
+**Where the layer line falls.** `model/` answers a state: `(T, V or ρ, n)` in, properties
+and exact derivatives out; its one iteration is the density root, over one phase.
+`equilibrium/` answers coexistence: anything where two states satisfy a shared condition.
+Saturation needs two states, so it is equilibrium by the rule, not by judgement, and
+nothing saturation-shaped may exist in `model/` — no seed, no vapour-pressure estimate, no
+pure-component coexistence path. The Clausius–Clapeyron seed `TRANSFER.md` Stage 7 names
+lives in `phase_boundary.cpp`. The scientific reason outranks the tidiness one: a pure fit
+and a mixture fit then share one convergence behaviour and one tolerance entry, so a
+parameter set cannot converge cleanly at `C = 1` under a private solver and fail at
+`C = 2` under the general one with no signal. S5 and S9 running through the same check
+function at `C = 1` and `C = 2`, against the same policy entries, is that claim as a test.
+`regression/` including `equilibrium/problem.hpp` is already what checker rule 3 permits
+and rule 4 bounds; the owner's discomfort with the dependency is answered by its size, and
+§4.2's Stage 7 file list is where the size is measured.
+
 ## 3. The space
 
 ### 3.1 Axes
@@ -134,7 +184,7 @@ consumed in all three. §4.3 has the check that the three see one matrix.
 | axis | values | what it changes |
 |---|---|---|
 | phase set, by identity | `{L}`, `{V}`, `{V,L}`, `{L,L}`, `{V,L,L}` | a phase's identity is (support, branch hint, amount status). `V` versus `L` is a **start** attribute — the density-branch hint for the initial `η_p` — and changes no row. `{L,L}` is in the space precisely because it is where a vapour-like reference root would be assumed if any part of the start or the seed assumed one |
-| amount status per phase | free; pinned `β = 0`; pinned `0 < β < 1` | `k`, the normalisation row, the balance's view of the phase |
+| amount status per phase | free; pinned `β = 0`; pinned `0 < β < 1` | `k`, and the balance's view of the phase; no row is added or removed |
 | `T`, `P` | each fixed or free | `f` |
 | reactions | none; one; two independent; two plus a dependent third; one that does not conserve charge | `rank B`, `g°`, the rejection |
 | ions | absent; present in a support with both signs; a charged feed; a support with one ion sign; an incipient neutral phase beside a charged finite one | the charge rows, the rejection |
@@ -226,7 +276,7 @@ certificate fails is a fixture problem, recorded in `STAGE-LOG.md`, not a code f
 
 | id | fixture | cells | stage |
 |---|---|---|---|
-| ethane | `ethane()` | `{V,L}`, `V` pinned, `P` free; then `T` free | 7 |
+| ethane | `ethane()` | `{L}` alone and `{V}` alone at fixed `T`, `P`; `{V,L}` with `V` pinned, `P` free; the same with `L` pinned (must give the same `P*`); then `T` free. The Stage 7 file list is the record that these ran with no `gibbs_minimizer.cpp`, no `phase_stability.cpp`, and `B = I` | 7 |
 | binary | `neutral_binary()` | `{V,L}` flash inside the envelope; bubble; dew; `β`-flash; both intensives | 8, 9 |
 | ternary | immiscible ternary | `{L,L}` flash; `{V,L,L}` flash at low `P`; `{L,L}` with `L₂` pinned, `T` free; `{V,L,L}` with `V`, `L₂` pinned, `T` and `P` free; one phase with `α ⇌ β`; `{L,L}` with both reactions | 8, 9 |
 | electrolyte | `aqueous_electrolyte()` | `{L}`; `{V,L}` with `V` support `{water}` and `V` pinned, `P` free — the MEA shape at three species | 8, 9 |
@@ -246,6 +296,8 @@ certificate fails is a fixture problem, recorded in `STAGE-LOG.md`, not a code f
 | S10 | one Jacobian | at the binary flash solution, Ipopt's `eval_h` with `σ = 1` and the converged multipliers equals the stationarity block of the boundary driver's `F_y` and of the sensitivity's `F_y`, elementwise to 1e-12 | scale `eval_h` by `0.5` |
 | S11 | ideal-gas limit | the reactive one-phase cell at `P → 0` approaches the closed form `K = exp(−Δg°/RT)` in mole fractions (a limit; the residual terms vanish, which Stage 2 already checks) | perturb the `g°` transform |
 | S12 | discovery agrees (Stage 11) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
+| S13 | single phase | `Π = 1` on every fixture at fixed `T`, `P`: the solved composition equals the feed to 1e-14, and the solved volume equals `model/`'s `solve_density` root at the same `(T, P, x)` within the density tolerance — the pressure row *is* the density equation when there is one phase | seed the start from phase index 1 |
+| S14 | `C = 1` is the general row set | the ethane boundary's compiled rows, counted by `EqID`, are exactly two `chemical_potential_stationarity`, two `pressure_equality`, one `material_balance`, two `incipient_normalization`, and nothing else; pinning `L` instead of `V` gives the same `P*` to the convergence tolerance | a `component_count == 1` branch in compile that omits the balance row |
 
 **Reported, never asserted**, per cell: Ipopt iterations, Newton iterations, evaluations,
 `hessian_calls`, recordings, wall. `hessian_calls ≥ 1` per iteration on every cell is how
@@ -351,7 +403,19 @@ them are already in `native/` (**measured**) and the script cannot currently rea
    non-lexical replacement is C1–C8 plus S3–S5, and §8 says what even those miss.
 6. **"Seven structural equivalences."** Spot checks on path pairs, as the brief says. Here
    they are properties applied per cell (§4.3).
-7. **The test budget.** `engine/tests/native/` holds 1,187 lines after two closed stages
+8. **Saturation is equilibrium, fully.** The owner's tension is real and the resolution
+   holds under test: §2.5 counts the `C = 1` cell against the general rows with no special
+   case and gets saturation, so a private pure-component solver would be a second
+   implementation of seven rows that already exist. **measured** residue check: nothing
+   saturation-shaped exists under `native/` today — no seed, no estimate, no coexistence
+   path, no policy entry — and `infinite_dilution_reference.cpp` is a sequence of
+   single-phase states, correctly placed. Two planned items are residue and should move:
+   `target-layout.md:51` lists a `Saturation` `py::class_` in `eos_bindings.cpp`, and `:59`
+   puts saturation under `eos.py`. The binding is `solve_phase_boundary`'s and belongs in
+   `equilibrium_bindings.cpp`; `Pure.saturation` stays where users reach for it, as a thin
+   call onto that binding, because the Python surface is organised by capability and was
+   never meant to mirror the layers.
+9. **The test budget.** `engine/tests/native/` holds 1,187 lines after two closed stages
    (**measured**), against a 1,650 total for the whole engine. This design adds about 560
    (§9). With the oracle-row tests still to write, the engine lands near 2,400 lines of
    tests, not 1,650. `TESTING.md`'s rule is that a stage over its share must show its
@@ -386,6 +450,9 @@ them are already in `native/` (**measured**) and the script cannot currently rea
   once; S1's mutation is the guard, and it is one mutation.
 - **The discovery cell asserts a rejection until Stage 11.** Between Stage 6 and Stage 11,
   "topology omitted" is proven only to fail by name.
+- **A single-phase cell proves consistency, not stability.** S13 shows the rows and the
+  density closure agree; whether that one phase is the stable state at `(T, P)` is Stage
+  11's question, and until then a `{L}` result carries no stability claim.
 
 ## 9. Cost and placement
 
@@ -397,10 +464,15 @@ revised order (`TRANSFER.md` §"Execution order") is before Stage 6 anyway. **gu
 |---|---|---|---|---|
 | `tests/native/equilibrium_support.hpp` | 130 | 180 | 6 | includes `model_support.hpp`; adds the immiscible ternary, its reactions and `g°`, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor |
 | `tests/native/specification_checks.cpp` | 180 | 240 | 6 | C1–C8 |
-| `tests/native/equilibrium_checks.cpp` | 130 | 180 | 8, then +15 at 11 | S1, S2, S6, S7, S8, S11 on the flash cells; S12 at Stage 11 |
-| `tests/native/boundary_checks.cpp` | 120 | 160 | 7 opens it (ethane, S5, S9 at `C = 1`, ~40); 9 completes it | S3, S4, S5, S9, S10, the `{L,L}` and `{V,L,L}` boundary cells |
+| `tests/native/equilibrium_checks.cpp` | 140 | 190 | 8, then +15 at 11 | S1, S2, S6, S7, S8, S11, S13 on the flash cells; S12 at Stage 11 |
+| `tests/native/boundary_checks.cpp` | 140 | 180 | 7 opens it (ethane: S5, S9, S13, S14 at `C = 1`, ~60); 9 completes it | S3, S4, S5, S9, S10, the `{L,L}` and `{V,L,L}` boundary cells |
 | `tools/check-engine-architecture.py` | +12 | — | 8 | rule 8: `eval_h` present, no `limited-memory` |
-| **total** | **~570** | **~770** | | |
+| **total** | **~600** | **~800** | | |
+
+Stage 7 is where the "light dependency" claim of §2.5 is measured rather than argued: its
+brief's file list is `phase_boundary.cpp`, `implicit_sensitivity.cpp` and
+`boundary_checks.cpp`, and its gate runs with `gibbs_minimizer.cpp` and
+`phase_stability.cpp` absent from the tree. `STAGE-LOG.md` records the list.
 
 Order inside Stage 6: `equilibrium_support.hpp` and C1–C3 first, before any solver exists —
 compile and the count rule are the first thing the stage writes, and C1–C3 are green on
