@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/numerical_policy.hpp"
 #include "physics/parameters.hpp"
 #include "physics/physical_constants.hpp"
 #include "physics/scalar.hpp"
@@ -329,8 +330,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = finite_size_chi(
             reduced,
-            reference_kappa_for_branch * 1.0e-10 * diameter_angstrom
-                < 1.0e-3
+            reference_kappa_for_branch * ANGSTROM_M * diameter_angstrom
+                < policy::SCREENING_SERIES_SWITCH.value
         );
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }

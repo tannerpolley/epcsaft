@@ -231,4 +231,18 @@ inline const Tolerance STABILITY_SEARCH_BUDGET{
     "budget; the floor analysis puts a binary decision at 40-150 evaluations",
 };
 
+// Below this reduced screening length the closed form of the finite-size correction
+// loses precision to cancellation -- log(1+r) - r + r^2/2 is a difference of terms that
+// agree to leading order -- so the series is used instead. Both forms are exact; this is
+// where double precision stops preferring one.
+//
+// It is also a recording-time predicate: the branch taken is baked into a tape, so a tape
+// recorded on one side of it is wrong on the other. That is why the tape cache is keyed on
+// the predicate signature and not on topology alone.
+inline const Tolerance SCREENING_SERIES_SWITCH{
+    1.0e-3,
+    Category::AlgorithmTolerance,
+    "cancellation floor of the closed-form chi; carried from the superseded tree",
+};
+
 }  // namespace epcsaft::policy

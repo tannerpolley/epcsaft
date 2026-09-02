@@ -141,6 +141,64 @@ def rule_constants_defined_once() -> list[str]:
     return bad
 
 
+# A threshold is a decision and belongs in numerical_policy.hpp. Only literals with a
+# decimal point or exponent are considered: a bare integer after "<" is a template
+# argument (std::array<double, 4>), not a comparison.
+THRESHOLD = re.compile(
+    r"(?:<=|>=|==|!=|<|>)\s*(\d+\.\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)"
+    r"|(\d+\.\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)\s*(?:<=|>=|==|!=|<|>)"
+)
+THRESHOLD_EXEMPT = {"physics/numerical_policy.hpp", "physics/physical_constants.hpp"}
+ALLOWED_THRESHOLDS = {"0.0", "1.0"}  # sign tests and normalisation, nothing else
+
+# A solver receives rows. It may not know which kind of problem produced them: that is
+# what makes the route general rather than a union of special cases. request_compile.cpp
+# is the one file allowed to branch, and only on which variable is specified.
+# Underscore counts as a boundary: snake_case is this tree's convention, so \b would let
+# solve_reactive_case through and leave the rule vacuous.
+CASE_TOKENS = re.compile(
+    r"(?<![A-Za-z0-9])(reactive|nonreactive|incipient|finite|electrolyte|charged|ionic|"
+    r"neutral|binary|ternary|saturation|bubble|dew|vle|lle|amine|aqueous|salt)"
+    r"(?![A-Za-z0-9])", re.IGNORECASE)
+SOLVER_FILES = {
+    "equilibrium/gibbs_minimizer.hpp", "equilibrium/gibbs_minimizer.cpp",
+    "equilibrium/phase_boundary.cpp", "equilibrium/implicit_sensitivity.cpp",
+    "equilibrium/phase_stability.cpp",
+}
+
+COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.S)
+
+
+def without_comments(text: str) -> str:
+    return COMMENT.sub("", text)
+
+
+def rule_no_threshold_literals() -> list[str]:
+    bad = []
+    for path in sources():
+        rel = str(path.relative_to(NATIVE))
+        if rel in THRESHOLD_EXEMPT:
+            continue
+        for number, line in enumerate(without_comments(path.read_text()).splitlines(), 1):
+            for match in THRESHOLD.finditer(line):
+                literal = match.group(1) or match.group(2)
+                if literal not in ALLOWED_THRESHOLDS:
+                    bad.append(f"{rel}:{number}: threshold literal {literal}")
+    return bad
+
+
+def rule_solvers_are_case_blind() -> list[str]:
+    bad = []
+    for path in sources():
+        rel = str(path.relative_to(NATIVE))
+        if rel not in SOLVER_FILES:
+            continue
+        text = without_comments(path.read_text())
+        for match in CASE_TOKENS.finditer(text):
+            bad.append(f"{rel}: names a problem kind: {match.group()}")
+    return bad
+
+
 def main() -> int:
     archive_findings, archive_built = rule_archive_is_python_free()
     checks = [
@@ -152,6 +210,8 @@ def main() -> int:
         ("include direction is downward", rule_include_direction()),
         ("regression stays below stability", rule_regression_stays_below_stability()),
         ("constants defined once", rule_constants_defined_once()),
+        ("no threshold literals", rule_no_threshold_literals()),
+        ("solvers are case-blind", rule_solvers_are_case_blind()),
     ]
     failed = 0
     for name, findings in checks:
