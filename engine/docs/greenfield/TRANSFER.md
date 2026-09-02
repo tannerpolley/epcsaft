@@ -413,6 +413,68 @@ preserving them — the migration was owed regardless of the rebuild.
 
 Cutover is one merge of `greenfield` into `main`.
 
+## Units: C++ resolves them, Python only reads the file
+
+The whole vocabulary is 14 strings across every parameter document in the project:
+`dimensionless` (1152), `kelvin` (503), `angstrom` (444), `elementary-charge` (113),
+`kg / mol` (80), `kilogram / mole` (42), `1 / kelvin` (28), `gram / mole` (25), `pascal`
+(20), `bar` (14), `1 / kelvin ** 2` (4), `megapascal` (2), `natural_log`,
+`absolute_mole_fraction`. Three spellings of molar mass, two of pressure — the failure mode
+is real (a document in g/mol read as kg/mol is wrong by 1000) and the table is tiny.
+
+**The split: Python does structure, C++ does numbers.** Python walks the JSON — I/O, not
+arithmetic — and emits `(identity, magnitude, unit_string)`. The native parameter builder
+resolves each unit against the field's expected dimension, rejects an incompatible one by
+name, and fills the array.
+
+Why not Pint in Python, and why not a Python-side table:
+
+- **It is validation, and validation happens once, natively.** A wrong unit is the same
+  class of error as a negative segment count, which the Stage 2 constructor already rejects
+  by field name. The tree this replaces ran three validation passes in two languages; one
+  pass in one language is the point.
+- **Python stays arithmetic-free with no exception clause.** A unit multiply in
+  `parameters.py` is small, but it is the first crack in a rule whose value is that it has
+  none.
+- **It is testable without Python.** The same `CHECK` harness as the rest of parameter
+  validation, and Stage 3's are the first gates that need a Python install at all.
+- **Pint leaves the hot path.** `Mixture.state(T=313.15*ureg.kelvin, ...)` unwraps a
+  quantity per call today, inside the measured ~590 µs of Python overhead on a call whose
+  native work is 67 µs. The public API takes and returns SI floats: K, Pa, mol/m³, mole
+  fractions, J/mol.
+
+Cost: about 40 lines of table and dimension check in `model/`, and `Pint` leaves
+`engine/pyproject.toml`. It is not installed in the greenfield venv today, so any Stage 3
+gate importing `epcsaft` would have failed on `units.py` regardless.
+
+## The MEA parameter set is the living bundle, not an estimation input
+
+Stage 2's nine-species fixture was transcribed from
+`analyses/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json`, an older
+estimation input. The current set is
+`MEA-Thermodynamics/analyses/mea_parameter_bundle/results/selected-current-best-parameters.json`,
+tabulated in that analysis's `results/notebook.pdf` page 3 with a provenance class per
+value (1 confirmed foundation, 2 literature-backed candidate, 3 local fit awaiting
+promotion, 4 missing or default). Three values differ:
+
+| | Stage 2 fixture | current bundle |
+|---|---|---|
+| CO₂ ε/k | 169.21 | **173.44025** |
+| CO₂–water k_ij | absent | **0.013262879176919628** |
+| permittivity formulation | ion suppression, per-ion α | **solvent-only** (α = 0 everywhere) |
+
+Stage 2 is unaffected: its checks are closed forms, exact symmetries, limits and derivative
+agreement, which hold for any parameter set — which is what `TESTING.md`'s rule buys. But
+every MEA claim from Stage 3 onward reads the living bundle, and the fixture is refreshed
+when Stage 3 lands.
+
+**Two different roles, not two candidates.** Baygi & Pahlavanzadeh 2015 is a *published
+model reproduced*: PC-SAFT, MEA–H₂O, no electrolyte, its own reported AAD, and therefore a
+pass/fail gate — a fact about the world. The living bundle is the *model under development*:
+nine species with electrolyte and reactions, currently 2.26× off in rmse-factor on pCO₂, so
+its deviations are reported and never asserted. Baygi gates the binary boundary rows at 5a;
+the bundle is what every reactive case is evaluated with.
+
 ## Order of the performance work, corrected
 
 The audit put tape caching first. The measurements put it last. Written into the stages
