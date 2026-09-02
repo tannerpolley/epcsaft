@@ -163,12 +163,7 @@ public:
   void finalize_solution(Ipopt::SolverReturn, Ipopt::Index n, const Ipopt::Number *x,
                          const Ipopt::Number *, const Ipopt::Number *, Ipopt::Index,
                          const Ipopt::Number *, const Ipopt::Number *, Ipopt::Number,
-                         const Ipopt::IpoptData *, Ipopt::IpoptCalculatedQuantities *) override {
-    if (x) {
-      std::copy(x, x + n, solution_.begin());
-      solution_available_ = true;
-    }
-  }
+                         const Ipopt::IpoptData *, Ipopt::IpoptCalculatedQuantities *) override { if (x) { std::copy(x, x + n, solution_.begin()); solution_available_ = true; } }
   [[nodiscard]] const std::array<double, 3> &solution() const { return solution_; }
   [[nodiscard]] bool solution_available() const { return solution_available_; }
   [[nodiscard]] const std::string &callback_error() const { return callback_error_; }
@@ -359,7 +354,6 @@ SaturationSolveResult solve_saturation(const NativeModel &model,
     candidate.failure_reason = attempt.callback_error.empty()
         ? "no finite in-domain saturation candidate"
         : attempt.callback_error;
-    candidate.evaluation = {};
     bool available = false;
     try {
       if (attempt.solution_available && inside_bounds(attempt.variables, bounds)) {
@@ -515,16 +509,9 @@ SaturationSensitivityResult solve_local_saturation_active(
     }
     return std::pair{std::move(pressure), std::move(chemical_potential)};
   };
-  std::pair<std::vector<double>, std::vector<double>> vapor;
-  std::pair<std::vector<double>, std::vector<double>> liquid;
-  try {
-    vapor = phase_partials(result.solve.evaluation.vapor.volume_m3);
-    liquid = phase_partials(result.solve.evaluation.liquid.volume_m3);
-  } catch (const std::exception &error) {
-    result.sensitivity_status = "unavailable";
-    result.sensitivity_failure_reason = error.what();
-    return result;
-  }
+  std::pair<std::vector<double>, std::vector<double>> vapor, liquid;
+  try { vapor = phase_partials(result.solve.evaluation.vapor.volume_m3); liquid = phase_partials(result.solve.evaluation.liquid.volume_m3); }
+  catch (const std::exception &error) { result.sensitivity_status = "unavailable"; result.sensitivity_failure_reason = error.what(); return result; }
   const double saturation_pressure =
       result.solve.evaluation.saturation_pressure_pa;
   result.derivatives.resize(3 * count);
@@ -548,10 +535,8 @@ SaturationSensitivityResult solve_local_saturation_active(
           sensitivity_dimension, count);
   result.sensitivity_rank = sensitivity.rank;
   result.sensitivity_dimension = sensitivity_dimension;
-  if (std::isfinite(sensitivity.condition_number))
-    result.sensitivity_condition_number = sensitivity.condition_number;
-  if (std::isfinite(sensitivity.backward_error))
-    result.sensitivity_backward_error = sensitivity.backward_error;
+  result.sensitivity_condition_number = std::isfinite(sensitivity.condition_number) ? std::optional<double>(sensitivity.condition_number) : std::nullopt;
+  result.sensitivity_backward_error = std::isfinite(sensitivity.backward_error) ? std::optional<double>(sensitivity.backward_error) : std::nullopt;
   const bool sensitivity_available = sensitivity.solution.size() ==
       sensitivity_dimension * count;
   result.sensitivity_status = sensitivity_available ? "available" : "unavailable";
