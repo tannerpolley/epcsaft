@@ -8,40 +8,46 @@ migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
 ---
 
-# Protect HELD until the phase-equilibrium promotion gate passes
+# Protect phase stability discovery until the promotion gate passes
 
 Kind: numerical-method
+
+Naming note (2026-09-02): this record originally labelled the protected
+incumbent by its authors. The code it refers to is now named for what it
+computes — phase stability discovery. The method is due to Held et al.; that
+attribution belongs in the source citation, not in an identifier. Provenance
+front matter and the historical route name `tp_flash` are unchanged.
 
 ## Context
 
 ADR 0001 set the correct destination—one source-neutral nonreactive
 phase-equilibrium owner—but prescribed an atomic replacement. CAP-09 then
-removed the mature `tp_flash` HELD/HELD2 workflow and introduced a separate
+removed the mature `tp_flash` phase stability discovery workflow and introduced a separate
 Gibbs-minimization implementation. That was not the intended lineage. The
-requested change was to evolve and eventually rename the validated HELD/HELD2
+requested change was to evolve and eventually rename the validated discovery
 workflow while adding explicit phase selection.
 
-HELD2 already carries expensive numerical and literature evidence, including
+The discovery workflow already carries expensive numerical and literature evidence, including
 the accepted eight-feed Khudaida Figure 2 campaign. Deleting that incumbent
 before a candidate proves the same workflows makes the migration itself the
 largest uncontrolled scientific change.
 
 ## Decision
 
-The exact pre-CAP-09 `tp_flash` HELD/HELD2 route is restored as the protected
-incumbent. `phase_equilibrium` is a HELD-derived candidate interface, not a
+The exact pre-CAP-09 `tp_flash` discovery route is restored as the protected
+incumbent. `phase_equilibrium` is a candidate interface derived from that discovery route, not a
 separate physical solver. During the transition:
 
 - both public operations remain explicit and neither automatically falls back
   to the other;
-- both use the same HELD/HELD2 numerical core and canonical EOS owner;
+- both use the same discovery numerical core and canonical EOS owner;
 - `tp_flash` retains its result, diagnostics, active-parameter sensitivity,
-  source-domain admission, and HELD2 certificate behavior unchanged;
+  source-domain admission, and discovery residual behavior unchanged;
 - `phase_equilibrium` may add typed feed amounts, phase roles, and constrained
   semantics without changing an incumbent discovery calculation;
 - a declared role mismatch fails closed and never becomes an initialization
   hint or a different topology claim; and
-- historical HELD/HELD2 names remain live only for the protected incumbent and
+- historical author-derived names remain live only for the protected incumbent and
   its exact evidence, not as selection keys for new numerical algorithms.
 
 The candidate implementation now carries exact protected incumbent discovery,
@@ -58,7 +64,7 @@ claim the completed ADR 0001 boundary.
 Retiring `tp_flash` requires a reviewed, user-approved result over one exact
 installed wheel that proves:
 
-1. every admitted HELD/HELD2 incumbent workflow is accepted by the candidate
+1. every admitted incumbent discovery workflow is accepted by the candidate
    with state, objective, residual, certificate, and sensitivity differences
    inside the incumbent's declared tolerances;
 2. the complete accepted Khudaida Figure 2 eight-feed sweep is no worse than
@@ -79,7 +85,7 @@ gate; its atomic-retirement sequencing is superseded by this decision.
 
 - The unrelated CAP-09 scratch phase solver is removed rather than retained as
   a parallel implementation.
-- Existing HELD2 certificates and validation evidence remain executable.
+- Existing discovery residual checks and validation evidence remain executable.
 - The temporary extra public interface is deliberate migration evidence, not
   a compatibility promise.
 - The one-owner target remains unchanged, but current capability claims are
@@ -94,4 +100,4 @@ by ADR 0007 therefore
 made `phase_equilibrium` the sole public route, mapped omitted fixed-T,P
 topology to the retained internal discovery controller, prohibited fallback
 for declared topology, and retired the transitional Python `tp_flash` surface.
-The HELD/HELD2 numerical core remains live internally as required by this ADR.
+The discovery numerical core remains live internally as required by this ADR.
