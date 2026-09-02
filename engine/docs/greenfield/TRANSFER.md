@@ -59,12 +59,13 @@ prioritised; the engine is built inside-out.
 | 2 | **1** `physics/` | six carried kernels, the policy header | closed `8bc6419` |
 | 3 | **2** `model/` | one tape per topology, one Lagrangian Hessian, density | closed `a2a2ac5` |
 | 4 | **5b** saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | planned |
-| 5 | **3** bindings and Python EOS | `bindings/`, `src/epcsaft/` as a mapping layer, Pint removed | briefing; worktree built |
-| 6 | **4** specification and minimizer | `problem.hpp`, `stoichiometry`, `request_compile`, `gibbs_minimizer` | designed; skeleton lattice in progress |
-| 7 | **5a** phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; T or P unknown | designed |
-| 8 | **7** `regression/` | `fit(model, observations)` on Ceres, covariance | planned |
-| 9 | **6** phase stability | `find_phases` written to Pereira 2012 | planned |
-| 10 | **8** composite gate and merge | every layer at once; one merge of `greenfield` into `main` | planned |
+| 5 | **3** bindings and Python EOS | `bindings/`, `src/epcsaft/` as a mapping layer, Pint removed | running; brief `stage-3.brief.*`, base `e4122b3` |
+| 6 | **T** tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` as the one record every solver returns; the three floors the tree can already measure (association pivot ratio, tape gradient floor, density root) | designed — `TOLERANCES.md` |
+| 7 | **4** specification and minimizer | `problem.hpp`, `stoichiometry`, `request_compile`, `gibbs_minimizer` | designed; skeleton lattice in progress |
+| 8 | **5a** phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; T or P unknown | designed |
+| 9 | **7** `regression/` | `fit(model, observations)` on Ceres, covariance | planned |
+| 10 | **6** phase stability | `find_phases` written to Pereira 2012 | planned |
+| 11 | **8** composite gate and merge | every layer at once; one merge of `greenfield` into `main` | planned |
 
 **Saturation before the minimizer.** Pure saturation is two rows — equal chemical
 potential and equal pressure between two phases of one component — over the density
@@ -80,7 +81,25 @@ a branch, and Stage 4's gate *accepts* that pattern in the well-posedness check.
 cannot be a row of the minimizer: an incipient phase has zero amount, and `ln n_p` is `ln 0`.
 Its rows are boundary rows, so they belong to 5a.
 
-**Consumers are not a stage.** Migrating `analyses/`, the MEA and Lithium repositories,
+**Stage T is a core, not a layer.** `TOLERANCES.md` is its specification. It sits in the
+run order between 3 and 4 because everything it adds to `physics/` and `model/` can be
+written and mutation-tested against the tree that exists after Stage 3, and everything
+Stage 4, 5a and 7 must then do — the running maximum of the gradient floor, `κ_KKT` from
+the sensitivity factorisation, the aggregate fit floor — is a commitment those briefs
+inherit rather than a mechanism they invent. Its gate is the one the document names: a
+`derived()` tighter than its input does not compile; every solver result carries
+`residual`, `tolerance`, `floor`, `amplification` and a named stop; the old tree's
+`3e-10 > 2e-10` inversion is rejected by the nominal floor with factor one.
+
+**Outside the engine, but staged.** Two pieces of work need planning, a brief and
+acceptance like a stage, and touch the engine without being a layer of it:
+
+| stage | writes | gate |
+|---|---|---|
+| **P** packet contract cut | one provenance form (`origin: {repo, commit, path, sha256}` per file); the lock manifest removed; the manifest's duplicated header dropped where the data file carries it; `validate_packets.py` and `packet-contract.md` rewritten; the 14 packets migrated | every packet validates; every hash the old form recorded still resolves; the in-place edit found on 2026-09-02 is rejected by the new check |
+| **C** consumers (#196) | `analyses/`, the MEA and Lithium repositories, result field names, packet names | each consumer's own suite green on the greenfield wheel |
+
+**Consumers are not an engine stage.** Migrating `analyses/`, the MEA and Lithium repositories,
 result field names and packet names (#196) is owed regardless of the rebuild and happens
 against the finished engine. It is tracked under "Outside the engine", not in this table.
 
