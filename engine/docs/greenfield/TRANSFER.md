@@ -44,6 +44,68 @@ The 78% is the audit's number reached by construction rather than by deletion. I
 prediction, not a budget: a stage that needs more lines to be correct takes them, and the
 overrun is recorded here rather than absorbed silently.
 
+## Execution order: MEA first, stability last
+
+Revised 2026-09-02 on the owner's priority: the MEA reactive workload comes first, phase
+stability goes last. Stage *numbers* are kept as names — they are in commit messages,
+`STAGE-LOG.md`, and the checker — and only the execution order changes. Two stages split.
+
+Nothing on MEA's path calls `find_phases`: its case is a finite electrolyte liquid against
+an incipient neutral vapour, topology declared. Stage 6 is not merely deprioritised, it is
+off the critical path.
+
+| run | stage | why MEA needs it |
+|---|---|---|
+| 1 | **2** `model/` | the Lagrangian Hessian and site elimination, 7–10× per evaluation — MEA's single biggest lever. Also `infinite_dilution_reference.cpp`, which its molality standard state requires |
+| 2 | **3** bindings + Python EOS | every name on MEA's surface |
+| 3 | **4** minimizer | fixed-T,P finite reactive electrolyte liquid: the speciation states |
+| 4 | **5a** `phase_boundary.cpp`, P unknown | the bubble point itself. **MEA switches here** |
+| 5 | **8a** MEA cutover | the 39→11 and 53→9 contraction |
+| 6 | **7** `regression/` | MEA fits only the neutral CO₂–water binary, an EOS-observable path |
+| 7 | **5b** saturation, `implicit_sensitivity.cpp` | owed to Stage 7's saturation gate and to Lithium |
+| 8 | **6** `phase_stability.cpp` | nothing |
+| 9 | **8b** composite gate, analyses, Lithium, merge | — |
+
+**Stage 4 versus Stage 5, disambiguated.** §"Problem as a degrees-of-freedom specification"
+lists "fixed T with an incipient partner solving P" among the patterns that fall out without
+a branch, and Stage 4's gate *accepts* that pattern in the well-posedness check. But it
+cannot be a row of the minimizer: an incipient phase has zero amount, and `ln n_p` is `ln 0`.
+Its rows are boundary rows. So the MEA path is 2 → 3 → 4 → **5a**, and the reactive bubble
+point moves from Stage 8 to 5a's gate, where the code that must satisfy it is written.
+
+`implicit_sensitivity.cpp` (250) leaves Stage 5 for 5b; `phase_boundary.cpp` (300) stays.
+Stage 5b keeps the saturation-fit gate explicitly, so Stage 7 running earlier does not
+silently lose it. Stage 8b re-runs 5a's gate as its closing step, so something still
+exercises every layer at once after 6 and 7 land.
+
+Reactive LLE remains absent from the oracle. MEA does not need it; it belongs with Stage 6.
+
+## Correction: the Stage 8 reactive gate is a golden file
+
+`TESTING.md` bans golden files of computed output — "a number that came out of this code is
+not evidence that this code is right." The Stage 8 gate as first written pins the liquid
+molar densities from `reactive_vle_baseline.json` (46,425–47,148 mol/m³), which are exactly
+that: this engine's own output. The rule catches the plan that introduced it.
+
+Replacement rows, all real measured data already transcribed with source hashes in
+`MEA-Thermodynamics/data/reference/MEA/`:
+
+| oracle case | source | gates |
+|---|---|---|
+| `aqueous_amine_binary_vle` | Cai 1996, isobaric T-x-y at 101.33 kPa | 5a — boundary rows on a neutral associating binary, no ions, no reactions |
+| `aqueous_amine_carbon_dioxide_speciation` | Jakobsen 2005 / Böttinger 2008 NMR, 293–353 K | 4 |
+| `aqueous_amine_carbon_dioxide_reactive_vle` | Jou 1995, Hilliard 2008, Xu 2011, 313–393 K | 5a |
+| `loaded_amine_density` | Amundsen 2009, ±0.0005 g/cm³ | 3, 4 — the measured counterpart of the computed density the baseline pinned |
+
+**These rows test the parameter set as much as the code**, and the current bundle is 2.26×
+off in rmse-factor on pCO₂, so they cannot be pass/fail on agreement. Within `TESTING.md`
+they can gate three things: that every row *solves*; that the solved point satisfies its own
+equations (equal chemical potentials, conservation, charge, Σy = 1 to 1e-10); and a
+**published-model reproduction** — Uyan, Sadowski & Held 2015 ePC-SAFT MEA–CO₂–H₂O, whose
+parameters and reported values sit on `codex/bulow-2021-fit-reproduction`. Reproducing a
+published paper with its published parameters is a fact about the world, in the same sense
+as the Khudaida tie-lines.
+
 ## Build order
 
 The order is forced by the include direction (`physics ← model ← equilibrium ← regression
