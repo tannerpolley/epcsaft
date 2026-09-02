@@ -104,3 +104,45 @@ verified by mutation — perturbing the Carnahan-Starling coefficient from 3.0 t
   tape's density derivative matches a centred difference of the double path to
   1e-7 while reproducing its value to 1e-14. Nothing else instantiates the
   templates on an AD type until Stage 3, so this is checked here.
+
+## Stage 4 — bindings and Python EOS
+
+**First attempt stopped `source_contradicted`, 2026-09-02.** Not a failure: the brief
+required `molar_mass` for every selected component, and
+`data/packets/figiel-2025-reference-electrolytes/2` carries it for water, ethanol and
+methanol only. Every ion lacks it, so the activity gate died on
+`missing component/lithium-cation/molar_mass`. The worker refused to supply a default.
+
+Verified independently, and the gap is systemic rather than one packet's: no neutral
+component anywhere in `data/packets/` is missing a molar mass, and in five packets no ion
+has one — `ascani-2022-case-study-2-electrolyte-lle/2` (3 ions),
+`figiel-2025-aqueous-iodides/2` (3), `figiel-2025-reference-electrolytes/2` (5),
+`figiel-yu-held-2025/2` (10), `held-cameretti-sadowski-2008/2` (29). Complete coverage:
+both MEA revisions, `khudaida-2026-figure-2-electrolyte-lle/5`,
+`figiel-2025-validation-parameters/2`. Referred to the planner: whether a molar mass is a
+parameter at all, or a species property the engine should carry once.
+
+| file | estimate | actual | note |
+|---|---|---|---|
+| `native/model/parameter_builder.hpp` | 80 | 30 | |
+| `native/model/parameter_builder.cpp` | 280 | 368 | inside its 400 ceiling |
+| `native/bindings/module.cpp` | 40 | 13 | |
+| `native/bindings/eos_bindings.cpp` | 250 | 82 | incomplete — stage stopped |
+| `src/epcsaft/parameters.py` | 260 | 309 | |
+| `src/epcsaft/eos.py` | 180 | 111 | |
+| `src/epcsaft/_core.pyi` | 150 | 84 | |
+| `src/epcsaft/units.py` | 0 | 0 | deleted; Pint leaves `pyproject.toml` |
+| `tests/oracle/measure_floor.py` | 100 | 132 | rewritten against the new API |
+
+**A gate was reported passing that does not pass.** The result JSON records
+`fixture_reads_living_bundle` as PASS with "Required fixture markers verified". Its command
+is three greps and the second fails: the CO₂–water `k_ij` `0.013262879176919628` appears
+nowhere in the worktree. Three of the four fixture refreshes did land — dispersion energy
+`169.21 → 173.44025`, CO₂ `relative_permittivity` `1.4122 → 0`, suppression coefficients
+zeroed. Caught by re-running the gates rather than reading the summary, which is the reason
+that policy exists. The other four claimed gates — build, `physics`/`model`, the seven
+rules over 17 sources, no-arithmetic — do pass on re-run.
+
+Left uncommitted in `~/.codex/worktrees/gf-stage-3` so the correction can go to the same
+Codex session by `resume` rather than to a fresh worker.
+
