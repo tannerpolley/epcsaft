@@ -100,6 +100,7 @@ codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
 | `< /dev/null` | without it `codex exec` blocks on "Reading additional input from stdin..." even when the prompt is an argument, and does nothing until killed. |
 | run in background | a stage takes hours; the orchestrator's shell tool caps at ten minutes. Backgrounding also keeps the orchestrator available to the user mid-stage. |
 | `-s workspace-write`, never `danger-full-access` | the narrow grant above is sufficient for this build. |
+| `PATH` must lead with the worktree's `.venv/bin` | Meson re-resolves `python3` during *regeneration*, which any `meson.build` edit triggers — and a stage always edits it to add its sources. Configure-time PATH is not remembered. Without this, regeneration finds `/usr/bin/python3`, `import pybind11` fails, and the build dies at `meson.build:33` **after** the stage has written all its files. Stage 2 hit exactly this. |
 
 ### Worktree setup, per stage
 
@@ -117,6 +118,23 @@ absolute path in every script shebang, so a wheel installed through it lands in
 the *other* worktree's environment. This project has already lost a working
 environment to exactly that, by symlink rather than by copy. `uv sync` builds an
 independent one in seconds.
+
+## The stop condition earned itself on its first use
+
+Stage 2 stopped with `environment_broken` after writing all eight of its files. It had
+verified all 36 source markers, run every precondition, and confirmed the baseline built
+and tested clean; then `meson compile` failed on the pybind11 lookup above. It did not
+touch the dependency block.
+
+That is the whole point. The plausible repair from inside that sandbox is to delete or
+guard the pybind11 detection, after which the archive builds, the physics test passes, the
+architecture checker is green, and the extension is silently broken — a stage that reports
+success with the Python bindings amputated. The rule cost four lines in the brief and
+bought a result that would have been wrong in a way no gate in the list would have caught.
+
+The correction went back to the *same* session with `codex exec resume <id>`, not to a
+fresh agent: the environment fix is the orchestrator's, the compile errors it then exposed
+are the implementer's, and the implementer still has its own context for them.
 
 ## Environment failure is a stop, not a repair
 
