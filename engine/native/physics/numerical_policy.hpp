@@ -115,6 +115,67 @@ inline const Tolerance DENSITY_BRACKET_INTERVALS{
     "coarse bracket over log volume; refined by Newton, not by subdivision",
 };
 
+inline const Tolerance DENSITY_LOWER_FRACTION{
+    1.0e-8,
+    Category::AlgorithmTolerance,
+    "Stage 2 brief; logarithmic density scan starts at a dilute ideal-gas fraction",
+};
+
+inline const Tolerance DENSITY_UPPER_FRACTION{
+    0.999,
+    Category::AlgorithmTolerance,
+    "Stage 2 brief; logarithmic density scan stops below close packing",
+};
+
+inline const Tolerance DENSITY_BISECTION_FRACTION{
+    0.5,
+    Category::AlgorithmTolerance,
+    "Stage 2 brief; safeguarded Newton uses the bracket midpoint",
+};
+
+inline const Tolerance ELECTROLYTE_SERIES_THRESHOLD{
+    1.0e-3,
+    Category::AlgorithmTolerance,
+    "electrolyte.hpp finite-size chi series switch",
+};
+
+inline const Tolerance COMPOSITION_SUM_TOLERANCE{
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "carried composition validation threshold from electrolyte_reference.hpp",
+};
+
+inline const Tolerance REFERENCE_MOLALITY_ONE{
+    1.0e-6,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp molality ladder",
+};
+inline const Tolerance REFERENCE_MOLALITY_TWO{
+    1.0e-8,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp molality ladder",
+};
+inline const Tolerance REFERENCE_MOLALITY_THREE{
+    1.0e-10,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp molality ladder",
+};
+inline const Tolerance REFERENCE_MOLALITY_FOUR{
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp molality ladder",
+};
+inline const Tolerance REFERENCE_CONVERGENCE_WITNESS{
+    1.0e-14,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp convergence witness",
+};
+inline const Tolerance REFERENCE_CONVERGENCE_TOLERANCE{
+    5.0e-5,
+    Category::AlgorithmTolerance,
+    "electrolyte_reference.hpp reference convergence threshold",
+};
+
 // ---------------------------------------------------------------- stability
 //
 // Pereira, Jackson, Galindo and Adjiman, Comput. Chem. Eng. 36 (2012) 99-118.

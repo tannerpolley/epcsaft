@@ -92,7 +92,11 @@ native_inc = include_directories('native')
 # a double and records a tape, so there is nothing to compile into the archive
 # until the model layer lands.
 # Stage 2
-model_sources = files()
+model_sources = files(
+  'native/model/helmholtz_model.cpp',
+  'native/model/density.cpp',
+  'native/model/infinite_dilution_reference.cpp',
+)
 # Stages 4, 5, 6
 equilibrium_sources = files()
 # Stage 7
@@ -152,6 +156,33 @@ physics_checks = executable(
   install: false,
 )
 test('physics', physics_checks)
+
+model_checks = executable(
+  'model_checks',
+  'tests/native/model_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('model', model_checks)
+
+model_floor = executable(
+  'model_floor',
+  'tests/native/model_floor.cpp',
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test(
+  'model_floor', model_floor,
+  suite: 'floor',
+  env: {'OMP_NUM_THREADS': '1'},
+  timeout: 600,
+)
 
 install_subdir(
   'src/epcsaft',
