@@ -191,6 +191,24 @@ worker starts, which costs a launch. The stage schema is
  "stop_detail": "..."}
 ```
 
+## Resuming a stopped stage
+
+A correction goes to the same session, never to a replacement worker. The global options
+come **before** the subcommand; `codex exec resume -C .` is rejected with
+`unexpected argument '-C' found`:
+
+```bash
+codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
+  --output-schema <schema.json> -o <result.json> \
+  resume <session-uuid> "$(cat resume-prompt.md)" \
+  < /dev/null > resume.log 2>&1 &
+```
+
+The session id is in the launch log's first lines (`session id: <uuid>`). Update the brief
+in the repository first, copy it into the worktree, and have the resume prompt say what
+changed and why — the worker still holds its own context for everything else, which is the
+whole reason a resume beats a fresh agent.
+
 ## Preflight
 
 `preflight.py` runs the brief's own claims against the worktree before the worker starts:
