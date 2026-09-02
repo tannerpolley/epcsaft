@@ -60,26 +60,30 @@ begins before the previous one's gate passes.
 
 Write: `engine/native/{physics,model,equilibrium,regression,bindings}/` (empty),
 `meson.build` producing one static archive `epcsaft_native` and one extension `_core`,
-and `tools/check-engine-architecture.py` with four rules:
+and `tools/check-engine-architecture.py` with five rules:
 
 1. exactly one static archive and one extension in the Meson products;
 2. `nm` on the archive shows no `PyInit`/pybind11 symbols;
 3. every `#include "..."` under `native/<layer>/` resolves to the same or a lower layer;
-4. no `constexpr` name defined in two translation units, and no category-1 constant
+4. `regression/` does not reach phase stability;
+5. no `constexpr` name defined in two translation units, and no category-1 constant
    outside `physics/physical_constants.hpp`.
 
-Rule 3 replaces the module-level regression ban that the old layout contradicted, with a
+Rule 4 replaces the module-level regression ban that the old layout contradicted, with a
 symbol rule: `regression/` may include `equilibrium/problem.hpp` and call
 `solve_equilibrium` / `solve_phase_boundary`; it may not include `phase_stability.hpp`,
-call `find_phases`, or construct a problem with phases omitted.
+call `find_phases`, or construct a problem with phases omitted. A fit needs
+differentiable residuals, and a discovered phase count is not one.
 
 Delete in the same commit: `engine/src/epcsaft/_native/`, `engine/cpp/`,
 `engine/tests/*/numerical/`, `engine/tests/*/behavior/`, and every Python module except
 the three that survive (`CARRY-OVER.md` §4). The branch does not build after this commit
 and is not expected to until Stage 3.
 
-**Gate:** the checker runs and reports four rules over an empty tree without crashing;
-`meson setup` configures.
+**Gate:** the checker reports all five rules green over the emptied tree, and each rule
+is shown to fail on a deliberate violation. `meson setup` does not configure until Stage 1
+supplies the first sources — a Meson archive with no source files is an error — so the
+build gate begins at Stage 1.
 
 ---
 

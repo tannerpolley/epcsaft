@@ -19,6 +19,7 @@ native_warnings = cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
 release_link_args = get_option('buildtype') == 'release' \
   ? cpp.get_supported_link_arguments('-s') \
   : []
+
 threads_dep = dependency('threads')
 ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '>=3.11.9')
 eigen_dep = dependency('eigen3', method: 'pkg-config', version: '>=3.4')
@@ -28,6 +29,7 @@ ceres_dep = dependency(
   modules: ['Ceres::ceres'],
   version: ['>=2.2.0', '<2.3.0'],
 )
+
 pybind11_include = run_command(
   py,
   '-c',
@@ -37,6 +39,7 @@ pybind11_include = run_command(
 pybind11_dep = declare_dependency(
   include_directories: include_directories(pybind11_include, is_system: true),
 )
+
 cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
@@ -79,141 +82,71 @@ nlopt_options.set_install(false)
 nlopt_project = cmake.subproject('nlopt', options: nlopt_options)
 nlopt_dep = nlopt_project.dependency('nlopt')
 
-eos_inc = include_directories('src/epcsaft/_native')
-interfaces_inc = include_directories('cpp/interfaces')
-eos_core = static_library(
-  'epcsaft_engine_eos_core',
+# One include root. A layer names its neighbours by path ("model/density.hpp"),
+# which is what makes the include direction checkable.
+native_inc = include_directories('native')
+
+# Filled by the build stages; the order is the layer order. Nothing here may
+# include pybind11 — that is bindings/, and it is the only place.
+# Stage 1
+physics_sources = files()
+# Stage 2
+model_sources = files()
+# Stages 4, 5, 6
+equilibrium_sources = files()
+# Stage 7
+regression_sources = files()
+
+epcsaft_native = static_library(
+  'epcsaft_native',
+  physics_sources,
+  model_sources,
+  equilibrium_sources,
+  regression_sources,
   cppad_temp_file,
-  'src/epcsaft/_native/eos.cpp',
-  'src/epcsaft/_native/eos_access.cpp',
-  'src/epcsaft/_native/eos_source_reference.cpp',
-  'src/epcsaft/_native/eos_regression_evaluator.cpp',
-  'src/epcsaft/_native/pure_saturation.cpp',
+  highs_conf_file,
   cpp_args: native_warnings,
   dependencies: [
     threads_dep,
     ipopt_dep,
     eigen_dep,
-    cppad_headers_dep,
-  ],
-  include_directories: [eos_inc, interfaces_inc],
-  install: false,
-  pic: true,
-)
-
-equilibrium_sources = files(
-  'cpp/equilibrium/owner_evaluator.cpp',
-  'cpp/equilibrium/chemical_equilibrium.cpp',
-  'cpp/equilibrium/chemical_equilibrium_compiler.cpp',
-  'cpp/equilibrium/phase_direction_compiler.cpp',
-  'cpp/equilibrium/chemical_equilibrium_support.cpp',
-  'cpp/equilibrium/reactive_finite_phase.cpp',
-  'cpp/equilibrium/grepe.cpp',
-  'cpp/equilibrium/solved_state_sensitivity.cpp',
-  'cpp/equilibrium/phase_equilibrium.cpp',
-  'cpp/equilibrium/phase_state.cpp',
-  'cpp/equilibrium/coexistence.cpp',
-  'cpp/equilibrium/flash.cpp',
-  'cpp/equilibrium/held.cpp',
-  'cpp/equilibrium/held_stage_i.cpp',
-  'cpp/equilibrium/held_stage_ii.cpp',
-  'cpp/equilibrium/held_stage_iii.cpp',
-  'cpp/equilibrium/held2.cpp',
-  'cpp/equilibrium/held2_certificates.cpp',
-  'cpp/equilibrium/held2_algorithm.cpp',
-  'cpp/equilibrium/held2_step1.cpp',
-  'cpp/equilibrium/held2_step2.cpp',
-  'cpp/equilibrium/held2_step3.cpp',
-  'cpp/equilibrium/held2_step4.cpp',
-  'cpp/equilibrium/held2_step5.cpp',
-  'cpp/equilibrium/held2_step6.cpp',
-  'cpp/equilibrium/held2_step7.cpp',
-  'cpp/equilibrium/held2_step8.cpp',
-  'cpp/equilibrium/held2_step9.cpp',
-  'cpp/equilibrium/held2_step10.cpp',
-  'cpp/equilibrium/held2_step8_nlp.cpp',
-)
-equilibrium_inc = include_directories('cpp/equilibrium')
-equilibrium_core = static_library(
-  'epcsaft_engine_equilibrium_core',
-  equilibrium_sources,
-  highs_conf_file,
-  cpp_args: native_warnings,
-  dependencies: [
-    ipopt_dep,
+    ceres_dep,
     highs_dep,
     nlopt_dep,
-    eigen_dep,
     boost_headers_dep,
     cppad_headers_dep,
   ],
-  include_directories: [equilibrium_inc, eos_inc, interfaces_inc],
-  install: false,
-  link_with: eos_core,
-  pic: true,
-)
-
-regression_private_inc = include_directories('cpp/regression')
-ceres_kernel_source = files('cpp/regression/ceres_least_squares.cpp')
-cpp.compiles(
-  ceres_kernel_source[0],
-  name: 'owner-neutral Ceres kernel',
-  args: native_warnings + [
-    '-I' + meson.current_source_dir() / 'cpp/interfaces',
-    '-I' + meson.current_source_dir() / 'cpp/regression',
-  ],
-  dependencies: [ceres_dep, eigen_dep],
-  required: true,
-)
-regression_core = static_library(
-  'epcsaft_engine_regression_core',
-  ceres_kernel_source,
-  cpp_args: native_warnings,
-  dependencies: [
-    ceres_dep,
-    eigen_dep,
-  ],
-  include_directories: [
-    interfaces_inc,
-    regression_private_inc,
-  ],
+  include_directories: native_inc,
   install: false,
   pic: true,
 )
 
+# Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
 py.extension_module(
   '_core',
-  'src/epcsaft/_native/module.cpp',
-  'src/epcsaft/_native/saturation_pybind.cpp',
-  'src/epcsaft/_native/regression_pybind.cpp',
-  'cpp/equilibrium/module.cpp',
-  'cpp/equilibrium/chemical_equilibrium_bindings.cpp',
+  files(),
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,
     ipopt_dep,
     eigen_dep,
+    ceres_dep,
     cppad_headers_dep,
   ],
-  include_directories: [
-    interfaces_inc,
-    regression_private_inc,
-    equilibrium_inc,
-    eos_inc,
-  ],
+  include_directories: native_inc,
   install: true,
   link_args: release_link_args,
-  link_with: [eos_core, equilibrium_core, regression_core],
+  link_with: epcsaft_native,
   subdir: 'epcsaft',
 )
 
+# Python ships alone: the native tree lives outside src/, so there is nothing
+# to exclude but caches.
 install_subdir(
   'src/epcsaft',
   exclude_directories: [
     '__pycache__',
-    '_native',
     'equilibrium/__pycache__',
-    'regression/__pycache__',
   ],
   install_dir: py.get_install_dir(),
 )

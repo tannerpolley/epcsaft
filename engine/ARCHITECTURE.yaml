@@ -1,5 +1,10 @@
-version: 12
-status: unified-monorepo-active
+version: 13
+status: greenfield-stage-0
+
+# The rule this file exists to state: C++ is organised by dependency layer,
+# because include direction is the only structural fact a checker can enforce.
+# Python is organised by capability, because that is what a caller imports.
+# The two do not mirror each other on purpose.
 
 artifact:
   repository: tannerpolley/ePC-SAFT
@@ -9,166 +14,99 @@ artifact:
   build_owner: pyproject.toml
   native_build_owner: meson.build
   runtime_dependencies: [Pint]
-  public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
+  public_modules: [epcsaft, epcsaft.equilibrium]
 
-owners:
-  scientific_records:
-    map: docs/scientific
-    decisions: docs/scientific/adr
-    formulation: docs/science/full-eos.md
-    equation_registry: docs/equations_registry.yaml
-    generated_equation_views: docs/latex
-    public_api_guide: docs/python-api.md
-  parameters:
-    input: epcsaft.Parameters
-    persistence: src/epcsaft/parameters.py
-    resolution: src/epcsaft/_resolve.py
-    active_set: epcsaft.ActiveParameterSet
-  eos:
-    models: [epcsaft.Pure, epcsaft.Mixture]
-    state: epcsaft.State
-    active_parameters: epcsaft.ActiveParameterSet
-    observable_descriptor: epcsaft.ObservableDescriptor
-    observable_block: epcsaft.ObservableBlock
-    equation_kernel: src/epcsaft/_native/helmholtz.hpp
-    selected_parameter_derivatives: src/epcsaft/_native/phase_block.hpp
-    access_boundary: src/epcsaft/_native/eos_access.cpp
-    source_reference_transfer: src/epcsaft/_native/eos_source_reference.cpp
-    density_closure: src/epcsaft/_native/density.hpp
-    pure_saturation: src/epcsaft/_native/pure_saturation.cpp
-    reference_states: src/epcsaft/reference.py
-  equilibrium:
-    public_module: epcsaft.equilibrium
-    python_api: src/epcsaft/equilibrium/_api.py
-    native_sources: cpp/equilibrium
-    nonreactive_numerical_core: held_held2
-    public_route: solve
-    promotion_status: accepted
-    promotion_result: ../analyses/reproduction/2026-khudaida/results/khudaida-2026-figure-2-held2-summary.json
-    transition_decision: docs/scientific/adr/0002-protect-phase-stability-until-promotion.md
-    promotion_decision: scientific_adr_0007_D-030
-    phase_specifications: [fixed_tp_feed, fixed_t_coexistence]
-    phase_modes: [omitted_topology_discovery, declared_topology_solve]
-    phase_kinds: [liquid, vapor]
-    component_support: [all_components, neutral_components, declared_neutral_components]
-    fixed_tp_component_support: all_components
-    fixed_tp_maximum_vapor_count: 1
-    coexistence_partner_support: [all_components, neutral_components]
-    phase_order: declared_topology_order
-    role_classification: native_mechanical_stability_and_volume_branch_order
-    discovery_maximum_phase_count: 2
-    maximum_certified_phase_count: 3
-    target_maximum_phase_count: 3
-    hints: non_authoritative_order_over_fixed_candidate_set
-    discovery_hints: forbidden_without_declared_topology
-    declared_topology_fallback: forbidden
-    active_parameters: epcsaft.ActiveParameterSet
-    solved_state_sensitivity: exact_implicit_from_eos_partials
-    general_reactive_equilibrium:
-      request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
-      result: epcsaft.equilibrium.GeneralReactiveEquilibriumResult
-      public_route: epcsaft.equilibrium.solve
-      native_solve: cpp/equilibrium/grepe.cpp
-      reaction_compiler: cpp/equilibrium/chemical_equilibrium_compiler.cpp
-      phase_direction_compiler: cpp/equilibrium/phase_direction_compiler.cpp
-      finite_reactive_owner: cpp/equilibrium/reactive_finite_phase.cpp
-      admitted_formulations: [finite, finite_incipient, intensive_boundary, temperature_boundary]
-      topology: request_declared
-      component_support: request_declared
-      formulation: total_gibbs_with_global_conservation
-      globality_claim: configured_local_minimum_only
-      admission: scientific_adr_0007_D-037_proven_core
-  regression:
-    public_module: epcsaft.regression
-    least_squares: epcsaft.regression.least_squares
-    curve_fit: epcsaft.regression.curve_fit
-    result: epcsaft.regression.LeastSquaresResult
-    native_fit: cpp/regression/ceres_least_squares.cpp
-    native_binding: src/epcsaft/_native/regression_pybind.cpp
-    native_sources: [cpp/regression, src/epcsaft/_native/regression_pybind.cpp]
-    optimizer: ceres
-    scientific_values: owner_provided_only
-    experiment_kinds: [eos, equilibrium]
-    current_observation_boundary: [eos_fixed_state, eos_pure_saturation, adr_0007_D-034, adr_0007_D-035]
-    grepe_transfer_owner: cpp/equilibrium/owner_evaluator.cpp
-    grepe_request: epcsaft.equilibrium.GeneralReactiveEquilibriumProblem
-    grepe_native_owner: cpp/equilibrium/grepe.cpp
-    grepe_feed_null_source: reaction_system.feed_amounts_mol
-    grepe_feed_null_unit: mol
-    phase_discovery_access: forbidden
-    equilibrium_observation_families: [grepe]
-  native_core:
-    extension: epcsaft._core
-    static_libraries: [eos_core, equilibrium_core, regression_core]
-    meson_targets:
-      eos_core: epcsaft_engine_eos_core
-      equilibrium_core: epcsaft_engine_equilibrium_core
-      regression_core: epcsaft_engine_regression_core
-      extension: _core
-    permitted_internal_links:
-      equilibrium_core: [eos_core]
-      regression_core: []
-      extension: [eos_core, equilibrium_core, regression_core]
-    binding_sources: [src/epcsaft/_native, cpp/equilibrium, cpp/regression]
-    internal_types: direct_cpp
-    python_inside_static_libraries: forbidden
-    private_transport_abi: forbidden
-    iterative_python_callbacks: forbidden
-    public_cpp_abi: forbidden
+plan:
+  transfer: docs/greenfield/TRANSFER.md
+  carry_over: docs/greenfield/CARRY-OVER.md
+  acceptance: tests/oracle
+  performance_floor: docs/greenfield/performance_floor.md
+  stability_findings: docs/greenfield/held2-stage-i-ii-findings.md
+
+native:
+  root: native
+  archive: epcsaft_native
+  extension: epcsaft._core
+  checker: ../tools/check-engine-architecture.py
+  # Downward only. bindings may include anything; nothing includes bindings.
+  layers: [physics, model, equilibrium, regression, bindings]
+  layer_content:
+    physics: no CppAD types, no solver
+    model: EOS state and exact derivatives, no phase concept
+    equilibrium: one minimization, its rows, its stability
+    regression: parameter fitting against declared problems
+    bindings: the only pybind11 includes
+  # regression/ may call solve_equilibrium and solve_phase_boundary on a problem
+  # with declared phases; it may not reach phase stability, because a fit needs
+  # differentiable residuals and a discovered phase count is not one.
+  regression_boundary:
+    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary]
+    forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
+  invariants:
+    static_libraries: 1
+    native_extensions: 1
+    python_inside_static_library: forbidden
     installed_headers: forbidden
-    state_lifetimes:
-      public_grepe_compilation: once_per_request
-      regression_owner_compilation: once_per_distinct_concrete_evaluator
-      regression_owner_values: once_per_exact_optimizer_coordinate
-      thread_and_tape_policy: measured_no_change_issue_86_comment_5442040189
+    public_cpp_abi: forbidden
+    iterative_python_callbacks: forbidden
+    constant_defined_twice: forbidden
+    category_one_constants_home: physics/physical_constants.hpp
 
-canonical_plans:
-  capability_cutover: docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md
-  eos: docs/eos/plans/2026-08-07-general-eos-parameter-derivatives.md
-  regression: docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md
-  equilibrium: docs/equilibrium/plans/2026-08-07-general-phase-equilibrium.md
-  grepe_target: docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md
+python:
+  root: src/epcsaft
+  # Python maps inputs to _core and _core results to types. It performs no
+  # arithmetic: a frontend call is agnostic to what it is solving.
+  numerics: forbidden
+  capabilities: [eos, equilibrium, regression]
+  exports:
+    epcsaft: 11
+    epcsaft.equilibrium: 9
 
-final_cutover:
-  status: accepted
-  decision: scientific_adr_0007_D-032
-  subject_commit: a8efa571d52c32f5a697f15dd7f4623b7e3613fd
-  subject_tree: c710bec469f7442952979e096a260cccb5a84246
-  result: ../analyses/phase-stability-cutover/results/phase-stability-summary.json
+formulation:
+  # Phase equilibrium, chemical equilibrium, and the coupled problem are one KKT
+  # system: B = I, one phase, or both. The affinity vanishes because B*nu = 0.
+  objective: sum_p [A_p(T, V_p, n_p) + P V_p] + sum g0 n
+  coordinates: [log n_p, log eta_p]
+  pressure_equality: stationarity row
+  specification: degrees_of_freedom
+  well_posedness: unknowns versus independent equations, failing by name
+  document: docs/equilibrium/formulation.md
+  stability_source: Pereira et al. 2012, Comput. Chem. Eng. 36, 99-118
+  not_expressible: [solids, critical points, kinetics]
+
+naming:
+  # No proper nouns in identifiers. Source names are citations, not symbols.
+  # HELD in particular read as the wrong author here: Christoph Held is a
+  # parameter source in this repository's bibliography, and the algorithm is not
+  # his.
+  proper_nouns_in_identifiers: forbidden
+  retired: [HELD, Held2, GREPE, Provider, step numbering]
+
+evidence:
+  # Tests follow the Python side, because a test is written against a
+  # user-facing claim, not a compilation unit. No numerical/behavior split.
+  organisation: by_capability
+  basis: real mixtures and measured data
+  route_specific_gates: forbidden
+  downstream_specific_flags: forbidden
+  oracle: tests/oracle/oracle.json
+  reactive_baseline: tests/oracle/reactive_vle_baseline.json
+  floor: tests/oracle/floor-measurements.json
+  entry_point_profile: tests/oracle/entry-point-profile.json
 
 scientific_boundaries:
   reusable_packets: data
   installed_artifact_evidence: analyses
   packet_access: explicit_materialization_only
   sibling_discovery: forbidden
-  regression_transfer: explicit_authority_neutral_candidate_parameters
 
 build_invariants:
   distributions: 1
   versions: 1
   wheels: 1
-  native_extensions: 1
   meson_roots: 1
   editable_downstream_dependencies: forbidden
   compatibility_aliases: forbidden
-  installed_eos_discovery: forbidden
   mutable_wheel_inputs: forbidden
-  development_wheel_cache: content_addressed_and_verified
   third_party_cmake_use: nlopt_subproject_only
-  source_specific_runtime_routes: forbidden
   inferred_parameter_defaults: forbidden
-
-evidence:
-  retained_tests: numerical_algorithm_and_scientific_workflow_only
-  normal_test_routing: affected_scientific_domain
-  full_test_routing: default_plus_slow_numerical_evidence
-  package_test_mode: installed_wheel
-  required_module_origins: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
-  installed_wheel_readiness: ../tools/verify-installed-wheel.py
-  phase_equilibrium_campaign: ../analyses/reproduction/2026-khudaida/tests/test_phase_equilibrium_campaign.py
-  phase_equilibrium_promotion: accepted_cap_09_result
-  developer_gate: build_first_parallel_installed_wheel_under_10_seconds_warm
-  slow_numerical_evidence: explicit_owner_command
-  installed_wheel_analyses: explicit_analysis_owner_command
-  native_quality_and_sanitizers: explicit_risk_based_owner_command
-  external_authority_gate: explicit_user_approval
