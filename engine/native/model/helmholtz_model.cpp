@@ -124,7 +124,11 @@ HelmholtzModel::HelmholtzModel(
         parameters_.dispersion_energy_over_k.end(),
         [](double value) { return std::isfinite(value) && value >= 0.0; }
     ), "dispersion_energy_over_k");
-    require(positive_vector(parameters_.molar_mass_kg_per_mol), "molar_mass");
+    for (std::size_t component = 0; component < components; ++component) {
+        const double mass = parameters_.molar_mass_kg_per_mol[component];
+        require(std::isfinite(mass) && mass >= 0.0, "molar_mass");
+        require(parameters_.charge_number[component] != 0 || mass > 0.0, "molar_mass");
+    }
     require(finite_vector(parameters_.k_ij), "k_ij");
     require(finite_vector(parameters_.l_ij), "l_ij");
     require(finite_vector(parameters_.k_ij_reciprocal_temperature_slope),
