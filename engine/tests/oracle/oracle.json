@@ -1,0 +1,430 @@
+{
+  "cases": {
+    "aqueous_alkali_halide_activity": [
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.965,
+        "molality_mol_kg": 0.001,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.904,
+        "molality_mol_kg": 0.01,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.789,
+        "molality_mol_kg": 0.1,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.739,
+        "molality_mol_kg": 0.5,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.775,
+        "molality_mol_kg": 1.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628346e-05,
+        "infinite_dilution_log_fugacity_anion": -127.07688974127,
+        "infinite_dilution_log_fugacity_cation": -196.460862367585,
+        "measured_mean_ionic_activity_coefficient": 0.924,
+        "molality_mol_kg": 2.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 0.965,
+        "molality_mol_kg": 0.001,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 0.905,
+        "molality_mol_kg": 0.01,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 0.797,
+        "molality_mol_kg": 0.1,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 0.754,
+        "molality_mol_kg": 0.5,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 0.803,
+        "molality_mol_kg": 1.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "lithium-cation",
+        "convergence_error": 1.0628332e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327869,
+        "infinite_dilution_log_fugacity_cation": -196.460862367584,
+        "measured_mean_ionic_activity_coefficient": 1.012,
+        "molality_mol_kg": 2.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "LiBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.965,
+        "molality_mol_kg": 0.001,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.901,
+        "molality_mol_kg": 0.01,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.768,
+        "molality_mol_kg": 0.1,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.649,
+        "molality_mol_kg": 0.5,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.604,
+        "molality_mol_kg": 1.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "chloride-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628373e-05,
+        "infinite_dilution_log_fugacity_anion": -127.076889741263,
+        "infinite_dilution_log_fugacity_cation": -124.604998599407,
+        "measured_mean_ionic_activity_coefficient": 0.573,
+        "molality_mol_kg": 2.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KCl",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.965,
+        "molality_mol_kg": 0.001,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.902,
+        "molality_mol_kg": 0.01,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.771,
+        "molality_mol_kg": 0.1,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.658,
+        "molality_mol_kg": 0.5,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.617,
+        "molality_mol_kg": 1.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      },
+      {
+        "anion": "bromide-anion",
+        "cation": "potassium-cation",
+        "convergence_error": 1.0628355e-05,
+        "infinite_dilution_log_fugacity_anion": -117.268077327867,
+        "infinite_dilution_log_fugacity_cation": -124.604998599412,
+        "measured_mean_ionic_activity_coefficient": 0.593,
+        "molality_mol_kg": 2.0,
+        "pressure_pa": 100000.0,
+        "pure_solvent_log_fugacity": -3.458429227312,
+        "salt": "KBr",
+        "temperature_k": 298.15
+      }
+    ],
+    "light_alkane_saturation": [
+      {
+        "liquid_molar_volume_m3_per_mol": 4.6566653e-05,
+        "measured_liquid_density_kg_m3": 640.94852,
+        "measured_pressure_pa": 11.080787,
+        "saturation_pressure_pa": 11.123831887356,
+        "species": "ethane",
+        "temperature_k": 100.0,
+        "vapor_molar_volume_m3_per_mol": 74.743419596532
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 4.8337692e-05,
+        "measured_liquid_density_kg_m3": 618.94997,
+        "measured_pressure_pa": 352.30167,
+        "saturation_pressure_pa": 351.942349700179,
+        "species": "ethane",
+        "temperature_k": 120.0,
+        "vapor_molar_volume_m3_per_mol": 2.834068655854
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 5.0209352e-05,
+        "measured_liquid_density_kg_m3": 596.58156,
+        "measured_pressure_pa": 3813.5564,
+        "saturation_pressure_pa": 3814.360475025046,
+        "species": "ethane",
+        "temperature_k": 140.0,
+        "vapor_molar_volume_m3_per_mol": 0.304489154851
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 5.2221838e-05,
+        "measured_liquid_density_kg_m3": 573.55144,
+        "measured_pressure_pa": 21405.224,
+        "saturation_pressure_pa": 21443.595352485794,
+        "species": "ethane",
+        "temperature_k": 160.0,
+        "vapor_molar_volume_m3_per_mol": 0.061487816743
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 5.4449159e-05,
+        "measured_liquid_density_kg_m3": 549.50874,
+        "measured_pressure_pa": 78638.137,
+        "saturation_pressure_pa": 78838.30609974916,
+        "species": "ethane",
+        "temperature_k": 180.0,
+        "vapor_molar_volume_m3_per_mol": 0.018524252226
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 5.7008476e-05,
+        "measured_liquid_density_kg_m3": 523.97698,
+        "measured_pressure_pa": 217232.94,
+        "saturation_pressure_pa": 217800.69494692178,
+        "species": "ethane",
+        "temperature_k": 200.0,
+        "vapor_molar_volume_m3_per_mol": 0.007241100995
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 6.0090117e-05,
+        "measured_liquid_density_kg_m3": 496.27145,
+        "measured_pressure_pa": 492046.39,
+        "saturation_pressure_pa": 493283.91447801754,
+        "species": "ethane",
+        "temperature_k": 220.0,
+        "vapor_molar_volume_m3_per_mol": 0.003361330765
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 6.4033976e-05,
+        "measured_liquid_density_kg_m3": 465.30887,
+        "measured_pressure_pa": 966787.79,
+        "saturation_pressure_pa": 969152.4807171321,
+        "species": "ethane",
+        "temperature_k": 240.0,
+        "vapor_molar_volume_m3_per_mol": 0.001745731329
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 6.954707e-05,
+        "measured_liquid_density_kg_m3": 429.07617,
+        "measured_pressure_pa": 1711835.4,
+        "saturation_pressure_pa": 1715342.64024801,
+        "species": "ethane",
+        "temperature_k": 260.0,
+        "vapor_molar_volume_m3_per_mol": 0.000969646811
+      },
+      {
+        "liquid_molar_volume_m3_per_mol": 7.8522221e-05,
+        "measured_liquid_density_kg_m3": 382.72712,
+        "measured_pressure_pa": 2806735.8,
+        "saturation_pressure_pa": 2807103.310187958,
+        "species": "ethane",
+        "temperature_k": 280.0,
+        "vapor_molar_volume_m3_per_mol": 0.000550279695
+      }
+    ],
+    "reactive_equilibrium_reachability": [
+      {
+        "model_constructed": false,
+        "packet": "mea-co2-h2o-nine-species-estimation",
+        "system": "aqueous_amine_carbon_dioxide_reactive",
+        "unevaluable": "FileNotFoundError: [Errno 2] No such file or directory: '~/Workspaces/Engineering/ePC-SAFT-project/data/packets/mea-co2-h2o-nine-species-estim"
+      },
+      {
+        "components_available": [
+          "water",
+          "lithium-cation",
+          "chloride-anion"
+        ],
+        "model_constructed": true,
+        "note": "model builds; a reaction system and declared phases are required to solve, which this capture does not assemble",
+        "packet": "figiel-2025-reference-electrolytes",
+        "reactive_problem_constructed": false,
+        "system": "aqueous_lithium_chloride_reactive"
+      }
+    ]
+  }
+}

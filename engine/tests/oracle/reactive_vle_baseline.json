@@ -1,0 +1,27 @@
+{
+  "case": "aqueous_amine_carbon_dioxide_reactive_vle",
+  "chemistry": {
+    "species": ["water","monoethanolamine","carbon-dioxide","protonated-monoethanolamine",
+                "carbamate-anion","bicarbonate-anion","carbonate-anion","hydronium-cation","hydroxide-anion"],
+    "phases": "finite electrolyte liquid against an incipient neutral vapour",
+    "reactions": 2,
+    "solves_for": "bubble pressure at fixed temperature and CO2 loading"
+  },
+  "measured_2026_09_02": [
+    {"solve_seconds": 7.57, "eos_evaluations": 225, "ms_per_evaluation": 33.64, "liquid_molar_density_mol_m3": 46425.26149648659},
+    {"solve_seconds": 7.73, "eos_evaluations": 234, "ms_per_evaluation": 33.02, "liquid_molar_density_mol_m3": 46613.56087477174},
+    {"solve_seconds": 7.39, "eos_evaluations": 234, "ms_per_evaluation": 31.60, "liquid_molar_density_mol_m3": 46746.152238335846},
+    {"solve_seconds": 8.18, "eos_evaluations": 252, "ms_per_evaluation": 32.45, "liquid_molar_density_mol_m3": 47147.7378423092}
+  ],
+  "single_state_evaluation_ms": {"two_component_no_association": 0.611,
+                                 "two_component_associating": 1.190,
+                                 "nine_species_electrolyte": 5.783},
+  "request_vocabulary_defect": {
+    "finding": "all 123 stored equilibrium requests are unloadable by the current engine",
+    "cause": "issue #156 retired Provider; the saved documents still name it",
+    "sites": ["phases[].model.kind = provider", "phases[].model.reference_id = installed-provider-eos",
+              "reaction_system.equilibrium_constants[].transform = source-standard-state-to-provider-neutral-reference"],
+    "repair": "single substitution provider -> eos at all three sites"
+  },
+  "role": "baseline to beat, not to preserve"
+}

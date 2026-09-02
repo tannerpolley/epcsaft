@@ -1,0 +1,253 @@
+{
+  "environment": {
+    "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+    "wheel_sha256": "287ad813144acc856381d64ca43177e061531f28cec605b7a036a3943b34f57b",
+    "commit": "f0abaced2a94f2b0a5bb9c46bb6a34b6425b37a4",
+    "ldd": "\tlinux-vdso.so.1 (0x000073b03f87f000)\n\tlibipopt.so.1 => /lib/libipopt.so.1 (0x000073b03ec2a000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x000073b03eb41000)\n\tlibceres.so.4 => /lib/x86_64-linux-gnu/libceres.so.4 (0x000073b03e400000)\n\tlibstdc++.so.6 => /lib/x86_64-linux-gnu/libstdc++.so.6 (0x000073b03e000000)\n\tlibgcc_s.so.1 => /lib/x86_64-linux-gnu/libgcc_s.so.1 (0x000073b03f826000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x000073b03dc00000)\n\t/lib64/ld-linux-x86-64.so.2 (0x000073b03f881000)\n\tliblapack.so.3 => /lib/x86_64-linux-gnu/liblapack.so.3 (0x000073b03d400000)\n\tlibblas.so.3 => /lib/x86_64-linux-gnu/libblas.so.3 (0x000073b03ea9a000)\n\tlibdmumps_seq-5.6.so => /lib/x86_64-linux-gnu/libdmumps_seq-5.6.so (0x000073b03d000000)\n\tlibglog.so.1 => /lib/x86_64-linux-gnu/libglog.so.1 (0x000073b03f7ee000)\n\tlibcholmod.so.5 => /lib/x86_64-linux-gnu/libcholmod.so.5 (0x000073b03de41000)\n\tlibspqr.so.4 => /lib/x86_64-linux-gnu/libspqr.so.4 (0x000073b03ea44000)\n\tlibgfortran.so.5 => /lib/x86_64-linux-gnu/libgfortran.so.5 (0x000073b03cc00000)\n\tlibmumps_common_seq-5.6.so => /lib/x86_64-linux-gnu/libmumps_common_seq-5.6.so (0x000073b03e9c0000)\n\tlibgflags.so.2.2 => /lib/x86_64-linux-gnu/libgflags.so.2.2 (0x000073b03f7cb000)\n\tlibunwind.so.8 => /lib/x86_64-linux-gnu/libunwind.so.8 (0x000073b03f7b0000)\n\tlibamd.so.3 => /lib/x86_64-linux-gnu/libamd.so.3 (0x000073b03f7a3000)\n\tlibcolamd.so.3 => /lib/x86_64-linux-gnu/libcolamd.so.3 (0x000073b03e9b7000)\n\tlibcamd.so.3 => /lib/x86_64-linux-gnu/libcamd.so.3 (0x000073b03e9ac000)\n\tlibccolamd.so.3 => /lib/x86_64-linux-gnu/libccolamd.so.3 (0x000073b03e9a0000)\n\tlibsuitesparseconfig.so.7 => /lib/x86_64-linux-gnu/libsuitesparseconfig.so.7 (0x000073b03e99b000)\n\tlibgomp.so.1 => /lib/x86_64-linux-gnu/libgomp.so.1 (0x000073b03e3aa000)\n\tlibesmumps-7.0.so => /lib/x86_64-linux-gnu/libesmumps-7.0.so (0x000073b03e993000)\n\tlibscotch-7.0.so => /lib/x86_64-linux-gnu/libscotch-7.0.so (0x000073b03e315000)\n\tliblzma.so.5 => /lib/x86_64-linux-gnu/liblzma.so.5 (0x000073b03e2e3000)\n\tlibscotcherr-7.0.so => /lib/x86_64-linux-gnu/libscotcherr-7.0.so (0x000073b03e98e000)\n\tlibz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x000073b03e2c7000)\n\tlibbz2.so.1.0 => /lib/x86_64-linux-gnu/libbz2.so.1.0 (0x000073b03e2b3000)\n",
+    "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "cpu": "AMD Ryzen 5 5500",
+    "python": "3.13.14",
+    "OMP_NUM_THREADS": "1",
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39"
+  },
+  "state": {
+    "neutral_binary.state_rho": {
+      "n": 2,
+      "T": 300.0,
+      "wall_us": 660.1991999195889,
+      "recordings": 1.0,
+      "recording_ns": 17829.8,
+      "tape_ops": 301.0,
+      "jacobian_calls": 1.0,
+      "hessian_calls": 1.0,
+      "forward_calls": 1.0,
+      "sweep_ns": 49308.06,
+      "association_solves": 0.0,
+      "association_iterations": 0.0
+    },
+    "neutral_binary.phase_derivatives_order2": {
+      "error": "ValueError: phase derivatives require resolved active coordinates"
+    },
+    "neutral_binary.phase_derivatives_order1": {
+      "error": "ValueError: phase derivative order must be exactly two"
+    },
+    "neutral_binary.grepe_evaluate_parameterized_phase": {
+      "n": 2,
+      "wall_us": 65.02004980575293,
+      "recordings": 2.0,
+      "recording_ns": 16321.85,
+      "tape_ops": 287.0,
+      "jacobian_calls": 2.0,
+      "hessian_calls": 2.0,
+      "forward_calls": 2.0,
+      "sweep_ns": 0.0,
+      "association_solves": 0.0,
+      "association_iterations": 0.0
+    },
+    "associating_binary.state_rho": {
+      "n": 2,
+      "T": 376.88,
+      "wall_us": 1480.327960161958,
+      "recordings": 1.0,
+      "recording_ns": 37135.84,
+      "tape_ops": 601.0,
+      "jacobian_calls": 1.0,
+      "hessian_calls": 5.0,
+      "forward_calls": 1.0,
+      "sweep_ns": 791409.16,
+      "association_solves": 1.0,
+      "association_iterations": 126.0
+    },
+    "associating_binary.phase_derivatives_order2": {
+      "error": "ValueError: phase derivatives require resolved active coordinates"
+    },
+    "associating_binary.phase_derivatives_order1": {
+      "error": "ValueError: phase derivative order must be exactly two"
+    },
+    "associating_binary.grepe_evaluate_parameterized_phase": {
+      "n": 2,
+      "wall_us": 584.2871498316526,
+      "recordings": 2.0,
+      "recording_ns": 28146.45,
+      "tape_ops": 540.0,
+      "jacobian_calls": 2.0,
+      "hessian_calls": 6.0,
+      "forward_calls": 2.0,
+      "sweep_ns": 521809.25,
+      "association_solves": 1.0,
+      "association_iterations": 126.0
+    },
+    "aqueous_electrolyte_3.state_rho": {
+      "n": 3,
+      "T": 298.15,
+      "wall_us": 1005.9745199396276,
+      "recordings": 1.0,
+      "recording_ns": 30701.84,
+      "tape_ops": 572.0,
+      "jacobian_calls": 1.0,
+      "hessian_calls": 3.0,
+      "forward_calls": 1.0,
+      "sweep_ns": 397042.58,
+      "association_solves": 1.0,
+      "association_iterations": 14.0
+    },
+    "aqueous_electrolyte_3.phase_derivatives_order2": {
+      "error": "ValueError: phase derivatives require resolved active coordinates"
+    },
+    "aqueous_electrolyte_3.phase_derivatives_order1": {
+      "error": "ValueError: phase derivative order must be exactly two"
+    },
+    "aqueous_electrolyte_3.grepe_evaluate_parameterized_phase": {
+      "n": 3,
+      "wall_us": 364.327499846695,
+      "recordings": 2.0,
+      "recording_ns": 30396.95,
+      "tape_ops": 557.0,
+      "jacobian_calls": 2.0,
+      "hessian_calls": 4.0,
+      "forward_calls": 2.0,
+      "sweep_ns": 310506.85,
+      "association_solves": 1.0,
+      "association_iterations": 14.0
+    },
+    "mea_nine_species.state_rho": {
+      "n": 9,
+      "T": 313.15,
+      "wall_us": 8494.297479919624,
+      "recordings": 1.0,
+      "recording_ns": 99566.32,
+      "tape_ops": 2164.0,
+      "jacobian_calls": 1.0,
+      "hessian_calls": 7.0,
+      "forward_calls": 1.0,
+      "sweep_ns": 7314727.2,
+      "association_solves": 1.0,
+      "association_iterations": 44.0
+    },
+    "mea_nine_species.phase_derivatives_order2": {
+      "error": "ValueError: phase derivatives require resolved active coordinates"
+    },
+    "mea_nine_species.phase_derivatives_order1": {
+      "error": "ValueError: phase derivative order must be exactly two"
+    },
+    "mea_nine_species.grepe_evaluate_parameterized_phase": {
+      "n": 9,
+      "wall_us": 4815.43124988093,
+      "recordings": 2.0,
+      "recording_ns": 124154.05,
+      "tape_ops": 1618.0,
+      "jacobian_calls": 2.0,
+      "hessian_calls": 8.0,
+      "forward_calls": 2.0,
+      "sweep_ns": 4571753.7,
+      "association_solves": 1.0,
+      "association_iterations": 44.0
+    }
+  },
+  "discovery_neutral_binary": {
+    "wall_s": 0.6710802349989535,
+    "phases": 1,
+    "eos_evaluation_count": 4631,
+    "optimizer_solve_count": 42,
+    "optimizer_iteration_count": 0,
+    "recordings": 4632,
+    "recording_ns": 68456537,
+    "tape_ops": 1236744,
+    "jacobian_calls": 4632,
+    "hessian_calls": 4632,
+    "forward_calls": 4632,
+    "sweep_ns": 0,
+    "association_solves": 0,
+    "association_iterations": 0
+  },
+  "reactive_bubble_point": [
+    {
+      "identity": "vle_obs_0119",
+      "wall_s": 10.983954263996566,
+      "status": "evaluated",
+      "eos_evaluation_count": 183.0,
+      "ipopt_iterations": null,
+      "evidence_keys": [
+        "accepted_candidate_count",
+        "closure_evaluation_count",
+        "distinct_branch_count",
+        "eos_evaluation_count"
+      ],
+      "recordings": 1759,
+      "recording_ns": 170246793,
+      "tape_ops": 3357475,
+      "jacobian_calls": 1759,
+      "hessian_calls": 11485,
+      "forward_calls": 1759,
+      "sweep_ns": 10724284386,
+      "association_solves": 1621,
+      "association_iterations": 74020
+    },
+    {
+      "identity": "vle_obs_0143",
+      "wall_s": 10.856839614003547,
+      "status": "evaluated",
+      "eos_evaluation_count": 183.0,
+      "ipopt_iterations": null,
+      "evidence_keys": [
+        "accepted_candidate_count",
+        "closure_evaluation_count",
+        "distinct_branch_count",
+        "eos_evaluation_count"
+      ],
+      "recordings": 1705,
+      "recording_ns": 160469973,
+      "tape_ops": 3266669,
+      "jacobian_calls": 1705,
+      "hessian_calls": 11041,
+      "forward_calls": 1705,
+      "sweep_ns": 10596478318,
+      "association_solves": 1556,
+      "association_iterations": 69649
+    },
+    {
+      "identity": "vle_obs_0203",
+      "wall_s": 10.99839728900406,
+      "status": "evaluated",
+      "eos_evaluation_count": 195.0,
+      "ipopt_iterations": null,
+      "evidence_keys": [
+        "accepted_candidate_count",
+        "closure_evaluation_count",
+        "distinct_branch_count",
+        "eos_evaluation_count"
+      ],
+      "recordings": 1716,
+      "recording_ns": 172385810,
+      "tape_ops": 3298543,
+      "jacobian_calls": 1716,
+      "hessian_calls": 11136,
+      "forward_calls": 1716,
+      "sweep_ns": 10726846003,
+      "association_solves": 1570,
+      "association_iterations": 70137
+    },
+    {
+      "identity": "vle_obs_0225",
+      "wall_s": 11.39001050000661,
+      "status": "evaluated",
+      "eos_evaluation_count": 357.0,
+      "ipopt_iterations": null,
+      "evidence_keys": [
+        "accepted_candidate_count",
+        "closure_evaluation_count",
+        "distinct_branch_count",
+        "eos_evaluation_count"
+      ],
+      "recordings": 1833,
+      "recording_ns": 180476178,
+      "tape_ops": 3394705,
+      "jacobian_calls": 1833,
+      "hessian_calls": 11547,
+      "forward_calls": 1833,
+      "sweep_ns": 11046911392,
+      "association_solves": 1619,
+      "association_iterations": 70599
+    }
+  ]
+}
