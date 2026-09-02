@@ -28,3 +28,12 @@ latexmk -pdf -outdir=out equations.tex
 The `out/` directory and generated PDFs are not tracked. CppAD remains the sole
 nonlinear production derivative authority; this mirror does not introduce a
 second derivative implementation.
+
+## Bibliography
+
+Zotero owns bibliographic metadata. `references.bib` is a generated snapshot of the
+keys in `cited_keys.txt`, taken from `~/Zotero/exports/references.bib`. **Never
+hand-edit it**; add or re-key the record in Zotero, then run
+`engine/scripts/docs/sync_bibliography.py` (`--check` fails when the snapshot is stale).
+The script refuses to emit local attachment paths and names any cited key the export
+does not carry.
