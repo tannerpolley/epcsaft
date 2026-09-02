@@ -31,12 +31,16 @@ RANK = {name: index for index, name in enumerate(LAYERS)}
 # Names that may only be defined in physics/physical_constants.hpp. The tree
 # this replaces had fifteen definitions of the gas constant.
 CATEGORY_ONE = {
-    "kGasConstant",
-    "kBoltzmannConstant",
-    "kAvogadroConstant",
-    "kElementaryCharge",
-    "kVacuumPermittivity",
-    "kPi",
+    "GAS_CONSTANT_J_PER_MOL_K",
+    "BOLTZMANN_J_PER_K",
+    "AVOGADRO_PER_MOL",
+    "ELEMENTARY_CHARGE_C",
+    "VACUUM_PERMITTIVITY_F_PER_M",
+    "SPEED_OF_LIGHT_M_PER_S",
+    "PI",
+    "ANGSTROM_M",
+    "DEBYE_C_M",
+    "NUMBER_DENSITY_PER_ANGSTROM3",
 }
 CONSTANTS_HOME = "physics/physical_constants.hpp"
 

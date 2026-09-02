@@ -1,0 +1,86 @@
+#pragma once
+
+#include <vector>
+
+// The parameter arrays the equations read. Plain data, no validation: the model
+// layer builds and checks one of these once, and the physics layer trusts it.
+//
+// Not in the target layout's six-file list. It is here because every physics
+// header needs the arrays and physics may not include the model layer, so the
+// data has to live at the bottom.
+
+namespace epcsaft {
+
+// Four published forms survive. The five the old tree carried collapsed to
+// these because three of them were one equation: ion suppression
+// eps_sf / (1 + sum_i alpha_i x_i) covers ion-specific suppression directly,
+// ion-fraction suppression with alpha_i equal for every ion, and solvent-only
+// with alpha_i = 0. The model layer fills ion_suppression_coefficient
+// accordingly, so the equation here has one branch instead of three.
+enum class PermittivityForm {
+    None = 0,
+    IonSuppression = 1,      // eps_sf / (1 + sum alpha_i x_i)
+    ComponentMixing = 2,     // linear mixing over components
+    DensityTemperature = 3,  // density and temperature correlation
+    DipolarPerturbation = 4, // dipolar density perturbation
+};
+
+enum class ElectrolyteForm {
+    None = 0,
+    DebyeHuckel = 1,
+    DebyeHuckelBorn = 2,
+};
+
+struct Parameters final {
+    // Chain and segment geometry
+    std::vector<double> segment_count;
+    std::vector<double> sigma_constant;
+    std::vector<int> sigma_term_component;
+    std::vector<double> sigma_term_amplitude;
+    std::vector<double> sigma_term_exponent;
+    std::vector<double> dispersion_energy_over_k;
+    std::vector<double> molar_mass_kg_per_mol;
+
+    // Pair corrections, row-major over component pairs
+    std::vector<double> k_ij;
+    std::vector<double> k_ij_reciprocal_temperature_slope;
+    std::vector<double> k_ij_reference_temperature_k;
+    std::vector<double> l_ij;
+
+    // Association sites; pair arrays are row-major over sites
+    std::vector<int> site_component;
+    std::vector<int> site_multiplicity;
+    std::vector<int> association_active;
+    std::vector<double> association_energy_over_k;
+    std::vector<double> association_volume;
+
+    // Electrolyte
+    std::vector<int> charge_number;
+    std::vector<double> packing_diameter_angstrom;
+    std::vector<double> debye_huckel_diameter_angstrom;
+    std::vector<double> born_diameter_angstrom;
+    std::vector<double> solvation_factor;
+    double ionic_region_relative_permittivity = 0.0;
+    double born_c_shell = 0.0;
+    double born_c_dielectric = 0.0;
+    ElectrolyteForm electrolyte_form = ElectrolyteForm::None;
+
+    // Permittivity
+    PermittivityForm permittivity_form = PermittivityForm::None;
+    std::vector<double> relative_permittivity;
+    std::vector<int> permittivity_term_component;
+    std::vector<double> permittivity_term_coefficient;
+    std::vector<int> permittivity_term_power;
+    std::vector<double> permittivity_reference_temperature_k;
+    std::vector<double> ion_suppression_coefficient;  // per component, alpha_i
+    std::vector<double> dielectric_volume_m3_per_mol;
+    std::vector<double> dielectric_temperature_k;
+    std::vector<double> dipole_scaling_debye2;
+    std::vector<double> polarizability_scaling_angstrom3;
+    std::vector<double> correlation_integral_parameter;
+
+    std::size_t component_count() const { return segment_count.size(); }
+    std::size_t site_count() const { return site_component.size(); }
+};
+
+}  // namespace epcsaft

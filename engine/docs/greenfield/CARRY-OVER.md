@@ -18,7 +18,7 @@ physics headers — because the equation registry (`equations_registry.yaml`,
 |---|---|---|---|
 | `physical_constants.hpp` | `_native/physical_constants.hpp` | 14 → 30 | carried, extended to hold every category-1 constant. Today 15 definitions of `R` live across the tree; the checker forbids the 16th. |
 | `helmholtz.hpp` | `_native/helmholtz.hpp` | 357 → 200 | carried. Hard chain, dispersion, packing-volume closed form, 26 `EqID`s. Trimmed where it reaches for solver state it should not have. |
-| `association.hpp` | `_native/association.hpp` **on `perf/association-newton` @f0abace**, not `main` | 265 → 150 | carried from the branch. The hybrid Newton/successive-substitution solver with the analytic Jacobian `∂F_a/∂X_b = X_a ρ_N x_{c(b)} n_b Δ_ab + δ_ab (1 + ρ_N B_a)`. Measured: 264→7, 486→8, 31,056→645 iterations, agreement 1.5e-14. `main` still has the damped-substitution version at 1,000 iterations — do not copy that one. |
+| `association.hpp` | `_native/association.hpp` **on `perf/association-newton` @a248de6**, not `main` | 265 → 150 | carried from the branch. The hybrid Newton/successive-substitution solver with the analytic Jacobian `∂F_a/∂X_b = X_a ρ_N x_{c(b)} n_b Δ_ab + δ_ab (1 + ρ_N B_a)`. Measured: 264→7, 486→8, 31,056→645 iterations, agreement 1.5e-14. `main` still has the damped-substitution version at 1,000 iterations — do not copy that one. |
 | `electrolyte.hpp` | `_native/electrolyte.hpp` | 399 → 260 | carried with one merge: five permittivity formulations become four, because Figiel is Zuber with `α_i = C` for every ion, and solvent-only is ion suppression with `α = 0`. The four that remain are distinct published equations — ion suppression `ε_sf/(1 + Σ α_i x_i)`, linear mixing (Ascani), density–temperature (Schreckenberg), dipolar perturbation (Rueben) — selected by the coefficient set in the parameter record rather than by a formulation enum. |
 | `born.hpp` | `_native/born.hpp` | 87 → 60 | carried nearly verbatim. |
 | `numerical_policy.hpp` | — | 0 → 250 | **written**. Every tolerance as a `Tolerance` entry with its category. See TRANSFER.md Stage 1 for the HELD2 drift resolved here. |
@@ -108,7 +108,10 @@ sync_equation_registry.py`, and the Zotero export path are not part of the trans
 
 ## 7. Two branches to land before their stage
 
-- **`perf/association-newton` @f0abace** — the source for `physics/association.hpp`.
+- **`perf/association-newton` @a248de6** — the source for `physics/association.hpp`.
+  The solver was uncommitted working-tree state in a scratch worktree until
+  2026-09-02; `f0abace`, the branch tip before that, carries only the
+  instrumentation counters.
   Either merge it to `main` first or copy from the branch; do not carry `main`'s
   damped-substitution solver.
 - **`docs/equilibrium-formulation` (PR #194)** — `formulation.md`, 15 registered

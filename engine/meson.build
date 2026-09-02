@@ -88,8 +88,9 @@ native_inc = include_directories('native')
 
 # Filled by the build stages; the order is the layer order. Nothing here may
 # include pybind11 — that is bindings/, and it is the only place.
-# Stage 1
-physics_sources = files()
+# physics/ is header-only: the terms are templated so one source both evaluates
+# a double and records a tape, so there is nothing to compile into the archive
+# until the model layer lands.
 # Stage 2
 model_sources = files()
 # Stages 4, 5, 6
@@ -99,7 +100,6 @@ regression_sources = files()
 
 epcsaft_native = static_library(
   'epcsaft_native',
-  physics_sources,
   model_sources,
   equilibrium_sources,
   regression_sources,
@@ -142,6 +142,17 @@ py.extension_module(
 
 # Python ships alone: the native tree lives outside src/, so there is nothing
 # to exclude but caches.
+physics_checks = executable(
+  'physics_checks',
+  'tests/native/physics_checks.cpp',
+  cppad_temp_file,
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  install: false,
+)
+test('physics', physics_checks)
+
 install_subdir(
   'src/epcsaft',
   exclude_directories: [
