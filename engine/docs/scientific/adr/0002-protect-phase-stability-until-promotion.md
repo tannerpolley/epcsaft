@@ -16,14 +16,16 @@ Naming note (2026-09-02): this record originally labelled the protected
 incumbent `HELD`. The code it refers to is now named for what it computes —
 phase stability discovery.
 
-`HELD` here is the name of a phase stability algorithm, **not** an attribution
-to Christoph Held, who is an ePC-SAFT author in this repository's parameter
-references (`Ji2012`, `FigielYuHeld2025`, `AscaniHeld2021`). The two are a name
-collision, and that collision is the reason the label is being removed. The
-algorithm name reached this repository through Perdomo et al. 2025
-(`10.1016/j.compchemeng.2024.108977`), which took it from earlier work; the
-algorithm's own primary citation is not recorded anywhere in this repository.
-Establishing it is open work, tracked with the naming change.
+`HELD` is an initialism, not a surname: **Helmholtz free Energy Lagrangian
+Dual**, from Pereira et al. 2012 (`Pereira2012`, *Computers & Chemical
+Engineering* 36, 99--118, `10.1016/j.compchemeng.2011.07.009`), which poses the
+`P,T` flash as a Helmholtz free energy minimisation in volume--composition space
+reformulated through Lagrangian duality. It is unrelated to Christoph Held, an
+ePC-SAFT author in this repository's parameter references (`Ji2012`,
+`FigielYuHeld2025`, `AscaniHeld2021`). That coincidental collision, together
+with the opacity of the initialism, is why the label is removed from
+identifiers; the citation carries the provenance instead. The name reached this
+repository through Perdomo et al. 2025, which cites Pereira.
 
 Provenance front matter and the historical route name `tp_flash` are unchanged.
 
