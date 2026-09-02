@@ -750,6 +750,304 @@
     },
     "gates": "4"
    }
+  ],
+  "aqueous_alcohol_salt_lle": [
+   {
+    "tie_line": 1,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9331,
+     "ethanol": 0.0159,
+     "isobutanol": 0.0028,
+     "sodium-chloride": 0.0482
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3705,
+     "ethanol": 0.1624,
+     "isobutanol": 0.465,
+     "sodium-chloride": 0.0021
+    },
+    "feed_mole_fraction": {
+     "water": 0.6518,
+     "ethanol": 0.08915,
+     "isobutanol": 0.2339,
+     "sodium-chloride": 0.02515
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 2,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9404,
+     "ethanol": 0.0121,
+     "isobutanol": 0.0027,
+     "sodium-chloride": 0.0448
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3703,
+     "ethanol": 0.14,
+     "isobutanol": 0.488,
+     "sodium-chloride": 0.0017
+    },
+    "feed_mole_fraction": {
+     "water": 0.65535,
+     "ethanol": 0.07605,
+     "isobutanol": 0.24535,
+     "sodium-chloride": 0.02325
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 3,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9446,
+     "ethanol": 0.011,
+     "isobutanol": 0.0022,
+     "sodium-chloride": 0.0422
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3691,
+     "ethanol": 0.1144,
+     "isobutanol": 0.5153,
+     "sodium-chloride": 0.0012
+    },
+    "feed_mole_fraction": {
+     "water": 0.65685,
+     "ethanol": 0.0627,
+     "isobutanol": 0.25875,
+     "sodium-chloride": 0.0217
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 4,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9486,
+     "ethanol": 0.0092,
+     "isobutanol": 0.0037,
+     "sodium-chloride": 0.0385
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3695,
+     "ethanol": 0.0927,
+     "isobutanol": 0.5366,
+     "sodium-chloride": 0.0012
+    },
+    "feed_mole_fraction": {
+     "water": 0.65905,
+     "ethanol": 0.05095,
+     "isobutanol": 0.27015,
+     "sodium-chloride": 0.01985
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 5,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9509,
+     "ethanol": 0.0073,
+     "isobutanol": 0.0034,
+     "sodium-chloride": 0.0384
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3692,
+     "ethanol": 0.0759,
+     "isobutanol": 0.5537,
+     "sodium-chloride": 0.0012
+    },
+    "feed_mole_fraction": {
+     "water": 0.66005,
+     "ethanol": 0.0416,
+     "isobutanol": 0.27855,
+     "sodium-chloride": 0.0198
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 6,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9539,
+     "ethanol": 0.0056,
+     "isobutanol": 0.0034,
+     "sodium-chloride": 0.0371
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3685,
+     "ethanol": 0.0646,
+     "isobutanol": 0.5658,
+     "sodium-chloride": 0.0011
+    },
+    "feed_mole_fraction": {
+     "water": 0.6612,
+     "ethanol": 0.0351,
+     "isobutanol": 0.2846,
+     "sodium-chloride": 0.0191
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 7,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.9567,
+     "ethanol": 0.0044,
+     "isobutanol": 0.0036,
+     "sodium-chloride": 0.0353
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3676,
+     "ethanol": 0.0478,
+     "isobutanol": 0.5836,
+     "sodium-chloride": 0.001
+    },
+    "feed_mole_fraction": {
+     "water": 0.66215,
+     "ethanol": 0.0261,
+     "isobutanol": 0.2936,
+     "sodium-chloride": 0.01815
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   },
+   {
+    "tie_line": 8,
+    "source": "Khudaida 2026",
+    "doi": "10.1021/acs.jced.5c00780",
+    "source_locator": "Tables 3 and 4",
+    "source_file": "data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/figure-02-source-points.csv",
+    "source_file_sha256": "ded0dfac899510413a5149c029814f8250628674f9bd0966034a3c5a8e7bd084",
+    "source_rows": "dataset=experimental_tieline",
+    "temperature_k": 293.15,
+    "salt_mass_fraction_unloaded": 0.05,
+    "aqueous_liquid_mole_fraction": {
+     "water": 0.958,
+     "ethanol": 0.003,
+     "isobutanol": 0.0037,
+     "sodium-chloride": 0.0353
+    },
+    "organic_liquid_mole_fraction": {
+     "water": 0.3641,
+     "ethanol": 0.0336,
+     "isobutanol": 0.6015,
+     "sodium-chloride": 0.0008
+    },
+    "feed_mole_fraction": {
+     "water": 0.66105,
+     "ethanol": 0.0183,
+     "isobutanol": 0.3026,
+     "sodium-chloride": 0.01805
+    },
+    "feed_derivation": "midpoint of the two measured endpoints; every interior point of a tie line has the same two equilibrium phases, so no digitized overall composition is needed",
+    "composition_uncertainty_mole_fraction": {
+     "water": 0.0016,
+     "ethanol": 0.0007,
+     "isobutanol": 0.0015,
+     "sodium-chloride": 0.0002
+    },
+    "uncertainty_locator": "Table 3 footnote a, standard uncertainties"
+   }
   ]
  }
 }

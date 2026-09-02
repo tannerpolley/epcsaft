@@ -69,8 +69,8 @@ it; nothing else would have. See `STAGE-LOG.md`.
 
 Because red-first applies only to checks that pass the diagnostic above, it
 cannot produce the bloat it might in a coverage-driven suite -- there is nothing
-to be thorough about. The oracle has 36 rows and the properties are finitely
-many.
+to be thorough about. The oracle has 71 rows across seven cases and the properties are
+finitely many.
 
 ## Budget
 

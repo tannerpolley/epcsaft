@@ -154,8 +154,9 @@ Delete in the same commit: `engine/src/epcsaft/_native/`, `engine/cpp/`,
 the three that survive (`CARRY-OVER.md` §4). The branch does not build after this commit
 and is not expected to until Stage 3.
 
-**Gate:** the checker reports all five rules green over the emptied tree, and each rule
-is shown to fail on a deliberate violation. `meson setup` does not configure until Stage 1
+**Gate:** the checker reports every rule green over the emptied tree, and each rule
+is shown to fail on a deliberate violation. Stage 0 landed five; rules 6 (no threshold
+literals) and 7 (solvers are case-blind) landed later and are held to the same standard. `meson setup` does not configure until Stage 1
 supplies the first sources — a Meson archive with no source files is an error — so the
 build gate begins at Stage 1.
 
@@ -298,7 +299,10 @@ evaluation. This is worth 5–10× on the reactive solve on its own.
 
 **Gate:** the well-posedness check accepts each of the seven patterns above and rejects a
 deficient one by name; conservation and charge residuals ≤ 1e-10; the homogeneous
-analytic reaction case exactly.
+analytic reaction case to `derived(minimizer_convergence_tolerance)` — the closed form is
+exact, the solve that reaches it is not, and a gate written below the minimizer's own
+convergence floor tests the floor rather than the equations. The brief constructs the
+factor; no literal appears in the check (rule 6).
 
 ---
 
@@ -319,7 +323,10 @@ sweeping — the change that took the existing fit from 3,509 ms to 330 ms with 
 fitted parameters.
 
 **Gate:** oracle case `light_alkane_saturation` (10 rows: ethane, propane, n-butane
-against NIST) to the recorded pressures and molar volumes; `Pure.saturation` cold in
+against NIST) to `measured_pressure_pa` and `measured_liquid_density_kg_m3` — the two
+columns the rows actually carry — within `derived(saturation_reproduction_tolerance)`,
+constructed in the brief from the parameter set's own reported deviation, not from what
+this engine happens to return; `Pure.saturation` cold in
 **≤ 1 ms** (today 454) at **≤ 25 evaluations** (today 5,422); bubble/dew Jacobians
 against centred differences.
 
@@ -367,9 +374,13 @@ The findings, as build instructions:
 
 **Gate:** the neutral binary at 300 K, 1e5 Pa, feed (0.5, 0.5) in **≤ 150 evaluations**
 and **≤ 150 recordings** (today 4,631) and **≤ 10 ms** wall (today 671); the eight
-water/ethanol/isobutanol/NaCl feeds each in **≤ 600 evaluations**; the Khudaida LLE feeds
-reproducing their phase count and compositions within Table 3 uncertainties, in **≤ 29
-major iterations** (the paper's ternary figure; today 18–38 with 4–8× its evaluations).
+water/ethanol/isobutanol/NaCl feeds each in **≤ 600 evaluations**; oracle case
+`aqueous_alcohol_salt_lle` (8 tie lines) reproducing the phase count and both endpoint
+compositions within the `composition_uncertainty_mole_fraction` each row carries, in
+**≤ 29 major iterations** (the paper's ternary figure; today 18–38 with 4–8× its
+evaluations). Each row's feed is the midpoint of its two measured endpoints, so the gate
+depends on no digitized overall composition: every interior point of a tie line has the
+same two equilibrium phases.
 A decision that meets the count but changes the phase count fails.
 
 One Khudaida feed enters the default gate (finding 11): today the only gated HELD2 test
@@ -400,10 +411,19 @@ The reactive case, which touches every layer, is the last gate — it is the one
 that exercises finite electrolyte liquid, incipient neutral vapour, two reactions, and a
 solved pressure at once.
 
-**Gate:** the four `vle_obs_*` reactive bubble points in **≤ 250 ms each** (today
-7,390–11,400) at **≤ 300 recordings** and **≤ 300 Hessian calls** per solve (today
-1,700–1,830 and 11,000–11,500), reproducing `oracle/reactive_vle_baseline.json` liquid
-molar densities (46,425–47,148 mol/m³) to the recorded precision.
+**Gate:** the four `vle_obs_*` reactive bubble points each converge to a two-phase
+solution with conservation and charge residuals ≤ 1e-10 and the phase count the chemistry
+requires. **Reported, not pass/fail:** **≤ 250 ms each** (today 7,390–11,400) at **≤ 300
+recordings** and **≤ 300 Hessian calls** per solve (today 1,700–1,830 and
+11,000–11,500), and the liquid molar densities beside
+`oracle/reactive_vle_baseline.json`'s 46,425–47,148 mol/m³.
+
+Those densities are `measured_2026_09_02` — what the tree being replaced returned on one
+day, not a fact about the world. Pinning them would make the old engine's answer the
+definition of a right answer, which is the golden-file ban in `TESTING.md`. They are a
+change indicator: a rebuilt engine landing far outside that band is a conversation, not a
+failure. The measured observable on these rows is `co2_partial_pressure_pa`, and the
+bundle is the model under development, so its deviation there is reported too.
 
 Then #196: migrate `analyses/`, the MEA and Lithium_Extraction repositories, result field
 names, and packet names. Both downstream repos are already unrunnable against `main`
