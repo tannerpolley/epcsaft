@@ -85,9 +85,9 @@ Carried, as the acceptance contract rather than as test code:
 
 | oracle case | rows | what it pins | stage |
 |---|---|---|---|
-| `aqueous_alkali_halide_activity` | 24 | LiCl/NaCl/KCl mean ionic activity coefficients with their infinite-dilution log fugacities and recorded convergence errors | 3 |
-| `light_alkane_saturation` | 10 | ethane/propane/n-butane saturation pressures, liquid and vapour molar volumes against NIST | 5, 7 |
-| `reactive_vle_baseline.json` | 4 | nine-species MEA–CO₂–H₂O reactive bubble point: liquid molar densities 46,425–47,148 mol/m³, and today's 7.4–8.2 s at 225–252 evaluations as the number to beat | 8 |
+| `aqueous_alkali_halide_activity` | 24 | LiCl/LiBr/KCl/KBr mean ionic activity coefficients; the infinite-dilution log fugacities and convergence errors were computed columns the oracle rebuild removed | 4 |
+| `light_alkane_saturation` | 10 | ethane saturation pressures and saturated-liquid mass densities against NIST SRD 69 — the propane and n-butane rows, and the vapour molar volumes, were computed columns the oracle rebuild removed | 7, 10 |
+| `reactive_vle_baseline.json` | 4 | nine-species MEA–CO₂–H₂O reactive bubble point: liquid molar densities 46,425–47,148 mol/m³, and today's 7.4–8.2 s at 225–252 evaluations. Reported as a change indicator, never pinned — they are this engine's own output | 12 |
 | `floor-measurements.json`, `entry-point-profile.json` | 39 entry points | every counter and wall time on `main`, with the environment record | every stage |
 
 `reactive_equilibrium_reachability` (2 rows) is not a target — it is a record that both

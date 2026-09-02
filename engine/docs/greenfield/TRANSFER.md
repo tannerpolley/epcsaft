@@ -128,6 +128,72 @@ labels. Nothing else does.
 | 6 | 11 | phase stability |
 | 8 | 12 | composite gate and merge |
 
+## The line between `model/` and `equilibrium/`
+
+Stated once, as a rule rather than a judgement call:
+
+- **`model/` answers a state.** Give it `T`, `V` or `ρ`, and amounts, and it returns
+  properties and exact derivatives. One state in, one answer out. The density root is the
+  one iteration it performs, and it iterates over a single phase.
+- **`equilibrium/` answers coexistence.** Anything requiring two states to satisfy a shared
+  condition — equal chemical potential, equal pressure, a closed balance — lives here,
+  whatever its component count.
+
+**If it needs two states, it is not an EOS property.**
+
+### Saturation is equilibrium, fully
+
+Pure-component saturation is what pure parameters are regressed against, so it reads like an
+EOS property, and routing it through `equilibrium/` makes `regression/` depend on the
+equilibrium layer. Both observations are fair and the decision is still that saturation moves
+fully into `equilibrium/`, as the one-component rows of `phase_boundary.cpp`. **Nothing
+saturation-shaped stays in `model/`** — no seeds, no Clausius–Clapeyron estimate, no
+vapour-pressure helper, no "quick" pure-component coexistence path. The seed generator
+Stage 7 writes lives in `phase_boundary.cpp`, beside the rows it seeds.
+
+1. **Physically it is coexistence, not a state evaluation.** Density, enthalpy and fugacity
+   are answered from a single state. Saturation requires equal chemical potential and equal
+   pressure between two phases. It resembles an EOS property only in what it is used for.
+2. **A separate solver would be a second implementation of rows that already exist** — its
+   own Newton, seeds, tolerance and failure modes, drifting from the general path. That is
+   the special-case pattern rule 7 forbids, reached by a different route.
+3. **The scientific argument, which is the strongest.** Shared rows mean a pure-component fit
+   and a mixture fit share convergence behaviour and tolerances. A separate saturation solver
+   lets a pure fit succeed under conditions a mixture fit would not, producing parameters that
+   work only in the regime they were fitted in, with nothing in the result to signal it.
+
+### The dependency is lighter than it reads
+
+"Regression depends on equilibrium" overstates it. A pure-component saturation activates two
+phases, one component, chemical-potential equality and pressure equality — and activates **no
+reactions, no charge row, no stoichiometry, no stability**. `regression/` depends on
+`problem.hpp` and a Newton with almost every row inactive. That is the degrees-of-freedom
+design doing its job: the specification selects the rows, so a small problem compiles to a
+small system rather than paying for a general one.
+
+### This is why saturation runs at Stage 7
+
+The order is not arbitrary and must not be "simplified" back. Saturation runs directly after
+the specification stage and before the flash, so `phase_boundary.cpp` exists early with only
+its one-component rows exercised, and Stage 10 gets what it needs without the rest of the
+equilibrium stack ever having been built. The layering objection and the build order are
+answered by the same choice.
+
+### Single-phase is a legitimate specification
+
+A degrees-of-freedom design must not assume `Π ≥ 2`: `{V}` alone and `{L}` alone are ordinary
+specifications, a single-phase flash being a density solve plus stationarity. Verified against
+`SPECIFICATION-SPACE.md` on 2026-09-02: `{L}` and `{V}` are values of the phase-set axis
+(§3.1), `{L}` is a solve-tier cell of the electrolyte fixture (§4.2), the count rule's
+`k = f = 0` row says "`Π` phases free" with no minimum (§2.3), and S11 solves a one-phase
+reactive cell. For a single free phase the balance rows fix the composition and the amount, so
+the volume is what remains, and minimising `G` over it *is* the pressure-equality row — the
+design degrades to a density solve exactly as it should.
+
+A `Π ≥ 2` assumption anywhere in compile therefore turns C1 and C3 red on the `{L}` and `{V}`
+cells, because the lattice walk emits them. That is structural rather than named, and a
+named claim with its own mutation would be better; raised with the planner.
+
 ## Oracle
 
 `engine/tests/oracle/oracle.json`, 71 rows in seven cases, measured columns only. Every
@@ -427,7 +493,9 @@ solver, because multiple roots need branch selection.
 The 21-start grid (7 vapour × 3 liquid) is not written. Two or three seeds from a
 Clausius–Clapeyron estimate, and continuation from the previous point when the caller is
 sweeping — the change that took the existing fit from 3,509 ms to 330 ms with identical
-fitted parameters.
+fitted parameters. **The seed generator lives in `phase_boundary.cpp`**, beside the rows it
+seeds; nothing saturation-shaped is added to `model/`, including a vapour-pressure estimate
+(§"The line between `model/` and `equilibrium/`").
 
 If this stage writes its own chemical-potential residuals rather than calling Stage 6's
 assembly, the rebuild has failed in the exact way it exists to prevent

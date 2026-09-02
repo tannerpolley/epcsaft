@@ -95,8 +95,8 @@ Read off the rule, with no route named anywhere:
 
 | `k` | `f` | what it is |
 |---|---|---|
-| 0 | 0 | the flash: fixed `T`, `P`, feed; `Π` phases free |
-| 1 | 1 | a boundary: one phase pinned at `β = 0`, `T` or `P` free — bubble, dew, cloud point, saturation (`C = 1`) are one cell family, distinguished only by *which* phase is pinned |
+| 0 | 0 | the flash: fixed `T`, `P`, feed; `Π` phases free. **`Π = 1` is a member**: the single-phase flash, whose solution is the feed composition and the density root — see §2.5 |
+| 1 | 1 | a boundary: one phase pinned at `β = 0`, `T` or `P` free — bubble, dew, cloud point are one cell family, distinguished only by *which* phase is pinned. **`C = 1` is a member**: pure saturation — see §2.5 |
 | 1 | 1 | the same with `β > 0`: the fixed-fraction flash (`T` at which a fraction `β` has vaporised at fixed `P`). No route in the old tree; the same rows |
 | 2 | 2 | two phases pinned, `T` and `P` free: the three-phase point at a fixed reference composition |
 | 0 | 1 | under-specified: rejected, "free `T` with no pinned phase" |
