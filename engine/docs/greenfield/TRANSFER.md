@@ -44,41 +44,72 @@ The 78% is the audit's number reached by construction rather than by deletion. I
 prediction, not a budget: a stage that needs more lines to be correct takes them, and the
 overrun is recorded here rather than absorbed silently.
 
-## Execution order: MEA first, stability last
+## Execution order
 
-Revised 2026-09-02 on the owner's priority: the MEA reactive workload comes first, phase
-stability goes last. Stage *numbers* are kept as names — they are in commit messages,
-`STAGE-LOG.md`, and the checker — and only the execution order changes. Two stages split.
+Revised 2026-09-02. Stage *numbers* are names — they are in commit messages, `STAGE-LOG.md`,
+the briefs and the checker — so the numbers stay and only the run order changes. The order
+is the include direction (`physics ← model ← equilibrium ← regression ← bindings`) with two
+deliberate exceptions: saturation runs directly after the EOS, and bindings land early so
+that every later stage is testable from Python against the oracle. No workload is
+prioritised; the engine is built inside-out.
 
-Nothing on MEA's path calls `find_phases`: its case is a finite electrolyte liquid against
-an incipient neutral vapour, topology declared. Stage 6 is not merely deprioritised, it is
-off the critical path.
+| run | stage | writes | state |
+|---|---|---|---|
+| 1 | **0** tree, build, checker | layer tree, one archive, seven rules | closed `e4d964c` |
+| 2 | **1** `physics/` | six carried kernels, the policy header | closed `8bc6419` |
+| 3 | **2** `model/` | one tape per topology, one Lagrangian Hessian, density | closed `a2a2ac5` |
+| 4 | **5b** saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | planned |
+| 5 | **3** bindings and Python EOS | `bindings/`, `src/epcsaft/` as a mapping layer, Pint removed | briefing; worktree built |
+| 6 | **4** specification and minimizer | `problem.hpp`, `stoichiometry`, `request_compile`, `gibbs_minimizer` | designed; skeleton lattice in progress |
+| 7 | **5a** phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; T or P unknown | designed |
+| 8 | **7** `regression/` | `fit(model, observations)` on Ceres, covariance | planned |
+| 9 | **6** phase stability | `find_phases` written to Pereira 2012 | planned |
+| 10 | **8** composite gate and merge | every layer at once; one merge of `greenfield` into `main` | planned |
 
-| run | stage | why MEA needs it |
-|---|---|---|
-| 1 | **2** `model/` | the Lagrangian Hessian and site elimination, 7–10× per evaluation — MEA's single biggest lever. Also `infinite_dilution_reference.cpp`, which its molality standard state requires |
-| 2 | **3** bindings + Python EOS | every name on MEA's surface |
-| 3 | **4** minimizer | fixed-T,P finite reactive electrolyte liquid: the speciation states |
-| 4 | **5a** `phase_boundary.cpp`, P unknown | the bubble point itself. **MEA switches here** |
-| 5 | **8a** MEA cutover | the 39→11 and 53→9 contraction |
-| 6 | **7** `regression/` | MEA fits only the neutral CO₂–water binary, an EOS-observable path |
-| 7 | **5b** saturation, `implicit_sensitivity.cpp` | owed to Stage 7's saturation gate and to Lithium |
-| 8 | **6** `phase_stability.cpp` | nothing |
-| 9 | **8b** composite gate, analyses, Lithium, merge | — |
+**Saturation before the minimizer.** Pure saturation is two rows — equal chemical
+potential and equal pressure between two phases of one component — over the density
+closure Stage 2 already provides. It needs nothing from the minimizer, so it is written
+first, as the one-component form of the boundary system. Stage 5a then adds the
+multicomponent rows to the *same* file and the same system; saturation is not
+reimplemented, it is the case the general rows reduce to. The Stage 5 gate text
+below still reads as one stage; 5b takes the saturation half, 5a the boundary half.
 
 **Stage 4 versus Stage 5, disambiguated.** §"Problem as a degrees-of-freedom specification"
 lists "fixed T with an incipient partner solving P" among the patterns that fall out without
 a branch, and Stage 4's gate *accepts* that pattern in the well-posedness check. But it
 cannot be a row of the minimizer: an incipient phase has zero amount, and `ln n_p` is `ln 0`.
-Its rows are boundary rows. So the MEA path is 2 → 3 → 4 → **5a**, and the reactive bubble
-point moves from Stage 8 to 5a's gate, where the code that must satisfy it is written.
+Its rows are boundary rows, so they belong to 5a.
 
-`implicit_sensitivity.cpp` (250) leaves Stage 5 for 5b; `phase_boundary.cpp` (300) stays.
-Stage 5b keeps the saturation-fit gate explicitly, so Stage 7 running earlier does not
-silently lose it. Stage 8b re-runs 5a's gate as its closing step, so something still
-exercises every layer at once after 6 and 7 land.
+**Consumers are not a stage.** Migrating `analyses/`, the MEA and Lithium repositories,
+result field names and packet names (#196) is owed regardless of the rebuild and happens
+against the finished engine. It is tracked under "Outside the engine", not in this table.
 
-Reactive LLE remains absent from the oracle. MEA does not need it; it belongs with Stage 6.
+## Oracle
+
+`engine/tests/oracle/oracle.json`, 71 rows in seven cases, measured columns only. Every
+row is a fact about the world; no implementation can be right and fail one. Each case
+names the analysis leaf that owns its evaluation (`analyses/reproduction/<year>-<author>`,
+the repository's convention; a standard with no author keeps the standard's name).
+Tolerances come in three kinds: a **row uncertainty** the source reports, a
+**`derived()` constructor** the stage brief builds from the parameter set's own reported
+deviation (rule 6 forbids the literal), or **reported, never asserted** where the parameter
+set is the model under development and a threshold would test the fit, not the code.
+
+| case | rows | system and property | conditions | closeness test | data | analysis |
+|---|---|---|---|---|---|---|
+| `light_alkane_saturation` | 10 | ethane; saturation pressure and saturated-liquid mass density, NIST SRD 69 | 100–280 K | `derived(saturation_reproduction_tolerance)` | `data/packets/nist-srd69-pure-saturation-properties/1` | `analyses/reproduction/nist-srd69` |
+| `aqueous_alkali_halide_activity` | 24 | LiCl, LiBr, KCl, KBr in water; mean ionic activity coefficient (Hamer & Wu 1972) | 298.15 K, 1 bar, 0.001–2 mol/kg | per-salt AARD of γ± ≤ 10 % over the salt's six rows — the parameter source's own adequacy criterion (Figiel 2025 SI §S2); superseded engine gives 2.4–4.1 % | observations `data/packets/hamer-wu-1972-aqueous-alkali-halides/1`; parameters `data/packets/figiel-2025-reference-electrolytes/2` | `analyses/reproduction/1972-hamer-wu` |
+| `aqueous_amine_binary_vle` | 6 | MEA–water; isobaric T–x–y (Cai 1996) | 373–443 K at 66.66 and 101.33 kPa | row uncertainties: ±133 Pa, ±0.1 K, ±0.001 x; carries the Baygi 2015 published-model reproduction, AAD 3.54 % x / 1.54 % y | row `source_file` + sha256 | `analyses/reproduction/1996-cai`, `analyses/reproduction/2015-baygi` |
+| `loaded_amine_density` | 6 | 30 wt % MEA–water, CO₂-loaded; mass density (Amundsen 2009) | 298–353 K, 0–0.4 mol/mol | row uncertainty ±0.5 kg/m³ | row `source_file` + sha256 | `analyses/reproduction/2009-amundsen` |
+| `aqueous_amine_carbon_dioxide_speciation` | 7 | MEA–CO₂–water, nine species; liquid speciation by NMR (Jakobsen 2005, Böttinger 2008) | 293–353 K, 0.11–0.99 mol/mol | reported, not asserted; structural gate: solves, conservation and charge ≤ policy | row `source_file` + sha256 | `analyses/reproduction/2005-jakobsen` |
+| `aqueous_amine_carbon_dioxide_reactive_vle` | 10 | MEA–CO₂–water, nine species; CO₂ partial pressure at fixed loading (Jou 1995, Hilliard 2008, Xu 2011) | 313–393 K, 0.2–0.64 mol/mol | reported, not asserted; structural gate: converges two-phase, residuals ≤ policy, phase count | row `source_file` + sha256 | `analyses/reproduction/1995-jou` |
+| `aqueous_alcohol_salt_lle` | 8 | water–ethanol–isobutanol–NaCl; both liquid-phase compositions on eight tie lines (Khudaida 2026) | 293.15 K, 5 wt % salt | row uncertainties per species: 0.0016 / 0.0007 / 0.0015 / 0.0002 mole fraction; phase count must match | `data/packets/khudaida-2026-figure-2-electrolyte-lle/2/observations/` | `analyses/reproduction/2026-khudaida` |
+
+The rows do not name stages and stages do not name rows: a stage's gate says which
+*capability* it makes available, and whichever oracle cases exercise that capability run
+from then on. A case that a stage makes solvable stays in the run for every later stage.
+Stage 3's brief resolved the activity tolerance above; the saturation and analytic-reaction
+constructors are owed by the 5b and 4 briefs.
 
 ## Correction: the Stage 8 reactive gate is a golden file
 
@@ -325,8 +356,8 @@ Clausius–Clapeyron estimate, and continuation from the previous point when the
 sweeping — the change that took the existing fit from 3,509 ms to 330 ms with identical
 fitted parameters.
 
-**Gate:** oracle case `light_alkane_saturation` (10 rows: ethane, propane, n-butane
-against NIST) to `measured_pressure_pa` and `measured_liquid_density_kg_m3` — the two
+**Gate:** oracle case `light_alkane_saturation` (10 rows: ethane against NIST SRD 69)
+to `measured_pressure_pa` and `measured_liquid_density_kg_m3` — the two
 columns the rows actually carry — within `derived(saturation_reproduction_tolerance)`,
 constructed in the brief from the parameter set's own reported deviation, not from what
 this engine happens to return; `Pure.saturation` cold in
@@ -408,7 +439,7 @@ in **≤ 400 ms** (today 11,705) at **≤ 200 recordings** (today 140,562).
 
 ---
 
-### Stage 8 — Composite gate and cutover
+### Stage 8 — Composite gate and merge
 
 The reactive case, which touches every layer, is the last gate — it is the one problem
 that exercises finite electrolyte liquid, incipient neutral vapour, two reactions, and a

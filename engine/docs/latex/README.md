@@ -1,39 +1,18 @@
-# EOS equation mirror
+# Bibliography
 
-`equations.tex` is the exhaustive human-readable mirror of mathematical
-relations executed by the current EOS. Runtime C++ and Python remain the
-equation owners, and `docs/science/full-eos.md` remains the normative
-scientific contract.
-
-The legacy catalogue is retained only as provenance and structural guidance:
-
-- commit `7920e56dbb0fc1fb418bae44e67ef50f334b75cd`
-- Git blob `2e970476258558de05391d9d77f31d1736d78de8`
-- legacy file SHA-256
-  `a0f2f3aff12042a8a50c5254c2af23e04b60af3e886b97b2756e6ecad800bacc`
-
-Check synchronization from the repository root:
+This directory holds the project bibliography only. The equation registry lives
+in `docs/equations_registry.yaml` (hand-edited authority) and its rendered view
+`docs/equations.md`; there is no LaTeX equation source any more. Check the pair
+from `engine/`:
 
 ```bash
-python scripts/docs/sync_equation_registry.py --check
+python3 scripts/docs/sync_equation_registry.py --check
 ```
-
-Optionally render a local PDF:
-
-```bash
-cd docs/latex
-latexmk -pdf -outdir=out equations.tex
-```
-
-The `out/` directory and generated PDFs are not tracked. CppAD remains the sole
-nonlinear production derivative authority; this mirror does not introduce a
-second derivative implementation.
-
-## Bibliography
 
 Zotero owns bibliographic metadata. `references.bib` is a generated snapshot of the
 keys in `cited_keys.txt`, taken from `~/Zotero/exports/references.bib`. **Never
 hand-edit it**; add or re-key the record in Zotero, then run
 `engine/scripts/docs/sync_bibliography.py` (`--check` fails when the snapshot is stale).
 The script refuses to emit local attachment paths and names any cited key the export
-does not carry.
+does not carry. The registry's `--check` rejects any `\cite{}` key absent from the
+snapshot, so the two checks together keep every cited source resolvable.

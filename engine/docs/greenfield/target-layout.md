@@ -71,7 +71,7 @@ engine/
     regression/                                 200   NIST parameter recovery; Jacobian vs centered differences; permutation
   docs/                                         —    by capability; unchanged files not listed
     science/full-eos.md                          —
-    equilibrium/formulation.md                   —    landed (PR #194)
+    equilibrium/formulation.md                   —    reverted 2026-09-02; skeleton lattice being designed
     equilibrium/phase-stability.md               —    with #188
     latex/, equations_registry.yaml, equations.md, python-api.md, scientific/adr/   —
   scripts/docs/, tools/                          —    unchanged
