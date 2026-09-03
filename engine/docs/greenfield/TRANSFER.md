@@ -61,17 +61,17 @@ Every stage owns exactly one brief pair, `briefs/stage-NN.brief.{md,json}`, writ
 planner and preflighted before a worker starts. Where a stage needs a design document
 larger than a brief, it is named here and is the brief's specification.
 
-| # | stage | writes | design document | state |
-|---|---|---|---|---|
-| 1 | tree, build, checker | layer tree, one archive, seven rules | — | **closed** `e4d964c` |
-| 2 | `physics/` | six carried kernels, the policy header written fresh | — | **closed** `8bc6419` |
-| 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `performance_floor.md` | **closed** `a2a2ac5` |
-| 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
-| 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
-| 6 | `equilibrium/` | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name; `gibbs_minimizer.{hpp,cpp}` — one Ipopt driver for every `k`; `phase_boundary.cpp` seeds and continuation; `implicit_sensitivity.cpp`; starts for every cell and the declared-topology contract | `SPECIFICATION-SPACE.md`, `formulation.md` | designed — ~3,040 lines, ceiling ~3,870 |
-| 7 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
-| 8 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
-| 9 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
+| # | stage | writes | category | design document | state |
+|---|---|---|---|---|---|
+| 1 | tree, build, checker | layer tree, one archive, seven rules | canon | — | **closed** `e4d964c` |
+| 2 | `physics/` | six carried kernels, the policy header written fresh | engine | — | **closed** `8bc6419` |
+| 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | engine | `performance_floor.md` | **closed** `a2a2ac5` |
+| 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | surface | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
+| 5 | the core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | core | `CORE.md` | designed — ~1,300 lines, +560 net in `native/` |
+| 6 | `equilibrium/` | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name; `gibbs_minimizer.{hpp,cpp}` — one Ipopt driver for every `k`; `phase_boundary.cpp` seeds and continuation; `implicit_sensitivity.cpp`; starts for every cell and the declared-topology contract | engine | `SPECIFICATION-SPACE.md`, `formulation.md` | designed — ~3,040 lines, ceiling ~3,870 |
+| 7 | `regression/` | `fit(model, observations)` on Ceres, with covariance | engine | — | planned |
+| 8 | phase stability | `find_phases` written to Pereira 2012 | engine | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
+| 9 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | canon | — | planned |
 
 **Stages are named for what they write, not for what they solve.** Corrected 2026-09-02
 after the owner caught it: the table called Stage 6 *saturation*, Stage 6 *the flash* and
