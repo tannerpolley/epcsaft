@@ -184,6 +184,18 @@ void check_s14() {
     CHECK(std::abs(vapor_pinned.pressure.front() / liquid_pinned.pressure.front() - 1.0) <= limit);
 }
 
+void check_s15c() {
+    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    auto problem = equilibrium_support::boundary();
+    problem.feed.values = {0.5, 0.5};
+    problem.temperature.value = 280.0;
+    const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    CHECK(!result.success);
+    CHECK(!result.has_state());
+    CHECK(result.message.find("phases_coincide") != std::string::npos);
+    CHECK(result.message.find("distance") != std::string::npos);
+}
+
 }  // namespace
 
 int main() {
@@ -193,5 +205,6 @@ int main() {
     equilibrium_support::run_check("S9", [] { check_s9(); });
     equilibrium_support::run_check("S10", [] { check_s10(); });
     equilibrium_support::run_check("S14", [] { check_s14(); });
+    equilibrium_support::run_check("S15(c)", [] { check_s15c(); });
     return equilibrium_support::failures == 0 ? 0 : 1;
 }
