@@ -203,6 +203,12 @@ rows and the `standard_gibbs` call. If a file you write crosses its ceiling, sto
 `budget_ceiling` with the number. Combining statements or removing blank lines to fit a
 count is rejected on reading whatever the total, and the file is measured as first written.
 
+Three test budgets moved after the first honest ceiling stop (333 lines in
+`equilibrium_checks.cpp` with S1's four consequences per cell still unwritten):
+`equilibrium_checks.cpp` 230 / 380 / 450, `specification_checks.cpp` 180 / 240 / 300,
+`equilibrium_support.hpp` 150 / 250 / 320. The ceilings are 1.2× measured-plus-remaining;
+the lows stay where content is guarded.
+
 You start from the tag `stage-05-attempt-3`. Carried: the exact-tape assembly, analytic `F_y`
 and `F_θ`, `stoichiometry`, `problem.hpp`, the bindings, the Python and the compile-tier
 checks. Rewritten under the sections above: the driver's starts, the coincidence refusal, the

@@ -533,3 +533,15 @@ own tree. `uv sync`, checker green on 30 sources, preflight clean: 8 sources, 24
 11 preconditions, 7 mutations deferred to acceptance. Launched with the verified recipe,
 stdin closed, venv first on `PATH`; session `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`,
 pid 1228759, log `attempt-4.log`.
+
+**Interrupted and resumed, 14 minutes in.** The live digest showed "Identifying budget ceiling
+breach" then "code compaction", "combining lines", "removing blank lines": `request_compile.cpp`
+at 784 against a 780 ceiling. The planner ruled 600 / 750 / 900 (716 lines of real content at
+the tag plus the feed column, the dimensionless rows and the `standard_gibbs` call) and that
+the compaction is a rejection finding whatever the total; the owner chose to interrupt and
+resume rather than let it run. Brief corrected at `7d6fe4d`, merged into the worktree, session
+resumed with a prompt naming the ceiling, the rule, and a restore step. Two lessons for the
+launch recipe: `$!` after `setsid nohup` is the wrapper's pid, not codex's, so the first kill
+missed; and a killed run holds its thread-writer lock until the codex process itself is gone.
+The interrupted run had already reached the boundary checks once, with S3 red on a mole
+fraction; that is the resumed worker's to finish.
