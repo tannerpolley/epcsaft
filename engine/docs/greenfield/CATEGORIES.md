@@ -1,7 +1,8 @@
-# What is engine, what is core, what is peripheral
+# What is engine, what is core, what is canon, what asks
 
 Status: inventory and proposal, 2026-09-02. Prepared as input for the agent that will own
-the core, the input surface and everything that is not the engine. **The classification
+the core, the input surface, and everything that is not the engine. Five categories:
+**engine**, **core**, **surface**, **canon**, **analyses**. **The classification
 below is measured; the taxonomy is a proposal and that agent decides it.**
 
 ## The measurement
@@ -54,10 +55,38 @@ input surface is where a model choice is declared or lost: `stoichiometry=(1, 1)
 because nothing in the surface carried it. Treating the builder as part of `model/` is what
 made it look like a mapping detail rather than a contract.
 
-**Peripheral — real work, outside the package.** The architecture checker (227 lines), the
-packet validator (572) and promoter (455), the registry and bibliography sync (233), the
-data packets, the analyses, the docs. These are not lesser; two of this week's findings came
-from the validator and the registry. They are simply not what a caller imports.
+**Canon — what asserts or enforces.** The checker's seven rules (227 lines), the packet
+contract and its validator (227 + 572), the equation registry and its two sync scripts (2,061
++ 233), the tests and the oracle (1,690 + 1,052 rows), and the documentation — 5,523 lines
+outside `greenfield/` and 3,939 of plan inside it.
+
+These belong together, and the grouping is not filing convenience. **The canon states what
+must be true; the enforcers check it.** They are two halves of one discipline, and this
+project's founding observation is what happens when they come apart: *a property asserted in
+prose but not checked is how every defect in the old tree survived*. Filed as one category,
+"does every rule in the canon have an enforcer, and does every enforcer trace to a rule?"
+becomes a question you can actually ask — and asking it this week is what found a registered
+equation with a case split whose selector nothing implemented.
+
+The two halves are worth naming inside the category, because their failure modes differ. A
+**record** (an ADR, a research note, a measurement, a bibliography) goes stale silently. A
+**rule** (a checker rule, a packet contract clause, a test with its mutation) goes stale
+loudly, or does not go stale at all. The documentation triage was a sweep of the first half;
+nothing has yet swept the second.
+
+**Analyses — where evidence is produced.** 37 reproduction leaves, 6 other analysis sets, and
+the 174 files of 14 locked data packets they read. Its own category because it is the only
+one that **asks** rather than asserts: an analysis poses a scientific question, produces
+evidence, and may conclude that the engine is wrong — which is exactly what happened this
+week. Everything else in this tree is downstream of an answer; this is where answers come
+from.
+
+An analysis may therefore depend on the engine, the surface and the canon, and **nothing may
+depend on an analysis**. That is a checkable direction, and it is currently violated in one
+place worth recording: the Stage 4 oracle gate reads
+`analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv`, so a
+gate depends on an analysis leaf. Either the digitized curve is promoted to a packet, or the
+rule admits a named exception for reproduction data. Not decided here.
 
 ## What this proposal implies, stated so it can be argued against
 
@@ -79,3 +108,18 @@ pointed at inputs and at outputs. If the core owns the convergence contract, the
 that it should also own the declared-choice contract is that both are promises the engine
 makes to a caller, enforced in one place, and both were broken this week in the same way —
 by a decision that lived in a layer nobody owned.
+
+## The five, in one line each
+
+| category | answers | may depend on |
+|---|---|---|
+| **engine** | what is true of the fluid | core |
+| **core** | how the engine computes and reports | nothing |
+| **surface** | how a caller states a problem and reads an answer | engine, core |
+| **canon** | what must be true, and whether it is | anything, at rest — never at runtime |
+| **analyses** | a scientific question, answered with evidence | anything |
+
+Nothing may depend on an analysis. The canon is not imported by a caller; it runs beside the
+package, not inside it. `promote_mea_active_bundle.py` (455 lines) is the one file that
+resists the table — it writes a packet from a campaign, which makes it a tool of the
+analyses rather than of the canon. Named, not decided.
