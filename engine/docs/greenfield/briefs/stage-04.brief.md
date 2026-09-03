@@ -1,6 +1,6 @@
 # Stage 4 — EOS: the tape, the state and the density closure
 
-You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-2`).
+You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-04`).
 You have no one to ask. Read, in order, before writing anything:
 
 1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested

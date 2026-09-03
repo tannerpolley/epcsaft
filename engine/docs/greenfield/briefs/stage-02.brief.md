@@ -1,6 +1,6 @@
 # Stage 2 — Core
 
-You are implementing Stage 2 of a greenfield rebuild in this worktree (branch `stage-05`,
+You are implementing Stage 2 of a greenfield rebuild in this worktree (branch `stage-02`,
 cut from `greenfield@21b8695`). You have no one to ask. Read, in order, before writing
 anything:
 
@@ -12,7 +12,7 @@ anything:
 6. `engine/native/physics/*.hpp`; `engine/native/model/*.hpp,*.cpp`; `engine/native/bindings/*.cpp`;
    `engine/tests/native/*.cpp,*.hpp`; `engine/src/epcsaft/*.py,*.pyi`
 7. `tools/check-engine-architecture.py` — you extend it; every rule must stay green
-8. `engine/docs/greenfield/briefs/stage-05.brief.json` — sources, budgets, gates, mutations
+8. `engine/docs/greenfield/briefs/stage-02.brief.json` — sources, budgets, gates, mutations
 
 Verify every source marker and every precondition in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.

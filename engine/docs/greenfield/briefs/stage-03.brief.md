@@ -1,6 +1,6 @@
 # Stage 3 — Surface: the parameter builder, the bindings, the Python mapping layer
 
-You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-3`).
+You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-03`).
 You have no one to ask. Read, in order, before writing anything:
 
 1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
