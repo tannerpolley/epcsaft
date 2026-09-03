@@ -55,9 +55,10 @@ double residual_derivative(
 
 bool association_failure(const std::runtime_error& error) {
     const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
+    // Who threw, not how it stopped. Enumerating stops silently narrowed this when
+    // `classify` gained `stalled`: the scan propagated instead of skipping the point.
     return failure != nullptr
-        && (failure->record.stop == core::Stop::left_domain
-            || failure->record.stop == core::Stop::budget_exhausted);
+        && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
 }
 
 DensityRoot refine(
