@@ -14,7 +14,7 @@
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
     "test -d engine/native/model",
-    "! test -d engine/native/equilibrium",
+    "test \"$(ls -A engine/native/equilibrium)\" = .gitkeep",
     "grep -q \"ipopt_dep = dependency('ipopt'\" engine/meson.build",
     "grep -q 'DensityRoot solve_density' engine/native/model/density.cpp",
     "grep -q 'stable_root_count' engine/native/model/density.cpp",
@@ -32,7 +32,7 @@
         "rows \u2212 unknowns = k \u2212 f",
         "### 4.1 Compile tier \u2014 no solve; lands with Stage 5",
         "## 10. Traps, one line each \u2014 the brief copies this list",
-        "### 1"
+        "## 11. The front surface: how a caller states the levers"
       ],
       "purpose": "the design. It is the specification, not background: every row, every rejection, every check and its mutation, and the 25 traps are decided there. Where this brief and EQUILIBRIUM.md differ, EQUILIBRIUM.md wins and you stop and say so"
     },
@@ -75,8 +75,8 @@
     {
       "ref": "greenfield@88b5a2a:engine/native/core/numerical_policy.hpp",
       "must_contain": [
-        "namespace policy",
-        "struct Tolerance"
+        "namespace epcsaft::policy",
+        "struct Tolerance final"
       ],
       "purpose": "every tolerance comes from here. Trap 7: S1 and S13 compare against max(tolerance, floor) read from the result's Convergence record, never a bare policy number"
     },
