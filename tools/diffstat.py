@@ -12,9 +12,10 @@ built".
     tools/diffstat.py --code           # executable code only
     tools/diffstat.py --files          # every file, classified
     tools/diffstat.py --no-split       # skip the statement/comment/blank pass
+    tools/diffstat.py --watch          # live: redraws on any change, uncommitted work included
 """
 from __future__ import annotations
-import subprocess, sys
+import io, subprocess, sys
 from collections import defaultdict
 
 EMPTIED = "e4d964c"          # Stage 1: the layer tree laid, the superseded one deleted
@@ -104,14 +105,7 @@ def split_added(rng: str, path: str, lang: str) -> tuple[int, int, int]:
     return (code, comment, blank)
 
 
-def main() -> int:
-    args = [a for a in sys.argv[1:]]
-    code_only = "--code" in args; show_files = "--files" in args
-    vs_main = "--vs-main" in args
-    rng = next((a for a in args if not a.startswith("--")), None)
-    if rng is None:
-        base = subprocess.run(["git", "merge-base", "main", "HEAD"], capture_output=True, text=True).stdout.strip() if vs_main else EMPTIED
-        rng = f"{base}..HEAD"
+def report(rng: str, code_only: bool, show_files: bool, live: bool) -> int:
     out = subprocess.run(["git", "diff", "--numstat", rng], capture_output=True, text=True).stdout
     rows = []
     for line in out.splitlines():
@@ -122,7 +116,8 @@ def main() -> int:
     if not rows:
         print("  nothing in range"); return 0
 
-    print(f"\n  range: {rng}    ({'vs main, deletions included' if vs_main else 'since the tree was emptied'})\n")
+    label = f"{rng} + working tree" if ".." not in rng else rng
+    print(f"\n  range: {label}\n")
     by_lang: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     by_cat: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0])
     cross: dict[tuple[str, str], int] = defaultdict(int)
@@ -142,7 +137,7 @@ def main() -> int:
         print(f"    {lang:12}{a:+9d}{-d:9d}{f:7d}   {'yes' if is_code else '—'}")
     print(f"\n    {'CODE':12}{code_add:+9d}\n    {'not code':12}{other_add:+9d}")
 
-    if "--no-split" not in sys.argv:
+    if not live:
         c = m = b = 0
         for a, d, path, lang, is_code, cat in rows:
             if cat == "removed" or not is_code:
@@ -173,7 +168,69 @@ def main() -> int:
         for a, d, path, lang, is_code, cat in sorted(rows, key=lambda r: -r[0]):
             if code_only and not is_code: continue
             print(f"    {a:+7d}{-d:7d}  {cat:9} {lang:7} {path}")
+    return code_add
+
+
+
+def fingerprint() -> str:
+    """Cheap signature of everything that could change the report."""
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+    dirty = subprocess.run(["git", "status", "--porcelain=v1"], capture_output=True, text=True).stdout
+    stat = subprocess.run(["git", "diff", "--numstat", "HEAD"], capture_output=True, text=True).stdout
+    return head + dirty + stat
+
+
+def watch(rng: str, code_only: bool) -> int:
+    """Redraw whenever the repository changes. Polls a fingerprint, so no dependency."""
+    import time
+    last, prev_total = None, None
+    try:
+        while True:
+            now = fingerprint()
+            if now != last:
+                last = now
+                buf = io.StringIO()
+                out, sys.stdout = sys.stdout, buf
+                try:
+                    total = report(rng, code_only, False, True)
+                finally:
+                    sys.stdout = out
+                print("\033[2J\033[H", end="")
+                head = subprocess.run(["git", "log", "--oneline", "-1"],
+                                      capture_output=True, text=True).stdout.strip()
+                dirty = subprocess.run(["git", "status", "--porcelain=v1"],
+                                       capture_output=True, text=True).stdout.splitlines()
+                delta = ""
+                if prev_total is not None and total != prev_total:
+                    delta = f"   ({total - prev_total:+d} since last redraw)"
+                prev_total = total
+                print(f"  \033[1mePC-SAFT — live\033[0m   {time.strftime('%H:%M:%S')}{delta}")
+                print(f"  HEAD {head[:66]}")
+                print(f"  working tree: {len(dirty)} file(s) modified"
+                      if dirty else "  working tree: clean")
+                print(buf.getvalue(), end="")
+                print("\n  watching… Ctrl-C to stop")
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        print("\n  stopped")
+        return 0
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    code_only = "--code" in args
+    show_files = "--files" in args
+    live = "--watch" in args or "--no-split" in args
+    vs_main = "--vs-main" in args
+    rng = next((a for a in args if not a.startswith("--")), None)
+    if rng is None:
+        base = subprocess.run(["git", "merge-base", "main", "HEAD"], capture_output=True, text=True).stdout.strip() if vs_main else EMPTIED
+        rng = base if "--watch" in args else f"{base}..HEAD"   # bare base includes uncommitted work
+    if "--watch" in args:
+        return watch(rng, code_only)
+    report(rng, code_only, show_files, live)
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
