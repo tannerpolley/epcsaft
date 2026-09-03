@@ -239,7 +239,7 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
-    if (parameters_.permittivity_form.is(PermittivityForm::None) == false) {
+    if (parameters_.permittivity_form.declared()) {
         require(std::any_of(
             parameters_.charge_number.begin(), parameters_.charge_number.end(),
             [&](int charge) { return charge == 0; }
@@ -531,6 +531,7 @@ State HelmholtzModel::state(
     double molar_density,
     const std::vector<double>& mole_fractions
 ) const {
+    core::Scope scope("state");
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;

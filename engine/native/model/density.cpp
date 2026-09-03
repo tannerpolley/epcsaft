@@ -224,7 +224,10 @@ DensityRoot solve_density(
                 );
                 anchor_record.evaluations = evaluations;
                 if (far_side_clear) {
-                    anchor_record.stop = core::Stop::converged;
+                    anchor_record.stop = core::classify(
+                        anchor_record.residual, *anchor_record.criterion,
+                        anchor_record.floor, anchor_record.contraction, false
+                    );
                     anchor.finish(anchor_record);
                     result = {
                         density, point.residual, point.slope, iteration + 1,
@@ -233,7 +236,10 @@ DensityRoot solve_density(
                     have_result = true;
                     break;
                 }
-                anchor_record.stop = core::Stop::stalled;
+                anchor_record.stop = core::classify(
+                    anchor_record.residual, *anchor_record.criterion,
+                    anchor_record.floor, anchor_record.contraction, false
+                );
                 anchor.finish(anchor_record);
                 break;
             }
