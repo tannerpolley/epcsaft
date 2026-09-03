@@ -66,7 +66,7 @@ larger than a brief, it is named here and is the brief's specification.
 | 1 | **Canon** | canon | the layer tree, one archive, the checker's rules, and what may be tested | `CANON.md` | **closed** `e4d964c` |
 | 2 | **Core** | core | `native/core/` — seven headers below everything: the four `EqID`-free tenants move in, and the declared-choice contract, the convergence record and the trace are written | `CORE.md` | **closed** `2a9b04c` |
 | 3 | **Surface** | surface | `native/surface/` the parameter builder; `native/bindings/` the only pybind11 includes; `src/epcsaft/` as a pure mapping layer, units resolved in C++ | `SURFACE.md` | **reopened** — merged, then three defects |
-| 4 | **EOS** | engine | the equation kernels and the policy they read; one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `EOS.md` | **closed** `8bc6419`, `a2a2ac5` — reopened with 3 |
+| 4 | **EOS** | engine | the equation kernels and the policy they read; one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `EOS.md` | **closed** `8bc6419`, `a2a2ac5`, repaired `b6f5186` |
 | 5 | **Equilibrium** | engine | the specification and count rule; one Ipopt driver for every `k`; seeds, continuation, sensitivity; starts and the topology contract | `EQUILIBRIUM.md` | designed — ~3,040 lines |
 | 6 | **Regression** | engine | `fit(model, observations)` on Ceres, with covariance | `REGRESSION.md` | planned |
 | 7 | **Phase stability** | engine | `find_phases` written to Pereira 2012, replacing 13,589 lines | `PHASE-STABILITY.md` | planned |
@@ -96,18 +96,24 @@ Budget ≈ 3,040 lines, ceiling ≈ 3,870 — specification 1,000, driver and on
 1,330, starts and topology 710. The parts are the equilibrium planner's estimates, marked
 **guessed** with per-file reasoning; `STAGE-LOG.md` records the actual.
 
-**Stage 3 is reopened, and Stage 4 has a defect.** Stage 3's nine gates pass and every
-mutation was shown red; the disagreement it surfaced is not its own.
+**Stage 3 is reopened. Stage 4's defect is repaired at `b6f5186`.** Stage 3's nine gates
+pass and every mutation was shown red; the disagreement it surfaced was not its own.
 `analyses/reproduction/2025-figiel-engine-crosswalk` localised it to the like-ion dispersion
 pairs and then settled it against the literature: ePC-SAFT sets the dispersion energy
 between cation–cation and anion–anion pairs to zero (Held 2008 excludes all ion–ion
 dispersion; Held 2014 adds back only cation–anion; Figiel 2025 states `u_ii = 0` outright),
-and `native/physics/helmholtz.hpp` applies the full combining rule to every pair.
+and `native/physics/helmholtz.hpp` applied the full combining rule to every pair.
 
-**This is a Stage 4 defect** — the dispersion kernel — surfaced by Stage 3, and the engine is
-internally inconsistent about it: it honours `u_ii = 0` in the ionic packing diameter, whose
-`0.88 σ` is *derived from* that rule, while ignoring the rule in the dispersion energy.
-Stage 4's gates could not have caught it: closed forms, symmetries, limits and derivative
+The repair declares the convention at the surface, carries it as a `core::Declared` with no
+`Unspecified` member, and reads it in the kernel. It could not be packet data: the builder
+correctly refuses to synthesise a self-pair, and for a two-ion salt the same-sign pairs *are*
+the diagonal. Measured after the repair: **0.2744% AARD** over Figiel 2025's 27
+published-curve points, no point exceeding 1.10× its own digitization uncertainty. Before:
+49.19%.
+
+The engine was internally inconsistent about it: it honoured `u_ii = 0` in the ionic packing
+diameter, whose `0.88 σ` is *derived from* that rule, while ignoring the rule in the
+dispersion energy. Stage 4's gates could not have caught it: closed forms, symmetries, limits and derivative
 agreement all hold for any `u_ij` matrix, including a wrong one. A modelling convention is
 seen only by a comparison against the model that defined it, which is an argument for the
 oracle rather than against the property tests.
@@ -404,7 +410,7 @@ beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380
 
 ---
 
-### Stage 4 — EOS (2,760 lines closed; reopened on three defects)
+### Stage 4 — EOS (2,760 lines closed; repaired at `b6f5186`)
 
 #### 4.1 The equation kernels (950 lines)
 
@@ -841,3 +847,17 @@ bibliography, where Christoph Held is a parameter source (`Ji2012`, `Figiel2025`
   than an accident.
 - **`stoichiometry.cpp`'s standard-state transform** reads EOS reference quantities
   today; its line budget (600–900) is the least certain in the tree.
+
+## Two things that are red, and are not defects
+
+**`check-all` is red on `epcsaft.equilibrium`.** `tools/verify-installed-wheel.py:13` asserts
+three public modules exist; `epcsaft.equilibrium` and `epcsaft.regression` are what Stages 5
+and 6 write. The verifier is ahead of the tree and goes green when they land. Do not
+re-diagnose it, and do not weaken the verifier to make it pass.
+
+**A brief's mutation can go stale against its own re-base.** Two of the repair's mutations
+stayed green on first run because the appended design delta changed the code shape the
+mutation `sed` had been written against — the pattern never matched, so the file was never
+mutated and the gate was never actually challenged. A mutation that does not apply looks
+exactly like a gate that does not bite. **Preflight must confirm each `sed` changes the file,
+not merely that a mutation is declared.**
