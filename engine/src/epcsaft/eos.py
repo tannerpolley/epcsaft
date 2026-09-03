@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from . import _core
 from .parameters import Parameters
 from .reference import Reference
+
+if TYPE_CHECKING:
+    from .equilibrium import Problem
 
 State = _core.State
 ParameterError = _core.ParameterError
@@ -111,3 +115,13 @@ class Pure:
             return self._model.state(T, rho, (1.0,))
         assert P is not None
         return self._model.state_at_pressure(T, P, (1.0,), branch, None)
+
+    def saturation(self, T: float) -> Problem:
+        from .equilibrium import Amounts, Free, Pinned, Phase, Problem
+
+        return Problem(
+            phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
+            T=T,
+            P=Free(),
+            feed=Amounts({self.component_ids[0]: 1.0}),
+        )

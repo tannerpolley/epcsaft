@@ -12,7 +12,6 @@ project(
     'strip=true',
   ],
 )
-
 py = import('python').find_installation('python3', pure: false)
 cpp = meson.get_compiler('cpp')
 native_warnings = cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
@@ -99,7 +98,13 @@ model_sources = files(
 )
 surface_sources = files('native/surface/parameter_builder.cpp')
 # Stages 4, 5, 6
-equilibrium_sources = files()
+equilibrium_sources = files(
+  'native/equilibrium/stoichiometry.cpp',
+  'native/equilibrium/request_compile.cpp',
+  'native/equilibrium/gibbs_minimizer.cpp',
+  'native/equilibrium/phase_boundary.cpp',
+  'native/equilibrium/implicit_sensitivity.cpp',
+)
 # Stage 7
 regression_sources = files()
 
@@ -131,7 +136,8 @@ epcsaft_native = static_library(
 py.extension_module(
   '_core',
   files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp',
-        'native/bindings/diagnostics_bindings.cpp'),
+        'native/bindings/diagnostics_bindings.cpp',
+        'native/bindings/equilibrium_bindings.cpp'),
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,
@@ -197,6 +203,39 @@ test(
   env: {'OMP_NUM_THREADS': '1'},
   timeout: 600,
 )
+
+equilibrium_checks = executable(
+  'equilibrium_checks',
+  'tests/native/equilibrium_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('equilibrium', equilibrium_checks, timeout: 600)
+
+boundary_checks = executable(
+  'boundary_checks',
+  'tests/native/boundary_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('boundary', boundary_checks, timeout: 600)
+
+specification_checks = executable(
+  'specification_checks',
+  'tests/native/specification_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('specification', specification_checks)
 
 install_subdir(
   'src/epcsaft',

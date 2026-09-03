@@ -1,0 +1,386 @@
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from typing import Protocol, cast
+
+from .. import _core
+
+
+class _Model(Protocol):
+    component_ids: tuple[str, ...]
+    _model: _core.HelmholtzModel
+
+
+class Free:
+    __slots__ = ("guess",)
+    guess: float
+
+    def __init__(self, guess: float = 0.0) -> None:
+        self.guess = guess
+
+
+class Pinned:
+    __slots__ = ("value",)
+    value: float
+
+    def __init__(self, value: float) -> None:
+        self.value = value
+
+
+class Phase:
+    __slots__ = ("name", "support", "amount", "kind", "composition_guess", "packing_guess")
+    name: str
+    support: tuple[str, ...] | None
+    amount: Free | Pinned
+    kind: str | None
+    composition_guess: tuple[float, ...]
+    packing_guess: float | None
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        support: Sequence[str] | None = None,
+        amount: Free | Pinned | None = None,
+        kind: str | None = None,
+        composition_guess: Sequence[float] = (),
+        packing_guess: float | None = None,
+    ) -> None:
+        self.name = name
+        self.support = None if support is None else tuple(support)
+        self.amount = Free() if amount is None else amount
+        self.kind = kind
+        self.composition_guess = tuple(composition_guess)
+        self.packing_guess = packing_guess
+
+
+class Discover:
+    __slots__ = ()
+
+
+class Feed:
+    __slots__ = ("basis", "values", "solvent", "solvent_mass_kg")
+    basis: _core.FeedKind
+    values: Mapping[str, float]
+    solvent: tuple[str, ...]
+    solvent_mass_kg: float
+
+    def __init__(
+        self,
+        basis: _core.FeedKind,
+        values: Mapping[str, float],
+        *,
+        solvent: Sequence[str] = (),
+        solvent_mass_kg: float = 1.0,
+    ) -> None:
+        self.basis = basis
+        self.values = values
+        self.solvent = tuple(solvent)
+        self.solvent_mass_kg = solvent_mass_kg
+
+
+class MoleFractions(Feed):
+    def __init__(self, values: Mapping[str, float]) -> None:
+        super().__init__(_core.FeedKind.MoleFractions, values)
+
+
+class Amounts(Feed):
+    def __init__(self, values: Mapping[str, float]) -> None:
+        super().__init__(_core.FeedKind.Amounts, values)
+
+
+class MassFractions(Feed):
+    def __init__(self, values: Mapping[str, float]) -> None:
+        super().__init__(_core.FeedKind.MassFractions, values)
+
+
+class Molalities(Feed):
+    def __init__(
+        self,
+        values: Mapping[str, float],
+        *,
+        solvent: Sequence[str],
+        solvent_mass_kg: float = 1.0,
+    ) -> None:
+        super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
+
+
+class Reaction:
+    __slots__ = ("name", "stoichiometry", "equilibrium_constant", "affinity_j_per_mol")
+    name: str
+    stoichiometry: Mapping[str, float]
+    equilibrium_constant: float
+    affinity_j_per_mol: float | None
+
+    def __init__(
+        self,
+        stoichiometry: Mapping[str, float],
+        *,
+        name: str = "",
+        equilibrium_constant: float = 1.0,
+        affinity_j_per_mol: float | None = None,
+    ) -> None:
+        self.name = name
+        self.stoichiometry = stoichiometry
+        self.equilibrium_constant = equilibrium_constant
+        self.affinity_j_per_mol = affinity_j_per_mol
+
+
+def _index(component_ids: tuple[str, ...], name: str) -> int:
+    try:
+        return component_ids.index(name)
+    except ValueError as error:
+        raise _core.ParameterError(f"unknown component_id {name}") from error
+
+
+def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list[float]:
+    return [values.get(component_id, 0.0) for component_id in component_ids]
+
+
+class Problem:
+    __slots__ = ("phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared")
+    phases: tuple[Phase, ...] | Discover
+    T: float | Free
+    P: float | Free
+    feed: Feed
+    reactions: tuple[Reaction, ...]
+    standard_gibbs_j_per_mol: tuple[float, ...]
+    topology_declared: bool
+
+    def __init__(
+        self,
+        *,
+        phases: Sequence[Phase] | Discover,
+        T: float | Free,
+        P: float | Free,
+        feed: Feed,
+        reactions: Sequence[Reaction] = (),
+        standard_gibbs_j_per_mol: Sequence[float] = (),
+        topology_declared: bool = True,
+    ) -> None:
+        self.phases = phases if isinstance(phases, Discover) else tuple(phases)
+        self.T = T
+        self.P = P
+        self.feed = feed
+        self.reactions = tuple(reactions)
+        self.standard_gibbs_j_per_mol = tuple(standard_gibbs_j_per_mol)
+        self.topology_declared = topology_declared and not isinstance(phases, Discover)
+
+    def _native(self, model: _Model) -> _core.EquilibriumProblem:
+        native = _core.EquilibriumProblem()
+        native.topology_declared = self.topology_declared
+        native.feed.kind = self.feed.basis
+        native.feed.values = _vector(self.feed.values, model.component_ids)
+        native.feed.solvent = [_index(model.component_ids, name) for name in self.feed.solvent]
+        native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
+        native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
+        native.temperature = _free_value(self.T)
+        native.pressure = _free_value(self.P)
+        if isinstance(self.phases, Discover):
+            native.phases = []
+            return native
+        native_phases: list[_core.PhaseSpec] = []
+        for phase in self.phases:
+            item = _core.PhaseSpec()
+            item.name = phase.name
+            item.kind = _phase_kind(phase)
+            names = model.component_ids if phase.support is None else phase.support
+            item.support = [_index(model.component_ids, name) for name in names]
+            item.amount = _amount_spec(phase.amount)
+            item.composition_guess = list(phase.composition_guess)
+            item.packing_guess = phase.packing_guess
+            native_phases.append(item)
+        native.phases = native_phases
+        native_reactions: list[_core.ReactionSpec] = []
+        for reaction in self.reactions:
+            reaction_item = _core.ReactionSpec()
+            reaction_item.name = reaction.name
+            reaction_item.stoichiometry = _vector(reaction.stoichiometry, model.component_ids)
+            reaction_item.equilibrium_constant = reaction.equilibrium_constant
+            reaction_item.affinity_j_per_mol = reaction.affinity_j_per_mol
+            native_reactions.append(reaction_item)
+        native.reactions = native_reactions
+        return native
+
+    def levers(self, model: _Model | None = None) -> str:
+        if isinstance(self.phases, Discover):
+            phase_text = "discover"
+        else:
+            phase_text = " · ".join(
+                f"{phase.name} {'free' if isinstance(phase.amount, Free) else f'pinned {phase.amount.value:g}'}"
+                for phase in self.phases
+            )
+        T_text = "free" if isinstance(self.T, Free) else "fixed"
+        P_text = "free" if isinstance(self.P, Free) else "fixed"
+        text = f"{phase_text} · T {T_text} · P {P_text}"
+        if model is not None:
+            compiled = _core.compile_problem(model._model, self._native(model))
+            text += (
+                f" · k = {compiled.pinned_count}, f = {compiled.free_intensive_count}"
+                f" · rank B = {compiled.rank} · charge rows {compiled.charge_row_count}"
+            )
+        print(text)
+        return text
+
+
+def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
+    allowed = {
+        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared"
+    }
+    if set(mapping) - allowed:
+        raise _core.ParameterError("unknown Problem key")
+    phases_value = mapping.get("phases")
+    if isinstance(phases_value, Discover):
+        phases: Sequence[Phase] | Discover = phases_value
+    elif phases_value == "discover":
+        phases = Discover()
+    else:
+        phases = tuple(_phase_from_mapping(item) for item in _records(phases_value, "phases"))
+    feed = _feed_from_mapping(mapping.get("feed"))
+    reactions = tuple(
+        _reaction_from_mapping(item) for item in _records(mapping.get("reactions", ()), "reactions")
+    )
+    return Problem(
+        phases=phases,
+        T=_intensive_from_mapping(mapping.get("T"), "T"),
+        P=_intensive_from_mapping(mapping.get("P"), "P"),
+        feed=feed,
+        reactions=reactions,
+        standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
+        topology_declared=bool(mapping.get("topology_declared", True)),
+    )
+
+
+def _records(value: object, name: str) -> Sequence[Mapping[str, object]]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise _core.ParameterError(f"{name} must be a sequence")
+    return tuple(_record(item, name) for item in value)
+
+
+def _record(value: object, name: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise _core.ParameterError(f"{name} entries must be mappings")
+    return value
+
+
+def _phase_from_mapping(value: Mapping[str, object]) -> Phase:
+    amount_value = value.get("amount")
+    amount: Free | Pinned | None = None
+    if isinstance(amount_value, Mapping) and amount_value.get("status") == "pinned":
+        amount = Pinned(float(amount_value.get("value", 0.0)))
+    elif isinstance(amount_value, Mapping) and amount_value.get("status") == "free":
+        amount = Free(float(amount_value.get("guess", 0.0)))
+    return Phase(
+        str(value.get("name", "")),
+        support=cast(Sequence[str] | None, value.get("support")),
+        amount=amount,
+        kind=cast(str | None, value.get("kind")),
+        composition_guess=cast(Sequence[float], value.get("composition_guess", ())),
+        packing_guess=cast(float | None, value.get("packing_guess")),
+    )
+
+
+def _intensive_from_mapping(value: object, name: str) -> float | Free:
+    if isinstance(value, Mapping):
+        if value.get("free") is True:
+            return Free(float(value.get("guess", 0.0)))
+        return float(value.get("value", 0.0))
+    if isinstance(value, (int, float)):
+        return float(value)
+    raise _core.ParameterError(f"missing {name}")
+
+
+def _feed_from_mapping(value: object) -> Feed:
+    record = _record(value, "feed")
+    values = cast(Mapping[str, float], record.get("values"))
+    basis = record.get("basis")
+    if basis == "mole_fractions":
+        return MoleFractions(values)
+    if basis == "amounts":
+        return Amounts(values)
+    if basis == "mass_fractions":
+        return MassFractions(values)
+    if basis == "molalities":
+        return Molalities(
+            values,
+            solvent=cast(Sequence[str], record.get("solvent", ())),
+            solvent_mass_kg=cast(float, record.get("solvent_mass_kg", 1.0)),
+        )
+    raise _core.ParameterError(f"unknown feed basis {basis}")
+
+
+def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
+    return Reaction(
+        cast(Mapping[str, float], value.get("stoichiometry")),
+        name=str(value.get("name", "")),
+        equilibrium_constant=cast(float, value.get("equilibrium_constant", 1.0)),
+        affinity_j_per_mol=cast(float | None, value.get("affinity_j_per_mol")),
+    )
+
+
+def _free_value(value: float | Free) -> _core.FreeValue:
+    return _core.FreeValue.variable(value.guess) if isinstance(value, Free) else _core.FreeValue.fixed(value)
+
+
+def _amount_spec(value: Free | Pinned) -> _core.AmountSpec:
+    return _core.AmountSpec.free() if isinstance(value, Free) else _core.AmountSpec.pinned(value.value)
+
+
+def _phase_kind(phase: Phase) -> _core.PhaseKind:
+    kind = phase.kind
+    if kind is None:
+        kind = "vapor" if phase.name.upper() == "V" else "liquid"
+    if kind.lower() in {"vapor", "gas"}:
+        return _core.PhaseKind.Vapor
+    if kind.lower() == "liquid":
+        return _core.PhaseKind.Liquid
+    raise _core.ParameterError(f"unknown phase kind {kind}")
+
+
+def solve_equilibrium(
+    model: _Model,
+    problem: Problem,
+    start: _core.EquilibriumResult | None = None,
+) -> _core.EquilibriumResult:
+    return _core.solve_equilibrium(model._model, problem._native(model), start)
+
+
+def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] = ()) -> Problem:
+    return Problem(
+        phases=[liquid, Phase("V", amount=Pinned(0.0))],
+        T=T,
+        P=Free(),
+        feed=feed,
+        reactions=reactions,
+    )
+
+
+def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] = ()) -> Problem:
+    return Problem(
+        phases=[Phase("L", amount=Pinned(0.0)), vapor],
+        T=T,
+        P=Free(),
+        feed=feed,
+        reactions=reactions,
+    )
+
+
+__all__ = (
+    "Amounts",
+    "Discover",
+    "Feed",
+    "Free",
+    "MassFractions",
+    "Molalities",
+    "MoleFractions",
+    "Pinned",
+    "Phase",
+    "Problem",
+    "Reaction",
+    "bubble_point",
+    "dew_point",
+    "problem_from_mapping",
+    "solve_equilibrium",
+)
+
+

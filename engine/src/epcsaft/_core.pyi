@@ -132,6 +132,148 @@ class HelmholtzModel:
     def counters(self) -> SweepCounters: ...
     def reset_counters(self) -> None: ...
 
+class PhaseKind:
+    Liquid: PhaseKind
+    Vapor: PhaseKind
+
+class AmountKind:
+    Free: AmountKind
+    Pinned: AmountKind
+
+class FeedKind:
+    MoleFractions: FeedKind
+    Amounts: FeedKind
+    MassFractions: FeedKind
+    Molalities: FeedKind
+
+class AmountSpec:
+    kind: AmountKind
+    fraction: float
+    def __init__(self) -> None: ...
+    @staticmethod
+    def free() -> AmountSpec: ...
+    @staticmethod
+    def pinned(value: float) -> AmountSpec: ...
+
+class FreeValue:
+    free: bool
+    value: float
+    def __init__(self) -> None: ...
+    @staticmethod
+    def fixed(value: float) -> FreeValue: ...
+    @staticmethod
+    def variable(guess: float = ...) -> FreeValue: ...
+
+class PhaseSpec:
+    name: str
+    kind: PhaseKind
+    support: list[int]
+    amount: AmountSpec
+    composition_guess: list[float]
+    packing_guess: Optional[float]
+    def __init__(self) -> None: ...
+
+class FeedSpec:
+    kind: FeedKind
+    values: list[float]
+    solvent: list[int]
+    solvent_mass_kg: float
+    def __init__(self) -> None: ...
+
+class ReactionSpec:
+    name: str
+    stoichiometry: list[float]
+    equilibrium_constant: float
+    affinity_j_per_mol: Optional[float]
+    def __init__(self) -> None: ...
+
+class EquilibriumProblem:
+    phases: list[PhaseSpec]
+    temperature: FreeValue
+    pressure: FreeValue
+    feed: FeedSpec
+    reactions: list[ReactionSpec]
+    standard_gibbs_j_per_mol: list[float]
+    topology_declared: bool
+    def __init__(self) -> None: ...
+
+class RowKind:
+    Chemical: RowKind
+    Pressure: RowKind
+    Moiety: RowKind
+    Electro: RowKind
+    Normalization: RowKind
+
+class Row:
+    kind: RowKind
+    phase: int
+    index: int
+    eqid: str
+
+class PointEvaluation:
+    values: list[float]
+    jacobian: list[float]
+    objective: float
+    floor: float
+
+class CompiledSystem:
+    rows: list[Row]
+    pinned_count: int
+    free_intensive_count: int
+    rank: int
+    charge_row_count: int
+    primal_size: int
+    rows_minus_unknowns: int
+    generic_nullity: int
+    feed_total: float
+    has_ions: bool
+    has_reaction: bool
+    jacobian_rank: int
+    removed_species: list[int]
+    def generic_point(self) -> list[float]: ...
+    def evaluate(self, point: Sequence[float]) -> PointEvaluation: ...
+    def jacobian(self, point: Sequence[float]) -> list[float]: ...
+    def lever_jacobian(self, point: Sequence[float]) -> list[float]: ...
+    def objective_gradient(self, point: Sequence[float]) -> list[float]: ...
+    def hessian(self, point: Sequence[float]) -> list[float]: ...
+
+class EquilibriumResult:
+    success: bool
+    message: str
+    temperature: list[float]
+    pressure: list[float]
+    amounts: list[float]
+    mole_fractions: list[float]
+    molar_densities: list[float]
+    packing_fractions: list[float]
+    multipliers: list[float]
+    residuals: list[float]
+    sensitivity: list[float]
+    coordinates: list[float]
+    phase_count: int
+    iterations: int
+    evaluations: int
+    hessian_calls: int
+    objective: float
+    reduced_hessian_minimum: float
+    convergence: Convergence
+    rows: list[Row]
+
+def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
+def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
+def solve_equilibrium(
+    model: HelmholtzModel,
+    problem: EquilibriumProblem,
+    start: Optional[EquilibriumResult] = ...,
+) -> EquilibriumResult: ...
+
+class SensitivityInfo:
+    equations: int
+    parameters: int
+    rank: int
+    condition_estimate: float
+    nonsingular: bool
+
 class InfiniteDilutionReference:
     log_fugacity: tuple[float, float]
     molality: float
