@@ -36,8 +36,8 @@ engine/
       stoichiometry.cpp                         800   balance/reaction rank (SVD), standard-state transform, nullspace
       request_compile.cpp                       600   specification → active rows and their assembly F, F_y; feed-basis conversion; count and rank check. Starts belong to the drivers
       gibbs_minimizer.hpp                       150
-      gibbs_minimizer.cpp                      1200   GibbsMinimizer (Ipopt), residuals, reduced-Hessian check
-      phase_boundary.cpp                        300   the boundary Newton (internal, k ≥ 1): T or P unknown; the one-component case is saturation
+      gibbs_minimizer.cpp                      1200   the one Ipopt TNLP for every k: objective G or zero, constraint set from compile; residuals, reduced-Hessian check
+      phase_boundary.cpp                        150   seeds and continuation for k ≥ 1 cells (the driver is gibbs_minimizer.cpp for every k); the one-component case is saturation
       implicit_sensitivity.cpp                  250   KKT system, rank, condition, output rows
       phase_stability.hpp                       150
       phase_stability.cpp                      1400   find_phases: electroneutral chart, TPD search, dual bound loop

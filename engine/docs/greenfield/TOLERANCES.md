@@ -10,7 +10,8 @@ Evidence classes used throughout: **measured** (read from a file or a run), **de
 or claim with no evidence yet; each one is marked).
 
 Revised 2026-09-02 against `SPECIFICATION-SPACE.md` and the twelve-stage order: the
-boundary driver is a Newton on the compiled rows, not Ipopt (§3.4); `Convergence` and
+one Ipopt driver serves every cell, with a zero objective and every row as a constraint
+for `k ≥ 1` (§3.4, revised again 2026-09-02 from a separate boundary Newton); `Convergence` and
 `Stop` live in the policy header, not in `equilibrium/` (§3.8); `derived()` needs
 `constexpr` entries (§4); the mechanism is stated for the neutral and the electrolyte model
 at once (§3.9). Nothing in §2–§6 is derived from the superseded tree; that tree appears
@@ -162,13 +163,15 @@ rejection restated as a floor. Report `residual, tolerance, floor, amplification
 1/|dr/dρ|`. If `floor > tolerance`, the root test cannot be met and the stop is
 `converged_to_floor` (§5), not "did not converge".
 
-### 3.4 The two equilibrium drivers on one assembly (Stages 7, 8, 9)
+### 3.4 One equilibrium driver on one assembly (Stages 7, 8, 9)
 
 `SPECIFICATION-SPACE.md` §2.4 fixes the shape: one row assembly `F(y; spec)` with its
-exact Jacobian `F_y` (Stage 6, `request_compile.cpp`), consumed by a damped Newton for
-`k ≥ 1` (saturation at Stage 7, every boundary at Stage 9) and by Ipopt for `k = 0` (the
-flash, Stage 8). The floor is a property of the *assembly*, computed once per iteration
-and read by whichever driver is running:
+exact Jacobian `F_y` (Stage 6, `request_compile.cpp`), consumed by one Ipopt `TNLP` whose
+objective is `G` for `k = 0` and zero for `k ≥ 1`, and whose constraint set is the rows
+compile marks (the balance, charge and normalisation rows for `k = 0`; every row for
+`k ≥ 1`). On a square feasibility problem Ipopt's primal step is the Newton step on the
+residuals whatever Hessian it is given, so `k ≥ 1` needs no separate solver. The floor is
+a property of the *assembly*, computed once per iteration and read by the driver:
 
 - **chemical-potential rows** of phase `p`: that phase's `gradient_floor` (§3.2), at unit
   amount;
@@ -180,16 +183,16 @@ The assembly returns the floor as one number, the maximum over rows, beside `F` 
 `F_y`. Per-row floors cost nothing more but S1 tests the ∞-norm, so one number is what a
 result carries.
 
-**The boundary Newton (`k ≥ 1`).** `residual = ‖F‖∞`, `tolerance` the policy entry,
-`floor` from the assembly, `amplification = κ(F_y)` from the LU the step already takes
-(the pivot ratio, as in §3.1; `implicit_sensitivity.cpp` inverts the same matrix and can
-report the exact smallest singular value at the solution). Classification is §5 directly:
-this driver owns its loop, so the stall window and the budget are its own counters and no
-post-hoc reading of a foreign status is needed. This is the driver the first equilibrium
-stage runs, and the regression fit's inner solve (§3.5), so it is the one the tolerance
-core must serve before Ipopt exists.
+**`k ≥ 1` under Ipopt.** With a zero objective the residual *is* Ipopt's primal
+infeasibility `inf_pr` on the compiled rows, in the assembly's units; `tolerance` is the
+policy entry mapped onto `constr_viol_tol`; `floor` from the assembly; `amplification =
+κ(F_y)` from the factorisation `implicit_sensitivity.cpp` takes at the solution. The
+classification of §5 is read post hoc from `inf_pr` and the status, exactly as for `k = 0`
+below; there is one loop and one reading. This configuration is what the first equilibrium
+stage runs, and the regression fit's inner solve for every saturation and boundary
+observation (§3.5).
 
-**Ipopt (`k = 0`).** Ipopt tests the scaled NLP error against `tol` and the unscaled parts
+**Ipopt tolerances (every `k`).** Ipopt tests the scaled NLP error against `tol` and the unscaled parts
 against `dual_inf_tol`, `constr_viol_tol`, `compl_inf_tol`
 (https://coin-or.github.io/Ipopt/OPTIONS.html). Set `nlp_scaling_method = none`, because
 the floor is computed in the assembly's own units and a scaled test would need the same
@@ -217,8 +220,8 @@ at the solution costs microseconds and runs once per solve.
 ### 3.5 Regression (Stage 10, Ceres)
 
 The outer here is a least-squares fit over solved equilibria. Its inner solve is
-whichever driver the observation's specification compiles to: the boundary Newton for
-every saturation and bubble-point observation, Ipopt for a flash observation. Each
+the one Ipopt driver in whichever configuration the observation's specification compiles
+to: zero objective for every saturation and bubble-point observation, `G` for a flash. Each
 residual is an observable of a solution with error `κ_sys · residual` read from that
 solve's own `Convergence` record, mapped through `∂obs/∂u`, and the Jacobian comes
 through the same implicit sensitivity. Ceres has no floor hook either, so the same
@@ -262,9 +265,9 @@ define one.
 | model | `helmholtz_model.hpp` | 5 | `HelmholtzDerivatives::gradient_floor` |
 | model | `density.cpp` | 5 | `DensityRoot::convergence` |
 | equilibrium | `request_compile.cpp` | 6 | the assembly's floor: max over rows of the per-phase floors and the linear rows' roundoff |
-| equilibrium | `phase_boundary.cpp` | 7, 9 | the Newton's `Convergence`; `κ(F_y)` from its LU; the classification |
+| equilibrium | `gibbs_minimizer.cpp` | 7 | the one driver's `Convergence`: the running max over Ipopt's evaluations; the post-hoc classification for every `k` |
 | equilibrium | `implicit_sensitivity.cpp` | 7 | `κ_sys` from the factorisation it owns |
-| equilibrium | `gibbs_minimizer.cpp` | 8 | the running max over Ipopt's evaluations; the post-hoc classification |
+| equilibrium | `phase_boundary.cpp` | 7, 9 | seeds and continuation only; a seed with no coexisting roots is a named failure before the solve |
 | regression | `least_squares.cpp` | 10 | the aggregate floor, the classification |
 
 No structure here is carried from the superseded tree. Its results had a name–value list
@@ -394,12 +397,12 @@ phases are not the ones asked for, which is the trivial solution reported as an 
 
 | coupling | old tree | greenfield | relation |
 |---|---|---|---|
-| bubble pressure ↔ liquid + vapour solves | outer Newton over `P` around two inner solves; the failure of §1 | **gone**: `P` (or `T`) and the pinned phase's composition are unknowns of the one compiled row system (`k = f = 1`), solved by the boundary Newton on the whole system at once; one residual, one tolerance | none to state; the instance no longer exists |
-| association sites → tape → either driver | `2e-13` under `(S+1)` Hessians, no accounting | survives, for the flash (Ipopt) and every boundary and saturation (Newton) alike | `floor = max over phases and rows` of §3.4; `‖Φ_yX Φ_XX^{-1} D‖∞ · 2e-13` per phase (§3.2) |
+| bubble pressure ↔ liquid + vapour solves | outer Newton over `P` around two inner solves; the failure of §1 | **gone**: `P` (or `T`) and the pinned phase's composition are unknowns of the one compiled row system (`k = f = 1`), solved by the one Ipopt driver on the whole system at once; one residual, one tolerance | none to state; the instance no longer exists |
+| association sites → tape → either driver | `2e-13` under `(S+1)` Hessians, no accounting | survives, for the flash and every boundary and saturation alike, under one driver | `floor = max over phases and rows` of §3.4; `‖Φ_yX Φ_XX^{-1} D‖∞ · 2e-13` per phase (§3.2) |
 | association → density root | as above under the 360-interval scan | survives for `state_at_pressure`, the reference ladder, and the `C = 1` seed's root count | `floor_r = V · floor_grad[V]`; `κ = 1/|dr/dρ|` (§3.3) |
 | flash solution or previous boundary point → boundary seed | 21-start grid | survives as a seed only | a seed carries no tolerance; nothing to relate |
 | single-phase flash ↔ density root (S13) | separate solvers | the pressure row *is* the density equation at `Π = 1` | agreement tested within the larger of the two `max(tolerance, floor)`; a bare number here would test the floor |
-| either driver → implicit sensitivity → regression | owner compilation | survives; the inner is the Newton for every saturation and boundary observation | `floor_fit = Σ_obs ‖∂obs/∂u‖ κ_sys · residual` (§3.5) |
+| either driver → implicit sensitivity → regression | owner compilation | survives; the inner is the one Ipopt driver in its feasibility configuration for every saturation and boundary observation | `floor_fit = Σ_obs ‖∂obs/∂u‖ κ_sys · residual` (§3.5) |
 | infinite-dilution reference → `g°` → minimizer | four fixed-P scans | survives | a bias, `5e-5` on `ln φ^∞`; reported, never a floor (§3.6) |
 | stability inner minimizations → dual bound loop | HELD2 stages I–II | survives at Stage 11 | inner is §3.4; the gap test `ε_b = 1e-2` sits eight decades above any floor and needs no relation |
 | Ipopt's own linear solves → its KKT test | Ipopt-internal | unchanged | same norm, same variables: Ipopt's iterative refinement owns it |
@@ -408,8 +411,8 @@ The first row is a design commitment for Stages 7 and 9 and the reason the insta
 disappears. Under `SPECIFICATION-SPACE.md` §2 a pinned phase keeps its composition and
 volume as unknowns and loses only its amount; `P` (or `T`) is freed to pay for the pin;
 the chemical-potential and pressure rows of every phase are rows of one system; and that
-system is solved *as one system* by a damped Newton, never as a minimisation and never as
-an outer loop over `P` around `solve_equilibrium`. If a brief writes the outer loop, the
+system is solved *as one system* by the one Ipopt driver with a zero objective, never as
+a minimisation of `G` and never as an outer loop over `P` around `solve_equilibrium`. If a brief writes the outer loop, the
 coupling returns with the old tree's floor, and the brief must then carry §3.4's floor
 through it. Prefer the rows. teqp makes the same move for its VLE by taking density as a
 variable of the outer system rather than an inner solve, and has no density-loop coupling

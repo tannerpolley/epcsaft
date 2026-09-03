@@ -69,8 +69,8 @@ larger than a brief, it is named here and is the brief's specification.
 | 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
 | 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
 | 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` (to re-land) | designed |
-| 7 | saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §4.2 | designed |
-| 8 | Gibbs minimizer | `gibbs_minimizer.{hpp,cpp}` — the Ipopt driver for the flash | `SPECIFICATION-SPACE.md` | designed |
+| 7 | the driver, and saturation | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed; line budgets to re-estimate |
+| 8 | the flash | multiphase starts, the declared-topology contract, the flash cells and their gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed |
 | 9 | phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; `T` or `P` free | `SPECIFICATION-SPACE.md` | designed |
 | 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
 | 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
@@ -497,8 +497,13 @@ an electrolyte flash compiles with nullity 0. Each with the named mutation from 
 
 ### Stage 7 — saturation (300 lines)
 
-`phase_boundary.cpp` (300) opens with its one-component rows; `implicit_sensitivity.cpp`
-(250) lands with it.
+`gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver, for every `k` (`SPECIFICATION-SPACE.md`
+§2.4: objective `G` or zero, constraint set from compile, exact Hessian for `k = 0` and
+zero for `k ≥ 1`); `phase_boundary.cpp` opens with the one-component seeds and
+continuation; `implicit_sensitivity.cpp` (250) lands with it. Revised 2026-09-02: the
+separate boundary Newton is not written, because Ipopt's step on a square feasibility
+problem *is* the Newton step, and a second solver loop with its own tolerance and stops
+was the disease in another form. Line budgets for Stages 7 and 8 are to be re-estimated.
 
 Saturation is not a file, not a route, and not an identifier: `saturation` is a rule-7
 case token, so nothing under `native/` is named after it and only Python's
@@ -545,11 +550,11 @@ evaluation per Ipopt iteration, served to the objective, gradient, constraint Ja
 Hessian callbacks; today each callback re-evaluates, about ten tapes per counted evaluation,
 which is worth 5–10× on the reactive solve on its own.
 
-The Ipopt driver and Stage 7's Newton are two consumers of *one* assembly, not two row sets.
-The assembly is Stage 6's, in `request_compile.cpp`, which rule 7 covers from Stage 6; that
-placement, not a check, is what holds the two drivers and the implicit sensitivity to one
-matrix (`SPECIFICATION-SPACE.md` §5). Their rows differ by a factor `N_p` per phase, so no
-elementwise comparison between them is possible; S10 is a finite-difference agreement.
+The driver is Stage 7's; this stage writes the multiphase starts, the declared-topology
+contract (§3.4 of the specification: whole or nothing) and the flash cells. The assembly is
+Stage 6's, in `request_compile.cpp`, which rule 7 covers from Stage 6; that placement, not a
+check, is what holds the driver and the implicit sensitivity to one matrix
+(`SPECIFICATION-SPACE.md` §5). S10 is a finite-difference agreement on each.
 
 **Gate:** `SPECIFICATION-SPACE.md` §4.2 solve tier on the flash cells. S1 every solved
 cell's residual within `derived(minimizer_convergence_tolerance)` on every row, *including

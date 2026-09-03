@@ -169,25 +169,36 @@ chemical-potential rows have been replaced by fixed K-values. In this system it 
 generator at most; if `gibbs_minimizer.cpp` or `phase_boundary.cpp` contains a scalar solve
 in a phase fraction, that is a second route. Rule 7 cannot see it; §4.3's checks can.
 
-### 2.4 Two drivers, one assembly
+### 2.4 One driver, one assembly
 
-A specification with `k = 0` is a minimisation and goes to Ipopt: objective `G`, equality
-constraints = balance, charge and normalisation rows, bounds on `ln η_p`, exact Lagrangian
-Hessian from the tape's `∂²A_p` per phase. A specification with `k ≥ 1` is **not** a
-minimisation — `G` is not minimised over `P`, and the pinned-multiplier condition is an
-equation, not an optimality condition — so it is a square Newton on the same rows with the
-same Jacobian. It is not posed as an Ipopt NLP with zero objective either: an
-exact-Hessian Ipopt on `F = 0` needs third derivatives of `A`, which the tape does not
-carry (**derived**), and a quasi-Newton Ipopt would run but is excluded by rule 8
-(**decided**). One consequence the Newton driver inherits and Stage 7 must commit to:
-it has no bound handling of its own, so an iterate leaving the domain is the `left_domain`
-stop of `TOLERANCES.md` §5, not an exception.
+Every cell is solved by Ipopt on one `TNLP` class whose two inputs come from compile as
+data: the **objective** and the **constraint set**.
+
+- `k = 0` is a minimisation: objective `G`, constraints = balance, charge and normalisation
+  rows, bounds on `ln η_p`, `ln x_{p,i}` and `N_p ≥ 0`, exact Lagrangian Hessian from the
+  tape's `∂²A_p` per phase. Minimising `G` rather than solving its KKT rows is what tells
+  the trivial solution and every saddle apart: they satisfy the rows, and only descent on
+  an objective refuses them.
+- `k ≥ 1` is **not** a minimisation — `G` is not bounded below in `P` — but it is square by
+  the count rule, and a square feasibility problem is one Ipopt solves as Newton. The
+  objective is zero and *every* row of §2.2 is a constraint. Ipopt's step solves
+  `[W + δI, Aᵀ; A, 0] [dx; dλ] = −[∇f + Aᵀλ; g]`, and with `A` square and nonsingular the
+  second block row alone fixes `dx = −A⁻¹ g`: the exact Newton step on the residuals,
+  whatever the Hessian `W`. The multipliers of a square feasibility problem vanish at the
+  solution, so the exact Lagrangian Hessian there is zero, and the Hessian callback
+  returns zero for `k ≥ 1`. No third derivative of `A` is needed anywhere; the earlier
+  draft's claim that a boundary "cannot be an Ipopt NLP" conflated the constraint
+  Hessian with the primal step. **derived**
+
+What one driver buys: bounds, line search, regularisation, `left_domain`, and one
+`Convergence` record are Ipopt's for every cell, and no second solver with its own loop,
+tolerance and stop names is written — which is the disease in another form. The "pick"
+is compile filling two fields of the compiled system, not a branch in a driver.
 
 So "one solver" means one row assembly `F(y; spec)` with its exact Jacobian `F_y`, consumed
-three ways: Ipopt's objective/constraint/Jacobian/Hessian callbacks are views of it; the
-boundary Newton iterates on it; `implicit_sensitivity.cpp` inverts it. The Hessian is
-consumed in all three. S10 holds each consumer to finite differences of its own rows;
-that there is one assembly is a placement decision (§5), not a check.
+two ways: the `TNLP` callbacks are views of it, and `implicit_sensitivity.cpp` inverts it.
+S10 holds each consumer to finite differences of its own rows; that there is one assembly
+is a placement decision (§5), not a check.
 
 ### 2.5 Three levels, one row set — and the two cells the design might quietly skip
 
@@ -205,7 +216,7 @@ pressure rows say `P_V = P_L = P`: three equations of substance in `V_V, V_L, P`
 pure saturation, reached with **no reaction span, no charge row, no stability, no phase
 count above two** — the active subset is seven rows of five registered kinds and no
 charge or reaction rows, which is the evidence that a regression fit of pure-component
-parameters depends on `equilibrium/` lightly (one compile, one assembly, one Newton)
+parameters depends on `equilibrium/` lightly (one compile, one assembly, one Ipopt call)
 rather than structurally. **derived**; S14 asserts the count, the nullity and the absence
 of reaction and charge rows, reports the row list (the multiset itself is not asserted,
 because a legitimate implementation may drop a free phase's normalisation row), and
@@ -473,7 +484,7 @@ from the papers already attached in Zotero; nothing needs acquiring.
 | S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way | return the converged iterate when one `N_p` sits at its bound |
 | S16 | reactive lever rule | on the `A + B ⇌ C` fixture at fixed `T`, `P`, the declared `{L,L}` reactive flash from three feeds whose moiety vectors `B n_feed` lie on the segment between the two phases' moiety vectors of a first solve returns the same two phase compositions to the convergence tolerance, and affinity vanishes in both phases with one `λ`. Gibbs' rule for the reactive system gives `F = 2 − 2 + 3 − 1 = 2`, both consumed by fixing `T` and `P`, so reactive tie lines are *isolated*, not unique — Ascani et al. 2023's Figure 3 has two, and "unique reactive tie-line" is their term of art for one that appears in a ternary — which is why the three feeds are placed on one tie line rather than anywhere in the gap. A route that solved the reaction in one phase and partitioned into the other would move the phases with the feed | drop the affinity consequence by solving the balance with `B = I` |
 
-**Reported, never asserted**, per cell: Ipopt iterations, Newton iterations, evaluations,
+**Reported, never asserted**, per cell: Ipopt iterations, evaluations,
 `hessian_calls`, recordings, wall. `hessian_calls ≥ 1` per iteration on every cell is how
 "the exact Hessian is consumed everywhere" is *seen*; it is not a pass condition. One
 architecture rule is cheap enough to add to the checker: `gibbs_minimizer.cpp` defines
@@ -495,10 +506,9 @@ applied to every cell they fit, which is what makes them coverage rather than sp
 
 ## 5. From specification to NLP
 
-    Problem  ──compile──►  CompiledSystem  ──►  Ipopt (k = 0)  ──►  EquilibriumResult
-                                │                     │
-                                ├──►  Newton (k ≥ 1)  ┤   both: F(y), F_y from one assembly
-                                │                     │
+    Problem  ──compile──►  CompiledSystem  ──►  Ipopt: objective G (k = 0) or 0 (k ≥ 1),
+                                │               constraints = the rows compile marks  ──►  EquilibriumResult
+                                │                     F(y), F_y from one assembly
                                 └──►  implicit sensitivity: −F_y⁻¹ F_θ
 
 1. **`Problem`** (`problem.hpp`) is data: phases with support, branch hint and amount
@@ -521,12 +531,13 @@ applied to every cell they fit, which is what makes them coverage rather than sp
    here, `equilibrium/request_compile.cpp` joins rule 7's `SOLVER_FILES`
    (`tools/check-engine-architecture.py:163`): it may branch on status flags, and it may
    not name a problem kind — the comment at `:154-156` is updated to say so.
-4. **drivers**: Ipopt for `k = 0` with bounds on `ln η_p`, `ln x_{p,i}` and `N_p ≥ 0`,
-   exact Hessian, `nlp_scaling_method = none` (`TOLERANCES.md` §3.4), objective `G` and
-   constraint rows read from the `CompiledSystem`; damped Newton on `F` for `k ≥ 1`, seeded
-   from the flash solution or the previous boundary point when the caller is sweeping
-   (`TRANSFER.md` Stage 7), and never an outer loop around `solve_equilibrium`
-   (`TOLERANCES.md` §6). Every multiphase start must give the phases *different*
+4. **driver** (`gibbs_minimizer.cpp`, Stage 7): one Ipopt `TNLP` with bounds on `ln η_p`,
+   `ln x_{p,i}` and `N_p ≥ 0`, `nlp_scaling_method = none` (`TOLERANCES.md` §3.4),
+   objective and constraint set read from the `CompiledSystem` (§2.4), exact Hessian for
+   `k = 0` and zero for `k ≥ 1`. Seeds and continuation for boundary cells live in
+   `phase_boundary.cpp` (Stages 7 and 9): a `k ≥ 1` solve is seeded from the flash
+   solution or the previous boundary point when the caller is sweeping, and there is never
+   an outer loop around `solve_equilibrium` (`TOLERANCES.md` §6). Every multiphase start must give the phases *different*
    compositions — the trivial solution is a stationary point (§3.3) and a symmetric start
    converges to it.
 5. **result**: amounts, volumes, intensives, multipliers, every residual row, the reduced
@@ -768,8 +779,8 @@ document's own first draft.
     chemical-potential row residuals at the converged multipliers (§3.4).
 24. A mass-fraction feed needs molar masses, which `Parameters` carries; a molality feed
     needs the solvent set, which only the `Problem` can supply.
-25. A boundary seed with no coexisting density roots, and any Newton iterate that leaves
-    the domain, is the `left_domain` stop; the Newton driver has no bounds of its own.
+25. A boundary seed with no coexisting density roots is a named failure before the solve;
+    an iterate that leaves the domain is Ipopt's `left_domain` stop, for every `k`.
 
 ## 11. The front surface: how a caller states the levers
 
@@ -811,11 +822,10 @@ Why each:
   explicit `Problem` it builds (one Python test per constructor, at the stage that lands
   it). A caller can always write the explicit form; the constructor only saves typing.
 - **One native entry point.** `solve_equilibrium(model, problem)` — the name the brief
-  fixed — compiles, reads `k`, and runs the
-  Ipopt driver for `k = 0` or the boundary Newton for `k ≥ 1` (§2.4). The driver is a
-  compile decision, not a caller's; a second public entry named for the boundary
-  (`solve_phase_boundary`) would be the taxonomy on the surface, so it is not bound and
-  `phase_boundary.cpp` keeps its Newton as an internal function. `find_phases` stays exposed for a caller who wants the discovery output alone.
+  fixed — compiles and runs the one Ipopt driver with the objective and constraint set
+  compile chose (§2.4). Those are compile's data, not a caller's choice; a second public
+  entry named for the boundary (`solve_phase_boundary`) would be the taxonomy on the
+  surface, so it is not bound and `phase_boundary.cpp` holds seeds and continuation only. `find_phases` stays exposed for a caller who wants the discovery output alone.
 - **The `Problem` shows its activation.** `problem.levers()` prints the phases with their
   statuses, which intensives are free, `k`, `f`, the reaction rank and the charge-row
   count, before any solve — the compile step's view, readable from Python, so that "what
@@ -847,3 +857,44 @@ problem = Problem(phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
 `Pure.saturation(280.0)` builds exactly that and nothing else. What this rules out is any
 method on the EOS surface that solves coexistence without a `Problem` passing through
 compile; the one-line test per constructor is what keeps it ruled out.
+
+## 12. What regression needs from equilibrium, and the all-native path
+
+`TRANSFER.md` Stage 10 is `fit(model, observations)` on Ceres with `least_squares.cpp`,
+`eos_observable.cpp`, `equilibrium_observable.cpp` and a `PredictionCache`. Checked
+against §2–§5 and §11, it is compatible, and the path from the one Python call to the one
+Python result is native throughout: `regression/` includes `equilibrium/problem.hpp`
+(rule 3 permits it, rule 4 bounds it), so the loop over observations, every solve, every
+sensitivity, every Jacobian row and the covariance run in C++ and nothing crosses the
+binding until `Fit` comes back. The old tree's Ceres kernel was also C++; what it lacked
+was a `Problem` it could build itself, so it went through an "owner evaluator", which is
+the owner compilation #192 removes.
+
+What an observation must carry, and what equilibrium must provide, stated as the
+interface:
+
+| regression needs | equilibrium provides | where |
+|---|---|---|
+| a `Problem` per observation, built natively from the observation's levers — never a "kind" | `Problem` is plain data with no Python in it (§5.1, §11) | Stage 6 |
+| a solve seeded from the previous point | `solve_equilibrium(model, problem, start)` with `start` an optional prior `EquilibriumResult`; the `PredictionCache` holds the last result per observation and per Ceres iterate | Stages 7, 9 |
+| `dy/dθ` for the model's active parameters | `implicit_sensitivity.cpp`: `−F_y⁻¹ F_θ`, `F_y` the matrix the driver already factorised, `F_θ` the tape's mixed second derivatives `∂²A/∂y∂θ`, which the Stage 3 tape already carries as its parameter Jacobian | Stage 7 |
+| the observable and its chain rule | an output-row enum — pressure, temperature, a phase composition, a phase density, an activity, a partial pressure — each a function of `y` with `∂obs/∂y` (formulation §8: "output rows carry their own chain rule") | `equilibrium_observable.cpp`, Stage 10 |
+| a residual-evaluation failure Ceres can act on | a solve that fails the declared-topology contract (§3.4), or leaves the domain, returns a failure with no state; the cost functor returns `false`, Ceres shrinks the trust region, and nothing is thrown across the fit or reported as a zero residual | Stages 8, 10 |
+| the fit's floor | `κ_sys · residual` per observation from the solve's own `Convergence` record (`TOLERANCES.md` §3.5) | Stage 10 |
+
+Three consequences worth stating:
+
+- **No third derivatives, anywhere.** Ceres is Gauss–Newton or Levenberg–Marquardt on the
+  residual Jacobian; it never forms the residual Hessian, which would be third order.
+  Ipopt on a square feasibility problem needs none (§2.4). The implicit sensitivity needs
+  second derivatives in `(y, θ)`, which the tape has. The old tree used a third-order
+  forward sweep exactly once (`phase_block.hpp`, `cubic_directional_derivative`, a
+  pure-component curvature quantity); it has no successor and nothing in the plan wants it.
+- **Every regression observation declares its topology.** Rule 4 forbids a fit from
+  constructing a problem with phases omitted, so the fit's residuals are differentiable and
+  a parameter step that makes a declared two-phase point cease to exist is a *failed
+  residual*, not a silently different problem. That is the design working as intended: a
+  fit can only move parameters where the declared physics still holds.
+- **Pure and mixture fits are one path.** A saturation observation is a `C = 1`, `k = 1`
+  `Problem` through the same driver and the same sensitivity as a two-liquid tie line of the
+  esterification data (§4.2), so one fit may mix them, and they share one floor.
