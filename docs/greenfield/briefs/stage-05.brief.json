@@ -186,7 +186,7 @@
     },
     {
       "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
-      "edit": "KKT system, rank, condition, output rows; levers T, P and the feed (F_theta = -B on the balance rows)",
+      "edit": "KKT system, rank, condition, output rows; levers T, P and the species feed n_feed,i (F_theta column i = -B[:, i] / sum_j n_feed,j on the balance rows)",
       "lines": {
         "low": 180,
         "estimate": 250,

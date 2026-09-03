@@ -118,10 +118,13 @@ difference of `eval_grad_f + Σ λ_j ∇c_j` in every primal unknown, to 1e-6. N
 `hessian_calls` assertion. No `isfinite` sweep.
 
 **S9** compares `dy/dθ` of the binary flash at fixed `T, P` against a centred difference of
-two full solves, for each of three levers: `T` (`δ = 1e-3 K`), `P`, and one feed coordinate
-`b_i` (the conserved amounts). `F_θ` for the feed is `−B` on the balance rows and zero
-elsewhere, one extra column in `implicit_sensitivity.cpp`; 1e-6 relative for every lever. The
-test supplies no derivative of anything.
+two full solves, for each of three levers: `T` (`δ = 1e-3 K`), `P`, and one species-feed
+coordinate `n_feed,i` that carries a moiety. `F_θ` for the feed column is `−B[:, i] / Σ_j n_feed,j`
+on the balance rows and zero elsewhere, one extra column per species in
+`implicit_sensitivity.cpp`; 1e-6 relative for every lever; and on the reactive fixture the
+derivative along a reaction direction (`B d = 0`), formed from the species columns, is exactly
+zero. The conserved amounts `b = B n_feed` are not a lever. The test supplies no derivative
+of anything.
 
 **Eight thin checks must assert what §4 words.** C6, S4 and S5 are adequate as one
 assertion. These are not:

@@ -44,13 +44,14 @@ The driver's unknowns are `ln x_{p,i}`, `ln η_p`, `N_p`, and the free intensive
 `ln x_{p,i} ∈ [ln STABILITY_COMPOSITION_FLOOR, 0]`, `ln η_p ∈ [ln 10⁻¹², ln PACKING_FRACTION_CEILING]`
 with the ceiling `0.74` (`policy::PACKING_FRACTION_CEILING`, an `AlgorithmTolerance`: close
 packing, above which no fluid root exists and `validate_point` refuses anyway),
-`N_p ∈ [0, Σ n_feed]`, `T, P > 0`. A plain-volume coordinate with no ceiling admits the
+`N_p ≥ 0` with no upper box bound (with reactions the mole total is not conserved, mass is, and the balance rows carry it; a bounded KKT system needs no box above, and for a non-reactive cell `N_p ≤ Σ n_feed` follows from the same rows), `T, P > 0`. A plain-volume coordinate with no ceiling admits the
 `v → ∞`, `P → 0` solution of the pressure row, which attempt 3 returned as a converged bubble
 point. This is held by reading the driver's `get_bounds_info`, like "one assembly": no check
 can distinguish a bounded coordinate from an unbounded one that happened not to run off.
 
-The sensitivity levers are `T`, `P` and the feed `b` (§12): `dy/dθ` is one call with one
-column per lever, and the model's active parameters are the same call with more columns.
+The sensitivity levers are `T`, `P` and the species feed `n_feed,i`, one column per species
+(§12): `dy/dθ` is one call with one column per lever, and the model's active parameters are
+the same call with more columns.
 
 System-wide: `T` and `P`, each **fixed** or **free**; feed `n_feed` (fixed, in any basis);
 the balance matrix `B` (identity when no reactions; otherwise the conserved moieties, whose
@@ -535,7 +536,7 @@ liquid, and `neutral_binary()` at 280 K and 50/50 is above the mixture critical 
 | S6 | instability certificate | `G₂ < G₁` at the ternary feed; `G₃ ≤ G₂ + tol` for the three-phase cell | return the one-phase start as the result |
 | S7 | lever rule | two feeds on the `{L,L}` tie line give the same two phases to 1e-8. This is S1 plus isolation of the solution, so it has no mutation of its own: S1's reddens it | shares S1's |
 | S8 | extensivity | every solved cell with the feed doubled: amounts double, every intensive unchanged | compile normalises `n_feed` to unit total before the balance rows |
-| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` one of three levers: a fixed intensive (`T` or `P`) or one feed coordinate `b_i` (the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative. `F_θ` is the assembly's: the tape's Hessian column in `T`, `−1/RT` on the pressure row, and `−B` on the balance rows for the feed; the test supplies no derivative | flip the sign of `F_θ` |
+| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` one of three levers: a fixed intensive (`T` or `P`) or one species-feed coordinate `n_feed,i` that carries a moiety (`B[:, i] ≠ 0`) (the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative; and, on the reactive fixture, the derivative along a reaction direction `d` with `B d = 0`, formed as `Σ_i d_i · dy/dn_feed,i`, is exactly zero. `F_θ` is the assembly's: the tape's Hessian column in `T`, `−1/RT` on the pressure row, and `−B[:, i] / Σ_j n_feed,j` on the balance rows for the feed; the test supplies no derivative | flip the sign of `F_θ` |
 | S10 | Jacobian agreement | the assembly's `F_y`, analytic from the tape's Hessian and the log-coordinate chain rule, against a centred difference of `F` in every unknown, at a boundary cell and at a flash cell, to 1e-6; and Ipopt's `eval_h` at the flash solution with the converged multipliers against a centred difference of the Lagrangian gradient (`eval_grad_f + Σ λ_j ∇c_j`) to 1e-6. Nothing about call counts. The drivers' rows differ by `N_p` per phase (§2.2), so no elementwise equality between consumers is asserted; "one assembly" is held by §5's placement and rule 7, not by a check | scale the pressure term of `evaluate`'s pressure row by 2: an `F_y` that is a difference of `evaluate` follows it and stays green, and a green mutant rejects the attempt; and scale the tape's Hessian blocks by 0.5 for the `eval_h` half |
 | S11 | ideal-gas limit | the reactive one-phase cell **as `{V}`** — the vapour branch is the one that reaches the ideal-gas limit; a liquid hint stays on its own branch — with the isomerisation `α ⇌ β` (so `Σ ν_i = 0` and the `ρ_ref` term cancels) at `P → 0` approaches `x_β / x_α = exp(−Δg°/RT)` (a limit; the residual terms vanish, which Stage 4 already checks). A reaction with `Σ ν ≠ 0` has a density factor in its limit and is not used here | perturb the `g°` transform |
 | S12 | discovery agrees (with the stability kernel) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
@@ -977,8 +978,15 @@ and the sensitivity when asked. No property. A property of phase `p` is
 generic only if no extensivity table ever appears in `regression/`: the rule admits
 `Σ_p N_p P_p`, which is the caller's error to make.
 
-**Sensitivity levers: `T`, `P`, and the feed** (`b`, the conserved amounts). `F_θ` for the
-feed is `−B` on the balance rows and zero elsewhere: trivial to assemble, and it is the
+**Sensitivity levers: `T`, `P`, and the species feed** `n_feed,i`, one column per species.
+`F_θ` for column `i` is `−B[:, i] / Σ_j n_feed,j` on the balance rows and zero elsewhere
+(balance row `r` is `(Σ_p N_p (B x_p)_r − (B n_feed)_r) / N_feed`, so its derivative in
+`n_feed,i` is `−B[r,i]/N_feed − row_r/N_feed`, and the second term vanishes at a converged
+point). The conserved amounts `b = B n_feed` are not a lever: `b` has rank-`B` entries and no
+unique preimage. A caller who wants a derivative along any feed direction `d`, a conserved
+coordinate included, forms `Σ_i d_i · dy/dn_feed,i` from the `C` columns, which is what the
+absorber's loading-to-feed transform does; a direction in the reaction span (`B d = 0`) gives
+exactly zero, because the solve is invariant to feed moved along a reaction. Trivial to assemble, and it is the
 derivative the absorption film finite-differences today (`Reactive_Film.py:280-330`,
 `d(log x)/d(log loading)` by `np.gradient`) and the derivative the superseded engine computes
 natively but filters from its public rows (`reactive_finite_phase.cpp:2077`, thread A1). S9
