@@ -27,10 +27,10 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 |---|---|
 | worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05` at `d404a27` = tag `stage-05-attempt-3` merged with `greenfield@78f4bc7` |
 | worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`, launched 2026-09-03 |
-| pid | 1284269, the resumed `codex exec`. Find it with `ps -eo pid,args \| grep "codex exec"`, never `$!` or a `pgrep -f` that also matches the shell wrapper; kill that pid, not the wrapper |
+| pid | 1345998, the second resume of `codex exec` (first resume stopped `budget_ceiling` at 333/330 on `equilibrium_checks.cpp`; result kept as `stage-05.result.attempt-4-stop-1.json`; log `attempt-4.resume2.log`). Find it with `ps -eo pid,args \| grep "codex exec"`, never `$!` or a `pgrep -f` that also matches the shell wrapper; kill that pid, not the wrapper |
 | log | `attempt-4.log` (first run, interrupted at 14 min) and `attempt-4.resume.log` (the resume) in the worktree; result lands in `stage-05.result.json` |
 | schema | `stage-05.result.schema.json` in the worktree (untracked) |
-| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `7d6fe4d` (request_compile 600/750/900; a breach is a stop), 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
+| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `1061a7d` (three test budgets raised after the honest stop) (request_compile 600/750/900; a breach is a stop), 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
 | interrupt | at 14 min the worker hit the old 780 ceiling on `request_compile.cpp` at 784 and began compacting ("combining lines, removing blank lines"); stopped on the owner's call, brief corrected, resumed with `resume-attempt-4.md` in the worktree. At acceptance measure that file as first written from `attempt-4.log` and reject any compaction on reading |
 
 Carried from the tag: the exact-tape assembly, analytic `F_y` and `F_θ`, stoichiometry,
@@ -74,7 +74,14 @@ A correction goes back to the same session with `codex exec ... resume <session 
 
 1. Attempt 4 acceptance (above). Compare the rewritten checks against `EQUILIBRIUM.md` §4.2
    and the brief's "Attempt four" section; run the five new mutations.
-2. `REGRESSION.md` and `FINAL-CHECK.md` are unwritten; Stages 6 and 8 need them before a brief.
+2. `FINAL-CHECK.md` is unwritten; Stage 8 needs it before a brief. `REGRESSION.md` exists;
+   before the Stage 6 brief it owes four items from the 2026-09-03 reviewer audit: (a) an
+   observation that names several solved targets, so finite-dose heat (two solves) is
+   expressible; (b) the `amplification` definition in the diagnostics block, currently Ipopt's
+   `regularization_size`; (c) re-pin the brief's sources at the current design commit, since
+   the preflight verifies the old pin while the worker reads the merged tree; (d) the owner's
+   ruling on `low` line floors and the `budget_undershot` stop now that `CANON.md` says a
+   minimum proves nothing.
 3. `engine/CONTEXT.md` glossary is the old tree's; five terms are listed sourceless in
    `docs/scientific/CONTEXT.md`. A Design item for whichever stage rewrites that file.
 4. `DensityBranch::Unspecified` → `Either` rename; issues #185–#196 to retire into per-stage

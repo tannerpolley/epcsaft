@@ -16,7 +16,7 @@
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
     "test -d engine/native/model",
-    "test -f engine/native/equilibrium/request_compile.cpp && test -f engine/native/equilibrium/problem.hpp && test -f engine/native/equilibrium/stoichiometry.cpp && git describe --tags --exact-match stage-05-attempt-3 >/dev/null 2>&1 || git cat-file -e d02f3c9^{commit}",
+    "test -f engine/native/equilibrium/request_compile.cpp && test -f engine/native/equilibrium/problem.hpp && test -f engine/native/equilibrium/stoichiometry.cpp && git cat-file -e d02f3c9^{commit} && git merge-base --is-ancestor d02f3c9 HEAD",
     "grep -q \"ipopt_dep = dependency('ipopt'\" engine/meson.build",
     "grep -q 'DensityRoot solve_density' engine/native/model/density.cpp",
     "grep -q 'stable_root_count' engine/native/model/density.cpp",
@@ -186,7 +186,7 @@
     },
     {
       "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
-      "edit": "KKT system, rank, condition, output rows; levers T, P and the feed (F_theta = -B on the balance rows)",
+      "edit": "KKT system, rank, condition, output rows; levers T, P and the species feed n_feed,i (F_theta column i = -B[:, i] / sum_j n_feed,j on the balance rows)",
       "lines": {
         "low": 180,
         "estimate": 250,
@@ -327,10 +327,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/request_compile.cpp",
-        "sed": "s/pinned/free/",
+        "sed": "s/compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;/compiled.pinned_count += 0;/",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "C1's own mutation: count a pinned phase as free"
+        "bites_only_after_write": false,
+        "why": "every pinned phase counts as free; the count rule breaks on every pinned cell (C1)"
       }
     },
     {
@@ -363,9 +363,9 @@
       "needs": "none",
       "mutation": {
         "file": "engine/native/equilibrium/phase_boundary.cpp",
-        "sed": "s/solve_boundary/solve_saturation/",
+        "sed": "s/boundary_start/solve_saturation/",
         "expect": "abort",
-        "bites_only_after_write": true,
+        "bites_only_after_write": false,
         "why": "trap 21: saturation is a rule 7 case token; only Python's Pure.saturation carries the word"
       }
     },
@@ -375,9 +375,9 @@
       "needs": "none",
       "mutation": {
         "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
-        "sed": "s/compiled.F_y/F_y/",
+        "sed": "s/compiled_.jacobian(point(n, x))/F_y(point(n, x))/",
         "expect": "abort",
-        "bites_only_after_write": true,
+        "bites_only_after_write": false,
         "why": "trap 5: the driver and the sensitivity find the assembly in request_compile.cpp, never write their own"
       }
     },
@@ -473,10 +473,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
-        "sed": "0,/RowKind::Moiety/s||RowKind::Electro|",
+        "sed": "s/&& compiled_.rows\\[row\\].kind != RowKind::Pressure)) {/\\&\\& compiled_.rows[row].kind != RowKind::Pressure \\&\\& compiled_.rows[row].kind != RowKind::Moiety)) {/",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "S1's own mutation: drop the balance rows from the constraint set; S1 reads the residual on every row including the ones the driver did not iterate"
+        "bites_only_after_write": false,
+        "why": "k = 0 cells lose their balance constraints in constraint_rows(); S1's balance residuals go nonzero"
       }
     },
     {
@@ -509,10 +509,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/request_compile.cpp",
-        "sed": "0,/amount\\[phase\\] \\* B\\[row.index\\]\\[species\\]/s||amount[phase] * B[row.index][phase]|",
+        "sed": "0,/derivative.gradient\\[2 + species\\]/s||derivative.gradient[2]|",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "C7's own mutation: index a phase where a component was meant in the balance row; a cell with more phases than components crashes, which also counts"
+        "bites_only_after_write": false,
+        "why": "C7's component-relabel half: every species carries species 0's residual chemical potential, so residual norms at the same physical point differ on the asymmetric binary"
       }
     },
     {
@@ -533,10 +533,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/phase_boundary.cpp",
-        "sed": "s|std::exp(ln_phi_liquid\\[i\\] - ln_phi_vapor\\[i\\])|1.0|",
+        "sed": "s|std::exp(ln_phi_liquid\\[i\\] - ln_phi_vapor\\[i\\])|1.0|; s|? DensityBranch::Vapor : DensityBranch::Liquid;|? DensityBranch::Liquid : DensityBranch::Liquid;|",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "K_i = 1 is the symmetric start; the ternary {V,L} flash at 1 bar collapses to the saddle and S2, S6 go red"
+        "bites_only_after_write": false,
+        "why": "K = 1 plus one density branch for both phases is a start on the true symmetric subspace (equal composition and equal eta); the ternary {V,L} flash at 1 bar collapses to the trivial pair, the coincidence refusal fires, S2 goes red"
       }
     },
     {
@@ -553,14 +553,14 @@
     },
     {
       "id": "checks_do_not_abort",
-      "command": "! grep -n 'std::abort' engine/tests/native/specification_checks.cpp engine/tests/native/equilibrium_checks.cpp engine/tests/native/boundary_checks.cpp",
+      "command": "! grep -n 'std::abort' engine/tests/native/equilibrium_support.hpp engine/tests/native/specification_checks.cpp engine/tests/native/equilibrium_checks.cpp engine/tests/native/boundary_checks.cpp",
       "needs": "none",
       "mutation": {
         "file": "engine/tests/native/equilibrium_support.hpp",
         "sed": "s|++failures;|++failures; std::abort();|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "a check that aborts hides every check after it; attempt 3 reported two reds and ran neither file past its first solve"
+        "why": "a check that aborts hides every check after it; the support header is where the harness lives, so the gate greps it too or its own mutation cannot redden it"
       }
     },
     {

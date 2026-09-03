@@ -853,7 +853,7 @@ Python becomes a native, declared derivation (`thermochemistry_from_reactions`) 
 
 ## 5. Checks to name, at the stage that writes each
 
-`H = H_res + H°` against `−T² ∂(A/T)/∂T` on the tape; `ρ → 0` returns `Cp°`; the transfer's
+`H = H° + H_res` against `U + PV` with `U = −T² ∂(A/T)/∂T` at fixed `V, n` on the tape (the registry's `total_enthalpy`; `−T² ∂(A/T)/∂T` alone is the internal energy); `ρ → 0` returns `Cp°`; the transfer's
 `∂/∂T` against a centred difference; the consistency diagnostic on an isomerisation and on
 a non-conserving reaction; rule 11 on `thermochemistry.hpp`; and the A1 falsifiers of the
 superseded repository's issue #202 as written: an ideal reactive mixture with closed-form

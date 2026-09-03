@@ -118,10 +118,13 @@ difference of `eval_grad_f + Σ λ_j ∇c_j` in every primal unknown, to 1e-6. N
 `hessian_calls` assertion. No `isfinite` sweep.
 
 **S9** compares `dy/dθ` of the binary flash at fixed `T, P` against a centred difference of
-two full solves, for each of three levers: `T` (`δ = 1e-3 K`), `P`, and one feed coordinate
-`b_i` (the conserved amounts). `F_θ` for the feed is `−B` on the balance rows and zero
-elsewhere, one extra column in `implicit_sensitivity.cpp`; 1e-6 relative for every lever. The
-test supplies no derivative of anything.
+two full solves, for each of three levers: `T` (`δ = 1e-3 K`), `P`, and one species-feed
+coordinate `n_feed,i` that carries a moiety. `F_θ` for the feed column is `−B[:, i] / Σ_j n_feed,j`
+on the balance rows and zero elsewhere, one extra column per species in
+`implicit_sensitivity.cpp`; 1e-6 relative for every lever; and on the reactive fixture the
+derivative along a reaction direction (`B d = 0`), formed from the species columns, is exactly
+zero. The conserved amounts `b = B n_feed` are not a lever. The test supplies no derivative
+of anything.
 
 **Eight thin checks must assert what §4 words.** C6, S4 and S5 are adequate as one
 assertion. These are not:
@@ -208,6 +211,14 @@ Three test budgets moved after the first honest ceiling stop (333 lines in
 `equilibrium_checks.cpp` 230 / 380 / 450, `specification_checks.cpp` 180 / 240 / 300,
 `equilibrium_support.hpp` 150 / 250 / 320. The ceilings are 1.2× measured-plus-remaining;
 the lows stay where content is guarded.
+
+**S15 clause (c) is a boundary check, and it is reachable.** In `boundary_checks.cpp`: the
+binary `{V,L}` boundary cell with `V` pinned and `P` free at 280 K, feed 0.5/0.5, a state above
+the mixture critical temperature where only the trivial solution exists, fails with no state
+and its failure names `phases_coincide` with the distance. If the unmutated run at that state
+stops on a budget rather than on coincidence, report it as a finding; the planner moves the
+state, not the check. Six mutations were re-anchored after the first acceptance run on the
+rewritten tree; the JSON governs.
 
 You start from the tag `stage-05-attempt-3`. Carried: the exact-tape assembly, analytic `F_y`
 and `F_θ`, `stoichiometry`, `problem.hpp`, the bindings, the Python and the compile-tier
