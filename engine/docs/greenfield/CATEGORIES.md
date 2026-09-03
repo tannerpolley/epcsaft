@@ -123,3 +123,26 @@ Nothing may depend on an analysis. The canon is not imported by a caller; it run
 package, not inside it. `promote_mea_active_bundle.py` (455 lines) is the one file that
 resists the table — it writes a packet from a campaign, which makes it a tool of the
 analyses rather than of the canon. Named, not decided.
+
+## Settled, 2026-09-02
+
+`CORE.md` §10 answered the four open homes and the analyses clause:
+
+| question | answer | reason |
+|---|---|---|
+| `parameter_builder` | **surface** | it is the contract naming which model is asked for, not a component of one |
+| `helmholtz_tape.hpp` | **engine** | it records the association potential and the Schur complement — equations nobody annotated. Annotate those two lines and the `EqID` test classifies it correctly |
+| `physical_constants.hpp` | **core** | reference data, read by every layer, depending on nothing |
+| one core for both contracts | **yes** | each is a type making the silent outcome unwritable, a report by name, and a checker rule stopping later stages opting out |
+| per-category stage tracks | **no** | a gate is one command on one tree needing engine, surface and canon at once, so tracks would synchronise at every stage and collapse back into the sequence. The sequence gains a **category column** instead, and the preflight refuses a write into an undeclared category |
+
+The analyses rule takes one clause: **nothing depends on an analysis at runtime or in a
+gate.** An analysis becomes a dependency only by promotion into a packet through the
+validator, and a `source_file` citation with a hash is provenance rather than a dependency.
+`promote_mea_active_bundle.py` is canon — it *is* the promotion boundary, sibling of
+`validate_packets.py` — which is the table row it was missing.
+
+Both violations are closed: the digitized LiBr curve is transcribed into `oracle.json` with
+its hash by the repair brief, and the two oracle scripts that read outside the repository
+are deleted.
+

@@ -19,7 +19,7 @@ written before it:
 
 | document | stages | what it owns |
 |---|---|---|
-| `CORE.md` | 5, and every later brief | **the core**: where it lives, numerical policy absorbed, the declared-choice and convergence contracts, debug mode, and what every brief must populate. Succeeds `TOLERANCES.md`, whose §9 disposition table says what was kept, revised and discarded |
+| `CORE.md` | 5, and the `diagnostics` block of every later brief | **the core**: where it lives, numerical policy absorbed, the declared-choice and convergence contracts, debug mode, and what every brief must populate. Succeeds `TOLERANCES.md`, whose §9 disposition table says what was kept, revised and discarded |
 | `TOLERANCES.md` | — | superseded by `CORE.md`; kept for its §1 measured failure, §2 floor derivation, §6 couplings and §7 prior art, which `CORE.md` cites rather than repeats |
 | `SPECIFICATION-SPACE.md` | 6, 7, 8, 9, 11 | how the equilibrium routes prove they are general: the count rule, the lattice, what each check may assert |
 | `CATEGORIES.md` | the core, the surface, and everything outside | what is engine, what is core, what is peripheral: the measured split and a proposal for the agent that will own it |
