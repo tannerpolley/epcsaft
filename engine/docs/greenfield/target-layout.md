@@ -48,7 +48,7 @@ engine/
       equilibrium_observable.cpp                250   problem → value and Jacobian rows
     bindings/                                  1100   the only pybind11 includes
       module.cpp                                150   PYBIND11_MODULE(_core), submodule registration
-      eos_bindings.cpp                          400   HelmholtzModel, State, Saturation, Reference as py::class_
+      eos_bindings.cpp                          400   HelmholtzModel, State, Reference as py::class_ (saturation is equilibrium's binding, below)
       equilibrium_bindings.cpp                  400   Problem, Result, solve_equilibrium, find_phases, solve_phase_boundary
       regression_bindings.cpp                   150   fit, Observation, Fit
   src/epcsaft/                                 2430   Python: maps inputs to _core and _core results to types
@@ -56,7 +56,7 @@ engine/
     _core.pyi                                   250
     units.py                                     80
     parameters.py                               400   Parameters.from_packet / from_mapping; ActiveParameters
-    eos.py                                      600   Pure, Mixture, State, derivatives, saturation
+    eos.py                                      600   Pure, Mixture, State, derivatives; Pure.saturation is a thin call onto solve_phase_boundary
     reference.py                                100   InfiniteDilutionReference mapping only
     regression.py                               200   fit, Observation, Fit (a module: one capability, one file)
     equilibrium/
@@ -65,7 +65,7 @@ engine/
       loader.py                                 250   problem_from_mapping; mass-fraction and molality feeds
   tests/                                       1650   by capability; no numerical/behavior split
     packets.py                                  150   read data/packets tables for fixtures
-    fixtures/                                   250   two synthetic tables (immiscible ternary, associating binary)
+    fixtures/                                   250   synthetic tables: the associating binary; the Ascani 2023 reactive ternary (SPECIFICATION-SPACE.md §4.2)
     eos/                                        520   saturation vs NIST; γ± vs Hamer–Wu (Held, Figiel); closed-form, identity, limit, permutation, closure, anchor
     equilibrium/                                530   LLE vs Figure 2 tie-lines; analytic uptake and reaction; conservation; boundary Jacobians; discovery; values survive failure; validation
     regression/                                 200   NIST parameter recovery; Jacobian vs centered differences; permutation

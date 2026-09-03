@@ -94,10 +94,14 @@ Carried, as the acceptance contract rather than as test code:
 downstream repositories cannot construct a model against `main` at all. It is the
 evidence for Stage 12, not a gate.
 
-Two synthetic fixtures carry into `tests/fixtures/` (250 lines): the immiscible ternary
-and the associating binary. Everything else is written against the oracle rows, on the
-user's rule: real mixtures and real data, no route-specific or downstream-specific gates
-or flags.
+One synthetic fixture carries: the associating binary, which is Baygi & Pahlavanzadeh
+2015's MEA–water model and already lives in `tests/native/model_support.hpp`. The
+immiscible ternary does **not** carry (revised 2026-09-02): its two-liquid cell was never
+verified to exist, and `SPECIFICATION-SPACE.md` §4.2 replaces it with a published
+fixture, the hypothetical `A + B ⇌ C` of Ascani et al. 2023 (Table 3, `K_a = 2.25`),
+whose miscibility gap and reactive tie lines are documented in that paper. Everything
+else is written against the oracle rows, on the user's rule: real mixtures and real data,
+no route-specific or downstream-specific gates or flags.
 
 ## 6. Outside the engine — untouched
 

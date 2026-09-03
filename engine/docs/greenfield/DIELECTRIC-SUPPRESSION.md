@@ -48,6 +48,14 @@ So the ion diameters in that packet were regressed **with `α = 7.01` held fixed
 are one calibration. Changing `α` alone leaves diameters that were fitted to absorb its
 error.
 
+> **The rule.** `born_diameter` and the dielectric suppression coefficient are **paired**.
+> A packet's Born diameters are only valid with the suppression coefficient they were
+> regressed against, and this packet's are only valid with `7.01`. Never evaluate
+> `figiel-2025-reference-electrolytes` with any other suppression value, and never
+> substitute a suppression coefficient into a packet without re-fitting the diameters in
+> the same step. Any consumer that changes one must change both, and a fit that varies one
+> while holding the other must say so.
+
 ## 3. The experiment
 
 Per-ion Zuber values substituted into the Figiel packet, nothing else changed, mean ionic

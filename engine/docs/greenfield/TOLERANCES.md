@@ -300,6 +300,14 @@ compare against measured data or closed forms with their own tolerances, and a g
 constructed as `derived(...)` below the floor tests the floor rather than the equations,
 which is exactly what TRANSFER.md's Stage 7 and 8 gates were rewritten to avoid.
 
+One outcome is deliberately **not** a stop: a declared phase set that converges to fewer
+phases than declared, or to two coincident phases. That iterate has met its tolerance;
+what it has failed is the specification's contract (`SPECIFICATION-SPACE.md` §3.4). It is
+returned as a failure with no equilibrium state, named `declared_phase_absent` or
+`phases_coincide`, carrying the phase and either Michelsen's deficit `1 − Σ` or the phase
+distance. Putting it in the `Stop` enum would let a caller read amounts off a result whose
+phases are not the ones asked for, which is the trivial solution reported as an answer.
+
 ## 6. Which couplings survive the rebuild
 
 | coupling | old tree | greenfield | relation |

@@ -66,7 +66,7 @@ larger than a brief, it is named here and is the brief's specification.
 | 1 | tree, build, checker | layer tree, one archive, seven rules | — | **closed** `e4d964c` |
 | 2 | `physics/` | six carried kernels, the policy header written fresh | — | **closed** `8bc6419` |
 | 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `performance_floor.md` | **closed** `a2a2ac5` |
-| 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | — | **running** — brief base `e4122b3` |
+| 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
 | 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
 | 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` (to re-land) | designed |
 | 7 | saturation | `phase_boundary.cpp` opens with its one-component rows; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §4.2 | designed |
@@ -75,6 +75,13 @@ larger than a brief, it is named here and is the brief's specification.
 | 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
 | 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
 | 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
+
+**Stage 4 is reopened, not closed.** Its nine gates pass and every mutation was shown red,
+and the code is merged at `b14851f`. It is held open because the engine and the superseded
+one disagree on the dispersion term for electrolytes, which
+`analyses/reproduction/2025-figiel-engine-crosswalk` localises to the like-ion pairs, and
+which convention is right is not yet established. A stage whose numbers are unexplained is
+not a closed stage, whatever its gates say. Stage 5 does not start until it is.
 
 **Saturation before the flash, and why it is Stage 7 and not Stage 4.** Pure saturation is
 the `k = 1`, `f = 1` cell of the one row system: one phase pinned at zero amount, `P` free
@@ -539,8 +546,14 @@ S7 lever rule to 1e-8. S8 extensivity under feed doubling. S10 the assembly's `F
 centred differences of `F`, and Ipopt's `eval_h` against centred differences of the
 Lagrangian gradient, both to 1e-6. S11 the ideal-gas limit `x_β / x_α = exp(−Δg°/RT)` on
 the isomerisation. S13 the single-phase cell on every fixture. S15 a declared phase that
-vanishes ends in a named `Stop`. Conservation and charge residuals ≤ 1e-10. Each with the
-named mutation from that table.
+vanishes, or two that coincide, fails with no equilibrium state (`SPECIFICATION-SPACE.md`
+§3.4). S16 the reactive tie line on the Ascani 2023 `A + B ⇌ C` fixture is feed-invariant.
+Oracle case `aqueous_alcohol_salt_lle` under **declared** `{L,L}` from each tie line's
+midpoint feed, both endpoint compositions within the row uncertainties — the electrolyte
+two-liquid cell under measured data before discovery exists (Stage 11 reaches the same
+rows with topology omitted). The esterification tie lines of Senina 2022 and Schmitt 2006
+(`SPECIFICATION-SPACE.md` §4.2) become a further oracle case once transcribed.
+Conservation and charge residuals ≤ 1e-10. Each with the named mutation from that table.
 
 ---
 
