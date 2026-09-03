@@ -145,7 +145,7 @@ source_files=(
 )
 while IFS= read -r -d '' path; do
     source_files+=("$path")
-done < <(find engine/cpp engine/src -type f -print0 | sort -z)
+done < <(find engine/native engine/src -type f -print0 | sort -z)
 while IFS= read -r -d '' path; do
     source_files+=("$path")
 done < <(
