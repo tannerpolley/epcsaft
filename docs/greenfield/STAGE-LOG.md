@@ -361,7 +361,7 @@ so nothing prints it. The record is right where it is exercised.
 
 | | attempt 1 (`stage-05-attempt-1`) | attempt 2 (`stage-05-attempt-2`) |
 |---|---|---|
-| lines, new files | 1,826 of 4,085 estimated | 3,539, **nothing below its `low`** |
+| lines, new files | 1,826 of 4,085 estimated | 3,539 as the worker reported its writes (by `git diff --numstat 88b5a2a`, 4,708 lines added: native 2,558, tests 778), **nothing below its `low`** |
 | files below `low` | 13 of 13 | 0 |
 | C1–C9, S1–S16 | **absent** | all 24 present and called |
 | gates | 12 of 12 green | 14 of 14 green |

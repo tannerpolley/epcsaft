@@ -1,7 +1,7 @@
 {
   "stage": "05",
   "branch": "stage-05",
-  "base": "greenfield@88b5a2a",
+  "base": "greenfield@18e18e5",
   "source_commit": "88b5a2a",
   "reaccepts": null,
   "stop_conditions": [
@@ -10,7 +10,8 @@
     "gate_red_after_write: a gate green at base goes red for a reason other than the write it names",
     "scope_expansion: the work requires a route name, a second driver, an outer Newton around solve_equilibrium, or a change to a tolerance or to classify",
     "design_silent: EQUILIBRIUM.md does not decide something the code must decide -- report the cell or row and stop, do not choose",
-    "budget_undershot: a write below its `low` line count. `low` is not advice -- it is the design's estimate of what the file must contain, and coming in under it means something specified is missing. Report the file and the number and stop"
+    "budget_undershot: a write below its `low` line count. `low` is not advice -- it is the design's estimate of what the file must contain, and coming in under it means something specified is missing. Report the file and the number and stop",
+    "mutation_invalid: a mutant that does not build, or a mutant on which the gate stays green. Both reject the attempt; neither is a pass"
   ],
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
@@ -30,9 +31,9 @@
       "ref": "greenfield@88b5a2a:engine/docs/greenfield/EQUILIBRIUM.md",
       "must_contain": [
         "### 2.3 The count rule",
-        "rows \u2212 unknowns = k \u2212 f",
-        "### 4.1 Compile tier \u2014 no solve; lands with Stage 5",
-        "## 10. Traps, one line each \u2014 the brief copies this list",
+        "rows − unknowns = k − f",
+        "### 4.1 Compile tier — no solve; lands with Stage 5",
+        "## 10. Traps, one line each — the brief copies this list",
         "## 11. The front surface: how a caller states the levers"
       ],
       "purpose": "the design. It is the specification, not background: every row, every rejection, every check and its mutation, and the 25 traps are decided there. Where this brief and EQUILIBRIUM.md differ, EQUILIBRIUM.md wins and you stop and say so"
@@ -51,7 +52,7 @@
       "must_contain": [
         "equilibrium/                               5270",
         "      request_compile.cpp                       600",
-        "core` \u2190 `physics` \u2190 `model` \u2190 `equilibrium`"
+        "core` ← `physics` ← `model` ← `equilibrium`"
       ],
       "purpose": "where each file goes and the include direction. equilibrium/ may include model/; nothing in model/ may include equilibrium/"
     },
@@ -134,7 +135,14 @@
         "low": 450,
         "estimate": 600,
         "ceiling": 780
-      }
+      },
+      "must_contain": [
+        "derivative.hessian[",
+        "pressure / rt",
+        "standard_gibbs[species] / rt",
+        "B[balance_row][species]",
+        "lever_jacobian"
+      ]
     },
     {
       "path": "engine/native/equilibrium/gibbs_minimizer.hpp",
@@ -152,7 +160,11 @@
         "low": 700,
         "estimate": 870,
         "ceiling": 1150
-      }
+      },
+      "must_contain": [
+        "RowKind::Moiety",
+        "compiled_.hessian"
+      ]
     },
     {
       "path": "engine/native/equilibrium/phase_boundary.cpp",
@@ -170,7 +182,11 @@
         "low": 180,
         "estimate": 250,
         "ceiling": 330
-      }
+      },
+      "must_contain": [
+        "-F_theta",
+        "lever_jacobian"
+      ]
     },
     {
       "path": "engine/native/bindings/equilibrium_bindings.cpp",
@@ -298,7 +314,7 @@
         "sed": "s/void check_c1/void check_c1_disabled/",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "renaming one named check must make the claim checker red"
+        "why": "a name check only: renaming one named check must make the claim checker red. It reads names, not bodies; the seven per-claim gates below read bodies"
       }
     },
     {
@@ -311,18 +327,6 @@
         "expect": "abort",
         "bites_only_after_write": true,
         "why": "S8's own mutation: compile normalises n_feed to unit total"
-      }
-    },
-    {
-      "id": "boundary_checks",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
-      "needs": "native",
-      "mutation": {
-        "file": "engine/native/equilibrium/phase_boundary.cpp",
-        "sed": "s/temperature/temperature_frozen/",
-        "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "S5's own mutation: freeze T in the Jacobian when T is the unknown"
       }
     },
     {
@@ -397,6 +401,90 @@
         "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
         "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/",
         "expect": "abort"
+      }
+    },
+    {
+      "id": "boundary_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|pressure / rt|2.0 * pressure / rt|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S10 F_y half at the boundary cell: evaluate moves, an analytic F_y does not, a finite-difference F_y follows it and stays green -- which is the rejection"
+      }
+    },
+    {
+      "id": "sensitivity_sign",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/implicit_sensitivity.cpp",
+        "sed": "s|-F_theta|F_theta|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S9's own mutation: flip the sign of F_theta; bites only if F_theta is the assembly's, never the test's"
+      }
+    },
+    {
+      "id": "hessian_is_exact",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|derivative\\.hessian\\[|0.5 * derivative.hessian[|g",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S10 eval_h half: scale the tape's Hessian blocks by 0.5; a numerical_hessian never reads them and stays green -- which is the rejection"
+      }
+    },
+    {
+      "id": "balance_row_enforced",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "sed": "0,/RowKind::Moiety/s||RowKind::Electro|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S1's own mutation: drop the balance rows from the constraint set; S1 reads the residual on every row including the ones the driver did not iterate"
+      }
+    },
+    {
+      "id": "affinity_from_span",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|B\\[balance_row\\]\\[species\\]|(balance_row == species ? 1.0 : 0.0)|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S16's own mutation: B = I in the chemical-potential row drops the affinity consequence; the three tie-line feeds no longer return the same phases"
+      }
+    },
+    {
+      "id": "standard_state_transform",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|standard_gibbs\\[species\\] / rt|1.01 * standard_gibbs[species] / rt|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S11's own mutation: a 1 % perturbation of g-standard moves ln(x_beta/x_alpha) by ~8e-3 at K = 2.25, past the 1e-3 limit bound"
+      }
+    },
+    {
+      "id": "permutation_residuals",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "0,/amount\\[phase\\] \\* B\\[row.index\\]\\[species\\]/s||amount[phase] * B[row.index][phase]|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "C7's own mutation: index a phase where a component was meant in the balance row; a cell with more phases than components crashes, which also counts"
       }
     }
   ],

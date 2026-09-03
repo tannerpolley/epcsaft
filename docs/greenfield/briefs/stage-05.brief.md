@@ -58,19 +58,13 @@ bare policy number), 10 (reach the tape through the existing predicate-signature
 - Include direction: `equilibrium/` may include `model/`; nothing in `model/` may include
   `equilibrium/`.
 
-## A budget inconsistency, recorded rather than resolved
+## Budgets
 
-`TRANSFER.md` heads this stage "~3,040 lines, ceiling ~3,870", then lists files summing to
-about **3,710 before tests, bindings or Python**. The headline is an older decomposition
-(specification 1,000 / driver and cell 1,330 / starts and topology 710) and the file list is
-newer. **The per-file ceilings in the JSON are what you are held to**; the headline is
-informational and is the coordinator's to reconcile, not yours. Total estimate across all
-sixteen writes is ~4,580 with a ceiling of ~5,955, and that is expected to be larger than
-either headline because it counts the four test files, the bindings and the Python layer,
-which the headline never did.
-
-Do not trim a file to meet a headline. If a file genuinely needs more than its ceiling, that
-is `budget_exceeded` — stop and report the number.
+The per-file `low`, estimate and ceiling in the JSON are what you are held to. They sum to
+2,450 / 3,240 / 4,130 for the eight native files, 2,900 / 3,890 / 5,010 with the bindings and
+Python, and 3,423 / 4,649 / 6,065 across all seventeen writes. `TRANSFER.md`'s heading now
+carries the same numbers. Do not trim a file to meet a total. If a file genuinely needs more
+than its ceiling, that is `budget_exceeded` — stop and report the number.
 
 ## The checks are the stage, and they are named
 
@@ -98,6 +92,56 @@ Concretely, the ones the first attempt proxied and must not be proxied again:
 - **S9** compares `dy/dθ` against a centred difference of the whole solve.
 - **S1** and **S13** read `max(tolerance, floor)` from the result's `Convergence` record.
 
+## Attempt three: what the second attempt got wrong
+
+The second attempt passed fourteen gates and was rejected on reading. Its assembly had no
+analytic `F_y`, no `F_θ` and no exact Hessian: `CompiledSystem::jacobian` was a centred
+finite difference of `evaluate`, `eval_h` called a `numerical_hessian`, and no line read
+`derivative.hessian`. §2.4 and §5 item 3 say all three come from the tape. Every consequence
+below follows from that one omission.
+
+**Derivatives are the assembly's, never the test's.**
+
+- `F_y` is `CompiledSystem::jacobian`, analytic from the tape's Hessian and the
+  log-coordinate chain rule. `request_compile.cpp` must contain `derivative.hessian[`.
+- `F_θ` is the assembly's `lever_jacobian(point)`, `θ ∈ {Temperature, Pressure}`: the tape's
+  Hessian column in `T` for the chemical-potential and pressure rows, `−1/RT` on the pressure
+  row for `P`, zero elsewhere. `implicit_sensitivity.cpp` owns `sensitivity(compiled, result,
+  lever)` and must contain `-F_theta` and `lever_jacobian`. The model's active parameters are
+  the same call with more columns and land with regression.
+- Ipopt's `eval_h` reads `compiled_.hessian`. `gibbs_minimizer.cpp` must contain it.
+
+**S10** centre-differences `evaluate` itself in every unknown at the boundary cell
+(`boundary_checks.cpp`) and at the flash cell (`equilibrium_checks.cpp`) and compares to 1e-6;
+and compares `eval_h` at the flash solution with the converged multipliers against a centred
+difference of `eval_grad_f + Σ λ_j ∇c_j` in every primal unknown, to 1e-6. No
+`hessian_calls` assertion. No `isfinite` sweep.
+
+**S9** compares `dy/dT` of the binary flash at fixed `T, P` against
+`(y(T+δ) − y(T−δ)) / 2δ` from two full solves, `δ = 1e-3 K`, to 1e-6 relative. The test
+supplies no derivative of anything.
+
+**Eight thin checks must assert what §4 words.** C6, S4 and S5 are adequate as one
+assertion. These are not:
+
+| check | attempt two asserted | write instead |
+|---|---|---|
+| C4 | composition to 1e-12; `rows.size()` | pairwise `rows[i].kind, phase, index, eqid` equal across the four bases |
+| C7 | nullity and `rows.size()` equal | the permuted point built from the first compile's generic point through the layout (a second `generic_point()` is not the permutation: `η_p` depends on phase index); `residual_norm()` and sorted `|values|` equal to 1e-14 under phase reorder; then relabel components by permuting the fixture's per-component vectors, `k_ij` and the feed (helper in `equilibrium_support.hpp`) and compare the same |
+| S1 | one `{L}` cell, residual rows only | every solved cell (`{L}`, `{V}`, `{V,L}` binary; ethane boundary; the reactive `{L,L}`; electrolyte `{L}`); per cell `limit = max(tolerance, floor)` from `result.convergence`; every residual, `g_p − λ·B x_p` per phase, `G − λ·B n_feed`, `Σ_i ν_i μ_{p,i}` per reaction per phase, `|z·x_p|` per ion phase, all `≤ limit` |
+| S2 | `reduced_hessian_minimum > 0` on `{L}` | the same field on the `{V,L}` binary flash and the reactive `{L,L}` flash, computed from the assembly's exact Hessian with the converged multipliers, never `numerical_hessian` |
+| S6 | `objective` at two generic points, slack 1e6 | solve `{L}` and `{L,L}` on the ternary without the reaction at S7's feed; `G₂ < G₁ − limit`. The `G₃` clause runs when the `{V,L,L}` cell is admitted, else is reported skipped by name |
+| S7 | two scaled feeds, no solve | solve `{L,L}` once; feeds at 0.3 and 0.7 along the segment between the two phase compositions; re-solve; both compositions equal to 1e-8 |
+| S11 | the affinity transform on a hand-built reaction | solve the reactive `{V}` cell with the isomerisation at `P = 10⁴, 10³, 10² Pa`; `gap(P) = |ln(x_β/x_α) + Δg°/RT|` decreasing and `gap(10²) ≤ 1e-3` |
+| S16 | rank and `‖n_feed‖` on the neutral binary | solve `ascani_reactive_problem()` (it exists in the support file; attempt two never called it); three feeds on the segment between the phases' moiety vectors `B x_p`; re-solve each; the same two compositions to `limit`; `Σ_i ν_i μ_{p,i} ≤ limit` in both phases with one `λ` |
+
+**Mutations are applied to your tree, and a mutant that does not build proves nothing.**
+Seven gates in the JSON carry a sed against a line you write, each tied to a `must_contain`
+token so the sed is stable. A mutant that fails to compile, or on which the gate stays green,
+is `mutation_invalid` and rejects the attempt. The `boundary_checks` mutation in particular
+edits `evaluate` alone: an analytic `F_y` goes red, a finite-difference `F_y` follows the
+edit and stays green, and green is the rejection.
+
 ## Line counts are a signal, not a formality
 
 Every file in the first attempt came in below its `low` — 1,826 lines against 4,085. `low`
@@ -112,7 +156,8 @@ planner.
 Stop and report rather than adapting if: a `must_contain` marker is absent; a write would pass
 its ceiling; a gate green at base goes red for a reason other than the write it names; the
 work seems to require a route name, a second driver, an outer Newton, or a change to a
-tolerance or to `classify`; or **`EQUILIBRIUM.md` does not decide something the code must
+tolerance or to `classify`; a write comes in under its `low`; a gate's mutation cannot be applied to what you wrote
+(`mutation_invalid`); or **`EQUILIBRIUM.md` does not decide something the code must
 decide** — report the cell or the row and stop. Do not choose. Do not repair your environment,
 and do not accept your own work: the coordinator rebuilds from a clean directory, re-runs
 every gate, and applies every mutation independently.

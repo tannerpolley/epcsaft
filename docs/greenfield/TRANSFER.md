@@ -67,7 +67,7 @@ larger than a brief, it is named here and is the brief's specification.
 | 2 | **Core** | core | `native/core/` — seven headers below everything: the four `EqID`-free tenants move in, and the declared-choice contract, the convergence record and the trace are written | `CORE.md` | **closed** `2a9b04c` |
 | 3 | **Surface** | surface | `native/surface/` the parameter builder; `native/bindings/` the only pybind11 includes; `src/epcsaft/` as a pure mapping layer, units resolved in C++ | `SURFACE.md` | **closed** `3c4e2be`, `65309c1` |
 | 4 | **EOS** | engine | the equation kernels and the policy they read; one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `EOS.md` | **closed** `8bc6419`, `a2a2ac5`, repaired `b6f5186` |
-| 5 | **Equilibrium** | engine | the specification and count rule; one Ipopt driver for every `k`; seeds, continuation, sensitivity; starts and the topology contract | `EQUILIBRIUM.md` | designed — ~3,040 lines |
+| 5 | **Equilibrium** | engine | the specification and count rule; one Ipopt driver for every `k`; seeds, continuation, sensitivity; starts and the topology contract | `EQUILIBRIUM.md` | designed — ~3,240 native lines; two attempts held, third running |
 | 6 | **Regression** | engine | `fit(model, observations)` on Ceres, with covariance | `REGRESSION.md` | planned |
 | 7 | **Phase stability** | engine | `find_phases` written to Pereira 2012, replacing 13,589 lines | `PHASE-STABILITY.md` | planned |
 | 8 | **Final check** | canon | every layer exercised at once; one merge of `greenfield` into `main` | `FINAL-CHECK.md` | planned |
@@ -92,9 +92,9 @@ continuation across a sweep is one function that does not change with component 
 neither is a second capability. Every split was route thinking surviving in the plan after
 it had been removed from the code.
 
-Budget ≈ 3,040 lines, ceiling ≈ 3,870 — specification 1,000, driver and one-component cell
-1,330, starts and topology 710. The parts are the equilibrium planner's estimates, marked
-**guessed** with per-file reasoning; `STAGE-LOG.md` records the actual.
+Budget ≈ 3,240 native lines, ceiling ≈ 4,130; with bindings and Python ≈ 3,890, ceiling
+≈ 5,010. The earlier three-part figure (1,000 + 1,330 + 710 = 3,040) was a retired
+decomposition; the brief's JSON governs per file, and `STAGE-LOG.md` records the actual.
 
 **Stage 3's three findings are repaired at `3c4e2be`; Stage 4's defect at `b6f5186`.** Stage 3's nine gates
 pass and every mutation was shown red; the disagreement it surfaced was not its own.
@@ -499,7 +499,7 @@ began, which is the mechanism described in `ORCHESTRATION.md`.*
 
 ---
 
-### Stage 5 — Equilibrium (~3,040 lines, ceiling ~3,870)
+### Stage 5 — Equilibrium (~3,240 native lines, ceiling ~4,130; ~3,890 with bindings and Python, ceiling ~5,010)
 
 One equilibrium, one driver, **one stage**. This was four — a specification stage, a driver
 stage, a starts stage and a boundary stage — and every split was an artifact of route
@@ -509,7 +509,8 @@ the order the stage is written in, not four gates.
 
 `problem.hpp` (300), `stoichiometry.{hpp,cpp}` (600–900), `request_compile.cpp` (600),
 `gibbs_minimizer.{hpp,cpp}` (870), `phase_boundary.cpp` (150), `implicit_sensitivity.cpp`
-(250), starts and the topology contract (~340) — and `problem.py` (450).
+(250) — and `problem.py` (450). Per-file `low`, estimate and ceiling are in
+`briefs/stage-05.brief.json`, which governs; tests and tools add ~760, ceiling ~1,055.
 
 #### 6.1 The specification (~1,000 lines)
 
