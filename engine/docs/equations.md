@@ -844,6 +844,19 @@ $$
 \label{eq:ion_specific_suppressed_bulk_permittivity}
 $$
 
+## `ion_suppressed_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Source equation
+- Source: Zuber et al. 2014 per-ion suppression coefficients (Zuber2014); \cite{Figiel2025} is the special case with one coefficient for every ion
+- Description: Bulk relative permittivity of an electrolyte solution as the salt-free solvent-mixture permittivity suppressed by the ion mole fractions with per-ion coefficients.
+- Change note: One equation covers ion-specific suppression, ion-fraction suppression (all alpha equal) and solvent-only (alpha = 0); the model layer fills the coefficients.
+
+$$
+\varepsilon=\frac{\varepsilon_{\mathrm{sf}}}{1+\sum_i\alpha_i x_i}.
+\label{eq:ion_suppressed_bulk_permittivity}
+$$
+
 ## `ionic_packing_diameter`
 
 - Section: Parameter setup
@@ -1233,6 +1246,19 @@ P=-RTn_{\mathrm{ref}}
 \label{eq:phase_pressure}
 $$
 
+## `phase_support`
+
+- Section: Equilibrium
+- Status: Implementation convention
+- Source: Declared phase support; structural, no source equation
+- Description: A species outside a phase's declared support has zero amount in that phase; the coordinate is removed, not bounded.
+- Change note: Structural row: it removes a variable rather than adding an equation, so it carries no multiplier and does not enter the count rule.
+
+$$
+n_{p,i}=0\quad\text{for }i\notin S_p\ \text{(the variable is absent)}.
+\label{eq:phase_support}
+$$
+
 ## `phase_total_amount`
 
 - Section: Native phase coordinates
@@ -1345,6 +1371,19 @@ $$
 $$
 \mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
 \label{eq:reduced_hessian_stability}
+$$
+
+## `reference_limit_terminal_pair`
+
+- Section: Electrolyte reference states and reported activities
+- Status: Implementation convention
+- Source: Infinite-dilution ladder convention of the model layer (numerical_policy entries for the ladder, witness and threshold)
+- Description: Convergence error of the infinite-dilution reference: the larger change in either ion's log fugacity coefficient between the last two molality ladder points.
+- Change note: Reported as a bias on the reference, never as a stopping floor (TOLERANCES.md section 3.6).
+
+$$
+e_{\mathrm{ref}}=\max_{i\in\{+,-\}}\left|\ln\varphi_i(m_{k})-\ln\varphi_i(m_{k-1})\right|.
+\label{eq:reference_limit_terminal_pair}
 $$
 
 ## `reference_molality_sequence`

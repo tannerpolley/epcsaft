@@ -104,10 +104,34 @@ def render_markdown(entries: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
+EQID_MENTION = re.compile(r"EqID:\s*`?([a-z][a-z0-9_]*)")
+
+
+def unregistered_mentions(root: Path, registered: set[str]) -> list[str]:
+    """Every `EqID: name` written in a document or a native annotation must exist in the registry.
+
+    The registry check alone runs registry -> views; this runs document -> registry, so a
+    document cannot claim an identifier that nothing registers and stay green."""
+    bad: list[str] = []
+    for folder, suffixes in ((root / "docs", {".md"}), (root / "native", {".hpp", ".cpp"})):
+        if not folder.is_dir():
+            continue
+        for path in sorted(folder.rglob("*")):
+            if path.suffix not in suffixes:
+                continue
+            for name in EQID_MENTION.findall(path.read_text(encoding="utf-8")):
+                if name not in registered:
+                    bad.append(f"{path.relative_to(root)}: EqID {name!r} is not registered")
+    return bad
+
+
 def synchronize(docs: Path, *, check: bool) -> None:
     registry = docs / "equations_registry.yaml"
     entries = load_entries(registry)
     validate(entries, bibliography_keys(docs / "latex" / "references.bib"))
+    unregistered = unregistered_mentions(docs.parent, {entry["eqid"] for entry in entries})
+    if unregistered:
+        raise ValueError("\n".join(unregistered))
     outputs = {registry: render_registry(entries), docs / "equations.md": render_markdown(entries)}
     stale = [path for path, text in outputs.items() if not path.exists() or path.read_text(encoding="utf-8") != text]
     if check and stale:
