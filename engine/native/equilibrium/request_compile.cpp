@@ -76,6 +76,45 @@ void validate_intensive_seed(const FreeValue& value, const char* name) {
     }
 }
 
+struct PackingTerms final {
+    double coefficient = 0.0;
+    double temperature_derivative = 0.0;
+    std::vector<double> component;
+};
+
+PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
+                           const std::vector<double>& composition) {
+    const auto& parameters = model.parameters();
+    const auto sigma = segment_sigma(temperature, parameters);
+    const auto diameter = segment_diameter(temperature, parameters, sigma);
+    std::vector<double> sigma_t(sigma.size(), 0.0);
+    for (std::size_t term = 0; term < parameters.sigma_term_component.size(); ++term) {
+        const auto component = static_cast<std::size_t>(parameters.sigma_term_component[term]);
+        sigma_t[component] += parameters.sigma_term_amplitude[term]
+            * parameters.sigma_term_exponent[term] * std::exp(
+                parameters.sigma_term_exponent[term] * temperature);
+    }
+    PackingTerms result;
+    result.component.resize(composition.size());
+    const double scale = (PI / 6.0) * NUMBER_DENSITY_PER_ANGSTROM3;
+    for (std::size_t i = 0; i < composition.size(); ++i) {
+        double diameter_t = 0.0;
+        if (parameters.charge_number[i] == 0) {
+            const double exponential = std::exp(-3.0
+                * parameters.dispersion_energy_over_k[i] / temperature);
+            diameter_t = sigma_t[i] * (1.0 - 0.12 * exponential)
+                - sigma[i] * 0.36 * parameters.dispersion_energy_over_k[i]
+                    * exponential / (temperature * temperature);
+        }
+        result.component[i] = scale * composition[i] * parameters.segment_count[i]
+            * diameter[i] * diameter[i] * diameter[i];
+        result.coefficient += result.component[i];
+        result.temperature_derivative += scale * composition[i]
+            * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i] * diameter_t;
+    }
+    return result;
+}
+
 }  // namespace
 
 CompiledSystem compile_problem(
@@ -124,7 +163,6 @@ CompiledSystem compile_problem(
     );
     compiled.feed_composition = normalized_feed(compiled.n_feed);
     compiled.balance = matvec(compiled.B, compiled.n_feed);
-
     std::vector<bool> covered(components, false);
     std::vector<bool> produced(components, false);
     for (const auto& item : request.reactions) {
@@ -198,7 +236,6 @@ CompiledSystem compile_problem(
             + "; pin a phase or free T or P"
         );
     }
-
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         for (const std::size_t index : compiled.problem.phases[phase].support) {
         compiled.rows.push_back({RowKind::Chemical, phase, index,
@@ -299,16 +336,10 @@ std::vector<double> CompiledSystem::generic_point() const {
             point[shape[phase].x[i]] = value;
             total += value;
         }
-        for (const std::size_t coordinate : shape[phase].x) point[coordinate] /= total;
+        for (const std::size_t coordinate : shape[phase].x)
+            point[coordinate] = std::log(point[coordinate] / total);
         if (shape[phase].amount.has_value()) point[*shape[phase].amount] = 1.0;
-        const double temperature = problem.temperature.value > 0.0
-            ? problem.temperature.value : 300.0;
-        std::vector<double> composition(model->parameters().component_count(), 0.0);
-        for (std::size_t i = 0; i < shape[phase].x.size(); ++i) {
-            composition[problem.phases[phase].support[i]] = point[shape[phase].x[i]];
-        }
-        point[shape[phase].volume] = model->packing_fraction_coefficient(
-            temperature, composition) / (0.25 + 0.05 * static_cast<double>(phase));
+        point[shape[phase].volume] = std::log(0.25 + 0.05 * static_cast<double>(phase));
     }
     std::size_t offset = 0;
     for (const auto& phase : problem.phases) {
@@ -330,32 +361,31 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
     }
     const std::size_t components = model->parameters().component_count();
     const auto z = species_z(model->parameters());
+    std::size_t offset = primal_size - free_intensive_count;
+    const double temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
+    const double pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     std::vector<std::vector<double>> x;
     std::vector<double> amount;
     std::vector<double> volume;
-    x.reserve(shape.size()); amount.reserve(shape.size()); volume.reserve(shape.size());
+    x.reserve(shape.size());
+    amount.reserve(shape.size());
+    volume.reserve(shape.size());
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         std::vector<double> values(components, 0.0);
         double total = 0.0;
         for (std::size_t i = 0; i < shape[phase].x.size(); ++i) {
-            const double value = point[shape[phase].x[i]];
-            if (!std::isfinite(value) || value < 0.0) throw std::invalid_argument("invalid composition");
+            const double value = std::exp(point[shape[phase].x[i]]);
+            if (!std::isfinite(value) || value <= 0.0) throw std::invalid_argument("invalid composition");
             values[problem.phases[phase].support[i]] = value;
             total += value;
         }
         if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
+        const auto packing = packing_terms(*model, temperature, values);
         x.push_back(std::move(values));
         amount.push_back(shape[phase].amount.has_value()
             ? point[*shape[phase].amount] : phase_amount(problem.phases[phase], n_feed));
-        volume.push_back(point[shape[phase].volume]);
+        volume.push_back(packing.coefficient / std::exp(point[shape[phase].volume]));
     }
-    std::size_t offset = 0;
-    for (const auto& phase : problem.phases) {
-        offset += phase.support.size() + 1;
-        if (phase.amount.kind == AmountKind::Free) ++offset;
-    }
-    const double temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
-    const double pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     std::vector<double> lambda(rank, 0.0);
     for (std::size_t row = 0; row < rank && primal_size + row < point.size(); ++row) {
         lambda[row] = point[primal_size + row];
@@ -369,6 +399,8 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
     std::vector<std::optional<HelmholtzDerivatives>> derivatives(shape.size());
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         derivatives[phase] = model->evaluate(temperature, volume[phase], x[phase], DerivativeOrder::Hessian);
+        scope.probe("gradient_floor", derivatives[phase]->gradient_floor,
+                    static_cast<std::uint32_t>(phase));
     }
     PointEvaluation result;
     for (const auto& derivative : derivatives) result.floor = std::max(result.floor, derivative->gradient_floor);
@@ -402,7 +434,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
                     value += amount[phase] * B[row.index][species] * x[phase][species];
                 }
             }
-            value -= balance[row.index];
+            value = (value - balance[row.index]) / feed_total;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
         } else {
@@ -411,6 +443,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
         }
         result.values.push_back(value);
     }
+    scope.probe("row_values", result.values);
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         const auto& derivative = *derivatives[phase];
         double ideal = 0.0;
@@ -435,17 +468,23 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
     std::vector<std::vector<double>> compositions;
     std::vector<double> amount;
     std::vector<double> volumes;
+    std::vector<PackingTerms> packings;
     std::vector<std::size_t> offsets;
     std::size_t offset = 0;
     for (const auto& phase : problem.phases) {
         offsets.push_back(offset);
         std::vector<double> composition(components, 0.0);
         for (std::size_t local = 0; local < phase.support.size(); ++local)
-            composition[phase.support[local]] = point[offset + local];
+            composition[phase.support[local]] = std::exp(point[offset + local]);
         offset += phase.support.size();
         amount.push_back(phase.amount.kind == AmountKind::Free
             ? point[offset++] : phase_amount(phase, n_feed));
-        volumes.push_back(point[offset++]);
+        const auto packing = packing_terms(*model,
+            problem.temperature.free ? point[primal_size - free_intensive_count]
+                                     : problem.temperature.value,
+            composition);
+        volumes.push_back(packing.coefficient / std::exp(point[offset++]));
+        packings.push_back(packing);
         compositions.push_back(std::move(composition));
     }
     const std::optional<std::size_t> temperature = problem.temperature.free
@@ -465,7 +504,9 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
     for (const auto& row : rows)
         if (row.kind == RowKind::Electro) phi[row.phase] = rank + phi_offset++;
     std::vector<double> result(base.values.size() * n, 0.0);
-    auto at = [&](std::size_t row, std::size_t column) -> double& { return result[row * n + column]; };
+    auto at = [&](std::size_t row, std::size_t column) -> double& {
+        return result[row * n + column];
+    };
     for (std::size_t row_index = 0; row_index < rows.size(); ++row_index) {
         const auto& row = rows[row_index];
         if (row.kind == RowKind::Chemical) {
@@ -475,17 +516,26 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
             const std::size_t species = row.index;
             for (std::size_t local = 0; local < phase.support.size(); ++local) {
                 const std::size_t component = phase.support[local];
+                const double physical_x = derivative.hessian[
+                    (2 + species) * width + (2 + component)]
+                    + (component == species ? 1.0 / compositions[row.phase][species] : 0.0);
+                const double physical_v = derivative.hessian[(2 + species) * width + 1]
+                    - 1.0 / volumes[row.phase];
+                const double dv = packings[row.phase].component[component]
+                    / std::exp(point[offsets[row.phase] + phase.support.size()
+                        + (phase.amount.kind == AmountKind::Free ? 1 : 0)]);
                 at(row_index, offsets[row.phase] + local) =
-                    derivative.hessian[(2 + species) * width + (2 + component)];
-                if (component == species) at(row_index, offsets[row.phase] + local) +=
-                    1.0 / std::max(compositions[row.phase][species], std::numeric_limits<double>::min());
+                    physical_x * compositions[row.phase][component] + physical_v * dv;
             }
             const std::size_t volume = offsets[row.phase] + phase.support.size()
                 + (phase.amount.kind == AmountKind::Free ? 1 : 0);
-            at(row_index, volume) = derivative.hessian[(2 + species) * width + 1]
+            const double physical_v = derivative.hessian[(2 + species) * width + 1]
                 - 1.0 / volumes[row.phase];
+            at(row_index, volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) =
-                derivative.hessian[(2 + species) * width];
+                derivative.hessian[(2 + species) * width]
+                + physical_v * packings[row.phase].temperature_derivative
+                    / std::exp(point[volume]);
             for (std::size_t balance_row = 0; balance_row < rank; ++balance_row)
                 at(row_index, primal_size + balance_row) = -B[balance_row][species];
             if (phi[row.phase].has_value()) at(row_index, primal_size + *phi[row.phase]) = -z[species];
@@ -493,35 +543,49 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
             const auto& derivative = derivatives[row.phase];
             const std::size_t width = derivative.gradient.size();
             const auto& phase = problem.phases[row.phase];
-            for (std::size_t local = 0; local < phase.support.size(); ++local)
+            const double physical_v = -derivative.gradient[1]
+                - volumes[row.phase] * derivative.hessian[width + 1] - P / rt;
+            for (std::size_t local = 0; local < phase.support.size(); ++local) {
+                const std::size_t component = phase.support[local];
+                const double dv = packings[row.phase].component[component]
+                    / std::exp(point[offsets[row.phase] + phase.support.size()
+                        + (phase.amount.kind == AmountKind::Free ? 1 : 0)]);
                 at(row_index, offsets[row.phase] + local) =
-                    -volumes[row.phase] * derivative.hessian[width + 2 + phase.support[local]];
+                    -volumes[row.phase] * derivative.hessian[width + 2 + component]
+                        * compositions[row.phase][component] + physical_v * dv;
+            }
             const std::size_t volume = offsets[row.phase] + phase.support.size()
                 + (phase.amount.kind == AmountKind::Free ? 1 : 0);
-            at(row_index, volume) = -derivative.gradient[1]
-                - volumes[row.phase] * derivative.hessian[width + 1] - P / rt;
+            at(row_index, volume) = -volumes[row.phase] * physical_v;
             if (temperature.has_value()) at(row_index, *temperature) = -derivative.hessian[width]
                 * volumes[row.phase] + P * volumes[row.phase]
-                    / (GAS_CONSTANT_J_PER_MOL_K * T * T);
+                    / (GAS_CONSTANT_J_PER_MOL_K * T * T)
+                + physical_v * packings[row.phase].temperature_derivative
+                    / std::exp(point[volume]);
             if (pressure.has_value()) at(row_index, *pressure) = -volumes[row.phase] / rt;
         } else if (row.kind == RowKind::Moiety) {
             for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
                 for (std::size_t local = 0; local < problem.phases[phase].support.size(); ++local) {
                     const std::size_t species = problem.phases[phase].support[local];
-                    at(row_index, offsets[phase] + local) = amount[phase] * B[row.index][species];
+                    at(row_index, offsets[phase] + local) = amount[phase] * B[row.index][species]
+                        * compositions[phase][species] / feed_total;
                 }
                 if (problem.phases[phase].amount.kind == AmountKind::Free) {
                     const std::size_t column = offsets[phase] + problem.phases[phase].support.size();
                     for (const std::size_t species : problem.phases[phase].support)
-                        at(row_index, column) += B[row.index][species] * compositions[phase][species];
+                        at(row_index, column) += B[row.index][species]
+                            * compositions[phase][species] / feed_total;
                 }
             }
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
-                at(row_index, offsets[row.phase] + local) = z[problem.phases[row.phase].support[local]];
+                at(row_index, offsets[row.phase] + local) =
+                    z[problem.phases[row.phase].support[local]]
+                    * compositions[row.phase][problem.phases[row.phase].support[local]];
         } else {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
-                at(row_index, offsets[row.phase] + local) = 1.0;
+                at(row_index, offsets[row.phase] + local) =
+                    compositions[row.phase][problem.phases[row.phase].support[local]];
         }
     }
     scope.probe("rows", static_cast<double>(base.values.size()));
@@ -539,27 +603,36 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
         if (phase.amount.kind == AmountKind::Free) ++offset;
         ++offset;
     }
-    std::vector<double> result(rows.size() * 2, 0.0);
+    std::vector<double> result(rows.size() * (2 + model->parameters().component_count()), 0.0);
     const std::size_t components = model->parameters().component_count();
+    const std::size_t levers = 2 + components;
     const double T = problem.temperature.free ? point[offset++] : problem.temperature.value;
     const double P = problem.pressure.free ? point[offset++] : problem.pressure.value;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
         std::vector<double> composition(components, 0.0);
         for (std::size_t local = 0; local < problem.phases[phase].support.size(); ++local)
-            composition[problem.phases[phase].support[local]] = point[offsets[phase] + local];
+            composition[problem.phases[phase].support[local]] =
+                std::exp(point[offsets[phase] + local]);
         std::size_t cursor = offsets[phase] + problem.phases[phase].support.size();
         if (problem.phases[phase].amount.kind == AmountKind::Free) ++cursor;
-        const double volume = point[cursor];
+        const auto packing = packing_terms(*model, T, composition);
+        const double volume = packing.coefficient / std::exp(point[cursor]);
         const auto derivative = model->evaluate(T, volume, composition, DerivativeOrder::Hessian);
         const std::size_t width = derivative.gradient.size();
         for (std::size_t row = 0; row < rows.size(); ++row) {
             if (rows[row].phase != phase) continue;
             if (rows[row].kind == RowKind::Chemical) {
-                result[2 * row] = derivative.hessian[(2 + rows[row].index) * width];
+                const double physical_v = derivative.hessian[
+                    (2 + rows[row].index) * width + 1] - 1.0 / volume;
+                result[levers * row] = derivative.hessian[(2 + rows[row].index) * width]
+                    + physical_v * packing.temperature_derivative / std::exp(point[cursor]);
             } else if (rows[row].kind == RowKind::Pressure) {
-                result[2 * row] = -volume * derivative.hessian[width]
-                    + P * volume / (GAS_CONSTANT_J_PER_MOL_K * T * T);
+                const double physical_v = -derivative.gradient[1]
+                    - volume * derivative.hessian[width + 1] - P / rt;
+                result[levers * row] = -volume * derivative.hessian[width]
+                    + P * volume / (GAS_CONSTANT_J_PER_MOL_K * T * T)
+                    + physical_v * packing.temperature_derivative / std::exp(point[cursor]);
             }
         }
     }
@@ -568,7 +641,17 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
             const auto& phase = problem.phases[rows[row].phase];
             const std::size_t cursor = offsets[rows[row].phase] + phase.support.size()
                 + (phase.amount.kind == AmountKind::Free ? 1 : 0);
-            result[2 * row + 1] = -point[cursor] / rt;
+            std::vector<double> composition(components, 0.0);
+            for (std::size_t local = 0; local < phase.support.size(); ++local)
+                composition[phase.support[local]] = std::exp(
+                    point[offsets[rows[row].phase] + local]);
+            const auto packing = packing_terms(*model, T, composition);
+            result[levers * row + 1] = -packing.coefficient
+                / std::exp(point[cursor]) / rt;
+        } else if (rows[row].kind == RowKind::Moiety) {
+            for (std::size_t species = 0; species < components; ++species)
+                result[levers * row + 2 + species] = -B[rows[row].index][species]
+                    / feed_total;
         }
     }
     return result;
@@ -596,10 +679,11 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
         const auto& spec = problem.phases[phase];
         std::vector<double> x(components, 0.0);
         for (std::size_t local = 0; local < spec.support.size(); ++local)
-            x[spec.support[local]] = point[offsets[phase] + local];
+            x[spec.support[local]] = std::exp(point[offsets[phase] + local]);
         std::size_t cursor = offsets[phase] + spec.support.size();
         const double amount = point[cursor++];
-        const double volume = point[cursor];
+        const auto packing = packing_terms(*model, T, x);
+        const double volume = packing.coefficient / std::exp(point[cursor]);
         const auto derivative = model->evaluate(T, volume, x, DerivativeOrder::Hessian);
         double standard = 0.0;
         double ideal = 0.0;
@@ -608,15 +692,21 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
             if (x[species] > 0.0) ideal += x[species] * (
                 std::log(x[species]) - std::log(volume) - 1.0);
         }
+        const double sum_x = std::accumulate(x.begin(), x.end(), 0.0);
         const double bracket = derivative.value + ideal + P * volume / rt + standard / rt;
         for (std::size_t local = 0; local < spec.support.size(); ++local) {
             const std::size_t species = spec.support[local];
-            result[offsets[phase] + local] = amount * (
+            const double chemical =
                 derivative.gradient[2 + species] + std::log(std::max(
                     x[species] / volume, std::numeric_limits<double>::min()))
-                + standard_gibbs[species] / rt);
+                + standard_gibbs[species] / rt;
+            const double physical_v = derivative.gradient[1] - sum_x / volume + P / rt;
+            result[offsets[phase] + local] = amount * (
+                chemical * x[species] + physical_v * packing.component[species]
+                    / std::exp(point[cursor]));
         }
-        result[cursor] = amount * (derivative.gradient[1] - 1.0 / volume + P / rt);
+        result[cursor] = -amount * volume
+            * (derivative.gradient[1] - sum_x / volume + P / rt);
         if (temperature.has_value()) result[*temperature] += amount * (
             derivative.gradient[0] - P * volume
                 / (GAS_CONSTANT_J_PER_MOL_K * T * T)
@@ -627,7 +717,10 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
     return result;
 }
 
-std::vector<double> CompiledSystem::hessian(const std::vector<double>& point) const {
+std::vector<double> CompiledSystem::hessian(
+    const std::vector<double>& point,
+    const std::vector<double>& constraint_multipliers
+) const {
     core::Scope scope("equilibrium_hessian");
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
@@ -639,14 +732,9 @@ std::vector<double> CompiledSystem::hessian(const std::vector<double>& point) co
         offsets.push_back(offset);
         offset += phase.support.size() + 1 + (phase.amount.kind == AmountKind::Free ? 1 : 0);
     }
-    const std::optional<std::size_t> temperature = problem.temperature.free
-        ? std::optional<std::size_t>(offset++) : std::nullopt;
-    const std::optional<std::size_t> pressure = problem.pressure.free
-        ? std::optional<std::size_t>(offset++) : std::nullopt;
-    const double T = temperature.has_value() ? point[*temperature] : problem.temperature.value;
-    const double P = pressure.has_value() ? point[*pressure] : problem.pressure.value;
-    const double gas = GAS_CONSTANT_J_PER_MOL_K;
-    const double rt = gas * T;
+    const double T = problem.temperature.value;
+    const double P = problem.pressure.value;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
     auto put = [&](std::size_t row, std::size_t column, double value) {
         result[row * n + column] = value;
         result[column * n + row] = value;
@@ -655,59 +743,106 @@ std::vector<double> CompiledSystem::hessian(const std::vector<double>& point) co
         const auto& spec = problem.phases[phase];
         std::vector<double> x(components, 0.0);
         for (std::size_t local = 0; local < spec.support.size(); ++local)
-            x[spec.support[local]] = point[offsets[phase] + local];
+            x[spec.support[local]] = std::exp(point[offsets[phase] + local]);
         std::size_t cursor = offsets[phase] + spec.support.size();
         const std::optional<std::size_t> amount = spec.amount.kind == AmountKind::Free
             ? std::optional<std::size_t>(cursor++) : std::nullopt;
         const std::size_t volume = cursor;
         const double phase_amount_value = amount.has_value() ? point[*amount]
             : phase_amount(spec, n_feed);
-        const auto derivative = model->evaluate(T, point[volume], x, DerivativeOrder::Hessian);
+        const auto packing = packing_terms(*model, T, x);
+        const double eta = std::exp(point[volume]);
+        const double physical_volume = packing.coefficient / eta;
+        const auto derivative = model->evaluate(T, physical_volume, x, DerivativeOrder::Hessian);
         const std::size_t width = derivative.gradient.size();
+        const double sum_x = std::accumulate(x.begin(), x.end(), 0.0);
+        const double physical_v_gradient = phase_amount_value * (
+            derivative.gradient[1] - sum_x / physical_volume + P / rt);
+        const double physical_vv = phase_amount_value * (
+            derivative.hessian[width + 1] + sum_x / (physical_volume * physical_volume));
         double standard = 0.0;
         for (std::size_t species = 0; species < components; ++species)
             standard += standard_gibbs[species] * x[species];
         for (std::size_t i = 0; i < spec.support.size(); ++i) {
             const std::size_t si = spec.support[i];
+            const double dv_i = packing.component[si] / eta;
+            const double physical_x_gradient = phase_amount_value * (
+                derivative.gradient[2 + si]
+                + std::log(std::max(x[si] / physical_volume,
+                                    std::numeric_limits<double>::min()))
+                + standard_gibbs[si] / rt);
             for (std::size_t j = 0; j < spec.support.size(); ++j) {
                 const std::size_t sj = spec.support[j];
-                put(offsets[phase] + i, offsets[phase] + j, phase_amount_value * (
+                const double dv_j = packing.component[sj] / eta;
+                const double h_xx = phase_amount_value * (
                     derivative.hessian[(2 + si) * width + (2 + sj)]
-                    + (si == sj ? 1.0 / std::max(x[si], std::numeric_limits<double>::min()) : 0.0)));
+                    + (si == sj ? 1.0 / x[si] : 0.0));
+                const double h_xv_i = phase_amount_value * (
+                    derivative.hessian[(2 + si) * width + 1] - 1.0 / physical_volume);
+                const double h_xv_j = phase_amount_value * (
+                    derivative.hessian[(2 + sj) * width + 1] - 1.0 / physical_volume);
+                put(offsets[phase] + i, offsets[phase] + j,
+                    x[si] * x[sj] * h_xx + x[si] * h_xv_i * dv_j
+                    + dv_i * h_xv_j * x[sj] + dv_i * physical_vv * dv_j
+                    + (si == sj ? physical_x_gradient * x[si]
+                                      + physical_v_gradient * dv_i : 0.0));
             }
-            put(offsets[phase] + i, volume, phase_amount_value * (
-                derivative.hessian[(2 + si) * width + 1]));
+            const double h_xv = phase_amount_value * (
+                derivative.hessian[(2 + si) * width + 1] - 1.0 / physical_volume);
+            put(offsets[phase] + i, volume,
+                -physical_volume * (x[si] * h_xv + dv_i * physical_vv)
+                - physical_v_gradient * dv_i);
         }
-        put(volume, volume, phase_amount_value * (
-            derivative.hessian[width + 1] + 1.0 / (point[volume] * point[volume])));
-        if (temperature.has_value()) {
-            for (std::size_t i = 0; i < spec.support.size(); ++i)
-                put(offsets[phase] + i, *temperature, phase_amount_value
-                    * derivative.hessian[(2 + spec.support[i]) * width]);
-            put(volume, *temperature, phase_amount_value * (derivative.hessian[width]
-                - P / (gas * T * T)));
-            put(*temperature, *temperature, phase_amount_value * (derivative.hessian[0]
-                + 2.0 * P * point[volume] / (gas * T * T * T)
-                + 2.0 * standard / (gas * T * T * T)));
-        }
-        if (pressure.has_value()) {
-            put(volume, *pressure, phase_amount_value / rt);
-            if (temperature.has_value()) put(*temperature, *pressure,
-                -phase_amount_value * point[volume] / (gas * T * T));
-        }
+        put(volume, volume, physical_volume * physical_volume * physical_vv
+            + physical_v_gradient * physical_volume);
         if (amount.has_value()) {
             for (std::size_t i = 0; i < spec.support.size(); ++i) {
                 const std::size_t species = spec.support[i];
-                put(*amount, offsets[phase] + i, derivative.gradient[2 + species]
-                    + std::log(std::max(x[species] / point[volume],
+                const double mu = derivative.gradient[2 + species]
+                    + std::log(std::max(x[species] / physical_volume,
                                         std::numeric_limits<double>::min()))
-                    + standard_gibbs[species] / rt);
+                    + standard_gibbs[species] / rt;
+                const double pressure_gradient = derivative.gradient[1]
+                    - sum_x / physical_volume + P / rt;
+                put(*amount, offsets[phase] + i, mu * x[species]
+                    + pressure_gradient * packing.component[species] / eta);
             }
-            put(*amount, volume, derivative.gradient[1] - 1.0 / point[volume] + P / rt);
-            if (temperature.has_value()) put(*amount, *temperature, derivative.gradient[0]
-                - P * point[volume] / (gas * T * T) - standard / (gas * T * T));
-            if (pressure.has_value()) put(*amount, *pressure, point[volume] / rt);
+            put(*amount, volume, -physical_volume * (
+                derivative.gradient[1] - sum_x / physical_volume + P / rt));
         }
+    }
+    if (!constraint_multipliers.empty()) {
+        std::size_t multiplier = 0;
+        for (const auto& row : rows) {
+            if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
+            if (multiplier >= constraint_multipliers.size()) {
+                throw std::invalid_argument("constraint multiplier count");
+            }
+            const double weight = constraint_multipliers[multiplier++];
+            for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+                if (row.kind != RowKind::Moiety && row.phase != phase) continue;
+                const auto& spec = problem.phases[phase];
+                const std::size_t amount = offsets[phase] + spec.support.size();
+                for (std::size_t local = 0; local < spec.support.size(); ++local) {
+                    const std::size_t species = spec.support[local];
+                    const std::size_t coordinate = offsets[phase] + local;
+                    const double x = std::exp(point[coordinate]);
+                    double coefficient = 1.0;
+                    if (row.kind == RowKind::Electro)
+                        coefficient = species_z(model->parameters())[species];
+                    if (row.kind == RowKind::Moiety)
+                        coefficient = B[row.index][species] / feed_total;
+                    result[coordinate * n + coordinate] += weight * coefficient * x
+                        * (row.kind == RowKind::Moiety ? point[amount] : 1.0);
+                    if (row.kind == RowKind::Moiety) {
+                        result[coordinate * n + amount] += weight * coefficient * x;
+                        result[amount * n + coordinate] += weight * coefficient * x;
+                    }
+                }
+            }
+        }
+        if (multiplier != constraint_multipliers.size())
+            throw std::invalid_argument("constraint multiplier count");
     }
     scope.probe("entries", static_cast<double>(result.size()));
     return result;

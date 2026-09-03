@@ -169,7 +169,10 @@ struct CompiledSystem final {
     std::vector<double> jacobian(const std::vector<double>& point) const;
     std::vector<double> lever_jacobian(const std::vector<double>& point) const;
     std::vector<double> objective_gradient(const std::vector<double>& point) const;
-    std::vector<double> hessian(const std::vector<double>& point) const;
+    std::vector<double> hessian(
+        const std::vector<double>& point,
+        const std::vector<double>& constraint_multipliers = {}
+    ) const;
 
     std::size_t unknown_count() const noexcept {
         return primal_size + rank + charge_row_count;
@@ -194,6 +197,7 @@ struct EquilibriumResult final {
     std::vector<double> molar_densities;
     std::vector<double> packing_fractions;
     std::vector<double> multipliers;
+    std::vector<double> constraint_multipliers;
     std::vector<double> residuals;
     std::vector<double> sensitivity;
     std::vector<double> coordinates;

@@ -87,7 +87,8 @@ bool residual_is_small(const Eigen::MatrixXd& matrix,
                        const Eigen::MatrixXd& solution,
                        const Eigen::MatrixXd& right) {
     const double scale = std::max(1.0, maximum_abs(right));
-    return maximum_abs(matrix * solution - right) <= policy::DENSITY_ROOT_RESIDUAL.value * scale;
+    return maximum_abs(matrix * solution - right)
+        <= policy::EQUILIBRIUM_ROW_RESIDUAL.value * scale;
 }
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) {
@@ -184,16 +185,19 @@ std::vector<double> sensitivity(
     const std::vector<double>& lever
 ) {
     core::Scope scope("sensitivity");
-    if (lever.size() != 2) throw std::invalid_argument("lever must contain T and P weights");
+    const std::size_t levers = 2 + compiled.model->parameters().component_count();
+    if (lever.size() != levers)
+        throw std::invalid_argument("lever must contain T, P, and feed weights");
     const auto F_theta = compiled.lever_jacobian(point);
-    if (F_theta.size() != compiled.rows.size() * 2) {
+    if (F_theta.size() != compiled.rows.size() * levers) {
         throw std::invalid_argument("lever Jacobian shape");
     }
     std::vector<double> selected(compiled.rows.size(), 0.0);
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        const double signed_F_theta = -F_theta[2 * row] * lever[0]
-            - F_theta[2 * row + 1] * lever[1];
-        selected[row] = -signed_F_theta;
+        double F_theta_value = 0.0;
+        for (std::size_t column = 0; column < levers; ++column)
+            F_theta_value += F_theta[levers * row + column] * lever[column];
+        selected[row] = -(-F_theta_value);
     }
     return solve_implicit(compiled, point, selected);
 }

@@ -8,6 +8,8 @@
 #include <optional>
 #include <vector>
 
+namespace epcsaft::core { class Scope; }
+
 namespace epcsaft::equilibrium {
 
 struct NlpShape final {
@@ -47,7 +49,8 @@ SensitivityInfo inspect_sensitivity(
 
 class GibbsMinimizer final : public Ipopt::TNLP {
 public:
-    GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start);
+    GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
+                   core::Scope* scope = nullptr);
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
@@ -85,10 +88,15 @@ public:
                            Ipopt::IpoptCalculatedQuantities* ip_cq) override;
 
     const std::vector<double>& solution() const noexcept { return solution_; }
+    const std::vector<double>& constraint_multipliers() const noexcept {
+        return constraint_multipliers_;
+    }
     Ipopt::SolverReturn status() const noexcept { return status_; }
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }
+
+    double regularization_size() const noexcept { return regularization_size_; }
 
     NlpShape shape() const {
         const Ipopt::Index variables = static_cast<Ipopt::Index>(
@@ -130,10 +138,13 @@ private:
     const CompiledSystem& compiled_;
     std::vector<double> start_;
     std::vector<double> solution_;
+    std::vector<double> constraint_multipliers_;
     Ipopt::SolverReturn status_ = Ipopt::UNASSIGNED;
     std::size_t iterations_ = 0;
     std::size_t evaluations_ = 0;
     std::size_t hessian_calls_ = 0;
+    core::Scope* scope_ = nullptr;
+    double regularization_size_ = 0.0;
 };
 
 }  // namespace epcsaft::equilibrium

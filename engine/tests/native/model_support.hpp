@@ -57,6 +57,15 @@ inline epcsaft::Parameters neutral_binary() {
     return p;
 }
 
+inline epcsaft::Parameters neutral_ternary() {
+    auto p = parameters(3);
+    p.segment_count = {1.0, 1.6069, 2.0020};
+    p.sigma_constant = {3.7039, 3.5206, 3.6184};
+    p.dispersion_energy_over_k = {150.03, 191.42, 208.11};
+    p.molar_mass_kg_per_mol = {0.016043, 0.03007, 0.044097};
+    return p;
+}
+
 inline epcsaft::Parameters associating_binary() {
     auto p = parameters(2);
     p.segment_count = {4.5354, 2.1945};

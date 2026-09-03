@@ -1,15 +1,60 @@
 #pragma once
 
+#include "core/trace.hpp"
 #include "equilibrium/problem.hpp"
 #include "model_support.hpp"
 
 #include <cstddef>
 #include <algorithm>
 #include <array>
+#include <cstdio>
+#include <exception>
 #include <string>
 #include <vector>
 
 namespace equilibrium_support {
+
+inline int failures = 0;
+
+inline void fail(const char* file, int line, const char* expression) {
+    std::fprintf(stderr, "%s:%d: failed: %s\n", file, line, expression);
+    ++failures;
+}
+
+inline void check(bool condition, const char* file, int line, const char* expression) {
+    if (!condition) fail(file, line, expression);
+}
+
+inline void print_trace(const epcsaft::core::Trace& trace) {
+    for (std::size_t i = 0; i < trace.spans.size(); ++i) {
+        const auto& span = trace.spans[i];
+        std::fprintf(stderr, "  span[%zu] %s %.0fus\n", i, span.name, span.wall_us);
+    }
+    for (const auto& event : trace.events) {
+        std::fprintf(stderr, "  event span=%u iteration=%u %s", event.span,
+                     event.iteration, event.name);
+        for (const double value : event.values) std::fprintf(stderr, " %.17g", value);
+        std::fputc('\n', stderr);
+    }
+}
+
+template <class Function>
+void run_check(const char* name, Function function) {
+    epcsaft::core::Capture capture;
+    const int before = failures;
+    try {
+        function();
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "%s: exception: %s\n", name, error.what());
+        ++failures;
+    }
+    if (failures == before) {
+        std::printf("%s passed\n", name);
+    } else {
+        std::fprintf(stderr, "%s failed\n", name);
+        print_trace(capture.trace());
+    }
+}
 
 inline epcsaft::equilibrium::PhaseSpec phase(
     const char* name, epcsaft::equilibrium::PhaseKind kind,
@@ -58,8 +103,11 @@ inline epcsaft::Parameters ascani_reactive_ternary() {
     result.association_energy_over_k.assign(16, 0.0);
     result.association_volume.assign(16, 0.0);
     result.association_active[0 * 4 + 1] = result.association_active[1 * 4 + 0] = 1;
+    result.association_active[2 * 4 + 3] = result.association_active[3 * 4 + 2] = 1;
     result.association_energy_over_k[0 * 4 + 1] = result.association_energy_over_k[1 * 4 + 0] = 2500.0;
+    result.association_energy_over_k[2 * 4 + 3] = result.association_energy_over_k[3 * 4 + 2] = 2500.0;
     result.association_volume[0 * 4 + 1] = result.association_volume[1 * 4 + 0] = 0.05;
+    result.association_volume[2 * 4 + 3] = result.association_volume[3 * 4 + 2] = 0.05;
     return result;
 }
 
@@ -79,9 +127,12 @@ inline epcsaft::equilibrium::EquilibriumProblem ascani_reactive_problem() {
         phase("L1", epcsaft::equilibrium::PhaseKind::Liquid),
         phase("L2", epcsaft::equilibrium::PhaseKind::Liquid),
     };
+    result.phases[0].composition_guess = {0.05, 0.90, 0.05};
+    result.phases[1].composition_guess = {0.05, 0.05, 0.90};
     result.reactions = {{"A+B=C", {-1.0, -1.0, 1.0}, 2.25, std::nullopt}};
     result.standard_gibbs_j_per_mol = {0.0, 0.0, 0.0};
-    result.temperature = epcsaft::equilibrium::FreeValue::fixed(300.0);
+    result.feed.values = {0.05, 0.475, 0.475};
+    result.temperature = epcsaft::equilibrium::FreeValue::fixed(298.15);
     result.pressure = epcsaft::equilibrium::FreeValue::fixed(1.0e5);
     return result;
 }
@@ -183,3 +234,6 @@ inline int pinned_phases(
 }
 
 }  // namespace equilibrium_support
+
+#define CHECK(condition) \
+    equilibrium_support::check(static_cast<bool>(condition), __FILE__, __LINE__, #condition)

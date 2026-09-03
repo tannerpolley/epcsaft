@@ -52,7 +52,8 @@ double specified_amount(const PhaseSpec& phase, const std::vector<double>& feed)
 }
 
 double reduced_hessian_minimum_at(
-    const CompiledSystem& compiled, const std::vector<double>& point
+    const CompiledSystem& compiled, const std::vector<double>& point,
+    const std::vector<double>& multipliers
 ) {
     if (compiled.pinned_count != 0 || point.empty()) return 0.0;
     const auto rows = [&compiled] {
@@ -77,7 +78,7 @@ double reduced_hessian_minimum_at(
     if (rank >= static_cast<Eigen::Index>(point.size())) return 1.0;
     const Eigen::MatrixXd nullspace = svd.matrixV().rightCols(
         static_cast<Eigen::Index>(point.size()) - rank);
-    const auto exact = compiled.hessian(point);
+    const auto exact = compiled.hessian(point, multipliers);
     Eigen::MatrixXd hessian(static_cast<Eigen::Index>(point.size()),
                             static_cast<Eigen::Index>(point.size()));
     for (std::size_t row = 0; row < point.size(); ++row)
@@ -132,6 +133,7 @@ void clear_state(EquilibriumResult& result) {
     result.molar_densities.clear();
     result.packing_fractions.clear();
     result.multipliers.clear();
+    result.constraint_multipliers.clear();
     result.coordinates.clear();
 }
 
@@ -231,19 +233,6 @@ std::vector<double> start_point(
             copy_previous_phase(compiled, start, phase, point, offsets);
         }
     }
-    double pinned_total = 0.0;
-    std::size_t free_count = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        if (phase.amount.kind == AmountKind::Free) ++free_count;
-        else pinned_total += phase.amount.fraction * compiled.feed_total;
-    }
-    const double free_amount = (compiled.feed_total - pinned_total)
-        / static_cast<double>(std::max<std::size_t>(1, free_count));
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) {
-            point[offsets[phase] + compiled.problem.phases[phase].support.size()] = free_amount;
-        }
-    }
     std::size_t intensive = phase_width(compiled);
     if (compiled.problem.temperature.free && !start.temperature.empty()) point[intensive++] = start.temperature[0];
     if (compiled.problem.pressure.free && !start.pressure.empty()) point[intensive++] = start.pressure[0];
@@ -275,8 +264,8 @@ void copy_previous_phase(
 ) {
     const auto& spec = compiled.problem.phases[phase];
     for (std::size_t i = 0; i < spec.support.size(); ++i) {
-        point[offsets[phase] + i] = start.mole_fractions[
-            phase * compiled.model->parameters().component_count() + spec.support[i]];
+        point[offsets[phase] + i] = std::log(start.mole_fractions[
+            phase * compiled.model->parameters().component_count() + spec.support[i]]);
     }
     std::size_t cursor = offsets[phase] + spec.support.size();
     if (spec.amount.kind == AmountKind::Free && start.amounts.size() == start.phase_count) {
@@ -285,7 +274,20 @@ void copy_previous_phase(
         }
         ++cursor;
     }
-    point[cursor] = 1.0 / start.molar_densities[phase];
+    std::vector<double> composition(compiled.model->parameters().component_count(), 0.0);
+    for (std::size_t species = 0; species < composition.size(); ++species)
+        composition[species] = start.mole_fractions[phase * composition.size() + species];
+    double density = start.molar_densities[phase];
+    if (spec.amount.kind == AmountKind::Pinned && !start.temperature.empty()
+        && !start.pressure.empty()) {
+        const auto branch = spec.kind == PhaseKind::Vapor
+            ? DensityBranch::Vapor : DensityBranch::Liquid;
+        density = solve_density(*compiled.model, start.temperature[0], start.pressure[0],
+                                composition, branch, std::nullopt).molar_density;
+    }
+    point[cursor] = std::log(compiled.model->packing_fraction_coefficient(
+        start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
+        composition) * density);
 }
 
 double active_constraint_residual(
@@ -332,9 +334,9 @@ ResidualSummary summarize_residuals(
 }  // namespace
 
 GibbsMinimizer::GibbsMinimizer(
-    const CompiledSystem& compiled, std::vector<double> start
+    const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope
 )
-    : compiled_(compiled), start_(std::move(start)) {}
+    : compiled_(compiled), start_(std::move(start)), scope_(scope) {}
 
 bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
@@ -359,11 +361,12 @@ bool GibbsMinimizer::get_bounds_info(
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
         for (std::size_t i = 0; i < phase.support.size(); ++i) {
-            x_l[offset] = policy::STABILITY_COMPOSITION_FLOOR.value;
-            x_u[offset++] = 1.0;
+            x_l[offset] = std::log(policy::STABILITY_COMPOSITION_FLOOR.value);
+            x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
-        x_l[offset++] = std::numeric_limits<double>::epsilon();
+        x_l[offset] = std::log(1.0e-12);
+        x_u[offset++] = std::log(policy::PACKING_FRACTION_CEILING.value);
     }
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
@@ -489,7 +492,8 @@ bool GibbsMinimizer::eval_h(
     }
     std::fill(values, values + nele_hess, 0.0);
     const auto base = point(n, x);
-    const auto hessian = compiled_.hessian(base);
+    const auto hessian = compiled_.hessian(
+        base, std::vector<double>(lambda, lambda + m));
     Ipopt::Index entry = 0;
     for (Ipopt::Index row = 0; row < n; ++row) {
         for (Ipopt::Index column = 0; column <= row; ++column) {
@@ -507,10 +511,13 @@ bool GibbsMinimizer::intermediate_callback(
     Ipopt::Number alpha_du, Ipopt::Number alpha_pr, Ipopt::Index ls_trials,
     const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
-    (void)mode; (void)obj_value; (void)inf_pr; (void)inf_du; (void)mu;
-    (void)d_norm; (void)regularization_size; (void)alpha_du; (void)alpha_pr;
-    (void)ls_trials; (void)ip_data; (void)ip_cq;
+    (void)mode; (void)obj_value; (void)ip_data; (void)ip_cq;
     iterations_ = static_cast<std::size_t>(iter);
+    regularization_size_ = regularization_size;
+    if (scope_ != nullptr) scope_->probe("ipopt_iteration",
+        std::vector<double>{inf_pr, inf_du, mu, d_norm, regularization_size,
+                            alpha_pr, alpha_du, static_cast<double>(ls_trials)},
+        static_cast<std::uint32_t>(iter));
     return true;
 }
 
@@ -521,10 +528,11 @@ void GibbsMinimizer::finalize_solution(
     Ipopt::Number objective,
     const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
-    (void)z_L; (void)z_U; (void)m; (void)g; (void)lambda;
+    (void)z_L; (void)z_U; (void)g;
     (void)objective; (void)ip_data; (void)ip_cq;
     status_ = status;
     solution_.assign(x, x + n);
+    constraint_multipliers_.assign(lambda, lambda + m);
 }
 
 EquilibriumResult solve_equilibrium(
@@ -536,16 +544,18 @@ EquilibriumResult solve_equilibrium(
     CompiledSystem compiled = compile_problem(model, request);
     std::vector<double> initial = boundary_start(compiled);
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
-    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial));
+    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
     Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
     application->Options()->SetIntegerValue("print_level", 0);
     application->Options()->SetStringValue("nlp_scaling_method", "none");
     application->Options()->SetStringValue("hessian_approximation", "exact");
-    application->Options()->SetNumericValue("tol", policy::DENSITY_ROOT_RESIDUAL.value);
-    application->Options()->SetNumericValue("acceptable_tol", policy::DENSITY_ROOT_RESIDUAL.value);
+    application->Options()->SetNumericValue("tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    application->Options()->SetNumericValue("acceptable_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
     application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("dual_inf_tol", policy::DENSITY_ROOT_RESIDUAL.value);
-    application->Options()->SetNumericValue("constr_viol_tol", policy::DENSITY_ROOT_RESIDUAL.value);
+    application->Options()->SetNumericValue("dual_inf_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    application->Options()->SetNumericValue("constr_viol_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    application->Options()->SetIntegerValue("max_iter",
+        static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
     application->Initialize();
     application->OptimizeTNLP(nlp);
 
@@ -571,25 +581,27 @@ EquilibriumResult solve_equilibrium(
     scope.probe("active_residual", active_constraint_residual(compiled, full));
     scope.probe("objective", result.objective);
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
-    result.convergence = {};
-    result.convergence.residual = maximum_abs(result.residuals);
-    result.convergence.criterion = &policy::DENSITY_ROOT_RESIDUAL;
-    if (evaluation.floor > 0.0) result.convergence.floor = evaluation.floor;
+    core::Convergence& convergence = result.convergence;
+    convergence = {};
+    convergence.residual = maximum_abs(result.residuals);
+    convergence.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+    if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
+    convergence.amplification = nlp->regularization_size();
     result.iterations = nlp->iterations();
     result.evaluations = nlp->evaluations();
     result.hessian_calls = nlp->hessian_calls();
-    result.convergence.iterations = result.iterations;
-    result.convergence.evaluations = result.evaluations;
+    convergence.iterations = result.iterations;
+    convergence.evaluations = result.evaluations;
     if (nlp->status() == Ipopt::LOCAL_INFEASIBILITY) {
-        result.convergence.stop = core::Stop::infeasible;
+        convergence.stop = core::Stop::infeasible;
     } else {
-        result.convergence.stop = core::classify(
-            result.convergence.residual, *result.convergence.criterion,
-            result.convergence.floor, result.convergence.contraction,
+        convergence.stop = core::classify(
+            convergence.residual, *convergence.criterion,
+            convergence.floor, convergence.contraction,
             nlp->status() != Ipopt::SUCCESS
         );
     }
-    result.message = core::describe(result.convergence);
+    result.message = core::describe(convergence);
     const auto offsets = phase_offsets(compiled);
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts;
@@ -604,7 +616,7 @@ EquilibriumResult solve_equilibrium(
         std::vector<double> composition(model.parameters().component_count(), 0.0);
         double total = 0.0;
         for (std::size_t i = 0; i < spec.support.size(); ++i) {
-            const double value = full[offsets[phase] + i];
+            const double value = std::exp(full[offsets[phase] + i]);
             composition[spec.support[i]] = value;
             total += value;
         }
@@ -615,25 +627,32 @@ EquilibriumResult solve_equilibrium(
         const double amount = spec.amount.kind == AmountKind::Free
             ? full[cursor++] : specified_amount(spec, compiled.n_feed);
         amounts.push_back(amount);
-        volumes.push_back(full[cursor]);
+        volumes.push_back(model.packing_fraction_coefficient(
+            candidate_temperature, composition) / std::exp(full[cursor]));
+        const double deficit = michelsen_deficit(
+            compiled, compositions[phase], phase, result.residuals, candidate_temperature);
+        scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         if (spec.amount.kind == AmountKind::Free
             && amount <= policy::STABILITY_COMPOSITION_FLOOR.value) {
             topology_ok = false;
             topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
-                + std::to_string(michelsen_deficit(
-                    compiled, compositions[phase], phase, result.residuals,
-                    candidate_temperature));
+                + std::to_string(deficit);
         }
     }
-    if (compiled.problem.phases.size() > 1 && compiled.pinned_count == 0) {
+    if (compiled.problem.phases.size() > 1) {
         for (std::size_t left = 0; left < compositions.size(); ++left) {
             for (std::size_t right = left + 1; right < compositions.size(); ++right) {
+                const auto left_eta = offsets[left] + compiled.problem.phases[left].support.size()
+                    + (compiled.problem.phases[left].amount.kind == AmountKind::Free ? 1 : 0);
+                const auto right_eta = offsets[right] + compiled.problem.phases[right].support.size()
+                    + (compiled.problem.phases[right].amount.kind == AmountKind::Free ? 1 : 0);
                 const double distance = std::max(
-                    std::abs(volumes[left] - volumes[right]),
+                    std::abs(full[left_eta] - full[right_eta]),
                     largest_difference(compositions[left], compositions[right]));
-                if (distance <= policy::STABILITY_COMPOSITION_FLOOR.value) {
+                scope.probe("phase_distance", distance);
+                if (distance <= policy::PHASE_COINCIDENCE_DISTANCE.value) {
                     topology_ok = false;
-                    topology_failure = "phase distance between "
+                    topology_failure = "phases_coincide: phase distance between "
                         + compiled.problem.phases[left].name + " and "
                         + compiled.problem.phases[right].name + " is too small: "
                         + std::to_string(distance);
@@ -664,16 +683,17 @@ EquilibriumResult solve_equilibrium(
     for (std::size_t phase = 0; phase < volumes.size(); ++phase) {
         result.molar_densities.push_back(1.0 / volumes[phase]);
         result.packing_fractions.push_back(
-            model.packing_fraction_coefficient(temperature, compositions[phase]) / volumes[phase]
-        );
+            model.packing_fraction_coefficient(temperature, compositions[phase]) / volumes[phase]);
         result.mole_fractions.insert(result.mole_fractions.end(),
                                      compositions[phase].begin(), compositions[phase].end());
     }
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
+    result.constraint_multipliers = nlp->constraint_multipliers();
     result.coordinates = full;
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
-    result.reduced_hessian_minimum = reduced_hessian_minimum_at(compiled, primal_point);
+    result.reduced_hessian_minimum = reduced_hessian_minimum_at(
+        compiled, primal_point, nlp->constraint_multipliers());
     if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
         result.success = false;
         result.message = "reduced_hessian_stability is not positive definite";
@@ -683,7 +703,7 @@ EquilibriumResult solve_equilibrium(
     result.rows = compiled.rows;
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
-    scope.probe("reduced_hessian", result.reduced_hessian_minimum);
+    scope.probe("reduced_hessian_minimum", result.reduced_hessian_minimum);
     scope.probe("phase_count", static_cast<double>(result.phase_count));
     scope.probe("residual", result.convergence.residual);
     scope.probe("iterations", static_cast<double>(result.iterations));

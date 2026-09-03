@@ -4,10 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <stdexcept>
 #include <string>
-#define CHECK(condition) do { if (!(condition)) { std::fprintf(stderr, "%s:%d: failed: %s\n", __FILE__, __LINE__, #condition); std::abort(); } } while (false)
 namespace {
 void check_c1() {
     for (const auto phase_set : equilibrium_support::phase_sets()) {
@@ -227,14 +225,14 @@ void check_c9() {
 
 }  // namespace
 int main() {
-    check_c1();
-    check_c2();
-    check_c3();
-    check_c4();
-    check_c5();
-    check_c6();
-    check_c7();
-    check_c8();
-    check_c9();
-    std::printf("specification checks passed\n");
+    equilibrium_support::run_check("C1", [] { check_c1(); });
+    equilibrium_support::run_check("C2", [] { check_c2(); });
+    equilibrium_support::run_check("C3", [] { check_c3(); });
+    equilibrium_support::run_check("C4", [] { check_c4(); });
+    equilibrium_support::run_check("C5", [] { check_c5(); });
+    equilibrium_support::run_check("C6", [] { check_c6(); });
+    equilibrium_support::run_check("C7", [] { check_c7(); });
+    equilibrium_support::run_check("C8", [] { check_c8(); });
+    equilibrium_support::run_check("C9", [] { check_c9(); });
+    return equilibrium_support::failures == 0 ? 0 : 1;
 }

@@ -225,6 +225,34 @@ inline constexpr Tolerance STABILITY_PACKING_GAP{"STABILITY_PACKING_GAP",
     "Pereira 2012 eps_eta",
 };
 
+// ------------------------------------------------------------- equilibrium
+
+inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
+    1.0e-10,
+    Category::AlgorithmTolerance,
+    "dimensionless equilibrium-row infinity norm; two decades above the "
+    "association residual entering the assembly floor",
+};
+
+inline constexpr Tolerance EQUILIBRIUM_MAX_ITERATIONS{"EQUILIBRIUM_MAX_ITERATIONS",
+    200.0,
+    Category::AlgorithmTolerance,
+    "budget; analytic equilibrium Jacobian with Ipopt",
+};
+
+inline constexpr Tolerance PHASE_COINCIDENCE_DISTANCE{"PHASE_COINCIDENCE_DISTANCE",
+    1.0e-6,
+    Category::AlgorithmTolerance,
+    "phase amount columns become numerically dependent below this composition "
+    "or log-packing distance",
+};
+
+inline constexpr Tolerance PACKING_FRACTION_CEILING{"PACKING_FRACTION_CEILING",
+    0.74,
+    Category::AlgorithmTolerance,
+    "fluid-coordinate ceiling below close packing",
+};
+
 // A budget with a name. The old tree's global search stopped at 3250 samples and
 // reported that as a one-phase result, so a decision that ran out of work was
 // indistinguishable from a decision that converged. Reaching this is a named
