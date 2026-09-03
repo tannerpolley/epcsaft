@@ -848,16 +848,43 @@ bibliography, where Christoph Held is a parameter source (`Ji2012`, `Figiel2025`
 - **`stoichiometry.cpp`'s standard-state transform** reads EOS reference quantities
   today; its line budget (600–900) is the least certain in the tree.
 
-## Two things that are red, and are not defects
+## What is red on greenfield, and why
 
-**`check-all` is red on `epcsaft.equilibrium`.** `tools/verify-installed-wheel.py:13` asserts
-three public modules exist; `epcsaft.equilibrium` and `epcsaft.regression` are what Stages 5
-and 6 write. The verifier is ahead of the tree and goes green when they land. Do not
-re-diagnose it, and do not weaken the verifier to make it pass.
+Checked in full on 2026-09-03, after the EOS repair. Green: `packets`,
+`engine-eos`, `ruff`, `mypy`, `analysis-layout`, `architecture`, the four native
+suites, and `uv lock --locked`.
 
-**A brief's mutation can go stale against its own re-base.** Two of the repair's mutations
-stayed green on first run because the appended design delta changed the code shape the
-mutation `sed` had been written against — the pattern never matched, so the file was never
-mutated and the gate was never actually challenged. A mutation that does not apply looks
-exactly like a gate that does not bite. **Preflight must confirm each `sed` changes the file,
-not merely that a mutation is declared.**
+**Two reds remain, and they are the same red.** `engine-equilibrium` and
+`engine-regression` collect no tests, and `tools/verify-installed-wheel.py` exits on
+`ModuleNotFoundError: epcsaft.equilibrium`. That file asserts three public modules and four
+native entry points; two modules and all four entry points are what **Stages 5 and 6 write**.
+The verifier is a description of the finished engine, carried over whole, and it is ahead of
+the tree. It goes green when those stages land.
+
+Do not weaken it to make `check-all` pass, and do not gate it on which stages are done — a
+verifier that knows which parts of itself to skip is the same one-directional defect this
+rebuild keeps finding. It is supposed to be red. It is a to-do list that fails.
+
+**Three other reds were fixable and are fixed.** They are recorded because each was
+initially mistaken for the unfixable kind:
+
+- `uv lock --locked` failed because the lock still carried `pint` after the last import of it
+  was removed. The repair worker regenerated the lock correctly; the coordinator reverted it
+  during the merge, mistaking it for an artifact of provisioning. Fixed at `7c098f3`.
+- `analysis-layout` failed on a loose `like-ion-dispersion-convention.md` at an analysis root.
+  The checker was right; the file was a result and now lives in `results/`. Fixed at `6527332`.
+- `ruff` failed on three findings in `measure_floor.py`, two of which are genuine load-order
+  requirements rather than style. Marked with their reason. Fixed at `c28031f`.
+
+**The lesson is the ordering.** `check-all` stops at its first failure, so one stale checker
+hid three fixable reds behind it, and the first report of this section called all of them
+unfixable. Enumerate every step before concluding that any red is structural.
+
+## A brief's mutation can go stale against its own re-base
+
+Two of the repair's mutations stayed green on first run because the appended design delta
+changed the code shape the mutation `sed` had been written against — the pattern never
+matched, so the file was never mutated and the gate was never actually challenged. A mutation
+that does not apply looks exactly like a gate that does not bite. **Preflight now confirms
+each `sed` changes the file**, not merely that a mutation is declared; it was verified to
+catch both of these.
