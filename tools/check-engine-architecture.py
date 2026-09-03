@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Structural rules for engine/native.
+"""Structural rules for engine/native and the public Python surface.
 
 C++ is organised by dependency layer because include direction is the only
 structural fact a checker can enforce. Five rules, all cheap, all stdlib:
@@ -15,6 +15,7 @@ Rule 2 needs a built archive and reports "skipped" without one.
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 import sys
@@ -25,10 +26,10 @@ NATIVE = ROOT / "engine" / "native"
 MESON = ROOT / "engine" / "meson.build"
 
 # Include direction: a layer may include itself and anything below it.
-LAYERS = ["physics", "model", "equilibrium", "regression", "bindings"]
+LAYERS = ["core", "physics", "model", "equilibrium", "regression", "surface", "bindings"]
 RANK = {name: index for index, name in enumerate(LAYERS)}
 
-# Names that may only be defined in physics/physical_constants.hpp. The tree
+# Names that may only be defined in core/physical_constants.hpp. The tree
 # this replaces had fifteen definitions of the gas constant.
 CATEGORY_ONE = {
     "GAS_CONSTANT_J_PER_MOL_K",
@@ -42,7 +43,7 @@ CATEGORY_ONE = {
     "DEBYE_C_M",
     "NUMBER_DENSITY_PER_ANGSTROM3",
 }
-CONSTANTS_HOME = "physics/physical_constants.hpp"
+CONSTANTS_HOME = "core/physical_constants.hpp"
 
 # Phase stability is reachable from equilibrium, never from a parameter fit: a
 # fit runs against declared phases so its residuals stay differentiable.
@@ -148,7 +149,7 @@ THRESHOLD = re.compile(
     r"(?:<=|>=|==|!=|<|>)\s*(\d+\.\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)"
     r"|(\d+\.\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)\s*(?:<=|>=|==|!=|<|>)"
 )
-THRESHOLD_EXEMPT = {"physics/numerical_policy.hpp", "physics/physical_constants.hpp"}
+THRESHOLD_EXEMPT = {"core/numerical_policy.hpp", "core/physical_constants.hpp"}
 ALLOWED_THRESHOLDS = {"0.0", "1.0"}  # sign tests and normalisation, nothing else
 
 # A solver receives rows. It may not know which kind of problem produced them: that is
@@ -199,6 +200,102 @@ def rule_solvers_are_case_blind() -> list[str]:
     return bad
 
 
+def rule_policy_entries_name_themselves() -> list[str]:
+    path = NATIVE / "core" / "numerical_policy.hpp"
+    if not path.is_file():
+        return [f"{path.relative_to(ROOT)} is missing"]
+    text = path.read_text()
+    bad = []
+    for identifier, name in re.findall(
+        r"inline\s+constexpr\s+Tolerance\s+(\w+)\s*\{\s*\"([^\"]+)\"",
+        text,
+    ):
+        if identifier != name:
+            bad.append(f"{path.relative_to(ROOT)}: {identifier} names itself {name}")
+    for identifier, name in re.findall(
+        r"inline\s+constexpr\s+Tolerance\s+(\w+)\s*=\s*derived\([^;]*?\"([^\"]+)\"",
+        text,
+        re.S,
+    ):
+        if identifier != name:
+            bad.append(f"{path.relative_to(ROOT)}: {identifier} names itself {name}")
+    if "inline const Tolerance" in text:
+        bad.append(f"{path.relative_to(ROOT)} still has inline const Tolerance")
+    return bad
+
+
+def rule_budget_readers_carry_records() -> list[str]:
+    budget = re.compile(r"policy::\w+_(?:MAX_ITERATIONS|BUDGET)\b")
+    bad = []
+    for path in sources():
+        if layer_of(path) in {"core", "bindings"}:
+            continue
+        text = without_comments(path.read_text())
+        if budget.search(text) and ("core::Scope" not in text or "Convergence" not in text):
+            bad.append(f"{path.relative_to(ROOT)} reads a budget without a convergence record")
+    return bad
+
+
+def rule_core_and_trace_boundaries() -> list[str]:
+    bad = []
+    forbidden = re.compile(
+        r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|nlopt|boost|pybind11)",
+        re.IGNORECASE,
+    )
+    read_back = re.compile(r"(?<![A-Za-z0-9_])(core::)?(Capture\b|active\s*\()")
+    for path in sources():
+        rel = path.relative_to(NATIVE)
+        parts = rel.parts
+        text = without_comments(path.read_text())
+        if parts[0] == "core":
+            if path.name != "scalar.hpp" and forbidden.search(text):
+                bad.append(f"{path.relative_to(ROOT)} includes a numerical library")
+            for target in INCLUDE.findall(text):
+                if target.split("/")[0] != "core":
+                    bad.append(f"{path.relative_to(ROOT)} includes {target} outside core")
+        elif parts[0] != "bindings" and read_back.search(text):
+            bad.append(f"{path.relative_to(ROOT)} reads the active trace")
+    return bad
+
+
+def rule_declared_selectors() -> list[str]:
+    path = NATIVE / "core" / "parameters.hpp"
+    if not path.is_file():
+        return [f"{path.relative_to(ROOT)} is missing"]
+    text = path.read_text()
+    bad = []
+    if "Unspecified" in text:
+        bad.append(f"{path.relative_to(ROOT)} contains Unspecified")
+    enum_names = re.findall(r"enum\s+class\s+(\w+)", text)
+    match = re.search(r"struct\s+Parameters\b.*?\n};", text, re.S)
+    if match:
+        enum_pattern = "|".join(map(re.escape, enum_names))
+        bare = re.compile(rf"^\s*(?:{enum_pattern})\s+\w+\s*[=;{{]")
+        for number, line in enumerate(match.group().splitlines(), 1):
+            if bare.search(line):
+                bad.append(f"{path.relative_to(ROOT)}:{number}: bare enum selector")
+    return bad
+
+
+def rule_surface_defaults() -> list[str]:
+    bad = []
+    surface = ROOT / "engine" / "src" / "epcsaft"
+    for path in sorted(surface.glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError as error:
+            bad.append(f"{path.relative_to(ROOT)}:{error.lineno}: syntax error")
+            continue
+        for node in __import__("ast").walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            defaults = [*node.args.defaults, *[item for item in node.args.kw_defaults if item is not None]]
+            for default in defaults:
+                if not isinstance(default, ast.Constant) or default.value is not None:
+                    bad.append(f"{path.relative_to(ROOT)}:{node.lineno}: default is not None")
+    return bad
+
+
 def main() -> int:
     archive_findings, archive_built = rule_archive_is_python_free()
     checks = [
@@ -212,6 +309,11 @@ def main() -> int:
         ("constants defined once", rule_constants_defined_once()),
         ("no threshold literals", rule_no_threshold_literals()),
         ("solvers are case-blind", rule_solvers_are_case_blind()),
+        ("policy entries name themselves", rule_policy_entries_name_themselves()),
+        ("budget readers carry records", rule_budget_readers_carry_records()),
+        ("core and trace boundaries", rule_core_and_trace_boundaries()),
+        ("selectors are declared", rule_declared_selectors()),
+        ("surface has no physical defaults", rule_surface_defaults()),
     ]
     failed = 0
     for name, findings in checks:
