@@ -209,6 +209,18 @@ in the repository first, copy it into the worktree, and have the resume prompt s
 changed and why — the worker still holds its own context for everything else, which is the
 whole reason a resume beats a fresh agent.
 
+## A pinned source names the file as it was at that sha
+
+A brief's `sources` are `branch@sha:path`, and the path must be the one the file had **at
+that sha**, not the one it has now. Renaming a document and sweeping the new name through
+the briefs breaks them silently: the preflight reports `source missing` and the sha is
+perfectly valid.
+
+This cost a repair on 2026-09-02, when four design documents were merged and three pinned
+refs were rewritten to their successors. The fix is to leave the historical path and note
+where the content lives now, which is what those three sources carry. Rebasing a brief to a
+newer sha is the alternative, and it means re-verifying every marker.
+
 ## Preflight
 
 `preflight.py` runs the brief's own claims against the worktree before the worker starts:

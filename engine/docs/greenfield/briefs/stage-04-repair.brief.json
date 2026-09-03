@@ -95,12 +95,13 @@
       "purpose": "the anchored early return that asserts a count it never computed"
     },
     {
-      "ref": "greenfield@c860395:engine/docs/greenfield/EOS.md",
+      "ref": "greenfield@c860395:engine/docs/greenfield/DENSITY-ROOT.md",
       "must_contain": [
         "`PressureSlope` path 40494.85915",
         "57 of 57"
       ],
-      "purpose": "the measurements behind 2.3 and 2.5"
+      "purpose": "the measurements behind 2.3 and 2.5",
+      "note": "pinned at a sha predating the 2026-09-02 document merge; the file now lives in EOS.md or CORE.md"
     },
     {
       "ref": "greenfield@c860395:analyses/reproduction/2025-figiel-engine-crosswalk/like-ion-dispersion-convention.md",

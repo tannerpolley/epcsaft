@@ -214,22 +214,24 @@
       "purpose": "the measurement that names the core's tenants and the builder's category"
     },
     {
-      "ref": "greenfield@21b8695:engine/docs/greenfield/CORE.md",
+      "ref": "greenfield@21b8695:engine/docs/greenfield/TOLERANCES.md",
       "must_contain": [
         "struct Convergence final {",
         "consteval Tolerance derived(const Tolerance& upstream, double factor, const char* why) {",
         "| `converged_to_floor` |"
       ],
-      "purpose": "the record and the stops this stage absorbs; CORE.md section 9 says what is kept, revised and discarded"
+      "purpose": "the record and the stops this stage absorbs; CORE.md section 9 says what is kept, revised and discarded",
+      "note": "pinned at a sha predating the 2026-09-02 document merge; the file now lives in EOS.md or CORE.md"
     },
     {
-      "ref": "greenfield@21b8695:engine/docs/greenfield/EOS.md",
+      "ref": "greenfield@21b8695:engine/docs/greenfield/DENSITY-ROOT.md",
       "must_contain": [
         "The `Convergence` record sketched there wants `amplification = 1/|dr/d\u03c1|`",
         "p50 1.17 \u00d7 10\u207b\u00b9\u00b3",
         "A reduced 1e-12 therefore buys only about"
       ],
-      "purpose": "why the density record carries no floor and no amplification until 04.repair; the delivered-accuracy sentence that goes on the policy entry"
+      "purpose": "why the density record carries no floor and no amplification until 04.repair; the delivered-accuracy sentence that goes on the policy entry",
+      "note": "pinned at a sha predating the 2026-09-02 document merge; the file now lives in EOS.md or CORE.md"
     },
     {
       "ref": "main@9eccbfd:engine/cpp/equilibrium/grepe.cpp",
