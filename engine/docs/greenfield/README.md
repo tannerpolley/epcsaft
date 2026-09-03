@@ -21,6 +21,7 @@ written before it:
 |---|---|---|
 | `TOLERANCES.md` | 5 | how nested solver tolerances stay consistent: the measured floor, the `derived()` guard, the named stops |
 | `SPECIFICATION-SPACE.md` | 6, 7, 8, 9, 11 | how the equilibrium routes prove they are general: the count rule, the lattice, what each check may assert |
+| `CATEGORIES.md` | the core, the surface, and everything outside | what is engine, what is core, what is peripheral: the measured split and a proposal for the agent that will own it |
 | `DENSITY-ROOT.md` | 3 (repair), 5, 7 | the density solve: the frozen-site slope defect, branch selection, cost, and the delivered accuracy behind `DENSITY_ROOT_RESIDUAL` |
 | `DIELECTRIC-SUPPRESSION.md` | 10, and any electrolyte activity claim | where the ion suppression coefficient comes from, why one number is not a free parameter, and what the activity gate measures |
 | `held2-stage-i-ii-findings.md` | 11 | the HELD2 kernel read against Pereira 2012, finding by finding |
