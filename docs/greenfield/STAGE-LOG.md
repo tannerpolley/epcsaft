@@ -444,3 +444,30 @@ also edited `meson.build` or `src/`, which are in the fingerprint, so stage acce
 a native-only edit did not. Now `engine/native` is hashed. `check-affected.sh` and
 `check-analysis-layout.py` carried the same dead path and follow. This is the one-directional
 shape again, in the build: a cache key that names a directory nothing checks exists.
+
+## Stage 5 attempt 3 stopped, and the control plane reset, 2026-09-03
+
+**Attempt 3.** The worker stopped itself `gate_impossible` after 47 minutes rather than
+weaken a check. Reproduced by the coordinator in the worktree: the local-minimum check
+(`equilibrium_checks.cpp:73`, reduced Hessian positive definite) fails because the
+two-phase flash fixture collapses to one phase, and the dew–bubble symmetry check
+(`boundary_checks.cpp:45`) fails on the recovered pressure. Every compile-tier check,
+the architecture checker (15 rules over 30 sources), the 24 named claims and the wheel
+build are green; `check-affected` is red by design until Stage 6. About 4,300 new lines
+plus 221 edited. Not tagged, merged or resumed; the owner sent the two failures to the
+Equilibrium planner for a ruling on design versus implementation before any resume.
+
+**The reset.** An independent read-only audit the same day found the engine clean against
+every checker rule and placed the drift in the transfer documents. The owner agreed and
+had it applied before Stage 5 continues, as one canon change: `TRANSFER.md` no longer says
+Stage 2 has not started, no longer argues for the two-stage split the crosswalk already
+retired, and numbers the downstream stages 5, 6 and 7; its test figure is the prediction
+beside the measurement (1,926 after Stage 4, about 2,400 expected). `CANON.md` says a line
+count is never completion evidence in either direction. `CARRY-OVER.md`'s stage column
+drops the retired numbers 7, 10 and 12. `target-layout.md` is marked historical and kept
+because closed briefs pin it by sha. ADR 0005 is marked superseded in part, naming the
+three decisions the rebuild reverses and what survives; ADR 0007's CAP-14 no longer names
+a deleted test file. `engine/ARCHITECTURE.yaml` drops its stage status and the Pint
+dependency, lists all seven layers the checker ranks, and points the constants home at
+`core/`. The paired briefs and the preflight are untouched: they are the mechanism that
+caught two of Stage 4's three plan defects, and they retire at cutover, not before.

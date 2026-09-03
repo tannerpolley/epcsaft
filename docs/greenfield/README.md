@@ -12,7 +12,7 @@ where they disagree, they are canonical and the page is stale.
 | `CARRY-OVER.md` | what is copied, what is written fresh, what has no successor |
 | `STAGE-LOG.md` | estimate vs actual per stage, and every decision taken while writing it |
 | `HANDOFF.md` | what a fresh coordinator session reads first: live process, acceptance steps, standing rules, open items |
-| `target-layout.md` | the finished tree, file by file, with line budgets |
+| `target-layout.md` | historical: the tree as first proposed, pinned by closed briefs; the design documents own the tree now |
 
 Design documents. **One per stage, named for the stage**, and each is what that stage's
 brief is written against:

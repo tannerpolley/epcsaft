@@ -1,5 +1,6 @@
-version: 13
-status: greenfield-stage-0
+version: 14
+# This file states the target structure only. Which stages have landed lives in
+# docs/greenfield/HANDOFF.md; dependencies live in pyproject.toml.
 
 # The rule this file exists to state: C++ is organised by dependency layer,
 # because include direction is the only structural fact a checker can enforce.
@@ -13,7 +14,6 @@ artifact:
   python: ">=3.13"
   build_owner: pyproject.toml
   native_build_owner: meson.build
-  runtime_dependencies: [Pint]
   public_modules: [epcsaft, epcsaft.equilibrium]
 
 plan:
@@ -29,12 +29,14 @@ native:
   extension: epcsaft._core
   checker: ../tools/check-engine-architecture.py
   # Downward only. bindings may include anything; nothing includes bindings.
-  layers: [physics, model, equilibrium, regression, bindings]
+  layers: [core, physics, model, equilibrium, regression, surface, bindings]
   layer_content:
+    core: policy, the declared-choice and convergence contracts, the trace
     physics: no CppAD types, no solver
     model: EOS state and exact derivatives, no phase concept
     equilibrium: one minimization, its rows, its stability
     regression: parameter fitting against declared problems
+    surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes
   # regression/ may call solve_equilibrium and solve_phase_boundary on a problem
   # with declared phases; it may not reach phase stability, because a fit needs
@@ -50,7 +52,7 @@ native:
     public_cpp_abi: forbidden
     iterative_python_callbacks: forbidden
     constant_defined_twice: forbidden
-    category_one_constants_home: physics/physical_constants.hpp
+    category_one_constants_home: core/physical_constants.hpp
 
 python:
   root: src/epcsaft

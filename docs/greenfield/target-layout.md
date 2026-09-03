@@ -1,4 +1,8 @@
-## Target layout (authoritative for #186–#192)
+## Target layout (historical)
+
+> Written before Stages 1–4 closed. The principles below still hold; the file tree and line
+> counts do not. The per-stage design documents (`CANON.md` … `PHASE-STABILITY.md`) own the
+> tree now, and `tools/diffstat.py` measures it. Kept because closed briefs pin it by sha.
 
 **Principle.** C++ is organized by dependency layer, because the only structural fact the compiler and the checker can enforce is include direction. Python is organized by capability (`eos`, `equilibrium`, `regression`), because that is what a user imports. The two do not mirror each other, deliberately: a layer answers "what may this include", a capability answers "what does a caller reach for". Tests and docs follow the Python side (capability), because a test or a document is written against a user-facing claim, not against a compilation unit.
 

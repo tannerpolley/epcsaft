@@ -37,7 +37,7 @@ deletion halves entirely. One (#196) is unchanged, because consumers are outside
 |---|---|---|---|
 | native C++ | 43,910 (80 files, `_native/` + `cpp/`) | 10,020 (29 files) | 77% |
 | Python | 15,743 | 2,430 | 85% |
-| tests | 4,404 | 1,650 | 63% |
+| tests | 4,404 | 1,650 predicted; 1,926 measured after Stage 4, ~2,400 expected once Stage 5 lands (`EQUILIBRIUM.md` §8) | 63% predicted |
 | **total** | **64,057** | **14,220** | **78%** |
 
 The 78% is the audit's number reached by construction rather than by deletion. It is a
@@ -118,28 +118,18 @@ agreement all hold for any `u_ij` matrix, including a wrong one. A modelling con
 seen only by a comparison against the model that defined it, which is an argument for the
 oracle rather than against the property tests.
 
-Stage 2 does not start until the kernel is fixed and both stages re-accepted.
+**Saturation is a cell of Stage 5, not a stage.** Pure saturation is the `k = 1`, `f = 1`
+cell of the one row system: one phase pinned at zero amount, `P` free (`EQUILIBRIUM.md`
+§2.3). It is two rows over the density closure Stage 4 provides and needs no flash seed — a
+Clausius–Clapeyron estimate is enough. Writing its own chemical-potential residuals would be
+the second route the whole rebuild exists to remove (`EQUILIBRIUM.md` §7.1), so it is the
+first cell the Stage 5 rows are shown to reduce to, and it is never reimplemented. The
+specification, saturation and the minimizer were once three stages; the crosswalk below
+records the collapse.
 
-**Saturation before the flash, and why it is Stage 5 and not Stage 3.** Pure saturation is
-the `k = 1`, `f = 1` cell of the one row system: one phase pinned at zero amount, `P` free
-(`EQUILIBRIUM.md` §2.3). It is two rows over the density closure Stage 4 already
-provides and it needs no flash seed — a Clausius–Clapeyron estimate is enough. What it does
-need is the row assembly and the compile step, because writing its own chemical-potential
-residuals would be the second route the whole rebuild exists to remove
-(`EQUILIBRIUM.md` §7.1). So it runs as early as it can: immediately after the
-specification stage, before the minimizer, and Stage 5 adds the multicomponent rows to the
-same file. Saturation is never reimplemented; it is the case the general rows reduce to.
-
-**Why the specification and the minimizer are two stages.** They were one 2,250-line stage.
-`EQUILIBRIUM.md` §9 splits them at a seam it identifies itself: the compile tier's
-checks C1–C8 are green on the compile step alone, before any solver exists, and it
-recommends writing them first for exactly that reason. Splitting there gives Stage 5 a gate
-that needs no driver, and lets saturation sit between the two.
-
-**Stage 2 is a core, not a layer.** `CORE.md` is its specification. It sits between 4
-and 6 because everything it adds to `physics/` and `model/` can be written and
-mutation-tested against the tree that exists after Stage 3, and everything Stage 5, 9 and
-10 must then do — the running maximum of the gradient floor, `κ_KKT` from the sensitivity
+**Stage 2 is a core, not a layer.** `CORE.md` is its specification. It is numbered below
+everything because everything it adds to `physics/` and `model/` can be written and
+mutation-tested against the closed EOS, and everything Stages 5, 6 and 7 must then do — the running maximum of the gradient floor, `κ_KKT` from the sensitivity
 factorisation, the aggregate fit floor — is a commitment those briefs inherit rather than a
 mechanism they invent. Its gate is the one the document names: a `derived()` tighter than
 its input does not compile; every solver result carries `residual`, `tolerance`, `floor`,

@@ -5,10 +5,15 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
 ## State at handoff
 
-- Branch `greenfield` at `dd81eb5`, worktree `~/Workspaces/Engineering/ePC-SAFT-greenfield`,
-  tree clean, **nothing pushed** (push only when the owner asks).
+- Branch `greenfield`, worktree `~/Workspaces/Engineering/ePC-SAFT-greenfield`,
+  **nothing pushed** (push only when the owner asks).
 - Stages 1–4 closed. Stage 5 (Equilibrium): attempts 1 and 2 held as tags
-  `stage-05-attempt-1`, `stage-05-attempt-2`; **attempt 3 is running**.
+  `stage-05-attempt-1`, `stage-05-attempt-2`; **attempt 3 stopped `gate_impossible`** on
+  2026-09-03 with the local-minimum and dew–bubble checks red (`STAGE-LOG.md`, last entry).
+  Not tagged, merged or resumed. The Equilibrium planner has the two failures and is
+  discussing design versus implementation with the owner; a resume waits on that ruling.
+- The control-plane reset the owner approved on 2026-09-03 is applied (`STAGE-LOG.md`,
+  last entry). Briefs and preflight untouched.
 - Records moved to the root today: `docs/scientific/` (CSE core, issue-55 shape) and
   `docs/greenfield/`. Engine-only docs stay under `engine/docs/`.
 - Rule 13 has no allowlist (owner ruling). The wheel fingerprint now hashes `engine/native`;
@@ -16,13 +21,13 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 - Overview page: https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58 —
   keep the head sha in its header synced after every commit (owner rule).
 
-## Attempt 3, the live process
+## Attempt 3, the stopped process
 
 | item | value |
 |---|---|
 | worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05`, cut from `dd81eb5` |
 | worker | `codex exec`, model `gpt-5.6-luna`, reasoning high, session id `01a0684e-7289-7ca3-bb24-3f10b04a82e8` |
-| pid | 361705 (check with `kill -0`) |
+| pid | 361705, exited |
 | log | `attempt-3.log` in the worktree; result lands in `stage-05.result.json` |
 | schema | `stage-05.result.schema.json` in the worktree (untracked) |
 | brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `dd81eb5`, 19 gates, preflight clean |
@@ -65,7 +70,8 @@ A correction goes back to the same session with `codex exec ... resume <session 
 
 ## Open items, in priority order
 
-1. Attempt 3 acceptance (above).
+1. Attempt 3: the planner's ruling, then resume, revise-and-resume, or tag-and-reject.
+   Acceptance steps above apply unchanged once a result reads `complete`.
 2. `REGRESSION.md` and `FINAL-CHECK.md` are unwritten; Stages 6 and 8 need them before a brief.
 3. `engine/CONTEXT.md` glossary is the old tree's; five terms are listed sourceless in
    `docs/scientific/CONTEXT.md`. A Design item for whichever stage rewrites that file.
