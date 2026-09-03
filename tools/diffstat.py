@@ -11,6 +11,7 @@ built".
     tools/diffstat.py HEAD~5..HEAD     # any range
     tools/diffstat.py --code           # executable code only
     tools/diffstat.py --files          # every file, classified
+    tools/diffstat.py --no-split       # skip the statement/comment/blank pass
 """
 from __future__ import annotations
 import subprocess, sys
@@ -50,6 +51,59 @@ def category(p: str) -> str:
     if p.startswith("analyses/"): return "analyses"
     return "build"
 
+LINE_COMMENT = {"C++": ("//",), "Python": ("#",), "Shell": ("#",), "Build": ("#",)}
+
+def split_added(rng: str, path: str, lang: str) -> tuple[int, int, int]:
+    """Added lines as (statement, comment, blank).
+
+    No off-the-shelf counter does this for a *diff* — tokei, scc and cloc classify a
+    tree. Blanks and comments are real work and stay in the file; they are simply not
+    what "how much code" is asking.
+    """
+    if lang not in LINE_COMMENT:
+        return (0, 0, 0)
+    out = subprocess.run(["git", "diff", "-U0", rng, "--", path],
+                         capture_output=True, text=True).stdout
+    code = comment = blank = 0
+    in_block = False
+    q3 = ('"' * 3, "'" * 3)
+    for raw in out.splitlines():
+        if not raw.startswith("+") or raw.startswith("+++"):
+            continue
+        s = raw[1:].strip()
+        if lang == "C++":
+            if in_block:
+                comment += 1
+                if "*/" in s:
+                    in_block = False
+                continue
+            if not s:
+                blank += 1
+            elif s.startswith("//"):
+                comment += 1
+            elif s.startswith("/*"):
+                comment += 1
+                in_block = "*/" not in s
+            else:
+                code += 1
+        else:
+            if in_block:
+                comment += 1
+                if any(s.count(q) % 2 for q in q3):
+                    in_block = False
+                continue
+            if not s:
+                blank += 1
+            elif s.startswith(LINE_COMMENT[lang]):
+                comment += 1
+            elif s.startswith(q3):
+                comment += 1
+                in_block = all(s.count(q) < 2 for q in q3)
+            else:
+                code += 1
+    return (code, comment, blank)
+
+
 def main() -> int:
     args = [a for a in sys.argv[1:]]
     code_only = "--code" in args; show_files = "--files" in args
@@ -87,6 +141,20 @@ def main() -> int:
         if lang in ("C++", "Python", "Shell", "Build"): is_code = True
         print(f"    {lang:12}{a:+9d}{-d:9d}{f:7d}   {'yes' if is_code else '—'}")
     print(f"\n    {'CODE':12}{code_add:+9d}\n    {'not code':12}{other_add:+9d}")
+
+    if "--no-split" not in sys.argv:
+        c = m = b = 0
+        for a, d, path, lang, is_code, cat in rows:
+            if cat == "removed" or not is_code:
+                continue
+            cc, mm, bb = split_added(rng, path, lang)
+            c += cc; m += mm; b += bb
+        if c or m or b:
+            tot = c + m + b
+            print("\n  OF THOSE CODE ADDITIONS")
+            print(f"    {'statements':12}{c:+9d}   {c/tot:6.1%}")
+            print(f"    {'comments':12}{m:+9d}   {m/tot:6.1%}")
+            print(f"    {'blank':12}{b:+9d}   {b/tot:6.1%}")
 
     print("\n  BY CATEGORY"); print(f"    {'':12}{'added':>9}{'deleted':>9}{'files':>7}")
     for cat in ("core", "surface", "engine", "build", "canon", "analyses", "removed"):
