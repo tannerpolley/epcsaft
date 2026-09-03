@@ -11,6 +11,7 @@ where they disagree, they are canonical and the page is stale.
 | `ORCHESTRATION.md` | who does what, the verified `codex exec` invocation, stop conditions, environment traps |
 | `CARRY-OVER.md` | what is copied, what is written fresh, what has no successor |
 | `STAGE-LOG.md` | estimate vs actual per stage, and every decision taken while writing it |
+| `HANDOFF.md` | what a fresh coordinator session reads first: live process, acceptance steps, standing rules, open items |
 | `target-layout.md` | the finished tree, file by file, with line budgets |
 
 Design documents. **One per stage, named for the stage**, and each is what that stage's
