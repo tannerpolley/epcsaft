@@ -366,7 +366,7 @@ is a lexical scope around it.
 **Composition.** `Trace::current` is the open span; a `Scope` records `parent = current`,
 becomes current, restores its parent on destruction. The density root opens `solve_density`;
 each `evaluate` inside is a child; the association Newton inside each is a grandchild; the
-reference ladder's fixed-pressure states nest under `infinite_dilution_reference`; Stage 7's
+reference ladder's fixed-pressure states nest under `infinite_dilution_reference`; Stage 6's
 driver will sit above them. Nothing threads a parameter, so a later stage that opens a span
 at the top of its solver is composed. The trace is a tree (§8.2 checks exactly that).
 
@@ -422,10 +422,10 @@ red with no new rule.
 | `density_anchor` | the anchored attempt, child of `solve_density` (Stage 5; 04.repair adds `far_side_residual` per grid point) | per step as above | its own record: `left_domain` or `stalled` when it falls to the cold path |
 | `infinite_dilution_reference` | (model, Stage 5) | per ladder point `reference_ladder_point` [m, ln φ₁, ln φ₂]; `reference_convergence_error`; `reference_witness_error` | none: a bias, not a stop (`TOLERANCES.md` §3.6) |
 | `compile` | `request_compile.cpp` (Stage 6) | `active_rows`, `degrees_of_freedom` [k, f, rank, nullity], `assembly_floor` per evaluation | none: no iteration |
-| `solve_equilibrium` | the driver (Stage 7) | per Ipopt iteration from `intermediate_callback`: `primal_infeasibility`, `dual_infeasibility`, `barrier_parameter`, `primal_step`, `dual_step`, `regularization`; running `assembly_floor` | `residual = inf_pr` (k ≥ 1) or `max(inf_pr, inf_du)` (k = 0); `floor` from the assembly; `amplification = κ(F_y)` from the sensitivity; `stop` from `classify` plus Ipopt's status for `infeasible`/`singular` |
-| `implicit_sensitivity` | (Stage 7) | `kkt_smallest_singular_value`, `kkt_condition` | none |
-| `fit` | `least_squares.cpp` (Stage 10) | per Ceres iteration `cost`, `gradient_norm`, `trust_region_radius`; observation solves nest automatically | `residual` = gradient norm at termination; `floor = Σ_obs ‖∂obs/∂u‖ κ_sys · residual_obs` |
-| `find_phases` | (Stage 11) | per start `tangent_plane_distance`; per major iteration `dual_bound`, `candidate_gap` | `budget_exhausted` here is what `TRANSFER.md` Stage 11 calls `search_budget_exhausted` |
+| `solve_equilibrium` | the driver (Stage 6) | per Ipopt iteration from `intermediate_callback`: `primal_infeasibility`, `dual_infeasibility`, `barrier_parameter`, `primal_step`, `dual_step`, `regularization`; running `assembly_floor` | `residual = inf_pr` (k ≥ 1) or `max(inf_pr, inf_du)` (k = 0); `floor` from the assembly; `amplification = κ(F_y)` from the sensitivity; `stop` from `classify` plus Ipopt's status for `infeasible`/`singular` |
+| `implicit_sensitivity` | (Stage 6) | `kkt_smallest_singular_value`, `kkt_condition` | none |
+| `fit` | `least_squares.cpp` (Stage 7) | per Ceres iteration `cost`, `gradient_norm`, `trust_region_radius`; observation solves nest automatically | `residual` = gradient norm at termination; `floor = Σ_obs ‖∂obs/∂u‖ κ_sys · residual_obs` |
+| `find_phases` | (Stage 8) | per start `tangent_plane_distance`; per major iteration `dual_bound`, `candidate_gap` | `budget_exhausted` here is what `TRANSFER.md` Stage 8 calls `search_budget_exhausted` |
 
 Everything in this table is **reported and never asserted**. The only assertions in the
 design are §8's four properties.

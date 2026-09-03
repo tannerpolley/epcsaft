@@ -454,8 +454,12 @@ beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380
 
 ### Stage 5 — the core (~1,300 lines written, ~+560 net in `native/`)
 
-`numerical_policy.hpp` (+80), `association.hpp` (+15), `helmholtz_model.hpp` (+10),
-`density.cpp` (+35), plus `tests/native/tolerance_checks.cpp` (120).
+`native/core/` — seven headers, no source file: `physical_constants.hpp`,
+`numerical_policy.hpp`, `parameters.hpp` and `scalar.hpp` move in from `physics/`, and
+`declared.hpp`, `convergence.hpp` and `trace.hpp` are written. `native/surface/` takes
+`parameter_builder.{hpp,cpp}` from `model/`. `association.hpp`, `helmholtz_model.hpp` and
+`density.cpp` gain their records; `epcsaft.trace()` reaches Python; the checker gains its
+new rules and the layer ranks.
 
 `CORE.md` is the specification, and `TOLERANCES.md` is superseded by it (§9 there is the disposition table). A nested stopping test cannot demand more accuracy
 than its inputs carry: the outer residual's **floor** is the sum of the inner tolerances
