@@ -452,12 +452,12 @@ beat the native it wraps); `Mixture.state` P nine species in ≤ 5 ms (today 380
 
 ---
 
-### Stage 5 — tolerance core (260 lines)
+### Stage 5 — the core (~1,300 lines written, ~+560 net in `native/`)
 
 `numerical_policy.hpp` (+80), `association.hpp` (+15), `helmholtz_model.hpp` (+10),
 `density.cpp` (+35), plus `tests/native/tolerance_checks.cpp` (120).
 
-`TOLERANCES.md` is the specification. A nested stopping test cannot demand more accuracy
+`CORE.md` is the specification, and `TOLERANCES.md` is superseded by it (§9 there is the disposition table). A nested stopping test cannot demand more accuracy
 than its inputs carry: the outer residual's **floor** is the sum of the inner tolerances
 amplified through their own conditioning at the solved point. The old tree tested a bubble
 residual against `2e-10` while its two inner solves carried `3e-10` between them, so
