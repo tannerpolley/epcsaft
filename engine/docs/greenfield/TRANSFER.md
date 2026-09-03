@@ -107,8 +107,8 @@ and `native/physics/helmholtz.hpp` applied the full combining rule to every pair
 The repair declares the convention at the surface, carries it as a `core::Declared` with no
 `Unspecified` member, and reads it in the kernel. It could not be packet data: the builder
 correctly refuses to synthesise a self-pair, and for a two-ion salt the same-sign pairs *are*
-the diagonal. Measured after the repair: **0.2744% AARD** over Figiel 2025's 27
-published-curve points, no point exceeding 1.10× its own digitization uncertainty. Before:
+the diagonal. Measured after the repair: **0.2723% AARD** over Figiel 2025's 27
+published-curve points, no point exceeding 1.097× its own digitization uncertainty. Before:
 49.19%.
 
 The engine was internally inconsistent about it: it honoured `u_ii = 0` in the ionic packing
@@ -854,9 +854,14 @@ Checked in full on 2026-09-03, after the EOS repair. Green: `packets`,
 `engine-eos`, `ruff`, `mypy`, `analysis-layout`, `architecture`, the four native
 suites, and `uv lock --locked`.
 
-**Two reds remain, and they are the same red.** `engine-equilibrium` and
-`engine-regression` collect no tests, and `tools/verify-installed-wheel.py` exits on
-`ModuleNotFoundError: epcsaft.equilibrium`. That file asserts three public modules and four
+**One red remains, and it stands in front of two more.** `tools/check-all.sh` runs the
+environment setup under `set -e`, and that runs `tools/verify-installed-wheel.py`, which exits
+on `ModuleNotFoundError: epcsaft.equilibrium`. The script aborts there, before any of its
+eight checks start — so check-all reports exactly one failure, not two. Behind it,
+`engine-equilibrium` and `engine-regression` would each exit 4, collecting no tests, because
+those directories do not exist.
+
+All three are one cause. `verify-installed-wheel.py` asserts three public modules and four
 native entry points; two modules and all four entry points are what **Stages 5 and 6 write**.
 The verifier is a description of the finished engine, carried over whole, and it is ahead of
 the tree. It goes green when those stages land.
@@ -864,6 +869,9 @@ the tree. It goes green when those stages land.
 Do not weaken it to make `check-all` pass, and do not gate it on which stages are done — a
 verifier that knows which parts of itself to skip is the same one-directional defect this
 rebuild keeps finding. It is supposed to be red. It is a to-do list that fails.
+
+One consequence worth knowing: because check-all aborts first, **it cannot tell you the state
+of the eight checks behind it.** Run them individually, as this section's roster was.
 
 **Three other reds were fixable and are fixed.** They are recorded because each was
 initially mistaken for the unfixable kind:
@@ -879,6 +887,12 @@ initially mistaken for the unfixable kind:
 **The lesson is the ordering.** `check-all` stops at its first failure, so one stale checker
 hid three fixable reds behind it, and the first report of this section called all of them
 unfixable. Enumerate every step before concluding that any red is structural.
+
+**And a second lesson, on numbers.** The repair's AARD was first recorded here as 0.2744%.
+It is **0.2723%** — the figure the worker originally reported. The coordinator re-derived it
+with an ad hoc parser over pytest's stdout, which dropped a row, and overwrote a correct
+number with a wrong one. A measured quantity gets computed, not scraped: re-run the
+calculation, do not parse the log that printed it.
 
 ## A brief's mutation can go stale against its own re-base
 

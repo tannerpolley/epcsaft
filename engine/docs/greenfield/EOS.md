@@ -19,7 +19,7 @@ every measured number: `ab_dispersion.py`, `slope_probe.cpp`, `libr_curve.py`.
    1 mol/kg; −8.754778549632 at 2 mol/kg) and differs from its `exclude-same-sign-ion-pairs`
    branch (−8.849957737809; −8.744923772855). Against Figiel's digitized LiBr model curve
    (27 points, 2.16–5.85 mol/kg): greenfield 49.19 % AARD, max 61.25 %; the superseded engine
-   under the exclusion 0.27 % AARD, max 0.56 %, every point within 1.10× its digitization
+   under the exclusion 0.27 % AARD, max 0.56 %, every point within 1.097× its digitization
    uncertainty; the superseded engine under all-ion-pairs reproduces greenfield's numbers to
    four decimals. Not overstated. It is a carried kernel minus its resolution: `helmholtz.hpp`
    diffs against `9eccbfd:_native/helmholtz.hpp` only in includes, namespace, constants and
