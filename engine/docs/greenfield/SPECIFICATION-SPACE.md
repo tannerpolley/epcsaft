@@ -521,10 +521,10 @@ applied to every cell they fit, which is what makes them coverage rather than sp
    point of §3.3, and either returns a `CompiledSystem` or throws naming the deficiency.
    It is the one file allowed to branch, and only on status flags.
 3. **assembly** — `CompiledSystem::evaluate(y)` giving `F(y)` and `F_y`, **also Stage 6,
-   in `request_compile.cpp`**, not in `gibbs_minimizer.cpp`: Stage 7's saturation and
-   `implicit_sensitivity.cpp` need it before the Ipopt driver exists, and a Stage 7 that
-   cannot find it will write its own, which is the failure this document exists to
-   prevent. One tape evaluation per phase per iteration at unit amount (§2.2) — value,
+   in `request_compile.cpp`**, not in `gibbs_minimizer.cpp`: the compile-tier checks
+   C1–C8 and `implicit_sensitivity.cpp` consume it with no driver present, Stage 7 writes
+   the driver *against* it, and a driver file that owned the rows would be the place a
+   second row set grows, which is the failure this document exists to prevent. One tape evaluation per phase per iteration at unit amount (§2.2) — value,
    gradient, Hessian of `A_p` in `(T, v_p, x_p, θ)` — scaled by `N_p`, plus the linear
    constraint blocks. The Hessian of `A_p` is the tape's reduced Hessian; the site-fraction
    elimination happened in Stage 3 and nothing here sees sites. Because the assembly moves
@@ -696,7 +696,7 @@ revised order (`TRANSFER.md` §"Execution order") is before Stage 6 anyway. **gu
 | `tests/native/specification_checks.cpp` | 180 | 240 | 6 | C1–C8 |
 | `tests/native/equilibrium_checks.cpp` | 170 | 220 | 8, then +15 at 11 | S1, S2, S6, S7, S8, S10's `eval_h` half, S11, S13 (multicomponent), S15, S16 on the flash cells; S12 at Stage 11 |
 | `tests/native/boundary_checks.cpp` | 140 | 180 | 7 opens it (ethane: S5, S9, S10's `F_y` half, S13 at `C = 1`, S14, ~60); 9 completes it | S3, S4, S5, S9, S10's `F_y` half, the `{L,L}` and `{V,L,L}` boundary cells |
-| `tools/check-engine-architecture.py` | +2, then +12 | — | 6, then 8 | `request_compile.cpp` joins rule 7's file list at Stage 6; rule 8 (`eval_h` present, no `limited-memory`) at Stage 8 |
+| `tools/check-engine-architecture.py` | +2, then +12 | — | 6, then 7 | `request_compile.cpp` joins rule 7's file list at Stage 6; rule 8 (`eval_h` present, no `limited-memory`) at Stage 7, with the driver |
 | **total** | **~640** | **~840** | | |
 
 Stage 7 is where the "light dependency" claim of §2.5 is measured rather than argued: its

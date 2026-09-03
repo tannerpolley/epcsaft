@@ -1,5 +1,6 @@
 ---
-status: fulfilled
+status: superseded
+superseded_by: greenfield rebuild, engine/docs/greenfield/TRANSFER.md
 date: 2026-08-10
 amends: 0001-one-general-phase-equilibrium-owner.md
 fulfilled_by: ADR 0007 retained D-030 and CAP-09 promotion result
@@ -7,6 +8,12 @@ migration_source_path: engine/docs/equilibrium/adr/0002-protect-held-until-phase
 migration_source_commit: 9f8728b3bffbd548aebb0356a32e31798b36c385
 migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
 ---
+
+> **Superseded by the greenfield rebuild, 2026-09-02.** The decision recorded here was taken
+> and is not being rewritten; what it decided no longer describes the tree. Phase stability is Stage 11, written fresh to Pereira 2012; the promotion gate this record protects no longer exists, and the protection is now checker rule 4, which forbids regression reaching `find_phases` by symbol.
+> See `engine/docs/greenfield/TRANSFER.md` for the replacement and its stages. The plan this
+> record links to was deleted with the architecture it specified; `git log` carries it.
+
 
 # Protect phase stability discovery until the promotion gate passes
 
