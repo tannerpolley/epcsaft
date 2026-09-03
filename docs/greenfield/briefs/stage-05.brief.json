@@ -132,9 +132,9 @@
       "path": "engine/native/equilibrium/request_compile.cpp",
       "edit": "specification to active rows and their assembly F, F_y; feed-basis conversion; count and rank check. The one file allowed to branch, and only on status flags",
       "lines": {
-        "low": 450,
-        "estimate": 600,
-        "ceiling": 780
+        "low": 600,
+        "estimate": 750,
+        "ceiling": 900
       },
       "must_contain": [
         "derivative.hessian[",
