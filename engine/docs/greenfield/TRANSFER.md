@@ -64,7 +64,7 @@ larger than a brief, it is named here and is the brief's specification.
 | # | stage | category | writes | design document | state |
 |---|---|---|---|---|---|
 | 1 | **Canon** | canon | the layer tree, one archive, the checker's rules, and what may be tested | `CANON.md` | **closed** `e4d964c` |
-| 2 | **Core** | core | `native/core/` — seven headers below everything: the four `EqID`-free tenants move in, and the declared-choice contract, the convergence record and the trace are written | `CORE.md` | designed — ~1,300 lines, ~+560 net |
+| 2 | **Core** | core | `native/core/` — seven headers below everything: the four `EqID`-free tenants move in, and the declared-choice contract, the convergence record and the trace are written | `CORE.md` | **closed** `2a9b04c` |
 | 3 | **Surface** | surface | `native/surface/` the parameter builder; `native/bindings/` the only pybind11 includes; `src/epcsaft/` as a pure mapping layer, units resolved in C++ | `SURFACE.md` | **reopened** — merged, then three defects |
 | 4 | **EOS** | engine | the equation kernels and the policy they read; one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `EOS.md` | **closed** `8bc6419`, `a2a2ac5` — reopened with 3 |
 | 5 | **Equilibrium** | engine | the specification and count rule; one Ipopt driver for every `k`; seeds, continuation, sensitivity; starts and the topology contract | `EQUILIBRIUM.md` | designed — ~3,040 lines |

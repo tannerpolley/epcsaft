@@ -249,3 +249,47 @@ record" applies to ADRs and not to a stale plan. Every dangling reference left b
 deletions was repaired in the same pass — seven files, including two ADRs and
 `target-layout.md`.
 
+## Stage 2 — the core
+
+**Closed.** Accepted independently: build directory wiped and reconfigured, all 19 gates
+re-run by the coordinator, all 19 mutations shown red. Four suites pass — `physics`,
+`model`, `diagnostics`, `model_floor` — and the checker reports eleven rules green over 21
+sources.
+
+| item | estimate | actual |
+|---|---|---|
+| written | ~1,300 | 1,270 |
+| net in `native/` | ~+560 | +462 |
+| `core/` | 7 headers | 7 headers, 700 lines |
+| `surface/` | 2 files | 2 files, 425 lines |
+
+`physics/` is now exactly the four files carrying all 45 equation annotations, which is the
+measurement in `CATEGORIES.md` become the actual tree.
+
+**Two corrections, both to the same session.**
+
+The first was mine. The brief's prose still said "branch `stage-05`" and cited
+`briefs/stage-05.brief.json` after the renumbering had renamed the files and the JSON fields
+but not the text inside them. The worker stopped `source_contradicted` and wrote nothing.
+The preflight now reads the brief's markdown and fails when it names a stage other than its
+own — it had been checking `sources`, `writes`, `gates` and `preconditions` and never the
+prose that tells the worker what to read.
+
+The second was a gate that could not fail. `types_consistent` runs `mypy`, whose config read
+`packages = ["epcsaft"]`, so it never looked at `engine/tests/` — and the only reader of the
+attribute its mutation renames is a test. **A type stub nothing consumes is a type stub
+nothing checks.** Now `files = ["src/epcsaft", "tests"]`, seven strict errors fixed with no
+ignores and no exclusions, and the mutation goes red.
+
+**And one mistake of mine after acceptance.** The stage commit staged `engine/` only, so the
+worker's 107 lines of checker changes stayed in the worktree; greenfield merged the new
+layers with the old checker and reported a rule failing that the worktree passed. The
+checker is canon and part of what a stage writes. Staging by category is right; staging by
+directory is not the same thing.
+
+**Verified rather than taken on trust:** the density record leaves `floor` and
+`amplification` as `std::optional` genuinely absent — not zero — with
+`// frozen-site slope until 04.repair; EOS.md §1` in the source beside them. `derived()`
+refuses an inverted tolerance at compile time. Debug mode is 0.11 ns per probe against
+15.8 µs for the cheapest instrumented call.
+
