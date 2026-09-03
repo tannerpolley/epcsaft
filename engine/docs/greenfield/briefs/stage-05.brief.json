@@ -1,0 +1,388 @@
+{
+  "stage": "05",
+  "branch": "stage-05",
+  "base": "greenfield@88b5a2a",
+  "source_commit": "88b5a2a",
+  "reaccepts": null,
+  "stop_conditions": [
+    "source_contradicted: any must_contain marker absent at its ref",
+    "budget_exceeded: any write past its ceiling",
+    "gate_red_after_write: a gate green at base goes red for a reason other than the write it names",
+    "scope_expansion: the work requires a route name, a second driver, an outer Newton around solve_equilibrium, or a change to a tolerance or to classify",
+    "design_silent: EQUILIBRIUM.md does not decide something the code must decide -- report the cell or row and stop, do not choose"
+  ],
+  "preconditions": [
+    "git cat-file -e 88b5a2a^{commit}",
+    "test -d engine/native/model",
+    "! test -d engine/native/equilibrium",
+    "grep -q \"ipopt_dep = dependency('ipopt'\" engine/meson.build",
+    "grep -q 'DensityRoot solve_density' engine/native/model/density.cpp",
+    "grep -q 'stable_root_count' engine/native/model/density.cpp",
+    "grep -q 'validate_point' engine/native/model/helmholtz_model.cpp",
+    "grep -q 'core::Scope scope' engine/native/model/helmholtz_model.cpp",
+    "grep -q 'def rule_no_hand_named_residual_stop' tools/check-engine-architecture.py",
+    ".venv/bin/meson --version",
+    "command -v python3"
+  ],
+  "sources": [
+    {
+      "ref": "greenfield@88b5a2a:engine/docs/greenfield/EQUILIBRIUM.md",
+      "must_contain": [
+        "### 2.3 The count rule",
+        "rows \u2212 unknowns = k \u2212 f",
+        "### 4.1 Compile tier \u2014 no solve; lands with Stage 5",
+        "## 10. Traps, one line each \u2014 the brief copies this list",
+        "### 1"
+      ],
+      "purpose": "the design. It is the specification, not background: every row, every rejection, every check and its mutation, and the 25 traps are decided there. Where this brief and EQUILIBRIUM.md differ, EQUILIBRIUM.md wins and you stop and say so"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/docs/greenfield/CORE.md",
+      "must_contain": [
+        "### 5.2 One classifier",
+        "`left_domain`, `singular`, `infeasible` are set by the solver that detects them. A solver",
+        "### 6.1 The shape"
+      ],
+      "purpose": "the classifier contract every equilibrium solve inherits, and the Scope rule. rules 13 and 14 are enforced -- a new solver may not name a residual stop, and every bound function opens one root"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/docs/greenfield/target-layout.md",
+      "must_contain": [
+        "equilibrium/                               5270",
+        "      request_compile.cpp                       600",
+        "core` \u2190 `physics` \u2190 `model` \u2190 `equilibrium`"
+      ],
+      "purpose": "where each file goes and the include direction. equilibrium/ may include model/; nothing in model/ may include equilibrium/"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/native/model/helmholtz_model.cpp",
+      "must_contain": [
+        "validate_point",
+        "core::Scope scope(\"state\");",
+        "HelmholtzModel::state("
+      ],
+      "purpose": "the tape the assembly evaluates. Trap 10: validate_point accepts zero amounts and a zero-ion phase takes the no-ion tape branch; the assembly must reach the tape through the existing predicate-signature cache key, never around it"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/native/model/density.cpp",
+      "must_contain": [
+        "stable_root_count",
+        "DensityRoot solve_density",
+        "core::classify("
+      ],
+      "purpose": "trap 12 and 25: a C = 1 seed needs a pressure where both roots exist, and stable_root_count is how you know. A seed without them is a named stop, never a retry loop"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/native/core/numerical_policy.hpp",
+      "must_contain": [
+        "namespace policy",
+        "struct Tolerance"
+      ],
+      "purpose": "every tolerance comes from here. Trap 7: S1 and S13 compare against max(tolerance, floor) read from the result's Convergence record, never a bare policy number"
+    },
+    {
+      "ref": "greenfield@88b5a2a:engine/native/core/convergence.hpp",
+      "must_contain": [
+        "classify",
+        "ResidualHistory"
+      ],
+      "purpose": "the record every solve returns and the only thing that may name a residual stop"
+    },
+    {
+      "ref": "greenfield@88b5a2a:tools/check-engine-architecture.py",
+      "must_contain": [
+        "def rule_no_hand_named_residual_stop",
+        "def rule_bound_functions_open_a_scope",
+        "def main() -> int:"
+      ],
+      "purpose": "the rules you inherit, and where rule 7's file list gains request_compile.cpp and rule 8 is added"
+    }
+  ],
+  "writes": [
+    {
+      "path": "engine/native/equilibrium/problem.hpp",
+      "edit": "EquilibriumProblem, EquilibriumResult, specification patterns; data with no method that solves",
+      "lines": {
+        "low": 220,
+        "estimate": 300,
+        "ceiling": 390
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/stoichiometry.hpp",
+      "edit": "balance and reaction interfaces",
+      "lines": {
+        "low": 80,
+        "estimate": 120,
+        "ceiling": 170
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/stoichiometry.cpp",
+      "edit": "balance/reaction rank by SVD, standard-state transform, nullspace",
+      "lines": {
+        "low": 600,
+        "estimate": 800,
+        "ceiling": 900
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/request_compile.cpp",
+      "edit": "specification to active rows and their assembly F, F_y; feed-basis conversion; count and rank check. The one file allowed to branch, and only on status flags",
+      "lines": {
+        "low": 450,
+        "estimate": 600,
+        "ceiling": 780
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/gibbs_minimizer.hpp",
+      "edit": "the TNLP interface",
+      "lines": {
+        "low": 110,
+        "estimate": 150,
+        "ceiling": 200
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/gibbs_minimizer.cpp",
+      "edit": "one Ipopt TNLP for every k: objective G at k=0 or zero, constraints from compile; residuals, reduced-Hessian check",
+      "lines": {
+        "low": 700,
+        "estimate": 870,
+        "ceiling": 1150
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/phase_boundary.cpp",
+      "edit": "seeds and continuation for k >= 1; the one-component case. No identifier named for saturation",
+      "lines": {
+        "low": 110,
+        "estimate": 150,
+        "ceiling": 210
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
+      "edit": "KKT system, rank, condition, output rows",
+      "lines": {
+        "low": 180,
+        "estimate": 250,
+        "ceiling": 330
+      }
+    },
+    {
+      "path": "engine/native/bindings/equilibrium_bindings.cpp",
+      "edit": "Problem, Result, solve_equilibrium as one entry",
+      "lines": {
+        "low": 120,
+        "estimate": 200,
+        "ceiling": 300
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/equilibrium/",
+      "edit": "problem.py and __init__.py: the mapping layer, no arithmetic",
+      "lines": {
+        "low": 330,
+        "estimate": 450,
+        "ceiling": 580
+      }
+    },
+    {
+      "path": "engine/tests/native/equilibrium_support.hpp",
+      "edit": "Ascani 2023 reactive ternary with its reaction and standard-state Gibbs, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor",
+      "lines": {
+        "low": 100,
+        "estimate": 140,
+        "ceiling": 190
+      }
+    },
+    {
+      "path": "engine/tests/native/specification_checks.cpp",
+      "edit": "C1 to C9",
+      "lines": {
+        "low": 130,
+        "estimate": 180,
+        "ceiling": 240
+      }
+    },
+    {
+      "path": "engine/tests/native/equilibrium_checks.cpp",
+      "edit": "S1, S2, S6, S7, S8, S10 eval_h half, S11, S13, S15, S16",
+      "lines": {
+        "low": 130,
+        "estimate": 185,
+        "ceiling": 250
+      }
+    },
+    {
+      "path": "engine/tests/native/boundary_checks.cpp",
+      "edit": "S3, S4, S5, S9, S10 F_y half, S14",
+      "lines": {
+        "low": 100,
+        "estimate": 140,
+        "ceiling": 180
+      }
+    },
+    {
+      "path": "tools/check-engine-architecture.py",
+      "edit": "request_compile.cpp joins rule 7's file list; rule 8 -- eval_h present and no limited-memory",
+      "lines": {
+        "low": 8,
+        "estimate": 14,
+        "ceiling": 30
+      }
+    },
+    {
+      "path": "engine/meson.build",
+      "edit": "the equilibrium layer's sources and the three new check targets",
+      "lines": {
+        "low": 15,
+        "estimate": 30,
+        "ceiling": 55
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": "build",
+      "command": ".venv/bin/meson compile -C engine/build/greenfield",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "1i #include \"regression/least_squares.hpp\"",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "an upward include; the file does not exist at base"
+      }
+    },
+    {
+      "id": "architecture_rules",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/point.slope > 0.0/point.slope > 1.0e-10/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "specification_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s/pinned/free/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "C1's own mutation: count a pinned phase as free"
+      }
+    },
+    {
+      "id": "equilibrium_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s/n_feed/n_feed_normalised/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S8's own mutation: compile normalises n_feed to unit total"
+      }
+    },
+    {
+      "id": "boundary_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/phase_boundary.cpp",
+        "sed": "s/temperature/temperature_frozen/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S5's own mutation: freeze T in the Jacobian when T is the unknown"
+      }
+    },
+    {
+      "id": "no_saturation_identifier",
+      "command": "! grep -rnE '\\b(solve_)?saturation\\b' engine/native/",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/equilibrium/phase_boundary.cpp",
+        "sed": "s/solve_boundary/solve_saturation/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "trap 21: saturation is a rule 7 case token; only Python's Pure.saturation carries the word"
+      }
+    },
+    {
+      "id": "assembly_lives_in_compile",
+      "command": "! grep -rn 'F_y' engine/native/equilibrium/gibbs_minimizer.cpp engine/native/equilibrium/implicit_sensitivity.cpp | grep -v 'compile'",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "sed": "s/compiled.F_y/F_y/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "trap 5: the driver and the sensitivity find the assembly in request_compile.cpp, never write their own"
+      }
+    },
+    {
+      "id": "physics_and_model_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "python_eos_tests",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/parameters_.permittivity_form.declared()/false/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "python_does_no_arithmetic",
+      "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/src/epcsaft/parameters.py",
+        "sed": "1i import math",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "types_consistent",
+      "command": "(cd engine && ../.venv/bin/mypy)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/ionic_dispersion_choice: str/ionic_dispersion_choic: str/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "packets_validate",
+      "command": "python3 data/tools/validate_packets.py > /dev/null",
+      "needs": "none",
+      "mutation": {
+        "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
+        "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/",
+        "expect": "abort"
+      }
+    }
+  ],
+  "reported": [
+    "outcome",
+    "files_written",
+    "gates",
+    "deviations",
+    "stop_detail"
+  ]
+}
