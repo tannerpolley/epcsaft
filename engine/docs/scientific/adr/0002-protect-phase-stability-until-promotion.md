@@ -10,7 +10,7 @@ migration_source_blob: 077021af554ca17daaaa3c9170b63a8e5a8982b5
 ---
 
 > **Superseded by the greenfield rebuild, 2026-09-02.** The decision recorded here was taken
-> and is not being rewritten; what it decided no longer describes the tree. Phase stability is Stage 11, written fresh to Pereira 2012; the promotion gate this record protects no longer exists, and the protection is now checker rule 4, which forbids regression reaching `find_phases` by symbol.
+> and is not being rewritten; what it decided no longer describes the tree. Phase stability is Stage 8, written fresh to Pereira 2012; the promotion gate this record protects no longer exists, and the protection is now checker rule 4, which forbids regression reaching `find_phases` by symbol.
 > See `engine/docs/greenfield/TRANSFER.md` for the replacement and its stages. The plan this
 > record links to was deleted with the architecture it specified; `git log` carries it.
 

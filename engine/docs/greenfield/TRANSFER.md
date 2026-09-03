@@ -21,10 +21,10 @@ data and counters, never against the old code.
 | #189 EOS derivatives | replace `(S+1)` Hessians, add tape cache, Newton association | one Lagrangian Hessian, site elimination, cached `ADFun` | Stage 3, 350 lines |
 | #190 EOS Python | strip numerics from Python, cut exports to 11, replace `py::dict` round trips | Python as a pure mapping layer, `py::class_` bindings | Stage 4, 1,100 lines |
 | #191 Problem/Result | collapse 6 specification types and 2 request families | one degrees-of-freedom `Problem`, one `EquilibriumResult` | Stage 6, 1,050 lines |
-| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, the boundary Newton as its rows | Stage 7, 1,650 lines |
-| #188 phase stability | delete HELD v1 (3,051) and HELD2 steps 8–10 (3,338); fix the neutral-chart sentinel | `find_phases` written to Pereira 2012 | Stage 11, 1,100 lines |
-| #192 regression | remove owner compilation from the fit path | `fit(model, observations)` on Ceres | Stage 10, 890 lines |
-| #196 consumers | migrate analyses and two downstream repos, rename result fields | the same migration — this one does not change | Stage 12, unchanged scope |
+| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, the boundary Newton as its rows | Stage 6, 1,650 lines |
+| #188 phase stability | delete HELD v1 (3,051) and HELD2 steps 8–10 (3,338); fix the neutral-chart sentinel | `find_phases` written to Pereira 2012 | Stage 8, 1,100 lines |
+| #192 regression | remove owner compilation from the fit path | `fit(model, observations)` on Ceres | Stage 7, 890 lines |
+| #196 consumers | migrate analyses and two downstream repos, rename result fields | the same migration — this one does not change | Stage 9, unchanged scope |
 | #181 policy-edit gate | reject unreviewed solver-policy edits | folds into Stage 2's duplicate-constant gate | — |
 | #178 build retention | bound build-tree and wheel-cache growth | orthogonal to the tree; stays on `main` | — |
 
@@ -68,30 +68,27 @@ larger than a brief, it is named here and is the brief's specification.
 | 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `performance_floor.md` | **closed** `a2a2ac5` |
 | 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
 | 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
-| 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` | designed |
-| 7 | the driver, and the one-component cell | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed — ~1,330 lines, ceiling ~1,720 |
-| 8 | starts, and the topology contract | multiphase starts, the declared-topology contract, and the `k = f = 0` cells' gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed — ~550 lines, ceiling ~740 |
-| 9 | the multicomponent cells | seeds and continuation for `k ≥ 1` at more than one component, on the same driver and assembly | `SPECIFICATION-SPACE.md` | designed |
-| 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
-| 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
-| 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
+| 6 | `equilibrium/` | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name; `gibbs_minimizer.{hpp,cpp}` — one Ipopt driver for every `k`; `phase_boundary.cpp` seeds and continuation; `implicit_sensitivity.cpp`; starts for every cell and the declared-topology contract | `SPECIFICATION-SPACE.md`, `formulation.md` | designed — ~3,040 lines, ceiling ~3,870 |
+| 7 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
+| 8 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
+| 9 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
 
 **Stages are named for what they write, not for what they solve.** Corrected 2026-09-02
-after the owner caught it: the table called Stage 7 *saturation*, Stage 8 *the flash* and
-Stage 9 *phase boundary*. Every one of those is a problem kind — the `k = f = 1` cell at one
+after the owner caught it: the table called Stage 6 *saturation*, Stage 6 *the flash* and
+Stage 6 *phase boundary*. Every one of those is a problem kind — the `k = f = 1` cell at one
 component, the `k = f = 0` cell, and the `k ≥ 1` family — and naming a stage after a cell
-reintroduces in the plan the special case the design removed from the code. Stage 7's own
+reintroduces in the plan the special case the design removed from the code. Stage 6's own
 body already said it: *`saturation` is a rule-7 case token, so nothing under `native/` is
 named after it* — printed directly beneath a heading that named the stage after it.
 
 There is one driver and one equilibrium. A cell is a specification, never a stage.
 
-**Stage 7 and 8 re-estimated, 2026-09-02.** The old split budgeted saturation, the boundary
+**Stage 6 and 8 re-estimated, 2026-09-02.** The old split budgeted saturation, the boundary
 and the minimizer at 300 + 250 + 1,350 = 1,900 lines across three stages. With one Ipopt
 driver serving every `k` — objective `G` at `k = 0`, a zero objective with every row as a
 constraint at `k ≥ 1`, because Ipopt's primal step on a square feasibility problem is the
-Newton step whatever Hessian it is given — the driver moves into Stage 7 beside saturation
-and Stage 8 keeps the flash. Stage 7 ≈ 1,330 (ceiling 1,720); Stage 8 ≈ 550 (ceiling 740).
+Newton step whatever Hessian it is given — the driver moves into Stage 6 beside saturation
+and Stage 6 keeps the flash. Stage 6 ≈ 1,330 (ceiling 1,720); Stage 6 ≈ 550 (ceiling 740).
 Estimates are the equilibrium planner's, marked **guessed** with the per-file reasoning in
 its message; `STAGE-LOG.md` records the actual.
 
@@ -113,14 +110,14 @@ oracle rather than against the property tests.
 
 Stage 5 does not start until the kernel is fixed and both stages re-accepted.
 
-**Saturation before the flash, and why it is Stage 7 and not Stage 4.** Pure saturation is
+**Saturation before the flash, and why it is Stage 6 and not Stage 4.** Pure saturation is
 the `k = 1`, `f = 1` cell of the one row system: one phase pinned at zero amount, `P` free
 (`SPECIFICATION-SPACE.md` §2.3). It is two rows over the density closure Stage 3 already
 provides and it needs no flash seed — a Clausius–Clapeyron estimate is enough. What it does
 need is the row assembly and the compile step, because writing its own chemical-potential
 residuals would be the second route the whole rebuild exists to remove
 (`SPECIFICATION-SPACE.md` §7.1). So it runs as early as it can: immediately after the
-specification stage, before the minimizer, and Stage 9 adds the multicomponent rows to the
+specification stage, before the minimizer, and Stage 6 adds the multicomponent rows to the
 same file. Saturation is never reimplemented; it is the case the general rows reduce to.
 
 **Why the specification and the minimizer are two stages.** They were one 2,250-line stage.
@@ -131,7 +128,7 @@ that needs no driver, and lets saturation sit between the two.
 
 **Stage 5 is a core, not a layer.** `TOLERANCES.md` is its specification. It sits between 4
 and 6 because everything it adds to `physics/` and `model/` can be written and
-mutation-tested against the tree that exists after Stage 4, and everything Stages 8, 9 and
+mutation-tested against the tree that exists after Stage 4, and everything Stages 6, 9 and
 10 must then do — the running maximum of the gradient floor, `κ_KKT` from the sensitivity
 factorisation, the aggregate fit floor — is a commitment those briefs inherit rather than a
 mechanism they invent. Its gate is the one the document names: a `derived()` tighter than
@@ -159,11 +156,11 @@ labels. Nothing else does.
 | 0, 1, 2 | 1, 2, 3 | closed; commit messages unchanged |
 | 3 | 4 | brief renamed `stage-04.brief.*`; the in-flight worker holds its own copy |
 | T | 5 | never had a number |
-| 4 | 6 and 8 | split at the compile/driver seam |
+| 4, 5a, 5b | 6 | equilibrium is one stage; the four-way split was route thinking |
 | 5b, 5a | 7, 9 | were halves of one "Stage 5" |
-| 7 | 10 | regression |
-| 6 | 11 | phase stability |
-| 8 | 12 | composite gate and merge |
+| 7 | 9 | regression |
+| 6 | 10 | phase stability |
+| 8 | 11 | composite gate and merge |
 
 ## The line between `model/` and `equilibrium/`
 
@@ -186,7 +183,7 @@ equilibrium layer. Both observations are fair and the decision is still that sat
 fully into `equilibrium/`, as the one-component rows of `phase_boundary.cpp`. **Nothing
 saturation-shaped stays in `model/`** — no seeds, no Clausius–Clapeyron estimate, no
 vapour-pressure helper, no "quick" pure-component coexistence path. The seed generator
-Stage 7 writes lives in `phase_boundary.cpp`, beside the rows it seeds.
+Stage 6 writes lives in `phase_boundary.cpp`, beside the rows it seeds.
 
 1. **Physically it is coexistence, not a state evaluation.** Density, enthalpy and fugacity
    are answered from a single state. Saturation requires equal chemical potential and equal
@@ -208,11 +205,11 @@ reactions, no charge row, no stoichiometry, no stability**. `regression/` depend
 design doing its job: the specification selects the rows, so a small problem compiles to a
 small system rather than paying for a general one.
 
-### This is why saturation runs at Stage 7
+### This is why saturation runs at Stage 6
 
 The order is not arbitrary and must not be "simplified" back. Saturation runs directly after
 the specification stage and before the flash, so `phase_boundary.cpp` exists early with only
-its one-component rows exercised, and Stage 10 gets what it needs without the rest of the
+its one-component rows exercised, and Stage 7 gets what it needs without the rest of the
 equilibrium stack ever having been built. The layering objection and the build order are
 answered by the same choice.
 
@@ -256,12 +253,12 @@ The rows do not name stages and stages do not name rows: a stage's gate says whi
 *capability* it makes available, and whichever oracle cases exercise that capability run
 from then on. A case that a stage makes solvable stays in the run for every later stage.
 Stage 4's brief resolved the activity tolerance above; the saturation constructor is owed
-by Stage 7's brief and the analytic-reaction constructor by Stage 8's.
+by Stage 6's brief and the analytic-reaction constructor by Stage 6's.
 
-## Correction: the Stage 12 reactive gate is a golden file
+## Correction: the Stage 9 reactive gate is a golden file
 
 `TESTING.md` bans golden files of computed output — "a number that came out of this code is
-not evidence that this code is right." The Stage 12 gate as first written pins the liquid
+not evidence that this code is right." The Stage 9 gate as first written pins the liquid
 molar densities from `reactive_vle_baseline.json` (46,425–47,148 mol/m³), which are exactly
 that: this engine's own output. The rule catches the plan that introduced it.
 
@@ -350,7 +347,7 @@ category (1 physical constant / 2 thermodynamic constraint / 3 algorithm toleran
 4 unjustified legacy). Category-4 entries are not carried; each one is either justified
 into category 3 with a source or replaced with the paper's value.
 
-The HELD2 tolerance drift is resolved here, not in Stage 11: the candidate gap `ε_b`
+The HELD2 tolerance drift is resolved here, not in Stage 8: the candidate gap `ε_b`
 enters as the paper's `1e-2` (not the drifted `5e-2`), and the composition floor as
 `1e-8` (not `1e-10·f_k`). The seven density-root tolerances that HELD2 owned
 (`root_*`, `mechanical_margin`, `stable_objective_tie`) enter as `model/density` entries.
@@ -472,7 +469,7 @@ stated accuracy.
 The three floors this stage can already measure are all quantities the tree computes
 anyway: the association Newton's pivot ratio, the tape's gradient floor from the Schur
 product `Φ_yX Φ_XX⁻¹` already formed for the Hessian, and the density root's `1/|dr/dρ|`.
-Stages 8, 9 and 10 inherit the rest as commitments.
+Stage 6 inherit the rest as commitments.
 
 **Gate:** a `derived()` call tighter than its input fails to compile; the old tree's
 `3e-10 > 2e-10` shape is rejected by the nominal floor at factor one; every solver result
@@ -481,7 +478,19 @@ carries the four numbers and a named stop; a solve driven below its floor report
 
 ---
 
-### Stage 6 — `equilibrium/` specification (1,000 lines)
+### Stage 6 — `equilibrium/` (~3,040 lines, ceiling ~3,870)
+
+One equilibrium, one driver, **one stage**. This was four — a specification stage, a driver
+stage, a starts stage and a boundary stage — and every split was an artifact of route
+thinking rather than a seam in the work. There are no rows for a second stage to write:
+compile emits them once and the driver solves them for every `k`. The subsections below are
+the order the stage is written in, not four gates.
+
+`problem.hpp` (300), `stoichiometry.{hpp,cpp}` (600–900), `request_compile.cpp` (600),
+`gibbs_minimizer.{hpp,cpp}` (870), `phase_boundary.cpp` (150), `implicit_sensitivity.cpp`
+(250), starts and the topology contract (~340) — and `problem.py` (450).
+
+#### 6.1 The specification (~1,000 lines)
 
 `problem.hpp` (300), `stoichiometry.{hpp,cpp}` (920 → range 600–900), `request_compile.cpp`
 (600) — and `problem.py` (450). No driver, no solve.
@@ -512,9 +521,7 @@ reaction-basis invariance under any invertible mixing; C6 the pinned specificati
 residual equals the flash's at the same point with `N_q = 0`; C7 permutation to 1e-14; C8
 an electrolyte flash compiles with nullity 0. Each with the named mutation from that table.
 
----
-
-### Stage 7 — the driver, and the one-component cell (~1,330 lines)
+#### 6.2 The driver, and the one-component cell (~1,330 lines)
 
 `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver, for every `k` (`SPECIFICATION-SPACE.md`
 §2.4: objective `G` or zero, constraint set from compile, exact Hessian for `k = 0` and
@@ -522,7 +529,7 @@ zero for `k ≥ 1`); `phase_boundary.cpp` opens with the one-component seeds and
 continuation; `implicit_sensitivity.cpp` (250) lands with it. Revised 2026-09-02: the
 separate boundary Newton is not written, because Ipopt's step on a square feasibility
 problem *is* the Newton step, and a second solver loop with its own tolerance and stops
-was the disease in another form. Line budgets for Stages 7 and 8 are to be re-estimated.
+was the disease in another form. Line budgets for Stage 6 are to be re-estimated.
 
 Saturation is not a file, not a route, and not an identifier: `saturation` is a rule-7
 case token, so nothing under `native/` is named after it and only Python's
@@ -553,9 +560,7 @@ return. S5 round trip: solve `P` at fixed `T`, then `T` at that `P`, and recover
 sensitivity against centred differences to 1e-6. **Reported, not pass/fail:**
 `Pure.saturation` cold in ≤ 1 ms (today 454) at ≤ 25 evaluations (today 5,422).
 
----
-
-### Stage 8 — starts, and the topology contract (~550 lines)
+#### 6.3 Starts, and the topology contract (~710 lines)
 
 `gibbs_minimizer.{hpp,cpp}` (1,350) — and `loader.py` shrinks, because the feed-basis
 arithmetic it was budgeted for moved into Stage 6's compile.
@@ -569,7 +574,7 @@ evaluation per Ipopt iteration, served to the objective, gradient, constraint Ja
 Hessian callbacks; today each callback re-evaluates, about ten tapes per counted evaluation,
 which is worth 5–10× on the reactive solve on its own.
 
-The driver is Stage 7's; this stage writes the multiphase starts, the declared-topology
+The driver is Stage 6's; this stage writes the multiphase starts, the declared-topology
 contract (§3.4 of the specification: whole or nothing) and the flash cells. The assembly is
 Stage 6's, in `request_compile.cpp`, which rule 7 covers from Stage 6; that placement, not a
 check, is what holds the driver and the implicit sensitivity to one matrix
@@ -587,21 +592,19 @@ vanishes, or two that coincide, fails with no equilibrium state (`SPECIFICATION-
 §3.4). S16 the reactive tie line on the Ascani 2023 `A + B ⇌ C` fixture is feed-invariant.
 Oracle case `aqueous_alcohol_salt_lle` under **declared** `{L,L}` from each tie line's
 midpoint feed, both endpoint compositions within the row uncertainties — the electrolyte
-two-liquid cell under measured data before discovery exists (Stage 11 reaches the same
+two-liquid cell under measured data before discovery exists (Stage 8 reaches the same
 rows with topology omitted). The esterification tie lines of Senina 2022 and Schmitt 2006
 (`SPECIFICATION-SPACE.md` §4.2) become a further oracle case once transcribed.
 Conservation and charge residuals ≤ 1e-10. Each with the named mutation from that table.
 
----
+#### 6.4 The multicomponent cells — folded into 6.3
 
-### Stage 9 — the multicomponent cells
+`phase_boundary.cpp` completes: seeds and continuation for `k ≥ 1` at more than one component. There are no new rows — compile emits them and Stage 6's driver solves them.
 
-`phase_boundary.cpp` completes: seeds and continuation for `k ≥ 1` at more than one component. There are no new rows — compile emits them and Stage 7's driver solves them.
-
-The same file and the same assembly Stage 7 opened, now with more than one component and
+The same file and the same assembly Stage 6 opened, now with more than one component and
 more than two phases: bubble, dew, cloud point and the fixed-fraction flash are one cell
 family distinguished only by which phase is pinned and which intensive is free. Seeded from
-the flash solution Stage 8 provides, or from the previous boundary point when sweeping.
+the flash solution Stage 6 provides, or from the previous boundary point when sweeping.
 
 **Commitment carried from `TOLERANCES.md` §6.** The boundary is written as *rows of the
 KKT system*, never as an outer Newton over `P` around `solve_equilibrium`. That is the one
@@ -618,13 +621,13 @@ reproduction. Each with the named mutation.
 
 ---
 
-### Stage 10 — `regression/` (890 + 200 lines)
+### Stage 7 — `regression/` (890 + 200 lines)
 
 `least_squares.{hpp,cpp}` (490), `eos_observable.cpp` (150),
 `equilibrium_observable.cpp` (250), `regression.py` (200).
 
 This is #192: `fit(model, observations)` with covariance, no owner compilation. Ceres
-kernel, `ResidualBlock`, `PredictionCache`. The saturation continuation from Stage 7 is
+kernel, `ResidualBlock`, `PredictionCache`. The saturation continuation from Stage 6 is
 what makes a parameter fit affordable: 140,562 recordings for a three-parameter
 saturation fit today, because each of 26 residual evaluations is a cold 21-start solve.
 
@@ -634,7 +637,7 @@ in **≤ 400 ms** (today 11,705) at **≤ 200 recordings** (today 140,562).
 
 ---
 
-### Stage 11 — `phase_stability.cpp` (1,100 lines, range 950–1,300)
+### Stage 8 — `phase_stability.cpp` (1,100 lines, range 950–1,300)
 
 `phase_stability.hpp` (150), `phase_stability.cpp` (1,100). This is #188, and the
 findings in `held2-stage-i-ii-findings.md` are its specification. Written to Pereira 2012
@@ -691,7 +694,7 @@ gate claim.
 
 ---
 
-### Stage 12 — Composite gate and merge
+### Stage 9 — Composite gate and merge
 
 The reactive case, which touches every layer, is the last gate — it is the one problem
 that exercises finite electrolyte liquid, incipient neutral vapour, two reactions, and a
@@ -778,7 +781,7 @@ when Stage 4 lands.
 model reproduced*: PC-SAFT, MEA–H₂O, no electrolyte, its own reported AAD, and therefore a
 pass/fail gate — a fact about the world. The living bundle is the *model under development*:
 nine species with electrolyte and reactions, currently 2.26× off in rmse-factor on pCO₂, so
-its deviations are reported and never asserted. Baygi gates the binary boundary rows at Stage 9;
+its deviations are reported and never asserted. Baygi gates the binary boundary rows at Stage 6;
 the bundle is what every reactive case is evaluated with.
 
 ## Order of the performance work, corrected
@@ -788,9 +791,9 @@ above, in the order the levers actually matter:
 
 1. Hessian count per evaluation, `(S+1)` → 1, plus site elimination — Stage 3, ~10×.
 2. Tapes per counted evaluation, ~10 → 1, by one state evaluation per Ipopt iteration —
-   Stage 8, 5–10× on the reactive solve, no derivative code involved.
-3. Evaluation count in discovery, 4,631 → ≤150 — Stage 11, 30–100×.
-4. Evaluation count in saturation, 5,422 → ≤25, and continuation in fits — Stage 7.
+   Stage 6, 5–10× on the reactive solve, no derivative code involved.
+3. Evaluation count in discovery, 4,631 → ≤150 — Stage 8, 30–100×.
+4. Evaluation count in saturation, 5,422 → ≤25, and continuation in fits — Stage 6.
 5. Recording — Stage 3, ≤10%.
 6. Python marshalling, `Mixture.state` only, 590 µs per call — Stage 4.
 
@@ -815,10 +818,10 @@ bibliography, where Christoph Held is a parameter source (`Ji2012`, `Figiel2025`
   Falsifiable at Stage 3's gate, before anything depends on it.
 - **The ~10 tapes per evaluation.** Inferred from 1,759 recordings / 183 evaluations. If
   the extra tapes are distinct states (line search, vapour closure) rather than
-  re-evaluations of one, Stage 8's 5–10× shrinks to 2–3×. Instrument the callback
-  sequence at Stage 8 before relying on it.
+  re-evaluations of one, Stage 6's 5–10× shrinks to 2–3×. Instrument the callback
+  sequence at Stage 6 before relying on it.
 - **The reduced start set.** If 40–150 evaluations cannot decide a binary, or the eight
-  LLE feeds find the wrong phase count from a fixed start list, Stage 11 keeps DIRECT-L
+  LLE feeds find the wrong phase count from a fixed start list, Stage 8 keeps DIRECT-L
   (+80 lines for the NLopt adapter) and its budget becomes a named, justified stop rather
   than an accident.
 - **`stoichiometry.cpp`'s standard-state transform** reads EOS reference quantities

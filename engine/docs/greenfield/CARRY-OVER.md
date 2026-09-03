@@ -92,7 +92,7 @@ Carried, as the acceptance contract rather than as test code:
 
 `reactive_equilibrium_reachability` (2 rows) is not a target — it is a record that both
 downstream repositories cannot construct a model against `main` at all. It is the
-evidence for Stage 12, not a gate.
+evidence for Stage 9, not a gate.
 
 One synthetic fixture carries: the associating binary, which is Baygi & Pahlavanzadeh
 2015's MEA–water model and already lives in `tests/native/model_support.hpp`. The
@@ -108,7 +108,7 @@ no route-specific or downstream-specific gates or flags.
 `data/packets/`, `analyses/`, `docs/scientific/adr/`, `docs/latex/`,
 `equations_registry.yaml`, `scripts/docs/sync_bibliography.py`, `scripts/docs/
 sync_equation_registry.py`, and the Zotero export path are not part of the transfer.
-`analyses/` is migrated at Stage 12 when the field names change.
+`analyses/` is migrated at Stage 9 when the field names change.
 
 ## 7. Two branches to land before their stage
 
@@ -123,5 +123,5 @@ sync_equation_registry.py`, and the Zotero export path are not part of the trans
 
 The saturation-continuation change (`eos_regression_evaluator.cpp`, fit 3,509 ms → 330 ms
 with identical fitted parameters `[2.001999999999, 3.618400000002]`) is on the same perf
-work; it does not carry as code — Stage 7 writes continuation into `phase_boundary.cpp` —
+work; it does not carry as code — Stage 6 writes continuation into `phase_boundary.cpp` —
 but it carries as the evidence that the 21-start grid is unnecessary.

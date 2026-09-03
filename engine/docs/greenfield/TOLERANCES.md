@@ -163,7 +163,7 @@ rejection restated as a floor. Report `residual, tolerance, floor, amplification
 1/|dr/dρ|`. If `floor > tolerance`, the root test cannot be met and the stop is
 `converged_to_floor` (§5), not "did not converge".
 
-### 3.4 One equilibrium driver on one assembly (Stages 7, 8, 9)
+### 3.4 One equilibrium driver on one assembly (Stages 6, 8, 9)
 
 `SPECIFICATION-SPACE.md` §2.4 fixes the shape: one row assembly `F(y; spec)` with its
 exact Jacobian `F_y` (Stage 6, `request_compile.cpp`), consumed by one Ipopt `TNLP` whose
@@ -200,7 +200,7 @@ factors applied to the floor; if scaling is ever enabled, divide the floor by th
 
 The floor on dual infeasibility is the running maximum of `gradient_floor` over the
 evaluations Ipopt made (one `std::max` per evaluation, inside the one-state-per-iteration
-cache Stage 8 already plans). The floor on primal infeasibility is roundoff on the linear
+cache Stage 6 already plans). The floor on primal infeasibility is roundoff on the linear
 conservation and charge rows, `ε_mach · C · n_tot`, which is why a gate of `1e-10` on those
 rows is safe: it sits five decades above the floor.
 
@@ -217,7 +217,7 @@ amplification of the achieved residual into the *solution's* error, which is the
 the next layer up needs (§3.5). The dimension is `C·Π + rows`, twenty-ish; one dense SVD
 at the solution costs microseconds and runs once per solve.
 
-### 3.5 Regression (Stage 10, Ceres)
+### 3.5 Regression (Stage 7, Ceres)
 
 The outer here is a least-squares fit over solved equilibria. Its inner solve is
 the one Ipopt driver in whichever configuration the observation's specification compiles
@@ -247,7 +247,7 @@ is capped at that value. It does not enter any stopping test.
 
 *Derived:* per Helmholtz Hessian one `w × S` row-sum norm; per density root two
 multiplications; per assembly one `max` over rows; per driver iteration one `max`; per
-solve one small SVD that Stage 7 needs regardless. No new evaluations, no new sweeps, no
+solve one small SVD that Stage 6 needs regardless. No new evaluations, no new sweeps, no
 new allocations beyond three doubles per result. *Guessed:* under one percent of any
 solve's wall time; to be read off `model_floor.cpp` when the gradient floor lands.
 
@@ -383,7 +383,7 @@ whole design: the old tree's eighteen successful closures were this outcome, mis
 as a failure with no number attached. It is not a pass on a test row: `TESTING.md` gates
 compare against measured data or closed forms with their own tolerances, and a gate
 constructed as `derived(...)` below the floor tests the floor rather than the equations,
-which is exactly what TRANSFER.md's Stage 7 and 8 gates were rewritten to avoid.
+which is exactly what TRANSFER.md's Stage 6 and 8 gates were rewritten to avoid.
 
 One outcome is deliberately **not** a stop: a declared phase set that converges to fewer
 phases than declared, or to two coincident phases. That iterate has met its tolerance;
@@ -404,10 +404,10 @@ phases are not the ones asked for, which is the trivial solution reported as an 
 | single-phase flash ↔ density root (S13) | separate solvers | the pressure row *is* the density equation at `Π = 1` | agreement tested within the larger of the two `max(tolerance, floor)`; a bare number here would test the floor |
 | either driver → implicit sensitivity → regression | owner compilation | survives; the inner is the one Ipopt driver in its feasibility configuration for every saturation and boundary observation | `floor_fit = Σ_obs ‖∂obs/∂u‖ κ_sys · residual` (§3.5) |
 | infinite-dilution reference → `g°` → minimizer | four fixed-P scans | survives | a bias, `5e-5` on `ln φ^∞`; reported, never a floor (§3.6) |
-| stability inner minimizations → dual bound loop | HELD2 stages I–II | survives at Stage 11 | inner is §3.4; the gap test `ε_b = 1e-2` sits eight decades above any floor and needs no relation |
+| stability inner minimizations → dual bound loop | HELD2 stages I–II | survives at Stage 8 | inner is §3.4; the gap test `ε_b = 1e-2` sits eight decades above any floor and needs no relation |
 | Ipopt's own linear solves → its KKT test | Ipopt-internal | unchanged | same norm, same variables: Ipopt's iterative refinement owns it |
 
-The first row is a design commitment for Stages 7 and 9 and the reason the instance
+The first row is a design commitment for Stage 6 and the reason the instance
 disappears. Under `SPECIFICATION-SPACE.md` §2 a pinned phase keeps its composition and
 volume as unknowns and loses only its amount; `P` (or `T`) is freed to pay for the pin;
 the chemical-potential and pressure rows of every phase are rows of one system; and that

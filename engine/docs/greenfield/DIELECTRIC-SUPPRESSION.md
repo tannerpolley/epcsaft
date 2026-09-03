@@ -74,7 +74,7 @@ activity coefficient against the digitized literature of Figiel Figure 5, `m ≤
 **Physically correct per-ion coefficients make the fit worse on every salt.** That is the
 expected outcome of §2 and is evidence for it, not against per-ion support: the diameters
 are absorbing the difference. Using Zuber's values properly means re-regressing the Born
-diameters against them, which is Stage 10's kind of work, on Stage 10's machinery.
+diameters against them, which is Stage 7's kind of work, on Stage 7's machinery.
 
 ## 4. The mechanism, and the direction of the error
 
@@ -158,4 +158,4 @@ Two things follow for the briefs, neither of which is a change to Stage 4:
    of the deviation must not be constant across the range, or the highest-molality row must
    be within its own bound.
 2. Per-ion suppression is data plus a re-regression, not a substitution. The packet is in the
-   tree; the fit that would make it usable belongs to Stage 10.
+   tree; the fit that would make it usable belongs to Stage 7.

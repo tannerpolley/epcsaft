@@ -232,7 +232,7 @@ Two judgement calls worth recording, both **kept**:
 
 - `equilibrium/research/…-mitsos-barton-perdomo-held2-duality-crosswalk.md` names HELD2 in
   its title but its content is a page-by-page theorem audit of two primary sources with
-  `[Fact]` markers. That is live science for Stage 11, not a specification.
+  `[Fact]` markers. That is live science for Stage 8, not a specification.
 - `equilibrium/research/…-carbonate-provider-parameter-sources.md` names the retired
   Provider, but its decision is *which species and which sources* — that no
   source-complete ePC-SAFT parameters exist for two calcium complexes is a fact about the
@@ -241,7 +241,7 @@ Two judgement calls worth recording, both **kept**:
 
 `equilibrium/reactive-bubble-observations.md` was the sharpest deletion: it specifies a
 bubble owner solving `g(q,P,θ) = 0` as an outer Newton over pressure around a separately
-certified liquid — precisely the nested coupling `TOLERANCES.md` §6 names as what Stage 9
+certified liquid — precisely the nested coupling `TOLERANCES.md` §6 names as what Stage 6
 must not reproduce. A future agent finding it in the tree would read it as the design.
 
 Deletion in a versioned tree destroys nothing, which is why the caution about "the only

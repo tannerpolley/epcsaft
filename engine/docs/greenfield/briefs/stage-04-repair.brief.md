@@ -371,5 +371,5 @@ matching `lithium-cation/sodium-cation` and `exclude-same-sign-ion-pairs`.
   separate policy decision on `DENSITY_BRACKET_INTERVALS` with its own measurement.
 - The `k_hb_ij` cross-association correction (`cross_association_energy_correction`, registered,
   no successor) stays unsupported; no packet carries the family as a coefficient.
-- Per-ion Zuber suppression coefficients are Stage 10's re-regression
+- Per-ion Zuber suppression coefficients are Stage 7's re-regression
   (`DIELECTRIC-SUPPRESSION.md` §3).

@@ -257,7 +257,7 @@ Eight exports in `__init__.py`: `Parameters`, `ParameterError`, `EosError`, `Pur
 `Mixture`, `State`, `Reference`, `Activity`. `State = _core.State`,
 `Activity = _core.ElectrolyteActivity`, `ParameterError = _core.ParameterError`,
 `EosError = _core.EosError` — re-exports, not wrappers. TRANSFER's "eleven" is a cap:
-`Saturation` (Stage 5) and `ActiveParameter` (Stage 7) arrive with the stages that consume
+`Saturation` (Stage 5) and `ActiveParameter` (Stage 6) arrive with the stages that consume
 them; `Derivatives` has no Python consumer and is not exposed.
 
 **`parameters.py`.**
@@ -334,7 +334,7 @@ object; and
 `src/epcsaft`. It must contain `def state_at_pressure(`.
 
 Not written: `units.py` (deleted), `Parameters.select`, `to_mapping`, `with_values`,
-`ActiveParameter`, `parameter_hash` (Stage 7 is its first consumer), `Pure.saturation`
+`ActiveParameter`, `parameter_hash` (Stage 6 is its first consumer), `Pure.saturation`
 (Stage 5), domain validation, `transfer_to`, solvation free energy, `Activity.mole_fractions`,
 any `__eq__`/`__hash__`/fingerprint on `Parameters`.
 
