@@ -63,7 +63,7 @@ written against.
 |---|---|---|
 | `units.py` | `units.py` | 86 → 80, carried |
 | `__init__.py` | `__init__.py` | 85 → 60, rewritten to 11 exports |
-| `equilibrium/loader.py` | `equilibrium/_feed.py` (364) + parts of `_grepe_io.py` (956) | → 250. The mass-fraction and molality feed mapping is real work worth keeping; the request-family branching around it is not. |
+| `equilibrium/loader.py` | `equilibrium/_feed.py` (364) + parts of `_grepe_io.py` (956) | → 120. The mapping from a document to a `Problem` is worth keeping; the mass-fraction and molality *arithmetic* moves native into `request_compile.cpp` (Python does no arithmetic), and the request-family branching is not written. |
 
 No successor: `_grepe.py` (2,770), `_api.py` (2,423), `eos.py` (2,412), `_dictionary_io.py`
 (1,839), `records.py` (1,171), `_resolve.py` (1,165), `_grepe_io.py` (the rest),

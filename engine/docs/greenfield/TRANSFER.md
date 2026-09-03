@@ -485,7 +485,7 @@ its `EqID`s, takes the rank, and either returns a `CompiledSystem` or throws nam
 deficiency.
 
 **Gate:** the compile-tier lattice of `SPECIFICATION-SPACE.md` §4.1, walked exhaustively —
-about 3,200 specifications from four enums, none sampled. C1 count rule against a predictor
+several thousand specifications from four enums, none sampled. C1 count rule against a predictor
 built from the specification alone; C2 every unreachable cell rejected by a message naming
 the offending phase, reaction or species; C3 nullity 0 on every square cell and ≥ 1 where
 all phases are pinned; C4 feed-basis invariance across four bases to 1e-12; C5
@@ -500,7 +500,9 @@ an electrolyte flash compiles with nullity 0. Each with the named mutation from 
 `phase_boundary.cpp` (300) opens with its one-component rows; `implicit_sensitivity.cpp`
 (250) lands with it.
 
-Saturation is not a file and not a route. `solve_saturation` is the `C = 1`, `k = 1`,
+Saturation is not a file, not a route, and not an identifier: `saturation` is a rule-7
+case token, so nothing under `native/` is named after it and only Python's
+`Pure.saturation` carries the word. Pure saturation is the `C = 1`, `k = 1`,
 `f = 1` call of `solve_phase_boundary`: one phase pinned at zero amount, `P` free, over the
 rows Stage 6 compiled. `Pure.saturation` in Python calls that binding. The three Newton
 systems in the old tree (`density.hpp`, `pure_saturation.cpp`, `incipient_closure` +

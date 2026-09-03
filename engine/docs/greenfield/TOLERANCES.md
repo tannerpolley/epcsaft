@@ -9,6 +9,13 @@ Evidence classes used throughout: **measured** (read from a file or a run), **de
 (follows from the equations or the code by an argument given here), **guessed** (a number
 or claim with no evidence yet; each one is marked).
 
+Revised 2026-09-02 against `SPECIFICATION-SPACE.md` and the twelve-stage order: the
+boundary driver is a Newton on the compiled rows, not Ipopt (§3.4); `Convergence` and
+`Stop` live in the policy header, not in `equilibrium/` (§3.8); `derived()` needs
+`constexpr` entries (§4); the mechanism is stated for the neutral and the electrolyte model
+at once (§3.9). Nothing in §2–§6 is derived from the superseded tree; that tree appears
+only in §1 as the measured failure and in Appendix A as the place the failure still runs.
+
 ## 1. The failure, in one sentence
 
 In the tree this replaces, an outer Newton on the bubble pressure tests
@@ -133,8 +140,11 @@ so the gradient's floor at this point is
     floor_grad = ‖ Φ_yX · Φ_XX^{-1} · diag(n_tot m_a / X_a) ‖∞ · ASSOCIATION_RESIDUAL
 
 `Φ_yX` is `cross` and `Φ_XX^{-1}` is `factorization` in
-`helmholtz_model.cpp:415-450`; the product `factorization.solve(cross)` is already formed
-for the Schur complement. One more row-sum norm of a `w × S` matrix, `O(wS)` flops against
+`helmholtz_model.cpp:419-451`; the product `factorization.solve(cross)` is already formed
+for the Schur complement. The equilibrium assembly evaluates every phase's tape at unit
+amount (`SPECIFICATION-SPACE.md` §2.2), so there `n_tot = 1` and the floor is intensive,
+one per phase per iteration; a pinned phase's floor is as real as a free one's, because
+its chemical-potential rows are evaluated at the same point. One more row-sum norm of a `w × S` matrix, `O(wS)` flops against
 `1 + 2w` tape sweeps: unmeasurable. Add `double gradient_floor` to `HelmholtzDerivatives`,
 set on `Hessian` and `PressureSlope` orders (for the latter only the `V` row of `cross` is
 in hand, which is exactly the row the density root needs).
@@ -152,13 +162,38 @@ rejection restated as a floor. Report `residual, tolerance, floor, amplification
 1/|dr/dρ|`. If `floor > tolerance`, the root test cannot be met and the stop is
 `converged_to_floor` (§5), not "did not converge".
 
-### 3.4 Gibbs minimizer (equilibrium, Stage 8)
+### 3.4 The two equilibrium drivers on one assembly (Stages 7, 8, 9)
 
-Ipopt tests the scaled NLP error against `tol` and the unscaled parts against
-`dual_inf_tol`, `constr_viol_tol`, `compl_inf_tol`
-(https://coin-or.github.io/Ipopt/OPTIONS.html). Keep `nlp_scaling_method = none` as the
-old tree did, so the reported infeasibilities are in the units the floor is computed in;
-if scaling is ever enabled, divide the floor by the same factors.
+`SPECIFICATION-SPACE.md` §2.4 fixes the shape: one row assembly `F(y; spec)` with its
+exact Jacobian `F_y` (Stage 6, `request_compile.cpp`), consumed by a damped Newton for
+`k ≥ 1` (saturation at Stage 7, every boundary at Stage 9) and by Ipopt for `k = 0` (the
+flash, Stage 8). The floor is a property of the *assembly*, computed once per iteration
+and read by whichever driver is running:
+
+- **chemical-potential rows** of phase `p`: that phase's `gradient_floor` (§3.2), at unit
+  amount;
+- **pressure-equality rows**: `V_p · floor_grad[V]` of that phase, as in §3.3;
+- **material-balance, charge and normalisation rows**: linear in the unknowns; roundoff
+  only, `ε_mach · Σ_p N_p` or `ε_mach · C`.
+
+The assembly returns the floor as one number, the maximum over rows, beside `F` and
+`F_y`. Per-row floors cost nothing more but S1 tests the ∞-norm, so one number is what a
+result carries.
+
+**The boundary Newton (`k ≥ 1`).** `residual = ‖F‖∞`, `tolerance` the policy entry,
+`floor` from the assembly, `amplification = κ(F_y)` from the LU the step already takes
+(the pivot ratio, as in §3.1; `implicit_sensitivity.cpp` inverts the same matrix and can
+report the exact smallest singular value at the solution). Classification is §5 directly:
+this driver owns its loop, so the stall window and the budget are its own counters and no
+post-hoc reading of a foreign status is needed. This is the driver the first equilibrium
+stage runs, and the regression fit's inner solve (§3.5), so it is the one the tolerance
+core must serve before Ipopt exists.
+
+**Ipopt (`k = 0`).** Ipopt tests the scaled NLP error against `tol` and the unscaled parts
+against `dual_inf_tol`, `constr_viol_tol`, `compl_inf_tol`
+(https://coin-or.github.io/Ipopt/OPTIONS.html). Set `nlp_scaling_method = none`, because
+the floor is computed in the assembly's own units and a scaled test would need the same
+factors applied to the floor; if scaling is ever enabled, divide the floor by them.
 
 The floor on dual infeasibility is the running maximum of `gradient_floor` over the
 evaluations Ipopt made (one `std::max` per evaluation, inside the one-state-per-iteration
@@ -173,21 +208,27 @@ classify against the floor (§5). On `Solve_Succeeded`, still report the floor: 
 that met `1e-10` with a floor of `9e-11` is one whose next point may not, and a sweep
 should see it coming.
 
-At the solution, `implicit_sensitivity.cpp` factorises the KKT matrix anyway; its smallest
-singular value gives `κ_KKT`, the amplification of `inf_du` into the *solution's* error,
-which is the floor the next layer up needs (§3.5). The old tree computed exactly this at
-`reactive_finite_phase.cpp:2044-2063` and then did nothing with it beyond a
-`condition_number_inf` field. The dimension is `C·Π + rows`, twenty-ish; one dense SVD at
-the solution costs microseconds and runs once per solve.
+At the solution, `implicit_sensitivity.cpp` factorises `F_y` (the KKT matrix for `k = 0`,
+the boundary Jacobian for `k ≥ 1`) anyway; its smallest singular value gives `κ_sys`, the
+amplification of the achieved residual into the *solution's* error, which is the floor
+the next layer up needs (§3.5). The dimension is `C·Π + rows`, twenty-ish; one dense SVD
+at the solution costs microseconds and runs once per solve.
 
 ### 3.5 Regression (Stage 10, Ceres)
 
-The outer here is a least-squares fit over solved equilibria; each residual is an
-observable of a solution with error `κ_KKT · inf_du`, mapped through `∂obs/∂u`, and the
-Jacobian comes through the same implicit sensitivity. Ceres has no floor hook either, so
-the same post-hoc rule applies: the fit's gradient norm at termination is compared with the
-sum over observations of `‖∂obs/∂u‖ · κ_KKT · inf_du`, and `function_tolerance` /
-`gradient_tolerance` are `derived()` from `MINIMIZER_TOLERANCE` with that structure (§4).
+The outer here is a least-squares fit over solved equilibria. Its inner solve is
+whichever driver the observation's specification compiles to: the boundary Newton for
+every saturation and bubble-point observation, Ipopt for a flash observation. Each
+residual is an observable of a solution with error `κ_sys · residual` read from that
+solve's own `Convergence` record, mapped through `∂obs/∂u`, and the Jacobian comes
+through the same implicit sensitivity. Ceres has no floor hook either, so the same
+post-hoc rule applies: the fit's gradient norm at termination is compared with the sum
+over observations of `‖∂obs/∂u‖ · κ_sys · residual`, and `function_tolerance` /
+`gradient_tolerance` are `derived()` from the driver's convergence entry with that
+structure (§4). Because a pure fit and a mixture fit share one assembly and one policy
+entry (`TRANSFER.md` §"Saturation is equilibrium, fully"), they share one floor, and a
+parameter set that converges cleanly at `C = 1` and sits at its floor at `C = 2` says so
+in the fit result rather than in a silent difference between two solvers.
 Ceres's defaults (`1e-6`, `1e-10`, `1e-8`) are loose relative to the minimizer's floor in
 the cases measured so far, so this is expected to classify as `converged` and the value
 of doing it is that the fit result *says so* with numbers rather than by silence.
@@ -202,27 +243,54 @@ is capped at that value. It does not enter any stopping test.
 ### 3.7 What this costs
 
 *Derived:* per Helmholtz Hessian one `w × S` row-sum norm; per density root two
-multiplications; per minimizer iteration one `max`; per minimizer solve one small SVD that
-Stage 7 needs regardless. No new evaluations, no new sweeps, no new allocations beyond
-three doubles per result. *Guessed:* under one percent of any solve's wall time; to be
-read off `model_floor.cpp` when the gradient floor lands.
+multiplications; per assembly one `max` over rows; per driver iteration one `max`; per
+solve one small SVD that Stage 7 needs regardless. No new evaluations, no new sweeps, no
+new allocations beyond three doubles per result. *Guessed:* under one percent of any
+solve's wall time; to be read off `model_floor.cpp` when the gradient floor lands.
 
 ### 3.8 Where it lives
 
-| layer | file | adds |
-|---|---|---|
-| physics | `numerical_policy.hpp` | `derived()` (§4), `FLOOR_MARGIN`, `STALL_WINDOW` |
-| physics | `association.hpp` | returns the pivot ratio it already computes |
-| model | `helmholtz_model.hpp` | `HelmholtzDerivatives::gradient_floor` |
-| model | `density.cpp` | `DensityRoot::convergence` |
-| equilibrium | `problem.hpp` | `Convergence`, `Stop`, on `EquilibriumResult` |
-| equilibrium | `gibbs_minimizer.cpp` | the running max, the classification |
-| equilibrium | `implicit_sensitivity.cpp` | `κ_KKT` from the factorisation it owns |
-| regression | `least_squares.cpp` | the aggregate floor, the classification |
+`Convergence` and `Stop` are consumed first by `DensityRoot` in `model/` at Stage 5, and
+`physics` is the only layer everything may include, so they are defined in the policy
+header beside the tolerances they report on. `problem.hpp` carries one, it does not
+define one.
 
-Nothing is a new type of thing: `Convergence` is the `resolved_policy` field the old tree
-already put on every result, reduced from a name-value list to the three numbers that
-matter, and given a fourth that was missing: the measured amplification.
+| layer | file | stage | adds |
+|---|---|---|---|
+| physics | `numerical_policy.hpp` | 5 | `Convergence`, `Stop`, `derived()` (§4), `FLOOR_MARGIN`, `STALL_WINDOW` |
+| physics | `association.hpp` | 5 | returns the pivot ratio it already computes |
+| model | `helmholtz_model.hpp` | 5 | `HelmholtzDerivatives::gradient_floor` |
+| model | `density.cpp` | 5 | `DensityRoot::convergence` |
+| equilibrium | `request_compile.cpp` | 6 | the assembly's floor: max over rows of the per-phase floors and the linear rows' roundoff |
+| equilibrium | `phase_boundary.cpp` | 7, 9 | the Newton's `Convergence`; `κ(F_y)` from its LU; the classification |
+| equilibrium | `implicit_sensitivity.cpp` | 7 | `κ_sys` from the factorisation it owns |
+| equilibrium | `gibbs_minimizer.cpp` | 8 | the running max over Ipopt's evaluations; the post-hoc classification |
+| regression | `least_squares.cpp` | 10 | the aggregate floor, the classification |
+
+No structure here is carried from the superseded tree. Its results had a name–value list
+of the tolerances in force and a condition number nothing read; neither is copied, and the
+record above is written from §2, not from either.
+
+### 3.9 One model, both parameterisations
+
+There is one Helmholtz model; the neutral and the electrolyte cases are one code path with
+terms switched by the parameter record (`STAGE-LOG.md`, Stage 2: one permittivity
+equation, four forms). The floor depends only on which *inner solves* exist, and the
+electrolyte terms add none: Debye–Hückel, Born and every permittivity form are closed
+forms on the tape. So:
+
+- **Neutral, non-associating** (`S = 0`): `gradient_floor` is zero and every floor is
+  roundoff. `Convergence` still carries the four numbers; they are small.
+- **Neutral, associating**: §3.2 in full.
+- **Electrolyte**: §3.2 unchanged, plus three things that are not floors and must not be
+  mistaken for them. The charge rows are linear (roundoff, §3.4). The finite-size series
+  switch (`SCREENING_SERIES_SWITCH`) is a recording-time predicate: both forms are exact
+  and the value is continuous across it to the cancellation floor, so a re-record inside
+  one solve moves the residual by roundoff, not by a tolerance. The infinite-dilution
+  reference is a bias (§3.6), and it is the electrolyte case's only bias.
+
+The mechanism is therefore parameter-set-agnostic by construction, which is the same
+property the checker's rule 7 demands of the solvers: nothing in it names a system kind.
 
 ## 4. The static guard, sized honestly
 
@@ -234,6 +302,20 @@ consteval Tolerance derived(const Tolerance& upstream, double factor, const char
     return {upstream.value * factor, Category::AlgorithmTolerance, why};
 }
 ```
+
+Two conditions on the header for this to compile, both cheap and both Stage 5's:
+
+- **The entries become `inline constexpr`.** Today all 27 are `inline const`
+  (*measured*), which is not a constant expression, and a `consteval` call on one is
+  ill-formed. `Tolerance` is already a literal type. Checker rule 5 then sees every entry
+  by name; the names are unique, so it stays green, and it now also refuses a second
+  definition of any tolerance, which is the drift rule 5 was written for.
+- **One `derived()`, two callers.** `TRANSFER.md` §"Oracle" uses the same name for the
+  closeness constructor a brief builds from a parameter set's reported deviation. It is
+  the same function: the brief constructs the upstream `Tolerance` from the source's
+  deviation with that source as `source`, and `derived()` refuses to test the engine
+  tighter than the parameter set was ever claimed to be. One name, one meaning: a
+  tolerance that cannot be tighter than what feeds it.
 
 What it catches, and did catch in the old tree's shape:
 
@@ -312,23 +394,26 @@ phases are not the ones asked for, which is the trivial solution reported as an 
 
 | coupling | old tree | greenfield | relation |
 |---|---|---|---|
-| bubble pressure ↔ liquid + vapour solves | outer Newton over `P` around two inner solves; the failure of §1 | **gone**: `ln P` (or `T`) and the incipient composition are variables of the one KKT system, its equality rows are the boundary rows; one Newton, one tolerance | none to state; the instance no longer exists |
-| association sites → tape → minimizer | `2e-13` under `(S+1)` Hessians, no accounting | survives | `floor_du = max_k ‖Φ_yX Φ_XX^{-1} D‖∞ · 2e-13`; measured per evaluation (§3.2) |
-| association → density root | as above under the 360-interval scan | survives for `state_at_pressure`, the reference ladder, and seeds | `floor_r = V · floor_grad[V]`; `κ = 1/|dr/dρ|` (§3.3) |
-| minimizer solution → phase-boundary continuation seed | 21-start grid | survives as a seed only | a seed carries no tolerance; nothing to relate |
-| minimizer → implicit sensitivity → regression | owner compilation | survives | `floor_fit = Σ_obs ‖∂obs/∂u‖ κ_KKT · inf_du` (§3.5) |
+| bubble pressure ↔ liquid + vapour solves | outer Newton over `P` around two inner solves; the failure of §1 | **gone**: `P` (or `T`) and the pinned phase's composition are unknowns of the one compiled row system (`k = f = 1`), solved by the boundary Newton on the whole system at once; one residual, one tolerance | none to state; the instance no longer exists |
+| association sites → tape → either driver | `2e-13` under `(S+1)` Hessians, no accounting | survives, for the flash (Ipopt) and every boundary and saturation (Newton) alike | `floor = max over phases and rows` of §3.4; `‖Φ_yX Φ_XX^{-1} D‖∞ · 2e-13` per phase (§3.2) |
+| association → density root | as above under the 360-interval scan | survives for `state_at_pressure`, the reference ladder, and the `C = 1` seed's root count | `floor_r = V · floor_grad[V]`; `κ = 1/|dr/dρ|` (§3.3) |
+| flash solution or previous boundary point → boundary seed | 21-start grid | survives as a seed only | a seed carries no tolerance; nothing to relate |
+| single-phase flash ↔ density root (S13) | separate solvers | the pressure row *is* the density equation at `Π = 1` | agreement tested within the larger of the two `max(tolerance, floor)`; a bare number here would test the floor |
+| either driver → implicit sensitivity → regression | owner compilation | survives; the inner is the Newton for every saturation and boundary observation | `floor_fit = Σ_obs ‖∂obs/∂u‖ κ_sys · residual` (§3.5) |
 | infinite-dilution reference → `g°` → minimizer | four fixed-P scans | survives | a bias, `5e-5` on `ln φ^∞`; reported, never a floor (§3.6) |
 | stability inner minimizations → dual bound loop | HELD2 stages I–II | survives at Stage 11 | inner is §3.4; the gap test `ε_b = 1e-2` sits eight decades above any floor and needs no relation |
 | Ipopt's own linear solves → its KKT test | Ipopt-internal | unchanged | same norm, same variables: Ipopt's iterative refinement owns it |
 
-The first row is a design commitment for Stage 9 and the reason the instance disappears:
-an incipient phase has no amount variable, so it is not a phase of the minimizer, but its
-composition and the unknown `P` are ordinary variables and `μ_i^inc(T, P, y) - μ_i^L = 0`,
-`Σ y = 1` are ordinary equality rows. If Stage 9's brief instead writes an outer Newton over
-`P` around `solve_equilibrium`, the coupling returns with the old tree's floor, and the
-brief must then carry §3.4's floor through it. Prefer the rows. teqp makes the same move
-for its VLE by taking density as a variable of the outer system rather than an inner
-solve, and has no density-loop coupling to report.
+The first row is a design commitment for Stages 7 and 9 and the reason the instance
+disappears. Under `SPECIFICATION-SPACE.md` §2 a pinned phase keeps its composition and
+volume as unknowns and loses only its amount; `P` (or `T`) is freed to pay for the pin;
+the chemical-potential and pressure rows of every phase are rows of one system; and that
+system is solved *as one system* by a damped Newton, never as a minimisation and never as
+an outer loop over `P` around `solve_equilibrium`. If a brief writes the outer loop, the
+coupling returns with the old tree's floor, and the brief must then carry §3.4's floor
+through it. Prefer the rows. teqp makes the same move for its VLE by taking density as a
+variable of the outer system rather than an inner solve, and has no density-loop coupling
+to report.
 
 ## 7. Prior art, surveyed
 
@@ -361,12 +446,34 @@ Eisenstat–Walker for the runtime linkage and SUNDIALS for the same-norm static
 The brief's prior was right. The static guard is a copy; the runtime floor is a
 contribution.
 
-## 8. On the old tree, now
+## 8. Where the brief's framing was wrong, and where it was right
+
+- **Right:** runtime measurement is the mechanism, the static check is hygiene. §4 goes
+  one step further: the static declaration is a hypothesis the runtime tests, which is
+  what makes it worth keeping at all.
+- **Right:** "everyone hardcodes it" is the finding. §7.
+- **Incomplete:** "the inners sum, amplified" treats every inner as noise. Once-solved
+  inners are bias (§2), and the policy header already contains one (`5e-5`) that would
+  otherwise look like a contradiction beside `1e-10`.
+- **Understated:** the pressure coupling does not merely "disappear" as a consequence of
+  the KKT formulation; it disappears only if the boundary is written as rows of the one
+  compiled system and not as an outer Newton. §6 makes that a commitment rather than an
+  observation.
+- **Rejected:** any version of the mechanism that adapts the inner tolerance to the outer
+  progress (Eisenstat–Walker). Correct in its domain, wrong here: the inner solve is
+  already cheap at full accuracy, and adapting it would trade a measured floor for a
+  moving one.
+
+## Appendix A. The superseded tree: evidence, and a retention patch
+
+This appendix is the only part of the document that reads the superseded tree, and it
+reads it as the place where the measured failure of §1 still runs today. Nothing in it is
+a source for §2–§6, and nothing in it is to be carried.
 
 Values unchanged. Nothing below moves a tolerance. The order is forced: the residual is not
 recorded, so no experiment can be read until it is.
 
-### 8.1 Evidence retention on the failing path (do this first)
+### A.1 Evidence retention on the failing path (do this first)
 
 At `grepe.cpp:2295`, the eighteen-iteration loop, and `:2365-2368`, the bare failure.
 Keep the residual trajectory and the last state; the `evidence` vector on `GrepeResult`
@@ -396,7 +503,7 @@ the caller through `GrepeFailure::partial_result()`. Then re-run the 28 rows and
 three numbers per row: the final residual, the ratio of the last two residuals, and the
 liquid's KKT condition number.
 
-### 8.2 What the numbers will say
+### A.2 What the numbers will say
 
 *Derived, not yet measured:*
 
@@ -409,7 +516,7 @@ liquid's KKT condition number.
 - A condition number that is decades larger at 120 °C than at 40 °C explains the
   clustering without any further hypothesis. If it is not, the clustering needs one.
 
-### 8.3 Only after 8.2, and only if it plateaus
+### A.3 Only after A.2, and only if it plateaus
 
 The minimal reversible change is to *one* site, `grepe.cpp:2303`, and it is not a new
 tolerance: accept when `|residual| <= max(2.0e-10, margin · floor)` with `floor` the
@@ -424,27 +531,10 @@ converged. A row that converges because a tolerance moved has not converged; it 
 re-described. The floor and the residual on the result are what make the description
 honest.
 
-### 8.4 Out of scope here
+### A.4 Out of scope here
 
 The three 40 °C rows fail the liquid certificate
 (`reactive_finite_phase_certificate_failed`), which tests the *inner* solve against
 `kChemicalKktTolerance = 1e-7` and its siblings (`chemical_equilibrium.hpp:13-23`).
 Different mechanism, same shape: a certificate threshold with no relation to Ipopt's
 `1e-10`. Not this document's problem, and not to be touched with it.
-
-## 9. Where the brief's framing was wrong, and where it was right
-
-- **Right:** runtime measurement is the mechanism, the static check is hygiene. §4 goes
-  one step further: the static declaration is a hypothesis the runtime tests, which is
-  what makes it worth keeping at all.
-- **Right:** "everyone hardcodes it" is the finding. §7.
-- **Incomplete:** "the inners sum, amplified" treats every inner as noise. Once-solved
-  inners are bias (§2), and the policy header already contains one (`5e-5`) that would
-  otherwise look like a contradiction beside `1e-10`.
-- **Understated:** the pressure coupling does not merely "disappear" as a consequence of
-  the KKT formulation; it disappears only if Stage 9 writes the boundary as rows and
-  not as an outer Newton. §6 makes that a commitment rather than an observation.
-- **Rejected:** any version of the mechanism that adapts the inner tolerance to the outer
-  progress (Eisenstat–Walker). Correct in its domain, wrong here: the inner solve is
-  already cheap at full accuracy, and adapting it would trade a measured floor for a
-  moving one.

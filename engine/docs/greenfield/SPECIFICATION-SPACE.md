@@ -37,7 +37,7 @@ Per declared phase `p` with support `S_p`:
 | coordinate | meaning | status the specification may give it |
 |---|---|---|
 | `x_p` (as `ln x_{p,i}`, `i ∈ S_p`) | composition | always free |
-| `N_p` | phase amount, mol | **free**, or **pinned** to `β_p N_feed` (`β_p = 0` is an incipient phase) |
+| `N_p` | phase amount, mol | **free**, or **pinned** to `β_p N_feed`, where `N_feed` is the feed's total mole number as given — a specification, whether or not the reactions conserve total moles (`β_p = 0` is an incipient phase) |
 | `V_p` (as `ln η_p`) | phase volume | always free |
 
 System-wide: `T` and `P`, each **fixed** or **free**; feed `n_feed` (fixed, in any basis);
@@ -47,8 +47,8 @@ nullspace is the reaction span); charges `z`; standard-state offsets `g°`.
 This differs from `formulation.md` §2 in one place, and the difference is load-bearing.
 The formulation carries `ln n_{p,i}` per phase, and its §3 then needs a *second variable
 kind*, `x_inc`, for a phase of zero amount, because `ln 0` is not a coordinate. That second
-kind is where `TRANSFER.md` §"Stage 6 versus Stage 7" concludes that an incipient phase
-"cannot be a row of the minimizer". It is right about the coordinate and wrong about the
+kind is where `TOLERANCES.md` §6 concludes that an incipient phase is "not a phase of the
+minimizer". It is right about the coordinate and wrong about the
 formulation: with the phase amount `N_p` separated from composition, `n_{p,i} = N_p x_{p,i}`
 is a linear change of variables in log space (the tape does not care), and pinning `N_p`
 is a specification that removes a variable, not a limit that breaks one. **derived**
@@ -64,8 +64,8 @@ written **intensively** — the stationarity row in `n_{p,i}` divided by `N_p`:
 | chemical potential | `μ_{p,i}(T, V_p/N_p, x_p) − λ·B_i − z_i φ_p = 0`, `i ∈ S_p` | `Σ_p |S_p|` | `chemical_potential_stationarity` |
 | pressure equality | `−∂A_p/∂V_p − P = 0` | one per phase | `pressure_equality` |
 | material balance | `Σ_p N_p B x_p − B n_feed = 0` | `rank B` | `material_balance` |
-| electroneutrality | `z · x_p = 0` | one per ion-containing phase **beyond the first** | `phase_electroneutrality` |
-| normalisation | `Σ_i x_{p,i} − 1 = 0` | one per phase | `incipient_normalization` |
+| electroneutrality | `z · x_p = 0` | one per ion-containing phase **except one phase of nonzero amount**; all of them if every ion-containing phase is pinned at zero | `phase_electroneutrality` |
+| normalisation | `Σ_i x_{p,i} − 1 = 0` | one per phase | `phase_normalization` (new; see §6) |
 
 The normalisation row is active for **every** phase, so the coordinates `(N_p, x_p, V_p)`
 are the same for every phase and a pinned phase differs from a free one by exactly one
@@ -80,7 +80,9 @@ tape takes `(T, V, n)` extensively, and `V_p / N_p` is `0/0` for a pinned phase.
 assembly evaluates every phase's tape at **unit amount**: `n = x_p`, `V = v_p` (the molar
 volume, which `ln η_p` already is up to the packing coefficient), and multiplies extensive
 results by `N_p` afterwards. `μ`, `P` and `g` are homogeneous of degree zero and come out
-unchanged; `A_p`, `G` and the Hessian blocks scale by `N_p`. A pinned phase then
+unchanged; `A_p`, `G` and the Hessian blocks scale by `N_p` — in the `(N_p, x_p, v_p)`
+chart the assembly works in. A driver that works in extensive `(n_p, V_p)` coordinates
+sees the inverse scaling, and the driver states which chart it uses. A pinned phase then
 contributes `0 · (…)` to the balance and to `G`, its rows are evaluated at the same point
 as any other phase's, and no `ln 0` is ever formed. This is the one implementation
 decision the count rule depends on; an assembly that evaluates at `(T, V_p, N_p x_p)`
@@ -101,9 +103,16 @@ condition. Nothing is imposed twice. **derived**
 **Why one charge row fewer than the ion-containing phases.** The feed is neutral and
 every admitted reaction conserves charge, so the charge vector `z` lies in the row space
 of `B` and overall neutrality `Σ_p N_p z·x_p = 0` is already a consequence of the balance
-rows. With one ion-containing phase its neutrality follows; with `π_ch` such phases only
-`π_ch − 1` rows are independent, and their multipliers `φ_p` are the electrostatic
-potential differences between the phases, the first phase's potential being arbitrary.
+rows. With one ion-containing phase of nonzero amount its neutrality follows; with `π_ch`
+such phases only `π_ch − 1` rows are independent, and their multipliers `φ_p` are the
+electrostatic potential differences between the phases, the row-less phase's potential
+being arbitrary. **The row-less phase must have nonzero amount**: the balance sum weights
+each phase by `N_p`, so a phase pinned at zero drops out of it and its neutrality follows
+from nothing. The rule is therefore "every ion-containing phase except one of nonzero
+amount", and if every ion-containing phase is pinned, all of them carry the row. The
+three sources below treat finite-phase flashes only and are silent on this case;
+S1 asserts `|z·x_p|` within the floor for every ion-containing phase so that a wrong
+assignment is red at the solve tier.
 This is Tsanas et al. 2019 §2.2.1 and 2022 §2.4, and Ascani, Sadowski and Held 2022 eq. 5
 (`π − 1` rows "due to the electroneutrality of the whole system"). Writing one row per
 charged phase, as the first draft of this table did, adds a row that is a linear
@@ -127,8 +136,17 @@ exactly, so they drop out):
 
 The system is square **iff `f = k`**. Necessary, not sufficient: the rank of the active
 Jacobian at the start point is the sufficient check (§4.1), because a square system can
-still be singular by construction — all phases pinned, a redundant reaction, a redundant
-charge row. **derived**
+still be singular by construction — all phases pinned, a redundant reaction, a charge row
+written for a phase whose neutrality the balance already implies. **derived**
+
+One more condition is the phase rule in rank form, and it is what makes the fixed-`T`,`P`
+three-phase flash of a binary unreachable. `N_p` appears only in the balance rows, so the
+`Π − k` free-amount columns can be independent only if `Π − k ≤ rank B`: free phases at
+most the number of independent moieties. The `C = 1` `{V,L}` flash at fixed `T`, `P`
+(`2 > 1`) and the binary `{V,L,L}` flash (`3 > 2`) are square by the count and singular
+at every point; pinning a phase or freeing an intensive restores them (the three-phase
+point of §2.3 is `k = 2`). A reacting ternary with one reaction has `rank B = 2`, so its
+three-phase flash is unreachable too. Compile rejects these by name (§3.2). **derived**
 
 Read off the rule, with no route named anywhere:
 
@@ -158,8 +176,12 @@ constraints = balance, charge and normalisation rows, bounds on `ln η_p`, exact
 Hessian from the tape's `∂²A_p` per phase. A specification with `k ≥ 1` is **not** a
 minimisation — `G` is not minimised over `P`, and the pinned-multiplier condition is an
 equation, not an optimality condition — so it is a square Newton on the same rows with the
-same Jacobian. It cannot be an Ipopt NLP with zero objective either: Ipopt's Hessian of
-`Σ σ_i F_i` needs third derivatives of `A`, which the tape does not carry. **derived**
+same Jacobian. It is not posed as an Ipopt NLP with zero objective either: an
+exact-Hessian Ipopt on `F = 0` needs third derivatives of `A`, which the tape does not
+carry (**derived**), and a quasi-Newton Ipopt would run but is excluded by rule 8
+(**decided**). One consequence the Newton driver inherits and Stage 7 must commit to:
+it has no bound handling of its own, so an iterate leaving the domain is the `left_domain`
+stop of `TOLERANCES.md` §5, not an exception.
 
 So "one solver" means one row assembly `F(y; spec)` with its exact Jacobian `F_y`, consumed
 three ways: Ipopt's objective/constraint/Jacobian/Hessian callbacks are views of it; the
@@ -181,14 +203,16 @@ chemical-potential, two pressure-equality, one balance (`B = I₁`), two normali
 `N_L` the feed, the two chemical-potential rows together say `μ_V = μ_L`, and the two
 pressure rows say `P_V = P_L = P`: three equations of substance in `V_V, V_L, P`. That is
 pure saturation, reached with **no reaction span, no charge row, no stability, no phase
-count above two** — the active subset is exactly seven registered rows and no others,
-which is the evidence that a regression fit of pure-component parameters depends on
-`equilibrium/` lightly (one compile, one assembly, one Newton) rather than structurally.
-**derived**; S14 asserts the subset, and pin exchange at `C = 1` (pin `L` instead of `V`)
-must give the same `P*`, which is the sharpest available test that "which phase is pinned"
-is a specification entry and not a route. If the engine needs a distinct saturation solver,
-it is visible here without solving: the compiled row multiset for ethane would differ from
-the multiset the rule predicts.
+count above two** — the active subset is seven rows of five registered kinds and no
+charge or reaction rows, which is the evidence that a regression fit of pure-component
+parameters depends on `equilibrium/` lightly (one compile, one assembly, one Newton)
+rather than structurally. **derived**; S14 asserts the count, the nullity and the absence
+of reaction and charge rows, reports the row list (the multiset itself is not asserted,
+because a legitimate implementation may drop a free phase's normalisation row), and
+requires that pin exchange at `C = 1` (pin `L` instead of `V`) give the same `P*`, which
+is the sharpest available test that "which phase is pinned" is a specification entry and
+not a route. If the engine needs a distinct saturation solver, it is visible here without
+solving: the compiled system for ethane would not be the general rows at `C = 1`.
 
 The single-phase flash, `Π = 1`, `k = f = 0`, is the other cell a two-phase habit skips.
 Unknowns `x (C), N, V, λ (C)`: `2C + 2`; rows: `C` chemical-potential, one pressure, one
@@ -224,7 +248,7 @@ and rule 4 bounds; the owner's discomfort with the dependency is answered by its
 | amount status per phase | free; pinned `β = 0`; pinned `0 < β < 1` | `k`, and the balance's view of the phase; no row is added or removed |
 | `T`, `P` | each fixed or free | `f` |
 | reactions | none; one; two independent; two plus a dependent third; one that does not conserve charge | `rank B`, `g°`, the rejection |
-| ions | absent; present in one phase's support with both signs; present in two liquids (`π_ch = 2`: one charge row, one interphase potential); a charged feed; a support with one ion sign; an incipient neutral phase beside a charged finite one | the charge rows (`π_ch − 1` of them), the rejection |
+| ions | absent; present in one phase's support with both signs; present in two liquids (`π_ch = 2`: one charge row, one interphase potential); an incipient charged phase beside a charged finite one (the row goes to the pinned phase); a charged feed; a support with one ion sign; an incipient neutral phase beside a charged finite one | the charge rows and which phase carries none, the rejection |
 | feed basis | mole fractions; amounts; mass fractions; molalities | **nothing in the compiled system** — that is the check |
 | topology | declared; omitted | declared is the main path; omitted is rejected by name until Stage 11, then accepted with `k = f = 0` |
 | feed coordinate free with a target row | (later; the old tree's "affine feed boundary") | the same count rule with a target row on the right: a freed feed coordinate is paid for by one target equation. Recorded so the rule is seen to extend; not built before Stage 12 needs it |
@@ -249,6 +273,7 @@ These carry the weight. A compile step that accepts them silently is the old tre
 | `f < k` | the pinned phase and "free `T` or `P`" |
 | `f > k` | the free intensive and "fix it or pin a phase amount" |
 | every phase pinned (`k = Π`) | "no free phase carries the feed" — square by the count, singular by rank; this cell is why the rank check is not redundant |
+| `Π − k > rank B` | the counts, and "pin a phase or free an intensive" — the phase rule in rank form (§2.3); the pure-component two-phase flash and the binary three-phase flash at fixed `T`, `P` land here |
 | dependent reaction set | the reaction that lies in the span of the others |
 | `z·ν ≠ 0` | the reaction and "does not conserve charge" |
 | `z·n_feed ≠ 0` | "feed carries net charge" |
@@ -264,9 +289,11 @@ a coordinate. Compile removes it from every support and reports the removal.
 
 ### 3.3 The compile-tier lattice is exhaustive, not sampled
 
-The core axes multiply to about 3,800 specifications (6 phase sets × ≤ 8 amount-status
-patterns — free or pinned-at-zero per phase, plus one `β > 0` pattern per two-phase set —
-× 4 intensive patterns × 5 reaction values × 4 ion values); each compiles in microseconds
+The core axes multiply to several thousand specifications (6 phase sets × ≤ 8
+amount-status patterns — free or pinned-at-zero per phase, plus one `β > 0` pattern per
+two-phase set — × 4 intensive patterns × 5 reaction values × 6 ion values, about 5,800
+before the generator discards combinations a fixture cannot express); each compiles in
+microseconds
 and the rank of a matrix under 40 × 40 costs the same. Feed basis is an invariance applied
 to every cell (four compiles, compared), not a fifth axis. Nested loops over four enums
 are the generator; there is no property-based framework and no random specification — the
@@ -283,7 +310,9 @@ the columns of `N_1` and `N_2` in the balance rows are identical and vanish in e
 row (the chemical-potential and pressure rows are intensive), so the Jacobian has nullity
 at least one *at every such point* — this is the trivial solution of the flash, which is a
 genuine stationary point of every multiphase cell, and a rank check taken there would
-reject every square cell. **derived**
+reject every square cell. The rule concerns free phases: at `C = 1` every phase has
+`x = 1`, and the boundary cell is fine because only one phase has an amount column.
+**derived**
 
 ### 3.4 Declared topology: what it buys, and what it must refuse
 
@@ -300,8 +329,11 @@ or delivers nothing. The rules:
 - Otherwise the call **fails with no equilibrium state**: no amounts, compositions,
   volumes or `G` are returned. What is returned is the failure name, the phase, and the
   quantity that condemned it. For a vanished phase that quantity is Michelsen's criterion
-  (1994): a phase absent at equilibrium has `Σ_i x_i exp(…) < 1` where a present one has
-  `= 1`, so the deficit `1 − Σ` is the report. For two phases that collapsed onto each
+  (1994, p. 545: an absent phase satisfies `Σ_i Y_{i,m} < 1` where a present one satisfies
+  `= 1`), written on these rows as `Σ_i x_{p,i} exp(−r_{p,i} / RT)` with `r_{p,i}` the
+  phase's chemical-potential row residual `μ_{p,i} − λ·B_i − z_i φ_p` at the converged
+  multipliers; the deficit `1 − Σ` is the report, and a positive deficit says the phase is
+  not stable to add. For two phases that collapsed onto each
   other it is their distance. This is the owner's rule stated as a mechanism: the trivial
   solution is never an answer, and neither is a two-phase result with one phase empty.
 - Declared topology does not make the solution unique. A declared set may admit several
@@ -333,8 +365,8 @@ meant.
 
 | system | `Π = 1` (`{L}` or `{V}`) | `Π = 2`, `{V,L}` | `Π = 2`, `{L,L}` | `Π = 3` (`{V,L,L}`, `{L,L,L}`) |
 |---|---|---|---|---|
-| neutral, non-reactive | `C = 1` ethane, S13 (7); `C = 2` binary, S13 (8) | `C = 1` saturation, S5 S9 S14 and the NIST oracle (7); `C = 2` flash, bubble, dew, fixed-fraction flash, S3–S5 and the Cai 1996 oracle (8, 9) | `C = 3` the reactive ternary with its reaction omitted, S6 S7 (8); cloud point (9) | compile tier on every fixture; opportunistic solve on the ternary |
-| neutral, reactive | `C = 3` isomerisation, S11 (8) | a reacting liquid under a pinned vapour: compile tier (6); solve on the reactive ternary at Stage 9 | `C = 3` Ascani 2023 fixture, S16 (8); `C = 4` esterification tie lines, Senina 2022 and Schmitt 2006 (8, rows to transcribe) | compile tier |
+| neutral, non-reactive | `C = 1` ethane, S13 (7); `C = 2` binary, S13 (8) | `C = 1` saturation, S5 S9 S14 and the NIST oracle (7); `C = 2` flash, bubble, dew, fixed-fraction flash, S3–S5 (8, 9) and the Cai 1996 oracle on the associating binary (9) | `C = 3` the reactive ternary with its reaction omitted, S6 S7 (8); cloud point (9) | compile tier: the fixed-`T`,`P` three-phase flash is rejected by the phase rule wherever `Π − k > rank B` (the binary), and accepted on the three-component fixture; the `k = 2` three-phase point is square on the binary; opportunistic solve on the ternary |
+| neutral, reactive | `C = 3` isomerisation as `{V}`, S11 (8) | a reacting liquid under a pinned vapour: compile tier (6); solve on the reactive ternary (9) | `C = 3` Ascani 2023 fixture, S16 (8); `C = 4` esterification tie lines, Senina 2022 and Schmitt 2006 (8, rows to transcribe) | compile tier; the reacting ternary's fixed-`T`,`P` three-phase flash is rejected (`rank B = 2`) |
 | electrolyte, non-reactive | `C = 3` aqueous NaCl, S13 (8); the Hamer–Wu activity oracle is single-phase states, not an equilibrium cell (4) | `C = 3` aqueous NaCl, neutral vapour pinned, `P` free (9) | `C = 5` Khudaida 2026 tie lines under declared `{L,L}` (8): `π_ch = 2`, one charge row, one interphase potential | compile tier; the three-liquid ionic-liquid systems of Ascani et al. 2022 are the literature case if one is ever wanted |
 | electrolyte, reactive | `C = 9` MEA speciation oracle (8) | `C = 9` MEA bubble point, neutral vapour pinned (9, 12) | **compile tier only**: nine species under declared `{L,L}` — the same rows with one charge row, but no fixture and no data | compile tier |
 
@@ -360,12 +392,12 @@ formulation registers the row.
 |---|---|---|---|
 | C1 | count rule | for every lattice cell, compile's verdict (square / over / under) equals `f − k` computed in the test from the specification alone | in the compile step, count a pinned phase as free |
 | C2 | reject by name | every unreachable cell throws, and the message contains the offending phase / reaction / species name from §3.2 | swap any two messages |
-| C3 | rank | for every square cell, `F_y` at the generic point has nullity 0; for `k = Π`, nullity ≥ 1 and the rejection names it | drop the normalisation row of pinned phases |
-| C4 | feed-basis invariance | the same feed as mole fractions, amounts, mass fractions and molalities compiles to identical rows and an identical feed *composition* `n_feed / Σ n_feed` to 1e-12 — the total implied by each basis differs (one mole, one kilogram, one kilogram of solvent) and S8 is what makes that irrelevant | molality conversion omits the solvent mass |
-| C5 | reaction-basis invariance | reactions `{ν₁, ν₂}` and `{ν₁ + ν₂, ν₁ − ν₂}` (and any invertible mixing) give the same `B`, the same nullity, the same `g°` transform | build `B` from the reaction list in order instead of from its span |
+| C3 | rank | for every cell that is square by the count, `F_y` at the generic point has nullity 0 **iff** `Π − k ≤ rank B` and not every phase is pinned; otherwise nullity ≥ 1 and the rejection names the condition | drop the normalisation row of pinned phases |
+| C4 | feed-basis invariance | the same feed as mole fractions, amounts, mass fractions and molalities compiles to the same row list and an identical feed *composition* `n_feed / Σ n_feed` to 1e-12 — the total implied by each basis differs (one mole, one kilogram, one kilogram of solvent), so `B n_feed` differs by that total, and S8 is what makes it irrelevant | molality conversion omits the solvent mass |
+| C5 | reaction-basis invariance | reactions `{ν₁, ν₂}` and `{ν₁ + ν₂, ν₁ − ν₂}` (and any invertible mixing) give the same row-space projector `BᵀB` to 1e-12, the same nullity, and the same reaction affinities `Σ_i ν_i g°_i` — not the same `B`, which is a basis, nor the same per-species `g°`, which depends on the reference-species choice | build `B` from the reaction list in order instead of from its span |
 | C6 | pin identity | the boundary specification's residual vector at a point equals the flash specification's residual vector at the same point with `N_q = 0`, on every shared row — the owner's "same rows, one entry differs", made numerical | the balance keeps the pinned phase at its start amount |
 | C7 | permutation | relabelling components, or reordering phases, permutes the rows and leaves nullity and residual norms unchanged to 1e-14 | index a phase where a component was meant in any row |
-| C8 | chart-or-row | an electrolyte flash compiles with nullity 0 — this catches the double count in `formulation.md` (§2 eliminates an ion by the electroneutral chart *and* §4 lists the charge row; both together are a redundant row) | add the eliminated coordinate back |
+| C8 | charge rows | an electrolyte flash with one ion-containing phase compiles with nullity 0 and no charge row; with two, nullity 0 and one row; with the charged phase pinned, the row is on the pinned phase. This catches both the double count in `formulation.md` (§2's chart *and* §4's row) and the one-row-per-charged-phase error of §2.2 | write a charge row, with its multiplier, for every ion-containing phase — the constraint Jacobian loses row rank and the KKT matrix is singular |
 
 C6 is the check the brief asked for. It has a limit worth stating: if `phase_boundary.cpp`
 assembles rows through the same function as the minimizer, no mutation of that function can
@@ -374,10 +406,12 @@ specification handling, and the checks that catch a *bypass* of compile are S3�
 
 ### 4.2 Solve tier — the minimal input set
 
-Six parameter sets. Four already exist in `engine/tests/native/model_support.hpp`
-(**measured**: `ethane()` :42, `neutral_binary()` :51, `associating_binary()` :60,
-`aqueous_electrolyte()` :87, `nine_species()` :116). Two come from the literature, not
-from the old tree:
+Parameter sets: five already exist in `engine/tests/native/model_support.hpp`
+(**measured**: `ethane()` :42, `neutral_binary()` :51, `associating_binary()` :60 — the
+Baygi 2015 MEA–water model the Cai 1996 oracle needs — `aqueous_electrolyte()` :87,
+`nine_species()` :116); one is published; two arrive with oracle packets (Khudaida 2026,
+and the esterification systems). The published one and the packets come from the
+literature, not from the old tree:
 
 - **The reactive two-liquid fixture is published.** Ascani et al. 2023 (*Molecules* 28,
   1768, §3.2 Table 3) define a hypothetical `A + B ⇌ C` with PC-SAFT parameters
@@ -414,37 +448,37 @@ from the papers already attached in Zotero; nothing needs acquiring.
 |---|---|---|---|
 | ethane | `ethane()` | `{L}` alone and `{V}` alone at fixed `T`, `P`; `{V,L}` with `V` pinned, `P` free; the same with `L` pinned (must give the same `P*`); then `T` free. The Stage 7 file list is the record that these ran with no `gibbs_minimizer.cpp`, no `phase_stability.cpp`, and `B = I` | 7 |
 | binary | `neutral_binary()` | `{V,L}` flash inside the envelope; bubble; dew; `β`-flash; both intensives | 8, 9 |
-| reactive ternary | Ascani 2023 `A + B ⇌ C` | **required:** `{L,L}` with the reaction, from three feeds in the gap (S16); `{L}` with the reaction (S11 uses an isomerisation variant of the same components); `{L,L}` without the reaction (S6, S7); `{L,L}` with `L₂` pinned, `T` free, with and without the reaction. **Opportunistic:** `{V,L,L}` and the three-phase point, if the fixture admits them at some state; recorded either way | 8, 9 |
+| reactive ternary | Ascani 2023 `A + B ⇌ C` | **required:** `{L,L}` with the reaction, from three feeds on one tie line's moiety segment (S16); `{V}` with an isomerisation of the same components (S11); `{L,L}` without the reaction (S6, S7); `{L,L}` with `L₂` pinned, `T` free, with and without the reaction; `{V,L}` with the reaction and `V` pinned, `P` free — a reacting liquid under a pinned vapour (9). **Opportunistic:** `{V,L,L}` without the reaction and the three-phase point, if the fixture admits them at some state; recorded either way | 8, 9 |
 | electrolyte | `aqueous_electrolyte()` | `{L}`; `{V,L}` with `V` support `{water}` and `V` pinned, `P` free — the MEA shape at three species | 8, 9 |
 | electrolyte two liquids | oracle `aqueous_alcohol_salt_lle` (Khudaida 2026, packet revision 2) | declared `{L,L}` from the tie-line midpoint feed; `π_ch = 2`, one charge row, one interphase potential; both endpoint compositions within the row uncertainties. Measured data on the electrolyte two-liquid cell before any discovery stage exists; Stage 11 later reaches the same rows with topology omitted | 8 |
 | reactive two liquids, real | Senina 2022, Schmitt 2006; parameters and `K_a` from Ascani 2023 Tables 1, 2, 4 | declared `{L,L}` on the nine quaternary tie lines; a published-model reproduction. A new oracle case once the rows are transcribed | 8 |
-| nine species | `nine_species()` | compile tier only: the composite cell's rows, rank, nullity, and reject-by-name with the bundle's two reactions; and declared `{L,L}` compiled with one charge row, which is the reactive electrolyte two-liquid cell's only evidence. The solve is Stage 12's gate | 6 |
+| nine species | `nine_species()` | compile tier at Stage 6: the composite cell's rows, rank, nullity, and reject-by-name with the bundle's two reactions; and declared `{L,L}` compiled with one charge row, which is the reactive electrolyte two-liquid cell's only evidence. Solves are oracle gates: speciation `{L}` at Stage 8, the bubble point at Stages 9 and 12 | 6, 8, 9, 12 |
 
 | # | claim | asserts | mutation |
 |---|---|---|---|
-| S1 | rows satisfied | every solved cell's residual vector is within `max(tolerance, floor)` of zero on every row, the two numbers read from the result's own `Convergence` record (`TOLERANCES.md` §2, consequence 3) — including rows the driver did not iterate on (affinity for a reactive cell; Euler's `g_p = λ·Bx_p` for every phase) | drop one balance row from the Ipopt constraint set: affinity goes nonzero |
-| S2 | local minimum | for `k = 0`, the reduced Hessian `Zᵀ ∇²L Z` is positive definite (`EqID: reduced_hessian_stability`) | flip the sign of the `P V` term in the objective |
+| S1 | rows satisfied | every solved cell's residual vector is within `max(tolerance, floor)` of zero on every row, the two numbers read from the result's own `Convergence` record (`TOLERANCES.md` §2, consequence 3) — including rows the driver did not iterate on (affinity for a reactive cell; Euler's `g_p = λ·Bx_p` for every phase; `G_min = λ·B n_feed`; and `|z·x_p|` for **every** ion-containing phase, whether or not it carried a row) | drop one balance row from the Ipopt constraint set: affinity goes nonzero |
+| S2 | local minimum | for `k = 0`, the reduced Hessian `Zᵀ ∇²L Z` is positive definite (`EqID: reduced_hessian_stability`) | negate one phase's Hessian block in the assembly |
 | S3 | dew ↔ bubble | for the binary at `T`: bubble from liquid `x` gives `(P*, y*)`; dew from `y*` must give `(P*, x)` to the convergence tolerance. An exact symmetry of the formulation, and it fails on any asymmetry between "which phase is pinned" | start the pinned phase on the vapour branch regardless of its declared identity |
 | S4 | `β → 0` | the fixed-fraction flash at `β = 10⁻², 10⁻⁴, 10⁻⁶` has `|T(β) − T_bubble|` decreasing and bounded by a constant times `β` (each step of a hundred in `β` shrinks the gap by at least ten) | the balance omits the pinned phase for `β > 0` |
 | S5 | round trip | solve `P` at fixed `T`; solve `T` at that `P`; recover `T` | freeze `T` in the Jacobian when `T` is the unknown |
 | S6 | instability certificate | `G₂ < G₁` at the ternary feed; `G₃ ≤ G₂ + tol` for the three-phase cell | return the one-phase start as the result |
-| S7 | lever rule | two feeds on the `{L,L}` tie line give the same two phases to 1e-8 | seed each phase from its own feed instead of from the tie line |
-| S8 | extensivity | every solved cell with the feed doubled: amounts double, every intensive unchanged | an absolute trace floor in the start |
+| S7 | lever rule | two feeds on the `{L,L}` tie line give the same two phases to 1e-8. This is S1 plus isolation of the solution, so it has no mutation of its own: S1's reddens it | shares S1's |
+| S8 | extensivity | every solved cell with the feed doubled: amounts double, every intensive unchanged | compile normalises `n_feed` to unit total before the balance rows |
 | S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp` against a centred difference of the solve in `θ` to 1e-6 (the Stage 3 precedent for the FD floor) | flip the sign of `F_θ` |
-| S10 | Jacobian agreement | the assembly's `F_y` against a centred difference of `F` in every unknown, at a boundary cell and at a flash cell, to 1e-6; and Ipopt's `eval_h` at the flash solution against a centred difference of the Lagrangian gradient (`eval_grad_f + Σ λ_j ∇c_j`) to 1e-6. The earlier form of this check, elementwise equality between the two drivers' matrices, was false: the drivers' rows differ by the factor `N_p` per phase (§2.2), so an implementer could only pass it by fudging. "One assembly" is a design statement, held by §5's file placement and rule 7's file list, not by a check | scale one Hessian block by `0.5` |
-| S11 | ideal-gas limit | the reactive one-phase cell with the isomerisation `α ⇌ β` (so `Σ ν_i = 0` and the `ρ_ref` term cancels) at `P → 0` approaches `x_β / x_α = exp(−Δg°/RT)` (a limit; the residual terms vanish, which Stage 2 already checks). A reaction with `Σ ν ≠ 0` has a density factor in its limit and is not used here | perturb the `g°` transform |
+| S10 | Jacobian agreement | the assembly's `F_y` against a centred difference of `F` in every unknown, at a boundary cell and at a flash cell, to 1e-6; and Ipopt's `eval_h` at the flash solution against a centred difference of the Lagrangian gradient (`eval_grad_f + Σ λ_j ∇c_j`) to 1e-6. The earlier form of this check, elementwise equality between the two drivers' matrices, was false: the drivers' rows differ by the factor `N_p` per phase (§2.2), so an implementer could only pass it by fudging. "One assembly" is a design statement, held by §5's file placement and rule 7's file list, not by a check. The `eval_h` half tests the Ipopt driver, not the physics; a `k = 0` driver that is not Ipopt has no such callback and the clause does not apply | scale one Hessian block by `0.5` |
+| S11 | ideal-gas limit | the reactive one-phase cell **as `{V}`** — the vapour branch is the one that reaches the ideal-gas limit; a liquid hint stays on its own branch — with the isomerisation `α ⇌ β` (so `Σ ν_i = 0` and the `ρ_ref` term cancels) at `P → 0` approaches `x_β / x_α = exp(−Δg°/RT)` (a limit; the residual terms vanish, which Stage 2 already checks). A reaction with `Σ ν ≠ 0` has a density factor in its limit and is not used here | perturb the `g°` transform |
 | S12 | discovery agrees (Stage 11) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
-| S13 | single phase | `Π = 1` on every fixture at fixed `T`, `P`: the solved composition equals the feed to 1e-14, and the solved volume equals `model/`'s `solve_density` root at the same `(T, P, x)` within the larger of the two solves' `max(tolerance, floor)` — the pressure row *is* the density equation when there is one phase | seed the start from phase index 1 |
-| S14 | `C = 1` is the general row set | the ethane boundary's compiled rows, counted by `EqID`, are exactly two `chemical_potential_stationarity`, two `pressure_equality`, one `material_balance`, two `incipient_normalization`, and nothing else; pinning `L` instead of `V` gives the same `P*` to the convergence tolerance | a `component_count == 1` branch in compile that omits the balance row |
+| S13 | single phase | `Π = 1` on every non-reactive fixture at fixed `T`, `P`: the solved composition equals the feed within the balance rows' `max(tolerance, floor)` (the balance is an Ipopt equality, so 1e-14 is not reachable), and the solved volume equals `model/`'s `solve_density` root at the same `(T, P, x)` within the larger of the two solves' `max(tolerance, floor)` — the pressure row *is* the density equation when there is one phase. Reactive single phases are S11's | seed the start from phase index 1 |
+| S14 | `C = 1` is the general row set | the ethane boundary compiles with `rows − unknowns = 0` and nullity 0 with no reaction span and no charge row, and pinning `L` instead of `V` gives the same `P*` to the convergence tolerance. The row list by `EqID` is *reported*, not asserted: a legitimate implementation may drop a free phase's normalisation row (§2.2), and `TESTING.md`'s diagnostic forbids asserting the multiset | a `component_count == 1` branch in compile that omits the balance row |
 | S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way | return the converged iterate when one `N_p` sits at its bound |
-| S16 | reactive tie line is feed-invariant | on the `A + B ⇌ C` fixture at fixed `T`, `P`, the declared `{L,L}` reactive flash from three different feeds inside the gap returns the same two phase compositions to the convergence tolerance, and affinity vanishes in both phases with one `λ`. Gibbs' rule for a reactive system, `F = 2 − π + C − R = 0` here, says the tie line is unique (Ascani et al. 2023 §2.1, "unique reactive tie-line"); a route that solved the reaction in one phase and partitioned into the other would move the tie line with the feed | drop the affinity consequence by solving the balance with `B = I` |
+| S16 | reactive lever rule | on the `A + B ⇌ C` fixture at fixed `T`, `P`, the declared `{L,L}` reactive flash from three feeds whose moiety vectors `B n_feed` lie on the segment between the two phases' moiety vectors of a first solve returns the same two phase compositions to the convergence tolerance, and affinity vanishes in both phases with one `λ`. Gibbs' rule for the reactive system gives `F = 2 − 2 + 3 − 1 = 2`, both consumed by fixing `T` and `P`, so reactive tie lines are *isolated*, not unique — Ascani et al. 2023's Figure 3 has two, and "unique reactive tie-line" is their term of art for one that appears in a ternary — which is why the three feeds are placed on one tie line rather than anywhere in the gap. A route that solved the reaction in one phase and partitioned into the other would move the phases with the feed | drop the affinity consequence by solving the balance with `B = I` |
 
 **Reported, never asserted**, per cell: Ipopt iterations, Newton iterations, evaluations,
 `hessian_calls`, recordings, wall. `hessian_calls ≥ 1` per iteration on every cell is how
 "the exact Hessian is consumed everywhere" is *seen*; it is not a pass condition. One
 architecture rule is cheap enough to add to the checker: `gibbs_minimizer.cpp` defines
-`eval_h` and contains no `limited-memory` string. Lexical and weak, and it says what the
-design intends.
+`eval_h` and contains no `limited-memory` string. Lexical and weak, it tests the driver
+rather than the physics, and it says what the design intends.
 
 ### 4.3 What the tiers establish together
 
@@ -547,6 +581,15 @@ oracle needs.
 **Drop:** §4's sentence naming `compile_phase_direction_system` and the two Python rank
 functions (deleted files); §9 entirely (owners that no longer exist).
 
+**One new identifier, and a rule about labels.** `incipient_normalization` is registered
+as "one per incipient phase"; §2.2 makes the row universal, so the every-phase row is
+registered as `phase_normalization` and the old identifier is retired rather than
+redefined. Identifiers are cited in `// EqID:` comments only, which the checker strips;
+the row labels a `CompiledSystem` carries at runtime are an enum whose names contain no
+rule-7 token (`normalization`, `balance`, `charge`, `pressure`, `potential`), because the
+string `incipient` inside `request_compile.cpp` would otherwise fail rule 7 once that file
+joins its list (§5).
+
 **Registry:** land the 21 entries with empty `implementation_refs`; extend the sync script
 so that a non-`Documentation-only` entry with no owner is a *warning* until the stage that
 annotates it, and its `MATH_OWNER_FILES` lists `native/**` instead of the 21 deleted paths.
@@ -555,8 +598,8 @@ them are already in `native/` (**measured**) and the script cannot currently rea
 
 ## 7. Where the brief's framing is corrected
 
-1. **"An incipient phase cannot be a row of the minimizer"** (`TRANSFER.md`, Stage 6 versus
-   Stage 7). It cannot be an *Ipopt variable* of the minimizer, and the boundary is not a
+1. **"An incipient phase is not a phase of the minimizer"** (`TOLERANCES.md` §6). It is
+   not an *Ipopt variable* of the minimizer, and the boundary is not a
    minimisation. It is a row of the same system, and Stage 9 is a driver on that system,
    not a second row set. If Stage 9's `phase_boundary.cpp` has its own chemical-potential
    residuals, the design has failed in exactly the way the owner described.
@@ -584,9 +627,9 @@ them are already in `native/` (**measured**) and the script cannot currently rea
    `Pure.saturation` is a thin call onto that binding, kept where users reach for it,
    because the Python surface is organised by capability and was never meant to mirror
    the layers.
-8. **The test budget.** `engine/tests/native/` holds 1,187 lines after two closed stages
-   (**measured**), against a 1,650 total for the whole engine. This design adds about 560
-   (§9). With the oracle-row tests still to write, the engine lands near 2,400 lines of
+8. **The test budget.** `engine/tests/native/` holds 1,188 lines after three closed stages
+   (**measured** 2026-09-02), against a 1,650 total for the whole engine. This design adds
+   about 640 (§9). With the oracle-row tests still to write, the engine lands near 2,400 lines of
    tests, not 1,650. `TESTING.md`'s rule is that a stage over its share must show its
    checks pass the diagnostic, not that the budget grows; every check above states the
    property it tests and the mutation that fails it, and the number is recorded rather than
@@ -640,8 +683,8 @@ revised order (`TRANSFER.md` §"Execution order") is before Stage 6 anyway. **gu
 |---|---|---|---|---|
 | `tests/native/equilibrium_support.hpp` | 140 | 190 | 6 | includes `model_support.hpp`; adds the Ascani 2023 reactive ternary, its reaction and `g°`, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor |
 | `tests/native/specification_checks.cpp` | 180 | 240 | 6 | C1–C8 |
-| `tests/native/equilibrium_checks.cpp` | 170 | 220 | 8, then +15 at 11 | S1, S2, S6, S7, S8, S11, S13, S15, S16 on the flash cells; S12 at Stage 11 |
-| `tests/native/boundary_checks.cpp` | 140 | 180 | 7 opens it (ethane: S5, S9, S13, S14 at `C = 1`, ~60); 9 completes it | S3, S4, S5, S9, S10, the `{L,L}` and `{V,L,L}` boundary cells |
+| `tests/native/equilibrium_checks.cpp` | 170 | 220 | 8, then +15 at 11 | S1, S2, S6, S7, S8, S10's `eval_h` half, S11, S13 (multicomponent), S15, S16 on the flash cells; S12 at Stage 11 |
+| `tests/native/boundary_checks.cpp` | 140 | 180 | 7 opens it (ethane: S5, S9, S10's `F_y` half, S13 at `C = 1`, S14, ~60); 9 completes it | S3, S4, S5, S9, S10's `F_y` half, the `{L,L}` and `{V,L,L}` boundary cells |
 | `tools/check-engine-architecture.py` | +2, then +12 | — | 6, then 8 | `request_compile.cpp` joins rule 7's file list at Stage 6; rule 8 (`eval_h` present, no `limited-memory`) at Stage 8 |
 | **total** | **~640** | **~840** | | |
 
@@ -695,17 +738,35 @@ document's own first draft.
 14. Nothing asserts a variable count, an iteration count, or which driver ran. Counters
     are printed per cell; the design intent that the exact Hessian is consumed is visible
     in `hessian_calls`, and rule 8 is the only thing that turns it into a failure.
-15. One electroneutrality row per ion-containing phase **beyond the first** (§2.2); one
-    per charged phase is a dependent row and the rank check will reject valid electrolyte
-    flashes.
+15. One electroneutrality row per ion-containing phase **except one phase of nonzero
+    amount** (§2.2); one per charged phase is a dependent row and the rank check rejects
+    valid electrolyte flashes, and leaving a *pinned* charged phase row-less lets it
+    converge non-neutral.
 16. A declared phase set is delivered whole or not at all (§3.4): a vanished phase, a
     collapsed pair or the trivial solution fails with no state, carrying the phase name and
     Michelsen's deficit or the distance.
 17. The reactive two-liquid fixture is Ascani et al. 2023 Table 3 with `K_a = 2.25`, not
     the old tree's immiscible ternary; its existence is the paper's Figure 3.
-18. At fixed `T`, `P` a reactive tie line in a one-reaction ternary has `F = 0` and is
-    feed-invariant (S16). Any feed dependence is a route solving the reaction in one phase.
+18. At fixed `T`, `P` a one-reaction ternary has `F = 2`, both consumed, so reactive tie
+    lines are isolated, not unique; S16 places its feeds on one tie line's moiety segment
+    and asserts the same phases (the reactive lever rule). Feed dependence along that
+    segment is a route solving the reaction in one phase.
 19. Start phases of a declared reactive multi-liquid set are first brought to chemical
     equilibrium along their own stoichiometric lines (Ascani et al. 2023 step 3), one
     single-phase reactive solve each; the feed itself stays on the stoichiometric line and
     is *not* on the chemical-equilibrium surface after the split.
+20. `Π − k ≤ rank B` (§2.3) is the phase rule in rank form; the pure-component two-phase
+    flash and the binary three-phase flash at fixed `T`, `P` are square by the count and
+    singular at every point, and compile rejects them by name.
+21. No identifier under `native/` is named after saturation: `solve_saturation` in
+    `phase_boundary.cpp` fails rule 7 (`saturation` is a case token). The call is
+    `solve_phase_boundary` on a one-component problem; only Python's `Pure.saturation`
+    carries the word.
+22. The assembly's Hessian blocks scale by `N_p` in the `(N_p, x_p, v_p)` chart (§2.2); a
+    driver in extensive coordinates sees `1/N_p`, and says which chart it uses.
+23. Michelsen's deficit is `1 − Σ_i x_{p,i} exp(−r_{p,i}/RT)` with `r` the phase's
+    chemical-potential row residuals at the converged multipliers (§3.4).
+24. A mass-fraction feed needs molar masses, which `Parameters` carries; a molality feed
+    needs the solvent set, which only the `Problem` can supply.
+25. A boundary seed with no coexisting density roots, and any Newton iterate that leaves
+    the domain, is the `left_domain` stop; the Newton driver has no bounds of its own.

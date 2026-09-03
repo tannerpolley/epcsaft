@@ -7,7 +7,7 @@ Consequences, stated once:
 - `_native/` dies as a name and as a location. All C++ moves under one root, `engine/native/`, outside `src/epcsaft/`. `meson.build` loses `exclude_directories: ['_native']`; `install_subdir('src/epcsaft')` ships only Python; the wheel contents are unchanged (`epcsaft/*.py`, `epcsaft/equilibrium/*.py`, `epcsaft/_core.so`).
 - One static library, `epcsaft_native`, from every `native/**/*.cpp` except `bindings/`; one extension, `_core`, from `native/bindings/*.cpp`, linked against it. The three-archive split and its link-order rule go.
 - Bindings live in one directory, `native/bindings/`, not beside the code they bind: they are the only files permitted to include pybind11, and one directory makes that a path rule the checker can test. The earlier proposal of `equilibrium_bindings.cpp` beside `module.cpp` in two places was two answers; this is one.
-- Saturation is not a file. `solve_saturation` is the one-component, two-phase call of `solve_phase_boundary` (`SPECIFICATION-SPACE.md` §2.3: the `k = f = 1` cell), so it lives in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`; `Pure.saturation` in Python calls that binding. `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
+- Saturation is not a file and not an identifier (`saturation` is a rule-7 case token). Pure saturation is the one-component, two-phase call of `solve_phase_boundary` (`SPECIFICATION-SPACE.md` §2.3: the `k = f = 1` cell), so it lives in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`; `Pure.saturation` in Python calls that binding. `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
 - Permitted include direction: `physics` ← `model` ← `equilibrium` ← `regression` ← `bindings`, downward only (`regression` may include `model` and `equilibrium`; `bindings` may include anything; nothing includes `bindings`). Python includes nothing; it imports `_core`.
 - Regression rule, by symbol rather than by module: `regression/` may include `equilibrium/problem.hpp` and call `solve_equilibrium` and `solve_phase_boundary` on a problem with declared phases; it may not include `phase_stability.hpp`, call `find_phases`, or construct a problem with phases omitted. This replaces today's module-level ban (`_regression_discovery_family` in the checker; `regression_core: []` in `ARCHITECTURE.yaml`), which the layout contradicted. The reconciliation, the move, the single archive, and the gate routing are owned by #195, sequenced before #187.
 
@@ -34,7 +34,7 @@ engine/
       problem.hpp                               300   EquilibriumProblem, EquilibriumResult, specification patterns
       stoichiometry.hpp                         120
       stoichiometry.cpp                         800   balance/reaction rank (SVD), standard-state transform, nullspace
-      request_compile.cpp                       600   specification → active rows; deterministic starts; count check
+      request_compile.cpp                       600   specification → active rows and their assembly F, F_y; feed-basis conversion; count and rank check. Starts belong to the drivers
       gibbs_minimizer.hpp                       150
       gibbs_minimizer.cpp                      1200   GibbsMinimizer (Ipopt), residuals, reduced-Hessian check
       phase_boundary.cpp                        300   solve_phase_boundary: T or P unknown; one-component case is saturation
@@ -62,12 +62,12 @@ engine/
     equilibrium/
       __init__.py                                40   9 exports
       problem.py                                450   Problem, Phase, Reaction, Fixed, Solved, Result
-      loader.py                                 250   problem_from_mapping; mass-fraction and molality feeds
+      loader.py                                 120   problem_from_mapping; feed-basis conversion is native (request_compile.cpp), Python only names the basis
   tests/                                       1650   by capability; no numerical/behavior split
     packets.py                                  150   read data/packets tables for fixtures
     fixtures/                                   250   synthetic tables: the associating binary; the Ascani 2023 reactive ternary (SPECIFICATION-SPACE.md §4.2)
     eos/                                        520   saturation vs NIST; γ± vs Hamer–Wu (Held, Figiel); closed-form, identity, limit, permutation, closure, anchor
-    equilibrium/                                530   LLE vs Figure 2 tie-lines; analytic uptake and reaction; conservation; boundary Jacobians; discovery; values survive failure; validation
+    equilibrium/                                530   LLE vs Figure 2 tie-lines; analytic uptake and reaction; conservation; boundary Jacobians; discovery; values survive a sensitivity failure (formulation §8) while a declared-topology failure returns no state (SPECIFICATION-SPACE.md §3.4); validation
     regression/                                 200   NIST parameter recovery; Jacobian vs centered differences; permutation
   docs/                                         —    by capability; unchanged files not listed
     science/full-eos.md                          —
