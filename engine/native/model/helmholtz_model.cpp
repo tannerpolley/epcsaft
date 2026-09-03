@@ -670,11 +670,13 @@ double HelmholtzModel::molar_density_upper_bound(
 }
 
 SweepCounters HelmholtzModel::counters() const {
+    core::Scope scope("counters");
     std::lock_guard<std::mutex> lock(mutex_);
     return counters_;
 }
 
 void HelmholtzModel::reset_counters() const {
+    core::Scope scope("reset_counters");
     std::lock_guard<std::mutex> lock(mutex_);
     counters_ = {};
 }

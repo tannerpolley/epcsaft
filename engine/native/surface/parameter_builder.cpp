@@ -1,5 +1,7 @@
 #include "surface/parameter_builder.hpp"
 
+#include "core/trace.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -121,6 +123,7 @@ struct Rule final {
 }  // namespace
 
 Parameters build_parameters(const ParameterDocument& document) {
+    core::Scope scope("build_parameters");
     const std::size_t components = document.component_ids.size();
     const std::size_t sites = document.site_component.size();
     if (document.site_multiplicity.size() != sites) reject("site structural lists have different sizes");

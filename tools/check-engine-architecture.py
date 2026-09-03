@@ -300,7 +300,7 @@ BOUND_FUNCTION = re.compile(
     r'\.def\(\s*"[^"]+"\s*,\s*&(?:epcsaft::)?'
     r'(?:(?P<class>\w+)::)?(?P<function>\w+)'
 )
-NON_SCOPED_BOUND_FUNCTIONS = {"build_parameters", "counters", "reset_counters"}
+NON_SCOPED_BOUND_FUNCTIONS: frozenset[str] = frozenset()  # every bound function, no allowlist
 HAND_NAMED_RESIDUAL_STOP = re.compile(
     r'(?:\.stop|->stop)\s*=\s*core::Stop::'
     r'(?:converged|converged_to_floor|stalled|budget_exhausted)\b'
