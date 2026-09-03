@@ -36,7 +36,7 @@ recompiling and without writing a probe.**
 
 **The input side broke the same way.** The `ionic_dispersion` selector vanished in the
 rebuild because nothing in the input surface carried it, at 49 % against the published model
-and a week to find (`like-ion-dispersion-convention.md`, *measured*); `stoichiometry=(1, 1)`
+and a week to find (`results/like-ion-dispersion-convention.md`, *measured*); `stoichiometry=(1, 1)`
 is a hidden physical default (`EOS.md` C.5, *measured*). "No hidden defaults" and
 "every solver reports its convergence" are one discipline: **a decision is declared or the
 call is refused by name, and what happened is reported with numbers or the result is
