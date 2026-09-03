@@ -222,24 +222,48 @@ stage's worker writes engine and canon together (the code and its checks), and a
 touches everything. When a commit must cross a category, its message says which categories
 and why.
 
-`tools/git-categories.sh` reports the split for any range:
+`tools/diffstat.py` reports any range by **language** and by **category**, and crosses the
+two:
 
 ```bash
-tools/git-categories.sh                  # since the branch point
-tools/git-categories.sh HEAD~5..HEAD     # a range
-tools/git-categories.sh --code           # only the categories that are code
+tools/diffstat.py                  # since the tree was emptied — the default, and the right question
+tools/diffstat.py --vs-main        # the whole rebuild, the 45,000-line deletion included
+tools/diffstat.py --code           # executable code only: C++, Python, shell, build
+tools/diffstat.py --files          # every file, classified
+tools/diffstat.py HEAD~5..HEAD     # any range
 ```
 
-`.gitattributes` marks the machine-generated and measured files `-diff`, so regenerating the
-equation views or landing a parameter document does not read as thousands of hand-written
-additions. Those files are still versioned, still reviewed when they land, and still
-recoverable — they simply stop inflating a code diff.
+**The baseline matters more than the filter.** A diff against `main` is dominated by the
+superseded tree Stage 1 deleted — 45,951 lines nobody wrote — so it answers "what changed"
+and never "what have we built". The default baseline is `e4d964c`, the commit that laid the
+layer tree and emptied the old one. Use `--vs-main` deliberately, when the 78 % cut is the
+story.
 
-**Measured 2026-09-02.** The raw diff since the branch point is +21,602 / −69,365. Split by
-category it is **+5,204 of code** — 2,342 engine, 1,684 enforcers, 603 build, 575 surface —
-against 45,951 lines of the superseded tree removed. The rest is 3,863 lines of brief,
-5,127 of record, 1,277 of data and 268 of analysis prose. The headline number was never
-wrong; it was answering a different question.
+Four repo-local aliases, set with `git config --local` and therefore not committed; recreate
+them from here if the checkout is fresh:
+
+| alias | what it shows |
+|---|---|
+| `git built` | the full language × category report |
+| `git code` | the same, executable code only |
+| `git src` | `--stat` over `*.cpp *.hpp *.py *.pyi` only |
+| `git nodata` | `--stat` with `:(exclude)` on every data, prose and asset extension |
+
+`.gitattributes` does three things. It marks the machine-generated and measured files
+`-diff`, so regenerating the equation view or landing a parameter document does not read as
+thousands of hand-written additions — they stay versioned and reviewed, they stop inflating
+a code diff. It sets `diff=cpp` and `diff=python`, so a hunk header names the enclosing
+function rather than a stray brace. And `* text=auto` keeps line endings from ever becoming
+a diff of their own.
+
+**Measured 2026-09-02**, from the right baseline. Since the tree was emptied: **+5,893 of
+executable code** — 4,654 C++, 1,136 Python, 54 shell, 49 build — against 10,113 lines that
+are prose, data or configuration. By category the code is 3,371 engine, 1,596 canon (the
+native checks and the enforcers), 674 surface, 203 analysis scripts, 49 build; the core is
+0, because Stage 2 is designed and not written.
+
+Against `main` the same tree reads +15,836 / −69,022, and both numbers are true. One
+answers what was built and the other what was removed, and no single figure answers both.
 
 ## A pinned source names the file as it was at that sha
 
