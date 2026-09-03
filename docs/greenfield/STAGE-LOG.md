@@ -554,3 +554,24 @@ compiler was restored as first written (848 of 900). The planner re-budgeted the
 files at 1.2× measured-plus-remaining (`1061a7d`); the owner chose to resume the same session.
 The planner's note for acceptance: run `coincidence_every_cell` and `start_splits_composition`
 before reading anything else, since those two would have caught attempt 3.
+
+**Attempt 4 complete on the worker's tree; first acceptance run.** The second resume finished
+`complete`: 24 gates green in brief order after its own clean rebuild. Committed as `6778be5`
+on `stage-05`. Coordinator's acceptance (`accept.sh`, wipe and rebuild, every gate, every
+mutation with the two attempt-3 catchers first): clean build green, 24 base gates green,
+**16 of 24 mutations red**. The eight that did not go red: one acceptance-tooling artifact (the
+abort gate's pre-fix command; red with the corrected gate); five stale seds whose anchors the
+rewrite moved (`solve_boundary`, `compiled.F_y`, a global `pinned` rename that does not
+compile, a first-occurrence `RowKind::Moiety` inside the residual classifier, a permutation
+edit on one of two sites under the specification binary), re-anchored by the planner and
+verified to change the file; and two real findings. **S15 clause (c) was not written**, so
+with the coincidence floor zeroed nothing drives a boundary cell to the trivial solution: the
+planner placed it as the binary bubble cell at 280 K, above the mixture critical temperature,
+where only the trivial solution exists, in `boundary_checks.cpp`. **The composition-splitting
+mutant did not reach the symmetric subspace**: with `K = 1` the compositions start at the feed
+but each phase's `η` comes from its own branch; the subspace is equal composition *and* equal
+`η` (trap 6 and §5 step 4 amended; the mutation now also forces one branch). Provenance note:
+`request_compile.cpp` was first written at 838 lines, compacted to 781, and restored to 790;
+its density (2.4 % blank, 0.64 statements per line) matches the tag version, so no penalty,
+and the 48-line gap is recorded as unexplained. Verdict: not accepted as it stood; one
+correction resume for clause (c), then the eight mutations re-run.
