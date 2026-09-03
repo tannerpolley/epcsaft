@@ -5,53 +5,40 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
 ## State at handoff
 
-- Branch `greenfield`, worktree `~/Workspaces/Engineering/ePC-SAFT-greenfield`,
+- Branch `greenfield` at `b40d5a7` and after, worktree `~/Workspaces/Engineering/ePC-SAFT-greenfield`,
   **nothing pushed** (push only when the owner asks).
-- Stages 1–4 closed. Stage 5 (Equilibrium): attempts 1 and 2 held as tags
-  `stage-05-attempt-1`, `stage-05-attempt-2`; **attempt 3 stopped `gate_impossible`** on
-  2026-09-03 with the local-minimum and dew–bubble checks red (`STAGE-LOG.md`, last entry).
-  Tagged `stage-05-attempt-3` (`d02f3c9`) and rejected. **Attempt 4 is running** (table below)
-  from that tag, on the planner's revised design (`STAGE-LOG.md`, attempt-4 entry).
-- The control-plane reset the owner approved on 2026-09-03 is applied (`STAGE-LOG.md`,
-  last entry). Briefs and preflight untouched.
-- Records moved to the root today: `docs/scientific/` (CSE core, issue-55 shape) and
-  `docs/greenfield/`. Engine-only docs stay under `engine/docs/`.
-- Rule 13 has no allowlist (owner ruling). The wheel fingerprint now hashes `engine/native`;
-  before today a native-only edit reinstalled a stale cached wheel.
+- **Stages 1–5 closed.** Stage 5 (Equilibrium) accepted on attempt 4: tags `stage-05-attempt-1`
+  to `-4`; the stage worktree `~/.codex/worktrees/gf-stage-05` still exists, branch `stage-05`
+  at `d3f3392`, merged. No worker is running.
+- Serena is pointed at the greenfield worktree for Claude sessions and at the stage worktree
+  for codex workers (`STAGE-LOG.md`, Stage 5 closure); onboarding memories live under
+  `.serena/memories/` and are not tracked.
 - Overview page: https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58 —
   keep the head sha in its header synced after every commit (owner rule).
 
-## Attempt 4, the live process
+## Next stage: 6 Regression
 
-| item | value |
-|---|---|
-| worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05` at `d404a27` = tag `stage-05-attempt-3` merged with `greenfield@78f4bc7` |
-| worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`, launched 2026-09-03 |
-| pid | 1550215, the third resume of `codex exec` (for S15 clause (c); log `attempt-4.resume3.log`). The completed tree of the second resume is `6778be5` on `stage-05`, result kept as `stage-05.result.attempt-4-complete-1.json`; the second resume of `codex exec` (first resume stopped `budget_ceiling` at 333/330 on `equilibrium_checks.cpp`; result kept as `stage-05.result.attempt-4-stop-1.json`; log `attempt-4.resume2.log`). Find it with `ps -eo pid,args \| grep "codex exec"`, never `$!` or a `pgrep -f` that also matches the shell wrapper; kill that pid, not the wrapper |
-| log | `attempt-4.log` (first run, interrupted at 14 min) and `attempt-4.resume.log` (the resume) in the worktree; result lands in `stage-05.result.json` |
-| schema | `stage-05.result.schema.json` in the worktree (untracked) |
-| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `1061a7d` (three test budgets raised after the honest stop) (request_compile 600/750/900; a breach is a stop), 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
-| interrupt | at 14 min the worker hit the old 780 ceiling on `request_compile.cpp` at 784 and began compacting ("combining lines, removing blank lines"); stopped on the owner's call, brief corrected, resumed with `resume-attempt-4.md` in the worktree. At acceptance measure that file as first written from `attempt-4.log` and reject any compaction on reading |
+`REGRESSION.md` exists. Before its brief, in `EQUILIBRIUM.md`/`REGRESSION.md` and the brief:
 
-Carried from the tag: the exact-tape assembly, analytic `F_y` and `F_θ`, stoichiometry,
-`problem.hpp`, bindings, Python, compile-tier checks. Rewritten under the revised design:
-starts, the coincidence refusal on every cell, coordinates and bounds, the rows' own
-tolerance, the non-aborting check macro, fixture states, the feed sensitivity lever.
+1. An observation that names several solved targets, so finite-dose heat (two solves) is
+   expressible; the `amplification` definition in the diagnostics block (Ipopt's
+   `regularization_size` today); re-pin the brief's sources at the current design commit;
+   the owner's ruling on `low` line floors and `budget_undershot`.
+2. Two Stage 5 deviations to fold in: "skipped by name" reporting when a fixture certificate
+   fails; the reaction-direction zero assertion on the feed sensitivity (S9).
+3. The brief tells the worker to read the tree through Serena (symbol overview, find symbol,
+   references) before writing; `mcp_servers.serena` in `~/.codex/config.toml` points at the
+   stage worktree, so re-point it when the Stage 6 worktree is created.
+4. Model and effort per the owner: attempt 4 ran on `gpt-5.6-sol` at high; never downgrade.
 
-**Acceptance is the coordinator's, never the worker's.** When the result file appears:
-
-1. Read `outcome`. Anything but `complete` is reported to the owner, not resumed alone.
-2. Rebuild from clean in the worktree; run every gate in the JSON.
-3. Apply every mutation with `sed -i`, rebuild, confirm the gate goes **red**, restore.
-   A mutant that does not build, or stays green, is `mutation_invalid`: reject.
-4. Read the checks. Attempt 2 was 14/14 green and rejected on reading (`STAGE-LOG.md`,
-   "Stage 5 — Equilibrium: two attempts, neither merged"). Compare each of the eight
-   rewritten checks against the table in the brief's "Attempt three" section.
-5. Line counts by `git diff --numstat dd81eb5`, grouped native / bindings+Python / tests.
-6. Merge only if clean; commit by category (engine, then canon); tag the attempt either way.
-
-A correction goes back to the same session with `codex exec ... resume <session id>`
-(global flags before `resume`), never a fresh worker.
+**Acceptance is the coordinator's, never the worker's.** `accept.sh` (in the session
+scratchpad; recreate from `STAGE-LOG.md`'s description if lost): `meson setup --wipe
+<build> engine`, compile, every gate in brief order, then every mutation: sed, rebuild,
+run, expect red, `git checkout` the file, rebuild. A mutant that does not build, or stays
+green, is `mutation_invalid`; sort those into tooling artifact, stale sed and real finding
+before reporting, and send the stale ones to the planner for re-anchoring. Then read the
+checks against the design's table. Measure any file the worker compacted as first written,
+from its log.
 
 ## Standing rules (owner's, verbatim where quoted)
 
@@ -72,8 +59,7 @@ A correction goes back to the same session with `codex exec ... resume <session 
 
 ## Open items, in priority order
 
-1. Attempt 4 acceptance (above). Compare the rewritten checks against `EQUILIBRIUM.md` §4.2
-   and the brief's "Attempt four" section; run the five new mutations.
+1. Stage 6 brief (above).
 2. `FINAL-CHECK.md` is unwritten; Stage 8 needs it before a brief. `REGRESSION.md` exists;
    before the Stage 6 brief it owes four items from the 2026-09-03 reviewer audit: (a) an
    observation that names several solved targets, so finite-dose heat (two solves) is

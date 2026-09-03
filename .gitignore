@@ -8,3 +8,6 @@
 /.management-state/
 /.workflow/
 /docs/scientific/.research/
+
+# Serena code-navigation state, per checkout
+.serena/

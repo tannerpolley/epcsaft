@@ -575,3 +575,41 @@ but each phase's `η` comes from its own branch; the subspace is equal compositi
 its density (2.4 % blank, 0.64 statements per line) matches the tag version, so no penalty,
 and the 48-line gap is recorded as unexplained. Verdict: not accepted as it stood; one
 correction resume for clause (c), then the eight mutations re-run.
+
+## Stage 5 — Equilibrium: attempt 4 accepted and merged, 2026-09-03
+
+**Third resume, clause (c).** S15(c) added to `boundary_checks.cpp` (13 lines, 210 of 270):
+the binary bubble cell at 280 K reached the `phases_coincide` refusal, not a budget stop.
+Tree `d3f3392`, tagged `stage-05-attempt-4`.
+
+**Acceptance run 2** (`accept.sh`, wipe and rebuild, every gate, every mutation with the
+attempt-3 catchers first): clean build green, **24 gates green, 24 mutations red**, every
+mutant built, worktree clean after restore. Merged into `greenfield` at `b40d5a7` as one
+commit crossing engine and canon, as a stage does. Whole stage against `dd81eb5`: native
++3,236, bindings and Python +721, tests +1,067; test source now 2,993 lines, recorded.
+
+**Read against `EQUILIBRIUM.md` §4.2.** The eight checks attempt 2 faked are real: feed-basis
+invariance compares every row's kind, phase, index and identifier across four bases;
+permutation builds the permuted point through the layout and relabels through a second
+fixture; the residual verifier runs six solved cells and asserts Euler's relation per phase,
+neutrality per ion phase, affinity per reaction per phase, the objective equal to the feed
+dual, and the record's residual equal to the recomputed one; the local minimum on both
+flashes; certificate, lever rule, isomerisation and reactive tie line as their rows say;
+three levers against centred differences; both Jacobian halves; the dew cold-seeded.
+
+**Recorded deviations, carried into Stage 6's brief, not gates:** no "skipped by name"
+reporting when a certificate fails (the three-phase clause is absent rather than reported);
+the reaction-direction zero on the feed sensitivity post-dates the brief the worker ran
+against. Provenance: `request_compile.cpp` first written at 838, compacted to 781, restored
+to 790, density equal to the tag's; 48 lines unexplained.
+
+**Serena.** Owner's instruction: the coordinator, the planner and the workers read the tree
+through Serena. It was pinned to the superseded checkout. Now: `.serena/project.yml` in the
+greenfield and stage worktrees (gitignored), the Claude Code server's `--project` at the
+greenfield worktree, a `serena` entry for the codex workers at the stage worktree. Takes
+effect at the next session and the next launch; the next brief tells the worker to use it.
+
+**Lessons that cost something today.** `$!` after `setsid nohup` is the wrapper's pid; find
+codex with `ps` and kill that. A killed run holds its thread-writer lock until the codex
+process is gone. `git merge` runs in whichever worktree you are in. A monitor's completion
+line can be missed: check the log by hand when the expected duration passes.
