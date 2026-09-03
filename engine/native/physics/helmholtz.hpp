@@ -241,14 +241,20 @@ HelmholtzResult<Scalar> residual_helmholtz(
             }
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
+            const int charge_i = parameters.charge_number[i];
+            const int charge_j = parameters.charge_number[j];
+            const bool same_sign_excluded =
+                parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)
+                && charge_i * charge_j > 0;
             const Scalar epsilon_i = dispersion_energy_override == nullptr
                 ? Scalar(parameters.dispersion_energy_over_k[i])
                 : (*dispersion_energy_override)[i];
             const Scalar epsilon_j = dispersion_energy_override == nullptr
                 ? Scalar(parameters.dispersion_energy_over_k[j])
                 : (*dispersion_energy_override)[j];
-            const Scalar epsilon_ij = scalar_sqrt(epsilon_i * epsilon_j)
-                * (Scalar(1.0) - k_ij);
+            const Scalar epsilon_ij = same_sign_excluded
+                ? Scalar(0.0)
+                : scalar_sqrt(epsilon_i * epsilon_j) * (Scalar(1.0) - k_ij);
             const Scalar weight = mole_fractions[i] * mole_fractions[j] *
                 parameters.segment_count[i] * parameters.segment_count[j] *
                 sigma_ij * sigma_ij * sigma_ij;

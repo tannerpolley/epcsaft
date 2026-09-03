@@ -22,6 +22,7 @@ void register_eos(py::module_& module) {
         .def_readwrite("site_component", &epcsaft::ParameterDocument::site_component)
         .def_readwrite("site_multiplicity", &epcsaft::ParameterDocument::site_multiplicity)
         .def_readwrite("electrolyte_choice", &epcsaft::ParameterDocument::electrolyte_choice)
+        .def_readwrite("ionic_dispersion_choice", &epcsaft::ParameterDocument::ionic_dispersion_choice)
         .def_readwrite("permittivity_choice", &epcsaft::ParameterDocument::permittivity_choice)
         .def_readwrite("entries", &epcsaft::ParameterDocument::entries);
     module.def("build_parameters", &epcsaft::build_parameters);

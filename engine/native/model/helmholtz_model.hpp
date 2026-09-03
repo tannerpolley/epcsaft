@@ -63,7 +63,7 @@ struct DensityRoot final {
     double pressure_residual = 0.0;
     double pressure_density_derivative = 0.0;
     std::size_t iterations = 0;
-    std::size_t stable_root_count = 0;
+    std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
 };
