@@ -294,6 +294,11 @@ window statistic: a ring of `STALL_WINDOW + 1` residuals, `contraction() = (r_k 
 r_{k−W})^{1/W}`, absent below the window; on `r_k = r_0 q^k` it returns exactly `q`
 (*derived*; §8.1's closed form).
 
+`rule_no_hand_named_residual_stop` in `tools/check-engine-architecture.py` enforces this
+boundary: comment-stripped native code may not assign a residual stop through `.stop` or
+`->stop`; it must call `classify`. Solver-owned `left_domain`, `singular`, and `infeasible`
+remain legal, and positional aggregate initialisers are not assignments.
+
 ### 5.3 What the density root's record can honestly carry, before and after the slope repair
 
 | | Stage 2 (before 04.repair) | after 04.repair |
@@ -350,6 +355,12 @@ public:
 };
 }
 ```
+
+Every computational function bound in `native/bindings/` opens a `core::Scope` at entry, so
+a captured binding call has exactly one root even when it calls another bound function.
+`rule_bound_functions_open_a_scope` resolves those bound symbols to their definitions and
+checks this rule; constructors, property accessors, and counter plumbing are not computation
+entry points.
 
 **Turning it on.** Natively `core::Capture capture;` around the call; from Python
 
@@ -524,6 +535,8 @@ request to the coordinator.
 | 10 | a `core/` file has no `"..."` include outside `core/` and no numerical-library include (`scalar.hpp` may include `<cppad`); `Capture` and `active(` appear only under `core/` and `bindings/` | the layer reaching up; an engine layer reading the trace |
 | 11 | `Unspecified` does not appear in `core/parameters.hpp`; every field of `Parameters` whose type is an `enum class` declared in that file is `Declared<...>` | a hole inside an enum; a bare selector |
 | 12 | `ast` over `src/epcsaft/*.py`: every function-signature default is the constant `None` | a physical default on the surface |
+| 13 | every computational function pointer bound in `native/bindings/` resolves to a definition with `core::Scope` | a binding entry without a trace root |
+| 14 | comment-stripped native assignments to residual `.stop`/`->stop` use `classify` | a solver naming `converged`, `converged_to_floor`, `stalled`, or `budget_exhausted` |
 
 ### 8.4 Reported, never asserted (`model_floor.cpp`)
 

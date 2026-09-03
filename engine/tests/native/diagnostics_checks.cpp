@@ -94,7 +94,7 @@ void declaration_guards() {
     CHECK(derived.upstream == &epcsaft::policy::ASSOCIATION_RESIDUAL);
 
     epcsaft::core::Declared<epcsaft::ElectrolyteForm> missing;
-    CHECK(!missing.is(epcsaft::ElectrolyteForm::None));
+    CHECK(!missing.declared());
     threw = false;
     try { missing.require("x"); }
     catch (const epcsaft::core::MissingDeclaration& error) {
@@ -106,14 +106,6 @@ void declaration_guards() {
     aqueous.electrolyte_form = {};
     threw = false;
     try { epcsaft::HelmholtzModel(std::move(aqueous)); }
-    catch (const std::invalid_argument& error) {
-        threw = std::string(error.what()).find("electrolyte_form") != std::string::npos;
-    }
-    CHECK(threw);
-    auto neutral = model_support::neutral_binary();
-    neutral.electrolyte_form = epcsaft::ElectrolyteForm::None;
-    threw = false;
-    try { epcsaft::HelmholtzModel(std::move(neutral)); }
     catch (const std::invalid_argument& error) {
         threw = std::string(error.what()).find("electrolyte_form") != std::string::npos;
     }
@@ -228,6 +220,43 @@ void trace_case(epcsaft::Parameters parameters, double temperature, double press
     CHECK(root_seen);
 }
 
+void trace_state_case(
+    epcsaft::Parameters parameters, double temperature, double density,
+    std::vector<double> composition
+) {
+    epcsaft::HelmholtzModel model(std::move(parameters));
+    const auto uncaptured = model.state(temperature, density, composition);
+    epcsaft::core::Capture capture;
+    const auto captured = model.state(temperature, density, composition);
+    const auto trace = capture.take();
+    same_state(uncaptured, captured);
+    CHECK(!trace.spans.empty());
+    CHECK(std::string(trace.spans.front().name) == "state");
+}
+
+void trace_activity_case() {
+    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
+    const std::vector<double> solvent = {1.0, 0.0, 0.0};
+    const std::array<std::size_t, 2> ions = {1, 2};
+    const std::array<int, 2> stoichiometry = {1, 1};
+    const auto reference = epcsaft::infinite_dilution_reference(
+        model, 298.15, 1.0e5, solvent, ions, stoichiometry
+    );
+    const auto uncaptured = epcsaft::electrolyte_activity(
+        model, 298.15, 1.0e5, solvent, ions, stoichiometry, 1.0e-8, reference
+    );
+    epcsaft::core::Capture capture;
+    const auto captured = epcsaft::electrolyte_activity(
+        model, 298.15, 1.0e5, solvent, ions, stoichiometry, 1.0e-8, reference
+    );
+    const auto trace = capture.take();
+    CHECK(uncaptured.single_ion == captured.single_ion);
+    CHECK(uncaptured.mean_ionic_log_molality_scale
+          == captured.mean_ionic_log_molality_scale);
+    CHECK(!trace.spans.empty());
+    CHECK(std::string(trace.spans.front().name) == "electrolyte_activity");
+}
+
 void trace_invariance() {
     trace_case(model_support::neutral_binary(), 300.0, 1.0e5, {0.4, 0.6},
                epcsaft::DensityBranch::Vapor);
@@ -235,6 +264,8 @@ void trace_invariance() {
                epcsaft::DensityBranch::Liquid);
     trace_case(model_support::ethane(), 320.0, 1.0e6, {1.0},
                epcsaft::DensityBranch::Vapor);
+    trace_state_case(model_support::neutral_binary(), 300.0, 1.0, {0.4, 0.6});
+    trace_activity_case();
 }
 
 }  // namespace
