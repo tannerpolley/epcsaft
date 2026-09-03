@@ -72,6 +72,41 @@ which the headline never did.
 Do not trim a file to meet a headline. If a file genuinely needs more than its ceiling, that
 is `budget_exceeded` — stop and report the number.
 
+## The checks are the stage, and they are named
+
+A first attempt passed all twelve gates and was rejected. The gates ran the meson targets;
+the targets were smoke tests. `boundary_checks.cpp` was twenty-seven lines asserting that
+sizes are finite and nullity is zero. **C1–C9 and S1–S16 did not exist.**
+
+So this is now explicit. `EQUILIBRIUM.md` §4.1 names nine compile-tier claims and §4.2 names
+sixteen solve-tier claims (S12 is Stage 7's, and S7 has no mutation by design). **Each one is
+a function named for it** — `check_c1`, `check_c4`, `check_s10` — called from `main` in the
+file §9 assigns it, asserting the claim as §4 words it, not a shape or a finiteness proxy.
+You also write `tools/check-equilibrium-claims.py`, which reads the names out of
+`EQUILIBRIUM.md` and fails if any is missing or uncalled. A claim with no function is a
+missing check; a function that is never called is worse.
+
+Concretely, the ones the first attempt proxied and must not be proxied again:
+
+- **C1** walks the lattice — every cell from the four enums, thousands of specifications,
+  none sampled — comparing compile's verdict to a predictor built from the specification
+  alone. One loop over three feed bases is C4, not C1.
+- **S10** compares `F_y` against a **centred difference** of `F` in every unknown. Asserting
+  `jacobian.size() == values.size() * point.size()` is a shape, and a shape is not a
+  derivative.
+- **S3** solves bubble, then solves dew *seeded cold* from the result and recovers the input.
+- **S9** compares `dy/dθ` against a centred difference of the whole solve.
+- **S1** and **S13** read `max(tolerance, floor)` from the result's `Convergence` record.
+
+## Line counts are a signal, not a formality
+
+Every file in the first attempt came in below its `low` — 1,826 lines against 4,085. `low`
+is the design's estimate of what the file must *contain*. Coming in under it is now a
+`budget_undershot` stop: report the file and the number rather than declaring the stage
+complete. If you believe a file genuinely needs less than its `low`, that is a finding about
+`EQUILIBRIUM.md` worth reporting — say so and stop, and the coordinator will take it to the
+planner.
+
 ## Stopping
 
 Stop and report rather than adapting if: a `must_contain` marker is absent; a write would pass

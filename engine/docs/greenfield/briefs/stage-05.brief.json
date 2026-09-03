@@ -9,7 +9,8 @@
     "budget_exceeded: any write past its ceiling",
     "gate_red_after_write: a gate green at base goes red for a reason other than the write it names",
     "scope_expansion: the work requires a route name, a second driver, an outer Newton around solve_equilibrium, or a change to a tolerance or to classify",
-    "design_silent: EQUILIBRIUM.md does not decide something the code must decide -- report the cell or row and stop, do not choose"
+    "design_silent: EQUILIBRIUM.md does not decide something the code must decide -- report the cell or row and stop, do not choose",
+    "budget_undershot: a write below its `low` line count. `low` is not advice -- it is the design's estimate of what the file must contain, and coming in under it means something specified is missing. Report the file and the number and stop"
   ],
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
@@ -242,6 +243,15 @@
         "estimate": 30,
         "ceiling": 55
       }
+    },
+    {
+      "path": "tools/check-equilibrium-claims.py",
+      "edit": "assert every claim EQUILIBRIUM.md 4.1 and 4.2 names has a function of that name, called from main, in the right check file",
+      "lines": {
+        "low": 40,
+        "estimate": 70,
+        "ceiling": 110
+      }
     }
   ],
   "gates": [
@@ -277,6 +287,18 @@
         "expect": "abort",
         "bites_only_after_write": true,
         "why": "C1's own mutation: count a pinned phase as free"
+      }
+    },
+    {
+      "id": "named_checks_exist",
+      "command": "python3 tools/check-equilibrium-claims.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/tests/native/specification_checks.cpp",
+        "sed": "s/void check_c1/void check_c1_disabled/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "renaming one named check must make the claim checker red"
       }
     },
     {
