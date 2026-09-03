@@ -160,6 +160,19 @@ Parameters build_parameters(const ParameterDocument& document) {
     } else if (document.electrolyte_choice != "none") {
         reject("unknown electrolyte choice " + document.electrolyte_choice);
     }
+    if (document.electrolyte_choice == "none") {
+        if (!document.ionic_dispersion_choice.empty()) {
+            reject("unconsumed model/electrolyte/ionic_dispersion");
+        }
+    } else if (document.ionic_dispersion_choice.empty()) {
+        reject("missing model/electrolyte/ionic_dispersion");
+    } else if (document.ionic_dispersion_choice == "all-ion-pairs") {
+        result.ionic_dispersion = IonicDispersion::AllIonPairs;
+    } else if (document.ionic_dispersion_choice == "exclude-same-sign-ion-pairs") {
+        result.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    } else {
+        reject("unknown ionic_dispersion choice " + document.ionic_dispersion_choice);
+    }
 
     if (document.permittivity_choice == "solvent-only"
         || document.permittivity_choice == "ion-fraction-suppression"
@@ -345,6 +358,23 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
     }
     for (std::size_t i = 0; i < components; ++i) for (std::size_t j = i + 1; j < components; ++j) {
+        const bool same_sign = result.charge_number[i] * result.charge_number[j] > 0;
+        if (same_sign && result.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)) {
+            for (const auto& entry : document.entries) {
+                if (entry.index.size() != 2
+                    || !((entry.index[0] == i && entry.index[1] == j)
+                         || (entry.index[0] == j && entry.index[1] == i))) {
+                    continue;
+                }
+                if (entry.field == "k_ij"
+                    || entry.field == "k_ij_reciprocal_temperature_slope"
+                    || entry.field == "k_ij_reference_temperature") {
+                    const std::string identity = where(entry);
+                    reject("unconsumed " + identity + " under exclude-same-sign-ion-pairs");
+                }
+            }
+            continue;
+        }
         if (result.k_ij[i * components + j] == 0.0 && result.k_ij[j * components + i] == 0.0) {
             bool present = false;
             for (const auto& entry : document.entries) if (entry.field == "k_ij" && entry.index.size() == 2 && ((entry.index[0] == i && entry.index[1] == j) || (entry.index[0] == j && entry.index[1] == i))) present = true;
