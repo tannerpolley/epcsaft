@@ -7,7 +7,7 @@ where they disagree, they are canonical and the page is stale.
 
 | document | what it owns |
 |---|---|
-| `TRANSFER.md` | **the map of the work**: the twelve stages in run order, each one's writes, design document and gate; the oracle; the crosswalk from the old numbering |
+| `TRANSFER.md` | **the map of the work**: the eight stages in category order, each one's writes, design document and gate; the oracle; the crosswalk from the old numbering |
 | `ORCHESTRATION.md` | who does what, the verified `codex exec` invocation, stop conditions, environment traps |
 | `CARRY-OVER.md` | what is copied, what is written fresh, what has no successor |
 | `STAGE-LOG.md` | estimate vs actual per stage, and every decision taken while writing it |
