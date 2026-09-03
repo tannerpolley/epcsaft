@@ -154,6 +154,24 @@ lying about its model, and the constructor says so by the selector's name.
 surface makes an omission loud on the way in; the trace makes the declaration visible on the
 way out.
 
+### 2.5 Two declared documents, never one (2026-09-03)
+
+Owner decision after the independent review: ePC-SAFT parameters and pure-component
+thermochemistry are separate declared objects, built by separate builders from separate
+packet schemas. They share component ids and nothing else.
+
+| object | owns | built by | packet schema |
+|---|---|---|---|
+| `Parameters` (`core/parameters.hpp`, *measured*) | everything the residual Helmholtz energy needs; molar mass stays here, the residual side uses it (`physics/electrolyte.hpp:113, 236, 271`) | `surface/parameter_builder` from `epcsaft.parameters` v1 | exists |
+| `Thermochemistry` (new, `core/thermochemistry.hpp`) | per species: reference enthalpy and entropy of formation at `(T_ref, P°)` on a named standard state; an ideal-gas heat-capacity correlation of a declared kind; and, for the aqueous standard state, the convention block the model's transfer needs: reference solvent composition, standard molality, `P°`, `T_ref` | `surface/thermochemistry_builder` from `epcsaft.thermochemistry` v1 | new |
+
+A model built from `Parameters` computes residuals; a model given both computes totals
+(`EOS.md`, "Properties"). Rule 11 (every enum-typed field wrapped in `Declared`) is extended
+to `core/thermochemistry.hpp`; the checker scans both documents and skips the second while
+the file does not exist. The owner's data rule: the package holds no thermochemistry data,
+the user supplies it, and the oracles carry theirs as packets transcribed from open sources
+with per-row provenance.
+
 ## 3. The parameter builder
 
 ### 3.1 Its input is a list of facts, not a document

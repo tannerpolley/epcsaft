@@ -1,7 +1,7 @@
 {
   "stage": "05",
   "branch": "stage-05",
-  "base": "greenfield@18e18e5",
+  "base": "stage-05@d02f3c9 (tag stage-05-attempt-3)",
   "source_commit": "88b5a2a",
   "reaccepts": null,
   "stop_conditions": [
@@ -16,7 +16,7 @@
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
     "test -d engine/native/model",
-    "test \"$(ls -A engine/native/equilibrium)\" = .gitkeep",
+    "test -f engine/native/equilibrium/request_compile.cpp && test -f engine/native/equilibrium/problem.hpp && test -f engine/native/equilibrium/stoichiometry.cpp && git describe --tags --exact-match stage-05-attempt-3 >/dev/null 2>&1 || git cat-file -e d02f3c9^{commit}",
     "grep -q \"ipopt_dep = dependency('ipopt'\" engine/meson.build",
     "grep -q 'DensityRoot solve_density' engine/native/model/density.cpp",
     "grep -q 'stable_root_count' engine/native/model/density.cpp",
@@ -162,22 +162,31 @@
         "ceiling": 1150
       },
       "must_contain": [
+        "EQUILIBRIUM_MAX_ITERATIONS",
+        "EQUILIBRIUM_ROW_RESIDUAL",
+        "PACKING_FRACTION_CEILING",
+        "PHASE_COINCIDENCE_DISTANCE",
         "RowKind::Moiety",
-        "compiled_.hessian"
+        "compiled_.hessian",
+        "ipopt_iteration"
       ]
     },
     {
       "path": "engine/native/equilibrium/phase_boundary.cpp",
-      "edit": "seeds and continuation for k >= 1; the one-component case. No identifier named for saturation",
+      "edit": "seeds and continuation for k >= 1; the one-component case. No identifier named for saturation; the three-rule start of EQUILIBRIUM.md §5 step 4",
       "lines": {
-        "low": 110,
-        "estimate": 150,
-        "ceiling": 210
-      }
+        "low": 150,
+        "estimate": 220,
+        "ceiling": 290
+      },
+      "must_contain": [
+        "ln_phi_liquid[i] - ln_phi_vapor[i]",
+        "start_symmetric"
+      ]
     },
     {
       "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
-      "edit": "KKT system, rank, condition, output rows",
+      "edit": "KKT system, rank, condition, output rows; levers T, P and the feed (F_theta = -B on the balance rows)",
       "lines": {
         "low": 180,
         "estimate": 250,
@@ -208,12 +217,16 @@
     },
     {
       "path": "engine/tests/native/equilibrium_support.hpp",
-      "edit": "Ascani 2023 reactive ternary with its reaction and standard-state Gibbs, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor",
+      "edit": "Ascani 2023 reactive ternary with its reaction and standard-state Gibbs, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor; the ternary fixture states, the non-aborting CHECK, the trace printer",
       "lines": {
-        "low": 100,
-        "estimate": 140,
-        "ceiling": 190
-      }
+        "low": 130,
+        "estimate": 190,
+        "ceiling": 250
+      },
+      "must_contain": [
+        "++failures;",
+        "core::Capture"
+      ]
     },
     {
       "path": "engine/tests/native/specification_checks.cpp",
@@ -228,18 +241,18 @@
       "path": "engine/tests/native/equilibrium_checks.cpp",
       "edit": "S1, S2, S6, S7, S8, S10 eval_h half, S11, S13, S15, S16",
       "lines": {
-        "low": 130,
-        "estimate": 185,
-        "ceiling": 250
+        "low": 170,
+        "estimate": 250,
+        "ceiling": 330
       }
     },
     {
       "path": "engine/tests/native/boundary_checks.cpp",
       "edit": "S3, S4, S5, S9, S10 F_y half, S14",
       "lines": {
-        "low": 100,
-        "estimate": 140,
-        "ceiling": 180
+        "low": 140,
+        "estimate": 200,
+        "ceiling": 270
       }
     },
     {
@@ -268,6 +281,21 @@
         "estimate": 70,
         "ceiling": 110
       }
+    },
+    {
+      "path": "engine/native/core/numerical_policy.hpp",
+      "edit": "four entries: EQUILIBRIUM_ROW_RESIDUAL 1e-10, EQUILIBRIUM_MAX_ITERATIONS 200, PHASE_COINCIDENCE_DISTANCE 1e-6, PACKING_FRACTION_CEILING 0.74 (EQUILIBRIUM.md §5, tolerance and budget)",
+      "lines": {
+        "low": 20,
+        "estimate": 28,
+        "ceiling": 40
+      },
+      "must_contain": [
+        "EQUILIBRIUM_ROW_RESIDUAL",
+        "EQUILIBRIUM_MAX_ITERATIONS",
+        "PHASE_COINCIDENCE_DISTANCE",
+        "PACKING_FRACTION_CEILING"
+      ]
     }
   ],
   "gates": [
@@ -424,7 +452,7 @@
         "sed": "s|-F_theta|F_theta|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "S9's own mutation: flip the sign of F_theta; bites only if F_theta is the assembly's, never the test's"
+        "why": "S9's own mutation for T, P and the feed lever: flip the sign of F_theta; bites only if F_theta is the assembly's, never the test's"
       }
     },
     {
@@ -486,6 +514,66 @@
         "bites_only_after_write": true,
         "why": "C7's own mutation: index a phase where a component was meant in the balance row; a cell with more phases than components crashes, which also counts"
       }
+    },
+    {
+      "id": "coincidence_every_cell",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "sed": "s|PHASE_COINCIDENCE_DISTANCE.value|PHASE_COINCIDENCE_DISTANCE.value * 0.0|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S15(c): with the distance floor zeroed the trivial boundary solution is returned as converged, which is attempt 3"
+      }
+    },
+    {
+      "id": "start_splits_composition",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/phase_boundary.cpp",
+        "sed": "s|std::exp(ln_phi_liquid\\[i\\] - ln_phi_vapor\\[i\\])|1.0|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "K_i = 1 is the symmetric start; the ternary {V,L} flash at 1 bar collapses to the saddle and S2, S6 go red"
+      }
+    },
+    {
+      "id": "own_row_tolerance",
+      "command": "! grep -rn 'DENSITY_ROOT_RESIDUAL' engine/native/equilibrium/",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
+        "sed": "0,/EQUILIBRIUM_ROW_RESIDUAL/s||DENSITY_ROOT_RESIDUAL|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "the equilibrium rows have their own criterion; a borrowed density tolerance on rows of another unit was attempt 3's 5e-12 chase"
+      }
+    },
+    {
+      "id": "checks_do_not_abort",
+      "command": "! grep -n 'std::abort' engine/tests/native/specification_checks.cpp engine/tests/native/equilibrium_checks.cpp engine/tests/native/boundary_checks.cpp",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/tests/native/equilibrium_support.hpp",
+        "sed": "s|++failures;|++failures; std::abort();|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "a check that aborts hides every check after it; attempt 3 reported two reds and ran neither file past its first solve"
+      }
+    },
+    {
+      "id": "dew_seeded_cold",
+      "command": "! grep -n 'solve_equilibrium(model, dew, ' engine/tests/native/boundary_checks.cpp",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/tests/native/boundary_checks.cpp",
+        "sed": "s|solve_equilibrium(model, dew)|solve_equilibrium(model, dew, bubble_result)|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "trap 13"
+      }
     }
   ],
   "reported": [
@@ -494,5 +582,45 @@
     "gates",
     "deviations",
     "stop_detail"
+  ],
+  "diagnostics": [
+    {
+      "span": "solve_equilibrium",
+      "events": [
+        "ipopt_iteration: inf_pr, inf_du, mu, d_norm, regularization_size, alpha_pr, alpha_du, ls_trials",
+        "phase_distance per pair",
+        "michelsen_deficit per phase",
+        "reduced_hessian_minimum",
+        "start_rule (1, 2 or 3 of EQUILIBRIUM.md §5 step 4)"
+      ],
+      "convergence": {
+        "residual": "infinity norm of the dimensionless rows at the returned point",
+        "criterion": "EQUILIBRIUM_ROW_RESIDUAL",
+        "floor": "largest phase gradient_floor",
+        "amplification": "Ipopt's last regularization_size"
+      },
+      "check": "record.residual equals max |row| recomputed from the returned state through CompiledSystem::evaluate",
+      "gate": "equilibrium"
+    },
+    {
+      "span": "equilibrium_evaluate",
+      "events": [
+        "row_values",
+        "gradient_floor per phase"
+      ],
+      "convergence": null,
+      "check": null,
+      "gate": null
+    },
+    {
+      "span": "boundary_start",
+      "events": [
+        "k_factor per component",
+        "branch_density per phase"
+      ],
+      "convergence": null,
+      "check": null,
+      "gate": null
+    }
   ]
 }

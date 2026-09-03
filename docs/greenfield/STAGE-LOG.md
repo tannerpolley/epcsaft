@@ -444,3 +444,81 @@ also edited `meson.build` or `src/`, which are in the fingerprint, so stage acce
 a native-only edit did not. Now `engine/native` is hashed. `check-affected.sh` and
 `check-analysis-layout.py` carried the same dead path and follow. This is the one-directional
 shape again, in the build: a cache key that names a directory nothing checks exists.
+
+## Stage 5 attempt 3 stopped, and the control plane reset, 2026-09-03
+
+**Attempt 3.** The worker stopped itself `gate_impossible` after 47 minutes rather than
+weaken a check. Reproduced by the coordinator in the worktree: the local-minimum check
+(`equilibrium_checks.cpp:73`, reduced Hessian positive definite) fails because the
+two-phase flash fixture collapses to one phase, and the dew–bubble symmetry check
+(`boundary_checks.cpp:45`) fails on the recovered pressure. Every compile-tier check,
+the architecture checker (15 rules over 30 sources), the 24 named claims and the wheel
+build are green; `check-affected` is red by design until Stage 6. About 4,300 new lines
+plus 221 edited. Not tagged, merged or resumed; the owner sent the two failures to the
+Equilibrium planner for a ruling on design versus implementation before any resume.
+
+**The reset.** An independent read-only audit the same day found the engine clean against
+every checker rule and placed the drift in the transfer documents. The owner agreed and
+had it applied before Stage 5 continues, as one canon change: `TRANSFER.md` no longer says
+Stage 2 has not started, no longer argues for the two-stage split the crosswalk already
+retired, and numbers the downstream stages 5, 6 and 7; its test figure is the prediction
+beside the measurement (1,926 after Stage 4, about 2,400 expected). `CANON.md` says a line
+count is never completion evidence in either direction. `CARRY-OVER.md`'s stage column
+drops the retired numbers 7, 10 and 12. `target-layout.md` is marked historical and kept
+because closed briefs pin it by sha. ADR 0005 is marked superseded in part, naming the
+three decisions the rebuild reverses and what survives; ADR 0007's CAP-14 no longer names
+a deleted test file. `engine/ARCHITECTURE.yaml` drops its stage status and the Pint
+dependency, lists all seven layers the checker ranks, and points the constants home at
+`core/`. The paired briefs and the preflight are untouched: they are the mechanism that
+caught two of Stage 4's three plan defects, and they retire at cutover, not before.
+
+## Attempt 3 tagged and rejected; the planner's revisions for attempt 4, 2026-09-03
+
+Tagged `stage-05-attempt-3` at `d02f3c9` on `stage-05`. The planner reproduced both reds
+from the attempt's own wheel and read them as one defect: the coincidence refusal guarded by
+`pinned_count == 0`, so bubble, dew and cold dew on methane–ethane at 180 K all converged to
+`x_L = y_V = 0.5/0.5` at 15.8 bar, 149 Pa and 15.8 bar. Behind it, four design gaps (no
+coincidence scale or `k ≥ 1` wording, no start rule, no equilibrium row tolerance, fixtures
+without states) and three procedural ones (abort-first check macro, a warm-seeded dew against
+trap 13, no `diagnostics` array). The owner ruled: tag and reject; attempt 4 from the tag.
+
+Applied to `EQUILIBRIUM.md` by the coordinator from the planner's draft, mapped by heading:
+§2.1 bounds, §2.2 dimensionless rows, §3.4 the coincidence mechanism, §5 step 4 the three-rule
+start and the tolerance-and-budget table, §4 preamble non-aborting checks, §4.2 the fixture
+state table and S15 clause (c), §4.4 diagnostics, trap 6 and trap 13. One sentence outside
+the draft was changed to agree with it: §3.4's "or the default: one phase at the feed, the
+other displaced toward the pure component with the largest positive pair deviation" is now
+the `start_symmetric` refusal, because rule 3 of the start rule removes that default. The
+brief JSON gains the tokens, the moved budgets, `numerical_policy.hpp` as a write, five gates
+and the `diagnostics` array; `preflight-brief.py` now refuses a native-writing brief without
+one, which `CORE.md` §7 asked for and which would have refused attempts 1–3.
+
+For the log, outside the stage: `Parameters.from_json` on the nine-species packet with
+`components=("monoethanolamine", "water")` builds, then `HelmholtzModel` throws
+"invalid ionic_dispersion". A neutral subset of an electrolyte packet cannot make a model.
+
+## The layering draft: properties, thermochemistry, the regression shell, 2026-09-03
+
+The planner's layering draft (revision 2, reviewed by an independent Fable 5.1 agent against
+the tree and the three downstream applications) was approved by the owner and applied by the
+coordinator. `EOS.md` gains a "Properties" section: `State` with a `PropertyOrder` flag,
+totals absent by name without a declared `Thermochemistry`, the fixed-pressure derivative
+block, `physics/ideal.hpp` on one basis, the standard-state transfer with a temperature
+derivative and a cache, `K(T) → g°(T)` in the model, consistency reported not asserted.
+`SURFACE.md` §2.5 makes `Thermochemistry` a second declared document with its own builder
+and packet schema; rule 11 reaches `core/thermochemistry.hpp` once it exists. `EQUILIBRIUM.md`
+§12 is the regression shell (four-node expression, no property names in `regression/`), the
+levers gain the feed with S9's feed column, the seventh active family is named, and §13 is
+the applications table with its provenance. `REGRESSION.md` is written; `TRANSFER.md`'s
+Stage 6 drops the two observable files. Rule 4 gains `Discover`. The Stage 5 brief's S9 and
+its sensitivity gate say `T`, `P` and the feed; preflight clean. `chemicals` 1.5.2 is a dev
+dependency for the thermochemistry transcription tool.
+
+**The registry is Markdown-only** (owner ruling the same day: "latex files are for
+manuscripts"). Schema 3: `math` replaces `latex`, `label` is dropped, `source` is a plain
+citation string (`\cite{Key}` became `[Key]`, `\eqref` became the identifier), and the
+check no longer reads `references.bib`; a LaTeX-only command in `source` or `math` is
+refused. Eleven entries added from the planner's bodies: the ideal-gas reference term, four
+heat-capacity kinds, two `K(T)` kinds, total enthalpy and entropy, the transfer's temperature
+derivative, and the reaction-derived thermochemistry. The reactive electrolyte two-liquid
+oracle row is still pending the owner's ruling (candidate: the lithium extraction network).

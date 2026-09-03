@@ -85,6 +85,10 @@ finitely many.
 
 ## Budget
 
-`TRANSFER.md` allows 1,650 lines of tests for the whole engine, against 4,404 in
-the tree it replaces. If a stage wants more than its share, the question is
-whether the checks pass the diagnostic, not whether the budget should grow.
+`TRANSFER.md` predicted 1,650 lines of tests for the whole engine, against 4,404 in
+the tree it replaces. The measured figure is 1,926 after Stage 4 and about 2,400 once
+Stage 5 lands (`EQUILIBRIUM.md` §8). The number is recorded, never trimmed to fit. If a
+stage wants more than its share, the question is whether the checks pass the diagnostic,
+not whether the budget should grow. A line count is never completion evidence in either
+direction: a ceiling bounds a stage, a minimum proves nothing, and a check is accepted by
+reading it against its named property and mutation.

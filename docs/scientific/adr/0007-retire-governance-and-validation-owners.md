@@ -53,8 +53,9 @@ The current evidence owners for the former capability claims are:
   `analyses/2026-grepe-hard-cut/results/validation-gates.csv`.
 - CAP-13: the reactive-bubble row in
   `analyses/2026-grepe-hard-cut/results/validation-gates.csv`.
-- CAP-14: `engine/ARCHITECTURE.yaml` and
-  `engine/tests/equilibrium/numerical/test_grepe.py`.
+- CAP-14: `engine/ARCHITECTURE.yaml` and `tools/check-engine-architecture.py`
+  (`engine/tests/equilibrium/numerical/test_grepe.py` was deleted with the old tree at
+  Stage 1; the checker's rules 4 and 7 are the surviving enforcer).
 
 The 1998 Chase validation ladder is aggregated by
 `analyses/reproduction/1998-chase/results/chemical-equilibrium-validation.json`;

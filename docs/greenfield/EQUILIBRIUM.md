@@ -38,7 +38,19 @@ Per declared phase `p` with support `S_p`:
 |---|---|---|
 | `x_p` (as `ln x_{p,i}`, `i ∈ S_p`) | composition | always free |
 | `N_p` | phase amount, mol | **free**, or **pinned** to `β_p N_feed`, where `N_feed` is the feed's total mole number as given — a specification, whether or not the reactions conserve total moles (`β_p = 0` is an incipient phase) |
-| `V_p` (as `ln η_p`) | phase volume | always free |
+| `V_p` (as `ln η_p`) | phase volume | always free, bounded below |
+
+The driver's unknowns are `ln x_{p,i}`, `ln η_p`, `N_p`, and the free intensives. Bounds:
+`ln x_{p,i} ∈ [ln STABILITY_COMPOSITION_FLOOR, 0]`, `ln η_p ∈ [ln 10⁻¹², ln PACKING_FRACTION_CEILING]`
+with the ceiling `0.74` (`policy::PACKING_FRACTION_CEILING`, an `AlgorithmTolerance`: close
+packing, above which no fluid root exists and `validate_point` refuses anyway),
+`N_p ∈ [0, Σ n_feed]`, `T, P > 0`. A plain-volume coordinate with no ceiling admits the
+`v → ∞`, `P → 0` solution of the pressure row, which attempt 3 returned as a converged bubble
+point. This is held by reading the driver's `get_bounds_info`, like "one assembly": no check
+can distinguish a bounded coordinate from an unbounded one that happened not to run off.
+
+The sensitivity levers are `T`, `P` and the feed `b` (§12): `dy/dθ` is one call with one
+column per lever, and the model's active parameters are the same call with more columns.
 
 System-wide: `T` and `P`, each **fixed** or **free**; feed `n_feed` (fixed, in any basis);
 the balance matrix `B` (identity when no reactions; otherwise the conserved moieties, whose
@@ -66,6 +78,13 @@ written **intensively** — the stationarity row in `n_{p,i}` divided by `N_p`:
 | material balance | `Σ_p N_p B x_p − B n_feed = 0` | `rank B` | `material_balance` |
 | electroneutrality | `z · x_p = 0` | one per ion-containing phase **except one phase of nonzero amount**; all of them if every ion-containing phase is pinned at zero | `phase_electroneutrality` |
 | normalisation | `Σ_i x_{p,i} − 1 = 0` | one per phase | `phase_normalization` (new; see §6) |
+
+**The rows are dimensionless.** `nlp_scaling_method = none` is a commitment (`CORE.md` §3.4),
+so the rows scale themselves. The chemical-potential rows are already in units of `RT`. The
+pressure row is written `Z_p(T, v_p, x_p) − P v_p / (RT) = 0` (`EqID: pressure_equality`, the
+same equation multiplied by `v_p / RT`), which is `O(1)` on every branch. The balance rows are
+divided by `Σ_i n_{feed,i}`; the amounts `N_p` stay extensive and `n_feed` is never normalised,
+so S8's mutation is unchanged. Normalisation and charge rows are `O(1)` as written.
 
 The normalisation row is active for **every** phase, so the coordinates `(N_p, x_p, V_p)`
 are the same for every phase and a pinned phase differs from a free one by exactly one
@@ -344,8 +363,18 @@ or delivers nothing. The rules:
   `= 1`), written on these rows as `Σ_i x_{p,i} exp(−r_{p,i} / RT)` with `r_{p,i}` the
   phase's chemical-potential row residual `μ_{p,i} − λ·B_i − z_i φ_p` at the converged
   multipliers; the deficit `1 − Σ` is the report, and a positive deficit says the phase is
-  not stable to add. For two phases that collapsed onto each
-  other it is their distance. This is the owner's rule stated as a mechanism: the trivial
+  not stable to add. For two phases that collapsed onto each other it is their distance,
+  `d(p, q) = max( max_i |x_{p,i} − x_{q,i}|, |ln η_p − ln η_q| )`, and the refusal is
+  `d ≤ PHASE_COINCIDENCE_DISTANCE` (`policy`, `AlgorithmTolerance`, `10⁻⁶`). The scale is
+  derived, not chosen: at distance `d` the two phases' amount columns in the balance rows
+  differ by `O(d)`, so the KKT matrix's conditioning is `O(1/d)`, and below `10⁻⁶` a row
+  residual of `EQUILIBRIUM_ROW_RESIDUAL` cannot separate the pair in double precision. The
+  test runs on **every multiphase cell, `k = 0` and `k ≥ 1` alike, over every pair, pinned
+  or free**. A pinned phase that has slid onto the free phase's branch is the trivial
+  solution of the boundary cell exactly as a coincident pair is the trivial solution of the
+  flash; attempt 3 guarded the test with `pinned_count == 0` and returned that solution as
+  converged at 15.8 bar, 149 Pa and 3.8 Pa for the same problem. This is the owner's rule
+  stated as a mechanism: the trivial
   solution is never an answer, and neither is a two-phase result with one phase empty.
 - Declared topology does not make the solution unique. A declared set may admit several
   solutions (Coatléven and Michel 2022 §2.3: "the choice of present phases leading to the
@@ -353,9 +382,9 @@ or delivers nothing. The rules:
   equilibrium solutions in a strongly non-ideal reactive ternary, cited in Ascani et al.
   2023 §2.1). The reduced Hessian certifies a local minimum; when the driver runs from more
   than one start the lowest `G` is taken; a global claim is never made (§8).
-- The start for a declared multi-liquid set must split composition (§3.3). Without
-  discovery the split direction is the caller's, or the default: one phase at the feed,
-  the other displaced toward the pure component with the largest positive pair deviation.
+- The start for a declared multi-liquid set must split composition (§3.3), by the three
+  rules of §5 step 4 and no other: without discovery the split is the caller's
+  `composition_guess`, and a same-kind pair with no guess is refused `start_symmetric`.
   For a reactive set each start phase is first brought to chemical equilibrium along its
   own stoichiometric line, which is Ascani et al. 2023's step 3 and costs one single-phase
   reactive solve per phase.
@@ -376,10 +405,10 @@ meant.
 
 | system | `Π = 1` (`{L}` or `{V}`) | `Π = 2`, `{V,L}` | `Π = 2`, `{L,L}` | `Π = 3` (`{V,L,L}`, `{L,L,L}`) |
 |---|---|---|---|---|
-| neutral, non-reactive | solve: `C = 1` ethane, S13; `C = 2` binary, S13 | solve: `C = 1` saturation, S5 S9 S14 and the NIST oracle; `C = 2` flash, bubble, dew, fixed-fraction flash, S3–S5, and the Cai 1996 oracle on the associating binary | solve: `C = 3` the reactive ternary with its reaction omitted, S6 S7; cloud point | compile tier: the fixed-`T`,`P` three-phase flash is rejected by the phase rule wherever `Π − k > rank B` (the binary), and accepted on the three-component fixture; the `k = 2` three-phase point is square on the binary; opportunistic solve on the ternary |
-| neutral, reactive | solve: `C = 3` isomerisation as `{V}`, S11 | solve: a reacting liquid under a pinned vapour, on the reactive ternary | solve: `C = 3` Ascani 2023 fixture, S16; `C = 4` esterification tie lines, Senina 2022 and Schmitt 2006 (rows to transcribe) | compile tier; the reacting ternary's fixed-`T`,`P` three-phase flash is rejected (`rank B = 2`) |
-| electrolyte, non-reactive | solve: `C = 3` aqueous NaCl, S13; the Hamer–Wu activity oracle is single-phase states on the EOS surface, not an equilibrium cell | solve: `C = 3` aqueous NaCl, neutral vapour pinned, `P` free | solve: `C = 5` Khudaida 2026 tie lines under declared `{L,L}`: `π_ch = 2`, one charge row, one interphase potential | compile tier; the three-liquid ionic-liquid systems of Ascani et al. 2022 are the literature case if one is ever wanted |
-| electrolyte, reactive | solve: `C = 9` MEA speciation oracle | solve: `C = 9` MEA bubble point, neutral vapour pinned, at the composite gate | **compile tier only**: nine species under declared `{L,L}` — the same rows with one charge row, but no fixture and no data | compile tier |
+| neutral, non-reactive | solve: `C = 1` ethane, S13; `C = 2` binary, S13 | solve: `C = 1` saturation, S5 S9 S14 and the NIST oracle; `C = 2` flash, bubble, dew, fixed-fraction flash, S3–S5, and the Cai 1996 oracle on the associating binary | solve: `C = 3` the reactive ternary with its reaction omitted, S6 S7; cloud point; `C = 4` Schmitt and Hasse 2005 Table 13 quaternary tie lines at 298.15 K (rows to transcribe) | compile tier: the fixed-`T`,`P` three-phase flash is rejected by the phase rule wherever `Π − k > rank B` (the binary), and accepted on the three-component fixture; the `k = 2` three-phase point is square on the binary; opportunistic solve on the ternary |
+| neutral, reactive | solve: `C = 3` isomerisation as `{V}`, S11 | solve: a reacting liquid under a pinned vapour, on the reactive ternary | solve: `C = 3` Ascani 2023 fixture, S16; `C = 4` Senina 2022 Table 3 reactive tie lines judged against Ascani 2023's predicted tie lines, catalyst caveat (rows to transcribe); Schmitt and Hasse 2006 supplies `K(T)` | compile tier; the reacting ternary's fixed-`T`,`P` three-phase flash is rejected (`rank B = 2`) |
+| electrolyte, non-reactive | solve: `C = 3` aqueous NaCl, S13; the Hamer–Wu activity oracle is single-phase states on the EOS surface, not an equilibrium cell | solve: `C = 3` aqueous NaCl, neutral vapour pinned, `P` free | solve: `C = 5` Khudaida 2026 Tables 3–4 tie lines under declared `{L,L}`: `π_ch = 2`, one charge row, one interphase potential, within the paper's Table 9 AAD; then Ascani et al. 2022 case study 2 from its refs 82–84; both under the Stage 4 declared-variant precondition | compile tier; Ascani et al. 2022 case study 1, three-liquid ionic-liquid systems, is the only published `Π = 3` electrolyte example in the library |
+| electrolyte, reactive | solve: `C = 9` MEA speciation oracle | solve: `C = 9` MEA bubble point, neutral vapour pinned, at the composite gate | **compile tier only**: the nine-species parameters under a declared `{L,L}` exercise the rows with one charge row; the system itself has one liquid. No published measured case: Tsanas et al. 2022's demixing-amine example (water, DEEA, MAPA, CO2, two ion-containing liquids) is eNRTL with no ePC-SAFT parameters. Solve tier is filled by **engine-internal** evidence: the calibrated HBTA/TOPO reactive network in Lithium_Extraction (`analyses/hbta_topo_calibrated_surrogate`, engine commit 90688d1, seven conditions with their consequence norms), a reproduction target labelled internal rather than published | compile tier |
 
 Two cells carry compile-tier evidence only, and they are named so that coverage is not
 mistaken for proof: reactive electrolyte two-liquid, and every three-phase cell except
@@ -396,6 +425,12 @@ Every quantity asserted is coordinate-free: **nullity** (unknowns minus rank), n
 NLP's variable count — a reimplementation that eliminates the density inline has fewer
 variables and the same nullity. Row *labels* by `EqID` are asserted only where the
 formulation registers the row.
+
+A check binary records every failed assertion and continues; each named check prints one
+line, `check_s3 pass` or `check_s3 FAIL <file:line: condition>`, and `main` exits nonzero if
+any failed. Every solve inside a check runs under `core::Capture`, and a failing check prints
+its trace: spans, the per-iteration events of §4.4, and the record. Two reds that hide ten
+unknowns are what attempt 3's abort-first macro produced.
 
 ### 4.1 Compile tier — no solve; lands with Stage 5
 
@@ -462,9 +497,33 @@ from the papers already attached in Zotero; nothing needs acquiring.
 | binary | `neutral_binary()` | `{V,L}` flash inside the envelope; bubble; dew; `β`-flash; both intensives |
 | reactive ternary | Ascani 2023 `A + B ⇌ C` | **required:** `{L,L}` with the reaction, from three feeds on one tie line's moiety segment (S16); `{V}` with an isomerisation of the same components (S11); `{L,L}` without the reaction (S6, S7); `{L,L}` with `L₂` pinned, `T` free, with and without the reaction; `{V,L}` with the reaction and `V` pinned, `P` free — a reacting liquid under a pinned vapour. **Opportunistic:** `{V,L,L}` without the reaction and the three-phase point, if the fixture admits them at some state; recorded either way |
 | electrolyte | `aqueous_electrolyte()` | `{L}`; `{V,L}` with `V` support `{water}` and `V` pinned, `P` free — the MEA shape at three species |
-| electrolyte two liquids | oracle `aqueous_alcohol_salt_lle` (Khudaida 2026, packet revision 2) | declared `{L,L}` from the tie-line midpoint feed; `π_ch = 2`, one charge row, one interphase potential; both endpoint compositions within the row uncertainties. Measured data on the electrolyte two-liquid cell before discovery exists; discovery later reaches the same rows with topology omitted |
-| reactive two liquids, real | Senina 2022, Schmitt 2006; parameters and `K_a` from Ascani 2023 Tables 1, 2, 4 | declared `{L,L}` on the nine quaternary tie lines; a published-model reproduction. A new oracle case once the rows are transcribed |
-| nine species | `nine_species()` | compile tier: the composite cell's rows, rank, nullity, and reject-by-name with the bundle's two reactions; and declared `{L,L}` compiled with one charge row, which is the reactive electrolyte two-liquid cell's only evidence. Its solves are oracle gates: speciation as `{L}`, and the bubble point at the composite gate |
+| electrolyte two liquids | oracle `aqueous_alcohol_salt_lle` (Khudaida et al. 2026, JCED 71, 708; packet revision 6 carries parameters only) | declared `{L,L}` from the tie-line midpoint feed; `π_ch = 2`, one charge row, one interphase potential. Rows: Tables 3 and 4, full quaternary tie lines with NaCl in both phases at 5 and 10 wt % over 293.15–313.15 K (a transcription task). Acceptance: within the paper's own ePC-SAFT AAD per component and phase (Table 9: grand 0.016 at 5 wt %), not the row uncertainty. Parameters: Tables 5–7 (Born diameters 3.445 and 4.100 Å, `f_k`, `k_ij`). **Precondition:** the greenfield model supports the variant the paper declares (Born diameters and `f_k` per Figiel 2025), a Stage 4 declared-choice question to check; the row is out of scope until answered. Second oracle: Ascani, Sadowski and Held 2022 case study 2 (water + 1-butanol or 1-propanol + two salts, 298.15 K) once its cited tie-line sources (its refs 82–84) are acquired and transcribed, with the same precondition (mixed dielectric by solvent mass fraction and ion mole fraction, ion `ε_r = 8`); its case study 1 is the only published `Π = 3` electrolyte example in the library. Withdrawn as oracles: Hubach et al. 2024 and Yu et al. 2024, extraction efficiencies only on switch-laden parameterisations. Discovery later reaches the same rows with topology omitted |
+| reactive two liquids, real | Senina et al. 2022 Table 3 (acetic acid + n-amyl alcohol + n-amyl acetate + water, 318.15 K, nine reactive tie lines, `u(x) = 0.002`); parameters and `K_a` from Ascani 2023 Tables 1, 2, 4 | declared `{L,L}` on the nine tie lines; judged against Ascani 2023's **predicted** tie lines (Figure 9, right) rather than the data, because the paper states its tie-line prediction is qualitative and worse with acetic acid (dimerisation not represented). Caveat recorded: an acid catalyst is present in the data (Ascani 2023 §3.1: HCl(aq) below 2 wt %), which no model in the library represents. Schmitt and Hasse 2006 is the `K(T)` source for the hexyl system; Schmitt and Hasse 2005 Table 13 is a separate, non-reactive LLE at 25 °C. A new oracle case once the rows are transcribed |
+| neutral two liquids, real | Schmitt and Hasse 2005 Table 13 (water + acetic acid + 1-hexanol + hexyl acetate, five quaternary tie lines at 298.15 K, both phases, no catalyst); parameters from Ascani 2023 Tables 1–2 | declared `{L,L}` on the five tie lines; the measured neutral quaternary oracle, acetic-acid caveat recorded. The engine-certified fixture stays the Ascani ternary with its reaction off. A new oracle case once the rows are transcribed |
+| reactive electrolyte two liquids, internal | the calibrated HBTA/TOPO reactive network in Lithium_Extraction (`analyses/hbta_topo_calibrated_surrogate`, engine commit 90688d1) | declared `{L,L}` with a cross-phase reaction and one ion-bearing phase at the seven evaluated conditions; **engine-internal evidence, not published**: a reproduction target with its consequence norms (balance, affinity, KKT and reduced-Hessian norms in `condition_results.csv`). The compile-tier nine-species exercise stays as is |
+| nine species | `nine_species()` | compile tier: the composite cell's rows, rank, nullity, and reject-by-name with the bundle's two reactions; and its parameters under a declared `{L,L}` compiled with one charge row, which exercises the row assembly for that shape and says nothing about the MEA system, whose liquid is one aqueous phase. Its solves are oracle gates: speciation as `{L}`, and the bubble point at the composite gate |
+
+Transcription tasks, each with its locator: Khudaida 2026 Tables 3–4; Senina 2022 Table 3;
+Schmitt and Hasse 2005 Table 13; Ascani et al. 2022 refs 82–84 after acquisition. Yu et al.
+2025 is not in the library and is not cited.
+
+Every synthetic state below is certified by S6 (`G₂ < G₁ − limit`) **before** any cell at that
+state runs; a failed certificate is a fixture finding for `STAGE-LOG.md`, and the cells that
+depend on it are reported skipped by name, neither green nor aborted. Pressures in parentheses
+are Raoult estimates for placing the state; the engine's own `P*` is the record. Attempt 3
+copied fixtures without states: `associating_binary()` at 280 K and 2.5 kPa is subcooled
+liquid, and `neutral_binary()` at 280 K and 50/50 is above the mixture critical point.
+
+| fixture | file | state | cells |
+|---|---|---|---|
+| `neutral_ternary()` — methane, ethane, propane, Gross–Sadowski 2001 pure parameters (`m = 1.0000, 1.6069, 2.0020`; `σ = 3.7039, 3.5206, 3.6184`; `ε/k = 150.03, 191.42, 208.11`), every `k_ij = 0` (methane–ethane is 0 by Gross's statement; the other two pairs are absent from the packet, so the fixture is synthetic, not an oracle) | `model_support.hpp` | `T = 180 K`, feed `1/3` each; all three subcritical (trap 13) | bubble, `P` free (~11 bar); dew from `y*`, cold; `{V,L}` flash at 1 bar (S2, S6 certificate, S8, S10 flash half, S13 as `{L}` and `{V}`); `β`-flash (S4); `T` free at `P*` (S5); `{V,L}` at 30 bar for S15 (subcooled) |
+| `neutral_binary()` — methane, ethane | exists | `T = 180 K`, feed `0.5/0.5` (bubble ~16 bar, dew ~0.16 bar) | S3 dew ↔ bubble (cold, trap 13); the `C = 2` compile cells |
+| `ethane()` | exists | `T = 250 K`, `P` free | S14 |
+| Ascani ternary, reaction omitted | `equilibrium_support.hpp` | `T = 298.15 K`, `P = 1 bar`, feed on the Figure 3 tie line, `composition_guess` from the two branches | `{L,L}` (S6 certificate, S7); `{L,L}` with `L₂` pinned, `T` free |
+| Ascani ternary, `A + B ⇌ C`, `K_a = 2.25` | exists | same `T`, `P`, three feeds on the moiety segment | S16; `{V}` isomerisation (S11); `{V,L}` reacting under a pinned vapour |
+| `aqueous_electrolyte()` | exists | `T = 298.15 K`, `P = 1 bar`, 1 molal | `{L}` (S1, S13); `{V,L}` with `V` support `{water}`, `V` pinned, `P` free |
+| MEA + water, `associating_binary()` | exists | **oracle**: Cai et al. 1996 isobaric VLE at 101.3 kPa, `T` free (bubble `T` at the measured `x`), rows transcribed into `oracle.json` | published-model reproduction; never a synthetic state |
+| Khudaida 2026 electrolyte two liquids | packet revision 6 | 293.15–313.15 K, 0.1 MPa, 5 and 10 wt % NaCl, tie-line midpoint feeds; the observation rows (Tables 3–4) are **not in the packet** and must be transcribed into `oracle.json`; acceptance is the paper's Table 9 AAD | S-tier oracle for `{L,L}` with one charge row, under the Stage 4 declared-variant precondition |
 
 | # | claim | asserts | mutation |
 |---|---|---|---|
@@ -476,13 +535,13 @@ from the papers already attached in Zotero; nothing needs acquiring.
 | S6 | instability certificate | `G₂ < G₁` at the ternary feed; `G₃ ≤ G₂ + tol` for the three-phase cell | return the one-phase start as the result |
 | S7 | lever rule | two feeds on the `{L,L}` tie line give the same two phases to 1e-8. This is S1 plus isolation of the solution, so it has no mutation of its own: S1's reddens it | shares S1's |
 | S8 | extensivity | every solved cell with the feed doubled: amounts double, every intensive unchanged | compile normalises `n_feed` to unit total before the balance rows |
-| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` a fixed intensive of the specification (`T` or `P`; the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative. `F_θ` is the assembly's, from the tape's Hessian column in `T` and `−1/RT` on the pressure row; the test supplies no derivative | flip the sign of `F_θ` |
+| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` one of three levers: a fixed intensive (`T` or `P`) or one feed coordinate `b_i` (the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative. `F_θ` is the assembly's: the tape's Hessian column in `T`, `−1/RT` on the pressure row, and `−B` on the balance rows for the feed; the test supplies no derivative | flip the sign of `F_θ` |
 | S10 | Jacobian agreement | the assembly's `F_y`, analytic from the tape's Hessian and the log-coordinate chain rule, against a centred difference of `F` in every unknown, at a boundary cell and at a flash cell, to 1e-6; and Ipopt's `eval_h` at the flash solution with the converged multipliers against a centred difference of the Lagrangian gradient (`eval_grad_f + Σ λ_j ∇c_j`) to 1e-6. Nothing about call counts. The drivers' rows differ by `N_p` per phase (§2.2), so no elementwise equality between consumers is asserted; "one assembly" is held by §5's placement and rule 7, not by a check | scale the pressure term of `evaluate`'s pressure row by 2: an `F_y` that is a difference of `evaluate` follows it and stays green, and a green mutant rejects the attempt; and scale the tape's Hessian blocks by 0.5 for the `eval_h` half |
 | S11 | ideal-gas limit | the reactive one-phase cell **as `{V}`** — the vapour branch is the one that reaches the ideal-gas limit; a liquid hint stays on its own branch — with the isomerisation `α ⇌ β` (so `Σ ν_i = 0` and the `ρ_ref` term cancels) at `P → 0` approaches `x_β / x_α = exp(−Δg°/RT)` (a limit; the residual terms vanish, which Stage 4 already checks). A reaction with `Σ ν ≠ 0` has a density factor in its limit and is not used here | perturb the `g°` transform |
 | S12 | discovery agrees (with the stability kernel) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
 | S13 | single phase | `Π = 1` on every non-reactive fixture at fixed `T`, `P`: the solved composition equals the feed within the balance rows' `max(tolerance, floor)` (the balance is an Ipopt equality, so 1e-14 is not reachable), and the solved volume equals `model/`'s `solve_density` root at the same `(T, P, x)` within the larger of the two solves' `max(tolerance, floor)` — the pressure row *is* the density equation when there is one phase. Reactive single phases are S11's | seed the start from phase index 1 |
 | S14 | `C = 1` is the general row set | the ethane boundary compiles with `rows − unknowns = 0` and nullity 0 with no reaction span and no charge row, and pinning `L` instead of `V` gives the same `P*` to the convergence tolerance. The row list by `EqID` is *reported*, not asserted: a legitimate implementation may drop a free phase's normalisation row (§2.2), and `CANON.md`'s diagnostic forbids asserting the multiset | a `component_count == 1` branch in compile that omits the balance row |
-| S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way | return the converged iterate when one `N_p` sits at its bound |
+| S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way; and (c) a boundary cell whose pinned phase is started on the free phase's branch at the free phase's composition is refused as `phases_coincide` with the distance, never returned as converged | (a, b) return the converged iterate when one `N_p` sits at its bound; (c) skip the coincidence test when `k ≥ 1` |
 | S16 | reactive lever rule | on the `A + B ⇌ C` fixture at fixed `T`, `P`, the declared `{L,L}` reactive flash from three feeds whose moiety vectors `B n_feed` lie on the segment between the two phases' moiety vectors of a first solve returns the same two phase compositions to the convergence tolerance, and affinity vanishes in both phases with one `λ`. Gibbs' rule for the reactive system gives `F = 2 − 2 + 3 − 1 = 2`, both consumed by fixing `T` and `P`, so reactive tie lines are *isolated*, not unique — Ascani et al. 2023's Figure 3 has two, and "unique reactive tie-line" is their term of art for one that appears in a ternary — which is why the three feeds are placed on one tie line rather than anywhere in the gap. A route that solved the reaction in one phase and partitioned into the other would move the phases with the feed | drop the affinity consequence by solving the balance with `B = I` |
 
 **Reported, never asserted**, per cell: Ipopt iterations, evaluations,
@@ -504,6 +563,17 @@ admits; that the two drivers share one assembly is enforced by where the assembl
 (§5) and by rule 7 covering that file, not by a test. The artifact's "seven genericity equivalences" (round trip, reaction basis,
 extensivity, a problem stated two ways) are not seven checks here; they are C4, C5, S5, S8
 applied to every cell they fit, which is what makes them coverage rather than spot checks.
+
+### 4.4 Diagnostics the brief carries
+
+The `CORE.md` §7 block, one entry per solver or assembly this stage writes. The brief's
+`diagnostics` array is this table verbatim, and the preflight refuses a brief without it.
+
+| span | events | convergence | check |
+|---|---|---|---|
+| `solve_equilibrium` | `ipopt_iteration` per iteration from `intermediate_callback`: `inf_pr, inf_du, mu, d_norm, regularization_size, alpha_pr, alpha_du, ls_trials`; `phase_distance` per pair; `michelsen_deficit` per phase; `reduced_hessian_minimum`; `start_rule` (1, 2 or 3 of §5 step 4) | residual: infinity norm of the dimensionless rows at the returned point; criterion `EQUILIBRIUM_ROW_RESIDUAL`; floor: largest phase `gradient_floor`; amplification: Ipopt's last `regularization_size` | `record.residual` equals `max |row|` recomputed from the returned state through `CompiledSystem::evaluate` |
+| `equilibrium_evaluate` | `row_values`, `gradient_floor` per phase | — | — |
+| `boundary_start` | `k_factor` per component, `branch_density` per phase | — | — |
 
 ## 5. From specification to NLP
 
@@ -539,8 +609,24 @@ applied to every cell they fit, which is what makes them coverage rather than sp
    `phase_boundary.cpp` (Stage 5): a `k ≥ 1` solve is seeded from the flash
    solution or the previous boundary point when the caller is sweeping, and there is never
    an outer loop around `solve_equilibrium` (`CORE.md` §6). Every multiphase start must give the phases *different*
-   compositions — the trivial solution is a stationary point (§3.3) and a symmetric start
-   converges to it.
+   compositions, by one of three rules and no other:
+   1. **The caller's `composition_guess`** for every phase that carries one.
+   2. **A one-step K-factor split** for a pair whose declared kinds differ (`V` and `L`),
+      from the model alone: evaluate `ln φ_i` at the feed composition on the vapour and on
+      the liquid density branch (`state_at_pressure`, one call per branch), set
+      `K_i = exp(ln φ_i^L − ln φ_i^V)`, `y_i ∝ z_i K_i`, `x_i ∝ z_i / K_i`, renormalise, and
+      take each phase's `η` from its own branch root. No critical constants, no Wilson
+      correlation, general in `C`.
+   3. **Refusal**, named `start_symmetric` with the two phase names, for a same-kind pair
+      (`L`, `L`) with no guess. The design does not invent a liquid–liquid split; the
+      stability kernel supplies one when discovery exists, and until then the caller does.
+
+   For `k ≥ 1` with a `start` given, compositions and `η` come from the start phase by
+   phase; the pinned phase's `η` is re-seeded on its **declared** branch from the density
+   root at the start's `T`, `P` and its own composition, never copied from the free phase.
+   Amounts from a start are kept, not overwritten with an equal split (attempt 3's
+   `start_point` overwrote them). The trivial solution is a stationary point (§3.3) and a
+   symmetric start converges to it.
 5. **result**: amounts, volumes, intensives, multipliers, every residual row, the reduced
    Hessian's smallest eigenvalue, counters, a named status. Sensitivity when asked. Or,
    under §3.4, no state at all: a failure name, the phase, and the number that condemned
@@ -549,6 +635,21 @@ applied to every cell they fit, which is what makes them coverage rather than sp
 The coverage exercises this path and not a bypass of it because C1–C8 act on step 2's
 output, S1 reads step 5's residuals for rows step 4 did not iterate on, and S10 holds the
 three consumers of step 3 to one matrix.
+
+**Tolerance and budget.** Four policy entries, in `CORE.md` §3's categories:
+
+| entry | value | category | rationale |
+|---|---|---|---|
+| `EQUILIBRIUM_ROW_RESIDUAL` | `1e-10` | AlgorithmTolerance | infinity norm of the dimensionless rows (§2.2); exact Newton on the analytic `F_y` reaches it in a handful of steps; two decades above the association floor `ASSOCIATION_RESIDUAL = 2e-13` that enters the record as `floor` |
+| `EQUILIBRIUM_MAX_ITERATIONS` | `200` | Budget | rule 9's predicate: a budget makes the loop a solver; attempt 3 used Ipopt's default 3000 without a policy budget and rule 9 never saw it |
+| `PHASE_COINCIDENCE_DISTANCE` | `1e-6` | AlgorithmTolerance | §3.4 |
+| `PACKING_FRACTION_CEILING` | `0.74` | AlgorithmTolerance | §2.1 |
+
+Ipopt reads `tol`, `constr_viol_tol`, `dual_inf_tol` from `EQUILIBRIUM_ROW_RESIDUAL`,
+`max_iter` from the budget, `acceptable_iter = 0`. The record's `criterion` points at
+`EQUILIBRIUM_ROW_RESIDUAL`; `floor` is the largest phase `gradient_floor`. Nothing under
+`equilibrium/` names `DENSITY_ROOT_RESIDUAL`: a density Newton tolerance on rows of another
+unit was attempt 3's `5e-12` chase.
 
 ## 6. What of `formulation.md` should land, and how
 
@@ -727,8 +828,9 @@ document's own first draft.
 4. C4 compares feed *composition*; the totals implied by the four bases differ.
 5. The assembly `F`, `F_y` lives in `request_compile.cpp`, and that file joins rule 7's
    list; the driver and the sensitivity must find it there, never write their own.
-6. Multiphase starts must split composition; the trivial solution is a stationary point and
-   S15 requires it to be reported by name, never returned as `converged`.
+6. Multiphase starts split composition by one of the three rules of §5 step 4 (the caller's
+   guess, the K-factor split, or the `start_symmetric` refusal) and no other; the trivial
+   solution is a stationary point and S15 requires it reported by name, never `converged`.
 7. S1 and S13 test against `max(tolerance, floor)` from the result's `Convergence` record,
    never against a bare policy number — `CORE.md` §2 says why a bare number can be
    unreachable.
@@ -745,8 +847,10 @@ document's own first draft.
 12. The `C = 1` seed needs a pressure at which both density roots exist; the density
     solver's `stable_root_count` says whether it does, and a seed where it does not is a
     named stop, not a retry loop.
-13. S3's dew is seeded cold, not from the bubble solution, or the symmetry is trivial; the
-    state is chosen subcritical for both components so the dew pressure is unique.
+13. S3's dew is seeded cold: `solve_equilibrium(model, dew)` with no `start`, or the
+    symmetry is trivial; the state is chosen subcritical for both components so the dew
+    pressure is unique. Attempt 3 passed the bubble result as the start and still failed,
+    which is how the trivial solution was found.
 14. Nothing asserts a variable count, an iteration count, or which driver ran. Counters
     are printed per cell; the design intent that the exact Hessian is consumed is visible
     in `hessian_calls`, and rule 8 is the only thing that turns it into a failure.
@@ -859,43 +963,115 @@ problem = Problem(phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
 method on the EOS surface that solves coexistence without a `Problem` passing through
 compile; the one-line test per constructor is what keeps it ruled out.
 
-## 12. What regression needs from equilibrium, and the all-native path
+## 12. What regression needs from equilibrium: a shell around Ceres
 
-`TRANSFER.md` Stage 6 is `fit(model, observations)` on Ceres with `least_squares.cpp`,
-`eos_observable.cpp`, `equilibrium_observable.cpp` and a `PredictionCache`. Checked
-against §2–§5 and §11, it is compatible, and the path from the one Python call to the one
-Python result is native throughout: `regression/` includes `equilibrium/problem.hpp`
-(rule 3 permits it, rule 4 bounds it), so the loop over observations, every solve, every
-sensitivity, every Jacobian row and the covariance run in C++ and nothing crosses the
-binding until `Fit` comes back. The old tree's Ceres kernel was also C++; what it lacked
-was a `Problem` it could build itself, so it went through an "owner evaluator", which is
-the owner compilation #192 removes.
+Owner decisions, 2026-09-03, after the independent review and a reading of the three
+downstream applications: equilibrium stays strictly generic; regression is a shell around
+Ceres with no property-specific code; `State` is one batch object with an order flag
+(`EOS.md`, "Properties"); ePC-SAFT parameters and pure-component thermochemistry are two
+declared objects (`SURFACE.md` §2.5).
 
-What an observation must carry, and what equilibrium must provide, stated as the
-interface:
+`EquilibriumResult` carries per phase `(T, v_p, x_p, N_p)`, the multipliers, rows, record,
+and the sensitivity when asked. No property. A property of phase `p` is
+`model.state(T, 1/v_p, x_p, order)`; a system total is `Σ_p N_p · property_p`, and this is
+generic only if no extensivity table ever appears in `regression/`: the rule admits
+`Σ_p N_p P_p`, which is the caller's error to make.
 
-| regression needs | equilibrium provides | where |
-|---|---|---|
-| a `Problem` per observation, built natively from the observation's levers — never a "kind" | `Problem` is plain data with no Python in it (§5.1, §11) | Stage 5 |
-| a solve seeded from the previous point | `solve_equilibrium(model, problem, start)` with `start` an optional prior `EquilibriumResult`; the `PredictionCache` holds the last result per observation and per Ceres iterate | Stage 5, 9 |
-| `dy/dθ` for the model's active parameters | `implicit_sensitivity.cpp`: `−F_y⁻¹ F_θ`, `F_y` the matrix the driver already factorised, `F_θ` the tape's mixed second derivatives `∂²A/∂y∂θ`, which the Stage 4 tape already carries as its parameter Jacobian | Stage 5 |
-| the observable and its chain rule | an output-row enum — pressure, temperature, a phase composition, a phase density, an activity, a partial pressure — each a function of `y` with `∂obs/∂y` (formulation §8: "output rows carry their own chain rule") | `equilibrium_observable.cpp`, Stage 6 |
-| a residual-evaluation failure Ceres can act on | a solve that fails the declared-topology contract (§3.4), or leaves the domain, returns a failure with no state; the cost functor returns `false`, Ceres shrinks the trust region, and nothing is thrown across the fit or reported as a zero residual | Stage 5, 10 |
-| the fit's floor | `κ_sys · residual` per observation from the solve's own `Convergence` record (`CORE.md` §3.5) | Stage 6 |
+**Sensitivity levers: `T`, `P`, and the feed** (`b`, the conserved amounts). `F_θ` for the
+feed is `−B` on the balance rows and zero elsewhere: trivial to assemble, and it is the
+derivative the absorption film finite-differences today (`Reactive_Film.py:280-330`,
+`d(log x)/d(log loading)` by `np.gradient`) and the derivative the superseded engine computes
+natively but filters from its public rows (`reactive_finite_phase.cpp:2077`, thread A1). S9
+carries a feed column. The reacting heat capacity `(∂H_eq/∂T)_{P,b}`, which the absorption
+energy balance needs and which frozen-composition `cp` is not, is then the selector's chain
+rule: `∂H/∂y · dy/dT + ∂H/∂T`, with no new code.
 
-Three consequences worth stating:
+**The seventh active-parameter family.** The six EOS families (`helmholtz_tape.hpp:61-68`)
+gain the `K(T)` correlation coefficients per reaction; `∂g°/∂θ` is already listed in `F_θ`
+(`formulation.md:204`) and comes from the model's `standard_gibbs(T, order)` (`EOS.md`,
+"Properties" §3). Without it neither application's fit is analytic: the amine fit shifts
+`reaction:R*:correlation:a, b_k`; the lithium fit moves `ln_k_exchange`, `ln_k_na_uptake`.
 
+An observation is data plus a selector plus a target:
+
+    Observation { target: Problem | StateSpec; select: Expression; value; uncertainty }
+    Expression =
+        Leaf(Property(phase, field) | Coordinate(lever or amount n_{p,i}) | Constant)
+      | Sum(w_j · e_j)
+      | Product(e_j ^ p_j)
+      | Log(e)
+
+A weighted sum plus one ratio cannot express what the applications fit. Verified needs:
+`pCO2 = y_CO2 · P` (a product) scored as `log10(pred/obs)` (a log); `net_na = na_feed −
+na_aq` (a constant in a sum); extraction fraction `li_org / (li_org + li_aq)` (ratio of a
+sum); selectivity (ratio of ratios). Four nodes cover all of them and finite-dose heat, and
+the tree is smaller than a combinator list plus a residual-form flag.
+
+`fit(model, observations)` builds one Ceres residual block per observation; the model output
+is the expression evaluated on the solved or evaluated state; the Jacobian is the chain rule
+per node: `Property` from `State` at `FirstDerivatives` composed with `dy/dθ`, `Coordinate`
+from `dy/dθ`, `Sum`/`Product`/`Log` by their rules. No property name is known to
+`regression/`; adding a field to `State` adds it to regression with no change.
+
+Rules that follow:
+
+- `StateSpec` declares its `DensityBranch`; `Unspecified` is refused inside a fit, as
+  undeclared topology is.
+- `Coordinate(T)` or `Coordinate(P)` on a target where that lever is fixed is rejected by
+  name at observation compile, never a silent zero Jacobian.
+- No `unit` field natively; the boundary is SI (`SURFACE.md` §3.4).
+- Weights such as `1/(n₂ − n₁)` are caller data or computed natively; Python does none of
+  that arithmetic.
+- Rule 4 gains `Discover` in `STABILITY_SYMBOLS` so a fit cannot omit phases.
+- The expression evaluator (value plus Jacobian) is one bound function, so a caller that
+  wants a sensitivity outside a fit (the lithium script reads one by hand,
+  `independent_network.py:855-858`) does not re-derive it.
 - **No third derivatives, anywhere.** Ceres is Gauss–Newton or Levenberg–Marquardt on the
-  residual Jacobian; it never forms the residual Hessian, which would be third order.
-  Ipopt on a square feasibility problem needs none (§2.4). The implicit sensitivity needs
-  second derivatives in `(y, θ)`, which the tape has. The old tree used a third-order
-  forward sweep exactly once (`phase_block.hpp`, `cubic_directional_derivative`, a
-  pure-component curvature quantity); it has no successor and nothing in the plan wants it.
-- **Every regression observation declares its topology.** Rule 4 forbids a fit from
-  constructing a problem with phases omitted, so the fit's residuals are differentiable and
-  a parameter step that makes a declared two-phase point cease to exist is a *failed
-  residual*, not a silently different problem. That is the design working as intended: a
-  fit can only move parameters where the declared physics still holds.
+  residual Jacobian; it never forms the residual Hessian. Ipopt on a square feasibility
+  problem needs none (§2.4). The implicit sensitivity needs second derivatives in `(y, θ)`,
+  which the tape has.
+- **Every regression observation declares its topology.** A parameter step that makes a
+  declared two-phase point cease to exist is a *failed residual*, not a silently different
+  problem: the cost functor returns `false`, Ceres shrinks the trust region, and nothing is
+  thrown across the fit or reported as a zero residual.
 - **Pure and mixture fits are one path.** A saturation observation is a `C = 1`, `k = 1`
-  `Problem` through the same driver and the same sensitivity as a two-liquid tie line of the
-  esterification data (§4.2), so one fit may mix them, and they share one floor.
+  `Problem` through the same driver and the same sensitivity as a two-liquid tie line.
+
+Budget: `TRANSFER.md` Stage 6 listed `eos_observable.cpp` (150) and
+`equilibrium_observable.cpp` (250); with no property names left, both go, and the expression
+tree is about 80 native lines net. `REGRESSION.md` is Stage 6's design document and carries
+the Ceres kernel and the gate.
+
+## 13. What the three applications need, and what the answer is
+
+Read on 2026-09-03: MEA-Thermodynamics (the reaction-temperature fit running under the
+superseded wheel at commit 8438ce5), Lithium_Extraction (the calibrated HBTA/TOPO reactive
+two-liquid network at commit 90688d1), MEA-Absorption-Column (pinned at 8007a70, three
+worktrees, and the two Codex threads: the absorber's three-plan diagnosis and the engine
+thread that merged PRs #199–#201 and is designing A1 as issue #202). These citations are the
+provenance of every row below.
+
+| application needs | answered by | status |
+|---|---|---|
+| reactive VLE bubble pressure, vapour composition, speciation at fixed `T`, feed (MEA) | the `k = f = 1` cell with a vapour support restriction | §2–§3 |
+| total enthalpy of a solved liquid; finite-dose heat (MEA calorimetry) | `State` totals + `Sum`/`Product` over two solves and `ideal_enthalpy` | `EOS.md` Properties §4; §12 |
+| reacting `(∂H_eq/∂T)_{P,b}`, not frozen `cp` (absorber energy balance) | selector chain rule with `dy/dT` | §12 |
+| equilibrium-path derivative `dy/db` at fixed `T, P` (absorber film tangent; removes its finite difference) | feed as a sensitivity lever | §12, S9, **new** |
+| fixed-`(T, P)` chemical-potential and density derivatives in constrained log-composition coordinates (absorber film, `EpcsaftLiquidTransportState`) | `State` at `FirstDerivatives`, fixed-`P` block | `EOS.md` Properties §4, **new** |
+| typed `K(T)` correlations with `∂ ln K/∂T`, van 't Hoff consistency, standard-state transfer with `∂/∂T` (all three) | `EOS.md` Properties §3 | **new** in the model |
+| reaction constants and correlation coefficients as fitted parameters (MEA, lithium) | the seventh active family | §12, **new** |
+| distribution ratios, extraction fractions, selectivity as fit outputs (lithium) | `Product`/`Sum`/`Log` nodes | §12 |
+| two liquids with disjoint supports, cross-phase reaction, one ion-bearing phase (lithium) | supports, whole-system stoichiometry, C8 | §2–§4 |
+| higher-order directional derivatives of the solved map for CasADi outer Hessians (absorber Plan A2) | **not provided**: third order is excluded by design; the absorber's own second candidate, explicit chemical-potential variables, needs only second derivatives of value maps, which the tape has | stated limit |
+| hydraulics, mobility, loading transforms, column balances, collocation | not the engine's, by the absorber's own plan | — |
+
+What the superseded engine added in the week of 2026-09-01 and the greenfield must not lose:
+explicit reference thermochemistry with complete `h`, `u`, `cp` and equilibrium total
+enthalpy (PR #199), reference-pressure consistency (#200), reaction slopes retained at
+incipient boundaries (#201), and the A1 design (#202): certified state plus exact first
+derivatives in `T`, `P` and the complete conserved feed coordinates, with the falsifiers it
+lists (ideal reactive mixture with closed-form extent; same-branch centred ladders in `T`,
+`P`, feed and mixed directions; `h = u + Pv` and `dh/dT|_{P,x} = cp` separately from the
+reacting `dH_eq/dT`). Those falsifiers are the solve-tier checks for the totals and the
+sensitivity and are adopted as written. The absorber still pins 8007a70 and supplies no
+thermochemistry, which its own Plan 2 calls an adoption gap, not an engine gap.

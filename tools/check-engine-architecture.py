@@ -47,7 +47,7 @@ CONSTANTS_HOME = "core/physical_constants.hpp"
 
 # Phase stability is reachable from equilibrium, never from a parameter fit: a
 # fit runs against declared phases so its residuals stay differentiable.
-STABILITY_SYMBOLS = ("phase_stability.hpp", "find_phases")
+STABILITY_SYMBOLS = ("phase_stability.hpp", "find_phases", "Discover")
 
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
 # Unanchored on purpose: a constexpr sharing a name across two translation
@@ -260,21 +260,26 @@ def rule_core_and_trace_boundaries() -> list[str]:
 
 
 def rule_declared_selectors() -> list[str]:
-    path = NATIVE / "core" / "parameters.hpp"
-    if not path.is_file():
-        return [f"{path.relative_to(ROOT)} is missing"]
-    text = path.read_text()
+    # Every declared document: Parameters today, Thermochemistry once it exists.
+    documents = (("parameters.hpp", "Parameters", True), ("thermochemistry.hpp", "Thermochemistry", False))
     bad = []
-    if "Unspecified" in text:
-        bad.append(f"{path.relative_to(ROOT)} contains Unspecified")
-    enum_names = re.findall(r"enum\s+class\s+(\w+)", text)
-    match = re.search(r"struct\s+Parameters\b.*?\n};", text, re.S)
-    if match:
-        enum_pattern = "|".join(map(re.escape, enum_names))
-        bare = re.compile(rf"^\s*(?:{enum_pattern})\s+\w+\s*[=;{{]")
-        for number, line in enumerate(match.group().splitlines(), 1):
-            if bare.search(line):
-                bad.append(f"{path.relative_to(ROOT)}:{number}: bare enum selector")
+    for name, struct, required in documents:
+        path = NATIVE / "core" / name
+        if not path.is_file():
+            if required:
+                bad.append(f"{path.relative_to(ROOT)} is missing")
+            continue
+        text = path.read_text()
+        if "Unspecified" in text:
+            bad.append(f"{path.relative_to(ROOT)} contains Unspecified")
+        enum_names = re.findall(r"enum\s+class\s+(\w+)", text)
+        match = re.search(rf"struct\s+{struct}\b.*?\n}};", text, re.S)
+        if match and enum_names:
+            enum_pattern = "|".join(map(re.escape, enum_names))
+            bare = re.compile(rf"^\s*(?:{enum_pattern})\s+\w+\s*[=;{{]")
+            for number, line in enumerate(match.group().splitlines(), 1):
+                if bare.search(line):
+                    bad.append(f"{path.relative_to(ROOT)}:{number}: bare enum selector")
     return bad
 
 

@@ -1,9 +1,17 @@
 # Native Engine ownership and generated evidence
 Kind: computational-architecture
 
-- Status: accepted
+- Status: superseded in part by the greenfield rebuild, 2026-09-03
 - Date: 2026-08-27
 - Amended: 2026-09-01 for issues #156 and #153
+
+> **Superseded in part, 2026-09-03.** Three decisions below no longer hold on `greenfield`:
+> the three Python-free libraries are one archive, `epcsaft_native` (`docs/greenfield/CANON.md`,
+> rule 1); HELD and HELD2 are not retained, and `find_phases` is written fresh to Pereira 2012
+> (`docs/greenfield/PHASE-STABILITY.md`, Stage 7); `cpp/interfaces/owner_evaluator.hpp` no
+> longer exists, and regression reaches the engine through `equilibrium/problem.hpp` only.
+> What survives: one extension boundary, Python maps and never computes, no Python inside the
+> archive, no iterative Python callbacks, and the lifetime and thread decision with its evidence.
 
 ## Context
 

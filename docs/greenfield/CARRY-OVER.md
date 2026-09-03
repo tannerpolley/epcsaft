@@ -45,8 +45,7 @@ What carries is the objective, already written down and registered:
 
 This is `reactive_finite_phase.cpp`'s objective (3,723 lines) and Pereira 2012's, and it
 is documented with 15 registered equations in
-`engine/docs/equilibrium/formulation.md` (PR #194, branch `docs/equilibrium-formulation`)
-— **merge that branch before Stage 5 begins**; it is the specification the stage is
+`engine/docs/equilibrium/formulation.md`; `EQUILIBRIUM.md` is the specification Stage 5 is
 written against.
 
 | what carries as an algorithm | from | note |
@@ -86,8 +85,8 @@ Carried, as the acceptance contract rather than as test code:
 | oracle case | rows | what it pins | stage |
 |---|---|---|---|
 | `aqueous_alkali_halide_activity` | 24 | LiCl/LiBr/KCl/KBr mean ionic activity coefficients; the infinite-dilution log fugacities and convergence errors were computed columns the oracle rebuild removed | 4 |
-| `light_alkane_saturation` | 10 | ethane saturation pressures and saturated-liquid mass densities against NIST SRD 69 — the propane and n-butane rows, and the vapour molar volumes, were computed columns the oracle rebuild removed | 7, 10 |
-| `reactive_vle_baseline.json` | 4 | nine-species MEA–CO₂–H₂O reactive bubble point: liquid molar densities 46,425–47,148 mol/m³, and today's 7.4–8.2 s at 225–252 evaluations. Reported as a change indicator, never pinned — they are this engine's own output | 12 |
+| `light_alkane_saturation` | 10 | ethane saturation pressures and saturated-liquid mass densities against NIST SRD 69 — the propane and n-butane rows, and the vapour molar volumes, were computed columns the oracle rebuild removed | 5 |
+| `reactive_vle_baseline.json` | 4 | nine-species MEA–CO₂–H₂O reactive bubble point: liquid molar densities 46,425–47,148 mol/m³, and today's 7.4–8.2 s at 225–252 evaluations. Reported as a change indicator, never pinned — they are this engine's own output | 5 |
 | `floor-measurements.json`, `entry-point-profile.json` | 39 entry points | every counter and wall time on `main`, with the environment record | every stage |
 
 `reactive_equilibrium_reachability` (2 rows) is not a target — it is a record that both
