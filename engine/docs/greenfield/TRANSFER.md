@@ -69,12 +69,22 @@ larger than a brief, it is named here and is the brief's specification.
 | 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
 | 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
 | 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` | designed |
-| 7 | the driver, and saturation | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed — ~1,330 lines, ceiling ~1,720 |
-| 8 | the flash | multiphase starts, the declared-topology contract, the flash cells and their gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed — ~550 lines, ceiling ~740 |
-| 9 | phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; `T` or `P` free | `SPECIFICATION-SPACE.md` | designed |
+| 7 | the driver, and the one-component cell | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed — ~1,330 lines, ceiling ~1,720 |
+| 8 | starts, and the topology contract | multiphase starts, the declared-topology contract, and the `k = f = 0` cells' gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed — ~550 lines, ceiling ~740 |
+| 9 | the multicomponent cells | seeds and continuation for `k ≥ 1` at more than one component, on the same driver and assembly | `SPECIFICATION-SPACE.md` | designed |
 | 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
 | 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
 | 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
+
+**Stages are named for what they write, not for what they solve.** Corrected 2026-09-02
+after the owner caught it: the table called Stage 7 *saturation*, Stage 8 *the flash* and
+Stage 9 *phase boundary*. Every one of those is a problem kind — the `k = f = 1` cell at one
+component, the `k = f = 0` cell, and the `k ≥ 1` family — and naming a stage after a cell
+reintroduces in the plan the special case the design removed from the code. Stage 7's own
+body already said it: *`saturation` is a rule-7 case token, so nothing under `native/` is
+named after it* — printed directly beneath a heading that named the stage after it.
+
+There is one driver and one equilibrium. A cell is a specification, never a stage.
 
 **Stage 7 and 8 re-estimated, 2026-09-02.** The old split budgeted saturation, the boundary
 and the minimizer at 300 + 250 + 1,350 = 1,900 lines across three stages. With one Ipopt
@@ -504,7 +514,7 @@ an electrolyte flash compiles with nullity 0. Each with the named mutation from 
 
 ---
 
-### Stage 7 — saturation (300 lines)
+### Stage 7 — the driver, and the one-component cell (~1,330 lines)
 
 `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver, for every `k` (`SPECIFICATION-SPACE.md`
 §2.4: objective `G` or zero, constraint set from compile, exact Hessian for `k = 0` and
@@ -545,7 +555,7 @@ sensitivity against centred differences to 1e-6. **Reported, not pass/fail:**
 
 ---
 
-### Stage 8 — Gibbs minimizer (1,350 lines)
+### Stage 8 — starts, and the topology contract (~550 lines)
 
 `gibbs_minimizer.{hpp,cpp}` (1,350) — and `loader.py` shrinks, because the feed-basis
 arithmetic it was budgeted for moved into Stage 6's compile.
@@ -584,9 +594,9 @@ Conservation and charge residuals ≤ 1e-10. Each with the named mutation from t
 
 ---
 
-### Stage 9 — phase boundary (250 lines)
+### Stage 9 — the multicomponent cells
 
-`phase_boundary.cpp` completes: the multicomponent rows, `T` or `P` free, `k ≥ 1`.
+`phase_boundary.cpp` completes: seeds and continuation for `k ≥ 1` at more than one component. There are no new rows — compile emits them and Stage 7's driver solves them.
 
 The same file and the same assembly Stage 7 opened, now with more than one component and
 more than two phases: bubble, dew, cloud point and the fixed-fraction flash are one cell
