@@ -68,6 +68,28 @@ node kind (`Property`, `Coordinate`, `Sum`, `Product`, `Log`); rule 4 with `Disc
 fixed-lever `Coordinate` rejected by name; a failed residual shrinking the trust region
 rather than scoring zero; the A1 falsifiers for the sensitivity (`EOS.md` Properties §5).
 
+### 4.1 Named checks
+
+Each is a function `check_r1` … `check_r8` in `tests/native/regression_checks.cpp`, called
+from `main`, non-aborting, every solve under `core::Capture`; `tools/check-equilibrium-claims.py`
+reads this table as it reads `EQUILIBRIUM.md` §4.
+
+| # | claim | asserts | mutation (must go red) |
+|---|---|---|---|
+| R1 | Jacobian per node kind | value and `∂/∂θ` of a `Property` leaf on a `StateSpec`, a `Coordinate` leaf on a solved `Problem`, a `Sum`, a `Product`, and a `Log`, each against a centred difference in every active parameter, to 1e-6 relative | `chain(outer, inner)` returns `outer` alone |
+| R2 | several targets | an observation over two solves (a `Sum` of the same residual field of two solved liquids at two feeds, minus a constant) evaluates, and its Jacobian matches the centred difference through both solves | the evaluator visits only the first target |
+| R3 | fixed lever rejected by name | `Coordinate(P)` on a fixed-`P` target fails at observation compile with `fixed_lever` in the message; no fit runs | the name changes |
+| R4 | failed residual | an observation whose declared `{V,L}` solve fails (the ternary at 30 bar) inside a fit is reported failed by name, the functor returned `false`, and the fit's cost carries no zero residual for it | the failure path returns a zero residual as success |
+| R5 | manufactured recovery | synthetic saturation rows from ethane's three parameters `θ*`; a fit from a 20 % perturbed start recovers `θ*` to 1e-6 relative with `Stop::converged` | `Coordinate(P)` reads the temperature column |
+| R6 | the NIST rows | the ten `light_alkane_saturation` rows, pressure and liquid density as `Coordinate(P)` and `Property(L, molar_density)`, fit for the three ethane parameters: stop `converged`, residual `≤ max(criterion, floor)` from the record; AARD in `P` and `ρ`, the deviation from the published tuple, recordings and wall time **reported** | shares R5's |
+| R7 | permutation invariance | relabelling the two components of a binary observation set permutes the fitted parameters and leaves the final cost unchanged to 1e-10 | the parameter offset ignores the index |
+| R8 | covariance | the returned covariance equals `σ² (JᵀJ)⁻¹` recomputed from the returned Jacobian, symmetric, positive semidefinite | `σ²` replaced by one |
+
+Two Stage 5 deviations, folded in with their own mutations: **S6-skip**, a failed existence
+certificate reports its dependent cells skipped by name (harness function in
+`equilibrium_support.hpp`); **S9-zero**, on the reactive fixture the feed sensitivity along a
+reaction direction (`B d = 0`) is exactly zero.
+
 ## 5. What is deliberately not here
 
 An observable enum. A residual-form flag. Any extensivity table (`Σ_p N_p P_p` is the
