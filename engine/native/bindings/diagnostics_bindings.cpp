@@ -97,12 +97,16 @@ void register_diagnostics(py::module_& module) {
         })
         .def_property_readonly("trace", [](const CaptureWrapper& wrapper) -> py::object {
             if (!wrapper.captured.has_value()) return py::none();
-            return py::cast(&*wrapper.captured, py::return_value_policy::reference);
+            return py::cast(&*wrapper.captured, py::return_value_policy::reference_internal, py::cast(wrapper));
         })
         .def_property_readonly("spans", [](const CaptureWrapper& wrapper) -> const std::vector<core::Span>& {
+            if (!wrapper.captured.has_value())
+                throw std::runtime_error("trace is not available until the capture closes");
             return wrapper.captured->spans;
         }, py::return_value_policy::reference_internal)
         .def_property_readonly("events", [](const CaptureWrapper& wrapper) -> const std::vector<core::Event>& {
+            if (!wrapper.captured.has_value())
+                throw std::runtime_error("trace is not available until the capture closes");
             return wrapper.captured->events;
         }, py::return_value_policy::reference_internal);
 }
