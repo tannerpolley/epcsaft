@@ -202,3 +202,50 @@ rows cannot see a missing upturn in the last one, and a check that a wrong physi
 the thing `TESTING.md` exists to prevent. Raised with the planner: whether the criterion
 should carry a shape condition alongside the average, and what accounts for the divergence.
 
+## Documentation triage — a Stage 1 gap, closed 2026-09-02
+
+Stage 1 scoped its deletion to code and tests and never looked at `engine/docs/`, so 55
+files passed through untouched. Several were confident specifications for the architecture
+the rebuild exists to remove — carried structure importing its assumptions, in prose rather
+than C++.
+
+**The rule, which is the prose form of "carry an equation, write a decision":** a document
+that records what was decided, or what is true, stays. A document that instructs how to
+build the deleted architecture goes. Facts do not go stale when the code changes; structures
+do.
+
+**Architecture decision records are the exception in both directions:** never delete one, and
+never leave one silently wrong. An ADR is the record of a decision that was taken, so
+deleting it destroys the reason a thing was done.
+
+`engine/docs/` went from 55 files to 45, excluding `greenfield/`.
+
+| verdict | files |
+|---|---|
+| **deleted**, plans for the removed architecture | the four cross-referencing capability plans (`general-scientific-capability-hard-cutover` and its eos, equilibrium and regression children) |
+| **deleted**, guides to the retired surface | `python-api.md` (the 40-name API contracting to 8), `migration-0.2.md`, `regression/general-regression-quickstart.md` |
+| **deleted**, specifications of removed owners | `equilibrium/phase-equilibrium.md`, `equilibrium/reactive-bubble-observations.md` |
+| **superseded, kept** | ADRs 0001, 0002, 0004 — each now names what replaced its decision |
+| **kept, unchanged** | ADRs 0003, 0005, 0006, 0007; the equation registry and its LaTeX bibliography; `science/full-eos.md`; every `research/` and `regression/science/` note; `scientific/writing/`; `agents/` |
+
+Two judgement calls worth recording, both **kept**:
+
+- `equilibrium/research/…-mitsos-barton-perdomo-held2-duality-crosswalk.md` names HELD2 in
+  its title but its content is a page-by-page theorem audit of two primary sources with
+  `[Fact]` markers. That is live science for Stage 11, not a specification.
+- `equilibrium/research/…-carbonate-provider-parameter-sources.md` names the retired
+  Provider, but its decision is *which species and which sources* — that no
+  source-complete ePC-SAFT parameters exist for two calcium complexes is a fact about the
+  literature. Its "Required Provider records" section is stale and is flagged here rather
+  than edited.
+
+`equilibrium/reactive-bubble-observations.md` was the sharpest deletion: it specifies a
+bubble owner solving `g(q,P,θ) = 0` as an outer Newton over pressure around a separately
+certified liquid — precisely the nested coupling `TOLERANCES.md` §6 names as what Stage 9
+must not reproduce. A future agent finding it in the tree would read it as the design.
+
+Deletion in a versioned tree destroys nothing, which is why the caution about "the only
+record" applies to ADRs and not to a stale plan. Every dangling reference left by the
+deletions was repaired in the same pass — seven files, including two ADRs and
+`target-layout.md`.
+

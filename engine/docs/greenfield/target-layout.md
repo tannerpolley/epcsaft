@@ -73,7 +73,7 @@ engine/
     science/full-eos.md                          —
     equilibrium/formulation.md                   —    reverted 2026-09-02; skeleton lattice being designed
     equilibrium/phase-stability.md               —    with #188
-    latex/, equations_registry.yaml, equations.md, python-api.md, scientific/adr/   —
+    latex/, equations_registry.yaml, equations.md, scientific/adr/   —
   scripts/docs/, tools/                          —    unchanged
 ```
 

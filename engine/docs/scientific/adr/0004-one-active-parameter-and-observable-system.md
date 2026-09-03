@@ -65,4 +65,4 @@ schemas, aliases, and fallbacks are deleted with their replacement.
   analysis sets.
 
 The execution authority is
-[`../../plans/2026-08-07-general-scientific-capability-hard-cutover.md`](../../plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).

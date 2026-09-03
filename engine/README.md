@@ -96,4 +96,4 @@ owned by `../analyses/reproduction/`.
 
 The canonical capability cutover and its EOS, Regression, and Equilibrium owner
 plans begin at
-[`docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md`](docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).

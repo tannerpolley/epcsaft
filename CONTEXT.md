@@ -21,7 +21,7 @@ ten seconds on a warm checkout, and publication-grade campaigns or exhaustive
 native analysis run only through explicit owner commands.
 
 The current Engine program is the
-[General Scientific Capability Hard-Cutover Plan](engine/docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+General Scientific Capability Hard-Cutover Plan (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
 [GitHub root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10), its
 native CAP subissues, and their blocked-by relationships are lifecycle truth;
 accepted plans and ADRs define the design. Conversation transcripts and task

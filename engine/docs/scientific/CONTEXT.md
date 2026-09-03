@@ -14,9 +14,9 @@ chemistry, parameter adoption, and downstream claims remain outside Engine.
 - Formulation authority: `engine/docs/science/full-eos.md`
 - Equation registry and synchronized views: `engine/docs/equations_registry.yaml`
   and `engine/docs/latex/`
-- Public API guide: `engine/docs/python-api.md`
+- Public API guide: `engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan)
 - Phase-equilibrium method and certificates:
-  `engine/docs/equilibrium/phase-equilibrium.md`
+  `engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan)
 - Accepted scientific decisions: `engine/docs/scientific/adr/`
 - Compact numerical falsifiers: `engine/tests/`
 - Installed-wheel analyses: `analyses/`

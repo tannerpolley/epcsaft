@@ -29,14 +29,14 @@ Primary citations, research, source locators, raw data, source records, results,
 still-relevant numerical evidence retain historical identities as provenance.
 
 The canonical cross-module execution plan is
-[`docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md`](docs/plans/2026-08-07-general-scientific-capability-hard-cutover.md).
+`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
 The approved GREPE target that evolves the sole public `solve`
 owner is
-[`docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md`](docs/equilibrium/plans/2026-08-14-general-reactive-equilibrium-phase-equilibrium.md).
+`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
 Its full owner plans cover
-[`EOS`](docs/eos/plans/2026-08-07-general-eos-parameter-derivatives.md),
-[`Regression`](docs/regression/plans/2026-08-07-owner-driven-parameter-fit.md),
-and [`Equilibrium`](docs/equilibrium/plans/2026-08-07-general-phase-equilibrium.md).
+`EOS` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`),
+`Regression` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`),
+and `Equilibrium` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
 
 ## Language
 

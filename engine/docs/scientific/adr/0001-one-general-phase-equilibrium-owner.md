@@ -61,4 +61,4 @@ electrolyte routes.
 - Named literature cases remain analysis evidence, not runtime identities.
 
 The execution authority is
-[`../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md`](../../equilibrium/plans/2026-08-07-general-phase-equilibrium.md).
+`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
