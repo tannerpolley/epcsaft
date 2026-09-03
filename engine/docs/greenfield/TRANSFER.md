@@ -76,12 +76,23 @@ larger than a brief, it is named here and is the brief's specification.
 | 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
 | 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
 
-**Stage 4 is reopened, not closed.** Its nine gates pass and every mutation was shown red,
-and the code is merged at `b14851f`. It is held open because the engine and the superseded
-one disagree on the dispersion term for electrolytes, which
-`analyses/reproduction/2025-figiel-engine-crosswalk` localises to the like-ion pairs, and
-which convention is right is not yet established. A stage whose numbers are unexplained is
-not a closed stage, whatever its gates say. Stage 5 does not start until it is.
+**Stage 4 is reopened, and Stage 3 has a defect.** Stage 4's nine gates pass and every
+mutation was shown red; the disagreement it surfaced is not its own.
+`analyses/reproduction/2025-figiel-engine-crosswalk` localised it to the like-ion dispersion
+pairs and then settled it against the literature: ePC-SAFT sets the dispersion energy
+between cation–cation and anion–anion pairs to zero (Held 2008 excludes all ion–ion
+dispersion; Held 2014 adds back only cation–anion; Figiel 2025 states `u_ii = 0` outright),
+and `native/physics/helmholtz.hpp` applies the full combining rule to every pair.
+
+**This is a Stage 3 defect** — the dispersion kernel — surfaced by Stage 4, and the engine is
+internally inconsistent about it: it honours `u_ii = 0` in the ionic packing diameter, whose
+`0.88 σ` is *derived from* that rule, while ignoring the rule in the dispersion energy.
+Stage 3's gates could not have caught it: closed forms, symmetries, limits and derivative
+agreement all hold for any `u_ij` matrix, including a wrong one. A modelling convention is
+seen only by a comparison against the model that defined it, which is an argument for the
+oracle rather than against the property tests.
+
+Stage 5 does not start until the kernel is fixed and both stages re-accepted.
 
 **Saturation before the flash, and why it is Stage 7 and not Stage 4.** Pure saturation is
 the `k = 1`, `f = 1` cell of the one row system: one phase pinned at zero amount, `P` free
