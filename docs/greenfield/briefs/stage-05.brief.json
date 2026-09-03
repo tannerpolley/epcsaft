@@ -219,9 +219,9 @@
       "path": "engine/tests/native/equilibrium_support.hpp",
       "edit": "Ascani 2023 reactive ternary with its reaction and standard-state Gibbs, specification builders, the four-enum lattice walk, the generic point, the count-rule predictor; the ternary fixture states, the non-aborting CHECK, the trace printer",
       "lines": {
-        "low": 130,
-        "estimate": 190,
-        "ceiling": 250
+        "low": 150,
+        "estimate": 250,
+        "ceiling": 320
       },
       "must_contain": [
         "++failures;",
@@ -232,18 +232,18 @@
       "path": "engine/tests/native/specification_checks.cpp",
       "edit": "C1 to C9",
       "lines": {
-        "low": 130,
-        "estimate": 180,
-        "ceiling": 240
+        "low": 180,
+        "estimate": 240,
+        "ceiling": 300
       }
     },
     {
       "path": "engine/tests/native/equilibrium_checks.cpp",
       "edit": "S1, S2, S6, S7, S8, S10 eval_h half, S11, S13, S15, S16",
       "lines": {
-        "low": 170,
-        "estimate": 250,
-        "ceiling": 330
+        "low": 230,
+        "estimate": 380,
+        "ceiling": 450
       }
     },
     {
