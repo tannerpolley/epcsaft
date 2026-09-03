@@ -17,11 +17,11 @@ artifact:
   public_modules: [epcsaft, epcsaft.equilibrium]
 
 plan:
-  transfer: docs/greenfield/TRANSFER.md
-  carry_over: docs/greenfield/CARRY-OVER.md
+  transfer: ../docs/greenfield/TRANSFER.md
+  carry_over: ../docs/greenfield/CARRY-OVER.md
   acceptance: tests/oracle
-  performance_floor: docs/greenfield/performance_floor.md
-  stability_findings: docs/greenfield/held2-stage-i-ii-findings.md
+  performance_floor: ../docs/greenfield/EOS.md
+  stability_findings: ../docs/greenfield/PHASE-STABILITY.md
 
 native:
   root: native

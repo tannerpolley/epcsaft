@@ -3,7 +3,7 @@
   "branch": "stage-02",
   "base": "greenfield@21b8695",
   "source_commit": "9eccbfd",
-  "design_document": "engine/docs/greenfield/CORE.md",
+  "design_document": "docs/greenfield/CORE.md",
   "categories_written": [
     "core",
     "engine",
@@ -19,7 +19,7 @@
   "preconditions": [
     "git cat-file -e 21b8695^{commit}",
     "git cat-file -e 9eccbfd^{commit}",
-    "ls engine/native/physics/numerical_policy.hpp engine/native/physics/parameters.hpp engine/native/physics/physical_constants.hpp engine/native/physics/scalar.hpp engine/native/physics/association.hpp engine/native/physics/helmholtz.hpp engine/native/physics/electrolyte.hpp engine/native/physics/born.hpp engine/native/model/density.cpp engine/native/model/helmholtz_model.hpp engine/native/model/helmholtz_model.cpp engine/native/model/helmholtz_tape.hpp engine/native/model/infinite_dilution_reference.cpp engine/native/model/parameter_builder.hpp engine/native/model/parameter_builder.cpp engine/native/bindings/module.cpp engine/native/bindings/eos_bindings.cpp engine/tests/native/model_floor.cpp engine/tests/native/model_checks.cpp engine/tests/native/model_support.hpp engine/tests/native/physics_checks.cpp engine/tests/eos/test_activity.py engine/src/epcsaft/__init__.py engine/src/epcsaft/eos.py engine/src/epcsaft/_core.pyi tools/check-engine-architecture.py engine/docs/greenfield/CATEGORIES.md",
+    "ls engine/native/physics/numerical_policy.hpp engine/native/physics/parameters.hpp engine/native/physics/physical_constants.hpp engine/native/physics/scalar.hpp engine/native/physics/association.hpp engine/native/physics/helmholtz.hpp engine/native/physics/electrolyte.hpp engine/native/physics/born.hpp engine/native/model/density.cpp engine/native/model/helmholtz_model.hpp engine/native/model/helmholtz_model.cpp engine/native/model/helmholtz_tape.hpp engine/native/model/infinite_dilution_reference.cpp engine/native/model/parameter_builder.hpp engine/native/model/parameter_builder.cpp engine/native/bindings/module.cpp engine/native/bindings/eos_bindings.cpp engine/tests/native/model_floor.cpp engine/tests/native/model_checks.cpp engine/tests/native/model_support.hpp engine/tests/native/physics_checks.cpp engine/tests/eos/test_activity.py engine/src/epcsaft/__init__.py engine/src/epcsaft/eos.py engine/src/epcsaft/_core.pyi tools/check-engine-architecture.py docs/greenfield/CATEGORIES.md",
     "test ! -e engine/native/core && test ! -e engine/native/surface && test ! -e engine/native/bindings/diagnostics_bindings.cpp && test ! -e engine/tests/native/diagnostics_checks.cpp && test ! -e engine/tests/eos/test_diagnostics.py",
     "test \"$(grep -c 'inline const Tolerance' engine/native/physics/numerical_policy.hpp)\" = 27",
     "! grep -rq 'constexpr Tolerance' engine/native/physics/numerical_policy.hpp",

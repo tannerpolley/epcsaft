@@ -3,16 +3,16 @@
 You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-03`).
 You have no one to ask. Read, in order, before writing anything:
 
-1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 3", §"Units: C++ resolves them, Python only
+1. `docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `docs/greenfield/TRANSFER.md` §"Stage 3", §"Units: C++ resolves them, Python only
    reads the file", §"The MEA parameter set is the living bundle", §"Naming"
-3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 0–2 decisions; you build on them
+3. `docs/greenfield/STAGE-LOG.md` — Stage 0–2 decisions; you build on them
 4. `engine/native/model/helmholtz_model.hpp` completely — it is the surface you bind
 5. `engine/native/physics/parameters.hpp` — the arrays your builder fills
 6. `engine/tests/native/model_checks.cpp` §`density_and_reference` — the native reference call
 7. `tools/check-engine-architecture.py` — seven rules; rule 6 (no threshold literals) applies to
    every file you write under `engine/native/`
-8. `engine/docs/greenfield/briefs/stage-3.brief.json` — sources, budgets, gates, mutations
+8. `docs/greenfield/briefs/stage-3.brief.json` — sources, budgets, gates, mutations
 
 Verify every source marker and every precondition in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.

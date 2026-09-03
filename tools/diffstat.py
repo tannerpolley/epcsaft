@@ -47,7 +47,7 @@ def category(p: str) -> str:
     if p.startswith(("tools/", "data/tools/", "engine/scripts/")): return "canon"
     if "briefs/" in p: return "canon"
     if p.startswith("engine/tests/"): return "canon"
-    if p.startswith("engine/docs/") or p.endswith((".md", ".tex", ".bib")): return "canon"
+    if p.startswith(("docs/", "engine/docs/")) or p.endswith((".md", ".tex", ".bib")): return "canon"
     if p.startswith("data/"): return "canon"
     if p.startswith("analyses/"): return "analyses"
     return "build"

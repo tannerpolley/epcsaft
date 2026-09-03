@@ -83,5 +83,5 @@ bash tools/run-slice.sh khudaida
 ```
 
 See `AGENTS.md`, `engine/ARCHITECTURE.yaml`, and
-`engine/docs/scientific/CONTEXT.md` for execution, architecture, and scientific
+`docs/scientific/CONTEXT.md` for execution, architecture, and scientific
 ownership.

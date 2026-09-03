@@ -4,7 +4,7 @@ Status: scientific equation authority for phase, chemical, and coupled reactive-
 equilibrium in the greenfield engine. Equation identifiers below are registered in
 `engine/docs/equations_registry.yaml`; runtime source is the executable authority and
 this document creates no second implementation. Re-landed 2026-09-02 from PR #194 with
-the revisions `engine/docs/greenfield/EQUILIBRIUM.md` §6 lists; that document
+the revisions `docs/greenfield/EQUILIBRIUM.md` §6 lists; that document
 owns the activation rule, the rejection table and the checks, and is cited here rather
 than repeated.
 

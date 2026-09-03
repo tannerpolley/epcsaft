@@ -31,7 +31,7 @@ prepare_native_build=0
 if grep -Eq '^(analyses/|engine/)' <<<"$paths"; then
     .venv/bin/python tools/check-analysis-layout.py
 fi
-if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|cpp/|src/|docs/scientific/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
+if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|cpp/|src/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     architecture_inputs=true
     prepare_native_build=1
 fi
@@ -41,7 +41,7 @@ fi
 if grep -q '^data/' <<<"$paths"; then
     python3 data/tools/validate_packets.py
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/|docs/scientific/)|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|cpp/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then

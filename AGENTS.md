@@ -1,10 +1,10 @@
 # ePC-SAFT Monorepo Agent Contract
 
 This private repository is the single Git and Codex home for the ePC-SAFT
-project. Read `engine/docs/scientific/README.md`,
-`engine/docs/scientific/CONTEXT.md`, the relevant accepted ADR, and the nearest
-subtree `AGENTS.md` before material scientific work. Use the installed CSE
-skills to select the smallest applicable workflow stage.
+project. Every agent performing scientific or engineering work uses the
+installed CSE skills and reads `docs/scientific/README.md`,
+`docs/scientific/CONTEXT.md`, the relevant accepted ADR, and the nearest
+subtree `AGENTS.md` before selecting the smallest applicable CSE route.
 
 One scientific slice has one accountable agent from input to evidence. That
 agent may change the exact files needed across `data/`, `engine/`, and

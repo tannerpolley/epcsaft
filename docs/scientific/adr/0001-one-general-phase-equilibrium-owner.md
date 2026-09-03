@@ -1,6 +1,6 @@
 ---
 status: superseded
-superseded_by: greenfield rebuild, engine/docs/greenfield/TRANSFER.md
+superseded_by: greenfield rebuild, docs/greenfield/TRANSFER.md
 date: 2026-08-07
 amended_by: 0002-protect-phase-stability-until-promotion.md
 migration_source_path: engine/docs/equilibrium/adr/0001-one-general-phase-equilibrium-owner.md
@@ -10,7 +10,7 @@ migration_source_blob: c285ce8150732c2c706bbe1503248e335e8a5930
 
 > **Superseded by the greenfield rebuild, 2026-09-02.** The decision recorded here was taken
 > and is not being rewritten; what it decided no longer describes the tree. There is no phase-equilibrium *owner* any more: one row system is compiled from a degrees-of-freedom specification, and checker rule 7 forbids a solver file naming a problem kind at all (`EQUILIBRIUM.md`).
-> See `engine/docs/greenfield/TRANSFER.md` for the replacement and its stages. The plan this
+> See `docs/greenfield/TRANSFER.md` for the replacement and its stages. The plan this
 > record links to was deleted with the architecture it specified; `git log` carries it.
 
 
@@ -61,4 +61,4 @@ electrolyte routes.
 - Named literature cases remain analysis evidence, not runtime identities.
 
 The execution authority is
-`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
+`docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `docs/greenfield/TRANSFER.md`).

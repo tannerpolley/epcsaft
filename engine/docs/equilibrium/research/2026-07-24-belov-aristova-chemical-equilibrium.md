@@ -333,7 +333,7 @@ The unknown-temperature bracket uses Roots.jl `Order1()` and `atol=tol`.
 [Fact, local] The repository pins `epcsaft==0.1.0.dev0` (`pyproject.toml`). Its
 accepted Equilibrium capability is only the fixed-temperature pure-component
 local saturation boundary for provider-approved methane, ethane, and propane
-(`README.md`, `ARCHITECTURE.yaml`, `engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan)). The local
+(`README.md`, `ARCHITECTURE.yaml`, `docs/greenfield/TRANSFER.md` (replaced the deleted plan)). The local
 provider catalog probe found Gross-Sadowski methane/ethane, Gross-Sadowski
 propane, and a bounded Figiel electrolyte catalog containing water, methanol,
 ethanol, Li+, Na+, K+, Cl-, and Br-; the latter is private/non-production for

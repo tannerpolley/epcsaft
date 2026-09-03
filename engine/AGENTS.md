@@ -1,7 +1,7 @@
 # Engine Directory Agent Contract
 
-Read root `AGENTS.md`, `docs/scientific/README.md`,
-`docs/scientific/CONTEXT.md`, `CONTEXT.md`, and the relevant accepted ADR
+Read root `AGENTS.md`, `../docs/scientific/README.md`,
+`../docs/scientific/CONTEXT.md`, `CONTEXT.md`, and the relevant accepted ADR
 before material work.
 
 This directory owns the sole `epcsaft` distribution and its public

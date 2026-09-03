@@ -3,13 +3,13 @@
 You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-04`).
 You have no one to ask. Read, in order, before writing anything:
 
-1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 4" and §"Naming"
-3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 1's decisions; you build on them
+1. `docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `docs/greenfield/TRANSFER.md` §"Stage 4" and §"Naming"
+3. `docs/greenfield/STAGE-LOG.md` — Stage 1's decisions; you build on them
 4. `engine/native/physics/*.hpp` — all eight files, completely
 5. `engine/tests/native/physics_checks.cpp` — the check pattern you follow
 6. `tools/check-engine-architecture.py` — the five rules your result must satisfy
-7. `engine/docs/greenfield/briefs/stage-2.brief.json` — sources, budgets, gates
+7. `docs/greenfield/briefs/stage-2.brief.json` — sources, budgets, gates
 
 Verify every source marker and gate command in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.

@@ -111,7 +111,7 @@ missing — correctly, since it cannot verify a single source marker without it.
 lost a run to this.
 
 ```bash
-git add engine/docs/greenfield/briefs/stage-NN.brief.{md,json} && git commit   # first
+git add docs/greenfield/briefs/stage-NN.brief.{md,json} && git commit   # first
 git worktree add -b stage-NN ~/.codex/worktrees/gf-stage-NN greenfield
 cp -r <greenfield>/engine/build/subprojects <worktree>/engine/build/    # gitignored
 cd <worktree> && uv sync                                                # never copy a venv

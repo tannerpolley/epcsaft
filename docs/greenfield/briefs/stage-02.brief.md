@@ -4,15 +4,15 @@ You are implementing Stage 2 of a greenfield rebuild in this worktree (branch `s
 cut from `greenfield@21b8695`). You have no one to ask. Read, in order, before writing
 anything:
 
-1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/CORE.md` — the specification of this stage, completely
-3. `engine/docs/greenfield/CATEGORIES.md` — why four files leave `physics/` and one leaves `model/`
-4. `engine/docs/greenfield/CORE.md` §2 and §5 — kept by reference
-5. `engine/docs/greenfield/EOS.md` §1, §6, §7 — why the density record carries no floor yet, and the accuracy sentence
+1. `docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `docs/greenfield/CORE.md` — the specification of this stage, completely
+3. `docs/greenfield/CATEGORIES.md` — why four files leave `physics/` and one leaves `model/`
+4. `docs/greenfield/CORE.md` §2 and §5 — kept by reference
+5. `docs/greenfield/EOS.md` §1, §6, §7 — why the density record carries no floor yet, and the accuracy sentence
 6. `engine/native/physics/*.hpp`; `engine/native/model/*.hpp,*.cpp`; `engine/native/bindings/*.cpp`;
    `engine/tests/native/*.cpp,*.hpp`; `engine/src/epcsaft/*.py,*.pyi`
 7. `tools/check-engine-architecture.py` — you extend it; every rule must stay green
-8. `engine/docs/greenfield/briefs/stage-02.brief.json` — sources, budgets, gates, mutations
+8. `docs/greenfield/briefs/stage-02.brief.json` — sources, budgets, gates, mutations
 
 Verify every source marker and every precondition in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.

@@ -63,7 +63,7 @@ wheel build and installation.
 The package owns one Meson graph and no installed cross-module SDK. Data
 packet materializations are explicit and hash-bound. Installed-wheel analyses
 live in `../analyses/`. See `AGENTS.md`, `ARCHITECTURE.yaml`, and
-`docs/scientific/CONTEXT.md`.
+`../docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
 through pkg-config. Exact archive wraps own Boost 1.88.0, CppAD
@@ -96,4 +96,4 @@ owned by `../analyses/reproduction/`.
 
 The canonical capability cutover and its EOS, Regression, and Equilibrium owner
 plans begin at
-`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
+`docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `docs/greenfield/TRANSFER.md`).

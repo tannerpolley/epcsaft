@@ -4,15 +4,15 @@ You are repairing Stages 3 and 4 of a greenfield rebuild in this worktree (branc
 `stage-04-repair`, cut from `greenfield@eb7c728`). You have no one to ask. Read, in order,
 before writing anything:
 
-1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/EOS.md` §1, §3 and §5 — the slope and anchor defects, measured
+1. `docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `docs/greenfield/EOS.md` §1, §3 and §5 — the slope and anchor defects, measured
 3. `analyses/reproduction/2025-figiel-engine-crosswalk/like-ion-dispersion-convention.md`,
    Addenda 1–4 — the dispersion defect, its registry entry, and why the fix is not packet data
 4. `engine/native/physics/helmholtz.hpp`, `parameters.hpp`; `engine/native/model/*.cpp,*.hpp`;
    `engine/tests/native/model_support.hpp`, `model_checks.cpp`, `physics_checks.cpp`
 5. `engine/src/epcsaft/parameters.py`, `engine/tests/eos/*.py`, `engine/tests/packets.py`
 6. `data/docs/packet-contract.md` §"Manifest" and §"Consumer lock"
-7. `engine/docs/greenfield/briefs/stage-04.repair.brief.json` — sources, budgets, gates, mutations
+7. `docs/greenfield/briefs/stage-04.repair.brief.json` — sources, budgets, gates, mutations
 
 Verify every source marker and every precondition in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.

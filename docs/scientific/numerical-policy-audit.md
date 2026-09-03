@@ -8,7 +8,7 @@ numeric literals, named tolerances, solver options, loop and search limits,
 rank and conditioning rules, clipping, fallback, exception handling, and result
 construction. Call traces start at the public Python methods and end at the
 native owner named in each row. The untracked historical
-`engine/docs/scientific/test-suite-audit/` proposal is not authority and was not
+`docs/scientific/test-suite-audit/` proposal is not authority and was not
 used.
 
 Implementation statements and test descriptions below are **verified** against

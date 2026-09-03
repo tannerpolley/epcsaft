@@ -20,9 +20,8 @@ current wheel before tests, the default installed-wheel gate targets less than
 ten seconds on a warm checkout, and publication-grade campaigns or exhaustive
 native analysis run only through explicit owner commands.
 
-The current Engine program is the
-General Scientific Capability Hard-Cutover Plan (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
-[GitHub root issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10), its
-native CAP subissues, and their blocked-by relationships are lifecycle truth;
-accepted plans and ADRs define the design. Conversation transcripts and task
+The current Engine program is the greenfield rebuild on branch `greenfield`,
+mapped in `docs/greenfield/TRANSFER.md`; the earlier Hard-Cutover Plan and root
+issue #10 are provenance. Issues #185–#196 hold the scope each stage absorbs;
+the stage documents and accepted ADRs define the design. Conversation transcripts and task
 summaries are handoff context, not durable authority.

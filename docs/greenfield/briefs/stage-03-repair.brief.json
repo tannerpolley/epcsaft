@@ -168,7 +168,7 @@
       }
     },
     {
-      "path": "engine/docs/greenfield/CORE.md",
+      "path": "docs/greenfield/CORE.md",
       "edit": "the Scope rule in 6.1, and 5.2 gains its checker reference",
       "lines": {
         "low": 6,

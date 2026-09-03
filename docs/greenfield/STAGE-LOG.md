@@ -402,3 +402,26 @@ differences `evaluate` in temperature at a fixed point, which is not obviously `
 **A method note.** Both rejections came from reading the checks, not from running them. Every
 gate was green both times. The apparatus catches a wrong answer well and a shallow one badly,
 and the only thing that caught this was opening the file.
+
+## Records moved to the root, 2026-09-03
+
+`engine/docs/scientific/` and `engine/docs/greenfield/` moved to `docs/scientific/` and
+`docs/greenfield/` with `git mv`, by the owner's decision: the CSE record owner belongs at
+the repository root, and the rebuild's record spans `data/`, `analyses/` and `tools/`, so it
+was never an engine document. Engine-only documents (the equation registry, the bibliography
+snapshot, the research notes) stay under `engine/docs/`.
+
+Deleted in the same commit: `formulation.tex`, `methods.tex`, `evidence.tex` (every path
+they pointed at had been deleted by the rebuild) and `adr/templates/` (generic starters,
+never used). `docs/scientific/CONTEXT.md` is rewritten to the shape CSE issue 55 specifies:
+question, owner map, glossary with sources, avoid table, default deliverable. Five terms
+from `engine/CONTEXT.md`'s old glossary are listed without a source; retiring them belongs to
+the stage that rewrites that file.
+
+Every unpinned path was rewritten. Pinned refs of the form `greenfield@<sha>:engine/docs/...`
+in closed briefs are left as written: they resolve at their commit and are provenance.
+Repaired on the way: two dangling `plan:` entries in `engine/ARCHITECTURE.yaml`, the
+doubled triage sentences in `engine/CONTEXT.md`, and the root `CONTEXT.md` still naming the
+deleted Hard-Cutover Plan as the current program. The CSE test-gate hooks were not
+installed: they block a session from stopping until its test fingerprint is approved, and
+every stage worker runs `codex exec` unattended.

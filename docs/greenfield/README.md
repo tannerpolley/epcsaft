@@ -32,8 +32,8 @@ Per stage, and the data:
 | | what it owns |
 |---|---|
 | `briefs/stage-NN.brief.{md,json}` | one stage: sources with markers, budgets with ceilings, gates with mutations. `NN` is the stage number in `TRANSFER.md` |
-| `../../tests/oracle/oracle.json` | the acceptance data: measured rows only |
-| `../../../tools/check-engine-architecture.py` | the seven rules |
+| `../../engine/tests/oracle/oracle.json` | the acceptance data: measured rows only |
+| `../../tools/check-engine-architecture.py` | the seven rules |
 
 ## Roles
 

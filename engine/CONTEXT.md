@@ -28,15 +28,9 @@ implementation reviews, and source-specific runtime guidance are deleted.
 Primary citations, research, source locators, raw data, source records, results, and
 still-relevant numerical evidence retain historical identities as provenance.
 
-The canonical cross-module execution plan is
-`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
-The approved GREPE target that evolves the sole public `solve`
-owner is
-`engine/docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
-Its full owner plans cover
-`EOS` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`),
-`Regression` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`),
-and `Equilibrium` (deleted with the rebuilt architecture; see `engine/docs/greenfield/TRANSFER.md`).
+The execution plan, the equilibrium target and the per-module plans this file once
+named were deleted with the architecture they specified. `docs/greenfield/TRANSFER.md`
+is their replacement and `git log` carries them.
 
 ## Language
 

@@ -19,7 +19,7 @@ plans and administrative records.
 
 Current repository execution rules live in `AGENTS.md`; executable topology in
 `engine/ARCHITECTURE.yaml`; scientific vocabulary and boundaries in
-`engine/docs/scientific/CONTEXT.md`; and accepted decisions in this sole ADR
+`docs/scientific/CONTEXT.md`; and accepted decisions in this sole ADR
 sequence. Data owns reusable source packets and `data/packet-locks.json`.
 Scientific work is retained as one-question analysis sets under `analyses/`.
 Reproductions use the documented local extension
