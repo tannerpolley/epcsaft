@@ -233,6 +233,19 @@ tools/diffstat.py --files          # every file, classified
 tools/diffstat.py HEAD~5..HEAD     # any range
 ```
 
+It also splits the code additions into **statements, comments and blank lines**. No
+off-the-shelf counter does that for a *diff* — `tokei`, `scc` and `cloc` all classify a
+tree, not a range — and it is the last step between "lines added" and "code written".
+Measured on this branch: **88.6 % statements, 4.4 % comments, 7.0 % blank.**
+
+**On buying rather than building.** The language half of this is a solved problem and the
+tools are good: `tokei` and `scc` are fast and accurate, `cloc` is in Debian. The category
+half cannot be bought, because no tool knows that `engine/native/core/` is the core and
+`analyses/` may be depended on by nothing — that mapping is this project's own, and it is
+the half that makes the number mean something. Nothing off the shelf crosses the two, and
+nothing does the statement/comment/blank split on a diff. Hence 200 lines here rather than
+a dependency.
+
 **The baseline matters more than the filter.** A diff against `main` is dominated by the
 superseded tree Stage 1 deleted — 45,951 lines nobody wrote — so it answers "what changed"
 and never "what have we built". The default baseline is `e4d964c`, the commit that laid the
@@ -256,9 +269,9 @@ a code diff. It sets `diff=cpp` and `diff=python`, so a hunk header names the en
 function rather than a stray brace. And `* text=auto` keeps line endings from ever becoming
 a diff of their own.
 
-**Measured 2026-09-02**, from the right baseline. Since the tree was emptied: **+5,893 of
-executable code** — 4,654 C++, 1,136 Python, 54 shell, 49 build — against 10,113 lines that
-are prose, data or configuration. By category the code is 3,371 engine, 1,596 canon (the
+**Measured 2026-09-02**, from the right baseline. Since the tree was emptied: **+5,950 of
+executable code** — 4,654 C++, 1,247 Python, 49 build — of which **5,274 are statements**,
+262 comments and 414 blank, against 10,113 lines that are prose, data or configuration. By category the code is 3,371 engine, 1,596 canon (the
 native checks and the enforcers), 674 surface, 203 analysis scripts, 49 build; the core is
 0, because Stage 2 is designed and not written.
 
