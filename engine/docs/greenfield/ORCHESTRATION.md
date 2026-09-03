@@ -209,6 +209,38 @@ in the repository first, copy it into the worktree, and have the resume prompt s
 changed and why — the worker still holds its own context for everything else, which is the
 whole reason a resume beats a fresh agent.
 
+## One commit, one category
+
+A commit changes one category. Not one file, not one stage — **one category**, from
+`CATEGORIES.md`: core, surface, engine, canon or analyses. A commit that lands a design
+document and an engine fix together makes the engine fix invisible, and a diff of the week
+then reads as thousands of green lines with no way to tell which of them anyone has to
+review as code.
+
+This is enforced by discipline rather than by a hook, because the exceptions are real: a
+stage's worker writes engine and canon together (the code and its checks), and a rename
+touches everything. When a commit must cross a category, its message says which categories
+and why.
+
+`tools/git-categories.sh` reports the split for any range:
+
+```bash
+tools/git-categories.sh                  # since the branch point
+tools/git-categories.sh HEAD~5..HEAD     # a range
+tools/git-categories.sh --code           # only the categories that are code
+```
+
+`.gitattributes` marks the machine-generated and measured files `-diff`, so regenerating the
+equation views or landing a parameter document does not read as thousands of hand-written
+additions. Those files are still versioned, still reviewed when they land, and still
+recoverable — they simply stop inflating a code diff.
+
+**Measured 2026-09-02.** The raw diff since the branch point is +21,602 / −69,365. Split by
+category it is **+5,204 of code** — 2,342 engine, 1,684 enforcers, 603 build, 575 surface —
+against 45,951 lines of the superseded tree removed. The rest is 3,863 lines of brief,
+5,127 of record, 1,277 of data and 268 of analysis prose. The headline number was never
+wrong; it was answering a different question.
+
 ## A pinned source names the file as it was at that sha
 
 A brief's `sources` are `branch@sha:path`, and the path must be the one the file had **at
