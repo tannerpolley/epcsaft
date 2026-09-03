@@ -10,12 +10,14 @@ from pathlib import Path
 from statistics import median
 from typing import Callable
 
+# The extension reads OMP_NUM_THREADS when it loads, and this script reports timings,
+# so the pin has to be checked before the import rather than after it.
 assert os.environ.get("OMP_NUM_THREADS") == "1"
 
-from epcsaft import Mixture, Parameters, State
+from epcsaft import Mixture, Parameters, State  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tests.packets import parameters_json
+from tests.packets import parameters_json  # noqa: E402
 
 FLOOR_COMPOSITION = (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)
 COUNTER_NAMES = ("forward", "reverse", "hessian_calls", "recordings")
@@ -67,7 +69,9 @@ def main() -> None:
     figiel = Mixture(Parameters.from_json(
         parameters_json("figiel-2025-reference-electrolytes", 3),
         components=("water", "sodium-cation", "chloride-anion")))
-    case_c: Callable[[], State] = lambda: mea.state(313.15, P=1e5, x=FLOOR_COMPOSITION, phase="liquid")
+    def case_c() -> State:
+        return mea.state(313.15, P=1e5, x=FLOOR_COMPOSITION, phase="liquid")
+
     state_c = case_c()
     reference = figiel.reference(
         298.15, 1e5, solvent_fractions=(1.0, 0.0, 0.0),
