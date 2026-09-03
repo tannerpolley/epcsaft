@@ -210,6 +210,22 @@ void inactive_terms_contribute_nothing() {
     CHECK(electrolyte.debye_huckel == 0.0);
 }
 
+void same_sign_exclusion_is_a_limit() {
+    auto excluded = neutral_binary();
+    excluded.charge_number[1] = 1;
+    excluded.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+    auto all_pairs = excluded;
+    all_pairs.ionic_dispersion = epcsaft::IonicDispersion::AllIonPairs;
+
+    const auto one_excluded = evaluate(excluded, 300.0, 1.2e4, {0.0, 1.0});
+    const auto one_all = evaluate(all_pairs, 300.0, 1.2e4, {0.0, 1.0});
+    CHECK(one_excluded.dispersion == 0.0);
+    CHECK(one_all.dispersion < 0.0);
+    const auto half_excluded = evaluate(excluded, 300.0, 1.2e4, {0.5, 0.5});
+    const auto half_all = evaluate(all_pairs, 300.0, 1.2e4, {0.5, 0.5});
+    CHECK(half_excluded.dispersion != half_all.dispersion);
+}
+
 // The packing fraction is linear in density and cubic in diameter; close packing
 // is the ceiling the hard-sphere logarithm cannot cross.
 void packing_fraction_is_bounded() {
@@ -276,6 +292,7 @@ int main() {
     relabelling_components_changes_nothing();
     association_solve_satisfies_mass_action();
     inactive_terms_contribute_nothing();
+    same_sign_exclusion_is_a_limit();
     packing_fraction_is_bounded();
     kernels_record_a_tape();
     std::printf("physics checks passed\n");

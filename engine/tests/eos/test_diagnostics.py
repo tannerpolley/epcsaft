@@ -35,7 +35,7 @@ def test_trace_and_convergence_round_trip() -> None:
 
 def test_reference_requires_stoichiometry() -> None:
     parameters = Parameters.from_json(
-        parameters_json("figiel-2025-reference-electrolytes", 2),
+        parameters_json("figiel-2025-reference-electrolytes", 3),
         components=("water", "lithium-cation", "chloride-anion"),
     )
     with pytest.raises(TypeError):
