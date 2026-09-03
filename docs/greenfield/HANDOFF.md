@@ -23,7 +23,8 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 1. An observation that names several solved targets, so finite-dose heat (two solves) is
    expressible; the `amplification` definition in the diagnostics block (Ipopt's
    `regularization_size` today); re-pin the brief's sources at the current design commit;
-   the owner's ruling on `low` line floors and `budget_undershot`.
+   the owner's ruling on `low` line floors and `budget_undershot`: **ruled 2026-09-03, drop
+   both** (`CANON.md`, Budget); Stage 6's brief carries ceilings and named checks only.
 2. Two Stage 5 deviations to fold in: "skipped by name" reporting when a fixture certificate
    fails; the reaction-direction zero assertion on the feed sensitivity (S9).
 3. The brief tells the worker to read the tree through Serena (symbol overview, find symbol,

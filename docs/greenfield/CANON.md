@@ -92,3 +92,6 @@ stage wants more than its share, the question is whether the checks pass the dia
 not whether the budget should grow. A line count is never completion evidence in either
 direction: a ceiling bounds a stage, a minimum proves nothing, and a check is accepted by
 reading it against its named property and mutation.
+Owner's ruling, 2026-09-03: from Stage 6 on, a brief carries ceilings and named checks
+only; no `low` line floor, and `budget_undershot` is not a stop. Completion is proven by
+the named-claims gate, the mutations and the reading; a short file that passes them is fine.
