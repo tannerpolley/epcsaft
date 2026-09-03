@@ -545,3 +545,12 @@ launch recipe: `$!` after `setsid nohup` is the wrapper's pid, not codex's, so t
 missed; and a killed run holds its thread-writer lock until the codex process itself is gone.
 The interrupted run had already reached the boundary checks once, with S3 red on a mole
 fraction; that is the resumed worker's to finish.
+
+**First honest ceiling stop, and the second resume.** Twelve minutes after the resume the
+worker stopped `budget_ceiling`: `equilibrium_checks.cpp` at 333 against 330 while writing S1's
+four consequences per cell; no compaction, and it said which additions were untested. Every
+gate it ran was green on its tree, S1–S16 (S12 excepted) included, and the compacted row
+compiler was restored as first written (848 of 900). The planner re-budgeted the three test
+files at 1.2× measured-plus-remaining (`1061a7d`); the owner chose to resume the same session.
+The planner's note for acceptance: run `coincidence_every_cell` and `start_splits_composition`
+before reading anything else, since those two would have caught attempt 3.
