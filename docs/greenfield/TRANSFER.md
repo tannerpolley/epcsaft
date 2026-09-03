@@ -68,7 +68,7 @@ larger than a brief, it is named here and is the brief's specification.
 | 3 | **Surface** | surface | `native/surface/` the parameter builder; `native/bindings/` the only pybind11 includes; `src/epcsaft/` as a pure mapping layer, units resolved in C++ | `SURFACE.md` | **closed** `3c4e2be`, `65309c1` |
 | 4 | **EOS** | engine | the equation kernels and the policy they read; one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `EOS.md` | **closed** `8bc6419`, `a2a2ac5`, repaired `b6f5186` |
 | 5 | **Equilibrium** | engine | the specification and count rule; one Ipopt driver for every `k`; seeds, continuation, sensitivity; starts and the topology contract | `EQUILIBRIUM.md` | designed — ~3,240 native lines; two attempts held, third running |
-| 6 | **Regression** | engine | `fit(model, observations)` on Ceres, with covariance, and the `PropertyOrder` first-derivative block on `State`; thermochemistry, totals and the ideal side are a Properties stage after it (proposed, owner to rule) | `REGRESSION.md` | briefed |
+| 6 | **Regression** | engine | `fit(model, observations)` on Ceres, with covariance, and the `PropertyOrder` first-derivative block on `State`; thermochemistry, totals and the ideal side are a Properties stage after it (owner's ruling, 2026-09-03; the owner numbers it) | `REGRESSION.md` | running |
 | 7 | **Phase stability** | engine | `find_phases` written to Pereira 2012, replacing 13,589 lines | `PHASE-STABILITY.md` | planned |
 | 8 | **Final check** | canon | every layer exercised at once; one merge of `greenfield` into `main` | `FINAL-CHECK.md` | planned |
 

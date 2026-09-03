@@ -31,7 +31,7 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
    references) before writing; `mcp_servers.serena` in `~/.codex/config.toml` points at the
    stage worktree, so re-point it when the Stage 6 worktree is created.
 4. Model and effort per the owner: attempt 4 ran on `gpt-5.6-sol` at high; never downgrade.
-5. **Scope, proposed by the planner, owner to rule:** Stage 6 writes the regression shell and
+5. **Scope, ruled by the owner 2026-09-03 (accepted as the planner proposed):** Stage 6 writes the regression shell and
    the `PropertyOrder` first-derivative block on `State` (`EOS.md` Properties §4, both
    coordinate sets) that a `Property` leaf's Jacobian needs. It does not write
    `Thermochemistry`, `physics/ideal.hpp`, the `State` totals, `standard_gibbs(T, order)` or
