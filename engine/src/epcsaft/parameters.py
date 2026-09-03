@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 from . import _core
 
@@ -222,8 +222,8 @@ class Parameters:
         if _choice(families, "base", {"pc-saft"}) != "pc-saft":
             raise _core.ParameterError("unknown base model choice")
         _choice(families, "association", {"none", "general-site"})
+        electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
         if electrolyte == "born":
-            electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
                 if name not in electrolyte_record:
                     raise _core.ParameterError(f"missing electrolyte/{name}")
@@ -317,6 +317,7 @@ class Parameters:
         native_document.site_component = site_component
         native_document.site_multiplicity = site_multiplicity
         native_document.electrolyte_choice = electrolyte
+        native_document.ionic_dispersion_choice = str(electrolyte_record.get("ionic_dispersion", ""))
         native_document.permittivity_choice = permittivity
         native_document.entries = entries
         return cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
