@@ -522,3 +522,14 @@ refused. Eleven entries added from the planner's bodies: the ideal-gas reference
 heat-capacity kinds, two `K(T)` kinds, total enthalpy and entropy, the transfer's temperature
 derivative, and the reaction-derived thermochemistry. The reactive electrolyte two-liquid
 oracle row is still pending the owner's ruling (candidate: the lithium extraction network).
+
+## Attempt 4 launched, 2026-09-03
+
+Owner's call: proceed, on `gpt-5.6-sol` at reasoning high rather than the luna model of
+attempts 1–3 ("this needs to be done correctly"). The stage worktree was brought to the
+attempt-3 tag merged with `greenfield@78f4bc7` (`d404a27`, clean merge; both sides had
+edited the checker) so the worker reads the revised `EQUILIBRIUM.md` and brief from its
+own tree. `uv sync`, checker green on 30 sources, preflight clean: 8 sources, 24 gates,
+11 preconditions, 7 mutations deferred to acceptance. Launched with the verified recipe,
+stdin closed, venv first on `PATH`; session `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`,
+pid 1228759, log `attempt-4.log`.

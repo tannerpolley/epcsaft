@@ -196,6 +196,13 @@ Behind it, four places the design let you guess. Each is now written, and each h
   `dew_seeded_cold` (trap 13: the dew is `solve_equilibrium(model, dew)` with no start).
 - **Diagnostics** (§4.4): the brief's `diagnostics` array, which the preflight now requires.
 
+**A budget breach is a stop, never a formatting task.** `request_compile.cpp` is budgeted
+600 / 750 / 900 (low / estimate / ceiling): attempt 3 measured 716 lines of real content
+with the analytic assembly in it, and this revision adds the feed column, the dimensionless
+rows and the `standard_gibbs` call. If a file you write crosses its ceiling, stop
+`budget_ceiling` with the number. Combining statements or removing blank lines to fit a
+count is rejected on reading whatever the total, and the file is measured as first written.
+
 You start from the tag `stage-05-attempt-3`. Carried: the exact-tape assembly, analytic `F_y`
 and `F_θ`, `stoichiometry`, `problem.hpp`, the bindings, the Python and the compile-tier
 checks. Rewritten under the sections above: the driver's starts, the coincidence refusal, the
