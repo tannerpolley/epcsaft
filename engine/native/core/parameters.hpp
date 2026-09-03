@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/declared.hpp"
+
 #include <vector>
 
 // The parameter arrays the equations read. Plain data, no validation: the model
@@ -63,10 +65,10 @@ struct Parameters final {
     double ionic_region_relative_permittivity = 0.0;
     double born_c_shell = 0.0;
     double born_c_dielectric = 0.0;
-    ElectrolyteForm electrolyte_form = ElectrolyteForm::None;
+    core::Declared<ElectrolyteForm> electrolyte_form;
 
     // Permittivity
-    PermittivityForm permittivity_form = PermittivityForm::None;
+    core::Declared<PermittivityForm> permittivity_form;
     std::vector<double> relative_permittivity;
     std::vector<int> permittivity_term_component;
     std::vector<double> permittivity_term_coefficient;

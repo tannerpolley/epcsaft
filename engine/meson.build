@@ -96,8 +96,8 @@ model_sources = files(
   'native/model/helmholtz_model.cpp',
   'native/model/density.cpp',
   'native/model/infinite_dilution_reference.cpp',
-  'native/model/parameter_builder.cpp',
 )
+surface_sources = files('native/surface/parameter_builder.cpp')
 # Stages 4, 5, 6
 equilibrium_sources = files()
 # Stage 7
@@ -106,6 +106,7 @@ regression_sources = files()
 epcsaft_native = static_library(
   'epcsaft_native',
   model_sources,
+  surface_sources,
   equilibrium_sources,
   regression_sources,
   cppad_temp_file,
@@ -129,7 +130,8 @@ epcsaft_native = static_library(
 # Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
 py.extension_module(
   '_core',
-  files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp'),
+  files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp',
+        'native/bindings/diagnostics_bindings.cpp'),
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,
@@ -168,6 +170,17 @@ model_checks = executable(
   install: false,
 )
 test('model', model_checks)
+
+diagnostics_checks = executable(
+  'diagnostics_checks',
+  'tests/native/diagnostics_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('diagnostics', diagnostics_checks)
 
 model_floor = executable(
   'model_floor',

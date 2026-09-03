@@ -1,5 +1,5 @@
 #include "model/helmholtz_model.hpp"
-#include "model/parameter_builder.hpp"
+#include "surface/parameter_builder.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -52,7 +52,8 @@ void register_eos(py::module_& module) {
         .def_readonly("residual_isobaric_heat_capacity", &epcsaft::State::residual_isobaric_heat_capacity)
         .def_readonly("molar_density", &epcsaft::State::molar_density)
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
-        .def_readonly("site_fractions", &epcsaft::State::site_fractions);
+        .def_readonly("site_fractions", &epcsaft::State::site_fractions)
+        .def_readonly("density_convergence", &epcsaft::State::density_convergence);
     py::class_<epcsaft::SweepCounters>(module, "SweepCounters")
         .def_readonly("forward", &epcsaft::SweepCounters::forward)
         .def_readonly("reverse", &epcsaft::SweepCounters::reverse)

@@ -42,8 +42,8 @@ struct TapeParameters final {
     double ionic_region_relative_permittivity;
     double born_c_shell;
     double born_c_dielectric;
-    ElectrolyteForm electrolyte_form;
-    PermittivityForm permittivity_form;
+    core::Declared<ElectrolyteForm> electrolyte_form;
+    core::Declared<PermittivityForm> permittivity_form;
     std::vector<double> relative_permittivity;
     std::vector<int> permittivity_term_component;
     std::vector<double> permittivity_term_coefficient;

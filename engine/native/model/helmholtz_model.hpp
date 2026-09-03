@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/convergence.hpp"
 #include "model/helmholtz_tape.hpp"
 
 #include <array>
@@ -20,6 +21,8 @@ struct HelmholtzDerivatives final {
     std::vector<double> gradient;
     std::vector<double> hessian;
     double volume_second_derivative = 0.0;
+    // Per-order association residual floor; zero when no association sites are present.
+    double gradient_floor = 0.0;
     std::vector<double> site_fractions;
 };
 
@@ -50,6 +53,7 @@ struct State final {
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
     std::vector<double> site_fractions;
+    std::optional<core::Convergence> density_convergence;
 };
 
 enum class DensityBranch { Unspecified, Vapor, Liquid };
@@ -61,6 +65,7 @@ struct DensityRoot final {
     std::size_t iterations = 0;
     std::size_t stable_root_count = 0;
     DensityBranch branch = DensityBranch::Unspecified;
+    core::Convergence convergence;
 };
 
 class HelmholtzModel final {

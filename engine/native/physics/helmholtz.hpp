@@ -1,9 +1,9 @@
 #pragma once
 
-#include "physics/numerical_policy.hpp"
-#include "physics/parameters.hpp"
-#include "physics/physical_constants.hpp"
-#include "physics/scalar.hpp"
+#include "core/numerical_policy.hpp"
+#include "core/parameters.hpp"
+#include "core/physical_constants.hpp"
+#include "core/scalar.hpp"
 
 #include <cppad/cppad.hpp>
 

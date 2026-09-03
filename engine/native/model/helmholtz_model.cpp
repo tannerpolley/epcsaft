@@ -1,5 +1,6 @@
 #include "model/helmholtz_model.hpp"
 
+#include "core/trace.hpp"
 #include "physics/association.hpp"
 #include "physics/born.hpp"
 #include "physics/electrolyte.hpp"
@@ -193,12 +194,12 @@ HelmholtzModel::HelmholtzModel(
                 "packing_diameter");
         require(parameters_.debye_huckel_diameter_angstrom[component] > 0.0,
                 "debye_huckel_diameter");
-        if (parameters_.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn) {
+        if (parameters_.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
             require(parameters_.born_diameter_angstrom[component] > 0.0,
                     "born_diameter");
         }
     }
-    if (parameters_.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn) {
+    if (parameters_.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
         require(parameters_.ionic_region_relative_permittivity > 0.0,
                 "ionic_region_relative_permittivity");
     }
@@ -206,12 +207,18 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
-    if (parameters_.permittivity_form != PermittivityForm::None) {
+    if (parameters_.permittivity_form.is(PermittivityForm::None) == false) {
         require(std::any_of(
             parameters_.charge_number.begin(), parameters_.charge_number.end(),
             [&](int charge) { return charge == 0; }
         ), "dielectric solvent");
     }
+    const bool has_ion = std::any_of(
+        parameters_.charge_number.begin(), parameters_.charge_number.end(),
+        [](int charge) { return charge != 0; }
+    );
+    require(has_ion == parameters_.electrolyte_form.declared(), "electrolyte_form");
+    require(parameters_.electrolyte_form.declared() == parameters_.permittivity_form.declared(), "permittivity_form");
 
     std::set<std::pair<ParameterFamily, std::size_t>> seen;
     for (const auto& item : active_) {
@@ -305,6 +312,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     DerivativeOrder order
 ) const {
     std::lock_guard<std::mutex> lock(mutex_);
+    core::Scope scope("evaluate");
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
     const std::size_t total_coordinates = 2 + components + active_.size();
@@ -321,6 +329,20 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     const auto sites = solve_site_fractions(
         temperature, density, composition, parameters_, sigma, diameter
     );
+    std::vector<double> declared_choices;
+    if (parameters_.electrolyte_form.declared()) {
+        declared_choices.push_back(0.0);
+        declared_choices.push_back(static_cast<double>(
+            parameters_.electrolyte_form.require("electrolyte_form")
+        ));
+    }
+    if (parameters_.permittivity_form.declared()) {
+        declared_choices.push_back(1.0);
+        declared_choices.push_back(static_cast<double>(
+            parameters_.permittivity_form.require("permittivity_form")
+        ));
+    }
+    scope.probe("declared_choices", declared_choices);
     const auto electro = electrolyte_contribution(
         temperature, density, temperature, density, composition, composition,
         parameters_
@@ -353,11 +375,16 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         point.push_back((*values)[item.indices.front()]);
     }
     const auto signature = predicate_signature(temperature, density, composition);
+    scope.probe(
+        "predicate_signature",
+        std::vector<double>(signature.begin(), signature.end())
+    );
     if (tape_ == nullptr || tape_->predicates != signature) {
         tape_ = detail::HelmholtzTape::record(
             parameters_, active_, point, sites, signature
         );
         ++counters_.recordings;
+        scope.probe("recording", 1.0);
     }
     tape_->function.new_dynamic(sites);
     std::vector<double> weight(1 + sites.size(), 0.0);
@@ -367,10 +394,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     const auto value = tape_->function.Forward(0, point);
     ++counters_.forward;
     result.value = value.front();
+    scope.probe("residual_helmholtz_extensive", result.value);
     if (order == DerivativeOrder::Value) return result;
     if (order == DerivativeOrder::Gradient) {
         result.gradient = tape_->function.Reverse(1, weight);
         ++counters_.reverse;
+        scope.probe("gradient", result.gradient);
         return result;
     }
     if (order == DerivativeOrder::PressureSlope) {
@@ -383,6 +412,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         const auto second = tape_->function.Reverse(2, weight);
         ++counters_.reverse;
         result.volume_second_derivative = second[2 * 1 + 1];
+        scope.probe("gradient", result.gradient);
+        scope.probe("volume_second_derivative", result.volume_second_derivative);
+        scope.probe("gradient_floor", result.gradient_floor);
         return result;
     }
 
@@ -449,6 +481,23 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     );
     if (sites_count != 0) {
         correction = cross.transpose() * factorization.solve(cross);
+        const Eigen::MatrixXd propagated = factorization.solve(cross).transpose();
+        double maximum = 0.0;
+        for (Eigen::Index row = 0; row < propagated.rows(); ++row) {
+            double norm = 0.0;
+            for (Eigen::Index column = 0; column < propagated.cols(); ++column) {
+                const std::size_t site = static_cast<std::size_t>(column);
+                const std::size_t component = static_cast<std::size_t>(
+                    parameters_.site_component[site]
+                );
+                const double mass = composition[component]
+                    * parameters_.site_multiplicity[site];
+                const double diagonal = total * mass / sites[site];
+                norm += std::abs(propagated(row, column) * diagonal);
+            }
+            maximum = std::max(maximum, norm);
+        }
+        result.gradient_floor = maximum * policy::ASSOCIATION_RESIDUAL.value;
     }
     for (std::size_t row = 0; row < total_coordinates; ++row) {
         for (std::size_t column = 0; column < total_coordinates; ++column) {
@@ -458,6 +507,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         }
     }
     result.volume_second_derivative = result.hessian[1 * total_coordinates + 1];
+    scope.probe("gradient", result.gradient);
+    scope.probe("hessian", result.hessian);
+    scope.probe("volume_second_derivative", result.volume_second_derivative);
+    scope.probe("site_fractions", result.site_fractions);
+    scope.probe("gradient_floor", result.gradient_floor);
     (void)direct_value;
     return result;
 }
@@ -556,10 +610,14 @@ State HelmholtzModel::state_at_pressure(
     DensityBranch branch,
     std::optional<double> anchor_density
 ) const {
+    core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
     );
-    return state(temperature, root.molar_density, mole_fractions);
+    State result = state(temperature, root.molar_density, mole_fractions);
+    result.density_convergence = root.convergence;
+    scope.finish(root.convergence);
+    return result;
 }
 
 double HelmholtzModel::packing_fraction_coefficient(

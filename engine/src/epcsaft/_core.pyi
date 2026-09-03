@@ -2,6 +2,69 @@ from typing import Optional, Sequence
 
 class ParameterError(ValueError): ...
 class EosError(RuntimeError): ...
+class ConvergenceError(EosError): ...
+class DeclarationError(ParameterError): ...
+
+class Stop:
+    converged: Stop
+    converged_to_floor: Stop
+    stalled: Stop
+    budget_exhausted: Stop
+    left_domain: Stop
+    singular: Stop
+    infeasible: Stop
+
+class Category:
+    ThermodynamicConstraint: Category
+    AlgorithmTolerance: Category
+
+class Tolerance:
+    name: str
+    value: float
+    category: Category
+    source: str
+    factor: float
+    upstream: Optional[Tolerance]
+
+class Convergence:
+    residual: float
+    criterion: Optional[Tolerance]
+    floor: Optional[float]
+    amplification: Optional[float]
+    contraction: Optional[float]
+    iterations: int
+    evaluations: int
+    stop: Stop
+    @property
+    def residual_over_criterion(self) -> Optional[float]: ...
+    @property
+    def residual_over_floor(self) -> Optional[float]: ...
+    @property
+    def amplification_over_declared(self) -> Optional[float]: ...
+
+class Event:
+    name: str
+    span: int
+    iteration: int
+    values: list[float]
+
+class Span:
+    name: str
+    parent: Optional[int]
+    convergence: Optional[Convergence]
+    wall_us: float
+
+class Trace:
+    spans: list[Span]
+    events: list[Event]
+    current: Optional[int]
+
+class Capture:
+    trace: Optional[Trace]
+    spans: list[Span]
+    events: list[Event]
+    def __enter__(self) -> Capture: ...
+    def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> bool: ...
 
 class ParameterEntry:
     identity: str
@@ -53,6 +116,7 @@ class State:
     molar_density: float
     pressure_density_derivative: float
     site_fractions: list[float]
+    density_convergence: Optional[Convergence]
 
 class SweepCounters:
     forward: int
