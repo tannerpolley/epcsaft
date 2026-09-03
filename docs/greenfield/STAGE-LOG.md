@@ -471,3 +471,28 @@ a deleted test file. `engine/ARCHITECTURE.yaml` drops its stage status and the P
 dependency, lists all seven layers the checker ranks, and points the constants home at
 `core/`. The paired briefs and the preflight are untouched: they are the mechanism that
 caught two of Stage 4's three plan defects, and they retire at cutover, not before.
+
+## Attempt 3 tagged and rejected; the planner's revisions for attempt 4, 2026-09-03
+
+Tagged `stage-05-attempt-3` at `d02f3c9` on `stage-05`. The planner reproduced both reds
+from the attempt's own wheel and read them as one defect: the coincidence refusal guarded by
+`pinned_count == 0`, so bubble, dew and cold dew on methane–ethane at 180 K all converged to
+`x_L = y_V = 0.5/0.5` at 15.8 bar, 149 Pa and 15.8 bar. Behind it, four design gaps (no
+coincidence scale or `k ≥ 1` wording, no start rule, no equilibrium row tolerance, fixtures
+without states) and three procedural ones (abort-first check macro, a warm-seeded dew against
+trap 13, no `diagnostics` array). The owner ruled: tag and reject; attempt 4 from the tag.
+
+Applied to `EQUILIBRIUM.md` by the coordinator from the planner's draft, mapped by heading:
+§2.1 bounds, §2.2 dimensionless rows, §3.4 the coincidence mechanism, §5 step 4 the three-rule
+start and the tolerance-and-budget table, §4 preamble non-aborting checks, §4.2 the fixture
+state table and S15 clause (c), §4.4 diagnostics, trap 6 and trap 13. One sentence outside
+the draft was changed to agree with it: §3.4's "or the default: one phase at the feed, the
+other displaced toward the pure component with the largest positive pair deviation" is now
+the `start_symmetric` refusal, because rule 3 of the start rule removes that default. The
+brief JSON gains the tokens, the moved budgets, `numerical_policy.hpp` as a write, five gates
+and the `diagnostics` array; `preflight-brief.py` now refuses a native-writing brief without
+one, which `CORE.md` §7 asked for and which would have refused attempts 1–3.
+
+For the log, outside the stage: `Parameters.from_json` on the nine-species packet with
+`components=("monoethanolamine", "water")` builds, then `HelmholtzModel` throws
+"invalid ionic_dispersion". A neutral subset of an electrolyte packet cannot make a model.

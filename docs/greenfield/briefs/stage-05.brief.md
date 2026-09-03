@@ -1,6 +1,6 @@
 # Stage 05 — Equilibrium
 
-Branch `stage-05`, based on `greenfield@88b5a2a`. Machine-readable claims are in
+Branch `stage-05`, sources pinned at `greenfield@88b5a2a`; attempt 4 starts from the tag `stage-05-attempt-3` (`d02f3c9`). Machine-readable claims are in
 `briefs/stage-05.brief.json`; that file governs where the two disagree.
 
 **`EQUILIBRIUM.md` is the specification, not background.** Every row, every rejection, every
@@ -161,3 +161,41 @@ tolerance or to `classify`; a write comes in under its `low`; a gate's mutation 
 decide** — report the cell or the row and stop. Do not choose. Do not repair your environment,
 and do not accept your own work: the coordinator rebuilds from a clean directory, re-runs
 every gate, and applies every mutation independently.
+
+## Attempt four: what the third attempt got wrong
+
+The third attempt stopped honestly with two solve-tier checks red, and the planner read
+them as one defect: the coincidence refusal was guarded by `pinned_count == 0`, so every
+boundary cell returned the trivial solution (`x_L = y_V`, equal densities) as converged.
+Behind it, four places the design let you guess. Each is now written, and each has a gate.
+
+- **Coordinates and bounds** (`EQUILIBRIUM.md` §2.1): `ln x`, `ln η` with the packing
+  ceiling `PACKING_FRACTION_CEILING = 0.74`; a plain volume with no ceiling admitted the
+  `v → ∞`, `P → 0` bubble point.
+- **The rows are dimensionless** (§2.2): the pressure row is `Z − Pv/RT`, the balance rows
+  are divided by the feed total.
+- **The coincidence rule is a mechanism** (§3.4): `d = max(max_i |Δx_i|, |Δ ln η|)`, refused
+  at `PHASE_COINCIDENCE_DISTANCE = 1e-6`, on **every** multiphase cell and every pair,
+  pinned or free. S15 gains clause (c) and the gate `coincidence_every_cell`.
+- **The start rule** (§5 step 4, trap 6): the caller's guess; else a one-step K-factor split
+  from the two density branches for a `V`/`L` pair; else the refusal `start_symmetric` for an
+  `L`/`L` pair. No other. Gate `start_splits_composition`.
+- **The rows' own tolerance** (§5, tolerance and budget): `EQUILIBRIUM_ROW_RESIDUAL = 1e-10`,
+  `EQUILIBRIUM_MAX_ITERATIONS = 200`, both in `numerical_policy.hpp`, which joins `writes`.
+  Nothing under `equilibrium/` names `DENSITY_ROOT_RESIDUAL`. Gate `own_row_tolerance`.
+- **Fixtures carry states** (§4.2, the state table): vapour–liquid cells run on the new
+  `neutral_ternary()` (methane, ethane, propane at 180 K); methane–ethane keeps the `C = 2`
+  compile cells and S3; MEA–water is the Cai 1996 isobaric oracle and never a synthetic
+  state; the Ascani ternary without its reaction is the neutral two-liquid example. S6
+  certifies every synthetic state before its dependents run; a failed certificate skips them
+  by name.
+- **Checks report, never abort** (§4 preamble): every solve under `core::Capture`; a failing
+  check prints its trace with every Ipopt iteration. Gates `checks_do_not_abort` and
+  `dew_seeded_cold` (trap 13: the dew is `solve_equilibrium(model, dew)` with no start).
+- **Diagnostics** (§4.4): the brief's `diagnostics` array, which the preflight now requires.
+
+You start from the tag `stage-05-attempt-3`. Carried: the exact-tape assembly, analytic `F_y`
+and `F_θ`, `stoichiometry`, `problem.hpp`, the bindings, the Python and the compile-tier
+checks. Rewritten under the sections above: the driver's starts, the coincidence refusal, the
+coordinates and bounds, the tolerance, the check macro and the fixture states. The
+attempt-three rulings on S9, S10 and the eight thin checks stand.
