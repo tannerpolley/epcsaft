@@ -158,11 +158,15 @@ contract types, and every engine layer needs the core — and it is *not* the or
 work happened in. The number is the intended build order; the Status column carries what is
 actually built.
 
+Brief filenames, branches and worktrees follow the stage number, so all four briefs were
+renamed with it: the core's is now `stage-02`, the surface's `stage-03`, the EOS's
+`stage-04` and its repair `stage-04-repair`.
+
 | old | new | note |
 |---|---|---|
 | 0 | 1 | Canon |
 | 1, 2 | 4 | physics and model are one thing: the EOS |
-| 3 | 3 | Surface; the brief keeps its `stage-04` filename |
+| 3 | 3 | Surface |
 | T, 5 | 2 | Core; it was never numbered before the sequence existed |
 | 4, 5a, 5b, 6 | 5 | Equilibrium is one stage |
 | 7 | 6 | Regression |

@@ -1,10 +1,15 @@
 {
-  "stage": 5,
-  "branch": "stage-05",
+  "stage": 2,
+  "branch": "stage-02",
   "base": "greenfield@21b8695",
   "source_commit": "9eccbfd",
   "design_document": "engine/docs/greenfield/CORE.md",
-  "categories_written": ["core", "engine", "surface", "canon"],
+  "categories_written": [
+    "core",
+    "engine",
+    "surface",
+    "canon"
+  ],
   "stop_conditions": [
     "budget_ceiling",
     "gate_impossible",
@@ -220,8 +225,8 @@
     {
       "ref": "greenfield@21b8695:engine/docs/greenfield/EOS.md",
       "must_contain": [
-        "The `Convergence` record sketched there wants `amplification = 1/|dr/dρ|`",
-        "p50 1.17 × 10⁻¹³",
+        "The `Convergence` record sketched there wants `amplification = 1/|dr/d\u03c1|`",
+        "p50 1.17 \u00d7 10\u207b\u00b9\u00b3",
         "A reduced 1e-12 therefore buys only about"
       ],
       "purpose": "why the density record carries no floor and no amplification until 04.repair; the delivered-accuracy sentence that goes on the policy entry"
@@ -235,158 +240,524 @@
     }
   ],
   "writes": [
-    {"path": "engine/native/core/physical_constants.hpp", "edit": "git mv from physics/, unchanged", "lines": {"low": 0, "estimate": 0, "ceiling": 2}},
-    {"path": "engine/native/core/numerical_policy.hpp", "edit": "git mv from physics/; Tolerance gains name, upstream, factor; 27 entries become inline constexpr and self-naming; derived(); FLOOR_MARGIN; STALL_WINDOW; DENSITY_ROOT_RESIDUAL as a derived edge with its value unchanged and the accuracy sentence", "lines": {"low": 270, "estimate": 300, "ceiling": 340}},
-    {"path": "engine/native/core/parameters.hpp", "edit": "git mv from physics/; the two selectors become Declared<...>", "lines": {"low": 95, "estimate": 105, "ceiling": 120}},
-    {"path": "engine/native/core/scalar.hpp", "edit": "git mv from physics/, unchanged", "lines": {"low": 0, "estimate": 0, "ceiling": 2}},
-    {"path": "engine/native/core/declared.hpp", "lines": {"low": 30, "estimate": 40, "ceiling": 60}},
-    {"path": "engine/native/core/convergence.hpp", "lines": {"low": 90, "estimate": 110, "ceiling": 150}},
-    {"path": "engine/native/core/trace.hpp", "lines": {"low": 140, "estimate": 170, "ceiling": 220}},
-    {"path": "engine/native/physics/numerical_policy.hpp", "edit": "deleted by the move", "lines": {"low": -248, "estimate": -248, "ceiling": -248}},
-    {"path": "engine/native/physics/parameters.hpp", "edit": "deleted by the move", "lines": {"low": -86, "estimate": -86, "ceiling": -86}},
-    {"path": "engine/native/physics/physical_constants.hpp", "edit": "deleted by the move", "lines": {"low": -28, "estimate": -28, "ceiling": -28}},
-    {"path": "engine/native/physics/scalar.hpp", "edit": "deleted by the move", "lines": {"low": -41, "estimate": -41, "ceiling": -41}},
-    {"path": "engine/native/surface/parameter_builder.hpp", "edit": "git mv from model/; include path", "lines": {"low": 0, "estimate": 0, "ceiling": 2}},
-    {"path": "engine/native/surface/parameter_builder.cpp", "edit": "git mv from model/; include paths; two selector reads become .is(...)", "lines": {"low": 0, "estimate": 2, "ceiling": 6}},
-    {"path": "engine/native/model/parameter_builder.hpp", "edit": "deleted by the move", "lines": {"low": -30, "estimate": -30, "ceiling": -30}},
-    {"path": "engine/native/model/parameter_builder.cpp", "edit": "deleted by the move", "lines": {"low": -395, "estimate": -395, "ceiling": -395}},
-    {"path": "engine/native/physics/helmholtz.hpp", "edit": "include paths only", "lines": {"low": 0, "estimate": 0, "ceiling": 1}},
-    {"path": "engine/native/physics/electrolyte.hpp", "edit": "include paths; eight selector reads become .is(...)", "lines": {"low": 0, "estimate": 0, "ceiling": 4}},
-    {"path": "engine/native/physics/born.hpp", "edit": "include paths; one selector read", "lines": {"low": 0, "estimate": 0, "ceiling": 1}},
-    {"path": "engine/native/physics/association.hpp", "edit": "include paths; solve_linear reports the pivot ratio; solve_site_fractions returns a Convergence, opens a span, throws ConvergenceFailure", "lines": {"low": 25, "estimate": 40, "ceiling": 60}},
-    {"path": "engine/native/model/helmholtz_tape.hpp", "edit": "include path; TapeParameters copies the two Declared fields", "lines": {"low": 0, "estimate": 1, "ceiling": 4}},
-    {"path": "engine/native/model/helmholtz_model.hpp", "edit": "gradient_floor; DensityRoot::convergence; State::density_convergence; include core/convergence.hpp", "lines": {"low": 5, "estimate": 8, "ceiling": 14}},
-    {"path": "engine/native/model/helmholtz_model.cpp", "edit": "include paths; evaluate span and probes; gradient_floor on the Hessian order; three selector reads; the two declaration requirements in the constructor; state_at_pressure copies the record; the dead double path and the PressureSlope line are not touched", "lines": {"low": 30, "estimate": 45, "ceiling": 70}},
-    {"path": "engine/native/model/density.cpp", "edit": "include paths; spans solve_density and density_anchor; probes; ResidualHistory; DensityRoot::convergence with floor and amplification absent; ConvergenceFailure; association_failure on the exception type; one exit", "lines": {"low": 45, "estimate": 60, "ceiling": 90}},
-    {"path": "engine/native/model/infinite_dilution_reference.cpp", "edit": "include paths; span and probes", "lines": {"low": 8, "estimate": 12, "ceiling": 20}},
-    {"path": "engine/native/bindings/diagnostics_bindings.cpp", "lines": {"low": 60, "estimate": 85, "ceiling": 120}},
-    {"path": "engine/native/bindings/module.cpp", "edit": "ConvergenceError after EosError; DeclarationError after ParameterError; register_diagnostics", "lines": {"low": 4, "estimate": 6, "ceiling": 9}},
-    {"path": "engine/native/bindings/eos_bindings.cpp", "edit": "include path for the builder; one def_readonly for density_convergence", "lines": {"low": 1, "estimate": 1, "ceiling": 3}},
-    {"path": "engine/src/epcsaft/eos.py", "edit": "stoichiometry loses its default", "lines": {"low": 0, "estimate": 0, "ceiling": 1}},
-    {"path": "engine/src/epcsaft/__init__.py", "edit": "export trace, Stop, Convergence, ConvergenceError, DeclarationError", "lines": {"low": 3, "estimate": 5, "ceiling": 7}},
-    {"path": "engine/src/epcsaft/_core.pyi", "edit": "Stop, Category, Tolerance, Convergence, Event, Span, Trace, Capture, ConvergenceError, DeclarationError; State.density_convergence", "lines": {"low": 40, "estimate": 55, "ceiling": 75}},
-    {"path": "engine/tests/eos/test_activity.py", "edit": "stoichiometry passed explicitly", "lines": {"low": 1, "estimate": 1, "ceiling": 2}},
-    {"path": "engine/tests/eos/test_diagnostics.py", "lines": {"low": 25, "estimate": 35, "ceiling": 50}},
-    {"path": "engine/tests/native/diagnostics_checks.cpp", "lines": {"low": 170, "estimate": 210, "ceiling": 270}},
-    {"path": "engine/tests/native/derived_inversion.cpp", "edit": "a translation unit that must not compile; not a Meson target", "lines": {"low": 6, "estimate": 8, "ceiling": 12}},
-    {"path": "engine/tests/native/model_floor.cpp", "edit": "describe(record) per density case; association record on case C; captured versus uncaptured case G", "lines": {"low": 20, "estimate": 30, "ceiling": 45}},
-    {"path": "tools/check-engine-architecture.py", "edit": "core and surface ranks; homes; rules 8, 9, 10, 11, 12", "lines": {"low": 60, "estimate": 80, "ceiling": 110}},
-    {"path": "engine/meson.build", "edit": "surface_sources; one test executable and one test() line", "lines": {"low": 11, "estimate": 14, "ceiling": 18}}
+    {
+      "path": "engine/native/core/physical_constants.hpp",
+      "edit": "git mv from physics/, unchanged",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/native/core/numerical_policy.hpp",
+      "edit": "git mv from physics/; Tolerance gains name, upstream, factor; 27 entries become inline constexpr and self-naming; derived(); FLOOR_MARGIN; STALL_WINDOW; DENSITY_ROOT_RESIDUAL as a derived edge with its value unchanged and the accuracy sentence",
+      "lines": {
+        "low": 270,
+        "estimate": 300,
+        "ceiling": 340
+      }
+    },
+    {
+      "path": "engine/native/core/parameters.hpp",
+      "edit": "git mv from physics/; the two selectors become Declared<...>",
+      "lines": {
+        "low": 95,
+        "estimate": 105,
+        "ceiling": 120
+      }
+    },
+    {
+      "path": "engine/native/core/scalar.hpp",
+      "edit": "git mv from physics/, unchanged",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/native/core/declared.hpp",
+      "lines": {
+        "low": 30,
+        "estimate": 40,
+        "ceiling": 60
+      }
+    },
+    {
+      "path": "engine/native/core/convergence.hpp",
+      "lines": {
+        "low": 90,
+        "estimate": 110,
+        "ceiling": 150
+      }
+    },
+    {
+      "path": "engine/native/core/trace.hpp",
+      "lines": {
+        "low": 140,
+        "estimate": 170,
+        "ceiling": 220
+      }
+    },
+    {
+      "path": "engine/native/physics/numerical_policy.hpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -248,
+        "estimate": -248,
+        "ceiling": -248
+      }
+    },
+    {
+      "path": "engine/native/physics/parameters.hpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -86,
+        "estimate": -86,
+        "ceiling": -86
+      }
+    },
+    {
+      "path": "engine/native/physics/physical_constants.hpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -28,
+        "estimate": -28,
+        "ceiling": -28
+      }
+    },
+    {
+      "path": "engine/native/physics/scalar.hpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -41,
+        "estimate": -41,
+        "ceiling": -41
+      }
+    },
+    {
+      "path": "engine/native/surface/parameter_builder.hpp",
+      "edit": "git mv from model/; include path",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/native/surface/parameter_builder.cpp",
+      "edit": "git mv from model/; include paths; two selector reads become .is(...)",
+      "lines": {
+        "low": 0,
+        "estimate": 2,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "engine/native/model/parameter_builder.hpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -30,
+        "estimate": -30,
+        "ceiling": -30
+      }
+    },
+    {
+      "path": "engine/native/model/parameter_builder.cpp",
+      "edit": "deleted by the move",
+      "lines": {
+        "low": -395,
+        "estimate": -395,
+        "ceiling": -395
+      }
+    },
+    {
+      "path": "engine/native/physics/helmholtz.hpp",
+      "edit": "include paths only",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 1
+      }
+    },
+    {
+      "path": "engine/native/physics/electrolyte.hpp",
+      "edit": "include paths; eight selector reads become .is(...)",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 4
+      }
+    },
+    {
+      "path": "engine/native/physics/born.hpp",
+      "edit": "include paths; one selector read",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 1
+      }
+    },
+    {
+      "path": "engine/native/physics/association.hpp",
+      "edit": "include paths; solve_linear reports the pivot ratio; solve_site_fractions returns a Convergence, opens a span, throws ConvergenceFailure",
+      "lines": {
+        "low": 25,
+        "estimate": 40,
+        "ceiling": 60
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_tape.hpp",
+      "edit": "include path; TapeParameters copies the two Declared fields",
+      "lines": {
+        "low": 0,
+        "estimate": 1,
+        "ceiling": 4
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.hpp",
+      "edit": "gradient_floor; DensityRoot::convergence; State::density_convergence; include core/convergence.hpp",
+      "lines": {
+        "low": 5,
+        "estimate": 8,
+        "ceiling": 14
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "include paths; evaluate span and probes; gradient_floor on the Hessian order; three selector reads; the two declaration requirements in the constructor; state_at_pressure copies the record; the dead double path and the PressureSlope line are not touched",
+      "lines": {
+        "low": 30,
+        "estimate": 45,
+        "ceiling": 70
+      }
+    },
+    {
+      "path": "engine/native/model/density.cpp",
+      "edit": "include paths; spans solve_density and density_anchor; probes; ResidualHistory; DensityRoot::convergence with floor and amplification absent; ConvergenceFailure; association_failure on the exception type; one exit",
+      "lines": {
+        "low": 45,
+        "estimate": 60,
+        "ceiling": 90
+      }
+    },
+    {
+      "path": "engine/native/model/infinite_dilution_reference.cpp",
+      "edit": "include paths; span and probes",
+      "lines": {
+        "low": 8,
+        "estimate": 12,
+        "ceiling": 20
+      }
+    },
+    {
+      "path": "engine/native/bindings/diagnostics_bindings.cpp",
+      "lines": {
+        "low": 60,
+        "estimate": 85,
+        "ceiling": 120
+      }
+    },
+    {
+      "path": "engine/native/bindings/module.cpp",
+      "edit": "ConvergenceError after EosError; DeclarationError after ParameterError; register_diagnostics",
+      "lines": {
+        "low": 4,
+        "estimate": 6,
+        "ceiling": 9
+      }
+    },
+    {
+      "path": "engine/native/bindings/eos_bindings.cpp",
+      "edit": "include path for the builder; one def_readonly for density_convergence",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 3
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/eos.py",
+      "edit": "stoichiometry loses its default",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 1
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/__init__.py",
+      "edit": "export trace, Stop, Convergence, ConvergenceError, DeclarationError",
+      "lines": {
+        "low": 3,
+        "estimate": 5,
+        "ceiling": 7
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/_core.pyi",
+      "edit": "Stop, Category, Tolerance, Convergence, Event, Span, Trace, Capture, ConvergenceError, DeclarationError; State.density_convergence",
+      "lines": {
+        "low": 40,
+        "estimate": 55,
+        "ceiling": 75
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_activity.py",
+      "edit": "stoichiometry passed explicitly",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_diagnostics.py",
+      "lines": {
+        "low": 25,
+        "estimate": 35,
+        "ceiling": 50
+      }
+    },
+    {
+      "path": "engine/tests/native/diagnostics_checks.cpp",
+      "lines": {
+        "low": 170,
+        "estimate": 210,
+        "ceiling": 270
+      }
+    },
+    {
+      "path": "engine/tests/native/derived_inversion.cpp",
+      "edit": "a translation unit that must not compile; not a Meson target",
+      "lines": {
+        "low": 6,
+        "estimate": 8,
+        "ceiling": 12
+      }
+    },
+    {
+      "path": "engine/tests/native/model_floor.cpp",
+      "edit": "describe(record) per density case; association record on case C; captured versus uncaptured case G",
+      "lines": {
+        "low": 20,
+        "estimate": 30,
+        "ceiling": 45
+      }
+    },
+    {
+      "path": "tools/check-engine-architecture.py",
+      "edit": "core and surface ranks; homes; rules 8, 9, 10, 11, 12",
+      "lines": {
+        "low": 60,
+        "estimate": 80,
+        "ceiling": 110
+      }
+    },
+    {
+      "path": "engine/meson.build",
+      "edit": "surface_sources; one test executable and one test() line",
+      "lines": {
+        "low": 11,
+        "estimate": 14,
+        "ceiling": 18
+      }
+    }
   ],
   "gates": [
     {
       "id": "build",
       "command": ".venv/bin/meson compile -C engine/build/greenfield",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "1i #include \"equilibrium/problem.hpp\"", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "1i #include \"equilibrium/problem.hpp\"",
+        "expect": "abort"
+      }
     },
     {
       "id": "architecture_rules_with_the_new_ranks",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/trace.hpp", "sed": "1i #include \"physics/helmholtz.hpp\"", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/trace.hpp",
+        "sed": "1i #include \"physics/helmholtz.hpp\"",
+        "expect": "abort"
+      }
     },
     {
       "id": "surface_sits_above_the_engine",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/helmholtz_model.cpp", "sed": "1i #include \"surface/parameter_builder.hpp\"", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "1i #include \"surface/parameter_builder.hpp\"",
+        "expect": "abort"
+      }
     },
     {
       "id": "core_is_self_contained",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/convergence.hpp", "sed": "1i #include <Eigen/Core>", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/convergence.hpp",
+        "sed": "1i #include <Eigen/Core>",
+        "expect": "abort"
+      }
     },
     {
       "id": "policy_entries_name_themselves",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/numerical_policy.hpp", "sed": "s/inline constexpr Tolerance ASSOCIATION_RESIDUAL{\"ASSOCIATION_RESIDUAL\",/inline constexpr Tolerance ASSOCIATION_RESIDUAL{\"ASSOCIATION_RESIDUA\",/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/numerical_policy.hpp",
+        "sed": "s/inline constexpr Tolerance ASSOCIATION_RESIDUAL{\"ASSOCIATION_RESIDUAL\",/inline constexpr Tolerance ASSOCIATION_RESIDUAL{\"ASSOCIATION_RESIDUA\",/",
+        "expect": "abort"
+      }
     },
     {
       "id": "solver_files_carry_a_record",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "s/core::Scope/core::Scop/g", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/core::Scope/core::Scop/g",
+        "expect": "abort"
+      }
     },
     {
       "id": "engine_never_reads_the_trace",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "$a namespace { const void* read_back = static_cast<const void*>(epcsaft::core::active()); }", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "$a namespace { const void* read_back = static_cast<const void*>(epcsaft::core::active()); }",
+        "expect": "abort"
+      }
     },
     {
       "id": "no_hole_inside_a_selector",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/parameters.hpp", "sed": "s/    core::Declared<ElectrolyteForm> electrolyte_form;/    ElectrolyteForm electrolyte_form = ElectrolyteForm::None;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/parameters.hpp",
+        "sed": "s/    core::Declared<ElectrolyteForm> electrolyte_form;/    ElectrolyteForm electrolyte_form = ElectrolyteForm::None;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "surface_has_no_physical_default",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/eos.py", "sed": "s/        stoichiometry: tuple\\[int, int\\],/        stoichiometry: tuple[int, int] = (1, 1),/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/src/epcsaft/eos.py",
+        "sed": "s/        stoichiometry: tuple\\[int, int\\],/        stoichiometry: tuple[int, int] = (1, 1),/",
+        "expect": "abort"
+      }
     },
     {
       "id": "derived_refuses_inversion",
       "command": "! c++ -std=c++17 -fsyntax-only -Iengine/native engine/tests/native/derived_inversion.cpp 2>/dev/null",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/numerical_policy.hpp", "sed": "s/if (!(factor >= 1.0)) throw \"derived tolerance tighter than its input\";/if (false) throw \"derived tolerance tighter than its input\";/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/numerical_policy.hpp",
+        "sed": "s/if (!(factor >= 1.0)) throw \"derived tolerance tighter than its input\";/if (false) throw \"derived tolerance tighter than its input\";/",
+        "expect": "abort"
+      }
     },
     {
       "id": "no_value_moved",
       "command": "test \"$(grep -c 'inline constexpr Tolerance' engine/native/core/numerical_policy.hpp)\" = 29 && grep -qF '    2.0e-13,' engine/native/core/numerical_policy.hpp && grep -qF 'derived(ASSOCIATION_RESIDUAL, 5.0, \"DENSITY_ROOT_RESIDUAL\"' engine/native/core/numerical_policy.hpp && ! grep -rq 'physics/numerical_policy\\|physics/parameters\\|physics/physical_constants\\|physics/scalar\\|model/parameter_builder' engine/native engine/tests engine/src engine/meson.build tools",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/numerical_policy.hpp", "sed": "s/derived(ASSOCIATION_RESIDUAL, 5.0, \"DENSITY_ROOT_RESIDUAL\"/derived(ASSOCIATION_RESIDUAL, 50.0, \"DENSITY_ROOT_RESIDUAL\"/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/numerical_policy.hpp",
+        "sed": "s/derived(ASSOCIATION_RESIDUAL, 5.0, \"DENSITY_ROOT_RESIDUAL\"/derived(ASSOCIATION_RESIDUAL, 50.0, \"DENSITY_ROOT_RESIDUAL\"/",
+        "expect": "abort"
+      }
     },
     {
       "id": "diagnostics_checks",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model diagnostics",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/convergence.hpp", "sed": "s/    if (residual <= criterion.value) return Stop::converged;/    if (residual < criterion.value) return Stop::converged;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/convergence.hpp",
+        "sed": "s/    if (residual <= criterion.value) return Stop::converged;/    if (residual < criterion.value) return Stop::converged;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "no_hidden_selector_default",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs diagnostics",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/helmholtz_model.cpp", "sed": "s/    require(has_ion == parameters_.electrolyte_form.declared(), \"electrolyte_form\");/    (void)has_ion;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/    require(has_ion == parameters_.electrolyte_form.declared(), \"electrolyte_form\");/    (void)has_ion;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "record_matches_answer",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs diagnostics",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "s/    record.residual = std::abs(point.residual);/    record.residual = 0.0;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/    record.residual = std::abs(point.residual);/    record.residual = 0.0;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "trace_changes_no_answer",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs diagnostics",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "s/    scope.probe(\"density_root\", result.molar_density);/    scope.probe(\"density_root\", result.molar_density); if (scope.on()) result.molar_density = lower;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/    scope.probe(\"density_root\", result.molar_density);/    scope.probe(\"density_root\", result.molar_density); if (scope.on()) result.molar_density = lower;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "python_trace_round_trip",
       "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos)",
       "needs": "python",
-      "mutation": {"file": "engine/native/bindings/diagnostics_bindings.cpp", "sed": "s/def_readonly(\"residual\", &epcsaft::core::Convergence::residual)/def_readonly(\"residual\", \\&epcsaft::core::Convergence::iterations)/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/bindings/diagnostics_bindings.cpp",
+        "sed": "s/def_readonly(\"residual\", &epcsaft::core::Convergence::residual)/def_readonly(\"residual\", \\&epcsaft::core::Convergence::iterations)/",
+        "expect": "abort"
+      }
     },
     {
       "id": "python_does_no_arithmetic",
       "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/__init__.py", "sed": "1i import math", "expect": "abort"}
+      "mutation": {
+        "file": "engine/src/epcsaft/__init__.py",
+        "sed": "1i import math",
+        "expect": "abort"
+      }
     },
     {
       "id": "types_consistent",
       "command": "(cd engine && ../.venv/bin/mypy)",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/_core.pyi", "sed": "s/density_convergence: Optional\\[Convergence\\]/density_convergenc: Optional[Convergence]/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/density_convergence: Optional\\[Convergence\\]/density_convergenc: Optional[Convergence]/",
+        "expect": "abort"
+      }
     },
     {
       "id": "floor_runs_and_reports",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor",
       "needs": "native",
-      "mutation": {"file": "engine/native/core/numerical_policy.hpp", "sed": "s/    50.0,/    1.0,/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/core/numerical_policy.hpp",
+        "sed": "s/    50.0,/    1.0,/",
+        "expect": "abort"
+      }
     }
   ],
   "reported": [
@@ -399,28 +770,62 @@
   "diagnostics": [
     {
       "span": "association_newton",
-      "events": ["association_residual_norm", "site_fractions", "association_pivot_ratio"],
-      "convergence": {"residual": "infinity norm of the mass-action residual", "criterion": "ASSOCIATION_RESIDUAL", "floor": "machine epsilon times the site count", "amplification": "pivot ratio of the last Newton step"},
+      "events": [
+        "association_residual_norm",
+        "site_fractions",
+        "association_pivot_ratio"
+      ],
+      "convergence": {
+        "residual": "infinity norm of the mass-action residual",
+        "criterion": "ASSOCIATION_RESIDUAL",
+        "floor": "machine epsilon times the site count",
+        "amplification": "pivot ratio of the last Newton step"
+      },
       "check": "record.residual equals the infinity norm of association_residuals at the returned fractions",
       "gate": "record_matches_answer"
     },
     {
       "span": "solve_density",
-      "events": ["density_scan_point", "density_bracket", "density_newton_step", "density_root", "stable_root_count"],
-      "convergence": {"residual": "absolute reduced residual at the returned root", "criterion": "DENSITY_ROOT_RESIDUAL", "floor": "absent until 04.repair", "amplification": "absent until 04.repair"},
+      "events": [
+        "density_scan_point",
+        "density_bracket",
+        "density_newton_step",
+        "density_root",
+        "stable_root_count"
+      ],
+      "convergence": {
+        "residual": "absolute reduced residual at the returned root",
+        "criterion": "DENSITY_ROOT_RESIDUAL",
+        "floor": "absent until 04.repair",
+        "amplification": "absent until 04.repair"
+      },
       "check": "record.residual equals |Z - P/(rho R T)| recomputed from state(T, rho*, x)",
       "gate": "record_matches_answer"
     },
     {
       "span": "evaluate",
-      "events": ["declared_choices", "recording", "predicate_signature", "residual_helmholtz_extensive", "gradient", "hessian", "volume_second_derivative", "gradient_floor", "site_fractions"],
+      "events": [
+        "declared_choices",
+        "recording",
+        "predicate_signature",
+        "residual_helmholtz_extensive",
+        "gradient",
+        "hessian",
+        "volume_second_derivative",
+        "gradient_floor",
+        "site_fractions"
+      ],
       "convergence": null,
       "check": "a captured state_at_pressure equals the uncaptured one bit for bit",
       "gate": "trace_changes_no_answer"
     },
     {
       "span": "infinite_dilution_reference",
-      "events": ["reference_ladder_point", "reference_convergence_error", "reference_witness_error"],
+      "events": [
+        "reference_ladder_point",
+        "reference_convergence_error",
+        "reference_witness_error"
+      ],
       "convergence": null,
       "check": "none: a bias is reported on the result, never a stop",
       "gate": null

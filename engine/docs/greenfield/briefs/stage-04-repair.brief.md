@@ -1,4 +1,4 @@
-# Stage 3 repair — the EOS layers re-accepted together
+# Stage 4 repair — the EOS layers re-accepted together
 
 You are repairing Stages 3 and 4 of a greenfield rebuild in this worktree (branch
 `stage-04-repair`, cut from `greenfield@c860395`). You have no one to ask. Read, in order,

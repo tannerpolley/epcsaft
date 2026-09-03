@@ -1,7 +1,7 @@
 {
   "stage": 3,
   "branch": "stage-03",
-  "base": "greenfield@87a33d4",
+  "base": "greenfield@e4122b3",
   "source_commit": "9eccbfd",
   "stop_conditions": [
     "budget_ceiling",
@@ -11,213 +11,384 @@
   ],
   "preconditions": [
     "git cat-file -e 9eccbfd^{commit}",
-    "ls engine/native/physics/association.hpp engine/native/physics/born.hpp engine/native/physics/electrolyte.hpp engine/native/physics/helmholtz.hpp engine/native/physics/numerical_policy.hpp engine/native/physics/parameters.hpp engine/native/physics/physical_constants.hpp engine/native/physics/scalar.hpp",
-    "test ! -e engine/native/model/helmholtz_tape.hpp",
-    "test -x .venv/bin/meson",
+    "git cat-file -e e4122b3^{commit}",
+    "ls engine/native/model/helmholtz_tape.hpp engine/native/model/helmholtz_model.hpp engine/native/model/helmholtz_model.cpp engine/native/model/density.cpp engine/native/model/infinite_dilution_reference.cpp engine/tests/native/model_support.hpp engine/tests/native/model_checks.cpp engine/tests/native/model_floor.cpp engine/tests/oracle/measure_floor.py engine/src/epcsaft/units.py",
+    "test ! -e engine/native/bindings/module.cpp && test ! -e engine/native/model/parameter_builder.cpp && test ! -e engine/src/epcsaft/__init__.py && test ! -e engine/tests/eos",
+    "test \"$(command -v python3)\" = \"$PWD/.venv/bin/python3\"",
+    "touch \"$HOME/.cache/epcsaft-stage-3-probe\" && rm \"$HOME/.cache/epcsaft-stage-3-probe\"",
+    "test -x .venv/bin/meson && .venv/bin/python -c 'import pybind11, pytest, mypy'",
+    "! .venv/bin/python -c 'import pint' 2>/dev/null",
     "pkg-config --exists eigen3 && pkg-config --exists ipopt",
     "test -d engine/build/subprojects/CppAD-20250000.3",
-    "grep -q 'void Independent(ADVector& x, ADVector& dynamic)' engine/build/subprojects/CppAD-20250000.3/include/cppad/core/independent/independent.hpp",
-    "test -f engine/build/greenfield/build.ninja || .venv/bin/meson setup engine/build/greenfield engine",
+    "test -f engine/build/greenfield/build.ninja || .venv/bin/meson setup -Dprefix=\"$PWD/.venv\" engine/build/greenfield engine",
+    ".venv/bin/meson configure engine/build/greenfield -Dprefix=\"$PWD/.venv\"",
     ".venv/bin/meson compile -C engine/build/greenfield",
-    ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics",
+    ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+    ".venv/bin/meson install -C engine/build/greenfield --dry-run | grep -qF '/.venv/lib/python3.13/site-packages/epcsaft'",
     "python3 tools/check-engine-architecture.py",
-    "grep -qF 'return Scalar(1.0) - 0.75 * reduced + 0.6 * reduced_2' engine/native/physics/electrolyte.hpp",
-    "grep -qF 'if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {' engine/native/physics/helmholtz.hpp",
-    "grep -qF '217800.69494692178' engine/tests/oracle/oracle.json",
-    "grep -qF 'x[ids.index(\"water\")] = 0.80' engine/tests/oracle/measure_floor.py"
+    "echo '2666914f0f9cfebdf230e96565de843f9aadc9424035c940883147ff66af035c  data/packets/mea-co2-h2o-nine-species-estimation/2/parameters/parameters.json' | sha256sum -c --quiet",
+    "grep -qF 'f58eabf45a149ecce312a1c49e4095a57bb6f399fa7d6da731439597058dabd0' data/packet-locks.json",
+    "test \"$(grep -c measured_mean_ionic_activity_coefficient engine/tests/oracle/oracle.json)\" = 24",
+    "grep -qF 'pk(\"figiel-2025-reference-electrolytes\")' engine/tests/oracle/capture2.py",
+    "grep -qF '\"unit\": \"gram / mole\"' data/packets/figiel-2025-reference-electrolytes/2/parameters/parameters.json",
+    "! grep -qF '\"pair/ethanol/methanol/k_ij\"' data/packets/figiel-2025-reference-electrolytes/2/parameters/parameters.json",
+    "grep -qF 'AARD < 10%' engine/docs/regression/research/figiel-table-4-5-fitting-method.md",
+    "grep -qF 'LiBr,2.0,1.012,1.1143454847451237' analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv",
+    "grep -qF 'result.mean_ionic_log_molality_scale = mean_log_m;' engine/native/model/infinite_dilution_reference.cpp",
+    "grep -qxF '  files(),' engine/meson.build",
+    "grep -qF 'Pint>=0.25.3' engine/pyproject.toml",
+    ".venv/bin/python -c \"import json; c={x['component_id']: x['fixed'] for x in json.load(open('data/packets/figiel-2025-reference-electrolytes/2/parameters/parameters.json'))['components']}; assert 'molar_mass' not in c['lithium-cation'] and 'molar_mass' in c['water']\""
   ],
   "sources": [
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/derivatives.hpp",
+      "ref": "greenfield@e4122b3:engine/native/model/helmholtz_model.hpp",
       "must_contain": [
-        "function.Hessian(point, 1 + site)",
-        "independent[coordinates + site] = site_fractions[site]",
-        "site_sensitivity[coordinate]"
+        "State state_at_pressure(",
+        "ElectrolyteActivity electrolyte_activity(",
+        "double mean_ionic_log_molality_scale = 0.0;",
+        "SweepCounters counters() const;"
       ],
-      "purpose": "the (S+1)-Hessian implicit-function algebra; reproduced in the test as the reference tensor, never copied into model/"
+      "purpose": "the native surface the bindings expose; ElectrolyteActivity gains one field beside the marker"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/density.hpp",
+      "ref": "greenfield@e4122b3:engine/native/model/infinite_dilution_reference.cpp",
       "must_contain": [
-        "constexpr std::size_t scan_intervals = 360;",
-        "refine_density_root(",
-        "density root is ambiguous"
+        "EqID: molality_activity_conversion",
+        "result.mean_ionic_log_molality_scale = mean_log_m;",
+        "- reference.log_fugacity[0];"
       ],
-      "purpose": "bracket + safeguarded Newton + stable-root branch selection carry as an algorithm; the 360 intervals and string diagnostics do not"
+      "purpose": "the one permitted assignment is added beside the second marker; nothing else changes"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/helmholtz.hpp",
+      "ref": "greenfield@e4122b3:engine/native/physics/parameters.hpp",
       "must_contain": [
-        "EqID: packing_fraction_coefficient",
-        "EqID: phase_packing_fraction",
-        "PHYSICAL_AVOGADRO"
+        "struct Parameters final {",
+        "std::vector<double> ion_suppression_coefficient;  // per component, alpha_i",
+        "DebyeHuckelBorn = 2,"
       ],
-      "purpose": "the two helpers Stage 1 deferred; PHYSICAL_AVOGADRO distinguishes this from the greenfield physics file, which has neither"
+      "purpose": "every array the builder fills, and the two form enums it selects"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/electrolyte_reference.hpp",
+      "ref": "greenfield@e4122b3:engine/native/physics/helmholtz.hpp",
       "must_contain": [
-        "1.0e-6, 1.0e-8, 1.0e-10, 1.0e-12,",
-        "REFERENCE_CONVERGENCE_WITNESS_MOLALITY = 1.0e-14",
-        "REFERENCE_CONVERGENCE_TOLERANCE = 5.0e-5",
-        "EqID: formula_unit_composition"
+        "EqID: segment_sigma_correlation",
+        "k_ij += parameters.k_ij_reciprocal_temperature_slope[pair]"
       ],
-      "purpose": "molality ladder, witness, convergence threshold, composition from molality"
+      "purpose": "how sigma terms and the k_ij slope with its reference temperature are consumed; fixes what the builder must place where"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/eos.cpp",
+      "ref": "greenfield@e4122b3:engine/native/physics/born.hpp",
       "must_contain": [
-        "EqID: residual_chemical_potential",
-        "EqID: log_fugacity_coefficient",
-        "EqID: residual_heat_capacity_cp",
-        "EqID: pressure_density_derivative",
-        "EqID: ideal_gas_density"
+        "parameters.born_c_shell *",
+        "parameters.born_c_dielectric *"
       ],
-      "purpose": "state closed forms and the reference sequence driver; EqIDs carry"
+      "purpose": "the two switches the electrolyte family record's c_shell and c_dielectric set"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/reference.py",
+      "ref": "greenfield@e4122b3:engine/native/physics/electrolyte.hpp",
       "must_contain": [
-        "# EqID: single_ion_activity_coefficient",
-        "# EqID: mean_ionic_activity_coefficient",
-        "# EqID: molality_activity_conversion",
-        "# EqID: practical_osmotic_coefficient"
+        "EqID: component_permittivity_temperature_polynomial",
+        "EqID: ion_suppressed_bulk_permittivity",
+        "throw std::invalid_argument(\"no permittivity form selected\");"
       ],
-      "purpose": "the activity definitions, Python on main, native here"
+      "purpose": "the polynomial correlation's array layout and the one-branch suppression form that solvent-only, ion-fraction and ion-specific choices all map to"
     },
     {
-      "ref": "main@9eccbfd:engine/src/epcsaft/_native/eos_source_reference.cpp",
+      "ref": "greenfield@e4122b3:data/packets/figiel-2025-reference-electrolytes/2/parameters/parameters.json",
       "must_contain": [
-        "EqID: neutral_reference_stoichiometric_basis",
-        "reference_limit_terminal_pair("
-      ],
-      "purpose": "read only for the anchored-density pattern in the reference loop"
-    },
-    {
-      "ref": "main@9eccbfd:analyses/2026-mea-parameter-estimation/inputs/neutral-selected-parameters.json",
-      "must_contain": [
+        "\"identity\": \"pair/lithium-cation/water/k_ij\"",
+        "\"unit\": \"gram / mole\"",
+        "\"choice\": \"ion-fraction-suppression\"",
         "\"rule_id\": \"arithmetic-energy-geometric-volume\"",
-        "\"magnitude\": -0.07352749874985018",
-        "78.41043478578715"
+        "\"c_shell\": 1.0"
       ],
-      "purpose": "nine-species case; values transcribed in the brief, confirm only"
+      "purpose": "the parameter set the 24 oracle rows are evaluated with; gram/mole is the unit the builder must convert; c_shell is 1.0 here and 0.0 in the MEA bundle"
     },
     {
-      "ref": "main@9eccbfd:analyses/2026-fixed-pressure-anchor/inputs/fixtures/strongly_associating_binary.json",
+      "ref": "greenfield@e4122b3:data/packets/mea-co2-h2o-nine-species-estimation/2/parameters/parameters.json",
       "must_contain": [
-        "2383.4744",
-        "0.1540467874409226",
-        "\"magnitude\": -0.052"
+        "173.44025",
+        "0.013262879176919628",
+        "\"choice\": \"solvent-only\"",
+        "\"c_shell\": 0.0",
+        "pair/carbon-dioxide/monoethanolamine/k_ij/reciprocal_temperature_slope"
       ],
-      "purpose": "associating binary; transcribed in the brief"
+      "purpose": "the living bundle: permutation check, floor cases B-D, and the fixture refresh values; the slope record exercises the reference-temperature field"
     },
     {
-      "ref": "main@9eccbfd:analyses/2026-fixed-pressure-anchor/inputs/fixtures/aqueous_electrolyte.json",
+      "ref": "greenfield@e4122b3:data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
       "must_contain": [
-        "\"magnitude\": 7.01",
-        "\"component_id\": \"sodium-cation\"",
-        "\"magnitude\": 78.09"
+        "\"unit\": \"kg / mol\"",
+        "191.42",
+        "\"choice\": \"none\""
       ],
-      "purpose": "aqueous NaCl case; transcribed in the brief"
+      "purpose": "the neutral packet for the Pure-equals-Mixture check and floor case A; the third molar-mass spelling"
     },
     {
-      "ref": "main@9eccbfd:data/packets/gross-2001-methane-ethane/1/parameters/single.csv",
+      "ref": "greenfield@e4122b3:engine/tests/oracle/oracle.json",
       "must_contain": [
-        "ethane-segment-count,ethane,segment_count,1.6069",
-        "ethane-dispersion-energy,ethane,dispersion_energy_over_k,191.42"
+        "\"aqueous_alkali_halide_activity\"",
+        "\"salt\": \"KBr\"",
+        "\"measured_mean_ionic_activity_coefficient\": 0.593"
       ],
-      "purpose": "ethane parameters for the NIST density checks"
+      "purpose": "the 24 measured rows; the test reads T, P, molality, salt, cation, anion from each row"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/tests/oracle/capture2.py",
+      "must_contain": [
+        "pk(\"figiel-2025-reference-electrolytes\")",
+        "formula_stoichiometry=(1,1)"
+      ],
+      "purpose": "evidence of how the rows were captured: packet, solvent fractions (1,0,0), stoichiometry (1,1); read only"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/tests/native/model_support.hpp",
+      "must_contain": [
+        "inline epcsaft::Parameters nine_species()",
+        "p.relative_permittivity = {78.41043478578715, 32, 1.4122, 0, 0, 0, 0, 0, 0};",
+        "169.21"
+      ],
+      "purpose": "the fixture to refresh to the living bundle; the markers identify the pre-refresh version"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/tests/native/model_checks.cpp",
+      "must_contain": [
+        "epcsaft::infinite_dilution_reference(",
+        "{1, 2}, {1, 1}"
+      ],
+      "purpose": "the native reference and activity call pattern the Python Reference wraps"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/docs/regression/research/figiel-table-4-5-fitting-method.md",
+      "must_contain": [
+        "AARD < 10%",
+        "85bd39f727158d5a9d6eea6828c1673f73850e783a655b09660cc9b66d84321a"
+      ],
+      "purpose": "the source's own MIAC adequacy criterion, SI section S2, with the SI transcription hash; the origin of SOURCE_ADEQUACY_AARD"
+    },
+    {
+      "ref": "greenfield@e4122b3:analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv",
+      "must_contain": [
+        "LiBr,2.0,1.012,1.1143454847451237",
+        "LiCl,2.0,0.924,1.0029316153376744"
+      ],
+      "purpose": "evidence for choosing the per-salt average over a per-row maximum; the superseded engine's numbers, never a gate value"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/meson.build",
+      "must_contain": [
+        "  files(),",
+        "model_sources = files("
+      ],
+      "purpose": "the two edit points: the empty _core source list and the model source list"
+    },
+    {
+      "ref": "greenfield@e4122b3:engine/tests/oracle/measure_floor.py",
+      "must_contain": [
+        "_core._instrumentation()"
+      ],
+      "purpose": "the superseded floor script this stage rewrites in place; the marker identifies the old version"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/_dictionary_io.py",
+      "must_contain": [
+        "_COMPONENT_COEFFICIENTS = frozenset(",
+        "\"constant-plus-sum-of-exponentials\"",
+        "volume = (volume_values[0] * volume_values[1]).sqrt()"
+      ],
+      "purpose": "the document schema and the combining rule as the superseded engine evaluated it: plain geometric mean, no diameter factor. Read; do not copy the three validation passes"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/eos.py",
+      "must_contain": [
+        "def _native_arguments(",
+        "permittivity_reference_temperature[component] = _quantity_magnitude("
+      ],
+      "purpose": "how records became native arrays (sigma terms, permittivity terms, symmetric association fill); read only"
+    },
+    {
+      "ref": "main@9eccbfd:engine/src/epcsaft/records.py",
+      "must_contain": [
+        "_DIMENSIONAL_UNITS = {",
+        "\"k_ij_reciprocal_temperature_slope\": \"kelvin\","
+      ],
+      "purpose": "the per-family dimensions the native unit table reproduces; read only"
     }
   ],
   "writes": [
     {
-      "path": "engine/native/model/helmholtz_tape.hpp",
+      "path": "engine/native/model/parameter_builder.hpp",
       "lines": {
-        "low": 300,
-        "estimate": 380,
-        "ceiling": 520
+        "low": 60,
+        "estimate": 80,
+        "ceiling": 120
+      }
+    },
+    {
+      "path": "engine/native/model/parameter_builder.cpp",
+      "lines": {
+        "low": 200,
+        "estimate": 280,
+        "ceiling": 400
       }
     },
     {
       "path": "engine/native/model/helmholtz_model.hpp",
+      "edit": "add double mean_ionic_molality_scale = 0.0; to ElectrolyteActivity only",
       "lines": {
-        "low": 150,
-        "estimate": 200,
-        "ceiling": 300
-      }
-    },
-    {
-      "path": "engine/native/model/helmholtz_model.cpp",
-      "lines": {
-        "low": 380,
-        "estimate": 520,
-        "ceiling": 750
-      }
-    },
-    {
-      "path": "engine/native/model/density.cpp",
-      "lines": {
-        "low": 150,
-        "estimate": 210,
-        "ceiling": 320
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
       }
     },
     {
       "path": "engine/native/model/infinite_dilution_reference.cpp",
+      "edit": "add mean_ionic_molality_scale; relax the molar-mass check to components with nonzero solvent fraction",
       "lines": {
-        "low": 180,
-        "estimate": 260,
-        "ceiling": 420
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 5
       }
     },
     {
-      "path": "engine/tests/native/model_support.hpp",
+      "path": "engine/native/bindings/module.cpp",
       "lines": {
-        "low": 220,
-        "estimate": 300,
+        "low": 25,
+        "estimate": 40,
+        "ceiling": 80
+      }
+    },
+    {
+      "path": "engine/native/bindings/eos_bindings.cpp",
+      "lines": {
+        "low": 180,
+        "estimate": 250,
         "ceiling": 380
       }
     },
     {
-      "path": "engine/tests/native/model_checks.cpp",
-      "lines": {
-        "low": 380,
-        "estimate": 480,
-        "ceiling": 620
-      }
-    },
-    {
-      "path": "engine/tests/native/model_floor.cpp",
-      "lines": {
-        "low": 150,
-        "estimate": 210,
-        "ceiling": 300
-      }
-    },
-    {
       "path": "engine/meson.build",
-      "edit": "add model_sources and two executables only",
-      "lines": {
-        "low": 25,
-        "estimate": 30,
-        "ceiling": 45
-      }
-    },
-    {
-      "path": "engine/native/physics/numerical_policy.hpp",
-      "edit": "new entries only",
-      "lines": {
-        "low": 30,
-        "estimate": 45,
-        "ceiling": 70
-      }
-    },
-    {
-      "path": "engine/native/physics/association.hpp",
-      "edit": "optional trailing std::size_t* iterations = nullptr",
+      "edit": "add parameter_builder.cpp to model_sources; replace files(), of _core with the two binding sources",
       "lines": {
         "low": 3,
         "estimate": 4,
+        "ceiling": 8
+      }
+    },
+    {
+      "path": "engine/pyproject.toml",
+      "edit": "remove the Pint dependency only",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/__init__.py",
+      "lines": {
+        "low": 15,
+        "estimate": 25,
+        "ceiling": 50
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/parameters.py",
+      "lines": {
+        "low": 180,
+        "estimate": 260,
+        "ceiling": 380
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/eos.py",
+      "lines": {
+        "low": 120,
+        "estimate": 180,
+        "ceiling": 280
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/reference.py",
+      "lines": {
+        "low": 40,
+        "estimate": 60,
+        "ceiling": 100
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/_core.pyi",
+      "lines": {
+        "low": 100,
+        "estimate": 150,
+        "ceiling": 230
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/units.py",
+      "edit": "delete",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 0
+      }
+    },
+    {
+      "path": "engine/tests/packets.py",
+      "lines": {
+        "low": 12,
+        "estimate": 20,
+        "ceiling": 40
+      }
+    },
+    {
+      "path": "engine/tests/eos/__init__.py",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 1
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_activity.py",
+      "lines": {
+        "low": 45,
+        "estimate": 65,
+        "ceiling": 100
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_state.py",
+      "lines": {
+        "low": 70,
+        "estimate": 100,
+        "ceiling": 160
+      }
+    },
+    {
+      "path": "engine/tests/oracle/measure_floor.py",
+      "edit": "rewrite in place against the new API",
+      "lines": {
+        "low": 70,
+        "estimate": 100,
+        "ceiling": 150
+      }
+    },
+    {
+      "path": "engine/tests/native/model_support.hpp",
+      "edit": "nine_species() refreshed to the living bundle: four values",
+      "lines": {
+        "low": 4,
+        "estimate": 6,
+        "ceiling": 12
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "molar_mass rule: neutral > 0, charged >= 0 (0 = not provided); nothing else",
+      "lines": {
+        "low": 4,
+        "estimate": 5,
         "ceiling": 8
       }
     }
@@ -228,58 +399,28 @@
       "command": ".venv/bin/meson compile -C engine/build/greenfield",
       "needs": "native",
       "mutation": {
-        "file": "engine/native/model/density.cpp",
+        "file": "engine/native/bindings/module.cpp",
         "sed": "1i #include \"equilibrium/problem.hpp\"",
         "expect": "abort"
       }
     },
     {
-      "id": "checks_pass_and_tape_matches_double_path",
+      "id": "native_checks_still_pass",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
       "needs": "native",
       "mutation": {
-        "file": "engine/native/physics/helmholtz.hpp",
-        "sed": "s|if (zeta\\[3\\] >= policy::CLOSE_PACKING_FRACTION.value) {|zeta[3] *= 1.001; if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {|",
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
         "expect": "abort"
       }
     },
     {
-      "id": "one_hessian_equals_S_plus_1_hessians",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
+      "id": "fixture_reads_living_bundle",
+      "command": "grep -qF '173.44025' engine/tests/native/model_support.hpp && grep -qF '0.013262879176919628' engine/tests/native/model_support.hpp && ! grep -qF '1.4122' engine/tests/native/model_support.hpp",
       "needs": "native",
       "mutation": {
-        "file": "engine/native/physics/numerical_policy.hpp",
-        "sed": "s/2.0e-13,/2.0e-1,/",
-        "expect": "abort"
-      }
-    },
-    {
-      "id": "density_root_accuracy",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
-      "needs": "native",
-      "mutation": {
-        "file": "engine/native/physics/numerical_policy.hpp",
-        "sed": "s/1.0e-12,/1.0e-1,/",
-        "expect": "abort"
-      }
-    },
-    {
-      "id": "density_branch_selection",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
-      "needs": "native",
-      "mutation": {
-        "file": "engine/native/physics/numerical_policy.hpp",
-        "sed": "s|PI / (3.0 \\* 1.4142135623730951),|0.30,|",
-        "expect": "abort"
-      }
-    },
-    {
-      "id": "reference_debye_huckel_tail",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
-      "needs": "native",
-      "mutation": {
-        "file": "engine/native/physics/electrolyte.hpp",
-        "sed": "s/return Scalar(1.0) - 0.75 \\* reduced + 0.6 \\* reduced_2/return Scalar(0.5) - 0.75 * reduced + 0.6 * reduced_2/",
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/169.21/",
         "expect": "abort"
       }
     },
@@ -288,18 +429,58 @@
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
       "mutation": {
-        "file": "engine/native/model/helmholtz_model.hpp",
+        "file": "engine/native/bindings/module.cpp",
         "sed": "$a inline constexpr double PI = 3.0;",
         "expect": "abort"
       }
     },
     {
-      "id": "floor_runs_and_reports",
-      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor",
-      "needs": "native",
+      "id": "oracle_activity_meets_source_criterion",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && .venv/bin/python -m pytest -q engine/tests/eos/test_activity.py",
+      "needs": "python",
       "mutation": {
-        "file": "engine/native/physics/numerical_policy.hpp",
-        "sed": "s/    50.0,/    1.0,/",
+        "file": "engine/native/model/parameter_builder.cpp",
+        "sed": "s|{\"gram / mole\", 1.0e-3}|{\"gram / mole\", 1.0}|",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "state_mapping_symmetry_identity_fail_closed",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && .venv/bin/python -m pytest -q engine/tests/eos/test_state.py",
+      "needs": "python",
+      "mutation": {
+        "file": "engine/native/bindings/eos_bindings.cpp",
+        "sed": "s/&epcsaft::State::compressibility_factor)/\\&epcsaft::State::residual_helmholtz)/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "python_does_no_arithmetic",
+      "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft && ! grep -rnE '(\\w|\\))\\s*[*/]\\s*[0-9]|(\\w|\\))\\s*[-+]\\s*[0-9]+\\.[0-9]|\\*\\*\\s*[0-9]|\\b[0-9]+(\\.[0-9]*)?[eE][-+]?[0-9]+\\b' --include='*.py' engine/src/epcsaft",
+      "needs": "python",
+      "mutation": {
+        "file": "engine/src/epcsaft/eos.py",
+        "sed": "1i import math",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "types_consistent",
+      "command": "(cd engine && ../.venv/bin/mypy)",
+      "needs": "python",
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/def state_at_pressure(/def state_at_pressur(/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "floor_runs_and_reports",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && OMP_NUM_THREADS=1 .venv/bin/python engine/tests/oracle/measure_floor.py",
+      "needs": "python",
+      "mutation": {
+        "file": "engine/tests/oracle/measure_floor.py",
+        "sed": "s/0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0/0.90, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0/",
         "expect": "abort"
       }
     }

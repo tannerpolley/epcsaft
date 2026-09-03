@@ -1,10 +1,19 @@
 {
-  "stage": "04.repair",
+  "stage": 4,
   "branch": "stage-04-repair",
   "base": "greenfield@c860395",
   "source_commit": "9eccbfd",
-  "reaccepts": [2, 3, 4],
-  "stop_conditions": ["budget_ceiling", "gate_impossible", "source_contradicted", "environment_broken"],
+  "reaccepts": [
+    2,
+    3,
+    4
+  ],
+  "stop_conditions": [
+    "budget_ceiling",
+    "gate_impossible",
+    "source_contradicted",
+    "environment_broken"
+  ],
   "preconditions": [
     "git cat-file -e 9eccbfd^{commit}",
     "git cat-file -e c860395^{commit}",
@@ -96,7 +105,7 @@
     {
       "ref": "greenfield@c860395:analyses/reproduction/2025-figiel-engine-crosswalk/like-ion-dispersion-convention.md",
       "must_contain": [
-        "`k_ij = 1.0` — the exclusion, written as data",
+        "`k_ij = 1.0` \u2014 the exclusion, written as data",
         "invalid component pair for pair/bromide-anion/bromide-anion/k_ij",
         "for left in range(size) for right in range(size)"
       ],
@@ -129,124 +138,420 @@
     }
   ],
   "writes": [
-    {"path": "engine/native/physics/parameters.hpp", "edit": "IonicDispersion enum and one field", "lines": {"low": 8, "estimate": 11, "ceiling": 16}},
-    {"path": "engine/native/physics/helmholtz.hpp", "edit": "the branch on the annotated line only", "lines": {"low": 4, "estimate": 6, "ceiling": 10}},
-    {"path": "engine/native/physics/numerical_policy.hpp", "edit": "delete ELECTROLYTE_SERIES_THRESHOLD", "lines": {"low": -5, "estimate": -5, "ceiling": -5}},
-    {"path": "engine/native/model/helmholtz_tape.hpp", "edit": "mirror the enum in TapeParameters", "lines": {"low": 2, "estimate": 2, "ceiling": 4}},
-    {"path": "engine/native/model/helmholtz_model.hpp", "edit": "stable_root_count becomes std::optional<std::size_t>", "lines": {"low": 1, "estimate": 1, "ceiling": 2}},
-    {"path": "engine/native/model/helmholtz_model.cpp", "edit": "constructor requirement; site-Hessian helper shared by PressureSlope and Hessian; delete the dead double path; SCREENING_SERIES_SWITCH", "lines": {"low": 5, "estimate": 20, "ceiling": 50}},
-    {"path": "engine/native/model/density.cpp", "edit": "anchor honoured only with a declared branch and a clear far side; residual-only scan order", "lines": {"low": 20, "estimate": 35, "ceiling": 60}},
-    {"path": "engine/native/model/parameter_builder.hpp", "edit": "ionic_dispersion_choice on ParameterDocument", "lines": {"low": 1, "estimate": 1, "ceiling": 2}},
-    {"path": "engine/native/model/parameter_builder.cpp", "edit": "choice mapping; same-sign pairs not required and rejected as unconsumed under the exclusion", "lines": {"low": 15, "estimate": 25, "ceiling": 45}},
-    {"path": "engine/native/bindings/eos_bindings.cpp", "edit": "one def_readwrite", "lines": {"low": 1, "estimate": 1, "ceiling": 2}},
-    {"path": "engine/src/epcsaft/_core.pyi", "edit": "one attribute", "lines": {"low": 1, "estimate": 1, "ceiling": 2}},
-    {"path": "engine/src/epcsaft/parameters.py", "edit": "locate the electrolyte record for every choice; pass the key through untouched", "lines": {"low": 4, "estimate": 8, "ceiling": 16}},
-    {"path": "engine/src/epcsaft/eos.py", "edit": "stoichiometry loses its default", "lines": {"low": 0, "estimate": 0, "ceiling": 1}},
-    {"path": "engine/tests/native/model_support.hpp", "edit": "two fixtures declare ExcludeSameSign", "lines": {"low": 2, "estimate": 2, "ceiling": 4}},
-    {"path": "engine/tests/native/physics_checks.cpp", "edit": "same_sign_exclusion_is_a_limit", "lines": {"low": 15, "estimate": 25, "ceiling": 40}},
-    {"path": "engine/tests/native/model_checks.cpp", "edit": "PressureSlope FD; same_sign_pair_is_inert; constructor rejections; anchor-branch and associating cold solve", "lines": {"low": 30, "estimate": 50, "ceiling": 80}},
-    {"path": "engine/tests/eos/test_activity.py", "edit": "published-model curve; stoichiometry passed explicitly; revision 3", "lines": {"low": 15, "estimate": 25, "ceiling": 40}},
-    {"path": "engine/tests/eos/test_state.py", "edit": "missing declaration and unconsumed same-sign record fail closed; revision 3", "lines": {"low": 8, "estimate": 14, "ceiling": 24}},
-    {"path": "engine/tests/oracle/oracle.json", "edit": "case aqueous_lithium_bromide_published_model, 27 rows with source_file and sha256", "lines": {"low": 40, "estimate": 60, "ceiling": 90}},
-    {"path": "engine/tests/oracle/measure_floor.py", "edit": "revision numbers", "lines": {"low": 0, "estimate": 0, "ceiling": 2}},
-    {"path": "engine/tests/oracle/capture2.py", "edit": "revision numbers", "lines": {"low": 0, "estimate": 0, "ceiling": 2}},
-    {"path": "data/packets/figiel-2025-reference-electrolytes/3/", "edit": "copy of 2 plus the declaration; rehashed manifest and provenance", "lines": {"low": 0, "estimate": 3, "ceiling": 6}},
-    {"path": "data/packets/figiel-2025-validation-parameters/3/", "edit": "copy of 2 plus the declaration; six same-sign k_ij records removed", "lines": {"low": -80, "estimate": -75, "ceiling": -60}},
-    {"path": "data/packets/figiel-2025-aqueous-iodides/3/", "edit": "copy of 2 plus the declaration", "lines": {"low": 0, "estimate": 3, "ceiling": 6}},
-    {"path": "data/packets/figiel-yu-held-2025/3/", "edit": "copy of 2 plus the declaration", "lines": {"low": 0, "estimate": 3, "ceiling": 6}},
-    {"path": "data/packets/held-cameretti-sadowski-2008/3/", "edit": "copy of 2 plus the declaration; 198 same-sign k_ij records removed, 208 cation-anion kept", "lines": {"low": -2800, "estimate": -2600, "ceiling": -2300}},
-    {"path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/3/", "edit": "copy of 2 plus the declaration", "lines": {"low": 0, "estimate": 3, "ceiling": 6}},
-    {"path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/6/", "edit": "copy of 5 plus the declaration", "lines": {"low": 0, "estimate": 3, "ceiling": 6}},
-    {"path": "data/packets/mea-co2-h2o-nine-species-estimation/3/", "edit": "copy of 2 plus the declaration; seven same-sign k_ij records removed", "lines": {"low": -100, "estimate": -90, "ceiling": -70}},
-    {"path": "data/packet-locks.json", "edit": "eight new lock entries", "lines": {"low": 48, "estimate": 56, "ceiling": 64}}
+    {
+      "path": "engine/native/physics/parameters.hpp",
+      "edit": "IonicDispersion enum and one field",
+      "lines": {
+        "low": 8,
+        "estimate": 11,
+        "ceiling": 16
+      }
+    },
+    {
+      "path": "engine/native/physics/helmholtz.hpp",
+      "edit": "the branch on the annotated line only",
+      "lines": {
+        "low": 4,
+        "estimate": 6,
+        "ceiling": 10
+      }
+    },
+    {
+      "path": "engine/native/physics/numerical_policy.hpp",
+      "edit": "delete ELECTROLYTE_SERIES_THRESHOLD",
+      "lines": {
+        "low": -5,
+        "estimate": -5,
+        "ceiling": -5
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_tape.hpp",
+      "edit": "mirror the enum in TapeParameters",
+      "lines": {
+        "low": 2,
+        "estimate": 2,
+        "ceiling": 4
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.hpp",
+      "edit": "stable_root_count becomes std::optional<std::size_t>",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "constructor requirement; site-Hessian helper shared by PressureSlope and Hessian; delete the dead double path; SCREENING_SERIES_SWITCH",
+      "lines": {
+        "low": 5,
+        "estimate": 20,
+        "ceiling": 50
+      }
+    },
+    {
+      "path": "engine/native/model/density.cpp",
+      "edit": "anchor honoured only with a declared branch and a clear far side; residual-only scan order",
+      "lines": {
+        "low": 20,
+        "estimate": 35,
+        "ceiling": 60
+      }
+    },
+    {
+      "path": "engine/native/model/parameter_builder.hpp",
+      "edit": "ionic_dispersion_choice on ParameterDocument",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/native/model/parameter_builder.cpp",
+      "edit": "choice mapping; same-sign pairs not required and rejected as unconsumed under the exclusion",
+      "lines": {
+        "low": 15,
+        "estimate": 25,
+        "ceiling": 45
+      }
+    },
+    {
+      "path": "engine/native/bindings/eos_bindings.cpp",
+      "edit": "one def_readwrite",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/_core.pyi",
+      "edit": "one attribute",
+      "lines": {
+        "low": 1,
+        "estimate": 1,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/parameters.py",
+      "edit": "locate the electrolyte record for every choice; pass the key through untouched",
+      "lines": {
+        "low": 4,
+        "estimate": 8,
+        "ceiling": 16
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/eos.py",
+      "edit": "stoichiometry loses its default",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 1
+      }
+    },
+    {
+      "path": "engine/tests/native/model_support.hpp",
+      "edit": "two fixtures declare ExcludeSameSign",
+      "lines": {
+        "low": 2,
+        "estimate": 2,
+        "ceiling": 4
+      }
+    },
+    {
+      "path": "engine/tests/native/physics_checks.cpp",
+      "edit": "same_sign_exclusion_is_a_limit",
+      "lines": {
+        "low": 15,
+        "estimate": 25,
+        "ceiling": 40
+      }
+    },
+    {
+      "path": "engine/tests/native/model_checks.cpp",
+      "edit": "PressureSlope FD; same_sign_pair_is_inert; constructor rejections; anchor-branch and associating cold solve",
+      "lines": {
+        "low": 30,
+        "estimate": 50,
+        "ceiling": 80
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_activity.py",
+      "edit": "published-model curve; stoichiometry passed explicitly; revision 3",
+      "lines": {
+        "low": 15,
+        "estimate": 25,
+        "ceiling": 40
+      }
+    },
+    {
+      "path": "engine/tests/eos/test_state.py",
+      "edit": "missing declaration and unconsumed same-sign record fail closed; revision 3",
+      "lines": {
+        "low": 8,
+        "estimate": 14,
+        "ceiling": 24
+      }
+    },
+    {
+      "path": "engine/tests/oracle/oracle.json",
+      "edit": "case aqueous_lithium_bromide_published_model, 27 rows with source_file and sha256",
+      "lines": {
+        "low": 40,
+        "estimate": 60,
+        "ceiling": 90
+      }
+    },
+    {
+      "path": "engine/tests/oracle/measure_floor.py",
+      "edit": "revision numbers",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "engine/tests/oracle/capture2.py",
+      "edit": "revision numbers",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 2
+      }
+    },
+    {
+      "path": "data/packets/figiel-2025-reference-electrolytes/3/",
+      "edit": "copy of 2 plus the declaration; rehashed manifest and provenance",
+      "lines": {
+        "low": 0,
+        "estimate": 3,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "data/packets/figiel-2025-validation-parameters/3/",
+      "edit": "copy of 2 plus the declaration; six same-sign k_ij records removed",
+      "lines": {
+        "low": -80,
+        "estimate": -75,
+        "ceiling": -60
+      }
+    },
+    {
+      "path": "data/packets/figiel-2025-aqueous-iodides/3/",
+      "edit": "copy of 2 plus the declaration",
+      "lines": {
+        "low": 0,
+        "estimate": 3,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "data/packets/figiel-yu-held-2025/3/",
+      "edit": "copy of 2 plus the declaration",
+      "lines": {
+        "low": 0,
+        "estimate": 3,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "data/packets/held-cameretti-sadowski-2008/3/",
+      "edit": "copy of 2 plus the declaration; 198 same-sign k_ij records removed, 208 cation-anion kept",
+      "lines": {
+        "low": -2800,
+        "estimate": -2600,
+        "ceiling": -2300
+      }
+    },
+    {
+      "path": "data/packets/ascani-2022-case-study-2-electrolyte-lle/3/",
+      "edit": "copy of 2 plus the declaration",
+      "lines": {
+        "low": 0,
+        "estimate": 3,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/6/",
+      "edit": "copy of 5 plus the declaration",
+      "lines": {
+        "low": 0,
+        "estimate": 3,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "data/packets/mea-co2-h2o-nine-species-estimation/3/",
+      "edit": "copy of 2 plus the declaration; seven same-sign k_ij records removed",
+      "lines": {
+        "low": -100,
+        "estimate": -90,
+        "ceiling": -70
+      }
+    },
+    {
+      "path": "data/packet-locks.json",
+      "edit": "eight new lock entries",
+      "lines": {
+        "low": 48,
+        "estimate": 56,
+        "ceiling": 64
+      }
+    }
   ],
   "gates": [
     {
       "id": "build",
       "command": ".venv/bin/meson compile -C engine/build/greenfield",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "1i #include \"equilibrium/problem.hpp\"", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "1i #include \"equilibrium/problem.hpp\"",
+        "expect": "abort"
+      }
     },
     {
       "id": "architecture_rules",
       "command": "python3 tools/check-engine-architecture.py",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "s/point.slope > 0.0/point.slope > 1.0e-10/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/point.slope > 0.0/point.slope > 1.0e-10/",
+        "expect": "abort"
+      }
     },
     {
       "id": "physics_and_model_checks",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
       "needs": "native",
-      "mutation": {"file": "engine/tests/native/model_support.hpp", "sed": "s/173.44025/-173.44025/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
+        "expect": "abort"
+      }
     },
     {
       "id": "same_sign_selector_live",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
       "needs": "native",
-      "mutation": {"file": "engine/native/physics/helmholtz.hpp", "sed": "s/&& parameters.charge_number\\[i\\] \\* parameters.charge_number\\[j\\] > 0;/\\&\\& false;/", "expect": "abort"},
+      "mutation": {
+        "file": "engine/native/physics/helmholtz.hpp",
+        "sed": "s/&& parameters.charge_number\\[i\\] \\* parameters.charge_number\\[j\\] > 0;/\\&\\& false;/",
+        "expect": "abort"
+      },
       "note": "same_sign_exclusion_is_a_limit (physics) and same_sign_pair_is_inert (model) both go red; the published-curve gate below would too"
     },
     {
       "id": "no_hidden_dispersion_default",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/helmholtz_model.cpp", "sed": "s/require(has_ion == declared, \"ionic_dispersion\");/(void)declared;/", "expect": "abort"},
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/require(has_ion == declared, \"ionic_dispersion\");/(void)declared;/",
+        "expect": "abort"
+      },
       "note": "the constructor rejection is what turns an undeclared fixture into an error; with it removed the Unspecified fixture silently runs the AllIonPairs branch and the rejection check aborts"
     },
     {
       "id": "pressure_slope_is_total",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/helmholtz_model.cpp", "sed": "s/second\\[3\\] - site_correction;/second[3];/", "expect": "abort"},
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/second\\[3\\] - site_correction;/second[3];/",
+        "expect": "abort"
+      },
       "note": "red on the three fixtures with sites; ethane alone would stay green, which is why all four cases are in the loop"
     },
     {
       "id": "anchor_respects_branch",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs model",
       "needs": "native",
-      "mutation": {"file": "engine/native/model/density.cpp", "sed": "s/if (far_side_clear)/if (true)/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/if (far_side_clear)/if (true)/",
+        "expect": "abort"
+      }
     },
     {
       "id": "python_eos_tests",
       "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos)",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/parameters.py", "sed": "s/get(\"ionic_dispersion\", \"\")/get(\"ionic_dispersion\", \"exclude-same-sign-ion-pairs\")/", "expect": "abort"},
+      "mutation": {
+        "file": "engine/src/epcsaft/parameters.py",
+        "sed": "s/get(\"ionic_dispersion\", \"\")/get(\"ionic_dispersion\", \"exclude-same-sign-ion-pairs\")/",
+        "expect": "abort"
+      },
       "note": "a Python-side default lets revision 2 load; the fail-closed test in test_state.py goes red"
     },
     {
       "id": "published_curve_reproduction",
       "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos/test_activity.py)",
       "needs": "python",
-      "mutation": {"file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json", "sed": "s/exclude-same-sign-ion-pairs/all-ion-pairs/", "expect": "abort"},
+      "mutation": {
+        "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
+        "sed": "s/exclude-same-sign-ion-pairs/all-ion-pairs/",
+        "expect": "abort"
+      },
       "note": "49.19 % against a 0.6 % tolerance; packets_validate also goes red on the hash, which is expected. The Hamer-Wu gate alone stays green under this mutation (5-7 % against 10 %), which is why this gate exists"
     },
     {
       "id": "unconsumed_same_sign_record_rejected",
       "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos/test_state.py)",
       "needs": "python",
-      "mutation": {"file": "engine/native/model/parameter_builder.cpp", "sed": "s/reject(\"unconsumed \" + identity + \" under exclude-same-sign-ion-pairs\");/continue;/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/native/model/parameter_builder.cpp",
+        "sed": "s/reject(\"unconsumed \" + identity + \" under exclude-same-sign-ion-pairs\");/continue;/",
+        "expect": "abort"
+      }
     },
     {
       "id": "python_does_no_arithmetic",
       "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/parameters.py", "sed": "1i import math", "expect": "abort"},
+      "mutation": {
+        "file": "engine/src/epcsaft/parameters.py",
+        "sed": "1i import math",
+        "expect": "abort"
+      },
       "note": "copy the full command from briefs/stage-04.brief.json gate python_does_no_arithmetic; it is truncated here only for display"
     },
     {
       "id": "types_consistent",
       "command": "(cd engine && ../.venv/bin/mypy)",
       "needs": "python",
-      "mutation": {"file": "engine/src/epcsaft/_core.pyi", "sed": "s/ionic_dispersion_choice: str/ionic_dispersion_choic: str/", "expect": "abort"}
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/ionic_dispersion_choice: str/ionic_dispersion_choic: str/",
+        "expect": "abort"
+      }
     },
     {
       "id": "packets_validate",
       "command": "python3 data/tools/validate_packets.py > /dev/null",
       "needs": "python",
-      "mutation": {"file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json", "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/", "expect": "abort"}
+      "mutation": {
+        "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
+        "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/",
+        "expect": "abort"
+      }
     }
   ],
   "reported": [
-    {"id": "floor", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor && .venv/bin/meson install -C engine/build/greenfield --quiet && OMP_NUM_THREADS=1 .venv/bin/python engine/tests/oracle/measure_floor.py", "what": "nine-species cold fixed-pressure evaluations and wall before/after; anchored far-side evaluations; per-salt Hamer-Wu AARD beside the superseded 2.4-4.1 %"}
+    {
+      "id": "floor",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor && .venv/bin/meson install -C engine/build/greenfield --quiet && OMP_NUM_THREADS=1 .venv/bin/python engine/tests/oracle/measure_floor.py",
+      "what": "nine-species cold fixed-pressure evaluations and wall before/after; anchored far-side evaluations; per-salt Hamer-Wu AARD beside the superseded 2.4-4.1 %"
+    }
   ]
 }

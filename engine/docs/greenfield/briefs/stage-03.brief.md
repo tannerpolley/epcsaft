@@ -1,413 +1,521 @@
-# Stage 4 — `engine/native/model/`
+# Stage 3 — Surface: the parameter builder, the bindings, the Python mapping layer
 
-You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-2`).
+You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-3`).
 You have no one to ask. Read, in order, before writing anything:
 
 1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 4" and §"Naming"
-3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 1's decisions; you build on them
-4. `engine/native/physics/*.hpp` — all eight files, completely
-5. `engine/tests/native/physics_checks.cpp` — the check pattern you follow
-6. `tools/check-engine-architecture.py` — the five rules your result must satisfy
-7. `engine/docs/greenfield/briefs/stage-2.brief.json` — sources, budgets, gates
+2. `engine/docs/greenfield/TRANSFER.md` §"Stage 3", §"Units: C++ resolves them, Python only
+   reads the file", §"The MEA parameter set is the living bundle", §"Naming"
+3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 0–2 decisions; you build on them
+4. `engine/native/model/helmholtz_model.hpp` completely — it is the surface you bind
+5. `engine/native/physics/parameters.hpp` — the arrays your builder fills
+6. `engine/tests/native/model_checks.cpp` §`density_and_reference` — the native reference call
+7. `tools/check-engine-architecture.py` — seven rules; rule 6 (no threshold literals) applies to
+   every file you write under `engine/native/`
+8. `engine/docs/greenfield/briefs/stage-3.brief.json` — sources, budgets, gates, mutations
 
-Verify every source marker and gate command in the JSON against the tree **before**
+Verify every source marker and every precondition in the JSON against the tree **before**
 writing. If a claim is false, stop and say which.
 
 ## 0. Non-negotiable
 
-**Layers.** `physics <- model <- equilibrium <- regression <- bindings`. A file under
-`native/model/` may include `"physics/..."` and `"model/..."` only, rooted at
+**Layers.** `physics <- model <- equilibrium <- regression <- bindings`. `native/bindings/` is
+the only directory that may include pybind11; nothing includes `bindings/`. The parameter
+builder lives in `native/model/` and includes `"physics/..."` and `"model/..."` only, rooted at
 `engine/native`, never relative.
 
-**No pybind11, no Python** outside `native/bindings/`. `_core` does not exist until Stage 4.
+**Python does no arithmetic.** Any Python method takes the inputs it is given, hands them to
+`_core`, and returns what comes back. No `math`, `numpy`, `pint`, `scipy`, `decimal`; no unit
+factor, no `exp`, no normalisation, no combining rule, no index arithmetic on physical
+quantities. Python walks JSON and resolves *names* to *indices*; every number crosses the
+boundary untouched, as `(identity, field, index, magnitude, unit_string)`. The gate
+`python_does_no_arithmetic` greps for this and its mutation is `import math`.
 
-**Constants and tolerances.** Category-1 constants come from `physics/physical_constants.hpp`.
-Every threshold, budget, step factor or fraction you introduce is a `Tolerance` entry in
-`physics/numerical_policy.hpp`, with category and source, in the existing style. No numeric
-literal acting as a tolerance may appear in `model/`. The checker rejects any `constexpr`
-name defined twice — give each a unique name.
+**Units resolve natively, once.** The builder in `model/parameter_builder.cpp` owns the unit
+table (§2.1). A unit it does not accept for a field is rejected by the record's identity and
+the unit string. Pint leaves `engine/pyproject.toml`. `units.py` is deleted, not rewritten:
+with Pint gone there is nothing in it.
 
-**Naming.** No proper nouns in identifiers. Published equation names Stage 1 already uses
-(`debye_huckel`, `born`) are fine; algorithms, authors, products and stage numbers are not.
-Cite sources in comments and `// EqID:` annotations only.
+**Bindings are `py::class_`**, never `py::dict` round trips. Native result structs are bound
+with `def_readonly` and returned as they are; Python does not copy them into dataclasses.
 
-**Testing.** Before writing a check ask: would it survive a legitimate reimplementation of
-the module from its equations? Only closed forms, exact symmetries, limits, derivative
-agreement and real data qualify. No golden files, no assertions on internals, no iteration
-count as a correctness claim. Counts and timings are reported, never pass/fail.
+**Constants and tolerances.** No numeric literal acting as a threshold in `engine/native/`.
+Rule 6 catches a literal adjacent to a comparison operator; conversion factors in the unit
+table (`1.0e-3`) are not thresholds and are permitted. Nothing in this stage should need a new
+`numerical_policy.hpp` entry; if you believe one is needed, add it in the existing style and
+report it.
 
-**`NDEBUG`.** `buildtype=release` with `b_ndebug=if-release` compiles `assert` to nothing.
-Use the `CHECK` macro pattern from `physics_checks.cpp` (fprintf + `std::abort`).
+**Naming.** No proper nouns in identifiers. Sources are cited in comments and docstrings.
 
-**Environment is not yours to repair.** You may edit `engine/meson.build` only to add your
-sources to `model_sources` and to add the two test executables. You may **not** touch its
-dependency block, `default_options`, the virtual environment, `engine/build/subprojects`,
-or how you were invoked, in order to make a build succeed. That is the orchestrator's
-problem: stop with `environment_broken`.
+**Testing.** Before writing a check ask: would it survive a legitimate reimplementation of the
+module from its equations? Only real measured data, exact symmetries, closed-form identities,
+and fail-closed validation qualify. No golden files, no assertions on internals. Counts and
+timings are reported, never pass/fail.
 
-**Physics is closed.** Two edits permitted, no others: (a) *adding* entries to
-`numerical_policy.hpp`; (b) an optional trailing `std::size_t* iterations = nullptr` on
-`solve_site_fractions` in `association.hpp`. Do not change any kernel's arithmetic, any
-existing tolerance value, or any existing signature.
+**Environment is not yours to repair.** You may edit `engine/meson.build` only to add
+`native/model/parameter_builder.cpp` to `model_sources` and to replace the empty `files(),`
+of the `_core` extension with your two binding sources. You may **not** touch its dependency
+block, `default_options`, the virtual environment, `uv.lock`, `engine/build/subprojects`, or
+how you were invoked, in order to make a build succeed. `pip`, `uv pip`, `uv sync`, and
+`uv lock` are not yours to run. Stop with `environment_broken`.
+
+**Three environment facts you must meet before the first build** (§6): `PATH` leads with the
+worktree's `.venv/bin`; `$HOME/.cache` is writable; the build directory's `prefix` is the
+worktree's `.venv`.
+
+**Model and physics are closed.** Five edits permitted in `native/model/` and none in
+`native/physics/`: (a) the new `parameter_builder.{hpp,cpp}`; (b) one field
+`double mean_ionic_molality_scale = 0.0;` added to `ElectrolyteActivity` in
+`helmholtz_model.hpp`; (c) one assignment `result.mean_ionic_molality_scale =
+std::exp(mean_log_m);` beside the existing `result.mean_ionic_log_molality_scale = mean_log_m;`
+in `infinite_dilution_reference.cpp`; (d) in `helmholtz_model.cpp`, the line
+`require(positive_vector(parameters_.molar_mass_kg_per_mol), "molar_mass");` becomes
+
+```cpp
+    for (std::size_t component = 0; component < components; ++component) {
+        const double mass = parameters_.molar_mass_kg_per_mol[component];
+        require(std::isfinite(mass) && mass >= 0.0, "molar_mass");
+        require(parameters_.charge_number[component] != 0 || mass > 0.0, "molar_mass");
+    }
+```
+
+(a charged component may carry 0.0, meaning not provided; a neutral one may not); (e) in
+`formula_composition`, the condition `|| molar_masses[component] <= 0.0` becomes
+`|| (solvent_fractions[component] > 0.0 && molar_masses[component] <= 0.0)` — a mass is
+required where a solvent fraction reads it, and nowhere else. Python must not `exp()` a
+log; the native side hands over the number the oracle is stated in.
+
+**Why (d) and (e).** Molar mass never enters the Helmholtz energy. Every native consumer
+reads solvent masses only: the three permittivity-mixing sites in `physics/electrolyte.hpp`
+are all inside `dielectric_solvent_component()`, which returns false for any charged
+component, and both `infinite_dilution_reference.cpp` sites multiply by a solvent fraction
+the reference composition forces to zero for the ions. Requiring a charged component's mass
+is a false rejection of sufficient data, and it is what stopped this stage's first attempt.
+These are relaxations of Stage 4's validation, not new arithmetic; every existing fixture
+carries positive masses, so the Stage 4 checks stay green under them.
 
 ## 1. Stop conditions — stopping is a first-class outcome
 
-- `source_contradicted` — a source lacks its stated marker, or says something other than
-  this brief claims. Name source and marker.
+- `source_contradicted` — a source lacks its stated marker, or says something other than this
+  brief claims. Name source and marker.
 - `gate_impossible` — a gate cannot run as written, or cannot be made to fail by its named
   mutation. Name the gate and why.
 - `budget_ceiling` — a file would exceed its ceiling. Stop *before* exceeding it.
-- `environment_broken` — configure, compile or a precondition fails for a reason outside
-  the tree. Quote the command and its first error line. Do not work around it.
+- `environment_broken` — configure, compile, install, or a precondition fails for a reason
+  outside the tree. Quote the command and its first error line. Do not work around it.
 
 An implementer that quietly absorbs a wrong plan is the failure. A correct stop is not.
 
 ## 2. Design
 
-### 2.1 The tape — `helmholtz_tape.hpp`
+### 2.1 The parameter builder — `model/parameter_builder.{hpp,cpp}`
 
-One `CppAD::ADFun<double>` per (model, active-parameter set, recording-time predicate
-signature), reused across points.
+```cpp
+namespace epcsaft {
+struct ParameterEntry final {
+    std::string identity;            // the JSON identity, for error messages only
+    std::string field;               // a name from the table below
+    std::vector<std::size_t> index;  // positions, resolved by Python from ids
+    double magnitude;
+    std::string unit;
+};
+struct ParameterDocument final {
+    std::vector<std::string> component_ids;   // selection order = model order
+    std::vector<int> site_component;          // S entries
+    std::vector<int> site_multiplicity;       // S entries
+    std::string electrolyte_choice;           // "none" | "fully-dissociated-debye-huckel" | "born"
+    std::string permittivity_choice;          // "none" | "solvent-only" | "ion-fraction-suppression"
+                                              // | "ion-specific-suppression" | "component-permittivity-mixing"
+    std::vector<ParameterEntry> entries;
+};
+Parameters build_parameters(const ParameterDocument&);   // throws std::invalid_argument
+}
+```
 
-**Coordinates.** Independents `y = (T, V, n_1..n_C, theta_1..theta_P)`: temperature K,
-volume m^3, amounts mol, active parameter values. Width `w = 2 + C + P`. Dependent 0 is the
-extensive residual Helmholtz `Phi = A_res/(RT)`, dimensionless. Site fractions are **not**
-independents: they enter as CppAD *dynamic parameters* (`CppAD::Independent(y, dynamic)`,
-then `f.new_dynamic(X)` per point), so the tape records once and is re-pointed.
+The builder allocates every `Parameters` array at its size (`C`, `C*C`, `S`, `S*S`, terms
+appended), fills from entries, then checks completeness. Every rejection is
+`std::invalid_argument` whose message names the identity (or `component_id` / pair) and what
+was wrong: `"unit gram for component/water/molar_mass: expected kilogram / mole"`,
+`"missing pair/ethanol/methanol/k_ij"`, `"duplicate component/water/segment_diameter"`.
+`HelmholtzModel`'s constructor validates the rest; do not duplicate its checks.
 
-**Site elimination.** With `rho = n_tot/V`, `x = n/n_tot`, `m_a = x_{c(a)} nu_a`,
-`rho_N = rho * NUMBER_DENSITY_PER_ANGSTROM3`, `Delta_ab` the physics association strength,
-`B_a = sum_b m_b X_b Delta_ab`, and `H_a = X_a(1 + rho_N B_a) - 1` the physics
-`association_residuals`, define the association potential
+**The unit table.** Nine strings are the whole parameter vocabulary in `data/packets/`;
+pressure units appear only in domains and observations and never reach a parameter.
 
-    Q(y; X) = sum_a m_a (ln X_a - X_a + 1) - (rho_N/2) sum_a m_a X_a B_a
+| dimension | accepted strings → factor |
+|---|---|
+| dimensionless | `dimensionless` → 1 |
+| temperature / energy over k | `kelvin` → 1 |
+| length | `angstrom` → 1 (native arrays are in Å) |
+| charge | `elementary-charge` → 1, magnitude must be integral |
+| molar mass | `kilogram / mole` → 1, `kg / mol` → 1, `gram / mole` → 1e-3 |
+| reciprocal temperature | `1 / kelvin` → 1 |
+| reciprocal temperature to power p | `1 / kelvin ** p` for the recorded `power` p (p = 1 is spelled `1 / kelvin`) → 1 |
 
-At the physics solution `X*(y)` (where `H = 0`): `Q = a_assoc` and `dQ/dX_a = 0`. Both
-follow from `a_assoc - Q = 0.5 sum_a m_a H_a`, which lets you build `Q` from physics calls
-alone: `residual_helmholtz(...).association - 0.5 sum_a m_a H_a`. Then
+The molar-mass row must be written literally as `{"gram / mole", 1.0e-3}` — a gate mutation
+targets that text.
 
-    Phi(y; X)   = n_tot * [a_hc + a_disp + a_dh + a_born](T, rho, x) + n_tot * Q(y; X)
-    F_a(y; X)   = dPhi/dX_a = -(n_tot m_a / X_a) * H_a
+**Fields.** `i, j` are component positions, `s, t` site positions, `n` a term position
+assigned by Python in document order.
 
-Dependents are `(Phi, F_1..F_S)`. With `a(y) := Phi(y; X*(y))`:
+| `field` | `index` | unit | fills | required |
+|---|---|---|---|---|
+| `molar_mass` | `[i]` | molar mass | `molar_mass_kg_per_mol[i]` | every component with `charge_number == 0`; a charged component may omit it and the builder stores 0.0 — molar mass never enters the Helmholtz energy and every native consumer (solvent permittivity mixing, molality) reads solvent masses only; an operation that needs a charged component's mass rejects by name at its own boundary |
+| `charge_number` | `[i]` | charge | `charge_number[i]` | every component |
+| `segment_count` | `[i]` | dimensionless | `segment_count[i]` | every component |
+| `sigma_constant` | `[i]` | length | `sigma_constant[i]` | every component, exactly once (a `segment_diameter` coefficient, or the `constant` of a `segment_diameter` correlation) |
+| `sigma_term_amplitude` | `[n, i]` | length | `sigma_term_amplitude[n]`, `sigma_term_component[n] = i` | per exponential term |
+| `sigma_term_exponent` | `[n, i]` | reciprocal temperature | `sigma_term_exponent[n]` | per exponential term |
+| `dispersion_energy_over_k` | `[i]` | kelvin | `dispersion_energy_over_k[i]` | every component |
+| `solvation_factor` | `[i]` | dimensionless | `solvation_factor[i]` | every component under `born`; else absent → 0 |
+| `relative_permittivity` | `[i]` | dimensionless | `relative_permittivity[i]` | absent → 0 (non-dielectric) |
+| `permittivity_reference_temperature` | `[i]` | kelvin | `permittivity_reference_temperature_k[i]` | with a polynomial correlation |
+| `permittivity_term_coefficient` | `[n, i, p]` | reciprocal temperature to power p | `permittivity_term_coefficient[n]`, `permittivity_term_power[n] = p`, `permittivity_term_component[n] = i` | per polynomial term |
+| `packing_diameter`, `debye_huckel_diameter` | `[i]` | length | the two diameter arrays | every charged component; absent → 0 |
+| `born_diameter` | `[i]` | length | `born_diameter_angstrom[i]` | every charged component under `born` |
+| `ion_suppression_coefficient` | `[i]` | dimensionless | `ion_suppression_coefficient[i]` | see permittivity choices |
+| `k_ij` | `[i, j]` | dimensionless | `k_ij[i*C+j]` **and** `k_ij[j*C+i]` | every unordered pair of selected components |
+| `l_ij` | `[i, j]` | dimensionless | both orders | absent → 0 |
+| `k_ij_reciprocal_temperature_slope` | `[i, j]` | kelvin | both orders | absent → 0 |
+| `k_ij_reference_temperature` | `[i, j]` | kelvin | `k_ij_reference_temperature_k`, both orders | with a slope; absent → 0 |
+| `association_energy_over_k` | `[s, t]` | kelvin | `[s*S+t]` and `[t*S+s]`; sets `association_active` to 1 at both | per explicit edge |
+| `association_volume` | `[s, t]` | dimensionless | both orders | per explicit edge |
+| `association_combining_rule` | `[s, t, s1, t1, s2, t2]` | (magnitude and unit ignored) | see below | per combining-rule edge |
+| `ionic_region_relative_permittivity` | `[]` | dimensionless | the scalar | under `born` |
+| `born_c_shell`, `born_c_dielectric` | `[]` | dimensionless | the two scalars | under `born` |
 
-    grad a  = Phi_y                                  (envelope: Phi_X = 0)
-    hess a  = Phi_yy - Phi_yX * Phi_XX^-1 * Phi_Xy   (Schur complement)
-    Phi_XX  = -n_tot [ delta_ab m_a / X_a^2 + rho_N m_a m_b Delta_ab ]   (analytic, S x S)
+**Unconsumed records are rejected.** A record whose field the declared choices do not read
+is a probable transcription loss and is rejected by identity: `ion_suppression_coefficient`
+(either origin) under `none` or `solvent-only`; `ionic_region_relative_permittivity`,
+`born_c_shell`, `born_c_dielectric`, `born_diameter`, `solvation_factor` under an
+electrolyte choice other than `born`. A present coefficient whose value is zero is data —
+packets retain printed zeros — and is never rejected for being zero.
 
-This is TRANSFER's "Lagrangian a + lambda.H" with the multiplier that makes it a potential.
-The tape never carries `lambda` or `X_y`.
+Symmetric fills must be written as two assignments, e.g. `k_ij[i * components + j] = value;`
+and `k_ij[j * components + i] = value;`. A field given twice at the same index is a
+`duplicate`.
 
-**Sweeps — never call `ADFun::Hessian`.** It discards the `Forward(1)` outputs you need,
-forcing `S` extra reverse sweeps. Drive the sweeps yourself; count each `Forward`/`Reverse`
-as one:
+**The combining rule.** `association_combining_rule` at `[s, t, s1, t1, s2, t2]` names the
+cross edge `(s, t)` and the two explicit self edges `(s1, t1)` and `(s2, t2)` it derives from.
+After all explicit edges are filled:
 
-| order | sweeps | how |
+    energy(s, t) = 0.5 * (energy(s1, t1) + energy(s2, t2))
+    volume(s, t) = sqrt(volume(s1, t1) * volume(s2, t2))
+
+both orders, `association_active` 1. This is the equation the superseded engine evaluated at
+run time (`_dictionary_io.py`: `volume = (volume_values[0] * volume_values[1]).sqrt()`) and
+the one the Stage 4 nine-species fixture encodes: `0.0411037990944876 = sqrt(0.03747 *
+0.04509)`. It has **no** diameter factor. (The `figiel-yu-held-2025/1` CSV materialised its
+solvent–solvent cross volumes with Gross–Sadowski 2002 Eq. 3's diameter factor instead; that is
+a packet-revision divergence outside this stage — no gate here selects a solvent–solvent cross
+edge. Do not add the factor.) Reject a rule whose self edges are not both active by the time it
+is evaluated, naming the identity.
+
+**Model choices.** `electrolyte_choice`: `none` → `ElectrolyteForm::None`;
+`fully-dissociated-debye-huckel` → `DebyeHuckel`; `born` → `DebyeHuckelBorn`, which requires
+`ionic_region_relative_permittivity`, `born_c_shell`, `born_c_dielectric`, every component's
+`solvation_factor`, and every charged component's `born_diameter`. `permittivity_choice`:
+`none` → `PermittivityForm::None`, all `ion_suppression_coefficient` 0; `solvent-only` →
+`IonSuppression` with all 0; `ion-fraction-suppression` → `IonSuppression` with the one
+`ion_suppression_coefficient` entry at `index []` — Python emits it once with an empty index
+from `model_coefficients.ion_fraction_suppression_coefficient`, and the builder copies it to
+every charged component and 0 to every neutral one; `ion-specific-suppression` →
+`IonSuppression` with a per-component entry required for every charged component;
+`component-permittivity-mixing` → `ComponentMixing`. Any other string → reject by name. The
+five arrays the two unmapped forms would read (`dielectric_volume_m3_per_mol`,
+`dielectric_temperature_k`, `dipole_scaling_debye2`, `polarizability_scaling_angstrom3`,
+`correlation_integral_parameter`) are zeros of length `C`: no packet in the tree carries their
+families, so nothing maps them.
+
+### 2.2 The bindings — `bindings/module.cpp`, `bindings/eos_bindings.cpp`
+
+`module.cpp` holds `PYBIND11_MODULE(_core, m)`, registers the two exceptions, and calls
+`register_eos(m)` from `eos_bindings.cpp`. Use `<pybind11/stl.h>` for vectors, arrays,
+optionals, and tuples. Exact names, because the stub and two mutations depend on them:
+
+| Python name | binds | notes |
 |---|---|---|
-| value | 1 | `Forward(0, y)` |
-| gradient | 2 | + `Reverse(1, e_0)` -> `Phi_y` |
-| pressure slope | 4 | + `Forward(1, e_V)` (gives `dPhi/dV` **and** `Phi_XV` for all S dependents) + `Reverse(2, e_0)`; `a_VV = Phi_VV - Phi_VX Phi_XX^-1 Phi_XV` |
-| hessian | `1 + 2w` | `Forward(0)`; per `j`: `Forward(1, e_j)` (column j of `Phi_Xy`), `Reverse(2, e_0)` (row j of `Phi_yy`); then one `S x S` solve and the Schur product |
+| `_core.ParameterError` | `std::invalid_argument` via `py::register_exception<std::invalid_argument>(m, "ParameterError", PyExc_ValueError)` | invalid document, unit, field, or call argument |
+| `_core.EosError` | `std::runtime_error` via `py::register_exception<std::runtime_error>(m, "EosError", PyExc_RuntimeError)` | a solve failed: no or ambiguous density root, association, reference limit |
+| `_core.ParameterEntry`, `_core.ParameterDocument` | the two structs, `py::init<>()` plus `def_readwrite` on every field | Python fills them |
+| `_core.build_parameters(document)` | `build_parameters` | returns `_core.Parameters` |
+| `_core.Parameters` | `epcsaft::Parameters` | opaque; `def_property_readonly("component_count", ...)`, `("site_count", ...)` |
+| `_core.DensityBranch` | `py::enum_<DensityBranch>` with `Unspecified`, `Vapor`, `Liquid` | |
+| `_core.State` | `epcsaft::State`, `def_readonly` on every field, same names | the line `.def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)` must appear verbatim — a mutation targets it |
+| `_core.SweepCounters` | `def_readonly` on the four fields | |
+| `_core.HelmholtzModel(parameters)` | `py::init<Parameters>()`, methods `state(T, molar_density, x)`, `state_at_pressure(T, P, x, branch, anchor_density: float | None)`, `counters()`, `reset_counters()` | `anchor_density` is `std::optional<double>`, default `None` |
+| `_core.InfiniteDilutionReference`, `_core.ElectrolyteActivity` | `def_readonly` on every field, including the new `mean_ionic_molality_scale` | |
+| `_core.infinite_dilution_reference(model, T, P, solvent_fractions, ion_indices, stoichiometry)` | the free function; `ion_indices` is `std::array<std::size_t, 2>`, `stoichiometry` `std::array<int, 2>` | |
+| `_core.electrolyte_activity(model, T, P, solvent_fractions, ion_indices, stoichiometry, molality, reference)` | the free function | |
 
-At nine species, `S = 6`, `P = 1`: `w = 12`, hessian = 25 sweeps and one 6x6 solve, against
-`7 * 35 = 245` today. Report `sweeps`, `hessian_calls`, `recordings` via a counters struct
-on the model — the model layer owns evaluation accounting.
+Do not bind `evaluate`, `solve_density`, `formula_composition`, active parameters, or the
+tape. Do not release the GIL; the model's mutex is enough and nothing here threads.
 
-**Active parameters.** `ActiveParameter { ParameterFamily family; std::vector<std::size_t>
-indices; }`, indices being flat positions in that family's array sharing one value (a
-symmetric `k_ij` pair has two). Families at Stage 4: `segment_count`, `sigma_constant`,
-`dispersion_energy_over_k`, `k_ij`, `association_energy_over_k`, `association_volume`.
-Implement with a `TapeParameters` mirror of `Parameters` whose arrays for those families are
-`std::vector<AD>`; the physics kernels are templated on `ParameterSet` and accept it.
-`electrolyte_contribution` and `born_contribution` take `const Parameters&` and get the
-double record. Other families are not activatable at Stage 4 because physics reads them as
-`double` — say so in a comment, do not extend physics.
+### 2.3 Python — `src/epcsaft/`
 
-**Cache key — read this twice.** Two predicates in `physics/electrolyte.hpp` are evaluated
-from `double` inputs *while recording* and baked into the tape: the `finite_size_chi` series
-switch per ion (`reference_kappa * 1e-10 * d_i < 1e-3`, line 332 — pass the evaluation point
-as the reference) and the `reference_charge_square_sum == 0.0` branch (line 242). Both flip
-inside Stage 4's own scope: the dilute end of the molality ladder takes the series, a
-pure-solvent state inside an electrolyte model takes the no-ion branch. A tape keyed on
-topology alone is silently wrong across them, with no error raised. Key the cache on
-(active set, predicate signature) and re-record when it changes. Check 3.14 exists for this.
+Eight exports in `__init__.py`: `Parameters`, `ParameterError`, `EosError`, `Pure`,
+`Mixture`, `State`, `Reference`, `Activity`. `State = _core.State`,
+`Activity = _core.ElectrolyteActivity`, `ParameterError = _core.ParameterError`,
+`EosError = _core.EosError` — re-exports, not wrappers. TRANSFER's "eleven" is a cap:
+`Saturation` (Stage 2) and `ActiveParameter` (Stage 5) arrive with the stages that consume
+them; `Derivatives` has no Python consumer and is not exposed.
 
-**Order per point.** Always run the double path first — `segment_sigma`,
-`segment_diameter`, `solve_site_fractions` (where domain errors throw) — then
-`new_dynamic(X*)` and the sweeps. `evaluate` is not thread-safe (an `ADFun` holds sweep
-state); guard with a `std::mutex` member and say so.
+**`parameters.py`.**
 
-### 2.2 The model — `helmholtz_model.{hpp,cpp}`
-
-```cpp
-enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian };
-struct HelmholtzDerivatives {           // in (T, V, n, theta); w = 2 + C + P
-  double value;                         // Phi = A_res/RT
-  std::vector<double> gradient;         // w, empty unless requested
-  std::vector<double> hessian;          // w*w row-major, empty unless Hessian
-  double volume_second_derivative;      // a_VV, set for PressureSlope and Hessian
-  std::vector<double> site_fractions;   // S
-};
-struct SweepCounters { std::size_t forward, reverse, hessian_calls, recordings; };
-
-class HelmholtzModel final {
- public:
-  explicit HelmholtzModel(Parameters, std::vector<ActiveParameter> = {});  // validates once
-  HelmholtzDerivatives evaluate(double T, double V, const std::vector<double>& n,
-                                DerivativeOrder) const;
-  State state(double T, double molar_density, const std::vector<double>& x) const;
-  State state_at_pressure(double T, double P, const std::vector<double>& x,
-                          DensityBranch, std::optional<double> anchor_density) const;
-  double packing_fraction_coefficient(double T, const std::vector<double>& x) const;
-  double phase_packing_fraction(double T, const std::vector<double>& n, double V) const;
-  double molar_density_upper_bound(double T, const std::vector<double>& x) const;
-  SweepCounters counters() const;  void reset_counters() const;
-};
+```python
+class Parameters:
+    component_ids: tuple[str, ...]           # selection order
+    site_ids: tuple[tuple[str, str], ...]    # (component_id, site_id), document order
+    @classmethod
+    def from_json(cls, path, *, components: Sequence[str] | None = None) -> Parameters
+    @classmethod
+    def from_mapping(cls, mapping, *, components: Sequence[str] | None = None) -> Parameters
 ```
 
-`State` carries the five term values, `bulk_relative_permittivity`, `residual_helmholtz`,
-`compressibility_factor`, `pressure`, `residual_chemical_potential_over_rt[]`,
-`log_fugacity_coefficient[]` (absent when `Z <= 0`), `residual_entropy`,
-`residual_internal_energy`, `residual_enthalpy`, `residual_isochoric_heat_capacity`,
-`residual_isobaric_heat_capacity` (optional), `molar_density`,
-`pressure_density_derivative`, `site_fractions[]`. `state(T, rho, x)` is
-`evaluate(T, 1/rho, x, Hessian)` with `n_tot = 1`, mapped by (carry the EqIDs from eos.cpp):
+`from_mapping` walks the `epcsaft.parameters` document (`schema == "epcsaft.parameters"`,
+`schema_version == 1`, else `ParameterError`). `components` selects and orders; `None`
+means document order. It emits one `ParameterEntry` per numeric value in §2.1's table —
+`identity` from the JSON, `field` from the table, `index` from `component_ids.index(...)` and
+`site_ids.index(...)`, `magnitude` and `unit` copied — plus the structural lists, and calls
+`_core.build_parameters`. What it reads: `components[].fixed.{charge_number, and molar_mass when present}`,
+`components[].coefficients[]`, `pairs[]` (a pair is emitted only when both components are
+selected; `component_id_a < component_id_b` in the document and the pair index is `[i, j]`
+in selection positions; `k_ij_reciprocal_temperature_slope` carries a sibling
+`reference_temperature` emitted as `k_ij_reference_temperature`), `correlations[]`
+(`segment_diameter` in forms `constant` and `constant-plus-sum-of-exponentials`;
+`relative_permittivity` in forms `constant` and `constant-plus-polynomial-in-temperature`;
+any other `family`/`form` → `ParameterError` by `correlation_id`), `model_families[]`
+(`base` must be `pc-saft`; `association` `none` or `general-site`; the `electrolyte` record's
+`c_shell` and `c_dielectric` are emitted as `born_c_shell` / `born_c_dielectric` when the
+choice is `born`), `model_coefficients[]`, `topology.sites[]` and `topology.edges[]` for
+selected components (`source.kind` `explicit` → the two value entries; `combining-rule` with
+`rule_id` `arithmetic-energy-geometric-volume` → one `association_combining_rule` entry
+whose `inputs.energy_over_k` and `inputs.volume` identities are resolved to the two self
+edges; any other `rule_id` → `ParameterError`). What it rejects by name: non-empty
+`topology.presets`, a `k_hb_ij` pair coefficient, an unknown family, form, or model choice.
+What it does not read: `domains`, `sources`, `purpose`, `reaction_correlations` (Stage 3),
+`site_role`, and every provenance field.
 
-    Z = 1 - V Phi_V              P = RT (1/V - Phi_V)          mu_res,i/RT = Phi_{n_i}
-    ln phi_i = Phi_{n_i} - ln Z  S_res/R = -Phi - T Phi_T      U_res/RT = -T Phi_T
-    H_res/RT = -T Phi_T + Z - 1  Cv_res/R = -2T Phi_T - T^2 Phi_TT
-    dP/drho|_{T,x} = RT (1 + V^2 Phi_VV)        (dP/dT)_V = P/T - RT Phi_TV
-    (dP/dV)_T = RT (-1/V^2 - Phi_VV)            Cp_res from Cv_res and the two P derivatives
+**`eos.py`.**
 
-Every second derivative is the *reduced* one. Two identities you will check: Euler
-homogeneity `V Phi_V + sum n_i Phi_{n_i} = Phi`, and `sum x_i mu_res,i/RT = a_res + Z - 1`.
-
-**Validation, once, in the constructor** (`std::invalid_argument` naming the field): array
-lengths against `C`, `C^2`, `S`, `S^2`; `segment_count > 0`, `sigma_constant > 0`,
-`dispersion_energy_over_k >= 0`, `molar_mass > 0`, all finite; `k_ij`, `l_ij` and the three
-association matrices symmetric; `site_component` in range; `association_active` in {0,1}
-with energy and volume `>= 0` where active; every `sigma_term_component` and
-`permittivity_term_component` in range; charged components have positive `packing_diameter`
-and `debye_huckel_diameter`, and under `DebyeHuckelBorn` also positive `born_diameter` and
-`ionic_region_relative_permittivity`; a `permittivity_form` other than `None` requires at
-least one dielectric solvent; `ion_suppression_coefficient` sized `C`. Point validation in
-`state`/`evaluate`: `T > 0`, `V > 0`, `n_i >= 0`, `sum x = 1` within a new policy entry, all
-finite. Do **not** require electroneutrality — later stages evaluate charged trial states.
-
-Helpers, from `main`'s `helmholtz.hpp` lines 155-198, using greenfield constants
-(`NUMBER_DENSITY_PER_ANGSTROM3`, not `PHYSICAL_AVOGADRO`): `packing_fraction_coefficient`
-= `packing_fraction_from_geometry(1.0, x, p, d(T))` after checking sigma and d positive and
-finite; `phase_packing_fraction(T, n, V)` = eta at `rho = n_tot/V`; `molar_density_upper_bound`
-= `CLOSE_PACKING_FRACTION / coefficient`.
-
-### 2.3 Density — `density.cpp`
-
-```cpp
-enum class DensityBranch { Unspecified, Vapor, Liquid };
-struct DensityRoot { double molar_density, pressure_residual, pressure_density_derivative;
-                     std::size_t iterations, stable_root_count; DensityBranch branch; };
-DensityRoot solve_density(const HelmholtzModel&, double T, double P,
-                          const std::vector<double>& x, DensityBranch,
-                          std::optional<double> anchor_density);
+```python
+class Mixture:
+    def __init__(self, parameters: Parameters)          # >= 2 components else ParameterError
+    component_ids, site_ids, parameters
+    def state(self, T: float, *, rho: float | None = None, P: float | None = None,
+              x: Sequence[float], phase: str | None = None, anchor: State | None = None) -> State
+    def reference(self, T: float, P: float, *, solvent_fractions: Sequence[float],
+                  ions: tuple[str, str], stoichiometry: tuple[int, int] = (1, 1)) -> Reference
+    def counters(self) -> _core.SweepCounters
+    def reset_counters(self) -> None
+class Pure:
+    def __init__(self, parameters: Parameters)          # exactly 1 component
+    def state(self, T, *, rho=None, P=None, phase=None) -> State     # x = (1.0,)
 ```
 
-Residual in reduced units, as `DENSITY_ROOT_RESIDUAL` already states:
-`r(rho) = Z(rho) - P/(rho RT)`, converged at `|r| <= DENSITY_ROOT_RESIDUAL`. Each evaluation
-is `evaluate(T, 1/rho, x, PressureSlope)` — four sweeps, never a Hessian.
+Exactly one of `rho`, `P`; `phase` in `{"liquid", "vapor", None}` maps to
+`_core.DensityBranch`; anything else is `ParameterError`. With `P`, `state` calls
+`self._model.state_at_pressure(T, P, x, branch, anchor.molar_density if anchor else None)`
+— that method name must appear in `eos.py`, a mutation targets the stub. SI floats in, SI
+floats out: K, Pa, mol/m³, mole fractions, mol/kg.
 
-1. **Anchor.** If given and in domain, safeguarded Newton on `r(rho)` with `dr/drho` from
-   `dP/drho`. Accept when converged and mechanically stable (`dP/drho > 0`, strict — a
-   constraint, not a tolerance). On leaving the domain, stalling, or `dP/drho <= 0`, fall to 2.
-2. **Cold.** Scan `DENSITY_BRACKET_INTERVALS` (40, exists) points in `log rho` over
-   `[rho_low, rho_high]`, `rho_low` a fraction of the ideal-gas density `P/(RT)`, `rho_high`
-   a fraction of `molar_density_upper_bound` — two **new** policy entries. Each sign change
-   of `r` brackets a root; refine with bisection-safeguarded Newton to
-   `DENSITY_ROOT_RESIDUAL` within `DENSITY_MAX_ITERATIONS` (exists). Keep roots with
-   `dP/drho > 0`.
-3. **Branch.** `Liquid` -> highest-density stable root; `Vapor` -> lowest; `Unspecified` ->
-   the unique stable root, else throw naming the count. When exactly one stable root exists,
-   both `Liquid` and `Vapor` return it — a deliberate change from `main`, which threw; a
-   sweep crossing the critical region must not fail. Record it as a deviation. No root: throw.
+**`reference.py`.** `Reference` holds the model, the call inputs, the resolved
+`ion_indices`, and the native `InfiniteDilutionReference`; exposes `log_fugacity`,
+`molality`, `convergence_error`, `pure_solvent_log_fugacity` as attributes of the native
+object; and
 
-Not written: the 360-interval scan, the 64 x depth-8 envelope, `polished_pressure_density`'s
-`nextafter` walk, the `std::string` branch names, the certified-root-index continuation API.
-Association non-convergence at a scan point is skipped as `main` did; other exceptions propagate.
+```python
+    def activity(self, molality: float) -> Activity:
+        return _core.electrolyte_activity(self._model, self.T, self.P, self.solvent_fractions,
+                                          self.ion_indices, self.stoichiometry, molality, self._native)
+```
 
-### 2.4 Infinite-dilution reference — `infinite_dilution_reference.cpp`
+**`_core.pyi`.** One stub for every name in §2.2, complete enough for `mypy --strict` on
+`src/epcsaft`. It must contain `def state_at_pressure(`.
 
-The ladder `1e-6, 1e-8, 1e-10, 1e-12`, the witness `1e-14`, and the `5e-5` threshold move
-into `numerical_policy.hpp` (category 3, source `electrolyte_reference.hpp` on `main`). At
-each molality: `formula_composition` (EqID `formula_unit_composition`), then a `Liquid`
-`state_at_pressure` **anchored on the previous root** — composition moves by 1e-6 between
-points, so the anchor is nearly exact and each point costs a few four-sweep evaluations.
-`convergence_error` = max over the two ions of `|delta ln phi|` between the last two ladder
-points; above threshold, evaluate the witness once and fail if still above. Pure-solvent
-`ln phi` when there is one solvent. Activity per `reference.py` 426-490:
-`ln gamma_i = ln phi_i(m) - ln phi_i^inf`; `ln gamma_pm^x = sum nu_i ln gamma_i / sum nu_i`;
-`gamma_pm^m = gamma_pm^x / (1 + M_s m sum nu)`; osmotic
-`phi = -[ln x_s + ln phi_s(m) - ln phi_s^pure] / (sum nu * m * M_s)`.
+Not written: `units.py` (deleted), `Parameters.select`, `to_mapping`, `with_values`,
+`ActiveParameter`, `parameter_hash` (Stage 5 is its first consumer), `Pure.saturation`
+(Stage 2), domain validation, `transfer_to`, solvation free energy, `Activity.mole_fractions`,
+any `__eq__`/`__hash__`/fingerprint on `Parameters`.
 
-Not written: the four-fixed-P-states-each-a-scan structure, the neutral-basis rank
-machinery, the request/result/status types.
+## 3. The tolerance: `derived(activity_reproduction_tolerance)`
 
-## 3. Checks — `model_checks.cpp`, meson test `model`
+The 24 rows of `aqueous_alkali_halide_activity` were captured with
+`figiel-2025-reference-electrolytes/2` (`capture2.py`: `pk("figiel-2025-reference-electrolytes")`,
+`solvent_x=(1,0,0)`, `formula_stoichiometry=(1,1)`, `T = 298.15 K`, `P = 1 bar`), so that
+packet, selected as `("water", cation, anion)`, is what the gate evaluates them with. It is
+the published model whose reproduction is a fact about the world in the sense of
+`CANON.md`.
 
-Scaled coordinates: scale `T` by `T`, `V` by `V`, `n_i` by 1, `theta_k` by `|theta_k|`, so
-every Hessian entry is `O(Phi)`; then `close(a,b,tol) := |a-b| <= tol*max(1,|b|)`. FD uses
-relative step 1e-5 (absolute 1e-5 for amounts), centred, on strictly positive compositions.
-Run on all four fixtures unless stated.
+**What the source reports.** Figiel, Yu & Held 2025 (transcription sha256
+`ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae`, re-read for this brief)
+reports **no deviation statistic** for the aqueous MIACs of its Figure 5 — the text says the
+approach describes them "very well" and reaches "quantitative agreement", and cites Hamer–Wu
+1972 as the data. The one number the source publishes for MIAC adequacy is in its supporting
+information, section S2: candidate Born-term approaches were screened against NaBr MIACs in
+water and retained when **AARD < 10 %** (SI transcription sha256
+`85bd39f727158d5a9d6eea6828c1673f73850e783a655b09660cc9b66d84321a`, lines 55–80, as recorded
+in `engine/docs/regression/research/figiel-table-4-5-fitting-method.md`; the SI file itself
+is not present on this machine, so the quotation is taken from that document). Missing fact,
+stated plainly: a per-salt or pooled deviation for LiCl, LiBr, KCl, KBr reported by the
+parameter source does not exist in the paper text.
 
-1. **Tape reproduces the double path.** `evaluate(...).value` equals `n_tot` times the sum
-   of the five physics terms on the double path, to 1e-14. Pins `Q = a_assoc` at `X*`.
-2. **Gradient vs FD**, every coordinate including theta, 1e-6 scaled.
-3. **Hessian equivalence — the check that licenses the 7x.** On the associating binary and
-   the nine-species case with one active parameter (water `dispersion_energy_over_k`): the
-   model's reduced Hessian equals the `(S+1)`-Hessian reference tensor computed in
-   `model_support.hpp` elementwise to **1e-10 scaled**. Write the reference independently of
-   `model/`: independents `z = (T, V, n, theta, X)` (width `w+S`); dependents
-   `G_0 = n_tot*[a_hc + a_disp + a_dh + a_born + a_assoc(X)]` using the **standard**
-   association form straight from `residual_helmholtz` with X on the tape, and `G_a = H_a`
-   from `association_residuals`; `J = Jacobian(z)`; `X_y = -H_X^-1 H_y`; `S+1` calls to
-   `ADFun::Hessian(z, k)`; `hess a[l][r] = d_l^T hess G_0 d_r + sum_a A_X[a] * X_lr[a]` with
-   `d_l = (e_l ; X_y[:,l])` and `X_lr = -H_X^-1 (d_l^T hess G_a d_r)_a`. Also compare its
-   gradient `A_y + A_X X_y` to the model's, 1e-10. This is evidence rather than a
-   restatement because the two sides share only the Stage-1-checked kernels and CppAD: they
-   differ in formulation (standard `a_assoc` with sites as independents and the implicit
-   function theorem, versus potential plus Schur with sites eliminated) and in every line of
-   assembly. Both are exact, so 1e-10 is a real threshold, not FD noise.
-4. **Hessian vs FD of the gradient**, 1e-6 scaled, all fixtures. Guards the failure both
-   exact formulations share: a quantity that varies on the double path recorded as a tape
-   constant.
-5. **Hessian symmetric**, 1e-12 scaled.
-6. **Euler homogeneity** `V Phi_V + sum n_i Phi_{n_i} = Phi`, 1e-12; and from `state`,
-   `sum x_i mu_res,i/RT = a_res + Z - 1`, 1e-12.
-7. **Pressure slope.** `pressure_density_derivative` vs centred FD of `pressure` in rho,
-   1e-6, all fixtures — exercises the 4-sweep path with its Schur correction.
-8. **Permutation.** Relabel the nine-species components, sites, pairs and edges: `a_res`,
-   `P`, `Z` unchanged to 1e-12; `mu_res` permuted accordingly.
-9. **Zero-density limit.** `a_res -> 0`, `Z -> 1` on the neutral binary.
-10. **Parameter derivative.** `dPhi/dtheta` vs FD over a rebuilt model with `theta +- h` (all
-    indices of the family moved together), 1e-6, for a `k_ij` pair on the neutral binary and
-    an association energy edge on the associating binary.
-11. **Density roots against NIST.** Ethane at 200 K and 240 K, `P` = the oracle
-    `saturation_pressure_pa` for that row: `Liquid` and `Vapor` give two distinct roots, each
-    `|P(rho*) - P|/P <= 1e-9` with `dP/drho > 0`, liquid denser, and `1/rho*` within 5% of
-    the row's molar volumes. `Unspecified` throws there. Anchored solves from 1.05x and 0.95x
-    each cold root return it to 1e-10 relative. Ethane at 320 K, 1e6 Pa (supercritical): all
-    three branches return the same single root. Nine-species `Liquid` at 313.15 K, 1e5 Pa
-    converges with `eta < CLOSE_PACKING_FRACTION`.
-12. **Reference: the Debye-Huckel tail.** Aqueous NaCl at 298.15 K, 1e5 Pa, solvent fractions
-    (1,0,0), ions (1,2), stoichiometry (1,1). The recorded `convergence_error` equals
-    `A_gamma (sqrt(m3) - sqrt(m4))` to **1e-3 relative**, where m3, m4 are the last two ladder
-    molalities and `A_gamma = e^2/(8 pi eps0 eps_r k T) * sqrt(2 e^2 N_A rho_w/(eps0 eps_r k T))`
-    with `rho_w` the model's own pure-water liquid density at (T,P) times `M_w`, and `eps_r`
-    the physics `bulk_relative_permittivity` of pure water there. This is the exact `kappa -> 0`
-    limit; every other term is analytic in ion fraction and contributes ~1e-10. On `main`'s
-    oracle the recorded error is 1.0628346e-05 and this formula gives 1.06287e-05 at
-    `rho_w = 997`. Then `electrolyte_activity(m = 1e-8).mean_ionic_log_molality_scale =
-    -A_gamma(sqrt(1e-8) - sqrt(m4))` to 1e-2 relative. Swapping cation and anion order changes
-    `ln gamma_pm` by < 1e-12.
-13. **Helpers.** `packing_fraction_coefficient(T,x)*rho == packing_fraction_from_geometry` and
-    `phase_packing_fraction(T,n,V) == eta(n_tot/V, n/n_tot)`, 1e-14; the constructor throws
-    `std::invalid_argument` on a mismatched array length, an asymmetric `k_ij`, and a
-    `site_component` out of range.
-14. **Cache invariance.** A model that has evaluated point A (NaCl at m = 1e-2), then the pure
-    solvent, then m = 1e-12, then A again, agrees with a fresh model at A to 1e-14 on value,
-    gradient and Hessian. This is the check for the recording-time predicates in §2.1.
+**The constructor.** The gate applies the source's own adequacy criterion, as the same
+statistic over the same kind of scope: for each salt, the average absolute relative deviation
+of `mean_ionic_molality_scale` from `measured_mean_ionic_activity_coefficient` over that
+salt's six rows must not exceed the source's criterion.
 
-## 4. Performance — `model_floor.cpp`, meson test `model_floor`, suite `floor`
+    aard(salt) = (1/6) * sum_rows |gamma_calc / gamma_measured - 1|  <=  SOURCE_ADEQUACY_AARD = 0.10
 
-Reported, never pass/fail. `env: {'OMP_NUM_THREADS': '1'}`, timeout 600. Median of 20 after
-3 warm-ups, `std::chrono::steady_clock`. One table row per case with `wall_us`, `sweeps`,
-`hessian_calls`, `recordings`, and where relevant `density_iterations`,
-`association_iterations`. Print `__VERSION__`, the `/proc/cpuinfo` model name, `OMP_NUM_THREADS`.
+There is no factor: the source's statistic is an average, the gate's is the same average,
+and the source applied it per salt (NaBr). The number is defined exactly once, as data with
+its citation and hashes, in `engine/tests/eos/test_activity.py`; the check reads it from
+there. Rule 6 governs `engine/native/` and this is a test constant in the style of Stage 4's
+checks; no native source carries it.
+
+**Why the average and not the maximum.** The superseded engine, evaluated on these 24 rows
+with this packet (`analyses/reproduction/2025-figiel/results/data/figiel-2025-miac.csv`,
+evidence only, never a gate value), gives per-salt AARD 3.36 % (LiCl), 4.13 % (LiBr),
+3.34 % (KCl), 2.44 % (KBr) — and a single-row maximum of 10.11 % (LiBr at 2 mol/kg). A
+per-row gate at the source's number would fail the parameter set itself on that row; the
+average is the statistic the source used and the one the parameter set meets with at least
+2.4× headroom.
+
+**The floor argument.** Every solve under `Mixture.reference` carries its own tolerance, and
+the gate sits above all of them:
+
+| floor | value | effect on gamma |
+|---|---|---|
+| reference limit truncation at the last ladder point `m4 = 1e-12` | `A_gamma * sqrt(m4)` ≈ 1.17 × 1e-6 | 1.2e-6 relative |
+| accepted reference convergence `REFERENCE_CONVERGENCE_TOLERANCE` | 5e-5 in ln phi | ≤ 5e-5 relative |
+| density root `DENSITY_ROOT_RESIDUAL` (reduced pressure) | 1e-12 | negligible |
+| association residual `ASSOCIATION_RESIDUAL` | 2e-13 | negligible |
+| Hamer–Wu tabulation, three decimals | ±0.0005 absolute | ≤ 8.7e-4 relative at gamma = 0.573 |
+
+The numerical floor is ≤ 5e-5 relative; the data floor 8.7e-4. The gate at 0.10 is 2,000×
+the first and 115× the second: it tests the equations and the parameter set, not the solves
+under them. The check also asserts every gamma finite and positive — a solve that fails
+raises `EosError` before any statistic is formed.
+
+## 4. Checks
+
+### 4.1 `tests/eos/test_activity.py` — the oracle gate
+
+Load `engine/tests/oracle/oracle.json`; group `aqueous_alkali_halide_activity` by `salt`;
+for each salt build `Mixture(Parameters.from_json(<figiel packet>, components=("water",
+cation, anion)))`, take `T` and `P` from the rows (assert all six agree), call
+`reference(T, P, solvent_fractions=(1.0, 0.0, 0.0), ions=(cation, anion),
+stoichiometry=(1, 1))`, then `reference.activity(row["molality_mol_kg"]).mean_ionic_molality_scale`
+per row. Assert finite and positive; assert `aard(salt) <= SOURCE_ADEQUACY_AARD` with the
+per-row deviations in the failure message. No literal other than `SOURCE_ADEQUACY_AARD`
+and its citation comment. Print the 24 deviations under `-s` so acceptance can record them.
+
+### 4.2 `tests/eos/test_state.py` — the mapping layer
+
+1. **Relabelling is a symmetry through the mapping.** The MEA bundle
+   (`mea-co2-h2o-nine-species-estimation/2`) loaded in the Stage 4 fixture order
+   `[water, monoethanolamine, carbon-dioxide, protonated-monoethanolamine, carbamate-anion,
+   bicarbonate-anion, carbonate-anion, hydronium-cation, hydroxide-anion]` and in the
+   reversed order; `state(313.15, rho=3.0e4, x=<floor composition>)` with `x` permuted to
+   match: `pressure`, `residual_helmholtz`, `compressibility_factor`, `bulk_relative_permittivity`
+   equal to 1e-12 relative; `residual_chemical_potential_over_rt` and
+   `log_fugacity_coefficient` equal after permutation to 1e-12. Floor composition
+   `(0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)`.
+2. **A state satisfies its own identities.** On the same state: `sum(x_i * mu_i) ==
+   residual_helmholtz + compressibility_factor - 1` to 1e-12; `pressure ==
+   compressibility_factor * molar_density * R * T` to 1e-12 relative with `R = 8.314462618`
+   written in the test with its source (CODATA 2018, exact); `state(313.15, P=1e5, x,
+   phase="liquid").pressure == 1e5` to **1e-9** relative — `DENSITY_ROOT_RESIDUAL` is 1e-12 in
+   reduced units, and a gate written at the floor would test the floor; then the anchored solve
+   `state(313.15, P=1e5, x, phase="liquid", anchor=<that state>)` returns the same
+   `molar_density` to 1e-10.
+3. **Pure is the one-component mixture.** `Pure(Parameters.from_json(<gross-2001-methane-ethane>,
+   components=("ethane",))).state(300.0, rho=1.0e4).pressure` equals
+   `Mixture(Parameters.from_json(<same>, components=("methane", "ethane"))).state(300.0,
+   rho=1.0e4, x=(0.0, 1.0)).pressure` to 1e-12 relative.
+4. **Fails closed, by name.** (a) `Parameters.from_json(<figiel>, components=("methanol",
+   "ethanol"))` raises `ParameterError` whose message contains `pair/ethanol/methanol/k_ij` —
+   the source does not report that cell and the packet has no record for it; (b) the
+   methane–ethane mapping with ethane's `fixed.molar_mass.unit` rewritten to `"gram"` raises
+   `ParameterError` naming `component/ethane/molar_mass` and `gram`; (c)
+   `Mixture.state(..., P=1e5, x=..., phase="gas")` raises `ParameterError`; (d) the
+   methane–ethane mapping with ethane's `fixed.molar_mass` deleted raises `ParameterError`
+   naming `component/ethane/molar_mass` — a neutral must carry its mass; the oracle gate is
+   the evidence that a charged component need not.
+
+`tests/packets.py` (≤ 40 lines): `PACKETS = Path(__file__).resolve().parents[2] / "data" /
+"packets"`, `ORACLE = Path(__file__).resolve().parent / "oracle" / "oracle.json"`, and
+`def parameters_json(packet_id: str, version: int) -> Path`. `tests/eos/__init__.py` is empty
+so that `tests.packets` imports with `engine/` as the root.
+
+## 5. Performance — `tests/oracle/measure_floor.py`, rewritten
+
+The script in the tree opens the superseded API (`_core._instrumentation()`, Pint, old
+fixture paths) and cannot run; rewrite it in place against §2.3. Reported, never pass/fail.
+Assert `OMP_NUM_THREADS == "1"` at import. Median of 20 after 3 warm-ups,
+`time.perf_counter_ns`. One row per case: `wall_us`, and the per-call delta of the four
+counters. Print `git rev-parse HEAD`, the `/proc/cpuinfo` model name, `sys.version`,
+`OMP_NUM_THREADS`; write the table as JSON to `argv[1]` if given. Compositions are passed
+literally, never normalised; the nine-species tuple must appear in the script as
+`0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0` — a mutation targets it.
 
 | case | what | today | floor |
 |---|---|---|---|
-| A | nine-species, 313.15 K, rho = 3.0e4, one active parameter (water `dispersion_energy_over_k`), `evaluate(Hessian)` | 5.25 ms, 245 sweeps, 7 Hessians | <= 1.0 ms, <= 23 + 2P sweeps, 1 Hessian |
-| B | same point, the (S+1) reference tensor from `model_support.hpp` | — | the measured multiplier |
-| C | associating binary, 376.88 K, rho = 1e4, x = (0.1385, 0.8615), `state` | 126 assoc. iterations | <= 5 |
-| D | nine-species `Liquid` at 313.15 K, 1e5 Pa, cold and anchored | 382 ms | <= 5 ms |
-| E | neutral binary `Vapor` at 300 K, 1e5 Pa, cold | 13.4 ms | <= 0.5 ms |
-| F | `infinite_dilution_reference`, aqueous NaCl, 298.15 K, 1e5 Pa | 108 ms | 2-5 ms |
+| A | methane–ethane (`gross-2001-methane-ethane/2`, order `("methane", "ethane")`), 300 K, rho = 1.0e4, x = (0.4, 0.6), `state` | 458 µs | ≤ 110 µs |
+| B | nine species (MEA bundle, fixture order), 313.15 K, rho = 3.0e4, floor composition, `state` | 5,250 µs | ≤ native case A wall + 50 µs (449 µs on this machine today) |
+| C | nine species, 313.15 K, 1e5 Pa, `phase="liquid"`, cold | 382 ms | ≤ native case D wall + 50 µs (7,298 µs today) |
+| D | case C anchored on its own result | — | ≤ native case D anchored + 50 µs |
+| E | `reference` for water / sodium-cation / chloride-anion from the figiel packet, 298.15 K, 1e5 Pa | 108 ms | ≤ native case F wall + 50 µs (5,687 µs today) |
+| F | one `activity(1.0)` on E's reference | — | reported |
 
-A miss is a conversation, not a failure. Report numbers exactly as measured.
+TRANSFER's "≤ 5 ms" for case C is below the native harness's own measured number, so the
+Python figure is judged against the native harness run in the same session, not against a
+fixed literal: Python cannot beat the native it wraps, and the difference is the marshalling
+this stage owns. `recordings` per call must be 0 in steady state for A and B; report it.
 
-## 5. Fixtures — `model_support.hpp`
+## 6. Build, install, run
 
-Functions returning `epcsaft::Parameters`, fully populated (see `physics_checks.cpp::neutral_binary`
-for required fields). Transcribed from the sources in the JSON; confirm, do not re-derive.
+Before anything else, in the worktree root:
 
-**Ethane**: m = 1.6069, sigma = 3.5206, eps/k = 191.42, M = 0.03007. **Methane**: 1.0,
-3.7039, 150.03, 0.016043. Neutral binary = [methane, ethane], k_ij = 0, FD composition (0.4, 0.6).
+```bash
+test "$(command -v python3)" = "$PWD/.venv/bin/python3"      # PATH leads with .venv/bin
+touch "$HOME/.cache/probe" && rm "$HOME/.cache/probe"        # --add-dir "$HOME/.cache" is in effect
+.venv/bin/meson configure engine/build/greenfield -Dprefix="$PWD/.venv"
+```
 
-**Associating binary** [solute, solvent]: solute m = 4.5354, sigma = 2.6019, eps/k = 204.0438,
-M = 0.06108; solvent 2.1945, 2.229, 141.66, 0.01801528; k_ij = -0.052. Sites
-[solute a (nu=2), solute b (1), solvent a (2), solvent b (2)]; active symmetric edges (energy K,
-volume): solute a-solute b (2383.4744, 0.118488); solute a-solvent b (2093.8222,
-0.1540467874409226); solute b-solvent a the same; solvent a-solvent b (1804.17, 0.2039). No
-electrolyte, no permittivity. Composition (0.1385, 0.8615).
+The first is the regeneration trap: any edit to `meson.build` makes Meson re-resolve
+`python3`, and `/usr/bin/python3` has no pybind11. The third routes `meson install` into
+`.venv/lib/python3.13/site-packages/epcsaft/` (`python.install_env` stays `prefix`; the
+`venv` setting needs `VIRTUAL_ENV` at every regeneration and is not used). `meson install`
+rebuilds before it copies, so every Python gate is
+`.venv/bin/meson install -C engine/build/greenfield --quiet && <python command>`; a stale
+installed copy is the failure mode this avoids. Never `pip install`, never `PYTHONPATH`.
 
-**Aqueous NaCl** [water, sodium-cation, chloride-anion]: water m = 1.2047, eps/k = 353.95,
-M = 0.0180153, sigma(T) = 2.7927 + 10.11*exp(-0.01775 T) - 1.417*exp(-0.01146 T)
-(`sigma_constant` 2.7927, two sigma_term entries on component 0), `relative_permittivity`
-78.09 constant, solvation 1.5, charge 0, sites [a (1), b (1)] with edge (2425.7, 0.04509).
-Na+: z = +1, m = 1, sigma = 2.8232, eps/k = 230.0, packing = DH diameter 2.484416, born 3.445,
-solvation 1.0, M = 0.02298977. Cl-: z = -1, m = 1, sigma = 2.756, eps/k = 170.0, packing = DH
-2.42528, born 4.1, solvation 1.0, M = 0.0354527. k_ij: water-Na+ -0.3, water-Cl- -0.3,
-Na+-Cl- 0.8. `permittivity_form = IonSuppression` with `ion_suppression_coefficient` =
-(0, 7.01, 7.01); `electrolyte_form = DebyeHuckelBorn`, `ionic_region_relative_permittivity` = 8.0,
-`born_c_shell = born_c_dielectric = 0`. FD composition (0.98, 0.01, 0.01).
+`meson.build`: add `'native/model/parameter_builder.cpp'` to `model_sources`; replace the
+`_core` extension's `files(),` with `files('native/bindings/module.cpp',
+'native/bindings/eos_bindings.cpp'),`. Nothing else.
 
-**Nine-species MEA**, order [water, monoethanolamine, carbon-dioxide, protonated-monoethanolamine,
-carbamate-anion, bicarbonate-anion, carbonate-anion, hydronium-cation, hydroxide-anion],
-charges (0,0,0,+1,-1,-1,-2,+1,-1):
+`model_support.hpp`: refresh `nine_species()` to the living bundle, four edits —
+`dispersion_energy_over_k[2]` `169.21` → `173.44025`; `relative_permittivity[2]` `1.4122` →
+`0` (revision 2 has no permittivity record for carbon dioxide; it is no longer a dielectric
+solvent in the mixing rule); `k_ij[2 * 9 + 0] = k_ij[0 * 9 + 2] = 0.013262879176919628`;
+`ion_suppression_coefficient` all zero (`solvent-only`), and the fixture carries the comment `// revision 2 declares solvent-only; the physics layer spells that IonSuppression with alpha = 0` on that line. `born_c_shell = born_c_dielectric =
+0` already matches revision 2. Then `meson test physics model` must still pass — every Stage
+2 check is parameter-independent.
 
-| i | component | m | sigma | eps/k | M | packing = DH d | born d | alpha_i | solvation |
-|---|---|---|---|---|---|---|---|---|---|
-| 0 | water | 1.2047 | sigma(T) as NaCl | 353.95 | 0.01801528 | — | — | 0 | 1.5 |
-| 1 | monoethanolamine | 3.0353 | 3.0435 | 277.174 | 0.06108 | — | — | 0 | 1.0 |
-| 2 | carbon-dioxide | 2.079 | 2.7852 | 169.21 | 0.04401 | — | — | 0 | 1.0 |
-| 3 | protonated-MEA | 1.0 | 3.48508556586 | 232.687201645 | 0.06209 | 3.0668752979568 | 3.53322927146 | 2.6 | 1.0 |
-| 4 | carbamate | 1.0 | 3.53543525721 | 453.265244384 | 0.10408 | 3.1111830263448 | 3.54107030822 | 7.01 | 1.0 |
-| 5 | bicarbonate | 1.0 | 2.9296 | 70.0 | 0.0610168 | 2.5780480000000003 | 3.0 | 7.89 | 1.0 |
-| 6 | carbonate | 1.0 | 2.4422 | 249.26 | 0.06001 | 2.149136 | 3.0 | 7.89 | 1.0 |
-| 7 | hydronium | 1.0 | 3.4654 | 500.0 | 0.01902 | 3.049552 | 1.218 | 9.55 | 1.0 |
-| 8 | hydroxide | 1.0 | 2.0177 | 650.0 | 0.01701 | 1.775576 | 3.08107689400404 | 13.96 | 1.0 |
-
-Permittivity: water `78.41043478578715 - 0.36133766233691506*(T - 298.15) +
-0.00076555618295*(T - 298.15)^2` (`relative_permittivity[0]` = 78.41043478578715,
-`permittivity_reference_temperature_k[0]` = 298.15, two terms of power 1 and 2 on component 0);
-MEA 32.0; CO2 1.4122; ions 0. `permittivity_form = IonSuppression`,
-`electrolyte_form = DebyeHuckelBorn`, `ionic_region_relative_permittivity` = 8.0,
-`born_c_shell = born_c_dielectric = 0`. k_ij (symmetric, else 0): MEA-water -0.07352749874985018;
-carbamate-protonated-MEA -0.00201813457644; carbonate-water -0.25; hydronium-water +0.25;
-hydroxide-water -0.25. l_ij = 0. Sites, all nu = 1: [MEA a, MEA b, water a, water b, CO2 a,
-CO2 b]. Active symmetric edges: MEA a-MEA b (2586.3, 0.03747); water a-water b (2425.7, 0.04509);
-CO2 a-water b (1212.85, 0.04509); CO2 b-water a (1212.85, 0.04509); MEA a-water b and
-MEA b-water a by arithmetic energy and geometric volume: (2506.0, 0.0411037990944876). Floor
-composition (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0). FD/permutation composition:
-replace the zeros by 1e-3 each, add 3e-3 to hydronium, renormalise.
-
-## 6. Build
-
-Add the four `.cpp` to `model_sources`. Add two executables in the style of `physics_checks`,
-each `link_with: epcsaft_native`, `dependencies: [eigen_dep, cppad_headers_dep]`,
-`include_directories: native_inc`; do **not** list `cppad_temp_file` again. `test('model',
-model_checks)`; `test('model_floor', model_floor, suite: 'floor', env: {'OMP_NUM_THREADS': '1'},
-timeout: 600)`. Then `meson compile`, `meson test physics model`, `meson test --suite floor`,
-`python3 tools/check-engine-architecture.py` — all clean, worktree free of stray files.
+Then: `meson compile`, `meson test physics model`, `meson install --quiet`, `python -m pytest
+-q engine/tests/eos`, `(cd engine && ../.venv/bin/mypy)`, the no-arithmetic grep,
+`python3 tools/check-engine-architecture.py`, `OMP_NUM_THREADS=1 python
+engine/tests/oracle/measure_floor.py` — all clean, worktree free of stray files
+(`__pycache__` under `src/` and `tests/` is ignored; nothing else may appear in `git status`).
 
 ## 7. What to report
 
-A JSON object: `files[]` {path, lines from `wc -l`}; `gates[]` {id, command, passed} for every
-gate in the JSON, run by you; `floor` — the §4 table verbatim plus the environment lines;
-`deviations[]` — every departure from this brief and why; `policy_entries_added[]`;
-`stopped_because` in {none, budget_ceiling, gate_impossible, source_contradicted,
-environment_broken} with `detail`. Do not run the mutations; acceptance runs them. Do not
-claim a number you did not measure.
-
-Deferred deliberately, do not write: `parameter_hash` (first consumer is Stage 4), a
-tape-side ideal-gas Helmholtz (Stage 3), component and site names (Stage 4 maps names; the
-model works on indices).
+A JSON object: `files[]` {path, lines from `wc -l`, or `deleted`}; `gates[]` {id, command,
+passed} for every gate in the JSON, run by you; `activity_rows[]` — the 24 `(salt, molality,
+measured, calculated, relative_deviation)` tuples and the four per-salt AARDs; `floor` — the
+§5 table verbatim plus the environment lines, and the native `meson test --suite floor`
+lines from the same session for the comparison; `deviations[]` — every departure from this
+brief and why; `policy_entries_added[]` (expected empty); `stopped_because` in {none,
+budget_ceiling, gate_impossible, source_contradicted, environment_broken} with `detail`. Do
+not run the mutations; acceptance runs them. Do not claim a number you did not measure.

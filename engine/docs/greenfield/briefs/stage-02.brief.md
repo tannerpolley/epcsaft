@@ -1,4 +1,4 @@
-# Stage 2 — the core
+# Stage 2 — Core
 
 You are implementing Stage 2 of a greenfield rebuild in this worktree (branch `stage-05`,
 cut from `greenfield@21b8695`). You have no one to ask. Read, in order, before writing
