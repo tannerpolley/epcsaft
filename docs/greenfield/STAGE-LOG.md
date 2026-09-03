@@ -425,3 +425,22 @@ doubled triage sentences in `engine/CONTEXT.md`, and the root `CONTEXT.md` still
 deleted Hard-Cutover Plan as the current program. The CSE test-gate hooks were not
 installed: they block a session from stopping until its test fingerprint is approved, and
 every stage worker runs `codex exec` unattended.
+
+## Rule 13 loses its allowlist, and the wheel fingerprint was blind to `native/`, 2026-09-03
+
+**Rule 13.** The owner ruled for `SURFACE.md` §4.2: every function bound in
+`native/bindings/` opens a `core::Scope`, with no allowlist. `NON_SCOPED_BOUND_FUNCTIONS`
+is an empty set; `build_parameters`, `counters` and `reset_counters` open a span. Shown red
+with the allowlist emptied and the spans absent (three findings), green with them present,
+and the spans are visible from Python: a captured `Parameters.from_json` has one root named
+`build_parameters`. The coordinator wrote those three lines and one include on the owner's
+direct instruction; it is the smallest engine edit made outside a stage.
+
+**The fingerprint.** Proving the spans from Python failed at first: the installed wheel had
+no `build_parameters` root. `tools/ensure-engine-wheel.sh` fingerprinted `engine/cpp` and
+`engine/src`, and `engine/cpp` was deleted at Stage 1, so an edit under `engine/native/`
+alone never changed the fingerprint and the cached wheel was reinstalled. Every stage so far
+also edited `meson.build` or `src/`, which are in the fingerprint, so stage acceptance rebuilt;
+a native-only edit did not. Now `engine/native` is hashed. `check-affected.sh` and
+`check-analysis-layout.py` carried the same dead path and follow. This is the one-directional
+shape again, in the build: a cache key that names a directory nothing checks exists.

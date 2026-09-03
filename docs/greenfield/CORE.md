@@ -356,11 +356,12 @@ public:
 }
 ```
 
-Every computational function bound in `native/bindings/` opens a `core::Scope` at entry, so
+Every function bound in `native/bindings/` opens a `core::Scope` at entry, so
 a captured binding call has exactly one root even when it calls another bound function.
 `rule_bound_functions_open_a_scope` resolves those bound symbols to their definitions and
-checks this rule; constructors, property accessors, and counter plumbing are not computation
-entry points.
+checks this rule with no allowlist. Accessors that reach no solver cannot produce a second
+root, and open a span anyway: an exemption by name is a blind spot a solver could be named
+into. Owner ruling, 2026-09-03; `SURFACE.md` §4.2 argued for it.
 
 **Turning it on.** Natively `core::Capture capture;` around the call; from Python
 
@@ -535,7 +536,7 @@ request to the coordinator.
 | 10 | a `core/` file has no `"..."` include outside `core/` and no numerical-library include (`scalar.hpp` may include `<cppad`); `Capture` and `active(` appear only under `core/` and `bindings/` | the layer reaching up; an engine layer reading the trace |
 | 11 | `Unspecified` does not appear in `core/parameters.hpp`; every field of `Parameters` whose type is an `enum class` declared in that file is `Declared<...>` | a hole inside an enum; a bare selector |
 | 12 | `ast` over `src/epcsaft/*.py`: every function-signature default is the constant `None` | a physical default on the surface |
-| 13 | every computational function pointer bound in `native/bindings/` resolves to a definition with `core::Scope` | a binding entry without a trace root |
+| 13 | every function bound in `native/bindings/` resolves to a definition with `core::Scope`, no allowlist | a binding entry without a trace root |
 | 14 | comment-stripped native assignments to residual `.stop`/`->stop` use `classify` | a solver naming `converged`, `converged_to_floor`, `stalled`, or `budget_exhausted` |
 
 ### 8.4 Reported, never asserted (`model_floor.cpp`)

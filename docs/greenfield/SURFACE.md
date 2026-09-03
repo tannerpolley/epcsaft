@@ -503,14 +503,10 @@ the last one.
   and in `electrolyte_activity`, and `rule_bound_functions_open_a_scope` as rule 13 with
   `rule_no_hand_named_residual_stop` as rule 14. §2.3 and §4.2 now describe the tree, not
   only the design. *Coordinator, on landing.*
-- **The accessor question §8 asks was answered by the repair.** Rule 13 resolves bound
-  symbols to their definitions and exempts constructors, property accessors and counter
-  plumbing — the exception the recommendation argued against. It is written that way in
-  `CORE.md` §6.1, and it is the one point where the repair took the opposite position from
-  this document. Worth a ruling.
-- **Accessors under the Scope rule.** Whether `build_parameters`, `counters` and
-  `reset_counters` must open a span is decided by the checker predicate the repair writes
-  (§4.2). Recommendation: no exception; the cost is one thread-local read.
+- **Accessors under the Scope rule: ruled 2026-09-03, no exception.** The repair had
+  written rule 13 with an allowlist of three names; the owner removed it. `build_parameters`,
+  `counters` and `reset_counters` open a span, the allowlist is an empty set, and `CORE.md`
+  §6.1 now says the same as §4.2 here.
 - **Export count.** Thirteen names against `TRANSFER.md`'s "eleven"; the five diagnostics
   names were not in that count (§5.2). A ruling, not a change.
 - **Molar mass as a species property.** Referred to the planner by the Stage 3 first attempt
