@@ -1,5 +1,15 @@
 # Performance floor, derived and measured
 
+> **The scripts that produced this document are deleted, 2026-09-02.**
+> `profile_entry_points.py` and `capture2.py` both import `epcsaft.equilibrium`,
+> `epcsaft.regression`, `unit_registry` and `_core._instrumentation`, none of which exist in
+> this tree, and `profile_entry_points.py` hard-coded an absolute path into the superseded
+> checkout. They ran against `perf/instrumentation`, a branch of the tree being replaced.
+> **The measurements below are facts and stay**; the scripts are recoverable from history,
+> and `measure_floor.py` — rewritten at Stage 4 against the current surface — is the one that
+> still runs. A canon file that cannot run is a rule that has quietly stopped checking.
+
+
 Measured 2026-09-02 on branch `perf/instrumentation` (`f0abace`, `main @9eccbfd` plus counters only), wheel `287ad813144acc856381d64ca43177e061531f28cec605b7a036a3943b34f57b`, `OMP_NUM_THREADS=1`, gcc 13.3.0, AMD Ryzen 5 5500, Python 3.13, `ldd` in `floor-measurements.json`. Script: `measure_floor.py`. Counters: tape recordings and recording time, tape operations (`ADFun::size_op`), Jacobian/Hessian/Forward calls, sweep time, association solves and iterations, exposed as `_core._instrumentation()`.
 
 ## 0. The premise, tested first
