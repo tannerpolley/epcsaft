@@ -623,7 +623,7 @@ them are already in `native/` (**measured**) and the script cannot currently rea
    path, no policy entry — and `infinite_dilution_reference.cpp` is a sequence of
    single-phase states, correctly placed. Two planned items were residue and
    `target-layout.md` is revised: the `Saturation` `py::class_` leaves `eos_bindings.cpp`
-   (the binding is `solve_phase_boundary`'s, in `equilibrium_bindings.cpp`), and `eos.py`'s
+   (the call is `solve_equilibrium`, bound in `equilibrium_bindings.cpp`), and `eos.py`'s
    `Pure.saturation` is a thin call onto that binding, kept where users reach for it,
    because the Python surface is organised by capability and was never meant to mirror
    the layers.
@@ -760,7 +760,7 @@ document's own first draft.
     singular at every point, and compile rejects them by name.
 21. No identifier under `native/` is named after saturation: `solve_saturation` in
     `phase_boundary.cpp` fails rule 7 (`saturation` is a case token). The call is
-    `solve_phase_boundary` on a one-component problem; only Python's `Pure.saturation`
+    `solve_equilibrium` on a one-component problem; only Python's `Pure.saturation`
     carries the word.
 22. The assembly's Hessian blocks scale by `N_p` in the `(N_p, x_p, v_p)` chart (§2.2); a
     driver in extensive coordinates sees `1/N_p`, and says which chart it uses.
@@ -770,3 +770,80 @@ document's own first draft.
     needs the solvent set, which only the `Problem` can supply.
 25. A boundary seed with no coexisting density roots, and any Newton iterate that leaves
     the domain, is the `left_domain` stop; the Newton driver has no bounds of its own.
+
+## 11. The front surface: how a caller states the levers
+
+The levers are the activation of §2: per phase an identity, a support and an amount
+status; `T` and `P` each fixed or free; a feed in a stated basis; reactions; topology
+declared or omitted. The question is how a Python call carries them to `Problem`.
+
+**Decision: typed keyword arguments on one `Problem` object; nothing assumed; a mapping
+form that is the same object serialised; convenience constructors that build a `Problem`
+and show it.** Rejected: a free-form dictionary as the primary intake, a configuration
+file at the call site, and defaults that pick a problem kind.
+
+Why each:
+
+- **Typed keywords, not a dictionary.** A dictionary is a vocabulary, and the loader that
+  reads it branches on keys — the old tree's `_grepe_io.py` was 956 lines of exactly that,
+  and its "request families" were the routes. A typed `Problem(phases=…, T=…, P=…,
+  feed=…, reactions=…)` has one shape; Python does no validation beyond types and hands
+  it to the native constructor, where compile rejects by name (§3.2). One validation, in
+  one language, which is `TRANSFER.md`'s rule for parameters applied to problems.
+- **Nothing assumed.** `T`, `P`, `phases` and `feed` have no defaults: a missing lever is
+  rejected naming the lever, the same way an over-specified one is. The one default is the
+  amount status, which is *free*, because the flash is the parent problem and every other
+  cell is a pin on it. A support defaults to every species. Discovery is stated, not
+  inferred from silence: `phases=Discover()`; an empty phase list is an error.
+- **Free is a value, and it may carry a seed.** `P=Free()` or `P=Free(guess=2.0e5)`;
+  `T=313.15` is fixed. The seed is a start, never a lever: it changes no row.
+- **A feed names its basis by type.** `MoleFractions({...})`, `Amounts({...})`,
+  `MassFractions({...})`, `Molalities({...}, solvent=[...])`. Python carries the numbers
+  and the basis; the conversion is native (§7.4), and C4 is what makes the four
+  indistinguishable to the rows.
+- **The mapping form is the same object.** `problem_from_mapping` reads a JSON or YAML
+  document whose keys are the constructor's keywords and nothing else, for campaigns and
+  for the oracle rows. It adds no vocabulary; a key that is not a keyword is rejected.
+- **Convenience constructors build a `Problem` and are not routes.** `bubble_point(
+  liquid=..., T=...)` returns the `Problem` with the vapour pinned at zero and `P` free;
+  `Pure.saturation(T)` returns the one-component form of the same. They live in Python,
+  are three lines each, and every one of them is checked to give the same result as the
+  explicit `Problem` it builds (one Python test per constructor, at the stage that lands
+  it). A caller can always write the explicit form; the constructor only saves typing.
+- **One native entry point.** `solve_equilibrium(model, problem)` — the name the brief
+  fixed — compiles, reads `k`, and runs the
+  Ipopt driver for `k = 0` or the boundary Newton for `k ≥ 1` (§2.4). The driver is a
+  compile decision, not a caller's; a second public entry named for the boundary
+  (`solve_phase_boundary`) would be the taxonomy on the surface, so it is not bound and
+  `phase_boundary.cpp` keeps its Newton as an internal function. `find_phases` stays exposed for a caller who wants the discovery output alone.
+- **The `Problem` shows its activation.** `problem.levers()` prints the phases with their
+  statuses, which intensives are free, `k`, `f`, the reaction rank and the charge-row
+  count, before any solve — the compile step's view, readable from Python, so that "what
+  did I just ask for" has an answer that is not the solver's.
+
+The MEA bubble point, stated in full:
+
+```python
+from epcsaft.equilibrium import Problem, Phase, Free, Pinned, Molalities, solve_equilibrium
+
+problem = Problem(
+    phases=[Phase("L"), Phase("V", support=["water", "CO2"], amount=Pinned(0.0))],
+    T=313.15,
+    P=Free(guess=2.0e5),
+    feed=Molalities({"MEA": 5.0, "CO2": 2.0}, solvent=["water"]),
+    reactions=bundle.reactions,
+)
+problem.levers()   # L free · V pinned 0 · T fixed · P free · k = 1, f = 1 · rank B = 7 · charge rows 0
+result = solve_equilibrium(model, problem)
+```
+
+and pure saturation, which is the same call with one component:
+
+```python
+problem = Problem(phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
+                  T=280.0, P=Free(), feed=Amounts({"ethane": 1.0}))
+```
+
+`Pure.saturation(280.0)` builds exactly that and nothing else. What this rules out is any
+method on the EOS surface that solves coexistence without a `Problem` passing through
+compile; the one-line test per constructor is what keeps it ruled out.

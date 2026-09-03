@@ -7,9 +7,9 @@ Consequences, stated once:
 - `_native/` dies as a name and as a location. All C++ moves under one root, `engine/native/`, outside `src/epcsaft/`. `meson.build` loses `exclude_directories: ['_native']`; `install_subdir('src/epcsaft')` ships only Python; the wheel contents are unchanged (`epcsaft/*.py`, `epcsaft/equilibrium/*.py`, `epcsaft/_core.so`).
 - One static library, `epcsaft_native`, from every `native/**/*.cpp` except `bindings/`; one extension, `_core`, from `native/bindings/*.cpp`, linked against it. The three-archive split and its link-order rule go.
 - Bindings live in one directory, `native/bindings/`, not beside the code they bind: they are the only files permitted to include pybind11, and one directory makes that a path rule the checker can test. The earlier proposal of `equilibrium_bindings.cpp` beside `module.cpp` in two places was two answers; this is one.
-- Saturation is not a file and not an identifier (`saturation` is a rule-7 case token). Pure saturation is the one-component, two-phase call of `solve_phase_boundary` (`SPECIFICATION-SPACE.md` §2.3: the `k = f = 1` cell), so it lives in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`; `Pure.saturation` in Python calls that binding. `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
+- Saturation is not a file and not an identifier (`saturation` is a rule-7 case token). Pure saturation is the one-component `k = f = 1` cell of the one row system (`SPECIFICATION-SPACE.md` §2.3), solved by the boundary Newton in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`. The public call is `solve_equilibrium` on that `Problem`; `Pure.saturation` in Python builds the `Problem` and calls it (§11). `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
 - Permitted include direction: `physics` ← `model` ← `equilibrium` ← `regression` ← `bindings`, downward only (`regression` may include `model` and `equilibrium`; `bindings` may include anything; nothing includes `bindings`). Python includes nothing; it imports `_core`.
-- Regression rule, by symbol rather than by module: `regression/` may include `equilibrium/problem.hpp` and call `solve_equilibrium` and `solve_phase_boundary` on a problem with declared phases; it may not include `phase_stability.hpp`, call `find_phases`, or construct a problem with phases omitted. This replaces today's module-level ban (`_regression_discovery_family` in the checker; `regression_core: []` in `ARCHITECTURE.yaml`), which the layout contradicted. The reconciliation, the move, the single archive, and the gate routing are owned by #195, sequenced before #187.
+- Regression rule, by symbol rather than by module: `regression/` may include `equilibrium/problem.hpp` and call `solve_equilibrium` on a problem with declared phases; it may not include `phase_stability.hpp`, call `find_phases`, or construct a problem with phases omitted. This replaces today's module-level ban (`_regression_discovery_family` in the checker; `regression_core: []` in `ARCHITECTURE.yaml`), which the layout contradicted. The reconciliation, the move, the single archive, and the gate routing are owned by #195, sequenced before #187.
 
 **What the checker validates after the change** (`tools/check-engine-architecture.py`, replacing the link-order and three-archive rules): exactly one static archive and one extension in the Meson products; `nm` on the archive shows no `PyInit`/pybind11 symbols; every `#include "..."` in `native/<layer>/` resolves to the same or a lower layer (a 40-line scan over the include lines); no `constexpr` name defined in two translation units and no category-1 constant outside `physics/physical_constants.hpp` (#186); `ARCHITECTURE.yaml` `native_core.static_libraries` becomes one entry and `permitted_internal_links` becomes the layer order above.
 
@@ -37,7 +37,7 @@ engine/
       request_compile.cpp                       600   specification → active rows and their assembly F, F_y; feed-basis conversion; count and rank check. Starts belong to the drivers
       gibbs_minimizer.hpp                       150
       gibbs_minimizer.cpp                      1200   GibbsMinimizer (Ipopt), residuals, reduced-Hessian check
-      phase_boundary.cpp                        300   solve_phase_boundary: T or P unknown; one-component case is saturation
+      phase_boundary.cpp                        300   the boundary Newton (internal, k ≥ 1): T or P unknown; the one-component case is saturation
       implicit_sensitivity.cpp                  250   KKT system, rank, condition, output rows
       phase_stability.hpp                       150
       phase_stability.cpp                      1400   find_phases: electroneutral chart, TPD search, dual bound loop
@@ -49,19 +49,19 @@ engine/
     bindings/                                  1100   the only pybind11 includes
       module.cpp                                150   PYBIND11_MODULE(_core), submodule registration
       eos_bindings.cpp                          400   HelmholtzModel, State, Reference as py::class_ (saturation is equilibrium's binding, below)
-      equilibrium_bindings.cpp                  400   Problem, Result, solve_equilibrium, find_phases, solve_phase_boundary
+      equilibrium_bindings.cpp                  400   Problem, Result, solve_equilibrium (one entry; the driver is a compile decision), find_phases
       regression_bindings.cpp                   150   fit, Observation, Fit
   src/epcsaft/                                 2430   Python: maps inputs to _core and _core results to types
     __init__.py                                  60   11 exports
     _core.pyi                                   250
     units.py                                     80
     parameters.py                               400   Parameters.from_packet / from_mapping; ActiveParameters
-    eos.py                                      600   Pure, Mixture, State, derivatives; Pure.saturation is a thin call onto solve_phase_boundary
+    eos.py                                      600   Pure, Mixture, State, derivatives; Pure.saturation builds the one-component Problem and calls solve_equilibrium
     reference.py                                100   InfiniteDilutionReference mapping only
     regression.py                               200   fit, Observation, Fit (a module: one capability, one file)
     equilibrium/
       __init__.py                                40   9 exports
-      problem.py                                450   Problem, Phase, Reaction, Fixed, Solved, Result
+      problem.py                                450   Problem, Phase, Free, Pinned, Discover, the feed-basis types, Reaction, Result; convenience constructors that build a Problem (SPECIFICATION-SPACE.md §11)
       loader.py                                 120   problem_from_mapping; feed-basis conversion is native (request_compile.cpp), Python only names the basis
   tests/                                       1650   by capability; no numerical/behavior split
     packets.py                                  150   read data/packets tables for fixtures

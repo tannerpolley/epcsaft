@@ -21,7 +21,7 @@ data and counters, never against the old code.
 | #189 EOS derivatives | replace `(S+1)` Hessians, add tape cache, Newton association | one Lagrangian Hessian, site elimination, cached `ADFun` | Stage 3, 350 lines |
 | #190 EOS Python | strip numerics from Python, cut exports to 11, replace `py::dict` round trips | Python as a pure mapping layer, `py::class_` bindings | Stage 4, 1,100 lines |
 | #191 Problem/Result | collapse 6 specification types and 2 request families | one degrees-of-freedom `Problem`, one `EquilibriumResult` | Stage 6, 1,050 lines |
-| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, `solve_phase_boundary` as its rows | Stage 7, 1,650 lines |
+| #187 GREPE ownership | delete `coexistence.cpp`, the declared routes, `solve_incipient_pressure` | one `GibbsMinimizer`, the boundary Newton as its rows | Stage 7, 1,650 lines |
 | #188 phase stability | delete HELD v1 (3,051) and HELD2 steps 8–10 (3,338); fix the neutral-chart sentinel | `find_phases` written to Pereira 2012 | Stage 11, 1,100 lines |
 | #192 regression | remove owner compilation from the fit path | `fit(model, observations)` on Ceres | Stage 10, 890 lines |
 | #196 consumers | migrate analyses and two downstream repos, rename result fields | the same migration — this one does not change | Stage 12, unchanged scope |
@@ -301,7 +301,7 @@ and `tools/check-engine-architecture.py` with five rules:
 
 Rule 4 replaces the module-level regression ban that the old layout contradicted, with a
 symbol rule: `regression/` may include `equilibrium/problem.hpp` and call
-`solve_equilibrium` / `solve_phase_boundary`; it may not include `phase_stability.hpp`,
+`solve_equilibrium`; it may not include `phase_stability.hpp`,
 call `find_phases`, or construct a problem with phases omitted. A fit needs
 differentiable residuals, and a discovered phase count is not one.
 
@@ -503,7 +503,7 @@ an electrolyte flash compiles with nullity 0. Each with the named mutation from 
 Saturation is not a file, not a route, and not an identifier: `saturation` is a rule-7
 case token, so nothing under `native/` is named after it and only Python's
 `Pure.saturation` carries the word. Pure saturation is the `C = 1`, `k = 1`,
-`f = 1` call of `solve_phase_boundary`: one phase pinned at zero amount, `P` free, over the
+`f = 1` cell of `solve_equilibrium`, the one public entry: one phase pinned at zero amount, `P` free, over the
 rows Stage 6 compiled. `Pure.saturation` in Python calls that binding. The three Newton
 systems in the old tree (`density.hpp`, `pure_saturation.cpp`, `incipient_closure` +
 `coexistence.cpp`) are rows of the one system, selected by which variables are unknown. The
@@ -778,7 +778,7 @@ owner.
 
 No proper nouns in identifiers. HELD, Held2, GREPE, Provider, and the step numbering do
 not appear in the greenfield tree; `find_phases`, `solve_equilibrium`,
-`solve_phase_boundary`, `GibbsMinimizer`, `Problem`, `EquilibriumResult` name what the
+`GibbsMinimizer`, `Problem`, `EquilibriumResult` name what the
 code does. Source names appear as citations in docs and `// EqID:` annotations, never as
 identifiers. HELD in particular reads as the wrong author inside this repository's own
 bibliography, where Christoph Held is a parameter source (`Ji2012`, `Figiel2025`,
