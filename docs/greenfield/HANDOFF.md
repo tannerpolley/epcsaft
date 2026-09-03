@@ -10,8 +10,8 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 - Stages 1–4 closed. Stage 5 (Equilibrium): attempts 1 and 2 held as tags
   `stage-05-attempt-1`, `stage-05-attempt-2`; **attempt 3 stopped `gate_impossible`** on
   2026-09-03 with the local-minimum and dew–bubble checks red (`STAGE-LOG.md`, last entry).
-  Not tagged, merged or resumed. The Equilibrium planner has the two failures and is
-  discussing design versus implementation with the owner; a resume waits on that ruling.
+  Tagged `stage-05-attempt-3` (`d02f3c9`) and rejected. **Attempt 4 is running** (table below)
+  from that tag, on the planner's revised design (`STAGE-LOG.md`, attempt-4 entry).
 - The control-plane reset the owner approved on 2026-09-03 is applied (`STAGE-LOG.md`,
   last entry). Briefs and preflight untouched.
 - Records moved to the root today: `docs/scientific/` (CSE core, issue-55 shape) and
@@ -21,20 +21,21 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 - Overview page: https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58 —
   keep the head sha in its header synced after every commit (owner rule).
 
-## Attempt 3, the stopped process
+## Attempt 4, the live process
 
 | item | value |
 |---|---|
-| worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05`, cut from `dd81eb5` |
-| worker | `codex exec`, model `gpt-5.6-luna`, reasoning high, session id `01a0684e-7289-7ca3-bb24-3f10b04a82e8` |
-| pid | 361705, exited |
-| log | `attempt-3.log` in the worktree; result lands in `stage-05.result.json` |
+| worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05` at `d404a27` = tag `stage-05-attempt-3` merged with `greenfield@78f4bc7` |
+| worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`, launched 2026-09-03 |
+| pid | 1228759 (check with `kill -0`) |
+| log | `attempt-4.log` in the worktree; result lands in `stage-05.result.json` |
 | schema | `stage-05.result.schema.json` in the worktree (untracked) |
-| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `dd81eb5`, 19 gates, preflight clean |
+| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `78f4bc7`, 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
 
-At last look the worker had analytic `F_y`, exact-Hessian differences and the C4/C7
-rewrites in place, and was tracing a residual `5.05e-12` against a `1e-12` record
-tolerance in the single-phase cell plus a boundary relation not yet passing.
+Carried from the tag: the exact-tape assembly, analytic `F_y` and `F_θ`, stoichiometry,
+`problem.hpp`, bindings, Python, compile-tier checks. Rewritten under the revised design:
+starts, the coincidence refusal on every cell, coordinates and bounds, the rows' own
+tolerance, the non-aborting check macro, fixture states, the feed sensitivity lever.
 
 **Acceptance is the coordinator's, never the worker's.** When the result file appears:
 
@@ -70,8 +71,8 @@ A correction goes back to the same session with `codex exec ... resume <session 
 
 ## Open items, in priority order
 
-1. Attempt 3: the planner's ruling, then resume, revise-and-resume, or tag-and-reject.
-   Acceptance steps above apply unchanged once a result reads `complete`.
+1. Attempt 4 acceptance (above). Compare the rewritten checks against `EQUILIBRIUM.md` §4.2
+   and the brief's "Attempt four" section; run the five new mutations.
 2. `REGRESSION.md` and `FINAL-CHECK.md` are unwritten; Stages 6 and 8 need them before a brief.
 3. `engine/CONTEXT.md` glossary is the old tree's; five terms are listed sourceless in
    `docs/scientific/CONTEXT.md`. A Design item for whichever stage rewrites that file.
