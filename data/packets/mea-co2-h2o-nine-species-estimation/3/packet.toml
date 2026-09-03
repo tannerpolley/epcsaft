@@ -1,0 +1,81 @@
+schema_version = 2
+packet_id = "mea-co2-h2o-nine-species-estimation"
+packet_version = "3"
+title = "Nine-species CO2-MEA-H2O current-best parameter bundle"
+description = "The living nine-species ePC-SAFT bundle: nine components, thirty-six pairs, four model families, and the R4/R5 reaction correlations. Supersedes version 1 in three values — carbon-dioxide dispersion energy 169.21 K to 173.44025 K, a carbon-dioxide-water k_ij of 0.013262879176919628 where version 1 carried none, and a solvent-only relative permittivity where version 1 suppressed per ion."
+license_or_use_basis = "Project-authorized parameter document copied byte-for-byte from the pinned MEA-Thermodynamics commit; no publisher full text is included."
+tolerance_rationale = "The packet asserts no fit tolerance. The bundle is the model under development, not a published model reproduced: deviations computed with it are reported, never asserted against a threshold. The consuming analysis owns diagnostic scales and scoring."
+
+[[sources]]
+source_id = "mea-retained-phase-two-artifact"
+citation = "MEA-Thermodynamics retained Phase 2 parameter artifact"
+use_basis = "authority-neutral regression starts and fixed model inputs; row-level literature lineage, transfer limits, and provisional statuses are audited in docs/ePC-SAFT/full-component-parameter-source-audit.md"
+
+[[sources]]
+source_id = "schick-2023-pabsch-2020-induced-association"
+citation = "Schick et al. (2023) using Pabsch et al. (2020)"
+use_basis = "CO2 2B sites and reciprocal CO2-water cross-association with the source combining rule"
+
+[[sources]]
+source_id = "zuber-et-al-2014"
+citation = "Zuber et al. (2014), Fluid Phase Equilibria 376, 116-123, doi:10.1016/j.fluid.2014.05.037"
+use_basis = "Ion-specific aqueous dielectric-suppression coefficients and charge-class fallback values"
+
+[[sources]]
+source_id = "uyan-2015-permittivity-transfer"
+citation = "Uyan Eq. 5; Wangler campaign Archer-Wang approximation."
+use_basis = "Explicit transfer approximation, not an exact Floriano-Nascimento replay."
+
+[[sources]]
+source_id = "tong-2012-aroua-1999"
+citation = "Tong et al. (2012), Table 5 K5 MEA, via Aroua et al. (1999)."
+use_basis = "R4 carbamate hydrolysis source-centred correlation."
+
+[[sources]]
+source_id = "bates-pinching-1951"
+citation = "Bates and Pinching (1951), equation 7."
+use_basis = "R5 monoethanolammonium dissociation source-centred correlation."
+
+[[sources]]
+source_id = "cai-1996-neutral-refit"
+citation = "Project-authored ePC-SAFT parameter fit result."
+use_basis = "Accepted fitted coefficient values and exact numerical evidence."
+
+[[sources]]
+source_id = "mea-best-in-slot-campaign-2026-09-02"
+citation = "MEA-Thermodynamics bounded direct Engine campaign, 2026-09-02."
+use_basis = "Current-best joint pressure/speciation calibration of the R4 correlation and carbon-dioxide dispersion energy; initialized from the retained literature bundle and not an independent validation."
+
+[[domains]]
+domain_id = "mea-diagnostic-293-15-to-393-15-k"
+description = "Diagnostic fit range of the current-best campaign, 293.15-393.15 K and 10 Pa-300 kPa."
+
+[[domains]]
+domain_id = "mea-provider-source-qualified-313-15-k"
+description = "Reported conditions of the retained source transfer, 313.15 K and 100 kPa; a single point, not a support claim."
+
+[[domains]]
+domain_id = "mea-candidate-293-15-to-393-15-k"
+description = "Candidate evaluation domain, 293.15-393.15 K and 1 Pa-10 MPa, qualified candidate_extrapolation pending campaign evidence."
+
+[[domains]]
+domain_id = "cai-1996-neutral-refit"
+description = "Admitted Cai (1996) MEA-water fit observations; the bundle records the domain without a range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "2ea3b41485a98d2cf49add620b87bb05fc5a275cdd132c1cdbb0cfc5f07f2ca4"
+source_refs = ["mea-retained-phase-two-artifact", "schick-2023-pabsch-2020-induced-association", "zuber-et-al-2014", "uyan-2015-permittivity-transfer", "tong-2012-aroua-1999", "bates-pinching-1951", "cai-1996-neutral-refit", "mea-best-in-slot-campaign-2026-09-02"]
+domain_refs = ["mea-diagnostic-293-15-to-393-15-k", "mea-provider-source-qualified-313-15-k", "mea-candidate-293-15-to-393-15-k", "cai-1996-neutral-refit"]
+units_basis = "Every coefficient carries an explicit canonical unit in the document; reaction coefficients retain dimensionless, K, and K^-1 units."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "73f45fd29c3ea2fa3eaca891b5bb26b6dd1e0c3d1f1a53ee347dbb64e94b4d62"
+source_refs = ["mea-retained-phase-two-artifact", "mea-best-in-slot-campaign-2026-09-02"]
+domain_refs = ["mea-diagnostic-293-15-to-393-15-k", "mea-candidate-293-15-to-393-15-k"]
+units_basis = "Origin repository, commit, tree, path, and SHA-256 identities are non-numeric provenance."

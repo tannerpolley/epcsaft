@@ -1,0 +1,15 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-data"
+origin_commit = "06d9af3e2d2d92e60dd0238851647b99de054f06"
+origin_tree = "8e585c74b29e0bacbd9ab8a53c5ce1747c1289cb"
+copy_mode = "strict-schema-translation"
+scope = "Canonical Parameters translation of the immutable accepted khudaida-2026-figure-2-electrolyte-lle packet; coefficient values, units, domains, citations, and source locators retain their accepted meaning."
+source_bundle_manifest_path = "packets/khudaida-2026-figure-2-electrolyte-lle/4/parameters/bundle.toml"
+source_bundle_manifest_sha256 = "f5d0fb91d5d6fe4837411a0d27d1e53000685b4062ecd7d6398db6e2377b1fa2"
+source_packet = "packets/khudaida-2026-figure-2-electrolyte-lle/5"
+source_packet_fingerprint = "52b7f5c6db76447e1262c70937e21e7c523f13ab965c6c483afe58ad2fc509a2"
+
+[[files]]
+retained_path = "parameters/parameters.json"
+origin_path = "packets/khudaida-2026-figure-2-electrolyte-lle/4/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
+sha256 = "05d684f3ec8a58c51a3d86bcc35b808efc9ee0a858086f705cb1e4ea011ab2e7"

@@ -1,0 +1,53 @@
+schema_version = 2
+packet_id = "figiel-2025-aqueous-iodides"
+packet_version = "3"
+title = "figiel-2025-aqueous-iodides canonical Parameters packet"
+description = "Canonical JSON successor to the immutable accepted figiel-2025-aqueous-iodides parameter packet."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use bases listed below; no full paper content is included."
+tolerance_rationale = "The strict schema translation preserves accepted coefficient values and asserts no new numerical acceptance tolerance. Any validation tolerance or uncertainty must be declared by the consuming campaign."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "source-complete aqueous sodium-iodide and potassium-iodide reference states; Tables 3-5 verified against retained Markdown SHA-256 ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+description = "Source-defined reported-conditions domain figiel-298-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and canonical Parameters document."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "6f9c349e57925668f9001843cd57543999033a80062f8fb43448e5a700002265"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "2cfaa1106c722715638653cb8665a6fb6ef523d7dd17b9ca8063e34f2a1deb9a"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity"]
+units_basis = "Origin repository, immutable source packet, paths, and hash metadata are non-numeric identifiers."

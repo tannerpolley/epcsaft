@@ -1,0 +1,15 @@
+provenance_kind = "repository-migration-v1"
+origin_repository = "ePC-SAFT/ePC-SAFT-eos"
+origin_commit = "e5cd64697d3fb33890f42e87b8779ddda4b52c6a"
+origin_tree = "7de4e53f5d81422039d621536053a66a3840d0f9"
+copy_mode = "strict-schema-translation"
+scope = "Canonical Parameters translation of the immutable accepted held-cameretti-sadowski-2008 packet; coefficient values, units, domains, citations, and source locators retain their accepted meaning."
+source_bundle_manifest_path = "src/epcsaft/data/bundles/held-cameretti-sadowski-2008/1/bundle.toml"
+source_bundle_manifest_sha256 = "48cb1009a13ae8fe09c3d0f72b5eb2da11c9fbb3eebee2bc3fe6b427bdab1418"
+source_packet = "packets/held-cameretti-sadowski-2008/2"
+source_packet_fingerprint = "abb954b1e76183947fc09ba1c86a5204479829f842a1b13f7a21933b24898d81"
+
+[[files]]
+retained_path = "parameters/parameters.json"
+origin_path = "packets/held-cameretti-sadowski-2008/1/parameters/{association.csv,bundle.toml,components.csv,correlations.toml,model.csv,pair.csv,single.csv,sites.csv}"
+sha256 = "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d"
