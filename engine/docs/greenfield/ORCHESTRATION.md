@@ -104,11 +104,21 @@ codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
 
 ### Worktree setup, per stage
 
+**Commit the brief pair before creating the worktree.** A worktree is branched from
+`greenfield` as it stands, so a brief committed afterwards is not in the checkout. The worker
+reads `briefs/stage-NN.brief.json` from its own tree and stops `environment_broken` when it is
+missing — correctly, since it cannot verify a single source marker without it. Stage 03.repair
+lost a run to this.
+
 ```bash
+git add engine/docs/greenfield/briefs/stage-NN.brief.{md,json} && git commit   # first
 git worktree add -b stage-NN ~/.codex/worktrees/gf-stage-NN greenfield
 cp -r <greenfield>/engine/build/subprojects <worktree>/engine/build/    # gitignored
 cd <worktree> && uv sync                                                # never copy a venv
 ```
+
+If the worktree already exists and the worker wrote nothing, `git reset --hard <brief commit>`
+is enough; the venv and build directory are untracked and survive it.
 
 `NN` is the two-digit stage number from `TRANSFER.md`'s execution table, and it is the same
 `NN` as the brief pair `briefs/stage-NN.brief.{md,json}`. One number names the stage, its
