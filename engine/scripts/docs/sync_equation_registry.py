@@ -41,7 +41,7 @@ TEX_ONLY = re.compile(r"\\(cite|label|ref|eqref)\b")
 def load_entries(path: Path) -> list[dict[str, str]]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or data.get("schema_version") != 3 or not isinstance(data.get("equations"), list):
-        raise ValueError(f"{path}: expected schema_version 2 with an `equations` list")
+        raise ValueError(f"{path}: expected schema_version 3 with an `equations` list")
     return [{field: str(entry.get(field, "")) for field in FIELDS} for entry in data["equations"]]
 
 

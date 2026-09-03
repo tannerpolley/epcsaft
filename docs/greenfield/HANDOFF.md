@@ -74,7 +74,14 @@ A correction goes back to the same session with `codex exec ... resume <session 
 
 1. Attempt 4 acceptance (above). Compare the rewritten checks against `EQUILIBRIUM.md` §4.2
    and the brief's "Attempt four" section; run the five new mutations.
-2. `REGRESSION.md` and `FINAL-CHECK.md` are unwritten; Stages 6 and 8 need them before a brief.
+2. `FINAL-CHECK.md` is unwritten; Stage 8 needs it before a brief. `REGRESSION.md` exists;
+   before the Stage 6 brief it owes four items from the 2026-09-03 reviewer audit: (a) an
+   observation that names several solved targets, so finite-dose heat (two solves) is
+   expressible; (b) the `amplification` definition in the diagnostics block, currently Ipopt's
+   `regularization_size`; (c) re-pin the brief's sources at the current design commit, since
+   the preflight verifies the old pin while the worker reads the merged tree; (d) the owner's
+   ruling on `low` line floors and the `budget_undershot` stop now that `CANON.md` says a
+   minimum proves nothing.
 3. `engine/CONTEXT.md` glossary is the old tree's; five terms are listed sourceless in
    `docs/scientific/CONTEXT.md`. A Design item for whichever stage rewrites that file.
 4. `DensityBranch::Unspecified` → `Either` rename; issues #185–#196 to retire into per-stage

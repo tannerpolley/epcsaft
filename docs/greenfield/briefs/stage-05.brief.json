@@ -16,7 +16,7 @@
   "preconditions": [
     "git cat-file -e 88b5a2a^{commit}",
     "test -d engine/native/model",
-    "test -f engine/native/equilibrium/request_compile.cpp && test -f engine/native/equilibrium/problem.hpp && test -f engine/native/equilibrium/stoichiometry.cpp && git describe --tags --exact-match stage-05-attempt-3 >/dev/null 2>&1 || git cat-file -e d02f3c9^{commit}",
+    "test -f engine/native/equilibrium/request_compile.cpp && test -f engine/native/equilibrium/problem.hpp && test -f engine/native/equilibrium/stoichiometry.cpp && git cat-file -e d02f3c9^{commit} && git merge-base --is-ancestor d02f3c9 HEAD",
     "grep -q \"ipopt_dep = dependency('ipopt'\" engine/meson.build",
     "grep -q 'DensityRoot solve_density' engine/native/model/density.cpp",
     "grep -q 'stable_root_count' engine/native/model/density.cpp",
@@ -553,14 +553,14 @@
     },
     {
       "id": "checks_do_not_abort",
-      "command": "! grep -n 'std::abort' engine/tests/native/specification_checks.cpp engine/tests/native/equilibrium_checks.cpp engine/tests/native/boundary_checks.cpp",
+      "command": "! grep -n 'std::abort' engine/tests/native/equilibrium_support.hpp engine/tests/native/specification_checks.cpp engine/tests/native/equilibrium_checks.cpp engine/tests/native/boundary_checks.cpp",
       "needs": "none",
       "mutation": {
         "file": "engine/tests/native/equilibrium_support.hpp",
         "sed": "s|++failures;|++failures; std::abort();|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "a check that aborts hides every check after it; attempt 3 reported two reds and ran neither file past its first solve"
+        "why": "a check that aborts hides every check after it; the support header is where the harness lives, so the gate greps it too or its own mutation cannot redden it"
       }
     },
     {
