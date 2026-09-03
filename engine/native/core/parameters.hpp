@@ -33,6 +33,14 @@ enum class ElectrolyteForm {
     DebyeHuckelBorn = 2,
 };
 
+// The registered case split same_sign_ionic_dispersion. Declared by the parameter
+// source, never defaulted: a set with a charged component and no declaration is
+// rejected by the model constructor, and a neutral set may not declare one.
+enum class IonicDispersion {
+    AllIonPairs = 1,      // every pair takes sqrt(eps_i eps_j)(1 - k_ij)
+    ExcludeSameSign = 2,  // pairs with z_i z_j > 0, the diagonal included, take 0
+};
+
 struct Parameters final {
     // Chain and segment geometry
     std::vector<double> segment_count;
@@ -66,6 +74,7 @@ struct Parameters final {
     double born_c_shell = 0.0;
     double born_c_dielectric = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;
+    core::Declared<IonicDispersion> ionic_dispersion;
 
     // Permittivity
     core::Declared<PermittivityForm> permittivity_form;
