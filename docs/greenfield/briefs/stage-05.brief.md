@@ -212,6 +212,14 @@ Three test budgets moved after the first honest ceiling stop (333 lines in
 `equilibrium_support.hpp` 150 / 250 / 320. The ceilings are 1.2× measured-plus-remaining;
 the lows stay where content is guarded.
 
+**S15 clause (c) is a boundary check, and it is reachable.** In `boundary_checks.cpp`: the
+binary `{V,L}` boundary cell with `V` pinned and `P` free at 280 K, feed 0.5/0.5, a state above
+the mixture critical temperature where only the trivial solution exists, fails with no state
+and its failure names `phases_coincide` with the distance. If the unmutated run at that state
+stops on a budget rather than on coincidence, report it as a finding; the planner moves the
+state, not the check. Six mutations were re-anchored after the first acceptance run on the
+rewritten tree; the JSON governs.
+
 You start from the tag `stage-05-attempt-3`. Carried: the exact-tape assembly, analytic `F_y`
 and `F_θ`, `stoichiometry`, `problem.hpp`, the bindings, the Python and the compile-tier
 checks. Rewritten under the sections above: the driver's starts, the coincidence refusal, the

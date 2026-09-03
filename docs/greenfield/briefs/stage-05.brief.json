@@ -327,10 +327,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/request_compile.cpp",
-        "sed": "s/pinned/free/",
+        "sed": "s/compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;/compiled.pinned_count += 0;/",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "C1's own mutation: count a pinned phase as free"
+        "bites_only_after_write": false,
+        "why": "every pinned phase counts as free; the count rule breaks on every pinned cell (C1)"
       }
     },
     {
@@ -363,9 +363,9 @@
       "needs": "none",
       "mutation": {
         "file": "engine/native/equilibrium/phase_boundary.cpp",
-        "sed": "s/solve_boundary/solve_saturation/",
+        "sed": "s/boundary_start/solve_saturation/",
         "expect": "abort",
-        "bites_only_after_write": true,
+        "bites_only_after_write": false,
         "why": "trap 21: saturation is a rule 7 case token; only Python's Pure.saturation carries the word"
       }
     },
@@ -375,9 +375,9 @@
       "needs": "none",
       "mutation": {
         "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
-        "sed": "s/compiled.F_y/F_y/",
+        "sed": "s/compiled_.jacobian(point(n, x))/F_y(point(n, x))/",
         "expect": "abort",
-        "bites_only_after_write": true,
+        "bites_only_after_write": false,
         "why": "trap 5: the driver and the sensitivity find the assembly in request_compile.cpp, never write their own"
       }
     },
@@ -473,10 +473,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/gibbs_minimizer.cpp",
-        "sed": "0,/RowKind::Moiety/s||RowKind::Electro|",
+        "sed": "s/&& compiled_.rows\\[row\\].kind != RowKind::Pressure)) {/\\&\\& compiled_.rows[row].kind != RowKind::Pressure \\&\\& compiled_.rows[row].kind != RowKind::Moiety)) {/",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "S1's own mutation: drop the balance rows from the constraint set; S1 reads the residual on every row including the ones the driver did not iterate"
+        "bites_only_after_write": false,
+        "why": "k = 0 cells lose their balance constraints in constraint_rows(); S1's balance residuals go nonzero"
       }
     },
     {
@@ -509,10 +509,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/request_compile.cpp",
-        "sed": "0,/amount\\[phase\\] \\* B\\[row.index\\]\\[species\\]/s||amount[phase] * B[row.index][phase]|",
+        "sed": "0,/derivative.gradient\\[2 + species\\]/s||derivative.gradient[2]|",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "C7's own mutation: index a phase where a component was meant in the balance row; a cell with more phases than components crashes, which also counts"
+        "bites_only_after_write": false,
+        "why": "C7's component-relabel half: every species carries species 0's residual chemical potential, so residual norms at the same physical point differ on the asymmetric binary"
       }
     },
     {
@@ -533,10 +533,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/phase_boundary.cpp",
-        "sed": "s|std::exp(ln_phi_liquid\\[i\\] - ln_phi_vapor\\[i\\])|1.0|",
+        "sed": "s|std::exp(ln_phi_liquid\\[i\\] - ln_phi_vapor\\[i\\])|1.0|; s|? DensityBranch::Vapor : DensityBranch::Liquid;|? DensityBranch::Liquid : DensityBranch::Liquid;|",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "K_i = 1 is the symmetric start; the ternary {V,L} flash at 1 bar collapses to the saddle and S2, S6 go red"
+        "bites_only_after_write": false,
+        "why": "K = 1 plus one density branch for both phases is a start on the true symmetric subspace (equal composition and equal eta); the ternary {V,L} flash at 1 bar collapses to the trivial pair, the coincidence refusal fires, S2 goes red"
       }
     },
     {

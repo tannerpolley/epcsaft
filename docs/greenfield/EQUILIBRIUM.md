@@ -542,7 +542,7 @@ liquid, and `neutral_binary()` at 280 K and 50/50 is above the mixture critical 
 | S12 | discovery agrees (with the stability kernel) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
 | S13 | single phase | `Π = 1` on every non-reactive fixture at fixed `T`, `P`: the solved composition equals the feed within the balance rows' `max(tolerance, floor)` (the balance is an Ipopt equality, so 1e-14 is not reachable), and the solved volume equals `model/`'s `solve_density` root at the same `(T, P, x)` within the larger of the two solves' `max(tolerance, floor)` — the pressure row *is* the density equation when there is one phase. Reactive single phases are S11's | seed the start from phase index 1 |
 | S14 | `C = 1` is the general row set | the ethane boundary compiles with `rows − unknowns = 0` and nullity 0 with no reaction span and no charge row, and pinning `L` instead of `V` gives the same `P*` to the convergence tolerance. The row list by `EqID` is *reported*, not asserted: a legitimate implementation may drop a free phase's normalisation row (§2.2), and `CANON.md`'s diagnostic forbids asserting the multiset | a `component_count == 1` branch in compile that omits the balance row |
-| S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way; and (c) a boundary cell whose pinned phase is started on the free phase's branch at the free phase's composition is refused as `phases_coincide` with the distance, never returned as converged | (a, b) return the converged iterate when one `N_p` sits at its bound; (c) skip the coincidence test when `k ≥ 1` |
+| S15 | a declared phase that vanishes | the binary `{V,L}` flash at a state outside its envelope, and the `{L,L}` flash at a feed outside the gap, **fail with no equilibrium state** (§3.4): the failure names the phase and carries Michelsen's deficit `1 − Σ` or the phase distance; no amounts, compositions or `G` are returned, and a symmetric start on any two-phase cell is refused the same way; and (c) the binary `{V,L}` boundary cell with `V` pinned and `P` free at 280 K, feed 0.5/0.5, a state above the mixture critical temperature where only the trivial solution exists (attempt 3 returned it as converged at 3.8 Pa), fails with no state and its failure names `phases_coincide` with the distance; it lives in `boundary_checks.cpp`. The start rule re-seeds a pinned phase on its declared branch, so no caller can place it on the free phase's branch by hand; the trivial solution is reached physically | (a, b) return the converged iterate when one `N_p` sits at its bound; (c) skip the coincidence test when `k ≥ 1` |
 | S16 | reactive lever rule | on the `A + B ⇌ C` fixture at fixed `T`, `P`, the declared `{L,L}` reactive flash from three feeds whose moiety vectors `B n_feed` lie on the segment between the two phases' moiety vectors of a first solve returns the same two phase compositions to the convergence tolerance, and affinity vanishes in both phases with one `λ`. Gibbs' rule for the reactive system gives `F = 2 − 2 + 3 − 1 = 2`, both consumed by fixing `T` and `P`, so reactive tie lines are *isolated*, not unique — Ascani et al. 2023's Figure 3 has two, and "unique reactive tie-line" is their term of art for one that appears in a ternary — which is why the three feeds are placed on one tie line rather than anywhere in the gap. A route that solved the reaction in one phase and partitioned into the other would move the phases with the feed | drop the affinity consequence by solving the balance with `B = I` |
 
 **Reported, never asserted**, per cell: Ipopt iterations, evaluations,
@@ -627,7 +627,8 @@ The `CORE.md` §7 block, one entry per solver or assembly this stage writes. The
    root at the start's `T`, `P` and its own composition, never copied from the free phase.
    Amounts from a start are kept, not overwritten with an equal split (attempt 3's
    `start_point` overwrote them). The trivial solution is a stationary point (§3.3) and a
-   symmetric start converges to it.
+   start on the symmetric subspace, equal composition and equal `η`, converges to it; a
+   composition-symmetric start with branch-distinct `η` is not on that subspace.
 5. **result**: amounts, volumes, intensives, multipliers, every residual row, the reduced
    Hessian's smallest eigenvalue, counters, a named status. Sensitivity when asked. Or,
    under §3.4, no state at all: a failure name, the phase, and the number that condemned
@@ -830,8 +831,11 @@ document's own first draft.
 5. The assembly `F`, `F_y` lives in `request_compile.cpp`, and that file joins rule 7's
    list; the driver and the sensitivity must find it there, never write their own.
 6. Multiphase starts split composition by one of the three rules of §5 step 4 (the caller's
-   guess, the K-factor split, or the `start_symmetric` refusal) and no other; the trivial
-   solution is a stationary point and S15 requires it reported by name, never `converged`.
+   guess, the K-factor split, or the `start_symmetric` refusal) and no other. The symmetric
+   subspace is equal composition **and** equal `η`: distinct branch densities alone break it
+   for a vapour–liquid pair, which is why rule 2 gives both a split and a branch per phase,
+   and why a liquid–liquid pair with no guess is refused (two liquid branches share `η`).
+   The trivial solution is a stationary point and S15 requires it reported by name.
 7. S1 and S13 test against `max(tolerance, floor)` from the result's `Convergence` record,
    never against a bare policy number — `CORE.md` §2 says why a bare number can be
    unreachable.
