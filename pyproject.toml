@@ -22,3 +22,8 @@ package = false
 
 [tool.uv.workspace]
 members = ["engine"]
+
+[dependency-groups]
+dev = [
+    "chemicals==1.5.2",
+]
