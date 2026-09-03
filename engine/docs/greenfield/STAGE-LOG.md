@@ -331,6 +331,21 @@ both survived 19 gates and 19 mutations.
   against §5.2's "a solver never names a residual stop itself". The repair touches that
   block, so it lands there.
 
+**All three repaired at `3c4e2be`, and the third grew.** The `ResidualHistory` landed with
+the EOS repair; the hand-named stop did not, and the merge message there overclaimed it.
+Writing §5.2 as `rule_no_hand_named_residual_stop` found **three** violations rather than
+one — two in `density.cpp` and one in `association.hpp` that no review had read. Both rules
+now carry a checker (13 and 14), which is the point: the Scope defects survived nineteen
+gates because `trace_case` drove only `state_at_pressure`, so the test and the defect shared
+a blind spot. A rule that only a test can see is only as good as the test's reach.
+
+**One behaviour change, unreported by the worker, and referred to the core planner.** At the
+far-side-not-clear exit the record said `stalled` while the residual had in fact converged;
+`classify` now returns `converged` there, and the rejection is carried by `have_result`
+staying false. That reads as the more honest record — the `Convergence` describes the
+convergence, not the acceptance — but §5.3 is `CORE.md`'s to rule on, and **no test exercises
+that path**.
+
 Measured on-cost with the trace on, case G: 9,440 µs against 8,880 µs, **6 % for 221 spans,
 1,443 events and 35.8 KB**. The off-cost of 3.4 × 10⁻⁴ stands.
 
