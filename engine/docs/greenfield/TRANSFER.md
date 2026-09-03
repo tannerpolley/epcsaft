@@ -68,13 +68,22 @@ larger than a brief, it is named here and is the brief's specification.
 | 3 | `model/` — the EOS | one tape per topology, sites eliminated, one Lagrangian Hessian, the density closure | `performance_floor.md` | **closed** `a2a2ac5` |
 | 4 | `bindings/` and Python EOS | `native/bindings/`, `src/epcsaft/` as a pure mapping layer, units resolved in C++, Pint removed | `DIELECTRIC-SUPPRESSION.md` | **reopened** — gates and mutations pass; held open on the dispersion discrepancy |
 | 5 | tolerance core | `derived()`, `FLOOR_MARGIN`, `STALL_WINDOW` in the policy header; `Convergence` and `Stop` on every solver result; the three floors the tree can already measure | `TOLERANCES.md` | designed |
-| 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` (to re-land) | designed |
-| 7 | the driver, and saturation | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed; line budgets to re-estimate |
-| 8 | the flash | multiphase starts, the declared-topology contract, the flash cells and their gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed |
+| 6 | equilibrium specification | `problem.hpp`, `stoichiometry.{hpp,cpp}`, `request_compile.cpp` — the count rule, the row assembly, reject-by-name. No driver | `SPECIFICATION-SPACE.md`, `formulation.md` | designed |
+| 7 | the driver, and saturation | `gibbs_minimizer.{hpp,cpp}` — the one Ipopt driver for every `k` (objective and constraint set are compile's data); `phase_boundary.cpp` opens with seeds and continuation for the one-component cell; `implicit_sensitivity.cpp` | `SPECIFICATION-SPACE.md` §2.4, §4.2 | designed — ~1,330 lines, ceiling ~1,720 |
+| 8 | the flash | multiphase starts, the declared-topology contract, the flash cells and their gates on the driver Stage 7 wrote | `SPECIFICATION-SPACE.md` | designed — ~550 lines, ceiling ~740 |
 | 9 | phase boundary | the multicomponent rows of the same `phase_boundary.cpp`; `T` or `P` free | `SPECIFICATION-SPACE.md` | designed |
 | 10 | `regression/` | `fit(model, observations)` on Ceres, with covariance | — | planned |
 | 11 | phase stability | `find_phases` written to Pereira 2012 | `held2-stage-i-ii-findings.md`, `phase-stability.md` (to re-land) | planned |
 | 12 | composite gate and merge | every layer exercised at once; one merge of `greenfield` into `main` | — | planned |
+
+**Stage 7 and 8 re-estimated, 2026-09-02.** The old split budgeted saturation, the boundary
+and the minimizer at 300 + 250 + 1,350 = 1,900 lines across three stages. With one Ipopt
+driver serving every `k` — objective `G` at `k = 0`, a zero objective with every row as a
+constraint at `k ≥ 1`, because Ipopt's primal step on a square feasibility problem is the
+Newton step whatever Hessian it is given — the driver moves into Stage 7 beside saturation
+and Stage 8 keeps the flash. Stage 7 ≈ 1,330 (ceiling 1,720); Stage 8 ≈ 550 (ceiling 740).
+Estimates are the equilibrium planner's, marked **guessed** with the per-file reasoning in
+its message; `STAGE-LOG.md` records the actual.
 
 **Stage 4 is reopened, and Stage 3 has a defect.** Stage 4's nine gates pass and every
 mutation was shown red; the disagreement it surfaced is not its own.
