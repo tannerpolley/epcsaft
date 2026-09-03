@@ -261,6 +261,13 @@ them from here if the checkout is fresh:
 | `git code` | the same, executable code only |
 | `git src` | `--stat` over `*.cpp *.hpp *.py *.pyi` only |
 | `git nodata` | `--stat` with `:(exclude)` on every data, prose and asset extension |
+| `git live` | the report, redrawn whenever anything changes, **uncommitted work included** |
+
+`--watch` is the one to leave open in a second pane. It polls a cheap fingerprint — `HEAD`,
+`git status --porcelain`, and the numstat against `HEAD` — once a second and redraws only on
+a change, so it costs nothing while you think. It diffs the bare baseline rather than
+`base..HEAD`, which is what makes it live: edits count before they are committed. The header
+carries the commit, how many files are dirty, and the delta since the last redraw.
 
 `.gitattributes` does three things. It marks the machine-generated and measured files
 `-diff`, so regenerating the equation view or landing a parameter document does not read as
