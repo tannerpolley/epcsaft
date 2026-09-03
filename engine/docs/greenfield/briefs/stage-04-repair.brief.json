@@ -428,7 +428,7 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/physics/helmholtz.hpp",
-        "sed": "s/&& parameters.charge_number\\[i\\] \\* parameters.charge_number\\[j\\] > 0;/\\&\\& false;/",
+        "sed": "s/&& charge_i \\* charge_j > 0;/\\&\\& false;/",
         "expect": "abort"
       },
       "note": "same_sign_exclusion_is_a_limit (physics) and same_sign_pair_is_inert (model) both go red; the published-curve gate below would too"
@@ -439,7 +439,7 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/model/helmholtz_model.cpp",
-        "sed": "s/require(has_ion == declared, \"ionic_dispersion\");/(void)declared;/",
+        "sed": "s/require(has_ion == parameters_.ionic_dispersion.declared(), \"ionic_dispersion\");/(void)has_ion;/",
         "expect": "abort"
       },
       "note": "the constructor rejection is what turns an undeclared fixture into an error; with it removed the Unspecified fixture silently runs the AllIonPairs branch and the rejection check aborts"
