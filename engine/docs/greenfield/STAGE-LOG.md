@@ -293,3 +293,48 @@ directory is not the same thing.
 refuses an inverted tolerance at compile time. Debug mode is 0.11 ns per probe against
 15.8 µs for the cheapest instrumented call.
 
+### Stage 2 review, by the core planner
+
+Full text in `reviews/stage-02-core.md`. The three written headers are what `CORE.md` §4–§6
+specify — `declared.hpp` and `trace.hpp` exact, `convergence.hpp` using a deque where the
+design said a ring, same statistic, and `describe` printing more than was asked. The
+`Declared<T>` guard is where §4.2 put it, and the worker's "neutral choices stay undeclared"
+deviation is **forced by the design** rather than a shortcut: a neutral set has nothing to
+declare.
+
+**One behaviour change no gate could see**, fixed at `31c8b00`. `association_failure`
+enumerated stops where the string it replaced matched every association non-convergence, so
+a `stalled` result — reachable since the solve classifies at its budget exit — stopped being
+recognised and the density scan propagated instead of skipping the point.
+`trace_changes_no_answer` compares captured against uncaptured, never new against old, so no
+mutation in the suite could reach it. Found by reading the diff.
+
+**Two binding defects**, fixed at `53b9007`: the `trace` property cast with
+`return_value_policy::reference`, so a `Trace` outliving its `Capture` dangled, and `spans`
+and `events` dereferenced the optional unchecked. Neither path is exercised, which is how
+both survived 19 gates and 19 mutations.
+
+**Three findings left open, each with its reason.**
+
+- `ElectrolyteForm::None` and `PermittivityForm::None` are now unreachable from the surface
+  — measured: the four packets declaring `none` all have zero ions, and no ion packet
+  declares it — and rejected from a hand-built struct. Dead members inside a selector, the
+  `EOS.md` C.4 shape. "Undeclared" already carries their only meaning. A deletion, and it
+  belongs with the stage that next touches the selector.
+- **Every function bound in `bindings/` should open a `Scope`, and the rule is half
+  applied.** `HelmholtzModel::state` and `electrolyte_activity` open none, so a capture
+  around `Mixture.state(T, rho=…)` has two roots. The tree check runs only on
+  `state_at_pressure`, which is why it passed. Two `Scope` lines and two more cases for
+  `trace_invariance` — and the rule belongs in `CORE.md` §6.1 with a grep behind it,
+  **otherwise it is the sixth one-directional check of the week**.
+- The anchored loop's budget exit names `stalled` by hand and keeps no `ResidualHistory`,
+  against §5.2's "a solver never names a residual stop itself". The repair touches that
+  block, so it lands there.
+
+Measured on-cost with the trace on, case G: 9,440 µs against 8,880 µs, **6 % for 221 spans,
+1,443 events and 35.8 KB**. The off-cost of 3.4 × 10⁻⁴ stands.
+
+The planner also corrected its own brief: it predicted the associating binary at 313.15 K
+would print `budget_exhausted` from the harness, and the harness has no such density case,
+so nothing prints it. The record is right where it is exercised.
+
