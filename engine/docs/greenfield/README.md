@@ -20,7 +20,7 @@ brief is written against:
 |---|---|---|
 | `CANON.md` | 1 Canon | the tree, the archive, the seven rules, and what may be tested |
 | `CORE.md` | 2 Core | where the core lives, numerical policy absorbed, the declared-choice and convergence contracts, debug mode, and the `diagnostics` block every later brief must carry |
-| `SURFACE.md` | 3 Surface | what a caller declares and reads: the parameter builder, the bindings, the Python mapping layer |
+| `SURFACE.md` | 3 Surface | what a caller declares and reads: the parameter builder, the bindings, the Python mapping layer, and where the tree departs from its brief |
 | `EOS.md` | 4 EOS | the layer audit, the like-ion dispersion convention, the density root, and the measured performance floor |
 | `EQUILIBRIUM.md` | 5 Equilibrium | how the routes prove they are general: the count rule, the lattice, what each check may assert |
 | `REGRESSION.md` | 6 Regression | *(to write)* |
