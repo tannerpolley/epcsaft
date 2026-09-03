@@ -16,7 +16,6 @@ $$
 k_{11}&\theta\\
 \theta&k_{22}
 \end{bmatrix}.
-\label{eq:active_binary_interaction_mapping}
 $$
 
 ## `active_binary_size_interaction_mapping`
@@ -33,27 +32,25 @@ $$
 l_{11}&\theta\\
 \theta&l_{22}
 \end{bmatrix}.
-\label{eq:active_binary_size_interaction_mapping}
 $$
 
 ## `angstrom_number_density`
 
 - Section: Symbols, bases, and units
 - Status: Exact derivation
-- Source: \cite{Gross2001}, unit conversion used by Appendix A
+- Source: [Gross2001], unit conversion used by Appendix A
 - Description: Convert molar density to molecular number density on the angstrom basis.
 - Change note: Uses the current EOS Avogadro constant and angstrom conversion.
 
 $$
 \widehat{\rho}=\rho_m\,N_A\,10^{-30}.
-\label{eq:angstrom_number_density}
 $$
 
 ## `association_contact`
 
 - Section: Contribution intermediates / Association
 - Status: Source equation
-- Source: \cite{Gross2001}, hard-sphere contact rule used by association
+- Source: [Gross2001], hard-sphere contact rule used by association
 - Description: Unlike-site hard-sphere contact function.
 - Change note: Mirrors the reduced-diameter association contact expression.
 
@@ -63,28 +60,26 @@ g_{ij}^{hs}=
 +\frac{3d_id_j}{d_i+d_j}\frac{\zeta_2}{(1-\eta)^2}
 +2\left(\frac{d_id_j}{d_i+d_j}\right)^2
 \frac{\zeta_2^2}{(1-\eta)^3}.
-\label{eq:association_contact}
 $$
 
 ## `association_helmholtz`
 
 - Section: Contribution intermediates / Association
 - Status: Source equation
-- Source: \cite{Chapman1990}, Eq.~(21)
+- Source: [Chapman1990], Eq.~(21)
 - Description: Association residual Helmholtz contribution.
 - Change note: Uses explicit site multiplicity from the resolved model.
 
 $$
 a^{assoc}=\sum_A x_{i(A)}\nu_A
 \left(\ln X_A-\frac{X_A}{2}+\frac{1}{2}\right).
-\label{eq:association_helmholtz}
 $$
 
 ## `association_mass_action`
 
 - Section: Contribution intermediates / Association
 - Status: Source equation
-- Source: \cite{Chapman1990}, Eq.~(19)
+- Source: [Chapman1990], Eq.~(19)
 - Description: Association site-fraction mass-action equation with explicit multiplicity.
 - Change note: Written in the zero-residual form used by the EOS.
 
@@ -92,14 +87,13 @@ $$
 F_A=X_A\left[
 1+\widehat{\rho}\sum_B x_{i(B)}\,\nu_B\,X_B\Delta_{AB}
 \right]-1=0.
-\label{eq:association_mass_action}
 $$
 
 ## `association_strength`
 
 - Section: Contribution intermediates / Association
 - Status: Source equation
-- Source: \cite{Gross2002}, cross-association rule; \cite{Chapman1990}, association strength
+- Source: [Gross2002], cross-association rule; [Chapman1990], association strength
 - Description: Site-pair association strength using explicit source-resolved cross records.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
@@ -107,28 +101,26 @@ $$
 \Delta_{AB}^{ij}=g_{ij}^{hs}
 \left[\exp\left(\frac{\epsilon_{AB}^{ij}/k_B}{T}\right)-1\right]
 \sigma_{ij}^3\kappa_{AB}^{ij}.
-\label{eq:association_strength}
 $$
 
 ## `born_outer_shell_diameter`
 
 - Section: Born solvation relations
 - Status: Source equation
-- Source: \cite{Figiel2025}, shell-thickness definition preceding Eq.~(7), parameterized to include its uncorrected limit
+- Source: [Figiel2025], shell-thickness definition preceding Eq.~(7), parameterized to include its uncorrected limit
 - Description: Ion-specific outer Born shell diameter with one explicit fixed correction coefficient.
 - Change note: The fitted Born diameter, solvation factor, and model-definition coefficient remain distinct inputs.
 
 $$
 f_{\mathrm{mix}}=\frac{\sum_kx_kf_k}{\sum_kx_k},\qquad
 D_i=d_i^{Born}\left(1+c_{\mathrm{shell}}\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
-\label{eq:born_outer_shell_diameter}
 $$
 
 ## `born_radial_charging_work`
 
 - Section: Born solvation relations
 - Status: Source equation
-- Source: Born charging work; \cite{Figiel2026Correction}, corrected Eq.~(7)
+- Source: Born charging work; [Figiel2026Correction], corrected Eq.~(7)
 - Description: Canonical radial charging sum with an explicit dielectric-saturation coefficient.
 - Change note: The admitted fixed coefficients express the uncorrected, shell-only, and shell-plus-dielectric limits through one equation.
 
@@ -140,46 +132,42 @@ W_{Born}=
 +c_{\mathrm{dielectric}}\left(1-\epsilon_{r,i}^{-1}\right)
 \left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
 \right].
-\label{eq:born_radial_charging_work}
 $$
 
 ## `born_residual_helmholtz`
 
 - Section: Born solvation relations
 - Status: Source equation
-- Source: Born charging work; \cite{Figiel2026Correction}, corrected Eq.~(7)
+- Source: Born charging work; [Figiel2026Correction], corrected Eq.~(7)
 - Description: Dimensionless residual Helmholtz contribution from the sole Born charging equation.
 - Change note: Shared by fixed and active-coordinate evaluation paths without a formulation selector.
 
 $$
 a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
-\label{eq:born_residual_helmholtz}
 $$
 
 ## `candidate_phase_criteria`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} system PP with tolerances of Section 4
+- Source: [Pereira2012] system PP with tolerances of Section 4
 - Description: A retained point is a candidate stable phase when its lower value is within the gap tolerance of the upper bound, its reduced gradient agrees with the multipliers on every coordinate away from the lower bound, and it is separated from every other candidate in packing fraction or in composition.
 - Change note: Gap 5e-2, relative derivative 0.5, packing and composition distinctness 1e-3, as in the source.
 
 $$
 \mathrm{UBD} - L^{m} \le \varepsilon_b,\qquad \frac{|\partial g/\partial \tilde{x}_i^{m} - \lambda_i|}{|\lambda_i|} \le \varepsilon_\lambda\ (\tilde{x}_i^{m} > \tilde{x}^{l}),\qquad |\eta^{m} - \eta^{n}| \ge \varepsilon_\eta\ \text{or}\ \max_i |\tilde{x}_i^{m} - \tilde{x}_i^{n}| \ge \varepsilon_x.
-\label{eq:candidate_phase_criteria}
 $$
 
 ## `chemical_potential_stationarity`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} Eq. 5; \cite{Gross2001} Eq. (A.33)
+- Source: [Pereira2012] Eq. 5; [Gross2001] Eq. (A.33)
 - Description: Intensive stationarity in phase composition with balance multipliers λ and per-phase charge multipliers φ_p; the same row for a free and a pinned phase.
 - Change note: Written intensively (divided by N_p) so a pinned phase carries the same row; phase equilibrium and reaction affinity follow from it.
 
 $$
 \mu_{p,i}-\boldsymbol{\lambda}\cdot\mathbf{B}_i-z_i\varphi_p=0,\quad i\in S_p.
-\label{eq:chemical_potential_stationarity}
 $$
 
 ## `close_packing_fraction`
@@ -192,14 +180,13 @@ $$
 
 $$
 \eta_{\mathrm{cp}}=\frac{\pi}{3\sqrt{2}}.
-\label{eq:close_packing_fraction}
 $$
 
 ## `component_mixed_bulk_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{AscaniHeld2021}, Eq.~(13)
+- Source: [AscaniHeld2021], Eq.~(13)
 - Description: Ascani combined solvent-mass and ion-mole bulk relative permittivity.
 - Change note: Ion mixture permittivities remain distinct from Figiel radial-region permittivity.
 
@@ -207,7 +194,6 @@ $$
 \epsilon_{r,\mathrm{bulk}}=
 \epsilon_{r,\mathrm{sf}}\sum_{s\in\mathcal{S}}x_s
 +\sum_{i\in\mathcal{I}}x_i\epsilon_{r,i}.
-\label{eq:component_mixed_bulk_permittivity}
 $$
 
 ## `component_permittivity_temperature_polynomial`
@@ -221,14 +207,13 @@ $$
 $$
 \epsilon_{r,s}(T)=c_{0,s}+\sum_{n=1}^{N_s}c_{n,s}
 (T-T_{\mathrm{ref},s})^n.
-\label{eq:component_permittivity_temperature_polynomial}
 $$
 
 ## `compressibility_factor`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.24)
+- Source: [Gross2001], Eq.~(A.24)
 - Description: Compressibility factor from the residual Helmholtz density derivative.
 - Change note: Uses molar density as the independent density coordinate.
 
@@ -236,7 +221,54 @@ $$
 Z=1+\rho_m a_\rho,
 \qquad
 a_\rho=\left(\frac{\partial a^r}{\partial\rho_m}\right)_{T,\boldsymbol{x}}.
-\label{eq:compressibility_factor}
+$$
+
+## `cp_ideal_constant`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Implementation convention
+- Source: Declared simplification; no literature form
+- Description: A constant ideal-gas heat capacity for a species with no better data, declared as such; its integrals are linear and logarithmic.
+- Change note: New declared kind; the only kind without a literature source, and the packet must say so.
+
+$$
+C^{\circ}_p=c,\qquad h^{\circ}(T)=h^{\circ}_{\mathrm{ref}}+c\,(T-T_{\mathrm{ref}}),\qquad s^{\circ}(T,P^{\circ})=s^{\circ}_{\mathrm{ref}}+c\ln\frac{T}{T_{\mathrm{ref}}}
+$$
+
+## `cp_ideal_dippr_107`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Bounded empirical relation
+- Source: Aly and Lee 1981, Fluid Phase Equilibria 6, 169 (DIPPR equation 107)
+- Description: Ideal-gas heat capacity of one species, hyperbolic form, with its closed-form enthalpy and entropy integrals; valid on the declared temperature domain only.
+- Change note: New declared kind.
+
+$$
+C^{\circ}_p=A+B\left[\frac{C/T}{\sinh(C/T)}\right]^2+D\left[\frac{E/T}{\cosh(E/T)}\right]^2,\qquad \int C^{\circ}_p\,dT=AT+BC\coth\frac{C}{T}-DE\tanh\frac{E}{T},\qquad \int\frac{C^{\circ}_p}{T}\,dT=A\ln T+B\left[\frac{C}{T}\coth\frac{C}{T}-\ln\sinh\frac{C}{T}\right]-D\left[\frac{E}{T}\tanh\frac{E}{T}-\ln\cosh\frac{E}{T}\right]
+$$
+
+## `cp_ideal_polynomial`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Bounded empirical relation
+- Source: Poling, Prausnitz and O'Connell 2001, The Properties of Gases and Liquids, 5th ed., Appendix A polynomial form
+- Description: Ideal-gas heat capacity as a power series in temperature with closed-form integrals; valid on the declared temperature domain only.
+- Change note: New declared kind.
+
+$$
+C^{\circ}_p=\sum_{k=0}^{n}a_kT^{k},\qquad \int C^{\circ}_p\,dT=\sum_{k=0}^{n}\frac{a_k}{k+1}T^{k+1},\qquad \int\frac{C^{\circ}_p}{T}\,dT=a_0\ln T+\sum_{k=1}^{n}\frac{a_k}{k}T^{k}
+$$
+
+## `cp_ideal_shomate`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Bounded empirical relation
+- Source: NIST Chemistry WebBook, SRD 69, Shomate equation (with t = T/1000 and the NIST constants F, G, H)
+- Description: Ideal-gas heat capacity in the Shomate form with the WebBook's enthalpy and entropy integrals; valid on the declared temperature domain only.
+- Change note: New declared kind.
+
+$$
+t=\frac{T}{1000},\quad C^{\circ}_p=A+Bt+Ct^2+Dt^3+\frac{E}{t^2},\quad H^{\circ}(T)-H^{\circ}(298.15)=At+\frac{Bt^2}{2}+\frac{Ct^3}{3}+\frac{Dt^4}{4}-\frac{E}{t}+F-H,\quad S^{\circ}=A\ln t+Bt+\frac{Ct^2}{2}+\frac{Dt^3}{3}-\frac{E}{2t^2}+G
 $$
 
 ## `cross_association_energy_correction`
@@ -255,14 +287,13 @@ $$
 \frac{\partial\left(\epsilon_{AB,r}^{ij}/k_B\right)}
 {\partial k_{\mathrm{HB},ij,r}}
 =-\frac{\epsilon_{AB,r,0}^{ij}}{k_B}.
-\label{eq:cross_association_energy_correction}
 $$
 
 ## `cross_dispersion_energy`
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.7)
+- Source: [Gross2001], Eq.~(A.7)
 - Description: Unlike-pair dispersion energy for an applicable pair.
 - Change note: Keeps k_ij semantically distinct from l_ij and association data.
 
@@ -270,27 +301,25 @@ $$
 \frac{\epsilon_{ij}}{k_B}
 =\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}}\,(1-k_{ij}),
 \qquad z_iz_j\le0.
-\label{eq:cross_dispersion_energy}
 $$
 
 ## `cross_segment_diameter`
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.7), with source-resulted l_ij extension
+- Source: [Gross2001], Eq.~(A.7), with source-resulted l_ij extension
 - Description: Unlike-pair segment diameter including the distinct l_ij family.
 - Change note: Makes the current l_ij semantics explicit.
 
 $$
 \sigma_{ij}=\frac{\sigma_i+\sigma_j}{2}(1-l_{ij}).
-\label{eq:cross_segment_diameter}
 $$
 
 ## `debye_finite_size_chi`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{Bulow2019}, finite-size function in Eq.~(2)
+- Source: [Bulow2019], finite-size function in Eq.~(2)
 - Description: Finite-size Debye--Huckel correction and its cancellation-safe series.
 - Change note: The reference-state reduced diameter selects the numerical branch.
 
@@ -304,14 +333,13 @@ $$
 & y_{\mathrm{ref}}\ge10^{-3},
 \end{cases}
 \qquad y=\kappa d_i.
-\label{eq:debye_finite_size_chi}
 $$
 
 ## `debye_huckel_helmholtz`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{Bulow2019}, Eq.~(2)
+- Source: [Bulow2019], Eq.~(2)
 - Description: Finite-size Debye--Huckel residual Helmholtz contribution.
 - Change note: Uses the model-routed common segment diameter converted to metres.
 
@@ -320,14 +348,13 @@ a^{DH}=
 -\frac{\kappa e^2}
 {12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}
 \sum_{i\in\mathcal{I}}x_i z_i^2\chi(\kappa d_i).
-\label{eq:debye_huckel_helmholtz}
 $$
 
 ## `debye_screening_parameter`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{Bulow2019}, Debye screening definition associated with Eq.~(2)
+- Source: [Bulow2019], Debye screening definition associated with Eq.~(2)
 - Description: SI Debye screening parameter for the resolved bulk dielectric.
 - Change note: Uses molar density and the current EOS physical constants.
 
@@ -335,7 +362,6 @@ $$
 \kappa=
 \sqrt{\frac{\rho_mN_Ae^2S_z}
 {\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}}.
-\label{eq:debye_screening_parameter}
 $$
 
 ## `declared_solvent_source_reference_transfer`
@@ -358,7 +384,6 @@ s_r&=\sum_i b_i^{(r)}\ell_i^{\mathrm{src}},\\
 \ln(\overline M_S m^\circ), & z_i\ne0.
 \end{cases}
 \end{aligned}
-\label{eq:declared_solvent_source_reference_transfer}
 $$
 
 ## `density_correlated_bulk_permittivity`
@@ -373,7 +398,6 @@ $$
 \epsilon_{r,\mathrm{bulk}}=
 1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
 \left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
-\label{eq:density_correlated_bulk_permittivity}
 $$
 
 ## `density_correlation_mixed_parameters`
@@ -389,34 +413,31 @@ x_{\mathrm{solv}}=\sum_{s\in\mathcal{S}}x_s,\qquad
 d_{V,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{V,s}}{x_{\mathrm{solv}}},
 \qquad
 d_{T,\mathrm{mix}}=\frac{\sum_{s\in\mathcal{S}}x_sd_{T,s}}{x_{\mathrm{solv}}}.
-\label{eq:density_correlation_mixed_parameters}
 $$
 
 ## `density_residual`
 
 - Section: Density closure and mechanical domain
 - Status: Exact derivation
-- Source: Exact pressure-closure equation using Eq.~\eqref{eq:pressure}
+- Source: Exact pressure-closure equation using Eq.~`pressure`
 - Description: Scalar residual whose roots are specified-pressure EOS states.
 - Change note: Root-search mechanics are not thermodynamic equations.
 
 $$
 F(\rho_m;T,\boldsymbol{x},P^\star)
 =P_{\mathrm{EOS}}(T,\rho_m,\boldsymbol{x})-P^\star=0.
-\label{eq:density_residual}
 $$
 
 ## `density_upper_bound`
 
 - Section: Density closure and mechanical domain
 - Status: Exact derivation
-- Source: Exact inversion of Eqs.~\eqref{eq:packing_fraction_coefficient} and \eqref{eq:close_packing_fraction}
+- Source: Exact inversion of Eqs.~`packing_fraction_coefficient` and `close_packing_fraction`
 - Description: Model-specific density boundary implied by close packing.
 - Change note: Reuses the sole EOS packing geometry owner.
 
 $$
 \rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
-\label{eq:density_upper_bound}
 $$
 
 ## `dipolar_correlation_integral`
@@ -429,7 +450,6 @@ $$
 
 $$
 I=1+\left(\sum_i a_{2,i}x_i\right)\left[\exp(-y)-1\right].
-\label{eq:dipolar_correlation_integral}
 $$
 
 ## `dipolar_perturbation_bulk_permittivity`
@@ -443,14 +463,13 @@ $$
 $$
 \epsilon_{r,\mathrm{bulk}}=
 1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
-\label{eq:dipolar_perturbation_bulk_permittivity}
 $$
 
 ## `dispersion_chain_coefficients`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eqs.~(A.13)--(A.14)
+- Source: [Gross2001], Eqs.~(A.13)--(A.14)
 - Description: Chain-length interpolation of universal dispersion coefficients.
 - Change note: Mirrors the current A0/A1/A2 and B0/B1/B2 arrays.
 
@@ -463,14 +482,13 @@ b_k(\overline m)&=b_{0k}
 +\frac{\overline m-1}{\overline m}b_{1k}
 +\frac{(\overline m-1)(\overline m-2)}{\overline m^2}b_{2k}.
 \end{aligned}
-\label{eq:dispersion_chain_coefficients}
 $$
 
 ## `dispersion_compressibility_factor`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.15)
+- Source: [Gross2001], Eq.~(A.15)
 - Description: Chain compressibility correction multiplying the second-order term.
 - Change note: Mirrors the current rational expression.
 
@@ -481,101 +499,93 @@ C_1=\left[
 \frac{20\eta-27\eta^2+12\eta^3-2\eta^4}
 {[(1-\eta)(2-\eta)]^2}
 \right]^{-1}.
-\label{eq:dispersion_compressibility_factor}
 $$
 
 ## `dispersion_first_moment`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.10) mixture sum
+- Source: [Gross2001], Eq.~(A.10) mixture sum
 - Description: First unlike-pair dispersion mixture moment.
 - Change note: Includes current segment counts and cross diameter.
 
 $$
 M_1=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
 \frac{\epsilon_{ij}/k_B}{T}.
-\label{eq:dispersion_first_moment}
 $$
 
 ## `dispersion_helmholtz`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.10)
+- Source: [Gross2001], Eq.~(A.10)
 - Description: PC-SAFT first- and second-order dispersion Helmholtz contribution.
 - Change note: Reconciled to the current angstrom number-density basis.
 
 $$
 a^{disp}=-2\pi\widehat{\rho}I_1M_1
 -\pi\widehat{\rho}\,\overline m\,C_1I_2M_2.
-\label{eq:dispersion_helmholtz}
 $$
 
 ## `dispersion_integral_one`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.11)
+- Source: [Gross2001], Eq.~(A.11)
 - Description: First PC-SAFT dispersion integral correlation.
 - Change note: Evaluated through the shared polynomial owner.
 
 $$
 I_1(\eta,\overline m)=\sum_{k=0}^{6}a_k(\overline m)\eta^k.
-\label{eq:dispersion_integral_one}
 $$
 
 ## `dispersion_integral_two`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.12)
+- Source: [Gross2001], Eq.~(A.12)
 - Description: Second PC-SAFT dispersion integral correlation.
 - Change note: Evaluated through the shared polynomial owner.
 
 $$
 I_2(\eta,\overline m)=\sum_{k=0}^{6}b_k(\overline m)\eta^k.
-\label{eq:dispersion_integral_two}
 $$
 
 ## `dispersion_polynomial`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Exact derivation
-- Source: \cite{Gross2001}, polynomial form in Eqs.~(A.11)--(A.12)
+- Source: [Gross2001], polynomial form in Eqs.~(A.11)--(A.12)
 - Description: Horner-evaluated sixth-order dispersion polynomial.
 - Change note: Documents the real arithmetic performed by polynomial.
 
 $$
 \mathcal{P}(\boldsymbol{c},\eta)=\sum_{k=0}^{6}c_k\eta^k.
-\label{eq:dispersion_polynomial}
 $$
 
 ## `dispersion_second_moment`
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.10) mixture sum
+- Source: [Gross2001], Eq.~(A.10) mixture sum
 - Description: Second unlike-pair dispersion mixture moment.
 - Change note: Includes the squared reduced pair energy.
 
 $$
 M_2=\sum_i\sum_j x_ix_jm_im_j\sigma_{ij}^3
 \left(\frac{\epsilon_{ij}/k_B}{T}\right)^2.
-\label{eq:dispersion_second_moment}
 $$
 
 ## `dual_inner_problem`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} Eqs. 9--11
+- Source: [Pereira2012] Eqs. 9--11
 - Description: Inner problem of the Lagrangian dual: the one-phase minimizer with a linear term and no balance rows.
 - Change note: Lower bound on the reduced Gibbs energy.
 
 $$
 q(\boldsymbol\lambda)=\min_{\boldsymbol x,v}\left[g(\boldsymbol x,v)-\boldsymbol\lambda\cdot\boldsymbol x\right]\le\frac{G^{*}}{N}.
-\label{eq:dual_inner_problem}
 $$
 
 ## `effective_dipolar_density`
@@ -591,14 +601,13 @@ y=\frac{4\pi}{9}\sum_i \widehat{\rho}_i
 \left(\frac{\mu_i^2\,10^{-19}}{k_BT}+3\alpha_i\right),
 \qquad
 \widehat{\rho}_i=\rho_mN_Ax_i10^{-30}.
-\label{eq:effective_dipolar_density}
 $$
 
 ## `electrolyte_phase_coordinate_jacobian`
 
 - Section: Native phase coordinates
 - Status: Exact derivation
-- Source: Exact Jacobian of Eqs.~\eqref{eq:phase_mole_fraction}--\eqref{eq:phase_molar_density}
+- Source: Exact Jacobian of Eqs.~`phase_mole_fraction`--`phase_molar_density`
 - Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
 - Change note: Retained by the Equilibrium EOS workflow pending CAP-07; the generic EOS tape differentiates amount-volume coordinates directly.
 
@@ -610,7 +619,6 @@ $$
 \frac{\partial x_i}{\partial n_j}=\frac{\delta_{ij}-x_i}{n},
 \quad
 \frac{\partial x_i}{\partial V}=0.
-\label{eq:electrolyte_phase_coordinate_jacobian}
 $$
 
 ## `electrolyte_phase_hessian_chain_rule`
@@ -631,27 +639,25 @@ a^r_{y_py_q}y_{p,\alpha}y_{q,\beta}
 \right),
 \quad
 \boldsymbol{y}=(\rho_m,\boldsymbol{x}).
-\label{eq:electrolyte_phase_hessian_chain_rule}
 $$
 
 ## `electroneutral_amount_chart`
 
 - Section: Equilibrium
 - Status: Implementation convention
-- Source: \cite{Pereira2012}; Perdomo et al. 2025 (Perdomo2025) Section 3
+- Source: [Pereira2012]; Perdomo et al. 2025 (Perdomo2025) Section 3
 - Description: Electroneutral reduced coordinates for the tangent-plane search: one ion eliminated per charged trial phase.
 - Change note: Used by the stability search only; the minimizer keeps the full composition with the charge row.
 
 $$
 n_{p,e}=-\frac{1}{z_e}\sum_{i\neq e} z_i\,n_{p,i}.
-\label{eq:electroneutral_amount_chart}
 $$
 
 ## `fixed_pressure_fugacity_correction`
 
 - Section: Thermodynamic properties
 - Status: Documentation-only
-- Source: EOS Newton correction using Eq.~\eqref{eq:pressure_density_derivative}
+- Source: EOS Newton correction using Eq.~`pressure_density_derivative`
 - Description: Correct a converged-state log fugacity for its bounded pressure residual.
 - Change note: Retained as provenance after the active-coordinate path adopted an exact extensive-coordinate pressure constraint.
 
@@ -661,7 +667,6 @@ $$
 \ln\phi_i(P^\star)&\approx
 \ln\phi_i(P)+(\ln\phi_i)_\rho\,\Delta\rho_m.
 \end{aligned}
-\label{eq:fixed_pressure_fugacity_correction}
 $$
 
 ## `fixed_pressure_total_derivative`
@@ -677,14 +682,13 @@ $$
 =Q_\theta+Q_\rho\left.\frac{d\rho_m}{d\theta}\right|_P,
 \qquad
 \left.\frac{d\rho_m}{d\theta}\right|_P=-\frac{P_\theta}{P_\rho}.
-\label{eq:fixed_pressure_total_derivative}
 $$
 
 ## `formula_unit_composition`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Exact derivation
-- Source: \cite{Figiel2025}, formula-unit molality reference-state basis
+- Source: [Figiel2025], formula-unit molality reference-state basis
 - Description: Convert salt formula-unit molality per kilogram of salt-free solvent to mole fractions.
 - Change note: Uses one kilogram of salt-free solvent as the construction basis.
 
@@ -696,28 +700,26 @@ n_{\mathrm{tot}}&=n_s^{(0)}+m(\nu_++\nu_-),
 &x_s&=\frac{y_sn_s^{(0)}}{n_{\mathrm{tot}}},
 &x_\pm&=\frac{\nu_\pm m}{n_{\mathrm{tot}}}.
 \end{aligned}
-\label{eq:formula_unit_composition}
 $$
 
 ## `hard_chain_helmholtz`
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.16)
+- Source: [Gross2001], Eq.~(A.16)
 - Description: PC-SAFT hard-chain residual Helmholtz contribution.
 - Change note: Mirrors the site-independent chain term.
 
 $$
 a^{hc}=\overline{m}\,a^{hs}
 -\sum_i x_i(m_i-1)\ln g_{ii}^{hs}.
-\label{eq:hard_chain_helmholtz}
 $$
 
 ## `hard_sphere_contact`
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.17)
+- Source: [Gross2001], Eq.~(A.17)
 - Description: Hard-sphere radial distribution function at segment contact.
 - Change note: Uses the current pure-component contact diameter d_i/2.
 
@@ -726,14 +728,13 @@ g_{ii}^{hs}=
 \frac{1}{1-\eta}
 +\frac{3(d_i/2)\zeta_2}{(1-\eta)^2}
 +\frac{2(d_i/2)^2\zeta_2^2}{(1-\eta)^3}.
-\label{eq:hard_sphere_contact}
 $$
 
 ## `hard_sphere_helmholtz`
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: \cite{Gross2001}, Eqs.~(A.8)--(A.9)
+- Source: [Gross2001], Eqs.~(A.8)--(A.9)
 - Description: Boublik-Mansoori-Carnahan-Starling-Leland hard-sphere Helmholtz term.
 - Change note: Mirrors the current zeta-based expression.
 
@@ -743,20 +744,18 @@ a^{hs}=\frac{1}{\zeta_0}\left[
 +\frac{\zeta_2^3}{\zeta_3(1-\zeta_3)^2}
 +\left(\frac{\zeta_2^3}{\zeta_3^2}-\zeta_0\right)
 \ln(1-\zeta_3)\right].
-\label{eq:hard_sphere_helmholtz}
 $$
 
 ## `helmholtz_lagrangian_dual`
 
 - Section: Equilibrium
 - Status: Documentation-only
-- Source: \cite{Pereira2012} problem D and Eq. 6
+- Source: [Pereira2012] problem D and Eq. 6
 - Description: The Lagrangian dual of the one-phase minimization in volume-composition coordinates; its value is the equilibrium free energy and its inner minimizers are the stable phases. Realized by alternating outer_approximation_bound and dual_inner_problem; no single function owns it.
 - Change note: Convergence to the dual optimum needs a global inner minimizer; the implementation certifies nothing beyond finite bounds.
 
 $$
 G^{D} = \max_{\boldsymbol\lambda}\ \min_{\tilde{\boldsymbol x},\,v}\ \Big[ g(\tilde{\boldsymbol x}, v) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}) \Big],\qquad g = \frac{A + P V}{R T}.
-\label{eq:helmholtz_lagrangian_dual}
 $$
 
 ## `ideal_gas_density`
@@ -769,7 +768,18 @@ $$
 
 $$
 \rho_{\mathrm{ideal}}=\frac{P^\star}{RT}.
-\label{eq:ideal_gas_density}
+$$
+
+## `ideal_gas_helmholtz`
+
+- Section: Reference thermochemistry / Ideal side
+- Status: Exact derivation
+- Source: Michelsen and Mollerup 2007, Thermodynamic Models: Fundamentals and Computational Aspects, ch. 2 (ideal-gas contribution); the translational and mixing term is registered under phase_helmholtz_amount_volume
+- Description: Reference-state part of the ideal-gas Helmholtz energy of a phase, per mole, from the declared per-species formation enthalpy, formation entropy and ideal-gas heat capacity; added to the mixing term the equilibrium assembly already owns. Absent by name when no Thermochemistry is declared.
+- Change note: New with the Thermochemistry object; references phase_helmholtz_amount_volume for the mixing term rather than restating it.
+
+$$
+\frac{A^{\circ}_{\mathrm{ref}}}{RT}=\sum_i x_i\left[\frac{h^{\circ}_i(T)}{RT}-\frac{s^{\circ}_i(T,P^{\circ})}{R}\right],\qquad h^{\circ}_i(T)=\Delta_f h^{\circ}_i(T_{\mathrm{ref}})+\int_{T_{\mathrm{ref}}}^{T}C^{\circ}_{p,i}\,dT,\qquad s^{\circ}_i(T,P^{\circ})=s^{\circ}_i(T_{\mathrm{ref}},P^{\circ})+\int_{T_{\mathrm{ref}}}^{T}\frac{C^{\circ}_{p,i}}{T}\,dT
 $$
 
 ## `implicit_sensitivity`
@@ -782,21 +792,19 @@ $$
 
 $$
 \frac{\mathrm d\boldsymbol y}{\mathrm d\boldsymbol\theta}=-\mathbf{F}_{\boldsymbol y}^{-1}\,\mathbf{F}_{\boldsymbol\theta}.
-\label{eq:implicit_sensitivity}
 $$
 
 ## `infinite_dilution_solvation_energy`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{Figiel2025}, infinite-dilution fugacity-to-solvation-energy relation
+- Source: [Figiel2025], infinite-dilution fugacity-to-solvation-energy relation
 - Description: Single-ion infinite-dilution solvation Gibbs energy on the EOS reference convention.
 - Change note: Uses the terminal reference-sequence log fugacity.
 
 $$
 \Delta G_{i,\mathrm{solv}}^\infty
 =RT\ln\phi_i^\infty.
-\label{eq:infinite_dilution_solvation_energy}
 $$
 
 ## `interphase_potential_equality`
@@ -809,14 +817,13 @@ $$
 
 $$
 \mu_{p,i}-\mu_{q,i}=z_i\,(\varphi_p-\varphi_q).
-\label{eq:interphase_potential_equality}
 $$
 
 ## `ion_fraction_suppressed_bulk_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Bounded empirical relation
-- Source: \cite{Figiel2025}, Eq.~(11)
+- Source: [Figiel2025], Eq.~(11)
 - Description: Figiel-family ion-suppressed bulk relative permittivity.
 - Change note: The suppression coefficient is an explicit resolved model record.
 
@@ -826,7 +833,6 @@ $$
 {1+C_\epsilon x_{\mathrm{ion}}},
 \qquad
 x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
-\label{eq:ion_fraction_suppressed_bulk_permittivity}
 $$
 
 ## `ion_specific_suppressed_bulk_permittivity`
@@ -841,20 +847,18 @@ $$
 \epsilon_{r,\mathrm{bulk}}=
 \frac{\epsilon_{r,s}(T)}
 {1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
-\label{eq:ion_specific_suppressed_bulk_permittivity}
 $$
 
 ## `ion_suppressed_bulk_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: Zuber et al. 2014 per-ion suppression coefficients (Zuber2014); \cite{Figiel2025} is the special case with one coefficient for every ion
+- Source: Zuber et al. 2014 per-ion suppression coefficients (Zuber2014); [Figiel2025] is the special case with one coefficient for every ion
 - Description: Bulk relative permittivity of an electrolyte solution as the salt-free solvent-mixture permittivity suppressed by the ion mole fractions with per-ion coefficients.
 - Change note: One equation covers ion-specific suppression, ion-fraction suppression (all alpha equal) and solvent-only (alpha = 0); the model layer fills the coefficients.
 
 $$
 \varepsilon=\frac{\varepsilon_{\mathrm{sf}}}{1+\sum_i\alpha_i x_i}.
-\label{eq:ion_suppressed_bulk_permittivity}
 $$
 
 ## `ionic_packing_diameter`
@@ -867,40 +871,37 @@ $$
 
 $$
 d_i=d_i^{\mathrm{pack}},\qquad z_i\ne0,\qquad d_i^{\mathrm{pack}}>0.
-\label{eq:ionic_packing_diameter}
 $$
 
 ## `ionic_strength_charge_sum`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{Bulow2019}, charge-weighted composition in the screening definition
+- Source: [Bulow2019], charge-weighted composition in the screening definition
 - Description: Mole-fraction charge-square sum entering Debye screening.
 - Change note: Only charged components contribute.
 
 $$
 S_z=\sum_{i\in\mathcal{I}}x_i z_i^2.
-\label{eq:ionic_strength_charge_sum}
 $$
 
 ## `log_fugacity_coefficient`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.32)
+- Source: [Gross2001], Eq.~(A.32)
 - Description: Natural logarithm of the component fugacity coefficient.
 - Change note: Available only when the compressibility factor is positive.
 
 $$
 \ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
-\label{eq:log_fugacity_coefficient}
 $$
 
 ## `log_fugacity_density_derivative`
 
 - Section: Thermodynamic properties
 - Status: Documentation-only
-- Source: Exact derivative of Eqs.~\eqref{eq:residual_chemical_potential} and \eqref{eq:log_fugacity_coefficient}
+- Source: Exact derivative of Eqs.~`residual_chemical_potential` and `log_fugacity_coefficient`
 - Description: Density derivative of log fugacity used by active fixed-pressure observations.
 - Change note: Retained as derivational provenance after the generic extensive-coordinate Hessian replaced the density-specific implementation.
 
@@ -912,27 +913,25 @@ $$
 &=2a_\rho+\rho_ma_{\rho\rho}
 +a_{x_i\rho}-\sum_jx_ja_{x_j\rho}.
 \end{aligned}
-\label{eq:log_fugacity_density_derivative}
 $$
 
 ## `material_balance`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} Eq. 3
+- Source: [Pereira2012] Eq. 3
 - Description: Conserved-moiety balance over the phases, each weighted by its amount; B is the identity when no reaction is declared.
 - Change note: Rank of B is the number of balance rows.
 
 $$
 \sum_p N_p\,\mathbf{B}\,\mathbf{x}_p=\mathbf{B}\,\mathbf{n}_{\mathrm{feed}}.
-\label{eq:material_balance}
 $$
 
 ## `mean_ionic_activity_coefficient`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{Figiel2025}, stoichiometric mean ionic activity definition
+- Source: [Figiel2025], stoichiometric mean ionic activity definition
 - Description: Stoichiometric mean ionic activity coefficient on the mole-fraction basis.
 - Change note: Supports the one-formula-unit cation/anion topology.
 
@@ -940,20 +939,18 @@ $$
 \ln\gamma_\pm^{(x)}
 =\frac{\nu_+\ln\gamma_+^{(x)}+\nu_-\ln\gamma_-^{(x)}}
 {\nu_++\nu_-}.
-\label{eq:mean_ionic_activity_coefficient}
 $$
 
 ## `mean_segment_count`
 
 - Section: Density and packing
 - Status: Source equation
-- Source: \cite{Gross2001}, Appendix A mixture definition
+- Source: [Gross2001], Appendix A mixture definition
 - Description: Composition-averaged segment count.
 - Change note: Reconciled to the current residual Helmholtz owner.
 
 $$
 \overline{m}=\sum_i x_i m_i.
-\label{eq:mean_segment_count}
 $$
 
 ## `mechanical_stability`
@@ -969,27 +966,25 @@ $$
 \qquad
 P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
 \quad\text{for certified roots}.
-\label{eq:mechanical_stability}
 $$
 
 ## `modified_fraction_chart`
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: \cite{Pereira2012} composition chart extended to charged species per Perdomo et al. 2025 (Perdomo2025) Section 3
+- Source: [Pereira2012] composition chart extended to charged species per Perdomo et al. 2025 (Perdomo2025) Section 3
 - Description: Modified mole fractions of a charged phase after eliminating one ion by electroneutrality; the modified fractions sum to one and the eliminated ion is reconstructed from the retained ones.
 - Change note: Owner of the phase-stability composition chart; the ordinary chart is the case with no charged species (all factors one, no eliminated ion).
 
 $$
 \tilde{x}_i = f_i\,x_i,\qquad f_i = 1 - \frac{q_i}{q_e}\ (i \neq e),\qquad \sum_{i \neq e}\tilde{x}_i = 1,\qquad x_e = -\frac{1}{q_e}\sum_{i \neq e} q_i x_i,\qquad x_i = \frac{\tilde{x}_i}{f_i}.
-\label{eq:modified_fraction_chart}
 $$
 
 ## `molality_activity_conversion`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{Figiel2025}, mole-fraction to molality activity conversion
+- Source: [Figiel2025], mole-fraction to molality activity conversion
 - Description: Convert the mean ionic coefficient to the formula-unit molality basis.
 - Change note: Uses salt-free solvent molar mass in kilograms per mole.
 
@@ -997,20 +992,18 @@ $$
 \gamma_\pm^{(m)}=
 \frac{\gamma_\pm^{(x)}}
 {1+\overline M_s\,m(\nu_++\nu_-)}.
-\label{eq:molality_activity_conversion}
 $$
 
 ## `multiplier_potential_link`
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: \cite{Pereira2012} Eq. 7 in the modified chart of Perdomo et al. 2025 (Perdomo2025)
+- Source: [Pereira2012] Eq. 7 in the modified chart of Perdomo et al. 2025 (Perdomo2025)
 - Description: At a solution of the inner problem the multipliers equal the reduced gradient of the phase free energy in the independent modified coordinates: the modified potential of the coordinate minus that of the dependent species.
 - Change note: The modified potentials are conjugate to the modified fractions so that the phase free energy is unchanged by the chart.
 
 $$
 \tilde{\mu}_i = \frac{\mu_i - (q_i/q_e)\,\mu_e}{f_i},\qquad \sum_{i \neq e}\tilde{\mu}_i\tilde{x}_i = \sum_i \mu_i x_i,\qquad \lambda_k = \tilde{\mu}_k - \tilde{\mu}_{d},\quad k \in \text{independent},\ d = \text{dependent species}.
-\label{eq:multiplier_potential_link}
 $$
 
 ## `neutral_reference_stoichiometric_basis`
@@ -1034,55 +1027,51 @@ c_r=\sum_i b_i^{(r)}\ln\phi_i^{\mathrm{ref}},
 \ln\phi_i(\boldsymbol{x}_{\mathrm{neutral}}), & z_i=0,\\
 \ln\phi_i^\infty, & z_i\ne 0.
 \end{cases}
-\label{eq:neutral_reference_stoichiometric_basis}
 $$
 
 ## `neutral_segment_diameter`
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.6)
+- Source: [Gross2001], Eq.~(A.6)
 - Description: Temperature-dependent hard-chain diameter for neutral components.
 - Change note: Reconciled to the current neutral diameter branch.
 
 $$
 d_i(T)=\sigma_i(T)\left[1-0.12\exp\left(-\frac{3(\epsilon_i/k_B)}{T}\right)\right],
 \qquad z_i=0.
-\label{eq:neutral_segment_diameter}
 $$
 
 ## `outer_approximation_bound`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} problem OP; \cite{Pereira2012} Section 2 after Mitsos and Barton 2007 (MitsosBarton2007)
+- Source: [Pereira2012] problem OP; [Pereira2012] Section 2 after Mitsos and Barton 2007 (MitsosBarton2007)
 - Description: Finite outer approximation of the semi-infinite dual: maximize a scalar bounded by every retained cut and by the feed free energy; the optimum is an upper bound on the dual value and its multipliers drive the next inner problem.
 - Change note: Solved as a linear program over the retained set M; the feed cut has zero slope.
 
 $$
 \mathrm{UBD} = \max_{v,\boldsymbol\lambda}\ v\quad \text{s.t.}\quad v \le g(\tilde{\boldsymbol x}^{m}, v^{m}) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}^{m})\ \ \forall m \in \mathcal M,\qquad v \le g(\tilde{\boldsymbol x}^{0}, v^{0}).
-\label{eq:outer_approximation_bound}
 $$
 
 ## `packing_fraction`
 
 - Section: Density and packing
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.8) at n=3
+- Source: [Gross2001], Eq.~(A.8) at n=3
 - Description: Packing fraction from molar density and segment geometry.
 - Change note: Shared by Helmholtz evaluation and EOS domain owners.
 
 $$
 \eta=\zeta_3
 =\frac{\pi}{6}\rho_mN_A10^{-30}\sum_i x_i m_i d_i^3.
-\label{eq:packing_fraction}
 $$
 
 ## `packing_fraction_coefficient`
 
 - Section: Density and packing
 - Status: Exact derivation
-- Source: Exact specialization of Eq.~\eqref{eq:packing_fraction}
+- Source: Exact specialization of Eq.~`packing_fraction`
 - Description: Composition and temperature coefficient satisfying eta=rho_m c_eta.
 - Change note: Mirrors the value-only volume-domain helper.
 
@@ -1090,21 +1079,19 @@ $$
 c_\eta(T,\boldsymbol{x})=
 \frac{\pi}{6}N_A10^{-30}\sum_i x_i m_i d_i(T)^3,
 \qquad \eta=\rho_m c_\eta.
-\label{eq:packing_fraction_coefficient}
 $$
 
 ## `packing_moments`
 
 - Section: Density and packing
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.8)
+- Source: [Gross2001], Eq.~(A.8)
 - Description: Segment-density moments used by hard-chain and association terms.
 - Change note: Uses the current angstrom number-density basis.
 
 $$
 \zeta_n=\frac{\pi}{6}\widehat{\rho}\sum_i x_i m_i d_i^n,
 \qquad n=0,1,2,3.
-\label{eq:packing_moments}
 $$
 
 ## `packing_volume_bounds`
@@ -1119,7 +1106,6 @@ $$
 V_{m,\min}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\max}},
 \qquad
 V_{m,\max}=\frac{c_\eta(T,\boldsymbol{x})}{\eta_{\min}}.
-\label{eq:packing_volume_bounds}
 $$
 
 ## `phase_dimensionless_helmholtz`
@@ -1137,33 +1123,30 @@ $$
 \ln\left(\frac{n_i/V}{\rho_{\mathrm{ref}}}\right)-1
 \right]
 +\frac{n}{n_{\mathrm{ref}}}a^r(T,\rho_m,\boldsymbol{x}).
-\label{eq:phase_dimensionless_helmholtz}
 $$
 
 ## `phase_electroneutrality`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Ascani2022} Eq. 5; Tsanas et al. 2019 Section 2.2.1 and 2022 Section 2.4 (Tsanas2019, Tsanas2022)
+- Source: [Ascani2022] Eq. 5; Tsanas et al. 2019 Section 2.2.1 and 2022 Section 2.4 (Tsanas2019, Tsanas2022)
 - Description: Per-phase electroneutrality for every ion-containing phase except one phase of nonzero amount; the omitted phase's neutrality follows from the balance rows and a neutral feed.
 - Change note: One row fewer than the ion-containing phases; if every ion-containing phase is pinned at zero amount, all carry the row.
 
 $$
 \mathbf{z}\cdot\mathbf{x}_p=0\quad\text{for all ion-containing }p\text{ except one of nonzero amount}.
-\label{eq:phase_electroneutrality}
 $$
 
 ## `phase_helmholtz_amount_volume`
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: \cite{Gross2001} Appendix A with the ideal-gas mixing term
+- Source: [Gross2001] Appendix A with the ideal-gas mixing term
 - Description: Phase Helmholtz energy over RT in amount and volume coordinates.
-- Change note: Reference density contributes a species-linear constant only.
+- Change note: ideal_gas_helmholtz references this entry for the translational and mixing term; equation unchanged.
 
 $$
 \frac{A_p}{RT}=\sum_i n_{p,i}\left[\ln\frac{n_{p,i}}{V_p\rho_{\mathrm{ref}}}-1\right]+N_p\,a^{r}\!\left(T,\frac{N_p}{V_p},\frac{\boldsymbol n_p}{N_p}\right).
-\label{eq:phase_helmholtz_amount_volume}
 $$
 
 ## `phase_molar_density`
@@ -1176,7 +1159,6 @@ $$
 
 $$
 \rho_m=\frac{n}{V}.
-\label{eq:phase_molar_density}
 $$
 
 ## `phase_mole_fraction`
@@ -1189,7 +1171,6 @@ $$
 
 $$
 x_i=\frac{n_i}{n}.
-\label{eq:phase_mole_fraction}
 $$
 
 ## `phase_normalization`
@@ -1202,34 +1183,31 @@ $$
 
 $$
 \sum_{i\in S_p}x_{p,i}=1\quad\text{for every phase }p.
-\label{eq:phase_normalization}
 $$
 
 ## `phase_packing_fraction`
 
 - Section: Density and packing
 - Status: Exact derivation
-- Source: Exact extensive-coordinate form of Eq.~\eqref{eq:packing_fraction}
+- Source: Exact extensive-coordinate form of Eq.~`packing_fraction`
 - Description: Packing fraction in explicit component amounts and extensive volume.
 - Change note: Mirrors the native phase-domain derivative owner.
 
 $$
 \eta(T,\boldsymbol{n},V)=
 \frac{\pi}{6}\frac{N_A10^{-30}}{V}\sum_i n_i m_i d_i(T)^3.
-\label{eq:phase_packing_fraction}
 $$
 
 ## `phase_packing_volume`
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: Packing-fraction definition, \cite{Gross2001} Eq. (A.8)
+- Source: Packing-fraction definition, [Gross2001] Eq. (A.8)
 - Description: Phase volume from the logarithmic packing coordinate.
 - Change note: Closed form; no tape is required.
 
 $$
 V_p=\frac{\pi}{6\,\eta_p}\sum_i n_{p,i}\,m_i\,d_i^{3}.
-\label{eq:phase_packing_volume}
 $$
 
 ## `phase_pressure`
@@ -1243,7 +1221,6 @@ $$
 $$
 P=-RTn_{\mathrm{ref}}
 \left(\frac{\partial\Phi}{\partial V}\right)_{T,\boldsymbol{n}}.
-\label{eq:phase_pressure}
 $$
 
 ## `phase_support`
@@ -1256,7 +1233,6 @@ $$
 
 $$
 n_{p,i}=0\quad\text{for }i\notin S_p\ \text{(the variable is absent)}.
-\label{eq:phase_support}
 $$
 
 ## `phase_total_amount`
@@ -1269,14 +1245,13 @@ $$
 
 $$
 n=\sum_i n_i.
-\label{eq:phase_total_amount}
 $$
 
 ## `practical_osmotic_coefficient`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{HamerWu1972}, practical molal osmotic-coefficient definition
+- Source: [HamerWu1972], practical molal osmotic-coefficient definition
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
 - Change note: Defined only for the admitted single-active-solvent aqueous path.
 
@@ -1286,27 +1261,25 @@ $$
 {(\nu_++\nu_-)mM_s},
 \qquad
 \ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}.
-\label{eq:practical_osmotic_coefficient}
 $$
 
 ## `pressure`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.24)
+- Source: [Gross2001], Eq.~(A.24)
 - Description: EOS pressure from compressibility factor.
 - Change note: Returns pressure in pascals on the SI molar-density basis.
 
 $$
 P=\rho_mRTZ.
-\label{eq:pressure}
 $$
 
 ## `pressure_density_derivative`
 
 - Section: Thermodynamic properties
 - Status: Exact derivation
-- Source: Exact derivative of Eq.~\eqref{eq:pressure}
+- Source: Exact derivative of Eq.~`pressure`
 - Description: Isothermal pressure derivative used by density closure and stability checks.
 - Change note: Transforms CppAD density partials without expanding the EOS derivative.
 
@@ -1315,20 +1288,18 @@ $$
 =RT\left(Z+\rho_mZ_\rho\right),
 \qquad
 Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
-\label{eq:pressure_density_derivative}
 $$
 
 ## `pressure_equality`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} Eq. 6; \cite{Gross2001} Eq. (A.24)
+- Source: [Pereira2012] Eq. 6; [Gross2001] Eq. (A.24)
 - Description: Stationarity in phase volume: every EOS phase is at the system pressure.
 - Change note: A stationarity row of the same minimization.
 
 $$
 -\frac{\partial A_p}{\partial V_p}=P.
-\label{eq:pressure_equality}
 $$
 
 ## `pure_active_parameter_mapping`
@@ -1344,7 +1315,6 @@ $$
 =\left(m,\sigma,\epsilon/k_B\right),
 \qquad
 \boldsymbol{k}=\boldsymbol{l}=(0).
-\label{eq:pure_active_parameter_mapping}
 $$
 
 ## `reaction_affinity`
@@ -1357,7 +1327,30 @@ $$
 
 $$
 \sum_i\nu_i\,\mu_{p,i}=\boldsymbol\lambda\cdot(\mathbf{B}\boldsymbol\nu)+\varphi_p\,(\boldsymbol z\cdot\boldsymbol\nu)=0.
-\label{eq:reaction_affinity}
+$$
+
+## `reaction_constant_ln_polynomial`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Bounded empirical relation
+- Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
+- Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
+- Change note: New declared kind; the correlation coefficients are a fittable active-parameter family.
+
+$$
+\ln K=a+\frac{b}{T}+c\ln T+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
+$$
+
+## `reaction_constant_log10_reciprocal`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Bounded empirical relation
+- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
+- Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; valid on the declared temperature domain only.
+- Change note: New declared kind; the correlation coefficients are a fittable active-parameter family.
+
+$$
+-\log_{10}K=\frac{a}{T}+b+cT,\qquad \ln K=-\ln 10\left(\frac{a}{T}+b+cT\right),\qquad \frac{d\ln K}{dT}=\ln 10\left(\frac{a}{T^2}-c\right)
 $$
 
 ## `reduced_hessian_stability`
@@ -1370,7 +1363,6 @@ $$
 
 $$
 \mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
-\label{eq:reduced_hessian_stability}
 $$
 
 ## `reference_limit_terminal_pair`
@@ -1383,14 +1375,13 @@ $$
 
 $$
 e_{\mathrm{ref}}=\max_{i\in\{+,-\}}\left|\ln\varphi_i(m_{k})-\ln\varphi_i(m_{k-1})\right|.
-\label{eq:reference_limit_terminal_pair}
 $$
 
 ## `reference_molality_sequence`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Implementation convention
-- Source: EOS convergence sequence for the \cite{Figiel2025} infinite-dilution reference
+- Source: EOS convergence sequence for the [Figiel2025] infinite-dilution reference
 - Description: Fixed four-molality sequence and terminal fugacity selection.
 - Change note: One internal owner constructs composition, adjudicates convergence, and selects the terminal observation.
 
@@ -1400,54 +1391,50 @@ $$
 \ \si{\mole\per\kilogram},
 \qquad
 \ln\phi_i^\infty\equiv\ln\phi_i(m=10^{-12}).
-\label{eq:reference_molality_sequence}
 $$
 
 ## `residual_chemical_potential`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.33)
+- Source: [Gross2001], Eq.~(A.33)
 - Description: Dimensionless residual chemical potential under unconstrained composition partials.
 - Change note: Mirrors the current constant-temperature, constant-density mixture convention.
 
 $$
 \frac{\mu_i^r}{RT}
 =a^r+(Z-1)+a_{x_i}-\sum_jx_ja_{x_j}.
-\label{eq:residual_chemical_potential}
 $$
 
 ## `residual_enthalpy`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.48)
+- Source: [Gross2001], Eq.~(A.48)
 - Description: Residual molar enthalpy.
 - Change note: Includes the residual pressure-volume term Z-1.
 
 $$
 h^r=RT\left[-Ta_T+(Z-1)\right].
-\label{eq:residual_enthalpy}
 $$
 
 ## `residual_entropy`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.46)
+- Source: [Gross2001], Eq.~(A.46)
 - Description: Residual entropy at the same temperature and density.
 - Change note: Does not silently change to a same-pressure ideal-gas reference.
 
 $$
 s_V^r=-R\left(a^r+Ta_T\right).
-\label{eq:residual_entropy}
 $$
 
 ## `residual_heat_capacity_cp`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.50)
+- Source: [Gross2001], Eq.~(A.50)
 - Description: Residual isobaric molar heat capacity on a conditioned mechanical branch.
 - Change note: The final minus one removes the ideal-gas cp-cv contribution.
 
@@ -1455,53 +1442,49 @@ $$
 \frac{c_p^r}{R}
 =\frac{c_v^r}{R}
 +\frac{(Z+TZ_T)^2}{Z+\rho_mZ_\rho}-1.
-\label{eq:residual_heat_capacity_cp}
 $$
 
 ## `residual_heat_capacity_cv`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.49)
+- Source: [Gross2001], Eq.~(A.49)
 - Description: Residual isochoric molar heat capacity.
 - Change note: Transforms CppAD first and second temperature partials.
 
 $$
 c_v^r=R\left(-2Ta_T-T^2a_{TT}\right).
-\label{eq:residual_heat_capacity_cv}
 $$
 
 ## `residual_helmholtz`
 
 - Section: Residual Helmholtz energy
 - Status: Implementation convention
-- Source: \cite{Gross2001}, PC-SAFT residual decomposition extended by admitted electrolyte terms
+- Source: [Gross2001], PC-SAFT residual decomposition extended by admitted electrolyte terms
 - Description: Sum of every active residual Helmholtz contribution.
 - Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 
 $$
 a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
-\label{eq:residual_helmholtz}
 $$
 
 ## `residual_internal_energy`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: \cite{Gross2001}, Eq.~(A.47)
+- Source: [Gross2001], Eq.~(A.47)
 - Description: Residual molar internal energy.
 - Change note: Uses the CppAD temperature partial at fixed density and composition.
 
 $$
 u^r=-RT^2a_T.
-\label{eq:residual_internal_energy}
 $$
 
 ## `salt_free_solvent_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: \cite{Figiel2025}, Eq.~(11) solvent basis; \cite{AscaniHeld2021}, Eq.~(13)
+- Source: [Figiel2025], Eq.~(11) solvent basis; [AscaniHeld2021], Eq.~(13)
 - Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
 - Change note: Uses component molar masses and includes exactly the neutral components with declared permittivity correlations.
 
@@ -1509,20 +1492,18 @@ $$
 \epsilon_{r,\mathrm{sf}}=
 \frac{\sum_{s\in\mathcal{S}}x_sM_s\epsilon_{r,s}}
 {\sum_{s\in\mathcal{S}}x_sM_s}.
-\label{eq:salt_free_solvent_permittivity}
 $$
 
 ## `same_sign_ionic_dispersion`
 
 - Section: Parameter setup
 - Status: Implementation convention
-- Source: \cite{Figiel2025}, same-sign ion exclusion; \cite{Ji2012}, all-ion-pair dispersion
+- Source: [Figiel2025], same-sign ion exclusion; [Ji2012], all-ion-pair dispersion
 - Description: Select the source-declared dispersion rule for equally charged ions.
 - Change note: The caller selects all ion pairs or same-sign exclusion as part of the electrolyte model family.
 
 $$
 \epsilon_{ij}=\begin{cases}\sqrt{\epsilon_i\epsilon_j}(1-k_{ij}),&z_iz_j\leq 0\ \text{or all-ion-pair dispersion},\\0,&z_iz_j>0\ \text{and same-sign exclusion}.\end{cases}
-\label{eq:same_sign_ionic_dispersion}
 $$
 
 ## `segment_sigma_correlation`
@@ -1535,72 +1516,114 @@ $$
 
 $$
 \sigma_i(T)=\sigma_{i,0}+\sum_{q\in\mathcal{Q}_i} A_q\exp(b_qT).
-\label{eq:segment_sigma_correlation}
 $$
 
 ## `single_ion_activity_coefficient`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{Figiel2025}, electrolyte reference-state fugacity relation
+- Source: [Figiel2025], electrolyte reference-state fugacity relation
 - Description: Single-ion mole-fraction activity coefficient relative to the infinite-dilution fugacity reference.
 - Change note: Exposes the exponential of the finite-minus-reference log fugacity.
 
 $$
 \gamma_i^{(x)}=
 \exp\left(\ln\phi_i-\ln\phi_i^\infty\right).
-\label{eq:single_ion_activity_coefficient}
+$$
+
+## `standard_state_transfer_temperature_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Chain rule through the fixed-pressure density root; the transfer itself is registered under the infinite-dilution reference and molality_activity_conversion entries
+- Description: Temperature derivative at fixed pressure of the standard-state transfer term Δ_i (the model's infinite-dilution reference evaluated at the reference solvent composition), obtained from the tape's fixed-volume derivatives and the implicit derivative of the solvent density root, never by differencing.
+- Change note: New; gives the transfer the derivative that the reaction enthalpy on the provider basis needs.
+
+$$
+\left(\frac{d\Delta_i}{dT}\right)_{P}=\left(\frac{\partial\Delta_i}{\partial T}\right)_{\rho}+\left(\frac{\partial\Delta_i}{\partial\rho}\right)_{T}\left(\frac{d\rho}{dT}\right)_{P},\qquad \left(\frac{d\rho}{dT}\right)_{P}=-\frac{(\partial P/\partial T)_{\rho}}{(\partial P/\partial\rho)_{T}}
 $$
 
 ## `system_gibbs_helmholtz_coordinates`
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: \cite{Pereira2012} Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
+- Source: [Pereira2012] Eqs. 2--4; exact derivation from $G=\min_V[A+PV]$
 - Description: System Gibbs energy at fixed T and P written in Helmholtz coordinates with standard-state offsets.
 - Change note: Pressure equality becomes a stationarity row instead of an inner density solve.
 
 $$
 \frac{G}{RT}=\sum_p\left[\frac{A_p(T,V_p,\boldsymbol n_p)}{RT}+\frac{PV_p}{RT}\right]+\sum_p\sum_i n_{p,i}\frac{g^{\circ}_i}{RT}.
-\label{eq:system_gibbs_helmholtz_coordinates}
 $$
 
 ## `tangent_plane_distance`
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: \cite{Pereira2012} Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
+- Source: [Pereira2012] Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
 - Description: Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion.
 - Change note: A negative value is a one-sided instability witness.
 
 $$
 \mathrm{TPD}(\boldsymbol x,v)=g(\boldsymbol x,v)-g(\boldsymbol x^{0},v^{0})-\nabla_{\boldsymbol x}g(\boldsymbol x^{0},v^{0})\cdot(\boldsymbol x-\boldsymbol x^{0}).
-\label{eq:tangent_plane_distance}
+$$
+
+## `thermochemistry_from_reactions`
+
+- Section: Reference thermochemistry / Declared derivations
+- Status: Implementation convention
+- Source: Minimum-norm conserved gauge as practised in MEA-Thermodynamics (evaluate_direct_absorption_heat.py, build_thermochemistry), made a declared native derivation
+- Description: When a packet declares reaction correlations but no per-species reference enthalpies, the per-species values are the minimum-norm solution of the reaction-enthalpy equations; the freedom left, any vector in the conserved-moiety row space, does not change any reaction enthalpy or any equilibrium. Declared by the packet, never inferred.
+- Change note: New declared derivation; reported in declared_choices.
+
+$$
+\boldsymbol{\nu}\,\mathbf{h}^{\circ}=\Delta_r\mathbf{h}^{\circ},\qquad \mathbf{h}^{\circ}=\boldsymbol{\nu}^{\mathsf T}\left(\boldsymbol{\nu}\boldsymbol{\nu}^{\mathsf T}\right)^{-1}\Delta_r\mathbf{h}^{\circ},\qquad \boldsymbol{\nu}\left(\mathbf{h}^{\circ}+\mathbf{B}^{\mathsf T}\mathbf{c}\right)=\Delta_r\mathbf{h}^{\circ}\ \text{for every }\mathbf{c}
+$$
+
+## `total_enthalpy`
+
+- Section: Reference thermochemistry / Totals
+- Status: Exact derivation
+- Source: Michelsen and Mollerup 2007, ch. 2, residual-plus-ideal decomposition at fixed (T, V, n)
+- Description: Enthalpy of a phase as the declared ideal reference part plus the residual part the tape already returns (residual_enthalpy); reported on the P° basis of the declared thermochemistry. Absent by name when no Thermochemistry is declared.
+- Change note: New; the residual term is the existing State field, not a new expression.
+
+$$
+H=\sum_i n_i\,h^{\circ}_i(T)+H^{\mathrm{res}}(T,V,\mathbf{n}),\qquad H^{\mathrm{res}}=A^{\mathrm{res}}-T\left(\frac{\partial A^{\mathrm{res}}}{\partial T}\right)_{V,\mathbf{n}}+PV-nRT
+$$
+
+## `total_entropy`
+
+- Section: Reference thermochemistry / Totals
+- Status: Exact derivation
+- Source: Michelsen and Mollerup 2007, ch. 2, ideal-gas mixture entropy at the phase volume plus the residual at fixed (T, V, n)
+- Description: Entropy of a phase as the ideal-gas mixture entropy at the phase's own (T, V, n) plus the residual entropy the tape returns; reported on the P° basis of the declared thermochemistry, which enters only through the per-species s°. Absent by name when no Thermochemistry is declared.
+- Change note: New; the residual term is the existing State field.
+
+$$
+S=\sum_i n_i\left[s^{\circ}_i(T,P^{\circ})-R\ln\frac{n_iRT}{VP^{\circ}}\right]+S^{\mathrm{res}}(T,V,\mathbf{n}),\qquad S^{\mathrm{res}}=-\left(\frac{\partial A^{\mathrm{res}}}{\partial T}\right)_{V,\mathbf{n}}
 $$
 
 ## `transfer_free_energy`
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: \cite{Figiel2025}, transfer Gibbs-energy relation
+- Source: [Figiel2025], transfer Gibbs-energy relation
 - Description: Ion transfer free energy between compatible solvent reference states.
 - Change note: Source and target must share temperature, pressure, phase, ions, and stoichiometry.
 
 $$
 \Delta G_{i,\mathrm{tr}}^{A\rightarrow B}
 =RT\left(\ln\phi_{i,B}^{\infty}-\ln\phi_{i,A}^{\infty}\right).
-\label{eq:transfer_free_energy}
 $$
 
 ## `tunneling_transform`
 
 - Section: Equilibrium
 - Status: Documentation-only
-- Source: \cite{Pereira2012} Eq. 10 and 11
+- Source: [Pereira2012] Eq. 10 and 11
 - Description: Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Not implemented: the current search samples the tangent-plane distance with a bounded DIRECT-L run instead.
 - Change note: Recorded so the deviation from the source is visible; a rewrite may adopt either search.
 
 $$
 f_T(\tilde{\boldsymbol x}, v) = \big(\mathrm{TPD}(\tilde{\boldsymbol x}, v) - d^{*}\big)\exp\!\Big(\frac{p^{*}}{\|\tilde{\boldsymbol x} - \tilde{\boldsymbol x}^{*}\|}\Big),\qquad p^{*} = 10^{-3}.
-\label{eq:tunneling_transform}
 $$

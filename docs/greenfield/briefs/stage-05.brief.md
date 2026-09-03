@@ -117,9 +117,11 @@ and compares `eval_h` at the flash solution with the converged multipliers again
 difference of `eval_grad_f + Σ λ_j ∇c_j` in every primal unknown, to 1e-6. No
 `hessian_calls` assertion. No `isfinite` sweep.
 
-**S9** compares `dy/dT` of the binary flash at fixed `T, P` against
-`(y(T+δ) − y(T−δ)) / 2δ` from two full solves, `δ = 1e-3 K`, to 1e-6 relative. The test
-supplies no derivative of anything.
+**S9** compares `dy/dθ` of the binary flash at fixed `T, P` against a centred difference of
+two full solves, for each of three levers: `T` (`δ = 1e-3 K`), `P`, and one feed coordinate
+`b_i` (the conserved amounts). `F_θ` for the feed is `−B` on the balance rows and zero
+elsewhere, one extra column in `implicit_sensitivity.cpp`; 1e-6 relative for every lever. The
+test supplies no derivative of anything.
 
 **Eight thin checks must assert what §4 words.** C6, S4 and S5 are adequate as one
 assertion. These are not:

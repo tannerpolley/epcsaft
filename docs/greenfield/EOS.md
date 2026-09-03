@@ -751,3 +751,111 @@ Held to on `profile_entry_points.py` with the environment record it writes, medi
 ## Verdict, from the complete measurement
 
 Unchanged in conclusion, sharpened in detail. Every entry point is dominated by one of four bounded defects inside the current tree: a derivative entry that always builds `(1+S)` Hessians (fixed-pressure states, reference, GREPE start construction, saturation callbacks), a 21-start Ipopt saturation with no continuation (saturation and every fit on it), evaluation-count policies in discovery and the fixed-P boundary, and `(1+S)` Hessians per evaluation in the reactive solve. Tape caching is the fifth lever and worth 1–25% depending on tape width; it is not the plan's first item on any path. None of the four requires a new tree; the rebuild stands on ownership and size, and #189's acceptance is now the per-entry table above rather than one number.
+
+
+# Properties (2026-09-03): the state surface, the ideal side, and thermochemistry
+
+Owner decisions this section records, after the independent review and a reading of the
+three downstream applications (`EQUILIBRIUM.md` §13): ePC-SAFT parameters and pure-component
+thermochemistry are separate declared objects (`SURFACE.md` §2.5); the ideal side lives
+beside the residuals in the EOS category as a pragmatic addition, not as ePC-SAFT; the
+package holds no thermochemistry data, the user supplies it, and the oracles carry theirs as
+packets transcribed from open sources (`chemicals` 1.5.2 is the named source, a dev
+dependency for the one-time transcription tool); ions use one convention, the aqueous
+molality infinite-dilution standard state; `State` is one batch object with an order flag.
+
+## 1. Absence, one mechanism
+
+A model built from `Parameters` computes residuals. A model given both `Parameters` and
+`Thermochemistry` computes totals. The total fields of `State` are `std::optional`;
+`state()` never throws for a missing thermochemistry; a selector or caller that reads an
+absent field throws `MissingDeclaration(<field name>)`; and `thermochemistry` appears in
+`declared_choices` so a trace shows whether it was declared.
+
+## 2. `physics/ideal.hpp`, and one basis
+
+`ideal.hpp` holds the ideal-gas mixture Helmholtz energy and its derivatives in `(T, ρ, x)`
+as functions of `Thermochemistry`. The mixing term keeps its existing owner,
+`EqID: phase_helmholtz_amount_volume` (one expression, one identifier); `ideal.hpp`
+references it and adds only the reference terms (`ideal_gas_helmholtz`). The heat-capacity
+correlation kinds are declared, each its own registry entry: `cp_ideal_dippr_107` (Aly–Lee),
+`cp_ideal_polynomial`, `cp_ideal_shomate`, `cp_ideal_constant`. The integrals are closed
+form; `ideal.hpp` is templated on the scalar like `helmholtz.hpp` so it can sit on the tape
+if ever needed.
+
+**Basis.** The equilibrium assembly writes its ideal term on the `ρ_ref = 1 mol/m³` basis
+(`formulation.md:35-39`), so `g°` offsets are on that basis. The thermochemistry reference
+is on `P°`. The two differ by `RT ln(RT ρ_ref / P°)` per mole, whose enthalpy contribution
+is `−RT` per mole. Decision: `State` totals are reported on the `P°` basis of the declared
+thermochemistry, the model's `standard_gibbs(T, order)` (§3) converts to the `ρ_ref` basis
+the equilibrium solves on, and the two are never mixed in one number. The Gibbs-type totals
+(`gibbs`, total `chemical_potential_over_rt`) carry the basis in their registry description.
+The consistency diagnostic of §3 carries the `−Σ_i ν_i / T` term (the MEA script already
+does, `evaluate_direct_absorption_heat.py:127-134`).
+
+## 3. Ions, standard states, and where `K(T) → g°(T)` runs
+
+The model's existing transfer (`model/infinite_dilution_reference.cpp`, *measured*) takes
+one ion pair and the solvent composition as arguments and evaluates four fixed-pressure
+density roots; it has no temperature derivative today. It gains:
+
+- the declared convention block from `Thermochemistry` (reference solvent composition,
+  standard molality, `P°`, `T_ref`) instead of call arguments;
+- a temperature derivative at fixed `P`, which is an implicit derivative through the density
+  roots, not the tape's `∂/∂T` alone (`standard_state_transfer_temperature_derivative`);
+- a cache keyed on `(T, θ)`, since the transfer is a ladder of `state_at_pressure` calls
+  (108 ms on the electrolyte fixture today, floor 2–5 ms, *measured* above).
+
+**`K(T) → g°(T)` runs in the model, not in compile.** `request_compile.cpp` is a rule-7 file
+and a standard-state transfer names an aqueous solvent; `∂g°/∂T` and `∂g°/∂θ` must come from
+where `g°` is computed; the model already holds the mutable cache under a mutex. The model
+exposes `standard_gibbs(T, order)` returning `g°`, `∂g°/∂T`, `∂g°/∂θ` on the `ρ_ref` basis;
+compile reads numbers and stays basis-blind. Correlation kinds for `K(T)` are registry entries in `physics/`:
+`reaction_constant_ln_polynomial` (`ln K = a + b/T + c ln T + dT`) and
+`reaction_constant_log10_reciprocal` (the `−log10 K = a/T + b + cT` form).
+
+**Reaction constants are fittable.** The `K(T)` correlation coefficients per reaction are the
+seventh active-parameter family (`EQUILIBRIUM.md` §12).
+
+**Consistency is reported, not asserted**, with one addition: when both a `K(T)` correlation
+and thermochemistry are declared for a reaction, the packet declares which one the
+equilibrium reads, `{correlation, thermochemistry}`; both present and undeclared is
+`MissingDeclaration`. The minimum-norm "reaction-consistent gauge" the MEA scripts run in
+Python becomes a native, declared derivation (`thermochemistry_from_reactions`) so a fit on
+`K(T)` coefficients moves `h°` with it and the application stops doing that arithmetic.
+
+## 4. `State` with an order flag
+
+`State` has 20 fields (*measured*). Two changes:
+
+- Totals when thermochemistry is declared: `ideal_enthalpy`, `enthalpy`, `entropy`, `gibbs`,
+  `isobaric_heat_capacity`, total `chemical_potential_over_rt` (`total_enthalpy`,
+  `total_entropy` in the registry). The ideal part of the entropy is evaluated at the phase's
+  own volume so the residual and ideal parts share the tape's reference; the `P°` basis enters
+  only through the per-species `s°`. `ideal_enthalpy` is named because finite-dose heat
+  subtracts the *ideal* CO2 enthalpy, not a pure-CO2 residual state
+  (`evaluate_direct_absorption_heat.py:485-492`).
+- An order flag with **its own enum**, not `DerivativeOrder` (that enum means orders of `A`;
+  a gradient of a property is the Hessian of `A`). `PropertyOrder::{Value,
+  FirstDerivatives}`. At `FirstDerivatives`, every *first-derivative* field carries `∂/∂T`,
+  `∂/∂ρ`, `∂/∂x_i`, `∂/∂θ_k`; the fields that are already second derivatives of `A`
+  (`residual_isobaric_heat_capacity`, `residual_isochoric_heat_capacity`,
+  `pressure_density_derivative`) carry none and say so by name. **No third derivatives,
+  anywhere** (`EQUILIBRIUM.md` §12).
+- The derivatives are offered in **both** coordinate sets: fixed `(T, ρ, x)` straight from the
+  tape, and fixed `(T, P, x)` through the density root (`∂/∂T|_P`, `∂/∂x|_P`). The absorption
+  film consumes the fixed-`P` block in its constrained log-composition coordinates
+  (`thermo_models.py:96-140`), and every application that works at fixed pressure needs it.
+- Cost: `state()` already runs the Hessian on every call (`helmholtz_model.cpp:539`), so
+  `FirstDerivatives` costs what `state()` costs today; what the flag buys is `Value`, which
+  skips the Hessian, 2–60× on the measured rates above. A separate "without θ" order saves
+  nothing because tape width is fixed at construction (`helmholtz_tape.hpp:175-177`).
+
+## 5. Checks to name, at the stage that writes each
+
+`H = H_res + H°` against `−T² ∂(A/T)/∂T` on the tape; `ρ → 0` returns `Cp°`; the transfer's
+`∂/∂T` against a centred difference; the consistency diagnostic on an isomerisation and on
+a non-conserving reaction; rule 11 on `thermochemistry.hpp`; and the A1 falsifiers of the
+superseded repository's issue #202 as written: an ideal reactive mixture with closed-form
+extent; same-branch centred ladders in `T`, `P`, feed and mixed directions; `h = u + Pv` and
+`dh/dT|_{P,x} = cp` separately from the reacting `dH_eq/dT`.

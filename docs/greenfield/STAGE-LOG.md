@@ -496,3 +496,29 @@ one, which `CORE.md` §7 asked for and which would have refused attempts 1–3.
 For the log, outside the stage: `Parameters.from_json` on the nine-species packet with
 `components=("monoethanolamine", "water")` builds, then `HelmholtzModel` throws
 "invalid ionic_dispersion". A neutral subset of an electrolyte packet cannot make a model.
+
+## The layering draft: properties, thermochemistry, the regression shell, 2026-09-03
+
+The planner's layering draft (revision 2, reviewed by an independent Fable 5.1 agent against
+the tree and the three downstream applications) was approved by the owner and applied by the
+coordinator. `EOS.md` gains a "Properties" section: `State` with a `PropertyOrder` flag,
+totals absent by name without a declared `Thermochemistry`, the fixed-pressure derivative
+block, `physics/ideal.hpp` on one basis, the standard-state transfer with a temperature
+derivative and a cache, `K(T) → g°(T)` in the model, consistency reported not asserted.
+`SURFACE.md` §2.5 makes `Thermochemistry` a second declared document with its own builder
+and packet schema; rule 11 reaches `core/thermochemistry.hpp` once it exists. `EQUILIBRIUM.md`
+§12 is the regression shell (four-node expression, no property names in `regression/`), the
+levers gain the feed with S9's feed column, the seventh active family is named, and §13 is
+the applications table with its provenance. `REGRESSION.md` is written; `TRANSFER.md`'s
+Stage 6 drops the two observable files. Rule 4 gains `Discover`. The Stage 5 brief's S9 and
+its sensitivity gate say `T`, `P` and the feed; preflight clean. `chemicals` 1.5.2 is a dev
+dependency for the thermochemistry transcription tool.
+
+**The registry is Markdown-only** (owner ruling the same day: "latex files are for
+manuscripts"). Schema 3: `math` replaces `latex`, `label` is dropped, `source` is a plain
+citation string (`\cite{Key}` became `[Key]`, `\eqref` became the identifier), and the
+check no longer reads `references.bib`; a LaTeX-only command in `source` or `math` is
+refused. Eleven entries added from the planner's bodies: the ideal-gas reference term, four
+heat-capacity kinds, two `K(T)` kinds, total enthalpy and entropy, the transfer's temperature
+derivative, and the reaction-derived thermochemistry. The reactive electrolyte two-liquid
+oracle row is still pending the owner's ruling (candidate: the lithium extraction network).

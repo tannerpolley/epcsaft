@@ -186,7 +186,7 @@
     },
     {
       "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
-      "edit": "KKT system, rank, condition, output rows",
+      "edit": "KKT system, rank, condition, output rows; levers T, P and the feed (F_theta = -B on the balance rows)",
       "lines": {
         "low": 180,
         "estimate": 250,
@@ -452,7 +452,7 @@
         "sed": "s|-F_theta|F_theta|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "S9's own mutation: flip the sign of F_theta; bites only if F_theta is the assembly's, never the test's"
+        "why": "S9's own mutation for T, P and the feed lever: flip the sign of F_theta; bites only if F_theta is the assembly's, never the test's"
       }
     },
     {

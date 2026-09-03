@@ -49,6 +49,9 @@ packing, above which no fluid root exists and `validate_point` refuses anyway),
 point. This is held by reading the driver's `get_bounds_info`, like "one assembly": no check
 can distinguish a bounded coordinate from an unbounded one that happened not to run off.
 
+The sensitivity levers are `T`, `P` and the feed `b` (§12): `dy/dθ` is one call with one
+column per lever, and the model's active parameters are the same call with more columns.
+
 System-wide: `T` and `P`, each **fixed** or **free**; feed `n_feed` (fixed, in any basis);
 the balance matrix `B` (identity when no reactions; otherwise the conserved moieties, whose
 nullspace is the reaction span); charges `z`; standard-state offsets `g°`.
@@ -526,7 +529,7 @@ liquid, and `neutral_binary()` at 280 K and 50/50 is above the mixture critical 
 | S6 | instability certificate | `G₂ < G₁` at the ternary feed; `G₃ ≤ G₂ + tol` for the three-phase cell | return the one-phase start as the result |
 | S7 | lever rule | two feeds on the `{L,L}` tie line give the same two phases to 1e-8. This is S1 plus isolation of the solution, so it has no mutation of its own: S1's reddens it | shares S1's |
 | S8 | extensivity | every solved cell with the feed doubled: amounts double, every intensive unchanged | compile normalises `n_feed` to unit total before the balance rows |
-| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` a fixed intensive of the specification (`T` or `P`; the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative. `F_θ` is the assembly's, from the tape's Hessian column in `T` and `−1/RT` on the pressure row; the test supplies no derivative | flip the sign of `F_θ` |
+| S9 | sensitivity | `dy/dθ` from `implicit_sensitivity.cpp`, `θ` one of three levers: a fixed intensive (`T` or `P`) or one feed coordinate `b_i` (the model's active parameters are the same call with more columns and land with regression), against a centred difference of two full solves in `θ` to 1e-6 relative. `F_θ` is the assembly's: the tape's Hessian column in `T`, `−1/RT` on the pressure row, and `−B` on the balance rows for the feed; the test supplies no derivative | flip the sign of `F_θ` |
 | S10 | Jacobian agreement | the assembly's `F_y`, analytic from the tape's Hessian and the log-coordinate chain rule, against a centred difference of `F` in every unknown, at a boundary cell and at a flash cell, to 1e-6; and Ipopt's `eval_h` at the flash solution with the converged multipliers against a centred difference of the Lagrangian gradient (`eval_grad_f + Σ λ_j ∇c_j`) to 1e-6. Nothing about call counts. The drivers' rows differ by `N_p` per phase (§2.2), so no elementwise equality between consumers is asserted; "one assembly" is held by §5's placement and rule 7, not by a check | scale the pressure term of `evaluate`'s pressure row by 2: an `F_y` that is a difference of `evaluate` follows it and stays green, and a green mutant rejects the attempt; and scale the tape's Hessian blocks by 0.5 for the `eval_h` half |
 | S11 | ideal-gas limit | the reactive one-phase cell **as `{V}`** — the vapour branch is the one that reaches the ideal-gas limit; a liquid hint stays on its own branch — with the isomerisation `α ⇌ β` (so `Σ ν_i = 0` and the `ρ_ref` term cancels) at `P → 0` approaches `x_β / x_α = exp(−Δg°/RT)` (a limit; the residual terms vanish, which Stage 4 already checks). A reaction with `Σ ν ≠ 0` has a density factor in its limit and is not used here | perturb the `g°` transform |
 | S12 | discovery agrees (with the stability kernel) | topology omitted at the ternary feed finds the phase count of the declared `{L,L}` flash and the same `G` | accept the first sample as a witness |
@@ -954,43 +957,115 @@ problem = Problem(phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
 method on the EOS surface that solves coexistence without a `Problem` passing through
 compile; the one-line test per constructor is what keeps it ruled out.
 
-## 12. What regression needs from equilibrium, and the all-native path
+## 12. What regression needs from equilibrium: a shell around Ceres
 
-`TRANSFER.md` Stage 6 is `fit(model, observations)` on Ceres with `least_squares.cpp`,
-`eos_observable.cpp`, `equilibrium_observable.cpp` and a `PredictionCache`. Checked
-against §2–§5 and §11, it is compatible, and the path from the one Python call to the one
-Python result is native throughout: `regression/` includes `equilibrium/problem.hpp`
-(rule 3 permits it, rule 4 bounds it), so the loop over observations, every solve, every
-sensitivity, every Jacobian row and the covariance run in C++ and nothing crosses the
-binding until `Fit` comes back. The old tree's Ceres kernel was also C++; what it lacked
-was a `Problem` it could build itself, so it went through an "owner evaluator", which is
-the owner compilation #192 removes.
+Owner decisions, 2026-09-03, after the independent review and a reading of the three
+downstream applications: equilibrium stays strictly generic; regression is a shell around
+Ceres with no property-specific code; `State` is one batch object with an order flag
+(`EOS.md`, "Properties"); ePC-SAFT parameters and pure-component thermochemistry are two
+declared objects (`SURFACE.md` §2.5).
 
-What an observation must carry, and what equilibrium must provide, stated as the
-interface:
+`EquilibriumResult` carries per phase `(T, v_p, x_p, N_p)`, the multipliers, rows, record,
+and the sensitivity when asked. No property. A property of phase `p` is
+`model.state(T, 1/v_p, x_p, order)`; a system total is `Σ_p N_p · property_p`, and this is
+generic only if no extensivity table ever appears in `regression/`: the rule admits
+`Σ_p N_p P_p`, which is the caller's error to make.
 
-| regression needs | equilibrium provides | where |
-|---|---|---|
-| a `Problem` per observation, built natively from the observation's levers — never a "kind" | `Problem` is plain data with no Python in it (§5.1, §11) | Stage 5 |
-| a solve seeded from the previous point | `solve_equilibrium(model, problem, start)` with `start` an optional prior `EquilibriumResult`; the `PredictionCache` holds the last result per observation and per Ceres iterate | Stage 5, 9 |
-| `dy/dθ` for the model's active parameters | `implicit_sensitivity.cpp`: `−F_y⁻¹ F_θ`, `F_y` the matrix the driver already factorised, `F_θ` the tape's mixed second derivatives `∂²A/∂y∂θ`, which the Stage 4 tape already carries as its parameter Jacobian | Stage 5 |
-| the observable and its chain rule | an output-row enum — pressure, temperature, a phase composition, a phase density, an activity, a partial pressure — each a function of `y` with `∂obs/∂y` (formulation §8: "output rows carry their own chain rule") | `equilibrium_observable.cpp`, Stage 6 |
-| a residual-evaluation failure Ceres can act on | a solve that fails the declared-topology contract (§3.4), or leaves the domain, returns a failure with no state; the cost functor returns `false`, Ceres shrinks the trust region, and nothing is thrown across the fit or reported as a zero residual | Stage 5, 10 |
-| the fit's floor | `κ_sys · residual` per observation from the solve's own `Convergence` record (`CORE.md` §3.5) | Stage 6 |
+**Sensitivity levers: `T`, `P`, and the feed** (`b`, the conserved amounts). `F_θ` for the
+feed is `−B` on the balance rows and zero elsewhere: trivial to assemble, and it is the
+derivative the absorption film finite-differences today (`Reactive_Film.py:280-330`,
+`d(log x)/d(log loading)` by `np.gradient`) and the derivative the superseded engine computes
+natively but filters from its public rows (`reactive_finite_phase.cpp:2077`, thread A1). S9
+carries a feed column. The reacting heat capacity `(∂H_eq/∂T)_{P,b}`, which the absorption
+energy balance needs and which frozen-composition `cp` is not, is then the selector's chain
+rule: `∂H/∂y · dy/dT + ∂H/∂T`, with no new code.
 
-Three consequences worth stating:
+**The seventh active-parameter family.** The six EOS families (`helmholtz_tape.hpp:61-68`)
+gain the `K(T)` correlation coefficients per reaction; `∂g°/∂θ` is already listed in `F_θ`
+(`formulation.md:204`) and comes from the model's `standard_gibbs(T, order)` (`EOS.md`,
+"Properties" §3). Without it neither application's fit is analytic: the amine fit shifts
+`reaction:R*:correlation:a, b_k`; the lithium fit moves `ln_k_exchange`, `ln_k_na_uptake`.
 
+An observation is data plus a selector plus a target:
+
+    Observation { target: Problem | StateSpec; select: Expression; value; uncertainty }
+    Expression =
+        Leaf(Property(phase, field) | Coordinate(lever or amount n_{p,i}) | Constant)
+      | Sum(w_j · e_j)
+      | Product(e_j ^ p_j)
+      | Log(e)
+
+A weighted sum plus one ratio cannot express what the applications fit. Verified needs:
+`pCO2 = y_CO2 · P` (a product) scored as `log10(pred/obs)` (a log); `net_na = na_feed −
+na_aq` (a constant in a sum); extraction fraction `li_org / (li_org + li_aq)` (ratio of a
+sum); selectivity (ratio of ratios). Four nodes cover all of them and finite-dose heat, and
+the tree is smaller than a combinator list plus a residual-form flag.
+
+`fit(model, observations)` builds one Ceres residual block per observation; the model output
+is the expression evaluated on the solved or evaluated state; the Jacobian is the chain rule
+per node: `Property` from `State` at `FirstDerivatives` composed with `dy/dθ`, `Coordinate`
+from `dy/dθ`, `Sum`/`Product`/`Log` by their rules. No property name is known to
+`regression/`; adding a field to `State` adds it to regression with no change.
+
+Rules that follow:
+
+- `StateSpec` declares its `DensityBranch`; `Unspecified` is refused inside a fit, as
+  undeclared topology is.
+- `Coordinate(T)` or `Coordinate(P)` on a target where that lever is fixed is rejected by
+  name at observation compile, never a silent zero Jacobian.
+- No `unit` field natively; the boundary is SI (`SURFACE.md` §3.4).
+- Weights such as `1/(n₂ − n₁)` are caller data or computed natively; Python does none of
+  that arithmetic.
+- Rule 4 gains `Discover` in `STABILITY_SYMBOLS` so a fit cannot omit phases.
+- The expression evaluator (value plus Jacobian) is one bound function, so a caller that
+  wants a sensitivity outside a fit (the lithium script reads one by hand,
+  `independent_network.py:855-858`) does not re-derive it.
 - **No third derivatives, anywhere.** Ceres is Gauss–Newton or Levenberg–Marquardt on the
-  residual Jacobian; it never forms the residual Hessian, which would be third order.
-  Ipopt on a square feasibility problem needs none (§2.4). The implicit sensitivity needs
-  second derivatives in `(y, θ)`, which the tape has. The old tree used a third-order
-  forward sweep exactly once (`phase_block.hpp`, `cubic_directional_derivative`, a
-  pure-component curvature quantity); it has no successor and nothing in the plan wants it.
-- **Every regression observation declares its topology.** Rule 4 forbids a fit from
-  constructing a problem with phases omitted, so the fit's residuals are differentiable and
-  a parameter step that makes a declared two-phase point cease to exist is a *failed
-  residual*, not a silently different problem. That is the design working as intended: a
-  fit can only move parameters where the declared physics still holds.
+  residual Jacobian; it never forms the residual Hessian. Ipopt on a square feasibility
+  problem needs none (§2.4). The implicit sensitivity needs second derivatives in `(y, θ)`,
+  which the tape has.
+- **Every regression observation declares its topology.** A parameter step that makes a
+  declared two-phase point cease to exist is a *failed residual*, not a silently different
+  problem: the cost functor returns `false`, Ceres shrinks the trust region, and nothing is
+  thrown across the fit or reported as a zero residual.
 - **Pure and mixture fits are one path.** A saturation observation is a `C = 1`, `k = 1`
-  `Problem` through the same driver and the same sensitivity as a two-liquid tie line of the
-  esterification data (§4.2), so one fit may mix them, and they share one floor.
+  `Problem` through the same driver and the same sensitivity as a two-liquid tie line.
+
+Budget: `TRANSFER.md` Stage 6 listed `eos_observable.cpp` (150) and
+`equilibrium_observable.cpp` (250); with no property names left, both go, and the expression
+tree is about 80 native lines net. `REGRESSION.md` is Stage 6's design document and carries
+the Ceres kernel and the gate.
+
+## 13. What the three applications need, and what the answer is
+
+Read on 2026-09-03: MEA-Thermodynamics (the reaction-temperature fit running under the
+superseded wheel at commit 8438ce5), Lithium_Extraction (the calibrated HBTA/TOPO reactive
+two-liquid network at commit 90688d1), MEA-Absorption-Column (pinned at 8007a70, three
+worktrees, and the two Codex threads: the absorber's three-plan diagnosis and the engine
+thread that merged PRs #199–#201 and is designing A1 as issue #202). These citations are the
+provenance of every row below.
+
+| application needs | answered by | status |
+|---|---|---|
+| reactive VLE bubble pressure, vapour composition, speciation at fixed `T`, feed (MEA) | the `k = f = 1` cell with a vapour support restriction | §2–§3 |
+| total enthalpy of a solved liquid; finite-dose heat (MEA calorimetry) | `State` totals + `Sum`/`Product` over two solves and `ideal_enthalpy` | `EOS.md` Properties §4; §12 |
+| reacting `(∂H_eq/∂T)_{P,b}`, not frozen `cp` (absorber energy balance) | selector chain rule with `dy/dT` | §12 |
+| equilibrium-path derivative `dy/db` at fixed `T, P` (absorber film tangent; removes its finite difference) | feed as a sensitivity lever | §12, S9, **new** |
+| fixed-`(T, P)` chemical-potential and density derivatives in constrained log-composition coordinates (absorber film, `EpcsaftLiquidTransportState`) | `State` at `FirstDerivatives`, fixed-`P` block | `EOS.md` Properties §4, **new** |
+| typed `K(T)` correlations with `∂ ln K/∂T`, van 't Hoff consistency, standard-state transfer with `∂/∂T` (all three) | `EOS.md` Properties §3 | **new** in the model |
+| reaction constants and correlation coefficients as fitted parameters (MEA, lithium) | the seventh active family | §12, **new** |
+| distribution ratios, extraction fractions, selectivity as fit outputs (lithium) | `Product`/`Sum`/`Log` nodes | §12 |
+| two liquids with disjoint supports, cross-phase reaction, one ion-bearing phase (lithium) | supports, whole-system stoichiometry, C8 | §2–§4 |
+| higher-order directional derivatives of the solved map for CasADi outer Hessians (absorber Plan A2) | **not provided**: third order is excluded by design; the absorber's own second candidate, explicit chemical-potential variables, needs only second derivatives of value maps, which the tape has | stated limit |
+| hydraulics, mobility, loading transforms, column balances, collocation | not the engine's, by the absorber's own plan | — |
+
+What the superseded engine added in the week of 2026-09-01 and the greenfield must not lose:
+explicit reference thermochemistry with complete `h`, `u`, `cp` and equilibrium total
+enthalpy (PR #199), reference-pressure consistency (#200), reaction slopes retained at
+incipient boundaries (#201), and the A1 design (#202): certified state plus exact first
+derivatives in `T`, `P` and the complete conserved feed coordinates, with the falsifiers it
+lists (ideal reactive mixture with closed-form extent; same-branch centred ladders in `T`,
+`P`, feed and mixed directions; `h = u + Pv` and `dh/dT|_{P,x} = cp` separately from the
+reacting `dH_eq/dT`). Those falsifiers are the solve-tier checks for the totals and the
+sensitivity and are adopted as written. The absorber still pins 8007a70 and supplies no
+thermochemistry, which its own Plan 2 calls an adoption gap, not an engine gap.

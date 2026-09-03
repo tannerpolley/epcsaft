@@ -24,7 +24,7 @@ brief is written against:
 | `SURFACE.md` | 3 Surface | what a caller declares and reads: the parameter builder, the bindings, the Python mapping layer, and where the tree departs from its brief |
 | `EOS.md` | 4 EOS | the layer audit, the like-ion dispersion convention, the density root, and the measured performance floor |
 | `EQUILIBRIUM.md` | 5 Equilibrium | how the routes prove they are general: the count rule, the lattice, what each check may assert |
-| `REGRESSION.md` | 6 Regression | *(to write)* |
+| `REGRESSION.md` | 6 Regression | the shell around Ceres, the four-node expression, the files, the rules, the gate |
 | `PHASE-STABILITY.md` | 7 Phase stability | the HELD2 kernel read against Pereira 2012, finding by finding |
 | `FINAL-CHECK.md` | 8 Final check | *(to write)* |
 

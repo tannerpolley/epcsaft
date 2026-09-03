@@ -3,10 +3,12 @@
 `docs/equations_registry.yaml` is the authority: one entry per equation, edited
 by hand. This script canonicalises that file (sorted by `eqid`, one quoting
 style) and renders `docs/equations.md` from it. `--check` fails when either file
-differs from what it would write, when an entry is malformed, or when a
-`\\cite{}` key is absent from `docs/latex/references.bib`.
+differs from what it would write, when an entry is malformed, or when a document
+or native annotation names an `EqID` the registry does not carry.
 
-There is no LaTeX source and no source-code ownership scan any more: the
+The registry is Markdown-only: `math` is display math as Markdown renders it and
+`source` is a plain citation string. Nothing here reads a LaTeX or bibliography
+file; those belong to manuscripts. There is no source-code ownership scan: the
 registry describes equations, not which file implements them.
 """
 
@@ -22,7 +24,7 @@ try:
 except ImportError as error:  # pragma: no cover
     raise SystemExit("sync_equation_registry.py needs PyYAML (python3 -m pip install pyyaml)") from error
 
-FIELDS = ("eqid", "section", "subsection", "label", "source", "status", "description", "change_note", "latex")
+FIELDS = ("eqid", "section", "subsection", "source", "status", "description", "change_note", "math")
 ALLOWED_STATUSES = frozenset(
     {
         "Source equation",
@@ -33,23 +35,17 @@ ALLOWED_STATUSES = frozenset(
     }
 )
 EQID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
-CITE_PATTERN = re.compile(r"\\cite\{([^}]+)\}")
+TEX_ONLY = re.compile(r"\\(cite|label|ref|eqref)\b")
 
 
 def load_entries(path: Path) -> list[dict[str, str]]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or data.get("schema_version") != 2 or not isinstance(data.get("equations"), list):
+    if not isinstance(data, dict) or data.get("schema_version") != 3 or not isinstance(data.get("equations"), list):
         raise ValueError(f"{path}: expected schema_version 2 with an `equations` list")
     return [{field: str(entry.get(field, "")) for field in FIELDS} for entry in data["equations"]]
 
 
-def bibliography_keys(bibliography: Path) -> set[str]:
-    if not bibliography.exists():
-        return set()
-    return set(re.findall(r"@\w+\s*\{\s*([^,\s]+)", bibliography.read_text(encoding="utf-8")))
-
-
-def validate(entries: list[dict[str, str]], keys: set[str]) -> None:
+def validate(entries: list[dict[str, str]]) -> None:
     seen: set[str] = set()
     for entry in entries:
         eqid = entry["eqid"]
@@ -60,13 +56,12 @@ def validate(entries: list[dict[str, str]], keys: set[str]) -> None:
         seen.add(eqid)
         if entry["status"] not in ALLOWED_STATUSES:
             raise ValueError(f"equation {eqid!r} has unsupported status {entry['status']!r}")
-        for field in ("source", "description", "latex"):
+        for field in ("source", "description", "math"):
             if not entry[field].strip():
                 raise ValueError(f"equation {eqid!r} has an empty {field}")
-        for group in CITE_PATTERN.findall(entry["source"]):
-            for key in (item.strip() for item in group.split(",")):
-                if key not in keys:
-                    raise ValueError(f"equation {eqid!r} has unknown citation {key!r}")
+        for field in ("source", "math"):
+            if TEX_ONLY.search(entry[field]):
+                raise ValueError(f"equation {eqid!r}: {field} carries a LaTeX-only command; cite in words, no labels")
 
 
 def _quoted(value: str) -> str:
@@ -74,7 +69,7 @@ def _quoted(value: str) -> str:
 
 
 def render_registry(entries: list[dict[str, str]]) -> str:
-    lines = ["schema_version: 2", "equations:"]
+    lines = ["schema_version: 3", "equations:"]
     for entry in sorted(entries, key=lambda item: item["eqid"]):
         lines.append(f"  - eqid: {_quoted(entry['eqid'])}")
         lines.extend(f"    {field}: {_quoted(entry[field])}" for field in FIELDS[1:])
@@ -96,7 +91,7 @@ def render_markdown(entries: list[dict[str, str]]) -> str:
                 f"- Change note: {entry['change_note']}",
                 "",
                 "$$",
-                entry["latex"],
+                entry["math"],
                 "$$",
                 "",
             ]
@@ -128,7 +123,7 @@ def unregistered_mentions(root: Path, registered: set[str]) -> list[str]:
 def synchronize(docs: Path, *, check: bool) -> None:
     registry = docs / "equations_registry.yaml"
     entries = load_entries(registry)
-    validate(entries, bibliography_keys(docs / "latex" / "references.bib"))
+    validate(entries)
     unregistered = unregistered_mentions(docs.parent, {entry["eqid"] for entry in entries})
     if unregistered:
         raise ValueError("\n".join(unregistered))

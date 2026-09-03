@@ -27,7 +27,7 @@ The tree is being rebuilt on branch `greenfield` in eight gated stages
 | acceptance data: measured rows only | `engine/tests/oracle/oracle.json` |
 | reusable source data with provenance and hashes | `data/packets/`; contract `data/docs/packet-contract.md` |
 | evidence produced by asking a question of the engine | `analyses/`; reproductions under `analyses/reproduction/<year>-<author>` |
-| bibliography snapshot, generated from Zotero | `engine/docs/latex/references.bib` via `engine/scripts/docs/sync_bibliography.py` |
+| bibliography snapshot, generated from Zotero, for manuscripts only | `engine/docs/latex/references.bib` via `engine/scripts/docs/sync_bibliography.py`; the equation registry does not read it |
 | accepted decisions | `docs/scientific/adr/` |
 | runtime semantics, concrete lifetimes | `engine/native/` and `engine/src/epcsaft/` |
 

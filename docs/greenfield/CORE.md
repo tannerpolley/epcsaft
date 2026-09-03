@@ -534,7 +534,7 @@ request to the coordinator.
 | 8 | every `inline constexpr Tolerance NAME{"NAME", ...}` or `= derived(..., "NAME", ...)` names itself; no `inline const Tolerance` remains | a name string differing from its identifier |
 | 9 | a file reading a budget entry names `core::Scope` and `Convergence` | a solver with no record |
 | 10 | a `core/` file has no `"..."` include outside `core/` and no numerical-library include (`scalar.hpp` may include `<cppad`); `Capture` and `active(` appear only under `core/` and `bindings/` | the layer reaching up; an engine layer reading the trace |
-| 11 | `Unspecified` does not appear in `core/parameters.hpp`; every field of `Parameters` whose type is an `enum class` declared in that file is `Declared<...>` | a hole inside an enum; a bare selector |
+| 11 | `Unspecified` does not appear in `core/parameters.hpp` or `core/thermochemistry.hpp`; every field of `Parameters` or `Thermochemistry` whose type is an `enum class` declared in that file is `Declared<...>` (the second document is scanned once it exists; `SURFACE.md` §2.5) | a hole inside an enum; a bare selector |
 | 12 | `ast` over `src/epcsaft/*.py`: every function-signature default is the constant `None` | a physical default on the surface |
 | 13 | every function bound in `native/bindings/` resolves to a definition with `core::Scope`, no allowlist | a binding entry without a trace root |
 | 14 | comment-stripped native assignments to residual `.stop`/`->stop` use `classify` | a solver naming `converged`, `converged_to_floor`, `stalled`, or `budget_exhausted` |

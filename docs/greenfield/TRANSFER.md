@@ -633,10 +633,12 @@ reproduction. Each with the named mutation.
 
 ---
 
-### Stage 6 — Regression (890 + 200 lines)
+### Stage 6 — Regression (~570 + 200 lines)
 
-`least_squares.{hpp,cpp}` (490), `eos_observable.cpp` (150),
-`equilibrium_observable.cpp` (250), `regression.py` (200).
+`least_squares.{hpp,cpp}` (490), `expression.{hpp,cpp}` (~80), `regression.py` (200).
+`eos_observable.cpp` and `equilibrium_observable.cpp` are not written: with no property
+names in `regression/`, the four-node expression tree replaces both (`REGRESSION.md`,
+`EQUILIBRIUM.md` §12).
 
 This is #192: `fit(model, observations)` with covariance, no owner compilation. Ceres
 kernel, `ResidualBlock`, `PredictionCache`. The saturation continuation from Stage 5 is
