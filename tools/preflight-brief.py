@@ -5,7 +5,7 @@ brief, wt = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
 d = json.load(brief.open())
 env = dict(os.environ, PATH=f"{wt}/.venv/bin:{os.environ['PATH']}", VIRTUAL_ENV=f"{wt}/.venv")
 def sh(cmd): return subprocess.run(cmd, shell=True, cwd=wt, env=env, capture_output=True, text=True)
-bad = []
+bad, deferred = [], []
 for s in d["sources"]:
     ref = s["ref"]; sha_path = ref.split("@", 1)[1]
     r = sh(f"git show {sha_path}")
@@ -28,7 +28,13 @@ for g in d["gates"]:
         with tempfile.NamedTemporaryFile(delete=False) as tmp: tmp.write(before)
         subprocess.run(["sed", "-i", g["mutation"]["sed"], tmp.name], capture_output=True)
         if Path(tmp.name).read_bytes() == before:
-            bad.append(f"mutation sed matches nothing: {g['id']} {mf}")
+            # A mutation may target a line the stage has yet to write. The brief must say so
+            # explicitly, and the coordinator still runs it at acceptance -- what is refused
+            # is a sed that silently matches nothing because the code moved under it.
+            if g["mutation"].get("bites_only_after_write"):
+                deferred.append(f"{g['id']} ({mf})")
+            else:
+                bad.append(f"mutation sed matches nothing: {g['id']} {mf}")
         Path(tmp.name).unlink()
 print(f"gates: {len(d['gates'])}, each with a mutation: {all(g.get('mutation') for g in d['gates'])}")
 pre_fail = []
@@ -49,4 +55,7 @@ if md.exists():
     print(f"self-reference: {'clean' if not wrong else 'MISMATCH'}")
 for p, e in pre_fail: print("  FAIL:", p, "\n       ", e.replace("\n", "\n        "))
 for b in bad: print("  ", b)
+if deferred:
+    print("mutations that bite only after the write, to run at acceptance:")
+    for d in deferred: print("  ", d)
 sys.exit(1 if bad or pre_fail else 0)

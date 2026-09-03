@@ -1,0 +1,283 @@
+{
+  "stage": "03.repair",
+  "branch": "stage-03-repair",
+  "base": "greenfield@1dd5db9",
+  "source_commit": "1dd5db9",
+  "reaccepts": "stage-03, closed b14851f, reopened on three findings recorded in STAGE-LOG.md",
+  "stop_conditions": [
+    "source_contradicted: any must_contain marker absent at its ref",
+    "budget_exceeded: any write past its ceiling",
+    "gate_red_after_write: a gate that passed at base goes red and the cause is not the write it names",
+    "scope_expansion: a fix that requires changing what classify returns, or changing a tolerance"
+  ],
+  "preconditions": [
+    "git cat-file -e 1dd5db9^{commit}",
+    "test -f engine/native/core/parameters.hpp",
+    "test -f tools/check-engine-architecture.py",
+    "grep -q 'None = 0' engine/native/core/parameters.hpp",
+    "grep -q 'anchor_record.stop = core::Stop::stalled;' engine/native/model/density.cpp",
+    "grep -q 'anchor_record.stop = core::Stop::converged;' engine/native/model/density.cpp",
+    "grep -q 'record->stop = core::Stop::converged;' engine/native/physics/association.hpp",
+    "! grep -q 'core::Scope scope' engine/native/model/infinite_dilution_reference.cpp || grep -q 'infinite_dilution_reference' engine/native/model/infinite_dilution_reference.cpp",
+    "command -v python3",
+    ".venv/bin/meson --version"
+  ],
+  "sources": [
+    {
+      "ref": "greenfield@1dd5db9:engine/native/core/parameters.hpp",
+      "must_contain": [
+        "enum class PermittivityForm {",
+        "    None = 0,",
+        "enum class ElectrolyteForm {"
+      ],
+      "purpose": "the two selectors carrying an unreachable None. Delete only the None members; every other member stays"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/native/surface/parameter_builder.cpp",
+      "must_contain": [
+        "} else if (document.electrolyte_choice != \"none\") {",
+        "} else if (document.permittivity_choice != \"none\") {"
+      ],
+      "purpose": "proof the surface never constructs Form::None -- a packet saying \"none\" leaves the field undeclared. This is why the members are unreachable and why declared() already carries their meaning"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/native/model/helmholtz_model.cpp",
+      "must_contain": [
+        "if (parameters_.permittivity_form.is(PermittivityForm::None) == false) {",
+        "State HelmholtzModel::state(",
+        "core::Scope scope(\"state_at_pressure\");"
+      ],
+      "purpose": "the guard that must become declared(), the function missing a Scope, and the Scope pattern to copy"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/native/model/infinite_dilution_reference.cpp",
+      "must_contain": [
+        "ElectrolyteActivity electrolyte_activity(",
+        "core::Scope scope(\"infinite_dilution_reference\");"
+      ],
+      "purpose": "the second function missing a Scope, beside one that has it"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/native/model/density.cpp",
+      "must_contain": [
+        "anchor_record.stop = core::Stop::converged;",
+        "anchor_record.stop = core::Stop::stalled;",
+        "anchor_record.stop = core::Stop::left_domain;",
+        "core::ResidualHistory history;"
+      ],
+      "purpose": "two residual stops named by hand and one solver stop that is legal. The history is already built; only the naming is wrong"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/native/physics/association.hpp",
+      "must_contain": [
+        "record->stop = core::Stop::converged;",
+        "record->criterion = &policy::ASSOCIATION_RESIDUAL;"
+      ],
+      "purpose": "the third hand-named residual stop, found by the rule rather than by the review"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/docs/greenfield/CORE.md",
+      "must_contain": [
+        "### 5.2 One classifier",
+        "`left_domain`, `singular`, `infeasible` are set by the solver that detects them. A solver",
+        "### 6.1 The shape"
+      ],
+      "purpose": "the rule being enforced, verbatim, and the section the Scope rule is written into"
+    },
+    {
+      "ref": "greenfield@1dd5db9:engine/tests/native/diagnostics_checks.cpp",
+      "must_contain": [
+        "void trace_case(epcsaft::Parameters parameters, double temperature, double pressure,",
+        "void trace_invariance() {",
+        "model.state_at_pressure("
+      ],
+      "purpose": "trace_case exercises only state_at_pressure, which is exactly why two missing Scopes survived 19 gates"
+    },
+    {
+      "ref": "greenfield@1dd5db9:tools/check-engine-architecture.py",
+      "must_contain": [
+        "def rule_declared_selectors() -> list[str]:",
+        "def rule_surface_defaults() -> list[str]:",
+        "def main() -> int:"
+      ],
+      "purpose": "the rule shape and the registration point for two new rules"
+    }
+  ],
+  "writes": [
+    {
+      "path": "engine/native/core/parameters.hpp",
+      "edit": "delete None = 0 from PermittivityForm and ElectrolyteForm",
+      "lines": {
+        "low": 0,
+        "estimate": 0,
+        "ceiling": 4
+      }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "permittivity guard becomes declared(); Scope in HelmholtzModel::state",
+      "lines": {
+        "low": 2,
+        "estimate": 3,
+        "ceiling": 8
+      }
+    },
+    {
+      "path": "engine/native/model/infinite_dilution_reference.cpp",
+      "edit": "Scope in electrolyte_activity",
+      "lines": {
+        "low": 1,
+        "estimate": 2,
+        "ceiling": 5
+      }
+    },
+    {
+      "path": "engine/native/model/density.cpp",
+      "edit": "the two hand-named residual stops call classify",
+      "lines": {
+        "low": 4,
+        "estimate": 8,
+        "ceiling": 16
+      }
+    },
+    {
+      "path": "engine/native/physics/association.hpp",
+      "edit": "the hand-named converged calls classify",
+      "lines": {
+        "low": 2,
+        "estimate": 4,
+        "ceiling": 10
+      }
+    },
+    {
+      "path": "engine/tests/native/diagnostics_checks.cpp",
+      "edit": "two trace cases: state(T, rho) and electrolyte_activity",
+      "lines": {
+        "low": 18,
+        "estimate": 30,
+        "ceiling": 50
+      }
+    },
+    {
+      "path": "tools/check-engine-architecture.py",
+      "edit": "rule_bound_functions_open_a_scope and rule_no_hand_named_residual_stop",
+      "lines": {
+        "low": 25,
+        "estimate": 40,
+        "ceiling": 65
+      }
+    },
+    {
+      "path": "engine/docs/greenfield/CORE.md",
+      "edit": "the Scope rule in 6.1, and 5.2 gains its checker reference",
+      "lines": {
+        "low": 6,
+        "estimate": 12,
+        "ceiling": 22
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": "build",
+      "command": ".venv/bin/meson compile -C engine/build/greenfield",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "1i #include \"equilibrium/problem.hpp\"",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "architecture_rules",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/model/density.cpp",
+        "sed": "s/anchor_record.stop = core::classify(/anchor_record.stop = core::Stop::stalled; (void)core::classify(/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "bound_functions_open_a_scope",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/^    core::Scope scope(\"state\");//",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "deletes a Scope line this stage creates; cannot bite at base, verified at acceptance"
+      }
+    },
+    {
+      "id": "no_unreachable_selector_member",
+      "command": "! grep -qE '^\\s+None = 0,' engine/native/core/parameters.hpp",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/core/parameters.hpp",
+        "sed": "s/^enum class ElectrolyteForm {/enum class ElectrolyteForm {\\n    None = 0,/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "physics_and_model_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "trace_has_one_root",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs diagnostics",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/model/infinite_dilution_reference.cpp",
+        "sed": "s/^    core::Scope scope(\"electrolyte_activity\");//",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "deletes a Scope line this stage creates; cannot bite at base, verified at acceptance"
+      }
+    },
+    {
+      "id": "python_eos_tests",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/native/model/helmholtz_model.cpp",
+        "sed": "s/parameters_.permittivity_form.declared()/false/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "types_consistent",
+      "command": "(cd engine && ../.venv/bin/mypy)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/ionic_dispersion_choice: str/ionic_dispersion_choic: str/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "packets_validate",
+      "command": "python3 data/tools/validate_packets.py > /dev/null",
+      "needs": "none",
+      "mutation": {
+        "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
+        "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/",
+        "expect": "abort"
+      }
+    }
+  ],
+  "reported": [
+    "outcome",
+    "files_written",
+    "gates",
+    "deviations",
+    "stop_detail"
+  ]
+}
