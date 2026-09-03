@@ -227,7 +227,51 @@ void hessian_fd_and_pressure_slope() {
         CHECK(close(slope_state.pressure_density_derivative,
                     (plus_state.pressure - minus_state.pressure) / (2.0 * 1.2e4 * 1e-5),
                     1e-6));
+        const auto pressure_slope = model.evaluate(
+            temperature, volume, item.second, epcsaft::DerivativeOrder::PressureSlope
+        );
+        const double volume_step = volume * 1e-5;
+        const auto plus_volume_gradient = model.evaluate(
+            temperature, volume + volume_step, item.second,
+            epcsaft::DerivativeOrder::Gradient
+        );
+        const auto minus_volume_gradient = model.evaluate(
+            temperature, volume - volume_step, item.second,
+            epcsaft::DerivativeOrder::Gradient
+        );
+        CHECK(close(pressure_slope.volume_second_derivative,
+                    (plus_volume_gradient.gradient[1] - minus_volume_gradient.gradient[1])
+                        / (2.0 * volume_step),
+                    1e-6));
     }
+}
+
+void same_sign_pair_is_inert() {
+    const std::vector<double> amounts = {
+        0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001,
+    };
+    auto excluded = model_support::nine_species();
+    auto changed = excluded;
+    changed.k_ij[3 * 9 + 7] = changed.k_ij[7 * 9 + 3] = 0.5;
+    const auto base_state = epcsaft::HelmholtzModel(excluded).state(
+        300.0, 1.2e4, amounts
+    );
+    const auto changed_state = epcsaft::HelmholtzModel(changed).state(
+        300.0, 1.2e4, amounts
+    );
+    CHECK(close(base_state.dispersion, changed_state.dispersion, 1e-14));
+
+    auto all_pairs = excluded;
+    all_pairs.ionic_dispersion = epcsaft::IonicDispersion::AllIonPairs;
+    auto all_changed = all_pairs;
+    all_changed.k_ij[3 * 9 + 7] = all_changed.k_ij[7 * 9 + 3] = 0.5;
+    const auto all_base_state = epcsaft::HelmholtzModel(all_pairs).state(
+        300.0, 1.2e4, amounts
+    );
+    const auto all_changed_state = epcsaft::HelmholtzModel(all_changed).state(
+        300.0, 1.2e4, amounts
+    );
+    CHECK(all_base_state.dispersion != all_changed_state.dispersion);
 }
 
 void parameter_derivative_and_helpers() {
@@ -259,6 +303,20 @@ void parameter_derivative_and_helpers() {
     bool threw = false;
     try { auto bad = parameters; bad.k_ij.pop_back(); (void)epcsaft::HelmholtzModel(std::move(bad)); }
     catch (const std::invalid_argument&) { threw = true; }
+    CHECK(threw);
+    threw = false;
+    try {
+        auto bad = model_support::aqueous_electrolyte();
+        bad.ionic_dispersion = {};
+        (void)epcsaft::HelmholtzModel(std::move(bad));
+    } catch (const std::invalid_argument&) { threw = true; }
+    CHECK(threw);
+    threw = false;
+    try {
+        auto bad = model_support::neutral_binary();
+        bad.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+        (void)epcsaft::HelmholtzModel(std::move(bad));
+    } catch (const std::invalid_argument&) { threw = true; }
     CHECK(threw);
     threw = false;
     try { auto bad = parameters; bad.k_ij[1] = 1.0; (void)epcsaft::HelmholtzModel(std::move(bad)); }
@@ -309,6 +367,27 @@ void density_and_reference() {
                                                  epcsaft::DensityBranch::Liquid);
     CHECK(close(vapor.pressure, 1e6, 1e-9));
     CHECK(close(liquid.molar_density, vapor.molar_density, 1e-10));
+    const auto cold_vapor = ethane.state_at_pressure(
+        280.0, 1e6, {1.0}, epcsaft::DensityBranch::Vapor
+    );
+    const auto cold_liquid = ethane.state_at_pressure(
+        280.0, 1e6, {1.0}, epcsaft::DensityBranch::Liquid
+    );
+    const auto anchored_liquid = ethane.state_at_pressure(
+        280.0, 1e6, {1.0}, epcsaft::DensityBranch::Liquid,
+        cold_vapor.molar_density
+    );
+    const auto anchored_vapor = ethane.state_at_pressure(
+        280.0, 1e6, {1.0}, epcsaft::DensityBranch::Vapor,
+        cold_liquid.molar_density
+    );
+    CHECK(close(anchored_liquid.molar_density, cold_liquid.molar_density, 1e-10));
+    CHECK(close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-10));
+    const auto associating = epcsaft::HelmholtzModel(model_support::associating_binary());
+    const auto associating_liquid = associating.state_at_pressure(
+        313.15, 1e5, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid
+    );
+    CHECK(close(associating_liquid.pressure, 1e5, 1e-9));
     const auto nine = epcsaft::HelmholtzModel(model_support::nine_species());
     const auto nine_state = nine.state_at_pressure(
         313.15, 1e5,
@@ -375,6 +454,7 @@ int main() {
     finite_difference_gradient();
     hessian_reference();
     hessian_fd_and_pressure_slope();
+    same_sign_pair_is_inert();
     parameter_derivative_and_helpers();
     density_and_reference();
     cache_invariance();

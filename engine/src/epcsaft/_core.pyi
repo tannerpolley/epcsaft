@@ -79,6 +79,7 @@ class ParameterDocument:
     site_component: list[int]
     site_multiplicity: list[int]
     electrolyte_choice: str
+    ionic_dispersion_choice: str
     permittivity_choice: str
     entries: list[ParameterEntry]
     def __init__(self) -> None: ...

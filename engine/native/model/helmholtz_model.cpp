@@ -53,6 +53,38 @@ bool symmetric(const std::vector<int>& values, std::size_t size) {
     return true;
 }
 
+Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
+    const std::vector<double>& sites,
+    const std::vector<double>& composition,
+    const Parameters& parameters,
+    double total,
+    double number_density,
+    const std::vector<double>& delta
+) {
+    const std::size_t sites_count = sites.size();
+    Eigen::MatrixXd association_hessian = Eigen::MatrixXd::Zero(
+        static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count));
+    for (std::size_t a = 0; a < sites_count; ++a) {
+        const double mass_a = composition[parameters.site_component[a]]
+            * parameters.site_multiplicity[a];
+        for (std::size_t b = 0; b < sites_count; ++b) {
+            const double mass_b = composition[parameters.site_component[b]]
+                * parameters.site_multiplicity[b];
+            association_hessian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
+                -total * (
+                    (a == b ? mass_a / (sites[a] * sites[a]) : 0.0)
+                    + number_density * mass_a * mass_b * delta[a * sites_count + b]
+                );
+        }
+    }
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(association_hessian);
+    if (sites_count != 0
+        && factorization.rank() != static_cast<Eigen::Index>(sites_count)) {
+        throw std::runtime_error("association Hessian is singular");
+    }
+    return factorization;
+}
+
 void require(bool condition, const char* field) {
     if (!condition) {
         throw std::invalid_argument(std::string("invalid ") + field);
@@ -217,6 +249,7 @@ HelmholtzModel::HelmholtzModel(
         parameters_.charge_number.begin(), parameters_.charge_number.end(),
         [](int charge) { return charge != 0; }
     );
+    require(has_ion == parameters_.ionic_dispersion.declared(), "ionic_dispersion");
     require(has_ion == parameters_.electrolyte_form.declared(), "electrolyte_form");
     require(parameters_.electrolyte_form.declared() == parameters_.permittivity_form.declared(), "permittivity_form");
 
@@ -299,7 +332,7 @@ detail::PredicateSignature HelmholtzModel::predicate_signature(
         if (parameters_.charge_number[component] == 0) continue;
         result.push_back(
             kappa * ANGSTROM_M * parameters_.debye_huckel_diameter_angstrom[component]
-                < policy::ELECTROLYTE_SERIES_THRESHOLD.value ? 1 : 0
+                < policy::SCREENING_SERIES_SWITCH.value ? 1 : 0
         );
     }
     return result;
@@ -343,21 +376,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         ));
     }
     scope.probe("declared_choices", declared_choices);
-    const auto electro = electrolyte_contribution(
-        temperature, density, temperature, density, composition, composition,
-        parameters_
-    );
-    const auto born = born_contribution(
-        temperature, composition, parameters_, electro.bulk_relative_permittivity
-    );
-    const auto direct = residual_helmholtz(
-        temperature, density, composition, parameters_, sigma, diameter, sites,
-        electro.debye_huckel, born
-    );
-    const double direct_value = total * (
-        direct.hard_chain + direct.dispersion + direct.association
-        + direct.debye_huckel + direct.born
-    );
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
     for (const auto& item : active_) {
@@ -402,6 +420,13 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         scope.probe("gradient", result.gradient);
         return result;
     }
+    const std::size_t sites_count = sites.size();
+    const auto delta = association_delta(
+        temperature, density, composition, parameters_, sigma, diameter
+    );
+    const double number_density = density * NUMBER_DENSITY_PER_ANGSTROM3;
+    auto factorization = site_factorization(
+        sites, composition, parameters_, total, number_density, delta);
     if (order == DerivativeOrder::PressureSlope) {
         result.gradient = tape_->function.Reverse(1, weight);
         ++counters_.reverse;
@@ -411,7 +436,24 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         ++counters_.forward;
         const auto second = tape_->function.Reverse(2, weight);
         ++counters_.reverse;
-        result.volume_second_derivative = second[2 * 1 + 1];
+        double site_correction = 0.0;
+        if (!sites.empty()) {
+            Eigen::VectorXd cross_v(static_cast<Eigen::Index>(sites.size()));
+            for (std::size_t site = 0; site < sites.size(); ++site) {
+                cross_v(static_cast<Eigen::Index>(site)) = first[1 + site];
+            }
+            site_correction = cross_v.dot(factorization.solve(cross_v));
+            Eigen::VectorXd D(static_cast<Eigen::Index>(sites.size()));
+            for (std::size_t site = 0; site < sites.size(); ++site) {
+                D(static_cast<Eigen::Index>(site)) = total
+                    * composition[parameters_.site_component[site]]
+                    * parameters_.site_multiplicity[site]
+                    / sites[site];
+            }
+            result.gradient_floor = std::abs(cross_v.dot(factorization.solve(D)))
+                * policy::ASSOCIATION_RESIDUAL.value;
+        }
+        result.volume_second_derivative = second[3] - site_correction;
         scope.probe("gradient", result.gradient);
         scope.probe("volume_second_derivative", result.volume_second_derivative);
         scope.probe("gradient_floor", result.gradient_floor);
@@ -421,37 +463,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     ++counters_.hessian_calls;
     result.gradient.resize(total_coordinates);
     result.hessian.assign(total_coordinates * total_coordinates, 0.0);
-    const std::size_t sites_count = sites.size();
-    Eigen::MatrixXd association_hessian = Eigen::MatrixXd::Zero(
-        static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count)
-    );
-    const auto delta = association_delta(
-        temperature, density, composition, parameters_, sigma, diameter
-    );
-    const double number_density = density * NUMBER_DENSITY_PER_ANGSTROM3;
-    for (std::size_t a = 0; a < sites_count; ++a) {
-        const std::size_t component_a = static_cast<std::size_t>(
-            parameters_.site_component[a]
-        );
-        const double mass_a = composition[component_a]
-            * parameters_.site_multiplicity[a];
-        for (std::size_t b = 0; b < sites_count; ++b) {
-            const std::size_t component_b = static_cast<std::size_t>(
-                parameters_.site_component[b]
-            );
-            const double mass_b = composition[component_b]
-                * parameters_.site_multiplicity[b];
-            association_hessian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
-                -total * (
-                    (a == b ? mass_a / (sites[a] * sites[a]) : 0.0)
-                    + number_density * mass_a * mass_b * delta[a * sites_count + b]
-                );
-        }
-    }
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization(association_hessian);
-    if (sites_count != 0 && factorization.rank() != static_cast<Eigen::Index>(sites_count)) {
-        throw std::runtime_error("association Hessian is singular");
-    }
     Eigen::MatrixXd cross = Eigen::MatrixXd::Zero(
         static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(total_coordinates)
     );
@@ -512,7 +523,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     scope.probe("volume_second_derivative", result.volume_second_derivative);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
-    (void)direct_value;
     return result;
 }
 

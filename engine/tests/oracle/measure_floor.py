@@ -59,13 +59,13 @@ def main() -> None:
         parameters_json("gross-2001-methane-ethane", 2),
         components=("methane", "ethane")))
     mea = Mixture(Parameters.from_json(
-        parameters_json("mea-co2-h2o-nine-species-estimation", 2),
+        parameters_json("mea-co2-h2o-nine-species-estimation", 3),
         components=("water", "monoethanolamine", "carbon-dioxide",
                     "protonated-monoethanolamine", "carbamate-anion",
                     "bicarbonate-anion", "carbonate-anion", "hydronium-cation",
                     "hydroxide-anion")))
     figiel = Mixture(Parameters.from_json(
-        parameters_json("figiel-2025-reference-electrolytes", 2),
+        parameters_json("figiel-2025-reference-electrolytes", 3),
         components=("water", "sodium-cation", "chloride-anion")))
     case_c: Callable[[], State] = lambda: mea.state(313.15, P=1e5, x=FLOOR_COMPOSITION, phase="liquid")
     state_c = case_c()

@@ -143,12 +143,6 @@ inline constexpr Tolerance DENSITY_BISECTION_FRACTION{"DENSITY_BISECTION_FRACTIO
     "Stage 2 brief; safeguarded Newton uses the bracket midpoint",
 };
 
-inline constexpr Tolerance ELECTROLYTE_SERIES_THRESHOLD{"ELECTROLYTE_SERIES_THRESHOLD",
-    1.0e-3,
-    Category::AlgorithmTolerance,
-    "electrolyte.hpp finite-size chi series switch",
-};
-
 inline constexpr Tolerance COMPOSITION_SUM_TOLERANCE{"COMPOSITION_SUM_TOLERANCE",
     1.0e-12,
     Category::AlgorithmTolerance,

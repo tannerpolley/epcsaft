@@ -22,7 +22,7 @@ def test_aqueous_activity_reproduces_source_rows() -> None:
         cation = str(first["cation"])
         anion = str(first["anion"])
         parameters = Parameters.from_json(
-            parameters_json("figiel-2025-reference-electrolytes", 2),
+            parameters_json("figiel-2025-reference-electrolytes", 3),
             components=("water", cation, anion),
         )
         temperature = first["temperature_k"]
@@ -49,3 +49,32 @@ def test_aqueous_activity_reproduces_source_rows() -> None:
             print(salt, row["molality_mol_kg"], measured, calculated, deviations[-1])
         aard = sum(deviations) / len(deviations)
         assert aard <= SOURCE_ADEQUACY_AARD, f"{salt}: {deviations}"
+
+
+def test_published_model_curve_reproduces_source() -> None:
+    rows = json.loads(ORACLE.read_text())["cases"]["aqueous_lithium_bromide_published_model"]
+    assert len(rows) == 27
+    first = rows[0]
+    parameters = Parameters.from_json(
+        parameters_json("figiel-2025-reference-electrolytes", 3),
+        components=("water", "lithium-cation", "bromide-anion"),
+    )
+    reference = Mixture(parameters).reference(
+        first["temperature_k"], first["pressure_pa"],
+        solvent_fractions=(1.0, 0.0, 0.0),
+        ions=("lithium-cation", "bromide-anion"), stoichiometry=(1, 1),
+    )
+    deviations: list[float] = []
+    uncertainty_ratios: list[float] = []
+    for row in rows:
+        calculated = reference.activity(row["molality_mol_kg"]).mean_ionic_molality_scale
+        published = row["published_mean_ionic_activity_coefficient"]
+        uncertainty = row["digitization_uncertainty"]
+        deviation = abs(calculated / published - 1.0)
+        deviations.append(deviation)
+        uncertainty_ratios.append(abs(calculated - published) / uncertainty)
+        print(row["molality_mol_kg"], published, calculated, uncertainty_ratios[-1])
+    assert sum(deviations) / len(deviations) <= sum(
+        row["digitization_uncertainty"] / row["published_mean_ionic_activity_coefficient"]
+        for row in rows
+    ) / len(rows)

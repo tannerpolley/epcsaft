@@ -43,6 +43,7 @@ struct TapeParameters final {
     double born_c_shell;
     double born_c_dielectric;
     core::Declared<ElectrolyteForm> electrolyte_form;
+    core::Declared<IonicDispersion> ionic_dispersion;
     core::Declared<PermittivityForm> permittivity_form;
     std::vector<double> relative_permittivity;
     std::vector<int> permittivity_term_component;
@@ -148,6 +149,7 @@ inline TapeParameters make_tape_parameters(
     result.born_c_shell = parameters.born_c_shell;
     result.born_c_dielectric = parameters.born_c_dielectric;
     result.electrolyte_form = parameters.electrolyte_form;
+    result.ionic_dispersion = parameters.ionic_dispersion;
     result.permittivity_form = parameters.permittivity_form;
     result.relative_permittivity = parameters.relative_permittivity;
     result.permittivity_term_component = parameters.permittivity_term_component;

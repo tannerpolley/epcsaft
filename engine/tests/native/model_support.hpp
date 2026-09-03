@@ -101,6 +101,7 @@ inline epcsaft::Parameters aqueous_electrolyte() {
     p.relative_permittivity = {78.09, 0.0, 0.0};
     p.ion_suppression_coefficient = {0.0, 7.01, 7.01};
     p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
+    p.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
     p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
     p.ionic_region_relative_permittivity = 8.0;
     p.site_component = {0, 0};
@@ -139,6 +140,7 @@ inline epcsaft::Parameters nine_species() {
     p.ion_suppression_coefficient = {0, 0, 0, 0, 0, 0, 0, 0, 0};  // revision 2 declares solvent-only; the physics layer spells that IonSuppression with alpha = 0
     p.k_ij[2 * 9 + 0] = p.k_ij[0 * 9 + 2] = 0.013262879176919628;
     p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
+    p.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
     p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
     p.ionic_region_relative_permittivity = 8.0;
     p.site_component = {1, 1, 0, 0, 2, 2};

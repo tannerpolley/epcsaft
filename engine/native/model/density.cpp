@@ -20,20 +20,14 @@ struct PressurePoint final {
     double residual;
     double pressure;
     double slope;
+    double gradient_floor;
 };
 
-PressurePoint at_density(
-    const HelmholtzModel& model,
-    double temperature,
-    double pressure,
-    const std::vector<double>& composition,
-    double density,
-    std::size_t& evaluations
-) {
+PressurePoint at_density(const HelmholtzModel& model, double temperature, double pressure,
+                         const std::vector<double>& composition, double density,
+                         std::size_t& evaluations, DerivativeOrder order) {
     ++evaluations;
-    const auto derivatives = model.evaluate(
-        temperature, 1.0 / density, composition, DerivativeOrder::PressureSlope
-    );
+    const auto derivatives = model.evaluate(temperature, 1.0 / density, composition, order);
     const double phi_v = derivatives.gradient[1];
     const double calculated_pressure = GAS_CONSTANT_J_PER_MOL_K * temperature
         * (density - phi_v);
@@ -41,8 +35,11 @@ PressurePoint at_density(
     return {
         z - pressure / (density * GAS_CONSTANT_J_PER_MOL_K * temperature),
         calculated_pressure,
-        GAS_CONSTANT_J_PER_MOL_K * temperature
-            * (1.0 + derivatives.volume_second_derivative / (density * density)),
+        order == DerivativeOrder::PressureSlope
+            ? GAS_CONSTANT_J_PER_MOL_K * temperature
+                * (1.0 + derivatives.volume_second_derivative / (density * density))
+            : 0.0,
+        derivatives.gradient_floor,
     };
 }
 
@@ -61,6 +58,32 @@ bool association_failure(const std::runtime_error& error) {
         && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
 }
 
+bool far_side_has_no_crossing(const HelmholtzModel& model, double temperature, double pressure,
+                              const std::vector<double>& composition, double density,
+                              DensityBranch branch, double log_lower, double log_upper,
+                              std::size_t intervals, core::Scope& anchor,
+                              std::size_t& evaluations) {
+    for (std::size_t index = 0; index <= intervals; ++index) {
+        const double grid_density = std::exp(log_lower + static_cast<double>(index)
+            / intervals * (log_upper - log_lower));
+        if ((branch == DensityBranch::Liquid && grid_density <= density)
+            || (branch == DensityBranch::Vapor && grid_density >= density)) {
+            continue;
+        }
+        try {
+            const auto point = at_density(model, temperature, pressure, composition, grid_density,
+                                          evaluations, DerivativeOrder::Gradient);
+            anchor.probe("far_side_residual", {grid_density, point.residual}, static_cast<std::uint32_t>(index));
+            if ((branch == DensityBranch::Liquid && !(point.residual > 0.0))
+                || (branch == DensityBranch::Vapor && !(point.residual < 0.0))) return false;
+        } catch (const std::runtime_error& error) {
+            if (association_failure(error)) return false;
+            throw;
+        }
+    }
+    return true;
+}
+
 DensityRoot refine(
     const HelmholtzModel& model,
     double temperature,
@@ -76,17 +99,14 @@ DensityRoot refine(
         policy::DENSITY_MAX_ITERATIONS.value
     );
     double density = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
-    PressurePoint point = at_density(
-        model, temperature, pressure, composition, density, evaluations
-    );
+    PressurePoint point = at_density(model, temperature, pressure, composition, density,
+                                     evaluations, DerivativeOrder::PressureSlope);
     core::ResidualHistory history;
     history.push(std::abs(point.residual));
     std::size_t iterations = 0;
     for (; iterations < maximum; ++iterations) {
         if (std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value) break;
-        const double derivative = residual_derivative(
-            point, density, pressure, temperature
-        );
+        const double derivative = residual_derivative(point, density, pressure, temperature);
         double candidate = density;
         if (std::isfinite(derivative) && derivative != 0.0) {
             candidate = density - point.residual / derivative;
@@ -98,9 +118,8 @@ DensityRoot refine(
             "density_newton_step", {density, point.residual, derivative, candidate},
             static_cast<std::uint32_t>(iterations)
         );
-        const PressurePoint next = at_density(
-            model, temperature, pressure, composition, candidate, evaluations
-        );
+        const PressurePoint next = at_density(model, temperature, pressure, composition, candidate,
+                                              evaluations, DerivativeOrder::PressureSlope);
         history.push(std::abs(next.residual));
         if (lower_residual * next.residual <= 0.0) {
             upper = candidate;
@@ -111,13 +130,16 @@ DensityRoot refine(
         density = candidate;
         point = next;
     }
-    core::Convergence record;
-    record.residual = std::abs(point.residual);
-    record.criterion = &policy::DENSITY_ROOT_RESIDUAL;
-    // frozen-site slope until 04.repair; EOS.md §1
-    record.contraction = history.contraction();
-    record.iterations = iterations + 1;
-    record.evaluations = evaluations;
+    const double derivative = residual_derivative(
+        point, density, pressure, temperature
+    );
+    core::Convergence record{
+        std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
+        point.gradient_floor / density,
+        std::isfinite(derivative) && derivative != 0.0
+            ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
+        history.contraction(), iterations + 1, evaluations, core::Stop::stalled
+    };
     record.stop = core::classify(
         record.residual, *record.criterion, record.floor, record.contraction,
         iterations == maximum
@@ -130,10 +152,8 @@ DensityRoot refine(
     if (iterations == maximum) {
         throw core::ConvergenceFailure(record);
     }
-    return {
-        density, point.residual, point.slope, iterations + 1, 0,
-        DensityBranch::Unspecified, record
-    };
+    return {density, point.residual, point.slope, iterations + 1, std::nullopt,
+            DensityBranch::Unspecified, record};
 }
 
 }  // namespace
@@ -163,63 +183,77 @@ DensityRoot solve_density(
         throw std::runtime_error("density domain is empty");
     }
 
+    const std::size_t intervals = static_cast<std::size_t>(
+        policy::DENSITY_BRACKET_INTERVALS.value
+    );
+    const double log_lower = std::log(lower);
+    const double log_upper = std::log(upper);
     std::size_t evaluations = 0;
     DensityRoot result;
     bool have_result = false;
-    if (anchor_density.has_value() && std::isfinite(*anchor_density)
-        && *anchor_density > lower && *anchor_density < upper) {
+    if (branch != DensityBranch::Unspecified && anchor_density.has_value()
+        && std::isfinite(*anchor_density) && *anchor_density > lower && *anchor_density < upper) {
         core::Scope anchor("density_anchor");
         double density = *anchor_density;
+        core::ResidualHistory history;
         core::Convergence anchor_record;
-        bool finished = false;
-        for (std::size_t iteration = 0;
-             iteration < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
+        std::size_t iteration = 0;
+        for (; iteration < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
              ++iteration) {
-            const auto point = at_density(
-                model, temperature, pressure, mole_fractions, density, evaluations
-            );
-            const double derivative = residual_derivative(
-                point, density, pressure, temperature
-            );
-            const double candidate = density - point.residual / derivative;
-            anchor.probe(
-                "density_newton_step", {density, point.residual, derivative, candidate},
-                static_cast<std::uint32_t>(iteration)
-            );
-            anchor_record = {};
-            anchor_record.residual = std::abs(point.residual);
-            anchor_record.criterion = &policy::DENSITY_ROOT_RESIDUAL;
-            anchor_record.iterations = iteration + 1;
-            anchor_record.evaluations = evaluations;
+            const auto point = at_density(model, temperature, pressure, mole_fractions, density,
+                                          evaluations, DerivativeOrder::PressureSlope);
+            history.push(std::abs(point.residual));
+            const double derivative = residual_derivative(point, density, pressure, temperature);
+            const double candidate = std::isfinite(derivative) && derivative != 0.0
+                ? density - point.residual / derivative
+                : density;
+            anchor.probe("density_newton_step", {density, point.residual, derivative, candidate},
+                         static_cast<std::uint32_t>(iteration));
+            anchor_record = {
+                std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
+                point.gradient_floor / density,
+                std::isfinite(derivative) && derivative != 0.0
+                    ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
+                history.contraction(), iteration + 1, evaluations, core::Stop::stalled
+            };
             if (anchor_record.residual <= anchor_record.criterion->value
                 && point.slope > 0.0) {
-                anchor_record.stop = core::Stop::converged;
+                const bool far_side_clear = far_side_has_no_crossing(
+                    model, temperature, pressure, mole_fractions, density, branch,
+                    log_lower, log_upper, intervals, anchor, evaluations
+                );
+                anchor_record.evaluations = evaluations;
+                if (far_side_clear) {
+                    anchor_record.stop = core::Stop::converged;
+                    anchor.finish(anchor_record);
+                    result = {
+                        density, point.residual, point.slope, iteration + 1,
+                        std::nullopt, branch, anchor_record
+                    };
+                    have_result = true;
+                    break;
+                }
+                anchor_record.stop = core::Stop::stalled;
                 anchor.finish(anchor_record);
-                result = {
-                    density, point.residual, point.slope, iteration + 1, 1, branch,
-                    anchor_record
-                };
-                have_result = true;
-                finished = true;
                 break;
             }
             if (!std::isfinite(derivative) || derivative == 0.0) {
-                anchor_record.stop = core::Stop::stalled;
+                anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
+                                                     anchor_record.floor, anchor_record.contraction, false);
                 anchor.finish(anchor_record);
-                finished = true;
                 break;
             }
             if (!(candidate > lower && candidate < upper)
                 || !std::isfinite(candidate)) {
                 anchor_record.stop = core::Stop::left_domain;
                 anchor.finish(anchor_record);
-                finished = true;
                 break;
             }
             density = candidate;
         }
-        if (!finished) {
-            anchor_record.stop = core::Stop::stalled;
+        if (iteration == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) {
+            anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
+                                                 anchor_record.floor, anchor_record.contraction, true);
             anchor.finish(anchor_record);
         }
     }
@@ -228,21 +262,13 @@ DensityRoot solve_density(
         bool previous_available = false;
         double previous_density = 0.0;
         double previous_residual = 0.0;
-        const std::size_t intervals = static_cast<std::size_t>(
-            policy::DENSITY_BRACKET_INTERVALS.value
-        );
-        const double log_lower = std::log(lower);
-        const double log_upper = std::log(upper);
         for (std::size_t index = 0; index <= intervals; ++index) {
-            const double fraction = static_cast<double>(index) / intervals;
-            const double density = std::exp(
-                log_lower + fraction * (log_upper - log_lower)
-            );
+            const double density = std::exp(log_lower + static_cast<double>(index) / intervals
+                                            * (log_upper - log_lower));
             PressurePoint point;
             try {
-                point = at_density(
-                    model, temperature, pressure, mole_fractions, density, evaluations
-                );
+                point = at_density(model, temperature, pressure, mole_fractions, density,
+                                   evaluations, DerivativeOrder::Gradient);
             } catch (const std::runtime_error& error) {
                 if (association_failure(error)) {
                     previous_available = false;
@@ -252,8 +278,7 @@ DensityRoot solve_density(
             }
             scope.probe(
                 "density_scan_point",
-                {density, point.residual,
-                 residual_derivative(point, density, pressure, temperature)},
+                {density, point.residual},
                 static_cast<std::uint32_t>(index)
             );
             if (previous_available && previous_residual * point.residual <= 0.0) {

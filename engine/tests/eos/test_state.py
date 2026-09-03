@@ -1,9 +1,10 @@
 import copy
+import json
 import math
 
 import pytest
 
-from epcsaft import EosError, Mixture, ParameterError, Parameters, Pure
+from epcsaft import Mixture, ParameterError, Parameters, Pure
 
 from tests.packets import parameters_json
 
@@ -13,7 +14,7 @@ def close(left: float, right: float, relative: float) -> None:
 
 
 def test_relabelling_and_state_identities() -> None:
-    packet = parameters_json("mea-co2-h2o-nine-species-estimation", 2)
+    packet = parameters_json("mea-co2-h2o-nine-species-estimation", 3)
     order = ("water", "monoethanolamine", "carbon-dioxide", "protonated-monoethanolamine", "carbamate-anion", "bicarbonate-anion", "carbonate-anion", "hydronium-cation", "hydroxide-anion")
     reverse = tuple(reversed(order))
     x = (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)
@@ -45,9 +46,29 @@ def test_pure_is_one_component_mixture() -> None:
 
 
 def test_mapping_fails_closed_by_name() -> None:
+    with pytest.raises(ParameterError, match="model/electrolyte/ionic_dispersion"):
+        Parameters.from_json(
+            parameters_json("figiel-2025-reference-electrolytes", 2),
+            components=("water", "lithium-cation", "chloride-anion"),
+        )
     with pytest.raises(ParameterError, match="pair/ethanol/methanol/k_ij"):
-        Parameters.from_json(parameters_json("figiel-2025-reference-electrolytes", 2), components=("methanol", "ethanol"))
-    mapping = copy.deepcopy(__import__("json").loads(parameters_json("gross-2001-methane-ethane", 2).read_text()))
+        Parameters.from_json(parameters_json("figiel-2025-reference-electrolytes", 3), components=("methanol", "ethanol"))
+    ionic_mapping = copy.deepcopy(json.loads(parameters_json("figiel-2025-reference-electrolytes", 3).read_text()))
+    ionic_mapping["pairs"].append({
+        "component_id_a": "lithium-cation",
+        "component_id_b": "sodium-cation",
+        "coefficients": [{
+            "identity": "pair/lithium-cation/sodium-cation/k_ij",
+            "family": "k_ij",
+            "value": {"magnitude": 0.0, "unit": "dimensionless"},
+        }],
+    })
+    with pytest.raises(ParameterError, match="lithium-cation/sodium-cation.*exclude-same-sign-ion-pairs"):
+        Parameters.from_mapping(
+            ionic_mapping,
+            components=("water", "lithium-cation", "sodium-cation", "chloride-anion"),
+        )
+    mapping = copy.deepcopy(json.loads(parameters_json("gross-2001-methane-ethane", 2).read_text()))
     mapping["components"][0]["fixed"]["molar_mass"]["value"]["unit"] = "gram"
     with pytest.raises(ParameterError, match="(?=.*component/ethane/molar_mass)(?=.*gram)"):
         Parameters.from_mapping(mapping, components=("ethane",))
