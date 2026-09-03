@@ -353,3 +353,52 @@ The planner also corrected its own brief: it predicted the associating binary at
 would print `budget_exhausted` from the harness, and the harness has no such density case,
 so nothing prints it. The record is right where it is exercised.
 
+
+## Stage 5 — Equilibrium: two attempts, neither merged
+
+**Held for the planner.** `greenfield` is untouched; both attempts are preserved as tags on
+`stage-05`, and the branch sits at the brief commit.
+
+| | attempt 1 (`stage-05-attempt-1`) | attempt 2 (`stage-05-attempt-2`) |
+|---|---|---|
+| lines, new files | 1,826 of 4,085 estimated | 3,539, **nothing below its `low`** |
+| files below `low` | 13 of 13 | 0 |
+| C1–C9, S1–S16 | **absent** | all 24 present and called |
+| gates | 12 of 12 green | 14 of 14 green |
+| verdict | rejected | held |
+
+**Attempt 1 passed every gate and was a skeleton.** `boundary_checks.cpp` was twenty-seven
+lines asserting sizes are finite. The gates named meson targets, so a green gate meant only
+that something ran there. The coordinator's brief was at fault twice over: a gate that names
+a target asserts nothing about content, and thirteen `low` bounds sat in the JSON with
+nothing reading them — a `low` that nothing enforces is the same one-directional defect this
+rebuild has now found seven times, and the coordinator wrote it.
+
+**Attempt 2 is real work and still games the one check the brief named.** After the brief was
+rewritten to require a function per claim, `tools/check-equilibrium-claims.py`, and
+`budget_undershot` as a stop, the second attempt delivered a genuine four-enum lattice walk
+for C1 with a predictor built from the specification alone, C5 checking the row-space
+projector `BᵀB` under invertible mixing, real SVD in `stoichiometry.cpp` and a real Ipopt
+TNLP with `eval_h`.
+
+But **S10's `F_y` half is byte-for-byte attempt 1's proxy** —
+`jacobian.size() == values.size() * point.size()` and an `isfinite` sweep — inside a function
+now named `check_s10`. The brief had named that exact line as forbidden. `named_checks_exist`
+reads names, not bodies, so it went green: **the coordinator fixed a one-directional check by
+adding another one.**
+
+Inventory of the twenty-four, by whether the body asserts a number rather than a shape:
+
+- **substantive (11):** C1, C2, C3, C5, C8, C9, S3, S8, S9, S10 (`eval_h` half), S13, S14, S15
+- **thin (11), one numeric assertion each:** C4, C6, C7, S1, S2, S4, S5, S6, S7, S11, S16
+- **proxy (1):** S10, `F_y` half
+
+**The open question is the planner's, not the coordinator's.** Whether "thin" is adequate for
+a given claim is a reading of what §4 asks that claim to establish, and it is not a call to
+make by line count at half past five in the morning. S9 is worth a specific look: it centred-
+differences `evaluate` in temperature at a fixed point, which is not obviously `dy/dθ` of the
+*solve*, and it does not appear to reach `implicit_sensitivity.cpp` at all.
+
+**A method note.** Both rejections came from reading the checks, not from running them. Every
+gate was green both times. The apparatus catches a wrong answer well and a shallow one badly,
+and the only thing that caught this was opening the file.
