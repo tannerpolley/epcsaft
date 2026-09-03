@@ -83,14 +83,19 @@ named after it* — printed directly beneath a heading that named the stage afte
 
 There is one driver and one equilibrium. A cell is a specification, never a stage.
 
-**Stage 6 and 8 re-estimated, 2026-09-02.** The old split budgeted saturation, the boundary
-and the minimizer at 300 + 250 + 1,350 = 1,900 lines across three stages. With one Ipopt
-driver serving every `k` — objective `G` at `k = 0`, a zero objective with every row as a
-constraint at `k ≥ 1`, because Ipopt's primal step on a square feasibility problem is the
-Newton step whatever Hessian it is given — the driver moves into Stage 6 beside saturation
-and Stage 6 keeps the flash. Stage 6 ≈ 1,330 (ceiling 1,720); Stage 6 ≈ 550 (ceiling 740).
-Estimates are the equilibrium planner's, marked **guessed** with the per-file reasoning in
-its message; `STAGE-LOG.md` records the actual.
+**Equilibrium is one stage, decided by the owner 2026-09-02.** It was four — a specification
+stage, a driver stage, a starts stage and a boundary stage. Under one Ipopt driver serving
+every `k` (objective `G` at `k = 0`, a zero objective with every row as a constraint at
+`k ≥ 1`, because Ipopt's primal step on a square feasibility problem *is* the Newton step
+whatever Hessian it is given) there are no rows for a second stage to write: compile emits
+them once and the driver solves them. The multicomponent seed is a start rule, and
+continuation across a sweep is one function that does not change with component count, so
+neither is a second capability. Every split was route thinking surviving in the plan after
+it had been removed from the code.
+
+Budget ≈ 3,040 lines, ceiling ≈ 3,870 — specification 1,000, driver and one-component cell
+1,330, starts and topology 710. The parts are the equilibrium planner's estimates, marked
+**guessed** with per-file reasoning; `STAGE-LOG.md` records the actual.
 
 **Stage 4 is reopened, and Stage 3 has a defect.** Stage 4's nine gates pass and every
 mutation was shown red; the disagreement it surfaced is not its own.
@@ -529,7 +534,7 @@ zero for `k ≥ 1`); `phase_boundary.cpp` opens with the one-component seeds and
 continuation; `implicit_sensitivity.cpp` (250) lands with it. Revised 2026-09-02: the
 separate boundary Newton is not written, because Ipopt's step on a square feasibility
 problem *is* the Newton step, and a second solver loop with its own tolerance and stops
-was the disease in another form. Line budgets for Stage 6 are to be re-estimated.
+was the disease in another form. Budgets are in the section heading; `STAGE-LOG.md` records the actual.
 
 Saturation is not a file, not a route, and not an identifier: `saturation` is a rule-7
 case token, so nothing under `native/` is named after it and only Python's
