@@ -1,7 +1,7 @@
 {
   "stage": 4,
   "branch": "stage-04-repair",
-  "base": "greenfield@c860395",
+  "base": "greenfield@eb7c728",
   "source_commit": "9eccbfd",
   "reaccepts": [
     2,
@@ -27,11 +27,9 @@
     "grep -qF 'result.volume_second_derivative = second[2 * 1 + 1];' engine/native/model/helmholtz_model.cpp",
     "grep -qF '(void)direct_value;' engine/native/model/helmholtz_model.cpp",
     "grep -qF 'policy::ELECTROLYTE_SERIES_THRESHOLD.value' engine/native/model/helmholtz_model.cpp",
-    "grep -qF 'return {density, point.residual, point.slope, iteration + 1, 1, branch};' engine/native/model/density.cpp",
     "grep -qF '// EqID: same_sign_ionic_dispersion' engine/native/physics/helmholtz.hpp",
-    "! grep -q 'ionic_dispersion' engine/native/physics/parameters.hpp",
+    "! grep -q 'ionic_dispersion' engine/native/core/parameters.hpp",
     "! grep -q 'ionic_dispersion' engine/src/epcsaft/parameters.py",
-    "grep -qF 'stoichiometry: tuple[int, int] = (1, 1)' engine/src/epcsaft/eos.py",
     "test ! -e data/packets/figiel-2025-reference-electrolytes/3",
     "test ! -e data/packets/mea-co2-h2o-nine-species-estimation/3",
     "test ! -e data/packets/held-cameretti-sadowski-2008/3",
@@ -68,7 +66,7 @@
       "purpose": "the registered case split whose selector is written in this stage"
     },
     {
-      "ref": "greenfield@c860395:engine/native/physics/helmholtz.hpp",
+      "ref": "greenfield@eb7c728:engine/native/physics/helmholtz.hpp",
       "must_contain": [
         "// EqID: same_sign_ionic_dispersion",
         "const Scalar epsilon_ij = scalar_sqrt(epsilon_i * epsilon_j)",
@@ -77,7 +75,7 @@
       "purpose": "the annotated line that implements one branch unconditionally; byte-identical to 9eccbfd:_native/helmholtz.hpp:303-337"
     },
     {
-      "ref": "greenfield@c860395:engine/native/model/helmholtz_model.cpp",
+      "ref": "greenfield@eb7c728:engine/native/model/helmholtz_model.cpp",
       "must_contain": [
         "result.volume_second_derivative = second[2 * 1 + 1];",
         "correction = cross.transpose() * factorization.solve(cross);",
@@ -87,12 +85,13 @@
       "purpose": "the frozen-site slope, the Schur correction the Hessian order already forms, the dead double path, and the duplicated policy name"
     },
     {
-      "ref": "greenfield@c860395:engine/native/model/density.cpp",
+      "ref": "greenfield@eb7c728:engine/native/model/density.cpp",
       "must_contain": [
-        "return {density, point.residual, point.slope, iteration + 1, 1, branch};",
-        "stable.front().stable_root_count = 1;"
+        "result.stable_root_count = 1;",
+        "core::Convergence record;"
       ],
-      "purpose": "the anchored early return that asserts a count it never computed"
+      "purpose": "the anchored early return that asserts a count it never computed",
+      "note": "markers refreshed after Stage 2 rewrote the DensityRoot literal to carry the record"
     },
     {
       "ref": "greenfield@c860395:engine/docs/greenfield/DENSITY-ROOT.md",
@@ -140,7 +139,7 @@
   ],
   "writes": [
     {
-      "path": "engine/native/physics/parameters.hpp",
+      "path": "engine/native/core/parameters.hpp",
       "edit": "IonicDispersion enum and one field",
       "lines": {
         "low": 8,
@@ -158,7 +157,7 @@
       }
     },
     {
-      "path": "engine/native/physics/numerical_policy.hpp",
+      "path": "engine/native/core/numerical_policy.hpp",
       "edit": "delete ELECTROLYTE_SERIES_THRESHOLD",
       "lines": {
         "low": -5,
@@ -190,7 +189,7 @@
       "lines": {
         "low": 5,
         "estimate": 20,
-        "ceiling": 50
+        "ceiling": 60
       }
     },
     {
@@ -199,11 +198,11 @@
       "lines": {
         "low": 20,
         "estimate": 35,
-        "ceiling": 60
+        "ceiling": 85
       }
     },
     {
-      "path": "engine/native/model/parameter_builder.hpp",
+      "path": "engine/native/surface/parameter_builder.hpp",
       "edit": "ionic_dispersion_choice on ParameterDocument",
       "lines": {
         "low": 1,
@@ -212,7 +211,7 @@
       }
     },
     {
-      "path": "engine/native/model/parameter_builder.cpp",
+      "path": "engine/native/surface/parameter_builder.cpp",
       "edit": "choice mapping; same-sign pairs not required and rejected as unconsumed under the exclusion",
       "lines": {
         "low": 15,
@@ -245,15 +244,6 @@
         "low": 4,
         "estimate": 8,
         "ceiling": 16
-      }
-    },
-    {
-      "path": "engine/src/epcsaft/eos.py",
-      "edit": "stoichiometry loses its default",
-      "lines": {
-        "low": 0,
-        "estimate": 0,
-        "ceiling": 1
       }
     },
     {
@@ -312,15 +302,6 @@
     },
     {
       "path": "engine/tests/oracle/measure_floor.py",
-      "edit": "revision numbers",
-      "lines": {
-        "low": 0,
-        "estimate": 0,
-        "ceiling": 2
-      }
-    },
-    {
-      "path": "engine/tests/oracle/capture2.py",
       "edit": "revision numbers",
       "lines": {
         "low": 0,
@@ -511,7 +492,7 @@
       "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos/test_state.py)",
       "needs": "python",
       "mutation": {
-        "file": "engine/native/model/parameter_builder.cpp",
+        "file": "engine/native/surface/parameter_builder.cpp",
         "sed": "s/reject(\"unconsumed \" + identity + \" under exclude-same-sign-ion-pairs\");/continue;/",
         "expect": "abort"
       }

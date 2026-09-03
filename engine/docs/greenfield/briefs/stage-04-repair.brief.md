@@ -1,7 +1,7 @@
 # Stage 4 repair — the EOS layers re-accepted together
 
 You are repairing Stages 3 and 4 of a greenfield rebuild in this worktree (branch
-`stage-04-repair`, cut from `greenfield@c860395`). You have no one to ask. Read, in order,
+`stage-04-repair`, cut from `greenfield@eb7c728`). You have no one to ask. Read, in order,
 before writing anything:
 
 1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
@@ -373,3 +373,56 @@ matching `lithium-cation/sodium-cation` and `exclude-same-sign-ion-pairs`.
   no successor) stays unsupported; no packet carries the family as a coefficient.
 - Per-ion Zuber suppression coefficients are Stage 6's re-regression
   (`EOS.md` §3).
+
+---
+
+## Re-base delta — read this before the body, and prefer it where they differ
+
+This brief was written against the tree before Stage 2. Stage 2 has since landed the core:
+four headers moved from `physics/` to `core/`, the parameter builder moved from `model/` to
+`surface/`, and every solver now returns a `core::Convergence`. The paths, sources,
+preconditions, gates and ceilings above are already re-based and preflight clean. **What
+follows is the design delta**, written by the core planner as part of Stage 2 and applied
+here verbatim. Where it contradicts the body above, it wins.
+
+- `base`: the Stage 2 merge sha. Every path to the four moved headers and the builder changes
+  (`physics/parameters.hpp` → `core/parameters.hpp`, `model/parameter_builder.*` →
+  `surface/parameter_builder.*`); re-verify every marker on `density.cpp`,
+  `helmholtz_model.{hpp,cpp}`, `association.hpp`, `numerical_policy.hpp` and `parameters.hpp`.
+- §2.1: `IonicDispersion` has two members, no `Unspecified`; the field is
+  `core::Declared<IonicDispersion> ionic_dispersion;`; the kernel line reads
+  `parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign) && charge_i * charge_j > 0`;
+  the constructor line is `require(has_ion == parameters_.ionic_dispersion.declared(),
+  "ionic_dispersion");` and gate `no_hidden_dispersion_default`'s sed targets it. Rule 11
+  would otherwise go red on `Unspecified`.
+- §2.2: the builder assigns `result.ionic_dispersion = IonicDispersion::ExcludeSameSign` etc.;
+  the "missing" rejection stays as written. `Mixture.reference`'s default removal and its test
+  edit are already done here; drop them from the repair's writes.
+- §2.3 `PressureSlope`: with the factorisation lifted, also set `result.gradient_floor` from the
+  `V` row (`|cross_v.dot(factorization.solve(D))| · ASSOCIATION_RESIDUAL`, `D` the vector
+  `total * mass_a / sites[a]`) and probe it. `density.cpp`'s record then fills
+  `floor = V · gradient_floor` and `amplification = 1 / |dr/dρ|` from the corrected slope; the
+  *frozen-site slope until 04.repair* comment is deleted. `DENSITY_ROOT_RESIDUAL.factor` is then
+  read against `floor / ASSOCIATION_RESIDUAL` in the floor harness: report it.
+- §2.4: `ELECTROLYTE_SERIES_THRESHOLD` is deleted from `core/numerical_policy.hpp`.
+- §2.5: the `DensityRoot` literal gains the record; the far-side walk probes
+  `far_side_residual` per grid point into the `density_anchor` span, and a rejected anchor
+  finishes that span's record with `stalled`.
+- Ceilings: `density.cpp` +25, `helmholtz_model.cpp` +10.
+- A `diagnostics` block (`CORE.md` §7) naming `solve_density` and `density_anchor`, with the
+  check *`amplification` equals `1 / |dr/dρ|` recomputed from `state().pressure_density_derivative`
+  at the root, and `floor` equals `V · gradient_floor` from `evaluate` at the root* — a property
+  of the pair (answer, record) — and the mutation `s/record.amplification = /record.amplification = 0.0 * /`
+  on `density.cpp`.
+
+Two further facts about the tree you are working on, from the Stage 2 review:
+
+- `density.cpp`'s `association_failure` now asks *who threw* rather than *how it stopped* —
+  `failure->record.criterion == &policy::ASSOCIATION_RESIDUAL`. Do not narrow it back to an
+  enumeration of stops; the previous enumeration silently stopped recognising `stalled` when
+  `classify` gained it, and the scan propagated instead of skipping a point.
+- The anchored loop's budget exit currently names `stalled` by hand and keeps no
+  `ResidualHistory`, against `CORE.md` §5.2's rule that a solver never names a residual stop
+  itself. You are touching that block; fix it while you are there — build the history and let
+  `classify` name the stop.
+
