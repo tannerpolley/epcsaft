@@ -1,12 +1,12 @@
-# Stage 4 — `bindings/` and the Python EOS surface
+# Stage 3 — `bindings/` and the Python EOS surface
 
-You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-3`).
+You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-3`).
 You have no one to ask. Read, in order, before writing anything:
 
-1. `engine/docs/greenfield/TESTING.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 4", §"Units: C++ resolves them, Python only
+1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `engine/docs/greenfield/TRANSFER.md` §"Stage 3", §"Units: C++ resolves them, Python only
    reads the file", §"The MEA parameter set is the living bundle", §"Naming"
-3. `engine/docs/greenfield/STAGE-LOG.md` — Stages 0–2 decisions; you build on them
+3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 0–2 decisions; you build on them
 4. `engine/native/model/helmholtz_model.hpp` completely — it is the surface you bind
 5. `engine/native/physics/parameters.hpp` — the arrays your builder fills
 6. `engine/tests/native/model_checks.cpp` §`density_and_reference` — the native reference call
@@ -91,8 +91,8 @@ are all inside `dielectric_solvent_component()`, which returns false for any cha
 component, and both `infinite_dilution_reference.cpp` sites multiply by a solvent fraction
 the reference composition forces to zero for the ions. Requiring a charged component's mass
 is a false rejection of sufficient data, and it is what stopped this stage's first attempt.
-These are relaxations of Stage 3's validation, not new arithmetic; every existing fixture
-carries positive masses, so the Stage 3 checks stay green under them.
+These are relaxations of Stage 4's validation, not new arithmetic; every existing fixture
+carries positive masses, so the Stage 4 checks stay green under them.
 
 ## 1. Stop conditions — stopping is a first-class outcome
 
@@ -204,7 +204,7 @@ After all explicit edges are filled:
 
 both orders, `association_active` 1. This is the equation the superseded engine evaluated at
 run time (`_dictionary_io.py`: `volume = (volume_values[0] * volume_values[1]).sqrt()`) and
-the one the Stage 2 nine-species fixture encodes: `0.0411037990944876 = sqrt(0.03747 *
+the one the Stage 4 nine-species fixture encodes: `0.0411037990944876 = sqrt(0.03747 *
 0.04509)`. It has **no** diameter factor. (The `figiel-yu-held-2025/1` CSV materialised its
 solvent–solvent cross volumes with Gross–Sadowski 2002 Eq. 3's diameter factor instead; that is
 a packet-revision divergence outside this stage — no gate here selects a solvent–solvent cross
@@ -257,7 +257,7 @@ Eight exports in `__init__.py`: `Parameters`, `ParameterError`, `EosError`, `Pur
 `Mixture`, `State`, `Reference`, `Activity`. `State = _core.State`,
 `Activity = _core.ElectrolyteActivity`, `ParameterError = _core.ParameterError`,
 `EosError = _core.EosError` — re-exports, not wrappers. TRANSFER's "eleven" is a cap:
-`Saturation` (Stage 5) and `ActiveParameter` (Stage 6) arrive with the stages that consume
+`Saturation` (Stage 2) and `ActiveParameter` (Stage 5) arrive with the stages that consume
 them; `Derivatives` has no Python consumer and is not exposed.
 
 **`parameters.py`.**
@@ -293,7 +293,7 @@ selected components (`source.kind` `explicit` → the two value entries; `combin
 whose `inputs.energy_over_k` and `inputs.volume` identities are resolved to the two self
 edges; any other `rule_id` → `ParameterError`). What it rejects by name: non-empty
 `topology.presets`, a `k_hb_ij` pair coefficient, an unknown family, form, or model choice.
-What it does not read: `domains`, `sources`, `purpose`, `reaction_correlations` (Stage 4),
+What it does not read: `domains`, `sources`, `purpose`, `reaction_correlations` (Stage 3),
 `site_role`, and every provenance field.
 
 **`eos.py`.**
@@ -334,8 +334,8 @@ object; and
 `src/epcsaft`. It must contain `def state_at_pressure(`.
 
 Not written: `units.py` (deleted), `Parameters.select`, `to_mapping`, `with_values`,
-`ActiveParameter`, `parameter_hash` (Stage 6 is its first consumer), `Pure.saturation`
-(Stage 5), domain validation, `transfer_to`, solvation free energy, `Activity.mole_fractions`,
+`ActiveParameter`, `parameter_hash` (Stage 5 is its first consumer), `Pure.saturation`
+(Stage 2), domain validation, `transfer_to`, solvation free energy, `Activity.mole_fractions`,
 any `__eq__`/`__hash__`/fingerprint on `Parameters`.
 
 ## 3. The tolerance: `derived(activity_reproduction_tolerance)`
@@ -345,7 +345,7 @@ The 24 rows of `aqueous_alkali_halide_activity` were captured with
 `solvent_x=(1,0,0)`, `formula_stoichiometry=(1,1)`, `T = 298.15 K`, `P = 1 bar`), so that
 packet, selected as `("water", cation, anion)`, is what the gate evaluates them with. It is
 the published model whose reproduction is a fact about the world in the sense of
-`TESTING.md`.
+`CANON.md`.
 
 **What the source reports.** Figiel, Yu & Held 2025 (transcription sha256
 `ce80533925a91bc59d8d0d8056113c40611ca26c2edf04aced76986d50bd4bae`, re-read for this brief)
@@ -370,7 +370,7 @@ salt's six rows must not exceed the source's criterion.
 There is no factor: the source's statistic is an average, the gate's is the same average,
 and the source applied it per salt (NaBr). The number is defined exactly once, as data with
 its citation and hashes, in `engine/tests/eos/test_activity.py`; the check reads it from
-there. Rule 6 governs `engine/native/` and this is a test constant in the style of Stage 2's
+there. Rule 6 governs `engine/native/` and this is a test constant in the style of Stage 4's
 checks; no native source carries it.
 
 **Why the average and not the maximum.** The superseded engine, evaluated on these 24 rows
@@ -413,7 +413,7 @@ and its citation comment. Print the 24 deviations under `-s` so acceptance can r
 ### 4.2 `tests/eos/test_state.py` — the mapping layer
 
 1. **Relabelling is a symmetry through the mapping.** The MEA bundle
-   (`mea-co2-h2o-nine-species-estimation/2`) loaded in the Stage 2 fixture order
+   (`mea-co2-h2o-nine-species-estimation/2`) loaded in the Stage 4 fixture order
    `[water, monoethanolamine, carbon-dioxide, protonated-monoethanolamine, carbamate-anion,
    bicarbonate-anion, carbonate-anion, hydronium-cation, hydroxide-anion]` and in the
    reversed order; `state(313.15, rho=3.0e4, x=<floor composition>)` with `x` permuted to

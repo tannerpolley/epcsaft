@@ -8,7 +8,7 @@ migration_source_blob: dc2546945b7c6dbf15ea291ad5260f1a1afce766
 ---
 
 > **Superseded by the greenfield rebuild, 2026-09-02.** The decision recorded here was taken
-> and is not being rewritten; what it decided no longer describes the tree. Owner compilation leaves the fit path entirely; Stage 7 is `fit(model, observations)` on Ceres with no observable-owner system.
+> and is not being rewritten; what it decided no longer describes the tree. Owner compilation leaves the fit path entirely; Stage 6 is `fit(model, observations)` on Ceres with no observable-owner system.
 > See `engine/docs/greenfield/TRANSFER.md` for the replacement and its stages. The plan this
 > record links to was deleted with the architecture it specified; `git log` carries it.
 

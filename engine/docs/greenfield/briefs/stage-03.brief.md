@@ -1,10 +1,10 @@
-# Stage 3 — `engine/native/model/`
+# Stage 4 — `engine/native/model/`
 
-You are implementing Stage 3 of a greenfield rebuild in this worktree (branch `stage-2`).
+You are implementing Stage 4 of a greenfield rebuild in this worktree (branch `stage-2`).
 You have no one to ask. Read, in order, before writing anything:
 
-1. `engine/docs/greenfield/TESTING.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/TRANSFER.md` §"Stage 3" and §"Naming"
+1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `engine/docs/greenfield/TRANSFER.md` §"Stage 4" and §"Naming"
 3. `engine/docs/greenfield/STAGE-LOG.md` — Stage 1's decisions; you build on them
 4. `engine/native/physics/*.hpp` — all eight files, completely
 5. `engine/tests/native/physics_checks.cpp` — the check pattern you follow
@@ -20,7 +20,7 @@ writing. If a claim is false, stop and say which.
 `native/model/` may include `"physics/..."` and `"model/..."` only, rooted at
 `engine/native`, never relative.
 
-**No pybind11, no Python** outside `native/bindings/`. `_core` does not exist until Stage 3.
+**No pybind11, no Python** outside `native/bindings/`. `_core` does not exist until Stage 4.
 
 **Constants and tolerances.** Category-1 constants come from `physics/physical_constants.hpp`.
 Every threshold, budget, step factor or fraction you introduce is a `Tolerance` entry in
@@ -116,19 +116,19 @@ on the model — the model layer owns evaluation accounting.
 
 **Active parameters.** `ActiveParameter { ParameterFamily family; std::vector<std::size_t>
 indices; }`, indices being flat positions in that family's array sharing one value (a
-symmetric `k_ij` pair has two). Families at Stage 3: `segment_count`, `sigma_constant`,
+symmetric `k_ij` pair has two). Families at Stage 4: `segment_count`, `sigma_constant`,
 `dispersion_energy_over_k`, `k_ij`, `association_energy_over_k`, `association_volume`.
 Implement with a `TapeParameters` mirror of `Parameters` whose arrays for those families are
 `std::vector<AD>`; the physics kernels are templated on `ParameterSet` and accept it.
 `electrolyte_contribution` and `born_contribution` take `const Parameters&` and get the
-double record. Other families are not activatable at Stage 3 because physics reads them as
+double record. Other families are not activatable at Stage 4 because physics reads them as
 `double` — say so in a comment, do not extend physics.
 
 **Cache key — read this twice.** Two predicates in `physics/electrolyte.hpp` are evaluated
 from `double` inputs *while recording* and baked into the tape: the `finite_size_chi` series
 switch per ion (`reference_kappa * 1e-10 * d_i < 1e-3`, line 332 — pass the evaluation point
 as the reference) and the `reference_charge_square_sum == 0.0` branch (line 242). Both flip
-inside Stage 3's own scope: the dilute end of the molality ladder takes the series, a
+inside Stage 4's own scope: the dilute end of the molality ladder takes the series, a
 pure-solvent state inside an electrolyte model takes the no-ion branch. A tape keyed on
 topology alone is silently wrong across them, with no error raised. Key the cache on
 (active set, predicate signature) and re-record when it changes. Check 3.14 exists for this.
@@ -408,6 +408,6 @@ gate in the JSON, run by you; `floor` — the §4 table verbatim plus the enviro
 environment_broken} with `detail`. Do not run the mutations; acceptance runs them. Do not
 claim a number you did not measure.
 
-Deferred deliberately, do not write: `parameter_hash` (first consumer is Stage 3), a
-tape-side ideal-gas Helmholtz (Stage 4), component and site names (Stage 3 maps names; the
+Deferred deliberately, do not write: `parameter_hash` (first consumer is Stage 4), a
+tape-side ideal-gas Helmholtz (Stage 3), component and site names (Stage 4 maps names; the
 model works on indices).

@@ -83,7 +83,7 @@ from.
 
 An analysis may therefore depend on the engine, the surface and the canon, and **nothing may
 depend on an analysis**. That is a checkable direction, and it is currently violated in one
-place worth recording: the Stage 4 oracle gate reads
+place worth recording: the Stage 3 oracle gate reads
 `analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv`, so a
 gate depends on an analysis leaf. Either the digitized curve is promoted to a packet, or the
 rule admits a named exception for reproduction data. Not decided here.

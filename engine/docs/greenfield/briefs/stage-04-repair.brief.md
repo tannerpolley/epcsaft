@@ -1,11 +1,11 @@
-# Stage 4 repair — the EOS layers re-accepted together
+# Stage 3 repair — the EOS layers re-accepted together
 
-You are repairing Stages 2, 3 and 4 of a greenfield rebuild in this worktree (branch
+You are repairing Stages 3 and 4 of a greenfield rebuild in this worktree (branch
 `stage-04-repair`, cut from `greenfield@c860395`). You have no one to ask. Read, in order,
 before writing anything:
 
-1. `engine/docs/greenfield/TESTING.md` — a hard restriction on what may be tested
-2. `engine/docs/greenfield/DENSITY-ROOT.md` §1, §3 and §5 — the slope and anchor defects, measured
+1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
+2. `engine/docs/greenfield/EOS.md` §1, §3 and §5 — the slope and anchor defects, measured
 3. `analyses/reproduction/2025-figiel-engine-crosswalk/like-ion-dispersion-convention.md`,
    Addenda 1–4 — the dispersion defect, its registry entry, and why the fix is not packet data
 4. `engine/native/physics/helmholtz.hpp`, `parameters.hpp`; `engine/native/model/*.cpp,*.hpp`;
@@ -76,7 +76,7 @@ Three defects, all verified on `c860395` before this brief was written (measured
 | `PressureSlope` is a frozen-site derivative | `model/helmholtz_model.cpp:385` | Φ_VV ratio `PressureSlope/Hessian`: 1.0000 ethane, **14.51** associating binary, 0.679 aqueous electrolyte, 0.807 nine species; the centred difference agrees with `Hessian` in every case; NaCl 280 K 5e5 Pa throws through the public API |
 | anchor bypasses branch selection | `model/density.cpp:318-340` | ethane 280 K 1e6 Pa and 250 K 5e5 Pa: `liquid` with a vapour anchor returns the vapour root (475.5, 257.3) labelled `Liquid`, count 1 |
 
-### 2.1 The selector — the registered case split gets its selector (Stage 2)
+### 2.1 The selector — the registered case split gets its selector (Stage 4)
 
 `equations_registry.yaml` registers `same_sign_ionic_dispersion` as a case split whose caller
 "selects all ion pairs or same-sign exclusion as part of the electrolyte model family". The
@@ -143,7 +143,7 @@ Exactly that line: the mutation for gate `no_hidden_dispersion_default` is a `se
 transcribed from Held-lineage sources; `like-ion-dispersion-convention.md`). The neutral
 fixtures and `physics_checks.cpp`'s `neutral_binary()` leave it `Unspecified`.
 
-### 2.2 The declaration reaches the builder and the packet (Stage 4)
+### 2.2 The declaration reaches the builder and the packet (Stage 3)
 
 `model/parameter_builder.hpp` — `ParameterDocument` gains
 `std::string ionic_dispersion_choice;` (empty when the packet carries no key).
@@ -183,7 +183,7 @@ here; gate `python_eos_tests` mutates exactly this `.get`.
 `= (1, 1)` default. A formula stoichiometry is a physical fact about the salt, not an API
 convenience. Update the one call in `tests/eos/test_activity.py` to pass `(1, 1)`.
 
-### 2.3 The pressure slope is the total derivative (Stage 3)
+### 2.3 The pressure slope is the total derivative (Stage 4)
 
 `model/helmholtz_model.cpp` `evaluate`: the `Hessian` branch already forms the S×S site
 Hessian `Φ_XX` and its `FullPivLU`. Lift that block into an anonymous-namespace helper
@@ -215,7 +215,7 @@ a deletion with no gate; the floor harness reports the change.
 
 `density.cpp` `at_density` and the far-side check (§2.5) evaluate at
 `DerivativeOrder::Gradient` when only the residual is needed, `PressureSlope` when the Newton
-step needs the slope (`DENSITY-ROOT.md` §5 change 2; answers bit-identical on 20 of 20 rows).
+step needs the slope (`EOS.md` §5 change 2; answers bit-identical on 20 of 20 rows).
 
 ### 2.4 One threshold, one name
 
@@ -227,7 +227,7 @@ on the wrong side of the switch with no error. `predicate_signature` reads
 `numerical_policy.hpp`. No gate: the checker's rule 5 matches `constexpr` only, and a
 `Tolerance` is `inline const`. Report this gap; do not widen the checker in this stage.
 
-### 2.5 The anchor is honoured only on its own branch (Stage 3)
+### 2.5 The anchor is honoured only on its own branch (Stage 4)
 
 `model/density.cpp` `solve_density`:
 
@@ -258,7 +258,7 @@ on the wrong side of the switch with no error. `predicate_signature` reads
   largest root both cross upward and are stable; a crossing beyond `ρ*` on the requested side
   means a root exists that the cold path would have chosen instead. The anchor cannot be
   trusted to enumerate roots; it is trusted to land on one, and the far side is checked.
-  The scan-granularity caveat of `DENSITY-ROOT.md` §2 applies equally to both paths and is
+  The scan-granularity caveat of `EOS.md` §2 applies equally to both paths and is
   not addressed here.
 - `DensityRoot::stable_root_count` becomes `std::optional<std::size_t>`. The cold path sets
   it; the anchored path leaves it empty. Nothing outside `density.cpp` reads it (verified by
@@ -358,7 +358,7 @@ matching `lithium-cation/sodium-cation` and `exclude-same-sign-ion-pairs`.
 ## 4. Reported, not asserted
 
 - `tests/native/model_floor.cpp` and `measure_floor.py`: the nine-species fixed-pressure
-  cold solve's evaluation count and wall, before and after (`DENSITY-ROOT.md` §4 gives
+  cold solve's evaluation count and wall, before and after (`EOS.md` §4 gives
   86 evaluations / 6.4 ms before; §5 predicts 4–8 polish evaluations after).
 - The `aqueous_alkali_halide_activity` per-salt AARDs after the repair, beside the
   superseded engine's 2.4–4.1 %.
@@ -367,9 +367,9 @@ matching `lithium-cation/sodium-cation` and `exclude-same-sign-ion-pairs`.
 
 ## 5. What this brief does not do
 
-- `DENSITY-ROOT.md` §2 (two roots inside one scan interval at ethane 280 K 1e4 Pa) is a
+- `EOS.md` §2 (two roots inside one scan interval at ethane 280 K 1e4 Pa) is a
   separate policy decision on `DENSITY_BRACKET_INTERVALS` with its own measurement.
 - The `k_hb_ij` cross-association correction (`cross_association_energy_correction`, registered,
   no successor) stays unsupported; no packet carries the family as a coefficient.
-- Per-ion Zuber suppression coefficients are Stage 7's re-regression
-  (`DIELECTRIC-SUPPRESSION.md` §3).
+- Per-ion Zuber suppression coefficients are Stage 6's re-regression
+  (`EOS.md` §3).

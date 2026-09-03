@@ -4,7 +4,7 @@ Status: scientific equation authority for phase, chemical, and coupled reactive-
 equilibrium in the greenfield engine. Equation identifiers below are registered in
 `engine/docs/equations_registry.yaml`; runtime source is the executable authority and
 this document creates no second implementation. Re-landed 2026-09-02 from PR #194 with
-the revisions `engine/docs/greenfield/SPECIFICATION-SPACE.md` §6 lists; that document
+the revisions `engine/docs/greenfield/EQUILIBRIUM.md` §6 lists; that document
 owns the activation rule, the rejection table and the checks, and is cited here rather
 than repeated.
 
@@ -113,7 +113,7 @@ eq. 5; Tsanas et al. 2019 §2.2.1 and 2022 §2.4). A phase pinned at zero amount
 of the balance sum, so the row-less phase must have nonzero amount.
 
 Well-posedness of the declared rows is proved before any solve by the compile step
-(`SPECIFICATION-SPACE.md` §2.3 and §3.2): the count rule `rows − unknowns = k − f`, the
+(`EQUILIBRIUM.md` §2.3 and §3.2): the count rule `rows − unknowns = k − f`, the
 phase rule in rank form `Π − k ≤ rank B`, the rank of the assembled Jacobian at a generic
 point, and the named rejections. No second rank routine exists.
 
@@ -144,7 +144,7 @@ chemical-potential rows over `R T`, affinity over `R T`, the reduced Hessian's s
 eigenvalue, phase distinctness. Their thresholds are category-3 entries of the
 numerical-policy header; a breach is a named stop, and a declared phase set that resolves
 to fewer distinct phases than declared is a failure with no equilibrium state
-(`SPECIFICATION-SPACE.md` §3.4).
+(`EQUILIBRIUM.md` §3.4).
 
 ## 6. Stability
 
@@ -182,7 +182,7 @@ distinguished only by which phase is pinned and which intensive is free; a three
 point at fixed reference composition is `k = f = 2`. `f ≠ k`, `k = Π`, `Π − k > rank B`, a
 dependent reaction set, a charge-violating reaction, a charged feed, and a support that
 cannot be neutral are rejected naming the deficiency; the engine never defaults. The full
-table, the compile-tier checks and the mutations are `SPECIFICATION-SPACE.md` §2.3, §3.2
+table, the compile-tier checks and the mutations are `EQUILIBRIUM.md` §2.3, §3.2
 and §4.1.
 
 Cases this specification cannot express: solids (different state variables), critical

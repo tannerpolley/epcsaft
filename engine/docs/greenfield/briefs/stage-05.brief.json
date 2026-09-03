@@ -209,7 +209,7 @@
       "purpose": "the measurement that names the core's tenants and the builder's category"
     },
     {
-      "ref": "greenfield@21b8695:engine/docs/greenfield/TOLERANCES.md",
+      "ref": "greenfield@21b8695:engine/docs/greenfield/CORE.md",
       "must_contain": [
         "struct Convergence final {",
         "consteval Tolerance derived(const Tolerance& upstream, double factor, const char* why) {",
@@ -218,7 +218,7 @@
       "purpose": "the record and the stops this stage absorbs; CORE.md section 9 says what is kept, revised and discarded"
     },
     {
-      "ref": "greenfield@21b8695:engine/docs/greenfield/DENSITY-ROOT.md",
+      "ref": "greenfield@21b8695:engine/docs/greenfield/EOS.md",
       "must_contain": [
         "The `Convergence` record sketched there wants `amplification = 1/|dr/dρ|`",
         "p50 1.17 × 10⁻¹³",
@@ -393,7 +393,7 @@
     {
       "id": "records_and_trace_cost",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs --suite floor",
-      "what": "describe(record) for every density case and the association case; the associating binary at 313.15 K, 1e5 Pa Liquid prints budget_exhausted with its contraction on this tree (DENSITY-ROOT.md section 1) and is not asserted; case G: nine-species cold Liquid uncaptured and captured, wall, spans, events, bytes"
+      "what": "describe(record) for every density case and the association case; the associating binary at 313.15 K, 1e5 Pa Liquid prints budget_exhausted with its contraction on this tree (EOS.md section 1) and is not asserted; case G: nine-species cold Liquid uncaptured and captured, wall, spans, events, bytes"
     }
   ],
   "diagnostics": [

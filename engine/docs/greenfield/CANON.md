@@ -1,4 +1,15 @@
-# What may be tested, and what may not
+# Canon — the tree, the rules, and what may be tested
+
+Stage 1's design document, and the only stage whose product is the canon itself.
+
+The layer tree, one static archive and one extension, and the checker's rules live in
+`tools/check-engine-architecture.py` — 227 lines, each rule mechanical, each shown to fail
+on a deliberate violation. `ORCHESTRATION.md` owns how a stage is run and accepted.
+
+What may be tested follows, unchanged: it is a restriction, not a coverage target.
+
+---
+
 
 The tree this replaces was hard to change because of its tests, not despite them.
 `test_internal_certificates.py` asserted on certificate struct fields; the gate
@@ -62,7 +73,7 @@ test-first development and it does not shape the design: the code is already
 written when the mutation runs. It answers one question that a green suite
 cannot -- *is this suite checking anything at all?*
 
-It is not hypothetical. Stage 2's first suite passed while checking nothing: the
+It is not hypothetical. Stage 4's first suite passed while checking nothing: the
 build sets `b_ndebug=if-release` with `buildtype=release`, `NDEBUG` erased every
 `assert`, and `meson test` reported the physics suite green. The mutation caught
 it; nothing else would have. See `STAGE-LOG.md`.

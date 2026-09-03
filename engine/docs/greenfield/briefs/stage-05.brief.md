@@ -1,14 +1,14 @@
-# Stage 5 — the core
+# Stage 2 — the core
 
-You are implementing Stage 5 of a greenfield rebuild in this worktree (branch `stage-05`,
+You are implementing Stage 2 of a greenfield rebuild in this worktree (branch `stage-05`,
 cut from `greenfield@21b8695`). You have no one to ask. Read, in order, before writing
 anything:
 
-1. `engine/docs/greenfield/TESTING.md` — a hard restriction on what may be tested
+1. `engine/docs/greenfield/CANON.md` — a hard restriction on what may be tested
 2. `engine/docs/greenfield/CORE.md` — the specification of this stage, completely
 3. `engine/docs/greenfield/CATEGORIES.md` — why four files leave `physics/` and one leaves `model/`
-4. `engine/docs/greenfield/TOLERANCES.md` §2 and §5 — kept by reference
-5. `engine/docs/greenfield/DENSITY-ROOT.md` §1, §6, §7 — why the density record carries no floor yet, and the accuracy sentence
+4. `engine/docs/greenfield/CORE.md` §2 and §5 — kept by reference
+5. `engine/docs/greenfield/EOS.md` §1, §6, §7 — why the density record carries no floor yet, and the accuracy sentence
 6. `engine/native/physics/*.hpp`; `engine/native/model/*.hpp,*.cpp`; `engine/native/bindings/*.cpp`;
    `engine/tests/native/*.cpp,*.hpp`; `engine/src/epcsaft/*.py,*.pyi`
 7. `tools/check-engine-architecture.py` — you extend it; every rule must stay green
@@ -106,11 +106,11 @@ In `core/numerical_policy.hpp`:
 
 - `DENSITY_ROOT_RESIDUAL` becomes `derived(ASSOCIATION_RESIDUAL, 5.0, "DENSITY_ROOT_RESIDUAL", "<why>")`;
   `2e-13 × 5 = 1e-12`, unchanged. Its `why` carries `CORE.md` §3.2's hypothesis sentence and
-  `DENSITY-ROOT.md` §7's accuracy sentence: *the tolerance is on the reduced residual; the
+  `EOS.md` §7's accuracy sentence: *the tolerance is on the reduced residual; the
   delivered relative pressure error is |r|/z, about 1e-8 on a dense liquid root, measured worst
   1.7e-8*.
 - add `FLOOR_MARGIN{"FLOOR_MARGIN", 10.0, ...}` and `STALL_WINDOW{"STALL_WINDOW", 5.0, ...}` under
-  `// --- convergence`, rationale from `TOLERANCES.md` §5, marked guessed.
+  `// --- convergence`, rationale from `CORE.md` §5, marked guessed.
 
 ### 2.2 `core/declared.hpp` and the parameter record
 
@@ -201,7 +201,7 @@ when the derivative is not finite or zero, `converged` on acceptance); the scan 
 probes `density_newton_step` per step and `density_root` per refined root; it keeps a
 `ResidualHistory` and fills `DensityRoot::convergence` with `criterion =
 &policy::DENSITY_ROOT_RESIDUAL`, `floor` and `amplification` **absent** (comment: *frozen-site
-slope until 04.repair; DENSITY-ROOT.md §1*), `contraction`, `iterations`, `evaluations`,
+slope until 04.repair; EOS.md §1*), `contraction`, `iterations`, `evaluations`,
 `stop = classify(..., budget_hit = iterations == maximum)`. The line that stores the residual
 is written exactly as
 
@@ -315,7 +315,7 @@ and does no arithmetic.
 For every density case: `describe(root.convergence)` on its own line. Case C: the association
 record. New case G: nine-species `Liquid` at 313.15 K, 1e5 Pa cold, once uncaptured and once
 inside a `Capture`: `wall_us` for both, `spans`, `events`, total `values` bytes. On this tree the
-associating binary at 313.15 K, 1e5 Pa `Liquid` reports `budget_exhausted` (`DENSITY-ROOT.md`
+associating binary at 313.15 K, 1e5 Pa `Liquid` reports `budget_exhausted` (`EOS.md`
 §1); print it, do not assert it, do not "fix" it — that is 04.repair.
 
 ## 5. What to report
@@ -334,7 +334,7 @@ regression and discovery rows of `CORE.md` §6.3.
 
 For the coordinator; not for this worker.
 
-- `base`: the Stage 5 merge sha. Every path to the four moved headers and the builder changes
+- `base`: the Stage 2 merge sha. Every path to the four moved headers and the builder changes
   (`physics/parameters.hpp` → `core/parameters.hpp`, `model/parameter_builder.*` →
   `surface/parameter_builder.*`); re-verify every marker on `density.cpp`,
   `helmholtz_model.{hpp,cpp}`, `association.hpp`, `numerical_policy.hpp` and `parameters.hpp`.

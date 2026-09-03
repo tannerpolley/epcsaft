@@ -9,25 +9,23 @@ where they disagree, they are canonical and the page is stale.
 |---|---|
 | `TRANSFER.md` | **the map of the work**: the twelve stages in run order, each one's writes, design document and gate; the oracle; the crosswalk from the old numbering |
 | `ORCHESTRATION.md` | who does what, the verified `codex exec` invocation, stop conditions, environment traps |
-| `TESTING.md` | what may be tested, and what may not |
 | `CARRY-OVER.md` | what is copied, what is written fresh, what has no successor |
 | `STAGE-LOG.md` | estimate vs actual per stage, and every decision taken while writing it |
 | `target-layout.md` | the finished tree, file by file, with line budgets |
 
-Design documents. Each is the specification of one or more stages, larger than a brief and
-written before it:
+Design documents. **One per stage, named for the stage**, and each is what that stage's
+brief is written against:
 
-| document | stages | what it owns |
+| document | stage | what it owns |
 |---|---|---|
-| `CORE.md` | 5, and the `diagnostics` block of every later brief | **the core**: where it lives, numerical policy absorbed, the declared-choice and convergence contracts, debug mode, and what every brief must populate. Succeeds `TOLERANCES.md`, whose §9 disposition table says what was kept, revised and discarded |
-| `TOLERANCES.md` | — | superseded by `CORE.md`; kept for its §1 measured failure, §2 floor derivation, §6 couplings and §7 prior art, which `CORE.md` cites rather than repeats |
-| `SPECIFICATION-SPACE.md` | 6, 7, 8, 9, 11 | how the equilibrium routes prove they are general: the count rule, the lattice, what each check may assert |
-| `CATEGORIES.md` | the core, the surface, and everything outside | what is engine, what is core, what is peripheral: the measured split and a proposal for the agent that will own it |
-| `DENSITY-ROOT.md` | 3 (repair), 5, 7 | the density solve: the frozen-site slope defect, branch selection, cost, and the delivered accuracy behind `DENSITY_ROOT_RESIDUAL` |
-| `DIELECTRIC-SUPPRESSION.md` | 10, and any electrolyte activity claim | where the ion suppression coefficient comes from, why one number is not a free parameter, and what the activity gate measures |
-| `held2-stage-i-ii-findings.md` | 11 | the HELD2 kernel read against Pereira 2012, finding by finding |
-| `performance_floor.md` | 3, and every reported timing | what the tree costs today, measured, with the counters that produced it |
-| `PACKET-CONTRACT-CUT.md` | P | *(to write)* the lighter packet contract |
+| `CANON.md` | 1 Canon | the tree, the archive, the seven rules, and what may be tested |
+| `CORE.md` | 2 Core | where the core lives, numerical policy absorbed, the declared-choice and convergence contracts, debug mode, and the `diagnostics` block every later brief must carry |
+| `SURFACE.md` | 3 Surface | what a caller declares and reads: the parameter builder, the bindings, the Python mapping layer |
+| `EOS.md` | 4 EOS | the layer audit, the like-ion dispersion convention, the density root, and the measured performance floor |
+| `EQUILIBRIUM.md` | 5 Equilibrium | how the routes prove they are general: the count rule, the lattice, what each check may assert |
+| `REGRESSION.md` | 6 Regression | *(to write)* |
+| `PHASE-STABILITY.md` | 7 Phase stability | the HELD2 kernel read against Pereira 2012, finding by finding |
+| `FINAL-CHECK.md` | 8 Final check | *(to write)* |
 
 Per stage, and the data:
 

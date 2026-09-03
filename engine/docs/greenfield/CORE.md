@@ -1,8 +1,8 @@
 # The core: numerical policy, the two contracts, and a debug mode that reads the tape
 
-Status: design, 2026-09-02, against `greenfield@21b8695`. Successor to `TOLERANCES.md`, which
+Status: design, 2026-09-02, against `greenfield@21b8695`. Successor to `CORE.md`, which
 it absorbs (§9), and the decision document for `CATEGORIES.md`'s open questions (§10).
-Specification of Stage 5 and of the `diagnostics` block every later brief carries (§7).
+Specification of Stage 2 and of the `diagnostics` block every later brief carries (§7).
 
 Evidence classes: **measured** (read from a file or a run on this tree today), **derived**
 (follows from the code or the equations by an argument given here), **guessed** (no evidence
@@ -11,23 +11,23 @@ in §1 as the shape of the failure.
 
 ## 1. What this replaces, and the evidence for the scope
 
-`TOLERANCES.md` designed nested solver tolerances with a `Convergence` record and named
+`CORE.md` designed nested solver tolerances with a `Convergence` record and named
 stops, scoped as one stage between the bindings and the minimizer. Three findings since then
 make it a core with two contracts rather than a stage with one.
 
-**The record cannot be built where it was planned.** `DENSITY-ROOT.md` §6 (*measured*): the
+**The record cannot be built where it was planned.** `EOS.md` §6 (*measured*): the
 `amplification = 1/|dr/dρ|` the record wants is the quantity the frozen-site slope corrupts,
-by 14.51× on the associating binary (`EOS-AUDIT.md` A.2), and the repair that fixes it
+by 14.51× on the associating binary (`EOS.md` A.2), and the repair that fixes it
 (`briefs/stage-04-repair.brief.md`) still ends its density loop with a bare
 `throw std::runtime_error("density root refinement did not converge")` (*measured*,
-`density.cpp:93`), the failure shape of `TOLERANCES.md` §1. The repair must report
+`density.cpp:93`), the failure shape of `CORE.md` §1. The repair must report
 convergence honestly and cannot, because the record is not defined. So the record precedes
 the repair.
 
 **Reading the engine's own numbers cost six probes and a rebuilt file.** Localising one
 activity-coefficient discrepancy (`analyses/reproduction/2025-figiel-engine-crosswalk`,
 *measured*) took six scripts, 203 lines, and a native probe linking the archive
-(`EOS-AUDIT.md` A.2) to read the five Helmholtz terms at a fixed density, `Φ_VV` on two
+(`EOS.md` A.2) to read the five Helmholtz terms at a fixed density, `Φ_VV` on two
 derivative orders, the pressure each root actually satisfies, and the reference ladder's
 convergence — every one a number in a register on the way to the answer. The requirement:
 **in debug mode a caller sees every residual, iteration count, tolerance, floor and tape
@@ -37,7 +37,7 @@ recompiling and without writing a probe.**
 **The input side broke the same way.** The `ionic_dispersion` selector vanished in the
 rebuild because nothing in the input surface carried it, at 49 % against the published model
 and a week to find (`like-ion-dispersion-convention.md`, *measured*); `stoichiometry=(1, 1)`
-is a hidden physical default (`EOS-AUDIT.md` C.5, *measured*). "No hidden defaults" and
+is a hidden physical default (`EOS.md` C.5, *measured*). "No hidden defaults" and
 "every solver reports its convergence" are one discipline: **a decision is declared or the
 call is refused by name, and what happened is reported with numbers or the result is
 refused.** Both promises had no owner. The core owns both.
@@ -118,18 +118,18 @@ Three changes to what exists (*measured:* 27 entries, all `inline const`):
 
 1. **`inline constexpr`.** Required by `derived()`, and by checker rule 5, whose regex matches
    `constexpr` only (*measured*, `CONSTEXPR = re.compile(...)`) and so never saw a policy
-   entry — which is how `EOS-AUDIT.md` C.1's two entries with one meaning got past the rule
+   entry — which is how `EOS.md` C.1's two entries with one meaning got past the rule
    written to catch them.
 2. **A `name` equal to the identifier**, so a record can point at the entry it was tested
    against and a trace can print it. Rule 8 checks the string against the identifier.
-3. **`upstream` and `factor` on the entry.** `TOLERANCES.md` §4 promised that a declared
+3. **`upstream` and `factor` on the entry.** `CORE.md` §4 promised that a declared
    factor "beside a measured `1e4` is a contradiction the result can print", then discarded
    both in `derived()`'s return. Two defaulted fields; the 26 root entries are unchanged in form.
 
-Categories stay 2 and 3, 4 empty. `EOS-AUDIT.md` C.9 (six entries sourced to a file name) is
+Categories stay 2 and 3, 4 empty. `EOS.md` C.9 (six entries sourced to a file name) is
 carried as an open item.
 
-**Delivered accuracy is stated on the entry.** `DENSITY-ROOT.md` §7 (*measured*): the density
+**Delivered accuracy is stated on the entry.** `EOS.md` §7 (*measured*): the density
 tolerance is on the *reduced* residual, so relative pressure error is `|r|/z` with
 `z ≈ 7e-5…7e-4` on a dense liquid root; a reduced `1e-12` buys about `1e-8` relative,
 worst measured `1.7e-8`. That sentence goes in `DENSITY_ROOT_RESIDUAL`'s source string,
@@ -147,14 +147,14 @@ inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL,
     "DENSITY_ROOT_RESIDUAL", "bracketed Newton on the reduced pressure residual ... ");
 ```
 
-**Kept**, for `TOLERANCES.md` §4's reason: each dependency is one greppable edge, an
+**Kept**, for `CORE.md` §4's reason: each dependency is one greppable edge, an
 upstream change moves every downstream value by construction, and the factor is a hypothesis
 the runtime record falsifies. Revised: **`constexpr`, not `consteval`** — the build is
 `cpp_std=c++17` (*measured*, `meson.build`), and a `constexpr` function that throws on the
 failing branch is ill-formed when the call must be a constant expression, which an
 `inline constexpr` initialiser is, so the inversion still refuses to compile. **One real edge
-at Stage 5:** `DENSITY_ROOT_RESIDUAL` is exactly `5 × ASSOCIATION_RESIDUAL`, the density root
-is nested over association-converged evaluations, and `DENSITY-ROOT.md` says the association
+at Stage 2:** `DENSITY_ROOT_RESIDUAL` is exactly `5 × ASSOCIATION_RESIDUAL`, the density root
+is nested over association-converged evaluations, and `EOS.md` says the association
 contribution to the residual floor is unmeasured; after 04.repair the record's
 `floor / ASSOCIATION_RESIDUAL` is that measurement, read against the declared 5. No other edge
 is invented to have edges. What it cannot catch is unchanged: a wrong factor. The record is
@@ -164,7 +164,7 @@ the check on that.
 
 `FLOOR_MARGIN` (`10.0`, *guessed*: a decade of slack across the first-order bound's norm
 inequalities, to tighten once measured ratios exist) and `STALL_WINDOW` (`5.0`, *guessed*:
-below Ipopt's `acceptable_iter` default of 15). From `TOLERANCES.md` §5, unchanged. Neither
+below Ipopt's `acceptable_iter` default of 15). From `CORE.md` §5, unchanged. Neither
 changes an answer. Rule 6 is unchanged; the exempt path moves.
 
 ## 4. The declared-choice contract
@@ -199,7 +199,7 @@ other members are physics, and every reader must remember which member is the ho
 (§8.3) forbids `Unspecified` in `core/parameters.hpp` and requires every enum-typed field of
 `Parameters` to be wrapped.
 
-### 4.2 Where it applies at Stage 5
+### 4.2 Where it applies at Stage 2
 
 The three selectors in `Parameters` (*measured*, `parameters.hpp:20-69`; `ionic_dispersion`
 arrives with 04.repair):
@@ -224,7 +224,7 @@ The rule for `src/epcsaft/`: **absence crosses the boundary as absence, and the 
 decides.** Python passes `None`, an empty string, or nothing; it never supplies a physical
 value in place of one. Two mechanical consequences: checker rule 12 (canon, §8.3) walks every
 function signature in `src/epcsaft/*.py` with `ast` and allows no default other than `None` —
-which is red on `stoichiometry=(1, 1)` today and green when Stage 5 removes it, taking that
+which is red on `stoichiometry=(1, 1)` today and green when Stage 2 removes it, taking that
 two-line write from the repair brief; and `parameter_builder.cpp`, now in `surface/`, remains
 the one place that turns a document's declared choice into a `Declared` value or rejects by
 name. That is what the coordinator's "the contract that says which model is being asked for"
@@ -258,7 +258,7 @@ struct Convergence final {
 }
 ```
 
-Against `TOLERANCES.md` §3: `tolerance` becomes `criterion` (the entry, with its name,
+Against `CORE.md` §3: `tolerance` becomes `criterion` (the entry, with its name,
 source, upstream and declared factor); `floor` and `amplification` are optional; `contraction`
 and `evaluations` are added. An absent floor is the statement that none was measured; a
 `0.0` there would be a claim. Same rule as 04.repair's `stable_root_count`.
@@ -266,13 +266,13 @@ and `evaluations` are added. An absent floor is the statement that none was meas
 **Where it goes.** `DensityRoot::convergence`; `State::density_convergence` (absent for a
 density-specified state), so `Mixture.state(P=...)` reports it without debug mode; the
 association solver's out-parameter `Convergence* record`, replacing the `std::size_t*
-iterations` Stage 3 added (*measured*, `association.hpp:175`, one reader at
+iterations` Stage 4 added (*measured*, `association.hpp:175`, one reader at
 `model_floor.cpp:172`). Later: the assembly, the driver, the sensitivity, the fit, the
 discovery (§7). Success returns the record on the result; failure throws
 `ConvergenceFailure`, a `std::runtime_error` whose `what()` is `describe(record)`:
 `"budget_exhausted: residual 3.1e-09 against DENSITY_ROOT_RESIDUAL 1.0e-12 after 60
 iterations, contraction 0.735"`. The equilibrium layer will return failures rather than throw
-(`SPECIFICATION-SPACE.md` §12); the record it carries is this one.
+(`EQUILIBRIUM.md` §12); the record it carries is this one.
 
 ### 5.2 One classifier
 
@@ -296,7 +296,7 @@ r_{k−W})^{1/W}`, absent below the window; on `r_k = r_0 q^k` it returns exactl
 
 ### 5.3 What the density root's record can honestly carry, before and after the slope repair
 
-| | Stage 5 (before 04.repair) | after 04.repair |
+| | Stage 2 (before 04.repair) | after 04.repair |
 |---|---|---|
 | `residual` | `|r|` at the returned root, exact | same |
 | `criterion` | `&DENSITY_ROOT_RESIDUAL` | same |
@@ -305,7 +305,7 @@ r_{k−W})^{1/W}`, absent below the window; on `r_k = r_0 q^k` it returns exactl
 | `contraction`, `iterations`, `evaluations`, `stop` | present | same |
 
 *Derived:* `r = Z − P/(ρRT)`, `Z = 1 − V Φ_V`, so `δr = V · δΦ_V`. *Measured*
-(`DENSITY-ROOT.md` §6): with a correct Newton the achieved residual is p50 `1.17e-13`, max
+(`EOS.md` §6): with a correct Newton the achieved residual is p50 `1.17e-13`, max
 `9.97e-13` against `1e-12`, so `converged_to_floor` is not expected to fire on the density
 root; it is exercised by the classifier's properties, never by a solve. The 102-of-630
 pre-repair failures are `budget_exhausted` with `contraction ≈ 0.735`, which the floor
@@ -315,9 +315,9 @@ harness prints and no test asserts — a test that a defect exists is a test of 
 `floor = ε_mach · S`, `amplification` = the pivot ratio `largest / smallest` of the last
 Newton step's LU (*measured:* `solve_linear` computes both, `association.hpp:155-156`),
 `contraction`, `stop` from `classify` or `left_domain` where it already throws. All present
-at Stage 5.
+at Stage 2.
 
-**`HelmholtzDerivatives::gradient_floor`** (`TOLERANCES.md` §3.2) lands on the `Hessian`
+**`HelmholtzDerivatives::gradient_floor`** (`CORE.md` §3.2) lands on the `Hessian`
 order as the ∞-norm over rows of `(Φ_XX⁻¹ Φ_Xy)ᵀ · diag(n_tot m_a / X_a)` times
 `ASSOCIATION_RESIDUAL`; `factorization.solve(cross)` is already formed (*measured*,
 `helmholtz_model.cpp:453`), so it is one `w × S` row-sum. Zero at `S = 0`. On the
@@ -366,7 +366,7 @@ is a lexical scope around it.
 **Composition.** `Trace::current` is the open span; a `Scope` records `parent = current`,
 becomes current, restores its parent on destruction. The density root opens `solve_density`;
 each `evaluate` inside is a child; the association Newton inside each is a grandchild; the
-reference ladder's fixed-pressure states nest under `infinite_dilution_reference`; Stage 6's
+reference ladder's fixed-pressure states nest under `infinite_dilution_reference`; Stage 5's
 driver will sit above them. Nothing threads a parameter, so a later stage that opens a span
 at the top of its solver is composed. The trace is a tree (§8.2 checks exactly that).
 
@@ -416,16 +416,16 @@ red with no new rule.
 
 | span | opened by | events | record |
 |---|---|---|---|
-| `association_newton` | `solve_site_fractions` (physics, Stage 5) | per iteration `association_residual_norm`; at exit `site_fractions`, `association_pivot_ratio` | §5.3 |
-| `evaluate` | `HelmholtzModel::evaluate` (model, Stage 5) | `declared_choices`, `recording`, `predicate_signature`, `residual_helmholtz_extensive`, `gradient`, `volume_second_derivative`, `hessian` (Hessian order), `gradient_floor`, `site_fractions` | none: not a solve |
-| `solve_density` | (model, Stage 5) | per scan point `density_scan_point` [ρ, r, dr/dρ]; per bracket `density_bracket`; per Newton step `density_newton_step` [ρ, r, dr/dρ, candidate]; per refined root `density_root` [ρ, r, dr/dρ, stable]; at exit `density_root`, `stable_root_count` | §5.3 |
-| `density_anchor` | the anchored attempt, child of `solve_density` (Stage 5; 04.repair adds `far_side_residual` per grid point) | per step as above | its own record: `left_domain` or `stalled` when it falls to the cold path |
-| `infinite_dilution_reference` | (model, Stage 5) | per ladder point `reference_ladder_point` [m, ln φ₁, ln φ₂]; `reference_convergence_error`; `reference_witness_error` | none: a bias, not a stop (`TOLERANCES.md` §3.6) |
-| `compile` | `request_compile.cpp` (Stage 6) | `active_rows`, `degrees_of_freedom` [k, f, rank, nullity], `assembly_floor` per evaluation | none: no iteration |
-| `solve_equilibrium` | the driver (Stage 6) | per Ipopt iteration from `intermediate_callback`: `primal_infeasibility`, `dual_infeasibility`, `barrier_parameter`, `primal_step`, `dual_step`, `regularization`; running `assembly_floor` | `residual = inf_pr` (k ≥ 1) or `max(inf_pr, inf_du)` (k = 0); `floor` from the assembly; `amplification = κ(F_y)` from the sensitivity; `stop` from `classify` plus Ipopt's status for `infeasible`/`singular` |
-| `implicit_sensitivity` | (Stage 6) | `kkt_smallest_singular_value`, `kkt_condition` | none |
-| `fit` | `least_squares.cpp` (Stage 7) | per Ceres iteration `cost`, `gradient_norm`, `trust_region_radius`; observation solves nest automatically | `residual` = gradient norm at termination; `floor = Σ_obs ‖∂obs/∂u‖ κ_sys · residual_obs` |
-| `find_phases` | (Stage 8) | per start `tangent_plane_distance`; per major iteration `dual_bound`, `candidate_gap` | `budget_exhausted` here is what `TRANSFER.md` Stage 8 calls `search_budget_exhausted` |
+| `association_newton` | `solve_site_fractions` (physics, Stage 2) | per iteration `association_residual_norm`; at exit `site_fractions`, `association_pivot_ratio` | §5.3 |
+| `evaluate` | `HelmholtzModel::evaluate` (model, Stage 2) | `declared_choices`, `recording`, `predicate_signature`, `residual_helmholtz_extensive`, `gradient`, `volume_second_derivative`, `hessian` (Hessian order), `gradient_floor`, `site_fractions` | none: not a solve |
+| `solve_density` | (model, Stage 2) | per scan point `density_scan_point` [ρ, r, dr/dρ]; per bracket `density_bracket`; per Newton step `density_newton_step` [ρ, r, dr/dρ, candidate]; per refined root `density_root` [ρ, r, dr/dρ, stable]; at exit `density_root`, `stable_root_count` | §5.3 |
+| `density_anchor` | the anchored attempt, child of `solve_density` (Stage 2; 04.repair adds `far_side_residual` per grid point) | per step as above | its own record: `left_domain` or `stalled` when it falls to the cold path |
+| `infinite_dilution_reference` | (model, Stage 2) | per ladder point `reference_ladder_point` [m, ln φ₁, ln φ₂]; `reference_convergence_error`; `reference_witness_error` | none: a bias, not a stop (`CORE.md` §3.6) |
+| `compile` | `request_compile.cpp` (Stage 5) | `active_rows`, `degrees_of_freedom` [k, f, rank, nullity], `assembly_floor` per evaluation | none: no iteration |
+| `solve_equilibrium` | the driver (Stage 5) | per Ipopt iteration from `intermediate_callback`: `primal_infeasibility`, `dual_infeasibility`, `barrier_parameter`, `primal_step`, `dual_step`, `regularization`; running `assembly_floor` | `residual = inf_pr` (k ≥ 1) or `max(inf_pr, inf_du)` (k = 0); `floor` from the assembly; `amplification = κ(F_y)` from the sensitivity; `stop` from `classify` plus Ipopt's status for `infeasible`/`singular` |
+| `implicit_sensitivity` | (Stage 5) | `kkt_smallest_singular_value`, `kkt_condition` | none |
+| `fit` | `least_squares.cpp` (Stage 6) | per Ceres iteration `cost`, `gradient_norm`, `trust_region_radius`; observation solves nest automatically | `residual` = gradient norm at termination; `floor = Σ_obs ‖∂obs/∂u‖ κ_sys · residual_obs` |
+| `find_phases` | (Stage 7) | per start `tangent_plane_distance`; per major iteration `dual_bound`, `candidate_gap` | `budget_exhausted` here is what `TRANSFER.md` Stage 7 calls `search_budget_exhausted` |
 
 Everything in this table is **reported and never asserted**. The only assertions in the
 design are §8's four properties.
@@ -452,11 +452,11 @@ probe.
 One thread, one trace. The tape's mutex serialises `evaluate` anyway (*measured*,
 `helmholtz_model.cpp:307`); no entry point spawns a thread.
 
-### 6.6 What keeps it from becoming the instrumentation `TESTING.md` bans
+### 6.6 What keeps it from becoming the instrumentation `CANON.md` bans
 
 One switch, no filters; names are quantities; nothing asserts on it; nothing reads it; and
 the carry warning is taken — the superseded tree's `_core._instrumentation()` counters and its
-name–value evidence list are not carried, the trace is written from §6.1, and Stage 3's
+name–value evidence list are not carried, the trace is written from §6.1, and Stage 4's
 `SweepCounters` stay where they are with the trace reading nothing from them.
 
 ## 7. How each layer depends on the core, and what every brief must populate
@@ -474,9 +474,9 @@ name–value evidence list are not carried, the trace is written from §6.1, and
 `native/` outside `core/` and `bindings/` whose comment-stripped text reads a budget entry
 (`policy::\w+_(MAX_ITERATIONS|BUDGET)\b`) must name `core::Scope` and `Convergence`; a budget
 is what makes a loop a solver, every planned solver has one, and a solver without a budget
-entry is an unbounded loop that rule 6 already refuses. Procedural: **each of Stages 6–11
+entry is an unbounded loop that rule 6 already refuses. Procedural: **each of Stage 5–11
 carries a `diagnostics` array** in its JSON, one entry per solver or assembly it writes, of
-the shape in the Stage 5 brief, and the preflight refuses a brief whose `writes` include a
+the shape in the Stage 2 brief, and the preflight refuses a brief whose `writes` include a
 file matching rule 9's predicate with no entry naming it. The `check` field is always the
 same shape — *the record's residual equals the residual recomputed from the returned answer
 through the public equations* — a property of the pair (answer, record) that survives any
@@ -530,13 +530,13 @@ request to the coordinator.
 Each density case's record via `describe`; the association record on case C; one captured
 cold nine-species solve beside the uncaptured one: wall, spans, events, bytes. On the
 pre-repair tree the associating binary at 313.15 K, 1e5 Pa `Liquid` prints
-`budget_exhausted` with its contraction — the number `TOLERANCES.md` §1 said the old tree
+`budget_exhausted` with its contraction — the number `CORE.md` §1 said the old tree
 never recorded, now recorded before the fix so the fix can be seen to change it.
 
 Test lines: `diagnostics_checks.cpp` 170–270, `derived_inversion.cpp` 8, `model_floor.cpp`
-+30, `tests/eos/test_diagnostics.py` 30–50. Inside `TESTING.md`'s 1,650.
++30, `tests/eos/test_diagnostics.py` 30–50. Inside `CANON.md`'s 1,650.
 
-## 9. Disposition of `TOLERANCES.md`
+## 9. Disposition of `CORE.md`
 
 | section | disposition | why |
 |---|---|---|
@@ -571,13 +571,13 @@ It is the only file whose job is to make an omission loud, and filing it under `
 what let a lost selector read as a mapping detail. It moves to `native/surface/`, rank
 between `regression` and `bindings`, so `bindings/` may include it and nothing in the engine
 can. Two files, so the no-single-file rule holds; `problem.py`'s native loader
-(`SPECIFICATION-SPACE.md` §11) is its future neighbour.
+(`EQUILIBRIUM.md` §11) is its future neighbour.
 
 ### 10.3 `helmholtz_tape.hpp` — engine, and the EqID test is right once the annotation gap is closed.
 
 The tape records `Φ(y; X) = n_tot [a_hc + a_disp + a_dh + a_born] + n_tot Q(y; X)` with the
 association potential `Q = Σ m_a (ln X_a − X_a + 1) − (ρ_N/2) Σ m_a X_a B_a` and the Schur
-complement `Φ_yy − Φ_yX Φ_XX⁻¹ Φ_Xy` (*measured*, Stage 3 brief §2.1). Those are equations
+complement `Φ_yy − Φ_yX Φ_XX⁻¹ Φ_Xy` (*measured*, Stage 4 brief §2.1). Those are equations
 about the fluid — the potential *is* `a_assoc` at the site solution and the complement *is*
 the total second derivative — and they carry no `EqID` because nobody annotated them, not
 because there is nothing to annotate. Annotate `Q` and the complement (two lines) and the
@@ -610,7 +610,7 @@ a `source_file` citation with a hash is provenance, not a dependency.** Two inst
   checkout, and imports `unit_registry` and `_core._instrumentation`, neither of which
   exists in this tree. A canon file that is dead and points outside the repository: the
   "nothing has swept the rules" finding, with a file name. Delete it or move it to the
-  analysis it serves; it is not a Stage 5 write, it is a triage item.
+  analysis it serves; it is not a Stage 2 write, it is a triage item.
 
 ### 10.6 `promote_mea_active_bundle.py` — canon tooling, and the rule names it.
 
@@ -625,7 +625,7 @@ for "the crossing"; the clause is that row.
 **One sequence with a category column, not per-category tracks.** Three reasons, the first
 decisive:
 
-1. **A gate is one command on one tree.** Stage 4's oracle gate needs the engine, the
+1. **A gate is one command on one tree.** Stage 3's oracle gate needs the engine, the
    surface and the canon at once; every later gate does too. Per-category tracks would have
    to synchronise at every gate, which is every stage, and the tracks collapse back into
    the sequence with more bookkeeping and the same order.
@@ -635,7 +635,7 @@ decisive:
 3. **What a category *can* give the sequence is a column.** Each stage row declares what it
    writes per category — engine / core / surface / canon — and the preflight refuses a write
    into a category the row did not declare. That is the thing that would have caught the
-   dispersion selector: a Stage 2 row declaring engine writes only, with a registered case
+   dispersion selector: a Stage 4 row declaring engine writes only, with a registered case
    split whose selector belonged to the surface column, has a hole in the surface column that
    a reader can see. Bookkeeping that names an owner is the kind that helps.
 
@@ -644,13 +644,13 @@ whose gates do not need the engine tree, and they synchronise at named stages. T
 per-category track for exactly the two categories where it costs nothing, and it works
 because their gates are independent of the build.
 
-### 10.8 Ordering: the EOS repair waits for Stage 5.
+### 10.8 Ordering: the EOS repair waits for Stage 2.
 
 The repair cannot report convergence without the record (§1); the density loop should be
 instrumented once, and the repair's rewrite of the anchored path should be written into a
 span from the start; the `IonicDispersion` selector should be born `Declared` rather than
-retrofitted from `Unspecified`; and Stage 5 changes no number, so it can be accepted on the
-tree that exists. The repair is re-based on the Stage 5 merge with the delta in the brief's
+retrofitted from `Unspecified`; and Stage 2 changes no number, so it can be accepted on the
+tree that exists. The repair is re-based on the Stage 2 merge with the delta in the brief's
 Appendix A. Retrofitting the other way round would mean editing `density.cpp`,
 `helmholtz_model.cpp`, `parameters.hpp`, `helmholtz.hpp` and the builder twice within a week.
 
@@ -658,16 +658,16 @@ Appendix A. Retrofitting the other way round would mean editing `density.cpp`,
 
 | document | change |
 |---|---|
-| `TRANSFER.md` row 5 | "diagnostics core" → "the core: `native/core/` (seven files), `native/surface/`, the two contracts, `epcsaft.trace()`; design `CORE.md`"; "Stage 5 does not start until the kernel is fixed" reversed; §"Stage 5" replaced by §2 and §8 here; a category column added to the execution table |
+| `TRANSFER.md` row 5 | "diagnostics core" → "the core: `native/core/` (seven files), `native/surface/`, the two contracts, `epcsaft.trace()`; design `CORE.md`"; "Stage 2 does not start until the kernel is fixed" reversed; §"Stage 2" replaced by §2 and §8 here; a category column added to the execution table |
 | `target-layout.md` | `native/core/` (7 files, ~800) and `native/surface/` (2, 425) added; `physics/` becomes four files (~1,030); `model/` loses the builder; the undecided-home bullet closed; envelope +~500 |
-| `README.md` | `TOLERANCES.md` row → `CORE.md`, stages "5, and the `diagnostics` block of 6–11" |
+| `README.md` | `CORE.md` row → `CORE.md`, stages "5, and the `diagnostics` block of 6–11" |
 | `CATEGORIES.md` | the five decisions of §10.1–10.6 recorded; the analyses clause |
 | `tools/check-engine-architecture.py` | ranks, homes, rules 8–12 |
 | `briefs/stage-04-repair.brief.{md,json}` | re-based: paths for the four moved headers and the builder; `Declared<IonicDispersion>` in place of `Unspecified`; the `stoichiometry` default removal and the `ELECTROLYTE_SERIES_THRESHOLD` deletion re-pathed; the density record's floor and amplification; the `density_anchor` far-side probes; a `diagnostics` block |
 | `briefs/stage-06…11` | the `diagnostics` block and the category column |
 | `ORCHESTRATION.md` §"Preflight" | the rule-9 / `diagnostics`-block refusal and the category-column refusal |
 
-Line-count honesty: the earlier Stage 5 was 260 lines; this is about 1,300 written and about
+Line-count honesty: the earlier Stage 2 was 260 lines; this is about 1,300 written and about
 +560 net in `native/`, of which ~450 is the trace, the two contracts and the checker, and the
 rest is moves.
 
@@ -685,7 +685,7 @@ rest is moves.
   equation registry, which the checker does not read.
 - **`DensityBranch::Unspecified`** (`helmholtz_model.hpp:55`) is a *choice* meaning "either
   branch", not a hole, so rule 11 does not reach it; the name is misleading and `Either`
-  would say what it means. A rename, not a Stage 5 write.
+  would say what it means. A rename, not a Stage 2 write.
 - **Missing fact:** whether the coordinator's preflight can take the rule-9, `diagnostics`-
   block and category-column refusals (§7, §10.7).
 - **Missing fact:** the association contribution to the density residual floor, which

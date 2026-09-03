@@ -14,7 +14,7 @@ Consequences, stated once:
   fresh. `native/surface/` holds `parameter_builder.{hpp,cpp}`, moved from `model/`, because
   it is the contract naming which model is being asked for rather than a component of one.
   The file tree and counts below predate both and are stale by that much.
-- Saturation is not a file and not an identifier (`saturation` is a rule-7 case token). Pure saturation is the one-component `k = f = 1` cell of the one row system (`SPECIFICATION-SPACE.md` §2.3), solved by the boundary Newton in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`. The public call is `solve_equilibrium` on that `Problem`; `Pure.saturation` in Python builds the `Problem` and calls it (§11). `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
+- Saturation is not a file and not an identifier (`saturation` is a rule-7 case token). Pure saturation is the one-component `k = f = 1` cell of the one row system (`EQUILIBRIUM.md` §2.3), solved by the boundary Newton in `native/equilibrium/phase_boundary.cpp` — with its seeds, and with nothing saturation-shaped left in `model/`. The public call is `solve_equilibrium` on that `Problem`; `Pure.saturation` in Python builds the `Problem` and calls it (§11). `helmholtz_tape.hpp` and `density.cpp` live in the `model` layer (EOS state without any equilibrium concept); `phase_boundary.cpp` in the `equilibrium` layer. The four files that were in two trees are now in two *layers* of one tree with a one-way include.
 - Permitted include direction, revised by `CORE.md` §2: `core` ← `physics` ← `model` ← `equilibrium` ← `regression` ← `surface` ← `bindings`, downward only (`regression` may include `model` and `equilibrium`; `bindings` may include anything; nothing includes `bindings`). Python includes nothing; it imports `_core`.
 - Regression rule, by symbol rather than by module: `regression/` may include `equilibrium/problem.hpp` and call `solve_equilibrium` on a problem with declared phases; it may not include `phase_stability.hpp`, call `find_phases`, or construct a problem with phases omitted. This replaces today's module-level ban (`_regression_discovery_family` in the checker; `regression_core: []` in `ARCHITECTURE.yaml`), which the layout contradicted. The reconciliation, the move, the single archive, and the gate routing are owned by #195, sequenced before #187.
 
@@ -68,13 +68,13 @@ engine/
     regression.py                               200   fit, Observation, Fit (a module: one capability, one file)
     equilibrium/
       __init__.py                                40   9 exports
-      problem.py                                450   Problem, Phase, Free, Pinned, Discover, the feed-basis types, Reaction, Result; convenience constructors that build a Problem (SPECIFICATION-SPACE.md §11)
+      problem.py                                450   Problem, Phase, Free, Pinned, Discover, the feed-basis types, Reaction, Result; convenience constructors that build a Problem (EQUILIBRIUM.md §11)
       loader.py                                 120   problem_from_mapping; feed-basis conversion is native (request_compile.cpp), Python only names the basis
   tests/                                       1650   by capability; no numerical/behavior split
     packets.py                                  150   read data/packets tables for fixtures
-    fixtures/                                   250   synthetic tables: the associating binary; the Ascani 2023 reactive ternary (SPECIFICATION-SPACE.md §4.2)
+    fixtures/                                   250   synthetic tables: the associating binary; the Ascani 2023 reactive ternary (EQUILIBRIUM.md §4.2)
     eos/                                        520   saturation vs NIST; γ± vs Hamer–Wu (Held, Figiel); closed-form, identity, limit, permutation, closure, anchor
-    equilibrium/                                530   LLE vs Figure 2 tie-lines; analytic uptake and reaction; conservation; boundary Jacobians; discovery; values survive a sensitivity failure (formulation §8) while a declared-topology failure returns no state (SPECIFICATION-SPACE.md §3.4); validation
+    equilibrium/                                530   LLE vs Figure 2 tie-lines; analytic uptake and reaction; conservation; boundary Jacobians; discovery; values survive a sensitivity failure (formulation §8) while a declared-topology failure returns no state (EQUILIBRIUM.md §3.4); validation
     regression/                                 200   NIST parameter recovery; Jacobian vs centered differences; permutation
   docs/                                         —    by capability; unchanged files not listed
     science/full-eos.md                          —

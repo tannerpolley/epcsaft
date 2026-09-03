@@ -21,13 +21,13 @@ Decisions:
   because an archive with no sources is an error. It has one: CppAD's
   `temp_file.cpp`, which the archive already needed. The build configures and
   links from Stage 1, with `_core` empty.
-- **`_core` has no sources until Stage 4**, and Meson warns that it allows this
+- **`_core` has no sources until Stage 3**, and Meson warns that it allows this
   only through a bug whose support will be removed. Accepted for two stages
   rather than writing a stub module to silence it.
 - **Five rules, not four.** The regression boundary is its own rule because it is
   a symbol rule, not an include rule.
 
-## Stage 2 — physics
+## Stage 4 — physics
 
 | file | estimate | actual | note |
 |---|---|---|---|
@@ -103,9 +103,9 @@ verified by mutation — perturbing the Carnahan-Starling coefficient from 3.0 t
 - **Tape.** The kernels instantiate on `CppAD::AD<double>`, and the recorded
   tape's density derivative matches a centred difference of the double path to
   1e-7 while reproducing its value to 1e-14. Nothing else instantiates the
-  templates on an AD type until Stage 3, so this is checked here.
+  templates on an AD type until Stage 4, so this is checked here.
 
-## Stage 4 — bindings and Python EOS
+## Stage 3 — bindings and Python EOS
 
 **First attempt stopped `source_contradicted`, 2026-09-02.** Not a failure: the brief
 required `molar_mass` for every selected component, and
@@ -158,7 +158,7 @@ tolerance.
 
 ### Open finding: the activity rows agree at low molality and diverge at high
 
-**Corrected 2026-09-02, and superseded by `DIELECTRIC-SUPPRESSION.md`.** The account below
+**Corrected 2026-09-02, and superseded by `EOS.md`.** The account below
 compared six oracle rows against `figiel-2025-miac.csv`, whose rows carry a *different
 parameter fingerprint per salt* — a per-salt fitted comparison, not one model. Against the
 one consistent superseded run, over 21 points per salt, this engine is comparable or better
@@ -195,11 +195,11 @@ carries its coefficient at model level
 than per component, and `parameter_builder.cpp:366-370` reads it and applies it to every
 charged component. The decrement is present.
 
-Not a gate failure and not a merge blocker: `TESTING.md` is explicit that a number out of
+Not a gate failure and not a merge blocker: `CANON.md` is explicit that a number out of
 the old engine is not evidence the new one is wrong, and the criterion the planner chose
 came from the parameter source rather than from this comparison. But an average over six
 rows cannot see a missing upturn in the last one, and a check that a wrong physics passes is
-the thing `TESTING.md` exists to prevent. Raised with the planner: whether the criterion
+the thing `CANON.md` exists to prevent. Raised with the planner: whether the criterion
 should carry a shape condition alongside the average, and what accounts for the divergence.
 
 ## Documentation triage — a Stage 1 gap, closed 2026-09-02
@@ -232,7 +232,7 @@ Two judgement calls worth recording, both **kept**:
 
 - `equilibrium/research/…-mitsos-barton-perdomo-held2-duality-crosswalk.md` names HELD2 in
   its title but its content is a page-by-page theorem audit of two primary sources with
-  `[Fact]` markers. That is live science for Stage 8, not a specification.
+  `[Fact]` markers. That is live science for Stage 7, not a specification.
 - `equilibrium/research/…-carbonate-provider-parameter-sources.md` names the retired
   Provider, but its decision is *which species and which sources* — that no
   source-complete ePC-SAFT parameters exist for two calcium complexes is a fact about the
@@ -241,7 +241,7 @@ Two judgement calls worth recording, both **kept**:
 
 `equilibrium/reactive-bubble-observations.md` was the sharpest deletion: it specifies a
 bubble owner solving `g(q,P,θ) = 0` as an outer Newton over pressure around a separately
-certified liquid — precisely the nested coupling `TOLERANCES.md` §6 names as what Stage 6
+certified liquid — precisely the nested coupling `CORE.md` §6 names as what Stage 5
 must not reproduce. A future agent finding it in the tree would read it as the design.
 
 Deletion in a versioned tree destroys nothing, which is why the caution about "the only
