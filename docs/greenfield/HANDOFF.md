@@ -27,10 +27,11 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 |---|---|
 | worktree | `~/.codex/worktrees/gf-stage-05`, branch `stage-05` at `d404a27` = tag `stage-05-attempt-3` merged with `greenfield@78f4bc7` |
 | worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a0690e-d72e-70b0-9d6e-5d299c9ef0d5`, launched 2026-09-03 |
-| pid | 1228759 (check with `kill -0`) |
-| log | `attempt-4.log` in the worktree; result lands in `stage-05.result.json` |
+| pid | 1284264, the resumed `codex exec` (check with `kill -0`; `pgrep -f 'codex exec.*resume 01a0690e'` finds it). Note: `$!` of a `setsid nohup` line is the wrapper, not codex; kill the codex pid |
+| log | `attempt-4.log` (first run, interrupted at 14 min) and `attempt-4.resume.log` (the resume) in the worktree; result lands in `stage-05.result.json` |
 | schema | `stage-05.result.schema.json` in the worktree (untracked) |
-| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `78f4bc7`, 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
+| brief | `docs/greenfield/briefs/stage-05.brief.{md,json}` at `7d6fe4d` (request_compile 600/750/900; a breach is a stop), 24 gates, preflight clean on the merged tree, 7 mutations bite only after the write |
+| interrupt | at 14 min the worker hit the old 780 ceiling on `request_compile.cpp` at 784 and began compacting ("combining lines, removing blank lines"); stopped on the owner's call, brief corrected, resumed with `resume-attempt-4.md` in the worktree. At acceptance measure that file as first written from `attempt-4.log` and reject any compaction on reading |
 
 Carried from the tag: the exact-tape assembly, analytic `F_y` and `F_θ`, stoichiometry,
 `problem.hpp`, bindings, Python, compile-tier checks. Rewritten under the revised design:
