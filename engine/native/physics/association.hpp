@@ -186,7 +186,10 @@ inline std::vector<double> solve_site_fractions(
             record->criterion = &policy::ASSOCIATION_RESIDUAL;
             record->floor = 0.0;
             record->amplification = 1.0;
-            record->stop = core::Stop::converged;
+            record->stop = core::classify(
+                record->residual, *record->criterion, record->floor,
+                record->contraction, false
+            );
         }
         return {};
     }

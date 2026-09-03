@@ -20,7 +20,6 @@ namespace epcsaft {
 // with alpha_i = 0. The model layer fills ion_suppression_coefficient
 // accordingly, so the equation here has one branch instead of three.
 enum class PermittivityForm {
-    None = 0,
     IonSuppression = 1,      // eps_sf / (1 + sum alpha_i x_i)
     ComponentMixing = 2,     // linear mixing over components
     DensityTemperature = 3,  // density and temperature correlation
@@ -28,7 +27,6 @@ enum class PermittivityForm {
 };
 
 enum class ElectrolyteForm {
-    None = 0,
     DebyeHuckel = 1,
     DebyeHuckelBorn = 2,
 };

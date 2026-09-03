@@ -296,6 +296,48 @@ def rule_surface_defaults() -> list[str]:
     return bad
 
 
+BOUND_FUNCTION = re.compile(
+    r'\.def\(\s*"[^"]+"\s*,\s*&(?:epcsaft::)?'
+    r'(?:(?P<class>\w+)::)?(?P<function>\w+)'
+)
+NON_SCOPED_BOUND_FUNCTIONS = {"build_parameters", "counters", "reset_counters"}
+HAND_NAMED_RESIDUAL_STOP = re.compile(
+    r'(?:\.stop|->stop)\s*=\s*core::Stop::'
+    r'(?:converged|converged_to_floor|stalled|budget_exhausted)\b'
+)
+
+
+def rule_bound_functions_open_a_scope() -> list[str]:
+    bound = []
+    for path in sorted((NATIVE / "bindings").glob("*.cpp")):
+        for match in BOUND_FUNCTION.finditer(without_comments(path.read_text())):
+            function = match.group("function")
+            if function in NON_SCOPED_BOUND_FUNCTIONS:
+                continue
+            bound.append((match.group("class"), function))
+    bad = []
+    for owner, function in bound:
+        qualified = f"{owner}::{function}" if owner else function
+        pattern = re.compile(
+            rf"\b{re.escape(qualified)}\s*\([^;{{]*\)\s*(?:const\s*)?\{{"
+            r"\s*core::Scope\s+scope\s*\(",
+            re.S,
+        )
+        if not any(pattern.search(without_comments(path.read_text())) for path in sources()):
+            bad.append(f"bound function {qualified} must open core::Scope at entry")
+    return bad
+
+
+def rule_no_hand_named_residual_stop() -> list[str]:
+    bad = []
+    for path in sources():
+        text = without_comments(path.read_text())
+        for number, line in enumerate(text.splitlines(), 1):
+            if HAND_NAMED_RESIDUAL_STOP.search(line):
+                bad.append(f"{path.relative_to(ROOT)}:{number}: residual stop must use classify")
+    return bad
+
+
 def main() -> int:
     archive_findings, archive_built = rule_archive_is_python_free()
     checks = [
@@ -314,6 +356,8 @@ def main() -> int:
         ("core and trace boundaries", rule_core_and_trace_boundaries()),
         ("selectors are declared", rule_declared_selectors()),
         ("surface has no physical defaults", rule_surface_defaults()),
+        ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
+        ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
     ]
     failed = 0
     for name, findings in checks:

@@ -172,6 +172,7 @@ ElectrolyteActivity electrolyte_activity(
     double molality,
     const InfiniteDilutionReference& reference
 ) {
+    core::Scope scope("electrolyte_activity");
     const auto composition = formula_composition(
         solvent_fractions,
         model.parameters().molar_mass_kg_per_mol,
