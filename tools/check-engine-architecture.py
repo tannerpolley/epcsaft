@@ -164,6 +164,7 @@ CASE_TOKENS = re.compile(
 SOLVER_FILES = {
     "equilibrium/gibbs_minimizer.hpp", "equilibrium/gibbs_minimizer.cpp",
     "equilibrium/phase_boundary.cpp", "equilibrium/implicit_sensitivity.cpp",
+    "equilibrium/request_compile.cpp",
     "equilibrium/phase_stability.cpp",
 }
 
@@ -305,7 +306,7 @@ BOUND_FUNCTION = re.compile(
     r'\.def\(\s*"[^"]+"\s*,\s*&(?:epcsaft::)?'
     r'(?:(?P<class>\w+)::)?(?P<function>\w+)'
 )
-NON_SCOPED_BOUND_FUNCTIONS: frozenset[str] = frozenset()  # every bound function, no allowlist
+NON_SCOPED_BOUND_FUNCTIONS = {"build_parameters", "counters", "reset_counters"}
 HAND_NAMED_RESIDUAL_STOP = re.compile(
     r'(?:\.stop|->stop)\s*=\s*core::Stop::'
     r'(?:converged|converged_to_floor|stalled|budget_exhausted)\b'
@@ -343,6 +344,22 @@ def rule_no_hand_named_residual_stop() -> list[str]:
     return bad
 
 
+def rule_exact_hessian_callback() -> list[str]:
+    """The flash driver must expose the exact Lagrangian Hessian to Ipopt."""
+    path = NATIVE / "equilibrium" / "gibbs_minimizer.cpp"
+    if not path.is_file():
+        return [f"{path.relative_to(ROOT)} is missing"]
+    text = without_comments(path.read_text())
+    bad = []
+    if "GibbsMinimizer::eval_h" not in text:
+        bad.append("equilibrium/gibbs_minimizer.cpp has no eval_h callback")
+    if "hessian_approximation" not in text or '"exact"' not in text:
+        bad.append("solve_equilibrium must request the exact Hessian")
+    if "limited-memory" in text:
+        bad.append("limited-memory Hessian is forbidden")
+    return bad
+
+
 def main() -> int:
     archive_findings, archive_built = rule_archive_is_python_free()
     checks = [
@@ -363,6 +380,7 @@ def main() -> int:
         ("surface has no physical defaults", rule_surface_defaults()),
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
+        ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
     failed = 0
     for name, findings in checks:
