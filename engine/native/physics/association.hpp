@@ -1,9 +1,11 @@
 #pragma once
 
-#include "physics/numerical_policy.hpp"
-#include "physics/parameters.hpp"
-#include "physics/physical_constants.hpp"
-#include "physics/scalar.hpp"
+#include "core/convergence.hpp"
+#include "core/numerical_policy.hpp"
+#include "core/parameters.hpp"
+#include "core/physical_constants.hpp"
+#include "core/scalar.hpp"
+#include "core/trace.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -12,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -143,7 +146,8 @@ std::vector<Scalar> association_residuals(
 // reports it.
 inline std::vector<double> solve_linear(
     const std::vector<double>& matrix,
-    const std::vector<double>& right_hand_side
+    const std::vector<double>& right_hand_side,
+    double* pivot_ratio = nullptr
 ) {
     using RowMajor =
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -158,6 +162,7 @@ inline std::vector<double> solve_linear(
         || smallest <= policy::ASSOCIATION_JACOBIAN_CONDITION.value * largest) {
         throw std::runtime_error("association Jacobian is ill-conditioned");
     }
+    if (pivot_ratio != nullptr) *pivot_ratio = largest / smallest;
     const Eigen::VectorXd solution = factorization.solve(
         Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), size)
     );
@@ -172,15 +177,20 @@ inline std::vector<double> solve_site_fractions(
     const Parameters& parameters,
     const std::vector<double>& sigma,
     const std::vector<double>& diameter,
-    std::size_t* iterations = nullptr
+    core::Convergence* record = nullptr
 ) {
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
-        if (iterations != nullptr) {
-            *iterations = 0;
+        if (record != nullptr) {
+            *record = {};
+            record->criterion = &policy::ASSOCIATION_RESIDUAL;
+            record->floor = 0.0;
+            record->amplification = 1.0;
+            record->stop = core::Stop::converged;
         }
         return {};
     }
+    core::Scope scope("association_newton");
     const auto delta = association_delta_values(
         temperature,
         molar_density,
@@ -194,6 +204,26 @@ inline std::vector<double> solve_site_fractions(
     const double number_density =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::vector<double> fractions(sites, 1.0);
+    core::ResidualHistory history;
+    std::size_t evaluations = 0;
+    std::optional<double> last_pivot;
+    double residual_norm = std::numeric_limits<double>::infinity();
+    auto make_record = [&](double residual, std::size_t iterations,
+                           core::Stop stop, bool classify) {
+        core::Convergence result;
+        result.residual = residual;
+        result.criterion = &policy::ASSOCIATION_RESIDUAL;
+        result.floor = std::numeric_limits<double>::epsilon() * sites;
+        result.amplification = last_pivot;
+        result.contraction = history.contraction();
+        result.iterations = iterations;
+        result.evaluations = evaluations;
+        result.stop = classify
+            ? core::classify(residual, *result.criterion, result.floor,
+                             result.contraction, true)
+            : stop;
+        return result;
+    };
     const auto max_iterations = static_cast<std::size_t>(
         policy::ASSOCIATION_MAX_ITERATIONS.value);
     const double tolerance = policy::ASSOCIATION_RESIDUAL.value;
@@ -223,6 +253,7 @@ inline std::vector<double> solve_site_fractions(
         const auto values = association_residuals(
             molar_density, mole_fractions, parameters, point, delta
         );
+        ++evaluations;
         double norm = 0.0;
         for (const double value : values) {
             norm = std::max(norm, std::abs(value));
@@ -242,6 +273,7 @@ inline std::vector<double> solve_site_fractions(
 
     for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
         std::vector<double> next;
+        last_pivot.reset();
         // Newton on F_a = X_a (1 + rho_N B_a) - 1, with
         // dF_a/dX_b = X_a rho_N x_c(b) n_b delta_ab + kron_ab (1 + rho_N B_a).
         {
@@ -272,7 +304,8 @@ inline std::vector<double> solve_site_fractions(
                     1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
             }
             try {
-                const auto step = solve_linear(jacobian, negative_residual);
+                double pivot_ratio = 0.0;
+                const auto step = solve_linear(jacobian, negative_residual, &pivot_ratio);
                 std::vector<double> candidate(sites, 0.0);
                 for (std::size_t a = 0; a < sites; ++a) {
                     candidate[a] = fractions[a] + step[a];
@@ -281,6 +314,7 @@ inline std::vector<double> solve_site_fractions(
                     && residual_infinity_norm(candidate)
                         < residual_infinity_norm(fractions)) {
                     next = std::move(candidate);
+                    last_pivot = pivot_ratio;
                 }
             } catch (const std::exception&) {
                 // singular or ill-conditioned: fall through to substitution
@@ -292,24 +326,50 @@ inline std::vector<double> solve_site_fractions(
         const auto residuals = association_residuals(
             molar_density, mole_fractions, parameters, next, delta
         );
-        double residual_norm = 0.0;
+        residual_norm = 0.0;
+        bool valid = true;
         for (std::size_t site = 0; site < sites; ++site) {
             if (!std::isfinite(next[site])
                 || next[site] <= policy::SITE_FRACTION_FLOOR.value
                 || next[site] > policy::SITE_FRACTION_CEILING.value) {
-                throw std::runtime_error("association solve left physical domain");
+                valid = false;
+                residual_norm = std::numeric_limits<double>::infinity();
+                break;
             }
             residual_norm = std::max(residual_norm, std::abs(residuals[site]));
         }
+        ++evaluations;
+        history.push(residual_norm);
+        scope.probe("association_residual_norm", residual_norm,
+                    static_cast<std::uint32_t>(iteration));
+        if (!valid) {
+            const auto failure = make_record(
+                residual_norm, iteration + 1, core::Stop::left_domain, false
+            );
+            scope.finish(failure);
+            throw core::ConvergenceFailure(failure);
+        }
         fractions = std::move(next);
         if (residual_norm <= tolerance) {
-            if (iterations != nullptr) {
-                *iterations = iteration + 1;
+            const auto convergence = make_record(
+                residual_norm, iteration + 1, core::Stop::converged, false
+            );
+            if (record != nullptr) {
+                *record = convergence;
+                if (record->amplification.has_value()) {
+                    scope.probe("association_pivot_ratio", *record->amplification);
+                }
+                scope.finish(*record);
             }
+            scope.probe("site_fractions", fractions);
             return fractions;
         }
     }
-    throw std::runtime_error("association solve did not converge");
+    const auto failure = make_record(
+        residual_norm, max_iterations, core::Stop::budget_exhausted, true
+    );
+    scope.finish(failure);
+    throw core::ConvergenceFailure(failure);
 }
 
 

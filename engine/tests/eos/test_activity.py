@@ -25,16 +25,25 @@ def test_aqueous_activity_reproduces_source_rows() -> None:
             parameters_json("figiel-2025-reference-electrolytes", 2),
             components=("water", cation, anion),
         )
+        temperature = first["temperature_k"]
+        pressure = first["pressure_pa"]
+        assert isinstance(temperature, (int, float))
+        assert isinstance(pressure, (int, float))
         reference = Mixture(parameters).reference(
-            float(first["temperature_k"]),
-            float(first["pressure_pa"]),
+            float(temperature),
+            float(pressure),
             solvent_fractions=(1.0, 0.0, 0.0),
             ions=(cation, anion),
+            stoichiometry=(1, 1),
         )
         deviations: list[float] = []
         for row in salt_rows:
-            calculated = reference.activity(float(row["molality_mol_kg"])).mean_ionic_molality_scale
-            measured = float(row["measured_mean_ionic_activity_coefficient"])
+            molality = row["molality_mol_kg"]
+            measured_value = row["measured_mean_ionic_activity_coefficient"]
+            assert isinstance(molality, (int, float))
+            assert isinstance(measured_value, (int, float))
+            calculated = reference.activity(float(molality)).mean_ionic_molality_scale
+            measured = float(measured_value)
             assert math.isfinite(calculated) and calculated > 0.0
             deviations.append(abs(calculated / measured - 1.0))
             print(salt, row["molality_mol_kg"], measured, calculated, deviations[-1])

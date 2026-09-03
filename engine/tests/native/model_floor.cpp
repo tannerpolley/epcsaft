@@ -1,6 +1,7 @@
 #include "model/helmholtz_model.hpp"
 #include "model_support.hpp"
 
+#include "core/trace.hpp"
 #include "physics/association.hpp"
 #include "physics/helmholtz.hpp"
 
@@ -99,6 +100,8 @@ void print_density_case(
                 "density_iterations=%zu\n", label, median(times),
                 counts.forward + counts.reverse, counts.hessian_calls,
                 counts.recordings, last.iterations);
+    std::printf("%s convergence=%s\n", label,
+                epcsaft::core::describe(last.convergence).c_str());
 }
 
 void print_reference_case(
@@ -134,6 +137,38 @@ void print_reference_case(
                 counts.hessian_calls, counts.recordings);
 }
 
+void print_trace_case(epcsaft::HelmholtzModel& model) {
+    const std::vector<double> composition = {
+        0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0
+    };
+    double uncaptured_wall = 0.0;
+    double captured_wall = 0.0;
+    const auto solve = [&] {
+        return model.state_at_pressure(
+            313.15, 1.0e5, composition, epcsaft::DensityBranch::Liquid
+        );
+    };
+    try {
+        uncaptured_wall = timed(solve);
+    } catch (const std::exception& error) {
+        std::printf("G uncaptured_error=%s\n", error.what());
+    }
+    epcsaft::core::Capture capture;
+    try {
+        captured_wall = timed(solve);
+    } catch (const std::exception& error) {
+        std::printf("G captured_error=%s\n", error.what());
+    }
+    const auto trace = capture.take();
+    std::size_t values_bytes = 0;
+    for (const auto& event : trace.events) {
+        values_bytes += event.values.size() * sizeof(double);
+    }
+    std::printf("G uncaptured_wall_us=%.3f captured_wall_us=%.3f spans=%zu events=%zu values_bytes=%zu\n",
+                uncaptured_wall, captured_wall, trace.spans.size(),
+                trace.events.size(), values_bytes);
+}
+
 }  // namespace
 
 int main() {
@@ -166,12 +201,13 @@ int main() {
     const auto diameter = epcsaft::segment_diameter(
         376.88, association_parameters, sigma
     );
-    std::size_t association_iterations = 0;
+    epcsaft::core::Convergence association_record;
     epcsaft::solve_site_fractions(
         376.88, 1.0e4, {0.1385, 0.8615}, association_parameters,
-        sigma, diameter, &association_iterations
+        sigma, diameter, &association_record
     );
-    std::printf("C association_iterations=%zu\n", association_iterations);
+    std::printf("C association=%s\n",
+                epcsaft::core::describe(association_record).c_str());
     epcsaft::HelmholtzModel density_model(model_support::neutral_binary());
     print_density_case("E", density_model, 300.0, 1.0e5, {0.4, 0.6}, false,
                        epcsaft::DensityBranch::Vapor);
@@ -180,6 +216,7 @@ int main() {
     print_density_case("D", nine_density, 313.15, 1.0e5,
                        {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0}, true,
                        epcsaft::DensityBranch::Liquid);
+    print_trace_case(nine_density);
     epcsaft::HelmholtzModel aqueous(model_support::aqueous_electrolyte());
     print_reference_case(aqueous, 298.15, 1.0e5);
     return 0;

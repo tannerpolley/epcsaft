@@ -62,7 +62,7 @@ class Mixture:
         *,
         solvent_fractions: Sequence[float],
         ions: tuple[str, str],
-        stoichiometry: tuple[int, int] = (1, 1),
+        stoichiometry: tuple[int, int],
     ) -> Reference:
         try:
             ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))

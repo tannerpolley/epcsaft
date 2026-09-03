@@ -1,7 +1,7 @@
 #pragma once
 
-#include "physics/parameters.hpp"
-#include "physics/physical_constants.hpp"
+#include "core/parameters.hpp"
+#include "core/physical_constants.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -19,7 +19,7 @@ Scalar born_contribution(
     const std::vector<Scalar> *born_diameter_override = nullptr,
     const std::vector<Scalar> *solvation_factor_override = nullptr,
     const Scalar *ionic_region_relative_permittivity_override = nullptr) {
-  if (parameters.electrolyte_form != ElectrolyteForm::DebyeHuckelBorn) {
+  if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
     return Scalar(0.0);
   }
 

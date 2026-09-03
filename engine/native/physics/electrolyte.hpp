@@ -1,9 +1,9 @@
 #pragma once
 
-#include "physics/numerical_policy.hpp"
-#include "physics/parameters.hpp"
-#include "physics/physical_constants.hpp"
-#include "physics/scalar.hpp"
+#include "core/numerical_policy.hpp"
+#include "core/parameters.hpp"
+#include "core/physical_constants.hpp"
+#include "core/scalar.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -23,9 +23,8 @@ inline bool dielectric_solvent_component(
     if (parameters.charge_number[component] != 0) {
         return false;
     }
-    if (parameters.permittivity_form == PermittivityForm::DensityTemperature
-        || parameters.permittivity_form
-            == PermittivityForm::DipolarPerturbation) {
+    if (parameters.permittivity_form.is(PermittivityForm::DensityTemperature)
+        || parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)) {
         return true;
     }
     if (parameters.relative_permittivity[component] > 0.0) {
@@ -137,7 +136,7 @@ Scalar bulk_relative_permittivity(
             * parameters.correlation_integral_parameter[component];
     }
 
-    if (parameters.permittivity_form == PermittivityForm::DipolarPerturbation) {
+    if (parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)) {
         // EqID: effective_dipolar_density
         const Scalar y_effective = (4.0 * PI / 9.0)
             * effective_dipolar_density;
@@ -152,7 +151,7 @@ Scalar bulk_relative_permittivity(
                     * y_effective * y_effective
             );
     }
-    if (parameters.permittivity_form == PermittivityForm::DensityTemperature) {
+    if (parameters.permittivity_form.is(PermittivityForm::DensityTemperature)) {
         // EqID: density_correlation_mixed_parameters
         const Scalar mixed_volume = dielectric_volume / solvent_fraction;
         const Scalar mixed_temperature = dielectric_temperature / solvent_fraction;
@@ -161,7 +160,7 @@ Scalar bulk_relative_permittivity(
             * (mixed_temperature / temperature - Scalar(1.0));
     }
 
-    if (parameters.permittivity_form == PermittivityForm::ComponentMixing) {
+    if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
         const bool has_neutral_component = std::any_of(
             parameters.charge_number.begin(),
             parameters.charge_number.end(),
@@ -175,11 +174,11 @@ Scalar bulk_relative_permittivity(
 
     // EqID: salt_free_solvent_permittivity
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
-    if (parameters.permittivity_form == PermittivityForm::ComponentMixing) {
+    if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
         // EqID: component_mixed_bulk_permittivity
         return salt_free_permittivity * solvent_fraction + ion_dielectric;
     }
-    if (parameters.permittivity_form == PermittivityForm::IonSuppression) {
+    if (parameters.permittivity_form.is(PermittivityForm::IonSuppression)) {
         // EqID: ion_suppressed_bulk_permittivity
         // Covers ion-specific suppression directly, ion-fraction
         // suppression with alpha equal for every ion, and solvent-only
@@ -285,7 +284,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         ion_suppression_override
     );
     if constexpr (std::is_same_v<Scalar, double>) {
-        if (parameters.permittivity_form != PermittivityForm::ComponentMixing &&
+        if (!parameters.permittivity_form.is(PermittivityForm::ComponentMixing) &&
             (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass))) {
             throw std::invalid_argument("electrolyte state has no solvent mass");
         }

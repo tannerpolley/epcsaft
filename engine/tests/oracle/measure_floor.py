@@ -12,7 +12,7 @@ from typing import Callable
 
 assert os.environ.get("OMP_NUM_THREADS") == "1"
 
-from epcsaft import Mixture, Parameters
+from epcsaft import Mixture, Parameters, State
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tests.packets import parameters_json
@@ -67,7 +67,7 @@ def main() -> None:
     figiel = Mixture(Parameters.from_json(
         parameters_json("figiel-2025-reference-electrolytes", 2),
         components=("water", "sodium-cation", "chloride-anion")))
-    case_c = lambda: mea.state(313.15, P=1e5, x=FLOOR_COMPOSITION, phase="liquid")
+    case_c: Callable[[], State] = lambda: mea.state(313.15, P=1e5, x=FLOOR_COMPOSITION, phase="liquid")
     state_c = case_c()
     reference = figiel.reference(
         298.15, 1e5, solvent_fractions=(1.0, 0.0, 0.0),

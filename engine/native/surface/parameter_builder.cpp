@@ -1,4 +1,4 @@
-#include "model/parameter_builder.hpp"
+#include "surface/parameter_builder.hpp"
 
 #include <algorithm>
 #include <array>
@@ -153,22 +153,23 @@ Parameters build_parameters(const ParameterDocument& document) {
     result.association_energy_over_k.assign(sites * sites, 0.0);
     result.association_volume.assign(sites * sites, 0.0);
 
-    if (document.electrolyte_choice == "none") result.electrolyte_form = ElectrolyteForm::None;
-    else if (document.electrolyte_choice == "fully-dissociated-debye-huckel") {
+    if (document.electrolyte_choice == "fully-dissociated-debye-huckel") {
         result.electrolyte_form = ElectrolyteForm::DebyeHuckel;
     } else if (document.electrolyte_choice == "born") {
         result.electrolyte_form = ElectrolyteForm::DebyeHuckelBorn;
-    } else reject("unknown electrolyte choice " + document.electrolyte_choice);
+    } else if (document.electrolyte_choice != "none") {
+        reject("unknown electrolyte choice " + document.electrolyte_choice);
+    }
 
-    if (document.permittivity_choice == "none"
-        || document.permittivity_choice == "solvent-only"
+    if (document.permittivity_choice == "solvent-only"
         || document.permittivity_choice == "ion-fraction-suppression"
         || document.permittivity_choice == "ion-specific-suppression") {
-        result.permittivity_form = PermittivityForm::None;
-        if (document.permittivity_choice != "none") result.permittivity_form = PermittivityForm::IonSuppression;
+        result.permittivity_form = PermittivityForm::IonSuppression;
     } else if (document.permittivity_choice == "component-permittivity-mixing") {
         result.permittivity_form = PermittivityForm::ComponentMixing;
-    } else reject("unknown permittivity choice " + document.permittivity_choice);
+    } else if (document.permittivity_choice != "none") {
+        reject("unknown permittivity choice " + document.permittivity_choice);
+    }
 
     std::set<std::tuple<std::string, Index>> seen;
     std::set<std::pair<std::string, std::size_t>> component_fields;
@@ -338,10 +339,10 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (component_fields.find({"segment_count", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_count");
         if (component_fields.find({"sigma_constant", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_diameter");
         if (component_fields.find({"dispersion_energy_over_k", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/dispersion_energy_over_k");
-        if (result.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn && component_fields.find({"solvation_factor", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/solvation_factor");
+        if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && component_fields.find({"solvation_factor", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/solvation_factor");
         if (result.charge_number[i] != 0 && component_fields.find({"packing_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/packing_diameter");
         if (result.charge_number[i] != 0 && component_fields.find({"debye_huckel_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/debye_huckel_diameter");
-        if (result.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
+        if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
     }
     for (std::size_t i = 0; i < components; ++i) for (std::size_t j = i + 1; j < components; ++j) {
         if (result.k_ij[i * components + j] == 0.0 && result.k_ij[j * components + i] == 0.0) {
@@ -355,11 +356,11 @@ Parameters build_parameters(const ParameterDocument& document) {
         }
         if (result.k_ij_reciprocal_temperature_slope[i * components + j] != 0.0 && result.k_ij_reference_temperature_k[i * components + j] == 0.0) reject("missing pair reference temperature/" + document.component_ids[i] + "/" + document.component_ids[j]);
     }
-    if (result.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn
+    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
         && scalar_fields.find("ionic_region_relative_permittivity") == scalar_fields.end()) reject("missing ionic_region_relative_permittivity");
-    if (result.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn
+    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
         && scalar_fields.find("born_c_shell") == scalar_fields.end()) reject("missing born_c_shell");
-    if (result.electrolyte_form == ElectrolyteForm::DebyeHuckelBorn
+    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
         && scalar_fields.find("born_c_dielectric") == scalar_fields.end()) reject("missing born_c_dielectric");
     if (document.permittivity_choice == "ion-fraction-suppression") {
         bool present = false;

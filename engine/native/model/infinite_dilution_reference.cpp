@@ -1,6 +1,7 @@
 #include "model/helmholtz_model.hpp"
 
-#include "physics/numerical_policy.hpp"
+#include "core/numerical_policy.hpp"
+#include "core/trace.hpp"
 
 #include <algorithm>
 #include <array>
@@ -65,6 +66,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry
 ) {
+    core::Scope scope("infinite_dilution_reference");
     std::array<double, 4> molalities = {
         policy::REFERENCE_MOLALITY_ONE.value,
         policy::REFERENCE_MOLALITY_TWO.value,
@@ -77,7 +79,8 @@ InfiniteDilutionReference infinite_dilution_reference(
     double convergence_error = 0.0;
     double terminal_error = 0.0;
     bool observed = false;
-    for (double molality : molalities) {
+    for (std::size_t index = 0; index < molalities.size(); ++index) {
+        const double molality = molalities[index];
         const auto composition = formula_composition(
             solvent_fractions,
             model.parameters().molar_mass_kg_per_mol,
@@ -95,6 +98,10 @@ InfiniteDilutionReference infinite_dilution_reference(
             (*state.log_fugacity_coefficient)[ion_indices[0]],
             (*state.log_fugacity_coefficient)[ion_indices[1]],
         };
+        scope.probe(
+            "reference_ladder_point", {molality, current[0], current[1]},
+            static_cast<std::uint32_t>(index)
+        );
         if (observed) {
             // EqID: reference_limit_terminal_pair
             convergence_error = std::max(
@@ -106,6 +113,8 @@ InfiniteDilutionReference infinite_dilution_reference(
         previous = current;
         observed = true;
         anchor = state.molar_density;
+        scope.probe("reference_convergence_error", convergence_error,
+                    static_cast<std::uint32_t>(index));
     }
     if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
         const auto composition = formula_composition(
@@ -125,6 +134,7 @@ InfiniteDilutionReference infinite_dilution_reference(
             std::abs((*state.log_fugacity_coefficient)[ion_indices[0]] - current[0]),
             std::abs((*state.log_fugacity_coefficient)[ion_indices[1]] - current[1])
         );
+        scope.probe("reference_witness_error", witness_error);
         if (witness_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
             throw std::runtime_error("reference limit did not converge");
         }

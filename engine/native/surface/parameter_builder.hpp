@@ -1,6 +1,6 @@
 #pragma once
 
-#include "physics/parameters.hpp"
+#include "core/parameters.hpp"
 
 #include <cstddef>
 #include <string>
