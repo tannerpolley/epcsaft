@@ -103,7 +103,7 @@
       "purpose": "rule 4 as it stands; the shell must stay below it"
     },
     {
-      "ref": "greenfield@REPIN:engine/native/equilibrium/request_compile.cpp",
+      "ref": "greenfield@271fb39:engine/native/equilibrium/request_compile.cpp",
       "must_contain": [
         "active_parameter_column"
       ],

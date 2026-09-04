@@ -802,3 +802,14 @@ point), that the diagnostic string and the last `michelsen_deficit` event agree,
 distance exceeds the ion fraction of the feed. Worker's run: 18 gates green, no deviations. Tree
 committed at `542df61` on `stage-05-repair`; acceptance run 2 (`tools/greenfield/accept-stage.sh`)
 started at 20:29 with `deficit_identity` among the first mutations.
+
+**Stage 5 repair accepted and merged (2026-09-03 20:29).** Acceptance run 2 on `542df61`:
+`meson setup --wipe`, clean compile, 18 gates green in brief order, then all 18 mutations applied,
+rebuilt, rerun and red, the tree restored after each. The one check that was blind in run 1,
+`deficit_identity`, is red under its mutation at the electrolyte cell. After the last mutation the
+tree was rebuilt, the wheel reinstalled, and the seven native suites rerun green. Merged
+`--no-ff` into `greenfield` as `271fb39`, tag `stage-05-repair-accepted`; the enforcer diff
+across the merge is rule 12's `rglob` widening only. The Stage 6 brief's `REPIN` source is now
+`greenfield@271fb39:engine/native/equilibrium/request_compile.cpp`; `stage-06` fast-forwarded
+to the merge; preflight clean, 13 preconditions run. Step (1) of the owner's four is closed;
+the planner has been asked for the harness brief (step 3) and the campaign brief (step 2).
