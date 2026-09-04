@@ -715,3 +715,9 @@ stronger `reject_by_name` mutation, the `FreeValue` absent state the worker had 
 bug-fix clarification, in one amendment. Lesson, the audit's and fair: reconcile the mathematics,
 the checks, the permitted files and the budget before a launch; six of seven stops on this repair
 were brief or prompt defects, not code.
+
+**Seventh stop, a permitted-files gap.** The corrected finding 8 differentiates the packing
+coefficient per active column and needs each active parameter's family and indices, which
+`HelmholtzModel` keeps private; no model-layer write was listed. `helmholtz_model.hpp` is now a
+write for one read-only accessor (`29d2fc7`). The worker had already fixed its identifier bug and
+made the native absent state within their ceilings. Eighth resume.
