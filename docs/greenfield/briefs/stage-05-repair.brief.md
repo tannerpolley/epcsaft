@@ -159,6 +159,11 @@ after the fix. The stop rule is for formatting under count pressure, nothing els
 behaviour (the unknown species key silently dropped; any other amount status free), so the test
 reddens on the dropped key, not on a message.
 
+**The assembly may read the active list.** `HelmholtzModel` keeps `active_` private; the corrected
+finding 8 needs each active parameter's family and indices in the tape's order. `helmholtz_model.hpp`
+is a listed write for one public read-only accessor, `active() const`, and nothing else in the model
+changes.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence

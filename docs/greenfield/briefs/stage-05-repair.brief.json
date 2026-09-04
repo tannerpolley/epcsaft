@@ -243,6 +243,17 @@
         "estimate": 0,
         "ceiling": 0
       }
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.hpp",
+      "edit": "finding 8 corrected: a public read-only accessor for the active parameter list (family and indices, in the tape's order), so the assembly can differentiate the packing coefficient per active column; no other change to the model",
+      "lines": {
+        "estimate": 2,
+        "ceiling": 6
+      },
+      "must_contain": [
+        "active() const"
+      ]
     }
   ],
   "gates": [
