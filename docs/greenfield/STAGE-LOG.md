@@ -781,3 +781,14 @@ identity has no non-trivial point on that cell either. Two questions to the plan
 a phase vanishes by amount, or "reported, not asserted" for the deficit with finding 3 verified by
 reading; and whether coincidence-instead-of-vanishing on the subcooled side is a defect or the row
 system's correct outcome there, for the campaign either way.
+
+**Ruling on coincidence versus vanishing (planner).** On the subcooled side of a declared `{V,L}`
+flash with unrestricted supports, coincidence is the correct outcome, not a defect: `G` is
+extensive, the trivial manifold is a flat set of minimisers with the same `G` as the vanished-phase
+boundary minimum, and which one the driver reaches is a start question. The failure name is
+`declared_phase_absent`, with `phases_coincide` plus the distance or `phase_vanished` plus the
+deficit as the detail; `EQUILIBRIUM.md` §3.4's "the deficit" becomes "the mechanism the driver
+met", folded in with the campaign. A phase vanishes by amount exactly where coincidence is
+structurally impossible: under a support restriction. The deficit check moves to the aqueous
+electrolyte `{V,L}` cell with `V` on `{water}` at 298.15 K and 1 bar, far above the ~3 kPa
+bubble pressure. Fourteenth resume.
