@@ -16,6 +16,20 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 - Overview page: https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58 —
   keep the head sha in its header synced after every commit (owner rule).
 
+## Stage 6, the live process
+
+| item | value |
+|---|---|
+| worktree | `~/.codex/worktrees/gf-stage-06`, branch `stage-06`, cut from `greenfield@fb47283`, merged with `c5ef4a4` |
+| worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a069b3-a577-7fd1-94e8-f037660b4535`, launched 2026-09-03 |
+| pid | 91635 (find with `ps -eo pid,args \| grep "codex exec"`; never `$!`) |
+| log | `attempt-1.log` in the worktree; result lands in `stage-06.result.json`; schema `stage-06.result.schema.json` (untracked, copied from Stage 5's) |
+| brief | `docs/greenfield/briefs/stage-06.brief.{md,json}` at `fb47283`, sources pinned at `6bdc05f`, 22 gates, preflight clean, no deferred mutations |
+| Serena | `mcp_servers.serena` in `~/.codex/config.toml` points at this worktree; the brief's reading step reports as `serena_reading` |
+
+Acceptance as for Stage 5 (`accept.sh` shape): wipe and rebuild, 22 gates in brief order, 22
+mutations with the three static gates' mutants not required to build.
+
 ## Next stage: 6 Regression
 
 `REGRESSION.md` exists. Before its brief, in `EQUILIBRIUM.md`/`REGRESSION.md` and the brief:

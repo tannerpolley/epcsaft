@@ -613,3 +613,16 @@ effect at the next session and the next launch; the next brief tells the worker 
 codex with `ps` and kill that. A killed run holds its thread-writer lock until the codex
 process is gone. `git merge` runs in whichever worktree you are in. A monitor's completion
 line can be missed: check the log by hand when the expected duration passes.
+
+## Stage 6 — Regression: brief, and attempt 1 launched, 2026-09-03
+
+The planner's brief: twenty writes (estimate 2,076, ceiling 3,043, no lows per the owner's
+ruling), twenty-two gates each with a mutation, nine sources pinned at `6bdc05f` with every
+marker verified, two diagnostics entries, the five stops, a Serena reading step reported as
+`serena_reading`. `REGRESSION.md` §4.1 carries the eight named checks R1–R8 and the two
+Stage 5 deviations with their own mutations. Scope, owner's ruling: this stage writes the
+regression shell and the `PropertyOrder` first-derivative block on `State`; thermochemistry,
+the ideal side, the totals and the seventh active family form a Properties stage after it.
+Worktree cut from `fb47283`, subprojects copied, fresh venv, Serena project file, the codex
+Serena entry re-pointed. Preflight clean: 9 sources, 22 gates, 12 preconditions. Launched on
+`gpt-5.6-sol` at high, session `01a069b3-a577-7fd1-94e8-f037660b4535`, pid 91635.
