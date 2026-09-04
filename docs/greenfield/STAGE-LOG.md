@@ -725,3 +725,8 @@ made the native absent state within their ceilings. Eighth resume.
 **Eighth stop, a name collision the checker caught.** Rule 10 refuses any unqualified `active(`
 outside `core/` and `bindings/`, since that token is the trace's accessor; the coordinator had
 named the model's accessor `active()`. Renamed `active_parameters()` (`1509e3e`). Ninth resume.
+
+**Ninth stop, an ill-posed cell.** S9-T-standard (ii) as written fixed `T` with `L₂` pinned and
+`P` fixed, which the count rule refuses (`k = 1` needs `f = 1`). The coordinator read the intent,
+"the same problem with `T` fixed", with `P` free, and resumed; the planner is told. On the same
+run S4, S5, S10 and S14 were green on the repaired tree.
