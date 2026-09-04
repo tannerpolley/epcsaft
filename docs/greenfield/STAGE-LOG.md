@@ -759,3 +759,15 @@ Acceptance running with the committed `tools/greenfield/accept-stage.sh` (the ea
 lived in a session scratchpad and was lost with it), the four new sensitivity mutations first.
 One reading note already: the result carries no `serena_reading` because the coordinator reused
 Stage 5's strict result schema, which has no such field; a schema defect, not the worker's.
+
+**Repair acceptance run 1** (`tools/greenfield/accept-stage.sh` on `4dde17e`): wipe and rebuild
+green, 18 gates green, 17 of 18 mutations red. `active_parameter_column`'s sed matched nothing
+(the worker assigns the tape block with `=`, the sed looked for `+`); re-anchored on the
+assignment, mutant built, boundary red. `deficit_identity` stayed green: the check's ethane cell
+has zero residuals at the point tested, so both sides of the identity are `1 − Σ x_i` under any
+divisor; a check that asserts an identity must also assert the point tells the sides apart. The
+planner moved it to the subcooled ternary at 30 bar with a guard clause; thirteenth resume for
+that one check. **Reproduction, numbers retained:** the audit's pinned-phase feed sensitivity
+case (methane–ethane, 180 K, `V` pinned at 0.2, `P` free) on the repaired wheel gives analytic
+−1,748,683.38 Pa/mol against a centred difference of −1,748,683.39, relative difference 1e-8,
+where the merged Stage 5 tree had given −1,361,623 (`analyses/reproduction/2026-09-03-stage-05-repair`).
