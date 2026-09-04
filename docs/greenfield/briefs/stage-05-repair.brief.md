@@ -176,6 +176,18 @@ is a listed write for one public read-only accessor, `active_parameters() const`
 rule 10 reserves an unqualified `active(` outside `core/` and `bindings/` for the trace), and nothing
 else in the model changes.
 
+**S15-deficit, replacing `equilibrium_checks.cpp:337–354` (planner's ruling after acceptance).** On
+the neutral-ternary `{V,L}` flash at 180 K and 30 bar, the subcooled cell S15 already refuses as a
+vanished phase, the deficit the failure carries for the vanished phase equals
+`1 − Σ_i x_i exp(−r_i)` recomputed from the returned chemical-potential residual rows of that phase
+at the returned point, 1e-12 relative; the same number appears as the last `michelsen_deficit`
+event of the `solve_equilibrium` span; and at least one of those residual rows exceeds
+`max(criterion, floor)` from the returned record, which is what makes the identity non-trivial (a
+vanished phase is not in equilibrium, so its rows are the driving force Michelsen's sum measures).
+Mutation unchanged. The ethane cell tested the identity at a point where both sides were
+`1 − Σ x_i` because the rows were zero; a check that asserts an identity must also assert that the
+point tells the two sides apart.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence

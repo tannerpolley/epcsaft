@@ -186,7 +186,7 @@
     },
     {
       "path": "engine/tests/native/equilibrium_checks.cpp",
-      "edit": "S15 asserts the deficit identity from the returned rows; S1 asserts the span's record equals result.convergence under Capture",
+      "edit": "S15 asserts the deficit identity from the returned rows; S1 asserts the span's record equals result.convergence under Capture; S15-deficit on the subcooled ternary at 30 bar with the non-trivial-point guard (planner's ruling after acceptance)",
       "lines": {
         "estimate": 26,
         "ceiling": 44
@@ -442,9 +442,9 @@
       "needs": "native",
       "mutation": {
         "file": "engine/native/equilibrium/request_compile.cpp",
-        "sed": "0,/+ active_parameter_column/s||+ 0.0 * active_parameter_column|",
+        "sed": "0,/= active_parameter_column/s||= 0.0 * active_parameter_column|",
         "expect": "abort",
-        "bites_only_after_write": true,
+        "bites_only_after_write": false,
         "why": "finding 8: the θ column of the chemical rows dies and S9's active-parameter column disagrees with the centred difference"
       }
     },
