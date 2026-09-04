@@ -109,6 +109,7 @@ public:
     SweepCounters counters() const;
     void reset_counters() const;
     const Parameters& parameters() const { return parameters_; }
+    const std::vector<ActiveParameter>& active_parameters() const { return active_; }
 
 private:
     friend DensityRoot solve_density(

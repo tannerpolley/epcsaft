@@ -134,6 +134,142 @@ void check_s9() {
                   * std::max(1.0, std::abs(centered)));
         }
     }
+
+    auto bubble = equilibrium_support::flash(3);
+    bubble.phases = {
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
+                                   epcsaft::equilibrium::AmountSpec::pinned(0.0)),
+    };
+    bubble.temperature.value = 180.0;
+    bubble.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    const auto bubble_result = epcsaft::equilibrium::solve_equilibrium(model, bubble);
+    CHECK(bubble_result.success);
+    if (!bubble_result.success) return;
+    auto pinned = bubble;
+    pinned.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(1.0e-2);
+    pinned.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
+    pinned.pressure = epcsaft::equilibrium::FreeValue::fixed(bubble_result.pressure.front());
+    const auto pinned_result = epcsaft::equilibrium::solve_equilibrium(model, pinned, bubble_result);
+    CHECK(pinned_result.success);
+    if (!pinned_result.success) return;
+    const auto pinned_compiled = epcsaft::equilibrium::compile_problem(model, pinned);
+    for (std::size_t species = 0; species < 3; ++species) {
+        auto higher = pinned;
+        auto lower = pinned;
+        const double delta = 1.0e-5;
+        higher.feed.values[species] += delta;
+        lower.feed.values[species] -= delta;
+        std::vector<double> lever(5, 0.0);
+        lever[2 + species] = 1.0;
+        const auto analytic = epcsaft::equilibrium::sensitivity(
+            pinned_compiled, pinned_result.coordinates, lever);
+        const auto up = epcsaft::equilibrium::solve_equilibrium(model, higher, pinned_result);
+        const auto down = epcsaft::equilibrium::solve_equilibrium(model, lower, pinned_result);
+        CHECK(up.success && down.success);
+        if (!up.success || !down.success) continue;
+        for (std::size_t column = 0; column < analytic.size(); ++column) {
+            const double centered = (up.coordinates[column] - down.coordinates[column])
+                / (2.0 * delta);
+            CHECK(std::abs(analytic[column] - centered)
+                  <= 1.0e-6 * std::max(1.0, std::abs(centered)));
+        }
+    }
+
+    epcsaft::HelmholtzModel reactive_model(equilibrium_support::ascani_reactive_ternary());
+    auto reactive = equilibrium_support::ascani_reactive_problem();
+    reactive.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(1.0e-2);
+    reactive.standard_gibbs_j_per_mol = {1000.0, -1000.0, 0.0};
+    reactive.temperature = epcsaft::equilibrium::FreeValue::variable(298.15);
+    const auto reactive_free = epcsaft::equilibrium::compile_problem(reactive_model, reactive);
+    const auto reactive_start = epcsaft::equilibrium::boundary_start(reactive_free);
+    const auto reactive_jacobian = reactive_free.jacobian(reactive_start);
+    auto warmer = reactive_start;
+    auto colder = reactive_start;
+    const std::size_t temperature_column = reactive_free.primal_size - 1;
+    const double temperature_step = 1.0e-3;
+    warmer[temperature_column] += temperature_step;
+    colder[temperature_column] -= temperature_step;
+    const auto warm_rows = reactive_free.evaluate(warmer).values;
+    const auto cold_rows = reactive_free.evaluate(colder).values;
+    for (std::size_t row = 0; row < reactive_free.rows.size(); ++row) {
+        const double centered = (warm_rows[row] - cold_rows[row]) / (2.0 * temperature_step);
+        CHECK(std::abs(reactive_jacobian[row * reactive_start.size() + temperature_column] - centered)
+              <= 1.0e-6 * std::max(1.0, std::abs(centered)));
+    }
+    reactive.temperature = epcsaft::equilibrium::FreeValue::fixed(298.15);
+    reactive.pressure = epcsaft::equilibrium::FreeValue::variable();
+    const auto reactive_fixed = epcsaft::equilibrium::compile_problem(reactive_model, reactive);
+    const auto fixed_start = epcsaft::equilibrium::boundary_start(reactive_fixed);
+    const auto reactive_levers = reactive_fixed.lever_jacobian(fixed_start);
+    auto warmer_problem = reactive;
+    auto colder_problem = reactive;
+    warmer_problem.temperature.value += temperature_step;
+    colder_problem.temperature.value -= temperature_step;
+    const auto warm_system = epcsaft::equilibrium::compile_problem(reactive_model, warmer_problem);
+    const auto cold_system = epcsaft::equilibrium::compile_problem(reactive_model, colder_problem);
+    const auto fixed_warm_rows = warm_system.evaluate(fixed_start).values;
+    const auto fixed_cold_rows = cold_system.evaluate(fixed_start).values;
+    const std::size_t lever_width = reactive_levers.size() / reactive_fixed.rows.size();
+    for (std::size_t row = 0; row < reactive_fixed.rows.size(); ++row) {
+        const double centered = (fixed_warm_rows[row] - fixed_cold_rows[row])
+            / (2.0 * temperature_step);
+        CHECK(std::abs(reactive_levers[row * lever_width] - centered)
+              <= 1.0e-6 * std::max(1.0, std::abs(centered)));
+    }
+
+    auto active_parameters = model_support::neutral_ternary();
+    const std::vector<epcsaft::ActiveParameter> active = {
+        {epcsaft::ParameterFamily::Kij, {1, 3}},
+        {epcsaft::ParameterFamily::SegmentCount, {0}},
+    };
+    epcsaft::HelmholtzModel active_model(active_parameters, active);
+    auto active_problem = equilibrium_support::flash(3);
+    active_problem.phases = {
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+    };
+    active_problem.temperature.value = 180.0;
+    const auto active_result = epcsaft::equilibrium::solve_equilibrium(active_model, active_problem);
+    CHECK(active_result.success);
+    if (!active_result.success) return;
+    const auto active_compiled = epcsaft::equilibrium::compile_problem(active_model, active_problem);
+    const auto active_columns = active_compiled.lever_jacobian(active_result.coordinates);
+    constexpr std::size_t active_levers = 7;
+    for (std::size_t parameter = 0; parameter < 2; ++parameter) {
+        std::vector<double> lever(active_levers, 0.0);
+        lever[5 + parameter] = 1.0;
+        const auto analytic = epcsaft::equilibrium::sensitivity(
+            active_compiled, active_result.coordinates, lever);
+        auto higher_parameters = active_parameters;
+        auto lower_parameters = active_parameters;
+        const double theta = parameter == 0 ? active_parameters.k_ij[1]
+            : active_parameters.segment_count[0];
+        const double delta = 1.0e-4 * std::max(std::abs(theta), 1.0);
+        if (parameter == 0) {
+            higher_parameters.k_ij[1] += delta;
+            higher_parameters.k_ij[3] += delta;
+            lower_parameters.k_ij[1] -= delta;
+            lower_parameters.k_ij[3] -= delta;
+        } else {
+            higher_parameters.segment_count[0] += delta;
+            lower_parameters.segment_count[0] -= delta;
+        }
+        const auto up = epcsaft::equilibrium::solve_equilibrium(
+            epcsaft::HelmholtzModel(higher_parameters, active), active_problem, active_result);
+        const auto down = epcsaft::equilibrium::solve_equilibrium(
+            epcsaft::HelmholtzModel(lower_parameters, active), active_problem, active_result);
+        CHECK(up.success && down.success);
+        for (std::size_t column = 0; up.success && down.success && column < analytic.size(); ++column) {
+            const double centered = (up.coordinates[column] - down.coordinates[column])
+                / (2.0 * delta);
+            CHECK(std::abs(analytic[column] - centered)
+                  <= 1.0e-6 * std::max(1.0, std::abs(centered)));
+        }
+        for (std::size_t row = 0; row < active_compiled.rows.size(); ++row)
+            if (active_compiled.rows[row].kind == epcsaft::equilibrium::RowKind::Moiety)
+                CHECK(active_columns[active_levers * row + 5 + parameter] == 0.0);
+    }
 }
 
 void check_s10() {

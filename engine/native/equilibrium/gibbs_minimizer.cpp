@@ -111,16 +111,14 @@ double michelsen_deficit(
     const CompiledSystem& compiled,
     const std::vector<double>& composition,
     std::size_t phase,
-    const std::vector<double>& residuals,
-    double temperature
+    const std::vector<double>& residuals
 ) {
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     double sum = 0.0;
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
         const auto& item = compiled.rows[row];
         if (item.kind != RowKind::Chemical || item.phase != phase) continue;
         if (item.index >= composition.size() || row >= residuals.size()) continue;
-        sum += composition[item.index] * std::exp(-residuals[row] / rt);
+        sum += composition[item.index] * std::exp(-residuals[row]);
     }
     return 1.0 - sum;
 }
@@ -602,6 +600,7 @@ EquilibriumResult solve_equilibrium(
         );
     }
     result.message = core::describe(convergence);
+    scope.finish(convergence);
     const auto offsets = phase_offsets(compiled);
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts;
@@ -630,7 +629,7 @@ EquilibriumResult solve_equilibrium(
         volumes.push_back(model.packing_fraction_coefficient(
             candidate_temperature, composition) / std::exp(full[cursor]));
         const double deficit = michelsen_deficit(
-            compiled, compositions[phase], phase, result.residuals, candidate_temperature);
+            compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         if (spec.amount.kind == AmountKind::Free
             && amount <= policy::STABILITY_COMPOSITION_FLOOR.value) {

@@ -185,10 +185,13 @@ std::vector<double> sensitivity(
     const std::vector<double>& lever
 ) {
     core::Scope scope("sensitivity");
-    const std::size_t levers = 2 + compiled.model->parameters().component_count();
-    if (lever.size() != levers)
-        throw std::invalid_argument("lever must contain T, P, and feed weights");
     const auto F_theta = compiled.lever_jacobian(point);
+    if (compiled.rows.empty() || F_theta.size() % compiled.rows.size() != 0) {
+        throw std::invalid_argument("lever Jacobian shape");
+    }
+    const std::size_t levers = F_theta.size() / compiled.rows.size();
+    if (lever.size() != levers)
+        throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
     if (F_theta.size() != compiled.rows.size() * levers) {
         throw std::invalid_argument("lever Jacobian shape");
     }

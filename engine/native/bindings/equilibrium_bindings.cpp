@@ -32,7 +32,9 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("free", &FreeValue::free)
         .def_readwrite("value", &FreeValue::value)
         .def_static("fixed", &FreeValue::fixed)
-        .def_static("variable", &FreeValue::variable, py::arg("guess") = 0.0);
+        .def_static("variable", [](std::optional<double> guess) {
+            return guess.has_value() ? FreeValue::variable(*guess) : FreeValue::variable();
+        }, py::arg("guess") = py::none());
     py::class_<PhaseSpec>(module, "PhaseSpec")
         .def(py::init<>())
         .def_readwrite("name", &PhaseSpec::name)
@@ -125,7 +127,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("rank", &SensitivityInfo::rank)
         .def_readonly("condition_estimate", &SensitivityInfo::condition_estimate)
         .def_readonly("nonsingular", &SensitivityInfo::nonsingular);
-    module.def("compile_problem", &compile_problem);
+    module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),
                py::arg("start") = std::nullopt);
