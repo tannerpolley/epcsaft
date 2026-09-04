@@ -1,8 +1,8 @@
 {
   "stage": "06",
   "branch": "stage-06",
-  "base": "greenfield@6bdc05f",
-  "source_commit": "6bdc05f",
+  "base": "greenfield@be3f329",
+  "source_commit": "be3f329",
   "reaccepts": null,
   "stop_conditions": [
     "budget_ceiling: any write past its ceiling; report the file and the number as first written, never compact",
@@ -12,7 +12,7 @@
     "mutation_invalid: a mutant of a test-running gate that does not build, or a mutant on which its gate stays green; both reject the attempt"
   ],
   "preconditions": [
-    "git cat-file -e 6bdc05f^{commit} && git merge-base --is-ancestor 6bdc05f HEAD",
+    "git cat-file -e be3f329^{commit} && git merge-base --is-ancestor be3f329 HEAD",
     "test -d engine/native/equilibrium && test -f engine/native/equilibrium/gibbs_minimizer.hpp",
     "test \"$(ls -A engine/native/regression | grep -v '^\\.gitkeep$' | wc -l)\" -eq 0",
     "grep -q \"'Ceres'\" engine/meson.build",
@@ -27,7 +27,7 @@
   ],
   "sources": [
     {
-      "ref": "greenfield@6bdc05f:docs/greenfield/REGRESSION.md",
+      "ref": "greenfield@be3f329:docs/greenfield/REGRESSION.md",
       "must_contain": [
         "## 1. What regression is, in one rule",
         "Log(e)",
@@ -37,7 +37,7 @@
       "purpose": "the design: the observation, the four nodes, the files, the rules and the gate"
     },
     {
-      "ref": "greenfield@6bdc05f:docs/greenfield/EQUILIBRIUM.md",
+      "ref": "greenfield@be3f329:docs/greenfield/EQUILIBRIUM.md",
       "must_contain": [
         "## 12. What regression needs from equilibrium: a shell around Ceres",
         "**Sensitivity levers: `T`, `P`, and the species feed**",
@@ -46,7 +46,7 @@
       "purpose": "what the shell may call and what it may never write; the lever set; the applications' observables the expression must express"
     },
     {
-      "ref": "greenfield@6bdc05f:docs/greenfield/EOS.md",
+      "ref": "greenfield@be3f329:docs/greenfield/EOS.md",
       "must_contain": [
         "## 1. Absence, one mechanism",
         "## 4. `State` with an order flag",
@@ -56,7 +56,7 @@
       "purpose": "the PropertyOrder block this stage writes on State; the totals and thermochemistry it does not"
     },
     {
-      "ref": "greenfield@6bdc05f:docs/greenfield/CORE.md",
+      "ref": "greenfield@be3f329:docs/greenfield/CORE.md",
       "must_contain": [
         "| `fit` | `least_squares.cpp` (Stage 6)",
         "### 5.2 One classifier",
@@ -65,27 +65,27 @@
       "purpose": "the fit's diagnostics row, the classifier a solver must call, the record's fields"
     },
     {
-      "ref": "greenfield@6bdc05f:docs/greenfield/CANON.md",
+      "ref": "greenfield@be3f329:docs/greenfield/CANON.md",
       "must_contain": ["a minimum proves nothing"],
       "purpose": "the budget ruling: ceilings and named checks only"
     },
     {
-      "ref": "greenfield@6bdc05f:engine/tests/oracle/oracle.json",
+      "ref": "greenfield@be3f329:engine/tests/oracle/oracle.json",
       "must_contain": ["\"light_alkane_saturation\""],
       "purpose": "the ten NIST ethane rows R6 fits"
     },
     {
-      "ref": "greenfield@6bdc05f:engine/native/equilibrium/gibbs_minimizer.hpp",
+      "ref": "greenfield@be3f329:engine/native/equilibrium/gibbs_minimizer.hpp",
       "must_contain": ["std::vector<double> sensitivity(", "std::vector<double> boundary_start(const CompiledSystem& compiled);"],
       "purpose": "the sensitivity call the shell composes with; lever is a weight vector over T, P and the species feed"
     },
     {
-      "ref": "greenfield@6bdc05f:engine/native/model/helmholtz_model.hpp",
+      "ref": "greenfield@be3f329:engine/native/model/helmholtz_model.hpp",
       "must_contain": ["std::vector<ActiveParameter> active = {}", "State state_at_pressure("],
       "purpose": "the active-parameter constructor and the state calls that gain an order flag"
     },
     {
-      "ref": "greenfield@6bdc05f:tools/check-engine-architecture.py",
+      "ref": "greenfield@be3f329:tools/check-engine-architecture.py",
       "must_contain": ["STABILITY_SYMBOLS = (\"phase_stability.hpp\", \"find_phases\", \"Discover\")"],
       "purpose": "rule 4 as it stands; the shell must stay below it"
     }

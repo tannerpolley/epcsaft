@@ -1,6 +1,6 @@
 # Stage 06 — Regression
 
-Branch `stage-06`, based on `greenfield@6bdc05f` (the coordinator re-pins if canon moves
+Branch `stage-06`, based on `greenfield@be3f329` (the coordinator re-pins if canon moves
 before the worktree is cut). Machine-readable claims are in `briefs/stage-06.brief.json`; that
 file governs where the two disagree.
 
