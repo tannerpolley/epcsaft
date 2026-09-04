@@ -759,3 +759,36 @@ Acceptance running with the committed `tools/greenfield/accept-stage.sh` (the ea
 lived in a session scratchpad and was lost with it), the four new sensitivity mutations first.
 One reading note already: the result carries no `serena_reading` because the coordinator reused
 Stage 5's strict result schema, which has no such field; a schema defect, not the worker's.
+
+**Repair acceptance run 1** (`tools/greenfield/accept-stage.sh` on `4dde17e`): wipe and rebuild
+green, 18 gates green, 17 of 18 mutations red. `active_parameter_column`'s sed matched nothing
+(the worker assigns the tape block with `=`, the sed looked for `+`); re-anchored on the
+assignment, mutant built, boundary red. `deficit_identity` stayed green: the check's ethane cell
+has zero residuals at the point tested, so both sides of the identity are `1 − Σ x_i` under any
+divisor; a check that asserts an identity must also assert the point tells the sides apart. The
+planner moved it to the subcooled ternary at 30 bar with a guard clause; thirteenth resume for
+that one check. **Reproduction, numbers retained:** the audit's pinned-phase feed sensitivity
+case (methane–ethane, 180 K, `V` pinned at 0.2, `P` free) on the repaired wheel gives analytic
+−1,748,683.38 Pa/mol against a centred difference of −1,748,683.39, relative difference 1e-8,
+where the merged Stage 5 tree had given −1,361,623 (`analyses/reproduction/2026-09-03-stage-05-repair`).
+
+**Thirteenth stop, a measurement.** On the neutral-ternary `{V,L}` flash at 180 K and 30 bar the
+driver returns `phases_coincide`, not a vanished-phase failure: both Michelsen deficits at
+`±7e-15`, every chemical residual below the returned `1e-10` limit, phase distance `2e-15`. The
+solve converged onto the trivial manifold and the coincidence refusal caught it; the
+vanished-phase mechanism (`N_V → 0` with a positive deficit) did not occur. So the deficit
+identity has no non-trivial point on that cell either. Two questions to the planner: a cell where
+a phase vanishes by amount, or "reported, not asserted" for the deficit with finding 3 verified by
+reading; and whether coincidence-instead-of-vanishing on the subcooled side is a defect or the row
+system's correct outcome there, for the campaign either way.
+
+**Ruling on coincidence versus vanishing (planner).** On the subcooled side of a declared `{V,L}`
+flash with unrestricted supports, coincidence is the correct outcome, not a defect: `G` is
+extensive, the trivial manifold is a flat set of minimisers with the same `G` as the vanished-phase
+boundary minimum, and which one the driver reaches is a start question. The failure name is
+`declared_phase_absent`, with `phases_coincide` plus the distance or `phase_vanished` plus the
+deficit as the detail; `EQUILIBRIUM.md` §3.4's "the deficit" becomes "the mechanism the driver
+met", folded in with the campaign. A phase vanishes by amount exactly where coincidence is
+structurally impossible: under a support restriction. The deficit check moves to the aqueous
+electrolyte `{V,L}` cell with `V` on `{water}` at 298.15 K and 1 bar, far above the ~3 kPa
+bubble pressure. Fourteenth resume.

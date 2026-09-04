@@ -188,6 +188,24 @@ Mutation unchanged. The ethane cell tested the identity at a point where both si
 `1 − Σ x_i` because the rows were zero; a check that asserts an identity must also assert that the
 point tells the two sides apart.
 
+**S15-deficit, second placement (planner's ruling after the thirteenth stop).** On the subcooled
+side of a declared `{V,L}` flash with unrestricted supports, coincidence is the correct outcome of
+the row system, not a defect: `G` is extensive, so the trivial manifold is a flat set of minimisers
+with the same `G` as the vanished-phase boundary minimum, and which one the driver reaches is a
+start question. The failure is `declared_phase_absent`, with `phases_coincide` plus the distance,
+or `phase_vanished` plus the deficit, as the detail. A phase vanishes by amount with a positive
+deficit exactly where coincidence is structurally impossible: a support restriction. The cell,
+replacing the ternary cell: **the aqueous electrolyte `{V,L}` flash, `V` with support `{water}`,
+all amounts free, 1 molal NaCl at 298.15 K and 1 bar**, a state far above the solution's bubble
+pressure (about 3 kPa). The solve fails as `declared_phase_absent` with `phase_vanished` for `V`;
+the deficit it carries equals `1 − Σ_i x_i exp(−r_i)` recomputed from `V`'s returned
+chemical-potential residual rows at the returned point, 1e-12 relative; the same number is the
+last `michelsen_deficit` event of the span; at least one of those rows exceeds
+`max(criterion, floor)` from the returned record; and the phase distance is at least the liquid's
+ion mole fraction. Mutation unchanged. If the driver stalls to the budget on that cell instead of
+reaching the bound, stop `source_contradicted` with the trace: that is the first measured
+vanished-phase behaviour of the driver and goes to the campaign as a finding.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence
