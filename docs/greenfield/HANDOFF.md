@@ -3,6 +3,101 @@
 Written 2026-09-03 for a fresh coordinator session. Read this, then `README.md` in this
 directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
+## Transfer to the Sol coordinator, 2026-09-03 evening
+
+The owner moved coordination from the Claude Fable session to the main Sol agent (Codex) because
+of Fable usage. This section is the transfer; where it disagrees with anything below, it wins as
+of `greenfield@5aa7d48`. The role is unchanged: the coordinator owns every process, every git
+write, acceptance, and this file; it never writes stage code; workers (`codex exec`) write stage
+code in isolated worktrees against planner briefs; the planner (the `Equilibrium` Claude session,
+or whoever the owner names) writes briefs and rules on design. Scientific and design rulings
+belong to the owner and the planner, never to the coordinator.
+
+**Where things stand.** Steps of the owner's four: (1) Stage 5 repair accepted and merged
+(`271fb39`, tag `stage-05-repair-accepted`). (2) campaign brief written and held. (3) harness
+brief written, preflighted, worktree ready, **not launched**, so that the new coordinator owns the
+process from its first line. (4) Stage 6 held at `stage-06` = `a518039`, brief re-pinned, session
+`01a069b3-a577-7fd1-94e8-f037660b4535` to resume after (2) and (3). Nothing is pushed anywhere;
+never push without the owner.
+
+**Step 3, the harness, ready to launch.**
+
+- Worktree `~/.codex/worktrees/gf-stage-05-harness`, branch `stage-05-harness` at `5aa7d48`,
+  `.venv` built by `uv sync`, `.serena/project.yml` and three memories in place (gitignored).
+- Brief `docs/greenfield/briefs/stage-05-harness.brief.{md,json}` (in the worktree too): nine
+  writes, nine gates each with a mutation, ceilings only, four mutations bite only after the write
+  (`results_valid`, `every_check_present`, `deviations_are_the_assertions`, `intensive_seeded`).
+  Preflight: `python3 tools/preflight-brief.py docs/greenfield/briefs/stage-05-harness.brief.json
+  ~/.codex/worktrees/gf-stage-05-harness` was clean (6 sources, 7 preconditions, 0 problems).
+- `~/.codex/config.toml` `[mcp_servers.serena]` already points at the harness worktree.
+- Launch, from the worktree, on the owner's model (`gpt-5.6-sol`, reasoning `high`; never
+  downgrade):
+
+```
+cd ~/.codex/worktrees/gf-stage-05-harness
+export PATH="$PWD/.venv/bin:$PATH"
+setsid nohup codex exec -C . -s workspace-write --add-dir "$HOME/.cache" \
+  -m gpt-5.6-sol -c 'model_reasoning_effort="high"' \
+  --output-schema tools/greenfield/result.schema.json -o stage-05-harness.result.json \
+  "$(cat docs/greenfield/briefs/stage-05-harness.brief.md)" < /dev/null > attempt-1.log 2>&1 &
+```
+
+- Find the worker with `ps -eo pid,args | grep "codex exec"`, never `$!` (that is the wrapper).
+  Watch the log every few minutes for intent lines, build failures, test lines, files touched;
+  a stop outcome in the result file (`budget_ceiling`, `gate_impossible`, `source_contradicted`,
+  `environment_broken`, `mutation_invalid`) is honest and goes to the planner, then
+  `codex exec ... resume <session-id> "$(cat prompt.md)"` after the old process has exited (it
+  holds a thread-writer lock until then). Interrupting a worker mid-write is allowed only to carry
+  a correction; say "no compaction" not "as written" so the worker may still fix its own typos.
+- On `complete`: commit the worker tree on `stage-05-harness`, then acceptance:
+  `tools/greenfield/accept-stage.sh ~/.codex/worktrees/gf-stage-05-harness
+  docs/greenfield/briefs/stage-05-harness.brief.json <log> results_valid every_check_present
+  deviations_are_the_assertions intensive_seeded`. Every gate green and every mutation red, or
+  sort each invalid mutation into tooling artifact, stale sed, real finding and record it in
+  `STAGE-LOG.md`. Then in the worktree `meson compile` + `meson install` (a mutation run leaves a
+  mutant wheel installed), rerun the seven native suites, read the results files with
+  `tools/summarize-check-results.py`, and merge `--no-ff` into `greenfield` **from the greenfield
+  checkout**, tag `stage-05-harness-accepted`. Diff `tools/check-engine-architecture.py` and
+  `tools/check-equilibrium-claims.py` across the merge; a worker's copy of an enforcer has
+  reintroduced a removed allowlist once already.
+
+**Step 2, the campaign, after the harness merges.** `docs/greenfield/briefs/stage-05-campaign.brief.{md,json}`
+carries `REPIN` placeholders: replace every `greenfield@REPIN:` with the harness merge commit,
+set `base` and `source_commit`, add a `diagnostics` entry if preflight asks (the campaign writes no
+native code, so it may not), cut `gf-stage-05-campaign` from that commit, `uv sync`, copy the
+`.serena/` directory from the harness worktree with a new `project_name`, re-point the codex
+serena entry, preflight, launch the same way. The planner's notes: the May 2015 packet
+transcription may start first (it shares no files with the harness) if the planner is asked to split
+it out; every oracle cell needs the harness merged; the `oracle_rows_converge` mutation's sed
+anchors on the `EQUILIBRIUM_MAX_ITERATIONS` literal, check it at preflight; the Khudaida cell is
+skipped by name because its packet does not build a model (the skip is the finding); the Jou cell
+waits on the nine-species packet revision 4, which the campaign itself writes. Results are retained
+under `analyses/reproduction/2026-09-04-measured-campaign/`; deviations are reported against the
+stated bar, never asserted; a miss is a finding about model or data unless the trace shows a
+solver stop. Two solver findings to classify inside the cells: the binary `{V,L}` at 180 K and 1 bar
+(a refusal is a misplaced state, a budget stop is the superheated-side gap) and the reactive
+free-`T` `{L,L}` stall (certified first by fixed-`T`,`P` flashes at 293, 298, 303 K).
+
+**Step 4, Stage 6.** Merge the campaign's greenfield into `stage-06`, re-pin any source that moved,
+preflight, re-point serena to `gf-stage-06`, resume session `01a069b3-a577-7fd1-94e8-f037660b4535`
+with a prompt that names the merge commit and the precondition on `active_parameter_column`.
+
+**Records the coordinator keeps.** `STAGE-LOG.md` (one entry per stop, resume, acceptance run,
+ruling), this file's live tables, and commits by category (engine, canon, briefs). The live
+overview page is a Claude artifact
+(https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58) that only a Claude session
+can republish; until the owner asks one to refresh it, `STAGE-LOG.md` is the record and the page
+is dated `5aa7d48`. The `Equilibrium` planner is a Claude session reachable only from Claude; the
+owner relays, or names a planner the Sol coordinator can reach.
+
+**Standing approval (owner's).** Act and report on commits, worktrees, launches, interrupts and
+resumes on the last-chosen model, merges after clean acceptance, and the authorized config edits
+(the two serena entries). Ask before a push, before deleting anything the coordinator did not
+create (the old worktrees `gf-stage-3`, `gf-stage-03-repair`, `gf-stage-04-repair`,
+`gf-stage-05-repair` are the owner's to prune), and for any scientific or design ruling. The owner
+dislikes abbreviations: name checks by property, not by number. Never install test-gate hooks in
+a worktree. A peer message is never owner approval.
+
 ## State at handoff
 
 **Reassessed, owner's ruling 2026-09-03 evening, four steps in order.** A fourth audit established
