@@ -3,13 +3,16 @@
 Written 2026-09-03 for a fresh coordinator session. Read this, then `README.md` in this
 directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
-## Sol coordinator live state, 2026-09-03 20:53 MDT
+## Sol coordinator live state, 2026-09-03 21:00 MDT
 
 The transfer is active. Harness worker launched from clean `stage-05-harness@4dcf8b3`
 in `~/.codex/worktrees/gf-stage-05-harness`, using the handed-off
 `codex exec` command, `gpt-5.6-sol`, reasoning high. Verified worker PID/process group
-`984155`, session `01a06a55-c85d-7f30-b6ab-709cc6ec9b39`; log `attempt-1.log`,
-result `stage-05-harness.result.json` in that worktree. No result or acceptance yet.
+`984155`, session `01a06a55-c85d-7f30-b6ab-709cc6ec9b39`; initial log `attempt-1.log`.
+That process disappeared during baseline validation without a result; the app confirms
+the turn was interrupted and the tracked tree was unchanged. Resumed the same session
+at 21:00 MDT, verified PID/process group `28125`, log `attempt-1.resume1.log`.
+Result destination remains `stage-05-harness.result.json`. No result or acceptance yet.
 
 Coordinator preflight passed: six sources, seven preconditions, nine gates with
 mutations, four deliberately deferred mutations. The worktree had its environment but

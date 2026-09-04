@@ -831,3 +831,10 @@ worktree `~/.codex/worktrees/gf-stage-05-harness`, log `attempt-1.log`,
 result destination `stage-05-harness.result.json`. Worker owns the brief's nine writes;
 coordinator owns independent acceptance and Git writes. Campaign and Stage 6 are held.
 No push, deletion, or scientific/design ruling was made.
+
+**First resume, 21:00 MDT.** The initial worker disappeared during baseline validation
+without a result file or tracked stage changes. The app records the turn as interrupted;
+the cause is not established. Verified the old process was absent, then resumed the same
+session on Sol high, PID/process group `28125`, log `attempt-1.resume1.log`. Scope and
+stop conditions are unchanged. The resume explicitly permits typo fixes but forbids
+compaction to fit budgets. Initial log is retained.
