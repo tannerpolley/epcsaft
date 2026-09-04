@@ -1,0 +1,87 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deviations",
+    "files_written",
+    "gates",
+    "outcome",
+    "serena_reading",
+    "stop_detail"
+  ],
+  "properties": {
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "budget_ceiling",
+        "budget_undershot",
+        "gate_impossible",
+        "source_contradicted",
+        "environment_broken",
+        "mutation_invalid",
+        "design_silent",
+        "scope_expansion"
+      ]
+    },
+    "files_written": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "lines"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "ran",
+          "passed",
+          "note"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ran": {
+            "type": "boolean"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "deviations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stop_detail": {
+      "type": "string"
+    },
+    "serena_reading": {
+      "type": "string",
+      "description": "what the worker read through Serena before writing: symbols looked up, references checked, one line each"
+    }
+  }
+}
