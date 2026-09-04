@@ -730,3 +730,24 @@ named the model's accessor `active()`. Renamed `active_parameters()` (`1509e3e`)
 `P` fixed, which the count rule refuses (`k = 1` needs `f = 1`). The coordinator read the intent,
 "the same problem with `T` fixed", with `P` free, and resumed; the planner is told. On the same
 run S4, S5, S10 and S14 were green on the repaired tree.
+
+## Reassessment, 2026-09-03 evening: what "Stage 5 complete" rests on
+
+A fourth read-only audit traced the acceptance record. The 24 gates were builds, the checker,
+typing, packet validation, the two inherited EOS activity comparisons, and the three native
+check binaries rerun under mutations; the 24 mutations proved the checks bite. Every accepted
+check is a mathematical property on a synthetic fixture. No accepted gate consumes an oracle
+equilibrium case, and the runner prints only `passed` or the failing expression, so even the
+passes retain no number. The 0.2723 % figure belongs to the EOS-stage activity reproduction and
+is not equilibrium accuracy. The planner's own account: the design named the NIST, Cai and
+Khudaida rows as oracle gates and then wrote a check table of properties only, and no brief ever
+carried an oracle comparison as a gate. The owner paused everything and ruled four steps
+(`HANDOFF.md`, "Reassessed"). Not a change to the design or the stage sequence, which four audits
+have left standing; a change to the order in which evidence is gathered and to its retention.
+
+**The repair's tenth stop.** The S9 active-parameter cell's baseline, the neutral binary `{V,L}`
+flash at 180 K and 1 bar with every amount free, does not converge on the repaired tree, with or
+without active parameters; phase-specific starts did not help and were reverted. That state was
+never a Stage 5 solve cell. Recorded as a candidate solver finding for the campaign (a two-phase
+solution exists inside the envelope; the `k = 0` driver does not reach it from the K-factor start);
+the planner is asked to move the repair's cell to the ternary flash, which converges.
