@@ -792,3 +792,13 @@ met", folded in with the campaign. A phase vanishes by amount exactly where coin
 structurally impossible: under a support restriction. The deficit check moves to the aqueous
 electrolyte `{V,L}` cell with `V` on `{water}` at 298.15 K and 1 bar, far above the ~3 kPa
 bubble pressure. Fourteenth resume.
+
+**Fourteenth resume, complete (2026-09-03 20:26).** The deficit check now runs the electrolyte
+cell: 1 molal NaCl at 298.15 K and 1 bar, `V` restricted to water, all amounts free. The vapour
+amount reaches its bound, the failure is `declared_phase_absent` with `phase V vanished` and the
+Michelsen deficit recomputed from the pure-water chemical row; the check also asserts that a
+chemical residual above the convergence limit drives the refusal (the identity has a non-trivial
+point), that the diagnostic string and the last `michelsen_deficit` event agree, and that the phase
+distance exceeds the ion fraction of the feed. Worker's run: 18 gates green, no deviations. Tree
+committed at `542df61` on `stage-05-repair`; acceptance run 2 (`tools/greenfield/accept-stage.sh`)
+started at 20:29 with `deficit_identity` among the first mutations.
