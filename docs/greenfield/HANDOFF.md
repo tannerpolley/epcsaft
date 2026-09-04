@@ -86,8 +86,8 @@ with a prompt that names the merge commit and the precondition on `active_parame
 ruling), this file's live tables, and commits by category (engine, canon, briefs). The live
 overview page is a Claude artifact
 (https://claude.ai/code/artifact/1bb42e8c-f3ef-4c72-99e1-335f7614bf58) that only a Claude session
-can republish; until the owner asks one to refresh it, `STAGE-LOG.md` is the record and the page
-is dated `5aa7d48`. The `Equilibrium` planner is a Claude session reachable only from Claude; the
+can republish; until the owner asks one to refresh it, `STAGE-LOG.md` is the record; the page was
+last refreshed at the transfer commit, whose sha it shows. The `Equilibrium` planner is a Claude session reachable only from Claude; the
 owner relays, or names a planner the Sol coordinator can reach.
 
 **Standing approval (owner's).** Act and report on commits, worktrees, launches, interrupts and
