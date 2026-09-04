@@ -142,9 +142,17 @@ derivative is the assembly's and is one registry entry, `packing_coefficient_par
 (registered). Token `packing_parameter_term`; the assembly adds `+ physical_v * packing_parameter_term`.
 Gate `packing_parameter_term` (boundary binary) with its own mutation; the earlier
 `active_parameter_column` mutation stays, since the two terms fail independently (the tape block
-alone on `k_ij`, the packing term on the segment count). S9's active-parameter cell stays as
-written: methane's segment count exercises the packing term, the methane–ethane `k_ij` the tape
-block alone.
+alone on `k_ij`, the packing term on the segment count). **S9 active-parameter column (moved after the tenth stop; the planner's text).** The neutral
+ternary `{V,L}` flash at 180 K and 1 bar, feed 1/3 each, all amounts free, the state S2, S6 and S8
+already converge, with the methane–ethane `k_ij` and methane's segment count active. For each
+active column `k`, `dy/dθ_k` from `sensitivity` with the unit weight on column `2 + C + k`, against
+a centred difference of two full solves on models rebuilt at `θ_k(1 ± 10⁻⁴)` with the same active
+list, 1e-6 relative on every coordinate; and the exact zero of every balance row's `θ` column.
+Mutations unchanged: `active_parameter_column` zeroes the tape block, which the `k_ij` column sees;
+`packing_parameter_term` zeroes the packing term, which the segment-count column sees. The binary
+flash at 180 K and 1 bar is outside its envelope (bubble 15.97 bar, dew 1.58 bar from the EOS
+surface), so its correct outcome is the declared-phase refusal; what it did instead is a campaign
+finding, not this repair's.
 
 **Absence crosses natively, not as a zero (finding 7's native half).** `FreeValue::variable()`'s
 default `guess = 0.0` is the zero sentinel in another place. `FreeValue` carries an explicit
