@@ -14,6 +14,11 @@ for s in d["sources"]:
         if m not in r.stdout: bad.append(f"marker absent: {ref} :: {m[:60]}")
 print(f"sources: {len(d['sources'])} checked, {len(bad)} problems")
 writes = {w["path"] for w in d["writes"]}
+# one number per budget: a ceiling under lines and a ceiling_total both at the top level and
+# under lines is how a worker finds two answers and stops (repair, 2026-09-03)
+for w in d["writes"]:
+    if "ceiling_total" in w.get("lines", {}):
+        bad.append(f"write {w['path']}: ceiling_total belongs at the write's top level, not under lines")
 # CORE.md §7: a stage that writes a solver under native/ carries a diagnostics array
 if any(w.startswith("engine/native/") and not w.startswith("engine/native/bindings/") for w in writes) and not d.get("diagnostics"):
     bad.append("brief writes under engine/native/ and carries no diagnostics array (CORE.md §7)")

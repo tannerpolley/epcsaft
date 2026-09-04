@@ -671,3 +671,8 @@ the start rule seeds them; the worker was interrupted before its first write to 
 third; re-budgeted 130 / 340 (`8cd5b58`), resumed with the file as first written and no refactor
 of accepted cells. Note for the Stage 6 closeout: one helper for every sensitivity check, S9 and
 R1 alike, if the reading finds verbatim copies of the centred-difference loop.
+
+**Third stop, the coordinator's.** The re-budget put `ceiling_total: 340` under `lines` while the
+brief keeps it at the write's top level, where 300 remained; the worker found two answers and
+stopped `source_contradicted`, correctly. Fixed (`769efc5`), and the preflight now refuses a write
+with `ceiling_total` under `lines`. Resumed a fourth time.
