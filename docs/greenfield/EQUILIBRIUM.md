@@ -49,9 +49,11 @@ packing, above which no fluid root exists and `validate_point` refuses anyway),
 point. This is held by reading the driver's `get_bounds_info`, like "one assembly": no check
 can distinguish a bounded coordinate from an unbounded one that happened not to run off.
 
-The sensitivity levers are `T`, `P` and the species feed `n_feed,i`, one column per species
-(§12): `dy/dθ` is one call with one column per lever, and the model's active parameters are
-the same call with more columns.
+The sensitivity levers are `T`, `P`, the species feed `n_feed,i` (one column per species) and
+the model's active parameters (columns `2 + C + k` in the active list's order, from the tape's
+`∂²A/∂y∂θ` block) (§12): `dy/dθ` is one call with one column per lever. The `K(T)`
+correlation coefficients stay the seventh family, deferred to the Properties stage, so today's
+active set is the six EOS families.
 
 System-wide: `T` and `P`, each **fixed** or **free**; feed `n_feed` (fixed, in any basis);
 the balance matrix `B` (identity when no reactions; otherwise the conserved moieties, whose
@@ -982,7 +984,11 @@ and the sensitivity when asked. No property. A property of phase `p` is
 generic only if no extensivity table ever appears in `regression/`: the rule admits
 `Σ_p N_p P_p`, which is the caller's error to make.
 
-**Sensitivity levers: `T`, `P`, and the species feed** `n_feed,i`, one column per species.
+**Sensitivity levers: `T`, `P`, the species feed** `n_feed,i` (one column per species) **and
+the model's active parameters** (columns `2 + C + k` in the active list's order; a chemical row's
+entry is the θ-derivative of the residual chemical potential over `RT` from the tape's mixed
+block, the pressure row's is `−v_p` times the θ-derivative of `∂A/∂v`, and the balance,
+normalisation and charge rows are zero).
 `F_θ` for column `i` is `−B[:, i] / Σ_j n_feed,j + Σ_{q pinned} β_q (B x_q)_r / N_feed` on balance row `r` (the second term the same for every feed column, zero when every pinned amount is zero) and zero elsewhere
 (balance row `r` is `(Σ_p N_p (B x_p)_r − (B n_feed)_r) / N_feed`, so its derivative in
 `n_feed,i` is `−B[r,i]/N_feed − row_r/N_feed`, and the second term vanishes at a converged
