@@ -771,3 +771,13 @@ that one check. **Reproduction, numbers retained:** the audit's pinned-phase fee
 case (methane–ethane, 180 K, `V` pinned at 0.2, `P` free) on the repaired wheel gives analytic
 −1,748,683.38 Pa/mol against a centred difference of −1,748,683.39, relative difference 1e-8,
 where the merged Stage 5 tree had given −1,361,623 (`analyses/reproduction/2026-09-03-stage-05-repair`).
+
+**Thirteenth stop, a measurement.** On the neutral-ternary `{V,L}` flash at 180 K and 30 bar the
+driver returns `phases_coincide`, not a vanished-phase failure: both Michelsen deficits at
+`±7e-15`, every chemical residual below the returned `1e-10` limit, phase distance `2e-15`. The
+solve converged onto the trivial manifold and the coincidence refusal caught it; the
+vanished-phase mechanism (`N_V → 0` with a positive deficit) did not occur. So the deficit
+identity has no non-trivial point on that cell either. Two questions to the planner: a cell where
+a phase vanishes by amount, or "reported, not asserted" for the deficit with finding 3 verified by
+reading; and whether coincidence-instead-of-vanishing on the subcooled side is a defect or the row
+system's correct outcome there, for the campaign either way.
