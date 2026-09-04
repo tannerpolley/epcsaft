@@ -676,3 +676,16 @@ R1 alike, if the reading finds verbatim copies of the centred-difference loop.
 brief keeps it at the write's top level, where 300 remained; the worker found two answers and
 stopped `source_contradicted`, correctly. Fixed (`769efc5`), and the preflight now refuses a write
 with `ceiling_total` under `lines`. Resumed a fourth time.
+
+**Fourth stop, the fixture's.** Build and checker green on the repaired tree (30 sources), then
+the boundary binary red at the new S9 reactive free-temperature cell: `{L,L}` with `L₂` pinned at
+one percent, `T` free from 298.15 K, offsets `{+1000, −1000, 0}` J/mol; 200 iterations exhausted at
+residual 7.3e-4. The worker's own diagnostic shows the assembled Jacobian's `T` column matching
+centred differences at the start to 2.2e-11, so finding 2's assembly is right and the cell does
+not converge. Stopped `gate_impossible` without touching fixture, start rule, driver or budget.
+The planner is asked for the cell: the falsifier (the `T` column against centred differences of
+the row evaluation) holds at any point, converged or not, so it need not ride on a free-`T` solve;
+whether that free-`T` `{L,L}` solve should converge is a separate question, possibly its own
+finding. Environment note: the repair worktree had subprojects but no configured build directory,
+and the worker configured one itself and reported it as a deviation; the coordinator now runs
+`meson setup` in every new worktree before launch (done for stage-06 as well).
