@@ -97,7 +97,9 @@ designs by writing a partial version of them.
 
 - `equilibrium/`: `solve_equilibrium(model, problem, start)`, `compile_problem`,
   `sensitivity(compiled, point, lever)` with `lever` a weight vector over
-  `[T, P, feed_1..feed_C]`, `lever_jacobian`. The shell calls them; it writes no row, no
+  `[T, P, feed_1..feed_C, θ_1..θ_A]`, the active parameters last in the model's active-list
+  order (`active_parameters()`), and `lever_jacobian` of width `2 + C + A` (the Stage 5 repair's
+  finding 8, including the packing-coordinate chain-rule term). The shell calls them; it writes no row, no
   solver, no start.
 - `CORE.md` §5.2: a solver never names a residual stop; call `classify`. Rule 14.
 - Rule 3: `regression/` includes `equilibrium/problem.hpp` and `model/`; rule 4: it never
