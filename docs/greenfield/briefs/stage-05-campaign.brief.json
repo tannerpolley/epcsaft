@@ -1,0 +1,58 @@
+{
+  "stage": "05-campaign",
+  "branch": "stage-05-campaign",
+  "base": "greenfield@REPIN-after-harness-merge",
+  "source_commit": "REPIN",
+  "reaccepts": null,
+  "depends_on": ["stage-05-harness merged: engine/tests/native/check_results.schema.json exists and tools/summarize-check-results.py validates"],
+  "stop_conditions": [
+    "budget_ceiling: any write past its ceiling; report the file and the number as first written, never compact",
+    "gate_impossible: a named check cannot be made green without adding a tolerance, a fixture or a solver change -- report and stop",
+    "source_contradicted: any must_contain marker absent at its ref, or this brief contradicts EQUILIBRIUM.md or CANON.md",
+    "environment_broken: a gate green at base goes red for a reason other than the write it names",
+    "mutation_invalid: a mutant of a test-running gate that does not build, or a mutant on which its gate stays green"
+  ],
+  "preconditions": [
+    "test -f engine/tests/native/check_results.schema.json",
+    "test -f tools/summarize-check-results.py",
+    "python3 -c \"import json; d=json.load(open('engine/tests/oracle/oracle.json'))['cases']; assert all(k in d for k in ('light_alkane_saturation','aqueous_amine_binary_vle','aqueous_alcohol_salt_lle','aqueous_amine_carbon_dioxide_reactive_vle'))\"",
+    "test -f ~/Workspaces/Engineering/ePC-SAFT-project/analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.csv",
+    "test -d data/packets/mea-co2-h2o-nine-species-estimation/3 && test ! -d data/packets/mea-co2-h2o-nine-species-estimation/4",
+    "test ! -d data/packets/may-2015-methane-ethane-vle",
+    "grep -q 'def solve_equilibrium' engine/src/epcsaft/equilibrium/problem.py",
+    ".venv/bin/meson --version",
+    "command -v python3"
+  ],
+  "sources": [
+    {"ref": "greenfield@REPIN:docs/greenfield/EQUILIBRIUM.md", "must_contain": ["| ethane | `ethane()` |", "| binary | `neutral_binary()` |", "| electrolyte two liquids |", "Cai 1996"], "purpose": "the fixture table whose oracle rows this campaign finally runs"},
+    {"ref": "greenfield@REPIN:docs/greenfield/CANON.md", "must_contain": ["a minimum proves nothing"], "purpose": "budget ruling; and the 'Every check retains its numbers' paragraph the harness adds"},
+    {"ref": "greenfield@REPIN:engine/tests/oracle/oracle.json", "must_contain": ["\"light_alkane_saturation\"", "\"aqueous_amine_binary_vle\"", "\"aqueous_alcohol_salt_lle\"", "\"aqueous_amine_carbon_dioxide_reactive_vle\""], "purpose": "the measured rows already in the tree"},
+    {"ref": "greenfield@REPIN:engine/tests/eos/test_activity.py", "must_contain": ["def test_aqueous_activity_reproduces_source_rows", "SOURCE_ADEQUACY_AARD"], "purpose": "the pattern: rows from the oracle file, a packet model, a stated bar with its source"},
+    {"ref": "greenfield@REPIN:engine/tests/native/check_results.schema.json", "must_contain": ["\"deviations\"", "\"within\""], "purpose": "the schema the campaign's results files obey"},
+    {"ref": "greenfield@REPIN:engine/src/epcsaft/equilibrium/problem.py", "must_contain": ["def solve_equilibrium", "class Problem"], "purpose": "the surface the cells call; no arithmetic there"}
+  ],
+  "writes": [
+    {"path": "data/packets/may-2015-methane-ethane-vle/1/", "edit": "packet: packet.toml with the citation (May et al. 2015, JCED, 10.1021/acs.jced.5b00610), observations/may-2015-methane-ethane-vle.csv transcribed verbatim from the superseded tree with every uncertainty column, provenance/source-origin.toml naming the source file and its sha256", "lines": {"estimate": 80, "ceiling": 120}},
+    {"path": "data/packets/mea-co2-h2o-nine-species-estimation/4/", "edit": "revision 4: revision 3 plus reaction_correlations for R1, R2, R3 of kind ln-k-a-plus-b-over-t-plus-c-ln-t-plus-d-t with the coefficients and source locators from the MEA repository's source contract (Austgen et al. 1989); nothing else changes", "lines": {"estimate": 60, "ceiling": 100}},
+    {"path": "engine/tests/oracle/oracle.json", "edit": "new case light_alkane_binary_vle from the May packet (17 rows: T, P, x, y, uncertainties, allowances, source locator)", "lines": {"estimate": 130, "ceiling": 180}},
+    {"path": "engine/tests/oracle/results_writer.py", "edit": "one writer for the campaign's results file in the harness schema (stdlib json only); used by every oracle test", "lines": {"estimate": 90, "ceiling": 130}},
+    {"path": "engine/tests/oracle/test_ethane_saturation.py", "edit": "the C = 1 boundary cell over the ten NIST rows", "lines": {"estimate": 70, "ceiling": 100}},
+    {"path": "engine/tests/oracle/test_methane_ethane_bubble.py", "edit": "bubble pressures and vapour compositions over the seventeen May rows; plus the 180 K, 1 bar binary flash reproduced once and classified", "lines": {"estimate": 90, "ceiling": 130}},
+    {"path": "engine/tests/oracle/test_mea_water_isobaric.py", "edit": "T free at 101.33 kPa over the six Cai rows, parameter provenance recorded", "lines": {"estimate": 70, "ceiling": 100}},
+    {"path": "engine/tests/oracle/test_khudaida_tie_lines.py", "edit": "declared {L,L} over the eight rows, skipped by name while the packet does not build; the skip written to the results file", "lines": {"estimate": 90, "ceiling": 130}},
+    {"path": "engine/tests/oracle/test_jou_partial_pressure.py", "edit": "the nine-species bubble cell over the ten Jou rows with K(T) from the packet's declared kinds; plus the reactive free-T {L,L} state certification (fixed-T,P flashes at 293, 298, 303 K)", "lines": {"estimate": 120, "ceiling": 170}},
+    {"path": "engine/tests/oracle/__init__.py", "edit": "package marker", "lines": {"estimate": 1, "ceiling": 2}},
+    {"path": "engine/meson.build", "edit": "none expected", "lines": {"estimate": 0, "ceiling": 6}}
+  ],
+  "gates": [
+    {"id": "packets_validate", "command": "python3 data/tools/validate_packets.py > /dev/null", "needs": "none", "mutation": {"file": "data/packets/may-2015-methane-ethane-vle/1/provenance/source-origin.toml", "sed": "s/sha256 = \"/sha256 = \"0/", "expect": "abort", "bites_only_after_write": true, "why": "packet-provenance: a wrong digest is a wrong packet"}},
+    {"id": "oracle_rows_converge", "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && CHECK_RESULTS_DIR=build/greenfield/check-results ../.venv/bin/python -m pytest -q tests/oracle)", "needs": "install", "mutation": {"file": "engine/native/core/numerical_policy.hpp", "sed": "0,/EQUILIBRIUM_MAX_ITERATIONS\\b[^0-9]*[0-9]\\+/s||EQUILIBRIUM_MAX_ITERATIONS\", 1|", "expect": "abort", "bites_only_after_write": true, "why": "oracle-rows-converge: with a budget of one no row converges; the coordinator anchors the sed on the entry's literal as written"}},
+    {"id": "oracle_results_retained", "command": "python3 tools/summarize-check-results.py --validate engine/build/greenfield/check-results/oracle_*.json && python3 tools/summarize-check-results.py --require-field bar engine/build/greenfield/check-results/oracle_*.json", "needs": "install", "mutation": {"file": "engine/tests/oracle/results_writer.py", "sed": "s|\"bar\"|\"bar_\"|", "expect": "abort", "bites_only_after_write": true, "why": "oracle-results-retained"}},
+    {"id": "python_does_no_arithmetic", "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft", "needs": "none", "mutation": {"file": "engine/src/epcsaft/equilibrium/problem.py", "sed": "1i import math", "expect": "abort"}},
+    {"id": "native_checks_green", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary", "needs": "native", "mutation": {"file": "engine/native/equilibrium/request_compile.cpp", "sed": "s|pressure / rt|2.0 * pressure / rt|", "expect": "abort", "why": "the campaign changes no check"}},
+    {"id": "types_consistent", "command": "(cd engine && ../.venv/bin/mypy)", "needs": "install", "mutation": {"file": "engine/src/epcsaft/_core.pyi", "sed": "s/def compile_problem(/def compile_problm(/", "expect": "abort"}}
+  ],
+  "diagnostics": [],
+  "retained_under": "analyses/reproduction/2026-09-04-measured-campaign/",
+  "reported": ["outcome", "files_written", "gates", "deviations", "stop_detail", "serena_reading", "per_cell_summary_table"]
+}

@@ -47,6 +47,15 @@ cancels), exact symmetries (relabelling components changes nothing), limits
 (every residual term vanishes at zero density), and derivative agreement (a
 recorded tape against a centred difference). No stored numbers, no golden files.
 
+**Every check retains its numbers.** A check that passes and retains nothing is blind
+(the fourth audit of 2026-09-03 found every Stage 5 pass blind). Each native check binary
+writes one results file, `${CHECK_RESULTS_DIR}/<binary>.json`, validated against
+`engine/tests/native/check_results.schema.json`: for every check its status, and for every
+cell its inputs, solved state, convergence record, failure, deviations with the bar each was
+held to, and the trace. Retaining a number is not asserting it; the assertions do not move.
+Oracle rows write the same fields with the measured value as the reference and the stated
+bar. This is what acceptance reads and what the measured-data campaign consumes.
+
 ## What is banned outright
 
 - Asserting on an intermediate value, a struct field, a call sequence, or an

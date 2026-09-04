@@ -1,0 +1,288 @@
+{
+  "stage": "05-harness",
+  "branch": "stage-05-harness",
+  "base": "greenfield@a518039",
+  "source_commit": "271fb39",
+  "reaccepts": null,
+  "stop_conditions": [
+    "budget_ceiling: any write past its ceiling; report the file and the number as first written, never compact",
+    "gate_impossible: a named check cannot be made green without changing an assertion, a tolerance or a solver -- report and stop",
+    "source_contradicted: any must_contain marker absent at its ref, or this brief contradicts CANON.md or EQUILIBRIUM.md",
+    "environment_broken: a gate green at base goes red for a reason other than the write it names",
+    "mutation_invalid: a mutant of a test-running gate that does not build, or a mutant on which its gate stays green"
+  ],
+  "preconditions": [
+    "grep -q 'void run_check(const char\\* name, Function function)' engine/tests/native/equilibrium_support.hpp",
+    "grep -q 'inline void print_trace' engine/tests/native/equilibrium_support.hpp",
+    "grep -q 'seed_temperature' engine/native/equilibrium/phase_boundary.cpp",
+    "grep -q 'def design_claims' tools/check-equilibrium-claims.py",
+    "test ! -f engine/tests/native/check_results.schema.json",
+    ".venv/bin/meson --version",
+    "command -v python3"
+  ],
+  "sources": [
+    {
+      "ref": "greenfield@271fb39:engine/tests/native/equilibrium_support.hpp",
+      "must_contain": [
+        "void run_check(const char* name, Function function)",
+        "inline void print_trace",
+        "inline int failures = 0;"
+      ],
+      "purpose": "the harness the writer joins: non-aborting CHECK, Capture per check, the trace printer"
+    },
+    {
+      "ref": "greenfield@271fb39:engine/native/equilibrium/phase_boundary.cpp",
+      "must_contain": [
+        "seed_temperature",
+        "seed_pressure",
+        "start_rule"
+      ],
+      "purpose": "where the absent guess is seeded; the intensive_seeded event goes beside start_rule"
+    },
+    {
+      "ref": "greenfield@271fb39:engine/native/equilibrium/problem.hpp",
+      "must_contain": [
+        "struct EquilibriumResult final",
+        "core::Convergence convergence;"
+      ],
+      "purpose": "the result and record the writer serialises"
+    },
+    {
+      "ref": "greenfield@a518039:docs/greenfield/CANON.md",
+      "must_contain": [
+        "a minimum proves nothing"
+      ],
+      "purpose": "the budget ruling; and the paragraph the coordinator adds pointing at the schema"
+    },
+    {
+      "ref": "greenfield@a518039:docs/greenfield/EQUILIBRIUM.md",
+      "must_contain": [
+        "| S15 | a declared phase that vanishes |",
+        "## 4. What each check asserts, and the mutation that makes it red"
+      ],
+      "purpose": "the named checks the results file must list; S15's row that the coordinator amends"
+    },
+    {
+      "ref": "greenfield@a518039:docs/greenfield/HANDOFF.md",
+      "must_contain": [
+        "Compute a measured quantity; never parse the log that printed it."
+      ],
+      "purpose": "the rule the writer obeys"
+    }
+  ],
+  "writes": [
+    {
+      "path": "engine/tests/native/check_results.schema.json",
+      "edit": "JSON Schema draft 2020-12 for one results file: binary, commit, wheel_sha256, started, checks[]; Check with name, status, skipped_reason, cells[], failures[]; Cell with label, inputs, solved|null, record, failure|null, deviations[], events[]",
+      "lines": {
+        "estimate": 140,
+        "ceiling": 200
+      }
+    },
+    {
+      "path": "engine/tests/native/equilibrium_support.hpp",
+      "edit": "record_cell(label, problem, result, deviations), the check entry from run_check, the file writer in a results object main flushes; hand-written JSON with %.17g and one string escaper; CHECK_RESULTS_DIR with the ./check-results fallback said on stderr",
+      "lines": {
+        "estimate": 170,
+        "ceiling": 240
+      },
+      "ceiling_total": 460,
+      "must_contain": [
+        "record_cell(",
+        "CHECK_RESULTS_DIR",
+        "\"record\"",
+        "\"deviations\"",
+        "\"within\""
+      ]
+    },
+    {
+      "path": "engine/tests/native/specification_checks.cpp",
+      "edit": "every check records its inputs (and rows, nullity, rejection names as deviations with bar 0)",
+      "lines": {
+        "estimate": 45,
+        "ceiling": 70
+      },
+      "ceiling_total": 330
+    },
+    {
+      "path": "engine/tests/native/equilibrium_checks.cpp",
+      "edit": "every check records each solve as a cell with its deviations and bars",
+      "lines": {
+        "estimate": 70,
+        "ceiling": 110
+      },
+      "ceiling_total": 520
+    },
+    {
+      "path": "engine/tests/native/boundary_checks.cpp",
+      "edit": "every check records each solve as a cell with its deviations and bars",
+      "lines": {
+        "estimate": 60,
+        "ceiling": 95
+      },
+      "ceiling_total": 430
+    },
+    {
+      "path": "engine/native/equilibrium/phase_boundary.cpp",
+      "edit": "intensive_seeded event (lever index, value) when a free intensive has no guess",
+      "lines": {
+        "estimate": 8,
+        "ceiling": 14
+      },
+      "must_contain": [
+        "intensive_seeded"
+      ]
+    },
+    {
+      "path": "engine/meson.build",
+      "edit": "CHECK_RESULTS_DIR in each native test's env; the summarize tool as a test named check_results",
+      "lines": {
+        "estimate": 14,
+        "ceiling": 24
+      }
+    },
+    {
+      "path": "tools/summarize-check-results.py",
+      "edit": "--validate against the schema (stdlib only, no jsonschema dependency: a hand validator of the documented shape), --table of every cell's record and deviations",
+      "lines": {
+        "estimate": 150,
+        "ceiling": 220
+      }
+    },
+    {
+      "path": "tools/check-equilibrium-claims.py",
+      "edit": "one clause: every named check appears in its binary's results file with a status, when the results directory exists",
+      "lines": {
+        "estimate": 25,
+        "ceiling": 40
+      }
+    }
+  ],
+  "gates": [
+    {
+      "id": "build",
+      "command": ".venv/bin/meson compile -C engine/build/greenfield",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/equilibrium_support.hpp",
+        "sed": "1i #include \"regression/least_squares.hpp\"",
+        "expect": "abort",
+        "why": "a header that does not exist"
+      }
+    },
+    {
+      "id": "architecture_rules",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/equilibrium/phase_boundary.cpp",
+        "sed": "1i static const char* const forbidden = \"saturation\";",
+        "expect": "abort",
+        "why": "rule 7 case token; static gate"
+      }
+    },
+    {
+      "id": "native_checks_green",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|pressure / rt|2.0 * pressure / rt|",
+        "expect": "abort",
+        "why": "Stage 5's S10 mutation; the harness must not change what turns red"
+      }
+    },
+    {
+      "id": "results_valid",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary && python3 tools/summarize-check-results.py --validate engine/build/greenfield/check-results/*.json",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/equilibrium_support.hpp",
+        "sed": "s|\"record\"|\"recrd\"|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "results-valid: the required field is gone"
+      }
+    },
+    {
+      "id": "every_check_present",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary && python3 tools/check-equilibrium-claims.py --results engine/build/greenfield/check-results",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/boundary_checks.cpp",
+        "sed": "0,/record_cell(/s||(void)0; // record_cell(|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "every-check-present: the first recording call in the boundary binary is silenced and that check has no cells"
+      }
+    },
+    {
+      "id": "deviations_are_the_assertions",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary && python3 tools/summarize-check-results.py --assertions engine/build/greenfield/check-results/*.json",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/equilibrium_support.hpp",
+        "sed": "0,/\"within\"/s||\"within\": true, \"within_\"|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "a cell whose deviation exceeds its bar is written as within; the tool sees |deviation| > bar with within true"
+      }
+    },
+    {
+      "id": "intensive_seeded",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary && python3 tools/summarize-check-results.py --require-event intensive_seeded engine/build/greenfield/check-results/boundary_checks.json",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/phase_boundary.cpp",
+        "sed": "s|\"intensive_seeded\"|\"intensive_seeded_\"|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "the event the check requires is not there"
+      }
+    },
+    {
+      "id": "python_does_no_arithmetic",
+      "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/src/epcsaft/eos.py",
+        "sed": "1i import math",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "physics_and_model_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
+        "expect": "abort"
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "span": "solve_equilibrium",
+      "events": [
+        "unchanged from the Stage 5 and repair briefs",
+        "intensive_seeded: written once per free intensive with no guess, values [lever index (0 for T, 1 for P), the value the start rule used]; today seed_or fills 300 K or 1e5 Pa silently"
+      ],
+      "convergence": "unchanged; the record the repair put in the span is what record_cell copies into the results file",
+      "check": "a boundary cell with P free and no guess carries one intensive_seeded event with lever index 1 and the value the start used (intensive-seeded)",
+      "gate": "intensive_seeded"
+    }
+  ],
+  "canon_edits_for_the_coordinator": [
+    "CANON.md, 'What is tested': a paragraph 'Every check retains its numbers' naming engine/tests/native/check_results.schema.json and ${CHECK_RESULTS_DIR}/<binary>.json",
+    "EQUILIBRIUM.md §3.4 and the S15 row: declared_phase_absent with the mechanism the driver met as detail (phase_vanished + deficit, phases_coincide + distance); coincidence is the correct outcome on the subcooled side with unrestricted supports because G is extensive; the deficit is asserted where a support restriction forces the vanishing and reported elsewhere"
+  ],
+  "reported": [
+    "outcome",
+    "files_written",
+    "gates",
+    "deviations",
+    "stop_detail",
+    "serena_reading"
+  ]
+}
