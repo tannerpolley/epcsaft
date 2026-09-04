@@ -115,6 +115,47 @@ standard term's derivative multiplied by zero reddens (i) and (ii). The comparis
 point falsifies exactly finding 2's defect; whether the free-`T` two-liquid solve converges is a
 separate finding, recorded in `STAGE-LOG.md`, not this repair's.
 
+**Finding 8, corrected (third audit; the planner's text).** The clause "the log-coordinate
+transforms carry no θ" was wrong for `ln η`. The driver's coordinate is `ln η` with
+`v_p = c(T, x_p, θ)/η_p` and `c = (π/6) N Σ_i x_i m_i d_i(T)³`, so at fixed solver coordinates
+`∂v_p/∂θ_k = (∂c/∂θ_k)/η_p`. For active column `2 + C + k` the entry of every row that depends on
+`v` is
+
+    ∂row/∂θ_k |_{T,v,x}  +  (∂row/∂v) · (∂c/∂θ_k) / η_p
+
+with the first term the tape block as already written and the second the same structure the `T`
+column uses for `packing.temperature_derivative`: for a chemical row of species `i`, `∂row/∂v` is
+`physical_v = hessian[(2 + i)·width + 1] − 1/v`; for the pressure row it is
+`physical_v = −gradient[1] − v·hessian[width + 1] − P/(RT)`. Balance, normalisation and charge rows
+stay zero. `∂c/∂θ_k` is nonzero for three families and zero for the others: segment count,
+`∂c/∂m_i = (π/6) N x_i d_i³`; segment diameter, `∂c/∂σ_i = (π/6) N x_i m_i · 3 d_i² · ∂d_i/∂σ_i`
+with `∂d_i/∂σ_i = d_i/σ_i`; dispersion energy, `∂c/∂(ε_i/k) = (π/6) N x_i m_i · 3 d_i² · ∂d_i/∂(ε_i/k)`
+with `∂d_i/∂(ε_i/k) = σ_i · 0.36/T · e^{−3ε_i/(kT)}`; `k_ij` and the two association families do
+not enter `c`. Take `∂c/∂θ` analytically inside `packing_terms` from the same `segment_sigma` and
+`segment_diameter` it already calls; it returns `parameter_derivative[k]` beside
+`temperature_derivative`. `c` is the assembly's own coordinate map, not the tape's, so its
+derivative is the assembly's and is one registry entry, `packing_coefficient_parameter_derivative`
+(registered). Token `packing_parameter_term`; the assembly adds `+ physical_v * packing_parameter_term`.
+Gate `packing_parameter_term` (boundary binary) with its own mutation; the earlier
+`active_parameter_column` mutation stays, since the two terms fail independently (the tape block
+alone on `k_ij`, the packing term on the segment count). S9's active-parameter cell stays as
+written: methane's segment count exercises the packing term, the methane–ethane `k_ij` the tape
+block alone.
+
+**Absence crosses natively, not as a zero (finding 7's native half).** `FreeValue::variable()`'s
+default `guess = 0.0` is the zero sentinel in another place. `FreeValue` carries an explicit
+absent guess (`std::optional<double>` or a flag; `problem.hpp` is a listed write for it), the
+binding maps Python `None` to absent, and the start rule seeds an absent guess and says so in
+`start_rule`. A free value never carries `0.0` as "no guess".
+
+**"As first written" means no compaction to fit a count.** It never meant "no correction": a
+compile error or a wrong identifier in a file you wrote is fixed, and the file is re-measured
+after the fix. The stop rule is for formatting under count pressure, nothing else.
+
+**Mutations disable, never respell.** `reject_by_name`'s mutation restores the pre-repair
+behaviour (the unknown species key silently dropped; any other amount status free), so the test
+reddens on the dropped key, not on a message.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence

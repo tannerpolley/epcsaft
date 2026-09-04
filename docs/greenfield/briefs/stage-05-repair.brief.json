@@ -108,16 +108,17 @@
   "writes": [
     {
       "path": "engine/native/equilibrium/request_compile.cpp",
-      "edit": "finding 1: the pinned-amount feed term on the balance rows of lever_jacobian; finding 2: standard_term(T) with value and dT evaluated at the iterate's T everywhere the standard term appears, and its derivative in every T column; finding 8: active-parameter columns of lever_jacobian from the tape's θ block",
+      "edit": "finding 1: the pinned-amount feed term on the balance rows of lever_jacobian; finding 2: standard_term(T) with value and dT evaluated at the iterate's T everywhere the standard term appears, and its derivative in every T column; finding 8: active-parameter columns of lever_jacobian from the tape's θ block; finding 8 corrected: packing_terms returns parameter_derivative[k], every v-dependent row's active column adds physical_v * packing_parameter_term",
       "lines": {
         "estimate": 100,
-        "ceiling": 160
+        "ceiling": 200
       },
-      "ceiling_total": 960,
+      "ceiling_total": 1000,
       "must_contain": [
         "pinned_amount_feed_term",
         "standard_term_temperature_derivative",
-        "active_parameter_column"
+        "active_parameter_column",
+        "packing_parameter_term"
       ]
     },
     {
@@ -134,10 +135,10 @@
     },
     {
       "path": "engine/native/bindings/equilibrium_bindings.cpp",
-      "edit": "finding 5: compile_problem keeps the model alive; sensitivity's lever length and lever_jacobian's width follow the active list",
+      "edit": "finding 5: compile_problem keeps the model alive; sensitivity's lever length and lever_jacobian's width follow the active list; Python None for a free value's guess maps to the native absent state",
       "lines": {
         "estimate": 6,
-        "ceiling": 12
+        "ceiling": 16
       },
       "must_contain": [
         "py::keep_alive<0, 1>()"
@@ -151,7 +152,7 @@
         "ceiling": 80
       },
       "must_contain": [
-        "unknown species",
+        "raise _core.ParameterError(f\"unknown species {unknown}\")",
         "unknown amount status"
       ]
     },
@@ -222,6 +223,25 @@
       "lines": {
         "estimate": 12,
         "ceiling": 24
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/problem.hpp",
+      "edit": "finding 7, native half: FreeValue carries an explicit absent guess; variable() with no guess is absent, never 0.0",
+      "lines": {
+        "estimate": 4,
+        "ceiling": 10
+      },
+      "must_contain": [
+        "absent"
+      ]
+    },
+    {
+      "path": "engine/docs/equations_registry.yaml",
+      "edit": "nothing: packing_coefficient_parameter_derivative is registered by the coordinator; annotate the assembly with EqID: packing_coefficient_parameter_derivative",
+      "lines": {
+        "estimate": 0,
+        "ceiling": 0
       }
     }
   ],
@@ -315,10 +335,10 @@
       "needs": "install",
       "mutation": {
         "file": "engine/src/epcsaft/equilibrium/problem.py",
-        "sed": "s|unknown species|unknown-species|",
+        "sed": "s|raise _core.ParameterError(f\"unknown species {unknown}\")|pass|",
         "expect": "abort",
-        "bites_only_after_write": true,
-        "why": "finding 6: rejected by name means the name is the claim"
+        "bites_only_after_write": false,
+        "why": "finding 6: with the rejection disabled the unknown key is silently dropped again and the test reddens on the dropped key, not on a message"
       }
     },
     {
@@ -415,6 +435,18 @@
         "expect": "abort",
         "bites_only_after_write": true,
         "why": "finding 8: the θ column of the chemical rows dies and S9's active-parameter column disagrees with the centred difference"
+      }
+    },
+    {
+      "id": "packing_parameter_term",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "0,/+ physical_v \\* packing_parameter_term/s||+ 0.0 * physical_v * packing_parameter_term|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "finding 8 corrected: the packing-coordinate chain-rule term dies and S9's segment-count column disagrees with the centred difference"
       }
     }
   ],

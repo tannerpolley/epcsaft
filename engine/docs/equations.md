@@ -1054,6 +1054,18 @@ $$
 \mathrm{UBD} = \max_{v,\boldsymbol\lambda}\ v\quad \text{s.t.}\quad v \le g(\tilde{\boldsymbol x}^{m}, v^{m}) + \boldsymbol\lambda\cdot(\tilde{\boldsymbol x}^{0} - \tilde{\boldsymbol x}^{m})\ \ \forall m \in \mathcal M,\qquad v \le g(\tilde{\boldsymbol x}^{0}, v^{0}).
 $$
 
+## `packing_coefficient_parameter_derivative`
+
+- Section: Native phase coordinates
+- Status: Exact derivation
+- Source: Chain rule through the packing-fraction coordinate map; the packing fraction definition and the temperature-dependent segment diameter are registered under packing_fraction and the hard-sphere diameter entries
+- Description: Derivative of the equilibrium assembly's packing coefficient c = (π/6) N Σ_i x_i m_i d_i³ in an active parameter at fixed solver coordinates (T, ln η, x): nonzero for segment count, segment diameter and dispersion energy, zero for the binary interaction and association families. Every row that depends on the phase volume v = c/η gains (∂row/∂v)(∂c/∂θ)/η in its active-parameter column.
+- Change note: New with the Stage 5 repair, finding 8 corrected.
+
+$$
+\frac{\partial c}{\partial m_i}=\frac{\pi}{6}N x_i d_i^{3},\qquad \frac{\partial c}{\partial \sigma_i}=\frac{\pi}{6}N x_i m_i\,3d_i^{2}\frac{d_i}{\sigma_i},\qquad \frac{\partial c}{\partial(\varepsilon_i/k)}=\frac{\pi}{6}N x_i m_i\,3d_i^{2}\,\sigma_i\frac{0.36}{T}e^{-3\varepsilon_i/(kT)},\qquad \left.\frac{\partial v_p}{\partial\theta_k}\right|_{T,\eta_p,x_p}=\frac{1}{\eta_p}\frac{\partial c}{\partial\theta_k}
+$$
+
 ## `packing_fraction`
 
 - Section: Density and packing
