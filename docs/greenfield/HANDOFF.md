@@ -22,13 +22,23 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 |---|---|
 | worktree | `~/.codex/worktrees/gf-stage-06`, branch `stage-06`, cut from `greenfield@fb47283`, merged with `c5ef4a4` |
 | worker | `codex exec`, model `gpt-5.6-sol` (owner's choice), reasoning high, session id `01a069b3-a577-7fd1-94e8-f037660b4535`, launched 2026-09-03 |
-| pid | 91635 (find with `ps -eo pid,args \| grep "codex exec"`; never `$!`) |
+| pid | none: stopped twice on 2026-09-03, `source_contradicted` (the scope ruling was not yet in the design documents; fixed at `be3f329`, resumed) then `gate_impossible` (the assembly has no EOS-parameter `F_θ` columns, which `EQUILIBRIUM.md` §12 promised as Stage 5's). **Held until the Stage 5 repair merges**; then merge `greenfield` into `stage-06` and resume session `01a069b3` with a precondition on the new columns |
 | log | `attempt-1.log` in the worktree; result lands in `stage-06.result.json`; schema `stage-06.result.schema.json` (untracked, copied from Stage 5's) |
 | brief | `docs/greenfield/briefs/stage-06.brief.{md,json}` at `fb47283`, sources pinned at `6bdc05f`, 22 gates, preflight clean, no deferred mutations |
 | Serena | `mcp_servers.serena` in `~/.codex/config.toml` points at this worktree; the brief's reading step reports as `serena_reading` |
 
 Acceptance as for Stage 5 (`accept.sh` shape): wipe and rebuild, 22 gates in brief order, 22
 mutations with the three static gates' mutants not required to build.
+
+## Stage 5 repair, in flight alongside Stage 6
+
+Eight findings from the 2026-09-03 read-only audit (`STAGE-LOG.md`, "Stage 5 repair"), briefed by
+the planner as `briefs/stage-05-repair.brief.{md,json}`: the pinned-amount feed term, the standard
+term's temperature derivative evaluated at the iterate, the deficit on dimensionless rows, the
+convergence record into the trace, `keep_alive` on `compile_problem`, reject-by-name in the Python
+mapping, the two physical defaults removed with rule 12 widened to the subpackage, and (from Stage
+6's stop) the EOS-parameter `F_θ` columns. Worktree `~/.codex/worktrees/gf-stage-05-repair`,
+worker `gpt-5.6-sol` at high (owner). Merges before Stage 6 acceptance.
 
 ## Next stage: 6 Regression
 

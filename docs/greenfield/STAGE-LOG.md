@@ -626,3 +626,29 @@ the ideal side, the totals and the seventh active family form a Properties stage
 Worktree cut from `fb47283`, subprojects copied, fresh venv, Serena project file, the codex
 Serena entry re-pointed. Preflight clean: 9 sources, 22 gates, 12 preconditions. Launched on
 `gpt-5.6-sol` at high, session `01a069b3-a577-7fd1-94e8-f037660b4535`, pid 91635.
+
+## Stage 5 repair: the second audit's findings, and Stage 6's two honest stops, 2026-09-03
+
+**Stage 6 attempt 1** stopped twice before writing a line, both correctly. First
+`source_contradicted`: the owner's scope split (Properties stage after Stage 6) had reached
+`HANDOFF.md` and `TRANSFER.md` but not `REGRESSION.md` §3, `EQUILIBRIUM.md` §12 or `EOS.md`
+Properties, which still required the seventh family and `standard_gibbs`; the coordinator wrote the
+staging ruling into all three (`be3f329`), re-pinned, resumed. Then `gate_impossible`: a Problem
+target's Jacobian for the six EOS families needs `dy/dθ = −F_y⁻¹ F_θ`, and the assembly's
+`lever_jacobian` has only `T`, `P` and feed columns although §12 promised the active-parameter
+columns as Stage 5's; Stage 6 may not change the assembly. Held until the repair merges.
+
+**The audit** (read-only, `b74ae3b → f6efa0b`) found seven defects, all verified by reading, two
+reproduced numerically by the reviewer: the feed sensitivity omits the pinned amount's dependence
+on the feed total (22 % at `β = 0.2`); the temperature column omits the standard term's derivative
+and compile evaluates `g°` once at the temperature guess; the Michelsen deficit divides dimensionless
+rows by `RT`; `result.convergence` never reaches `scope.finish`; `compile_problem` has no
+`keep_alive`; the Python mapping drops unknown species and turns an unknown amount status into
+free; `Reaction(equilibrium_constant=1.0)` and `solvent_mass_kg=1.0` are physical defaults the
+rule-12 checker missed because it scans top-level files only. An eighth: rule 13's allowlist had
+returned through the Stage 5 merge, which kept the worker's copy of the checker; removed at
+`be3f329`. Canon edits applied: S9's pressure-row derivative sentence (`−v_p/(RT)`), the
+pinned-amount term in §12's `F_θ` sentence, the deficit without `RT` in §3.4, and S9's new cells.
+The repair brief adds the EOS-parameter `F_θ` columns as finding 8 at the coordinator's request.
+Lesson: a merge that "was clean" can still carry a policy reversal when both sides edited the same
+tool; diff the enforcers after every merge.
