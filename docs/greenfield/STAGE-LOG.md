@@ -652,3 +652,9 @@ pinned-amount term in §12's `F_θ` sentence, the deficit without `RT` in §3.4,
 The repair brief adds the EOS-parameter `F_θ` columns as finding 8 at the coordinator's request.
 Lesson: a merge that "was clean" can still carry a policy reversal when both sides edited the same
 tool; diff the enforcers after every merge.
+
+**Repair launched.** Finding 8 (the EOS-parameter `F_θ` columns from the tape's mixed block,
+`lever_jacobian` widened to `2 + C + A`, S9's active-parameter column) spliced into the brief;
+§2.1 and §12 name the active parameters as a lever. Preflight clean at `be6ddf0`: 10 sources, 17
+gates, 11 preconditions, 8 mutations deferred to acceptance. Launched on `gpt-5.6-sol` at high,
+session `01a069d6-7868-7ec3-a66e-308fdd5ce3d6`, pid 252018, while Stage 6 waits.

@@ -37,8 +37,18 @@ the planner as `briefs/stage-05-repair.brief.{md,json}`: the pinned-amount feed 
 term's temperature derivative evaluated at the iterate, the deficit on dimensionless rows, the
 convergence record into the trace, `keep_alive` on `compile_problem`, reject-by-name in the Python
 mapping, the two physical defaults removed with rule 12 widened to the subpackage, and (from Stage
-6's stop) the EOS-parameter `F_θ` columns. Worktree `~/.codex/worktrees/gf-stage-05-repair`,
-worker `gpt-5.6-sol` at high (owner). Merges before Stage 6 acceptance.
+6's stop) the EOS-parameter `F_θ` columns. Worktree `~/.codex/worktrees/gf-stage-05-repair`, branch `stage-05-repair` at `be6ddf0`.
+
+| item | value |
+|---|---|
+| worker | `codex exec`, `gpt-5.6-sol` at high (owner), session id `01a069d6-7868-7ec3-a66e-308fdd5ce3d6`, launched 2026-09-03 |
+| pid | 252018 (find with `ps -eo pid,args \| grep "codex exec"`) |
+| log | `attempt-1.log`; result `stage-05-repair.result.json`; schema `stage-05-repair.result.schema.json` (untracked) |
+| brief | `briefs/stage-05-repair.brief.{md,json}` at `be6ddf0`, sources pinned at `4fca81d`, 17 gates, preflight clean, 8 mutations bite only after the write |
+| Serena | `mcp_servers.serena` in `~/.codex/config.toml` points at this worktree; re-point to `gf-stage-06` before resuming Stage 6 |
+
+Merges before Stage 6 acceptance; then `stage-06` merges `greenfield` and its session resumes with
+the `active_parameter_column` precondition already in its brief.
 
 ## Next stage: 6 Regression
 
