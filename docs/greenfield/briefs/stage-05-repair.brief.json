@@ -28,7 +28,7 @@
     {
       "ref": "greenfield@4fca81d:docs/greenfield/EQUILIBRIUM.md",
       "must_contain": [
-        "**Sensitivity levers: `T`, `P`, and the species feed**",
+        "**Sensitivity levers: `T`, `P`, the species feed**",
         "| S9 | sensitivity |",
         "| S15 | a declared phase that vanishes |",
         "| S1 | rows satisfied |"
