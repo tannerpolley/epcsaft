@@ -751,3 +751,11 @@ without active parameters; phase-specific starts did not help and were reverted.
 never a Stage 5 solve cell. Recorded as a candidate solver finding for the campaign (a two-phase
 solution exists inside the envelope; the `k = 0` driver does not reach it from the K-factor start);
 the planner is asked to move the repair's cell to the ternary flash, which converges.
+
+**Repair complete on the worker's tree.** Twelfth resume: 18 gates green in brief order on the
+repaired tree, no deviations, the active-parameter cell on the ternary flash with the absolute
+step at a zero `k_ij`. Committed `4dde17e` on `stage-05-repair`, +436 −68 against `greenfield`.
+Acceptance running with the committed `tools/greenfield/accept-stage.sh` (the earlier script
+lived in a session scratchpad and was lost with it), the four new sensitivity mutations first.
+One reading note already: the result carries no `serena_reading` because the coordinator reused
+Stage 5's strict result schema, which has no such field; a schema defect, not the worker's.
