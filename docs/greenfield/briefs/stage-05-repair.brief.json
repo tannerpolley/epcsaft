@@ -122,7 +122,7 @@
     },
     {
       "path": "engine/native/equilibrium/gibbs_minimizer.cpp",
-      "edit": "finding 3: exp(-r) on the dimensionless rows; finding 4: scope.finish(convergence) once the record is complete; sensitivity() accepts 2 + C + A weights; the k = 0 KKT path reuses the θ block",
+      "edit": "finding 3: exp(-r) on the dimensionless rows; finding 4: scope.finish(convergence) once the record is complete; the k = 0 KKT path reuses the θ block (sensitivity() itself is in implicit_sensitivity.cpp)",
       "lines": {
         "estimate": 20,
         "ceiling": 34
@@ -145,10 +145,10 @@
     },
     {
       "path": "engine/src/epcsaft/equilibrium/problem.py",
-      "edit": "finding 6: unknown species keys and unknown amount statuses rejected by name; finding 7: equilibrium_constant and solvent_mass_kg required, no defaults",
+      "edit": "finding 6: unknown species keys and unknown amount statuses rejected by name; finding 7: rule 12 applied to the whole subpackage: every non-None signature default under src/epcsaft/equilibrium/ goes: the two physical ones (equilibrium_constant, solvent_mass_kg) become required arguments; structural empties (name, composition_guess, solvent, reactions, phases, standard_gibbs, topology_declared, the native_* helpers) become None with an explicit `x = () if x is None else x` (or the equivalent) at the top of the function; no physical value may appear as a default anywhere",
       "lines": {
-        "estimate": 20,
-        "ceiling": 40
+        "estimate": 45,
+        "ceiling": 80
       },
       "must_contain": [
         "unknown species",
@@ -214,6 +214,14 @@
       "lines": {
         "estimate": 0,
         "ceiling": 6
+      }
+    },
+    {
+      "path": "engine/native/equilibrium/implicit_sensitivity.cpp",
+      "edit": "finding 8: sensitivity() lives here (Serena found it), not in gibbs_minimizer.cpp; its lever length follows 2 + C + A and it composes the active columns of lever_jacobian",
+      "lines": {
+        "estimate": 12,
+        "ceiling": 24
       }
     }
   ],

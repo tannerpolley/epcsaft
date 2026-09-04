@@ -92,6 +92,13 @@ solves on models rebuilt at `θ_k ± δ` (`HelmholtzModel(parameters_perturbed, 
 `δ = 10⁻⁴` relative, 1e-6 relative; and the exact zero on a balance row's θ-column. Mutation:
 the active column multiplied by zero.
 
+**Amendment after the first stop (coordinator, 2026-09-03).** Rule 12 is `SURFACE.md`'s: every
+function-signature default under `src/epcsaft/` is the constant `None`. Widening the checker to the
+subpackage therefore governs every default in `equilibrium/problem.py`, not only the two physical
+ones: the physical ones become required arguments; structural empties become `None` with an
+explicit replacement at the top of the function. That is within this repair's writes and ceilings
+now. And `sensitivity()` lives in `implicit_sensitivity.cpp`, which is now a listed write.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence
