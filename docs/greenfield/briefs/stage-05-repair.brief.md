@@ -146,8 +146,10 @@ alone on `k_ij`, the packing term on the segment count). **S9 active-parameter c
 ternary `{V,L}` flash at 180 K and 1 bar, feed 1/3 each, all amounts free, the state S2, S6 and S8
 already converge, with the methane–ethane `k_ij` and methane's segment count active. For each
 active column `k`, `dy/dθ_k` from `sensitivity` with the unit weight on column `2 + C + k`, against
-a centred difference of two full solves on models rebuilt at `θ_k(1 ± 10⁻⁴)` with the same active
-list, 1e-6 relative on every coordinate; and the exact zero of every balance row's `θ` column.
+a centred difference of two full solves on models rebuilt at `θ_k ± δ_k` with
+`δ_k = 10⁻⁴ · max(|θ_k|, 1)` (the fixture's `k_ij` is zero, so a relative step is no step; the
+coordinator's amendment after the eleventh stop) with the same active list, 1e-6 relative on every
+coordinate; and the exact zero of every balance row's `θ` column.
 Mutations unchanged: `active_parameter_column` zeroes the tape block, which the `k_ij` column sees;
 `packing_parameter_term` zeroes the packing term, which the segment-count column sees. The binary
 flash at 180 K and 1 bar is outside its envelope (bubble 15.97 bar, dew 1.58 bar from the EOS
