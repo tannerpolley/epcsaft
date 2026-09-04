@@ -318,40 +318,51 @@ void check_s13() {
 }
 
 void check_s15() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
         equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
-        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
     };
-    problem.temperature.value = 180.0;
-    problem.pressure.value = 3.0e6;
-    const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
-    CHECK(!result.success && !result.has_state());
-    CHECK(result.message.find("phase") != std::string::npos);
-    epcsaft::HelmholtzModel ethane_model(model_support::ethane());
-    auto vanished = equilibrium_support::flash(1);
-    vanished.phases = {
-        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
-                                   epcsaft::equilibrium::AmountSpec::pinned(1.0)),
-        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
-    };
-    vanished.temperature.value = 250.0;
-    vanished.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    problem.phases[1].support = {0};
+    problem.temperature.value = 298.15;
+    problem.pressure.value = 1.0e5;
+    problem.feed.kind = epcsaft::equilibrium::FeedKind::Molalities;
+    problem.feed.values = {0.0, 1.0, 1.0};
+    problem.feed.solvent = {0};
+    problem.feed.solvent_mass_kg = 1.0;
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     epcsaft::core::Capture deficit_capture;
-    const auto failure = epcsaft::equilibrium::solve_equilibrium(ethane_model, vanished);
+    const auto failure = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(!failure.success && !failure.has_state());
+    CHECK(failure.message.find("phase V vanished") != std::string::npos);
     double expected_deficit = 1.0;
+    bool driving_row = false;
+    const double limit = convergence_limit(failure.convergence);
     for (std::size_t row = 0; row < failure.rows.size(); ++row)
         if (failure.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical
-            && failure.rows[row].phase == 1) expected_deficit -= std::exp(-failure.residuals[row]);
-    const auto deficit = std::find_if(deficit_capture.trace().events.begin(),
-        deficit_capture.trace().events.end(), [](const auto& event) {
-            return std::string(event.name) == "michelsen_deficit" && event.iteration == 1;
+            && failure.rows[row].phase == 1) {
+            expected_deficit -= std::exp(-failure.residuals[row]);
+            driving_row = driving_row || std::abs(failure.residuals[row]) > limit;
+        }
+    CHECK(driving_row);
+    CHECK(failure.message == "phase V vanished; Michelsen deficit "
+          + std::to_string(expected_deficit));
+    const auto& trace = deficit_capture.trace();
+    CHECK(!trace.spans.empty() && std::string(trace.spans.front().name) == "solve_equilibrium");
+    const auto deficit = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
+            return event.span == 0 && std::string(event.name) == "michelsen_deficit";
         });
-    CHECK(deficit != deficit_capture.trace().events.end() && deficit->values.size() == 1);
-    if (deficit != deficit_capture.trace().events.end() && deficit->values.size() == 1)
-        CHECK(std::abs(deficit->values.front() - expected_deficit) <= 1.0e-12);
+    const auto distance = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
+            return event.span == 0 && std::string(event.name) == "phase_distance";
+        });
+    CHECK(deficit != trace.events.rend() && deficit->values.size() == 1);
+    CHECK(distance != trace.events.rend() && distance->values.size() == 1);
+    if (deficit != trace.events.rend() && deficit->values.size() == 1)
+        CHECK(std::abs(deficit->values.front() - expected_deficit)
+              <= 1.0e-12 * std::max(1.0, std::abs(expected_deficit)));
+    if (distance != trace.events.rend() && distance->values.size() == 1)
+        CHECK(distance->values.front() >= compiled.feed_composition[1] + compiled.feed_composition[2]);
     auto symmetric = equilibrium_support::ascani_reactive_problem();
     symmetric.phases[0].composition_guess.clear();
     symmetric.phases[1].composition_guess.clear();
