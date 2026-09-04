@@ -161,8 +161,9 @@ reddens on the dropped key, not on a message.
 
 **The assembly may read the active list.** `HelmholtzModel` keeps `active_` private; the corrected
 finding 8 needs each active parameter's family and indices in the tape's order. `helmholtz_model.hpp`
-is a listed write for one public read-only accessor, `active() const`, and nothing else in the model
-changes.
+is a listed write for one public read-only accessor, `active_parameters() const` (not `active()`:
+rule 10 reserves an unqualified `active(` outside `core/` and `bindings/` for the trace), and nothing
+else in the model changes.
 
 ## What you inherit and may not change
 

@@ -246,13 +246,13 @@
     },
     {
       "path": "engine/native/model/helmholtz_model.hpp",
-      "edit": "finding 8 corrected: a public read-only accessor for the active parameter list (family and indices, in the tape's order), so the assembly can differentiate the packing coefficient per active column; no other change to the model",
+      "edit": "finding 8 corrected: a public read-only accessor active_parameters() for the active parameter list (not active(): rule 10 reserves that token for the trace) (family and indices, in the tape's order), so the assembly can differentiate the packing coefficient per active column; no other change to the model",
       "lines": {
         "estimate": 2,
         "ceiling": 6
       },
       "must_contain": [
-        "active() const"
+        "active_parameters() const"
       ]
     }
   ],
