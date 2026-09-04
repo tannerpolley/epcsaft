@@ -689,3 +689,11 @@ whether that free-`T` `{L,L}` solve should converge is a separate question, poss
 finding. Environment note: the repair worktree had subprojects but no configured build directory,
 and the worker configured one itself and reported it as a deviation; the coordinator now runs
 `meson setup` in every new worktree before launch (done for stage-06 as well).
+
+**Finding for its own brief, not the repair's (planner's ruling).** The reactive `{L,L}` cell with
+`L₂` pinned at one percent, `T` free at 1 bar, offsets `±1,000 J/mol`, exhausts
+`EQUILIBRIUM_MAX_ITERATIONS` at residual 7.3e-4 with the assembly verified at the start. Either the
+cell has no solution near 298 K with those offsets (a fixture-state question; certify it as the
+state table requires) or the free-`T` boundary path needs its own continuation start. The trace
+of that run (`gf-stage-05-repair/attempt-1.resume4.log`) is the evidence to keep. The repair's
+S9 standard-term check becomes a derivative comparison at the start point, no solve.

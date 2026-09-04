@@ -104,6 +104,17 @@ trace's `start_rule` event says so (a zero sentinel that the native side turns i
 is a physical default in disguise). If `FreeValue` needs an explicit absent state, that is a
 two-line native change under the same finding (`CORE.md` §4.3), not scope creep. And `sensitivity()` lives in `implicit_sensitivity.cpp`, which is now a listed write.
 
+**S9-T-standard, replacing the free-`T` solve (planner's ruling after the fourth stop).** Compile the
+reactive fixture twice with `standard_gibbs_j_per_mol = {1000, −1000, 0}`: (i) `L₂` pinned at
+`β = 10⁻²`, `T` free, `P` fixed at 1 bar; at the start the start rule produces (`boundary_start`),
+the `T` column of `compiled.jacobian` against a centred difference of `evaluate` in the `T`
+coordinate, step 1e-3 K, 1e-6 relative; (ii) the same problem with `T` fixed at 298.15 K; at its
+start, the `T` lever column of `lever_jacobian` against a centred difference of `evaluate` over the
+system recompiled at `T ± 1e-3` K, 1e-6 relative. No solve in either. Mutation unchanged: the
+standard term's derivative multiplied by zero reddens (i) and (ii). The comparison at any interior
+point falsifies exactly finding 2's defect; whether the free-`T` two-liquid solve converges is a
+separate finding, recorded in `STAGE-LOG.md`, not this repair's.
+
 ## What you inherit and may not change
 
 Everything else under `equilibrium/`: the rows, the driver, the start rule, the coincidence
