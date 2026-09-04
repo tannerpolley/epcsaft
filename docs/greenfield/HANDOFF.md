@@ -42,9 +42,9 @@ mapping, the two physical defaults removed with rule 12 widened to the subpackag
 | item | value |
 |---|---|
 | worker | `codex exec`, `gpt-5.6-sol` at high (owner), session id `01a069d6-7868-7ec3-a66e-308fdd5ce3d6`, launched 2026-09-03 |
-| pid | 252018 (find with `ps -eo pid,args \| grep "codex exec"`) |
+| pid | 295729, the second resume (first run stopped `source_contradicted` on rule 12's scope; first resume interrupted before writing to carry the planner's empty-structure caveat). Logs `attempt-1.log`, `attempt-1.resume.log`, `attempt-1.resume2.log`. Find codex with `ps -eo pid,args \| grep "codex exec"` |
 | log | `attempt-1.log`; result `stage-05-repair.result.json`; schema `stage-05-repair.result.schema.json` (untracked) |
-| brief | `briefs/stage-05-repair.brief.{md,json}` at `be6ddf0`, sources pinned at `4fca81d`, 17 gates, preflight clean, 8 mutations bite only after the write |
+| brief | `briefs/stage-05-repair.brief.{md,json}` at `363ff5d` (amended twice after honest stops), sources pinned at `4fca81d`, 17 gates, preflight clean, 8 mutations bite only after the write |
 | Serena | `mcp_servers.serena` in `~/.codex/config.toml` points at this worktree; re-point to `gf-stage-06` before resuming Stage 6 |
 
 Merges before Stage 6 acceptance; then `stage-06` merges `greenfield` and its session resumes with
