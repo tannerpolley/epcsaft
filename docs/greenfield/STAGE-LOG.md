@@ -702,3 +702,16 @@ S9 standard-term check becomes a derivative comparison at the start point, no so
 `boundary_checks.cpp` 343 against 340 (133 added against 130). Coordinator's re-budget, 145 per
 write and 355 total, on the ground that the planner's own replacement is the whole overrun;
 recorded here so the planner can object. No compaction, as before.
+
+**Sixth stop, the coordinator's wording.** The build gate failed on an undeclared identifier in
+the worker's own S9-T-standard replacement (`reactive_compiled` where it defined
+`reactive_free`), and the resume prompt had said to keep the file "exactly as written", so the
+worker stopped `source_contradicted` rather than fix its bug. The rule was always "no compaction
+to fit a count", never "no correction"; the next prompt says so in those words. Held there on
+purpose: a third audit (through `ecdccd7`) found that finding 8's column rule omits the chain rule
+through the packing coordinate, since `v = c(T, x, θ)/η` with `c` built from segment count and
+diameter (verified in `packing_terms()`), so the next resume carries the corrected derivation, a
+stronger `reject_by_name` mutation, the `FreeValue` absent state the worker had not made, and the
+bug-fix clarification, in one amendment. Lesson, the audit's and fair: reconcile the mathematics,
+the checks, the permitted files and the budget before a launch; six of seven stops on this repair
+were brief or prompt defects, not code.
