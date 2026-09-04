@@ -97,7 +97,12 @@ function-signature default under `src/epcsaft/` is the constant `None`. Widening
 subpackage therefore governs every default in `equilibrium/problem.py`, not only the two physical
 ones: the physical ones become required arguments; structural empties become `None` with an
 explicit replacement at the top of the function. That is within this repair's writes and ceilings
-now. And `sensitivity()` lives in `implicit_sensitivity.cpp`, which is now a listed write.
+now. A replacement may be an empty structure, never a number: `support`, `composition_guess`,
+`reactions`, `standard_gibbs_j_per_mol` and the molality solvent list become empty tuples or lists;
+`Free(guess=None)` and `packing_guess=None` cross as *absent*, so the start rule seeds them and the
+trace's `start_rule` event says so (a zero sentinel that the native side turns into 300 K or 1e5 Pa
+is a physical default in disguise). If `FreeValue` needs an explicit absent state, that is a
+two-line native change under the same finding (`CORE.md` §4.3), not scope creep. And `sensitivity()` lives in `implicit_sensitivity.cpp`, which is now a listed write.
 
 ## What you inherit and may not change
 

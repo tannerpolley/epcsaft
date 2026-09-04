@@ -145,7 +145,7 @@
     },
     {
       "path": "engine/src/epcsaft/equilibrium/problem.py",
-      "edit": "finding 6: unknown species keys and unknown amount statuses rejected by name; finding 7: rule 12 applied to the whole subpackage: every non-None signature default under src/epcsaft/equilibrium/ goes: the two physical ones (equilibrium_constant, solvent_mass_kg) become required arguments; structural empties (name, composition_guess, solvent, reactions, phases, standard_gibbs, topology_declared, the native_* helpers) become None with an explicit `x = () if x is None else x` (or the equivalent) at the top of the function; no physical value may appear as a default anywhere",
+      "edit": "finding 6: unknown species keys and unknown amount statuses rejected by name; finding 7: rule 12 applied to the whole subpackage: every non-None signature default under src/epcsaft/equilibrium/ goes: the two physical ones (equilibrium_constant, solvent_mass_kg) become required arguments; structural empties (name, composition_guess, solvent, reactions, phases, standard_gibbs, topology_declared, the native_* helpers) become None with an explicit `x = () if x is None else x` (or the equivalent) at the top of the function; no physical value may appear as a default anywhere; a replacement may be an empty structure, never a number: Free(guess=None) and packing_guess=None cross as absent so the start rule seeds them and the trace's start_rule event says so (if FreeValue needs an explicit absent state, that is a two-line native change under this finding, CORE.md 4.3)",
       "lines": {
         "estimate": 45,
         "ceiling": 80
