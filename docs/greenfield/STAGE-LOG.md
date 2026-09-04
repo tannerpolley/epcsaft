@@ -838,3 +838,37 @@ the cause is not established. Verified the old process was absent, then resumed 
 session on Sol high, PID/process group `28125`, log `attempt-1.resume1.log`. Scope and
 stop conditions are unchanged. The resume explicitly permits typo fixes but forbids
 compaction to fit budgets. Initial log is retained.
+
+**Harness stopped before implementation, 21:08 MDT.** The resumed worker returned
+`mutation_invalid` and exited. No tracked stage files changed and no mutant was run.
+Its result is `stage-05-harness.result.json` in the harness worktree, SHA-256
+`09719c54a91b7f8c94a0f0d02dd2f759e94c3988961be46fbe0ee88de7a0ac7f`.
+
+The coordinator checked the reported mismatch: `check_s3` solves both bubble and dew
+(`boundary_checks.cpp:30,39`). The prescribed completeness mutation removes only the
+first `record_cell`, although its explanation says the check would have no cells. A
+gate requiring only the check name/status or a nonempty cell list cannot detect that
+missing bubble cell. This finding is source-based, not evidence of a mutation executed
+against a finished writer. The planner must reconcile the completeness requirement and
+mutation; coordinator has not changed the brief or chosen that design.
+
+Additional planner frontier: the assertion-consistency mutation forces `within: true`
+without creating an out-of-bar deviation. On valid passing records that changes no
+numerical truth, so its specified reason for going red is unsupported unless a
+contradictory numerical record is also introduced. This is likewise a preimplementation
+review finding; an accidental syntax or schema failure would not demonstrate the
+claimed numerical sensitivity.
+
+The worker built and installed a non-editable wheel, but `ensure-engine-wheel.sh`
+failed at the existing general verifier's import of `epcsaft.regression`. That verifier
+also names regression native entrypoints; those expectations need reconciliation with
+the staged rebuild. No compatibility stub or verifier weakening was applied.
+
+Independent coordinator rerun on the unchanged tree: physics, model, specification,
+boundary and equilibrium native suites green; all architecture rules green; the
+existing source ledger reports 24 unique claims. There are 26 runner registrations,
+including the second mechanical-pressure check and the declared-phase boundary check;
+24 unique names must not be mistaken for all execution records. These are baseline
+checks only. Harness acceptance has not run, and the new results validator does not
+exist yet. Cleanup audit passed. Campaign and Stage 6 remain held for the owner's
+relay to the planner; no push, merge, or deletion.

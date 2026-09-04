@@ -3,7 +3,7 @@
 Written 2026-09-03 for a fresh coordinator session. Read this, then `README.md` in this
 directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
-## Sol coordinator live state, 2026-09-03 21:00 MDT
+## Sol coordinator live state, 2026-09-03 21:08 MDT
 
 The transfer is active. Harness worker launched from clean `stage-05-harness@4dcf8b3`
 in `~/.codex/worktrees/gf-stage-05-harness`, using the handed-off
@@ -12,7 +12,9 @@ in `~/.codex/worktrees/gf-stage-05-harness`, using the handed-off
 That process disappeared during baseline validation without a result; the app confirms
 the turn was interrupted and the tracked tree was unchanged. Resumed the same session
 at 21:00 MDT, verified PID/process group `28125`, log `attempt-1.resume1.log`.
-Result destination remains `stage-05-harness.result.json`. No result or acceptance yet.
+The resumed worker has now exited with `mutation_invalid`, before any tracked code
+changes. Result: `stage-05-harness.result.json`, SHA-256
+`09719c54a91b7f8c94a0f0d02dd2f759e94c3988961be46fbe0ee88de7a0ac7f`.
 
 Coordinator preflight passed: six sources, seven preconditions, nine gates with
 mutations, four deliberately deferred mutations. The worktree had its environment but
@@ -20,9 +22,22 @@ no configured native build. Before launch, the coordinator copied the existing d
 source caches from the repair worktree and configured `engine/build/greenfield` with
 the harness `.venv` as prefix. Meson setup passed; no stage code changed.
 
-Next: observe this exact worker, then independently accept its completed tree using
-the transfer recipe below. Campaign and Stage 6 remain held. Scientific/design stops
-go through the owner to the planner. Nothing pushed; no existing worktree deleted.
+**Held for the planner through the owner.** The bubble/dew check has two solves;
+the prescribed mutation removes only the first recording call, leaving the second cell
+and the check's status. Mere check presence cannot detect that omission. This is a
+source-inspection finding, not an executed mutant. The planner must reconcile the
+mutation and the required completeness check before this same session resumes.
+
+Two related items should be resolved in that same pass: forcing `within: true` on
+already-passing deviations creates no numerical contradiction unless the mutation also
+introduces an out-of-bar value; and the general installed-wheel verifier expects
+`epcsaft.regression` and regression entrypoints absent from this stage. The worker built
+and installed the wheel, but that broader verification failed. Do not call it green.
+
+The coordinator independently reran the five baseline native suites, architecture rules,
+and the existing 24-claim source check successfully. Those establish the unchanged
+baseline, not harness acceptance. Campaign and Stage 6 remain held. Nothing pushed;
+no existing worktree deleted. See the final stage-log entry for the complete stop.
 
 ## Transfer to the Sol coordinator, 2026-09-03 evening
 
