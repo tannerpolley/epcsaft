@@ -5,6 +5,14 @@ directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
 ## State at handoff
 
+**PAUSED, owner's instruction 2026-09-03 evening.** Reassessment of the engine as a whole before
+any more Stage 6 or repair work. A fourth audit established that Stage 5's acceptance rests on
+structural and mathematical checks plus the two inherited EOS activity comparisons; no accepted
+gate runs the NIST, Cai or Khudaida rows through the new solver, and the check runner retains
+pass/fail only. Until the owner rules: no launches, no resumes, no new briefs. The repair
+worker's current run may finish on its own; its tree is untouched.
+
+
 - Branch `greenfield` at `b40d5a7` and after, worktree `~/Workspaces/Engineering/ePC-SAFT-greenfield`,
   **nothing pushed** (push only when the owner asks).
 - **Stages 1–5 closed.** Stage 5 (Equilibrium) accepted on attempt 4: tags `stage-05-attempt-1`
