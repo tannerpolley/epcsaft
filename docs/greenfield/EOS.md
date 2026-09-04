@@ -764,6 +764,10 @@ packets transcribed from open sources (`chemicals` 1.5.2 is the named source, a 
 dependency for the one-time transcription tool); ions use one convention, the aqueous
 molality infinite-dilution standard state; `State` is one batch object with an order flag.
 
+**Staging (owner's ruling, 2026-09-03).** Everything in §1–§3 and the totals of §4 is written
+by a Properties stage after Stage 6; Stage 6 writes only the `PropertyOrder` first-derivative
+block of §4 (both coordinate sets, first-derivative fields only).
+
 ## 1. Absence, one mechanism
 
 A model built from `Parameters` computes residuals. A model given both `Parameters` and

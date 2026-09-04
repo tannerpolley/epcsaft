@@ -55,6 +55,13 @@ parameters where the declared physics still holds.
   per reaction (`EQUILIBRIUM.md` §12); `∂g°/∂θ` comes from the model's
   `standard_gibbs(T, order)`.
 
+**Staging (owner's ruling, 2026-09-03).** Stage 6 writes the regression shell and the
+`PropertyOrder` first-derivative block on `State` only. `Thermochemistry`, `physics/ideal.hpp`,
+the `State` totals, `standard_gibbs(T, order)` and the seventh active-parameter family are a
+**Properties stage** after Stage 6, numbered by the owner. Until it lands, `Property` leaves name
+residual fields and the active parameters are the six EOS families; nothing in Stage 6 may write
+a partial version of them.
+
 ## 4. Gate
 
 From `TRANSFER.md` Stage 6, unchanged: NIST parameter recovery on the

@@ -1004,6 +1004,9 @@ gain the `K(T)` correlation coefficients per reaction; `∂g°/∂θ` is already
 "Properties" §3). Without it neither application's fit is analytic: the amine fit shifts
 `reaction:R*:correlation:a, b_k`; the lithium fit moves `ln_k_exchange`, `ln_k_na_uptake`.
 
+The seventh family, `standard_gibbs(T, order)` and the totals land in the Properties stage after
+Stage 6 (owner's ruling, 2026-09-03; `REGRESSION.md` §3, Staging), not in Stage 6.
+
 An observation is data plus a selector plus a target:
 
     Observation { target: Problem | StateSpec; select: Expression; value; uncertainty }
