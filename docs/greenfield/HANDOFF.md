@@ -84,8 +84,13 @@ from its log.
 
 ## Standing rules (owner's, verbatim where quoted)
 
-- "Commit or push only when asked." Categorical commits: engine, core, surface, canon,
-  analyses, build, data.
+- **Standing approval, 2026-09-03** ("I am just going to hit yes every time"): the coordinator
+  commits by category, cuts worktrees, launches, interrupts and resumes workers on the model the
+  owner last chose, merges a stage that passes acceptance clean, publishes the page, and makes
+  the config edits already authorized, all without asking. It still asks before a **push**, before
+  **deleting** anything it did not create in the session (worktrees, branches, files), and for any
+  **scientific or design ruling** that is the owner's or the planner's. Categorical commits:
+  engine, core, surface, canon, analyses, build, data.
 - "Do not downgrade the worker model."
 - "No proper nouns in identifiers. Sources are citations, never symbols."
 - "As few tests as necessary, based on real measured data or mathematical properties."
