@@ -872,3 +872,12 @@ including the second mechanical-pressure check and the declared-phase boundary c
 checks only. Harness acceptance has not run, and the new results validator does not
 exist yet. Cleanup audit passed. Campaign and Stage 6 remain held for the owner's
 relay to the planner; no push, merge, or deletion.
+
+**Temporary Sol planner appointed by the owner.** Created native child
+`/root/sol_planner` on `gpt-5.6-sol`, reasoning high, for the harness's three open
+planning questions. Its only write ownership is the harness brief pair in the
+greenfield checkout; coordinator retains the log, handoff, every Git write, worker
+execution and acceptance. The same planner will disposition fresh independent review
+before the coordinator preflights and resumes the existing worker. No stage code,
+scientific formulation, numerical method, tolerance, or assertion is changed by this
+appointment; campaign and Stage 6 remain held.

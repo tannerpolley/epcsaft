@@ -3,6 +3,21 @@
 Written 2026-09-03 for a fresh coordinator session. Read this, then `README.md` in this
 directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
+## Temporary Sol planner, appointed by the owner
+
+The owner authorized a new `gpt-5.6-sol` planner at reasoning high while Fable is
+unavailable. Coordinator created native child `/root/sol_planner` through
+`collaboration.spawn_agent`; steer that exact child through its native lifecycle,
+not through the older Claude planner or the CLI worker session.
+
+First assignment: resolve the three harness planning questions below and revise only
+`briefs/stage-05-harness.brief.{md,json}`. The planner owns design and brief text,
+never stage implementation, worker supervision, Git writes, or acceptance. Coordinator
+owns this handoff, the stage log, Git, execution, and independent acceptance. A fresh
+read-only review and executable preflight precede resuming the existing harness worker.
+No model, numerical-method, tolerance, or assertion change is authorized by this
+appointment. The harness worker, campaign, and Stage 6 remain held meanwhile.
+
 ## Sol coordinator live state, 2026-09-03 21:08 MDT
 
 The transfer is active. Harness worker launched from clean `stage-05-harness@4dcf8b3`
