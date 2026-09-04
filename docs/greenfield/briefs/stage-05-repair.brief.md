@@ -131,7 +131,10 @@ stay zero. `∂c/∂θ_k` is nonzero for three families and zero for the others:
 `∂c/∂m_i = (π/6) N x_i d_i³`; segment diameter, `∂c/∂σ_i = (π/6) N x_i m_i · 3 d_i² · ∂d_i/∂σ_i`
 with `∂d_i/∂σ_i = d_i/σ_i`; dispersion energy, `∂c/∂(ε_i/k) = (π/6) N x_i m_i · 3 d_i² · ∂d_i/∂(ε_i/k)`
 with `∂d_i/∂(ε_i/k) = σ_i · 0.36/T · e^{−3ε_i/(kT)}`; `k_ij` and the two association families do
-not enter `c`. Take `∂c/∂θ` analytically inside `packing_terms` from the same `segment_sigma` and
+not enter `c`. For a charged component the diameter is the constant `packing_diameter_angstrom`, not
+`σ_i(1 − 0.12 e^{−3ε_i/(kT)})`, so for an ion `∂d_i/∂σ_i = ∂d_i/∂(ε_i/k) = 0` and only `∂c/∂m_i`
+survives; write the branch on `charge_number` as `packing_terms` already does for its temperature
+derivative. Take `∂c/∂θ` analytically inside `packing_terms` from the same `segment_sigma` and
 `segment_diameter` it already calls; it returns `parameter_derivative[k]` beside
 `temperature_derivative`. `c` is the assembly's own coordinate map, not the tape's, so its
 derivative is the assembly's and is one registry entry, `packing_coefficient_parameter_derivative`
