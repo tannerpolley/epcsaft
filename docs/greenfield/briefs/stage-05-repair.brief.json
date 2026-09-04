@@ -176,7 +176,7 @@
     },
     {
       "path": "engine/tests/native/boundary_checks.cpp",
-      "edit": "S9 gains the fixed-fraction feed cell and the reactive free-T cell with standard_gibbs offsets",
+      "edit": "S9 gains the fixed-fraction feed cell and S9-T-standard (the point comparison, no free-T solve) with standard_gibbs offsets",
       "lines": {
         "estimate": 60,
         "ceiling": 145
@@ -270,7 +270,7 @@
         "sed": "0,/+ standard_term_temperature_derivative/s||+ 0.0 * standard_term_temperature_derivative|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "finding 2: the T column loses the standard term's derivative on the reactive free-T cell"
+        "why": "finding 2: S9-T-standard compares the T column of the assembled Jacobian (T free at the boundary start) and the T lever column of lever_jacobian (T fixed, system recompiled at T ± 1e-3 K) against centred differences of evaluate on the reactive fixture with ±1,000 J/mol offsets, no solve; with the standard term's derivative zeroed both comparisons disagree"
       }
     },
     {
