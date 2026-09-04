@@ -658,3 +658,16 @@ tool; diff the enforcers after every merge.
 §2.1 and §12 name the active parameters as a lever. Preflight clean at `be6ddf0`: 10 sources, 17
 gates, 11 preconditions, 8 mutations deferred to acceptance. Launched on `gpt-5.6-sol` at high,
 session `01a069d6-7868-7ec3-a66e-308fdd5ce3d6`, pid 252018, while Stage 6 waits.
+
+**Repair, two honest stops.** First `source_contradicted` before writing: rule 12 is `SURFACE.md`'s
+and governs every default under the subpackage, so widening the checker flags twelve defaults in
+`problem.py`, not the two the brief named; and `sensitivity()` lives in `implicit_sensitivity.cpp`,
+unlisted. Brief amended (`1fc76b6`): physical defaults required, structural empties `None` with an
+explicit replacement, the file listed; then the planner's caveat (`363ff5d`): a replacement is an
+empty structure, never a number, so `Free(guess=None)` and `packing_guess=None` cross as absent and
+the start rule seeds them; the worker was interrupted before its first write to carry it. Second
+`budget_ceiling`: `boundary_checks.cpp` 327 against 300 with three new centred-difference cells
+(117 lines against 96); the planner's 96 was the estimate of two cells before finding 8 added the
+third; re-budgeted 130 / 340 (`8cd5b58`), resumed with the file as first written and no refactor
+of accepted cells. Note for the Stage 6 closeout: one helper for every sensitivity check, S9 and
+R1 alike, if the reading finds verbatim copies of the centred-difference loop.
