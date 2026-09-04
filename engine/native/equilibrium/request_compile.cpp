@@ -68,10 +68,10 @@ std::size_t count_rows(const CompiledSystem& compiled, RowKind kind) {
 }
 
 void validate_intensive_seed(const FreeValue& value, const char* name) {
-    if (!value.free && (!std::isfinite(value.value) || value.value <= 0.0)) {
+    if (!value.free && !value.is_positive()) {
         throw std::invalid_argument(std::string("invalid ") + name);
     }
-    if (value.free && value.value < 0.0) {
+    if (value.free && !value.absent && !value.is_positive()) {
         throw std::invalid_argument(std::string("invalid ") + name + " guess");
     }
 }
@@ -80,6 +80,7 @@ struct PackingTerms final {
     double coefficient = 0.0;
     double temperature_derivative = 0.0;
     std::vector<double> component;
+    std::vector<double> parameter_derivative;
 };
 
 PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
@@ -96,6 +97,7 @@ PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
     }
     PackingTerms result;
     result.component.resize(composition.size());
+    result.parameter_derivative.resize(model.active_parameters().size());
     const double scale = (PI / 6.0) * NUMBER_DENSITY_PER_ANGSTROM3;
     for (std::size_t i = 0; i < composition.size(); ++i) {
         double diameter_t = 0.0;
@@ -111,6 +113,60 @@ PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
         result.coefficient += result.component[i];
         result.temperature_derivative += scale * composition[i]
             * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i] * diameter_t;
+    }
+    for (std::size_t parameter = 0; parameter < model.active_parameters().size(); ++parameter) {
+        const auto& item = model.active_parameters()[parameter];
+        for (const std::size_t i : item.indices) {
+            if (item.family == ParameterFamily::SegmentCount) {
+                result.parameter_derivative[parameter] +=
+                    scale * composition[i] * diameter[i] * diameter[i] * diameter[i];
+            } else if (item.family == ParameterFamily::SigmaConstant
+                       && parameters.charge_number[i] == 0) {
+                result.parameter_derivative[parameter] += scale * composition[i]
+                    * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i]
+                    * diameter[i] / sigma[i];
+            } else if (item.family == ParameterFamily::DispersionEnergyOverK
+                       && parameters.charge_number[i] == 0) {
+                result.parameter_derivative[parameter] += scale * composition[i]
+                    * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i]
+                    * sigma[i] * 0.36 / temperature * std::exp(
+                        -3.0 * parameters.dispersion_energy_over_k[i] / temperature);
+            }
+        }
+    }
+    return result;
+}
+
+struct StandardTerm final {
+    std::vector<double> value;
+    std::vector<double> temperature_derivative;
+};
+
+StandardTerm standard_term(
+    double temperature, std::size_t components,
+    const std::vector<ReactionSpec>& reactions,
+    const std::vector<double>& supplied
+) {
+    const auto gibbs = standard_state(temperature, components, reactions, supplied);
+    std::vector<double> gibbs_temperature_derivative(components, 0.0);
+    if (supplied.empty() && !reactions.empty()) {
+        auto derivative_reactions = reactions;
+        for (auto& reaction : derivative_reactions) {
+            if (reaction.affinity_j_per_mol.has_value()) reaction.affinity_j_per_mol = 0.0;
+        }
+        gibbs_temperature_derivative = standard_state(
+            1.0, components, derivative_reactions, {}
+        );
+    }
+    StandardTerm result;
+    result.value.resize(components);
+    result.temperature_derivative.resize(components);
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    for (std::size_t species = 0; species < components; ++species) {
+        result.value[species] = gibbs[species] / rt;
+        result.temperature_derivative[species] =
+            gibbs_temperature_derivative[species] / rt
+            - gibbs[species] / (GAS_CONSTANT_J_PER_MOL_K * temperature * temperature);
     }
     return result;
 }
@@ -155,9 +211,7 @@ CompiledSystem compile_problem(
     }
     compiled.B = balance_basis(components, request.reactions);
     compiled.rank = compiled.B.size();
-    const double temperature_guess = request.temperature.free
-        ? (request.temperature.value > 0.0 ? request.temperature.value : 300.0)
-        : request.temperature.value;
+    const double temperature_guess = request.temperature.seed_or(300.0);
     compiled.standard_gibbs = standard_state(
         temperature_guess, components, request.reactions, request.standard_gibbs_j_per_mol
     );
@@ -346,10 +400,8 @@ std::vector<double> CompiledSystem::generic_point() const {
         offset += phase.support.size() + 1;
         if (phase.amount.kind == AmountKind::Free) ++offset;
     }
-    if (problem.temperature.free) point[offset++] = problem.temperature.value > 0.0
-        ? problem.temperature.value : 300.0;
-    if (problem.pressure.free) point[offset++] = problem.pressure.value > 0.0
-        ? problem.pressure.value : 1.0e5;
+    if (problem.temperature.free) point[offset++] = problem.temperature.seed_or(300.0);
+    if (problem.pressure.free) point[offset++] = problem.pressure.seed_or(1.0e5);
     return point;
 }
 
@@ -396,6 +448,9 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
         phi[row] = point[primal_size + rank + row];
     }
     const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    const auto standard = standard_term(
+        temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol
+    );
     std::vector<std::optional<HelmholtzDerivatives>> derivatives(shape.size());
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         derivatives[phase] = model->evaluate(temperature, volume[phase], x[phase], DerivativeOrder::Hessian);
@@ -422,7 +477,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
                 phase_phi[row.phase].has_value() ? phi[*phase_phi[row.phase]] : 0.0);
             value = std::log(std::max(x[row.phase][species] / volume[row.phase],
                                       std::numeric_limits<double>::min()))
-                + derivative.gradient[2 + species] + standard_gibbs[species] / rt
+                + derivative.gradient[2 + species] + standard.value[species]
                 - constraint - electro;
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = *derivatives[row.phase];
@@ -453,8 +508,8 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
         }
         result.objective += amount[phase] * (
             derivative.value + ideal + pressure * volume[phase] / rt
-            + std::inner_product(standard_gibbs.begin(), standard_gibbs.end(),
-                                 x[phase].begin(), 0.0) / rt
+            + std::inner_product(standard.value.begin(), standard.value.end(),
+                                 x[phase].begin(), 0.0)
         );
     }
     return result;
@@ -494,6 +549,9 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
     const double T = temperature.has_value() ? point[*temperature] : problem.temperature.value;
     const double P = pressure.has_value() ? point[*pressure] : problem.pressure.value;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    const auto standard = standard_term(
+        T, components, problem.reactions, problem.standard_gibbs_j_per_mol
+    );
     std::vector<HelmholtzDerivatives> derivatives;
     derivatives.reserve(problem.phases.size());
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase)
@@ -535,7 +593,8 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
             if (temperature.has_value()) at(row_index, *temperature) =
                 derivative.hessian[(2 + species) * width]
                 + physical_v * packings[row.phase].temperature_derivative
-                    / std::exp(point[volume]);
+                    / std::exp(point[volume])
+                + standard.temperature_derivative[species];
             for (std::size_t balance_row = 0; balance_row < rank; ++balance_row)
                 at(row_index, primal_size + balance_row) = -B[balance_row][species];
             if (phi[row.phase].has_value()) at(row_index, primal_size + *phi[row.phase]) = -z[species];
@@ -603,12 +662,16 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
         if (phase.amount.kind == AmountKind::Free) ++offset;
         ++offset;
     }
-    std::vector<double> result(rows.size() * (2 + model->parameters().component_count()), 0.0);
     const std::size_t components = model->parameters().component_count();
-    const std::size_t levers = 2 + components;
     const double T = problem.temperature.free ? point[offset++] : problem.temperature.value;
     const double P = problem.pressure.free ? point[offset++] : problem.pressure.value;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    const auto standard = standard_term(
+        T, components, problem.reactions, problem.standard_gibbs_j_per_mol
+    );
+    std::size_t levers = 0;
+    std::vector<double> result;
+    std::vector<double> pinned_amount_feed_term(rank, 0.0);
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
         std::vector<double> composition(components, 0.0);
         for (std::size_t local = 0; local < problem.phases[phase].support.size(); ++local)
@@ -620,19 +683,52 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
         const double volume = packing.coefficient / std::exp(point[cursor]);
         const auto derivative = model->evaluate(T, volume, composition, DerivativeOrder::Hessian);
         const std::size_t width = derivative.gradient.size();
+        if (result.empty()) {
+            levers = width;
+            result.resize(rows.size() * levers, 0.0);
+        }
+        if (problem.phases[phase].amount.kind == AmountKind::Pinned) {
+            for (std::size_t balance_row = 0; balance_row < rank; ++balance_row) {
+                for (std::size_t species = 0; species < components; ++species) {
+                    pinned_amount_feed_term[balance_row] +=
+                        problem.phases[phase].amount.fraction * B[balance_row][species]
+                        * composition[species] / feed_total;
+                }
+            }
+        }
         for (std::size_t row = 0; row < rows.size(); ++row) {
             if (rows[row].phase != phase) continue;
             if (rows[row].kind == RowKind::Chemical) {
                 const double physical_v = derivative.hessian[
                     (2 + rows[row].index) * width + 1] - 1.0 / volume;
+                const double standard_term_temperature_derivative =
+                    standard.temperature_derivative[rows[row].index];
                 result[levers * row] = derivative.hessian[(2 + rows[row].index) * width]
-                    + physical_v * packing.temperature_derivative / std::exp(point[cursor]);
+                    + physical_v * packing.temperature_derivative / std::exp(point[cursor])
+                    + standard_term_temperature_derivative;
+                for (std::size_t active = 2 + components; active < width; ++active) {
+                    const double active_parameter_column = derivative.hessian[
+                        (2 + rows[row].index) * width + active];
+                    // EqID: packing_coefficient_parameter_derivative
+                    const double packing_parameter_term = packing.parameter_derivative[
+                        active - 2 - components] / std::exp(point[cursor]);
+                    result[levers * row + active] = active_parameter_column
+                        + physical_v * packing_parameter_term;
+                }
             } else if (rows[row].kind == RowKind::Pressure) {
                 const double physical_v = -derivative.gradient[1]
                     - volume * derivative.hessian[width + 1] - P / rt;
                 result[levers * row] = -volume * derivative.hessian[width]
                     + P * volume / (GAS_CONSTANT_J_PER_MOL_K * T * T)
                     + physical_v * packing.temperature_derivative / std::exp(point[cursor]);
+                for (std::size_t active = 2 + components; active < width; ++active) {
+                    const double active_parameter_column =
+                        -volume * derivative.hessian[width + active];
+                    const double packing_parameter_term = packing.parameter_derivative[
+                        active - 2 - components] / std::exp(point[cursor]);
+                    result[levers * row + active] = active_parameter_column
+                        + physical_v * packing_parameter_term;
+                }
             }
         }
     }
@@ -651,7 +747,7 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
         } else if (rows[row].kind == RowKind::Moiety) {
             for (std::size_t species = 0; species < components; ++species)
                 result[levers * row + 2 + species] = -B[rows[row].index][species]
-                    / feed_total;
+                    / feed_total + pinned_amount_feed_term[rows[row].index];
         }
     }
     return result;
@@ -675,6 +771,9 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
     const double T = temperature.has_value() ? point[*temperature] : problem.temperature.value;
     const double P = pressure.has_value() ? point[*pressure] : problem.pressure.value;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    const auto standard_at_temperature = standard_term(
+        T, components, problem.reactions, problem.standard_gibbs_j_per_mol
+    );
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
         const auto& spec = problem.phases[phase];
         std::vector<double> x(components, 0.0);
@@ -686,20 +785,23 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
         const double volume = packing.coefficient / std::exp(point[cursor]);
         const auto derivative = model->evaluate(T, volume, x, DerivativeOrder::Hessian);
         double standard = 0.0;
+        double standard_term_temperature_derivative = 0.0;
         double ideal = 0.0;
         for (std::size_t species = 0; species < components; ++species) {
-            standard += standard_gibbs[species] * x[species];
+            standard += standard_at_temperature.value[species] * x[species];
+            standard_term_temperature_derivative +=
+                standard_at_temperature.temperature_derivative[species] * x[species];
             if (x[species] > 0.0) ideal += x[species] * (
                 std::log(x[species]) - std::log(volume) - 1.0);
         }
         const double sum_x = std::accumulate(x.begin(), x.end(), 0.0);
-        const double bracket = derivative.value + ideal + P * volume / rt + standard / rt;
+        const double bracket = derivative.value + ideal + P * volume / rt + standard;
         for (std::size_t local = 0; local < spec.support.size(); ++local) {
             const std::size_t species = spec.support[local];
             const double chemical =
                 derivative.gradient[2 + species] + std::log(std::max(
                     x[species] / volume, std::numeric_limits<double>::min()))
-                + standard_gibbs[species] / rt;
+                + standard_at_temperature.value[species];
             const double physical_v = derivative.gradient[1] - sum_x / volume + P / rt;
             result[offsets[phase] + local] = amount * (
                 chemical * x[species] + physical_v * packing.component[species]
@@ -710,7 +812,7 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
         if (temperature.has_value()) result[*temperature] += amount * (
             derivative.gradient[0] - P * volume
                 / (GAS_CONSTANT_J_PER_MOL_K * T * T)
-            - standard / (GAS_CONSTANT_J_PER_MOL_K * T * T));
+            + standard_term_temperature_derivative);
         if (pressure.has_value()) result[*pressure] += amount * volume / rt;
         result[offsets[phase] + spec.support.size()] = bracket;
     }
@@ -735,6 +837,9 @@ std::vector<double> CompiledSystem::hessian(
     const double T = problem.temperature.value;
     const double P = problem.pressure.value;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    const auto standard_at_temperature = standard_term(
+        T, components, problem.reactions, problem.standard_gibbs_j_per_mol
+    );
     auto put = [&](std::size_t row, std::size_t column, double value) {
         result[row * n + column] = value;
         result[column * n + row] = value;
@@ -762,7 +867,7 @@ std::vector<double> CompiledSystem::hessian(
             derivative.hessian[width + 1] + sum_x / (physical_volume * physical_volume));
         double standard = 0.0;
         for (std::size_t species = 0; species < components; ++species)
-            standard += standard_gibbs[species] * x[species];
+            standard += standard_at_temperature.value[species] * x[species];
         for (std::size_t i = 0; i < spec.support.size(); ++i) {
             const std::size_t si = spec.support[i];
             const double dv_i = packing.component[si] / eta;
@@ -770,7 +875,7 @@ std::vector<double> CompiledSystem::hessian(
                 derivative.gradient[2 + si]
                 + std::log(std::max(x[si] / physical_volume,
                                     std::numeric_limits<double>::min()))
-                + standard_gibbs[si] / rt);
+                + standard_at_temperature.value[si]);
             for (std::size_t j = 0; j < spec.support.size(); ++j) {
                 const std::size_t sj = spec.support[j];
                 const double dv_j = packing.component[sj] / eta;
@@ -801,7 +906,7 @@ std::vector<double> CompiledSystem::hessian(
                 const double mu = derivative.gradient[2 + species]
                     + std::log(std::max(x[species] / physical_volume,
                                         std::numeric_limits<double>::min()))
-                    + standard_gibbs[species] / rt;
+                    + standard_at_temperature.value[species];
                 const double pressure_gradient = derivative.gradient[1]
                     - sum_x / physical_volume + P / rt;
                 put(*amount, offsets[phase] + i, mu * x[species]

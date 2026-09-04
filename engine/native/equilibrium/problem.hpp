@@ -45,14 +45,18 @@ struct AmountSpec final {
 struct FreeValue final {
     bool free = false;
     double value = 0.0;
-    static FreeValue fixed(double value) { return {false, value}; }
-    static FreeValue variable(double guess = 0.0) { return {true, guess}; }
+    bool absent = false;
+    static FreeValue fixed(double value) { return {false, value, false}; }
+    static FreeValue variable() { return {true, 0.0, true}; }
+    static FreeValue variable(double guess) { return {true, guess, false}; }
 
     double seed_or(double fallback) const noexcept {
-        return free && value <= 0.0 ? fallback : value;
+        return free && absent ? fallback : value;
     }
 
-    bool is_positive() const noexcept { return std::isfinite(value) && value > 0.0; }
+    bool is_positive() const noexcept {
+        return !absent && std::isfinite(value) && value > 0.0;
+    }
 };
 
 struct PhaseSpec final {

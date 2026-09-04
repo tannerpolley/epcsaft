@@ -101,8 +101,23 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
 void check_s1() {
     epcsaft::HelmholtzModel binary_model(model_support::neutral_binary());
     const auto liquid = equilibrium_support::flash(2);
-    verify_s1(binary_model, liquid,
-              epcsaft::equilibrium::solve_equilibrium(binary_model, liquid));
+    epcsaft::core::Capture capture;
+    const auto liquid_result = epcsaft::equilibrium::solve_equilibrium(binary_model, liquid);
+    verify_s1(binary_model, liquid, liquid_result);
+    const auto span = std::find_if(capture.trace().spans.begin(), capture.trace().spans.end(),
+        [](const auto& item) { return std::string(item.name) == "solve_equilibrium"; });
+    CHECK(span != capture.trace().spans.end() && span->convergence.has_value());
+    if (span != capture.trace().spans.end() && span->convergence.has_value()) {
+        const auto& record = *span->convergence;
+        CHECK(record.residual == liquid_result.convergence.residual);
+        CHECK(record.criterion == liquid_result.convergence.criterion);
+        CHECK(record.floor == liquid_result.convergence.floor);
+        CHECK(record.amplification == liquid_result.convergence.amplification);
+        CHECK(record.contraction == liquid_result.convergence.contraction);
+        CHECK(record.iterations == liquid_result.convergence.iterations);
+        CHECK(record.evaluations == liquid_result.convergence.evaluations);
+        CHECK(record.stop == liquid_result.convergence.stop);
+    }
     auto vapor = equilibrium_support::flash(2);
     vapor.phases[0].kind = epcsaft::equilibrium::PhaseKind::Vapor;
     verify_s1(binary_model, vapor,
@@ -314,6 +329,29 @@ void check_s15() {
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(!result.success && !result.has_state());
     CHECK(result.message.find("phase") != std::string::npos);
+    epcsaft::HelmholtzModel ethane_model(model_support::ethane());
+    auto vanished = equilibrium_support::flash(1);
+    vanished.phases = {
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
+                                   epcsaft::equilibrium::AmountSpec::pinned(1.0)),
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+    };
+    vanished.temperature.value = 250.0;
+    vanished.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    epcsaft::core::Capture deficit_capture;
+    const auto failure = epcsaft::equilibrium::solve_equilibrium(ethane_model, vanished);
+    CHECK(!failure.success && !failure.has_state());
+    double expected_deficit = 1.0;
+    for (std::size_t row = 0; row < failure.rows.size(); ++row)
+        if (failure.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical
+            && failure.rows[row].phase == 1) expected_deficit -= std::exp(-failure.residuals[row]);
+    const auto deficit = std::find_if(deficit_capture.trace().events.begin(),
+        deficit_capture.trace().events.end(), [](const auto& event) {
+            return std::string(event.name) == "michelsen_deficit" && event.iteration == 1;
+        });
+    CHECK(deficit != deficit_capture.trace().events.end() && deficit->values.size() == 1);
+    if (deficit != deficit_capture.trace().events.end() && deficit->values.size() == 1)
+        CHECK(std::abs(deficit->values.front() - expected_deficit) <= 1.0e-12);
     auto symmetric = equilibrium_support::ascani_reactive_problem();
     symmetric.phases[0].composition_guess.clear();
     symmetric.phases[1].composition_guess.clear();

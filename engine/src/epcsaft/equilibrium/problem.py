@@ -13,9 +13,9 @@ class _Model(Protocol):
 
 class Free:
     __slots__ = ("guess",)
-    guess: float
+    guess: float | None
 
-    def __init__(self, guess: float = 0.0) -> None:
+    def __init__(self, guess: float | None = None) -> None:
         self.guess = guess
 
 
@@ -43,9 +43,10 @@ class Phase:
         support: Sequence[str] | None = None,
         amount: Free | Pinned | None = None,
         kind: str | None = None,
-        composition_guess: Sequence[float] = (),
+        composition_guess: Sequence[float] | None = None,
         packing_guess: float | None = None,
     ) -> None:
+        composition_guess = () if composition_guess is None else composition_guess
         self.name = name
         self.support = None if support is None else tuple(support)
         self.amount = Free() if amount is None else amount
@@ -63,16 +64,17 @@ class Feed:
     basis: _core.FeedKind
     values: Mapping[str, float]
     solvent: tuple[str, ...]
-    solvent_mass_kg: float
+    solvent_mass_kg: float | None
 
     def __init__(
         self,
         basis: _core.FeedKind,
         values: Mapping[str, float],
         *,
-        solvent: Sequence[str] = (),
-        solvent_mass_kg: float = 1.0,
+        solvent_mass_kg: float | None,
+        solvent: Sequence[str] | None = None,
     ) -> None:
+        solvent = () if solvent is None else solvent
         self.basis = basis
         self.values = values
         self.solvent = tuple(solvent)
@@ -81,17 +83,17 @@ class Feed:
 
 class MoleFractions(Feed):
     def __init__(self, values: Mapping[str, float]) -> None:
-        super().__init__(_core.FeedKind.MoleFractions, values)
+        super().__init__(_core.FeedKind.MoleFractions, values, solvent_mass_kg=None)
 
 
 class Amounts(Feed):
     def __init__(self, values: Mapping[str, float]) -> None:
-        super().__init__(_core.FeedKind.Amounts, values)
+        super().__init__(_core.FeedKind.Amounts, values, solvent_mass_kg=None)
 
 
 class MassFractions(Feed):
     def __init__(self, values: Mapping[str, float]) -> None:
-        super().__init__(_core.FeedKind.MassFractions, values)
+        super().__init__(_core.FeedKind.MassFractions, values, solvent_mass_kg=None)
 
 
 class Molalities(Feed):
@@ -100,7 +102,7 @@ class Molalities(Feed):
         values: Mapping[str, float],
         *,
         solvent: Sequence[str],
-        solvent_mass_kg: float = 1.0,
+        solvent_mass_kg: float,
     ) -> None:
         super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
 
@@ -116,10 +118,11 @@ class Reaction:
         self,
         stoichiometry: Mapping[str, float],
         *,
-        name: str = "",
-        equilibrium_constant: float = 1.0,
+        equilibrium_constant: float,
+        name: str | None = None,
         affinity_j_per_mol: float | None = None,
     ) -> None:
+        name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
         self.equilibrium_constant = equilibrium_constant
@@ -134,6 +137,9 @@ def _index(component_ids: tuple[str, ...], name: str) -> int:
 
 
 def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list[float]:
+    unknown = next((name for name in values if name not in component_ids), None)
+    if unknown is not None:
+        raise _core.ParameterError(f"unknown species {unknown}")
     return [values.get(component_id, 0.0) for component_id in component_ids]
 
 
@@ -150,14 +156,18 @@ class Problem:
     def __init__(
         self,
         *,
-        phases: Sequence[Phase] | Discover,
+        phases: Sequence[Phase] | Discover | None = None,
         T: float | Free,
         P: float | Free,
         feed: Feed,
-        reactions: Sequence[Reaction] = (),
-        standard_gibbs_j_per_mol: Sequence[float] = (),
-        topology_declared: bool = True,
+        reactions: Sequence[Reaction] | None = None,
+        standard_gibbs_j_per_mol: Sequence[float] | None = None,
+        topology_declared: bool | None = None,
     ) -> None:
+        phases = () if phases is None else phases
+        reactions = () if reactions is None else reactions
+        standard_gibbs_j_per_mol = () if standard_gibbs_j_per_mol is None else standard_gibbs_j_per_mol
+        topology_declared = True if topology_declared is None else topology_declared
         self.phases = phases if isinstance(phases, Discover) else tuple(phases)
         self.T = T
         self.P = P
@@ -172,7 +182,8 @@ class Problem:
         native.feed.kind = self.feed.basis
         native.feed.values = _vector(self.feed.values, model.component_ids)
         native.feed.solvent = [_index(model.component_ids, name) for name in self.feed.solvent]
-        native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
+        if self.feed.solvent_mass_kg is not None:
+            native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
@@ -269,7 +280,10 @@ def _phase_from_mapping(value: Mapping[str, object]) -> Phase:
     if isinstance(amount_value, Mapping) and amount_value.get("status") == "pinned":
         amount = Pinned(float(amount_value.get("value", 0.0)))
     elif isinstance(amount_value, Mapping) and amount_value.get("status") == "free":
-        amount = Free(float(amount_value.get("guess", 0.0)))
+        guess = amount_value.get("guess")
+        amount = Free(None if guess is None else float(guess))
+    elif isinstance(amount_value, Mapping):
+        raise _core.ParameterError(f"unknown amount status {amount_value.get('status')}")
     return Phase(
         str(value.get("name", "")),
         support=cast(Sequence[str] | None, value.get("support")),
@@ -283,7 +297,8 @@ def _phase_from_mapping(value: Mapping[str, object]) -> Phase:
 def _intensive_from_mapping(value: object, name: str) -> float | Free:
     if isinstance(value, Mapping):
         if value.get("free") is True:
-            return Free(float(value.get("guess", 0.0)))
+            guess = value.get("guess")
+            return Free(None if guess is None else float(guess))
         return float(value.get("value", 0.0))
     if isinstance(value, (int, float)):
         return float(value)
@@ -301,25 +316,31 @@ def _feed_from_mapping(value: object) -> Feed:
     if basis == "mass_fractions":
         return MassFractions(values)
     if basis == "molalities":
+        if "solvent_mass_kg" not in record:
+            raise _core.ParameterError("missing solvent_mass_kg")
         return Molalities(
             values,
             solvent=cast(Sequence[str], record.get("solvent", ())),
-            solvent_mass_kg=cast(float, record.get("solvent_mass_kg", 1.0)),
+            solvent_mass_kg=cast(float, record["solvent_mass_kg"]),
         )
     raise _core.ParameterError(f"unknown feed basis {basis}")
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
+    if "equilibrium_constant" not in value:
+        raise _core.ParameterError("missing equilibrium_constant")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
-        equilibrium_constant=cast(float, value.get("equilibrium_constant", 1.0)),
+        equilibrium_constant=cast(float, value["equilibrium_constant"]),
         affinity_j_per_mol=cast(float | None, value.get("affinity_j_per_mol")),
     )
 
 
 def _free_value(value: float | Free) -> _core.FreeValue:
-    return _core.FreeValue.variable(value.guess) if isinstance(value, Free) else _core.FreeValue.fixed(value)
+    if not isinstance(value, Free):
+        return _core.FreeValue.fixed(value)
+    return _core.FreeValue.variable() if value.guess is None else _core.FreeValue.variable(value.guess)
 
 
 def _amount_spec(value: Free | Pinned) -> _core.AmountSpec:
@@ -345,7 +366,8 @@ def solve_equilibrium(
     return _core.solve_equilibrium(model._model, problem._native(model), start)
 
 
-def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] = ()) -> Problem:
+def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+    reactions = () if reactions is None else reactions
     return Problem(
         phases=[liquid, Phase("V", amount=Pinned(0.0))],
         T=T,
@@ -355,7 +377,8 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
     )
 
 
-def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] = ()) -> Problem:
+def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
+    reactions = () if reactions is None else reactions
     return Problem(
         phases=[Phase("L", amount=Pinned(0.0)), vapor],
         T=T,
@@ -382,5 +405,3 @@ __all__ = (
     "problem_from_mapping",
     "solve_equilibrium",
 )
-
-

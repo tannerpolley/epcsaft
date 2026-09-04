@@ -286,7 +286,7 @@ def rule_declared_selectors() -> list[str]:
 def rule_surface_defaults() -> list[str]:
     bad = []
     surface = ROOT / "engine" / "src" / "epcsaft"
-    for path in sorted(surface.glob("*.py")):
+    for path in sorted(surface.rglob("*.py")):
         try:
             tree = ast.parse(path.read_text())
         except SyntaxError as error:
