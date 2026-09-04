@@ -179,9 +179,9 @@
       "edit": "S9 gains the fixed-fraction feed cell and the reactive free-T cell with standard_gibbs offsets",
       "lines": {
         "estimate": 60,
-        "ceiling": 130
+        "ceiling": 145
       },
-      "ceiling_total": 340
+      "ceiling_total": 355
     },
     {
       "path": "engine/tests/native/equilibrium_checks.cpp",

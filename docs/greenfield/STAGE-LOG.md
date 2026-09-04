@@ -697,3 +697,8 @@ cell has no solution near 298 K with those offsets (a fixture-state question; ce
 state table requires) or the free-`T` boundary path needs its own continuation start. The trace
 of that run (`gf-stage-05-repair/attempt-1.resume4.log`) is the evidence to keep. The repair's
 S9 standard-term check becomes a derivative comparison at the start point, no solve.
+
+**Fifth stop, three lines.** The two-part point comparison that replaced the free-`T` solve made
+`boundary_checks.cpp` 343 against 340 (133 added against 130). Coordinator's re-budget, 145 per
+write and 355 total, on the ground that the planner's own replacement is the whole overrun;
+recorded here so the planner can object. No compaction, as before.
