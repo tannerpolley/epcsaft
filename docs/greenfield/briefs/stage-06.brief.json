@@ -23,7 +23,8 @@
     "grep -q 'EQUILIBRIUM_MAX_ITERATIONS' engine/native/core/numerical_policy.hpp",
     "grep -q 'def design_claims' tools/check-equilibrium-claims.py",
     ".venv/bin/meson --version",
-    "command -v python3"
+    "command -v python3",
+    "grep -q 'active_parameter_column' engine/native/equilibrium/request_compile.cpp"
   ],
   "sources": [
     {
@@ -66,75 +67,505 @@
     },
     {
       "ref": "greenfield@be3f329:docs/greenfield/CANON.md",
-      "must_contain": ["a minimum proves nothing"],
+      "must_contain": [
+        "a minimum proves nothing"
+      ],
       "purpose": "the budget ruling: ceilings and named checks only"
     },
     {
       "ref": "greenfield@be3f329:engine/tests/oracle/oracle.json",
-      "must_contain": ["\"light_alkane_saturation\""],
+      "must_contain": [
+        "\"light_alkane_saturation\""
+      ],
       "purpose": "the ten NIST ethane rows R6 fits"
     },
     {
       "ref": "greenfield@be3f329:engine/native/equilibrium/gibbs_minimizer.hpp",
-      "must_contain": ["std::vector<double> sensitivity(", "std::vector<double> boundary_start(const CompiledSystem& compiled);"],
+      "must_contain": [
+        "std::vector<double> sensitivity(",
+        "std::vector<double> boundary_start(const CompiledSystem& compiled);"
+      ],
       "purpose": "the sensitivity call the shell composes with; lever is a weight vector over T, P and the species feed"
     },
     {
       "ref": "greenfield@be3f329:engine/native/model/helmholtz_model.hpp",
-      "must_contain": ["std::vector<ActiveParameter> active = {}", "State state_at_pressure("],
+      "must_contain": [
+        "std::vector<ActiveParameter> active = {}",
+        "State state_at_pressure("
+      ],
       "purpose": "the active-parameter constructor and the state calls that gain an order flag"
     },
     {
       "ref": "greenfield@be3f329:tools/check-engine-architecture.py",
-      "must_contain": ["STABILITY_SYMBOLS = (\"phase_stability.hpp\", \"find_phases\", \"Discover\")"],
+      "must_contain": [
+        "STABILITY_SYMBOLS = (\"phase_stability.hpp\", \"find_phases\", \"Discover\")"
+      ],
       "purpose": "rule 4 as it stands; the shell must stay below it"
+    },
+    {
+      "ref": "greenfield@REPIN:engine/native/equilibrium/request_compile.cpp",
+      "must_contain": [
+        "active_parameter_column"
+      ],
+      "purpose": "the active-parameter F_theta columns the regression Jacobian composes with (Stage 5 repair, finding 8)"
     }
   ],
   "writes": [
-    {"path": "engine/native/model/helmholtz_model.hpp", "edit": "PropertyOrder {Value, FirstDerivatives}; state() and state_at_pressure() gain an order argument; State gains the optional derivative block for first-derivative fields in both coordinate sets", "lines": {"estimate": 70, "ceiling": 110}, "must_contain": ["enum class PropertyOrder", "FirstDerivatives"]},
-    {"path": "engine/native/model/helmholtz_model.cpp", "edit": "the derivative block from the Hessian state() already computes; fixed-P block through the density root; second-derivative fields absent by name", "lines": {"estimate": 220, "ceiling": 320}, "must_contain": ["PropertyOrder::FirstDerivatives"]},
-    {"path": "engine/native/regression/expression.hpp", "edit": "the four nodes, LeverIndex {Temperature = 0, Pressure = 1, Feed = 2}, the leaf kinds, the evaluator declaration", "lines": {"estimate": 70, "ceiling": 110}, "must_contain": ["Pressure = 1", "chain("]},
-    {"path": "engine/native/regression/expression.cpp", "edit": "value and Jacobian per node; one chain(outer, inner) helper for every non-leaf node; targets visited by index; fixed-lever rejection by name", "lines": {"estimate": 160, "ceiling": 240}, "must_contain": ["return outer * inner;", "target < targets.size()", "\"fixed_lever"]},
-    {"path": "engine/native/regression/least_squares.hpp", "edit": "Observation, Fit, fit(model, observations); the record; PredictionCache", "lines": {"estimate": 100, "ceiling": 150}, "must_contain": ["Fit fit("]},
-    {"path": "engine/native/regression/least_squares.cpp", "edit": "Ceres cost function per observation with the analytic Jacobian; failed solve returns false; covariance sigma^2 (J^T J)^-1; the fit's Convergence record with FIT_GRADIENT_TOLERANCE, FIT_MAX_ITERATIONS, floor and amplification; core::Scope", "lines": {"estimate": 420, "ceiling": 580}, "must_contain": ["policy::FIT_MAX_ITERATIONS", "core::Scope", "Convergence", "// failed_residual", "residual_variance", "return offsets[family] + index;"]},
-    {"path": "engine/native/core/numerical_policy.hpp", "edit": "FIT_GRADIENT_TOLERANCE (AlgorithmTolerance) and FIT_MAX_ITERATIONS (Budget), each naming itself", "lines": {"estimate": 14, "ceiling": 24}, "must_contain": ["FIT_GRADIENT_TOLERANCE", "FIT_MAX_ITERATIONS"]},
-    {"path": "engine/native/bindings/regression_bindings.cpp", "edit": "Observation and Expression builders, fit, evaluate_expression; every bound function opens one Scope", "lines": {"estimate": 160, "ceiling": 240}, "must_contain": ["core::Scope"]},
-    {"path": "engine/native/bindings/module.cpp", "edit": "register the regression bindings", "lines": {"estimate": 3, "ceiling": 8}},
-    {"path": "engine/src/epcsaft/regression.py", "edit": "mapping only: Observation, Property, Coordinate, Constant, Sum, Product, Log, StateSpec, fit; names to indices, no arithmetic", "lines": {"estimate": 200, "ceiling": 290}},
-    {"path": "engine/src/epcsaft/_core.pyi", "edit": "regression types and the two entry points", "lines": {"estimate": 60, "ceiling": 90}},
-    {"path": "engine/src/epcsaft/__init__.py", "edit": "export regression", "lines": {"estimate": 2, "ceiling": 6}},
-    {"path": "engine/meson.build", "edit": "regression sources into the native library, regression_bindings into _core, the regression_checks executable and test", "lines": {"estimate": 40, "ceiling": 60}},
-    {"path": "tools/verify-installed-wheel.py", "edit": "NATIVE_ENTRYPOINTS become the two regression entry points this stage binds (fit, evaluate_expression) plus solve_equilibrium; PUBLIC_MODULES unchanged", "lines": {"estimate": 8, "ceiling": 16}},
-    {"path": "tools/check-equilibrium-claims.py", "edit": "also read REGRESSION.md's claim table (R1-R8) and map them to regression_checks.cpp", "lines": {"estimate": 30, "ceiling": 50}},
-    {"path": "engine/tests/native/regression_support.hpp", "edit": "ethane fixture with three active parameters, synthetic saturation rows at theta*, the NIST rows loader, the non-aborting CHECK and trace printer shared with equilibrium_support.hpp", "lines": {"estimate": 110, "ceiling": 160}},
-    {"path": "engine/tests/native/regression_checks.cpp", "edit": "check_r1 .. check_r8 as REGRESSION.md's table words them; every failure reported, never aborted", "lines": {"estimate": 300, "ceiling": 420}},
-    {"path": "engine/tests/regression/test_fit.py", "edit": "one fit from Python end to end: observations in, Fit out, record present, no arithmetic in the mapping", "lines": {"estimate": 80, "ceiling": 120}},
-    {"path": "engine/tests/native/equilibrium_support.hpp", "edit": "Stage 5 deviation: skipped-by-name reporting for dependents of a failed existence certificate", "lines": {"estimate": 15, "ceiling": 25}, "must_contain": ["skipped by name"]},
-    {"path": "engine/tests/native/boundary_checks.cpp", "edit": "Stage 5 deviation: S9 asserts the feed sensitivity along a reaction direction (B d = 0) is exactly zero on the reactive fixture", "lines": {"estimate": 14, "ceiling": 24}}
+    {
+      "path": "engine/native/model/helmholtz_model.hpp",
+      "edit": "PropertyOrder {Value, FirstDerivatives}; state() and state_at_pressure() gain an order argument; State gains the optional derivative block for first-derivative fields in both coordinate sets",
+      "lines": {
+        "estimate": 70,
+        "ceiling": 110
+      },
+      "must_contain": [
+        "enum class PropertyOrder",
+        "FirstDerivatives"
+      ]
+    },
+    {
+      "path": "engine/native/model/helmholtz_model.cpp",
+      "edit": "the derivative block from the Hessian state() already computes; fixed-P block through the density root; second-derivative fields absent by name",
+      "lines": {
+        "estimate": 220,
+        "ceiling": 320
+      },
+      "must_contain": [
+        "PropertyOrder::FirstDerivatives"
+      ]
+    },
+    {
+      "path": "engine/native/regression/expression.hpp",
+      "edit": "the four nodes, LeverIndex {Temperature = 0, Pressure = 1, Feed = 2}, the leaf kinds, the evaluator declaration",
+      "lines": {
+        "estimate": 70,
+        "ceiling": 110
+      },
+      "must_contain": [
+        "Pressure = 1",
+        "chain("
+      ]
+    },
+    {
+      "path": "engine/native/regression/expression.cpp",
+      "edit": "value and Jacobian per node; one chain(outer, inner) helper for every non-leaf node; targets visited by index; fixed-lever rejection by name",
+      "lines": {
+        "estimate": 160,
+        "ceiling": 240
+      },
+      "must_contain": [
+        "return outer * inner;",
+        "target < targets.size()",
+        "\"fixed_lever"
+      ]
+    },
+    {
+      "path": "engine/native/regression/least_squares.hpp",
+      "edit": "Observation, Fit, fit(model, observations); the record; PredictionCache",
+      "lines": {
+        "estimate": 100,
+        "ceiling": 150
+      },
+      "must_contain": [
+        "Fit fit("
+      ]
+    },
+    {
+      "path": "engine/native/regression/least_squares.cpp",
+      "edit": "Ceres cost function per observation with the analytic Jacobian; failed solve returns false; covariance sigma^2 (J^T J)^-1; the fit's Convergence record with FIT_GRADIENT_TOLERANCE, FIT_MAX_ITERATIONS, floor and amplification; core::Scope",
+      "lines": {
+        "estimate": 420,
+        "ceiling": 580
+      },
+      "must_contain": [
+        "policy::FIT_MAX_ITERATIONS",
+        "core::Scope",
+        "Convergence",
+        "// failed_residual",
+        "residual_variance",
+        "return offsets[family] + index;"
+      ]
+    },
+    {
+      "path": "engine/native/core/numerical_policy.hpp",
+      "edit": "FIT_GRADIENT_TOLERANCE (AlgorithmTolerance) and FIT_MAX_ITERATIONS (Budget), each naming itself",
+      "lines": {
+        "estimate": 14,
+        "ceiling": 24
+      },
+      "must_contain": [
+        "FIT_GRADIENT_TOLERANCE",
+        "FIT_MAX_ITERATIONS"
+      ]
+    },
+    {
+      "path": "engine/native/bindings/regression_bindings.cpp",
+      "edit": "Observation and Expression builders, fit, evaluate_expression; every bound function opens one Scope",
+      "lines": {
+        "estimate": 160,
+        "ceiling": 240
+      },
+      "must_contain": [
+        "core::Scope"
+      ]
+    },
+    {
+      "path": "engine/native/bindings/module.cpp",
+      "edit": "register the regression bindings",
+      "lines": {
+        "estimate": 3,
+        "ceiling": 8
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/regression.py",
+      "edit": "mapping only: Observation, Property, Coordinate, Constant, Sum, Product, Log, StateSpec, fit; names to indices, no arithmetic",
+      "lines": {
+        "estimate": 200,
+        "ceiling": 290
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/_core.pyi",
+      "edit": "regression types and the two entry points",
+      "lines": {
+        "estimate": 60,
+        "ceiling": 90
+      }
+    },
+    {
+      "path": "engine/src/epcsaft/__init__.py",
+      "edit": "export regression",
+      "lines": {
+        "estimate": 2,
+        "ceiling": 6
+      }
+    },
+    {
+      "path": "engine/meson.build",
+      "edit": "regression sources into the native library, regression_bindings into _core, the regression_checks executable and test",
+      "lines": {
+        "estimate": 40,
+        "ceiling": 60
+      }
+    },
+    {
+      "path": "tools/verify-installed-wheel.py",
+      "edit": "NATIVE_ENTRYPOINTS become the two regression entry points this stage binds (fit, evaluate_expression) plus solve_equilibrium; PUBLIC_MODULES unchanged",
+      "lines": {
+        "estimate": 8,
+        "ceiling": 16
+      }
+    },
+    {
+      "path": "tools/check-equilibrium-claims.py",
+      "edit": "also read REGRESSION.md's claim table (R1-R8) and map them to regression_checks.cpp",
+      "lines": {
+        "estimate": 30,
+        "ceiling": 50
+      }
+    },
+    {
+      "path": "engine/tests/native/regression_support.hpp",
+      "edit": "ethane fixture with three active parameters, synthetic saturation rows at theta*, the NIST rows loader, the non-aborting CHECK and trace printer shared with equilibrium_support.hpp",
+      "lines": {
+        "estimate": 110,
+        "ceiling": 160
+      }
+    },
+    {
+      "path": "engine/tests/native/regression_checks.cpp",
+      "edit": "check_r1 .. check_r8 as REGRESSION.md's table words them; every failure reported, never aborted",
+      "lines": {
+        "estimate": 300,
+        "ceiling": 420
+      }
+    },
+    {
+      "path": "engine/tests/regression/test_fit.py",
+      "edit": "one fit from Python end to end: observations in, Fit out, record present, no arithmetic in the mapping",
+      "lines": {
+        "estimate": 80,
+        "ceiling": 120
+      }
+    },
+    {
+      "path": "engine/tests/native/equilibrium_support.hpp",
+      "edit": "Stage 5 deviation: skipped-by-name reporting for dependents of a failed existence certificate",
+      "lines": {
+        "estimate": 15,
+        "ceiling": 25
+      },
+      "must_contain": [
+        "skipped by name"
+      ]
+    },
+    {
+      "path": "engine/tests/native/boundary_checks.cpp",
+      "edit": "Stage 5 deviation: S9 asserts the feed sensitivity along a reaction direction (B d = 0) is exactly zero on the reactive fixture",
+      "lines": {
+        "estimate": 14,
+        "ceiling": 24
+      }
+    }
   ],
   "gates": [
-    {"id": "build", "command": ".venv/bin/meson compile -C engine/build/greenfield", "needs": "native", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "1i #include \"phase_stability/find_phases.hpp\"", "expect": "abort", "bites_only_after_write": true, "why": "an include of a header that does not exist"}},
-    {"id": "architecture_rules", "command": "python3 tools/check-engine-architecture.py", "needs": "none", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "1i static const char* const forbidden_symbol = \"Discover\";", "expect": "abort", "bites_only_after_write": true, "why": "rule 4: regression may not reach Discover; the mutant builds"}},
-    {"id": "budget_reader_carries_record", "command": "python3 tools/check-engine-architecture.py", "needs": "none", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "s/core::Scope/core::Scope_/", "expect": "abort", "bites_only_after_write": true, "why": "rule 9: a file reading FIT_MAX_ITERATIONS must name core::Scope; a static gate, the mutant need not build"}},
-    {"id": "named_checks_exist", "command": "python3 tools/check-equilibrium-claims.py", "needs": "none", "mutation": {"file": "engine/tests/native/regression_checks.cpp", "sed": "s/void check_r1/void check_r1_disabled/", "expect": "abort", "bites_only_after_write": true, "why": "renaming one named check must make the claim checker red"}},
-    {"id": "regression_checks", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/expression.cpp", "sed": "s|return outer \\* inner;|return outer;|", "expect": "abort", "bites_only_after_write": true, "why": "R1: every non-leaf node's chain rule dies; the mutant builds"}},
-    {"id": "several_targets", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/expression.cpp", "sed": "0,/target < targets.size()/s||target < 1|", "expect": "abort", "bites_only_after_write": true, "why": "R2: the evaluator visits only the first target"}},
-    {"id": "fixed_lever_named", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/expression.cpp", "sed": "s|\"fixed_lever|\"fixed-lever|", "expect": "abort", "bites_only_after_write": true, "why": "R3: rejected by name means the name is the claim"}},
-    {"id": "failed_residual_not_zero", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "s|return false;  // failed_residual|residuals[0] = 0.0; return true;  // failed_residual|", "expect": "abort", "bites_only_after_write": true, "why": "R4: a failed solve must never score zero"}},
-    {"id": "pressure_column", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/expression.hpp", "sed": "s|Pressure = 1|Pressure = 0|", "expect": "abort", "bites_only_after_write": true, "why": "R5 and R6: Coordinate(P) reads the temperature column; duplicate enum values build"}},
-    {"id": "parameter_offset", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "s|return offsets\\[family\\] + index;|return offsets[family];|", "expect": "abort", "bites_only_after_write": true, "why": "R7: permutation invariance dies when every index of a family maps to its first slot"}},
-    {"id": "covariance_scale", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression", "needs": "native", "mutation": {"file": "engine/native/regression/least_squares.cpp", "sed": "0,/residual_variance/s||1.0 /* residual_variance */|", "expect": "abort", "bites_only_after_write": true, "why": "R8: the covariance loses its variance scale"}},
-    {"id": "feed_reaction_direction_zero", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary", "needs": "native", "mutation": {"file": "engine/native/equilibrium/request_compile.cpp", "sed": "s|= -B\\[rows\\[row\\].index\\]\\[species\\]|= -(1.0 + 0.1 * species) * B[rows[row].index][species]|", "expect": "abort", "bites_only_after_write": true, "why": "S9-zero: unequal feed columns break the exact zero along a reaction direction"}},
-    {"id": "skipped_by_name", "command": "grep -q 'skipped by name' engine/tests/native/equilibrium_support.hpp", "needs": "none", "mutation": {"file": "engine/tests/native/equilibrium_support.hpp", "sed": "s/skipped by name/skipped/", "expect": "abort", "bites_only_after_write": true, "why": "S6-skip: a presence gate on the harness; the reading confirms it is called from S6's dependents"}},
-    {"id": "equilibrium_checks", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium", "needs": "native", "mutation": {"file": "engine/native/equilibrium/request_compile.cpp", "sed": "s/n_feed/n_feed_normalised/", "expect": "abort", "why": "Stage 5's S8 mutation; the stage must not regress the equilibrium checks"}},
-    {"id": "boundary_checks", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary", "needs": "native", "mutation": {"file": "engine/native/equilibrium/request_compile.cpp", "sed": "s|pressure / rt|2.0 * pressure / rt|", "expect": "abort", "why": "Stage 5's S10 mutation; the stage must not regress the boundary checks"}},
-    {"id": "physics_and_model_checks", "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model", "needs": "native", "mutation": {"file": "engine/tests/native/model_support.hpp", "sed": "s/173.44025/-173.44025/", "expect": "abort"}},
-    {"id": "python_eos_and_regression_tests", "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos tests/regression)", "needs": "install", "mutation": {"file": "engine/src/epcsaft/regression.py", "sed": "s/def fit(/def fit_(/", "expect": "abort", "bites_only_after_write": true, "why": "the one Python entry point"}},
-    {"id": "python_does_no_arithmetic", "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft", "needs": "none", "mutation": {"file": "engine/src/epcsaft/regression.py", "sed": "1i import math", "expect": "abort", "bites_only_after_write": true}},
-    {"id": "types_consistent", "command": "(cd engine && ../.venv/bin/mypy)", "needs": "install", "mutation": {"file": "engine/src/epcsaft/_core.pyi", "sed": "s/def fit(/def fitt(/", "expect": "abort", "bites_only_after_write": true}},
-    {"id": "installed_wheel_verifies", "command": "bash tools/ensure-engine-wheel.sh", "needs": "install", "mutation": {"file": "tools/verify-installed-wheel.py", "sed": "s/\"fit\"/\"fitt\"/", "expect": "abort", "bites_only_after_write": true, "why": "check-all's wheel gate turns green with this stage and must name the real entry points"}},
-    {"id": "no_property_names_in_regression", "command": "! grep -rnE 'residual_enthalpy|log_fugacity_coefficient|molar_density|compressibility_factor|residual_chemical_potential' engine/native/regression/", "needs": "none", "mutation": {"file": "engine/native/regression/expression.cpp", "sed": "1i // molar_density", "expect": "abort", "bites_only_after_write": true, "why": "no property name is known to regression/; a field is read through one accessor by the caller's string"}},
-    {"id": "packets_validate", "command": "python3 data/tools/validate_packets.py > /dev/null", "needs": "none", "mutation": {"file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json", "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/", "expect": "abort"}}
+    {
+      "id": "build",
+      "command": ".venv/bin/meson compile -C engine/build/greenfield",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "1i #include \"phase_stability/find_phases.hpp\"",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "an include of a header that does not exist"
+      }
+    },
+    {
+      "id": "architecture_rules",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "1i static const char* const forbidden_symbol = \"Discover\";",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "rule 4: regression may not reach Discover; the mutant builds"
+      }
+    },
+    {
+      "id": "budget_reader_carries_record",
+      "command": "python3 tools/check-engine-architecture.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "s/core::Scope/core::Scope_/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "rule 9: a file reading FIT_MAX_ITERATIONS must name core::Scope; a static gate, the mutant need not build"
+      }
+    },
+    {
+      "id": "named_checks_exist",
+      "command": "python3 tools/check-equilibrium-claims.py",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/tests/native/regression_checks.cpp",
+        "sed": "s/void check_r1/void check_r1_disabled/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "renaming one named check must make the claim checker red"
+      }
+    },
+    {
+      "id": "regression_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/expression.cpp",
+        "sed": "s|return outer \\* inner;|return outer;|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R1: every non-leaf node's chain rule dies; the mutant builds"
+      }
+    },
+    {
+      "id": "several_targets",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/expression.cpp",
+        "sed": "0,/target < targets.size()/s||target < 1|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R2: the evaluator visits only the first target"
+      }
+    },
+    {
+      "id": "fixed_lever_named",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/expression.cpp",
+        "sed": "s|\"fixed_lever|\"fixed-lever|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R3: rejected by name means the name is the claim"
+      }
+    },
+    {
+      "id": "failed_residual_not_zero",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "s|return false;  // failed_residual|residuals[0] = 0.0; return true;  // failed_residual|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R4: a failed solve must never score zero"
+      }
+    },
+    {
+      "id": "pressure_column",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/expression.hpp",
+        "sed": "s|Pressure = 1|Pressure = 0|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R5 and R6: Coordinate(P) reads the temperature column; duplicate enum values build"
+      }
+    },
+    {
+      "id": "parameter_offset",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "s|return offsets\\[family\\] + index;|return offsets[family];|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R7: permutation invariance dies when every index of a family maps to its first slot"
+      }
+    },
+    {
+      "id": "covariance_scale",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs regression",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/regression/least_squares.cpp",
+        "sed": "0,/residual_variance/s||1.0 /* residual_variance */|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "R8: the covariance loses its variance scale"
+      }
+    },
+    {
+      "id": "feed_reaction_direction_zero",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|= -B\\[rows\\[row\\].index\\]\\[species\\]|= -(1.0 + 0.1 * species) * B[rows[row].index][species]|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S9-zero: unequal feed columns break the exact zero along a reaction direction"
+      }
+    },
+    {
+      "id": "skipped_by_name",
+      "command": "grep -q 'skipped by name' engine/tests/native/equilibrium_support.hpp",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/tests/native/equilibrium_support.hpp",
+        "sed": "s/skipped by name/skipped/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "S6-skip: a presence gate on the harness; the reading confirms it is called from S6's dependents"
+      }
+    },
+    {
+      "id": "equilibrium_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs equilibrium",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s/n_feed/n_feed_normalised/",
+        "expect": "abort",
+        "why": "Stage 5's S8 mutation; the stage must not regress the equilibrium checks"
+      }
+    },
+    {
+      "id": "boundary_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs boundary",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/native/equilibrium/request_compile.cpp",
+        "sed": "s|pressure / rt|2.0 * pressure / rt|",
+        "expect": "abort",
+        "why": "Stage 5's S10 mutation; the stage must not regress the boundary checks"
+      }
+    },
+    {
+      "id": "physics_and_model_checks",
+      "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs physics model",
+      "needs": "native",
+      "mutation": {
+        "file": "engine/tests/native/model_support.hpp",
+        "sed": "s/173.44025/-173.44025/",
+        "expect": "abort"
+      }
+    },
+    {
+      "id": "python_eos_and_regression_tests",
+      "command": ".venv/bin/meson install -C engine/build/greenfield --quiet && (cd engine && ../.venv/bin/python -m pytest -q tests/eos tests/regression)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/src/epcsaft/regression.py",
+        "sed": "s/def fit(/def fit_(/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "the one Python entry point"
+      }
+    },
+    {
+      "id": "python_does_no_arithmetic",
+      "command": "! grep -rnE '^\\s*(import|from)\\s+(math|numpy|pint|scipy|decimal|fractions|statistics|cmath)\\b' engine/src/epcsaft",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/src/epcsaft/regression.py",
+        "sed": "1i import math",
+        "expect": "abort",
+        "bites_only_after_write": true
+      }
+    },
+    {
+      "id": "types_consistent",
+      "command": "(cd engine && ../.venv/bin/mypy)",
+      "needs": "install",
+      "mutation": {
+        "file": "engine/src/epcsaft/_core.pyi",
+        "sed": "s/def fit(/def fitt(/",
+        "expect": "abort",
+        "bites_only_after_write": true
+      }
+    },
+    {
+      "id": "installed_wheel_verifies",
+      "command": "bash tools/ensure-engine-wheel.sh",
+      "needs": "install",
+      "mutation": {
+        "file": "tools/verify-installed-wheel.py",
+        "sed": "s/\"fit\"/\"fitt\"/",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "check-all's wheel gate turns green with this stage and must name the real entry points"
+      }
+    },
+    {
+      "id": "no_property_names_in_regression",
+      "command": "! grep -rnE 'residual_enthalpy|log_fugacity_coefficient|molar_density|compressibility_factor|residual_chemical_potential' engine/native/regression/",
+      "needs": "none",
+      "mutation": {
+        "file": "engine/native/regression/expression.cpp",
+        "sed": "1i // molar_density",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "no property name is known to regression/; a field is read through one accessor by the caller's string"
+      }
+    },
+    {
+      "id": "packets_validate",
+      "command": "python3 data/tools/validate_packets.py > /dev/null",
+      "needs": "none",
+      "mutation": {
+        "file": "data/packets/figiel-2025-reference-electrolytes/3/parameters/parameters.json",
+        "sed": "s/\"magnitude\": 7.01/\"magnitude\": 7.02/",
+        "expect": "abort"
+      }
+    }
   ],
   "diagnostics": [
     {
@@ -155,11 +586,26 @@
     },
     {
       "span": "evaluate_expression",
-      "events": ["leaf_value per leaf", "leaf_jacobian_norm per leaf"],
-      "convergence": {"residual": "none: no iteration", "criterion": "none", "floor": "none", "amplification": "none"},
+      "events": [
+        "leaf_value per leaf",
+        "leaf_jacobian_norm per leaf"
+      ],
+      "convergence": {
+        "residual": "none: no iteration",
+        "criterion": "none",
+        "floor": "none",
+        "amplification": "none"
+      },
       "check": "value recomputed from the leaves equals the returned value",
       "gate": "regression_checks"
     }
   ],
-  "reported": ["outcome", "files_written", "gates", "deviations", "stop_detail", "serena_reading"]
+  "reported": [
+    "outcome",
+    "files_written",
+    "gates",
+    "deviations",
+    "stop_detail",
+    "serena_reading"
+  ]
 }
