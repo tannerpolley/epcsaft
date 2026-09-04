@@ -721,3 +721,7 @@ coefficient per active column and needs each active parameter's family and indic
 `HelmholtzModel` keeps private; no model-layer write was listed. `helmholtz_model.hpp` is now a
 write for one read-only accessor (`29d2fc7`). The worker had already fixed its identifier bug and
 made the native absent state within their ceilings. Eighth resume.
+
+**Eighth stop, a name collision the checker caught.** Rule 10 refuses any unqualified `active(`
+outside `core/` and `bindings/`, since that token is the trace's accessor; the coordinator had
+named the model's accessor `active()`. Renamed `active_parameters()` (`1509e3e`). Ninth resume.
