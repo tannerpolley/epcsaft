@@ -813,3 +813,21 @@ across the merge is rule 12's `rglob` widening only. The Stage 6 brief's `REPIN`
 `greenfield@271fb39:engine/native/equilibrium/request_compile.cpp`; `stage-06` fast-forwarded
 to the merge; preflight clean, 13 preconditions run. Step (1) of the owner's four is closed;
 the planner has been asked for the harness brief (step 3) and the campaign brief (step 2).
+
+## Stage 5 harness — Sol coordinator takeover, 2026-09-03 20:53 MDT
+
+The owner transferred coordination from Fable to Sol. The coordinator verified the
+clean main `greenfield` checkout and harness `stage-05-harness` checkout at `4dcf8b3`,
+then reran brief preflight: six sources, seven preconditions, nine mutation-bearing
+gates, zero problems; four mutations intentionally await implementation.
+
+The harness environment existed but its native build directory did not. Reused the
+repair worktree's dependency source caches and configured the harness build with its
+own `.venv` prefix; Meson setup passed. No stage implementation was changed.
+
+Launched the handed-off `codex exec` command on `gpt-5.6-sol`, reasoning high.
+Verified PID/process group `984155`, session `01a06a55-c85d-7f30-b6ab-709cc6ec9b39`,
+worktree `~/.codex/worktrees/gf-stage-05-harness`, log `attempt-1.log`,
+result destination `stage-05-harness.result.json`. Worker owns the brief's nine writes;
+coordinator owns independent acceptance and Git writes. Campaign and Stage 6 are held.
+No push, deletion, or scientific/design ruling was made.

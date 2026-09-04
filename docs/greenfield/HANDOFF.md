@@ -3,6 +3,24 @@
 Written 2026-09-03 for a fresh coordinator session. Read this, then `README.md` in this
 directory, then `ORCHESTRATION.md`. Everything else is reached from those.
 
+## Sol coordinator live state, 2026-09-03 20:53 MDT
+
+The transfer is active. Harness worker launched from clean `stage-05-harness@4dcf8b3`
+in `~/.codex/worktrees/gf-stage-05-harness`, using the handed-off
+`codex exec` command, `gpt-5.6-sol`, reasoning high. Verified worker PID/process group
+`984155`, session `01a06a55-c85d-7f30-b6ab-709cc6ec9b39`; log `attempt-1.log`,
+result `stage-05-harness.result.json` in that worktree. No result or acceptance yet.
+
+Coordinator preflight passed: six sources, seven preconditions, nine gates with
+mutations, four deliberately deferred mutations. The worktree had its environment but
+no configured native build. Before launch, the coordinator copied the existing dependency
+source caches from the repair worktree and configured `engine/build/greenfield` with
+the harness `.venv` as prefix. Meson setup passed; no stage code changed.
+
+Next: observe this exact worker, then independently accept its completed tree using
+the transfer recipe below. Campaign and Stage 6 remain held. Scientific/design stops
+go through the owner to the planner. Nothing pushed; no existing worktree deleted.
+
 ## Transfer to the Sol coordinator, 2026-09-03 evening
 
 The owner moved coordination from the Claude Fable session to the main Sol agent (Codex) because
