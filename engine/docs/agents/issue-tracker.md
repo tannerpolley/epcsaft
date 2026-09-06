@@ -9,7 +9,7 @@ do not replace current issue state.
 CAP programs, D-numbered decisions, issue completion and old interface examples
 are provenance. They do not establish availability in the rebuilt Engine.
 Use the sole accepted ADR sequence under `docs/scientific/adr/` for decisions,
-the scientific context for permanent mathematics, and `docs/greenfield/TRANSFER.md`
+the scientific context for permanent mathematics, and `docs/scientific/implementation-plan.md`
 for current implementation/evidence gaps. Read live issue state when issue
 work is requested; do not copy it into another status ledger.
 

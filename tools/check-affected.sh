@@ -31,7 +31,7 @@ paths="$(printf '%s\n' "${changed[@]}")"
 docs_only=true
 for path in "${changed[@]}"; do
     case "$path" in
-        docs/*.md|engine/docs/*.md|docs/greenfield/briefs/*.json|docs/greenfield/reviews/*.csv|docs/greenfield/reviews/stage-history/*.json|engine/docs/equations_registry.yaml|engine/ARCHITECTURE.yaml|tools/diffstat.py|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes|engine/scripts/docs/sync_equation_registry.py|tools/check-affected.sh|tools/check-all.sh) ;;
+        docs/*.md|engine/docs/*.md|docs/*.json|docs/*.csv|engine/docs/equations_registry.yaml|engine/ARCHITECTURE.yaml|tools/diffstat.py|AGENTS.md|engine/AGENTS.md|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes|engine/scripts/docs/sync_equation_registry.py|tools/check-affected.sh|tools/check-all.sh) ;;
         *) docs_only=false ;;
     esac
 done

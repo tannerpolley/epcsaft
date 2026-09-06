@@ -26,9 +26,7 @@ Keep `dipolar-density-perturbation`, `dipole_scaling`,
 behavior in the electrolyte relative-permittivity owner. Historical results,
 source transcriptions, accepted plans, and ADR 0003 remain provenance.
 
-This record supersedes only the final consequence of ADR 0003 that required
-open polar leaves to report one aggregate `ares_polar` contribution. Every
-other ADR 0003 decision and consequence remains accepted.
+This exclusion also applies to explicit parameter inputs under ADR 0003.
 
 ## Verification and validity boundary
 

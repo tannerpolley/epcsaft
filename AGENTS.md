@@ -3,7 +3,8 @@
 This private repository is the single Git and Codex home for the ePC-SAFT
 project. Every agent performing scientific or engineering work uses the
 installed CSE skills and reads `docs/scientific/README.md`,
-`docs/scientific/CONTEXT.md`, the relevant accepted ADR, and the nearest
+`docs/scientific/CONTEXT.md` for the project map and one-driver requirement,
+the relevant accepted ADR, and the nearest
 subtree `AGENTS.md` before selecting the smallest applicable CSE route.
 
 One scientific slice has one accountable agent from input to evidence. That
@@ -36,8 +37,9 @@ file across the participating repositories.
 
 Directory ownership remains strict:
 
-- `engine/`: the sole `epcsaft` runtime, executable topology, scientific
-  context, accepted ADRs, compact numerical evidence, and one native build.
+- `docs/scientific/`: the project map, accepted decisions and current implementation plan.
+- `engine/`: the sole `epcsaft` runtime, executable topology, canonical mathematics
+  and algorithms, compact numerical evidence, and one native build.
 - `data/`: canonical reusable scientific packets, packet locks, and readiness
   checks.
 - `analyses/`: retained one-question scientific inputs, scripts, results,
@@ -65,9 +67,9 @@ replays belong in analyses; builds, lint, typing, schemas, hashes, manifests,
 environments, and path audits are readiness checks. Do not add contract,
 compatibility, legacy, snapshot, prose, mock, or coverage-only tests.
 
-Historical plans, prior results, evidence, source locators, old repository
-names, and old package names are provenance and must not be normalized as live
-instructions. This project has no CI/CD. Run the applicable root checks before
+Superseded setup and worker instructions live only in Git history. Retained
+scientific results and source locators are evidence for their stated snapshot;
+read historical records only for a specific provenance or recovery question. This project has no CI/CD. Run the applicable root checks before
 handoff. `codex-cleanup.sh` is an agent closeout action: agents run it, never ask
 the user to run it, and remove only task-created ignored caches or exact
 user-authorized candidates.

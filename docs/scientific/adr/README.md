@@ -1,9 +1,16 @@
-# Scientific decision records
-Accepted records use one Engine-wide sequence: `0001-short-title.md`,
-`0002-short-title.md`, and so on. Keep `Kind:` near the top, and write only the facts needed to
-recover the setting, alternatives, decision, evidence, and validity boundary.
+# Scientific decisions
 
-Create a record only when reversal is costly, code and equations do not explain
-the choice, genuine alternatives existed, and the choice materially affects
-scientific or computational work. Superseded records stay here, name their
-replacement, and never release their number for reuse.
+Current accepted decisions use one sequence. Read the
+[project map](../CONTEXT.md) first and only the decision relevant to the work.
+
+- [0003: explicit parameter inputs](0003-explicit-parameter-inputs.md)
+- [0006: residual polar exclusion](0006-retire-residual-polar.md)
+- [0007: scientific directory ownership](0007-retire-governance-and-validation-owners.md)
+- [0008: mathematical documentation authority](0008-mathematics-documentation-authority.md)
+- [0009: general platform and one equilibrium driver](0009-general-platform-one-driver.md)
+
+Record a decision when real alternatives materially affect scientific or
+computational work and the equations/code alone do not explain the choice.
+Superseded decisions leave the active tree after surviving requirements are
+consolidated. Git history preserves their original content; numbers are never
+reused. Decisions 0001, 0002, 0004 and 0005 are recoverable at `2985cd4`.

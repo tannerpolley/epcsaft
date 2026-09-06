@@ -8,7 +8,7 @@ applications own chemistry selections, fit adoption and application evidence.
 Read [equations](docs/equations.md), [EOS conventions](docs/science/full-eos.md),
 [equilibrium formulation](docs/equilibrium/formulation.md) and
 [algorithms](docs/science/algorithms.md) for required mathematics. Read the
-[current transfer plan](../docs/greenfield/TRANSFER.md) for implemented,
+[current transfer plan](../docs/scientific/implementation-plan.md) for implemented,
 incorrect, missing and unqualified behavior. A definition in the equation
 index does not establish that the installed Engine implements it.
 

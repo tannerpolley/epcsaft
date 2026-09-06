@@ -4,7 +4,7 @@ This document owns symbols, bases, source applicability and EOS conventions.
 It states required behavior, not installed availability. The canonical
 [equation definitions](../equations.md) are edited once; repeated derivations
 below explain their meaning. [Algorithms](algorithms.md) own numerical methods
-and [TRANSFER.md](../../../docs/greenfield/TRANSFER.md) owns implementation gaps.
+and [implementation plan](../../../docs/scientific/implementation-plan.md) owns implementation gaps.
 Correct mathematics is not weakened to match an implementation defect.
 
 ## 1. Sources and evidence classes
@@ -97,7 +97,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 The [equation catalogue](../equations.md) gives each defining relation a stable
 ID and source locator. Its YAML index is generated, not independently edited.
 Current native owners and numerical falsifiers are linked by the
-[transfer plan](../../../docs/greenfield/TRANSFER.md). Historical `_native`
+[transfer plan](../../../docs/scientific/implementation-plan.md). Historical `_native`
 paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
@@ -630,6 +630,21 @@ gap, not a permanent ban on the accepted target. Solids, critical-point
 conditions as an augmented equation system, kinetics and Bjerrum pairing
 require separately justified scientific extensions. Residual polar terms
 remain retired by ADR 0006.
+
+Residual EOS parameters and reference thermochemistry are separately declared
+physical records. Public density/pressure state calls supply temperature and
+composition with exactly one of density or pressure; native amount-volume
+coordinates retain their defining meaning. Reference calculations additionally require
+the declared stoichiometry, basis and standard state. Physical-input resolution
+and unit arithmetic belong to the native admission owner.
+
+The model/property owner converts declared reaction correlations to reference
+Gibbs offsets and their temperature derivatives; equilibrium consumes those
+values consistently. Request value and derivative orders explicitly. Missing
+thermochemistry or unsupported actions produce typed unavailable total fields
+while preserving valid residual properties. These are required semantics;
+concrete class names and installed availability belong to the implementation
+plan and public interface, not this mathematical specification.
 
 At zero ionic strength the DH value has its exact neutral limit. Its leading
 ionic-strength power is 3/2, so arbitrary ionic insertion Hessians need not be

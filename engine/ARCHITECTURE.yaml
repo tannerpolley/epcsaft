@@ -1,6 +1,6 @@
 version: 15
-# This file states the target structure only. Which stages have landed lives in
-# docs/greenfield/TRANSFER.md; dependencies live in pyproject.toml.
+# This file states intended structure. Implemented and qualified capability is in
+# docs/scientific/implementation-plan.md; dependencies live in pyproject.toml.
 
 # The rule this file exists to state: C++ is organised by dependency layer,
 # because include direction is the only structural fact a checker can enforce.
@@ -17,10 +17,10 @@ artifact:
   public_modules: [epcsaft, epcsaft.equilibrium]
 
 plan:
-  transfer: ../docs/greenfield/TRANSFER.md
+  transfer: ../docs/scientific/implementation-plan.md
   scientific_authority: ../docs/scientific/CONTEXT.md
   acceptance: tests/oracle
-  historical_evidence: ../docs/greenfield/reviews
+  historical_evidence: ../docs/scientific/reviews
 
 # Physical source lines, including comments/blanks/stubs, across the complete
 # working tree (tracked and untracked). Engineering targets, not mathematical
@@ -85,7 +85,7 @@ native:
     core: policy, the declared-choice and convergence contracts, the trace
     physics: no CppAD types, no solver
     model: EOS state and exact derivatives, no phase concept
-    equilibrium: one minimization, its rows, its stability
+    equilibrium: one equilibrium driver, shared rows, continuation and stability
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes
@@ -118,8 +118,9 @@ python:
 formulation:
   document: docs/equilibrium/formulation.md
   algorithms: docs/science/algorithms.md
-  # Fixed-T/P minimization and pinned/free-intensive feasibility share energy
-  # and row owners. Their numerical method/curvature requirements differ.
+  # All admitted specifications use one driver and shared energy/row owners.
+  # Its numerical method and curvature must be qualified for each admitted domain.
+  equilibrium_drivers: 1
   not_expressible: [solids, augmented critical-point equations, kinetics]
 
 naming:

@@ -5,7 +5,7 @@ Canonical, human-editable equation definitions. Edit each equation here once;
 The index is not an implementation-availability declaration. Symbols, source
 applicability and conventions are in [full-eos.md](science/full-eos.md) and
 [formulation.md](equilibrium/formulation.md); methods and derivative domains
-are in [algorithms.md](science/algorithms.md). The [transfer plan](../../docs/greenfield/TRANSFER.md)
+are in [algorithms.md](science/algorithms.md). The [transfer plan](../../docs/scientific/implementation-plan.md)
 links the current implementation and numerical evidence gaps.
 
 Each definition has one stable heading, the five metadata lines, and one
@@ -369,7 +369,7 @@ $$
 
 - Section: Native phase coordinates
 - Status: Documentation-only
-- Source: Historical native source-activity convention; reconciliation of its pressure and reference basis remains required by TRANSFER.md S4
+- Source: Historical native source-activity convention; reconciliation of its pressure and reference basis remains required by docs/scientific/implementation-plan.md S4
 - Description: Historical trial-pressure fugacity/activity contraction; this expression is not an accepted conversion of a fixed source standard state. P in the displayed formula means P_trial, not P0.
 - Change note: Retained for provenance only until its reference-state derivation is established. Do not infer that a source reference pressure is only provenance, or substitute trial pressure for fixed P0. The accepted pressure-density conversion has a separate ID.
 
@@ -610,7 +610,7 @@ $$
 - Status: Exact derivation
 - Source: Exact Jacobian of Eqs.~`phase_mole_fraction`--`phase_molar_density`
 - Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in TRANSFER.md; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in docs/scientific/implementation-plan.md; the generic EOS tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
@@ -628,7 +628,7 @@ $$
 - Status: Exact derivation
 - Source: Exact second-order multivariable chain rule
 - Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in TRANSFER.md; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in docs/scientific/implementation-plan.md; the generic EOS tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}

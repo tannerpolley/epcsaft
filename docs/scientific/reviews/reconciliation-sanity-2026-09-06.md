@@ -55,7 +55,7 @@ There is no stage implementation to merge or cherry-pick.
 The [file inventory](greenfield-pending-2026-09-06.csv) binds all 82 untracked
 files (113,197,853 bytes) to original path, branch, HEAD and SHA-256. Twenty
 worker result JSON records were consolidated byte-for-byte under
-[stage-history](stage-history/), with retained destinations in the inventory.
+`docs/greenfield/reviews/stage-history/` at Git commit `2985cd4`, with retained destinations in the inventory.
 They report historical attempts and are not current acceptance results.
 Original files were retained until the authorized archive verification and
 cleanup described below.
@@ -67,10 +67,11 @@ The harness result explains the 26-registration/24-claim correction and the
 missing-regression verifier stop. Stage-06 stops name missing thermochemistry
 and parameter-derivative owners; neither wrote an implementation. The repair
 stops expose contradictory ceilings and early-stop rules that preserved broken
-intermediate work. These requirements survive in TRANSFER S0/S2/S4/S6 and the
-new code-budget rule. The stale root stage-06 brief is not revived.
+intermediate work. These requirements survive in the current [implementation plan](../implementation-plan.md)
+S0/S2/S4/S6 and the code-budget rule. The stale root stage-06 brief is not revived.
 
-The two pre-existing current harness brief edits remain byte-identical:
+At the pre-cleanup snapshot, the two harness brief edits had these exact bytes
+(now retained in Git at `2985cd4`):
 
 | File | SHA-256 |
 |---|---|
@@ -120,11 +121,12 @@ budget/tooling behavior. Scientific review: prior findings resolved after correc
 label. Budget/preservation review verified all hashes/counts and required the
 budget gate to run even before the clean-tree early exit; corrected. A broader
 style scan found pre-existing formatting findings in the old diff-report mode;
-the focused undefined-name/syntax checks pass. Final outcomes are reported in
-the task handoff.
+the focused undefined-name/syntax checks pass. The later authorized cleanup
+outcome is recorded below.
 
-No wheel build, numerical campaign, source acquisition, GitHub write, branch
-rewrite or worktree/process removal is implied by this record. A finite sanity
+The initial review did not authorize wheel builds, numerical campaigns, source
+acquisition, GitHub writes, branch rewrites or worktree/process removal. The
+subsequent owner-authorized retention and cleanup are recorded below. A finite sanity
 review cannot prove absence of every mathematical error or semantic duplication.
 The next discussion should select independent numerical falsifiers and accepted
 criteria for the observable/domain being implemented; this task does not

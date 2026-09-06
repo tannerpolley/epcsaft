@@ -2,7 +2,7 @@
 
 Required general fitting mathematics; pure saturation is one observation
 construction. Installed availability is recorded in the
-[transfer plan](../../../../docs/greenfield/TRANSFER.md).
+[transfer plan](../../../../docs/scientific/implementation-plan.md).
 
 An observation combines a state/equilibrium specification, an expression, a
 reported value and an explicit discrepancy/uncertainty model. Expressions use

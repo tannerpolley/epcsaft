@@ -85,10 +85,9 @@ EQID_MENTION = re.compile(r"EqID:\s*(`[^`]*`|[^\s]+)")
 
 def documentation_paths(root: Path) -> list[Path]:
     paths = list((root / "docs").rglob("*.md"))
-    paths += list((root.parent / "docs" / "scientific").rglob("*.md"))
-    transfer = root.parent / "docs" / "greenfield" / "TRANSFER.md"
-    if transfer.exists():
-        paths.append(transfer)
+    scientific = root.parent / "docs" / "scientific"
+    paths += [p for p in scientific.rglob("*.md")
+              if "reviews" not in p.relative_to(scientific).parts]
     return paths
 
 
@@ -139,6 +138,20 @@ def self_check(docs: Path) -> None:
         canonical = target / "equations.md"
         canonical.write_text(source, encoding="utf-8")
         synchronize(target, check=False)
+        synchronize(target, check=True)
+        scientific = Path(temporary) / "docs" / "scientific"
+        (scientific / "reviews").mkdir(parents=True)
+        plan = scientific / "implementation-plan.md"
+        plan.write_text("EqID: missing_equation\n", encoding="utf-8")
+        (scientific / "reviews" / "dated.md").write_text(
+            "EqID: historical_equation\n", encoding="utf-8")
+        try:
+            synchronize(target, check=True)
+        except ValueError as error:
+            assert "missing_equation" in str(error) and "historical_equation" not in str(error)
+        else:
+            raise AssertionError("implementation plan references were not checked")
+        plan.write_text("", encoding="utf-8")
         synchronize(target, check=True)
         first = re.search(r"^## `[^`]+`.*?(?=^## `|\Z)", source, re.MULTILINE | re.DOTALL)
         assert first is not None

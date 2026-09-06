@@ -74,8 +74,9 @@ One common Helmholtz definition supplies properties and their derivatives.
 Association elimination, density closure, reference transformations, equilibrium
 row assembly and physical-input resolution each retain their accountable owner.
 Python maps inputs/outputs; applications supply chemistry and specifications as
-data. Distinct numerical algorithms are allowed for distinct mathematical
-problems, using those shared owners. Existing architecture checks cover known
+data. All equilibrium specifications use one driver; association, density,
+fitting and discovery retain their distinct numerical operations using the
+shared owners. Existing architecture checks cover known
 include/constant/call patterns; size and regex checks cannot establish absence
 of semantic duplication. Scientific/code review must inspect the actual calls.
 

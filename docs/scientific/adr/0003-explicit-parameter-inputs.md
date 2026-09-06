@@ -1,41 +1,28 @@
-# ADR 0003: Explicit parameter inputs replace the installed catalog
+# Explicit physical parameter inputs
 
 Kind: computational-architecture
 
-- Status: accepted
-- Date: 2026-07-31
-- Migration source: `engine/docs/adr/0003-explicit-parameter-inputs.md` at
-  commit `9f8728b3bffbd548aebb0356a32e31798b36c385`, blob
-  `25177cd7b21d408ce78547d90904e7af88281551`
+Status: accepted; current interfaces and ownership reconciled 2026-09-06.
 
-## Decision
+The Engine consumes explicitly supplied physical parameters and model choices.
+Reusable packets and provenance belong to `data/`; applications explicitly
+materialize their selected inputs. The runtime does not discover sibling
+repositories or ship a paper-specific parameter catalog.
 
-EOS accepts parameters through a strict source-neutral dictionary or an
-explicit external bundle path. It ships no paper-specific parameter catalog,
-does not expose catalog discovery or typed-record construction, and does not
-depend on ePC-SAFT-data at runtime.
+One native admission owner resolves units, ordered components, pairs, sites,
+physical choices and applicability. Python maps those inputs. Missing required
+physical information is an identified failure, not an inferred coefficient.
+Parameter coordinates have one identity and order through EOS derivatives,
+equilibrium actions and fitting. Active families require complete derivative
+chains; declaring a coordinate does not establish support.
 
-`Mixture.from_dictionary(...)` is the convenience composition entry point. It
-delegates to the same strict `Parameters.from_dictionary(...)` loader and does
-not create a second parameter representation or validation path.
+Physical parameter fingerprints identify normalized scientific values,
+component order, options and validity. Source citations and packet membership
+retain provenance separately; they do not select runtime physics. Native
+behavior follows physical topology and declared formulations, never application,
+source, component-name or fingerprint allowlists.
 
-Parameter fingerprints are computed from normalized scientific values,
-component order, options, and validity. Source IDs, citations, locators, record
-IDs, bundle IDs, and packet membership do not affect equation identity. Internal
-native capabilities are admitted from resolved topology, required fields,
-component order, and applicability—not allowlisted fingerprints.
-
-Reusable parameter/property packets and provenance are owned by Data.
-An analysis may retain paper-, table-, or figure-specific extracts when they are
-local evidence for its question. The immutable transfer inventory is recorded in
-`docs/results/parameter-catalog-cutover.json`.
-
-## Consequences
-
-- A cloned EOS checkout runs its complete test suite without Data, analyses,
-  network access, or a sibling source tree.
-- Applications choose whether to use in-memory raw values or materialize a
-  source-traceable external packet.
-- Old catalog IDs fail because no catalog API exists.
-- This decision does not change equations or implement the open polar leaves.
-  Those leaves must report one aggregate `ares_polar` contribution.
+The project map and implementation plan own current scope and availability.
+Residual polar terms remain excluded by ADR 0006. Historical loader names,
+catalog migration records and previous package arrangements are recoverable
+from this decision's Git history; they are not current callable requirements.

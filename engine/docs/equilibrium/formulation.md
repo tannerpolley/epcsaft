@@ -3,7 +3,7 @@
 This document specifies required phase, reaction and reactive-phase mathematics.
 [Equation definitions](../equations.md) own the displayed relations;
 [algorithms](../science/algorithms.md) own their numerical solution.
-[TRANSFER.md](../../../docs/greenfield/TRANSFER.md) records implementation gaps.
+[implementation plan](../../../docs/scientific/implementation-plan.md) records implementation gaps.
 A proposed or registered equation is not a capability claim.
 
 ## Energy, reference states and coordinates
@@ -80,6 +80,10 @@ and require their own count derivation; they cannot inherit this rule blindly.
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be
 constructed as data specifications of these rows. Names may help users
 construct a problem; they must not select application-specific physics.
+A single declared phase and one-component coexistence are ordinary cells of
+the same specification. Admission and numerical qualification must cover
+phase/support, reaction, charge, pin and free-intensive combinations explicitly;
+structural acceptance of a cell is not evidence that it solves.
 
 ## Stationarity, feasibility and stability
 

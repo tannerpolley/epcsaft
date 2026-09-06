@@ -3,7 +3,7 @@
 Before Engine shaping or implementation, read root `CONTEXT.md`,
 `engine/CONTEXT.md`, `engine/ARCHITECTURE.yaml`, and the relevant accepted
 decision under `docs/scientific/adr/`. Rebuild work also reads
-`docs/greenfield/TRANSFER.md` and `engine/docs/agents/issue-tracker.md`.
+`docs/scientific/implementation-plan.md` and `engine/docs/agents/issue-tracker.md`.
 
 Use the vocabulary defined by `docs/scientific/CONTEXT.md` in issues, code, evidence, and
 reviews. Surface an ADR conflict before implementation; lifecycle state remains

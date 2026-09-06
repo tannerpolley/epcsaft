@@ -3,6 +3,11 @@
 Private scientific monorepo for the unified ePC-SAFT engine, canonical data,
 compact numerical evidence, and retained scientific analyses.
 
+Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
+scientific owners and one equilibrium driver. The
+[implementation plan](docs/scientific/implementation-plan.md) distinguishes
+required capability from implemented and numerically qualified behavior.
+
 ## Prerequisites
 
 The supported development environment is Linux with Git, Python 3.13, `uv`, a

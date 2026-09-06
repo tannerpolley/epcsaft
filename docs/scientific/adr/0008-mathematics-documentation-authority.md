@@ -19,9 +19,9 @@ Permanent equation definitions are edited in `engine/docs/equations.md`;
 Markdown with LaTeX equations and precise pseudocode serves both humans and
 agents. Additional rendered views must use those same sources. The scientific
 context maps EOS conventions, equilibrium formulation, algorithms and fitting
-meaning to their permanent owners. `docs/greenfield/TRANSFER.md` owns the one
-current implementation gap plan; other stage documents and dated reviews
-retain historical evidence without live execution authority.
+meaning to their permanent owners. `docs/scientific/implementation-plan.md` owns the one
+current implementation gap plan. Superseded setup lives only in Git history
+under ADR 0009; dated reviews retain evidence for their inspected snapshot.
 
 This replaces the former YAML-first equation ownership and stage-document
 scientific authority. It preserves ADR 0006's polar exclusion and ADR 0007's

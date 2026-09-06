@@ -4,7 +4,7 @@ Accepted requirements, reconciled against the 2026-09-06 transfer audit.
 These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
 Algorithm IDs below are stable references. Current implementation and required
-numerical falsifiers are mapped in [TRANSFER.md](../../../docs/greenfield/TRANSFER.md).
+numerical falsifiers are mapped in [implementation plan](../../../docs/scientific/implementation-plan.md).
 No section claims that all required actions currently exist.
 
 ## ALG-ADMISSION
@@ -74,7 +74,9 @@ specified scan; mechanical stability does not establish global stability.
 
 ## ALG-EQUILIBRIUM
 
-Compile balances, supports, pins and free intensives from data. Check structural
+All admitted specifications use the one equilibrium driver required by the
+[project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
+pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
@@ -87,10 +89,11 @@ and potential constraints do not have zero curvature merely because an
 objective is constant or multipliers vanish at a solution.
 
 **Open method decision for pinned/free-intensive systems:** qualify an exact
-weighted-curvature constrained solver, a root method using the exact row
+weighted-curvature constrained method, a root method using the exact row
 Jacobian, or a limited-memory constrained method. The latter must be labelled
 as such in capability claims and architecture checks. This reconciliation
-selects none of these alternatives. Exact constraint curvature generally
+selects none of these alternatives. Qualify the method within the one-driver
+requirement; do not add independent specification-specific solvers. Exact constraint curvature generally
 requires third energy derivatives; lifting variables does not automatically
 remove that requirement.
 

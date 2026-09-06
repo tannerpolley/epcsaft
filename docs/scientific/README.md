@@ -12,10 +12,14 @@ same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
 neither becomes a second Engine specification. This preserves the repository's
 accepted CSE Markdown layout (issue 55).
 
-[TRANSFER.md](../greenfield/TRANSFER.md) is the single current implementation
-gap plan. Dated reviews, prior briefs and stage documents retain provenance;
-they neither override permanent doctrine nor authorize execution. The
-[numerical-policy audit](numerical-policy-audit.md) is historical evidence.
+The [implementation plan](implementation-plan.md) is the single current gap
+and completion plan. [Dated reviews](reviews/transfer-audit-2026-09-06.md)
+retain numerical evidence and inspected limitations; they do not issue current
+instructions. Obsolete setup documents and worker records live only in Git
+history. The complete pre-consolidation setup is recoverable at
+`2985cd4e09228c7f752c6bbd1d798ba70cfdd6d7`; use
+`git show <commit>:<path>` only for a specific provenance or recovery question.
+The retained cleanup review locates the verified private historical-log archive.
 
 [Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
 ceiling; their single numeric owner is `engine/ARCHITECTURE.yaml`.
