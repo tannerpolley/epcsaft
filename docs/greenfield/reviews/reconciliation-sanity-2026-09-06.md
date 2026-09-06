@@ -57,7 +57,8 @@ files (113,197,853 bytes) to original path, branch, HEAD and SHA-256. Twenty
 worker result JSON records were consolidated byte-for-byte under
 [stage-history](stage-history/), with retained destinations in the inventory.
 They report historical attempts and are not current acceptance results.
-Original files remain in their worktrees pending the exact cleanup decision.
+Original files were retained until the authorized archive verification and
+cleanup described below.
 The other files are logs, resume prompts, result schemas, copied briefs, dead
 PID files and local Serena configuration. A hash inventory is not a backup of
 those bytes; deleting them requires an explicit disposition.
@@ -149,4 +150,23 @@ The inventory above describes the pre-cleanup snapshot. The verified archive
 is the complete byte-preservation owner; the 20 committed worker reports are
 the compact review surface. Ignored build/dependency/virtual-environment caches
 are disposable worktree contents and are not included in this historical-file
-archive. Cleanup completion is recorded below after the authorized operations.
+archive. Cleanup completion is recorded below.
+
+## Completed local cleanup
+
+Reconciliation and preserved reports were committed locally as `e29eeaf`
+before clearing any originals. All 82 archived originals were rehashed against
+the inventory and archive immediately before removal. Exactly those files
+were removed; the 20 compact reports remain in Git.
+
+Native Git worktree removal completed for `gf-stage-02`, `gf-stage-03-repair`,
+`gf-stage-04-repair`, `gf-stage-05`, `gf-stage-05-repair`, `gf-stage-06` and
+`gf-stage-3`. Each had no tracked or untracked changes, an integrated tip and
+no directly attached live process at the final preflight. Their ignored build,
+dependency and environment caches were discarded with the worktrees.
+
+`gf-stage-05-harness` remains, clean, with its language-server processes.
+All eight stage branches and all unique historical branches retain their exact
+tips. Other worktrees and unrelated application work were not changed. No push,
+branch deletion, history rewrite, process termination or broad worktree pruning
+was performed. The current greenfield attachment is retained.
