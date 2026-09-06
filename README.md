@@ -33,7 +33,7 @@ Python consumers use the installed package and do not invoke Meson:
 
 ```python
 import epcsaft
-from epcsaft import equilibrium, regression
+from epcsaft import equilibrium
 ```
 
 Do not use an editable install or add `engine/src` to `PYTHONPATH`. Downstream

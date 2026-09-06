@@ -1,0 +1,7 @@
+temperature_K,molar_density_mol_m3,method,temperature_step_K,residual_internal_energy_J_mol
+300.0,10000.0,returned,,-22.849652512532796
+300.0,10000.0,h_minus_RT_Zminus1,,-6854.895753759838
+300.0,10000.0,centered_residual_helmholtz_temperature_derivative,0.1,-6854.896682211184
+300.0,10000.0,centered_residual_helmholtz_temperature_derivative,0.03,-6854.895837307021
+300.0,10000.0,centered_residual_helmholtz_temperature_derivative,0.01,-6854.895763068368
+300.0,10000.0,centered_residual_helmholtz_temperature_derivative,0.003,-6854.895754494701

@@ -4,73 +4,51 @@ default deliverable: capability
 
 ## Question and intended use
 
-The engine evaluates ePC-SAFT states, solves phase and reaction equilibrium from a
-degrees-of-freedom specification, and fits parameters to declared observations, through one
-installed `epcsaft` wheel. The intended use is generic scientific computation for the
-formulations the equation registry admits; application chemistry, parameter adoption and
-downstream claims stay with the applications that consume the wheel.
+Compute ePC-SAFT fluid states, phase and reaction equilibrium, thermodynamic
+properties and parameter fits through one installed Engine wheel. Application
+chemistry, parameter adoption and flowsheet claims belong to the three official
+downstream applications named in root `AGENTS.md`. Intended capability is not
+installed availability; [TRANSFER.md](../greenfield/TRANSFER.md) owns that gap.
 
-The tree is being rebuilt on branch `greenfield` in eight gated stages
-(`docs/greenfield/TRANSFER.md`). Four are closed. Until the final check merges,
-`main` is the old tree and `greenfield` is the design authority.
+## Authority
 
-## Owners
-
-| authority | owner |
+| Subject | Sole owner |
 |---|---|
-| governing equations, symbols, units, validity domains | `engine/docs/science/full-eos.md` |
-| stable equation identifiers, each tied to its `// EqID:` annotation in source | `engine/docs/equations_registry.yaml`; rendered view `engine/docs/equations.md` |
-| the rebuild: stages, gates, roles, carry-over, decisions taken while writing | `docs/greenfield/` |
-| what every layer may assume of the core: declared choices, convergence records, the trace | `docs/greenfield/CORE.md` |
-| the equilibrium formulation and its count rule | `docs/greenfield/EQUILIBRIUM.md`; derivation in `engine/docs/equilibrium/formulation.md` |
-| structural rules the checker enforces | `tools/check-engine-architecture.py`; stated in `docs/greenfield/CANON.md` |
-| acceptance data: measured rows only | `engine/tests/oracle/oracle.json` |
-| reusable source data with provenance and hashes | `data/packets/`; contract `data/docs/packet-contract.md` |
-| evidence produced by asking a question of the engine | `analyses/`; reproductions under `analyses/reproduction/<year>-<author>` |
-| bibliography snapshot, generated from Zotero, for manuscripts only | `engine/docs/latex/references.bib` via `engine/scripts/docs/sync_bibliography.py`; the equation registry does not read it |
-| accepted decisions | `docs/scientific/adr/` |
-| runtime semantics, concrete lifetimes | `engine/native/` and `engine/src/epcsaft/` |
+| Equation definitions, stable equation IDs and source locators | [equations.md](../../engine/docs/equations.md); generated `equations_registry.yaml` is an index |
+| EOS symbols, units, conventions and source validity | [full-eos.md](../../engine/docs/science/full-eos.md) |
+| Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
+| Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
+| Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
+| Current code owners, missing implementation and required evidence | [TRANSFER.md](../greenfield/TRANSFER.md) |
+| Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `engine/ARCHITECTURE.yaml` |
+| Accepted decisions | [adr/](adr/README.md), sole sequence |
+| Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
+| Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
+| Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
+| Runtime source-size budgets | `engine/ARCHITECTURE.yaml:code_budgets`; [meaning and review](code-budgets.md) |
+| Execution and check selection | root `AGENTS.md`, `tools/check-affected.sh`, `tools/check-all.sh` |
 
-Tests and analyses own numerical claims. Documents and architecture views are derived
-evidence: they expose structural drift and prove nothing numerical.
+Mathematics defines required behavior. Code records actual behavior. Evidence
+supports bounded claims about their agreement and physical adequacy. Neither
+an architecture scan nor a successful solve proves model validity.
 
-## Glossary
+## Vocabulary and conventions
 
-Every term names its source. A term with no source is retained vocabulary from the old
-tree, kept only until the rebuild retires the text that uses it.
+| Term | Meaning and source |
+|---|---|
+| independent reference case | Analytic identity, measurement, evaluated reference, or source model calculation; source class and uncertainty remain distinct (CSE terminology and transfer audit §7) |
+| support | Species with coordinates in a phase; omitted species have structural zero amount (equilibrium formulation) |
+| admission | Checking declared physical inputs and the requested mathematical domain before evaluation (full EOS §12) |
+| derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
+| convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
+| numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
+| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
+| typed failure | An unavailable result with a specific reason; not an invented physical value (algorithms) |
+| claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
+| stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
 
-| Term | Meaning | Source | Scope |
-|---|---|---|---|
-| stage | one unit of the rebuild: one brief, one worktree, one gate, one acceptance | `docs/greenfield/TRANSFER.md` §Execution order | `docs/greenfield/**` |
-| brief | the pair `stage-NN.brief.{md,json}`: sources with markers, budgets with ceilings, gates with mutations | `docs/greenfield/ORCHESTRATION.md` | `docs/greenfield/briefs/**` |
-| gate | an executable claim a stage must make green | `docs/greenfield/CANON.md` | `docs/greenfield/**` |
-| mutation | a named edit that must turn one gate red; acceptance applies every one | `docs/greenfield/ORCHESTRATION.md` | `docs/greenfield/**`, `tools/preflight-brief.py` |
-| oracle | measured rows only; a fact about the world no implementation may fail | `docs/greenfield/TRANSFER.md` §Oracle | `engine/tests/oracle/**` |
-| canon, core, surface, engine, analyses | the five categories a file belongs to, and the commit categories | `docs/greenfield/CATEGORIES.md` | repository |
-| declared choice | a selector with no unspecified member; absence is carried by `declared()` | `docs/greenfield/CORE.md` §4 | `engine/native/**` |
-| convergence record | achieved residual, criterion, floor, amplification and a named stop, returned by every solver | `docs/greenfield/CORE.md` §5 | `engine/native/**` |
-| floor | the accuracy a nested solve's inputs allow, amplified through their conditioning | `docs/greenfield/CORE.md` §3 | `engine/native/**` |
-| derived tolerance | a tolerance constructed from an upstream one by a factor with a stated reason; never tighter than its input | `docs/greenfield/CORE.md` §3 | `engine/native/core/numerical_policy.hpp` |
-| scope, trace, capture | one span per instrumented call; one root per bound function; the lexical capture around a call | `docs/greenfield/CORE.md` §6 | `engine/native/**`, `engine/src/epcsaft/**` |
-| count rule | rows − unknowns = k − f; square iff f = k | `docs/greenfield/EQUILIBRIUM.md` §2 | `engine/native/equilibrium/**` |
-| like-ion dispersion convention | u_ij = 0 for cation–cation and anion–anion pairs, declared at the surface | `docs/greenfield/EOS.md`; Held 2008, Held 2014, Figiel 2025 | `engine/native/**`, `data/packets/**` |
-| packet | a versioned, hash-bound, source-traceable data unit | `data/docs/packet-contract.md` | `data/**` |
-| reproduction | an analysis leaf that re-derives a published result against its source | `analyses/README.md` | `analyses/reproduction/**` |
-| certificate | — | none | `engine/CONTEXT.md` |
-| fingerprint | — | none | `engine/CONTEXT.md`, `data/AGENTS.md` |
-| admission | — | none | `engine/CONTEXT.md` |
-| typed failure | — | none | `engine/CONTEXT.md` |
-| claim boundary | — | none | `engine/CONTEXT.md`, `AGENTS.md` |
-
-The five sourceless terms live in `engine/CONTEXT.md`'s glossary, written for the old tree
-and not yet retired. Retiring or sourcing them is a Design item for the stage that rewrites
-that file, not a Setup edit.
-
-## Avoid
-
-| Avoid | Prefer | Meaning | Scope | Exceptions | Evidence |
-|---|---|---|---|---|---|
-| saturation solver, flash routine, bubble-point route | equilibrium specification, the cell | one driver serves every degrees-of-freedom cell; a named route is the special case the rebuild removed | `engine/**`; `docs/greenfield/**` | historical text under provenance | `docs/greenfield/TRANSFER.md` §Execution order, owner decision 2026-09-02 |
-| HELD, HELD2, GREPE | phase stability, equilibrium | no proper nouns in identifiers; sources are citations | `engine/native/**`; `engine/src/**` | citations, `analyses/**` results, ADR text | `engine/ARCHITECTURE.yaml` naming; owner rule |
-| golden file | oracle row, closed form, property | a number this code produced is not evidence this code is right | `engine/tests/**` | — | `docs/greenfield/CANON.md` |
-| iteration limit reached | named stop from `classify` | a stop is one of the named outcomes, never hand-set except left_domain, singular, infeasible | `engine/native/**` | — | `docs/greenfield/CORE.md` §5.2 |
+Use bubble, dew, saturation and flash as mathematical specifications or data
+constructors. Shared solvers must not select physics by an application or paper
+name. Shared thermodynamics does not require identical numerical algorithms
+for minimization, root finding, continuation and global search. Residual polar
+terms remain retired by ADR 0006; dipolar relative permittivity is distinct.

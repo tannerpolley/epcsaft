@@ -1,6 +1,6 @@
-version: 14
+version: 15
 # This file states the target structure only. Which stages have landed lives in
-# docs/greenfield/HANDOFF.md; dependencies live in pyproject.toml.
+# docs/greenfield/TRANSFER.md; dependencies live in pyproject.toml.
 
 # The rule this file exists to state: C++ is organised by dependency layer,
 # because include direction is the only structural fact a checker can enforce.
@@ -18,10 +18,61 @@ artifact:
 
 plan:
   transfer: ../docs/greenfield/TRANSFER.md
-  carry_over: ../docs/greenfield/CARRY-OVER.md
+  scientific_authority: ../docs/scientific/CONTEXT.md
   acceptance: tests/oracle
-  performance_floor: ../docs/greenfield/EOS.md
-  stability_findings: ../docs/greenfield/PHASE-STABILITY.md
+  historical_evidence: ../docs/greenfield/reviews
+
+# Physical source lines, including comments/blanks/stubs, across the complete
+# working tree (tracked and untracked). Engineering targets, not mathematical
+# lower bounds. See docs/scientific/code-budgets.md for rationale and amendment.
+# JSON flow mapping is valid YAML and lets the counter use only the stdlib.
+code_budgets: {
+  "core": [
+    700,
+    850,
+    1000
+  ],
+  "physics": [
+    1100,
+    1300,
+    1500
+  ],
+  "model": [
+    2400,
+    2900,
+    3400
+  ],
+  "equilibrium": [
+    5000,
+    6000,
+    7000
+  ],
+  "regression": [
+    800,
+    1000,
+    1200
+  ],
+  "surface": [
+    450,
+    550,
+    650
+  ],
+  "bindings": [
+    500,
+    650,
+    800
+  ],
+  "python": [
+    1350,
+    1600,
+    1850
+  ],
+  "total": [
+    12300,
+    14850,
+    17400
+  ]
+}
 
 native:
   root: native
@@ -65,16 +116,11 @@ python:
     epcsaft.equilibrium: 9
 
 formulation:
-  # Phase equilibrium, chemical equilibrium, and the coupled problem are one KKT
-  # system: B = I, one phase, or both. The affinity vanishes because B*nu = 0.
-  objective: sum_p [A_p(T, V_p, n_p) + P V_p] + sum g0 n
-  coordinates: [log n_p, log eta_p]
-  pressure_equality: stationarity row
-  specification: degrees_of_freedom
-  well_posedness: unknowns versus independent equations, failing by name
   document: docs/equilibrium/formulation.md
-  stability_source: Pereira et al. 2012, Comput. Chem. Eng. 36, 99-118
-  not_expressible: [solids, critical points, kinetics]
+  algorithms: docs/science/algorithms.md
+  # Fixed-T/P minimization and pinned/free-intensive feasibility share energy
+  # and row owners. Their numerical method/curvature requirements differ.
+  not_expressible: [solids, augmented critical-point equations, kinetics]
 
 naming:
   # No proper nouns in identifiers. Source names are citations, not symbols.
@@ -88,7 +134,7 @@ evidence:
   # Tests follow the Python side, because a test is written against a
   # user-facing claim, not a compilation unit. No numerical/behavior split.
   organisation: by_capability
-  basis: real mixtures and measured data
+  basis: independent analytic identities, measurements, evaluated references, and source-model comparisons
   route_specific_gates: forbidden
   downstream_specific_flags: forbidden
   oracle: tests/oracle/oracle.json

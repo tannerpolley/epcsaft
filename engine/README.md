@@ -1,10 +1,10 @@
 # Unified ePC-SAFT Engine
 
-One installed Python distribution provides EOS, equilibrium, and regression:
+One installed Python distribution owns the Engine. Current state/equilibrium imports:
 
 ```python
 import epcsaft
-from epcsaft import equilibrium, regression
+from epcsaft import equilibrium
 ```
 
 Consumers import `epcsaft` from their environment. They do not run Meson or
@@ -50,8 +50,8 @@ meson setup --wipe build/engine-dev engine
 meson compile -C build/engine-dev
 ```
 
-The Meson graph has no standalone test targets. Run Python tests against the
-installed wheel through the root check commands. Do not use `meson
+The Meson graph includes native scientific checks. Run installed-wheel Python
+checks through the root commands; expensive native evidence remains explicit. Do not use `meson
 install`; the wheel is the installation boundary.
 
 Create and install wheels only through root setup. When the root environment is
@@ -76,24 +76,9 @@ that asset embeds Git metadata. All archive URLs and SHA-256 values are pinned.
 Downloads and extracted trees stay ignored under `engine/build/subprojects/`
 and never enter the wheel.
 
-## Regression example
+## Scientific specification and availability
 
-Regression exports owner-neutral native `least_squares` and `curve_fit`:
-
-```python
-from epcsaft import regression
-
-result = regression.least_squares(owners, observations, initial_parameters)
-print(result.parameters, result.physical_jacobian)
-```
-
-EOS and Equilibrium compile their own immutable owner handles and sidecars.
-Regression owns only ordered observations, caller-defined discrepancy weights,
-affine coordinates, bounds, and solver accounting. The result retains both
-physical owner Jacobians and weighted optimizer-coordinate Jacobians; it never
-promotes or adopts parameters. Installed-wheel literature evidence remains
-owned by `../analyses/reproduction/`.
-
-The canonical capability cutover and its EOS, Regression, and Equilibrium owner
-plans begin at
-`docs/greenfield/TRANSFER.md` (replaced the deleted plan) (deleted with the rebuilt architecture; see `docs/greenfield/TRANSFER.md`).
+The [scientific owner map](../docs/scientific/CONTEXT.md) identifies the
+permanent equations and methods. The [transfer plan](../docs/greenfield/TRANSFER.md)
+records implementation gaps, including the absent regression module. Do not
+infer availability from historical usage examples or a registered equation.

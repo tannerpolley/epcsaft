@@ -1,23 +1,11 @@
-# Full EOS Scientific Specification
+# Full EOS scientific specification
 
-Status: scientific equation authority for the accepted full-EOS scope.
-
-EOS, Equilibrium, and Regression exchange direct C++ types inside the one
-`epcsaft._core` extension. This internal interface defines no public Python
-API, installed header set, external ABI, Regression capability, or separate
-artifact.
-
-This file owns the scientific equations and conventions consumed by the clean
-EOS. The [checked EOS equation mirror](../equations.md) maps those
-relations to their current C++ and Python owners and provides synchronized
-Markdown and LaTeX views. Runtime source remains executable authority; the
-mirror does not create a second equation implementation.
-
-The legacy `equations.tex` is retained only as provenance at review commit
-`7920e56dbb0fc1fb418bae44e67ef50f334b75cd`, blob
-`2e970476258558de05391d9d77f31d1736d78de8`, and SHA-256
-`a0f2f3aff12042a8a50c5254c2af23e04b60af3e886b97b2756e6ecad800bacc`.
-It does not override this bounded specification or the current implementation.
+This document owns symbols, bases, source applicability and EOS conventions.
+It states required behavior, not installed availability. The canonical
+[equation definitions](../equations.md) are edited once; repeated derivations
+below explain their meaning. [Algorithms](algorithms.md) own numerical methods
+and [TRANSFER.md](../../../docs/greenfield/TRANSFER.md) owns implementation gaps.
+Correct mathematics is not weakened to match an implementation defect.
 
 ## 1. Sources and evidence classes
 
@@ -104,63 +92,32 @@ Component inputs use:
 The clean native kernel converts every length to one basis before combining it
 with number density. It does not mix SI number density with Angstrom cubed.
 
-## 3. Equation registry and owners
+## 3. Equation and implementation ownership
 
-| Family | Governing relation | Status | Source locator | Owner |
-|---|---|---|---|---|
-| Segment diameter | `d_i(T) = sigma_i [1 - 0.12 exp(-3(u_i/k_B)/T)]` | source equation | Gross2001 Eq. (A.6) | `_native/helmholtz.hpp` |
-| Ionic packing diameter | `d_i = d_i^pack > 0`, declared independently of Debye--Huckel and Born diameters | parameter declaration | Figiel2025 Eqs. (3), (4); AscaniHeld2021 following Eq. (10) | `Parameters`, `_native/helmholtz.hpp` |
-| Held water-ionization formulation | water and ion hard-chain/dispersion plus association and Debye--Huckel; `a^Born = 0` | source equation and explicit absence | Held2008 Eqs. (1)--(7), Sections 2--3 | `_native/helmholtz.hpp`, `_native/electrolyte.hpp` |
-| Held ion--ion dispersion | `k_(H3O+,OH-) = 1`; water--ion `k_ij = 0` | source equation | Held2008 Eqs. (5), (6) and Section 3 | explicit Held record set and `_native/helmholtz.hpp` |
-| Cross diameter | `sigma_ij = (sigma_i + sigma_j)(1-l_ij)/2` | source equation | Ascani2022SI Eq. (S4) | `_native/helmholtz.hpp`, `_native/association.hpp` |
-| Mixture moments | `zeta_n = (pi/6) rho_hat sum_i x_i m_i d_i^n`, `n=0..3` | source equation | Gross2001 Eq. (A.8) | `_native/helmholtz.hpp` |
-| Hard chain | hard-sphere mixture Helmholtz minus chain contact terms | source equation | Gross2001 Eqs. (A.9), (A.16), (A.17) | `_native/helmholtz.hpp` |
-| Dispersion | first- and second-order perturbation terms using `I_1`, `I_2`, and `C_1` | source equation | Gross2001 Eqs. (A.10)-(A.15) | `_native/helmholtz.hpp` |
-| Association | mass-action site fractions and `sum_i x_i sum_A [ln X_iA - X_iA/2 + 1/2]` | source equation | Chapman1990 Eqs. (19), (21) | `_native/association.hpp` |
-| Debye-Huckel | finite-size DH residual Helmholtz term | adapted source equation | Bulow2019 Eq. (2), with diameter and screening definitions below | `_native/electrolyte.hpp` |
-| Figiel bulk dielectric | salt-free solvent mass mixing followed by ion suppression | bounded empirical relation | Figiel2025 Eqs. (11), (12) | `_native/electrolyte.hpp` |
-| Ascani bulk dielectric | combined salt-free-solvent mass and ion-mole mixing | source equation | AscaniHeld2021 Eq. (13) | `_native/electrolyte.hpp` |
-| Schreckenberg bulk dielectric | solvent-density and temperature correlation | bounded empirical relation | Yang2024 Eqs. (1a), (2a), (2b) | `_native/electrolyte.hpp` |
-| Zuber bulk dielectric | pure-solvent dielectric with ion-specific suppression | bounded empirical relation | Zuber2014 Eq. (9), Table 2 | `_native/electrolyte.hpp` |
-| Rueben bulk dielectric | partial-density perturbation-theory relation | source equation | Rueben2024 Eqs. (4)--(6) | `_native/electrolyte.hpp` |
-| Born | one radial charging equation with explicit fixed `c_shell` and `c_dielectric` coefficients | source equation with explicit limiting forms | Figiel2026Correction Eq. (7); AscaniHeld2021 Eq. (10) | `_native/born.hpp` |
-| Total Helmholtz | `a^r = a^hc + a^disp + a^assoc + a^DH + a^Born` | source equation and aggregate convention | Gross2001; Figiel2025 Eq. (1) | `_native/helmholtz.hpp` |
-| Pressure | `Z = 1 + rho_m (partial a^r/partial rho_m)_(T,x)` and `P = rho_m R T Z` | source equation | Gross2001 Eq. (A.24) | `_native/derivatives.hpp` |
-| Chemical potential | composition derivative of the common `a^r` owner | source equation | Gross2001 Eq. (A.33); Figiel2025 Eq. (13) | `_native/derivatives.hpp` |
-| Fugacity | `ln phi_i = mu_i^r/(RT) - ln Z` | source equation | Gross2001 Eq. (A.32) | `_native/derivatives.hpp` |
-| Infinite-dilution solvation | `Delta_solv,x G_i^infinity = RT ln(phi_i^infinity)` | source equation | Figiel2025 Eq. (17) | `reference.py` |
-| Infinite-dilution transfer | `Delta_tr G_i = RT ln(phi_i^infinity,S2/phi_i^infinity,S1)` | source equation | Figiel2025 Eq. (19) | `reference.py` |
-| Ionic activity and MIAC | fugacity ratio, stoichiometric mean, and mole-fraction-to-molality conversion | source equations | Figiel2025 Eqs. (20)--(22) | `reference.py` |
-| Practical molal osmotic coefficient | pure-solvent-referenced solvent activity on the formula-unit molality basis | source equation | HamerWu1972 Eqs. (3.4'), (3.5) | `reference.py` |
-| Residual caloric properties | temperature and density derivatives of the common `a^r` owner | source equation and exact derivation | Gross2001 Eqs. (A.46)-(A.50) plus identities below | `_native/derivatives.hpp` |
-| Density closure | `rho_m R T Z(T,rho_m,x) - P_spec = 0` | exact derivation | pressure identity | `_native/density.hpp` |
+The [equation catalogue](../equations.md) gives each defining relation a stable
+ID and source locator. Its YAML index is generated, not independently edited.
+Current native owners and numerical falsifiers are linked by the
+[transfer plan](../../../docs/greenfield/TRANSFER.md). Historical `_native`
+paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
 separate dipolar-density-perturbation relative-permittivity formulation.
-Source locators and record identifiers remain in the provenance-sensitive
-bundle fingerprint and exported records, while the resolved equation identity
-remains provenance-neutral.
-
-The EOS does not implement the lab catalogue's handwritten nonlinear
-composition, density, or temperature derivative formulas. CppAD differentiates
-the defining equations in this registry. Independent numerical formulas may
-exist only in tests.
+The common Helmholtz definition owns thermodynamic derivatives. Independent
+finite-difference formulas belong to numerical verification, not an alternate
+production equation owner.
 
 ## 4. Neutral PC-SAFT
 
-The promoted Slice 1 kernel is retained without numerical change. It evaluates
-the Gross2001 temperature-corrected diameters, mixture moments, hard-sphere
+The neutral model uses the Gross2001 temperature-corrected diameters, mixture moments, hard-sphere
 Helmholtz energy, hard-chain contact correction, and two dispersion
 perturbation terms. The coefficient arrays `a_0..a_6` and `b_0..b_6` are the
-Gross2001 universal constants already owned by
-`src/epcsaft/_native/helmholtz.hpp`.
+Gross2001 universal constants retained as `A0`, `A1`, `A2`, `B0`, `B1`, `B2` in
+`engine/native/physics/helmholtz.hpp`, transcribed from Gross2001 Table 1.
+The catalogue defines their interpolation; it does not duplicate the arrays.
 
 The pair rules consumed by the admitted bundles are
 
-```text
-sigma_ij = [(sigma_i + sigma_j)/2] (1 - l_ij)
-(u_ij/k_B) = sqrt[(u_i/k_B)(u_j/k_B)] (1 - k_ij).
-```
+Defining relation: [EqID: `cross_segment_diameter`](../equations.md#cross_segment_diameter), [EqID: `cross_dispersion_energy`](../equations.md#cross_dispersion_energy), [EqID: `same_sign_ionic_dispersion`](../equations.md#same_sign_ionic_dispersion).
 
 The `l_ij = 0` Gross rule remains an implementation identity for bundles that
 do not admit that family. The Ascani2022 bundle instead requires an explicit
@@ -188,17 +145,11 @@ definition.
 For each explicit site `A` on component `i`, define the site fraction
 `X_iA` by the fixed-topology mass-action residual
 
-```text
-H_iA(X; T,rho_hat,x) =
-    X_iA [1 + rho_hat sum_j x_j sum_B X_jB Delta_iA,jB] - 1 = 0.
-```
+Defining relation: [EqID: `association_mass_action`](../equations.md#association_mass_action).
 
 The association strength is
 
-```text
-Delta_iA,jB = g_ij^hs [exp(epsilon_iA,jB/(k_B T)) - 1]
-               sigma_ij^3 kappa_iA,jB.
-```
+Defining relation: [EqID: `association_strength`](../equations.md#association_strength).
 
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
@@ -234,9 +185,7 @@ therefore retained without adding a runtime pair matrix or overloading `k_ij`.
 
 The association Helmholtz contribution is
 
-```text
-a^assoc = sum_i x_i sum_A [ln(X_iA) - X_iA/2 + 1/2].
-```
+Defining relation: [EqID: `association_helmholtz`](../equations.md#association_helmholtz).
 
 The value solver runs outside CppAD recording. For independent variables `q`,
 CppAD supplies the partial Jacobians of `H(X,q)` and the code solves
@@ -252,8 +201,9 @@ the second sensitivity consumed by `a_TT`, `a_T,rho`, and `a_rho,rho` is
 X_qr = -H_X^-1 [H_qr + H_qX X_r + H_Xr X_q + H_XX[X_q,X_r]].
 ```
 
-CppAD supplies every displayed partial of the defining `H`; the code performs
-the linear solves. The EOS rejects `X` outside `(0,1]`, a nonfinite
+These are implicit-function identities, not a claim that every displayed
+derivative is implemented. An equivalent stationary elimination must reproduce
+them on its regular domain. The EOS rejects `X` outside `(0,1]`, a nonfinite
 residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
@@ -268,19 +218,11 @@ resolution.
 For the bounded Figiel2025 solvent/electrolyte model, first form salt-free
 solvent mass fractions from component molar masses:
 
-```text
-w_s^(salt-free) = x_s M_s / sum_(k in solvents) x_k M_k.
-epsilon_r,solvent^(salt-free) = sum_(s in solvents)
-                                w_s^(salt-free) epsilon_r,s(T).
-```
+Defining relation: [EqID: `salt_free_solvent_permittivity`](../equations.md#salt_free_solvent_permittivity).
 
 Figiel2025 Eq. (11) then gives
 
-```text
-epsilon_r,bulk = epsilon_r,solvent^(salt-free) /
-                 [1 + C_epsilon x_ion],
-x_ion = sum_(i in ions) x_i.
-```
+Defining relation: [EqID: `ion_fraction_suppressed_bulk_permittivity`](../equations.md#ion_fraction_suppressed_bulk_permittivity).
 
 `C_epsilon = 7.01` is a source-bearing model record. The relation is empirical
 for water and methanol correlations, was checked against ethanol, uses data up
@@ -291,11 +233,7 @@ not broaden the empirical ion-suppression evidence.
 For the bounded Ascani2022 Case Study 2 model, AscaniHeld2021 Eq. 13 instead
 defines
 
-```text
-x_sol = sum_(s in solvents) x_s,
-epsilon_r,bulk = epsilon_r,solvent^(salt-free) x_sol
-                 + sum_(i in ions) epsilon_r,i x_i.
-```
+Defining relation: [EqID: `component_mixed_bulk_permittivity`](../equations.md#component_mixed_bulk_permittivity).
 
 The source records set `epsilon_r,i = 8` for the admitted alkali-halide ions.
 That mixture quantity is not Figiel's radial `epsilon_r,ion`: the Ascani bundle
@@ -309,12 +247,7 @@ differentiates the displayed composition rule in the common owner.
 Yang2024 Eqs. (1a), (2a), and (2b) give the implemented
 Schreckenberg/Uematsu--Frank topology. With `S` the neutral-solvent set,
 
-```text
-x_solv = sum_(s in S) x_s,
-d_V,mix = sum_(s in S) x_s d_V,s / x_solv,
-d_T,mix = sum_(s in S) x_s d_T,s / x_solv,
-epsilon_r,bulk = 1 + rho_m x_solv d_V,mix (d_T,mix/T - 1).
-```
+Defining relation: [EqID: `density_correlation_mixed_parameters`](../equations.md#density_correlation_mixed_parameters), [EqID: `density_correlated_bulk_permittivity`](../equations.md#density_correlated_bulk_permittivity).
 
 The admitted water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 `d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,
@@ -325,10 +258,7 @@ both parameters; missing records fail closed.
 
 For a single source-supported solvent, Zuber2014 Eq. (9) is
 
-```text
-epsilon_r,bulk = epsilon_r,s(T) /
-                 [1 + sum_(i in ions) alpha_i,s x_i].
-```
+Defining relation: [EqID: `ion_specific_suppressed_bulk_permittivity`](../equations.md#ion_specific_suppressed_bulk_permittivity).
 
 The water/Na+/Cl- comparison uses the Table 2 coefficients
 `alpha_Na+,water = 3.62` and `alpha_Cl-,water = 6.80`. These parameters are
@@ -343,12 +273,7 @@ volume data or a mixing rule.
 Rueben2024 Eqs. (4)--(6) are implemented in the source's Angstrom number-density
 basis. Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
 
-```text
-y = (4 pi/9) sum_i rho_hat_i
-      [mu2_i 10^-19/(k_B T) + 3 alpha_i],
-I = 1 + [sum_i a2_i x_i] [exp(-y) - 1],
-epsilon_r,bulk = 1 + 3 y {1 + y + [(17/16) I - 1] y^2}.
-```
+Defining relation: [EqID: `effective_dipolar_density`](../equations.md#effective_dipolar_density), [EqID: `dipolar_correlation_integral`](../equations.md#dipolar_correlation_integral), [EqID: `dipolar_perturbation_bulk_permittivity`](../equations.md#dipolar_perturbation_bulk_permittivity).
 
 `mu2_i`, `alpha_i`, and `a2_i` are the source-backed dipole-squared,
 polarizability, and correlation-integral records. The water/Na+/Cl- comparison
@@ -443,13 +368,11 @@ by this comparison.
 
 The defining Debye screening quantity is
 
-```text
-kappa = sqrt[rho_N e^2/(epsilon_0 epsilon_r,bulk k_B T)
-             sum_i x_i z_i^2].
-```
+Defining relation: [EqID: `debye_screening_parameter`](../equations.md#debye_screening_parameter).
 
 Only charged components enter the following sum. Their finite-size DH diameter
-is the same model-bound diameter used by the PC-SAFT mixture and packing owner:
+is a separately declared record. Equality to a packing or Born diameter is
+allowed only when the selected source prescribes it. Source-specific examples:
 
 ```text
 Figiel: d_i^DH(T) = 0.88 sigma_i,
@@ -458,23 +381,16 @@ Ascani: d_i^DH(T) = sigma_i.
 
 The Figiel relation follows its Eqs. (3)--(4) and admitted `u_ii = 0`
 convention. AscaniHeld2021 explicitly uses `sigma_i` in the hard-chain,
-Debye--Huckel, and Born terms. The DH owner consumes the diameter already
-resolved by the common segment-diameter owner rather than applying a second
-scale. Here `sigma_i` and `d_i^DH` use the same length basis and `d_i^DH` is
+Debye--Huckel, and Born terms. The DH owner consumes its declared `d_i^DH`; the packing owner consumes
+`d_i^pack` and Born consumes `d_i^Born`. A source relation between these
+records must be retained explicitly, not inferred universally. Here `sigma_i` and `d_i^DH` use the same length basis and `d_i^DH` is
 converted to metres in the SI DH equation. For each charged component,
 
-```text
-chi_i = 3/(kappa d_i)^3
-        [3/2 + ln(1+kappa d_i) - 2(1+kappa d_i)
-         + (1+kappa d_i)^2/2].
-```
+Defining relation: [EqID: `debye_finite_size_chi`](../equations.md#debye_finite_size_chi).
 
 The residual contribution is
 
-```text
-a^DH = -kappa e^2/(12 pi epsilon_0 epsilon_r,bulk k_B T)
-       sum_(i in ions) x_i z_i^2 chi_i.
-```
+Defining relation: [EqID: `debye_huckel_helmholtz`](../equations.md#debye_huckel_helmholtz).
 
 When `sum_i x_i z_i^2 = 0`, the EOS defines `kappa = 0` and `a^DH = 0`
 without evaluating `chi_i`; this is the exact neutral limit. The fitted Born
@@ -512,15 +428,9 @@ contradicts all of the following evidence in the same source:
 
 Figiel2026Correction confirms that the original Eq. (7) omitted one bracket
 and incorrectly named the second dielectric constant `epsilon_r,bulk` instead
-of `epsilon_r,ion`. The clean EOS implements one canonical primary-source
-equation:
+of `epsilon_r,ion`. The required canonical primary-source equation is:
 
-```text
-D_i = d_i^Born [1 + c_shell (f_mix - 1)/|z_i|]
-a^Born = -e^2/(4 pi epsilon_0 k_B T) sum_(i in ions) x_i z_i^2
-  { (1 - 1/epsilon_r,bulk)/D_i
-    + c_dielectric (1 - 1/epsilon_r,ion) [1/d_i^Born - 1/D_i] }.
-```
+Defining relation: [EqID: `born_outer_shell_diameter`](../equations.md#born_outer_shell_diameter), [EqID: `born_residual_helmholtz`](../equations.md#born_residual_helmholtz).
 
 Every `d_i^Born` and `D_i` in this equation is converted from angstrom to metre
 before use with the SI factor `e^2/(4 pi epsilon_0 k_B T)`. This equation is a
@@ -542,47 +452,29 @@ site topology. Association uses the implicit sensitivities in Section 5.
 
 Define
 
-```text
-a_T   = (partial a^r/partial T)_(rho_m,x)
-a_TT  = (partial^2 a^r/partial T^2)_(rho_m,x)
-a_rho = (partial a^r/partial rho_m)_(T,x)
-Z     = 1 + rho_m a_rho
-P     = rho_m R T Z.
-```
+Defining relation: [EqID: `compressibility_factor`](../equations.md#compressibility_factor), [EqID: `pressure`](../equations.md#pressure).
 
 The unconstrained composition partials used below follow the Gross2001
 constant-`T`, constant-density mixture convention. For component `i`,
 
-```text
-mu_i^r/(RT) = a^r + (Z-1) + a_xi - sum_j x_j a_xj
-ln(phi_i)   = mu_i^r/(RT) - ln Z.
-```
+Defining relation: [EqID: `residual_chemical_potential`](../equations.md#residual_chemical_potential), [EqID: `log_fugacity_coefficient`](../equations.md#log_fugacity_coefficient).
 
-The EOS reports the total chemical potential and fugacity coefficient.
+The chemical-potential convention and fugacity coefficient must be explicit.
 It does not publish the lab's nonunique contribution allocation of `ln Z`.
 
 The exact residual caloric identities at the state density are
 
-```text
-u^r/(RT) = -T a_T
-h^r/(RT) = -T a_T + (Z-1)
-c_v^r/R  = -2 T a_T - T^2 a_TT.
-```
+Defining relation: [EqID: `residual_internal_energy`](../equations.md#residual_internal_energy), [EqID: `residual_enthalpy`](../equations.md#residual_enthalpy), [EqID: `residual_heat_capacity_cv`](../equations.md#residual_heat_capacity_cv).
 
 With `Z_T = (partial Z/partial T)_(rho_m,x)` and
 `Z_rho = (partial Z/partial rho_m)_(T,x)`,
 
-```text
-c_p^r/R = c_v^r/R
-          + [Z + T Z_T]^2/[Z + rho_m Z_rho] - 1.
-```
+Defining relation: [EqID: `residual_heat_capacity_cp`](../equations.md#residual_heat_capacity_cp).
 
 The `-1` removes the ideal-gas `c_p-c_v = R` contribution. The EOS also
 reports the same-density residual entropy
 
-```text
-s_V^r/R = -a^r - T a_T.
-```
+Defining relation: [EqID: `residual_entropy`](../equations.md#residual_entropy).
 
 If it reports the departure entropy relative to an ideal gas at the same
 `T,P`, the result is named separately and equals `s_V^r/R + ln Z`. No result
@@ -594,196 +486,63 @@ route admits only mechanically stable roots. Explicit-density evaluation does
 not reject a finite state solely because the slope is negative; it reports the
 mathematical EOS result and does not certify that state as stable.
 
-## 9. Native pure-phase Helmholtz block
+## 9. General phase energy and caloric basis
 
-The version-1 native consumer contract evaluates one fixed-temperature pure,
-nonassociating phase at positive amount `n [mol]` and volume `V [m^3]`. Define
+The [phase formulation](../equilibrium/formulation.md) defines amount-volume
+coordinates for mixtures, association and electrolytes. Pure nonassociating
+states are a restriction of that definition, not a separate thermodynamic
+owner. Observable derivative orders and chain rules are specified in
+[algorithms](algorithms.md).
 
-```text
-rho_m   = n/V
-n_ref   = 1 mol
-rho_ref = 1 mol m^-3
-n_hat   = n/n_ref
-
-Phi = A/(R T n_ref)
-    = n_hat * [ln(rho_m/rho_ref) - 1 + a^r(T,rho_m)].
-```
-
-The logarithmic term supplies the complete ideal density dependence needed by
-nonreactive phase equilibrium. Its reference contributes only a conserved
-species-linear constant; it is not a reactive standard-state or ideal-gas
-caloric model. CppAD records this single `Phi(n,V)` owner and returns the value,
-gradient, Hessian, and symmetric third tensor in row-major `(n_mol,V_m3)`
-order. Pressure and chemical potential diagnostics are derived from that same
-gradient:
-
-```text
-P [Pa]  = -R T n_ref Phi_V
-mu/(RT) = Phi_n.
-```
-
-The phase block rejects mixture, association, charge, invalid source domain,
-packing failure, and nonfinite states. It does not select liquid or vapor,
-solve density, or certify equilibrium. One model-bound native state is
-evaluated independently at every candidate phase state.
-
-For the first pure-methane regression slice, the same defining function accepts
-the active coordinate order
-`(n_mol,V_m3,m,sigma_angstrom,epsilon_over_k_kelvin)` and returns its gradient
-and Hessian. The pressure and chemical-potential parameter Jacobians are exact
-rows of that Hessian:
-
-```text
-dP/dq_j       = -R T Phi_(V,q_j)
-d(mu/RT)/dq_j = Phi_(n,q_j).
-```
-
-The regression package may lift each observed state's two phase volumes and
-assemble its own pressure, potential, and density residuals without copying an
-EOS equation or differentiating a density solver. The EOS does not own
-target data, residual scaling, parameter bounds, optimization, identifiability, or fit
-acceptance. Mixture, association, electrolyte, and binary-interaction active
-parameters remain outside this version-1 parameterized block.
-
-The first regression formulation fixes each phase amount at `1 mol`, uses
-volume as the only row-local phase coordinate, and must reject coalesced or
-mechanically unstable candidate phases. Its immutable result retains the
-actual parameter tuple, units, transforms/scales, bounds, and source
-fingerprint; the EOS's returned fingerprint continues to identify the
-source model rather than the mutable trial point.
+Residual enthalpy and internal energy differ by the residual pressure-volume
+term; total enthalpy and internal energy differ by the full pressure-volume
+term. Missing reference thermochemistry means total calorics are unavailable,
+not equal to residual calorics. Standard-pressure and standard-density bases
+must be converted consistently; see EqID: `standard_pressure_density_conversion`.
+A reaction-consistent reference gauge alone does not determine absolute
+enthalpy, entropy or heat capacity. The source reference pressure is fixed
+when trial pressure changes.
 
 ## 10. Electrolyte reference states
 
-`Mixture.reference` holds a salt-free solvent mole composition fixed and
-dilutes one cation/anion formula unit along an exactly electroneutral path. It
-evaluates the complete EOS at formula-unit molalities `10^-6`, `10^-8`,
-`10^-10`, and `10^-12 mol kg^-1`. The limiting ion log fugacities are accepted
-only when the maximum change between the final two states is at most `5e-5`;
-the accepted molality and observed change are returned as diagnostics.
+Figiel2025 Eqs. (17), (19), (20)–(22) define solvation, transfer, single-ion
+reference activities and stoichiometric mean ionic activity. Hamer–Wu1972
+Eqs. (3.4′), (3.5) define the practical molal osmotic coefficient. The
+canonical definitions are EqID: `infinite_dilution_solvation_energy`,
+EqID: `transfer_free_energy`, EqID: `single_ion_activity_coefficient`,
+EqID: `mean_ionic_activity_coefficient`, EqID: `molality_activity_conversion`
+and EqID: `practical_osmotic_coefficient`.
 
-For ion `i` in solvent state `S`, the x-process quantities are
+Declare solvent composition, component order, charges, formula-unit
+stoichiometry, molar masses, concentration basis and reference pressure.
+Dilute along an exactly electroneutral path with fixed salt-free solvent
+composition. Single-ion quantities are path/gauge dependent; charge-neutral
+stoichiometric contractions carry the physical comparison. The neutral basis
+is EqID: `neutral_reference_stoichiometric_basis`; its existence does not
+establish current public availability. Mixed-solvent MIAC does not imply a
+unique scalar osmotic coefficient. Multi-salt paths require a separately
+specified reference convention.
 
-```text
-Delta_solv,x G_i^infinity = RT ln(phi_i^infinity,S)
-Delta_tr G_i^(infinity,S1->S2)
-    = RT [ln(phi_i^infinity,S2) - ln(phi_i^infinity,S1)]
-gamma_i^* = phi_i^S / phi_i^infinity,S.
-```
+The retained four-molality method and its terminal comparison are EqID:
+`reference_molality_sequence` and EqID: `reference_limit_terminal_pair`.
+This finite sequence estimates a limit within its accepted case and tolerance;
+it is not a theorem of convergence for every model. Return the observed change,
+terminal molality, source applicability and failure reason. Do not silently
+replace a failed limit by the last finite iterate or assign it zero error.
 
-`ElectrolyteReference.infinite_dilution_log_fugacity_coefficient` stores the
-two dimensionless `ln(phi_i^infinity,S)` values in `ion_component_ids` order.
-
-For one formula unit with stoichiometric coefficients `nu_i`,
-
-```text
-ln(gamma_pm^*,x) = sum_i nu_i ln(gamma_i^*) / sum_i nu_i
-gamma_pm^*,m = gamma_pm^*,x /
-    [1 + M_solvent m_solute sum_i nu_i].
-```
-
-These are Figiel2025 Eqs. (17), (19), and (20)--(22). `M_solvent`
-is calculated from the explicitly supplied salt-free solvent mole fractions
-and source-backed solvent molar masses. The reference module calls
-`Mixture.state`; it owns no Helmholtz or derivative equation. Single-ion
-values are path-defined model quantities. The stoichiometric MIAC is the
-literature comparison quantity.
-
-For a single active water solvent, the same finite-molality pressure state
-also gives
-
-```text
-ln(a_water) = ln(x_water) + ln(phi_water) - ln(phi_water^0)
-Phi = -ln(a_water) / [m_solute M_water sum_i nu_i].
-```
-
-This is Hamer--Wu (1972) Eqs. (3.4') and (3.5) in the SI-equivalent basis:
-`m_solute` is formula-unit molality in `mol/kg` of salt-free solvent and
-`M_water` is the resolved molar mass in `kg/mol`. The pure-water fugacity
-coefficient is evaluated at the same temperature and pressure. Mixed-solvent
-references retain their MIAC result and expose no scalar osmotic coefficient.
-
-The first admitted reference scope contains exactly one cation, one anion,
-water, methanol, ethanol, or a selected mixture of those solvents at
-`T = 298.15 K` within the Figiel parameter domain.
-Multi-salt reference paths, non-electroneutral dilution, automatic species
-generation, and alternative concentration conventions remain closed.
-
-### 10.1 Installed charge-neutral reference basis
-
-For an admitted phase model with `C` components, one or more neutral molecular
-components, at least one cation, and at least one anion, the direct native EOS
-interface exposes `C-1` rows spanning the nullspace of the ordered charge
-vector. Exact component identities define the canonical row and anchor order,
-independently of caller component permutation. Every neutral component
-contributes its unit row. For the charged components, the canonical first
-cation is paired with every anion and every remaining cation is paired with the
-canonical first anion. Each pair uses the smallest positive integer
-stoichiometry obtained from the greatest common divisor of the two charge
-magnitudes. If `B` is this row-major basis and `c` its returned contractions,
-
-```text
-B q = 0
-c_r = sum_i B_ri ln(phi_i^reference).
-```
-
-Each neutral contraction uses that component's fugacity coefficient in the
-reported salt-free composition, which assigns equal mole fraction to every
-neutral component, at the same trial `T,P`; every
-ionic formula-unit contraction uses the terminal values from its canonical
-four-molality reference sequence. Any caller-owned charge-neutral row `nu` is
-represented as `nu = alpha B`, so its gauge-invariant EOS reference is
-`alpha c`. No individual ionic reference is exposed. In particular, the
-original ordered `(water, H3O+, OH-)` case retains
-
-```text
-(-2, 1, 1) = -2 B_water + B_salt
-Delta C_fugacity = c_salt - 2 c_water.
-```
-
-The result binds the ordered components and charges already advertised by the
-model table, parameter and topology fingerprints, exact source-domain `T,P`,
-salt-free reference composition, composition-weighted neutral molar mass, the
-worst formula-unit convergence diagnostic, and the Helmholtz basis
-`A/(RT n_ref)` with `n_ref = 1 mol` and `rho_ref = 1 mol m^-3`. The evaluator is
-re-evaluated at every admitted trial pressure; an external source-reference
-pressure is not used as the application pressure. Unknown source applicability
-advertises no evaluable neutral-reference capability, and caller-owned
-provenance is not promoted by the EOS interface. This is not a finite-salt reference
-path. The value entry advertises no derivatives; the append-only derivative
-entry returns exact pressure and admitted active-parameter derivatives.
-Reaction constants, source standard-state conversions, gauges, constraints,
-and equilibrium remain consumer-owned.
-
-The Held source-complete aqueous-electrolyte bundle is admitted through this
-same generic basis at exactly `298.15 K` and `100000 Pa`; it does not retain a
-case-specific standard-reference evaluator. The ordinary public pure-water state
-supplies any liquid molar-volume initialization through the same fixed-pressure
-density owner. EOS does not supply `K_w` or transform an external activity
-convention into this mechanical basis.
+Thermochemical standard states and reaction correlations belong to the common
+Engine property/formulation owners; they do not modify the residual EOS.
+Their coefficients require complete independent source evidence. Reference
+pressure is not the trial pressure unless the declared transformation says so.
 
 ## 11. Density closure
 
-Specified-pressure evaluation solves
-
-```text
-R(rho_m) = rho_m R T Z(T,rho_m,x) - P_spec = 0.
-```
-
-Candidate roots must have a finite residual and a finite slope
-
-```text
-dR/d(rho_m) = R T [Z + rho_m Z_rho].
-```
-
-Mechanical stability requires a positive, numerically nonsingular slope. A
-deterministic logarithmic scan brackets sign-changing candidates in the
-positive-density interval below the packing limit. `phase=None` accepts one
-stable root. In a multi-root state, vapor and liquid requests select the
-lowest- and highest-density stable roots. An unlabelled lone root is reported
-as `single`; a phase-specific request rejects after that branch topology is
-lost rather than relabelling the remaining root. Failed closure reports through
-`EosError`; this local root calculation is not a global phase-stability or
-critical-point certificate.
+Use EqID: `density_residual`, EqID: `pressure_density_derivative` and
+EqID: `mechanical_stability`. The root-selection algorithm and failure meaning
+are [ALG-DENSITY](algorithms.md#alg-density). A mathematical fixed-density
+state can exist on a mechanically unstable branch. A specified-pressure
+physical phase must meet the root's mechanical criterion; neither choice
+establishes global equilibrium.
 
 ## 12. Domain and rejection rules
 
@@ -862,21 +621,37 @@ Construction or evaluation fails on:
   instability of a specified-pressure root; and
 - a requested derivative or property whose defining Jacobian is singular.
 
-## 13. Deliberate exclusions
+## 13. Scope and derivative boundaries
 
-This specification does not admit Bjerrum pairing, ion-pair equilibrium,
-reaction equilibrium, caller-selected dielectric or Born modes, unsupported
-Zuber mixed-solvent volume mixing, synthetic Rueben parameter completion,
-analytic derivative modes, ideal-gas caloric data, phase equilibrium,
-regression, multi-salt reference paths, alternate single-ion conventions,
-mixture/associating/electrolyte Regression observations, or reactive
-standard-state chemical potentials. The direct native EOS interface exposes
-only the EOS operations required by current Equilibrium consumers; it is not a
-Regression extension point and does not admit a fitted model.
-Adding any other exclusion requires a new source-backed capability design
-rather than a flag in this model.
+EOS supplies residual thermodynamics. Equilibrium, reaction standard states,
+reference thermochemistry and fitting have separate responsibilities inside
+the same Engine. Their absence in the current implementation is a transfer
+gap, not a permanent ban on the accepted target. Solids, critical-point
+conditions as an augmented equation system, kinetics and Bjerrum pairing
+require separately justified scientific extensions. Residual polar terms
+remain retired by ADR 0006.
 
-The Held source-complete mechanical/reference candidate does not change those
-exclusions. Reaction stoichiometry, `K_w`, mixed-standard-state conversion,
-conservation constraints, Ipopt, KKT and physical certificates, globality, and
-predictive adjudication remain outside EOS and require their own authority.
+At zero ionic strength the DH value has its exact neutral limit. Its leading
+ionic-strength power is 3/2, so arbitrary ionic insertion Hessians need not be
+finite there. Availability must distinguish derivatives within a fixed support
+from insertion directions; temperature/density derivatives on the neutral
+restriction do not establish the full composition Hessian.
+
+Zero amount of an associating species is not permission to add a positive
+composition floor. The unweighted mass-action Jacobian may remain regular
+where a composition-weighted stationary association Hessian becomes singular.
+Retain valid central states and report unsupported derivative directions
+separately. See [ALG-ASSOCIATION](algorithms.md#alg-association).
+
+Ordinary physical ionic states require electroneutrality and explicit charges.
+Unconstrained composition partials use a declared mathematical extension;
+they do not admit a charged physical feed. A neutral subset is selected from
+its own components/sites, not unrelated ionic records in its source packet.
+Source extrapolation must be identified separately from mathematical domain
+validity; convergence does not expand a source's applicability.
+
+Central mixing-energy and entropy terms use the continuous limit of n_i log n_i
+at zero component amount. Positive total amount suffices for mole fractions;
+logarithmic coordinates and insertion chemical potentials require separate
+interior/limit treatment. An incipient phase at zero total amount uses the
+independent intensive chart in the equilibrium formulation.

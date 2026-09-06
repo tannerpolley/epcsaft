@@ -20,12 +20,28 @@ mapfile -t changed < <(
         git ls-files --others --exclude-standard
     } | sort -u
 )
+python3 tools/diffstat.py --budgets
 if ((${#changed[@]} == 0)); then
     echo "no changed paths"
     exit 0
 fi
 
 paths="$(printf '%s\n' "${changed[@]}")"
+# Documentation readiness must not trigger wheel installation or numerical studies.
+docs_only=true
+for path in "${changed[@]}"; do
+    case "$path" in
+        docs/*.md|engine/docs/*.md|docs/greenfield/briefs/*.json|docs/greenfield/reviews/*.csv|docs/greenfield/reviews/stage-history/*.json|engine/docs/equations_registry.yaml|engine/ARCHITECTURE.yaml|tools/diffstat.py|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes|engine/scripts/docs/sync_equation_registry.py|tools/check-affected.sh|tools/check-all.sh) ;;
+        *) docs_only=false ;;
+    esac
+done
+python3 engine/scripts/docs/sync_equation_registry.py --check
+if [[ "$docs_only" == true ]]; then
+    bash -n tools/check-affected.sh tools/check-all.sh
+    echo "documentation readiness passed; no wheel build or numerical tests ran"
+    exit 0
+fi
+
 architecture_inputs=false
 prepare_native_build=0
 if grep -Eq '^(analyses/|engine/)' <<<"$paths"; then

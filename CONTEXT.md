@@ -20,8 +20,7 @@ current wheel before tests, the default installed-wheel gate targets less than
 ten seconds on a warm checkout, and publication-grade campaigns or exhaustive
 native analysis run only through explicit owner commands.
 
-The current Engine program is the greenfield rebuild on branch `greenfield`,
-mapped in `docs/greenfield/TRANSFER.md`; the earlier Hard-Cutover Plan and root
-issue #10 are provenance. Issues #185–#196 hold the scope each stage absorbs;
-the stage documents and accepted ADRs define the design. Conversation transcripts and task
-summaries are handoff context, not durable authority.
+The current implementation gap plan is `docs/greenfield/TRANSFER.md`.
+Permanent mathematics and methods are owned by the documents mapped in
+`docs/scientific/CONTEXT.md`. Prior stage documents, issue programs and task
+summaries retain historical context, not current scientific authority.

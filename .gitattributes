@@ -1,7 +1,7 @@
 # Machine-generated views. `-diff` makes git report them as changed without a line
 # count, so a regeneration does not read as thousands of hand-written additions.
 # Regenerate with the script named in each file's header; never edit them.
-engine/docs/equations.md                                        -diff linguist-generated=true
+engine/docs/equations_registry.yaml                             -diff linguist-generated=true
 analyses/reproduction/*/results/data/*.json                     -diff linguist-generated=true
 
 # Measured data. Reviewed line by line when it lands, but it is evidence rather than

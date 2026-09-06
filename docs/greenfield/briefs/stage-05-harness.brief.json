@@ -68,6 +68,17 @@
         "Compute a measured quantity; never parse the log that printed it."
       ],
       "purpose": "the rule the writer obeys"
+    },
+    {
+      "ref": "greenfield@271fb39:tools/verify-installed-wheel.py",
+      "must_contain": [
+        "PUBLIC_MODULES = (\"epcsaft\", \"epcsaft.equilibrium\", \"epcsaft.regression\")",
+        "NATIVE_ENTRYPOINTS = (",
+        "editable Engine install is forbidden",
+        "installed_from != wheel",
+        "TRANSIENT_WHEEL_RUNPATH"
+      ],
+      "purpose": "the installed-artifact readiness owner: its current module and entry-point list is ahead of this stage, while its wheel, origin and non-editable provenance checks remain required"
     }
   ],
   "writes": [
@@ -81,7 +92,7 @@
     },
     {
       "path": "engine/tests/native/equilibrium_support.hpp",
-      "edit": "record_cell(label, problem, result, deviations), the check entry from run_check, the file writer in a results object main flushes; hand-written JSON with %.17g and one string escaper; CHECK_RESULTS_DIR with the ./check-results fallback said on stderr",
+      "edit": "record_cell(label, problem, result, deviations), the check entry from run_check, the file writer in a results object main flushes; hand-written JSON with %.17g and one string escaper; CHECK_RESULTS_DIR with the ./check-results fallback said on stderr; recompute and emit finite within from the signed deviation and bar using the exact anchors emitted_deviation = entry.deviation and emitted_within = std::abs(emitted_deviation) <= entry.bar; retain a zero-bar structural equality row on the green baseline",
       "lines": {
         "estimate": 170,
         "ceiling": 240
@@ -92,7 +103,9 @@
         "CHECK_RESULTS_DIR",
         "\"record\"",
         "\"deviations\"",
-        "\"within\""
+        "\"within\"",
+        "const double emitted_deviation = entry.deviation;",
+        "const bool emitted_within = std::abs(emitted_deviation) <= entry.bar;"
       ]
     },
     {
@@ -151,11 +164,23 @@
     },
     {
       "path": "tools/check-equilibrium-claims.py",
-      "edit": "one clause: every named check appears in its binary's results file with a status, when the results directory exists",
+      "edit": "read all three binaries' run_check registrations as 26 (binary, name) entries for 24 unique claims, including separate S10 registrations and S15(c); require exactly one status-bearing result entry and nonempty cells for every registration, require every cell to carry inputs, solved-or-explicit-failure, record, deviations and events, retain S15(c) as a boundary alias without merging cells, and require each check's result cell count to cover the literal solve_equilibrium call-site lower bound (loops may add cells)",
       "lines": {
         "estimate": 25,
         "ceiling": 40
       }
+    },
+    {
+      "path": "tools/verify-installed-wheel.py",
+      "edit": "make the current Stage 5 verifier require PUBLIC_MODULES = (epcsaft, epcsaft.equilibrium) and NATIVE_ENTRYPOINTS = (solve_equilibrium,) while preserving exactly one extension, no transient runpath, one epcsaft distribution, non-editable direct_url.json, installed origin equal to the wheel, and imports from the installed root; do not change ensure-engine-wheel.sh or add a regression module",
+      "lines": {
+        "estimate": 8,
+        "ceiling": 16
+      },
+      "must_contain": [
+        "PUBLIC_MODULES = (\"epcsaft\", \"epcsaft.equilibrium\")",
+        "NATIVE_ENTRYPOINTS = (\"solve_equilibrium\",)"
+      ]
     }
   ],
   "gates": [
@@ -193,15 +218,27 @@
       }
     },
     {
+      "id": "installed_wheel_verifies",
+      "command": "bash tools/ensure-engine-wheel.sh",
+      "needs": "install",
+      "mutation": {
+        "file": "tools/verify-installed-wheel.py",
+        "sed": "s|\"solve_equilibrium\"|\"solve_equilibrium_\"|",
+        "expect": "abort",
+        "bites_only_after_write": true,
+        "why": "the installed wheel must expose the current solve_equilibrium binding; renaming it makes the verifier fail while preserving valid Python and all provenance checks"
+      }
+    },
+    {
       "id": "results_valid",
       "command": ".venv/bin/meson test -C engine/build/greenfield --print-errorlogs specification equilibrium boundary && python3 tools/summarize-check-results.py --validate engine/build/greenfield/check-results/*.json",
       "needs": "native",
       "mutation": {
         "file": "engine/tests/native/equilibrium_support.hpp",
-        "sed": "s|\"record\"|\"recrd\"|",
+        "sed": "0,/\"record\"/s|\"record\"|\"recrd\"|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "results-valid: the required field is gone"
+        "why": "results-valid: the required field is gone; the bounded first-key mutation remains compilable and the schema validator catches the missing record"
       }
     },
     {
@@ -210,10 +247,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/tests/native/boundary_checks.cpp",
-        "sed": "0,/record_cell(/s||(void)0; // record_cell(|",
+        "sed": "0,/equilibrium_support::record_cell(/s|equilibrium_support::record_cell(|if (false) equilibrium_support::record_cell(|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "every-check-present: the first recording call in the boundary binary is silenced and that check has no cells"
+        "why": "every-check-present: the first recording call is made unreachable without touching its possibly multi-line arguments; S3's dew solve remains, but the result cell count is below its two literal solve-call sites and its binary ledger is incomplete"
       }
     },
     {
@@ -222,10 +259,10 @@
       "needs": "native",
       "mutation": {
         "file": "engine/tests/native/equilibrium_support.hpp",
-        "sed": "0,/\"within\"/s||\"within\": true, \"within_\"|",
+        "sed": "s|emitted_deviation = entry.deviation;|emitted_deviation = entry.deviation + 1.0;|;s|emitted_within = std::abs(emitted_deviation) <= entry.bar;|emitted_within = true;|",
         "expect": "abort",
         "bites_only_after_write": true,
-        "why": "a cell whose deviation exceeds its bar is written as within; the tool sees |deviation| > bar with within true"
+        "why": "the finite writer mutant remains compilable and emits valid JSON; the required zero-bar structural equality becomes deviation 1.0 with within true, so --assertions sees a real |deviation| > bar contradiction rather than only a malformed field"
       }
     },
     {

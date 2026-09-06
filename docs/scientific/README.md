@@ -1,23 +1,39 @@
 # Scientific records
 
-This directory is the CSE record owner for `tannerpolley/ePC-SAFT`: the map of the
-scientific question, the owners of every kind of authority, the repository vocabulary, and
-the accepted decisions. It copies no equation, tolerance, or result; each stays with the
-owner `CONTEXT.md` names.
+This is the CSE owner map for the ePC-SAFT monorepo. Start with
+[CONTEXT.md](CONTEXT.md) for mathematical authority, methods, implementation
+and evidence owners. [ADRs](adr/README.md) retain the sole accepted decision
+sequence; [writing](writing/STYLE.md) owns manuscript and notebook style.
 
-| file | what it owns |
-|---|---|
-| `CONTEXT.md` | the question and intended use, the owner map, the glossary with sources, the avoid table, the default deliverable |
-| `adr/` | the sole accepted decision-record sequence, `0001` onward; superseded records stay and name their replacement |
-| `writing/STYLE.md`, `writing/RULES.md` | house style and the deterministic prose rules for notebooks and manuscripts |
-| `numerical-policy-audit.md` | the 2026-09-01 audit of every tolerance in the old tree; the input `docs/greenfield/CORE.md` absorbed |
+Canonical mathematics and algorithms use Markdown with LaTeX display equations
+and plain pseudocode under `engine/docs/`. The equation definitions are edited
+once; their YAML index is generated. Optional HTML/PDF views must render the
+same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
+neither becomes a second Engine specification. This preserves the repository's
+accepted CSE Markdown layout (issue 55).
 
-The rebuild in progress is recorded under `docs/greenfield/`, starting at
-`docs/greenfield/README.md`. Its stage documents are the current design authority; the
-ADRs here that it supersedes say so in their front matter.
+[TRANSFER.md](../greenfield/TRANSFER.md) is the single current implementation
+gap plan. Dated reviews, prior briefs and stage documents retain provenance;
+they neither override permanent doctrine nor authorize execution. The
+[numerical-policy audit](numerical-policy-audit.md) is historical evidence.
 
-Layout follows CSE issue 55: two mandatory Markdown files, optional records as Markdown,
-LaTeX only for manuscript sources under `docs/scientific/latex/` when one exists. The
-earlier `formulation.tex`, `methods.tex` and `evidence.tex` maps were removed at this
-commit; every path they pointed at had been deleted by the rebuild, and their surviving
-content is the owner map in `CONTEXT.md`.
+[Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
+ceiling; their single numeric owner is `engine/ARCHITECTURE.yaml`.
+
+## Maintaining agreement
+
+A scientific change updates or explicitly revalidates its equation IDs,
+algorithm IDs and domain assumptions in the same change as implementation and
+numerical evidence. Record that disposition in the change description; do not
+copy equations into another ledger. A code defect is corrected against the
+accepted mathematics. A proposed change to mathematics needs its own source or
+derivation and review; observed code behavior cannot silently redefine it.
+
+Run `python3 engine/scripts/docs/sync_equation_registry.py` after editing
+[definitions](../../engine/docs/equations.md), then `bash tools/check-affected.sh HEAD`
+for uncommitted work. The normal checks reject malformed or duplicate equation
+IDs, duplicate algorithm IDs, unresolved equation/algorithm references, and a
+stale generated index. They cannot prove
+scientific agreement: result-level numerical checks and review must falsify
+wrong coefficients, derivative chains, bases and stopping claims. Update the
+transfer plan only when identified evidence supports the changed capability.

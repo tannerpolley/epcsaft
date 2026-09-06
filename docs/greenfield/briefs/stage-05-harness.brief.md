@@ -13,6 +13,12 @@ solved state, its convergence record, its deviations, and its status. Pass and f
 unchanged. The results file is what acceptance reads and what the measured-data campaign
 consumes, so its location and schema are stated once, here, and nowhere else.
 
+The ledger is **26 registrations for 24 unique physical claims**: nine `C` registrations,
+ten in `equilibrium_checks`, and seven in `boundary_checks`. The repeated physical claims
+are intentional: `S10` is registered in both binaries and `S15(c)` is the boundary
+subcase of `S15`. They remain separate `(binary, name)` entries in the results; the claims
+checker must not collapse them or only check that a name appears.
+
 **Location.** `${CHECK_RESULTS_DIR}/<binary>.json`, with `CHECK_RESULTS_DIR` set by
 `meson.build` per test to `<build>/check-results`; a binary run outside meson with the
 variable unset writes `./check-results/<binary>.json` and says so on stderr. The file is
@@ -59,14 +65,43 @@ the surface surviving in the trace.
 1. `check_results.schema.json`, then the writer in `equilibrium_support.hpp`: `record_cell`
    called by a check with a label, the problem, the result and its deviations; `run_check`
    writes the check's entry with its status and failures; `main` writes the file. Hand-written
-   JSON, no dependency: `std::ofstream`, `%.17g`, one function that escapes strings.
-2. The three check files: every check records its cells. Twenty-four checks; a check that
-   solves records each solve, a check that compiles records its inputs. No assertion changes.
+   JSON, no dependency: `std::ofstream`, `%.17g`, one function that escapes strings. The
+   serializer recomputes `within` from the signed deviation and bar. Keep these mutation
+   anchors as written in the serializer: `const double emitted_deviation =
+   entry.deviation;` and `const bool emitted_within = std::abs(emitted_deviation) <=
+   entry.bar;`, then emit both locals. At least one compile-tier structural row is zero on
+   the green baseline with `bar: 0`; this is an equality already asserted by the check, not
+   a scientific expected value.
+2. The three check files: all 26 registrations write one status-bearing result entry. Every
+   check has at least one cell; a check that solves records one cell for **each actual**
+   `solve_equilibrium` call (including a failed solve's inputs, failure, convergence record,
+   deviations, and trace), while a compile-only check records its inputs and structural
+   deviations. Use fully qualified `equilibrium_support::record_cell` calls. In `check_s3`,
+   the bubble cell is the first recording call and the dew cell is the second. A static
+   lower bound from the literal solve call sites plus the runtime cell count is the harness
+   coverage check; loop iterations may add cells. No assertion changes.
 3. `meson.build`: `CHECK_RESULTS_DIR` per native test.
 4. `phase_boundary.cpp`: the `intensive_seeded` event.
-5. `tools/summarize-check-results.py`: `--validate` against the schema, and a table of every
-   cell's record and deviations for the reading; the claims checker gains one clause, every
-   named check present in its binary's results file.
+5. `tools/summarize-check-results.py`: `--validate` against the schema, a table of every
+   cell's record and deviations for the reading, and `--assertions` that rejects a finite
+   `within: true` row with `abs(deviation) > bar` (and a `within: false` row from a passing
+   check). The claims checker reads all three results files, matches every `(binary, name)`
+   registration, requires nonempty cells and statuses, and verifies that each check's cell
+   count covers its literal solve-call lower bound. It recognizes `S15(c)` as the S15
+   boundary registration without merging its result with S15.
+
+## Installed-wheel readiness
+
+`tools/ensure-engine-wheel.sh` remains the sole build/install caller and already invokes
+`tools/verify-installed-wheel.py` after installing the non-editable wheel. This stage makes
+that verifier describe the surface that exists now: public modules `epcsaft` and
+`epcsaft.equilibrium`, and the bound native entry point `epcsaft._core.solve_equilibrium`.
+The verifier continues to require exactly one extension, no transient wheel runpath, one
+`epcsaft` distribution, a non-editable `direct_url.json`, and an installed origin equal to
+the wheel path. Do not change `ensure-engine-wheel.sh`, add a regression module, add a fake
+entry point, loosen provenance checks, or introduce another package route. The later
+regression owner must extend and repin this verifier when that surface is real; this
+stage's readiness gate is only `bash tools/ensure-engine-wheel.sh`.
 
 ## Traps
 
@@ -98,9 +133,10 @@ the surface surviving in the trace.
 
 | id | asserts | mutation (must go red) |
 |---|---|---|
+| installed-wheel-verifies | `ensure-engine-wheel.sh` builds/installs the current non-editable wheel and its verifier accepts the current public surface and provenance | rename the required `solve_equilibrium` entry point |
 | results-valid | every binary's results file validates against the schema | the writer drops the `record` field |
-| every-check-present | every named check of `EQUILIBRIUM.md` §4 appears in its binary's results file with a status | one check stops recording |
-| deviations-are-the-assertions | for every cell with `within: true`, `|deviation| ≤ bar`; for every `within: false`, the check's status is `fail` | a check writes `within` as always true |
+| every-check-present | all 26 `(binary, registration)` entries have a status and nonempty cells; every actual solve has a retained cell with its inputs, output/failure, record and trace; compile-only entries retain inputs and deviations | silence the first `equilibrium_support::record_cell` call in `boundary_checks.cpp`; S3's second solve remains, but its two-call lower bound and cell ledger go red |
+| deviations-are-the-assertions | for every finite cell with `within: true`, `|deviation| ≤ bar`; for every `within: false`, the check's status is `fail`, and the green baseline contains a zero-bar structural equality | change the finite emitted deviation by `+1.0` and force the emitted `within` to `true`; JSON remains valid but the zero-bar row is a real contradiction |
 | intensive-seeded | a boundary cell with `P` free and no guess carries one `intensive_seeded` event with lever index 1 and the value the start used | the event is not written |
 
 ## Stopping

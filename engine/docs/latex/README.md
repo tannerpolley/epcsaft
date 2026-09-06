@@ -1,8 +1,8 @@
 # Bibliography
 
 This directory holds the project bibliography only. The equation registry lives
-in `docs/equations_registry.yaml` (hand-edited authority) and its rendered view
-`docs/equations.md`; there is no LaTeX equation source any more. Check the pair
+in `docs/equations.md` (human-editable authority) and its generated index
+`docs/equations_registry.yaml`; there is no LaTeX equation source any more. Check the pair
 from `engine/`:
 
 ```bash

@@ -3,7 +3,11 @@
 Status: authoritative Regression workflow and evidence-classification contract;
 no parameter, prediction, or promotion authority.
 
-Date: 2026-07-30
+Date: 2026-07-30; authority clarified 2026-09-06.
+
+These are required evidence/reproduction meanings, not a claim that historical
+Engine callables or issue plans are implemented. Current availability and
+implementation work are owned by [TRANSFER.md](../../../../docs/greenfield/TRANSFER.md).
 
 ## Purpose
 
@@ -186,9 +190,9 @@ For a new species, use this order:
    declared data design, exact scaled Jacobian, nuisance-reoptimized profiles,
    and accepted-region evidence distinguish the complete active block.
 
-Current Regression issue 28 owns practical identifiability for the retained
+Historical Regression issue 28 recorded practical identifiability for the retained
 fixed-pure-2B literature case.
-Issue 34 owns the future fixed induced/cross-association alternatives after EOS
+Historical issue 34 recorded proposed fixed induced/cross-association alternatives after EOS
 support. Neither issue authorizes dynamic topology discovery.
 
 Primary method anchors include:
@@ -212,22 +216,22 @@ parameter defaults.
 
 ## Regression numerical verification set
 
-Regression keeps a small local NVDD set that verifies current scientific and
-numerical claims. The checks are mutable evidence rather than API, solver,
+Regression requires a small local NVDD set to verify its claimed scientific
+and numerical behavior as implementation lands. The checks are mutable evidence rather than API, solver,
 serialization, or compatibility contracts, and they run only through the
 repository-local environment.
 
 The compact matrix covers:
 
-1. accepted methane and ethane joint pure-saturation numerical results;
+1. independent methane and ethane joint pure-saturation reference cases;
 2. representative scalar component, pair, and direct-observable fits with
    independently checked derivatives;
 3. joint pure `(m, sigma, epsilon/k)` recovery;
 4. fixed-topology association parameter recovery for scientifically distinct
    active-parameter cases; and
-5. unordered-pair `k_ij` and `l_ij` recovery through currently admitted EOS
-   fixed-state Observation Families; historical fixed-composition VLE evidence
-   does not admit an Equilibrium Observation Family.
+5. unordered-pair `k_ij` and `l_ij` recovery through qualified direct-state and
+   equilibrium observations. Historical evidence does not establish availability
+   in the rebuilt Engine.
 
 Each retained numerical sentinel:
 

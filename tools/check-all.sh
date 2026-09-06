@@ -4,6 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+python3 engine/scripts/docs/sync_equation_registry.py --check
+python3 tools/diffstat.py --budgets
+
 # Build and install the immutable wheel before any test process starts.
 EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 
