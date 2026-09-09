@@ -96,7 +96,7 @@ readiness review follows the corrections.
 ### Live Quarto companion
 
 Run `python3 tools/serve-roadmap.py --port 8766` and open
-[the local companion](http://127.0.0.1:8766). One Quarto website has Plan and Tests pages. Its sources live in `docs/companion/`; generated
+[the local companion](http://127.0.0.1:8766). One Quarto website has Map, Plan and Tests pages; the Map view derives components, layers and files from `ARCHITECTURE.yaml` and the checkout, and a selected owner carries into Plan and Tests. Its sources live in `docs/companion/`; generated
 HTML lives under `build/companion/`. The server renders with `--no-execute` and
 rebuilds changed presentation sources. Open pages read current plan rows, test
 registrations, study descriptions and recorded numerical output every two seconds.
@@ -147,7 +147,7 @@ before showing a fresh comparison. Unrecorded or invalid evidence cannot become
 Current. Neither rendering nor a passing readiness check
 qualifies a scientific milestone.
 
-Current presentation: Plan and Tests use the current Contributions/Properties
+Current presentation: Map, Plan and Tests use the current Contributions/Properties
 vocabulary and compact collapsed comparison rows. The view renders connected
 outputs and inventory through shared records; the normal check commands record
 results and the viewer only reads them. Acceptance is reopened for persistent

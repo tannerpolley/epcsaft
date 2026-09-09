@@ -24,6 +24,13 @@ from tools.test_records import SCHEMA_VERSION, digest
 _ROADMAP = runpy.run_path(__file__.replace("companion-data.py", "check-roadmap.py"))
 LAYERS = tuple(_ROADMAP["LAYERS"])
 _PLAN_STATUS = {"[ ]": "Planned", "[-]": "Active", "[!]": "Blocked", "[x]": "Qualified"}
+# Plan layer headings and declaration categories share the map's owner ids.
+OWNER_OF = {
+    "Core": "engine.core", "Contributions": "engine.contributions", "Properties": "engine.properties",
+    "Equilibrium": "engine.equilibrium", "Regression": "engine.regression", "Surface": "engine.surface",
+    "Bindings/Python": "engine.bindings", "Application acceptance": "applications",
+    "Tooling": "tooling", "Tooling/Checks": "tooling", "Studies": "analyses",
+}
 
 
 def _plain(text: str) -> str:
@@ -66,8 +73,41 @@ def plan_projection(source: str, layers: tuple[str, ...] = LAYERS) -> list[dict[
             "prerequisites": row["dependencies"],
             "required": _plain(row["required"]),
             "evidence": row["links"],
+            "owner": OWNER_OF.get(row["layer"]),
         })
     return [{"name": name, "rows": groups[name]} for name in layers]
+
+
+def map_projection(
+    project_map: dict[str, Any], plan: list[dict[str, Any]], declarations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Join the file map to the milestones and declarations each owner carries."""
+
+    milestones: dict[str, list[dict[str, Any]]] = {}
+    for group in plan:
+        for row in group["rows"]:
+            if row.get("owner"):
+                milestones.setdefault(row["owner"], []).append({
+                    "id": row["id"], "name": row["name"], "status": row["status"], "evidence": row["evidence"],
+                })
+    tests: dict[str, list[str]] = {}
+    for item in declarations:
+        owner = OWNER_OF.get(str(item.get("category")))
+        if owner and item.get("test_id"):
+            tests.setdefault(owner, []).append(str(item["test_id"]))
+    nodes = []
+    for node in project_map.get("nodes", []):
+        nodes.append({
+            **node,
+            "milestones": milestones.get(node["id"], []),
+            "tests": tests.get(node["id"], []),
+        })
+    return {
+        "nodes": nodes,
+        "unmapped": project_map.get("unmapped", []),
+        "ambiguous": project_map.get("ambiguous", []),
+        "complete": bool(project_map.get("complete")),
+    }
 
 
 def _public_comparison_reason(value: Any) -> str:
@@ -248,6 +288,7 @@ def companion_projection(
     inventory: dict[str, Any],
     runs: list[dict[str, Any]] | None = None,
     *,
+    project_map: dict[str, Any] | None = None,
     revision_inputs: dict[str, Any] | None = None,
     layers: tuple[str, ...] = LAYERS,
 ) -> dict[str, Any]:
@@ -295,6 +336,7 @@ def companion_projection(
         "runs": visible_runs,
         "studies": studies,
     }
+    payload["map"] = map_projection(project_map or {}, payload["plan"], raw_declarations)
     payload["revision"] = digest(revision_inputs or {
         "inventory": payload["inventory"],
         "runs": [(run.get("run_id"), run.get("freshness"), run.get("execution")) for run in visible_runs],
@@ -330,6 +372,12 @@ def self_test() -> None:
     assert result["runs"][0]["freshness"] == "Current"
     assert result["preparation"][0]["name"] == "Recording"
     assert result["plan"][0]["rows"][0]["id"] == "C1"
+    result = companion_projection(source, {"state": "Complete", "declarations": [
+        {"test_id": "native.core.c1", "category": "Core", "title": "t", "kind": "Numerical"}]},
+        project_map={"nodes": [{"id": "engine.core", "name": "Core", "files": {}}], "complete": True},
+        layers=("Core",))
+    node = result["map"]["nodes"][0]
+    assert node["milestones"][0]["id"] == "C1" and node["tests"] == ["native.core.c1"]
 
 
 if __name__ == "__main__":

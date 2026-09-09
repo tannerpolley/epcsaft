@@ -165,6 +165,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
 | Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current code owners, missing implementation and required evidence | [implementation plan](implementation-plan.md) |
+| Project structure: components, Engine layers, path ownership and artifact roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [adr/](adr/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |

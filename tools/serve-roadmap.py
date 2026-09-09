@@ -34,6 +34,7 @@ COMPANION_BUILD = ROOT / "build/companion"
 ROADMAP = runpy.run_path(str(ROOT / "tools/check-roadmap.py"))
 INVENTORY = runpy.run_path(str(ROOT / "tools/numerical-inventory.py"))
 COMPANION_DATA = runpy.run_path(str(ROOT / "tools/companion-data.py"))
+PROJECT_MAP = runpy.run_path(str(ROOT / "tools/project-map.py"))
 
 _COMPANION_LOCK = threading.Lock()
 _SNAPSHOT_LOCK = threading.Lock()
@@ -166,8 +167,9 @@ def companion_projection() -> dict:
                 if reason:
                     checked["freshness_reason"] = reason
                 runs.append(checked)
+            project_map = PROJECT_MAP["project_map"](ROOT)
             after = input_generation(ROOT)
-        except (OSError, ValueError, RuntimeError) as error:
+        except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
             _LOGGER.debug("companion snapshot unavailable", exc_info=error)
             return {
                 "schema_version": 1,
@@ -176,14 +178,16 @@ def companion_projection() -> dict:
                 "presentation_available": False,
                 "inventory": {"state": "Unavailable", "errors": ["inventory unavailable"]},
                 "declarations": [], "runs": [], "plan": [], "preparation": [],
-                "studies": [],
+                "studies": [], "map": {"nodes": [], "unmapped": [], "ambiguous": [], "complete": False},
             }
         projection = COMPANION_DATA["companion_projection"](
             plan,
             inventory,
             runs,
+            project_map=project_map,
             revision_inputs={
                 "plan_sha256": plan_hash,
+                "project_map": digest(project_map),
                 "input_generation": after,
                 "inventory_generation": inventory.get("inventory_generation"),
                 "manifest_revision": manifest.get("revision"),

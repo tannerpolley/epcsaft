@@ -8,7 +8,7 @@ scientific owners and one equilibrium driver. The
 [implementation plan](docs/scientific/implementation-plan.md) distinguishes
 required capability from implemented and numerically qualified behavior.
 
-For the live Plan and Tests website, run
+For the live Map, Plan and Tests website, run
 `python3 tools/serve-roadmap.py --port 8766` and open the
 [Quarto companion](http://127.0.0.1:8766/). The companion is a read-only
 viewer: it renders the plan and the results recorded by the normal check

@@ -60,6 +60,7 @@ TOOLING_GATES = (
     ("check-all", "equation-registry", "Equation registry consistency"),
     ("check-all", "roadmap", "Roadmap consistency"),
     ("check-all", "budgets", "Code budget consistency"),
+    ("check-all", "project-map", "Project map completeness"),
     ("check-all", "environment", "Installed Engine environment"),
     ("check-all", "packets", "Reference packet validation"),
     ("check-all", "recorded-evidence", "Automatic numerical evidence"),

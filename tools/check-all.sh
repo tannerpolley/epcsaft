@@ -17,6 +17,8 @@ python3 tools/record-command.py --test-id tooling.check-all.roadmap -- \
     python3 tools/check-roadmap.py
 python3 tools/record-command.py --test-id tooling.check-all.budgets -- \
     python3 tools/diffstat.py --budgets
+python3 tools/record-command.py --test-id tooling.check-all.project-map -- \
+    python3 tools/project-map.py
 
 # Build and install the immutable wheel before any test process starts.
 EPCSAFT_PREPARE_NATIVE_BUILD=1 python3 tools/record-command.py \

@@ -516,11 +516,129 @@ function controls(snapshot, render) {
   return wrapper;
 }
 
+function selectedOwner() {
+  return new URLSearchParams(location.hash.slice(1)).get('owner') || '';
+}
+
+function ownerLink(ownerId, pageFile, label) {
+  const link = make('a', 'owner-link', label);
+  link.href = `${pageFile}#owner=${encodeURIComponent(ownerId)}`;
+  return link;
+}
+
+function selectionNote(snapshot, ownerId) {
+  const node = array(snapshot.map?.nodes).find(item => item.id === ownerId);
+  const note = make('p', 'selection-note');
+  note.append(`Showing ${node ? node.name : ownerId}. `);
+  const clear = make('a', '', 'Show everything');
+  clear.href = '#';
+  note.append(clear);
+  return note;
+}
+
+function fileTree(paths) {
+  const groups = new Map();
+  for (const path of paths) {
+    const slash = path.lastIndexOf('/');
+    const directory = slash < 0 ? '' : path.slice(0, slash);
+    if (!groups.has(directory)) groups.set(directory, []);
+    groups.get(directory).push(path);
+  }
+  const list = make('div', 'file-tree');
+  for (const [directory, files] of [...groups.entries()].sort()) {
+    const folder = make('details', 'folder');
+    const summary = make('summary');
+    summary.append(make('code', '', directory || '.'), badge(String(files.length)));
+    folder.append(summary);
+    const inside = make('ul', 'files');
+    for (const path of files) {
+      const item = make('li');
+      const link = make('a', '', path.slice(directory ? directory.length + 1 : 0));
+      link.href = `/${path}`;
+      item.append(link);
+      inside.append(item);
+    }
+    folder.append(inside);
+    list.append(folder);
+  }
+  return list;
+}
+
+function mapNode(node, snapshot, open, depth) {
+  const fileCount = Object.values(node.files || {}).reduce((sum, files) => sum + files.length, 0);
+  const layer = make('details', depth ? 'layer map-layer' : 'layer');
+  layer.id = `map-${node.id}`;
+  layer.open = open.has(layer.id) || selectedOwner() === node.id || selectedOwner().startsWith(`${node.id}.`);
+  const summary = make('summary');
+  summary.append(make('strong', '', text(node.name)));
+  if (array(node.milestones).length) summary.append(badge(`${node.milestones.filter(row => row.status === 'Qualified').length} / ${node.milestones.length} milestones`));
+  if (array(node.tests).length) summary.append(badge(`${node.tests.length} checks`));
+  summary.append(badge(`${fileCount} files`));
+  layer.append(summary);
+  const inside = make('div', 'inside');
+  inside.append(make('p', 'purpose', text(node.purpose)));
+  const paths = make('p', 'detail-line');
+  paths.append(make('span', 'detail-label', 'Paths '), make('span', '', array(node.paths).join(', ') || '—'));
+  inside.append(paths);
+  const links = make('p', 'detail-line');
+  links.append(ownerLink(node.id, 'index.html', 'Milestones in Plan'), ' · ', ownerLink(node.id, 'tests.html', 'Checks in Tests'));
+  inside.append(links);
+  for (const milestone of array(node.milestones)) {
+    const work = make('div', 'work');
+    const head = make('div', 'work-head');
+    head.append(make('small', '', text(milestone.id)), make('strong', '', text(milestone.name)), badge(text(milestone.status)));
+    work.append(head);
+    if (array(milestone.evidence).length) {
+      const evidence = make('p', '');
+      for (const [index, link] of milestone.evidence.entries()) {
+        const anchor = make('a', '', link);
+        anchor.href = `/docs/scientific/${link}`;
+        if (index) evidence.append(' · ');
+        evidence.append(anchor);
+      }
+      work.append(evidence);
+    }
+    inside.append(work);
+  }
+  for (const [role, files] of Object.entries(node.files || {}).sort()) {
+    const section = make('details', 'role');
+    section.id = `map-${node.id}-${role}`;
+    section.open = open.has(section.id);
+    const roleSummary = make('summary');
+    roleSummary.append(make('span', '', role), badge(String(files.length)));
+    section.append(roleSummary, fileTree(files));
+    inside.append(section);
+  }
+  for (const item of array(node.summarized)) inside.append(make('p', 'detail-line', `${item.path} — ${item.role}, not enumerated`));
+  for (const repository of array(node.external)) inside.append(make('p', 'detail-line', `${repository} — independent repository consuming the Engine wheel`));
+  for (const child of array(snapshot.map?.nodes).filter(item => item.parent === node.id)) inside.append(mapNode(child, snapshot, open, depth + 1));
+  layer.append(inside);
+  return layer;
+}
+
+function mapView(snapshot) {
+  const open = new Set([...area.querySelectorAll('details[open]')].map(element => element.id));
+  area.replaceChildren();
+  const map = snapshot.map || {};
+  const nodes = array(map.nodes);
+  const banner = make('div', 'snapshot-banner');
+  banner.append(badge(map.complete ? 'Every project file has an owner' : 'Map incomplete', map.complete ? 'passed' : 'failed'));
+  for (const [label, paths] of [['Unmapped', array(map.unmapped)], ['Ambiguous', array(map.ambiguous)]]) {
+    if (paths.length) banner.append(make('span', 'banner-note', `${label}: ${paths.join(', ')}`));
+  }
+  area.append(banner);
+  for (const node of nodes.filter(item => !item.parent)) area.append(mapNode(node, snapshot, open, 0));
+  if (!nodes.length) area.append(make('p', 'empty', 'Project map unavailable.'));
+  area.append(make('p', 'page-note', 'Owners and roles come from ARCHITECTURE.yaml; files come from the checkout. Implementation inventory is not scientific qualification.'));
+}
+
 function planView(snapshot) {
   const open = new Set([...area.querySelectorAll('details[open]')].map(element => element.id));
   area.replaceChildren();
-  const plan = array(snapshot.plan);
+  const owner = selectedOwner();
+  const plan = array(snapshot.plan).filter(group => !owner || array(group.rows).some(row => row.owner === owner));
   const rows = plan.flatMap(group => array(group.rows));
+  if (owner) area.append(selectionNote(snapshot, owner));
   const qualified = rows.filter(row => ['Qualified', '[x]'].includes(row.status)).length;
   const metrics = make('div', 'metrics');
   for (const [value, label] of [[`${qualified} / ${rows.length}`, 'Qualified milestones'], [String(plan.length), 'Capability groups']]) {
@@ -543,6 +661,16 @@ function planView(snapshot) {
       head.append(make('small', '', text(row.id)), make('strong', '', text(row.name)), badge(text(row.status)));
       work.append(head, make('p', '', text(row.required)));
       if (row.remaining) work.append(make('p', '', `${row.remaining} h remaining · ${row.actual === '—' ? 'Time not measured' : text(row.actual) + ' h measured'}`));
+      const links = make('p', 'detail-line');
+      if (array(row.prerequisites).length) links.append(`After ${row.prerequisites.join(', ')} · `);
+      for (const [index, link] of array(row.evidence).entries()) {
+        const anchor = make('a', '', link);
+        anchor.href = `/docs/scientific/${link}`;
+        if (index) links.append(' · ');
+        links.append(anchor);
+      }
+      if (row.owner) links.append(array(row.evidence).length || array(row.prerequisites).length ? ' · ' : '', ownerLink(row.owner, 'map.html', 'Owner in Map'));
+      work.append(links);
       inside.append(work);
     }
     layer.append(inside);
@@ -574,9 +702,12 @@ function testsView(snapshot) {
   const searchInput = area.querySelector('#test-search');
   state.searchFocused = document.activeElement === searchInput;
   state.searchSelection = searchInput ? [searchInput.selectionStart ?? state.query.length, searchInput.selectionEnd ?? state.query.length] : state.searchSelection;
-  const declarations = declarationsFor(snapshot);
+  const owner = selectedOwner();
+  const ownerCategories = new Set(array(snapshot.map?.nodes).filter(node => node.id === owner).flatMap(node => node.tests));
+  const declarations = declarationsFor(snapshot).filter(declaration => !owner || ownerCategories.has(declaration.test_id));
   const render = () => testsView(snapshot);
   area.replaceChildren();
+  if (owner) area.append(selectionNote(snapshot, owner));
   const banner = make('div', 'snapshot-banner');
   const inventory = snapshot.inventory || {};
   banner.append(badge(inventory.state === 'Complete' ? 'Inventory complete' : 'Inventory incomplete'));
@@ -587,7 +718,7 @@ function testsView(snapshot) {
   for (const [index, category] of categoryOrder(snapshot, declarations).entries()) {
     const selected = declarations.filter(declaration => declaration.category === category && (state.kind === 'All' || declaration.kind === state.kind));
     const visible = selected.filter(declaration => !search || searchable(declaration, runsFor(snapshot, declaration.test_id)).includes(search));
-    const categoryStudies = category === 'Studies' ? array(snapshot.studies).filter(study => !search || JSON.stringify(study).toLowerCase().includes(search)) : [];
+    const categoryStudies = category === 'Studies' && (!owner || owner === 'analyses') ? array(snapshot.studies).filter(study => !search || JSON.stringify(study).toLowerCase().includes(search)) : [];
     if (!visible.length && !categoryStudies.length) continue;
     const layer = make('details', `layer ${category === 'Tooling' ? 'tooling-layer' : ''}`.trim());
     layer.id = `tests-category-${category}-${index}`;
@@ -634,7 +765,8 @@ function testsView(snapshot) {
 }
 
 function renderSnapshot(snapshot) {
-  if (page === 'plan') planView(snapshot);
+  if (page === 'map') mapView(snapshot);
+  else if (page === 'plan') planView(snapshot);
   else testsView(snapshot);
   if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([area]);
 }
@@ -727,3 +859,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 refresh();
+
+window.addEventListener('hashchange', () => {
+  if (state.snapshot && state.rendered) renderSnapshot(state.snapshot);
+});
