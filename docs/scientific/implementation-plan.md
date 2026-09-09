@@ -154,6 +154,20 @@ results and the viewer only reads them. Acceptance is reopened for persistent
 startup and integrity-harness visibility. The previous installed gate passed in 26.92 seconds, above the warm
 10-second target. F5 remains a known numerical failure. This does not qualify M1 or E1.
 
+### What each signal establishes
+
+| Signal | What it establishes |
+|---|---|
+| Implementation inventory (Map view) | Code or other assets exist and have an owner. |
+| Milestone status (this plan) | Planned, active, blocked or qualified work against stated acceptance requirements. |
+| Recorded execution and freshness (Tests view) | A check passed, failed or could not run, and whether that record still applies to current inputs. |
+| Scientific qualification | Reviewed scientific evidence supports the stated capability and domain. |
+
+A file count, line count or passing test does not complete a milestone, and
+tooling completion never inflates thermodynamic qualification. Native include
+rules describe what may depend on what; milestone prerequisites describe which
+work must be accepted before other work begins.
+
 ### Keeping this plan current
 
 At start, inspect the live checkout and evidence, select the first eligible row,

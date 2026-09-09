@@ -192,6 +192,12 @@ an architecture scan nor a successful solve proves model validity.
 | typed failure | An unavailable result with a specific reason; not an invented physical value (algorithms) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
 | stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
+| component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
+| layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
+| capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
+| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's C1, P1, … rows (implementation plan) |
+| artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
+| qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 
 Use bubble, dew, saturation and flash as mathematical specifications or data
 constructors. Shared solvers must not select physics by an application or paper

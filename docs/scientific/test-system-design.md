@@ -26,7 +26,7 @@ Use one local Quarto website: Map, Plan and Tests. The companion is a read-only
 viewer. Rendering, refreshing and starting the service never run scientific
 calculations or tests; results come from the normal build, check and study
 commands. Automatic execution on source edits was retired on 2026-09-09 (see
-[the cleanup brief](project-map-design.md)). No Docker requirement, database,
+[the cleanup record](reviews/companion-cleanup-2026-09-09.md)). No Docker requirement, database,
 remote service, CI pipeline or new testing framework is needed. Use the existing pytest, native executables, wheel
 preparation, standard-library files and local preview.
 
