@@ -71,7 +71,7 @@ except ModuleNotFoundError:  # defensive fallback for callers that set tools/ as
 
 
 ALIASES = {
-    "F1": "native.model.f1",
+    "F1": "native.properties.f1",
     "F5": "native.equilibrium.f5",
 }
 PREPARATION_NAME = "preparation.json"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
-#include "model/helmholtz_model.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
 #include <algorithm>

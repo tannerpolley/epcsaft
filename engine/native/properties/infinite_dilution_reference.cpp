@@ -1,4 +1,4 @@
-#include "model/helmholtz_model.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"

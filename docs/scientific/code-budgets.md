@@ -5,7 +5,7 @@ ceilings to constrain duplication and unnecessary machinery. Here **floor
 target** means an engineering estimate of a lean complete implementation. It is
 not a proven minimum, an allocation to spend or a lower acceptance bound.
 
-The single numeric table is `engine/ARCHITECTURE.yaml:code_budgets`. Run
+The single numeric table is `ARCHITECTURE.yaml:code_budgets`. Run
 `python3 tools/diffstat.py --budgets` to display current counts against it.
 Both normal local check commands enforce it. `check-affected.sh` provides the
 documentation-only route without a wheel build; `check-all.sh` always builds

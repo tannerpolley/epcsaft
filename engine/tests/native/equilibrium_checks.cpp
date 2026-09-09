@@ -516,7 +516,7 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
 }
 
 void check_s1() {
-    epcsaft::HelmholtzModel binary_model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel binary_model(properties_support::neutral_binary());
     const auto liquid = equilibrium_support::flash(2);
     epcsaft::core::Capture capture;
     const auto liquid_result = epcsaft::equilibrium::solve_equilibrium(binary_model, liquid);
@@ -543,7 +543,7 @@ void check_s1() {
     flash.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
                     equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
     flash.temperature.value = 180.0;
-    epcsaft::HelmholtzModel ternary_model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel ternary_model(properties_support::neutral_ternary());
     verify_s1(ternary_model, flash,
               epcsaft::equilibrium::solve_equilibrium(ternary_model, flash), "ternary");
     epcsaft::HelmholtzModel reactive_model(equilibrium_support::ascani_reactive_ternary());
@@ -556,19 +556,19 @@ void check_s1() {
                                                 epcsaft::equilibrium::AmountSpec::pinned(0.0))};
     ethane.temperature.value = 250.0;
     ethane.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
-    epcsaft::HelmholtzModel ethane_model(model_support::ethane());
+    epcsaft::HelmholtzModel ethane_model(properties_support::ethane());
     verify_s1(ethane_model, ethane,
               epcsaft::equilibrium::solve_equilibrium(ethane_model, ethane), "ethane");
     auto salt = equilibrium_support::flash(3);
     salt.feed.values = {0.98, 0.01, 0.01};
     salt.temperature.value = 298.15;
-    epcsaft::HelmholtzModel salt_model(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel salt_model(properties_support::aqueous_electrolyte());
     verify_s1(salt_model, salt,
               epcsaft::equilibrium::solve_equilibrium(salt_model, salt), "salt");
 }
 
 void check_s2() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto binary = equilibrium_support::flash(3);
     binary.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
                      equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
@@ -705,7 +705,7 @@ void check_s7() {
 }
 
 void check_s8() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto small = equilibrium_support::flash(2);
     auto large = small;
     large.feed.values = {5.0, 5.0};
@@ -742,7 +742,7 @@ void check_s8() {
 }
 
 void check_s10() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
                       equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
@@ -767,7 +767,7 @@ void check_s10() {
     // multipliers independently, then differentiate the complete weighted gradient.
     auto pinned_problem = equilibrium_support::boundary();
     pinned_problem.temperature.value = 180.0;
-    epcsaft::HelmholtzModel pinned_model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel pinned_model(properties_support::neutral_binary());
     const auto pinned = epcsaft::equilibrium::compile_problem(
         pinned_model, pinned_problem
     );
@@ -877,7 +877,7 @@ void check_s11() {
 }
 
 void check_s13() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const auto problem = equilibrium_support::flash(2);
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
     const double limit = result.convergence.criterion == nullptr
@@ -932,7 +932,7 @@ void check_s13() {
 }
 
 void check_s15() {
-    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {
         equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),

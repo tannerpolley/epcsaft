@@ -21,7 +21,7 @@ edit history. GitHub issues track bounded delivery and link to the plan's
 scientific qualification rows rather than repeating their status.
 
 [Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
-ceiling; their single numeric owner is `engine/ARCHITECTURE.yaml`.
+ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 
 ## Live companion
 

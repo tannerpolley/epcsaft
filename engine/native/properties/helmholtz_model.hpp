@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
-#include "model/helmholtz_tape.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <array>
 #include <cstddef>

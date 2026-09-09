@@ -43,10 +43,10 @@ except ModuleNotFoundError:  # direct ``python tools/numerical-inventory.py``
 
 
 NATIVE_TARGETS = {
-    "contributions": "physics_checks",
-    "properties": "model_checks",
+    "contributions": "contributions_checks",
+    "properties": "properties_checks",
     "diagnostics": "diagnostics_checks",
-    "properties-floor": "model_floor",
+    "properties-floor": "properties_floor",
     "equilibrium": "equilibrium_checks",
     "boundary": "boundary_checks",
     "specification": "specification_checks",

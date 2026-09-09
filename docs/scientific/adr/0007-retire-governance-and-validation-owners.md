@@ -11,7 +11,7 @@ Scientific inputs and calculations are organized by their actual responsibility,
 with one owner for each value and requirement. The
 [project map](../CONTEXT.md) defines current directories. Execution instructions
 live in `AGENTS.md`; native topology and source budgets in
-`engine/ARCHITECTURE.yaml`; reusable packets and locks in `data/`; scientific
+`ARCHITECTURE.yaml`; reusable packets and locks in `data/`; scientific
 studies in `analyses/`; equations and algorithms in `engine/docs/`.
 
 Retain one-question analysis sets with their actual inputs, scripts, results,

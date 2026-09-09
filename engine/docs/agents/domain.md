@@ -1,7 +1,7 @@
 # Engine domain authority
 
 Before Engine shaping or implementation, read root `CONTEXT.md`,
-`engine/CONTEXT.md`, `engine/ARCHITECTURE.yaml`, and the relevant accepted
+`engine/CONTEXT.md`, `ARCHITECTURE.yaml`, and the relevant accepted
 decision under `docs/scientific/adr/`. Rebuild work also reads
 `docs/scientific/implementation-plan.md` and `engine/docs/agents/issue-tracker.md`.
 

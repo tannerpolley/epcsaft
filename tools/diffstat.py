@@ -229,13 +229,12 @@ def code_budgets(root=None) -> int:
     import json
     import re
     root = Path(__file__).resolve().parent.parent if root is None else Path(root)
-    architecture = (root / "engine/ARCHITECTURE.yaml").read_text()
-    labels = json.loads(re.search(r"^category_labels: (\{[^\n]+\})$", architecture, re.MULTILINE).group(1))
+    architecture = (root / "ARCHITECTURE.yaml").read_text()
     sections = list(re.finditer(r"^code_budgets:", architecture, re.MULTILINE))
     if len(sections) != 1:
         raise ValueError("expected one code_budgets JSON flow mapping in ARCHITECTURE.yaml")
     budgets, _ = json.JSONDecoder().raw_decode(architecture[sections[0].end():].lstrip())
-    expected = {"core", "physics", "model", "equilibrium", "regression", "surface", "bindings", "python", "total"}
+    expected = {"core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings", "python", "total"}
     if set(budgets) != expected:
         raise ValueError("code budgets must classify every runtime layer and total")
     for layer, limits in budgets.items():
@@ -271,7 +270,7 @@ def code_budgets(root=None) -> int:
     print("runtime physical lines: current / floor target / soft / hard")
     for layer, limits in budgets.items():
         state = budget_state(counts[layer], limits)
-        print(f"{state:4} {labels.get(layer, layer):13} {counts[layer]:5} / {limits[0]:5} / {limits[1]:5} / {limits[2]:5}")
+        print(f"{state:4} {layer:13} {counts[layer]:5} / {limits[0]:5} / {limits[1]:5} / {limits[2]:5}")
         failed |= state == "FAIL"
     return int(failed)
 
@@ -282,14 +281,14 @@ def budget_self_check() -> None:
     import tempfile
     import json
     from pathlib import Path
-    layers = ["core", "physics", "model", "equilibrium", "regression", "surface", "bindings", "python"]
+    layers = ["core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings", "python"]
     with tempfile.TemporaryDirectory(prefix="epcsaft-budget-") as temporary:
         root = Path(temporary)
         (root / "engine/native/core").mkdir(parents=True)
         (root / "engine/src/epcsaft").mkdir(parents=True)
         limits = {name: [8, 10, 12] for name in layers}
         limits["total"] = [64, 80, 96]
-        (root / "engine/ARCHITECTURE.yaml").write_text('category_labels: {"physics": "Contributions", "model": "Properties"}\ncode_budgets: ' + json.dumps(limits))
+        (root / "ARCHITECTURE.yaml").write_text('code_budgets: ' + json.dumps(limits))
         source = root / "engine/native/core/untracked.cpp"
         with contextlib.redirect_stdout(io.StringIO()):
             for lines, expected in ((0, "ok"), (10, "ok"), (11, "WARN"), (12, "WARN"), (13, "FAIL")):

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "model/helmholtz_model.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include <Eigen/Dense>
 #include <cppad/cppad.hpp>
@@ -11,7 +11,7 @@
 #include <optional>
 #include <vector>
 
-namespace model_support {
+namespace properties_support {
 
 inline epcsaft::Parameters parameters(std::size_t components) {
     epcsaft::Parameters p;
@@ -345,4 +345,4 @@ inline ReferenceTensor reference_tensor(
     return result;
 }
 
-}  // namespace model_support
+}  // namespace properties_support

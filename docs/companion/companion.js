@@ -523,7 +523,7 @@ function planView(snapshot) {
   const rows = plan.flatMap(group => array(group.rows));
   const qualified = rows.filter(row => ['Qualified', '[x]'].includes(row.status)).length;
   const metrics = make('div', 'metrics');
-  for (const [value, label] of [[`${qualified} / ${rows.length}`, 'Qualified sublayers'], [String(plan.length), 'Capability groups']]) {
+  for (const [value, label] of [[`${qualified} / ${rows.length}`, 'Qualified milestones'], [String(plan.length), 'Capability groups']]) {
     const metric = make('div', 'metric');
     metric.append(make('b', '', value), make('span', '', label));
     metrics.append(metric);

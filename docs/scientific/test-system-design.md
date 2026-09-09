@@ -449,4 +449,4 @@ reviews both returned Ready after corrections to reference/criterion completenes
 expected evidence, concurrent recording and the input/artifact identity split.
 The lead checked these findings against the current test entry points and this
 contract. The design is Ready; the implementation plan owns current delivery status.
-No scientific sublayer is qualified by this review.
+No scientific milestone is qualified by this review.

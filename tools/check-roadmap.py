@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Validate the Markdown progress owner and refresh its derived summary."""
 import argparse
-import json
 from pathlib import Path
 import re
 import tempfile
@@ -10,9 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN = ROOT / 'docs/scientific/implementation-plan.md'
 START = '<!-- roadmap-summary:start -->'
 END = '<!-- roadmap-summary:end -->'
-ARCHITECTURE = (ROOT / 'engine/ARCHITECTURE.yaml').read_text()
-CATEGORY_LABELS = json.loads(re.search(r'^category_labels: (\{[^\n]+\})$', ARCHITECTURE, re.M).group(1))
-LAYERS = ('Core', CATEGORY_LABELS['physics'], CATEGORY_LABELS['model'], 'Equilibrium', 'Regression', 'Surface',
+LAYERS = ('Core', 'Contributions', 'Properties', 'Equilibrium', 'Regression', 'Surface',
           'Bindings/Python', 'Application acceptance')
 
 

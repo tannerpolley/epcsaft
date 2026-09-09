@@ -26,9 +26,8 @@ ROOT = Path(__file__).resolve().parent.parent
 NATIVE = ROOT / "engine" / "native"
 MESON = ROOT / "engine" / "meson.build"
 
-# Internal directory identifiers implement the Contributions/Properties boundary.
 # Include direction: a layer may include itself and anything below it.
-LAYERS = ["core", "physics", "model", "equilibrium", "regression", "surface", "bindings"]
+LAYERS = ["core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings"]
 RANK = {name: index for index, name in enumerate(LAYERS)}
 
 # Names that may only be defined in core/physical_constants.hpp. The tree

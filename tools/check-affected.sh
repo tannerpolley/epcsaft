@@ -65,14 +65,14 @@ prepare_native_build=0
 if grep -Eq '^(analyses/|engine/)' <<<"$paths"; then
     run_recorded tooling.check-all.analysis-layout .venv/bin/python tools/check-analysis-layout.py
 fi
-if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|native/|src/|tests/native/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
+if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|native/|src/|tests/native/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     architecture_inputs=true
     prepare_native_build=1
 fi
 if grep -q '^data/' <<<"$paths"; then
     run_recorded tooling.check-all.packets .venv/bin/python data/tools/validate_packets.py
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     run_recorded tooling.check-all.environment env EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then
@@ -102,7 +102,7 @@ if grep -q '^engine/' <<<"$paths"; then
                 engine_equilibrium=true
                 ;;
             engine/src/epcsaft/regression/*) engine_regression=true ;;
-            engine/AGENTS.md|engine/ARCHITECTURE.yaml|engine/CONTEXT.md|engine/README.md|engine/meson.build|engine/build/subprojects/*|engine/pyproject.toml|engine/native/*|engine/src/*|engine/data/*|engine/tests/*)
+            engine/AGENTS.md|engine/CONTEXT.md|engine/README.md|engine/meson.build|engine/build/subprojects/*|engine/pyproject.toml|engine/native/*|engine/src/*|engine/data/*|engine/tests/*)
                 engine_all=true
                 ;;
         esac

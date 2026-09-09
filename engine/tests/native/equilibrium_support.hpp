@@ -2,7 +2,7 @@
 
 #include "core/trace.hpp"
 #include "equilibrium/problem.hpp"
-#include "model_support.hpp"
+#include "properties_support.hpp"
 #include "recording_support.hpp"
 
 #include <cstddef>
@@ -96,7 +96,7 @@ inline epcsaft::equilibrium::EquilibriumProblem boundary() {
 }
 
 inline epcsaft::Parameters ascani_reactive_ternary() {
-    auto result = model_support::parameters(3);
+    auto result = properties_support::parameters(3);
     result.segment_count = {2.40, 1.08, 2.80};
     result.sigma_constant = {3.20, 3.00, 3.80};
     result.dispersion_energy_over_k = {200.0, 400.0, 280.0};
@@ -119,7 +119,7 @@ inline epcsaft::Parameters ascani_reactive_ternary() {
 }
 
 inline epcsaft::Parameters relabel_neutral_binary() {
-    auto result = model_support::neutral_binary();
+    auto result = properties_support::neutral_binary();
     std::swap(result.segment_count[0], result.segment_count[1]);
     std::swap(result.sigma_constant[0], result.sigma_constant[1]);
     std::swap(result.dispersion_energy_over_k[0], result.dispersion_energy_over_k[1]);

@@ -24,7 +24,7 @@ double convergence_limit(const epcsaft::core::Convergence& convergence) {
 }
 
 void check_s3() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto bubble = equilibrium_support::boundary();
     bubble.feed.values = {0.5, 0.5};
     bubble.temperature.value = 180.0;
@@ -81,7 +81,7 @@ void check_s3() {
 }
 
 void check_s4() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto bubble = equilibrium_support::flash(3);
     bubble.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
                      equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
@@ -133,7 +133,7 @@ void check_s4() {
 }
 
 void check_s5() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
                       equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
@@ -169,7 +169,7 @@ void check_s5() {
 }
 
 void check_s9() {
-    epcsaft::HelmholtzModel model(model_support::neutral_ternary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
                       equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
@@ -342,7 +342,7 @@ void check_s9() {
               <= 1.0e-6 * std::max(1.0, std::abs(centered)));
     }
 
-    auto active_parameters = model_support::neutral_ternary();
+    auto active_parameters = properties_support::neutral_ternary();
     const std::vector<epcsaft::ActiveParameter> active = {
         {epcsaft::ParameterFamily::Kij, {1, 3}},
         {epcsaft::ParameterFamily::SegmentCount, {0}},
@@ -414,7 +414,7 @@ void check_s9() {
 }
 
 void check_s10() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const auto compiled = epcsaft::equilibrium::compile_problem(
         model, equilibrium_support::boundary());
     const auto point = compiled.generic_point();
@@ -452,7 +452,7 @@ void check_s10() {
 }
 
 void check_s14() {
-    epcsaft::HelmholtzModel model(model_support::ethane());
+    epcsaft::HelmholtzModel model(properties_support::ethane());
     auto problem = equilibrium_support::flash(1);
     problem.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
                       equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
@@ -491,7 +491,7 @@ void check_s14() {
 }
 
 void check_s15c() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto problem = equilibrium_support::boundary();
     problem.feed.values = {0.5, 0.5};
     problem.temperature.value = 280.0;

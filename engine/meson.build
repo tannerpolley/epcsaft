@@ -81,20 +81,19 @@ nlopt_options.set_install(false)
 nlopt_project = cmake.subproject('nlopt', options: nlopt_options)
 nlopt_dep = nlopt_project.dependency('nlopt')
 
-# One include root. A layer names its neighbours by path ("model/density.hpp"),
+# One include root. A layer names its neighbours by path ("properties/density.hpp"),
 # which is what makes the include direction checkable.
 native_inc = include_directories('native')
 
 # Filled by the build stages; the order is the layer order. Nothing here may
 # include pybind11 — that is bindings/, and it is the only place.
-# physics/ is header-only: the terms are templated so one source both evaluates
-# a double and records a tape, so there is nothing to compile into the archive
-# until the model layer lands.
-# Stage 2
-model_sources = files(
-  'native/model/helmholtz_model.cpp',
-  'native/model/density.cpp',
-  'native/model/infinite_dilution_reference.cpp',
+# contributions/ is header-only: the terms are templated so one source both
+# evaluates a double and records a tape, so there is nothing to compile into
+# the archive until the properties layer.
+properties_sources = files(
+  'native/properties/helmholtz_model.cpp',
+  'native/properties/density.cpp',
+  'native/properties/infinite_dilution_reference.cpp',
 )
 surface_sources = files('native/surface/parameter_builder.cpp')
 # Stages 4, 5, 6
@@ -110,7 +109,7 @@ regression_sources = files()
 
 epcsaft_native = static_library(
   'epcsaft_native',
-  model_sources,
+  properties_sources,
   surface_sources,
   equilibrium_sources,
   regression_sources,
@@ -155,27 +154,27 @@ py.extension_module(
 
 # Python ships alone: the native tree lives outside src/, so there is nothing
 # to exclude but caches.
-physics_checks = executable(
-  'physics_checks',
-  'tests/native/physics_checks.cpp',
+contributions_checks = executable(
+  'contributions_checks',
+  'tests/native/contributions_checks.cpp',
   cppad_temp_file,
   cpp_args: native_warnings,
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   install: false,
 )
-test('physics', physics_checks)
+test('contributions', contributions_checks)
 
-model_checks = executable(
-  'model_checks',
-  'tests/native/model_checks.cpp',
+properties_checks = executable(
+  'properties_checks',
+  'tests/native/properties_checks.cpp',
   cpp_args: native_warnings,
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
 )
-test('model', model_checks)
+test('properties', properties_checks)
 
 diagnostics_checks = executable(
   'diagnostics_checks',
@@ -188,9 +187,9 @@ diagnostics_checks = executable(
 )
 test('diagnostics', diagnostics_checks)
 
-model_floor = executable(
-  'model_floor',
-  'tests/native/model_floor.cpp',
+properties_floor = executable(
+  'properties_floor',
+  'tests/native/properties_floor.cpp',
   cpp_args: native_warnings,
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
@@ -198,7 +197,7 @@ model_floor = executable(
   install: false,
 )
 test(
-  'model_floor', model_floor,
+  'properties_floor', properties_floor,
   suite: 'floor',
   env: {'OMP_NUM_THREADS': '1'},
   timeout: 600,

@@ -1,4 +1,4 @@
-#include "model/helmholtz_model.hpp"
+#include "properties/helmholtz_model.hpp"
 #include "surface/parameter_builder.hpp"
 
 #include <pybind11/pybind11.h>

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "physics/association.hpp"
-#include "physics/born.hpp"
-#include "physics/electrolyte.hpp"
-#include "physics/helmholtz.hpp"
+#include "contributions/association.hpp"
+#include "contributions/born.hpp"
+#include "contributions/electrolyte.hpp"
+#include "contributions/helmholtz.hpp"
 
 #include <cppad/cppad.hpp>
 

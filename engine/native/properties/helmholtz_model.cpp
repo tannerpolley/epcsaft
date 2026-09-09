@@ -1,10 +1,10 @@
-#include "model/helmholtz_model.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include "core/trace.hpp"
-#include "physics/association.hpp"
-#include "physics/born.hpp"
-#include "physics/electrolyte.hpp"
-#include "physics/helmholtz.hpp"
+#include "contributions/association.hpp"
+#include "contributions/born.hpp"
+#include "contributions/electrolyte.hpp"
+#include "contributions/helmholtz.hpp"
 
 #include <Eigen/Dense>
 

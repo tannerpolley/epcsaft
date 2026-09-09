@@ -112,7 +112,7 @@ The neutral model uses the Gross2001 temperature-corrected diameters, mixture mo
 Helmholtz energy, hard-chain contact correction, and two dispersion
 perturbation terms. The coefficient arrays `a_0..a_6` and `b_0..b_6` are the
 Gross2001 universal constants retained as `A0`, `A1`, `A2`, `B0`, `B1`, `B2` in
-`engine/native/physics/helmholtz.hpp`, transcribed from Gross2001 Table 1.
+`engine/native/contributions/helmholtz.hpp`, transcribed from Gross2001 Table 1.
 The catalogue defines their interpolation; it does not duplicate the arrays.
 
 The pair rules consumed by the admitted bundles are

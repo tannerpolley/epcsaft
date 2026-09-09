@@ -950,7 +950,7 @@ def check_record_store(temp: Path) -> None:
 )
 def check_input_identity(temp: Path) -> None:
     root = temp / "identity"
-    for relative in ("engine/native/model.cpp", "engine/tests/test_decl.py", "data/reference.csv", "docs/companion/index.qmd"):
+    for relative in ("engine/native/properties/state.cpp", "engine/tests/test_decl.py", "data/reference.csv", "docs/companion/index.qmd"):
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(relative, encoding="utf-8")
@@ -960,7 +960,7 @@ def check_input_identity(temp: Path) -> None:
     require(input_generation(root) == baseline, "presentation edit invalidated computational evidence")
 
     checks = (
-        (root / "engine/native/model.cpp", "source edit"),
+        (root / "engine/native/properties/state.cpp", "source edit"),
         (root / "data/reference.csv", "data edit"),
         (root / "engine/tests/test_decl.py", "declaration edit"),
     )
@@ -969,7 +969,7 @@ def check_input_identity(temp: Path) -> None:
         path.write_text(path.read_text(encoding="utf-8") + "\nchanged", encoding="utf-8")
         require(input_generation(root) != before, f"{label} did not change input identity")
     renamed = root / "engine/native/renamed.cpp"
-    original = root / "engine/native/model.cpp"
+    original = root / "engine/native/properties/state.cpp"
     before = input_generation(root)
     original.rename(renamed)
     require(input_generation(root) != before, "source rename did not change input identity")

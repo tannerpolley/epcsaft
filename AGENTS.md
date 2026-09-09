@@ -82,7 +82,7 @@ record its SHA-256; they never import the Engine source checkout.
 ## Budgets and verification
 
 Use `docs/scientific/code-budgets.md`; the sole numeric owner is
-`engine/ARCHITECTURE.yaml:code_budgets`. Work toward the floor target, explain
+`ARCHITECTURE.yaml:code_budgets`. Work toward the floor target, explain
 soft-ceiling overruns, and obtain an owner-approved amendment before accepting
 hard-ceiling excess. Preserve readable code and required science when simplifying.
 
@@ -116,7 +116,7 @@ Run `bash "$HOME/.codex/hooks/codex-cleanup.sh" --repo-root .` after file change
 or task-owned processes/artifacts. Agents run it; never ask the user to do so.
 Remove only task-created ignored artifacts or exact user-authorized candidates.
 
-For roadmap work, update the implementation plan's authoritative sublayer row at
+For roadmap work, update the implementation plan's authoritative milestone row at
 start, completion and handoff: status, remaining/actual Astra elapsed hours and
 a dated evidence record. Reopen affected and dependent qualifications when a
 claim changes. Run `python3 tools/check-roadmap.py --write` after row edits; the

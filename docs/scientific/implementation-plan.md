@@ -2,7 +2,7 @@
 
 The generated summary below owns scientific qualification counts. The fast installed-wheel
 baseline runs; the residual-energy correction passes its focused check, while
-the weighted equilibrium-curvature check retains an unresolved failure. The sublayer tables own qualification and effort; the current
+the weighted equilibrium-curvature check retains an unresolved failure. The milestone tables own qualification and effort; the current
 execution queue owns the next work. Numerical records identify the exact inputs
 and implementation they exercised and never serve as competing instructions.
 
@@ -27,10 +27,10 @@ precede PH/PS/UV; the thermal milestone is not deferred past that layer.
 
 ### How progress and effort are counted
 
-The sublayer tables below are the sole editable progress record. `[ ]` means
+The milestone tables below are the sole editable progress record. `[ ]` means
 pending or reopened, `[-]` active, `[!]` blocked, and `[x]` qualified complete.
-Progress counts qualified sublayers equally, not effort or existing scaffolding.
-No entire sublayer has yet been qualified. Existing code is retained in the code/evidence map.
+Progress counts qualified milestones equally, not effort or existing scaffolding.
+No entire milestone has yet been qualified. Existing code is retained in the code/evidence map.
 
 Time estimates below are **provisional active elapsed hours for Astra-led agent
 work**, including repository inspection, design, tool/build execution, numerical
@@ -62,7 +62,7 @@ Total: **0/35 qualified milestones (0.0%)**; **37–113 remaining Astra hours**.
 The summary is generated from the tables; do not edit its counts or estimates.
 Relevance is 5/5 for every layer; priority is 5/5 for Core, Contributions, Properties,
 Equilibrium and applications, and 4/5 for Regression, Surface and bindings.
-The smallest pending sublayer estimates identify easy completions, subject to
+The smallest pending milestone estimates identify easy completions, subject to
 prerequisites. Preparation and excluded waits are additional to these estimates.
 
 ### Test-system preparation
@@ -71,7 +71,7 @@ The [test-system design](test-system-design.md) specifies the requested automate
 inventory, individual outcomes, numerical records and freshness behavior. It is a
 reviewed design whose reboot persistence, integrity-check visibility and suite naming
 are undergoing correction. These preparation steps precede numerical
-qualification work; they do not add to the 35 thermodynamic sublayers or their
+qualification work; they do not add to the 35 thermodynamic milestones or their
 Astra effort estimates. Scientific-basis and execution reviews returned Ready on 2026-09-08 after
 reference, completeness and identity corrections. Implementation ran from
 2026-09-08 at 21:36 MDT to 2026-09-09 at 01:40 MDT: **4.1 active elapsed hours**
@@ -104,7 +104,7 @@ No separate editable progress or numerical-value copy belongs in the website.
 The service must be running; a disconnected indicator replaces the live indicator
 when updates fail. Viewing the site never executes a scientific test or study.
 
-The Plan page derives scientific qualification and effort from the sublayer rows.
+The Plan page derives scientific qualification and effort from the milestone rows.
 The Tests page separates discovered implemented checks, selected comparisons,
 planned verification and studies. Discovery does not prove a recorded run applies
 to current code. Unverified results remain marked as needing a rerun; absent
@@ -145,7 +145,7 @@ output after building/verifying the installed wheel. F1 passed after the caloric
 correction; F5 remains a known failure. The display checks current applicability
 before showing a fresh comparison. Unrecorded or invalid evidence cannot become
 Current. Neither rendering nor a passing readiness check
-qualifies a scientific sublayer.
+qualifies a scientific milestone.
 
 Current presentation: Plan and Tests use the current Contributions/Properties
 vocabulary and compact collapsed comparison rows. The view renders connected
@@ -169,7 +169,7 @@ and algorithms with code and evidence in the same scientific change.
 A discovered defect reopens the affected row and any dependent completed rows;
 block active dependents until repaired. Finish every row in a layer before the
 next layer starts. Do not mark a row done from a build or readiness check alone.
-Keep these scope requirements below; only the sublayer tables own status.
+Keep these scope requirements below; only the milestone tables own status.
 
 Run `python3 tools/check-roadmap.py --write` after table updates, then
 `python3 tools/check-roadmap.py`. Both normal check scripts run the latter before
@@ -253,12 +253,12 @@ analysis-script relocation is already complete infrastructure work and is not
 counted again as scientific progress. Do not remove hard requirements merely
 to improve the displayed percentage.
 
-## Sublayer estimates and dependency graphs
+## Milestone estimates and dependency graphs
 
 These are subdivisions of the existing layer estimates, not extra hours or new
 runtime directories. **Actual time taken is not yet measured**; every range is
 remaining active Astra elapsed time under the assumptions above. Includes local
-validation per sublayer; each final qualification row covers integrated checks
+validation per milestone; each final qualification row covers integrated checks
 and review without counting all validation twice. The scope lists above retain requirements; these rows alone own completion.
 
 Solid arrows show required execution order. Every layer starts only after the
@@ -278,7 +278,7 @@ flowchart LR
 
 ### Core
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | C1 — Constants and numerical policy | [ ] | 0.25–0.75 | — | Specifications and executable prerequisites | Verify units, physical bounds and tolerance meanings; remove unjustified claims. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C2 — Parameter coordinates and scaling | [ ] | 0.25–0.75 | — | C1 | Define common coordinate identities and dimensional scaling, including derivative coordinate transformations. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
@@ -301,7 +301,7 @@ flowchart TD
 
 ### Contributions
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | P1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | C4 qualified | Qualify hard-chain/dispersion formulas and analytic limits; establish the ideal-gas Helmholtz formulation with explicit thermal and mixing inputs. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 | P2 — Association equations | [ ] | 0.5–1.5 | — | P1 | Qualify site topology, mass-action equations and support-limit mathematics. | — |
@@ -324,7 +324,7 @@ flowchart TD
 
 ### Properties
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | M1 — Residual properties and caloric correction | [ ] | 1–3 | — | P4 qualified | Verify the residual-energy correction and thermodynamic identities. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
 | M2 — Association elimination and density closure | [ ] | 1–3 | — | M1 | Qualify implicit kernels, support limits and pressure-to-density branch closure; reuse the resolved state. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
@@ -350,7 +350,7 @@ flowchart TD
 
 ### Equilibrium
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | E1 — Shared formulation and exact curvature | [ ] | 2–6 | — | M5 qualified | Qualify shared rows and complete multiplier/objective-weighted Hessians, including pinned cases. | — |
 | E2 — Declared phase and reaction specifications | [ ] | 2–6 | — | E1 | TP, bubble/dew, phase fractions/amounts and explicit supports. | — |
@@ -379,7 +379,7 @@ flowchart TD
 
 ### Regression
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | R1 — Built-in observations and coordinates | [ ] | 1–3 | — | E6 qualified | Density and phase observations, active/fixed/shared EOS fields, bounds/transforms. | — |
 | R2 — Exact prediction Jacobians and fitting | [ ] | 1–3 | — | R1 | Compose property/equilibrium chains; manufactured parameter recovery. | — |
@@ -401,7 +401,7 @@ flowchart TD
 
 ### Surface
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | S1 — Species, support and amount admission | [ ] | 0.5–1.5 | — | R4 qualified | Prepare reusable parameter-bundle species/site mappings; verify explicit charge/support and fraction-versus-amount semantics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 | S2 — Units and reference input mapping | [ ] | 0.5–1.5 | — | S1 | SI state units, coefficient units and four declared reaction bases. | — |
@@ -423,7 +423,7 @@ flowchart TD
 
 ### Bindings/Python
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | B1 — Expose qualified native capabilities | [ ] | 0.5–1.5 | — | S4 qualified | Expose reusable parameter-driven Mixture and native state/equilibrium/regression capabilities; explicit ideal/residual/total quantities without duplicate numerics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 | B2 — Derivative requests and results | [ ] | 0.5–1.5 | — | B1 | Full/selective state requests, balanced composition directions, units, derivative orders and per-output availability. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
@@ -446,7 +446,7 @@ flowchart TD
 
 ### Application acceptance
 
-| Sublayer | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
+| Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | A1 — MEA numerical demonstration | [ ] | 1–3 | — | B4 qualified | Strongest retained fixed-parameter candidate; equilibrium and consumed outputs. | — |
 | A2 — Absorber qualification | [ ] | 2–7 | — | A1 | Calorics/actions, refined Case 3C and disposition of operating failures. | — |
@@ -484,13 +484,13 @@ The strict order adds scheduling constraints beyond these scientific dependencie
 Core design uses the mapped consumers to establish the shared quantities they need. Verifying a
 lower layer uses existing test/binding infrastructure; necessary minimal test
 wiring is included in that layer's estimate. No new upper-layer feature work is
-implicitly authorized. A discovered lower-layer defect reopens its sublayer
+implicitly authorized. A discovered lower-layer defect reopens its milestone
 row and blocks dependent acceptance until repaired.
 
 The critical scientific uncertainties are Properties's high-order implicit chains
 and reference calorics, Equilibrium's exact pinned curvature and higher actions,
 and application-specific input sufficiency. Their ranges can grow; the total
-must be revised rather than forcing sublayer work to fit an old estimate.
+must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
@@ -523,7 +523,7 @@ remain separate actions; they do not block this local work.
 | Slice definition | Concrete capability/failure, equations, consumed inputs, units/domain, owner/callers and numerical falsifier | Design review |
 | Design Ready | One fresh integrated reviewer for bounded supported work; scientific-basis and numerical-execution reviewers for material changes, with the lead resolving findings | Build that slice |
 | Execution checks | Identified non-editable wheel and relevant installed tests; equation index, architecture, budgets and input checks | Assess actual numerical evidence |
-| Scientific qualification | Falsifier and preserved reference cases pass; tolerances/limits and failure behavior justified; independent final-tree review supports the claim | Mark the sublayer qualified |
+| Scientific qualification | Falsifier and preserved reference cases pass; tolerances/limits and failure behavior justified; independent final-tree review supports the claim | Mark the milestone qualified |
 | Integration | Affected docs and evidence agree with code; focused reviewed changes and authorized Git delivery | Integrate the bounded change |
 | Manuscript promotion, when requested | Investigator selects the reviewed result and intended use | Write for that use |
 
@@ -577,7 +577,7 @@ provisional pending that slice design; no qualification status changes here.
 
 The plan owns scientific scope, dependencies and qualification. GitHub issues
 own bounded delivery, discussion and design-review disposition; link each issue
-to its sublayer and the result evidence. Standalone issues are normal. A layer
+to its milestone and the result evidence. Standalone issues are normal. A layer
 parent is useful only for real decomposition: Core may have C1–C3 children and
 C4 as its integrated acceptance checklist. Reviewer assignments, commands and
 file edits belong inside the issue, not in additional subissues. Create later
@@ -615,7 +615,7 @@ actual model and effort.
 
 ## Required scientific choices
 
-These are accepted requirements; qualification is recorded only in the sublayer
+These are accepted requirements; qualification is recorded only in the milestone
 tables. Resolve equivalent details autonomously and return only material
 scientific conflicts or changes of scope to the owner.
 
@@ -644,13 +644,13 @@ scientific conflicts or changes of scope to the owner.
 
 | Requirement | Existing owner | Gap and numerical falsifier |
 |---|---|---|
-| Common residual energy and exact derivative chains; ALG-ASSOCIATION | `engine/native/physics/helmholtz.hpp`, `association.hpp`, `electrolyte.hpp`, `born.hpp`; `engine/native/model/helmholtz_tape.hpp` | Common tape exists. F2: weighted association elimination fails exact-zero associating support; E2 must separate regular mass action from the genuinely nonsmooth DH insertion Hessian. |
-| EqID: `residual_internal_energy`, residual/total caloric identities | `engine/native/model/helmholtz_model.cpp` | F1: missing T factor corrected 2026-09-08; focused ladder and mixture caloric identities pass. Broader M1 qualification remains pending. Total h/u must not be substituted by residual fields. |
+| Common residual energy and exact derivative chains; ALG-ASSOCIATION | `engine/native/contributions/helmholtz.hpp`, `association.hpp`, `electrolyte.hpp`, `born.hpp`; `engine/native/properties/helmholtz_tape.hpp` | Common tape exists. F2: weighted association elimination fails exact-zero associating support; E2 must separate regular mass action from the genuinely nonsmooth DH insertion Hessian. |
+| EqID: `residual_internal_energy`, residual/total caloric identities | `engine/native/properties/helmholtz_model.cpp` | F1: missing T factor corrected 2026-09-08; focused ladder and mixture caloric identities pass. Broader M1 qualification remains pending. Total h/u must not be substituted by residual fields. |
 | ALG-ADMISSION | `engine/native/surface/parameter_builder.cpp`, `engine/src/epcsaft/` | F3: neutral subset, charge defaults, source domains and ordinary electroneutrality incomplete; density-volume-temperature and dipolar-density permittivity families are specified but rejected by public builders; E2 plus explicit selected-support/domain cases. |
-| ALG-DENSITY | `engine/native/model/density.cpp` | Gradient scan and corrected reduced slope exist. F4: public branch/count not preserved; E3/E5 root multiplicity, disappearance and branch tests. |
+| ALG-DENSITY | `engine/native/properties/density.cpp` | Gradient scan and corrected reduced slope exist. F4: public branch/count not preserved; E3/E5 root multiplicity, disappearance and branch tests. |
 | Equilibrium rows and ALG-EQUILIBRIUM | `engine/native/equilibrium/request_compile.cpp`, `gibbs_minimizer.cpp`, `phase_boundary.cpp` | Compiler/shared minimizer exist. F5 exact pinned Hessian and callback objective-factor weighting are incorrect. E12 directional weighted-gradient ladder at nonzero multipliers, obj_factor 0, 0.5 and 1, including free T/P away from seeds; zero curvature is not exact. Boundary seeds are not continuation. |
 | EqID: `implicit_sensitivity`; ALG-ACTIONS | `engine/native/equilibrium/implicit_sensitivity.cpp` | A1 path exists with silent unavailable cases; E3 needs reasons/rank/linear residual and complete mixed chains. A2/A3 required by downstream uses are absent or unqualified; E10 independent action ladder. |
-| EqID: `standard_pressure_density_conversion`; ALG-REFERENCE | `engine/native/model/infinite_dilution_reference.cpp`; no complete common thermochemistry owner | E4/E7/E9: consistent fixed-P0 conversion, typed K(T), total properties and reference derivatives. Reaction gauge alone cannot supply absolute calorics. |
+| EqID: `standard_pressure_density_conversion`; ALG-REFERENCE | `engine/native/properties/infinite_dilution_reference.cpp`; no complete common thermochemistry owner | E4/E7/E9: consistent fixed-P0 conversion, typed K(T), total properties and reference derivatives. Reaction gauge alone cannot supply absolute calorics. |
 | ALG-FIT | `engine/native/regression/` placeholder | General observation algebra/fitting absent; E9 property fits, fixed-coordinate zero derivative, domain failures, chain rules and conditional covariance. Extend active coordinates beyond the six present EOS families only with complete defining chains. |
 | Stability/discovery | No qualified current discovery owner | Discover mapping incomplete/rejected. E8/E11: instability witnesses, declared-vs-discovered comparisons, charge/support and genuine bound meaning; local inner minima and exhausted search are not global proof. |
 | Installed-wheel/application evidence | `tools/verify-installed-wheel.py`, `tools/check-all.sh`; three downstream repositories | Fast installed-wheel gate passes; see the S0 execution record below. The gate does not run the focused F1/F5 checks and does not qualify application calculations. |
@@ -679,7 +679,7 @@ Reconciliation of old run identities and the seven source-readiness labels are
 not prerequisites. Additional phase analyses, tie lines or pure-property studies
 are required only for a calculation or expanded claim that actually consumes them.
 
-Remaining design is attached to the affected sublayers:
+Remaining design is attached to the affected milestones:
 
 - M3: standard-state conversions, four reaction bases and consistent thermal
   references; compare supplied/corrected calorics before adopting residual-dependent

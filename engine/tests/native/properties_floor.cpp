@@ -1,10 +1,10 @@
-#include "model/helmholtz_model.hpp"
-#include "model_support.hpp"
+#include "properties/helmholtz_model.hpp"
+#include "properties_support.hpp"
 #include "recording_support.hpp"
 
 #include "core/trace.hpp"
-#include "physics/association.hpp"
-#include "physics/helmholtz.hpp"
+#include "contributions/association.hpp"
+#include "contributions/helmholtz.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -185,13 +185,13 @@ void run_floor() {
     const char* threads = std::getenv("OMP_NUM_THREADS");
     std::printf("OMP_NUM_THREADS=%s\n", threads == nullptr ? "unset" : threads);
     epcsaft::HelmholtzModel model(
-        model_support::nine_species(),
+        properties_support::nine_species(),
         {{epcsaft::ParameterFamily::DispersionEnergyOverK, {0}}}
     );
     print_evaluation_case("A", model, 313.15,
                {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0},
                1.0 / 3.0e4, epcsaft::DerivativeOrder::Hessian);
-    const auto assoc = model_support::associating_binary();
+    const auto assoc = properties_support::associating_binary();
     epcsaft::HelmholtzModel associating(assoc);
     print_evaluation_case("C", associating, 376.88, {0.1385, 0.8615},
                           1.0 / 1.0e4, epcsaft::DerivativeOrder::Hessian);
@@ -209,21 +209,21 @@ void run_floor() {
     );
     std::printf("C association=%s\n",
                 epcsaft::core::describe(association_record).c_str());
-    epcsaft::HelmholtzModel density_model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel density_model(properties_support::neutral_binary());
     print_density_case("E", density_model, 300.0, 1.0e5, {0.4, 0.6}, false,
                        epcsaft::DensityBranch::Vapor);
     std::printf("B reference tensor multiplier=not measured\n");
-    epcsaft::HelmholtzModel nine_density(model_support::nine_species());
+    epcsaft::HelmholtzModel nine_density(properties_support::nine_species());
     print_density_case("D", nine_density, 313.15, 1.0e5,
                        {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0}, true,
                        epcsaft::DensityBranch::Liquid);
     print_trace_case(nine_density);
-    epcsaft::HelmholtzModel aqueous(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     print_reference_case(aqueous, 298.15, 1.0e5);
 }
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.model_floor", "Model_floor_measurements", "Tooling", "Properties", "Explicit", "Outcome_only", nullptr, "M5", nullptr, "engine/tests/native/model_floor.cpp", "model_floor", "run"}, run_floor},
+        {{"native.properties_floor", "Model_floor_measurements", "Tooling", "Properties", "Explicit", "Outcome_only", nullptr, "M5", nullptr, "engine/tests/native/properties_floor.cpp", "properties_floor", "run"}, run_floor},
     });
 }

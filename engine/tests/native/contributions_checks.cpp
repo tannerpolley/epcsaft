@@ -3,10 +3,10 @@
 // Data-backed tests arrive with the Python layer; these are the checks that fail
 // if the kernels are wrong at all.
 
-#include "physics/association.hpp"
-#include "physics/born.hpp"
-#include "physics/electrolyte.hpp"
-#include "physics/helmholtz.hpp"
+#include "contributions/association.hpp"
+#include "contributions/born.hpp"
+#include "contributions/electrolyte.hpp"
+#include "contributions/helmholtz.hpp"
 #include "recording_support.hpp"
 
 #include <algorithm>
@@ -581,13 +581,13 @@ void kernels_record_a_tape() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.physics.p1", "Hard_sphere_Carnahan_Starling", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "eta-*", "engine/tests/native/physics_checks.cpp", "physics_checks", "P1", "eta-*:3"}, hard_sphere_matches_carnahan_starling},
-        {{"native.physics.p2", "Residual_vanishes_at_zero_density", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "density-monotonic/*,zero-density-limit", "engine/tests/native/physics_checks.cpp", "physics_checks", "P2", "density-monotonic/*:4,zero-density-limit:1"}, residual_vanishes_at_zero_density},
-        {{"native.physics.p3", "Component_relabelling_invariance", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "hard-chain,dispersion", "engine/tests/native/physics_checks.cpp", "physics_checks", "P3", "hard-chain:1,dispersion:1"}, relabelling_components_changes_nothing},
-        {{"native.physics.p4", "Association_mass_action", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P2", "mass-action-*,site-floor-*,site-ceiling-*,site-symmetry", "engine/tests/native/physics_checks.cpp", "physics_checks", "P4", "mass-action-*:2,site-floor-*:2,site-ceiling-*:2,site-symmetry:1"}, association_solve_satisfies_mass_action},
-        {{"native.physics.p5", "Inactive_terms_vanish", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "association,born,debye-huckel", "engine/tests/native/physics_checks.cpp", "physics_checks", "P5", "association:1,born:1,debye-huckel:1"}, inactive_terms_contribute_nothing},
-        {{"native.physics.p6", "Same_sign_ionic_exclusion", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-pure-ion,all-pairs-pure-ion,excluded-zero,all-pairs-negative,half-mixture-different", "engine/tests/native/physics_checks.cpp", "physics_checks", "P6", "excluded-pure-ion:1,all-pairs-pure-ion:1,excluded-zero:1,all-pairs-negative:1,half-mixture-different:1"}, same_sign_exclusion_is_a_limit},
-        {{"native.physics.p7", "Packing_fraction_bound", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "density-scaling,low-positive,policy-lower,policy-upper", "engine/tests/native/physics_checks.cpp", "physics_checks", "P7", "density-scaling:1,low-positive:1,policy-lower:1,policy-upper:1"}, packing_fraction_is_bounded},
-        {{"native.physics.p8", "CppAD_tape_matches_double_path", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "M4", "density-gradient,tape-value", "engine/tests/native/physics_checks.cpp", "physics_checks", "P8", "density-gradient:1,tape-value:1"}, kernels_record_a_tape},
+        {{"native.contributions.p1", "Hard_sphere_Carnahan_Starling", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "eta-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P1", "eta-*:3"}, hard_sphere_matches_carnahan_starling},
+        {{"native.contributions.p2", "Residual_vanishes_at_zero_density", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "density-monotonic/*,zero-density-limit", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P2", "density-monotonic/*:4,zero-density-limit:1"}, residual_vanishes_at_zero_density},
+        {{"native.contributions.p3", "Component_relabelling_invariance", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "hard-chain,dispersion", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P3", "hard-chain:1,dispersion:1"}, relabelling_components_changes_nothing},
+        {{"native.contributions.p4", "Association_mass_action", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P2", "mass-action-*,site-floor-*,site-ceiling-*,site-symmetry", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P4", "mass-action-*:2,site-floor-*:2,site-ceiling-*:2,site-symmetry:1"}, association_solve_satisfies_mass_action},
+        {{"native.contributions.p5", "Inactive_terms_vanish", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "association,born,debye-huckel", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P5", "association:1,born:1,debye-huckel:1"}, inactive_terms_contribute_nothing},
+        {{"native.contributions.p6", "Same_sign_ionic_exclusion", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-pure-ion,all-pairs-pure-ion,excluded-zero,all-pairs-negative,half-mixture-different", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P6", "excluded-pure-ion:1,all-pairs-pure-ion:1,excluded-zero:1,all-pairs-negative:1,half-mixture-different:1"}, same_sign_exclusion_is_a_limit},
+        {{"native.contributions.p7", "Packing_fraction_bound", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P1", "density-scaling,low-positive,policy-lower,policy-upper", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P7", "density-scaling:1,low-positive:1,policy-lower:1,policy-upper:1"}, packing_fraction_is_bounded},
+        {{"native.contributions.p8", "CppAD_tape_matches_double_path", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "M4", "density-gradient,tape-value", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P8", "density-gradient:1,tape-value:1"}, kernels_record_a_tape},
     });
 }

@@ -1,8 +1,8 @@
 #include "core/convergence.hpp"
 #include "core/numerical_policy.hpp"
-#include "model/helmholtz_model.hpp"
-#include "model_support.hpp"
-#include "physics/association.hpp"
+#include "properties/helmholtz_model.hpp"
+#include "properties_support.hpp"
+#include "contributions/association.hpp"
 #include "recording_support.hpp"
 
 #include <algorithm>
@@ -158,7 +158,7 @@ void declaration_guards() {
     }
     CHECK(threw);
 
-    auto aqueous = model_support::aqueous_electrolyte();
+    auto aqueous = properties_support::aqueous_electrolyte();
     aqueous.electrolyte_form = {};
     threw = false;
     try { epcsaft::HelmholtzModel(std::move(aqueous)); }
@@ -203,7 +203,7 @@ void check_density_record(
 }
 
 void density_records() {
-    epcsaft::HelmholtzModel ethane(model_support::ethane());
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
     for (const auto& row : std::array<std::tuple<double, double>, 2>{
              std::tuple{200.0, 217800.69494692178},
              std::tuple{240.0, 969152.4807171321}}) {
@@ -220,11 +220,11 @@ void density_records() {
                          "ethane-320-vapor");
     check_density_record(ethane, 320.0, 1.0e6, {1.0}, epcsaft::DensityBranch::Liquid,
                          "ethane-320-liquid");
-    epcsaft::HelmholtzModel nine(model_support::nine_species());
+    epcsaft::HelmholtzModel nine(properties_support::nine_species());
     check_density_record(nine, 313.15, 1.0e5,
                          {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0},
                          epcsaft::DensityBranch::Liquid, "nine-313-liquid");
-    epcsaft::HelmholtzModel aqueous(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     check_density_record(aqueous, 298.15, 1.0e5, {1.0, 0.0, 0.0},
                          epcsaft::DensityBranch::Liquid, "aqueous-298-liquid");
 }
@@ -264,8 +264,8 @@ void association_record(
 }
 
 void association_records() {
-    association_record(model_support::associating_binary(), 1.0e4, {0.1385, 0.8615}, "associating");
-    association_record(model_support::nine_species(), 1.2e4,
+    association_record(properties_support::associating_binary(), 1.0e4, {0.1385, 0.8615}, "associating");
+    association_record(properties_support::nine_species(), 1.2e4,
                       {0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001},
                       "nine-species");
 }
@@ -324,7 +324,7 @@ void trace_state_case(
 }
 
 void trace_activity_case() {
-    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
     const std::vector<double> solvent = {1.0, 0.0, 0.0};
     const std::array<std::size_t, 2> ions = {1, 2};
     const std::array<int, 2> stoichiometry = {1, 1};
@@ -347,13 +347,13 @@ void trace_activity_case() {
 }
 
 void trace_invariance() {
-    trace_case(model_support::neutral_binary(), 300.0, 1.0e5, {0.4, 0.6},
+    trace_case(properties_support::neutral_binary(), 300.0, 1.0e5, {0.4, 0.6},
                epcsaft::DensityBranch::Vapor);
-    trace_case(model_support::ethane(), 200.0, 217800.69494692178, {1.0},
+    trace_case(properties_support::ethane(), 200.0, 217800.69494692178, {1.0},
                epcsaft::DensityBranch::Liquid);
-    trace_case(model_support::ethane(), 320.0, 1.0e6, {1.0},
+    trace_case(properties_support::ethane(), 320.0, 1.0e6, {1.0},
                epcsaft::DensityBranch::Vapor);
-    trace_state_case(model_support::neutral_binary(), 300.0, 1.0, {0.4, 0.6});
+    trace_state_case(properties_support::neutral_binary(), 300.0, 1.0, {0.4, 0.6});
     trace_activity_case();
 }
 

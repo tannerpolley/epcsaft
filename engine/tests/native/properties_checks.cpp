@@ -1,5 +1,5 @@
-#include "model/helmholtz_model.hpp"
-#include "model_support.hpp"
+#include "properties/helmholtz_model.hpp"
+#include "properties_support.hpp"
 #include "recording_support.hpp"
 
 #include <algorithm>
@@ -48,7 +48,7 @@ std::string model_inputs(const epcsaft::Parameters& parameters, double temperatu
 void residual_internal_energy_identity_ladder() {
     // F1 previous-failure check: the temperature derivative is independent of
     // the state caloric fields, and the centered ladder checks its local error.
-    epcsaft::HelmholtzModel model(model_support::ethane());
+    epcsaft::HelmholtzModel model(properties_support::ethane());
     constexpr double temperature = 300.0;
     constexpr double density = 1.0e4;
     constexpr double gas_constant = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
@@ -172,10 +172,10 @@ void residual_internal_energy_identity_ladder() {
 
 void derivatives_and_limits() {
     const std::vector<std::pair<epcsaft::Parameters, std::vector<double>>> cases = {
-        {model_support::neutral_binary(), {0.4, 0.6}},
-        {model_support::associating_binary(), {0.1385, 0.8615}},
-        {model_support::aqueous_electrolyte(), {0.98, 0.01, 0.01}},
-        {model_support::nine_species(), {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0, 0.005, 0}},
+        {properties_support::neutral_binary(), {0.4, 0.6}},
+        {properties_support::associating_binary(), {0.1385, 0.8615}},
+        {properties_support::aqueous_electrolyte(), {0.98, 0.01, 0.01}},
+        {properties_support::nine_species(), {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0, 0.005, 0}},
     };
     recording_support::expect_group(
         recording_support::active_test_id(), "m2-value-state", "value-state/", cases.size(),
@@ -321,7 +321,7 @@ void derivatives_and_limits() {
                     state_identity.residual_helmholtz
                     + state_identity.compressibility_factor - 1.0, 1e-12));
     }
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     for (double density : {1e1, 1e0, 1e-1, 1e-2}) {
         const auto state = model.state(300.0, density, {0.4, 0.6});
         recording_support::compare(
@@ -353,7 +353,7 @@ void derivatives_and_limits() {
 
 void finite_difference_gradient() {
     epcsaft::HelmholtzModel model(
-        model_support::associating_binary(),
+        properties_support::associating_binary(),
         {{epcsaft::ParameterFamily::Kij, {1, 2}}}
     );
     const double temperature = 376.88;
@@ -368,7 +368,7 @@ void finite_difference_gradient() {
     for (std::size_t coordinate = 0; coordinate < actual.gradient.size(); ++coordinate) {
         if (coordinate == amounts.size() + 2) {
             const double step = 1e-5;
-            auto plus = model_support::associating_binary();
+            auto plus = properties_support::associating_binary();
             auto minus = plus;
             plus.k_ij[1] += step; plus.k_ij[2] += step;
             minus.k_ij[1] -= step; minus.k_ij[2] -= step;
@@ -432,7 +432,7 @@ void finite_difference_gradient() {
 }
 
 void hessian_reference() {
-    const auto associating_parameters = model_support::associating_binary();
+    const auto associating_parameters = properties_support::associating_binary();
     const std::vector<double> associating_amounts = {0.1385, 0.8615};
     recording_support::expect_group(
         recording_support::active_test_id(), "m4-associating-gradient", "associating-gradient/", 4,
@@ -450,7 +450,7 @@ void hessian_reference() {
     const auto associating_result = associating.evaluate(
         376.88, 1.0e-4, associating_amounts, epcsaft::DerivativeOrder::Hessian
     );
-    const auto associating_reference = model_support::reference_tensor(
+    const auto associating_reference = properties_support::reference_tensor(
         associating_parameters, 376.88, 1.0e-4, associating_amounts,
         associating_result.site_fractions
     );
@@ -493,7 +493,7 @@ void hessian_reference() {
                     associating_reference.hessian[entry], 1e-10));
     }
 
-    const auto nine_parameters = model_support::nine_species();
+    const auto nine_parameters = properties_support::nine_species();
     const std::vector<double> nine_amounts = {
         0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001,
     };
@@ -504,7 +504,7 @@ void hessian_reference() {
     const auto nine_result = nine.evaluate(
         300.0, 1.0 / 1.2e4, nine_amounts, epcsaft::DerivativeOrder::Hessian
     );
-    const auto nine_reference = model_support::reference_tensor(
+    const auto nine_reference = properties_support::reference_tensor(
         nine_parameters, 300.0, 1.0 / 1.2e4, nine_amounts,
         nine_result.site_fractions,
         epcsaft::ActiveParameter{
@@ -551,10 +551,10 @@ void hessian_reference() {
 
 void hessian_fd_and_pressure_slope() {
     const std::vector<std::pair<epcsaft::Parameters, std::vector<double>>> cases = {
-        {model_support::neutral_binary(), {0.4, 0.6}},
-        {model_support::associating_binary(), {0.1385, 0.8615}},
-        {model_support::aqueous_electrolyte(), {0.98, 0.01, 0.01}},
-         {model_support::nine_species(),
+        {properties_support::neutral_binary(), {0.4, 0.6}},
+        {properties_support::associating_binary(), {0.1385, 0.8615}},
+        {properties_support::aqueous_electrolyte(), {0.98, 0.01, 0.01}},
+         {properties_support::nine_species(),
          {0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001}},
     };
     recording_support::expect_group(
@@ -684,7 +684,7 @@ void same_sign_pair_is_inert() {
     const std::vector<double> amounts = {
         0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001,
     };
-    auto excluded = model_support::nine_species();
+    auto excluded = properties_support::nine_species();
     auto changed = excluded;
     changed.k_ij[3 * 9 + 7] = changed.k_ij[7 * 9 + 3] = 0.5;
     recording_support::expect_group(
@@ -734,7 +734,7 @@ void same_sign_pair_is_inert() {
 }
 
 void parameter_derivative_and_helpers() {
-    epcsaft::Parameters parameters = model_support::neutral_binary();
+    epcsaft::Parameters parameters = properties_support::neutral_binary();
     epcsaft::HelmholtzModel model(
         parameters, {{epcsaft::ParameterFamily::Kij, {1, 2}}}
     );
@@ -806,14 +806,14 @@ void parameter_derivative_and_helpers() {
     CHECK(threw);
     threw = false;
     try {
-        auto bad = model_support::aqueous_electrolyte();
+        auto bad = properties_support::aqueous_electrolyte();
         bad.ionic_dispersion = {};
         (void)epcsaft::HelmholtzModel(std::move(bad));
     } catch (const std::invalid_argument&) { threw = true; }
     CHECK(threw);
     threw = false;
     try {
-        auto bad = model_support::neutral_binary();
+        auto bad = properties_support::neutral_binary();
         bad.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
         (void)epcsaft::HelmholtzModel(std::move(bad));
     } catch (const std::invalid_argument&) { threw = true; }
@@ -824,7 +824,7 @@ void parameter_derivative_and_helpers() {
     CHECK(threw);
     threw = false;
     try {
-        auto bad = model_support::associating_binary();
+        auto bad = properties_support::associating_binary();
         bad.site_component[0] = 2;
         (void)epcsaft::HelmholtzModel(std::move(bad));
     } catch (const std::invalid_argument&) { threw = true; }
@@ -832,7 +832,7 @@ void parameter_derivative_and_helpers() {
 }
 
 void density_and_reference() {
-    epcsaft::HelmholtzModel ethane(model_support::ethane());
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
     const auto reference_rows = std::array<std::tuple<double, double, double, double>, 2>{
         std::tuple{200.0, 217800.69494692178, 0.007241100995,
                    0.03007 / 523.97698},
@@ -1010,7 +1010,7 @@ void density_and_reference() {
         close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-10),
         "m8-anchored-vapor", "state", "\\rho_v", "T,P,\\mathbf{x}", "\\rho_{anchored,v}=\\rho_v", "state");
     CHECK(close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-10));
-    const auto associating = epcsaft::HelmholtzModel(model_support::associating_binary());
+    const auto associating = epcsaft::HelmholtzModel(properties_support::associating_binary());
     const auto associating_liquid = associating.state_at_pressure(
         313.15, 1e5, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid
     );
@@ -1024,7 +1024,7 @@ void density_and_reference() {
         "reference_or_one", 0.0, 1e-9, close(associating_liquid.pressure, 1e5, 1e-9),
         "m8-associating", "state", "P", "T,P,\\mathbf{x}", "P_{liquid}=P", "state");
     CHECK(close(associating_liquid.pressure, 1e5, 1e-9));
-    const auto nine = epcsaft::HelmholtzModel(model_support::nine_species());
+    const auto nine = epcsaft::HelmholtzModel(properties_support::nine_species());
     const auto nine_state = nine.state_at_pressure(
         313.15, 1e5,
         {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0},
@@ -1049,7 +1049,7 @@ void density_and_reference() {
         "absolute", 0.0, 0.0, nine_packing_ok, "m8-nine", "state", "\\eta<\\eta_{max}",
         "T,P,\\mathbf{x},\\rho", "\\eta<\\eta_{max}", "state");
     CHECK(nine_packing_ok);
-    const auto aqueous = model_support::aqueous_electrolyte();
+    const auto aqueous = properties_support::aqueous_electrolyte();
     epcsaft::HelmholtzModel model(aqueous);
     const auto reference = epcsaft::infinite_dilution_reference(
         model, 298.15, 1e5, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}
@@ -1129,7 +1129,7 @@ void density_and_reference() {
 }
 
 void cache_invariance() {
-    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
     recording_support::expect_group(
         recording_support::active_test_id(), "m9-value", "value", 1,
         "cached value invariance", "state");
@@ -1182,14 +1182,14 @@ void cache_invariance() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.model.f1", "Residual_internal_energy_identity_ladder", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "M1", "a_res,pressure,compressibility_factor,residual_entropy,residual_enthalpy,temperature-ladder/*,internal-energy-identity,enthalpy-internal-energy-identity", "engine/tests/native/model_checks.cpp", "model_checks", "F1", "a_res:1,pressure:1,compressibility_factor:1,residual_entropy:1,residual_enthalpy:1,temperature-ladder/*:4,internal-energy-identity:1,enthalpy-internal-energy-identity:1"}, residual_internal_energy_identity_ladder, "F1"},
-        {{"native.model.m2", "Derivatives_and_limits", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M1", "value-state/*,residual-sum/*,gradient-density/*,hessian-symmetry/*,euler/*,internal-energy/*,internal-energy-entropy/*,chemical-potential/*,low-density/*,low-density-z/*", "engine/tests/native/model_checks.cpp", "model_checks", "M2", "value-state/*:4,residual-sum/*:4,gradient-density/*:4,hessian-symmetry/*:178,euler/*:4,internal-energy/*:4,internal-energy-entropy/*:4,chemical-potential/*:4,low-density/*:4,low-density-z/*:4"}, derivatives_and_limits},
-        {{"native.model.m3", "Finite_difference_gradient", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "gradient/*", "engine/tests/native/model_checks.cpp", "model_checks", "M3", "gradient/*:5"}, finite_difference_gradient},
-        {{"native.model.m4", "Hessian_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "associating-gradient/*,associating-hessian/*,nine-gradient/*,nine-hessian/*", "engine/tests/native/model_checks.cpp", "model_checks", "M4", "associating-gradient/*:4,associating-hessian/*:16,nine-gradient/*:12,nine-hessian/*:144"}, hessian_reference},
-        {{"native.model.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*", "engine/tests/native/model_checks.cpp", "model_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4"}, hessian_fd_and_pressure_slope},
-        {{"native.model.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-inert,all-pairs-active", "engine/tests/native/model_checks.cpp", "model_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
-        {{"native.model.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/model_checks.cpp", "model_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
-        {{"native.model.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/model_checks.cpp", "model_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
-        {{"native.model.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "value,gradient/*,hessian/*", "engine/tests/native/model_checks.cpp", "model_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
+        {{"native.properties.f1", "Residual_internal_energy_identity_ladder", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "M1", "a_res,pressure,compressibility_factor,residual_entropy,residual_enthalpy,temperature-ladder/*,internal-energy-identity,enthalpy-internal-energy-identity", "engine/tests/native/properties_checks.cpp", "properties_checks", "F1", "a_res:1,pressure:1,compressibility_factor:1,residual_entropy:1,residual_enthalpy:1,temperature-ladder/*:4,internal-energy-identity:1,enthalpy-internal-energy-identity:1"}, residual_internal_energy_identity_ladder, "F1"},
+        {{"native.properties.m2", "Derivatives_and_limits", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M1", "value-state/*,residual-sum/*,gradient-density/*,hessian-symmetry/*,euler/*,internal-energy/*,internal-energy-entropy/*,chemical-potential/*,low-density/*,low-density-z/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M2", "value-state/*:4,residual-sum/*:4,gradient-density/*:4,hessian-symmetry/*:178,euler/*:4,internal-energy/*:4,internal-energy-entropy/*:4,chemical-potential/*:4,low-density/*:4,low-density-z/*:4"}, derivatives_and_limits},
+        {{"native.properties.m3", "Finite_difference_gradient", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "gradient/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M3", "gradient/*:5"}, finite_difference_gradient},
+        {{"native.properties.m4", "Hessian_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "associating-gradient/*,associating-hessian/*,nine-gradient/*,nine-hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M4", "associating-gradient/*:4,associating-hessian/*:16,nine-gradient/*:12,nine-hessian/*:144"}, hessian_reference},
+        {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4"}, hessian_fd_and_pressure_slope},
+        {{"native.properties.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-inert,all-pairs-active", "engine/tests/native/properties_checks.cpp", "properties_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
+        {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
+        {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
+        {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
     });
 }

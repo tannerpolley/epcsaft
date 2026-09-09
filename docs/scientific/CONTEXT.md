@@ -51,7 +51,7 @@ from this intended architecture.
 
 ## Engine responsibilities
 
-Native dependencies run downward in `engine/ARCHITECTURE.yaml`; Python exposes
+Native dependencies run downward in `ARCHITECTURE.yaml`; Python exposes
 capabilities rather than reproducing the native directory tree.
 
 | Layer | Owns | Boundary |
@@ -99,9 +99,9 @@ properties with explicit unavailability for missing required inputs, not invente
 ideal thermal data. Missing ideal calorics must not disable valid residual work.
 Python exposes these capabilities; native owners perform the science and reuse.
 
-Contributions and Properties are the current category names. The internal
-`physics/` and `model/` directories implement their dependency boundary; their
-identifiers do not change the scientific vocabulary. Callable names, output
+Contributions and Properties are the layer names; `engine/native/contributions/`
+and `engine/native/properties/` implement their dependency boundary under the
+same names. Callable names, output
 container shape, default evaluation policy and pure-fluid/mixture interface
 unification remain bounded design decisions. The plan distinguishes the accepted
 Ideal/Residual/Total organization from currently implemented outputs.
@@ -165,12 +165,12 @@ recovery question. Historical stage completion is never current acceptance.
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
 | Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current code owners, missing implementation and required evidence | [implementation plan](implementation-plan.md) |
-| Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `engine/ARCHITECTURE.yaml` |
+| Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [adr/](adr/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
 | Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
 | Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
-| Runtime source-size budgets | `engine/ARCHITECTURE.yaml:code_budgets`; [meaning and review](code-budgets.md) |
+| Runtime source-size budgets | `ARCHITECTURE.yaml:code_budgets`; [meaning and review](code-budgets.md) |
 | Execution and check selection | root `AGENTS.md`, `tools/check-affected.sh`, `tools/check-all.sh` |
 
 Mathematics defines required behavior. Code records actual behavior. Evidence
@@ -204,7 +204,7 @@ terms remain retired by ADR 0006; dipolar relative permittivity is distinct.
 The owner selected strict layer completion: Core, Contributions, Properties, Equilibrium,
 Regression, Surface, Bindings/Python, then application acceptance. The
 [implementation plan](implementation-plan.md#official-dependency-order-progress--2026-09-08)
-owns sublayer status, generated progress and rough effort estimates.
+owns milestone status, generated progress and rough effort estimates.
 Finish and verify each layer's agreed scope before expanding the next; later
 integration defects reopen the affected earlier milestone. Design readiness
 is scoped to the affected slice; the implementation plan owns its gates and

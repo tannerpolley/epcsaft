@@ -73,7 +73,7 @@ wheel build and installation.
 
 The package owns one Meson graph and no installed cross-module SDK. Data
 packet materializations are explicit and hash-bound. Installed-wheel analyses
-live in `../analyses/`. See `AGENTS.md`, `ARCHITECTURE.yaml`, and
+live in `../analyses/`. See `AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer

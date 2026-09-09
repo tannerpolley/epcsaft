@@ -107,6 +107,6 @@ Run a canonical end-to-end workflow with:
 bash tools/run-slice.sh khudaida
 ```
 
-See `AGENTS.md`, `engine/ARCHITECTURE.yaml`, and
+See `AGENTS.md`, `ARCHITECTURE.yaml`, and
 `docs/scientific/CONTEXT.md` for execution, architecture, and scientific
 ownership.

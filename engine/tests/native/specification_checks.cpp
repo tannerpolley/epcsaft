@@ -69,7 +69,7 @@ void check_c1() {
                 for (const auto chemistry : equilibrium_support::chemistry_values()) {
                     auto problem = equilibrium_support::lattice_problem(
                         phase_set, amount_pattern, intensive_pattern, chemistry);
-                    const auto parameters = chemistry == equilibrium_support::Chemistry::Neutral ? model_support::neutral_binary() : chemistry == equilibrium_support::Chemistry::Electrolyte ? model_support::aqueous_electrolyte() : equilibrium_support::ascani_reactive_ternary();
+                    const auto parameters = chemistry == equilibrium_support::Chemistry::Neutral ? properties_support::neutral_binary() : chemistry == equilibrium_support::Chemistry::Electrolyte ? properties_support::aqueous_electrolyte() : equilibrium_support::ascani_reactive_ternary();
                     epcsaft::HelmholtzModel model(parameters);
                     const int k = equilibrium_support::pinned_phases(phase_set, amount_pattern);
                     const int f = equilibrium_support::free_intensives(intensive_pattern);
@@ -116,7 +116,7 @@ void check_c1() {
     }
 }
 void check_c4() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto amounts = equilibrium_support::flash(2);
     amounts.feed.values = {0.5, 0.5};
     auto fractions = amounts;
@@ -174,7 +174,7 @@ void check_c4() {
     }
 }
 void check_c5() {
-    auto parameters = model_support::parameters(3);
+    auto parameters = properties_support::parameters(3);
     parameters.segment_count = {1.0, 1.0, 1.0};
     parameters.sigma_constant = {3.0, 3.1, 3.2};
     parameters.dispersion_energy_over_k = {100.0, 110.0, 120.0};
@@ -303,13 +303,13 @@ void check_c5() {
     auto three_phase = equilibrium_support::flash(2);
     three_phase.phases = {equilibrium_support::phase("L1", epcsaft::equilibrium::PhaseKind::Liquid), equilibrium_support::phase("L2", epcsaft::equilibrium::PhaseKind::Liquid), equilibrium_support::phase("L3", epcsaft::equilibrium::PhaseKind::Liquid)};
     rejected = false;
-    epcsaft::HelmholtzModel binary(model_support::neutral_binary());
+    epcsaft::HelmholtzModel binary(properties_support::neutral_binary());
     try { (void)epcsaft::equilibrium::compile_problem(binary, three_phase); }
     catch (const std::invalid_argument& error) { rejected = std::string(error.what()).find("phase count") != std::string::npos; }
     CHECK(rejected);
 }
 void check_c8() {
-    epcsaft::HelmholtzModel model(model_support::aqueous_electrolyte());
+    epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
     auto problem = equilibrium_support::flash(3);
     problem.feed.values = {0.98, 0.01, 0.01};
     problem.phases.front().support = {0, 1, 2};
@@ -343,7 +343,7 @@ void check_c8() {
     CHECK(boundary.charge_row_count == 1);
 }
 void check_c2() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto under = equilibrium_support::boundary();
     under.temperature = epcsaft::equilibrium::FreeValue::fixed(300.0);
     under.pressure = epcsaft::equilibrium::FreeValue::fixed(1.0e5);
@@ -384,7 +384,7 @@ void check_c2() {
     CHECK(phase_count);
 }
 void check_c3() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const auto problem = equilibrium_support::flash(2);
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     const auto point = compiled.generic_point();
@@ -415,7 +415,7 @@ void check_c3() {
     CHECK(named);
 }
 void check_c6() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto flash = equilibrium_support::flash(2);
     auto boundary = equilibrium_support::boundary();
     flash.phases = boundary.phases;
@@ -465,7 +465,7 @@ void check_c6() {
     CHECK(flash_values.size() == boundary_values.size());
 }
 void check_c7() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto first = equilibrium_support::boundary();
     auto second = first;
     std::swap(second.phases[0], second.phases[1]);
@@ -545,7 +545,7 @@ void check_c7() {
     CHECK(relabelled_ok);
 }
 void check_c9() {
-    epcsaft::HelmholtzModel model(model_support::neutral_binary());
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     std::size_t case_index = 0;
     for (const auto phase_set : {equilibrium_support::PhaseSet::OneLiquid,
                                  equilibrium_support::PhaseSet::OneVapor}) {
