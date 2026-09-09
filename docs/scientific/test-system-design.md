@@ -22,10 +22,12 @@ not scientific tolerances. On return from a suspended browser, invalidate badges
 before refreshing. An unavailable service or broken inventory cannot look green.
 Expensive studies need not run on every edit; they must visibly become outdated.
 
-Use one local Quarto website, Plan and Tests. Rendering never runs scientific
-calculations. One separately controlled local worker watches and executes permitted
-fast checks. No Docker requirement, database, remote service, CI pipeline or new
-testing framework is needed. Use the existing pytest, native executables, wheel
+Use one local Quarto website: Map, Plan and Tests. The companion is a read-only
+viewer. Rendering, refreshing and starting the service never run scientific
+calculations or tests; results come from the normal build, check and study
+commands. Automatic execution on source edits was retired on 2026-09-09 (see
+[the cleanup brief](project-map-design.md)). No Docker requirement, database,
+remote service, CI pipeline or new testing framework is needed. Use the existing pytest, native executables, wheel
 preparation, standard-library files and local preview.
 
 The installed local service must have persistent startup configuration rather
@@ -54,8 +56,10 @@ the latter has not been exercised.
 Keep these existing owners and the capability-based directory organization; kinds
 are metadata, not separate numerical/package directory trees. A shared record reader/writer helper is justified by
 native and Python producers; it is tooling, not an Engine runtime interface.
-Internal fingerprints and error logs remain private to the machinery. No file
-paths, function names, hashes or raw diagnostics appear in the notebook.
+Internal fingerprints and error logs remain private to the machinery. Hashes,
+raw diagnostics and secrets do not appear in the notebook. Source paths are
+useful navigation in the Map view and milestone details; scientific result
+tables stay focused on quantities and their meanings.
 
 ## What a test means
 
@@ -212,10 +216,12 @@ The build/collection record explicitly binds its artifacts to the pre-build inpu
 generation, which must still match after building. Preserve both manifests
 internally to explain invalidation; neither belongs in the frontend.
 
-A run is Current only when its input generation still matches the checkout and
-its artifact/environment identity matches the artifacts actually used, with the
-same checks passing before and after execution and during later applicability
-checks. Every terminal run requires both identity fields, its case key and artifact
+At build/run time a case is executed only when its artifact/environment identity
+verifies before and after execution. At display time a run is shown Current only
+when its input generation still matches the checkout and the recorded wheel and
+binaries are still the files on disk; the compiler, runtime and dependency probes
+are not repeated on refresh. Display freshness therefore means "sources and
+artifacts unchanged since this run", not a re-verified environment. Every terminal run requires both identity fields, its case key and artifact
 digests. A build failure or unidentifiable dependency records an explicit unavailable
 identity/artifact state and cannot qualify as Current evidence. Failed, skipped,
 interrupted, error and incomplete records require concise reasons. Unavailable
@@ -288,17 +294,16 @@ lineage remains in retained data, excluded from the notebook as requested.
    errors. Native listing uses the registered executable built from current inputs.
    If a build or collection fails, show Inventory unavailable/incomplete and retain
    previous entries as Unverified. Never claim the old inventory is exhaustive.
-2. Invalidate applicable results as soon as watched inputs change, before rebuilding
-   or queuing a run. Additions, removals and renames count. A presentation edit only
-   rebuilds the view; it does not rerun thermodynamics.
-3. The shared worker debounces edits, coalesces identical requested generations and
-   allows one wheel preparation/test batch at a time. A single shared lock covers
-   automatic, check-all, affected, focused and slice entry points from wheel
-   preparation through publication; nested calls reuse the owning context and
-   cannot reacquire it or start independent builds. Existing wheel verification
-   is mandatory before Engine execution. Multiple tabs never create extra jobs.
-4. Automatic mode runs the permitted fast selection for the changed input
-   generation, including registered native fast cases as well as Python cases.
+2. Changed inputs make recorded results Outdated at the next refresh. Additions,
+   removals and renames count. A presentation edit only rebuilds the view; it
+   does not rerun thermodynamics.
+3. A single shared lock covers check-all, affected, focused and slice entry
+   points from wheel preparation through publication; nested calls reuse the
+   owning context and cannot reacquire it or start independent builds. Existing
+   wheel verification is mandatory before Engine execution. The viewer never
+   takes this lock to execute anything.
+4. The automatic selection (`--automatic`) runs when a normal gate invokes the
+   runner, including registered native fast cases as well as Python cases.
    Native registration alone currently does not make a suite part of the fast
    gate; the migration must explicitly connect its permitted selection. The automatic set is the collected implemented cases explicitly declared
    Automatic fast, intersected with the existing permitted fast selection. Slow,
@@ -342,18 +347,16 @@ controls applicability; uncommitted edits and input deletion must invalidate it.
 
 Conservative invalidation can rerun more fast tests than necessary. Narrow it only
 when a complete declared input closure and measured benefit justify doing so.
-The watchdog may use filesystem events as hints; reconcile identities periodically
-and on every result request so missed events cannot preserve a current badge.
-Never silently access changing remote reference data: materialize it through its
+Recompute the input generation on every result request so a stale badge cannot
+survive an edit. Never silently access changing remote reference data: materialize it through its
 existing data owner first. Environmental identity is operational evidence, not a
 claim to bitwise reproducibility or universal numerical correctness.
 
 Normal checks and explicit slice invocations publish through the same reporter.
 Uninstrumented direct binaries or foreign reports may be discovered as Unverified;
 no machinery can retroactively attest a run that bypassed it. At migration close,
-all repository-supported entry points must record outcomes. The local launcher
-starts the viewer and automatic fast worker together; a view-only mode clearly
-shows Automatic execution off. The worker is not a scheduled Codex task.
+all repository-supported entry points must record outcomes. The local service
+starts only the viewer.
 
 ## Notebook behavior
 
@@ -370,9 +373,8 @@ errors and applicable criterion. Old observations can be inspected on expansion
 with Outdated/Unverified labels; their current-result cells remain empty. Never
 substitute a previous pass for a failed or incomplete current run.
 
-Replace Live with **Synced** (inventory/view current), **Updating**, or **Offline**;
-show Automatic execution on/off separately. Synced does not mean tests passed.
-If any automatic check is queued/running, say so. Planned and explicit work are not
+Replace Live with **Synced** (inventory/view current), **Updating**, or **Offline**.
+Synced does not mean tests passed. If any recorded check is queued/running, say so. Planned and explicit work are not
 synchronization failures. Keep selected scientific comparisons visible only once.
 If one execution test emits several comparisons, show its aggregate execution
 outcome only in context; do not duplicate a generic test row beside every comparison.
@@ -395,9 +397,9 @@ parallel trackers and a new remote are unnecessary for this design.
    useful planned declarations and connect existing studies without replaying them.
    Reconcile collected IDs against the discovered inventory: each is classified,
    deliberately planned, or explicitly reported as unavailable. No silent omissions.
-3. Implement identities, atomic publication and the local automatic fast worker.
-   Verify edit-during-build/run, dependency/data changes, result corruption, worker
-   restart and queue coalescing. Existing known failures remain failures.
+3. Implement identities and atomic publication. Verify edit-during-build/run,
+   dependency/data changes and result corruption. Existing known failures remain
+   failures.
 4. Replace special-case frontend/backend projections with the shared records and
    independent statuses. Verify notebook refresh, expiry, offline behavior, search,
    math, collapsed rows and the no-provenance presentation.
@@ -433,12 +435,12 @@ internal directory and binary identifiers do not set presentation vocabulary.
 | Fail, skip, abort or time out part of a suite | Individual outcomes correct; unstarted tests never inherit Passed |
 | Edit source, helper, declaration, tolerance, data or environment | Prior results cease to be current before the replacement run completes |
 | Edit during build/run, corrupt an artifact or interrupt publication | No falsely current or mixed-generation result; failed replacement cannot resurrect a pass |
-| Open multiple tabs, restart worker, repeat an unchanged failure | No duplicate jobs or infinite rerun loop; unfinished work reconciles honestly |
+| Open multiple tabs, restart the viewer, repeat an unchanged failure | No test process starts; unfinished work reconciles honestly |
 | Break collection, disconnect server, suspend/resume browser | No stale current badges; inventory incompleteness and offline state visible |
 | Add a planned or explicit external comparison | Visible without a fake run, forced input fields or automatic installation |
 | Edit only presentation or plan wording | View refreshes; numerical evidence is not rerun or silently requalified |
 | Duplicate IDs, missing declarations, dynamic/parametrized collection or missing expected comparisons | Explicit inventory/evidence failure; no guessed classification or silently accepted empty numerical run |
-| Concurrent worker/check-all execution, crash at manifest replacement and failed rerun after prior pass | One shared lock and coherent manifest; no mixed artifacts, duplicate work or resurrected pass |
+| Concurrent gate execution, crash at manifest replacement and failed rerun after prior pass | One shared lock and coherent manifest; no mixed artifacts, duplicate work or resurrected pass |
 | Criterion/owner disagreement, zero reference, nonfinite operand or missing reference identity | Invalid/unavailable evidence handled explicitly; no false Passed/Observed/Current judgment |
 | Inspect compact UI and internal records | Values/units/criteria agree; provenance stays internal; no mandatory empty comparison classes |
 

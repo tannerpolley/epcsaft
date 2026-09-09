@@ -10,9 +10,9 @@ required capability from implemented and numerically qualified behavior.
 
 For the live Plan and Tests website, run
 `python3 tools/serve-roadmap.py --port 8766` and open the
-[Quarto companion](http://127.0.0.1:8766/). The service starts one worker for
-permitted automatic fast checks; add `--view-only` to disable execution.
-Page rendering and browser refresh only read the plan and recorded results.
+[Quarto companion](http://127.0.0.1:8766/). The companion is a read-only
+viewer: it renders the plan and the results recorded by the normal check
+commands, and starting it or refreshing a page never runs tests.
 
 To keep the companion running for this checkout, install the user service and
 enable it:
@@ -26,8 +26,7 @@ systemctl --user enable --now epcsaft-companion-greenfield.service
 ```
 
 Check it with `systemctl --user status epcsaft-companion-greenfield.service`.
-The unit serves from this repository root, starts the automatic worker, and
-restarts after a service failure.
+The unit serves from this repository root and restarts after a service failure.
 
 ## Prerequisites
 

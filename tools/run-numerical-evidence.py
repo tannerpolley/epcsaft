@@ -86,14 +86,6 @@ def _run_id(test_id: str, case_id: str = "single") -> str:
     return f"{stamp}-{safe}-{case_id}"
 
 
-def _number(value: str) -> int | float | str:
-    try:
-        number = float(value)
-    except ValueError:
-        return value
-    return int(number) if number.is_integer() and "." not in value and "e" not in value.lower() else number
-
-
 _FLOAT_PREFIX = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?")
 
 
@@ -102,30 +94,6 @@ def _float_field(value: str) -> float:
     if match is None:
         raise ValueError(value)
     return float(match.group(0))
-
-
-def _inputs(raw: str | None) -> dict[str, Any]:
-    if not raw:
-        return {}
-    raw = unquote(raw)
-    if raw[:1] in {"{", "["}:
-        try:
-            value = json.loads(raw)
-        except json.JSONDecodeError:
-            value = None
-        if isinstance(value, dict):
-            return value
-    result: dict[str, Any] = {}
-    for field in raw.split(";"):
-        if ":" not in field:
-            result.setdefault("raw", []).append(field)
-            continue
-        key, value = field.split(":", 1)
-        if "," in value:
-            result[key] = [_number(item) for item in value.split(",")]
-        else:
-            result[key] = _number(value)
-    return result
 
 
 def _native_fields(line: str, prefix: str) -> dict[str, str]:
@@ -711,7 +679,7 @@ def _terminate_process_group(process: subprocess.Popen[Any], *, grace: float = 2
 
 
 def _relay_child_shutdown(signum: int, _frame: Any) -> None:
-    """Relay worker termination to build/test groups owned by this runner."""
+    """Relay termination to build/test groups owned by this runner."""
 
     global _SHUTDOWN_REQUESTED
     _SHUTDOWN_REQUESTED = True
@@ -1265,7 +1233,6 @@ def main() -> int:
         "--native-suite",
         help="run every registered case in one native suite (contributions/properties)",
     )
-    parser.add_argument("--worker", action="store_true", help="record worker state while running automatic checks")
     args = parser.parse_args()
     if not args.cases and not args.automatic and not args.explicit:
         args.automatic = True

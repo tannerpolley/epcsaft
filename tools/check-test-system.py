@@ -35,6 +35,7 @@ from tools.test_records import (
     RecordStore,
     freshness,
     input_generation,
+    sha256,
     locked,
     make_comparison,
     now,
@@ -872,7 +873,7 @@ def check_record_store(temp: Path) -> None:
     lifecycle_store.publish(running)
     after_crash = lifecycle_store.read_runs()
     require(len(after_crash) == 1 and after_crash[0]["execution"] == "Running", "crashed replacement left the prior pass current")
-    lifecycle_store.publish(run_record(lifecycle_root, "case.crash", execution="Failed", reason="worker crashed before publication"))
+    lifecycle_store.publish(run_record(lifecycle_root, "case.crash", execution="Failed", reason="runner crashed before publication"))
     require(lifecycle_store.read_runs()[0]["execution"] == "Failed", "failed crash replacement did not supersede running state")
 
     failure_root = temp / "failed-replacement"
@@ -1010,41 +1011,24 @@ def check_artifact_fail_closed(temp: Path) -> None:
     status, reason = freshness(mismatched, root)
     require(status == "Unverified" and reason, f"wrong artifact generation stayed current: {status}, {reason}")
 
-    cache_root = temp / "artifact-cache"
-    wheel = cache_root / "engine.whl"
+    display_root = temp / "artifact-display"
+    wheel = display_root / "engine.whl"
     wheel.parent.mkdir(parents=True, exist_ok=True)
     wheel.write_bytes(b"wheel")
     identity = {
-        "state": "Available", "identity": "synthetic", "input_generation": "same",
-        "artifacts": [{"kind": "wheel", "path": "engine.whl", "sha256": "recorded"}],
-        "environment": {"runtime": str(cache_root / "venv/bin/python")},
+        "state": "Available", "identity": "synthetic", "input_generation": input_generation(display_root),
+        "artifacts": [{"kind": "wheel", "path": "engine.whl", "sha256": sha256(wheel)}],
+        "environment": {"runtime": str(display_root / "venv/bin/python")},
     }
-    original_verify = RECORDS._verify_artifact_identity
-    original_context = RECORDS._runtime_context
-    calls: list[dict[str, Any]] = []
-    context = {"search_path": [str(cache_root / "site-packages")], "versions": {"pytest": "1"}, "metadata_roots": []}
-
-    def fake_verify(_root: Path, value: dict[str, Any]) -> tuple[bool, str | None]:
-        calls.append(value)
-        return True, None
-
-    try:
-        RECORDS._verify_artifact_identity = fake_verify
-        RECORDS._runtime_context = lambda _runtime, _names: context
-        require(verify_artifact_identity(cache_root, identity) == (True, None), "synthetic artifact cache did not warm")
-        context = {"search_path": [str(cache_root / "site-packages")], "versions": {"pytest": "2"}, "metadata_roots": []}
-        require(verify_artifact_identity(cache_root, identity) == (True, None),
-                "dependency metadata version change reused a cached artifact result")
-    finally:
-        RECORDS._verify_artifact_identity = original_verify
-        RECORDS._runtime_context = original_context
-    require(len(calls) == 2, "dependency metadata cache invalidation did not reverify")
-
-    runtime_context = RECORDS._runtime_context(PYTHON, ())
-    require(
-        runtime_context.get("search_path", [None])[0] == str(Path.cwd()),
-        "runtime context dropped the interpreter's empty cwd search path",
-    )
+    displayed = run_record(display_root, "case.display", generation=input_generation(display_root))
+    displayed["artifact_identity"] = identity
+    require(RECORDS.display_status(displayed, display_root)["freshness"] == "Current",
+            "display freshness rejected an unchanged wheel")
+    wheel.write_bytes(b"replaced")
+    require(RECORDS.display_status(displayed, display_root)["freshness"] == "Unverified",
+            "display freshness accepted a replaced wheel")
+    require(freshness(displayed, display_root)[0] == "Unverified",
+            "run-time verification accepted a synthetic identity without a runtime")
 
 
 @integrity_check(
@@ -1053,7 +1037,7 @@ def check_artifact_fail_closed(temp: Path) -> None:
 )
 def check_public_projection(temp: Path) -> None:
     require(COMPANION is not None, f"companion module could not load: {TOOL_LOAD_ERROR}")
-    plan = "### Core\n| C1 — Synthetic check | [x] | 1 | — | 1 | — | — | — |"
+    plan = "### Core\n| C1 — Synthetic check | [x] | 0 | 1 | — | Verify | — |"
     inventory = {
         "schema_version": SCHEMA_VERSION,
         "state": "Complete",
@@ -1092,7 +1076,6 @@ def check_public_projection(temp: Path) -> None:
         plan,
         inventory,
         [current, orphan],
-        worker={"state": "Failed", "last_output": "/secret/worker.log", "revision": "private-hash"},
         layers=("Core",),
     )
     require(
@@ -1106,8 +1089,6 @@ def check_public_projection(temp: Path) -> None:
     public_declarations = {item["test_id"]: item for item in projection["declarations"]}
     require(public_declarations["unclassified.test"]["title"] == "Unclassified check",
             "unclassified nodeid title leaked into public projection")
-    require("last_output" not in projection["worker"] and "revision" not in projection["worker"],
-            "raw worker output or revision leaked into public projection")
     safe_error = COMPANION._safe_run({
         "test_id": "current.test", "execution": "Error",
         "outcome_reason": "record unavailable: /secret/path/traceback",
@@ -1248,227 +1229,6 @@ with locked(Path(sys.argv[1])):
     finally:
         require(holder.wait(timeout=5) == 0, "lock holder failed")
     require(blocked, "nonblocking lock acquisition ignored a held shared lock")
-
-
-def worker_process_code() -> str:
-    return '''
-import importlib.util, sys
-from pathlib import Path
-root = Path(sys.argv[1])
-spec = importlib.util.spec_from_file_location("test_worker_under_check", sys.argv[2])
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-module.ROOT = root
-module.RESULTS = root / "build" / "numerical-evidence"
-module.WORKER_LOCK = module.RESULTS / "worker.lock"
-module.watch(timeout=1, interval=0.02, debounce=0.10)
-'''
-
-
-def start_worker(temp: Path, count: Path, *, failing: bool) -> subprocess.Popen[str]:
-    environment = dict(os.environ, CHECK_WORKER_COUNT=str(count), CHECK_WORKER_FAIL="1" if failing else "0")
-    return subprocess.Popen(
-        [sys.executable, "-c", worker_process_code(), str(temp), str(ROOT / "tools/test-worker.py")],
-        cwd=ROOT,
-        env=environment,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-
-
-def stop_process(process: subprocess.Popen[str]) -> tuple[str, str]:
-    if process.poll() is None:
-        process.terminate()
-    try:
-        stdout, stderr = process.communicate(timeout=3)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        stdout, stderr = process.communicate(timeout=3)
-    return stdout, stderr
-
-
-def wait_count(path: Path, expected: int, timeout: float = 2.0) -> int:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            value = int(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            value = 0
-        if value >= expected:
-            return value
-        time.sleep(0.02)
-    try:
-        return int(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return 0
-
-
-def wait_worker_generation(temp: Path, generation: str, timeout: float = 2.0) -> bool:
-    path = temp / "build/numerical-evidence/worker.json"
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        try:
-            state = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            state = {}
-        if state.get("last_completed_generation") == generation:
-            return True
-        time.sleep(0.02)
-    return False
-
-
-@integrity_check(
-    "tooling.test-system.worker-coalescing",
-    "worker coalescing/new generation/restart",
-    kind="simulated",
-)
-def check_worker_coalescing_and_restart(temp: Path) -> None:
-    (temp / "engine/native").mkdir(parents=True, exist_ok=True)
-    (temp / "tools").mkdir(parents=True, exist_ok=True)
-    (temp / "engine/native/input.cpp").write_text("one", encoding="utf-8")
-    runner = temp / "tools/run-numerical-evidence.py"
-    runner.write_text(
-        '''
-import os
-from pathlib import Path
-count = Path(os.environ["CHECK_WORKER_COUNT"])
-old = int(count.read_text(encoding="utf-8")) if count.exists() else 0
-count.write_text(str(old + 1), encoding="utf-8")
-print("late child output", flush=True)
-raise SystemExit(7 if os.environ.get("CHECK_WORKER_FAIL") == "1" else 0)
-''',
-        encoding="utf-8",
-    )
-    (temp / ".venv/bin").mkdir(parents=True, exist_ok=True)
-    (temp / ".venv/bin/python").symlink_to(sys.executable)
-    count = temp / "worker-count"
-
-    worker = start_worker(temp, count, failing=True)
-    try:
-        observed = wait_count(count, 1)
-        time.sleep(0.25)
-    finally:
-        stop_process(worker)
-    require(observed == 1 and wait_count(count, 1) == 1, "unchanged worker failure was rerun")
-    state = json.loads((temp / "build/numerical-evidence/worker.json").read_text(encoding="utf-8"))
-    require(state.get("state") == "Failed", f"worker failure state was not retained: {state}")
-    require(state.get("last_exit_code") == 7 and "late child output" in state.get("last_output", ""),
-            f"worker did not retain the nonzero child exit and late output: {state}")
-    failure_terminal = {
-        field: state.get(field)
-        for field in ("state", "requested_generation", "last_completed_generation",
-                      "last_exit_code", "last_output", "finished_at")
-    }
-    worker = start_worker(temp, count, failing=True)
-    try:
-        time.sleep(0.3)
-    finally:
-        stop_process(worker)
-    restarted_failure = json.loads((temp / "build/numerical-evidence/worker.json").read_text(encoding="utf-8"))
-    require(wait_count(count, 1) == 1, "worker restart reran an unchanged failed generation")
-    require(
-        all(restarted_failure.get(field) == value for field, value in failure_terminal.items()),
-        f"worker restart changed terminal failure details: {restarted_failure}",
-    )
-
-    (temp / "engine/native/input.cpp").write_text("two", encoding="utf-8")
-    worker = start_worker(temp, count, failing=False)
-    try:
-        changed_count = wait_count(count, 2)
-    finally:
-        changed_output = stop_process(worker)
-    require(changed_count == 2, f"new input generation was not queued: {changed_output[1][-1000:]}")
-
-    count.write_text("0", encoding="utf-8")
-    (temp / "engine/native/input.cpp").write_text("restart", encoding="utf-8")
-    restart_generation = input_generation(temp)
-    worker = start_worker(temp, count, failing=False)
-    try:
-        first_restart_count = wait_count(count, 1)
-        completed = wait_worker_generation(temp, restart_generation)
-    finally:
-        first_restart_output = stop_process(worker)
-    require(first_restart_count == 1 and completed, f"worker did not publish before restart test: {first_restart_output[1][-1000:]}")
-    state = json.loads((temp / "build/numerical-evidence/worker.json").read_text(encoding="utf-8"))
-    success_terminal = {
-        field: state.get(field)
-        for field in ("state", "requested_generation", "last_completed_generation",
-                      "last_exit_code", "last_output", "finished_at")
-    }
-    worker = start_worker(temp, count, failing=False)
-    try:
-        time.sleep(0.3)
-    finally:
-        stop_process(worker)
-    require(wait_count(count, 1) == 1, "worker restart duplicated an unchanged generation")
-    restarted_success = json.loads((temp / "build/numerical-evidence/worker.json").read_text(encoding="utf-8"))
-    require(
-        all(restarted_success.get(field) == value for field, value in success_terminal.items()),
-        f"worker restart changed terminal success details: {restarted_success}",
-    )
-
-    service_python = Path("/usr/bin/python3")
-    if not service_python.is_file():
-        raise SkipCheck("deployed service interpreter is unavailable")
-    service_probe = """
-import importlib.util
-import json
-import subprocess
-import sys
-from pathlib import Path
-
-repo_root = Path(sys.argv[1])
-temp_root = Path(sys.argv[2])
-serve_path = Path(sys.argv[3])
-sys.path.insert(0, str(repo_root))
-spec = importlib.util.spec_from_file_location("serve_roadmap_under_check", serve_path)
-module = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = module
-spec.loader.exec_module(module)
-module.ROOT = temp_root
-module._worker_enabled = True
-from tools.test_records import RecordStore
-store = RecordStore(temp_root)
-store.worker_path.parent.mkdir(parents=True, exist_ok=True)
-store.worker_path.unlink(missing_ok=True)
-live_worker = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(5)"])
-module._worker_process = live_worker
-try:
-    missing = module._read_worker(store)
-    store.worker_path.write_text("{invalid", encoding="utf-8")
-    invalid = module._read_worker(store)
-finally:
-    live_worker.terminate()
-    live_worker.wait(timeout=5)
-if not (
-    missing.get("state") == "Unavailable"
-    and missing.get("automatic_execution") == "off"
-    and invalid.get("state") == "Unavailable"
-    and invalid.get("automatic_execution") == "off"
-):
-    raise SystemExit(f"missing/invalid worker state was not unavailable/off: {missing}, {invalid}")
-dead_worker = subprocess.Popen([sys.executable, "-c", "raise SystemExit(9)"])
-if dead_worker.wait(timeout=5) != 9:
-    raise SystemExit("dead-worker fixture did not exit nonzero")
-module._worker_process = dead_worker
-print(json.dumps(module._read_worker(store)))
-""".strip() + "\n"
-    probe = subprocess.run(
-        [str(service_python), "-c", service_probe, str(ROOT), str(temp), str(ROOT / "tools/serve-roadmap.py")],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        timeout=20,
-        check=False,
-    )
-    require(probe.returncode == 0, f"service worker projection probe failed: {probe.stderr[-1000:]}")
-    projection = json.loads(probe.stdout)
-    require(
-        projection.get("state") == "Unavailable"
-        and projection.get("automatic_execution") == "off",
-        f"dead worker remained visible as active: {projection}",
-    )
 
 
 @integrity_check(

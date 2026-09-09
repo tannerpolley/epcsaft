@@ -16,23 +16,39 @@ LAYERS = ('Core', CATEGORY_LABELS['physics'], CATEGORY_LABELS['model'], 'Equilib
           'Bindings/Python', 'Application acceptance')
 
 
-def summarize(source, directory):
-    rows = {}
-    groups = {name: [] for name in LAYERS}
+def rows(source):
+    """Parse every milestone row once; validation and presentation derive from these."""
+
+    result = []
     layer = None
     for line in source.splitlines():
-        if line.startswith('### ') and line[4:] in groups:
+        if line.startswith('### ') and line[4:] in LAYERS:
             layer = line[4:]
         if not re.match(r'^\| [CPMERSBA]\d+ — ', line):
             continue
         cells = [c.strip() for c in line.strip('|').split('|')]
         if len(cells) != 7 or layer is None:
-            raise ValueError('malformed sublayer row')
+            raise ValueError('malformed milestone row')
         title, status, remaining, actual, prerequisites, required, record = cells
-        key = title.split()[0]
-        if key in rows or status not in ('[ ]', '[-]', '[!]', '[x]'):
+        result.append({
+            'id': title.split()[0], 'title': title, 'layer': layer, 'status': status,
+            'remaining': remaining, 'actual': actual, 'prerequisites': prerequisites,
+            'required': required, 'record': record,
+            'dependencies': re.findall(r'\b[CPMERSBA]\d+\b', prerequisites),
+            'links': re.findall(r'\[[^\]]+\]\(([^)]+)\)', record),
+        })
+    return result
+
+
+def summarize(source, directory):
+    seen = {}
+    groups = {name: [] for name in LAYERS}
+    for item in rows(source):
+        key, status, layer = item['id'], item['status'], item['layer']
+        remaining, actual, deps, links = item['remaining'], item['actual'], item['dependencies'], item['links']
+        if key in seen or status not in ('[ ]', '[-]', '[!]', '[x]'):
             raise ValueError(f'{key}: duplicate ID or invalid status')
-        if not required:
+        if not item['required']:
             raise ValueError(f'{key}: missing acceptance requirements')
         if not re.fullmatch(r'\d+(?:\.\d+)?(?:–\d+(?:\.\d+)?)?', remaining):
             raise ValueError(f'{key}: invalid remaining hours')
@@ -40,22 +56,20 @@ def summarize(source, directory):
         low, high = bounds[0], bounds[-1]
         if low > high or (actual != '—' and not re.fullmatch(r'\d+(?:\.\d+)?', actual)):
             raise ValueError(f'{key}: invalid hours')
-        deps = re.findall(r'\b[CPMERSBA]\d+\b', prerequisites)
         if key != 'C1' and not deps:
             raise ValueError(f'{key}: missing prerequisites')
-        if any(dep not in rows for dep in deps):
+        if any(dep not in seen for dep in deps):
             raise ValueError(f'{key}: unknown, cyclic or forward prerequisite')
         if status in ('[-]', '[x]'):
             earlier = [r for name in LAYERS[:LAYERS.index(layer)] for r in groups[name]]
-            if any(rows[d][0] != '[x]' for d in deps) or any(r[0] != '[x]' for r in earlier):
+            if any(seen[d][0] != '[x]' for d in deps) or any(r[0] != '[x]' for r in earlier):
                 raise ValueError(f'{key}: prerequisites or earlier layer incomplete')
-        links = re.findall(r'\[[^\]]+\]\(([^)]+)\)', record)
-        if record != '—' and (not links or any(not (directory / link.split('#')[0]).is_file() for link in links)):
+        if item['record'] != '—' and (not links or any(not (directory / link.split('#')[0]).is_file() for link in links)):
             raise ValueError(f'{key}: missing local evidence file')
         if status == '[x]' and (not links or actual == '—' or high != 0):
             raise ValueError(f'{key}: completion requires evidence, actual hours and zero remaining')
         row = (status, low, high, actual)
-        rows[key] = row
+        seen[key] = row
         groups[layer].append(row)
     if any(not group for group in groups.values()):
         raise ValueError('missing layer rows')
@@ -68,9 +82,9 @@ def summarize(source, directory):
         actual = f'{sum(measured):g}' + (' (partial)' if len(measured) < len(group) else '') if measured else '—'
         result.append(f'| {name} | {bar} {100 * done / len(group):.1f}% ({done}/{len(group)}) | '
                       f'{sum(r[1] for r in group):g}–{sum(r[2] for r in group):g} | {actual} |')
-    done = sum(r[0] == '[x]' for r in rows.values())
-    result += ['', f'Total: **{done}/{len(rows)} qualified sublayers ({100 * done / len(rows):.1f}%)**; '
-               f'**{sum(r[1] for r in rows.values()):g}–{sum(r[2] for r in rows.values()):g} remaining Astra hours**.']
+    done = sum(r[0] == '[x]' for r in seen.values())
+    result += ['', f'Total: **{done}/{len(seen)} qualified milestones ({100 * done / len(seen):.1f}%)**; '
+               f'**{sum(r[1] for r in seen.values()):g}–{sum(r[2] for r in seen.values()):g} remaining Astra hours**.']
     return '\n'.join(result)
 
 

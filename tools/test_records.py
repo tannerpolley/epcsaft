@@ -16,15 +16,13 @@ import math
 import os
 import platform
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
-import threading
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 SCHEMA_VERSION = 1
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,8 +80,6 @@ INTERRUPTION_KINDS = {"timeout", "interruption", "abandoned"}
 JUDGMENTS = {"Criterion satisfied", "Criterion failed", "Observation only", "Unavailable"}
 EVIDENCE_STATES = {"Complete", "Partial", "Unavailable"}
 
-_ARTIFACT_VERIFY_CACHE: dict[tuple[str, str, str], tuple[bool, str | None]] = {}
-_ARTIFACT_VERIFY_LOCK = threading.Lock()
 
 
 def now() -> str:
@@ -314,61 +310,6 @@ print(json.dumps(result, sort_keys=True))
         return {}
 
 
-def _runtime_context(runtime: Path, names: tuple[str, ...]) -> dict[str, Any]:
-    """Capture the selected runtime search path and dependency metadata roots."""
-
-    probe = """\
-import importlib.metadata, json, sys
-from pathlib import Path
-names = json.loads(sys.argv[1])
-# ``''`` is Python's spelling for the process cwd.  Preserve that search
-# location explicitly so a local module added or removed there invalidates
-# cached artifact applicability just like an absolute import path would.
-result = {
-    "search_path": [str(Path.cwd()) if value == "" else value for value in sys.path],
-    "versions": {},
-    "metadata_roots": [],
-}
-for name in names:
-    try:
-        distribution = importlib.metadata.distribution(name)
-    except importlib.metadata.PackageNotFoundError:
-        continue
-    result["versions"][name] = distribution.version
-    metadata_root = getattr(distribution, "_path", None)
-    if metadata_root is not None:
-        result["metadata_roots"].append(str(Path(metadata_root)))
-print(json.dumps(result, sort_keys=True))
-"""
-    try:
-        result = subprocess.run(
-            [str(runtime), "-c", probe, json.dumps(list(names))],
-            capture_output=True, text=True, check=False, timeout=10,
-        )
-        if result.returncode != 0:
-            return {}
-        value = json.loads(result.stdout)
-        if not isinstance(value, dict):
-            return {}
-        search_path = value.get("search_path", [])
-        versions = value.get("versions", {})
-        metadata_roots = value.get("metadata_roots", [])
-        if not all(isinstance(item, str) for item in search_path + metadata_roots):
-            return {}
-        if not isinstance(versions, dict) or not all(
-            isinstance(name, str) and isinstance(version, str)
-            for name, version in versions.items()
-        ):
-            return {}
-        return {
-            "search_path": search_path,
-            "versions": versions,
-            "metadata_roots": metadata_roots,
-        }
-    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError, TypeError):
-        return {}
-
-
 def _installed_runtime_files(package_path: Path) -> list[Path]:
     package_root = package_path.resolve().parent
     if not package_root.is_dir():
@@ -578,138 +519,30 @@ def _verify_artifact_identity(root: Path, identity: dict[str, Any]) -> tuple[boo
     return True, None
 
 
-def _path_signature(path: Path) -> list[tuple[Any, ...]]:
-    """Capture a bounded lstat/symlink chain for one verification input."""
-
-    records: list[tuple[Any, ...]] = []
-    current = path
-    seen: set[Path] = set()
-    for _ in range(16):
-        if current in seen:
-            records.append((str(current), "symlink-cycle"))
-            break
-        seen.add(current)
-        try:
-            observed = current.lstat()
-        except OSError:
-            records.append((str(current), None, None, None, None, None, None))
-            break
-        target: str | None = None
-        if stat.S_ISLNK(observed.st_mode):
-            try:
-                target = os.readlink(current)
-            except OSError:
-                target = "<unreadable>"
-        records.append((
-            str(current), observed.st_ino, observed.st_mode, observed.st_size,
-            observed.st_mtime_ns, observed.st_ctime_ns, target,
-        ))
-        if target is None:
-            break
-        current = (current.parent / target).resolve(strict=False)
-    return records
-
-
-def _artifact_file_signature(root: Path, identity: dict[str, Any]) -> str:
-    """Track replacement, symlink, and installed-file changes for verification."""
-
-    paths: set[Path] = set()
-    artifacts = identity.get("artifacts", []) if isinstance(identity, dict) else []
-    if isinstance(artifacts, list):
-        for item in artifacts:
-            if isinstance(item, dict) and item.get("path"):
-                paths.add(root / str(item["path"]))
-    environment = identity.get("environment", {}) if isinstance(identity, dict) else {}
-    runtime_context: dict[str, Any] = {}
-    if isinstance(environment, dict):
-        compiler = environment.get("compiler", {})
-        if isinstance(compiler, dict) and compiler.get("resolved_executable"):
-            paths.add(Path(str(compiler["resolved_executable"])))
-        runtime = environment.get("runtime")
-        if runtime:
-            runtime_path = Path(str(runtime))
-            if not runtime_path.is_absolute():
-                runtime_path = root / runtime_path
-            paths.add(runtime_path)
-            # pyvenv.cfg controls the selected environment even when the
-            # launcher symlink and installed files keep their old metadata.
-            paths.add(runtime_path.parent.parent / "pyvenv.cfg")
-            runtime_context = _runtime_context(
-                runtime_path, ("meson", "meson-python", "pybind11", "pytest")
-            )
-            if runtime_context:
-                # Include both the values and the path names.  A changed
-                # dependency version or import search path must expire the
-                # verification cache even when file mtimes are preserved.
-                paths.update(
-                    value_path if value_path.is_absolute() else root / value_path
-                    for value_path in (Path(value) for value in runtime_context["search_path"])
-                )
-                for metadata_root in runtime_context["metadata_roots"]:
-                    metadata_path = Path(metadata_root)
-                    paths.add(metadata_path)
-                    if metadata_path.is_dir():
-                        paths.update(metadata_path.iterdir())
-        runtime_report = environment.get("runtime_report", {})
-        if isinstance(runtime_report, dict):
-            for key in ("executable", "package", "core"):
-                if runtime_report.get(key):
-                    paths.add(Path(str(runtime_report[key])))
-            package = runtime_report.get("package")
-            if package:
-                package_root = Path(str(package)).resolve().parent
-                # Detect package file additions/removals before a cached
-                # identity check can hide the changed file set.
-                paths.update(_installed_runtime_files(package_root / "__init__.py"))
-        linked = environment.get("linked_dependencies", {})
-        if isinstance(linked, dict):
-            for dependencies in linked.values():
-                if isinstance(dependencies, list):
-                    for item in dependencies:
-                        if isinstance(item, dict) and item.get("path"):
-                            paths.add(Path(str(item["path"])))
-    records: list[tuple[Any, ...]] = []
-    for path in sorted(paths):
-        records.extend(_path_signature(path))
-    if runtime_context:
-        records.append((
-            "runtime-context",
-            tuple(runtime_context["search_path"]),
-            tuple(sorted(runtime_context["versions"].items())),
-            tuple(sorted(runtime_context["metadata_roots"])),
-        ))
-    return digest(records)
-
-
 def verify_artifact_identity(root: Path, identity: dict[str, Any]) -> tuple[bool, str | None]:
-    """Verify an artifact once per identity and unchanged file set."""
+    """Verify the recorded runtime, compiler, dependencies and artifact files (build/run time)."""
+
+    return _verify_artifact_identity(root.resolve(), identity)
+
+
+def artifact_files_match(root: Path, identity: dict[str, Any]) -> tuple[bool, str | None]:
+    """Display-time check: the recorded wheel and binaries are still the files on disk."""
 
     root = root.resolve()
-    # Unavailable identities must never share a cache entry with a prior
-    # available identity that happened to carry the same selected fields.
     if not isinstance(identity, dict) or identity.get("state") != "Available":
-        return _verify_artifact_identity(root, identity)
-    try:
-        identity_key = digest(identity)
-    except (TypeError, ValueError):
-        identity_key = repr(identity)
-    file_signature = _artifact_file_signature(root, identity)
-    cache_key = (str(root), identity_key, file_signature)
-    with _ARTIFACT_VERIFY_LOCK:
-        cached = _ARTIFACT_VERIFY_CACHE.get(cache_key)
-    if cached is not None:
-        return cached
-    before_signature = file_signature
-    result = _verify_artifact_identity(root, identity)
-    after_signature = _artifact_file_signature(root, identity)
-    if before_signature != after_signature:
-        # Never cache a result observed across an artifact replacement.
-        return False, "artifact changed during verification"
-    with _ARTIFACT_VERIFY_LOCK:
-        if len(_ARTIFACT_VERIFY_CACHE) >= 128:
-            _ARTIFACT_VERIFY_CACHE.pop(next(iter(_ARTIFACT_VERIFY_CACHE)))
-        _ARTIFACT_VERIFY_CACHE[cache_key] = result
-    return result
+        return False, str(identity.get("reason", "artifact identity unavailable")) if isinstance(identity, dict) else "artifact identity unavailable"
+    artifacts = identity.get("artifacts", [])
+    if not isinstance(artifacts, list) or not any(isinstance(item, dict) and item.get("kind") == "wheel" for item in artifacts):
+        return False, "installed Engine wheel identity unavailable"
+    for item in artifacts:
+        if not isinstance(item, dict):
+            return False, "artifact identity unavailable"
+        path = (root / str(item.get("path", ""))).resolve()
+        if not path.is_file() or not path.is_relative_to(root):
+            return False, f"artifact missing: {item.get('path')}"
+        if sha256(path) != item.get("sha256"):
+            return False, f"artifact changed: {item.get('path')}"
+    return True, None
 
 
 def scalar_judgment(model: float, reference: float, criterion: dict[str, Any]) -> bool:
@@ -1287,6 +1120,7 @@ class RecordStore:
 
 def freshness(
     run: dict[str, Any], root: Path = ROOT, *, current_generation: str | None = None,
+    verify: Callable[[Path, dict[str, Any]], tuple[bool, str | None]] = verify_artifact_identity,
 ) -> tuple[str, str | None]:
     if not run.get("input_generation") or not isinstance(run.get("artifact_identity"), dict):
         return "Unverified", "identity unavailable"
@@ -1295,14 +1129,16 @@ def freshness(
         return "Outdated", "computational inputs changed"
     if run.get("artifact_identity", {}).get("input_generation") not in {None, run["input_generation"]}:
         return "Unverified", "artifact was built from a different input generation"
-    ok, reason = verify_artifact_identity(root, run["artifact_identity"])
+    ok, reason = verify(root, run["artifact_identity"])
     return ("Current", None) if ok else ("Unverified", reason)
 
 
 def display_status(
     run: dict[str, Any], root: Path = ROOT, *, current_generation: str | None = None,
 ) -> dict[str, Any]:
-    status, reason = freshness(run, root, current_generation=current_generation)
+    """Freshness for display: sources and artifact files unchanged; the environment is not re-probed."""
+
+    status, reason = freshness(run, root, current_generation=current_generation, verify=artifact_files_match)
     result = dict(run)
     result["freshness"] = status
     if reason:

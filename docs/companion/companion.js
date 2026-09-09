@@ -580,8 +580,6 @@ function testsView(snapshot) {
   const banner = make('div', 'snapshot-banner');
   const inventory = snapshot.inventory || {};
   banner.append(badge(inventory.state === 'Complete' ? 'Inventory complete' : 'Inventory incomplete'));
-  banner.append(badge(`Automatic execution ${snapshot.automatic_execution === 'on' ? 'on' : 'off'}`, snapshot.automatic_execution === 'on' ? 'automatic-on' : 'automatic-off'));
-  if (snapshot.worker?.state && snapshot.worker.state !== 'Idle') banner.append(badge(`Worker ${snapshot.worker.state}`, 'active'));
   if (array(snapshot.runs).some(run => ['Queued', 'Running'].includes(run.execution))) banner.append(badge('Checks queued or running', 'active'));
   if (inventory.state !== 'Complete') banner.append(make('span', 'banner-note', 'Current results are unverified until discovery completes.'));
   area.append(banner, controls(snapshot, render));
@@ -687,9 +685,7 @@ async function refresh() {
       || (!updating && state.revision !== snapshot.revision)
       || (wasInvalidated && !updating)
       || previous.state !== snapshot.state
-      || previous.automatic_execution !== snapshot.automatic_execution
-      || previous.inventory?.state !== snapshot.inventory?.state
-      || previous.worker?.state !== snapshot.worker?.state;
+      || previous.inventory?.state !== snapshot.inventory?.state;
     state.snapshot = snapshot;
     state.online = true;
     if (updating) {

@@ -33,14 +33,18 @@ mapfile -t changed < <(
         git ls-files --others --exclude-standard
     } | sort -u
 )
-run_recorded tooling.check-all.roadmap python3 tools/check-roadmap.py
-run_recorded tooling.check-all.budgets python3 tools/diffstat.py --budgets
 if ((${#changed[@]} == 0)); then
     echo "no changed paths"
     exit 0
 fi
 
 paths="$(printf '%s\n' "${changed[@]}")"
+# The full gate owns every shared check; decide that before running any here.
+if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
+    exec bash tools/check-all.sh
+fi
+run_recorded tooling.check-all.roadmap python3 tools/check-roadmap.py
+run_recorded tooling.check-all.budgets python3 tools/diffstat.py --budgets
 # Documentation readiness must not trigger wheel installation or numerical studies.
 docs_only=true
 for path in "${changed[@]}"; do
@@ -64,9 +68,6 @@ fi
 if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|native/|src/|tests/native/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     architecture_inputs=true
     prepare_native_build=1
-fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/)' <<<"$paths"; then
-    exec bash tools/check-all.sh
 fi
 if grep -q '^data/' <<<"$paths"; then
     run_recorded tooling.check-all.packets .venv/bin/python data/tools/validate_packets.py

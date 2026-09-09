@@ -51,29 +51,21 @@ def preparation_projection(source: str) -> list[dict[str, str]]:
 
 
 def plan_projection(source: str, layers: tuple[str, ...] = LAYERS) -> list[dict[str, Any]]:
-    """Read the plan's authoritative sublayer rows for the Plan page."""
+    """Group the plan's milestone rows by layer, carrying prerequisite and evidence links."""
 
-    groups = {layer: [] for layer in layers}
-    layer: str | None = None
-    pattern = re.compile(
-        r"^\| ([CPMERSBA]\d+)\s+—\s+(.+?) \| (\[[^]]+\]) \| "
-        r"(.+?) \| (.+?) \| (.+?) \| (.+?) \| (.+?) \|$"
-    )
-    for line in source.splitlines():
-        if line.startswith("### ") and line[4:] in groups:
-            layer = line[4:]
+    groups: dict[str, list[dict[str, Any]]] = {layer: [] for layer in layers}
+    for row in _ROADMAP["rows"](source):
+        if row["layer"] not in groups:
             continue
-        match = pattern.match(line)
-        if match is None or layer is None:
-            continue
-        identifier, name, marker, remaining, actual, _prerequisites, required, _record = match.groups()
-        groups[layer].append({
-            "id": identifier,
-            "name": _plain(name),
-            "status": _PLAN_STATUS.get(marker, "Planned"),
-            "remaining": _plain(remaining),
-            "actual": _plain(actual),
-            "required": _plain(required),
+        groups[row["layer"]].append({
+            "id": row["id"],
+            "name": _plain(row["title"].split("—", 1)[1]) if "—" in row["title"] else row["id"],
+            "status": _PLAN_STATUS.get(row["status"], "Planned"),
+            "remaining": _plain(row["remaining"]),
+            "actual": _plain(row["actual"]),
+            "prerequisites": row["dependencies"],
+            "required": _plain(row["required"]),
+            "evidence": row["links"],
         })
     return [{"name": name, "rows": groups[name]} for name in layers]
 
@@ -107,7 +99,6 @@ def _public_outcome_reason(value: Any, execution: str) -> str:
         "runner interrupted while executing the case": "test runner interrupted",
         "test did not produce a call outcome": "test produced no call outcome",
         "previous runner stopped before publishing a terminal outcome": "previous run was interrupted",
-        "worker crashed before publication": "worker crashed before publication",
         "command timed out": "test command timed out",
         "command interrupted": "test command interrupted",
     }
@@ -172,27 +163,6 @@ def _safe_run(run: dict[str, Any]) -> dict[str, Any]:
         result["outcome_reason"] = _public_outcome_reason(run.get("outcome_reason"), execution)
     if freshness in {"Outdated", "Unverified"}:
         result["freshness_reason"] = _public_freshness_reason(run.get("freshness_reason"), freshness)
-    return result
-
-
-def _safe_worker(worker: dict[str, Any] | None) -> dict[str, Any]:
-    """Expose worker state without logs, paths, hashes or internal errors."""
-
-    if not isinstance(worker, dict):
-        return {"state": "Unavailable", "automatic_execution": "off"}
-    state = str(worker.get("state", "Unavailable"))
-    reason = {
-        "Failed": "automatic checks failed",
-        "Interrupted": "automatic checks were interrupted",
-        "Unavailable": "automatic checks are unavailable",
-        "Outdated": "inputs changed during automatic checks",
-    }.get(state)
-    result: dict[str, Any] = {
-        "state": state,
-        "automatic_execution": str(worker.get("automatic_execution", "off")),
-    }
-    if reason:
-        result["reason"] = reason
     return result
 
 
@@ -278,8 +248,6 @@ def companion_projection(
     inventory: dict[str, Any],
     runs: list[dict[str, Any]] | None = None,
     *,
-    worker: dict[str, Any] | None = None,
-    automatic_execution: str = "off",
     revision_inputs: dict[str, Any] | None = None,
     layers: tuple[str, ...] = LAYERS,
 ) -> dict[str, Any]:
@@ -326,14 +294,11 @@ def companion_projection(
         "declarations": declarations,
         "runs": visible_runs,
         "studies": studies,
-        "worker": _safe_worker(worker or {"state": "Idle"}),
-        "automatic_execution": automatic_execution,
     }
     payload["revision"] = digest(revision_inputs or {
         "inventory": payload["inventory"],
         "runs": [(run.get("run_id"), run.get("freshness"), run.get("execution")) for run in visible_runs],
         "plan": plan,
-        "worker": payload["worker"],
     })
     return payload
 
@@ -364,6 +329,7 @@ def self_test() -> None:
     assert result["declarations"][0]["scope"] == "simulated"
     assert result["runs"][0]["freshness"] == "Current"
     assert result["preparation"][0]["name"] == "Recording"
+    assert result["plan"][0]["rows"][0]["id"] == "C1"
 
 
 if __name__ == "__main__":

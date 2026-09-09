@@ -27,10 +27,10 @@ ceiling; their single numeric owner is `engine/ARCHITECTURE.yaml`.
 
 The Quarto companion in `docs/companion/` presents the current implementation
 plan, thermodynamic comparisons, and implemented/planned verification as one
-local website with Plan and Tests pages. Start the viewer and automatic fast-test
-worker with `python3 tools/serve-roadmap.py --port 8766`; add `--view-only` to
-disable automatic execution. Rendering pages reads current owners and completed
-records without running scientific calculations. The implementation plan owns the
+local website with Map, Plan and Tests pages. Start the read-only viewer with
+`python3 tools/serve-roadmap.py --port 8766`. Rendering pages reads current owners
+and completed records without running scientific calculations or tests; results
+come from the normal check commands. The implementation plan owns the
 live-view behavior and limits. The
 [test-system design](test-system-design.md) defines automatic recording, freshness
 and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)

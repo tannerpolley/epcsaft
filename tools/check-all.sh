@@ -30,35 +30,14 @@ if ((${#engine_wheels[@]} != 1)); then
 fi
 wheel="${engine_wheels[0]}"
 
-run_root="$(mktemp -d)"
-cleanup() {
-    rm -rf -- "$run_root"
-}
-trap cleanup EXIT
-
-names=()
-pids=()
-active=0
-# Every gate now publishes through the same recorder.  Keep them serialized
-# while this script owns the shared lock; inherited lock descriptors cannot
-# serialize sibling processes safely.
-max_workers=1
-declare -A exit_codes=()
+failed=0
 run_check() {
     local name="$1"
     shift
-    names+=("$name")
-    (/usr/bin/time -f 'wall_seconds=%e' "$@") >"$run_root/$name.log" 2>&1 &
-    pids+=("$!")
-    ((active += 1))
-    if ((active == max_workers)); then
-        local finished_pid
-        if wait -n -p finished_pid; then
-            exit_codes["$finished_pid"]=0
-        else
-            exit_codes["$finished_pid"]=$?
-        fi
-        active=$((active - 1))
+    printf '\n[%s]\n' "$name"
+    if ! /usr/bin/time -f 'wall_seconds=%e' "$@"; then
+        printf '[%s FAILED]\n' "$name" >&2
+        failed=1
     fi
 }
 
@@ -75,28 +54,6 @@ run_check analysis-layout python3 tools/record-command.py \
     --test-id tooling.check-all.analysis-layout -- .venv/bin/python tools/check-analysis-layout.py
 run_check architecture python3 tools/record-command.py --test-id tooling.check-all.architecture -- \
     .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
-
-failed=0
-for index in "${!pids[@]}"; do
-    name="${names[$index]}"
-    pid="${pids[$index]}"
-    status="${exit_codes[$pid]-}"
-    if [[ -z "$status" ]]; then
-        if wait "$pid"; then
-            status=0
-        else
-            status=$?
-        fi
-    fi
-    if ((status == 0)); then
-        printf '\n[%s]\n' "$name"
-        cat "$run_root/$name.log"
-    else
-        printf '\n[%s FAILED]\n' "$name" >&2
-        cat "$run_root/$name.log" >&2
-        failed=1
-    fi
-done
 
 if ((failed)); then
     exit 1

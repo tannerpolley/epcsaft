@@ -56,7 +56,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **0/35 qualified sublayers (0.0%)**; **37–113 remaining Astra hours**.
+Total: **0/35 qualified milestones (0.0%)**; **37–113 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -89,7 +89,7 @@ readiness review follows the corrections.
 |---|---|---|
 | Shared declarations and results | Complete | Shared native/Python records preserve the 24 retained F1/F5 operand pairs and complete derivative ladders; shared actual inputs and per-row criteria are retained. |
 | Complete test inventory and recording | Active | Register and record each integrity-harness check through the shared route and include it in the installed gate. |
-| Freshness and automatic fast runs | Active | Replace the transient service with persistent enabled startup; preserve worker coalescing and fail-closed applicability. |
+| Freshness and read-only viewer | Active | Persistent enabled startup of the viewer only; display freshness means unchanged sources and artifact files, never a re-verified environment. |
 | Notebook synchronization | Active | Verify integrity-check visibility and live recovery under the persistent service. |
 | Remove special-case wiring | Active | Align supported suite names with Contributions and Properties, then review the full implementation. |
 
@@ -149,8 +149,8 @@ qualifies a scientific sublayer.
 
 Current presentation: Plan and Tests use the current Contributions/Properties
 vocabulary and compact collapsed comparison rows. The view renders connected
-outputs and inventory through shared records; the controlled worker runs permitted
-fast checks after computational inputs change. Acceptance is reopened for persistent
+outputs and inventory through shared records; the normal check commands record
+results and the viewer only reads them. Acceptance is reopened for persistent
 startup and integrity-harness visibility. The previous installed gate passed in 26.92 seconds, above the warm
 10-second target. F5 remains a known numerical failure. This does not qualify M1 or E1.
 
