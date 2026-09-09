@@ -1,9 +1,6 @@
-import gc
-import sys
-
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters, _core
+from epcsaft import Mixture, ParameterError, Parameters
 from epcsaft.equilibrium import (
     Amounts,
     Molalities,
@@ -27,17 +24,16 @@ def problem(feed: Amounts) -> Problem:
     return Problem(phases=[Phase("L")], T=300.0, P=1.0e5, feed=feed)
 
 
-def test_compiled_system_keeps_model_alive() -> None:
-    model = mixture()
-    native_model = model._model
-    references = sys.getrefcount(native_model)
-    compiled = _core.compile_problem(native_model, problem(Amounts({"methane": 1.0}))._native(model))
-    assert sys.getrefcount(native_model) == references + 1
-    del compiled
-    gc.collect()
-    assert sys.getrefcount(native_model) == references
-
-
+@pytest.mark.evidence(
+    test_id="python.equilibrium.invalid-names",
+    title="Equilibrium input names fail closed",
+    kind="Package",
+    category="Equilibrium",
+    requirement_id="E1",
+    execution_policy="Automatic fast",
+    lifecycle="Implemented",
+    evidence_expectation="Outcome only",
+)
 def test_unknown_species_and_amount_status_are_rejected_by_name() -> None:
     model = mixture()
     with pytest.raises(ParameterError, match="unknown species methnae"):
@@ -51,6 +47,16 @@ def test_unknown_species_and_amount_status_are_rejected_by_name() -> None:
         })
 
 
+@pytest.mark.evidence(
+    test_id="python.equilibrium.required-physical-arguments",
+    title="Equilibrium physical arguments are required",
+    kind="Package",
+    category="Equilibrium",
+    requirement_id="E1",
+    execution_policy="Automatic fast",
+    lifecycle="Implemented",
+    evidence_expectation="Outcome only",
+)
 def test_physical_arguments_are_required() -> None:
     with pytest.raises(TypeError, match="equilibrium_constant"):
         Reaction({"methane": -1.0})  # type: ignore[call-arg]

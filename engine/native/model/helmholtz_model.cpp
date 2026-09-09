@@ -596,7 +596,7 @@ State HelmholtzModel::state(
     // EqID: residual_entropy
     result.residual_entropy = GAS_CONSTANT_J_PER_MOL_K * (-derivatives.value - temperature * phi_t);
     // EqID: residual_internal_energy
-    result.residual_internal_energy = -GAS_CONSTANT_J_PER_MOL_K * temperature * phi_t;
+    result.residual_internal_energy = -GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * phi_t;
     // EqID: residual_enthalpy
     result.residual_enthalpy = GAS_CONSTANT_J_PER_MOL_K * temperature
         * (-temperature * phi_t + z - 1.0);

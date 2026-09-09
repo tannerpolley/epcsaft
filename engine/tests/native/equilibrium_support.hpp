@@ -3,6 +3,7 @@
 #include "core/trace.hpp"
 #include "equilibrium/problem.hpp"
 #include "model_support.hpp"
+#include "recording_support.hpp"
 
 #include <cstddef>
 #include <algorithm>
@@ -22,7 +23,13 @@ inline void fail(const char* file, int line, const char* expression) {
 }
 
 inline void check(bool condition, const char* file, int line, const char* expression) {
-    if (!condition) fail(file, line, expression);
+    if (!condition) {
+        fail(file, line, expression);
+        throw recording_support::Failure(
+            std::string(file) + ":" + std::to_string(line)
+            + ": failed: " + expression
+        );
+    }
 }
 
 inline void print_trace(const epcsaft::core::Trace& trace) {

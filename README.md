@@ -8,6 +8,27 @@ scientific owners and one equilibrium driver. The
 [implementation plan](docs/scientific/implementation-plan.md) distinguishes
 required capability from implemented and numerically qualified behavior.
 
+For the live Plan and Tests website, run
+`python3 tools/serve-roadmap.py --port 8766` and open the
+[Quarto companion](http://127.0.0.1:8766/). The service starts one worker for
+permitted automatic fast checks; add `--view-only` to disable execution.
+Page rendering and browser refresh only read the plan and recorded results.
+
+To keep the companion running for this checkout, install the user service and
+enable it:
+
+```bash
+install -Dm644 tools/systemd/epcsaft-companion-greenfield.service \
+  "$HOME/.config/systemd/user/epcsaft-companion-greenfield.service"
+loginctl enable-linger "$USER"  # start the user service at boot without login
+systemctl --user daemon-reload
+systemctl --user enable --now epcsaft-companion-greenfield.service
+```
+
+Check it with `systemctl --user status epcsaft-companion-greenfield.service`.
+The unit serves from this repository root, starts the automatic worker, and
+restarts after a service failure.
+
 ## Prerequisites
 
 The supported development environment is Linux with Git, Python 3.13, `uv`, a
@@ -65,9 +86,9 @@ bash tools/check-all.sh
 documentation-only changes can stop at readiness checks without building or
 installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
-current wheel, then covers the default EOS, equilibrium, regression, static,
+current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence.
+numerical evidence. Regression checks join the gate when that capability exists.
 
 Native C++ changes use the explicit owner commands:
 

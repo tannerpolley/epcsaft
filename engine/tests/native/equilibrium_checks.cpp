@@ -3,11 +3,14 @@
 #include "equilibrium_support.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
+#include "recording_support.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <string>
+#include <stdexcept>
 
 namespace {
 
@@ -20,15 +23,169 @@ bool close(double left, double right) {
     return std::abs(left - right) <= 1.0e-6 * std::max(1.0, std::abs(right));
 }
 
+bool close_with_tolerance(double left, double right, double tolerance) {
+    return std::abs(left - right) <= tolerance * std::max(1.0, std::abs(right));
+}
+
 double centered_step(double value) {
     return std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(std::abs(value), 1.0);
+}
+
+std::string weighted_hessian_context(
+    const epcsaft::equilibrium::CompiledSystem& compiled
+) {
+    const auto& problem = compiled.problem;
+    std::string phase_definition;
+    for (const auto& phase : problem.phases) {
+        if (!phase_definition.empty()) phase_definition += ',';
+        phase_definition += phase.name + ":"
+            + epcsaft::equilibrium::phase_kind_name(phase.kind) + ":"
+            + epcsaft::equilibrium::amount_kind_name(phase.amount.kind) + ":"
+            + recording_support::number(phase.amount.fraction)
+            + ":support=" + std::to_string(phase.support.size()) + ":guess=";
+        for (std::size_t index = 0; index < phase.composition_guess.size(); ++index) {
+            if (index != 0) phase_definition += ',';
+            phase_definition += recording_support::number(phase.composition_guess[index]);
+        }
+        if (phase.packing_guess.has_value())
+            phase_definition += ":packing=" + recording_support::number(*phase.packing_guess);
+    }
+    std::string reaction_definition;
+    for (const auto& reaction : problem.reactions) {
+        if (!reaction_definition.empty()) reaction_definition += ',';
+        reaction_definition += reaction.name + ":K="
+            + recording_support::number(reaction.equilibrium_constant) + ":nu=";
+        for (std::size_t index = 0; index < reaction.stoichiometry.size(); ++index) {
+            if (index != 0) reaction_definition += ',';
+            reaction_definition += recording_support::number(reaction.stoichiometry[index]);
+        }
+    }
+    const auto* model = compiled.model;
+    if (model == nullptr) {
+        return recording_support::fields({
+            recording_support::field("compiled_model", "missing"),
+            recording_support::field("temperature", problem.temperature.value),
+            recording_support::field("pressure", problem.pressure.value),
+            recording_support::field("feed_kind",
+                                     epcsaft::equilibrium::feed_kind_name(problem.feed.kind)),
+            recording_support::field("feed", problem.feed.values),
+            recording_support::field("phase_definition", phase_definition),
+            recording_support::field("reaction_definition", reaction_definition),
+        });
+    }
+    const auto& parameters = model->parameters();
+    std::string row_names;
+    for (const auto& name : compiled.row_names) {
+        if (!row_names.empty()) row_names += ',';
+        row_names += name;
+    }
+    return recording_support::fields({
+        recording_support::field("temperature", problem.temperature.value),
+        recording_support::field("temperature_free", problem.temperature.free ? 1U : 0U),
+        recording_support::field("temperature_absent", problem.temperature.absent ? 1U : 0U),
+        recording_support::field("pressure", problem.pressure.value),
+        recording_support::field("pressure_free", problem.pressure.free ? 1U : 0U),
+        recording_support::field("pressure_absent", problem.pressure.absent ? 1U : 0U),
+        recording_support::field("feed_kind",
+                                 epcsaft::equilibrium::feed_kind_name(problem.feed.kind)),
+        recording_support::field("feed", problem.feed.values),
+        recording_support::field("feed_solvent_count", problem.feed.solvent.size()),
+        recording_support::field("feed_solvent_mass_kg", problem.feed.solvent_mass_kg),
+        recording_support::field("phase_definition", phase_definition),
+        recording_support::field("reaction_definition", reaction_definition),
+        recording_support::field("standard_gibbs", problem.standard_gibbs_j_per_mol),
+        recording_support::field("topology_declared", problem.topology_declared ? 1U : 0U),
+        recording_support::field("compiled_primal_size", compiled.primal_size),
+        recording_support::field("compiled_rank", compiled.rank),
+        recording_support::field("compiled_pinned_count", compiled.pinned_count),
+        recording_support::field("compiled_free_intensive_count", compiled.free_intensive_count),
+        recording_support::field("compiled_charge_row_count", compiled.charge_row_count),
+        recording_support::field("compiled_rows", compiled.rows.size()),
+        recording_support::field("compiled_rows_minus_unknowns", compiled.rows_minus_unknowns),
+        recording_support::field("compiled_generic_nullity", compiled.generic_nullity),
+        recording_support::field("compiled_jacobian_rank", compiled.jacobian_rank),
+        recording_support::field("compiled_n_feed", compiled.n_feed),
+        recording_support::field("compiled_feed_composition", compiled.feed_composition),
+        recording_support::field("compiled_balance", compiled.balance),
+        recording_support::field("compiled_feed_total", compiled.feed_total),
+        recording_support::field("compiled_feasible", compiled.feasible ? 1U : 0U),
+        recording_support::field("compiled_has_ions", compiled.has_ions ? 1U : 0U),
+        recording_support::field("compiled_has_reaction", compiled.has_reaction ? 1U : 0U),
+        recording_support::field("compiled_row_names", row_names),
+        recording_support::field("model_component_count", parameters.component_count()),
+        recording_support::field("model_segment_count", parameters.segment_count),
+        recording_support::field("model_sigma_constant", parameters.sigma_constant),
+        recording_support::field("model_sigma_term_component", parameters.sigma_term_component),
+        recording_support::field("model_sigma_term_amplitude", parameters.sigma_term_amplitude),
+        recording_support::field("model_sigma_term_exponent", parameters.sigma_term_exponent),
+        recording_support::field("model_dispersion_energy_over_k", parameters.dispersion_energy_over_k),
+        recording_support::field("model_molar_mass_kg_per_mol", parameters.molar_mass_kg_per_mol),
+        recording_support::field("model_k_ij", parameters.k_ij),
+        recording_support::field("model_k_ij_reciprocal_temperature_slope",
+                                 parameters.k_ij_reciprocal_temperature_slope),
+        recording_support::field("model_k_ij_reference_temperature_k",
+                                 parameters.k_ij_reference_temperature_k),
+        recording_support::field("model_l_ij", parameters.l_ij),
+        recording_support::field("model_site_component", parameters.site_component),
+        recording_support::field("model_site_multiplicity", parameters.site_multiplicity),
+        recording_support::field("model_association_active", parameters.association_active),
+        recording_support::field("model_association_energy_over_k", parameters.association_energy_over_k),
+        recording_support::field("model_association_volume", parameters.association_volume),
+        recording_support::field("model_charge_number", parameters.charge_number),
+        recording_support::field("model_packing_diameter_angstrom", parameters.packing_diameter_angstrom),
+        recording_support::field("model_debye_huckel_diameter_angstrom", parameters.debye_huckel_diameter_angstrom),
+        recording_support::field("model_born_diameter_angstrom", parameters.born_diameter_angstrom),
+        recording_support::field("model_solvation_factor", parameters.solvation_factor),
+        recording_support::field("model_ionic_region_relative_permittivity",
+                                 parameters.ionic_region_relative_permittivity),
+        recording_support::field("model_born_c_shell", parameters.born_c_shell),
+        recording_support::field("model_born_c_dielectric", parameters.born_c_dielectric),
+        recording_support::field("model_electrolyte_form_declared",
+                                 parameters.electrolyte_form.declared() ? 1U : 0U),
+        recording_support::field("model_electrolyte_form",
+                                 parameters.electrolyte_form.declared()
+                                     ? static_cast<int>(parameters.electrolyte_form.require("electrolyte_form"))
+                                     : -1),
+        recording_support::field("model_ionic_dispersion_declared",
+                                 parameters.ionic_dispersion.declared() ? 1U : 0U),
+        recording_support::field("model_ionic_dispersion",
+                                 parameters.ionic_dispersion.declared()
+                                     ? static_cast<int>(parameters.ionic_dispersion.require("ionic_dispersion"))
+                                     : -1),
+        recording_support::field("model_relative_permittivity", parameters.relative_permittivity),
+        recording_support::field("model_permittivity_term_component",
+                                 parameters.permittivity_term_component),
+        recording_support::field("model_permittivity_term_coefficient",
+                                 parameters.permittivity_term_coefficient),
+        recording_support::field("model_permittivity_term_power",
+                                 parameters.permittivity_term_power),
+        recording_support::field("model_permittivity_reference_temperature_k",
+                                 parameters.permittivity_reference_temperature_k),
+        recording_support::field("model_ion_suppression_coefficient", parameters.ion_suppression_coefficient),
+        recording_support::field("model_permittivity_form_declared",
+                                 parameters.permittivity_form.declared() ? 1U : 0U),
+        recording_support::field("model_permittivity_form",
+                                 parameters.permittivity_form.declared()
+                                     ? static_cast<int>(parameters.permittivity_form.require("permittivity_form"))
+                                     : -1),
+        recording_support::field("model_dielectric_volume_m3_per_mol",
+                                 parameters.dielectric_volume_m3_per_mol),
+        recording_support::field("model_dielectric_temperature_k",
+                                 parameters.dielectric_temperature_k),
+        recording_support::field("model_dipole_scaling_debye2", parameters.dipole_scaling_debye2),
+        recording_support::field("model_polarizability_scaling_angstrom3",
+                                 parameters.polarizability_scaling_angstrom3),
+        recording_support::field("model_correlation_integral_parameter",
+                                 parameters.correlation_integral_parameter),
+    });
 }
 
 void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compiled,
                              const std::vector<double>& point) {
     const auto analytic = compiled.jacobian(point);
     const auto base = compiled.evaluate(point).values;
+    const auto context = weighted_hessian_context(compiled);
     CHECK(analytic.size() == base.size() * point.size());
     for (std::size_t column = 0; column < point.size(); ++column) {
         auto plus = point;
@@ -38,20 +195,237 @@ void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compile
         minus[column] -= delta;
         const auto up = compiled.evaluate(plus).values;
         const auto down = compiled.evaluate(minus).values;
-        for (std::size_t row = 0; row < base.size(); ++row)
-            CHECK(close(analytic[row * point.size() + column],
-                        (up[row] - down[row]) / (2.0 * delta)));
+        for (std::size_t row = 0; row < base.size(); ++row) {
+            const double centered = (up[row] - down[row]) / (2.0 * delta);
+            const double model_value = analytic[row * point.size() + column];
+            const bool verdict = close(model_value, centered);
+            const auto point_id = std::to_string(row) + "-" + std::to_string(column);
+            recording_support::compare(
+                (std::string("jacobian/") + point_id).c_str(),
+                "equilibrium_jacobian", "1", model_value, centered,
+                recording_support::fields({
+                    context,
+                    recording_support::field("point", point),
+                    recording_support::field("row", row),
+                    recording_support::field("column", column),
+                    recording_support::field("delta", delta),
+                }),
+                "Relationship", "finite-difference", "equilibrium Jacobian matches centered residual derivative",
+                "reference_or_one", 0.0, 1.0e-6, verdict,
+                "f5-jacobian", point_id.c_str(), "J", "T,P,\\mathbf{x},\\Delta z",
+                "J_{ij}=\\Delta r_i/\\Delta z_j", "row,column");
+            CHECK(verdict);
+        }
     }
+}
+
+std::vector<std::size_t> callback_rows(
+    const epcsaft::equilibrium::CompiledSystem& compiled
+) {
+    std::vector<std::size_t> result;
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+        if (compiled.pinned_count != 0
+            || (compiled.rows[row].kind != epcsaft::equilibrium::RowKind::Chemical
+                && compiled.rows[row].kind != epcsaft::equilibrium::RowKind::Pressure)) {
+            result.push_back(row);
+        }
+    }
+    return result;
+}
+
+std::vector<double> weighted_gradient(
+    const epcsaft::equilibrium::CompiledSystem& compiled,
+    const std::vector<double>& point,
+    const std::vector<double>& multipliers,
+    double objective_factor
+) {
+    auto result = compiled.objective_gradient(point);
+    const auto jacobian = compiled.jacobian(point);
+    const auto rows = callback_rows(compiled);
+    if (result.size() != point.size()
+        || jacobian.size() != compiled.rows.size() * point.size()
+        || multipliers.size() != rows.size()) {
+        throw std::runtime_error("weighted-gradient shape mismatch");
+    }
+    for (double& value : result) value *= objective_factor;
+    for (std::size_t multiplier = 0; multiplier < rows.size(); ++multiplier) {
+        for (std::size_t column = 0; column < point.size(); ++column) {
+            result[column] += multipliers[multiplier]
+                * jacobian[rows[multiplier] * point.size() + column];
+        }
+    }
+    return result;
+}
+
+void expect_weighted_hessian_gradient_ladder(
+    const epcsaft::equilibrium::CompiledSystem& compiled,
+    const std::vector<double>& point,
+    const std::vector<double>& multipliers,
+    const char* label
+) {
+    epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
+    const auto shape = nlp.shape();
+    const auto objective_factors = {0.0, 0.5, 1.0};
+    const auto step_factors = {10.0, 3.0, 1.0};
+    const std::size_t lower_triangle_count = point.size() * (point.size() + 1) / 2;
+    const auto context = weighted_hessian_context(compiled);
+    const auto definition = recording_support::fields({
+        context,
+        recording_support::field("case", label),
+        recording_support::field("point", point),
+        recording_support::field("multipliers", multipliers),
+        recording_support::field("variables", point.size()),
+        recording_support::field("constraints", multipliers.size()),
+        recording_support::field("matrix", "lower_triangle"),
+        recording_support::field("objective_factors", std::vector<double>{0.0, 0.5, 1.0}),
+        recording_support::field("step_factors", std::vector<double>{10.0, 3.0, 1.0}),
+        recording_support::field("hessian_entries", static_cast<std::size_t>(shape.hessian_entries)),
+    });
+    for (const double objective_factor : objective_factors) {
+        for (const double step_factor : step_factors) {
+            const auto prefix = std::string("hessian/") + label
+                + "/objective-" + recording_support::number(objective_factor)
+                + "/step-" + recording_support::number(step_factor) + "/";
+            const auto group_definition = recording_support::fields({
+                definition,
+                recording_support::field("objective_factor", objective_factor),
+                recording_support::field("step_factor", step_factor),
+                recording_support::field("expected_rows", lower_triangle_count),
+            });
+            recording_support::expect_group(
+                "native.equilibrium.f5", "f5-hessian-ladder", prefix.c_str(),
+                lower_triangle_count, group_definition,
+                recording_support::field(
+                    "coordinate_schema", "case,objective_factor,step_factor,row,column"
+                ).c_str()
+            );
+        }
+    }
+}
+
+bool check_weighted_hessian_gradient_ladder(
+    const epcsaft::equilibrium::CompiledSystem& compiled,
+    const std::vector<double>& point,
+    const std::vector<double>& multipliers,
+    const char* label,
+    double tolerance
+) {
+    const auto rows = callback_rows(compiled);
+    epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
+    const auto shape = nlp.shape();
+    CHECK(shape.variables >= 0 && shape.constraints >= 0);
+    CHECK(point.size() == static_cast<std::size_t>(shape.variables));
+    CHECK(multipliers.size() == rows.size());
+    CHECK(multipliers.size() == static_cast<std::size_t>(shape.constraints));
+    if (point.size() != static_cast<std::size_t>(shape.variables)
+        || multipliers.size() != static_cast<std::size_t>(shape.constraints)) return false;
+
+    const auto objective_factors = {0.0, 0.5, 1.0};
+    const auto step_factors = {10.0, 3.0, 1.0};
+    const auto context = weighted_hessian_context(compiled);
+
+    std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(shape.hessian_entries));
+    std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(shape.hessian_entries));
+    CHECK(nlp.eval_h(shape.variables, point.data(), true, 1.0, shape.constraints,
+                     multipliers.data(), true, shape.hessian_entries,
+                     hessian_rows.data(), hessian_columns.data(), nullptr));
+    bool all_verdicts = true;
+    for (const double objective_factor : objective_factors) {
+        std::vector<Ipopt::Number> hessian(
+            static_cast<std::size_t>(shape.hessian_entries), 0.0
+        );
+        CHECK(nlp.eval_h(shape.variables, point.data(), false, objective_factor,
+                         shape.constraints, multipliers.data(), false,
+                         shape.hessian_entries, hessian_rows.data(),
+                         hessian_columns.data(), hessian.data()));
+        for (const double step_factor : step_factors) {
+            for (std::size_t column = 0; column < point.size(); ++column) {
+                auto plus = point;
+                auto minus = point;
+                const double step = step_factor * centered_step(point[column]);
+                plus[column] += step;
+                minus[column] -= step;
+                const auto grad_plus = weighted_gradient(
+                    compiled, plus, multipliers, objective_factor
+                );
+                const auto grad_minus = weighted_gradient(
+                    compiled, minus, multipliers, objective_factor
+                );
+                for (std::size_t row = column; row < point.size(); ++row) {
+                    const double centered = (grad_plus[row] - grad_minus[row]) / (2.0 * step);
+                    const std::size_t index = row * (row + 1) / 2 + column;
+                    const auto comparison_id = std::string("hessian/") + label
+                        + "/objective-" + recording_support::number(objective_factor)
+                        + "/step-" + recording_support::number(step_factor)
+                        + "/" + std::to_string(row) + "-" + std::to_string(column);
+                    const auto point_id = std::string("case-") + label
+                        + "/objective-" + recording_support::number(objective_factor)
+                        + "/step-" + recording_support::number(step_factor)
+                        + "/row-" + std::to_string(row)
+                        + "/column-" + std::to_string(column);
+                    const auto coordinates = recording_support::fields({
+                        recording_support::field("case", label),
+                        recording_support::field("objective_factor", objective_factor),
+                        recording_support::field("step_factor", step_factor),
+                        recording_support::field("row", row),
+                        recording_support::field("column", column),
+                    });
+                    const auto inputs = recording_support::fields({
+                        context,
+                        recording_support::field("case", label),
+                        recording_support::field("objective_factor", objective_factor),
+                        recording_support::field("step_factor", step_factor),
+                        recording_support::field("point", point),
+                        recording_support::field("multipliers", multipliers),
+                        recording_support::field("row", row),
+                        recording_support::field("column", column),
+                        recording_support::field("step", step),
+                        recording_support::field("variables", point.size()),
+                        recording_support::field("constraints", multipliers.size()),
+                    });
+                    const bool verdict = close_with_tolerance(hessian[index], centered, tolerance);
+                    recording_support::compare(
+                        comparison_id.c_str(), "weighted_lagrangian_hessian", "coordinate",
+                        hessian[index], centered, inputs, "Relationship",
+                        "weighted_hessian_gradient_finite_difference",
+                        "nabla2_L=d(weighted_gradient)/d(coordinate)", "reference_or_one",
+                        0.0, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
+                        "\\nabla^2\\mathcal L", "\\mathbf{z},\\lambda,\\Delta z",
+                        "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
+                        coordinates.c_str());
+                    all_verdicts = all_verdicts && verdict;
+                }
+            }
+        }
+    }
+    return all_verdicts;
 }
 
 void verify_s1(const epcsaft::HelmholtzModel& model,
                const epcsaft::equilibrium::EquilibriumProblem& problem,
-               const epcsaft::equilibrium::EquilibriumResult& result) {
+               const epcsaft::equilibrium::EquilibriumResult& result,
+               const char* case_id) {
     CHECK(result.success);
     if (!result.success) return;
     const double limit = convergence_limit(result.convergence);
     CHECK(result.residuals.size() == result.rows.size());
-    for (const double residual : result.residuals) CHECK(std::abs(residual) <= limit);
+    for (std::size_t row = 0; row < result.residuals.size(); ++row) {
+        const auto inputs = recording_support::fields({
+            recording_support::field("T", result.temperature.front()),
+            recording_support::field("P", result.pressure.front()),
+            recording_support::field("coordinates", result.coordinates),
+            recording_support::field("row", row), recording_support::field("limit", limit),
+        });
+        recording_support::compare(
+            (std::string("residual/") + case_id + "/" + std::to_string(row)).c_str(),
+            "equilibrium_residual", "1", result.residuals[row], 0.0, inputs,
+            "Relationship", "equilibrium-residual", "residual is within convergence limit",
+            "reference_or_one", limit, 0.0, std::abs(result.residuals[row]) <= limit,
+            "s1-residual", (std::string(case_id) + "/" + std::to_string(row)).c_str(),
+            "r", "T,P,\\mathbf{z},row",
+            "|r_i|\\leq\\ell", "row");
+        CHECK(std::abs(result.residuals[row]) <= limit);
+    }
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     CHECK(result.convergence.residual == compiled.evaluate(result.coordinates).residual_norm());
     const std::size_t components = model.parameters().component_count();
@@ -80,21 +454,64 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
             for (std::size_t row = 0; row < compiled.rank; ++row)
                 lambda_Bx += result.multipliers[row] * compiled.B[row][species] * x[species];
         }
+        const auto phase_inputs = recording_support::fields({
+            recording_support::field("T", result.temperature.front()),
+            recording_support::field("P", result.pressure.front()),
+            recording_support::field("x", x), recording_support::field("phase", phase),
+            recording_support::field("limit", limit),
+        });
+        recording_support::compare(
+            (std::string("gibbs-dual/") + case_id + "/" + std::to_string(phase)).c_str(),
+            "gibbs_dual_residual", "1", gibbs, lambda_Bx, phase_inputs,
+            "Relationship", "KKT", "phase Gibbs value equals balance dual",
+            "reference_or_one", limit, 0.0, std::abs(gibbs - lambda_Bx) <= limit,
+            "s1-gibbs-dual", (std::string(case_id) + "/" + std::to_string(phase)).c_str(),
+            "g", "T,P,\\mathbf{x},phase",
+            "g=\\lambda^TBx", "phase");
         CHECK(std::abs(gibbs - lambda_Bx) <= limit);
         bool ion_phase = false;
         for (const auto species : compiled.problem.phases[phase].support)
             ion_phase = ion_phase || charges[species] != 0;
-        if (ion_phase) CHECK(std::abs(charge) <= limit);
+        if (ion_phase) {
+            recording_support::compare(
+                (std::string("charge/") + case_id + "/" + std::to_string(phase)).c_str(),
+                "phase_charge", "1", charge, 0.0, phase_inputs,
+                "Relationship", "charge-balance", "ionic phase charge is zero",
+                "reference_or_one", limit, 0.0, std::abs(charge) <= limit,
+                "s1-charge", (std::string(case_id) + "/" + std::to_string(phase)).c_str(),
+                "q", "T,P,\\mathbf{x},phase",
+                "q=0", "phase");
+            CHECK(std::abs(charge) <= limit);
+        }
         for (const auto& reaction : compiled.problem.reactions) {
             double affinity = 0.0;
             for (std::size_t species = 0; species < components; ++species)
                 affinity += reaction.stoichiometry[species] * chemical[species];
+            recording_support::compare(
+                (std::string("affinity/") + case_id + "/" + std::to_string(phase)
+                 + "/" + reaction.name).c_str(),
+                "reaction_affinity", "J/mol", affinity, 0.0, phase_inputs,
+                "Relationship", "reaction-equilibrium", "reaction affinity is zero",
+                "reference_or_one", limit, 0.0, std::abs(affinity) <= limit,
+                "s1-affinity", (std::string(case_id) + "/" + std::to_string(phase)
+                                 + "/" + reaction.name).c_str(),
+                "A", "T,P,\\mathbf{x},phase",
+                "A=0", "reaction");
             CHECK(std::abs(affinity) <= limit);
         }
     }
     double feed_dual = 0.0;
     for (std::size_t row = 0; row < compiled.rank; ++row)
         feed_dual += result.multipliers[row] * compiled.balance[row];
+    recording_support::compare(
+        (std::string("feed-dual/") + case_id).c_str(), "objective", "1", result.objective, feed_dual,
+        recording_support::fields({recording_support::field("T", result.temperature.front()),
+                                   recording_support::field("P", result.pressure.front()),
+                                   recording_support::field("coordinates", result.coordinates),
+                                   recording_support::field("limit", limit)}),
+        "Relationship", "KKT", "objective equals feed balance dual",
+        "reference_or_one", limit, 0.0, std::abs(result.objective - feed_dual) <= limit,
+        "s1-feed-dual", case_id, "g", "T,P,\\mathbf{z}", "g=\\lambda^Tb", "objective");
     CHECK(std::abs(result.objective - feed_dual) <= limit);
 }
 
@@ -103,7 +520,7 @@ void check_s1() {
     const auto liquid = equilibrium_support::flash(2);
     epcsaft::core::Capture capture;
     const auto liquid_result = epcsaft::equilibrium::solve_equilibrium(binary_model, liquid);
-    verify_s1(binary_model, liquid, liquid_result);
+    verify_s1(binary_model, liquid, liquid_result, "liquid");
     const auto span = std::find_if(capture.trace().spans.begin(), capture.trace().spans.end(),
         [](const auto& item) { return std::string(item.name) == "solve_equilibrium"; });
     CHECK(span != capture.trace().spans.end() && span->convergence.has_value());
@@ -121,18 +538,18 @@ void check_s1() {
     auto vapor = equilibrium_support::flash(2);
     vapor.phases[0].kind = epcsaft::equilibrium::PhaseKind::Vapor;
     verify_s1(binary_model, vapor,
-              epcsaft::equilibrium::solve_equilibrium(binary_model, vapor));
+              epcsaft::equilibrium::solve_equilibrium(binary_model, vapor), "vapor");
     auto flash = equilibrium_support::flash(3);
     flash.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
                     equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
     flash.temperature.value = 180.0;
     epcsaft::HelmholtzModel ternary_model(model_support::neutral_ternary());
     verify_s1(ternary_model, flash,
-              epcsaft::equilibrium::solve_equilibrium(ternary_model, flash));
+              epcsaft::equilibrium::solve_equilibrium(ternary_model, flash), "ternary");
     epcsaft::HelmholtzModel reactive_model(equilibrium_support::ascani_reactive_ternary());
     const auto reactive = equilibrium_support::ascani_reactive_problem();
     verify_s1(reactive_model, reactive,
-              epcsaft::equilibrium::solve_equilibrium(reactive_model, reactive));
+              epcsaft::equilibrium::solve_equilibrium(reactive_model, reactive), "reactive");
     auto ethane = equilibrium_support::flash(1);
     ethane.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
                      equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
@@ -141,13 +558,13 @@ void check_s1() {
     ethane.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
     epcsaft::HelmholtzModel ethane_model(model_support::ethane());
     verify_s1(ethane_model, ethane,
-              epcsaft::equilibrium::solve_equilibrium(ethane_model, ethane));
+              epcsaft::equilibrium::solve_equilibrium(ethane_model, ethane), "ethane");
     auto salt = equilibrium_support::flash(3);
     salt.feed.values = {0.98, 0.01, 0.01};
     salt.temperature.value = 298.15;
     epcsaft::HelmholtzModel salt_model(model_support::aqueous_electrolyte());
     verify_s1(salt_model, salt,
-              epcsaft::equilibrium::solve_equilibrium(salt_model, salt));
+              epcsaft::equilibrium::solve_equilibrium(salt_model, salt), "salt");
 }
 
 void check_s2() {
@@ -158,11 +575,49 @@ void check_s2() {
     binary.temperature.value = 180.0;
     binary.pressure.value = 1.0e5;
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, binary);
-    CHECK(result.success && result.reduced_hessian_minimum > 0.0);
+    recording_support::compare(
+        "binary-success", "success", "bool", result.success ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("T", binary.temperature.value),
+                                   recording_support::field("P", binary.pressure.value),
+                                   recording_support::field("feed", binary.feed.values)}),
+        "Relationship", "stability", "binary solution succeeds", "reference_or_one", 0.0, 0.0,
+        result.success, "s2-binary-success", "binary", "success", "T,P,feed",
+        "success=1", "case");
+    const bool binary_curvature_positive = std::isfinite(result.reduced_hessian_minimum)
+        && result.reduced_hessian_minimum > 0.0;
+    recording_support::compare_custom(
+        "binary-curvature", "reduced_hessian_minimum", "1", result.reduced_hessian_minimum,
+        0.0, recording_support::fields({recording_support::field("T", binary.temperature.value),
+                                         recording_support::field("P", binary.pressure.value),
+                                         recording_support::field("feed", binary.feed.values)}),
+        "Relationship", "stability", "reduced Hessian minimum is positive",
+        "isfinite(model) && model > reference", binary_curvature_positive,
+        "s2-binary-curvature", "binary", "\\lambda_{min}(H)", "T,P,feed",
+        "\\lambda_{min}(H)>0", "stability");
+    CHECK(result.success && binary_curvature_positive);
     const auto reactive = epcsaft::equilibrium::solve_equilibrium(
         epcsaft::HelmholtzModel(equilibrium_support::ascani_reactive_ternary()),
         equilibrium_support::ascani_reactive_problem());
-    CHECK(reactive.success && reactive.reduced_hessian_minimum > 0.0);
+    recording_support::compare(
+        "reactive-success", "success", "bool", reactive.success ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}),
+        "Relationship", "stability", "reactive solution succeeds", "reference_or_one", 0.0, 0.0,
+        reactive.success, "s2-reactive-success", "reactive", "success", "T,P,feed",
+        "success=1", "case");
+    const bool reactive_curvature_positive = std::isfinite(reactive.reduced_hessian_minimum)
+        && reactive.reduced_hessian_minimum > 0.0;
+    recording_support::compare_custom(
+        "reactive-curvature", "reduced_hessian_minimum", "1", reactive.reduced_hessian_minimum,
+        0.0, recording_support::fields({recording_support::field("T", 298.15),
+                                         recording_support::field("P", 1.0e5),
+                                         recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}),
+        "Relationship", "stability", "reactive reduced Hessian minimum is positive",
+        "isfinite(model) && model > reference", reactive_curvature_positive,
+        "s2-reactive-curvature", "reactive", "\\lambda_{min}(H)", "T,P,feed",
+        "\\lambda_{min}(H)>0", "stability");
+    CHECK(reactive.success && reactive_curvature_positive);
 }
 
 void check_s6() {
@@ -173,6 +628,39 @@ void check_s6() {
     one.phases.resize(1);
     const auto one_result = epcsaft::equilibrium::solve_equilibrium(model, one);
     const auto two_result = epcsaft::equilibrium::solve_equilibrium(model, two);
+    recording_support::compare(
+        "one-success", "success", "bool", one_result.success ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", two.feed.values),
+                                   recording_support::field("phase_count", 1U)}),
+        "Relationship", "solve", "one-phase solve succeeds", "reference_or_one", 0.0, 0.0,
+        one_result.success, "s6-one-success", "one", "success", "T,P,feed,phases", "success=1", "case");
+    recording_support::compare(
+        "two-success", "success", "bool", two_result.success ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", two.feed.values),
+                                   recording_support::field("phase_count", 2U)}),
+        "Relationship", "solve", "two-phase solve succeeds", "reference_or_one", 0.0, 0.0,
+        two_result.success, "s6-two-success", "two", "success", "T,P,feed,phases", "success=1", "case");
+    const double objective_gap = one_result.objective - two_result.objective;
+    const double objective_limit = two_result.convergence.criterion == nullptr
+        ? 0.0 : convergence_limit(two_result.convergence);
+    const bool objective_gap_ok = std::isfinite(objective_gap) && std::isfinite(objective_limit)
+        && objective_gap > objective_limit;
+    recording_support::compare_custom(
+        "objective-gap", "objective_gap", "1", objective_gap, objective_limit,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", two.feed.values),
+                                   recording_support::field("one_objective", one_result.objective),
+                                   recording_support::field("two_objective", two_result.objective),
+                                   recording_support::field("convergence_limit", objective_limit)}),
+        "Relationship", "phase-split", "two-phase objective gap exceeds convergence limit",
+        "isfinite(model) && isfinite(reference) && model > reference", objective_gap_ok,
+        "s6-objective-gap", "two-minus-one", "\\Delta g", "T,P,feed,objective,limit",
+        "\\Delta g>\\ell", "objective");
     CHECK(one_result.success && two_result.success);
     if (!one_result.success || !two_result.success) return;
     CHECK(two_result.objective < one_result.objective
@@ -193,8 +681,26 @@ void check_s7() {
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem, first);
         CHECK(result.success);
         if (!result.success) continue;
-        for (std::size_t i = 0; i < 6; ++i)
-            CHECK(std::abs(result.mole_fractions[i] - first.mole_fractions[i]) <= 1.0e-8);
+        for (std::size_t i = 0; i < 6; ++i) {
+            const double difference = std::abs(
+                result.mole_fractions[i] - first.mole_fractions[i]);
+            const auto point = recording_support::number(fraction) + "/" + std::to_string(i);
+            recording_support::compare(
+                (std::string("continuation/") + point).c_str(),
+                "mole_fraction_difference", "1", difference, 0.0,
+                recording_support::fields({recording_support::field("T", problem.temperature.value),
+                                           recording_support::field("P", problem.pressure.value),
+                                           recording_support::field("feed", problem.feed.values),
+                                           recording_support::field("fraction", fraction),
+                                           recording_support::field("component", i),
+                                           recording_support::field("reference_solution", first.mole_fractions),
+                                           recording_support::field("solution", result.mole_fractions)}),
+                "Relationship", "continuation", "continuation preserves the solved composition",
+                "reference_or_one", 1.0e-8, 0.0, difference <= 1.0e-8,
+                "s7-continuation", point.c_str(), "\\Delta x_i",
+                "T,P,feed,\\alpha,component", "\\Delta x_i\\leq10^{-8}", "component");
+            CHECK(difference <= 1.0e-8);
+        }
     }
 }
 
@@ -206,11 +712,33 @@ void check_s8() {
     const auto first = epcsaft::equilibrium::solve_equilibrium(model, small);
     const auto second = epcsaft::equilibrium::solve_equilibrium(model, large);
     CHECK(first.success && second.success);
-    CHECK(first.temperature == second.temperature);
-    CHECK(first.pressure == second.pressure);
-    CHECK(first.amounts.size() == second.amounts.size());
-    for (std::size_t i = 0; i < first.amounts.size(); ++i)
-        CHECK(std::abs(second.amounts[i] / first.amounts[i] - 10.0) < 1.0e-7);
+    if (!first.success || !second.success) return;
+    const bool same_intensives = first.temperature == second.temperature
+        && first.pressure == second.pressure;
+    const bool same_amount_shape = first.amounts.size() == second.amounts.size();
+    if (!same_amount_shape) {
+        CHECK(same_intensives);
+        CHECK(same_amount_shape);
+        return;
+    }
+    for (std::size_t i = 0; i < first.amounts.size(); ++i) {
+        const double ratio = second.amounts[i] / first.amounts[i];
+        recording_support::compare(
+            (std::string("amount-scale/") + std::to_string(i)).c_str(), "phase_amount_ratio", "1",
+            ratio, 10.0,
+            recording_support::fields({recording_support::field("T", first.temperature.front()),
+                                       recording_support::field("P", first.pressure.front()),
+                                       recording_support::field("feed_small", small.feed.values),
+                                       recording_support::field("feed_large", large.feed.values),
+                                       recording_support::field("phase", i)}),
+            "Relationship", "extensive-scaling", "amounts scale with feed by ten",
+            "strict_absolute", 1.0e-7, 0.0, std::abs(ratio - 10.0) < 1.0e-7,
+        "s8-amount-scale", std::to_string(i).c_str(), "n", "T,P,feed,phase",
+        "n_{large}/n_{small}=10", "phase");
+        CHECK(std::abs(ratio - 10.0) < 1.0e-7);
+    }
+    CHECK(same_intensives);
+    CHECK(same_amount_shape);
 }
 
 void check_s10() {
@@ -227,45 +755,42 @@ void check_s10() {
     check_finite_difference(flash, flash_point);
     std::vector<double> primal(flash_point.begin(),
                                flash_point.begin() + static_cast<std::ptrdiff_t>(flash.primal_size));
-    epcsaft::equilibrium::GibbsMinimizer nlp(flash, primal);
-    Ipopt::Index n = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
-    Ipopt::TNLP::IndexStyleEnum style = Ipopt::TNLP::C_STYLE;
-    CHECK(nlp.get_nlp_info(n, constraints, jacobian_entries, hessian_entries, style));
-    std::vector<Ipopt::Index> rows(static_cast<std::size_t>(hessian_entries));
-    std::vector<Ipopt::Index> columns(static_cast<std::size_t>(hessian_entries));
-    const std::vector<Ipopt::Number> lambda = solved.constraint_multipliers;
-    CHECK(lambda.size() == static_cast<std::size_t>(constraints));
-    CHECK(nlp.eval_h(n, primal.data(), true, 1.0, constraints, lambda.data(),
-                     true, hessian_entries, rows.data(), columns.data(), nullptr));
-    std::vector<Ipopt::Number> hessian(static_cast<std::size_t>(hessian_entries), 0.0);
-    CHECK(nlp.eval_h(n, primal.data(), false, 1.0, constraints, lambda.data(),
-                     false, hessian_entries, rows.data(), columns.data(), hessian.data()));
-    for (std::size_t column = 0; column < primal.size(); ++column) {
-        auto plus = primal;
-        auto minus = primal;
-        const double step = centered_step(primal[column]);
-        plus[column] += step;
-        minus[column] -= step;
-        std::vector<Ipopt::Number> grad_plus(static_cast<std::size_t>(n));
-        std::vector<Ipopt::Number> grad_minus(static_cast<std::size_t>(n));
-        CHECK(nlp.eval_grad_f(n, plus.data(), true, grad_plus.data()));
-        CHECK(nlp.eval_grad_f(n, minus.data(), true, grad_minus.data()));
-        std::vector<Ipopt::Number> jac_plus(static_cast<std::size_t>(constraints * n));
-        std::vector<Ipopt::Number> jac_minus(static_cast<std::size_t>(constraints * n));
-        CHECK(nlp.eval_jac_g(n, plus.data(), true, constraints, jacobian_entries,
-                             nullptr, nullptr, jac_plus.data()));
-        CHECK(nlp.eval_jac_g(n, minus.data(), true, constraints, jacobian_entries,
-                             nullptr, nullptr, jac_minus.data()));
-        for (std::size_t row = column; row < primal.size(); ++row) {
-            for (Ipopt::Index constraint = 0; constraint < constraints; ++constraint) {
-                grad_plus[row] += lambda[constraint] * jac_plus[constraint * n + row];
-                grad_minus[row] += lambda[constraint] * jac_minus[constraint * n + row];
-            }
-            const double centered = (grad_plus[row] - grad_minus[row]) / (2.0 * step);
-            const std::size_t index = row * (row + 1) / 2 + column;
-            CHECK(close(hessian[index], centered));
-        }
+    const auto active_rows = callback_rows(flash);
+    std::vector<double> lambda = solved.constraint_multipliers;
+    CHECK(lambda.size() == active_rows.size());
+    if (lambda.size() != active_rows.size()) return;
+    for (std::size_t row = 0; row < lambda.size(); ++row) {
+        if (std::abs(lambda[row]) < 1.0e-12)
+            lambda[row] = 0.25 + 0.1 * static_cast<double>(row);
     }
+    // F5 previous-failure check: vary objective factors and nonzero callback
+    // multipliers independently, then differentiate the complete weighted gradient.
+    auto pinned_problem = equilibrium_support::boundary();
+    pinned_problem.temperature.value = 180.0;
+    epcsaft::HelmholtzModel pinned_model(model_support::neutral_binary());
+    const auto pinned = epcsaft::equilibrium::compile_problem(
+        pinned_model, pinned_problem
+    );
+    const auto pinned_point = pinned.generic_point();
+    const auto pinned_rows = callback_rows(pinned);
+    std::vector<double> pinned_lambda(pinned_rows.size());
+    for (std::size_t row = 0; row < pinned_lambda.size(); ++row)
+        pinned_lambda[row] = 0.35 + 0.1 * static_cast<double>(row);
+    // Publish both complete sweeps before either ladder starts evaluating
+    // weighted gradients, so a regular-case failure cannot hide pinned rows.
+    expect_weighted_hessian_gradient_ladder(
+        flash, primal, lambda, "regular"
+    );
+    expect_weighted_hessian_gradient_ladder(
+        pinned, pinned_point, pinned_lambda, "pinned"
+    );
+    const bool regular_ok = check_weighted_hessian_gradient_ladder(
+        flash, primal, lambda, "regular", 1.0e-6
+    );
+    const bool pinned_ok = check_weighted_hessian_gradient_ladder(
+        pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5
+    );
+    CHECK(regular_ok && pinned_ok);
 }
 
 void check_s11() {
@@ -274,6 +799,16 @@ void check_s11() {
     };
     const auto standard = epcsaft::equilibrium::standard_state(300.0, 3, reactions, {});
     const auto affinity = epcsaft::equilibrium::reaction_affinities(reactions, standard);
+    const double affinity_reference = -epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0 * std::log(2.0);
+    recording_support::compare(
+        "standard-affinity", "reaction_affinity", "J/mol", affinity.front(), affinity_reference,
+        recording_support::fields({recording_support::field("T", 300.0),
+                                   recording_support::field("stoichiometry", std::vector<double>{-1.0, 1.0, 0.0}),
+                                   recording_support::field("K", 2.0)}),
+        "Relationship", "reaction-standard-state", "standard affinity follows K=2",
+        "strict_absolute", 1e-10, 0.0,
+        std::abs(affinity.front() - affinity_reference) < 1e-10,
+        "s11-standard-affinity", "reaction", "A", "T,\\nu,K", "A=-RT\\ln K", "reaction");
     CHECK(affinity.size() == 1);
     CHECK(std::isfinite(affinity.front()));
     CHECK(std::abs(affinity.front() + epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0
@@ -294,9 +829,50 @@ void check_s11() {
         }
         const double gap = std::abs(std::log(result.mole_fractions[1] / result.mole_fractions[0])
             + affinity.front() / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * result.temperature.front()));
-        CHECK(gap <= previous);
+        const auto pressure_id = recording_support::number(pressure);
+        const auto previous_gap = std::isfinite(previous)
+            ? recording_support::number(previous) : std::string("none");
+        const auto gap_inputs = recording_support::fields({
+            recording_support::field("T", result.temperature.front()),
+            recording_support::field("P", pressure),
+            recording_support::field("x", result.mole_fractions),
+            recording_support::field("affinity", affinity.front()),
+            recording_support::field("previous_gap", previous_gap),
+        });
+        const bool gap_contracts = std::isfinite(gap) && std::isfinite(previous)
+            && gap <= previous;
+        if (std::isfinite(previous)) {
+            recording_support::compare_custom(
+                (std::string("pressure-gap/") + pressure_id).c_str(),
+                "reaction_equilibrium_gap", "1", gap, previous, gap_inputs,
+                "Relationship", "reaction-equilibrium",
+                "reaction gap contracts as pressure decreases",
+                "isfinite(model) && isfinite(reference) && model <= reference", gap_contracts,
+                "s11-gap", pressure_id.c_str(), "\\Delta", "T,P,\\mathbf{x},A,\\Delta_{previous}",
+                "\\Delta(P)\\leq\\Delta(P_{previous})", "pressure");
+        } else {
+            recording_support::observe(
+                (std::string("pressure-gap/") + pressure_id).c_str(),
+                "reaction_equilibrium_gap", "1", gap, std::nullopt, gap_inputs,
+                "Relationship", "reaction-equilibrium",
+                "first reaction gap establishes the contraction baseline",
+                "s11-gap", pressure_id.c_str(), "\\Delta", "T,P,\\mathbf{x},A",
+                "\\Delta(P_{first})", "pressure");
+        }
+        CHECK(std::isfinite(gap) && (std::isinf(previous) || gap_contracts));
         previous = gap;
-        if (pressure == 1.0e2) CHECK(gap <= 1.0e-3);
+        if (pressure == 1.0e2) {
+            recording_support::compare(
+                "final-gap", "reaction_equilibrium_gap", "1", gap, 0.0,
+                recording_support::fields({recording_support::field("T", result.temperature.front()),
+                                           recording_support::field("P", pressure),
+                                           recording_support::field("x", result.mole_fractions),
+                                           recording_support::field("affinity", affinity.front())}),
+                "Relationship", "reaction-equilibrium", "final reaction gap is below one millith",
+                "reference_or_one", 1.0e-3, 0.0, gap <= 1.0e-3,
+                "s11-final-gap", "final", "\\Delta", "T,P,\\mathbf{x},A", "\\Delta\\leq10^{-3}", "pressure");
+            CHECK(gap <= 1.0e-3);
+        }
     }
 }
 
@@ -304,17 +880,55 @@ void check_s13() {
     epcsaft::HelmholtzModel model(model_support::neutral_binary());
     const auto problem = equilibrium_support::flash(2);
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    const double limit = result.convergence.criterion == nullptr
+        ? 0.0 : convergence_limit(result.convergence);
+    recording_support::compare(
+        "phase-count", "phase_count", "count", static_cast<double>(result.phase_count), 1.0,
+        recording_support::fields({recording_support::field("T", 300.0),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", problem.feed.values),
+                                   recording_support::field("limit", limit)}),
+        "Relationship", "single-phase", "single-phase solve returns one phase",
+        "reference_or_one", 0.0, 0.0, result.phase_count == 1,
+        "s13-phase-count", "phase", "N_{phase}", "T,P,feed", "N_{phase}=1", "phase");
     CHECK(result.success && result.phase_count == 1);
-    const double limit = convergence_limit(result.convergence);
     CHECK(result.mole_fractions.size() == 2);
+    recording_support::compare(
+        "composition-0", "mole_fraction", "1", result.mole_fractions[0], problem.feed.values[0],
+        recording_support::fields({recording_support::field("T", 300.0), recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", problem.feed.values), recording_support::field("limit", limit),
+                                   recording_support::field("component", 0U)}),
+        "Relationship", "feed-balance", "phase composition follows feed", "reference_or_one", limit, 0.0,
+        std::abs(result.mole_fractions[0] - problem.feed.values[0]) <= limit,
+        "s13-composition", "component-0", "x_0", "T,P,feed,component", "x_0=x_{feed,0}", "component");
+    recording_support::compare(
+        "composition-1", "mole_fraction", "1", result.mole_fractions[1], problem.feed.values[1],
+        recording_support::fields({recording_support::field("T", 300.0), recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", problem.feed.values), recording_support::field("limit", limit),
+                                   recording_support::field("component", 1U)}),
+        "Relationship", "feed-balance", "phase composition follows feed", "reference_or_one", limit, 0.0,
+        std::abs(result.mole_fractions[1] - problem.feed.values[1]) <= limit,
+        "s13-composition", "component-1", "x_1", "T,P,feed,component", "x_1=x_{feed,1}", "component");
     CHECK(std::abs(result.mole_fractions[0] - problem.feed.values[0]) <= limit);
     CHECK(std::abs(result.mole_fractions[1] - problem.feed.values[1]) <= limit);
     CHECK(result.molar_densities.size() == 1 && result.molar_densities.front() > 0.0);
     const auto root = epcsaft::solve_density(
         model, 300.0, 1.0e5, problem.feed.values, epcsaft::DensityBranch::Liquid, std::nullopt);
     const double density_limit = std::max(limit, convergence_limit(root.convergence));
-    CHECK(std::abs(1.0 / result.molar_densities.front() - 1.0 / root.molar_density)
-          <= density_limit);
+    const double specific_volume_difference =
+        std::abs(1.0 / result.molar_densities.front() - 1.0 / root.molar_density);
+    recording_support::compare(
+        "density-root", "specific_volume_difference", "m3/mol", specific_volume_difference, 0.0,
+        recording_support::fields({recording_support::field("T", 300.0),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", problem.feed.values),
+                                   recording_support::field("density_limit", density_limit),
+                                   recording_support::field("rho_result", result.molar_densities.front()),
+                                   recording_support::field("rho_root", root.molar_density)}),
+        "Relationship", "density-root", "equilibrium density matches direct density root",
+        "reference_or_one", density_limit, 0.0, specific_volume_difference <= density_limit,
+        "s13-density-root", "liquid", "\\Delta v", "T,P,feed,branch", "\\Delta v\\leq\\ell", "density");
+    CHECK(specific_volume_difference <= density_limit);
 }
 
 void check_s15() {
@@ -334,35 +948,81 @@ void check_s15() {
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     epcsaft::core::Capture deficit_capture;
     const auto failure = epcsaft::equilibrium::solve_equilibrium(model, problem);
-    CHECK(!failure.success && !failure.has_state());
-    CHECK(failure.message.find("phase V vanished") != std::string::npos);
+    recording_support::compare(
+        "vanished-phase", "success", "bool", failure.success ? 1.0 : 0.0, 0.0,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", problem.feed.values),
+                                   recording_support::field("vanished_phase", "V")}),
+        "Relationship", "boundary-failure", "vanished vapor phase is rejected",
+        "reference_or_one", 0.0, 0.0, !failure.success, "s15-vanished-phase", "V",
+        "success", "T,P,feed,phase", "success=0", "phase");
+    const bool failure_status_ok = !failure.success && !failure.has_state();
+    const bool failure_message_ok = failure.message.find("phase V vanished") != std::string::npos;
     double expected_deficit = 1.0;
     bool driving_row = false;
-    const double limit = convergence_limit(failure.convergence);
+    const double limit = failure.convergence.criterion == nullptr
+        ? 0.0 : convergence_limit(failure.convergence);
     for (std::size_t row = 0; row < failure.rows.size(); ++row)
         if (failure.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical
             && failure.rows[row].phase == 1) {
             expected_deficit -= std::exp(-failure.residuals[row]);
             driving_row = driving_row || std::abs(failure.residuals[row]) > limit;
         }
-    CHECK(driving_row);
-    CHECK(failure.message == "phase V vanished; Michelsen deficit "
-          + std::to_string(expected_deficit));
+    const bool exact_failure_message = failure.message
+        == "phase V vanished; Michelsen deficit " + std::to_string(expected_deficit);
     const auto& trace = deficit_capture.trace();
-    CHECK(!trace.spans.empty() && std::string(trace.spans.front().name) == "solve_equilibrium");
+    const bool trace_ok = !trace.spans.empty()
+        && std::string(trace.spans.front().name) == "solve_equilibrium";
     const auto deficit = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
             return event.span == 0 && std::string(event.name) == "michelsen_deficit";
         });
     const auto distance = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
             return event.span == 0 && std::string(event.name) == "phase_distance";
         });
-    CHECK(deficit != trace.events.rend() && deficit->values.size() == 1);
-    CHECK(distance != trace.events.rend() && distance->values.size() == 1);
-    if (deficit != trace.events.rend() && deficit->values.size() == 1)
-        CHECK(std::abs(deficit->values.front() - expected_deficit)
-              <= 1.0e-12 * std::max(1.0, std::abs(expected_deficit)));
-    if (distance != trace.events.rend() && distance->values.size() == 1)
-        CHECK(distance->values.front() >= compiled.feed_composition[1] + compiled.feed_composition[2]);
+    const bool deficit_present = deficit != trace.events.rend() && deficit->values.size() == 1;
+    const bool distance_present = distance != trace.events.rend() && distance->values.size() == 1;
+    bool deficit_ok = false;
+    bool distance_ok = false;
+    if (deficit_present) {
+        deficit_ok = std::abs(deficit->values.front() - expected_deficit)
+            <= 1.0e-12 * std::max(1.0, std::abs(expected_deficit));
+        recording_support::compare(
+            "deficit", "michelsen_deficit", "1", deficit->values.front(), expected_deficit,
+            recording_support::fields({recording_support::field("T", 298.15),
+                                       recording_support::field("P", 1.0e5),
+                                       recording_support::field("feed", problem.feed.values),
+                                       recording_support::field("expected_deficit", expected_deficit)}),
+            "Relationship", "Michelsen-deficit", "trace deficit equals recomputed phase deficit",
+            "reference_or_one", 0.0, 1e-12,
+            deficit_ok,
+            "s15-deficit", "trace", "D", "T,P,feed", "D=1-\\sum_i\\exp(-r_i)", "deficit");
+    }
+    if (distance_present) {
+        const double distance_reference = compiled.feed_composition[1]
+            + compiled.feed_composition[2];
+        distance_ok = std::isfinite(distance->values.front())
+            && std::isfinite(distance_reference)
+            && distance->values.front() >= distance_reference;
+        recording_support::compare_custom(
+            "distance", "phase_distance", "1", distance->values.front(), distance_reference,
+            recording_support::fields({recording_support::field("T", 298.15),
+                                       recording_support::field("P", 1.0e5),
+                                       recording_support::field("feed", problem.feed.values),
+                                       recording_support::field("reference_distance", distance_reference)}),
+            "Relationship", "boundary-failure", "phase distance reaches the vanished-phase feed amount",
+            "isfinite(model) && isfinite(reference) && model >= reference", distance_ok,
+            "s15-distance", "trace", "d", "T,P,feed", "d\\geq n_{vanished}", "trace");
+    }
+    CHECK(failure_status_ok);
+    CHECK(failure_message_ok);
+    CHECK(exact_failure_message);
+    CHECK(trace_ok);
+    CHECK(deficit_present);
+    CHECK(distance_present);
+    CHECK(deficit_ok);
+    CHECK(distance_ok);
+    CHECK(driving_row);
     auto symmetric = equilibrium_support::ascani_reactive_problem();
     symmetric.phases[0].composition_guess.clear();
     symmetric.phases[1].composition_guess.clear();
@@ -389,8 +1049,26 @@ void check_s16() {
         CHECK(result.success);
         if (!result.success) continue;
         const double limit = convergence_limit(result.convergence);
-        for (std::size_t i = 0; i < 6; ++i)
-            CHECK(std::abs(result.mole_fractions[i] - first.mole_fractions[i]) <= limit);
+        for (std::size_t i = 0; i < 6; ++i) {
+            const double difference = std::abs(
+                result.mole_fractions[i] - first.mole_fractions[i]);
+            const auto point = recording_support::number(fraction) + "/" + std::to_string(i);
+            recording_support::compare(
+                (std::string("continuation/") + point).c_str(),
+                "mole_fraction_difference", "1", difference, 0.0,
+                recording_support::fields({recording_support::field("T", problem.temperature.value),
+                                           recording_support::field("P", problem.pressure.value),
+                                           recording_support::field("feed", problem.feed.values),
+                                           recording_support::field("fraction", fraction),
+                                           recording_support::field("component", i),
+                                           recording_support::field("limit", limit),
+                                           recording_support::field("solution", result.mole_fractions)}),
+                "Relationship", "continuation", "continuation composition stays within convergence limit",
+                "reference_or_one", limit, 0.0, difference <= limit,
+                "s16-composition", point.c_str(), "\\Delta x_i",
+                "T,P,feed,\\alpha,component", "\\Delta x_i\\leq\\ell", "component");
+            CHECK(difference <= limit);
+        }
         for (std::size_t phase = 0; phase < 2; ++phase) {
             double affinity = 0.0;
             for (std::size_t row = 0; row < result.rows.size(); ++row)
@@ -398,6 +1076,20 @@ void check_s16() {
                     && result.rows[row].phase == phase)
                     affinity += problem.reactions[0].stoichiometry[result.rows[row].index]
                         * result.residuals[row];
+            recording_support::compare(
+                (std::string("affinity/") + recording_support::number(fraction) + "/"
+                 + std::to_string(phase)).c_str(),
+                "reaction_affinity", "1", affinity, 0.0,
+                recording_support::fields({recording_support::field("T", problem.temperature.value),
+                                           recording_support::field("P", problem.pressure.value),
+                                           recording_support::field("feed", problem.feed.values),
+                                           recording_support::field("fraction", fraction),
+                                           recording_support::field("phase", phase),
+                                           recording_support::field("limit", limit)}),
+                "Relationship", "reaction-equilibrium", "continuation reaction affinity is zero",
+                "reference_or_one", limit, 0.0, std::abs(affinity) <= limit,
+                "s16-affinity", (std::to_string(fraction) + "-" + std::to_string(phase)).c_str(),
+                "A", "T,P,feed,\\alpha,phase", "A=0", "fraction,phase");
             CHECK(std::abs(affinity) <= limit);
         }
     }
@@ -405,16 +1097,17 @@ void check_s16() {
 
 }  // namespace
 
-int main() {
-    equilibrium_support::run_check("S1", [] { check_s1(); });
-    equilibrium_support::run_check("S2", [] { check_s2(); });
-    equilibrium_support::run_check("S6", [] { check_s6(); });
-    equilibrium_support::run_check("S7", [] { check_s7(); });
-    equilibrium_support::run_check("S8", [] { check_s8(); });
-    equilibrium_support::run_check("S10", [] { check_s10(); });
-    equilibrium_support::run_check("S11", [] { check_s11(); });
-    equilibrium_support::run_check("S13", [] { check_s13(); });
-    equilibrium_support::run_check("S15", [] { check_s15(); });
-    equilibrium_support::run_check("S16", [] { check_s16(); });
-    return equilibrium_support::failures == 0 ? 0 : 1;
+int main(int argc, char** argv) {
+    return recording_support::run(argc, argv, {
+        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
+        {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
+        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
+        {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
+        {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
+        {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},
+        {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
+        {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
+        {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},
+        {{"native.equilibrium.s16", "Equilibrium_S16", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*,affinity/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S16", "continuation/*:18,affinity/*:6"}, check_s16},
+    });
 }

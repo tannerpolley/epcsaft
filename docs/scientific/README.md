@@ -9,20 +9,33 @@ Canonical mathematics and algorithms use Markdown with LaTeX display equations
 and plain pseudocode under `engine/docs/`. The equation definitions are edited
 once; their YAML index is generated. Optional HTML/PDF views must render the
 same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
-neither becomes a second Engine specification. This preserves the repository's
-accepted CSE Markdown layout (issue 55).
+neither becomes a second Engine specification. This is the repository's accepted CSE Markdown layout.
 
 The [implementation plan](implementation-plan.md) is the single current gap
 and completion plan. [Dated reviews](reviews/transfer-audit-2026-09-06.md)
 retain numerical evidence and inspected limitations; they do not issue current
-instructions. Obsolete setup documents and worker records live only in Git
-history. The complete pre-consolidation setup is recoverable at
-`2985cd4e09228c7f752c6bbd1d798ba70cfdd6d7`; use
-`git show <commit>:<path>` only for a specific provenance or recovery question.
-The retained cleanup review locates the verified private historical-log archive.
+instructions. Keep a record only while it supports a scientific result,
+derivation, accepted decision or diagnosis. Update current owners in place and
+remove superseded instructions and duplicate progress summaries; Git preserves
+edit history. GitHub issues track bounded delivery and link to the plan's
+scientific qualification rows rather than repeating their status.
 
 [Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
 ceiling; their single numeric owner is `engine/ARCHITECTURE.yaml`.
+
+## Live companion
+
+The Quarto companion in `docs/companion/` presents the current implementation
+plan, thermodynamic comparisons, and implemented/planned verification as one
+local website with Plan and Tests pages. Start the viewer and automatic fast-test
+worker with `python3 tools/serve-roadmap.py --port 8766`; add `--view-only` to
+disable automatic execution. Rendering pages reads current owners and completed
+records without running scientific calculations. The implementation plan owns the
+live-view behavior and limits. The
+[test-system design](test-system-design.md) defines automatic recording, freshness
+and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)
+records the bounded checks. The implementation plan reopens startup persistence
+and integrity-check visibility before accepting this prerequisite to Core work.
 
 ## Maintaining agreement
 

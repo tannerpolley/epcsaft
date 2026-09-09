@@ -1,0 +1,42 @@
+[
+  {
+    "schema_version": 1,
+    "test_id": "planned.matching-model.feos",
+    "title": "FEOS matching-model comparison",
+    "kind": "Numerical",
+    "category": "Properties",
+    "lifecycle": "Planned",
+    "execution_policy": "Explicit",
+    "evidence_expectation": "Numerical",
+    "requirement_id": "M5",
+    "expected_comparison_keys": ["feos/*"],
+    "unmet_prerequisite": "FEOS source packet and an admitted matching implementation."
+  },
+  {
+    "schema_version": 1,
+    "test_id": "planned.matching-model.clapeyron",
+    "title": "Clapeyron matching-model comparison",
+    "kind": "Numerical",
+    "category": "Equilibrium",
+    "lifecycle": "Planned",
+    "execution_policy": "Explicit",
+    "evidence_expectation": "Numerical",
+    "requirement_id": "E1",
+    "expected_comparison_keys": ["clapeyron/*"],
+    "unmet_prerequisite": "Clapeyron source packet and an admitted matching implementation."
+  },
+  {
+    "schema_version": 1,
+    "test_id": "planned.properties.ideal-caloric",
+    "title": "Ideal caloric properties",
+    "kind": "Numerical",
+    "category": "Properties",
+    "lifecycle": "Planned",
+    "execution_policy": "Explicit",
+    "evidence_expectation": "Numerical",
+    "property_group": "Ideal",
+    "requirement_id": "M3",
+    "expected_comparison_keys": ["ideal-caloric/*"],
+    "unmet_prerequisite": "Accepted ideal-gas caloric input correlations and reference conventions."
+  }
+]

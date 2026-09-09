@@ -1,75 +1,124 @@
-# ePC-SAFT Monorepo Agent Contract
+# ePC-SAFT agent operating agreement
 
-This private repository is the single Git and Codex home for the ePC-SAFT
-project. Every agent performing scientific or engineering work uses the
-installed CSE skills and reads `docs/scientific/README.md`,
-`docs/scientific/CONTEXT.md` for the project map and one-driver requirement,
-the relevant accepted ADR, and the nearest
-subtree `AGENTS.md` before selecting the smallest applicable CSE route.
+Build a general fluid thermodynamics platform. The three official applications
+are its first required acceptance uses; application names never select physics.
 
-One scientific slice has one accountable agent from input to evidence. That
-agent may change the exact files needed across `data/`, `engine/`, and
-`analyses/` in one branch. Keep one writer per file and do not create nested
-Git repositories, submodules, sibling-repository dependencies, or separate
-package installations.
+## Start with the current owners
+
+Use the installed CSE skills. Read `docs/scientific/README.md`,
+`docs/scientific/CONTEXT.md` and the nearest subtree `AGENTS.md` before selecting
+the smallest applicable CSE route. Then read only the relevant equations,
+algorithms, accepted decisions and `docs/scientific/implementation-plan.md`
+entries. The project map owns architectural detail and directory responsibilities.
+
+Before Serena inspection, activate the exact checkout root and verify the returned
+path. Keep `.serena/project.yml` and memories as pointers to these current owners,
+not copied doctrine. After changing Serena's project instructions, verify them
+through a fresh server activation; reactivation can reuse cached configuration.
+If the server returns stale instructions, use the current files and report that
+the Serena connection needs restarting.
+
+All equilibrium specifications use one driver and shared thermodynamics.
+Preserve one installed Engine wheel and explicit physical inputs. A scientific
+change updates or explicitly revalidates its mathematics, algorithms, code and
+numerical evidence together. Code behavior cannot redefine accepted doctrine;
+unresolved scientific choices remain explicit in the implementation plan.
+
+## Execution and collaboration
+
+Complete authorized work and relevant verification without repeated permission.
+Resolve routine implementation choices from current evidence. Ask when missing
+scientific inputs or choices materially change the result; continue independent
+work while waiting. Prepare a concrete, reviewable result before requesting any
+additional authority needed for external or destructive actions.
+
+Scope readiness to the scientific slice being built: establish its equations,
+consumed inputs and falsifying checks before implementation, then qualify its
+results before claiming completion. Resolve unrelated preparation with its own
+slice. Treat downstream clones as independent current applications; investigate
+historical inconsistencies only when they affect the current calculation.
+Update affected authoritative docs and their live views in the same change;
+remove superseded instructions instead of appending competing policy. Keep
+progress in the implementation plan and delivery in linked issues. Retain
+records for their scientific use, never merely to narrate task history.
+
+One accountable lead owns each scientific slice across its required files.
+Keep one writer per file. Delegate bounded independent inspections when parallel
+work improves evidence or speed; substantive mathematics, solver and derivative
+changes receive independent review. The lead checks reviewer findings against
+source and evidence; a reviewer opinion alone is not acceptance.
+
+Use the user-selected task model as lead. Keep model identifiers, reasoning
+settings and fallback choices in task configuration. Never silently substitute
+another model for an explicitly requested Astra task or delegate. Do not impose
+a permanent planner/coordinator/worker hierarchy. Keep progress and completion
+reports concise; give detailed scientific explanations when requested.
+
+Work in the attached checkout and preserve unrelated work. Do not create nested
+repositories, submodules, runtime sibling-source dependencies or separate Engine
+installations. Superseded setup and worker instructions live only in Git history;
+consult them only for a specific provenance or recovery question. Retained
+scientific evidence applies to its stated inputs, domain and inspected snapshot.
 
 ## Official downstream applications
 
-The following sibling Git repositories are official downstream applications:
+For current application migration work, use the independent clones in
+`downstream/`; read `downstream/README.md`. This explicit exception permits those
+nested repositories only. Revise instructions/specifications there before any
+change in the real application repositories. Do not import their source at runtime.
 
 - `~/Workspaces/Engineering/MEA-Thermodynamics`
 - `~/Workspaces/Engineering/MEA-Absorption-Column`
 - `~/Workspaces/Engineering/Lithium_Extraction`
 
-When a requested Engine slice requires application implementation or evidence,
-the same accountable agent may inspect, edit, test, and run Git commands in the
-applicable named repository without moving the Codex task attachment. This
-authorization applies only when the task filesystem exposes the target path;
-repository instructions cannot override an app sandbox.
+When a requested Engine slice needs application implementation or evidence, the
+accountable agent may inspect, edit, test and run Git commands in these named
+repositories without moving the task attachment, subject to filesystem access.
+Before each downstream Git mutation, verify its root, branch and working tree,
+read its nearest `AGENTS.md`, and keep its changes separately reviewable.
+Applications consume an explicitly identified non-editable Engine wheel and
+record its SHA-256; they never import the Engine source checkout.
 
-Before every downstream Git mutation, verify the exact repository root,
-branch, and working-tree state, read its nearest `AGENTS.md`, and keep each
-repository's changes separately reviewable. Do not create nested repositories,
-submodules, or runtime sibling-source dependencies. Every application must
-consume an explicitly identified, non-editable Engine wheel and record its
-SHA-256 rather than import the Engine source checkout. Preserve one writer per
-file across the participating repositories.
+## Budgets and verification
 
-Directory ownership remains strict:
+Use `docs/scientific/code-budgets.md`; the sole numeric owner is
+`engine/ARCHITECTURE.yaml:code_budgets`. Work toward the floor target, explain
+soft-ceiling overruns, and obtain an owner-approved amendment before accepting
+hard-ceiling excess. Preserve readable code and required science when simplifying.
 
-- `docs/scientific/`: the project map, accepted decisions and current implementation plan.
-- `engine/`: the sole `epcsaft` runtime, executable topology, canonical mathematics
-  and algorithms, compact numerical evidence, and one native build.
-- `data/`: canonical reusable scientific packets, packet locks, and readiness
-  checks.
-- `analyses/`: retained one-question scientific inputs, scripts, results,
-  figures, optional checks, and reviewed notebooks. Reproductions live under
-  `analyses/reproduction/<short-id>/`.
+Use Numerical Verification-Driven Development. Persistent numerical tests must
+falsify claims through values, identities, derivatives, limits or justified
+reference cases. Do not add API-contract, compatibility, snapshot, prose, mock
+or coverage-only tests. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
+with diagnostics, provenance, failures and claim limits. Expensive installed-wheel
+replays belong in analyses. Readiness checks do not establish numerical agreement.
 
-The root `.codex/environments/environment.toml` is the only Codex environment.
-It creates one root `.venv`, builds `engine/` into one non-editable wheel, and
-rejects split or legacy ePC-SAFT distributions. This is a private,
-in-development scientific engine used by downstream applications, so the
-wheel is built and installed before any test process starts. Use
-`tools/check-affected.sh` for normal work and `tools/check-all.sh` for the
-parallel fast installed-wheel gate, with a warm-wheel target below ten seconds.
-Slow or expensive Engine evidence, analysis reproductions, full native
-clang-tidy, and sanitizers run only by an explicit owner command when their
-specific risk or scientific claim requires them; a changed tool or document
-must not silently invoke them. `tools/run-slice.sh khudaida` owns the canonical
-phase-equilibrium vertical slice.
+The sole environment is `.codex/environments/environment.toml`. Build and install
+the current non-editable wheel before Engine numerical tests or application
+acceptance. Documentation-only and source readiness checks can run without
+building the wheel.
+Use `bash tools/check-affected.sh HEAD` for uncommitted work;
+`bash tools/check-all.sh` is the full fast installed-wheel gate, with a warm-wheel
+target below ten seconds. Slow evidence, analysis reproductions, full native
+clang-tidy and sanitizers require an explicit owner command justified by the
+changed claim. `bash tools/run-slice.sh khudaida` runs the canonical phase-equilibrium
+slice. Broaden or repeat verification only for new changes, failures or unresolved
+risks. This project has no CI/CD.
 
-Use Numerical Verification-Driven Development. Retain homogeneous calculation
-rows once in CSV/TSV and keep JSON results compact, diagnostic, provenance-,
-failure-, and claim-bound.
-Persistent tests must falsify numerical claims; expensive installed-artifact
-replays belong in analyses; builds, lint, typing, schemas, hashes, manifests,
-environments, and path audits are readiness checks. Do not add contract,
-compatibility, legacy, snapshot, prose, mock, or coverage-only tests.
+## Completion
 
-Superseded setup and worker instructions live only in Git history. Retained
-scientific results and source locators are evidence for their stated snapshot;
-read historical records only for a specific provenance or recovery question. This project has no CI/CD. Run the applicable root checks before
-handoff. `codex-cleanup.sh` is an agent closeout action: agents run it, never ask
-the user to run it, and remove only task-created ignored caches or exact
-user-authorized candidates.
+Report the changed behavior, checks actually executed, numerical evidence and
+its limits, unresolved work and Git state. Update the implementation plan only
+when code and evidence support the new capability claim. A successful build,
+readiness check or reviewer opinion is not numerical acceptance.
+
+Run `bash "$HOME/.codex/hooks/codex-cleanup.sh" --repo-root .` after file changes
+or task-owned processes/artifacts. Agents run it; never ask the user to do so.
+Remove only task-created ignored artifacts or exact user-authorized candidates.
+
+For roadmap work, update the implementation plan's authoritative sublayer row at
+start, completion and handoff: status, remaining/actual Astra elapsed hours and
+a dated evidence record. Reopen affected and dependent qualifications when a
+claim changes. Run `python3 tools/check-roadmap.py --write` after row edits; the
+normal readiness gate checks the derived summary. No readiness check alone
+qualifies a scientific row.

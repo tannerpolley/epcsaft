@@ -82,20 +82,20 @@ rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
 Retain failed attempts and initialization/termination details.
 
-For constrained minimization an exact Hessian callback must obey EqID:
-`weighted_lagrangian_hessian` at arbitrary callback points and multipliers.
-The objective factor scales only objective curvature. Pinned nonlinear pressure
-and potential constraints do not have zero curvature merely because an
-objective is constant or multipliers vanish at a solution.
-
-**Open method decision for pinned/free-intensive systems:** qualify an exact
-weighted-curvature constrained method, a root method using the exact row
-Jacobian, or a limited-memory constrained method. The latter must be labelled
-as such in capability claims and architecture checks. This reconciliation
-selects none of these alternatives. Qualify the method within the one-driver
-requirement; do not add independent specification-specific solvers. Exact constraint curvature generally
-requires third energy derivatives; lifting variables does not automatically
-remove that requirement.
+The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
+specification, including pinned/free-intensive and incipient bubble/dew cases.
+Its exact Hessian callback must obey EqID: `weighted_lagrangian_hessian` at
+arbitrary callback points, objective factors and optimizer multipliers. The
+objective factor scales objective curvature only. Pinned nonlinear pressure and
+potential constraints retain their underlying curvature when an objective is
+constant; a zero multiplier makes that constraint’s weighted term zero, without
+removing the required constraint Hessian. Root and limited-memory equilibrium
+replacements are not admitted, and a specification that cannot be represented
+by this shared exact-curvature formulation is unavailable with a named
+diagnostic. Derive all required third energy derivatives on the declared regular
+domain; lifting variables does not automatically remove that requirement. This
+is a capability requirement, not a claim that the current implementation
+satisfies it.
 
 Continuation requires a predictor/corrector, step admission, branch checks and
 explicit stopping behavior. Reusing only an initial seed is not continuation.

@@ -259,6 +259,42 @@ $$
 C^{\circ}_p=A+B\left[\frac{C/T}{\sinh(C/T)}\right]^2+D\left[\frac{E/T}{\cosh(E/T)}\right]^2,\qquad \int C^{\circ}_p\,dT=AT+BC\coth\frac{C}{T}-DE\tanh\frac{E}{T},\qquad \int\frac{C^{\circ}_p}{T}\,dT=A\ln T+B\left[\frac{C}{T}\coth\frac{C}{T}-\ln\sinh\frac{C}{T}\right]-D\left[\frac{E}{T}\tanh\frac{E}{T}-\ln\cosh\frac{E}{T}\right]
 $$
 
+## `cp_ideal_nasa7`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Bounded empirical relation
+- Source: NASA RP-1311 Part I (1994), section 4.2, Eqs. (4.6)-(4.8), https://ntrs.nasa.gov/citations/19950013764
+- Description: Ideal-gas seven-coefficient NASA7 (original NASA/Chemkin) standard-state thermochemistry on each source-declared temperature interval; coefficients a0-a4 give heat capacity and a5-a6 are enthalpy and entropy integration constants.
+- Change note: Uses dimensionless tau=T/(1 K) while preserving the source coefficients' Kelvin convention; P_src is an explicit source standard pressure and P is the caller-declared standard pressure. Do not infer 298.15 K, 1 atm or interval continuity.
+
+$$
+\begin{aligned}
+\tau&=T/T_{\mathrm u},\qquad T_{\mathrm u}=1\,\mathrm K,\qquad T>0,\qquad T\in I_r,\qquad P^{\circ}>0,\qquad P^{\circ}_{\mathrm{src},r}>0,\\
+\frac{C^{\circ}_{p,r}(T)}{R}&=a_{0r}+a_{1r}\tau+a_{2r}\tau^2+a_{3r}\tau^3+a_{4r}\tau^4,\\
+\frac{h^{\circ}_r(T)}{RT}&=a_{0r}+\frac{a_{1r}}{2}\tau+\frac{a_{2r}}{3}\tau^2+\frac{a_{3r}}{4}\tau^3+\frac{a_{4r}}{5}\tau^4+\frac{a_{5r}}{\tau},\\
+\frac{s^{\circ}_r(T,P^{\circ})}{R}&=a_{0r}\ln\tau+a_{1r}\tau+\frac{a_{2r}}{2}\tau^2+\frac{a_{3r}}{3}\tau^3+\frac{a_{4r}}{4}\tau^4+a_{6r}-\ln\frac{P^{\circ}}{P^{\circ}_{\mathrm{src},r}},\\
+\frac{\mathrm d h^{\circ}_r}{\mathrm dT}&=C^{\circ}_{p,r},\qquad T\left(\frac{\partial s^{\circ}_r}{\partial T}\right)_{P^{\circ},P^{\circ}_{\mathrm{src},r}}=C^{\circ}_{p,r}.
+\end{aligned}
+$$
+
+## `cp_ideal_nasa9`
+
+- Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
+- Status: Bounded empirical relation
+- Source: NASA RP-1311 Part I (1994), section 4.2, Eqs. (4.9)-(4.11); McBride, Zehe and Gordon, NASA/TP-2002-211556 (2002), Empirical Equations for Fitting Thermodynamic Functions, Eqs. (1)-(3), https://ntrs.nasa.gov/citations/19950013764 and https://ntrs.nasa.gov/citations/20020085330
+- Description: Ideal-gas nine-coefficient NASA9 (new NASA/Glenn) standard-state thermochemistry on each source-declared temperature interval; coefficients a0-a6 give heat capacity and a7-a8 are enthalpy and entropy integration constants.
+- Change note: Uses dimensionless tau=T/(1 K) while preserving the source coefficients' Kelvin convention; P_src is an explicit source standard pressure and P is the caller-declared standard pressure. Evaluate only on declared intervals, preserve source boundary behavior and do not infer 298.15 K or 1 atm.
+
+$$
+\begin{aligned}
+\tau&=T/T_{\mathrm u},\qquad T_{\mathrm u}=1\,\mathrm K,\qquad T>0,\qquad T\in I_r,\qquad P^{\circ}>0,\qquad P^{\circ}_{\mathrm{src},r}>0,\\
+\frac{C^{\circ}_{p,r}(T)}{R}&=a_{0r}\tau^{-2}+a_{1r}\tau^{-1}+a_{2r}+a_{3r}\tau+a_{4r}\tau^2+a_{5r}\tau^3+a_{6r}\tau^4,\\
+\frac{h^{\circ}_r(T)}{RT}&=-a_{0r}\tau^{-2}+a_{1r}\frac{\ln\tau}{\tau}+a_{2r}+\frac{a_{3r}}{2}\tau+\frac{a_{4r}}{3}\tau^2+\frac{a_{5r}}{4}\tau^3+\frac{a_{6r}}{5}\tau^4+\frac{a_{7r}}{\tau},\\
+\frac{s^{\circ}_r(T,P^{\circ})}{R}&=-\frac{a_{0r}}{2}\tau^{-2}-a_{1r}\tau^{-1}+a_{2r}\ln\tau+a_{3r}\tau+\frac{a_{4r}}{2}\tau^2+\frac{a_{5r}}{3}\tau^3+\frac{a_{6r}}{4}\tau^4+a_{8r}-\ln\frac{P^{\circ}}{P^{\circ}_{\mathrm{src},r}},\\
+\frac{\mathrm d h^{\circ}_r}{\mathrm dT}&=C^{\circ}_{p,r},\qquad T\left(\frac{\partial s^{\circ}_r}{\partial T}\right)_{P^{\circ},P^{\circ}_{\mathrm{src},r}}=C^{\circ}_{p,r}.
+\end{aligned}
+$$
+
 ## `cp_ideal_polynomial`
 
 - Section: Reference thermochemistry / Ideal-gas heat-capacity kinds
@@ -369,9 +405,9 @@ $$
 
 - Section: Native phase coordinates
 - Status: Documentation-only
-- Source: Historical native source-activity convention; reconciliation of its pressure and reference basis remains required by docs/scientific/implementation-plan.md S4
-- Description: Historical trial-pressure fugacity/activity contraction; this expression is not an accepted conversion of a fixed source standard state. P in the displayed formula means P_trial, not P0.
-- Change note: Retained for provenance only until its reference-state derivation is established. Do not infer that a source reference pressure is only provenance, or substitute trial pressure for fixed P0. The accepted pressure-density conversion has a separate ID.
+- Source: Unqualified source-activity conversion; reference-pressure consistency must be established in Properties reference thermochemistry (M3)
+- Description: Trial-pressure fugacity/activity contraction; this expression is not an accepted conversion of a fixed source standard state. P in the displayed formula means P_trial, not P0.
+- Change note: Candidate for checking the reference-state discrepancy; not an adopted conversion. Do not infer that a source reference pressure is only provenance, or substitute trial pressure for fixed P0. The accepted pressure-density conversion has a separate ID.
 
 $$
 \begin{aligned}
@@ -660,7 +696,7 @@ $$
 - Status: Documentation-only
 - Source: EOS Newton correction using Eq.~`pressure_density_derivative`
 - Description: Correct a converged-state log fugacity for its bounded pressure residual.
-- Change note: Retained as provenance after the active-coordinate path adopted an exact extensive-coordinate pressure constraint.
+- Change note: First-order residual-error estimate for comparison with the exact extensive-coordinate pressure constraint; not a replacement for solving that constraint.
 
 $$
 \begin{aligned}
@@ -916,7 +952,7 @@ $$
 - Status: Documentation-only
 - Source: Exact derivative of Eqs.~`residual_chemical_potential` and `log_fugacity_coefficient`
 - Description: Density derivative of log fugacity used by active fixed-pressure observations.
-- Change note: Retained as derivational provenance after the generic extensive-coordinate Hessian replaced the density-specific implementation.
+- Change note: Independent density-coordinate identity for checking the generic extensive-coordinate Hessian.
 
 $$
 \begin{aligned}
@@ -1355,7 +1391,7 @@ $$
 - Status: Bounded empirical relation
 - Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
 - Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
-- Change note: New declared kind; the correlation coefficients are a fittable active-parameter family.
+- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
 
 $$
 \ln K=a+\frac{b}{T}+c\ln T+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
@@ -1367,7 +1403,7 @@ $$
 - Status: Bounded empirical relation
 - Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
 - Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; valid on the declared temperature domain only.
-- Change note: New declared kind; the correlation coefficients are a fittable active-parameter family.
+- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
 
 $$
 -\log_{10}K=\frac{a}{T}+b+cT,\qquad \ln K=-\ln 10\left(\frac{a}{T}+b+cT\right),\qquad \frac{d\ln K}{dT}=\ln 10\left(\frac{a}{T^2}-c\right)
@@ -1649,8 +1685,8 @@ $$
 - Section: Equilibrium
 - Status: Documentation-only
 - Source: [Pereira2012] Eq. 10 and 11
-- Description: Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Historical source method; no current discovery algorithm is selected by this entry.
-- Change note: Recorded so the deviation from the source is visible; a rewrite may adopt either search.
+- Description: Exponential tunneling transform of the tangent-plane distance used by the source for the stage-I search from 10 nc random starts. Source search candidate; not an adopted discovery algorithm.
+- Change note: Evaluate only within a separately reviewed search design using the shared thermodynamic owner.
 
 $$
 f_T(\tilde{\boldsymbol x}, v) = \big(\mathrm{TPD}(\tilde{\boldsymbol x}, v) - d^{*}\big)\exp\!\Big(\frac{p^{*}}{\|\tilde{\boldsymbol x} - \tilde{\boldsymbol x}^{*}\|}\Big),\qquad p^{*} = 10^{-3}.

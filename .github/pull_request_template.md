@@ -19,5 +19,5 @@
 - [ ] This change belongs to this repository's role.
 - [ ] It introduces no duplicate runtime owner or forbidden dependency.
 - [ ] Capability and scientific claims match executable evidence.
-- [ ] Public behavior and ownership pointers are updated when changed.
+- [ ] Affected scientific owners and live views are current; superseded instructions and duplicate progress text are removed.
 - [ ] Worktree, artifact, environment, and draft state remain synchronized.

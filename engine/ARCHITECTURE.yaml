@@ -1,4 +1,4 @@
-version: 15
+version: 16
 # This file states intended structure. Implemented and qualified capability is in
 # docs/scientific/implementation-plan.md; dependencies live in pyproject.toml.
 
@@ -74,6 +74,9 @@ code_budgets: {
   ]
 }
 
+category_labels: {"physics": "Contributions", "model": "Properties"}
+property_categories: [Ideal, Residual, Total]
+
 native:
   root: native
   archive: epcsaft_native
@@ -83,8 +86,8 @@ native:
   layers: [core, physics, model, equilibrium, regression, surface, bindings]
   layer_content:
     core: policy, the declared-choice and convergence contracts, the trace
-    physics: no CppAD types, no solver
-    model: EOS state and exact derivatives, no phase concept
+    physics: Contributions — ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
+    model: Properties — Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
     equilibrium: one equilibrium driver, shared rows, continuation and stability
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for

@@ -11,3 +11,6 @@
 
 # Serena code-navigation state, per checkout
 .serena/
+
+# Owner-requested independent downstream draft clones; not Engine dependencies
+/downstream/

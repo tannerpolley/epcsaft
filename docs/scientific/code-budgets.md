@@ -32,7 +32,7 @@ Spare lines never justify a second thermodynamic or solver owner.
 ## Initial estimate and uncertainty
 
 The September 6 baseline is 8,807 lines in 37 source files. The target allocation
-starts with the existing core, physics and admission owners. Model allows
+starts with the existing Core, Contributions and admission owners. Properties allows
 roughly 675 additional lines for reference thermochemistry, property chains
 and compact derivative actions. Equilibrium allows roughly 1,820: historical
 planning estimated about 1,400 for stability, with the balance assuming reuse
@@ -81,4 +81,4 @@ include/constant/call patterns; size and regex checks cannot establish absence
 of semantic duplication. Scientific/code review must inspect the actual calls.
 
 This budget is a local readiness rule, not CI/CD and not a numerical accuracy or
-runtime-speed threshold. Numerical-evidence design remains the next discussion.
+runtime-speed threshold.

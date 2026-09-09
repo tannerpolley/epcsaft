@@ -1,0 +1,11 @@
+---
+title: Tests & studies
+---
+
+::: {.lead}
+Numerical comparisons and planned checks, organized by scientific category.
+:::
+
+```{=html}
+<div id="companion" data-page="tests" aria-live="polite"><p>Loading current tests…</p></div>
+```

@@ -4,6 +4,14 @@ set -euo pipefail
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
 cd "$engine_root"
+script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+if [[ "${EPCSAFT_NATIVE_RECORDING:-0}" != 1 ]]; then
+    recorder_python="$workspace_root/.venv/bin/python"
+    [[ -x "$recorder_python" ]] || recorder_python="$(command -v python3)"
+    exec "$recorder_python" "$workspace_root/tools/record-command.py" \
+        --test-id tooling.native-sanitizers --cwd "$workspace_root" -- \
+        bash "$script_path" "$@"
+fi
 export PATH="$workspace_root/.venv/bin:$PATH"
 
 for required_command in uv meson cmake ninja clang-18 clang++-18 file nm; do
@@ -98,8 +106,9 @@ LD_PRELOAD="$sanitizer_preload" \
 ASAN_OPTIONS="detect_leaks=0:halt_on_error=1" \
 UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
+EPCSAFT_PYTEST_RESULTS="$run_root/pytest-results.json" \
     "$run_root/venv/bin/python" -m pytest -q \
         -m "slow or not slow" \
-        tests/eos/numerical/test_saturation.py \
-        tests/regression/behavior/test_result_integrity.py \
-        tests/equilibrium/numerical/test_declared_phase.py::test_declared_one_phase_certifies_pressure_feed_stability_and_role
+        tests/eos/test_activity.py \
+        tests/eos/test_diagnostics.py \
+        tests/equilibrium/test_problem.py

@@ -57,12 +57,54 @@ capabilities rather than reproducing the native directory tree.
 | Layer | Owns | Boundary |
 |---|---|---|
 | core | Common constants, parameter coordinates, numerical policy and diagnostics | Small shared foundations; no phase or application selection |
-| physics | Mathematical contributions and association equations | No competing thermodynamic implementation |
-| model | State properties, EOS differentiation, density closure and reference thermochemistry | Single-state calculations and consistent derivative chains |
+| Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
+| Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
 | equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, stability/discovery and solved-state actions | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
 | regression | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; native iterative work has no Python callbacks |
+
+### Residual, ideal and state responsibilities
+
+Contributions owns the ideal-gas Helmholtz formulation and the individual residual
+formulations: hard-chain, dispersion, association and applicable electrolyte terms.
+Residual thermodynamics remains the scientific priority. Ideal thermal correlations
+and mixing contain physical information; reference conventions set enthalpy/entropy
+and other consistent offsets. Ideal thermodynamics is not a synonym for reference
+conventions, and it does not need a separate parallel category.
+
+Properties has three scientific groups:
+
+- **Ideal**: quantities derived from the ideal formulation.
+- **Residual**: quantities derived from the residual formulation.
+- **Total**: assembled physical quantities, including experimental observables,
+  where supported. Assembly follows each quantity's governing definition; it is
+  not always the arithmetic sum of identically named Ideal and Residual outputs.
+
+Preserve the connected differentiation chain and shared calculations across these
+responsibilities. Grouping and naming do not establish implemented availability.
+
+A caller supplies a parameter bundle once to a reusable mixture. Construction
+validates and prepares species/site mappings and genuinely state-independent
+quantities. Temperature-dependent parameters, association fractions, density
+roots and properties require the state inputs and are evaluated there. Shared
+intermediates and useful computed results are reused within the state; retained
+mixture preparation must remain valid across changing temperature and composition.
+
+State requests specify temperature, composition and either density or pressure.
+A pressure request resolves the declared density branch and reuses that resolved
+state. Support both a full bundle and selected properties, computing only the
+required dependencies and derivative orders. Full output means supported
+properties with explicit unavailability for missing required inputs, not invented
+ideal thermal data. Missing ideal calorics must not disable valid residual work.
+Python exposes these capabilities; native owners perform the science and reuse.
+
+Contributions and Properties are the current category names. The internal
+`physics/` and `model/` directories implement their dependency boundary; their
+identifiers do not change the scientific vocabulary. Callable names, output
+container shape, default evaluation policy and pure-fluid/mixture interface
+unification remain bounded design decisions. The plan distinguishes the accepted
+Ideal/Residual/Total organization from currently implemented outputs.
 
 **One equilibrium driver is an owner requirement.** It owns the solve lifecycle
 for all admitted equilibrium specifications and uses one row assembly and one
@@ -72,11 +114,27 @@ numerical kernels. Continuation and phase discovery control sequences of
 problems and reuse the same equilibrium driver where equilibrium is solved;
 their search operations do not duplicate it.
 
-The requirement does not certify the current Ipopt implementation or its
-Hessian. The common driver's numerical method, any mathematically necessary
-internal steps, and their scope must be qualified explicitly. If the requirement
-cannot meet a demanded case within accuracy and cost limits, present that
-specific evidence for an owner decision; do not quietly add a second driver.
+The owner requires a single Ipopt driver with exact curvature, including bubble
+and dew specifications. This does not certify the current implementation or
+promise convergence for every input. Qualify its pinned/free-intensive equations,
+derivatives and cost; report a demonstrated limitation for an owner decision
+rather than substitute another equilibrium method.
+
+Runtime accepts caller-supplied physical inputs and one documented unit system;
+source-parameter validity ranges are the caller's responsibility. Mathematical
+input validity and numerical diagnostics remain Engine responsibilities.
+Phase counts/types are declared by default. Stability and phase search are a
+separate mode selected explicitly at the outset. Caller tolerances govern solve
+requests; available candidates that miss them retain warnings and achieved
+residuals. The required state/property derivative target is directional actions
+through third order on admitted smooth branches, with correct implicit chains.
+Initial fitting targets residual-EOS parameters only; reaction/reference fitting
+is deferred. Concrete input forms and outstanding qualification are recorded in
+the implementation plan's required scientific choices.
+Phase specifications are the first milestone; PH, PS and UV remain required
+later. Initial fitting uses density and phase observations. Public state units
+follow SI molar conventions; composition actions use explicit zero-sum
+directions. The plan records the precise inputs and remaining specifications.
 
 ## How the setup evolves
 
@@ -139,3 +197,17 @@ constructors. Shared solvers must not select physics by an application or paper
 name. All equilibrium specifications use the one driver described above; lower-level
 kernels and search controllers retain their distinct mathematical roles. Residual polar
 terms remain retired by ADR 0006; dipolar relative permittivity is distinct.
+
+
+## Implementation completion order
+
+The owner selected strict layer completion: Core, Contributions, Properties, Equilibrium,
+Regression, Surface, Bindings/Python, then application acceptance. The
+[implementation plan](implementation-plan.md#official-dependency-order-progress--2026-09-08)
+owns sublayer status, generated progress and rough effort estimates.
+Finish and verify each layer's agreed scope before expanding the next; later
+integration defects reopen the affected earlier milestone. Design readiness
+is scoped to the affected slice; the implementation plan owns its gates and
+current execution queue. Infrastructure needed to execute checks is a prerequisite. Existing
+higher layers may be used to verify a lower layer without claiming their own
+completion.

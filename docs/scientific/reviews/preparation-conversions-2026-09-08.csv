@@ -1,0 +1,19 @@
+case,observable,expected,actual,absolute_error,units,scope,status
+CA-water-ethanol,cross association energy,2539.55,2539.55,0.00,K,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+CA-water-ethanol,cross association volume,0.03798098222932118,0.0379809822293211834499624612398250220482856384452314742288956,3.449962461239825022048285638E-18,dimensionless,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+CA-water-isobutanol,cross association energy,2470.0,2470.0,0.0,K,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+CA-water-isobutanol,cross association volume,0.01299623825352431,0.0129962382535243115424706668267371735200364485086842907212102,1.542470666826737173520036449E-18,dimensionless,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+CA-ethanol-isobutanol,cross association energy,2583.85,2583.85,0.00,K,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+CA-ethanol-isobutanol,cross association volume,0.01119849133244554,0.0111984913324455399529419135298190861309759387129760593394873,4.705808647018091386902406129E-20,dimensionless,rev4 recorded versus combining rule at 293.15 K; rev6 rule-only,arithmetic comparison; tolerance not adopted
+RXN-R1,ln K at Tref,-31.17540213354659,-31.17540213354659,0E-14,dimensionless,313.15 K; exact source offset,arithmetic comparison; tolerance not adopted
+RXN-R1,ln K at Tref with rounded offset,-31.17540213354659,-31.17540213354555,1.04E-12,dimensionless,313.15 K; JSON rounded offset,arithmetic comparison; tolerance not adopted
+RXN-R1,maximum representation error,0,7.105427357601002e-15,7.105427357601002E-15,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted
+RXN-R1,maximum rounded-offset shift,1.042721464727947e-12,1.0480505352461478e-12,5.3290705182008E-15,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted
+RXN-R2,ln K at Tref,-14.505037067112742,-14.505037067112735,7E-15,dimensionless,313.15 K; exact source offset,arithmetic comparison; tolerance not adopted
+RXN-R2,ln K at Tref with rounded offset,-14.505037067112742,-14.505037067112221,5.21E-13,dimensionless,313.15 K; JSON rounded offset,arithmetic comparison; tolerance not adopted
+RXN-R2,maximum representation error,0,2.1316282072803006e-14,2.1316282072803006E-14,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted
+RXN-R2,maximum rounded-offset shift,5.213607323639735e-13,5.186961971048731e-13,2.6645352591004E-15,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted
+RXN-R3,ln K at Tref,-23.53653838436904,-23.53653838436904,0E-14,dimensionless,313.15 K; exact source offset,arithmetic comparison; tolerance not adopted
+RXN-R3,ln K at Tref with rounded offset,-23.53653838436904,-23.53653838436852,5.2E-13,dimensionless,313.15 K; JSON rounded offset,arithmetic comparison; tolerance not adopted
+RXN-R3,maximum representation error,0,7.105427357601002e-15,7.105427357601002E-15,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted
+RXN-R3,maximum rounded-offset shift,5.213607323639735e-13,5.293543381412746e-13,7.9936057773011E-15,dimensionless,grid K: 273.15|313.15|498.15,arithmetic comparison; tolerance not adopted

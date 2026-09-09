@@ -3,6 +3,19 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+if [[ "${EPCSAFT_RECORD_LOCK_HELD:-0}" != 1 ]]; then
+    mkdir -p build/numerical-evidence
+    exec {record_lock_fd}>build/numerical-evidence/.lock
+    flock "$record_lock_fd"
+    export EPCSAFT_RECORD_LOCK_HELD=1
+fi
+
+run_recorded() {
+    local test_id="$1"
+    shift
+    python3 tools/record-command.py --test-id "$test_id" -- "$@"
+}
+
 base_ref="${1:-HEAD~1}"
 source_only="${EPCSAFT_CHECK_SOURCE_ONLY:-0}"
 if [[ "$source_only" != 0 && "$source_only" != 1 ]]; then
@@ -20,7 +33,8 @@ mapfile -t changed < <(
         git ls-files --others --exclude-standard
     } | sort -u
 )
-python3 tools/diffstat.py --budgets
+run_recorded tooling.check-all.roadmap python3 tools/check-roadmap.py
+run_recorded tooling.check-all.budgets python3 tools/diffstat.py --budgets
 if ((${#changed[@]} == 0)); then
     echo "no changed paths"
     exit 0
@@ -31,11 +45,11 @@ paths="$(printf '%s\n' "${changed[@]}")"
 docs_only=true
 for path in "${changed[@]}"; do
     case "$path" in
-        docs/*.md|engine/docs/*.md|docs/*.json|docs/*.csv|engine/docs/equations_registry.yaml|engine/ARCHITECTURE.yaml|tools/diffstat.py|AGENTS.md|engine/AGENTS.md|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes|engine/scripts/docs/sync_equation_registry.py|tools/check-affected.sh|tools/check-all.sh) ;;
+        docs/*.md|engine/docs/*.md|docs/*.json|docs/*.csv|engine/docs/equations_registry.yaml|AGENTS.md|engine/AGENTS.md|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes) ;;
         *) docs_only=false ;;
     esac
 done
-python3 engine/scripts/docs/sync_equation_registry.py --check
+run_recorded tooling.check-all.equation-registry python3 engine/scripts/docs/sync_equation_registry.py --check
 if [[ "$docs_only" == true ]]; then
     bash -n tools/check-affected.sh tools/check-all.sh
     echo "documentation readiness passed; no wheel build or numerical tests ran"
@@ -45,9 +59,9 @@ fi
 architecture_inputs=false
 prepare_native_build=0
 if grep -Eq '^(analyses/|engine/)' <<<"$paths"; then
-    .venv/bin/python tools/check-analysis-layout.py
+    run_recorded tooling.check-all.analysis-layout .venv/bin/python tools/check-analysis-layout.py
 fi
-if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|native/|src/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
+if grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|native/|src/|tests/native/)|docs/scientific/|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     architecture_inputs=true
     prepare_native_build=1
 fi
@@ -55,10 +69,10 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pypro
     exec bash tools/check-all.sh
 fi
 if grep -q '^data/' <<<"$paths"; then
-    python3 data/tools/validate_packets.py
+    run_recorded tooling.check-all.packets .venv/bin/python data/tools/validate_packets.py
 fi
 if [[ "$source_only" == 0 ]] && grep -Eq '^(engine/(ARCHITECTURE\.yaml|meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
-    EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
+    run_recorded tooling.check-all.environment env EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then
     build_dir="$(<build/environment-wheel/meson-build-dir)"
@@ -67,7 +81,7 @@ if [[ "$source_only" == 0 && "$architecture_inputs" == true ]]; then
         echo "expected exactly one Engine wheel, found ${#engine_wheels[@]}" >&2
         exit 1
     fi
-    .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "${engine_wheels[0]}"
+    run_recorded tooling.check-all.architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "${engine_wheels[0]}"
 fi
 if grep -q '^engine/' <<<"$paths"; then
     engine_all=false
@@ -102,13 +116,13 @@ if grep -q '^engine/' <<<"$paths"; then
         [[ "$engine_regression" == true ]] && engine_test_paths+=(tests/regression)
     fi
     if [[ "$source_only" == 0 ]] && ((${#engine_test_paths[@]})); then
-        (cd engine && ../.venv/bin/python -m pytest -q -m 'not slow and not expensive' "${engine_test_paths[@]}")
+        run_recorded tooling.check-all.recorded-evidence .venv/bin/python tools/run-numerical-evidence.py --automatic --no-build
     fi
     if grep -Eq '^engine/(src/|tests/)' <<<"$paths"; then
-        (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
+        run_recorded tooling.check-all.ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
     fi
     if grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths"; then
-        (cd engine && ../.venv/bin/mypy)
+        run_recorded tooling.check-all.mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
     fi
     if grep -q '^engine/tools/' <<<"$paths"; then
         bash -n engine/tools/*.sh

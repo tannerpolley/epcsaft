@@ -1,0 +1,13 @@
+[Unit]
+Description=ePC-SAFT greenfield live companion
+
+[Service]
+Type=simple
+WorkingDirectory=~/Workspaces/Engineering/ePC-SAFT-greenfield
+Environment=PATH=~/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 tools/serve-roadmap.py --port 8766
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

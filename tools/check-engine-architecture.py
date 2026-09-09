@@ -8,13 +8,14 @@ structural fact a checker can enforce. Five rules, all cheap, all stdlib:
   2. no Python or pybind11 symbol inside the archive
   3. every "..." include resolves to the same or a lower layer
   4. regression/ may not reach phase stability
-  5. no constexpr name defined twice, no category-1 constant outside physics/
+  5. no constexpr name defined twice, no category-1 constant outside core/
 
 Rule 2 needs a built archive and reports "skipped" without one.
 """
 
 from __future__ import annotations
 
+import argparse
 import ast
 import re
 import subprocess
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 NATIVE = ROOT / "engine" / "native"
 MESON = ROOT / "engine" / "meson.build"
 
+# Internal directory identifiers implement the Contributions/Properties boundary.
 # Include direction: a layer may include itself and anything below it.
 LAYERS = ["core", "physics", "model", "equilibrium", "regression", "surface", "bindings"]
 RANK = {name: index for index, name in enumerate(LAYERS)}
@@ -79,8 +81,18 @@ def rule_one_archive() -> list[str]:
     return bad
 
 
-def rule_archive_is_python_free() -> tuple[list[str], bool]:
-    found = list((ROOT / "engine").glob("build/**/libepcsaft_native.a"))
+def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str], bool]:
+    if build_dir is None:
+        found = sorted((ROOT / "engine").glob("build/**/libepcsaft_native.a"))
+    else:
+        build_dir = build_dir.resolve()
+        if not build_dir.is_dir():
+            return [f"configured build directory does not exist: {build_dir}"], True
+        if not (build_dir / "meson-info" / "meson-info.json").is_file():
+            return [f"not a configured Meson build: {build_dir}"], True
+        found = sorted(build_dir.glob("libepcsaft_native.a"))
+        if len(found) != 1:
+            return [f"expected one native archive in {build_dir}, found {found}"], True
     if not found:
         return [], False
     out = subprocess.run(
@@ -99,6 +111,23 @@ def rule_archive_is_python_free() -> tuple[list[str], bool]:
     if leaked:
         return [f"{found[0].name} exports Python symbols: {leaked[:5]}"], True
     return [], True
+
+
+def verify_identified_wheel(wheel: Path) -> list[str]:
+    wheel = wheel.resolve()
+    if wheel.suffix != ".whl" or not wheel.is_file():
+        return [f"Engine wheel does not exist: {wheel}"]
+    verifier = ROOT / "tools" / "verify-installed-wheel.py"
+    completed = subprocess.run(
+        [sys.executable, str(verifier), "--wheel", str(wheel)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode:
+        detail = (completed.stderr or completed.stdout).strip()
+        return [f"installed-wheel verification failed ({completed.returncode}): {detail}"]
+    return []
 
 
 def rule_include_direction() -> list[str]:
@@ -361,7 +390,14 @@ def rule_exact_hessian_callback() -> list[str]:
 
 
 def main() -> int:
-    archive_findings, archive_built = rule_archive_is_python_free()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--build-dir", type=Path)
+    parser.add_argument("--wheel", type=Path)
+    arguments = parser.parse_args()
+    if (arguments.build_dir is None) != (arguments.wheel is None):
+        parser.error("--build-dir and --wheel must be supplied together")
+
+    archive_findings, archive_built = rule_archive_is_python_free(arguments.build_dir)
     checks = [
         ("one archive, one extension", rule_one_archive()),
         (
@@ -382,6 +418,8 @@ def main() -> int:
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
+    if arguments.wheel is not None:
+        checks.append(("identified installed wheel", verify_identified_wheel(arguments.wheel)))
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")

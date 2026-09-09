@@ -244,12 +244,13 @@ differentiates the displayed composition rule in the common owner.
 
 ### 6.2 Schreckenberg density topology
 
-Yang2024 Eqs. (1a), (2a), and (2b) give the implemented
-Schreckenberg/Uematsu--Frank topology. With `S` the neutral-solvent set,
+Yang2024 Eqs. (1a), (2a), and (2b) specify the
+Schreckenberg/Uematsu--Frank topology; the public input builder does not yet
+admit this family. With `S` the neutral-solvent set,
 
 Defining relation: [EqID: `density_correlation_mixed_parameters`](../equations.md#density_correlation_mixed_parameters), [EqID: `density_correlated_bulk_permittivity`](../equations.md#density_correlated_bulk_permittivity).
 
-The admitted water comparison uses `d_V = 0.3777 dm3 mol^-1` and
+The source water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 `d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,
 `epsilon_r,bulk -> 1` as `rho_m x_solv -> 0`. Every neutral solvent requires
 both parameters; missing records fail closed.
@@ -270,8 +271,8 @@ volume data or a mixing rule.
 
 ### 6.4 Rueben perturbation topology
 
-Rueben2024 Eqs. (4)--(6) are implemented in the source's Angstrom number-density
-basis. Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
+Rueben2024 Eqs. (4)--(6) are specified in the source's Angstrom number-density
+basis; the public input builder does not yet admit this family. Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
 
 Defining relation: [EqID: `effective_dipolar_density`](../equations.md#effective_dipolar_density), [EqID: `dipolar_correlation_integral`](../equations.md#dipolar_correlation_integral), [EqID: `dipolar_perturbation_bulk_permittivity`](../equations.md#dipolar_perturbation_bulk_permittivity).
 
@@ -566,10 +567,11 @@ solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
 Relative-permittivity behavior is selected by one source-neutral Model Family
-choice in the canonical Parameters document. The admitted families are
-ion-fraction suppression, component-permittivity mixing,
-density-volume-temperature, ion-specific suppression,
-dipolar-density perturbation, and solvent-only permittivity. Citations to the
+choice in the canonical Parameters document. The public builder currently admits
+ion-fraction suppression, component-permittivity mixing, ion-specific suppression
+and solvent-only permittivity, plus `none`. Density-volume-temperature and
+dipolar-density perturbation remain specified families requiring implementation
+and qualification before public admission. Citations to the
 papers that support a choice and its coefficients remain in provenance; paper
 names do not select runtime implementations. `Parameters.from_mapping(...)`
 and `Parameters.from_json(...)` parse the same strict document, which must

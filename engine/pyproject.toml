@@ -13,7 +13,8 @@ dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not expensive and not slow'"
+pythonpath = [".."]
+addopts = "-p tools.pytest_recording -m 'not expensive and not slow'"
 markers = [
   "expensive: slow white-box numerical sentinel run explicitly",
   "slow: compact numerical evidence retained for full verification",

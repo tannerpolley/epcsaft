@@ -3,6 +3,7 @@
 #include "model/helmholtz_model.hpp"
 #include "model_support.hpp"
 #include "physics/association.hpp"
+#include "recording_support.hpp"
 
 #include <algorithm>
 #include <array>
@@ -16,7 +17,8 @@
 #include <utility>
 #include <vector>
 
-#define CHECK(condition) do { if (!(condition)) { std::fprintf(stderr, "%s:%d: failed: %s\n", __FILE__, __LINE__, #condition); std::abort(); } } while (false)
+#define CHECK(condition) recording_support::check( \
+    static_cast<bool>(condition), __FILE__, __LINE__, #condition)
 
 namespace {
 
@@ -40,42 +42,96 @@ void classifier_partition() {
     const std::vector<double> residuals = {0.0, v / 2.0, v, 2.0 * v, 5.0 * v, 20.0 * v, 200.0 * v};
     const std::vector<std::optional<double>> floors = {std::nullopt, v / 10.0, v, 10.0 * v};
     const std::vector<std::optional<double>> contractions = {std::nullopt, 0.5, 1.0, 1.5};
-    for (const auto floor : floors) for (const auto contraction : contractions) {
-        for (bool budget : {false, true}) {
-            int previous = -1;
-            for (const double residual : residuals) {
-                const Stop stop = epcsaft::core::classify(
-                    residual, criterion, floor, contraction, budget
-                );
-                CHECK(stop == Stop::converged || stop == Stop::converged_to_floor
-                      || stop == Stop::budget_exhausted || stop == Stop::stalled);
-                CHECK((stop == Stop::converged) == (residual <= v));
-                const bool in_floor = floor.has_value() && residual > v
-                    && residual <= epcsaft::policy::FLOOR_MARGIN.value * *floor;
-                CHECK((stop == Stop::converged_to_floor) == in_floor);
-                const bool exhausted = !((residual <= v) || in_floor) && budget
-                    && (!contraction.has_value() || *contraction < 1.0);
-                CHECK((stop == Stop::budget_exhausted) == exhausted);
-                CHECK(stop_rank(stop) >= previous);
-                previous = stop_rank(stop);
+    std::size_t classifications = 0;
+    bool all_classifications = true;
+    for (std::size_t floor_index = 0; floor_index < floors.size(); ++floor_index) {
+        const auto floor = floors[floor_index];
+        for (std::size_t contraction_index = 0;
+             contraction_index < contractions.size(); ++contraction_index) {
+            const auto contraction = contractions[contraction_index];
+            for (const bool budget : {false, true}) {
+                int previous = -1;
+                for (std::size_t residual_index = 0;
+                     residual_index < residuals.size(); ++residual_index) {
+                    const double residual = residuals[residual_index];
+                    const Stop stop = epcsaft::core::classify(
+                        residual, criterion, floor, contraction, budget
+                    );
+                    ++classifications;
+                    const bool in_floor = floor.has_value() && residual > v
+                        && residual <= epcsaft::policy::FLOOR_MARGIN.value * *floor;
+                    const bool exhausted = !((residual <= v) || in_floor) && budget
+                        && (!contraction.has_value() || *contraction < 1.0);
+                    const int expected = residual <= v ? 0
+                        : in_floor ? 1 : exhausted ? 2 : 3;
+                    const int actual = stop_rank(stop);
+                    const bool verdict = actual == expected && actual >= previous;
+                    const auto point = std::to_string(floor_index) + "/"
+                        + std::to_string(contraction_index) + "/"
+                        + (budget ? "1/" : "0/") + std::to_string(residual_index);
+                    const auto floor_value = floor.has_value()
+                        ? recording_support::number(*floor) : std::string("none");
+                    const auto contraction_value = contraction.has_value()
+                        ? recording_support::number(*contraction) : std::string("none");
+                    recording_support::compare_custom(
+                        (std::string("classification/") + point).c_str(),
+                        "stop_rank", "rank", static_cast<double>(actual),
+                        static_cast<double>(expected),
+                        recording_support::fields({
+                            recording_support::field("criterion", v),
+                            recording_support::field("floor_margin", epcsaft::policy::FLOOR_MARGIN.value),
+                            recording_support::field("residual", residual),
+                            recording_support::field("floor", floor_value),
+                            recording_support::field("contraction", contraction_value),
+                            recording_support::field("budget", budget ? 1U : 0U),
+                            recording_support::field("previous_rank", previous),
+                            recording_support::field("actual_rank", actual),
+                            recording_support::field("expected_rank", expected),
+                        }),
+                        "Relationship", "partition", "classifier returns the expected stop state",
+                        "actual_rank == expected_rank && actual_rank >= previous_rank", verdict,
+                        "d1-classification", point.c_str(), "s", "criterion,residual,floor,contraction,budget",
+                        "s=expected(s) and s_k\\geq s_{k-1}", "floor,contraction,budget,residual");
+                    all_classifications = all_classifications && verdict;
+                    previous = actual;
+                }
             }
         }
     }
+    CHECK(all_classifications);
+    CHECK(classifications == 224);
 }
 
 void contraction_window() {
     epcsaft::core::ResidualHistory history;
     const double q = 0.7;
+    bool all_contractions = true;
     for (std::size_t k = 0; k < 12; ++k) {
         history.push(std::pow(3.0, 1.0) * std::pow(q, static_cast<double>(k)));
         const auto contraction = history.contraction();
         if (k < static_cast<std::size_t>(epcsaft::policy::STALL_WINDOW.value)) {
-            CHECK(!contraction.has_value());
+            all_contractions = all_contractions && !contraction.has_value();
         } else {
-            CHECK(contraction.has_value());
-            CHECK(std::abs(*contraction - q) <= 1e-12 * q);
+            all_contractions = all_contractions && contraction.has_value();
+            if (contraction.has_value())
+                all_contractions = all_contractions
+                    && std::abs(*contraction - q) <= 1e-12 * q;
         }
     }
+    const auto contraction = history.contraction();
+    const bool final_contraction = contraction.has_value()
+        && std::abs(*contraction - q) <= 1e-12 * q;
+    recording_support::compare(
+        "contraction-limit", "contraction", "1", contraction.value_or(0.0), q,
+        recording_support::fields({recording_support::field("q", q),
+                                   recording_support::field("history_length", 12U),
+                                   recording_support::field("window", epcsaft::policy::STALL_WINDOW.value)}),
+        "Relationship", "convergence-history", "contraction estimate reaches q",
+        "reference_or_one", 1.0e-12 * q, 0.0,
+        final_contraction,
+        "d2-contraction", "final", "q", "q,N,window", "q_{estimated}=q", "history");
+    CHECK(all_contractions);
+    CHECK(final_contraction);
 }
 
 void declaration_guards() {
@@ -114,7 +170,8 @@ void declaration_guards() {
 
 void check_density_record(
     epcsaft::HelmholtzModel& model, double temperature, double pressure,
-    const std::vector<double>& composition, epcsaft::DensityBranch branch
+    const std::vector<double>& composition, epcsaft::DensityBranch branch,
+    const char* point_id
 ) {
     const auto result = model.state_at_pressure(
         temperature, pressure, composition, branch
@@ -126,7 +183,20 @@ void check_density_record(
         returned.compressibility_factor
         - pressure / (result.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature)
     );
-    CHECK(std::abs(record.residual - residual) <= 1e-15);
+    const bool residual_matches = std::abs(record.residual - residual) <= 1e-15;
+    recording_support::compare(
+        (std::string("density-residual/") + point_id).c_str(),
+        "density_residual", "1", record.residual, residual,
+        recording_support::fields({recording_support::field("T", temperature),
+                                   recording_support::field("P", pressure),
+                                   recording_support::field("x", composition),
+                                   recording_support::field("rho", result.molar_density),
+                                   recording_support::field("branch", branch == epcsaft::DensityBranch::Liquid ? "liquid" : "vapor")}),
+        "Relationship", "convergence-record", "recorded residual equals recomputed residual",
+        "absolute", 1e-15, 0.0,
+        residual_matches, "d4-density-residual", point_id,
+        "residual", "T,P,\\mathbf{x},\\rho,branch", "r_{record}=r_{state}", "state");
+    CHECK(residual_matches);
     CHECK(record.criterion != nullptr);
     CHECK(std::string(record.criterion->name) == "DENSITY_ROOT_RESIDUAL");
     if (record.stop == Stop::converged) CHECK(record.residual <= record.criterion->value);
@@ -138,24 +208,30 @@ void density_records() {
              std::tuple{200.0, 217800.69494692178},
              std::tuple{240.0, 969152.4807171321}}) {
         check_density_record(ethane, std::get<0>(row), std::get<1>(row), {1.0},
-                             epcsaft::DensityBranch::Vapor);
+                             epcsaft::DensityBranch::Vapor,
+                             (std::string("ethane-") + std::to_string(std::get<0>(row))
+                              + "-vapor").c_str());
         check_density_record(ethane, std::get<0>(row), std::get<1>(row), {1.0},
-                             epcsaft::DensityBranch::Liquid);
+                             epcsaft::DensityBranch::Liquid,
+                             (std::string("ethane-") + std::to_string(std::get<0>(row))
+                              + "-liquid").c_str());
     }
-    check_density_record(ethane, 320.0, 1.0e6, {1.0}, epcsaft::DensityBranch::Vapor);
-    check_density_record(ethane, 320.0, 1.0e6, {1.0}, epcsaft::DensityBranch::Liquid);
+    check_density_record(ethane, 320.0, 1.0e6, {1.0}, epcsaft::DensityBranch::Vapor,
+                         "ethane-320-vapor");
+    check_density_record(ethane, 320.0, 1.0e6, {1.0}, epcsaft::DensityBranch::Liquid,
+                         "ethane-320-liquid");
     epcsaft::HelmholtzModel nine(model_support::nine_species());
     check_density_record(nine, 313.15, 1.0e5,
                          {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0},
-                         epcsaft::DensityBranch::Liquid);
+                         epcsaft::DensityBranch::Liquid, "nine-313-liquid");
     epcsaft::HelmholtzModel aqueous(model_support::aqueous_electrolyte());
     check_density_record(aqueous, 298.15, 1.0e5, {1.0, 0.0, 0.0},
-                         epcsaft::DensityBranch::Liquid);
+                         epcsaft::DensityBranch::Liquid, "aqueous-298-liquid");
 }
 
 void association_record(
     const epcsaft::Parameters& parameters, double density,
-    const std::vector<double>& composition
+    const std::vector<double>& composition, const char* point_id
 ) {
     const auto sigma = epcsaft::segment_sigma(300.0, parameters);
     const auto diameter = epcsaft::segment_diameter(300.0, parameters, sigma);
@@ -172,13 +248,26 @@ void association_record(
     );
     double norm = 0.0;
     for (double value : residuals) norm = std::max(norm, std::abs(value));
+    recording_support::compare(
+        (std::string("association-residual/") + point_id).c_str(),
+        "association_residual", "1", record.residual, norm,
+        recording_support::fields({recording_support::field("T", 300.0),
+                                   recording_support::field("rho", density),
+                                   recording_support::field("x", composition),
+                                   recording_support::field("site_fractions", fractions),
+                                   recording_support::field("residuals", residuals)}),
+        "Relationship", "convergence-record", "association record stores residual norm",
+        "absolute", 1e-15, 0.0, std::abs(record.residual - norm) <= 1e-15,
+        "d5-association-residual", point_id, "r", "T,\\rho,\\mathbf{x},\\chi",
+        "r_{record}=||f(\\chi)||_\\infty", "state");
     CHECK(std::abs(record.residual - norm) <= 1e-15);
 }
 
 void association_records() {
-    association_record(model_support::associating_binary(), 1.0e4, {0.1385, 0.8615});
+    association_record(model_support::associating_binary(), 1.0e4, {0.1385, 0.8615}, "associating");
     association_record(model_support::nine_species(), 1.2e4,
-                      {0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001});
+                      {0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001},
+                      "nine-species");
 }
 
 void same_state(const epcsaft::State& left, const epcsaft::State& right) {
@@ -270,12 +359,13 @@ void trace_invariance() {
 
 }  // namespace
 
-int main() {
-    classifier_partition();
-    contraction_window();
-    declaration_guards();
-    density_records();
-    association_records();
-    trace_invariance();
-    std::printf("diagnostics checks passed\n");
+int main(int argc, char** argv) {
+    return recording_support::run(argc, argv, {
+        {{"native.diagnostics.d1", "Classifier_partition", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "classification/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D1", "classification/*:224"}, classifier_partition},
+        {{"native.diagnostics.d2", "Contraction_window", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "contraction-limit", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D2"}, contraction_window},
+        {{"native.diagnostics.d3", "Declaration_guards", "Package", "Surface", "Explicit", "Outcome_only", nullptr, "S1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D3"}, declaration_guards},
+        {{"native.diagnostics.d4", "Density_convergence_records", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "density-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D4", "density-residual/*:8"}, density_records},
+        {{"native.diagnostics.d5", "Association_convergence_records", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P2", "association-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D5", "association-residual/*:2"}, association_records},
+        {{"native.diagnostics.d6", "Trace_invariance", "Package", "Core", "Explicit", "Outcome_only", nullptr, "B1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D6"}, trace_invariance},
+    });
 }

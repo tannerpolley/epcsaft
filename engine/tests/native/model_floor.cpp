@@ -1,5 +1,6 @@
 #include "model/helmholtz_model.hpp"
 #include "model_support.hpp"
+#include "recording_support.hpp"
 
 #include "core/trace.hpp"
 #include "physics/association.hpp"
@@ -171,7 +172,7 @@ void print_trace_case(epcsaft::HelmholtzModel& model) {
 
 }  // namespace
 
-int main() {
+void run_floor() {
     std::printf("compiler=%s\n", __VERSION__);
     std::ifstream cpuinfo("/proc/cpuinfo");
     std::string line;
@@ -219,5 +220,10 @@ int main() {
     print_trace_case(nine_density);
     epcsaft::HelmholtzModel aqueous(model_support::aqueous_electrolyte());
     print_reference_case(aqueous, 298.15, 1.0e5);
-    return 0;
+}
+
+int main(int argc, char** argv) {
+    return recording_support::run(argc, argv, {
+        {{"native.model_floor", "Model_floor_measurements", "Tooling", "Properties", "Explicit", "Outcome_only", nullptr, "M5", nullptr, "engine/tests/native/model_floor.cpp", "model_floor", "run"}, run_floor},
+    });
 }

@@ -1,33 +1,23 @@
-# Engine Directory Agent Contract
+# Engine-specific instructions
 
-Read root `AGENTS.md`, `../docs/scientific/README.md`,
-`../docs/scientific/CONTEXT.md`, `CONTEXT.md`, and the relevant accepted ADR
-before material work.
+Follow root `AGENTS.md`. Before changing Engine behavior, read the relevant
+canonical mathematics and algorithms mapped in `../docs/scientific/CONTEXT.md`;
+`../docs/scientific/implementation-plan.md` distinguishes required capability
+from installed availability.
 
-This directory owns the sole `epcsaft` distribution and its public
-`epcsaft`, `epcsaft.equilibrium`, and `epcsaft.regression` modules. Keep
-one Python build, one Meson graph, one version, one wheel, and one installed
-module origin. Do not add compatibility imports, alternate package identities,
-installed-EOS discovery, hidden physical defaults, duplicate equation
-owners, or a public C++ ABI without a real external consumer.
+`engine/` owns the sole `epcsaft` runtime. Preserve one Python build, one Meson
+graph, one version, one Python-free native archive and one extension. Follow
+`ARCHITECTURE.yaml` for dependency direction. Native iterative work has no Python
+callbacks; Python maps inputs and results. Do not add compatibility imports,
+alternate package identities, hidden physical defaults or a public C++ ABI
+without an approved scope change and a real external consumer.
 
-An Engine-accountable task owns its full scientific slice across the exact
-needed `data/`, `engine/`, and `analyses/` files in one branch. Engine
-runtime and tests never discover sibling source dynamically. The containing
-monorepo commit binds copied Data fixtures to their packet lock; every
-materialization also requires the packet fingerprint and exact file hashes.
-Analysis reproductions must exercise the installed wheel through public APIs.
+Runtime and tests never discover sibling source dynamically. The monorepo commit
+binds copied Data fixtures to their packet lock; each materialization also retains
+the packet fingerprint and exact file hashes. Analysis reproductions exercise
+the installed wheel through public interfaces.
 
-Use Numerical Verification-Driven Development. Retain homogeneous calculation
-rows once in CSV/TSV and keep JSON results compact, diagnostic, provenance-,
-failure-, and claim-bound. Retain compact tests
-only for numerical values, identities, derivatives, limits, solver or
-equilibrium certificates, manufactured solutions, metamorphic relations, and
-source-backed benchmarks. No API-contract, compatibility, legacy, mock,
-snapshot, prose, solver-label, iteration-count, or coverage-only tests.
-
-The sole environment is `../.codex/environments/environment.toml`. Run the
-applicable root affected/all checks. `codex-cleanup.sh` is an agent closeout
-action: agents run it, never ask the user to run it, and remove only task-created
-ignored caches or exact user-authorized candidates. Historical plans, source records,
-results, and old names are immutable provenance. No CI/CD.
+Numerical checks may cover manufactured solutions, symmetries and justified
+solver/equilibrium certificates. Internal layouts, solver labels, call sequences
+and iteration counts are not numerical correctness criteria; evaluation counts
+and timings are performance evidence for equivalent accepted work.

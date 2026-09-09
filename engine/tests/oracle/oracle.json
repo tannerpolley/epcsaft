@@ -220,62 +220,62 @@
   ],
   "light_alkane_saturation": [
    {
-    "measured_liquid_density_kg_m3": 640.94852,
-    "measured_pressure_pa": 11.080787,
+    "reference_liquid_density_kg_m3": 640.94852,
+    "reference_pressure_pa": 11.080787,
     "species": "ethane",
     "temperature_k": 100.0
    },
    {
-    "measured_liquid_density_kg_m3": 618.94997,
-    "measured_pressure_pa": 352.30167,
+    "reference_liquid_density_kg_m3": 618.94997,
+    "reference_pressure_pa": 352.30167,
     "species": "ethane",
     "temperature_k": 120.0
    },
    {
-    "measured_liquid_density_kg_m3": 596.58156,
-    "measured_pressure_pa": 3813.5564,
+    "reference_liquid_density_kg_m3": 596.58156,
+    "reference_pressure_pa": 3813.5564,
     "species": "ethane",
     "temperature_k": 140.0
    },
    {
-    "measured_liquid_density_kg_m3": 573.55144,
-    "measured_pressure_pa": 21405.224,
+    "reference_liquid_density_kg_m3": 573.55144,
+    "reference_pressure_pa": 21405.224,
     "species": "ethane",
     "temperature_k": 160.0
    },
    {
-    "measured_liquid_density_kg_m3": 549.50874,
-    "measured_pressure_pa": 78638.137,
+    "reference_liquid_density_kg_m3": 549.50874,
+    "reference_pressure_pa": 78638.137,
     "species": "ethane",
     "temperature_k": 180.0
    },
    {
-    "measured_liquid_density_kg_m3": 523.97698,
-    "measured_pressure_pa": 217232.94,
+    "reference_liquid_density_kg_m3": 523.97698,
+    "reference_pressure_pa": 217232.94,
     "species": "ethane",
     "temperature_k": 200.0
    },
    {
-    "measured_liquid_density_kg_m3": 496.27145,
-    "measured_pressure_pa": 492046.39,
+    "reference_liquid_density_kg_m3": 496.27145,
+    "reference_pressure_pa": 492046.39,
     "species": "ethane",
     "temperature_k": 220.0
    },
    {
-    "measured_liquid_density_kg_m3": 465.30887,
-    "measured_pressure_pa": 966787.79,
+    "reference_liquid_density_kg_m3": 465.30887,
+    "reference_pressure_pa": 966787.79,
     "species": "ethane",
     "temperature_k": 240.0
    },
    {
-    "measured_liquid_density_kg_m3": 429.07617,
-    "measured_pressure_pa": 1711835.4,
+    "reference_liquid_density_kg_m3": 429.07617,
+    "reference_pressure_pa": 1711835.4,
     "species": "ethane",
     "temperature_k": 260.0
    },
    {
-    "measured_liquid_density_kg_m3": 382.72712,
-    "measured_pressure_pa": 2806735.8,
+    "reference_liquid_density_kg_m3": 382.72712,
+    "reference_pressure_pa": 2806735.8,
     "species": "ethane",
     "temperature_k": 280.0
    }

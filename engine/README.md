@@ -54,6 +54,17 @@ The Meson graph includes native scientific checks. Run installed-wheel Python
 checks through the root commands; expensive native evidence remains explicit. Do not use `meson
 install`; the wheel is the installation boundary.
 
+The supported direct native test route records one coherent outcome through the
+shared recorder and defaults to the fast suites:
+
+```bash
+bash engine/tools/run-native-tests.sh
+```
+
+It accepts only `contributions`, `properties`, `diagnostics`, and
+`specification`; the equilibrium, boundary, and Properties-floor suites remain
+explicit owner commands.
+
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
 wheel build and installation.

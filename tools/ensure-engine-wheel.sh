@@ -4,6 +4,17 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+# Fingerprints hash sorted file and dependency records.  Pin the collation
+# locale so a shell and the managed companion service select the same cache
+# key regardless of the caller's locale.
+export LC_ALL=C
+
+mkdir -p build/numerical-evidence
+if [[ "${EPCSAFT_RECORD_LOCK_HELD:-0}" != 1 ]]; then
+    exec {record_lock_fd}>build/numerical-evidence/.lock
+    flock "$record_lock_fd"
+fi
+
 prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
 if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
     echo "EPCSAFT_PREPARE_NATIVE_BUILD must be 0 or 1" >&2
@@ -16,6 +27,20 @@ if [[ ! -x "$python" ]]; then
     exit 1
 fi
 export PATH="$repo_root/.venv/bin:$PATH"
+
+# Bind any resulting wheel/native build to the source generation captured
+# before preparation starts.  A source edit during compilation must fail
+# closed instead of stamping the later generation onto an older build.
+preparation_input_generation="$($python - "$repo_root" <<'PY'
+import sys
+from pathlib import Path
+
+from tools.test_records import input_generation
+
+print(input_generation(Path(sys.argv[1]).resolve()))
+PY
+)"
+
 read -r -a cc_command <<<"${CC:-cc}"
 read -r -a cxx_command <<<"${CXX:-c++}"
 for required_command in uv meson cmake ninja patchelf pkg-config sha256sum readlink flock xargs \
@@ -145,7 +170,7 @@ source_files=(
 )
 while IFS= read -r -d '' path; do
     source_files+=("$path")
-done < <(find engine/native engine/src -type f -print0 | sort -z)
+done < <(find engine/native engine/src engine/tests/native -type f -print0 | sort -z)
 while IFS= read -r -d '' path; do
     source_files+=("$path")
 done < <(
@@ -288,9 +313,33 @@ ensure_configured_build() {
     printf '%s\n' "$build_dir" >"$build_dir_stamp"
 }
 
-record_rebuilt_configured_build() {
-    printf '%s\n' "$build_fingerprint" >"$configured_build_stamp"
-    printf '%s\n' "$build_dir" >"$build_dir_stamp"
+record_preparation_binding() {
+    if [[ ! -d "$build_dir" ]]; then
+        return 0
+    fi
+    "$python" - "$repo_root" "$build_dir" "$1" "$preparation_input_generation" <<'PY'
+import sys
+from pathlib import Path
+
+from tools.test_records import atomic_json, input_generation, sha256
+
+root = Path(sys.argv[1]).resolve()
+build_dir = Path(sys.argv[2]).resolve()
+wheel = Path(sys.argv[3]).resolve()
+expected_generation = sys.argv[4]
+if not build_dir.is_dir() or not wheel.is_file():
+    raise SystemExit("prepared build or wheel is unavailable")
+current_generation = input_generation(root)
+if current_generation != expected_generation:
+    raise SystemExit("computational inputs changed during wheel preparation")
+atomic_json(root / "build/environment-wheel/preparation.json", {
+    "schema_version": 1,
+    "input_generation": expected_generation,
+    "build_dir": str(build_dir.relative_to(root)),
+    "wheel": str(wheel.relative_to(root)),
+    "wheel_sha256": sha256(wheel),
+})
+PY
 }
 
 mapfile -t wheels < <(find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print 2>/dev/null)
@@ -305,11 +354,12 @@ fi
 if [[ "$wheel_current" == true ]]; then
     wheel="${wheels[0]}"
     if verification_output="$("$python" tools/verify-installed-wheel.py --wheel "$wheel" 2>&1)"; then
-        if [[ "$prepare_native_build" == 1 ]]; then
+        if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
             ensure_configured_build
         fi
         uv pip check --python "$python"
         printf '%s\n' "$verification_output"
+        record_preparation_binding "$wheel"
         echo "Engine wheel is current; native rebuild skipped"
         exit 0
     fi
@@ -369,13 +419,16 @@ wheel="${wheels[0]}"
 uv pip install --python "$python" --no-deps --reinstall-package epcsaft "$wheel"
 uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
-if [[ "$wheel_origin" == rebuilt ]]; then
-    record_rebuilt_configured_build
-elif [[ "$prepare_native_build" == 1 ]]; then
+if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
+    # Wheel creation can update the extension without compiling Meson's test
+    # executables.  Always pass through the configured-build check after a
+    # wheel install, and keep an existing configured tree current even when
+    # the caller did not request a native test preparation.
     ensure_configured_build
 fi
 printf '%s\n' "$build_fingerprint" >"$stamp"
 sha256sum "$wheel" | cut -d ' ' -f 1 >"$wheel_hash_stamp"
+record_preparation_binding "$wheel"
 
 case "$wheel_origin" in
     cache) echo "Engine wheel restored from shared cache for build $build_fingerprint" ;;

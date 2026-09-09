@@ -1,6 +1,7 @@
 #include "equilibrium/problem.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium_support.hpp"
+#include "recording_support.hpp"
 
 #include "core/numerical_policy.hpp"
 
@@ -8,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <string>
 
 namespace {
 
@@ -42,9 +44,40 @@ void check_s3() {
     if (!dew_result.success) return;
     const double limit = std::max(convergence_limit(bubble_result.convergence),
                                   convergence_limit(dew_result.convergence));
+    const auto inputs = recording_support::fields({
+        recording_support::field("T", 180.0), recording_support::field("x", bubble.feed.values),
+        recording_support::field("P_bubble", bubble_result.pressure.front()),
+        recording_support::field("P_dew", dew_result.pressure.front()),
+        recording_support::field("limit", limit),
+    });
+    recording_support::compare(
+        "pressure-roundtrip", "pressure_ratio", "1",
+        dew_result.pressure.front() / bubble_result.pressure.front(), 1.0, inputs,
+        "Relationship", "bubble-dew-roundtrip",
+        "dew pressure reproduces bubble pressure", "reference_or_one", limit, 0.0,
+        std::abs(dew_result.pressure.front() / bubble_result.pressure.front() - 1.0) <= limit,
+        "s3-pressure", "bubble-dew", "P", "T,\\mathbf{x},branch", "P_{dew}=P_{bubble}", "branch");
     CHECK(std::abs(dew_result.pressure.front() / bubble_result.pressure.front() - 1.0) <= limit);
-    CHECK(std::abs(dew_result.mole_fractions[0] - bubble_result.mole_fractions[0]) <= limit);
-    CHECK(std::abs(dew_result.mole_fractions[1] - bubble_result.mole_fractions[1]) <= limit);
+    for (std::size_t component = 0; component < 2; ++component) {
+        const auto point = std::to_string(component);
+        const bool equal = std::abs(
+            dew_result.mole_fractions[component] - bubble_result.mole_fractions[component]
+        ) <= limit;
+        recording_support::compare(
+            (std::string("composition-roundtrip/") + point).c_str(), "mole_fraction", "1",
+            dew_result.mole_fractions[component], bubble_result.mole_fractions[component],
+            recording_support::fields({recording_support::field("T", bubble.temperature.value),
+                                       recording_support::field("P_bubble", bubble_result.pressure.front()),
+                                       recording_support::field("P_dew", dew_result.pressure.front()),
+                                       recording_support::field("feed", bubble.feed.values),
+                                       recording_support::field("component", component),
+                                       recording_support::field("limit", limit)}),
+            "Relationship", "bubble-dew-roundtrip", "dew composition reproduces bubble composition",
+            "reference_or_one", limit, 0.0, equal,
+            "s3-composition", point.c_str(), "x_i", "T,P_{bubble},P_{dew},feed,component",
+            "x_{dew,i}=x_{bubble,i}", "component");
+        CHECK(equal);
+    }
 }
 
 void check_s4() {
@@ -75,7 +108,28 @@ void check_s4() {
         gaps[index++] = std::abs(result.temperature.front() - bubble_result.temperature.front());
         start = result;
     }
-    CHECK(gaps[1] <= gaps[0] / 10.0 && gaps[2] <= gaps[1] / 10.0);
+    for (std::size_t step = 1; step < gaps.size(); ++step) {
+        const bool contracted = std::isfinite(gaps[step])
+            && std::isfinite(gaps[step - 1])
+            && gaps[step] <= gaps[step - 1] / 10.0;
+        const auto point = std::to_string(step);
+        recording_support::compare_custom(
+            (std::string("temperature-ladder/") + point).c_str(),
+            "temperature_gap", "K", gaps[step], gaps[step - 1],
+            recording_support::fields({
+                recording_support::field("T", bubble_result.temperature.front()),
+                recording_support::field("P", bubble_result.pressure.front()),
+                recording_support::field("beta", std::vector<double>{1.0e-2, 1.0e-4, 1.0e-6}),
+                recording_support::field("gaps", std::vector<double>{gaps[0], gaps[1], gaps[2]}),
+                recording_support::field("step", step),
+                recording_support::field("previous_gap", gaps[step - 1]),
+            }),
+            "Relationship", "boundary-limit", "temperature gap contracts by at least one decade",
+            "isfinite(model) && isfinite(reference) && model <= reference / 10", contracted,
+            "s4-temperature-ladder", point.c_str(), "\\Delta T", "T,P,\\beta,step,\\Delta T_{previous}",
+            "\\Delta T_{k+1}\\leq0.1\\Delta T_k", "step");
+        CHECK(contracted);
+    }
 }
 
 void check_s5() {
@@ -98,8 +152,20 @@ void check_s5() {
         model, problem, pressure_result);
     CHECK(temperature_result.success);
     if (!temperature_result.success) return;
-    CHECK(std::abs(temperature_result.temperature.front()
-                   - pressure_result.temperature.front()) <= 1.0e-6);
+    const bool temperature_matches = std::abs(
+        temperature_result.temperature.front() - pressure_result.temperature.front()
+    ) <= 1.0e-6;
+    recording_support::compare(
+        "temperature-roundtrip", "temperature", "K", temperature_result.temperature.front(),
+        pressure_result.temperature.front(),
+        recording_support::fields({recording_support::field("T", pressure_result.temperature.front()),
+                                   recording_support::field("P", pressure_result.pressure.front()),
+                                   recording_support::field("x", problem.feed.values)}),
+        "Relationship", "pressure-temperature-roundtrip", "temperature solve reproduces pressure solve",
+        "reference_or_one", 1.0e-6, 0.0,
+        temperature_matches,
+        "s5-temperature", "roundtrip", "T", "T,P,\\mathbf{x}", "T_{roundtrip}=T", "state");
+    CHECK(temperature_matches);
 }
 
 void check_s9() {
@@ -130,6 +196,21 @@ void check_s9() {
         if (!up.success || !down.success) continue;
         for (std::size_t column = 0; column < point.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column]) / (2.0 * delta);
+            recording_support::compare(
+                (std::string("sensitivity/") + std::to_string(lever_index) + "/"
+                 + std::to_string(column)).c_str(),
+                "equilibrium_sensitivity", "coordinate", derivative[column], centered,
+                recording_support::fields({recording_support::field("T", problem.temperature.value),
+                                           recording_support::field("P", problem.pressure.value),
+                                           recording_support::field("x", problem.feed.values),
+                                           recording_support::field("lever", lever),
+                                           recording_support::field("delta", delta),
+                                           recording_support::field("coordinate", column)}),
+                "Relationship", "finite-difference", "analytic sensitivity matches centered solve",
+                "reference_or_one", 0.0, 1.0e-6,
+                std::abs(derivative[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+                "s9-sensitivity", (std::to_string(lever_index) + "-" + std::to_string(column)).c_str(),
+                "\\partial z/\\partial q", "T,P,\\mathbf{x},\\Delta q", "z_q=\\Delta z/\\Delta q", "lever,coordinate");
             CHECK(std::abs(derivative[column] - centered) <= 1.0e-6
                   * std::max(1.0, std::abs(centered)));
         }
@@ -171,6 +252,21 @@ void check_s9() {
         for (std::size_t column = 0; column < analytic.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column])
                 / (2.0 * delta);
+            recording_support::compare(
+                (std::string("pinned-sensitivity/") + std::to_string(species) + "/"
+                 + std::to_string(column)).c_str(),
+                "equilibrium_sensitivity", "coordinate", analytic[column], centered,
+                recording_support::fields({recording_support::field("T", pinned.temperature.value),
+                                           recording_support::field("P", pinned.pressure.value),
+                                           recording_support::field("x", pinned.feed.values),
+                                           recording_support::field("species", species),
+                                           recording_support::field("delta", delta),
+                                           recording_support::field("coordinate", column)}),
+                "Relationship", "finite-difference", "pinned sensitivity matches centered solve",
+                "reference_or_one", 0.0, 1.0e-6,
+                std::abs(analytic[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+                "s9-pinned-sensitivity", (std::to_string(species) + "-" + std::to_string(column)).c_str(),
+                "\\partial z/\\partial x_i", "T,P,\\mathbf{x},\\Delta x_i", "z_{x_i}=\\Delta z/\\Delta x_i", "species,coordinate");
             CHECK(std::abs(analytic[column] - centered)
                   <= 1.0e-6 * std::max(1.0, std::abs(centered)));
         }
@@ -194,6 +290,20 @@ void check_s9() {
     const auto cold_rows = reactive_free.evaluate(colder).values;
     for (std::size_t row = 0; row < reactive_free.rows.size(); ++row) {
         const double centered = (warm_rows[row] - cold_rows[row]) / (2.0 * temperature_step);
+        recording_support::compare(
+            (std::string("reactive-jacobian/") + std::to_string(row)).c_str(),
+            "equilibrium_jacobian", "1", reactive_jacobian[row * reactive_start.size() + temperature_column], centered,
+            recording_support::fields({recording_support::field("T", 298.15),
+                                       recording_support::field("P", 1.0e5),
+                                       recording_support::field("x", reactive.feed.values),
+                                       recording_support::field("delta_T", temperature_step),
+                                       recording_support::field("row", row)}),
+            "Relationship", "finite-difference", "reactive Jacobian temperature column matches centered rows",
+            "reference_or_one", 0.0, 1.0e-6,
+            std::abs(reactive_jacobian[row * reactive_start.size() + temperature_column] - centered)
+                <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+            "s9-reactive-jacobian", std::to_string(row).c_str(), "J_{r,T}", "T,P,\\mathbf{x},\\Delta T",
+            "J_{r,T}=\\Delta r/\\Delta T", "row");
         CHECK(std::abs(reactive_jacobian[row * reactive_start.size() + temperature_column] - centered)
               <= 1.0e-6 * std::max(1.0, std::abs(centered)));
     }
@@ -214,6 +324,20 @@ void check_s9() {
     for (std::size_t row = 0; row < reactive_fixed.rows.size(); ++row) {
         const double centered = (fixed_warm_rows[row] - fixed_cold_rows[row])
             / (2.0 * temperature_step);
+        recording_support::compare(
+            (std::string("reactive-lever/") + std::to_string(row)).c_str(), "lever_jacobian", "1",
+            reactive_levers[row * lever_width], centered,
+            recording_support::fields({recording_support::field("T", 298.15),
+                                       recording_support::field("P", 1.0e5),
+                                       recording_support::field("x", reactive.feed.values),
+                                       recording_support::field("delta_T", temperature_step),
+                                       recording_support::field("row", row)}),
+            "Relationship", "finite-difference", "lever Jacobian temperature column matches centered rows",
+            "reference_or_one", 0.0, 1.0e-6,
+            std::abs(reactive_levers[row * lever_width] - centered)
+                <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+            "s9-reactive-lever", std::to_string(row).c_str(), "J_{r,T}", "T,P,\\mathbf{x},\\Delta T",
+            "J_{r,T}=\\Delta r/\\Delta T", "row");
         CHECK(std::abs(reactive_levers[row * lever_width] - centered)
               <= 1.0e-6 * std::max(1.0, std::abs(centered)));
     }
@@ -263,6 +387,23 @@ void check_s9() {
         for (std::size_t column = 0; up.success && down.success && column < analytic.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column])
                 / (2.0 * delta);
+            recording_support::compare(
+                (std::string("parameter-sensitivity/") + std::to_string(parameter) + "/"
+                 + std::to_string(column)).c_str(), "equilibrium_sensitivity", "coordinate",
+                analytic[column], centered,
+                recording_support::fields({recording_support::field("T", active_problem.temperature.value),
+                                           recording_support::field("P", active_problem.pressure.value),
+                                           recording_support::field("x", active_problem.feed.values),
+                                           recording_support::field("parameter", parameter),
+                                           recording_support::field("theta", theta),
+                                           recording_support::field("delta", delta),
+                                           recording_support::field("coordinate", column)}),
+                "Relationship", "finite-difference", "active parameter sensitivity matches centered solve",
+                "reference_or_one", 0.0, 1.0e-6,
+                std::abs(analytic[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+                "s9-parameter-sensitivity", (std::to_string(parameter) + "-" + std::to_string(column)).c_str(),
+                "\\partial z/\\partial\\theta", "T,P,\\mathbf{x},\\theta,\\Delta\\theta",
+                "z_\\theta=\\Delta z/\\Delta\\theta", "parameter,coordinate");
             CHECK(std::abs(analytic[column] - centered)
                   <= 1.0e-6 * std::max(1.0, std::abs(centered)));
         }
@@ -286,10 +427,27 @@ void check_s10() {
         plus[column] += delta; minus[column] -= delta;
         const auto up = compiled.evaluate(plus).values;
         const auto down = compiled.evaluate(minus).values;
-        for (std::size_t row = 0; row < values.size(); ++row)
-            CHECK(std::abs(jacobian[row * point.size() + column]
-                          - (up[row] - down[row]) / (2.0 * delta))
-                  <= 1.0e-6 * std::max(1.0, std::abs(up[row] - down[row]) / (2.0 * delta)));
+        for (std::size_t row = 0; row < values.size(); ++row) {
+            const double centered = (up[row] - down[row]) / (2.0 * delta);
+            const auto point_id = std::to_string(row) + "-" + std::to_string(column);
+            recording_support::compare(
+                (std::string("jacobian/") + point_id).c_str(), "equilibrium_jacobian", "1",
+                jacobian[row * point.size() + column], centered,
+                recording_support::fields({recording_support::field("T", 300.0),
+                                           recording_support::field("P", 1.0e5),
+                                           recording_support::field("x", std::vector<double>{0.5, 0.5}),
+                                           recording_support::field("row", row),
+                                           recording_support::field("column", column),
+                                           recording_support::field("delta", delta)}),
+                "Relationship", "finite-difference", "equilibrium Jacobian matches centered residual derivative",
+                "reference_or_one", 0.0, 1.0e-6,
+                std::abs(jacobian[row * point.size() + column] - centered)
+                    <= 1.0e-6 * std::max(1.0, std::abs(centered)),
+                "s10-jacobian", point_id.c_str(), "J", "T,P,\\mathbf{x},\\Delta z",
+                "J_{ij}=\\Delta r_i/\\Delta z_j", "row,col");
+            CHECK(std::abs(jacobian[row * point.size() + column] - centered)
+                  <= 1.0e-6 * std::max(1.0, std::abs(centered)));
+        }
     }
 }
 
@@ -317,6 +475,18 @@ void check_s14() {
     if (!liquid_pinned.success) return;
     const double limit = std::max(convergence_limit(vapor_pinned.convergence),
                                   convergence_limit(liquid_pinned.convergence));
+    recording_support::compare(
+        "pinned-pressure", "pressure_ratio", "1",
+        vapor_pinned.pressure.front() / liquid_pinned.pressure.front(), 1.0,
+        recording_support::fields({recording_support::field("T", 250.0),
+                                   recording_support::field("P", 1.3e6),
+                                   recording_support::field("limit", limit),
+                                   recording_support::field("x", std::vector<double>{1.0})}),
+        "Relationship", "pinned-phase-switch", "switching pinned phase preserves pressure",
+        "reference_or_one", limit, 0.0,
+        std::abs(vapor_pinned.pressure.front() / liquid_pinned.pressure.front() - 1.0) <= limit,
+        "s14-pressure", "phase-switch", "P_{vapor}/P_{liquid}", "T,P,\\mathbf{x},branch",
+        "P_{vapor}=P_{liquid}", "branch");
     CHECK(std::abs(vapor_pinned.pressure.front() / liquid_pinned.pressure.front() - 1.0) <= limit);
 }
 
@@ -326,6 +496,15 @@ void check_s15c() {
     problem.feed.values = {0.5, 0.5};
     problem.temperature.value = 280.0;
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    recording_support::compare(
+        "coincident-failure", "success", "bool", result.success ? 1.0 : 0.0, 0.0,
+        recording_support::fields({recording_support::field("T", 280.0),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("x", problem.feed.values),
+                                   recording_support::field("topology", "boundary")}),
+        "Relationship", "boundary-admission", "coincident phases are rejected",
+        "reference_or_one", 0.0, 0.0, !result.success, "s15c-failure", "boundary",
+        "success", "T,P,\\mathbf{x},topology", "success=0 for coincident phases", "topology");
     CHECK(!result.success);
     CHECK(!result.has_state());
     CHECK(result.message.find("phases_coincide") != std::string::npos);
@@ -334,13 +513,14 @@ void check_s15c() {
 
 }  // namespace
 
-int main() {
-    equilibrium_support::run_check("S3", [] { check_s3(); });
-    equilibrium_support::run_check("S4", [] { check_s4(); });
-    equilibrium_support::run_check("S5", [] { check_s5(); });
-    equilibrium_support::run_check("S9", [] { check_s9(); });
-    equilibrium_support::run_check("S10", [] { check_s10(); });
-    equilibrium_support::run_check("S14", [] { check_s14(); });
-    equilibrium_support::run_check("S15(c)", [] { check_s15c(); });
-    return equilibrium_support::failures == 0 ? 0 : 1;
+int main(int argc, char** argv) {
+    return recording_support::run(argc, argv, {
+        {{"native.boundary.s3", "Boundary_S3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pressure-roundtrip,composition-roundtrip/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S3"}, check_s3},
+        {{"native.boundary.s4", "Boundary_S4", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-ladder/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S4", "temperature-ladder/*:2"}, check_s4},
+        {{"native.boundary.s5", "Boundary_S5", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-roundtrip", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S5"}, check_s5},
+        {{"native.boundary.s9", "Boundary_S9", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "sensitivity/*,pinned-sensitivity/*,reactive-jacobian/*,reactive-lever/*,parameter-sensitivity/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S9"}, check_s9},
+        {{"native.boundary.s10", "Boundary_S10", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S10"}, check_s10},
+        {{"native.boundary.s14", "Boundary_S14", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pinned-pressure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S14"}, check_s14},
+        {{"native.boundary.s15c", "Boundary_S15c", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "coincident-failure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S15c"}, check_s15c},
+    });
 }

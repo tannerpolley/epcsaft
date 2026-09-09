@@ -25,9 +25,12 @@ physical inputs, common parameter identities and owner-supplied derivative
 chains. General platform scope does not introduce compatibility support,
 external catalogs, speculative extension frameworks or a second installation.
 
-The choice does not qualify the existing Ipopt Hessian or select an untested
-replacement method. Numerical method selection and demanded-case acceptance
-remain work in the implementation plan. Material limitations require an owner
+On 2026-09-07 the owner specified one Ipopt driver with exact curvature for
+all admitted equilibrium specifications, including bubble/dew. Root or
+limited-memory equilibrium replacements are not authorized. This requirement
+does not qualify the existing Hessian: pinned/free-intensive formulation,
+derivative correctness and demanded-case cost remain work in the implementation
+plan. Lower-level density/association root kernels remain distinct. Material limitations require an owner
 decision rather than a silent second driver. Solids remain a separately
 justified extension. Runtime budgets retain their current numeric owner.
 
