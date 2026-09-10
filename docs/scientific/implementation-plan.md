@@ -47,7 +47,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 <!-- roadmap-summary:start -->
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
-| Core | ███████░░░ 75.0% (3/4) | 0.25–0.75 | 6.5 (partial) |
+| Core | █████░░░░░ 50.0% (2/4) | 0.25–0.75 | 6.5 (partial) |
 | Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/6) | 12–36 | — |
@@ -56,7 +56,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **3/35 qualified milestones (8.6%)**; **36.25–110.75 remaining Astra hours**.
+Total: **2/35 qualified milestones (5.7%)**; **36.25–110.75 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -246,7 +246,7 @@ flowchart LR
 |---|---|---:|---:|---|---|---|
 | C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside C1. |
 | C2 — Parameter coordinates and scaling | [x] | 0 | 2.0 | C1 | Define and qualify common coordinate identities and dimensional scaling, including derivative coordinate transformations, with one-slot ownership for scalar coordinates. | [2026-09-10: C2 qualification after correction](reviews/core-c2-2026-09-10.md); supervisor correction closed by exact-one-index validation, red/value evidence, corrected installed-wheel gates, and independent `Supported` review. |
-| C3 — Diagnostics and availability | [x] | 0 | 2.0 | C1 | Correct solver budget classification and reject nonfinite density candidates before publication; retain falsifying evidence and independent review. | [2026-09-10: C3 correction qualification](reviews/core-c3-2026-09-10.md); final implementation/evidence tree `eed3fa0`, installed wheel `ad43c6c7b72282b1bbda0cd3c057d44f4a54c9b8970fac47d6bd453fa951e6d6`, producer-loop falsifiers and current-wheel replays passed, fresh independent `Supported` review passed; pinned F5 remains outside scope. |
+| C3 — Diagnostics and availability | [-] | 0 | 2.0 | C1 | Correct solver budget classification and reject nonfinite density candidates before publication; retain falsifying evidence and independent review. | [2026-09-10: C3 correction review pending](reviews/core-c3-2026-09-10.md); implementation tree `67e3c40`, installed wheel `f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7`, scripted producer harness removed, genuine current-wheel replays passed, density publication branches source-reviewed only, fresh independent review pending; pinned F5 remains outside scope. |
 | C4 — Core qualification | [ ] | 0.25–0.75 | — | C2, C3 | Focused checks, cost review and independent acceptance. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 
 ```mermaid
@@ -458,7 +458,7 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core C1, C2 and C3 are qualified; C4 remains queued. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core C1 and C2 are qualified; the C3 harness-removal correction is in final review and C4 remains queued. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
@@ -466,8 +466,8 @@ Current stage: bounded Core C1, C2 and C3 are qualified; C4 remains queued. The 
 | C1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
 | C1-correction | Correct and requalify C1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
 | C2-build | Implement and qualify bounded C2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, scalar exact-one-slot correction, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and C3 remain outside scope. |
-| C3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: distinguish actual Ipopt budget statuses from finite nonconverged tiny-step stalls; reject nonfinite density roots in refine and anchor producers; rebuild, retain current-wheel falsifiers, and pass independent `Supported` review. |
-| Next | C4 qualification | C2 and C3 are qualified; C4 remains separate. |
+| C3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Final review pending: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, and record source-reviewed density branch limits. |
+| Next | C3 review, then C4 qualification | C2 is qualified; C3 review must pass before C4. |
 
 Local C1 design and validation are followed by slice-scoped Core work. Repository
 creation, remote changes and issue publication are separate actions and do not
