@@ -187,23 +187,24 @@ inline ReferenceTensor reference_tensor(
     double volume,
     const std::vector<double>& amounts,
     const std::vector<double>& site_fractions,
-    std::optional<epcsaft::ActiveParameter> active = std::nullopt
+    std::vector<epcsaft::ActiveParameter> active = {}
 ) {
     using AD = CppAD::AD<double>;
     const std::size_t components = parameters.component_count();
     const std::size_t sites_count = site_fractions.size();
-    const std::size_t width = 2 + components + (active.has_value() ? 1 : 0);
+    const std::size_t width = 2 + components + active.size();
     const std::size_t full_width = width + sites_count;
     std::vector<double> point;
     point.reserve(full_width);
     point.push_back(temperature);
     point.push_back(volume);
     point.insert(point.end(), amounts.begin(), amounts.end());
-    if (active.has_value()) {
-        const auto& values = active->family == epcsaft::ParameterFamily::Kij
+    for (const auto& item : active) {
+        const auto& values = item.family == epcsaft::ParameterFamily::Kij
             ? parameters.k_ij
-            : parameters.dispersion_energy_over_k;
-        point.push_back(values[active->indices.front()]);
+            : item.family == epcsaft::ParameterFamily::Lij ? parameters.l_ij
+                                                            : parameters.dispersion_energy_over_k;
+        point.push_back(values[item.indices.front()]);
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     std::vector<AD> independent(point.begin(), point.end());
@@ -219,7 +220,7 @@ inline ReferenceTensor reference_tensor(
     for (const AD& amount : amount_values) composition.push_back(amount / total);
     const std::vector<AD> sites(independent.begin() + width, independent.end());
     std::vector<epcsaft::detail::ActiveParameter> active_set;
-    if (active.has_value()) active_set.push_back(*active);
+    active_set = active;
     const auto tape_parameters = epcsaft::detail::make_tape_parameters(
         parameters, active_set,
         std::vector<AD>(independent.begin() + 2 + components,

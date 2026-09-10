@@ -26,6 +26,28 @@ of the energy. It does not authorize charged physical states. Parameters fixed
 by the request have zero derivatives; dependent combining-rule outputs carry
 the chain from independent coefficients. Discrete topology is not fitted.
 
+## ALG-PARAMETERS
+
+Resolve source values into documented native units before constructing active
+coordinates. Native units are dimensionless for segment count, `k_ij`, `l_ij`,
+and association volume; Angstrom for sigma; and Kelvin for dispersion and
+association energy-over-k. An active scalar owns one native slot for a scalar
+family, both reciprocal row-major off-diagonal slots for an unordered
+unlike-component `k_ij` or `l_ij` pair, or the corresponding association
+site-pair slots. A distinct association site pair owns both reciprocal slots;
+a same-site association pair may own its one diagonal slot when active.
+Component diagonal interaction slots remain fixed. The coordinate is linear in
+every owned slot, with unit derivative; no implicit log or normalization is
+applied.
+
+For `p_native = s_p p_source`, apply
+`dF/dp_source = s_p dF/dp_native` and
+`d2F/(dp_source dq_source) = s_p s_q
+d2F/(dp_native dq_native)`. Active pair derivatives sum the two raw
+reciprocal-slot derivatives. The pure packing coefficient has no `k_ij` or
+`l_ij` dependency under `packing_coefficient_parameter_derivative`; their
+energy and cross-diameter dependencies remain on the common Helmholtz tape.
+
 ## ALG-ASSOCIATION
 
 Use EqID: `association_mass_action`, EqID: `association_helmholtz` and the

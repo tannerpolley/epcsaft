@@ -507,9 +507,9 @@ void hessian_reference() {
     const auto nine_reference = properties_support::reference_tensor(
         nine_parameters, 300.0, 1.0 / 1.2e4, nine_amounts,
         nine_result.site_fractions,
-        epcsaft::ActiveParameter{
+        std::vector<epcsaft::ActiveParameter>{epcsaft::ActiveParameter{
             epcsaft::ParameterFamily::DispersionEnergyOverK, {0}
-        }
+        }}
     );
     const auto nine_inputs = recording_support::fields({
         model_inputs(nine_parameters, 300.0, 1.0 / 1.2e4, nine_amounts),
@@ -1178,6 +1178,164 @@ void cache_invariance() {
     }
 }
 
+void core_c2_parameter_coordinates() {
+    auto rejects = [](epcsaft::Parameters parameters,
+                      epcsaft::ActiveParameter active) {
+        try {
+            (void)epcsaft::HelmholtzModel(std::move(parameters), {active});
+        } catch (const std::invalid_argument&) {
+            return true;
+        }
+        return false;
+    };
+    auto binary = properties_support::neutral_binary();
+    const auto kij = epcsaft::ParameterFamily::Kij;
+    const auto lij = epcsaft::ParameterFamily::Lij;
+    CHECK(rejects(binary, {kij, {1}}));
+    CHECK(rejects(binary, {kij, {0}}));
+    CHECK(rejects(binary, {kij, {1, 1}}));
+    CHECK(rejects(binary, {kij, {1, 3}}));
+    CHECK(rejects(binary, {lij, {1}}));
+    CHECK(rejects(binary, {lij, {0}}));
+    (void)epcsaft::HelmholtzModel(binary, {{kij, {1, 2}}, {lij, {1, 2}}});
+
+    auto associating = properties_support::associating_binary();
+    CHECK(!rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}}));
+    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1}}));
+    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}));
+    auto self = associating;
+    self.association_active[0] = 1;
+    self.association_energy_over_k[0] = 1200.0;
+    self.association_volume[0] = 0.1;
+    CHECK(!rejects(self, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}));
+
+    const auto association_active = std::vector<epcsaft::ActiveParameter>{
+        {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}}
+    };
+    epcsaft::HelmholtzModel association_model(associating, association_active);
+    const auto association_base = association_model.evaluate(
+        376.88, 1.0e-4, {0.4, 0.6}, epcsaft::DerivativeOrder::Gradient);
+    auto association_shifted = [&](double delta) {
+        auto p = associating;
+        p.association_energy_over_k[1] += delta;
+        p.association_energy_over_k[4] += delta;
+        return epcsaft::HelmholtzModel(std::move(p), association_active).evaluate(
+            376.88, 1.0e-4, {0.4, 0.6}, epcsaft::DerivativeOrder::Value).value;
+    };
+    constexpr double association_h = 1e-5;
+    const double association_fd =
+        (association_shifted(association_h) - association_shifted(-association_h))
+        / (2.0 * association_h);
+    const double association_error = std::abs(
+        association_base.gradient.back() - association_fd)
+        / std::max(1.0, std::abs(association_fd));
+    CHECK(association_error <= 5e-6);
+
+    constexpr double temperature = 300.0;
+    constexpr double volume = 1.0 / 1.2e4;
+    const std::vector<double> amounts = {0.4, 0.6};
+    binary.l_ij[1] = binary.l_ij[2] = 0.2;
+    const auto active = std::vector<epcsaft::ActiveParameter>{{kij, {1, 2}}, {lij, {1, 2}}};
+    epcsaft::HelmholtzModel model(binary, active);
+    const auto base = model.evaluate(temperature, volume, amounts, epcsaft::DerivativeOrder::Hessian);
+    const auto fixed = epcsaft::HelmholtzModel(binary).evaluate(
+        temperature, volume, amounts, epcsaft::DerivativeOrder::Value);
+    CHECK(close(base.value, fixed.value, 1e-12));
+    const double h = 1e-5;
+    auto shifted = [&](double dk, double dl, epcsaft::DerivativeOrder order) {
+        auto p = binary;
+        p.k_ij[1] += dk; p.k_ij[2] += dk;
+        p.l_ij[1] += dl; p.l_ij[2] += dl;
+        return epcsaft::HelmholtzModel(std::move(p), active).evaluate(
+            temperature, volume, amounts, order);
+    };
+    const auto plus_k = shifted(h, 0.0, epcsaft::DerivativeOrder::Value);
+    const auto minus_k = shifted(-h, 0.0, epcsaft::DerivativeOrder::Value);
+    const auto plus_l = shifted(0.0, h, epcsaft::DerivativeOrder::Value);
+    const auto minus_l = shifted(0.0, -h, epcsaft::DerivativeOrder::Value);
+    const double gradient_k_fd = (plus_k.value - minus_k.value) / (2.0 * h);
+    const double gradient_l_fd = (plus_l.value - minus_l.value) / (2.0 * h);
+    CHECK(close(base.gradient[base.gradient.size() - 2], gradient_k_fd, 5e-6));
+    CHECK(close(base.gradient.back(), gradient_l_fd, 5e-6));
+    CHECK(std::abs(base.gradient[base.gradient.size() - 2]) > 1e-12);
+    CHECK(std::abs(base.gradient.back()) > 1e-12);
+
+    const auto plus_direction = shifted(0.7 * h, -0.4 * h, epcsaft::DerivativeOrder::Gradient);
+    const auto minus_direction = shifted(-0.7 * h, 0.4 * h, epcsaft::DerivativeOrder::Gradient);
+    const auto width = base.gradient.size();
+    double error = 0.0;
+    double scaling_error = 0.0;
+    for (std::size_t row = 0; row < width; ++row) {
+        const double fd = (plus_direction.gradient[row] - minus_direction.gradient[row]) / (2.0 * h);
+        const double action = base.hessian[row * width + width - 2] * 0.7
+            + base.hessian[row * width + width - 1] * -0.4;
+        error = std::max(error, std::abs(fd - action) / std::max(1.0, std::abs(fd)));
+    }
+    CHECK(error <= 5e-6);
+
+    const double scales[2] = {2.0, 3.0};
+    for (std::size_t i = 0; i < 2; ++i) {
+        const auto source_plus = shifted(i == 0 ? scales[i] * h : 0.0,
+                                          i == 1 ? scales[i] * h : 0.0,
+                                          epcsaft::DerivativeOrder::Value);
+        const auto source_minus = shifted(i == 0 ? -scales[i] * h : 0.0,
+                                           i == 1 ? -scales[i] * h : 0.0,
+                                           epcsaft::DerivativeOrder::Value);
+        const double source_gradient = (source_plus.value - source_minus.value) / (2.0 * h);
+        const double gradient_error = std::abs(source_gradient
+            - scales[i] * base.gradient[width - 2 + i])
+            / std::max(1.0, std::abs(source_gradient));
+        scaling_error = std::max(scaling_error, gradient_error);
+        CHECK(gradient_error <= 5e-6);
+        for (std::size_t j = 0; j < 2; ++j) {
+            auto source_plus_gradient = shifted(
+                i == 0 ? scales[i] * h : 0.0, i == 1 ? scales[i] * h : 0.0,
+                epcsaft::DerivativeOrder::Gradient);
+            auto source_minus_gradient = shifted(
+                i == 0 ? -scales[i] * h : 0.0, i == 1 ? -scales[i] * h : 0.0,
+                epcsaft::DerivativeOrder::Gradient);
+            const double source_hessian =
+                (source_plus_gradient.gradient[width - 2 + j]
+                 - source_minus_gradient.gradient[width - 2 + j])
+                * scales[j] / (2.0 * h);
+            const double expected = base.hessian[(width - 2 + i) * width + width - 2 + j]
+                * scales[i] * scales[j];
+            const double hessian_error = std::abs(source_hessian - expected)
+                / std::max(1.0, std::abs(source_hessian));
+            scaling_error = std::max(scaling_error, hessian_error);
+            CHECK(hessian_error <= 5e-6);
+        }
+    }
+    recording_support::expect_group(recording_support::active_test_id(),
+        "c2-falsifier", "c2-falsifier", 1, "Core C2 Hessian action", "row");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "c2-association-gradient", "c2-association-gradient", 1,
+        "Core C2 association gradient", "row");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "c2-scaling", "c2-scaling", 1, "Core C2 source scaling", "row");
+    recording_support::compare("c2-falsifier", "relative_error", "1", error, 0.0,
+        recording_support::fields({model_inputs(binary, temperature, volume, amounts),
+                                   recording_support::field("h", h),
+                                   recording_support::field("v", std::vector<double>{0.7, -0.4})}), "Relationship",
+        "centered-difference", "C2 Hessian action", "reference_or_one", 0.0, 5e-6,
+        error <= 5e-6, "c2-falsifier", "H*v", "relative_error", "H*v", "T,V,n",
+        "H*v=finite_difference");
+    recording_support::compare("c2-association-gradient", "relative_error", "1",
+        association_error, 0.0,
+        recording_support::fields({model_inputs(associating, 376.88, 1.0e-4, {0.4, 0.6}),
+                                   recording_support::field("h", association_h),
+                                   recording_support::field("pair", "1,4")}),
+        "Relationship", "centered-difference", "association gradient", "reference_or_one",
+        0.0, 5e-6, association_error <= 5e-6, "c2-association-gradient", "distinct-site-pair",
+        "relative_error", "dA/dtheta", "T,V,n", "dA/dtheta=finite_difference");
+    recording_support::compare("c2-scaling", "relative_error", "1", scaling_error, 0.0,
+        recording_support::fields({recording_support::field("h", h),
+                                   recording_support::field("S", std::vector<double>{2.0, 3.0})}),
+        "Relationship", "scaled-coordinate", "source gradient/Hessian scaling",
+        "reference_or_one", 0.0, 5e-6, scaling_error <= 5e-6, "c2-scaling", "S=diag(2,3)",
+        "relative_error", "Sg,S H S", "T,V,n", "source=S*native");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1189,6 +1347,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4"}, hessian_fd_and_pressure_slope},
         {{"native.properties.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-inert,all-pairs-active", "engine/tests/native/properties_checks.cpp", "properties_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
+        {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "C2", "c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
     });

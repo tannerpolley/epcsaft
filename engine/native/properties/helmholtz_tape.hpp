@@ -28,7 +28,7 @@ struct TapeParameters final {
     std::vector<AD> k_ij;
     std::vector<double> k_ij_reciprocal_temperature_slope;
     std::vector<double> k_ij_reference_temperature_k;
-    std::vector<double> l_ij;
+    std::vector<AD> l_ij;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;
@@ -63,6 +63,7 @@ enum class ParameterFamily {
     SigmaConstant,
     DispersionEnergyOverK,
     Kij,
+    Lij,
     AssociationEnergyOverK,
     AssociationVolume,
 };
@@ -116,6 +117,9 @@ inline TapeParameters make_tape_parameters(
     result.k_ij = active_vector(
         parameters.k_ij, active, ParameterFamily::Kij, coordinates
     );
+    result.l_ij = active_vector(
+        parameters.l_ij, active, ParameterFamily::Lij, coordinates
+    );
     result.association_energy_over_k = active_vector(
         parameters.association_energy_over_k,
         active,
@@ -135,7 +139,6 @@ inline TapeParameters make_tape_parameters(
     result.k_ij_reciprocal_temperature_slope =
         parameters.k_ij_reciprocal_temperature_slope;
     result.k_ij_reference_temperature_k = parameters.k_ij_reference_temperature_k;
-    result.l_ij = parameters.l_ij;
     result.site_component = parameters.site_component;
     result.site_multiplicity = parameters.site_multiplicity;
     result.association_active = parameters.association_active;
