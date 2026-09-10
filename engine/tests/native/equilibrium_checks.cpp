@@ -257,6 +257,35 @@ std::vector<double> weighted_gradient(
     return result;
 }
 
+std::vector<double> kkt_gradient(
+    const epcsaft::equilibrium::CompiledSystem& compiled,
+    const std::vector<double>& point,
+    const std::vector<double>& multipliers
+) {
+    const auto objective = compiled.objective_gradient(point);
+    const auto jacobian = compiled.jacobian(point);
+    const auto rows = callback_rows(compiled);
+    if (objective.size() != point.size()
+        || jacobian.size() != compiled.rows.size() * point.size()
+        || multipliers.size() != rows.size()) {
+        throw std::runtime_error("KKT gradient shape mismatch");
+    }
+    auto result = objective;
+    for (std::size_t multiplier = 0; multiplier < rows.size(); ++multiplier) {
+        for (std::size_t column = 0; column < point.size(); ++column) {
+            result[column] += multipliers[multiplier]
+                * jacobian[rows[multiplier] * point.size() + column];
+        }
+    }
+    return result;
+}
+
+double maximum_abs(const std::vector<double>& values) {
+    double result = 0.0;
+    for (const double value : values) result = std::max(result, std::abs(value));
+    return result;
+}
+
 void expect_weighted_hessian_gradient_ladder(
     const epcsaft::equilibrium::CompiledSystem& compiled,
     const std::vector<double>& point,
@@ -751,6 +780,145 @@ void check_c1_amount_scale() {
     }
 }
 
+void check_c1_multiplier_scale() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto small = equilibrium_support::flash(2);
+    auto large = small;
+    large.feed.values = {5.0, 5.0};
+    const auto small_result = epcsaft::equilibrium::solve_equilibrium(model, small);
+    const auto large_result = epcsaft::equilibrium::solve_equilibrium(model, large);
+    CHECK(small_result.success && large_result.success);
+    if (!small_result.success || !large_result.success) return;
+
+    const auto small_compiled = epcsaft::equilibrium::compile_problem(model, small);
+    const auto large_compiled = epcsaft::equilibrium::compile_problem(model, large);
+    const auto small_rows = callback_rows(small_compiled);
+    const auto large_rows = callback_rows(large_compiled);
+    CHECK(small_rows == large_rows);
+    CHECK(small_result.constraint_multipliers.size() == small_rows.size());
+    CHECK(large_result.constraint_multipliers.size() == large_rows.size());
+    if (small_rows != large_rows
+        || small_result.constraint_multipliers.size() != small_rows.size()
+        || large_result.constraint_multipliers.size() != large_rows.size()) {
+        return;
+    }
+
+    const std::vector<double> small_point(
+        small_result.coordinates.begin(),
+        small_result.coordinates.begin()
+            + static_cast<std::ptrdiff_t>(small_compiled.primal_size));
+    const std::vector<double> large_point(
+        large_result.coordinates.begin(),
+        large_result.coordinates.begin()
+            + static_cast<std::ptrdiff_t>(large_compiled.primal_size));
+    const auto small_objective = small_compiled.objective_gradient(small_point);
+    const auto large_objective = large_compiled.objective_gradient(large_point);
+    const auto small_kkt = kkt_gradient(
+        small_compiled, small_point, small_result.constraint_multipliers);
+    const auto large_kkt = kkt_gradient(
+        large_compiled, large_point, large_result.constraint_multipliers);
+    const double small_kkt_scale = std::max(1.0, maximum_abs(small_objective));
+    const double large_kkt_scale = std::max(1.0, maximum_abs(large_objective));
+    const double small_kkt_limit =
+        100.0 * epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value * small_kkt_scale;
+    const double large_kkt_limit =
+        100.0 * epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value * large_kkt_scale;
+    const double small_kkt_residual = maximum_abs(small_kkt);
+    const double large_kkt_residual = maximum_abs(large_kkt);
+    const auto kkt_inputs = recording_support::fields({
+        recording_support::field("T", 300.0),
+        recording_support::field("P", 1.0e5),
+        recording_support::field("feed_small", small.feed.values),
+        recording_support::field("feed_large", large.feed.values),
+        recording_support::field("feed_total_small", small_compiled.feed_total),
+        recording_support::field("feed_total_large", large_compiled.feed_total),
+        recording_support::field("active_constraint_count", small_rows.size()),
+        recording_support::field("small_objective_gradient", small_objective),
+        recording_support::field("large_objective_gradient", large_objective),
+        recording_support::field("small_constraint_multipliers",
+            small_result.constraint_multipliers),
+        recording_support::field("large_constraint_multipliers",
+            large_result.constraint_multipliers),
+        recording_support::field("small_kkt_scale", small_kkt_scale),
+        recording_support::field("large_kkt_scale", large_kkt_scale),
+    });
+    recording_support::compare(
+        "c1-multiplier-scale/kkt-small", "kkt_residual", "1", small_kkt_residual, 0.0,
+        kkt_inputs, "Relationship", "KKT", "small-feed returned multipliers satisfy KKT",
+        "reference_or_one", small_kkt_limit, 0.0,
+        small_kkt_residual <= small_kkt_limit, "c1-multiplier-scale", "small",
+        "||r_KKT||", "T,P,feed,lambda,scale", "||r_KKT||<=100*row_residual*scale", "feed");
+    recording_support::compare(
+        "c1-multiplier-scale/kkt-large", "kkt_residual", "1", large_kkt_residual, 0.0,
+        kkt_inputs, "Relationship", "KKT", "large-feed returned multipliers satisfy KKT",
+        "reference_or_one", large_kkt_limit, 0.0,
+        large_kkt_residual <= large_kkt_limit, "c1-multiplier-scale", "large",
+        "||r_KKT||", "T,P,feed,lambda,scale", "||r_KKT||<=100*row_residual*scale", "feed");
+    CHECK(small_kkt_residual <= small_kkt_limit);
+    CHECK(large_kkt_residual <= large_kkt_limit);
+
+    const double feed_scale = large_compiled.feed_total / small_compiled.feed_total;
+    double multiplier_difference = 0.0;
+    for (std::size_t i = 0; i < small_result.constraint_multipliers.size(); ++i) {
+        const double expected = feed_scale * small_result.constraint_multipliers[i];
+        multiplier_difference = std::max(
+            multiplier_difference, std::abs(large_result.constraint_multipliers[i] - expected)
+                / std::max(1.0, std::abs(expected)));
+    }
+    recording_support::compare(
+        "c1-multiplier-scale/multipliers", "relative_multiplier_difference", "1",
+        multiplier_difference, 0.0, kkt_inputs, "Relationship", "extensive-scaling",
+        "constraint multipliers scale with feed amount", "reference_or_one", 1.0e-7, 0.0,
+        multiplier_difference <= 1.0e-7, "c1-multiplier-scale", "multipliers",
+        "delta_lambda", "T,P,feed,lambda", "lambda_large=10*lambda_small", "feed");
+    CHECK(multiplier_difference <= 1.0e-7);
+
+    double intensive_difference = 0.0;
+    intensive_difference = std::max(
+        intensive_difference,
+        std::abs(small_result.temperature.front() - large_result.temperature.front())
+            / std::max(1.0, std::abs(small_result.temperature.front())));
+    intensive_difference = std::max(
+        intensive_difference,
+        std::abs(small_result.pressure.front() - large_result.pressure.front())
+            / std::max(1.0, std::abs(small_result.pressure.front())));
+    for (std::size_t i = 0; i < small_result.mole_fractions.size(); ++i) {
+        intensive_difference = std::max(
+            intensive_difference,
+            std::abs(small_result.mole_fractions[i] - large_result.mole_fractions[i]));
+    }
+    for (std::size_t i = 0; i < small_result.molar_densities.size(); ++i) {
+        intensive_difference = std::max(
+            intensive_difference,
+            std::abs(small_result.molar_densities[i] - large_result.molar_densities[i])
+                / std::max(1.0, std::abs(small_result.molar_densities[i])));
+        intensive_difference = std::max(
+            intensive_difference,
+            std::abs(small_result.packing_fractions[i] - large_result.packing_fractions[i]));
+    }
+    recording_support::compare(
+        "c1-multiplier-scale/intensives", "relative_intensive_difference", "1",
+        intensive_difference, 0.0, kkt_inputs, "Relationship", "extensive-scaling",
+        "intensive state is invariant under feed scaling", "reference_or_one", 1.0e-8, 0.0,
+        intensive_difference <= 1.0e-8, "c1-multiplier-scale", "intensives",
+        "delta_state", "T,P,feed", "state_large=state_small", "feed");
+    CHECK(intensive_difference <= 1.0e-8);
+    CHECK(small_result.reduced_hessian_minimum > 0.0);
+    CHECK(large_result.reduced_hessian_minimum > 0.0);
+
+    auto double_scaled = large_result.constraint_multipliers;
+    for (double& value : double_scaled) value *= feed_scale;
+    const double double_scaled_kkt = maximum_abs(
+        kkt_gradient(large_compiled, large_point, double_scaled));
+    recording_support::compare_custom(
+        "c1-multiplier-scale/double-scaling", "kkt_residual", "1", double_scaled_kkt,
+        large_kkt_limit, kkt_inputs, "Relationship", "KKT-regression-control",
+        "extra feed scaling violates the KKT residual", "model > reference",
+        double_scaled_kkt > large_kkt_limit, "c1-multiplier-scale", "double-scaling",
+        "||r_KKT||", "T,P,feed,lambda", "double-scaled lambda rejected", "feed");
+    CHECK(double_scaled_kkt > large_kkt_limit);
+}
+
 void check_s8() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto small = equilibrium_support::flash(2);
@@ -1153,6 +1321,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
         {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},
         {{"native.equilibrium.c1", "Core_C1_amount_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C1", "c1-amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_amount_scale},
+        {{"native.equilibrium.c1-multipliers", "Core_C1_multiplier_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C1", "c1-multiplier-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_multiplier_scale},
         {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
         {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
         {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},

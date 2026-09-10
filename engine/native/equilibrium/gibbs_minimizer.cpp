@@ -695,7 +695,6 @@ EquilibriumResult solve_equilibrium(
     }
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
     result.constraint_multipliers = nlp->constraint_multipliers();
-    for (double& value : result.constraint_multipliers) value /= objective_scale;
     result.coordinates = full;
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));

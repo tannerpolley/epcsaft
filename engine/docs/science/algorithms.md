@@ -85,9 +85,9 @@ scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
 tiny-step termination only when the recomputed residual meets the declared
-equilibrium criterion. Constraint multipliers returned to callers are converted
-back from Ipopt's internally scaled objective to the original extensive Gibbs
-objective.
+equilibrium criterion. Ipopt unscales final constraint multipliers before the
+TNLP callback receives them, and the Engine preserves that original extensive
+Gibbs-objective meaning.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.

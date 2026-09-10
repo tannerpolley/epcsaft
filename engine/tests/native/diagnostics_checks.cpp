@@ -29,9 +29,8 @@ void core_constant_identities() {
     CHECK(epcsaft::VACUUM_PERMITTIVITY_F_PER_M == 8.8541878128e-12);
     CHECK(std::abs(debye_product - 1.0e-21) <= 1.0e-36);
     CHECK(epcsaft::ANGSTROM_M == 1.0e-10);
-    const double density = epcsaft::AVOGADRO_PER_MOL * epcsaft::ANGSTROM_M
-        * epcsaft::ANGSTROM_M * epcsaft::ANGSTROM_M;
-    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density) <= 1.0e-37);
+    const double density_reference = epcsaft::AVOGADRO_PER_MOL * 1.0e-30;
+    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference) <= 1.0e-37);
     recording_support::compare("core-constants/R", "R", "J/mol/K",
         epcsaft::GAS_CONSTANT_J_PER_MOL_K, r, {}, "Relationship", "SI-definitions",
         "R=N_A*k_B", "reference_or_one", 0.0, 1.0e-15, true,
@@ -51,12 +50,13 @@ void core_constant_identities() {
         "Relationship", "CODATA-2018", "retained CODATA 2018 central value",
         "absolute", 0.0, 0.0, true,
         "c1-constants", "epsilon_0", "epsilon_0", "CODATA-2018", "epsilon_0=CODATA-2018", "constant");
-    recording_support::compare("core-constants/number-density", "C_rho", "1",
-        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density, {},
-        "Relationship", "SI-definitions", "C_rho=N_A*angstrom^3",
+    recording_support::compare("core-constants/number-density", "C_rho",
+        "(number/angstrom^3)/(mol/m^3)",
+        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density_reference, {},
+        "Relationship", "SI-definitions", "C_rho=N_A*10^{-30}",
         "strict_absolute", 1.0e-37, 0.0,
-        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density) <= 1.0e-37,
-        "c1-constants", "C_rho", "C_rho", "N_A,angstrom", "C_rho=N_A*angstrom^3", "constant");
+        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference) <= 1.0e-37,
+        "c1-constants", "C_rho", "C_rho", "N_A,10^{-30}", "C_rho=N_A*10^{-30}", "constant");
 }
 
 using epcsaft::core::Stop;
