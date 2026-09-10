@@ -471,9 +471,9 @@ Current stage: bounded Core C1 through C4 are qualified and repository separatio
 | Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
 | Next | Contributions qualification | Ready to start; do not widen the qualified Core claim. |
 
-Local C1 design and validation are followed by slice-scoped Core work. Repository
-creation, remote changes and issue publication are separate actions and do not
-block this local scientific queue.
+Repository separation is a completed delivery prerequisite. It does not change
+scientific milestone qualification; subsequent work follows the scientific
+dependency order above and delivers to the independent repository.
 
 ### Gates and authority
 
