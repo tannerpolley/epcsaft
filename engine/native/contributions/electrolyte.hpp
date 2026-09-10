@@ -99,7 +99,7 @@ Scalar bulk_relative_permittivity(
     Scalar dipolar_correlation = Scalar(0.0);
 
     const Scalar number_density_angstrom3 =
-        molar_density * AVOGADRO_PER_MOL * 1.0e-30;
+        molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     const auto relative_permittivity = [&](std::size_t component) {
         return evaluated_relative_permittivity == nullptr
             ? Scalar(parameters.relative_permittivity[component])
@@ -325,7 +325,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         }
         const double diameter_angstrom =
             parameters.debye_huckel_diameter_angstrom[component];
-        const Scalar diameter_m = Scalar(1.0e-10 * diameter_angstrom);
+        const Scalar diameter_m = Scalar(ANGSTROM_M * diameter_angstrom);
         const Scalar reduced = kappa * diameter_m;
         const Scalar chi = finite_size_chi(
             reduced,

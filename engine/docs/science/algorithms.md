@@ -80,7 +80,14 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
-Retain failed attempts and initialization/termination details.
+Retain failed attempts and initialization/termination details. The Ipopt driver
+scales its extensive Gibbs objective by `1 / feed_total` internally; this
+preserves the minimizer while keeping objective derivatives on the same
+numerical scale as the normalized material-balance rows. It accepts Ipopt's
+tiny-step termination only when the recomputed residual meets the declared
+equilibrium criterion. Constraint multipliers returned to callers are converted
+back from Ipopt's internally scaled objective to the original extensive Gibbs
+objective.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
@@ -154,6 +161,15 @@ scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 
 ## ALG-TERMINATION
+
+Core C1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
+is only the lower bound for the intensive `log(x_i)` coordinate. Free-phase
+disappearance compares the dimensionless amount ratio
+`n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
+that topology rejection is not a stability or accuracy conclusion. Packing
+admission rejects the equal-sphere face-centred-cubic geometric boundary
+`eta >= CLOSE_PACKING_FRACTION`; this is a conservative PC-SAFT domain
+constraint, not a mathematical singularity claim.
 
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
 application accuracy criteria stay beside their accepted reference cases.

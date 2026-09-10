@@ -1,5 +1,10 @@
 #pragma once
 
+// Shared physical constants and unit bridges. Values are SI unless the name
+// says otherwise; each is defined here once and reused by consumers.
+// Vacuum permittivity retains the CODATA 2018 central value, with relative
+// standard uncertainty 1.5e-10; updates require replaying affected evidence.
+
 // Category 1: measured or defined physical constants. Every one of them is
 // defined here and nowhere else -- the tree this replaces carried fifteen
 // definitions of the gas constant, and the architecture checker now rejects the
@@ -11,7 +16,8 @@ inline constexpr double ELEMENTARY_CHARGE_C = 1.602176634e-19;
 inline constexpr double VACUUM_PERMITTIVITY_F_PER_M = 8.8541878128e-12;
 inline constexpr double BOLTZMANN_J_PER_K = 1.380649e-23;
 inline constexpr double AVOGADRO_PER_MOL = 6.02214076e23;
-inline constexpr double GAS_CONSTANT_J_PER_MOL_K = 8.31446261815324;
+inline constexpr double GAS_CONSTANT_J_PER_MOL_K =
+    AVOGADRO_PER_MOL * BOLTZMANN_J_PER_K;
 inline constexpr double SPEED_OF_LIGHT_M_PER_S = 299792458.0;
 
 inline constexpr double PI = 3.141592653589793238462643383279502884;
@@ -23,6 +29,7 @@ inline constexpr double DEBYE_C_M = 1.0e-21 / SPEED_OF_LIGHT_M_PER_S;
 
 // Segment geometry is written in angstrom, so a molar density in mol/m^3 becomes
 // a number density per angstrom^3 with this factor.
-inline constexpr double NUMBER_DENSITY_PER_ANGSTROM3 = AVOGADRO_PER_MOL / 1.0e30;
+inline constexpr double NUMBER_DENSITY_PER_ANGSTROM3 =
+    AVOGADRO_PER_MOL * ANGSTROM_M * ANGSTROM_M * ANGSTROM_M;
 
 }  // namespace epcsaft

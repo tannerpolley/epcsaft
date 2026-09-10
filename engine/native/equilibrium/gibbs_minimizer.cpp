@@ -490,13 +490,16 @@ bool GibbsMinimizer::eval_h(
     }
     std::fill(values, values + nele_hess, 0.0);
     const auto base = point(n, x);
-    const auto hessian = compiled_.hessian(
+    const auto objective_hessian = compiled_.hessian(base);
+    const auto lagrangian_hessian = compiled_.hessian(
         base, std::vector<double>(lambda, lambda + m));
     Ipopt::Index entry = 0;
     for (Ipopt::Index row = 0; row < n; ++row) {
         for (Ipopt::Index column = 0; column <= row; ++column) {
-            values[entry++] = obj_factor * hessian[static_cast<std::size_t>(row) * n
-                                                   + static_cast<std::size_t>(column)];
+            const std::size_t index = static_cast<std::size_t>(row) * n
+                + static_cast<std::size_t>(column);
+            values[entry++] = obj_factor * objective_hessian[index]
+                + lagrangian_hessian[index] - objective_hessian[index];
         }
     }
     return entry == nele_hess;
@@ -544,8 +547,10 @@ EquilibriumResult solve_equilibrium(
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
     Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
+    const double objective_scale = 1.0 / compiled.feed_total;
     application->Options()->SetIntegerValue("print_level", 0);
     application->Options()->SetStringValue("nlp_scaling_method", "none");
+    application->Options()->SetNumericValue("obj_scaling_factor", objective_scale);
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetNumericValue("tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
     application->Options()->SetNumericValue("acceptable_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
@@ -556,7 +561,6 @@ EquilibriumResult solve_equilibrium(
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
     application->Initialize();
     application->OptimizeTNLP(nlp);
-
     EquilibriumResult result;
     result.rows = compiled.rows;
     result.phase_count = compiled.problem.phases.size();
@@ -632,7 +636,7 @@ EquilibriumResult solve_equilibrium(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         if (spec.amount.kind == AmountKind::Free
-            && amount <= policy::STABILITY_COMPOSITION_FLOOR.value) {
+            && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value) {
             topology_ok = false;
             topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
                 + std::to_string(deficit);
@@ -659,7 +663,10 @@ EquilibriumResult solve_equilibrium(
             }
         }
     }
-    const bool accepted = nlp->status() == Ipopt::SUCCESS
+    const bool solver_ok = nlp->status() == Ipopt::SUCCESS
+        || (nlp->status() == Ipopt::STOP_AT_TINY_STEP
+            && result.convergence.stop == core::Stop::converged);
+    const bool accepted = solver_ok
         && (result.convergence.stop == core::Stop::converged
             || result.convergence.stop == core::Stop::converged_to_floor)
         && topology_ok;
@@ -688,11 +695,12 @@ EquilibriumResult solve_equilibrium(
     }
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
     result.constraint_multipliers = nlp->constraint_multipliers();
+    for (double& value : result.constraint_multipliers) value /= objective_scale;
     result.coordinates = full;
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
     result.reduced_hessian_minimum = reduced_hessian_minimum_at(
-        compiled, primal_point, nlp->constraint_multipliers());
+        compiled, primal_point, result.constraint_multipliers);
     if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
         result.success = false;
         result.message = "reduced_hessian_stability is not positive definite";

@@ -704,6 +704,53 @@ void check_s7() {
     }
 }
 
+void check_c1_amount_scale() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto normal = equilibrium_support::flash(2);
+    auto tiny = normal;
+    normal.feed.values = {0.5, 0.5};
+    tiny.feed.values = {5.0e-10, 5.0e-10};
+    const auto first = epcsaft::equilibrium::solve_equilibrium(model, normal);
+    const auto second = epcsaft::equilibrium::solve_equilibrium(model, tiny);
+    CHECK(first.success && second.success);
+    if (!first.success || !second.success) return;
+    CHECK(first.amounts.size() == second.amounts.size());
+    const double first_total = normal.feed.values[0] + normal.feed.values[1];
+    const double second_total = tiny.feed.values[0] + tiny.feed.values[1];
+    for (std::size_t i = 0; i < first.amounts.size(); ++i) {
+        const double first_normalized = first.amounts[i] / first_total;
+        const double second_normalized = second.amounts[i] / second_total;
+        CHECK(std::abs(first_normalized - 1.0) <= 1.0e-7);
+        CHECK(std::abs(second_normalized - 1.0) <= 1.0e-7);
+        const auto normal_inputs = recording_support::fields({
+            recording_support::field("T", 300.0),
+            recording_support::field("P", 1.0e5),
+            recording_support::field("feed", normal.feed.values),
+            recording_support::field("phase", i),
+        });
+        recording_support::compare(
+            (std::string("c1-amount-scale/normal/") + std::to_string(i)).c_str(),
+            "phase_amount/feed_total", "1", first_normalized, 1.0, normal_inputs,
+            "Relationship", "extensive-scaling", "normalized phase amount remains one",
+            "strict_absolute", 1.0e-7, 0.0, std::abs(first_normalized - 1.0) <= 1.0e-7,
+            "c1-amount-scale", "normal", "n/feed_total", "T,P,feed,phase",
+            "n_phase/feed_total=1", "phase");
+        const auto tiny_inputs = recording_support::fields({
+            recording_support::field("T", 300.0),
+            recording_support::field("P", 1.0e5),
+            recording_support::field("feed", tiny.feed.values),
+            recording_support::field("phase", i),
+        });
+        recording_support::compare(
+            (std::string("c1-amount-scale/tiny/") + std::to_string(i)).c_str(),
+            "phase_amount/feed_total", "1", second_normalized, 1.0, tiny_inputs,
+            "Relationship", "extensive-scaling", "normalized phase amount remains one",
+            "strict_absolute", 1.0e-7, 0.0, std::abs(second_normalized - 1.0) <= 1.0e-7,
+            "c1-amount-scale", "tiny", "n/feed_total", "T,P,feed,phase",
+            "n_phase/feed_total=1", "phase");
+    }
+}
+
 void check_s8() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto small = equilibrium_support::flash(2);
@@ -1105,6 +1152,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
         {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},
+        {{"native.equilibrium.c1", "Core_C1_amount_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C1", "c1-amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_amount_scale},
         {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
         {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
         {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},

@@ -1,5 +1,6 @@
 #include "core/convergence.hpp"
 #include "core/numerical_policy.hpp"
+#include "core/physical_constants.hpp"
 #include "properties/helmholtz_model.hpp"
 #include "properties_support.hpp"
 #include "contributions/association.hpp"
@@ -21,6 +22,42 @@
     static_cast<bool>(condition), __FILE__, __LINE__, #condition)
 
 namespace {
+void core_constant_identities() {
+    const double r = epcsaft::AVOGADRO_PER_MOL * epcsaft::BOLTZMANN_J_PER_K;
+    const double debye_product = epcsaft::DEBYE_C_M * epcsaft::SPEED_OF_LIGHT_M_PER_S;
+    CHECK(epcsaft::GAS_CONSTANT_J_PER_MOL_K == r);
+    CHECK(epcsaft::VACUUM_PERMITTIVITY_F_PER_M == 8.8541878128e-12);
+    CHECK(std::abs(debye_product - 1.0e-21) <= 1.0e-36);
+    CHECK(epcsaft::ANGSTROM_M == 1.0e-10);
+    const double density = epcsaft::AVOGADRO_PER_MOL * epcsaft::ANGSTROM_M
+        * epcsaft::ANGSTROM_M * epcsaft::ANGSTROM_M;
+    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density) <= 1.0e-37);
+    recording_support::compare("core-constants/R", "R", "J/mol/K",
+        epcsaft::GAS_CONSTANT_J_PER_MOL_K, r, {}, "Relationship", "SI-definitions",
+        "R=N_A*k_B", "reference_or_one", 0.0, 1.0e-15, true,
+        "c1-constants", "R", "R", "N_A,k_B", "R=N_A*k_B", "constant");
+    recording_support::compare("core-constants/debye", "D*c", "C m^2/s",
+        debye_product, 1.0e-21, {}, "Relationship", "SI-definitions",
+        "D*c=1e-21", "strict_absolute", 1.0e-36, 0.0,
+        std::abs(debye_product - 1.0e-21) <= 1.0e-36,
+        "c1-constants", "Debye", "D*c", "D,c", "D*c=1e-21", "constant");
+    recording_support::compare("core-constants/angstrom", "angstrom", "m",
+        epcsaft::ANGSTROM_M, 1.0e-10, {}, "Relationship", "SI-definitions",
+        "angstrom=1e-10 m", "absolute", 0.0, 0.0,
+        epcsaft::ANGSTROM_M == 1.0e-10,
+        "c1-constants", "angstrom", "angstrom", "angstrom", "angstrom=1e-10 m", "constant");
+    recording_support::compare("core-constants/epsilon", "epsilon_0", "F/m",
+        epcsaft::VACUUM_PERMITTIVITY_F_PER_M, 8.8541878128e-12, {},
+        "Relationship", "CODATA-2018", "retained CODATA 2018 central value",
+        "absolute", 0.0, 0.0, true,
+        "c1-constants", "epsilon_0", "epsilon_0", "CODATA-2018", "epsilon_0=CODATA-2018", "constant");
+    recording_support::compare("core-constants/number-density", "C_rho", "1",
+        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density, {},
+        "Relationship", "SI-definitions", "C_rho=N_A*angstrom^3",
+        "strict_absolute", 1.0e-37, 0.0,
+        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density) <= 1.0e-37,
+        "c1-constants", "C_rho", "C_rho", "N_A,angstrom", "C_rho=N_A*angstrom^3", "constant");
+}
 
 using epcsaft::core::Stop;
 
@@ -361,6 +398,7 @@ void trace_invariance() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.diagnostics.c1", "Core_constant_identities", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C1", "core-constants/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C1"}, core_constant_identities},
         {{"native.diagnostics.d1", "Classifier_partition", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "classification/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D1", "classification/*:224"}, classifier_partition},
         {{"native.diagnostics.d2", "Contraction_window", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "contraction-limit", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D2"}, contraction_window},
         {{"native.diagnostics.d3", "Declaration_guards", "Package", "Surface", "Explicit", "Outcome_only", nullptr, "S1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D3"}, declaration_guards},

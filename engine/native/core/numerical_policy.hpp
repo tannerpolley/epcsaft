@@ -48,13 +48,13 @@ constexpr Tolerance derived(const Tolerance& upstream, double factor,
 
 // ---------------------------------------------------------------- constraints
 
-// Above this the hard-sphere term's logarithm has no real value: the packing
-// fraction of identical spheres in a face-centred cubic lattice. Not a
-// tolerance -- a state at or above it is not a fluid.
+// Dimensionless packing fraction. Reject eta >= the equal-sphere
+// face-centred-cubic geometric limit as a conservative PC-SAFT admission
+// bound; this is a domain constraint, not a mathematical singularity claim.
 inline constexpr Tolerance CLOSE_PACKING_FRACTION{"CLOSE_PACKING_FRACTION",
     PI / (3.0 * 1.4142135623730951),
     Category::ThermodynamicConstraint,
-    "face-centred cubic close packing, pi/(3 sqrt 2)",
+    "equal-sphere face-centred-cubic admission bound; eta >= value is a domain failure",
 };
 
 // A site fraction is a probability. Outside (0, 1] the mass-action system has
@@ -204,7 +204,12 @@ inline constexpr Tolerance STABILITY_CANDIDATE_GAP{"STABILITY_CANDIDATE_GAP",
 inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "Pereira 2012; drifted to 1e-10 f_k in the superseded tree",
+    "dimensionless x_i coordinate; require x_i >= floor for log(x_i); Pereira 2012; provisional domain cutoff, not an accuracy bound",
+};
+inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
+    1.0e-8,
+    Category::AlgorithmTolerance,
+    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff; not a stability result or accuracy bound",
 };
 
 inline constexpr Tolerance STABILITY_MULTIPLIER_GAP{"STABILITY_MULTIPLIER_GAP",
@@ -283,14 +288,14 @@ inline constexpr Tolerance FLOOR_MARGIN{
     "FLOOR_MARGIN",
     10.0,
     Category::AlgorithmTolerance,
-    "guessed: a decade of slack across the first-order bound's norm inequalities",
+    "provisional residual-floor classification margin; not an accuracy bound",
 };
 
 inline constexpr Tolerance STALL_WINDOW{
     "STALL_WINDOW",
     5.0,
     Category::AlgorithmTolerance,
-    "guessed: below Ipopt's acceptable_iter default of 15",
+    "provisional residual-stall window; not an accuracy bound",
 };
 
 }  // namespace epcsaft::policy

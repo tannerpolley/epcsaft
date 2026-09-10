@@ -47,7 +47,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 <!-- roadmap-summary:start -->
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
-| Core | ░░░░░░░░░░ 0.0% (0/4) | 1–3 | — |
+| Core | ██░░░░░░░░ 25.0% (1/4) | 0.75–2.25 | 1.5 (partial) |
 | Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/6) | 12–36 | — |
@@ -56,7 +56,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **0/35 qualified milestones (0.0%)**; **37–113 remaining Astra hours**.
+Total: **1/35 qualified milestones (2.9%)**; **36.75–112.25 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -244,7 +244,7 @@ flowchart LR
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Constants and numerical policy | [ ] | 0.25–0.75 | — | Specifications and executable prerequisites | Verify units, physical bounds and tolerance meanings; remove unjustified claims. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
+| C1 — Constants and numerical policy | [x] | 0 | 1.5 | Specifications and executable prerequisites | Verify units, physical bounds and tolerance meanings; remove unjustified claims. | [2026-09-09: C1 qualification evidence](reviews/core-c1-2026-09-09.md); focused installed-wheel evidence and independent final review passed; broader pinned F5 remains outside C1. |
 | C2 — Parameter coordinates and scaling | [ ] | 0.25–0.75 | — | C1 | Define common coordinate identities and dimensional scaling, including derivative coordinate transformations. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C3 — Diagnostics and availability | [ ] | 0.25–0.75 | — | C1 | Define residuals, termination and unavailable-result information. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C4 — Core qualification | [ ] | 0.25–0.75 | — | C2, C3 | Focused checks, cost review and independent acceptance. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
