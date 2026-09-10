@@ -3,6 +3,12 @@
 Private scientific monorepo for the unified ePC-SAFT engine, canonical data,
 compact numerical evidence, and retained scientific analyses.
 
+The independent repository is
+[tannerpolley/ePC-SAFT-greenfield](https://github.com/tannerpolley/ePC-SAFT-greenfield).
+Its `main` baseline preserves the accepted Core history from `cea695f`.
+The original `tannerpolley/ePC-SAFT` repository remains available for historical
+issues and reviews; current development and delivery use this repository.
+
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
 scientific owners and one equilibrium driver. The
 [implementation plan](docs/scientific/implementation-plan.md) distinguishes
