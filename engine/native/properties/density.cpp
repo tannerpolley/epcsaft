@@ -308,9 +308,9 @@ std::array<bool, 3> density_producer_checks_impl() {
     try {
         (void)anchor(
             nonfinite_anchor, 1.0, 0.0, DensityBranch::Vapor,
-            anchor_density * 1.0e-3, anchor_density * 1.0e-2,
+            anchor_density * 1.0e-3, anchor_density * 1.0e3,
             std::log(anchor_density * 1.0e-3),
-            std::log(anchor_density * 1.0e-2), 40, anchor_density,
+            std::log(anchor_density * 1.0e3), 40, anchor_density,
             anchor_evaluations
         );
     } catch (const core::ConvergenceFailure& error) {
