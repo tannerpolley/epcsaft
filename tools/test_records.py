@@ -383,7 +383,7 @@ def artifact_identity(
         for path in sorted(build_dir.iterdir()):
             if path.is_file() and (path.name.endswith(".so") or path.name in {
                 "properties_checks", "equilibrium_checks", "contributions_checks", "diagnostics_checks",
-                "boundary_checks", "specification_checks", "properties_floor",
+                "boundary_checks", "specification_checks", "properties_floor", "association_comparison_checks",
             }):
                 artifacts.append({"kind": "binary", "path": str(path.relative_to(root)), "sha256": sha256(path)})
     selected_runtime = runtime or (root / ".venv/bin/python")

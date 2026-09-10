@@ -50,6 +50,7 @@ NATIVE_TARGETS = {
     "equilibrium": "equilibrium_checks",
     "boundary": "boundary_checks",
     "specification": "specification_checks",
+    "association-comparison": "association_comparison_checks",
 }
 
 # Repository gates that produce an outcome even when they do not emit

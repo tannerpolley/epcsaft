@@ -187,7 +187,8 @@ inline ReferenceTensor reference_tensor(
     double volume,
     const std::vector<double>& amounts,
     const std::vector<double>& site_fractions,
-    std::optional<epcsaft::ActiveParameter> active = std::nullopt
+    std::optional<epcsaft::ActiveParameter> active = std::nullopt,
+    bool association_only = false
 ) {
     using AD = CppAD::AD<double>;
     const std::size_t components = parameters.component_count();
@@ -202,7 +203,11 @@ inline ReferenceTensor reference_tensor(
     if (active.has_value()) {
         const auto& values = active->family == epcsaft::ParameterFamily::Kij
             ? parameters.k_ij
-            : parameters.dispersion_energy_over_k;
+            : active->family == epcsaft::ParameterFamily::DispersionEnergyOverK
+            ? parameters.dispersion_energy_over_k
+            : active->family == epcsaft::ParameterFamily::AssociationEnergyOverK
+            ? parameters.association_energy_over_k
+            : parameters.association_volume;
         point.push_back(values[active->indices.front()]);
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
@@ -253,10 +258,10 @@ inline ReferenceTensor reference_tensor(
     const auto residuals = epcsaft::association_residuals(
         density, composition, tape_parameters, sites, delta
     );
-    AD value = total * (
+    AD value = total * (association_only ? terms.association : (
         terms.hard_chain + terms.dispersion + terms.debye_huckel
         + terms.born + terms.association
-    );
+    ));
     std::vector<AD> dependents = {value};
     for (const AD& residual : residuals) dependents.push_back(residual);
     CppAD::ADFun<double> function(independent, dependents);
