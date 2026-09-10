@@ -6,8 +6,10 @@
 #include <cppad/cppad.hpp>
 
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -179,6 +181,13 @@ inline epcsaft::Parameters nine_species() {
 struct ReferenceTensor final {
     std::vector<double> gradient;
     std::vector<double> hessian;
+    double scaled_condition = std::numeric_limits<double>::quiet_NaN();
+    double first_sensitivity_residual = std::numeric_limits<double>::quiet_NaN();
+    double second_sensitivity_residual = std::numeric_limits<double>::quiet_NaN();
+    double sensitivity_error_proxy = std::numeric_limits<double>::quiet_NaN();
+    std::size_t first_sensitivity_coordinate = 0;
+    std::size_t second_sensitivity_row = 0;
+    std::size_t second_sensitivity_column = 0;
 };
 
 inline ReferenceTensor reference_tensor(
@@ -274,25 +283,90 @@ inline ReferenceTensor reference_tensor(
         for (std::size_t coordinate = 0; coordinate < full_width; ++coordinate) {
             site_jacobian(static_cast<Eigen::Index>(site),
                           static_cast<Eigen::Index>(coordinate)) =
-                jacobian[(site + 1) * full_width + coordinate];
+            jacobian[(site + 1) * full_width + coordinate];
         }
     }
-    const auto site_factorization = site_jacobian.rightCols(
+    const Eigen::MatrixXd site_factorization = site_jacobian.rightCols(
         static_cast<Eigen::Index>(sites_count)
     );
-    const Eigen::MatrixXd x_y = -Eigen::FullPivLU<Eigen::MatrixXd>(site_factorization)
-        .solve(site_jacobian.leftCols(static_cast<Eigen::Index>(width)));
-    const auto value_jacobian = function.Jacobian(point);
-    Eigen::VectorXd value_x(static_cast<Eigen::Index>(sites_count));
-    Eigen::VectorXd value_y(static_cast<Eigen::Index>(width));
-    for (std::size_t site = 0; site < sites_count; ++site) {
-        value_x(static_cast<Eigen::Index>(site)) =
-            value_jacobian[width + site];
-    }
-    for (std::size_t coordinate = 0; coordinate < width; ++coordinate) {
-        value_y(static_cast<Eigen::Index>(coordinate)) = value_jacobian[coordinate];
-    }
+    const Eigen::FullPivLU<Eigen::MatrixXd> factorization(site_factorization);
+    const Eigen::MatrixXd x_y = -factorization.solve(
+        site_jacobian.leftCols(static_cast<Eigen::Index>(width))
+    );
+    const Eigen::Map<const Eigen::VectorXd> value_x(
+        jacobian.data() + width, static_cast<Eigen::Index>(sites_count));
+    const Eigen::Map<const Eigen::VectorXd> value_y(
+        jacobian.data(), static_cast<Eigen::Index>(width));
     ReferenceTensor result;
+    const auto infinity_norm = [](const Eigen::MatrixXd& matrix) {
+        if (matrix.size() == 0) return 0.0;
+        if (!matrix.allFinite()) return std::numeric_limits<double>::quiet_NaN();
+        const double result = matrix.cwiseAbs().rowwise().sum().maxCoeff();
+        return std::isfinite(result) ? result : std::numeric_limits<double>::quiet_NaN();
+    };
+    const auto vector_infinity_norm = [](const Eigen::VectorXd& vector) {
+        if (vector.size() == 0) return 0.0;
+        if (!vector.allFinite()) return std::numeric_limits<double>::quiet_NaN();
+        const double result = vector.cwiseAbs().maxCoeff();
+        return std::isfinite(result) ? result : std::numeric_limits<double>::quiet_NaN();
+    };
+    const auto residual_ratio = [&](const Eigen::VectorXd& actual_residual,
+                                    const Eigen::VectorXd& unknown,
+                                    const Eigen::VectorXd& rhs,
+                                    double matrix_norm) {
+        const double numerator = vector_infinity_norm(actual_residual);
+        const double unknown_norm = vector_infinity_norm(unknown);
+        const double rhs_norm = vector_infinity_norm(rhs);
+        const double denominator = matrix_norm * unknown_norm + rhs_norm;
+        if (!std::isfinite(numerator) || !std::isfinite(unknown_norm)
+            || !std::isfinite(rhs_norm) || !std::isfinite(matrix_norm)
+            || !std::isfinite(denominator))
+            return std::numeric_limits<double>::quiet_NaN();
+        if (denominator == 0.0) return numerator == 0.0 ? 0.0 : std::numeric_limits<double>::infinity();
+        return numerator / denominator;
+    };
+    const double total_amount = total_double;
+    const auto scale = [&](std::size_t coordinate) {
+        if (coordinate == 0) return temperature;
+        if (coordinate == 1) return volume;
+        if (coordinate < 2 + components) return total_amount;
+        const auto& family = active.value();
+        return family.family == epcsaft::ParameterFamily::AssociationEnergyOverK ? 1000.0 : 0.1;
+    };
+    const Eigen::MatrixXd site_diagonal = Eigen::Map<const Eigen::VectorXd>(
+        site_fractions.data(), static_cast<Eigen::Index>(sites_count)).asDiagonal();
+    const Eigen::MatrixXd scaled_jacobian = site_factorization * site_diagonal;
+    const Eigen::FullPivLU<Eigen::MatrixXd> scaled_factorization(scaled_jacobian);
+    if (sites_count != 0 && scaled_factorization.rank() == static_cast<Eigen::Index>(sites_count)) {
+        const Eigen::MatrixXd inverse = scaled_factorization.solve(
+            Eigen::MatrixXd::Identity(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count))
+        );
+        const double matrix_norm = infinity_norm(scaled_jacobian);
+        const double inverse_norm = infinity_norm(inverse);
+        result.scaled_condition = std::isfinite(matrix_norm) && std::isfinite(inverse_norm)
+            ? matrix_norm * inverse_norm : std::numeric_limits<double>::quiet_NaN();
+    }
+    const double matrix_norm = infinity_norm(scaled_jacobian);
+    result.first_sensitivity_residual = 0.0;
+    result.second_sensitivity_residual = 0.0;
+    for (std::size_t coordinate = 0; coordinate < width; ++coordinate) {
+        Eigen::VectorXd unknown = x_y.col(static_cast<Eigen::Index>(coordinate)) * scale(coordinate);
+        for (std::size_t site = 0; site < sites_count; ++site)
+            unknown(static_cast<Eigen::Index>(site)) /= site_fractions[site];
+        const Eigen::VectorXd rhs = site_jacobian.col(static_cast<Eigen::Index>(coordinate)) * scale(coordinate);
+        const double residual = residual_ratio(
+            (site_factorization * x_y.col(static_cast<Eigen::Index>(coordinate))
+                + site_jacobian.col(static_cast<Eigen::Index>(coordinate))) * scale(coordinate),
+            unknown, rhs, matrix_norm);
+        if (!std::isfinite(residual)) {
+            result.first_sensitivity_residual = std::numeric_limits<double>::quiet_NaN();
+            result.first_sensitivity_coordinate = coordinate;
+        }
+        else if (std::isfinite(result.first_sensitivity_residual) && residual > result.first_sensitivity_residual) {
+            result.first_sensitivity_residual = residual;
+            result.first_sensitivity_coordinate = coordinate;
+        }
+    }
     result.gradient.resize(width);
     for (std::size_t coordinate = 0; coordinate < width; ++coordinate) {
         result.gradient[coordinate] = value_y(static_cast<Eigen::Index>(coordinate))
@@ -303,24 +377,18 @@ inline ReferenceTensor reference_tensor(
     for (std::size_t dependent = 0; dependent <= sites_count; ++dependent) {
         hessians.push_back(function.Hessian(point, dependent));
     }
+    std::vector<Eigen::VectorXd> directions(width, Eigen::VectorXd::Zero(
+        static_cast<Eigen::Index>(full_width)));
+    for (std::size_t coordinate = 0; coordinate < width; ++coordinate) {
+        for (std::size_t site = 0; site < sites_count; ++site)
+            directions[coordinate](static_cast<Eigen::Index>(width + site)) =
+                x_y(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(coordinate));
+        directions[coordinate](static_cast<Eigen::Index>(coordinate)) = 1.0;
+    }
     for (std::size_t row = 0; row < width; ++row) {
-        Eigen::VectorXd direction_row = Eigen::VectorXd::Zero(
-            static_cast<Eigen::Index>(full_width)
-        );
-        for (std::size_t site = 0; site < sites_count; ++site) {
-            direction_row(static_cast<Eigen::Index>(width + site)) =
-                x_y(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(row));
-        }
-        direction_row(static_cast<Eigen::Index>(row)) = 1.0;
+        const auto& direction_row = directions[row];
         for (std::size_t column = 0; column < width; ++column) {
-            Eigen::VectorXd direction_column = Eigen::VectorXd::Zero(
-                static_cast<Eigen::Index>(full_width)
-            );
-            for (std::size_t site = 0; site < sites_count; ++site) {
-                direction_column(static_cast<Eigen::Index>(width + site)) =
-                    x_y(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(column));
-            }
-            direction_column(static_cast<Eigen::Index>(column)) = 1.0;
+            const auto& direction_column = directions[column];
             Eigen::VectorXd second_site(static_cast<Eigen::Index>(sites_count));
             for (std::size_t site = 0; site < sites_count; ++site) {
                 double contraction = 0.0;
@@ -333,9 +401,24 @@ inline ReferenceTensor reference_tensor(
                 }
                 second_site(static_cast<Eigen::Index>(site)) = contraction;
             }
-            const Eigen::VectorXd x_second = -Eigen::FullPivLU<Eigen::MatrixXd>(
-                site_factorization
-            ).solve(second_site);
+            const Eigen::VectorXd x_second = -factorization.solve(second_site);
+            Eigen::VectorXd transformed_second = x_second * scale(row) * scale(column);
+            for (std::size_t site = 0; site < sites_count; ++site)
+                transformed_second(static_cast<Eigen::Index>(site)) /= site_fractions[site];
+            const Eigen::VectorXd second_rhs = second_site * scale(row) * scale(column);
+            const double sensitivity_residual = residual_ratio(
+                (site_factorization * x_second + second_site) * scale(row) * scale(column),
+                transformed_second, second_rhs, matrix_norm);
+            if (!std::isfinite(sensitivity_residual)) {
+                result.second_sensitivity_residual = std::numeric_limits<double>::quiet_NaN();
+                result.second_sensitivity_row = row;
+                result.second_sensitivity_column = column;
+            }
+            else if (std::isfinite(result.second_sensitivity_residual) && sensitivity_residual > result.second_sensitivity_residual) {
+                result.second_sensitivity_residual = sensitivity_residual;
+                result.second_sensitivity_row = row;
+                result.second_sensitivity_column = column;
+            }
             double value_second = 0.0;
             for (std::size_t left = 0; left < full_width; ++left) {
                 for (std::size_t right = 0; right < full_width; ++right) {
@@ -346,6 +429,19 @@ inline ReferenceTensor reference_tensor(
             }
             result.hessian[row * width + column] = value_second + value_x.dot(x_second);
         }
+    }
+    if (sites_count == 0) {
+        result.scaled_condition = 1.0;
+        result.first_sensitivity_residual = 0.0;
+        result.second_sensitivity_residual = 0.0;
+        result.sensitivity_error_proxy = 0.0;
+        result.newton_defect = 0.0;
+    } else if (std::isfinite(result.scaled_condition)
+        && std::isfinite(result.first_sensitivity_residual)
+        && std::isfinite(result.second_sensitivity_residual)) {
+        result.sensitivity_error_proxy = result.scaled_condition
+            * (std::max(result.first_sensitivity_residual, result.second_sensitivity_residual)
+               + static_cast<double>(sites_count) * std::numeric_limits<double>::epsilon());
     }
     return result;
 }

@@ -793,7 +793,7 @@ def _build(root: Path, log: Path, input_id: str) -> tuple[int, Path | None, Path
 
 def _run_subprocess(
     command: list[str], *, cwd: Path, timeout: int, environment: dict[str, str],
-    output: Path, error_output: Path,
+    output: Path, error_output: Path, address_space_limit: int | None = None,
 ) -> tuple[str, int | None, str | None, str | None]:
     output.parent.mkdir(parents=True, exist_ok=True)
     error_output.parent.mkdir(parents=True, exist_ok=True)
@@ -804,6 +804,9 @@ def _run_subprocess(
             process = _track_process(subprocess.Popen(
                 command, cwd=cwd, env=environment, stdout=stream,
                 stderr=error_stream, start_new_session=True,
+                preexec_fn=(lambda: resource.setrlimit(
+                    resource.RLIMIT_AS, (address_space_limit, address_space_limit)
+                )) if address_space_limit is not None else None,
             ))
             try:
                 returncode = process.wait(timeout=timeout)
@@ -932,6 +935,8 @@ def _run_record(
     execution, exit_code, process_reason, interruption_kind = _run_subprocess(
         command, cwd=run_cwd, timeout=timeout, environment=environment,
         output=output, error_output=error_output,
+        address_space_limit=4 * 1024 * 1024 * 1024
+        if test_id == "native.association.comparison" else None,
     )
     process_interrupted = execution == "Interrupted"
     text = output.read_text(encoding="utf-8", errors="replace") if output.exists() else ""
@@ -1016,10 +1021,12 @@ def _run_record(
                     integrity_reason = str(integrity_result["outcome_reason"])
         if integrity_errors:
             integrity_reason = "; ".join(integrity_errors)
+    if test_id == "native.association.comparison" and native_expected_counts:
+        native_expected_keys = []
     rows, evidence_error = _expected_complete(
         declaration,
         rows,
-        expected_keys=native_expected_keys or None,
+        expected_keys=native_expected_keys,
         expected_counts=native_expected_counts or None,
     )
     if integrity_reason:
@@ -1068,6 +1075,7 @@ def _run_record(
         "comparisons": rows,
         "input_groups": input_groups,
         "command": command,
+        "selector": environment.get("EPCSAFT_ASSOCIATION_SELECTOR"),
         "exit_code": exit_code,
         "output": str(output.relative_to(ROOT)),
         "output_sha256": __import__("hashlib").sha256(output.read_bytes()).hexdigest() if output.is_file() else None,
