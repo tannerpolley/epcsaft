@@ -187,6 +187,18 @@ diagnostics_checks = executable(
 )
 test('diagnostics', diagnostics_checks)
 
+density_producer_checks = executable(
+  'density_producer_checks',
+  files('tests/native/density_producer_checks.cpp',
+        'native/properties/density.cpp'),
+  cpp_args: native_warnings + ['-DEPCSAFT_DENSITY_TESTING'],
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('density_producer', density_producer_checks)
+
 properties_floor = executable(
   'properties_floor',
   'tests/native/properties_floor.cpp',
