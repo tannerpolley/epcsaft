@@ -66,6 +66,43 @@ struct DensityRoot final {
     std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
+
+    static DensityRoot publish(
+        double density,
+        double pressure_residual,
+        double pressure_slope,
+        std::size_t iteration_count,
+        std::optional<std::size_t> stable_count,
+        DensityBranch root_branch,
+        const core::Convergence& record,
+        bool at_iteration_cap = false
+    ) {
+        if (record.stop == core::Stop::nonfinite
+            || (at_iteration_cap && record.stop != core::Stop::converged)) {
+            throw core::ConvergenceFailure(record);
+        }
+        return DensityRoot(
+            density, pressure_residual, pressure_slope, iteration_count,
+            stable_count, root_branch, record
+        );
+    }
+
+private:
+    DensityRoot(
+        double density,
+        double pressure_residual,
+        double pressure_slope,
+        std::size_t iteration_count,
+        std::optional<std::size_t> stable_count,
+        DensityBranch root_branch,
+        const core::Convergence& record
+    )
+        : molar_density(density), pressure_residual(pressure_residual),
+          pressure_density_derivative(pressure_slope), iterations(iteration_count),
+          stable_root_count(stable_count), branch(root_branch), convergence(record) {}
+
+public:
+    DensityRoot() = default;
 };
 
 class HelmholtzModel final {

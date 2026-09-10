@@ -637,7 +637,8 @@ EquilibriumResult solve_equilibrium(
         convergence.stop = core::classify(
             convergence.residual, *convergence.criterion,
             convergence.floor, convergence.contraction,
-            nlp->status() != Ipopt::SUCCESS, convergence.amplification
+            (nlp->status() == Ipopt::MAXITER_EXCEEDED ||
+             nlp->status() == Ipopt::CPUTIME_EXCEEDED), convergence.amplification
         );
     }
     result.message = core::describe(convergence);

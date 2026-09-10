@@ -1449,6 +1449,8 @@ void check_c3_availability() {
         && failure.amounts.empty() && failure.mole_fractions.empty()
         && failure.molar_densities.empty() && failure.coordinates.empty();
     const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
+    const bool tiny_step_stalled = failure.solver_status == "STOP_AT_TINY_STEP"
+        && failure.convergence.stop == epcsaft::core::Stop::stalled;
 
     epcsaft::HelmholtzModel success_model(properties_support::neutral_binary());
     auto success_problem = equilibrium_support::flash(2);
@@ -1465,7 +1467,7 @@ void check_c3_availability() {
         "C3 equilibrium availability", "check");
     recording_support::compare(
         "c3-availability", "failed-result", "1",
-        (retained && cleared && failure_reason) ? 1.0 : 0.0, 1.0,
+        (retained && cleared && failure_reason && tiny_step_stalled) ? 1.0 : 0.0, 1.0,
         recording_support::fields({
             recording_support::field("solver_status", failure.solver_status),
             recording_support::field("stop", epcsaft::core::stop_name(failure.convergence.stop)),
@@ -1479,7 +1481,7 @@ void check_c3_availability() {
         }),
         "Relationship", "unavailable-result", "failed solve retains diagnostics and clears state",
         "absolute", 0.0, 0.0,
-        retained && cleared && failure_reason, "native.equilibrium.c3", "C3",
+        retained && cleared && failure_reason && tiny_step_stalled, "native.equilibrium.c3", "C3",
         "failed-result", "availability", "T,P,feed", "has_state=0 with diagnostics retained");
     recording_support::compare(
         "c3-availability", "success-state", "1", success_state ? 1.0 : 0.0, 1.0,
@@ -1494,7 +1496,7 @@ void check_c3_availability() {
         "Relationship", "available-result", "successful solve exposes state diagnostics",
         "absolute", 0.0, 0.0, success_state, "native.equilibrium.c3", "C3",
         "success-state", "availability", "T,P,feed", "has_state=1 with convergence retained");
-    CHECK(retained && cleared && failure_reason);
+    CHECK(retained && cleared && failure_reason && tiny_step_stalled);
     CHECK(success_state);
 }
 

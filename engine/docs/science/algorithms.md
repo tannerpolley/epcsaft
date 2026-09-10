@@ -198,11 +198,18 @@ constraint, not a mathematical singularity claim.
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
 application accuracy criteria stay beside their accepted reference cases.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
-solver status and termination reason visible. A tiny-step status alone never
-establishes success; recomputed residual and topology criteria still apply.
+solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
+`CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
+`STOP_AT_TINY_STEP` with a finite non-converged residual is stalled and
+unavailable, while a finite criterion-meeting tiny-step result remains
+eligible. A tiny-step status alone never establishes success; recomputed
+residual and topology criteria still apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
-diagnosis and do not determine success.
+diagnosis and do not determine success. Density root producers classify all
+optional diagnostics before publishing a criterion-meeting root; nonfinite
+floor, contraction or amplification is unavailable and throws the existing
+convergence failure.
 
 Propagate inner-solve/input error into an outer accuracy estimate using the
 applicable local conditioning and scale. A first-order estimate or pivot ratio

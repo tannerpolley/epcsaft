@@ -143,18 +143,16 @@ DensityRoot refine(
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
+    const auto root = DensityRoot::publish(
+        density, point.residual, point.slope, iterations + 1, std::nullopt,
+        DensityBranch::Unspecified, record, iterations == maximum
+    );
     parent_scope.probe(
         "density_root",
         {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
         static_cast<std::uint32_t>(iterations)
     );
-    if (iterations == maximum) {
-        if (record.stop != core::Stop::converged) {
-            throw core::ConvergenceFailure(record);
-        }
-    }
-    return {density, point.residual, point.slope, iterations + 1, std::nullopt,
-            DensityBranch::Unspecified, record};
+    return root;
 }
 
 }  // namespace
@@ -230,11 +228,16 @@ DensityRoot solve_density(
                         anchor_record.floor, anchor_record.contraction, false,
                         anchor_record.amplification
                     );
+                    try {
+                        result = DensityRoot::publish(
+                            density, point.residual, point.slope, iteration + 1,
+                            std::nullopt, branch, anchor_record
+                        );
+                    } catch (const core::ConvergenceFailure&) {
+                        anchor.finish(anchor_record);
+                        throw;
+                    }
                     anchor.finish(anchor_record);
-                    result = {
-                        density, point.residual, point.slope, iteration + 1,
-                        std::nullopt, branch, anchor_record
-                    };
                     have_result = true;
                     break;
                 }
@@ -250,6 +253,10 @@ DensityRoot solve_density(
                 anchor_record.stop = !std::isfinite(anchor_record.residual)
                     || (anchor_record.floor.has_value()
                         && !std::isfinite(*anchor_record.floor))
+                    || (anchor_record.contraction.has_value()
+                        && !std::isfinite(*anchor_record.contraction))
+                    || (anchor_record.amplification.has_value()
+                        && !std::isfinite(*anchor_record.amplification))
                     ? core::Stop::nonfinite
                     : core::Stop::singular;
                 anchor.finish(anchor_record);

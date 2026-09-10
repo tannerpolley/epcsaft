@@ -296,6 +296,128 @@ void density_records() {
                          epcsaft::DensityBranch::Liquid, "aqueous-298-liquid");
 }
 
+void density_publication_boundaries() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    const auto valid = model.state_at_pressure(
+        300.0, 1.0e5, {0.4, 0.6}, epcsaft::DensityBranch::Vapor
+    );
+    const bool valid_root = valid.density_convergence.has_value()
+        && valid.density_convergence->stop == Stop::converged
+        && std::isfinite(valid.density_convergence->residual)
+        && std::isfinite(valid.molar_density);
+
+    const epcsaft::policy::Tolerance criterion{
+        "density-publication", 1.0,
+        epcsaft::policy::Category::AlgorithmTolerance, "test"
+    };
+    epcsaft::core::Convergence refine_record;
+    refine_record.residual = 0.5;
+    refine_record.criterion = &criterion;
+    refine_record.floor = std::numeric_limits<double>::infinity();
+    refine_record.stop = epcsaft::core::classify(
+        refine_record.residual, criterion, refine_record.floor,
+        std::nullopt, false
+    );
+    bool refine_unavailable = false;
+    try {
+        (void)epcsaft::DensityRoot::publish(
+            1.0, 0.0, 1.0, 1, std::nullopt,
+            epcsaft::DensityBranch::Unspecified, refine_record
+        );
+    } catch (const epcsaft::core::ConvergenceFailure& error) {
+        refine_unavailable = error.record.stop == Stop::nonfinite;
+    }
+
+    epcsaft::core::Convergence anchor_record;
+    anchor_record.residual = 0.5;
+    anchor_record.criterion = &criterion;
+    anchor_record.amplification = std::numeric_limits<double>::infinity();
+    anchor_record.stop = epcsaft::core::classify(
+        anchor_record.residual, criterion, std::nullopt,
+        std::nullopt, false, anchor_record.amplification
+    );
+    bool anchor_unavailable = false;
+    try {
+        (void)epcsaft::DensityRoot::publish(
+            1.0, 0.0, 1.0, 1, std::nullopt,
+            epcsaft::DensityBranch::Vapor, anchor_record
+        );
+    } catch (const epcsaft::core::ConvergenceFailure& error) {
+        anchor_unavailable = error.record.stop == Stop::nonfinite;
+    }
+
+    epcsaft::core::Convergence cap_record;
+    cap_record.criterion = &epcsaft::policy::DENSITY_ROOT_RESIDUAL;
+    cap_record.stop = Stop::converged;
+    cap_record.iterations = static_cast<std::size_t>(
+        epcsaft::policy::DENSITY_MAX_ITERATIONS.value
+    ) + 1;
+    bool cap_available = false;
+    try {
+        const auto root = epcsaft::DensityRoot::publish(
+            1.0, 0.0, 1.0, cap_record.iterations, std::nullopt,
+            epcsaft::DensityBranch::Vapor, cap_record, true
+        );
+        cap_available = root.convergence.stop == Stop::converged
+            && root.convergence.iterations == cap_record.iterations;
+    } catch (const epcsaft::core::ConvergenceFailure&) {
+        cap_available = false;
+    }
+
+    recording_support::expect_group(
+        recording_support::active_test_id(), "density-publication",
+        "density-publication", 4, "C3 density publication boundaries", "check"
+    );
+    recording_support::compare(
+        "density-publication", "valid-root", "1", valid_root ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("T", 300.0),
+            recording_support::field("P", 1.0e5),
+            recording_support::field("x", std::vector<double>{0.4, 0.6}),
+            recording_support::field("stop", valid.density_convergence.has_value()
+                ? epcsaft::core::stop_name(valid.density_convergence->stop) : "absent"),
+            recording_support::field("residual", valid.density_convergence.has_value()
+                ? valid.density_convergence->residual : std::numeric_limits<double>::infinity()),
+        }),
+        "Relationship", "density-root", "finite density root remains available",
+        "absolute", 0.0, 0.0, valid_root, "native.diagnostics.c3-correction", "C3",
+        "density-publication", "availability", "T,P,x", "valid root published"
+    );
+    recording_support::compare(
+        "density-publication", "refine-nonfinite", "1", refine_unavailable ? 1.0 : 0.0,
+        1.0, recording_support::fields({
+            recording_support::field("floor", *refine_record.floor),
+            recording_support::field("stop", epcsaft::core::stop_name(refine_record.stop)),
+        }),
+        "Relationship", "density-refine", "refine rejects nonfinite root before publication",
+        "absolute", 0.0, 0.0, refine_unavailable, "native.diagnostics.c3-correction", "C3",
+        "density-publication", "availability", "residual,floor,amplification", "root rejected"
+    );
+    recording_support::compare(
+        "density-publication", "anchor-nonfinite", "1", anchor_unavailable ? 1.0 : 0.0,
+        1.0, recording_support::fields({
+            recording_support::field("amplification", *anchor_record.amplification),
+            recording_support::field("stop", epcsaft::core::stop_name(anchor_record.stop)),
+        }),
+        "Relationship", "density-anchor", "anchor rejects nonfinite root before publication",
+        "absolute", 0.0, 0.0, anchor_unavailable, "native.diagnostics.c3-correction", "C3",
+        "density-publication", "availability", "residual,floor,amplification", "root rejected"
+    );
+    recording_support::compare(
+        "density-publication", "finite-cap", "1", cap_available ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("iterations", cap_record.iterations),
+            recording_support::field("stop", epcsaft::core::stop_name(cap_record.stop)),
+            recording_support::field("residual", cap_record.residual),
+        }),
+        "Relationship", "density-root", "finite criterion root remains available at cap",
+        "absolute", 0.0, 0.0, cap_available, "native.diagnostics.c3-correction", "C3",
+        "density-publication", "availability", "residual,iterations", "cap root published"
+    );
+    CHECK(valid_root);
+    CHECK(refine_unavailable && anchor_unavailable && cap_available);
+}
+
 void association_record(
     const epcsaft::Parameters& parameters, double density,
     const std::vector<double>& composition, const char* point_id
@@ -440,6 +562,8 @@ void termination_boundaries() {
         std::numeric_limits<double>::infinity(), std::nullopt, false) == Stop::nonfinite;
     valid = valid && epcsaft::core::classify(2.0, criterion, std::nullopt,
         std::numeric_limits<double>::infinity(), false) == Stop::nonfinite;
+    valid = valid && epcsaft::core::classify(2.0, criterion, std::nullopt,
+        std::nullopt, false, std::numeric_limits<double>::infinity()) == Stop::nonfinite;
     epcsaft::core::ResidualHistory history;
     bool history_rejected = false;
     try { history.push(std::numeric_limits<double>::quiet_NaN()); }
@@ -516,6 +640,7 @@ int main(int argc, char** argv) {
         {{"native.diagnostics.d2", "Contraction_window", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "contraction-limit", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D2"}, contraction_window},
         {{"native.diagnostics.d3", "Declaration_guards", "Package", "Surface", "Explicit", "Outcome_only", nullptr, "S1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D3"}, declaration_guards},
         {{"native.diagnostics.d4", "Density_convergence_records", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "density-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D4", "density-residual/*:8"}, density_records},
+        {{"native.diagnostics.c3-density", "Density_publication_boundaries", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "C3", "density-publication", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "density-publication:4"}, density_publication_boundaries},
         {{"native.diagnostics.d5", "Association_convergence_records", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P2", "association-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D5", "association-residual/*:2"}, association_records},
         {{"native.diagnostics.c3", "Termination_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "termination-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "termination-boundaries:1"}, termination_boundaries},
         {{"native.diagnostics.c3-producers", "Producer_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "producer-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "producer-boundaries:1"}, producer_boundaries},
