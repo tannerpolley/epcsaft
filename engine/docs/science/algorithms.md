@@ -186,7 +186,7 @@ successful zero residual. Fitted values remain candidate parameters.
 
 ## ALG-TERMINATION
 
-Core C1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
+Core CORE1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
 is only the lower bound for the intensive `log(x_i)` coordinate. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;

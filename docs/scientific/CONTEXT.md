@@ -195,7 +195,7 @@ an architecture scan nor a successful solve proves model validity.
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
 | capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
-| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's C1, P1, … rows (implementation plan) |
+| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's CORE1, C1, P1, … rows (implementation plan) |
 | artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
 | qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 

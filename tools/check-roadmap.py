@@ -11,6 +11,8 @@ START = '<!-- roadmap-summary:start -->'
 END = '<!-- roadmap-summary:end -->'
 LAYERS = ('Core', 'Contributions', 'Properties', 'Equilibrium', 'Regression', 'Surface',
           'Bindings/Python', 'Application acceptance')
+PREFIXES = ('CORE', 'C', 'P', 'E', 'R', 'S', 'B', 'A')
+ID_RE = r'(?:CORE|[CPERSBA])\d+'
 
 
 def rows(source):
@@ -21,7 +23,7 @@ def rows(source):
     for line in source.splitlines():
         if line.startswith('### ') and line[4:] in LAYERS:
             layer = line[4:]
-        if not re.match(r'^\| [CPMERSBA]\d+ — ', line):
+        if not re.match(rf'^\| {ID_RE} — ', line):
             continue
         cells = [c.strip() for c in line.strip('|').split('|')]
         if len(cells) != 7 or layer is None:
@@ -31,7 +33,7 @@ def rows(source):
             'id': title.split()[0], 'title': title, 'layer': layer, 'status': status,
             'remaining': remaining, 'actual': actual, 'prerequisites': prerequisites,
             'required': required, 'record': record,
-            'dependencies': re.findall(r'\b[CPMERSBA]\d+\b', prerequisites),
+            'dependencies': re.findall(rf'\b{ID_RE}\b', prerequisites),
             'links': re.findall(r'\[[^\]]+\]\(([^)]+)\)', record),
         })
     return result
@@ -53,7 +55,7 @@ def summarize(source, directory):
         low, high = bounds[0], bounds[-1]
         if low > high or (actual != '—' and not re.fullmatch(r'\d+(?:\.\d+)?', actual)):
             raise ValueError(f'{key}: invalid hours')
-        if key != 'C1' and not deps:
+        if key != 'CORE1' and not deps:
             raise ValueError(f'{key}: missing prerequisites')
         if any(dep not in seen for dep in deps):
             raise ValueError(f'{key}: unknown, cyclic or forward prerequisite')
@@ -91,14 +93,14 @@ def self_test():
         (directory / 'evidence.md').write_text('Retained evidence')
         lines = []
         previous = 'Specifications and executable prerequisites'
-        for prefix, layer in zip('CPMERSBA', LAYERS):
+        for prefix, layer in zip(PREFIXES, LAYERS):
             key = prefix + '1'
             lines += [f'### {layer}', f'| {key} — Work | [x] | 0 | 1 | {previous} | Verify | [record](evidence.md) |']
             previous = key
         good = '\n'.join(lines)
         assert '8/8' in summarize(good, directory)
         for bad in (good.replace('evidence.md', 'missing.md'),
-                    good.replace('| C1 |', '| Z9 |'),
+                    good.replace('CORE1 — Work', 'Z9 — Work'),
                     good.replace('| [x] |', '| [ ] |', 1),
                     good.replace('| 0 |', '| 1 |', 1)):
             try:

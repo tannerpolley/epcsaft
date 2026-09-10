@@ -30,7 +30,9 @@ precede PH/PS/UV; the thermal milestone is not deferred past that layer.
 The milestone tables below are the sole editable progress record. `[ ]` means
 pending or reopened, `[-]` active, `[!]` blocked, and `[x]` qualified complete.
 Progress counts qualified milestones equally, not effort or existing scaffolding.
-No entire milestone has yet been qualified. Existing code is retained in the code/evidence map.
+Core milestones are qualified; Contributions and later layers remain pending. Existing code is retained in the code/evidence map.
+
+Historical label mapping: former Core `C1`–`C4` are current `CORE1`–`CORE4`; former Contributions `P1`–`P4` are current `C1`–`C4`; former Properties `M1`–`M5` are current `P1`–`P5`. Historical reviews, equation IDs and numerical test identifiers retain their original labels.
 
 Time estimates below are **provisional active elapsed hours for Astra-led agent
 work**, including repository inspection, design, tool/build execution, numerical
@@ -102,7 +104,7 @@ The Results page keeps execution outcome, production date, source/input freshnes
 and scientific qualification separate. Historical values remain visible and the
 complete retained F1/F5 tables remain downloadable when outdated. Missing,
 corrupt, and interrupted records remain explicit. F1's historical pass and F5's
-established failure do not qualify M1 or E1 or claim current code passed.
+established failure do not qualify P1 or E1 or claim current code passed.
 
 ### What each signal establishes
 
@@ -244,79 +246,79 @@ flowchart LR
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside C1. |
-| C2 — Parameter coordinates and scaling | [x] | 0 | 2.0 | C1 | Define and qualify common coordinate identities and dimensional scaling, including derivative coordinate transformations, with one-slot ownership for scalar coordinates. | [2026-09-10: C2 qualification after correction](reviews/core-c2-2026-09-10.md); supervisor correction closed by exact-one-index validation, red/value evidence, corrected installed-wheel gates, and independent `Supported` review. |
-| C3 — Diagnostics and availability | [x] | 0 | 2.0 | C1 | Define residuals, termination and unavailable-result information; preserve typed nonfinite/domain/singular/infeasible/budget outcomes through existing producers; correct solver budget classification and reject nonfinite density candidates before publication; retain valid outputs, evidence and independent review. | [2026-09-10: C3 correction qualification](reviews/core-c3-2026-09-10.md); implementation tree `cb8302f`, installed wheel `f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7`, scripted producer harness removed, genuine current-wheel replays passed, density publication branches source-reviewed only, fresh independent `Supported` review passed; pinned F5 remains outside scope. |
-| C4 — Core qualification | [x] | 0 | 0.25 | C2, C3 | Revalidate C1–C3 against one final installed wheel, inspect integrated residual/termination/availability behavior, measure equivalent-work cost against Core budgets, retain failures and claim limits, and obtain independent final acceptance. | [2026-09-10: C4 qualification](reviews/core-c4-2026-09-10.md); final wheel replay and cost review passed, with independent `Supported` acceptance; pinned F5 and source-reviewed density limits remain explicit. |
+| CORE1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside CORE1. |
+| CORE2 — Parameter coordinates and scaling | [x] | 0 | 2.0 | CORE1 | Define and qualify common coordinate identities and dimensional scaling, including derivative coordinate transformations, with one-slot ownership for scalar coordinates. | [2026-09-10: C2 qualification after correction](reviews/core-c2-2026-09-10.md); supervisor correction closed by exact-one-index validation, red/value evidence, corrected installed-wheel gates, and independent `Supported` review. |
+| CORE3 — Diagnostics and availability | [x] | 0 | 2.0 | CORE1 | Define residuals, termination and unavailable-result information; preserve typed nonfinite/domain/singular/infeasible/budget outcomes through existing producers; correct solver budget classification and reject nonfinite density candidates before publication; retain valid outputs, evidence and independent review. | [2026-09-10: C3 correction qualification](reviews/core-c3-2026-09-10.md); implementation tree `cb8302f`, installed wheel `f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7`, scripted producer harness removed, genuine current-wheel replays passed, density publication branches source-reviewed only, fresh independent `Supported` review passed; pinned F5 remains outside scope. |
+| CORE4 — Core qualification | [x] | 0 | 0.25 | CORE2, CORE3 | Revalidate CORE1–CORE3 against one final installed wheel, inspect integrated residual/termination/availability behavior, measure equivalent-work cost against Core budgets, retain failures and claim limits, and obtain independent final acceptance. | [2026-09-10: C4 qualification](reviews/core-c4-2026-09-10.md); final wheel replay and cost review passed, with independent `Supported` acceptance; pinned F5 and source-reviewed density limits remain explicit. |
 
 ```mermaid
 flowchart TD
   start["Specifications and executable prerequisites"]
-  C1["C1: Constants and numerical policy"]
-  start --> C1
-  C2["C2: Parameter coordinates and scaling"]
-  C1 --> C2
-  C3["C3: Diagnostics and availability"]
-  C1 --> C3
-  C4["C4: Core qualification"]
-  C2 --> C4
-  C3 --> C4
+  CORE1["CORE1: Constants and numerical policy"]
+  start --> CORE1
+  CORE2["CORE2: Parameter coordinates and scaling"]
+  CORE1 --> CORE2
+  CORE3["CORE3: Diagnostics and availability"]
+  CORE1 --> CORE3
+  CORE4["CORE4: Core qualification"]
+  CORE2 --> CORE4
+  CORE3 --> CORE4
 ```
 
 ### Contributions
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| P1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | C4 qualified | Qualify hard-chain/dispersion formulas and analytic limits; establish the ideal-gas Helmholtz formulation with explicit thermal and mixing inputs. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P2 — Association equations | [ ] | 0.5–1.5 | — | P1 | Qualify site topology, mass-action equations and support-limit mathematics. | — |
-| P3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | P1 | Qualify accepted formulas, charge conventions and singular limits. | — |
-| P4 — Contributions qualification | [ ] | 0.5–1.5 | — | P2, P3 | Contribution reference checks, duplication/cost review and independent acceptance. | — |
+| C1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | CORE4 qualified | Qualify hard-chain/dispersion formulas and analytic limits; establish the ideal-gas Helmholtz formulation with explicit thermal and mixing inputs. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| C2 — Association equations | [ ] | 0.5–1.5 | — | C1 | Qualify site topology, mass-action equations and support-limit mathematics. | — |
+| C3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | C1 | Qualify accepted formulas, charge conventions and singular limits. | — |
+| C4 — Contributions qualification | [ ] | 0.5–1.5 | — | C2, C3 | Contribution reference checks, duplication/cost review and independent acceptance. | — |
 
 ```mermaid
 flowchart TD
-  start["C4 qualified"]
-  P1["P1: Hard-chain and dispersion"]
-  start --> P1
-  P2["P2: Association equations"]
-  P1 --> P2
-  P3["P3: Electrolyte, Born and dielectric terms"]
-  P1 --> P3
-  P4["P4: Contributions qualification"]
-  P2 --> P4
-  P3 --> P4
+  start["CORE4 qualified"]
+  C1["C1: Hard-chain and dispersion"]
+  start --> C1
+  C2["C2: Association equations"]
+  C1 --> C2
+  C3["C3: Electrolyte, Born and dielectric terms"]
+  C1 --> C3
+  C4["C4: Contributions qualification"]
+  C2 --> C4
+  C3 --> C4
 ```
 
 ### Properties
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| M1 — Residual properties and caloric correction | [ ] | 1–3 | — | P4 qualified | Verify the residual-energy correction and thermodynamic identities. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
-| M2 — Association elimination and density closure | [ ] | 1–3 | — | M1 | Qualify implicit kernels, support limits and pressure-to-density branch closure; reuse the resolved state. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| M3 — Ideal and Total properties and references | [ ] | 2–6 | — | M2 | Derive Ideal properties from the ideal contribution and Total properties from the governing definitions; qualify thermal inputs, mixing, reference offsets and K(T) without treating physical ideal behavior as a reference convention. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| M4 — General property derivative actions | [ ] | 3–9 | — | M2, M3 | Qualify CppAD and implicit chains, actions through third order and parameter Jacobians; selected properties reuse shared work and agree with full evaluation. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| M5 — Properties qualification | [ ] | 1–3 | — | M4 | Independent identities/step ladders, repeated-mixture state changes, unavailable-input behavior, selective/full agreement, measured reuse/cost and review. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P1 — Residual properties and caloric correction | [ ] | 1–3 | — | C4 qualified | Verify the residual-energy correction and thermodynamic identities. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
+| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 | Qualify implicit kernels, support limits and pressure-to-density branch closure; reuse the resolved state. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 | Derive Ideal properties from the ideal contribution and Total properties from the governing definitions; qualify thermal inputs, mixing, reference offsets and K(T) without treating physical ideal behavior as a reference convention. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 | Qualify CppAD and implicit chains, actions through third order and parameter Jacobians; selected properties reuse shared work and agree with full evaluation. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P5 — Properties qualification | [ ] | 1–3 | — | P4 | Independent identities/step ladders, repeated-mixture state changes, unavailable-input behavior, selective/full agreement, measured reuse/cost and review. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 
 ```mermaid
 flowchart TD
-  start["P4 qualified"]
-  M1["M1: Residual properties and caloric correction"]
-  start --> M1
-  M2["M2: Association elimination and density closure"]
-  M1 --> M2
-  M3["M3: Ideal and Total properties and references"]
-  M2 --> M3
-  M4["M4: General property derivative actions"]
-  M2 --> M4
-  M3 --> M4
-  M5["M5: Properties qualification"]
-  M4 --> M5
+  start["C4 qualified"]
+  P1["P1: Residual properties and caloric correction"]
+  start --> P1
+  P2["P2: Association elimination and density closure"]
+  P1 --> P2
+  P3["P3: Ideal and Total properties and references"]
+  P2 --> P3
+  P4["P4: General property derivative actions"]
+  P2 --> P4
+  P3 --> P4
+  P5["P5: Properties qualification"]
+  P4 --> P5
 ```
 
 ### Equilibrium
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| E1 — Shared formulation and exact curvature | [ ] | 2–6 | — | M5 qualified | Qualify shared rows and complete multiplier/objective-weighted Hessians, including pinned cases. | — |
+| E1 — Shared formulation and exact curvature | [ ] | 2–6 | — | P5 qualified | Qualify shared rows and complete multiplier/objective-weighted Hessians, including pinned cases. | — |
 | E2 — Declared phase and reaction specifications | [ ] | 2–6 | — | E1 | TP, bubble/dew, phase fractions/amounts and explicit supports. | — |
 | E3 — Thermal specifications | [ ] | 2–6 | — | E2 | PH, PS and UV with consistent references and balances. | — |
 | E4 — Continuation and explicit phase search | [ ] | 2–6 | — | E2 | Branch following/disappearance; separately selected stability/discovery using the same driver. | — |
@@ -325,7 +327,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  start["M5 qualified"]
+  start["P5 qualified"]
   E1["E1: Shared formulation and exact curvature"]
   start --> E1
   E2["E2: Declared phase and reaction specifications"]
@@ -458,16 +460,16 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core C1 through C4 are qualified and repository separation is complete; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core CORE1 through CORE4 are qualified and repository separation is complete; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
-| 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; C1 qualification state is kept current. |
-| C1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
-| C1-correction | Correct and requalify C1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
-| C2-build | Implement and qualify bounded C2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, scalar exact-one-slot correction, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and C3 remain outside scope. |
-| C3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, record source-reviewed density branch limits, and pass independent `Supported` review. |
-| C4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel C1–C3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
+| 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; CORE1 qualification state is kept current. |
+| CORE1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
+| CORE1-correction | Correct and requalify CORE1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
+| CORE2-build | Implement and qualify bounded CORE2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, scalar exact-one-slot correction, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and CORE3 remain outside scope. |
+| CORE3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, record source-reviewed density branch limits, and pass independent `Supported` review. |
+| CORE4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel CORE1–CORE3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
 | Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
 | Next | Contributions qualification | Ready to start; do not widen the qualified Core claim. |
 
@@ -502,8 +504,8 @@ T/P/x with branch/anchor inputs. Pure currently has a separate class. The presen
 native state evaluates through Hessian order and returns flat residual outputs;
 selective requests and grouped ideal/residual/total outputs are not implemented.
 
-The architecture map owns the intended preparation/evaluation boundary. M2 owns
-pressure closure and reuse; M3 Ideal/Total properties and reference conversions; M4/M5
+The architecture map owns the intended preparation/evaluation boundary. P2 owns
+pressure closure and reuse; P3 Ideal/Total properties and reference conversions; P4/P5
 property dependencies, derivative work, reuse and numerical qualification; S1/S3
 bundle preparation and request-specific requirements; B1–B4 the thin public API.
 Core remains shared constants, units/coordinates, policy and diagnostics.
@@ -537,8 +539,8 @@ provisional pending that slice design; no qualification status changes here.
 The plan owns scientific scope, dependencies and qualification. GitHub issues
 own bounded delivery, discussion and design-review disposition; link each issue
 to its milestone and the result evidence. Standalone issues are normal. A layer
-parent is useful only for real decomposition: Core may have C1–C3 children and
-C4 as its integrated acceptance checklist. Reviewer assignments, commands and
+parent is useful only for real decomposition: Core may have CORE1–CORE3 children and
+CORE4 as its integrated acceptance checklist. Reviewer assignments, commands and
 file edits belong inside the issue, not in additional subissues. Create later
 issues when their scientific boundaries are clear.
 
@@ -619,7 +621,7 @@ scientific conflicts or changes of scope to the owner.
 | Requirement | Existing owner | Gap and numerical falsifier |
 |---|---|---|
 | Common residual energy and exact derivative chains; ALG-ASSOCIATION | `engine/native/contributions/helmholtz.hpp`, `association.hpp`, `electrolyte.hpp`, `born.hpp`; `engine/native/properties/helmholtz_tape.hpp` | Common tape exists. F2: weighted association elimination fails exact-zero associating support; E2 must separate regular mass action from the genuinely nonsmooth DH insertion Hessian. |
-| EqID: `residual_internal_energy`, residual/total caloric identities | `engine/native/properties/helmholtz_model.cpp` | F1: missing T factor corrected 2026-09-08; focused ladder and mixture caloric identities pass. Broader M1 qualification remains pending. Total h/u must not be substituted by residual fields. |
+| EqID: `residual_internal_energy`, residual/total caloric identities | `engine/native/properties/helmholtz_model.cpp` | F1: missing T factor corrected 2026-09-08; focused ladder and mixture caloric identities pass. Broader P1 qualification remains pending. Total h/u must not be substituted by residual fields. |
 | ALG-ADMISSION | `engine/native/surface/parameter_builder.cpp`, `engine/src/epcsaft/` | F3: neutral subset, charge defaults, source domains and ordinary electroneutrality incomplete; density-volume-temperature and dipolar-density permittivity families are specified but rejected by public builders; E2 plus explicit selected-support/domain cases. |
 | ALG-DENSITY | `engine/native/properties/density.cpp` | Gradient scan and corrected reduced slope exist. F4: public branch/count not preserved; E3/E5 root multiplicity, disappearance and branch tests. |
 | Equilibrium rows and ALG-EQUILIBRIUM | `engine/native/equilibrium/request_compile.cpp`, `gibbs_minimizer.cpp`, `phase_boundary.cpp` | Compiler/shared minimizer exist. F5 exact pinned Hessian and callback objective-factor weighting are incorrect. E12 directional weighted-gradient ladder at nonzero multipliers, obj_factor 0, 0.5 and 1, including free T/P away from seeds; zero curvature is not exact. Boundary seeds are not continuation. |
@@ -655,10 +657,10 @@ are required only for a calculation or expanded claim that actually consumes the
 
 Remaining design is attached to the affected milestones:
 
-- M3: standard-state conversions, four reaction bases and consistent thermal
+- P3: standard-state conversions, four reaction bases and consistent thermal
   references; compare supplied/corrected calorics before adopting residual-dependent
   references. Retained conversion arithmetic does not qualify physical conventions.
-- M4/E5: direct-state and pressure-closed coordinate charts, balanced composition
+- P4/E5: direct-state and pressure-closed coordinate charts, balanced composition
   directions, implicit mixed actions through third order and per-action failures.
   Pressure and density are not independent coordinates of the same closed state.
 - E1–E4: weighted objective/constraint curvature for pinned/free intensives,
