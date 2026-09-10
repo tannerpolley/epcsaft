@@ -21,6 +21,7 @@ enum class Stop : std::uint8_t {
     left_domain,
     singular,
     infeasible,
+    nonfinite,
 };
 
 struct Convergence final {
@@ -39,8 +40,15 @@ inline Stop classify(
     const policy::Tolerance& criterion,
     std::optional<double> floor,
     std::optional<double> contraction,
-    bool budget_hit
+    bool budget_hit,
+    std::optional<double> amplification = std::nullopt
 ) noexcept {
+    if (!std::isfinite(residual) ||
+        (floor.has_value() && !std::isfinite(*floor)) ||
+        (contraction.has_value() && !std::isfinite(*contraction)) ||
+        (amplification.has_value() && !std::isfinite(*amplification))) {
+        return Stop::nonfinite;
+    }
     if (residual <= criterion.value) return Stop::converged;
     if (floor.has_value() && residual <= policy::FLOOR_MARGIN.value * *floor) {
         return Stop::converged_to_floor;
@@ -54,6 +62,7 @@ inline Stop classify(
 class ResidualHistory final {
 public:
     void push(double residual) {
+        if (!std::isfinite(residual)) throw std::invalid_argument("nonfinite residual history");
         values_.push_back(residual);
         const auto limit = static_cast<std::size_t>(policy::STALL_WINDOW.value) + 1;
         if (values_.size() > limit) values_.pop_front();
@@ -83,6 +92,7 @@ inline const char* stop_name(Stop stop) noexcept {
     case Stop::left_domain: return "left_domain";
     case Stop::singular: return "singular";
     case Stop::infeasible: return "infeasible";
+    case Stop::nonfinite: return "nonfinite";
     }
     return "unknown";
 }

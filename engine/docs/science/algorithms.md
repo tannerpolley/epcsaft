@@ -211,6 +211,13 @@ accuracy than supplied inputs support, and do not loosen accepted thresholds
 to force convergence. Source rounding, numerical error, experimental uncertainty
 and model discrepancy are distinct. Missing accuracy/runtime thresholds stay
 owner decisions; historical microbenchmarks are not universal limits.
+`Stop::nonfinite` is unavailable and has precedence over finite convergence and
+floor predicates whenever the residual or an optional diagnostic is non-finite.
+For equilibrium, `success` requires accepted solver status, finite residuals and
+declared topology; an unsuccessful result retains `solver_status`, residuals,
+the convergence record and failure message while clearing candidate state and
+action arrays, so `has_state()` is the availability predicate. A successful
+result retains the same convergence record alongside its state.
 
 ## Verification obligations
 

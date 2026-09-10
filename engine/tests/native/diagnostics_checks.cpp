@@ -424,6 +424,89 @@ void trace_invariance() {
     trace_activity_case();
 }
 
+void termination_boundaries() {
+    const epcsaft::policy::Tolerance criterion{"c3", 1.0, epcsaft::policy::Category::AlgorithmTolerance, "test"};
+    const std::vector<double> nonfinite = {
+        std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity()
+    };
+    bool valid = true;
+    for (const double residual : nonfinite) {
+        valid = valid && epcsaft::core::classify(residual, criterion, std::nullopt,
+            std::nullopt, false) == Stop::nonfinite;
+    }
+    valid = valid && epcsaft::core::classify(2.0, criterion,
+        std::numeric_limits<double>::infinity(), std::nullopt, false) == Stop::nonfinite;
+    valid = valid && epcsaft::core::classify(2.0, criterion, std::nullopt,
+        std::numeric_limits<double>::infinity(), false) == Stop::nonfinite;
+    epcsaft::core::ResidualHistory history;
+    bool history_rejected = false;
+    try { history.push(std::numeric_limits<double>::quiet_NaN()); }
+    catch (const std::invalid_argument&) { history_rejected = true; }
+    valid = valid && history_rejected;
+    recording_support::expect_group(recording_support::active_test_id(),
+        "termination-boundaries", "termination-boundaries", 1,
+        "C3 nonfinite termination", "check");
+    recording_support::compare("termination-boundaries", "valid", "1",
+        valid ? 1.0 : 0.0, 1.0, {}, "Relationship", "classifier", "nonfinite boundaries",
+        "absolute", 0.0, 0.0, valid, "native.diagnostics.c3", "C3",
+        "termination", "stop", "residual", "nonfinite inputs rejected");
+}
+
+void producer_boundaries() {
+    const auto parameters = properties_support::associating_binary();
+    const auto sigma = epcsaft::segment_sigma(300.0, parameters);
+    const auto diameter = epcsaft::segment_diameter(300.0, parameters, sigma);
+
+    auto nonfinite_parameters = parameters;
+    nonfinite_parameters.association_energy_over_k[1] = 1.0e308;
+    epcsaft::core::Convergence nonfinite_record;
+    bool nonfinite = false;
+    try {
+        (void)epcsaft::solve_site_fractions(
+            300.0, 1.0e4, {0.4, 0.6}, nonfinite_parameters, sigma, diameter,
+            &nonfinite_record);
+    } catch (const epcsaft::core::ConvergenceFailure& error) {
+        nonfinite_record = error.record;
+        nonfinite = error.record.stop == Stop::nonfinite;
+    }
+
+    epcsaft::core::Convergence domain_record;
+    bool domain = false;
+    try {
+        (void)epcsaft::solve_site_fractions(
+            300.0, -1.0e8, {0.4, 0.6}, parameters, sigma, diameter,
+            &domain_record);
+    } catch (const epcsaft::core::ConvergenceFailure& error) {
+        domain_record = error.record;
+        domain = error.record.stop == Stop::left_domain;
+    }
+
+    const bool verdict = nonfinite && domain
+        && !std::isfinite(nonfinite_record.residual)
+        && std::isinf(domain_record.residual);
+    recording_support::expect_group(
+        recording_support::active_test_id(), "producer-boundaries", "producer-boundaries", 1,
+        "C3 typed producer stops", "check");
+    recording_support::compare(
+        "producer-boundaries", "typed-stops", "1", verdict ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("nonfinite_stop",
+                                     epcsaft::core::stop_name(nonfinite_record.stop)),
+            recording_support::field("domain_stop",
+                                     epcsaft::core::stop_name(domain_record.stop)),
+            recording_support::field("nonfinite_residual", nonfinite_record.residual),
+            recording_support::field("domain_residual", domain_record.residual),
+            recording_support::field("T", 300.0),
+            recording_support::field("rho_nonfinite", 1.0e4),
+            recording_support::field("rho_domain", -1.0e8),
+        }),
+        "Relationship", "producer-failure", "producers retain typed stop reasons",
+        "absolute", 0.0, 0.0, verdict, "native.diagnostics.c3", "C3",
+        "producer-boundaries", "stop", "T,rho,x,parameters", "typed stop retained");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -434,6 +517,8 @@ int main(int argc, char** argv) {
         {{"native.diagnostics.d3", "Declaration_guards", "Package", "Surface", "Explicit", "Outcome_only", nullptr, "S1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D3"}, declaration_guards},
         {{"native.diagnostics.d4", "Density_convergence_records", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "density-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D4", "density-residual/*:8"}, density_records},
         {{"native.diagnostics.d5", "Association_convergence_records", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P2", "association-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D5", "association-residual/*:2"}, association_records},
+        {{"native.diagnostics.c3", "Termination_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "termination-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "termination-boundaries:1"}, termination_boundaries},
+        {{"native.diagnostics.c3-producers", "Producer_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "C3", "producer-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "producer-boundaries:1"}, producer_boundaries},
         {{"native.diagnostics.d6", "Trace_invariance", "Package", "Core", "Explicit", "Outcome_only", nullptr, "B1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D6"}, trace_invariance},
     });
 }

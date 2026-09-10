@@ -188,7 +188,7 @@ inline std::vector<double> solve_site_fractions(
             record->amplification = 1.0;
             record->stop = core::classify(
                 record->residual, *record->criterion, record->floor,
-                record->contraction, false
+                record->contraction, false, record->amplification
             );
         }
         return {};
@@ -223,7 +223,7 @@ inline std::vector<double> solve_site_fractions(
         result.evaluations = evaluations;
         result.stop = classify
             ? core::classify(residual, *result.criterion, result.floor,
-                             result.contraction, true)
+                             result.contraction, true, result.amplification)
             : stop;
         return result;
     };
@@ -259,7 +259,9 @@ inline std::vector<double> solve_site_fractions(
         ++evaluations;
         double norm = 0.0;
         for (const double value : values) {
-            norm = std::max(norm, std::abs(value));
+            const double magnitude = std::abs(value);
+            if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+            norm = std::max(norm, magnitude);
         }
         return norm;
     };
@@ -331,6 +333,7 @@ inline std::vector<double> solve_site_fractions(
         );
         residual_norm = 0.0;
         bool valid = true;
+        bool finite_residual = true;
         for (std::size_t site = 0; site < sites; ++site) {
             if (!std::isfinite(next[site])
                 || next[site] <= policy::SITE_FRACTION_FLOOR.value
@@ -339,15 +342,30 @@ inline std::vector<double> solve_site_fractions(
                 residual_norm = std::numeric_limits<double>::infinity();
                 break;
             }
-            residual_norm = std::max(residual_norm, std::abs(residuals[site]));
+            const double magnitude = std::abs(residuals[site]);
+            if (!std::isfinite(magnitude)) {
+                finite_residual = false;
+                residual_norm = std::numeric_limits<double>::infinity();
+                break;
+            }
+            residual_norm = std::max(residual_norm, magnitude);
         }
         ++evaluations;
-        history.push(residual_norm);
-        scope.probe("association_residual_norm", residual_norm,
-                    static_cast<std::uint32_t>(iteration));
+        if (std::isfinite(residual_norm)) {
+            history.push(residual_norm);
+            scope.probe("association_residual_norm", residual_norm,
+                        static_cast<std::uint32_t>(iteration));
+        }
         if (!valid) {
             const auto failure = make_record(
                 residual_norm, iteration + 1, core::Stop::left_domain, false
+            );
+            scope.finish(failure);
+            throw core::ConvergenceFailure(failure);
+        }
+        if (!finite_residual) {
+            const auto failure = make_record(
+                residual_norm, iteration + 1, core::Stop::nonfinite, false
             );
             scope.finish(failure);
             throw core::ConvergenceFailure(failure);

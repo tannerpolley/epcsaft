@@ -1422,6 +1422,82 @@ void check_s15() {
     CHECK(refused);
 }
 
+void check_c3_availability() {
+    epcsaft::HelmholtzModel failure_model(properties_support::aqueous_electrolyte());
+    auto failure_problem = equilibrium_support::flash(3);
+    failure_problem.phases = {
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
+    };
+    failure_problem.phases[1].support = {0};
+    failure_problem.temperature.value = 298.15;
+    failure_problem.pressure.value = 1.0e5;
+    failure_problem.feed.kind = epcsaft::equilibrium::FeedKind::Molalities;
+    failure_problem.feed.values = {0.0, 1.0, 1.0};
+    failure_problem.feed.solvent = {0};
+    failure_problem.feed.solvent_mass_kg = 1.0;
+    const auto failure = epcsaft::equilibrium::solve_equilibrium(failure_model, failure_problem);
+    const bool retained = !failure.solver_status.empty()
+        && failure.convergence.criterion != nullptr
+        && std::isfinite(failure.convergence.residual)
+        && failure.rows.size() == failure.residuals.size()
+        && std::all_of(failure.residuals.begin(), failure.residuals.end(),
+                       [](double value) { return std::isfinite(value); })
+        && !failure.message.empty();
+    const bool cleared = !failure.success && !failure.has_state()
+        && failure.temperature.empty() && failure.pressure.empty()
+        && failure.amounts.empty() && failure.mole_fractions.empty()
+        && failure.molar_densities.empty() && failure.coordinates.empty();
+    const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
+
+    epcsaft::HelmholtzModel success_model(properties_support::neutral_binary());
+    auto success_problem = equilibrium_support::flash(2);
+    success_problem.reactions.clear();
+    success_problem.phases.resize(1);
+    const auto success = epcsaft::equilibrium::solve_equilibrium(success_model, success_problem);
+    const bool success_state = success.success && success.has_state()
+        && success.convergence.criterion != nullptr
+        && std::isfinite(success.convergence.residual)
+        && !success.solver_status.empty();
+
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c3-availability", "c3-availability", 2,
+        "C3 equilibrium availability", "check");
+    recording_support::compare(
+        "c3-availability", "failed-result", "1",
+        (retained && cleared && failure_reason) ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("solver_status", failure.solver_status),
+            recording_support::field("stop", epcsaft::core::stop_name(failure.convergence.stop)),
+            recording_support::field("residual", failure.convergence.residual),
+            recording_support::field("row_count", failure.rows.size()),
+            recording_support::field("residual_count", failure.residuals.size()),
+            recording_support::field("message", failure.message),
+            recording_support::field("T", failure_problem.temperature.value),
+            recording_support::field("P", failure_problem.pressure.value),
+            recording_support::field("feed", failure_problem.feed.values),
+        }),
+        "Relationship", "unavailable-result", "failed solve retains diagnostics and clears state",
+        "absolute", 0.0, 0.0,
+        retained && cleared && failure_reason, "native.equilibrium.c3", "C3",
+        "failed-result", "availability", "T,P,feed", "has_state=0 with diagnostics retained");
+    recording_support::compare(
+        "c3-availability", "success-state", "1", success_state ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("solver_status", success.solver_status),
+            recording_support::field("stop", epcsaft::core::stop_name(success.convergence.stop)),
+            recording_support::field("residual", success.convergence.residual),
+            recording_support::field("T", success_problem.temperature.value),
+            recording_support::field("P", success_problem.pressure.value),
+            recording_support::field("feed", success_problem.feed.values),
+        }),
+        "Relationship", "available-result", "successful solve exposes state diagnostics",
+        "absolute", 0.0, 0.0, success_state, "native.equilibrium.c3", "C3",
+        "success-state", "availability", "T,P,feed", "has_state=1 with convergence retained");
+    CHECK(retained && cleared && failure_reason);
+    CHECK(success_state);
+}
+
 void check_s16() {
     epcsaft::HelmholtzModel model(equilibrium_support::ascani_reactive_ternary());
     auto problem = equilibrium_support::ascani_reactive_problem();
@@ -1497,6 +1573,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
         {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
         {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},
+        {{"native.equilibrium.c3", "Core_C3_availability", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C3", "c3-availability", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C3", "c3-availability:2"}, check_c3_availability},
         {{"native.equilibrium.s16", "Equilibrium_S16", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*,affinity/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S16", "continuation/*:18,affinity/*:6"}, check_s16},
     });
 }

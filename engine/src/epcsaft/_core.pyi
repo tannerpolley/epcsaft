@@ -13,6 +13,7 @@ class Stop:
     left_domain: Stop
     singular: Stop
     infeasible: Stop
+    nonfinite: Stop
 
 class Category:
     ThermodynamicConstraint: Category

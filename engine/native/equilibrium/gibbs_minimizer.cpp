@@ -40,7 +40,11 @@ std::vector<std::size_t> phase_offsets(const CompiledSystem& compiled) {
 
 double maximum_abs(const std::vector<double>& values) {
     double result = 0.0;
-    for (const double value : values) result = std::max(result, std::abs(value));
+    for (const double value : values) {
+        const double magnitude = std::abs(value);
+        if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+        result = std::max(result, magnitude);
+    }
     return result;
 }
 
@@ -338,15 +342,20 @@ ResidualSummary summarize_residuals(
     const std::size_t count = std::min(rows.size(), values.size());
     for (std::size_t index = 0; index < count; ++index) {
         const double magnitude = std::abs(values[index]);
-        result.maximum = std::max(result.maximum, magnitude);
+        if (!std::isfinite(magnitude)) result.maximum = std::numeric_limits<double>::infinity();
+        else result.maximum = std::max(result.maximum, magnitude);
         if (rows[index].kind == RowKind::Chemical || rows[index].kind == RowKind::Pressure) {
-            result.intensive = std::max(result.intensive, magnitude);
+            if (!std::isfinite(magnitude)) result.intensive = std::numeric_limits<double>::infinity();
+            else result.intensive = std::max(result.intensive, magnitude);
         } else if (rows[index].kind == RowKind::Moiety) {
-            result.balance = std::max(result.balance, magnitude);
+            if (!std::isfinite(magnitude)) result.balance = std::numeric_limits<double>::infinity();
+            else result.balance = std::max(result.balance, magnitude);
         } else if (rows[index].kind == RowKind::Normalization) {
-            result.normalization = std::max(result.normalization, magnitude);
+            if (!std::isfinite(magnitude)) result.normalization = std::numeric_limits<double>::infinity();
+            else result.normalization = std::max(result.normalization, magnitude);
         } else if (rows[index].kind == RowKind::Electro) {
-            result.charge = std::max(result.charge, magnitude);
+            if (!std::isfinite(magnitude)) result.charge = std::numeric_limits<double>::infinity();
+            else result.charge = std::max(result.charge, magnitude);
         }
     }
     return result;
@@ -618,13 +627,17 @@ EquilibriumResult solve_equilibrium(
     result.hessian_calls = nlp->hessian_calls();
     convergence.iterations = result.iterations;
     convergence.evaluations = result.evaluations;
-    if (nlp->status() == Ipopt::LOCAL_INFEASIBILITY) {
-        convergence.stop = core::Stop::infeasible;
-    } else {
+    switch (nlp->status()) {
+    case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
+    case Ipopt::DIVERGING_ITERATES: convergence.stop = core::Stop::left_domain; break;
+    case Ipopt::ERROR_IN_STEP_COMPUTATION: convergence.stop = core::Stop::singular; break;
+    case Ipopt::LOCAL_INFEASIBILITY:
+    case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: convergence.stop = core::Stop::infeasible; break;
+    default:
         convergence.stop = core::classify(
             convergence.residual, *convergence.criterion,
             convergence.floor, convergence.contraction,
-            nlp->status() != Ipopt::SUCCESS
+            nlp->status() != Ipopt::SUCCESS, convergence.amplification
         );
     }
     result.message = core::describe(convergence);

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <array>
+#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -137,7 +138,11 @@ struct PointEvaluation final {
 
     double residual_norm() const noexcept {
         double result = 0.0;
-        for (const double value : values) result = std::max(result, std::abs(value));
+        for (const double value : values) {
+            const double magnitude = std::abs(value);
+            if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+            result = std::max(result, magnitude);
+        }
         return result;
     }
 };
@@ -222,7 +227,11 @@ struct EquilibriumResult final {
 
     double residual_norm() const noexcept {
         double result = 0.0;
-        for (const double value : residuals) result = std::max(result, std::abs(value));
+        for (const double value : residuals) {
+            const double magnitude = std::abs(value);
+            if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+            result = std::max(result, magnitude);
+        }
         return result;
     }
 };

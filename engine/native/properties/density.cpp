@@ -140,17 +140,18 @@ DensityRoot refine(
             ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
         history.contraction(), iterations + 1, evaluations, core::Stop::stalled
     };
-    record.stop = core::classify(
-        record.residual, *record.criterion, record.floor, record.contraction,
-        iterations == maximum
-    );
+    record.stop = core::classify(record.residual, *record.criterion, record.floor,
+                                 record.contraction, iterations == maximum,
+                                 record.amplification);
     parent_scope.probe(
         "density_root",
         {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
         static_cast<std::uint32_t>(iterations)
     );
     if (iterations == maximum) {
-        throw core::ConvergenceFailure(record);
+        if (record.stop != core::Stop::converged) {
+            throw core::ConvergenceFailure(record);
+        }
     }
     return {density, point.residual, point.slope, iterations + 1, std::nullopt,
             DensityBranch::Unspecified, record};
@@ -226,7 +227,8 @@ DensityRoot solve_density(
                 if (far_side_clear) {
                     anchor_record.stop = core::classify(
                         anchor_record.residual, *anchor_record.criterion,
-                        anchor_record.floor, anchor_record.contraction, false
+                        anchor_record.floor, anchor_record.contraction, false,
+                        anchor_record.amplification
                     );
                     anchor.finish(anchor_record);
                     result = {
@@ -238,14 +240,18 @@ DensityRoot solve_density(
                 }
                 anchor_record.stop = core::classify(
                     anchor_record.residual, *anchor_record.criterion,
-                    anchor_record.floor, anchor_record.contraction, false
+                    anchor_record.floor, anchor_record.contraction, false,
+                    anchor_record.amplification
                 );
                 anchor.finish(anchor_record);
                 break;
             }
             if (!std::isfinite(derivative) || derivative == 0.0) {
-                anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                                                     anchor_record.floor, anchor_record.contraction, false);
+                anchor_record.stop = !std::isfinite(anchor_record.residual)
+                    || (anchor_record.floor.has_value()
+                        && !std::isfinite(*anchor_record.floor))
+                    ? core::Stop::nonfinite
+                    : core::Stop::singular;
                 anchor.finish(anchor_record);
                 break;
             }
@@ -259,7 +265,8 @@ DensityRoot solve_density(
         }
         if (iteration == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) {
             anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                                                 anchor_record.floor, anchor_record.contraction, true);
+                                                anchor_record.floor, anchor_record.contraction, true,
+                                                anchor_record.amplification);
             anchor.finish(anchor_record);
         }
     }
