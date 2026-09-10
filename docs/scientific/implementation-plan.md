@@ -244,7 +244,7 @@ flowchart LR
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; retain falsifying evidence and independent final review. | [2026-09-10: C1 correction qualification](reviews/core-c1-2026-09-09.md); corrected installed-wheel evidence and independent `Ship` review passed; broader pinned F5 remains outside C1. |
+| C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside C1. |
 | C2 — Parameter coordinates and scaling | [ ] | 0.25–0.75 | — | C1 | Define common coordinate identities and dimensional scaling, including derivative coordinate transformations. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C3 — Diagnostics and availability | [ ] | 0.25–0.75 | — | C1 | Define residuals, termination and unavailable-result information. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C4 — Core qualification | [ ] | 0.25–0.75 | — | C2, C3 | Focused checks, cost review and independent acceptance. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
@@ -458,14 +458,14 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: notebook cutover correction closeout and Core/C1 qualification are complete. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness. The next bounded slice is C2.
+Current stage: notebook cutover correction closeout and Core/C1 qualification are complete. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness. C2 remains queued.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
 | 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; C1 qualification state is kept current. |
 | C1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
-| C1-correction | Correct and requalify C1 | Complete: removed the extra multiplier rescaling, corrected installed-wheel falsifiers passed, numerical evidence retained, and independent final-tree review returned `Ship`. |
-| Next | Define bounded C2 slice | C1 is qualified for its stated constants/policy and extensive-scaling claim; do not expand C1 into C2/C3 work. |
+| C1-correction | Correct and requalify C1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
+| Next | Define bounded C2 slice | C1 is qualified for its stated constants, policy meanings and tested feed-scaling claim; do not expand C1 into C2/C3 work. |
 
 Local C1 design and validation are followed by slice-scoped Core work. Repository
 creation, remote changes and issue publication are separate actions and do not

@@ -6,6 +6,7 @@
 #include "recording_support.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -337,7 +338,8 @@ bool check_weighted_hessian_gradient_ladder(
     const std::vector<double>& point,
     const std::vector<double>& multipliers,
     const char* label,
-    double tolerance
+    double tolerance,
+    std::array<std::size_t, 3>* false_verdicts = nullptr
 ) {
     const auto rows = callback_rows(compiled);
     epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
@@ -359,6 +361,8 @@ bool check_weighted_hessian_gradient_ladder(
                      multipliers.data(), true, shape.hessian_entries,
                      hessian_rows.data(), hessian_columns.data(), nullptr));
     bool all_verdicts = true;
+    std::array<std::size_t, 3> false_counts{};
+    std::size_t objective_index = 0;
     for (const double objective_factor : objective_factors) {
         std::vector<Ipopt::Number> hessian(
             static_cast<std::size_t>(shape.hessian_entries), 0.0
@@ -423,10 +427,13 @@ bool check_weighted_hessian_gradient_ladder(
                         "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
                         coordinates.c_str());
                     all_verdicts = all_verdicts && verdict;
+                    if (!verdict) ++false_counts[objective_index];
                 }
             }
         }
+        ++objective_index;
     }
+    if (false_verdicts != nullptr) *false_verdicts = false_counts;
     return all_verdicts;
 }
 
@@ -755,6 +762,10 @@ void check_c1_amount_scale() {
             recording_support::field("T", 300.0),
             recording_support::field("P", 1.0e5),
             recording_support::field("feed", normal.feed.values),
+            recording_support::field("solver_status", first.solver_status),
+            recording_support::field("convergence_stop",
+                epcsaft::core::stop_name(first.convergence.stop)),
+            recording_support::field("residual", first.convergence.residual),
             recording_support::field("phase", i),
         });
         recording_support::compare(
@@ -768,6 +779,10 @@ void check_c1_amount_scale() {
             recording_support::field("T", 300.0),
             recording_support::field("P", 1.0e5),
             recording_support::field("feed", tiny.feed.values),
+            recording_support::field("solver_status", second.solver_status),
+            recording_support::field("convergence_stop",
+                epcsaft::core::stop_name(second.convergence.stop)),
+            recording_support::field("residual", second.convergence.residual),
             recording_support::field("phase", i),
         });
         recording_support::compare(
@@ -832,6 +847,12 @@ void check_c1_multiplier_scale() {
         recording_support::field("feed_large", large.feed.values),
         recording_support::field("feed_total_small", small_compiled.feed_total),
         recording_support::field("feed_total_large", large_compiled.feed_total),
+        recording_support::field("small_solver_status", small_result.solver_status),
+        recording_support::field("large_solver_status", large_result.solver_status),
+        recording_support::field("small_convergence_stop",
+            epcsaft::core::stop_name(small_result.convergence.stop)),
+        recording_support::field("large_convergence_stop",
+            epcsaft::core::stop_name(large_result.convergence.stop)),
         recording_support::field("active_constraint_count", small_rows.size()),
         recording_support::field("small_objective_gradient", small_objective),
         recording_support::field("large_objective_gradient", large_objective),
@@ -917,6 +938,130 @@ void check_c1_multiplier_scale() {
         double_scaled_kkt > large_kkt_limit, "c1-multiplier-scale", "double-scaling",
         "||r_KKT||", "T,P,feed,lambda", "double-scaled lambda rejected", "feed");
     CHECK(double_scaled_kkt > large_kkt_limit);
+
+    auto tiny = small;
+    tiny.feed.values = {5.0e-10, 5.0e-10};
+    const auto tiny_result = epcsaft::equilibrium::solve_equilibrium(model, tiny);
+    CHECK(tiny_result.success);
+    if (!tiny_result.success) return;
+    const auto tiny_compiled = epcsaft::equilibrium::compile_problem(model, tiny);
+    const auto tiny_rows = callback_rows(tiny_compiled);
+    CHECK(tiny_rows == small_rows);
+    CHECK(tiny_result.constraint_multipliers.size() == tiny_rows.size());
+    if (tiny_rows != small_rows
+        || tiny_result.constraint_multipliers.size() != tiny_rows.size()) return;
+
+    const auto tiny_point = std::vector<double>(
+        tiny_result.coordinates.begin(),
+        tiny_result.coordinates.begin()
+            + static_cast<std::ptrdiff_t>(tiny_compiled.primal_size));
+    const auto tiny_objective = tiny_compiled.objective_gradient(tiny_point);
+    const auto tiny_kkt = kkt_gradient(
+        tiny_compiled, tiny_point, tiny_result.constraint_multipliers);
+    const double tiny_kkt_scale = maximum_abs(tiny_objective);
+    CHECK(tiny_kkt_scale > 0.0);
+    const double tiny_kkt_limit =
+        100.0 * epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value * tiny_kkt_scale;
+    const double tiny_kkt_residual = maximum_abs(tiny_kkt);
+    const auto tiny_inputs = recording_support::fields({
+        recording_support::field("T", 300.0),
+        recording_support::field("P", 1.0e5),
+        recording_support::field("feed", tiny.feed.values),
+        recording_support::field("feed_total", tiny_compiled.feed_total),
+        recording_support::field("solver_status", tiny_result.solver_status),
+        recording_support::field("convergence_stop",
+            epcsaft::core::stop_name(tiny_result.convergence.stop)),
+        recording_support::field("residual", tiny_result.convergence.residual),
+        recording_support::field("convergence_limit", convergence_limit(tiny_result.convergence)),
+        recording_support::field("objective_gradient", tiny_objective),
+        recording_support::field("constraint_multipliers",
+            tiny_result.constraint_multipliers),
+        recording_support::field("kkt_scale", tiny_kkt_scale),
+        recording_support::field("kkt_limit", tiny_kkt_limit),
+        recording_support::field("reduced_hessian_minimum",
+            tiny_result.reduced_hessian_minimum),
+    });
+    const bool tiny_status_ok = tiny_result.solver_status == "STOP_AT_TINY_STEP";
+    recording_support::compare(
+        "c1-multiplier-scale/tiny-status", "tiny_step_status", "bool",
+        tiny_status_ok ? 1.0 : 0.0, 1.0, tiny_inputs, "Relationship", "Ipopt",
+        "tiny-feed case uses the recorded tiny-step termination", "absolute", 0.0, 0.0,
+        tiny_status_ok, "c1-multiplier-scale", "tiny-status", "status", "feed",
+        "status=STOP_AT_TINY_STEP", "feed");
+    const bool tiny_stop_ok = tiny_result.convergence.stop == epcsaft::core::Stop::converged;
+    recording_support::compare(
+        "c1-multiplier-scale/tiny-convergence", "convergence_stop", "bool",
+        tiny_stop_ok ? 1.0 : 0.0, 1.0, tiny_inputs, "Relationship", "equilibrium-residual",
+        "tiny-step is accepted only after residual convergence", "absolute", 0.0, 0.0,
+        tiny_stop_ok, "c1-multiplier-scale", "tiny-convergence", "stop", "feed,residual",
+        "stop=converged", "feed");
+    recording_support::compare(
+        "c1-multiplier-scale/tiny-kkt", "kkt_residual", "1", tiny_kkt_residual, 0.0,
+        tiny_inputs, "Relationship", "KKT", "tiny-feed returned multipliers satisfy KKT",
+        "strict_absolute", tiny_kkt_limit, 0.0, tiny_kkt_residual <= tiny_kkt_limit,
+        "c1-multiplier-scale", "tiny", "||r_KKT||", "T,P,feed,lambda,scale",
+        "||r_KKT||<=100*row_residual*||grad f||", "feed");
+    const bool tiny_reduced_hessian_ok =
+        std::isfinite(tiny_result.reduced_hessian_minimum)
+        && tiny_result.reduced_hessian_minimum > 0.0;
+    recording_support::compare_custom(
+        "c1-multiplier-scale/tiny-reduced-hessian", "reduced_hessian_minimum", "1",
+        tiny_result.reduced_hessian_minimum, 0.0, tiny_inputs, "Relationship", "KKT",
+        "tiny-feed reduced Hessian remains positive", "model > 0", tiny_reduced_hessian_ok,
+        "c1-multiplier-scale", "tiny-reduced-hessian", "lambda_min", "feed,lambda",
+        "lambda_min>0", "feed");
+    CHECK(tiny_status_ok);
+    CHECK(tiny_stop_ok);
+    CHECK(tiny_kkt_residual <= tiny_kkt_limit);
+    CHECK(tiny_reduced_hessian_ok);
+
+    const double tiny_feed_scale = tiny_compiled.feed_total / small_compiled.feed_total;
+    double tiny_multiplier_difference = 0.0;
+    for (std::size_t i = 0; i < tiny_result.constraint_multipliers.size(); ++i) {
+        const double expected = tiny_feed_scale * small_result.constraint_multipliers[i];
+        const double denominator = std::max(std::abs(expected), tiny_kkt_limit);
+        tiny_multiplier_difference = std::max(
+            tiny_multiplier_difference,
+            std::abs(tiny_result.constraint_multipliers[i] - expected) / denominator);
+    }
+    recording_support::compare(
+        "c1-multiplier-scale/tiny-multipliers", "relative_multiplier_difference", "1",
+        tiny_multiplier_difference, 0.0, tiny_inputs, "Relationship", "extensive-scaling",
+        "tiny-feed multipliers scale with feed amount", "reference_or_one", 1.0e-6, 0.0,
+        tiny_multiplier_difference <= 1.0e-6, "c1-multiplier-scale", "tiny-multipliers",
+        "delta_lambda", "feed,lambda,scale", "lambda_tiny=1e-9*lambda_small", "feed");
+    CHECK(tiny_multiplier_difference <= 1.0e-6);
+
+    double tiny_intensive_difference = 0.0;
+    tiny_intensive_difference = std::max(
+        tiny_intensive_difference,
+        std::abs(tiny_result.temperature.front() - small_result.temperature.front())
+            / std::max(1.0, std::abs(small_result.temperature.front())));
+    tiny_intensive_difference = std::max(
+        tiny_intensive_difference,
+        std::abs(tiny_result.pressure.front() - small_result.pressure.front())
+            / std::max(1.0, std::abs(small_result.pressure.front())));
+    for (std::size_t i = 0; i < small_result.mole_fractions.size(); ++i) {
+        tiny_intensive_difference = std::max(
+            tiny_intensive_difference,
+            std::abs(tiny_result.mole_fractions[i] - small_result.mole_fractions[i]));
+    }
+    for (std::size_t i = 0; i < small_result.molar_densities.size(); ++i) {
+        tiny_intensive_difference = std::max(
+            tiny_intensive_difference,
+            std::abs(tiny_result.molar_densities[i] - small_result.molar_densities[i])
+                / std::max(1.0, std::abs(small_result.molar_densities[i])));
+        tiny_intensive_difference = std::max(
+            tiny_intensive_difference,
+            std::abs(tiny_result.packing_fractions[i] - small_result.packing_fractions[i]));
+    }
+    recording_support::compare(
+        "c1-multiplier-scale/tiny-intensives", "relative_intensive_difference", "1",
+        tiny_intensive_difference, 0.0, tiny_inputs, "Relationship", "extensive-scaling",
+        "tiny-feed intensive state is invariant", "reference_or_one", 1.0e-8, 0.0,
+        tiny_intensive_difference <= 1.0e-8, "c1-multiplier-scale", "tiny-intensives",
+        "delta_state", "feed,T,P", "state_tiny=state_small", "feed");
+    CHECK(tiny_intensive_difference <= 1.0e-8);
 }
 
 void check_s8() {
@@ -999,13 +1144,40 @@ void check_s10() {
     expect_weighted_hessian_gradient_ladder(
         pinned, pinned_point, pinned_lambda, "pinned"
     );
+    std::array<std::size_t, 3> regular_false_verdicts{};
+    std::array<std::size_t, 3> pinned_false_verdicts{};
     const bool regular_ok = check_weighted_hessian_gradient_ladder(
-        flash, primal, lambda, "regular", 1.0e-6
+        flash, primal, lambda, "regular", 1.0e-6, &regular_false_verdicts
     );
     const bool pinned_ok = check_weighted_hessian_gradient_ladder(
-        pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5
+        pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5, &pinned_false_verdicts
     );
-    CHECK(regular_ok && pinned_ok);
+    const std::array<double, 3> objective_factors = {0.0, 0.5, 1.0};
+    for (std::size_t i = 0; i < objective_factors.size(); ++i) {
+        const auto inputs = recording_support::fields({
+            recording_support::field("objective_factor", objective_factors[i]),
+            recording_support::field("regular_false_verdict_count", regular_false_verdicts[i]),
+            recording_support::field("pinned_false_verdict_count", pinned_false_verdicts[i]),
+        });
+        recording_support::compare(
+            (std::string("f5-summary/regular/")
+                + recording_support::number(objective_factors[i])).c_str(),
+            "false_verdict_count", "count", static_cast<double>(regular_false_verdicts[i]),
+            0.0, inputs, "Relationship", "hessian-ladder-summary",
+            "regular Hessian ladder has no false verdicts", "absolute", 0.0, 0.0,
+            regular_false_verdicts[i] == 0, "f5-hessian-summary", "regular", "count",
+            "objective_factor", "false_verdict_count=0", "objective_factor");
+        recording_support::compare_custom(
+            (std::string("f5-summary/pinned/")
+                + recording_support::number(objective_factors[i])).c_str(),
+            "false_verdict_count", "count", static_cast<double>(pinned_false_verdicts[i]),
+            0.0, inputs, "Relationship", "hessian-ladder-summary",
+            "pinned Hessian ladder false-verdict count is retained", "model > 0",
+            pinned_false_verdicts[i] > 0, "f5-hessian-summary", "pinned", "count",
+            "objective_factor", "false_verdict_count>0", "objective_factor");
+    }
+    CHECK(regular_ok);
+    CHECK(pinned_ok);
 }
 
 void check_s11() {
@@ -1314,7 +1486,7 @@ void check_s16() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
+        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
         {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},

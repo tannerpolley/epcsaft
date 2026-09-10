@@ -135,6 +135,29 @@ void clear_state(EquilibriumResult& result) {
     result.coordinates.clear();
 }
 
+const char* solver_status_name(Ipopt::SolverReturn status) noexcept {
+    switch (status) {
+    case Ipopt::SUCCESS: return "SUCCESS";
+    case Ipopt::MAXITER_EXCEEDED: return "MAXITER_EXCEEDED";
+    case Ipopt::CPUTIME_EXCEEDED: return "CPUTIME_EXCEEDED";
+    case Ipopt::STOP_AT_TINY_STEP: return "STOP_AT_TINY_STEP";
+    case Ipopt::STOP_AT_ACCEPTABLE_POINT: return "STOP_AT_ACCEPTABLE_POINT";
+    case Ipopt::LOCAL_INFEASIBILITY: return "LOCAL_INFEASIBILITY";
+    case Ipopt::USER_REQUESTED_STOP: return "USER_REQUESTED_STOP";
+    case Ipopt::FEASIBLE_POINT_FOUND: return "FEASIBLE_POINT_FOUND";
+    case Ipopt::DIVERGING_ITERATES: return "DIVERGING_ITERATES";
+    case Ipopt::RESTORATION_FAILURE: return "RESTORATION_FAILURE";
+    case Ipopt::ERROR_IN_STEP_COMPUTATION: return "ERROR_IN_STEP_COMPUTATION";
+    case Ipopt::INVALID_NUMBER_DETECTED: return "INVALID_NUMBER_DETECTED";
+    case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: return "TOO_FEW_DEGREES_OF_FREEDOM";
+    case Ipopt::INVALID_OPTION: return "INVALID_OPTION";
+    case Ipopt::OUT_OF_MEMORY: return "OUT_OF_MEMORY";
+    case Ipopt::INTERNAL_ERROR: return "INTERNAL_ERROR";
+    case Ipopt::UNASSIGNED: return "UNASSIGNED";
+    }
+    return "UNKNOWN";
+}
+
 void require_solution_shape(
     const EquilibriumResult& result, std::size_t phases, std::size_t components
 ) {
@@ -562,6 +585,7 @@ EquilibriumResult solve_equilibrium(
     application->Initialize();
     application->OptimizeTNLP(nlp);
     EquilibriumResult result;
+    result.solver_status = solver_status_name(nlp->status());
     result.rows = compiled.rows;
     result.phase_count = compiled.problem.phases.size();
     std::vector<double> point = nlp->solution();

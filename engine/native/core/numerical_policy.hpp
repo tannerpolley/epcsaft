@@ -13,12 +13,14 @@
 //                                  the model wrong, not merely different
 //   3  algorithm tolerance      -- a convergence or discretisation choice with a
 //                                  stated source and a stated consequence
-//   4  unjustified legacy       -- a number nobody can source
+//   4  unjustified legacy       -- a number nobody can source; this category is empty
 //
 // Category 4 is empty and must stay empty. An entry that cannot be justified
-// into category 3 with a source does not get carried; the audit found the
-// drifted values below by comparing against the paper, and they are pinned here
-// so a solver stage cannot quietly move them again.
+// into category 3 with a source does not get carried; a provisional category-3
+// choice may remain only when its rationale, predicate, failure meaning and
+// unresolved accuracy are explicit. The audit found the drifted values below
+// by comparing against the paper, and they are pinned here so a solver stage
+// cannot quietly move them again.
 //
 // Stages add their own entries as they are written. Nothing outside this header
 // may define a tolerance.
@@ -288,14 +290,18 @@ inline constexpr Tolerance FLOOR_MARGIN{
     "FLOOR_MARGIN",
     10.0,
     Category::AlgorithmTolerance,
-    "provisional residual-floor classification margin; not an accuracy bound",
+    "provisional guessed decade of slack across first-order bound norm inequalities; "
+    "predicate: residual <= FLOOR_MARGIN * floor; failure meaning: classified "
+    "converged_to_floor; numerical adequacy/calibration remains open, not an accuracy bound",
 };
 
 inline constexpr Tolerance STALL_WINDOW{
     "STALL_WINDOW",
     5.0,
     Category::AlgorithmTolerance,
-    "provisional residual-stall window; not an accuracy bound",
+    "provisional guessed window below Ipopt acceptable_iter default 15; predicate: "
+    "residual history has STALL_WINDOW entries without contraction; failure meaning: "
+    "classified stalled; numerical adequacy/calibration remains open, not an accuracy bound",
 };
 
 }  // namespace epcsaft::policy

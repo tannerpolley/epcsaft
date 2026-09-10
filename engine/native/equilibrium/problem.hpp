@@ -194,6 +194,7 @@ CompiledSystem compile_problem(
 struct EquilibriumResult final {
     bool success = false;
     std::string message;
+    std::string solver_status;
     std::vector<double> temperature;
     std::vector<double> pressure;
     std::vector<double> amounts;

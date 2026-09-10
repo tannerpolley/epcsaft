@@ -240,6 +240,7 @@ class CompiledSystem:
 class EquilibriumResult:
     success: bool
     message: str
+    solver_status: str
     temperature: list[float]
     pressure: list[float]
     amounts: list[float]

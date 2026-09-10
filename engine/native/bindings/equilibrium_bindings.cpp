@@ -103,6 +103,7 @@ void register_equilibrium(py::module_& module) {
     py::class_<EquilibriumResult>(module, "EquilibriumResult")
         .def_readonly("success", &EquilibriumResult::success)
         .def_readonly("message", &EquilibriumResult::message)
+        .def_readonly("solver_status", &EquilibriumResult::solver_status)
         .def_readonly("temperature", &EquilibriumResult::temperature)
         .def_readonly("pressure", &EquilibriumResult::pressure)
         .def_readonly("amounts", &EquilibriumResult::amounts)

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <optional>
 #include <string>
 #include <stdexcept>
@@ -24,17 +25,44 @@
 namespace {
 void core_constant_identities() {
     const double r = epcsaft::AVOGADRO_PER_MOL * epcsaft::BOLTZMANN_J_PER_K;
+    const double r_source = 8.31446261815324;
+    // R has four literal/product roundings and C_rho has six at most.  The
+    // binary64 unit roundoff is epsilon/2, so eight epsilon is a conservative
+    // source-scale envelope with room for higher-order terms.
+    constexpr double source_roundoff_factor = 8.0;
+    const double r_bound =
+        source_roundoff_factor * std::numeric_limits<double>::epsilon()
+        * std::abs(r_source);
     const double debye_product = epcsaft::DEBYE_C_M * epcsaft::SPEED_OF_LIGHT_M_PER_S;
     CHECK(epcsaft::GAS_CONSTANT_J_PER_MOL_K == r);
-    CHECK(epcsaft::VACUUM_PERMITTIVITY_F_PER_M == 8.8541878128e-12);
+    CHECK(std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r_source) <= r_bound);
+    const double epsilon_source = 8.8541878128e-12;
+    const double epsilon_bound =
+        source_roundoff_factor * std::numeric_limits<double>::epsilon()
+        * std::abs(epsilon_source);
+    CHECK(std::abs(epcsaft::VACUUM_PERMITTIVITY_F_PER_M - epsilon_source)
+        <= epsilon_bound);
     CHECK(std::abs(debye_product - 1.0e-21) <= 1.0e-36);
     CHECK(epcsaft::ANGSTROM_M == 1.0e-10);
     const double density_reference = epcsaft::AVOGADRO_PER_MOL * 1.0e-30;
-    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference) <= 1.0e-37);
+    const double density_source = 6.02214076e-7;
+    const double density_bound =
+        source_roundoff_factor * std::numeric_limits<double>::epsilon()
+        * std::abs(density_source);
+    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference)
+        <= density_bound);
+    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_source)
+        <= density_bound);
     recording_support::compare("core-constants/R", "R", "J/mol/K",
+        epcsaft::GAS_CONSTANT_J_PER_MOL_K, r_source, {}, "Relationship", "source-decimal",
+        "R=N_A*k_B", "strict_absolute", r_bound, 0.0,
+        std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r_source) <= r_bound,
+        "c1-constants", "R-source", "R", "N_A,k_B", "R=8.31446261815324", "constant");
+    recording_support::compare("core-constants/R-identity", "R_identity_error", "J/mol/K",
         epcsaft::GAS_CONSTANT_J_PER_MOL_K, r, {}, "Relationship", "SI-definitions",
-        "R=N_A*k_B", "reference_or_one", 0.0, 1.0e-15, true,
-        "c1-constants", "R", "R", "N_A,k_B", "R=N_A*k_B", "constant");
+        "R=N_A*k_B identity", "strict_absolute", r_bound, 0.0,
+        std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r) <= r_bound,
+        "c1-constants", "R-identity", "R", "N_A,k_B", "R=N_A*k_B", "constant");
     recording_support::compare("core-constants/debye", "D*c", "C m^2/s",
         debye_product, 1.0e-21, {}, "Relationship", "SI-definitions",
         "D*c=1e-21", "strict_absolute", 1.0e-36, 0.0,
@@ -46,17 +74,19 @@ void core_constant_identities() {
         epcsaft::ANGSTROM_M == 1.0e-10,
         "c1-constants", "angstrom", "angstrom", "angstrom", "angstrom=1e-10 m", "constant");
     recording_support::compare("core-constants/epsilon", "epsilon_0", "F/m",
-        epcsaft::VACUUM_PERMITTIVITY_F_PER_M, 8.8541878128e-12, {},
+        epcsaft::VACUUM_PERMITTIVITY_F_PER_M, epsilon_source, {},
         "Relationship", "CODATA-2018", "retained CODATA 2018 central value",
-        "absolute", 0.0, 0.0, true,
+        "strict_absolute", epsilon_bound, 0.0,
+        std::abs(epcsaft::VACUUM_PERMITTIVITY_F_PER_M - epsilon_source)
+            <= epsilon_bound,
         "c1-constants", "epsilon_0", "epsilon_0", "CODATA-2018", "epsilon_0=CODATA-2018", "constant");
     recording_support::compare("core-constants/number-density", "C_rho",
         "(number/angstrom^3)/(mol/m^3)",
-        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density_reference, {},
-        "Relationship", "SI-definitions", "C_rho=N_A*10^{-30}",
-        "strict_absolute", 1.0e-37, 0.0,
-        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference) <= 1.0e-37,
-        "c1-constants", "C_rho", "C_rho", "N_A,10^{-30}", "C_rho=N_A*10^{-30}", "constant");
+        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density_source, {},
+        "Relationship", "source-decimal", "C_rho=N_A*10^{-30}",
+        "strict_absolute", density_bound, 0.0,
+        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_source) <= density_bound,
+        "c1-constants", "C_rho", "C_rho", "N_A,10^{-30}", "C_rho=6.02214076e-7", "constant");
 }
 
 using epcsaft::core::Stop;

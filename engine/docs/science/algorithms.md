@@ -80,12 +80,14 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
-Retain failed attempts and initialization/termination details. The Ipopt driver
+Retain the native optimizer `solver_status` alongside the convergence stop,
+residual, and failed-attempt initialization/termination details. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
 tiny-step termination only when the recomputed residual meets the declared
-equilibrium criterion. Ipopt unscales final constraint multipliers before the
+equilibrium criterion; a tiny-step status alone is never success. Ipopt unscales
+final constraint multipliers before the
 TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
 
@@ -173,8 +175,10 @@ constraint, not a mathematical singularity claim.
 
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
 application accuracy criteria stay beside their accepted reference cases.
-Keep the achieved error, criterion, scale, iteration/evaluation budget and
-termination reason visible. Distinguish converged, stagnated, exhausted,
+Keep the achieved error, criterion, scale, iteration/evaluation budget, native
+solver status and termination reason visible. A tiny-step status alone never
+establishes success; recomputed residual and topology criteria still apply.
+Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
 diagnosis and do not determine success.
 
