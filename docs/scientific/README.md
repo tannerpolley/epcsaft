@@ -25,17 +25,18 @@ ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 
 ## Live companion
 
-The Quarto companion in `docs/companion/` presents the current implementation
-plan, thermodynamic comparisons, and implemented/planned verification as one
-local website with Map, Plan and Tests pages. Start the read-only viewer with
-`python3 tools/serve-roadmap.py --port 8766`. Rendering pages reads current owners
-and completed records without running scientific calculations or tests; results
-come from the normal check commands. The implementation plan owns the
-live-view behavior and limits. The
-[test-system design](test-system-design.md) defines automatic recording, freshness
+The root Quarto project presents the current map, implementation plan, ordinary
+check reports, and retained thermodynamic comparisons as one read-only local
+website. Start it with
+`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`.
+Quarto owns rendering, navigation, watching, serving, and reload. Its
+presentation reader only reads current owners and completed records; it never
+builds, collects, tests, or calculates. The implementation plan owns milestone
+status and qualification. The
+[test-system design](test-system-design.md) defines the one-way result and freshness
 and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)
-records the bounded checks. The implementation plan reopens startup persistence
-and integrity-check visibility before accepting this prerequisite to Core work.
+records the retired system's bounded checks; it is historical evidence, not a
+current execution contract.
 
 ## Maintaining agreement
 

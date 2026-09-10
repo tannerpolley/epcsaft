@@ -31,7 +31,8 @@ void register_diagnostics(py::module_& module) {
         .value("budget_exhausted", core::Stop::budget_exhausted)
         .value("left_domain", core::Stop::left_domain)
         .value("singular", core::Stop::singular)
-        .value("infeasible", core::Stop::infeasible);
+        .value("infeasible", core::Stop::infeasible)
+        .value("nonfinite", core::Stop::nonfinite);
     py::enum_<policy::Category>(module, "Category")
         .value("ThermodynamicConstraint", policy::Category::ThermodynamicConstraint)
         .value("AlgorithmTolerance", policy::Category::AlgorithmTolerance);

@@ -47,7 +47,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 <!-- roadmap-summary:start -->
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
-| Core | ░░░░░░░░░░ 0.0% (0/4) | 1–3 | — |
+| Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
 | Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/6) | 12–36 | — |
@@ -56,7 +56,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **0/35 qualified milestones (0.0%)**; **37–113 remaining Astra hours**.
+Total: **4/35 qualified milestones (11.4%)**; **36–110 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -67,92 +67,42 @@ prerequisites. Preparation and excluded waits are additional to these estimates.
 
 ### Test-system preparation
 
-The [test-system design](test-system-design.md) specifies the requested automated
-inventory, individual outcomes, numerical records and freshness behavior. It is a
-reviewed design whose reboot persistence, integrity-check visibility and suite naming
-are undergoing correction. These preparation steps precede numerical
-qualification work; they do not add to the 35 thermodynamic milestones or their
-Astra effort estimates. Scientific-basis and execution reviews returned Ready on 2026-09-08 after
-reference, completeness and identity corrections. Implementation ran from
-2026-09-08 at 21:36 MDT to 2026-09-09 at 01:40 MDT: **4.1 active elapsed hours**
-under the configured lead, without adding concurrent agent-hours. Remaining
-preparation effort is being reassessed for the corrections opened on 2026-09-09
-at 09:51 MDT. No scientific row changes status.
-The [implementation acceptance record](reviews/test-system-acceptance-2026-09-09.md)
-contains the executed checks and their limits. Independent implementation closure
-and final cache/integrity reviews returned Ready on 2026-09-09, but did not establish
-reboot persistence or notebook registration of the separate integrity harness.
-Those acceptance gaps are reopened below; a fresh full implementation and Core
-readiness review follows the corrections.
+The [read-only notebook design](test-system-design.md) defines the hard-cutover
+boundary. Tests, checks, retained analyses, `ARCHITECTURE.yaml`, and this plan are
+independent owners. A standard-library presentation reader projects them into a
+Quarto site without collection, execution, retry, scheduling, or publication.
+The pre-cutover [acceptance record](reviews/test-system-acceptance-2026-09-09.md)
+remains historical evidence for the retained F1/F5 rows; it is not a current
+notebook contract. This tooling work does not change any scientific milestone.
 
 | Work | Status | Completion |
 |---|---|---|
-| Shared declarations and results | Complete | Shared native/Python records preserve the 24 retained F1/F5 operand pairs and complete derivative ladders; shared actual inputs and per-row criteria are retained. |
-| Complete test inventory and recording | Active | Register and record each integrity-harness check through the shared route and include it in the installed gate. |
-| Freshness and read-only viewer | Active | Persistent enabled startup of the viewer only; display freshness means unchanged sources and artifact files, never a re-verified environment. |
-| Notebook synchronization | Active | Verify integrity-check visibility and live recovery under the persistent service. |
-| Remove special-case wiring | Active | Align supported suite names with Contributions and Properties, then review the full implementation. |
+| Independent producers | Complete | Normal pytest, Meson, analyses, and readiness checks run without notebook modules or a viewer. |
+| Retained results | Complete | Legacy F1/F5 values, inputs, dates, wheel provenance, and the established F5 disagreement remain readable and integrity-checked. |
+| Quarto-native view | Complete | Quarto owns Map, Plan, Results navigation, render, preview, resource watching, and reload; [dated cutover evidence](reviews/notebook-cutover-2026-09-09.md). |
+| Hard cutover | Complete | The custom server/browser app, collection inventory, recorder wrappers, managed execution, retries, recovery, aliases, and notebook-only harness are removed; [dated cutover evidence](reviews/notebook-cutover-2026-09-09.md). |
 
 ### Live Quarto companion
 
-Run `python3 tools/serve-roadmap.py --port 8766` and open
-[the local companion](http://127.0.0.1:8766). One Quarto website has Map, Plan and Tests pages; the Map view derives components, layers and files from `ARCHITECTURE.yaml` and the checkout, and a selected owner carries into Plan and Tests. Its sources live in `docs/companion/`; generated
-HTML lives under `build/companion/`. The server renders with `--no-execute` and
-rebuilds changed presentation sources. Open pages read current plan rows, test
-registrations, study descriptions and recorded numerical output every two seconds.
-No separate editable progress or numerical-value copy belongs in the website.
-The service must be running; a disconnected indicator replaces the live indicator
-when updates fail. Viewing the site never executes a scientific test or study.
+Run
+`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`
+and open [the local notebook](http://127.0.0.1:8766). The root Quarto project has
+Map, Plan, and Results pages. Its declared resources make Quarto 1.10.18 watch
+`ARCHITECTURE.yaml`, this plan, ordinary test reports, and the retained result
+manifest even though they are outside the page bodies. Generated HTML lives under
+`build/companion/`.
 
-The Plan page derives scientific qualification and effort from the milestone rows.
-The Tests page separates discovered implemented checks, selected comparisons,
-planned verification and studies. Discovery does not prove a recorded run applies
-to current code. Unverified results remain marked as needing a rerun; absent
-results remain absent. Tests contains each connected numerical comparison once, grouped by scientific
-category and then quantity or claim. Categories and individual test rows are collapsed initially. Each test uses one
-compact row with Quantity, Inputs, Relationship and Status columns; expansion
-reveals its numerical values or full requirement. Unknown inputs remain absent.
-Properties is a category inside Tests, with Ideal, Residual and Total meanings;
-it is not a separate page. Unconnected property fields do not create tests.
-Implemented checks without numerical exports and explicitly planned verification
-remain visible without invented values.
-Each test helper supplies its scientific labels, actual inputs and comparison
-records. The generic view needs no new presentation mapping when a registered
-test emits a new quantity; arbitrary raw logs are not numerical records.
+The Map page derives components, descendant layers, files, roles, milestones, and
+relevant recorded checks from the existing owners. Deleted tracked paths are
+absent; unmapped and ambiguous existing paths remain explicit. The Engine section
+includes every descendant layer's milestones and relevant checks. Tracked YAML,
+shell, and other source links resolve to the current repository revision.
 
-Only useful selected comparisons appear: Relationships, Experimental, Matching-model and Cross-model sanity
-are comparison types, not mandatory sections for every property. Compare measured
-caloric properties with total ideal-plus-residual model quantities at consistent
-conditions and reference conventions. Matching-model checks require matched
-parameters and equations; other EOS or activity-model equilibrium results may be
-sanity checks without becoming numerical acceptance gates. No experimental value
-is inferred from an internal identity. No provenance, filenames, function names,
-commands, raw diagnostics or source links appear in the scientific view.
-
-#### Selected external comparisons
-
-| Comparison | Purpose | Status |
-|---|---|---|
-| FEOS PC-SAFT | Matching-model property comparisons with matched parameters and conventions. | Planned with scientific slice |
-| Clapeyron PC-SAFT | Matching-model property comparisons with matched parameters and conventions. | Planned with scientific slice |
-
-Install the selected packages and execute these cases with their scientific
-slices; clone source only when needed. Additional experimental or equilibrium
-comparisons need a useful observable and available evidence before selection.
-
-`python3 tools/run-numerical-evidence.py F1 F5` updates the connected numerical
-output after building/verifying the installed wheel. F1 passed after the caloric
-correction; F5 remains a known failure. The display checks current applicability
-before showing a fresh comparison. Unrecorded or invalid evidence cannot become
-Current. Neither rendering nor a passing readiness check
-qualifies a scientific milestone.
-
-Current presentation: Map, Plan and Tests use the current Contributions/Properties
-vocabulary and compact collapsed comparison rows. The view renders connected
-outputs and inventory through shared records; the normal check commands record
-results and the viewer only reads them. Acceptance is reopened for persistent
-startup and integrity-harness visibility. The previous installed gate passed in 26.92 seconds, above the warm
-10-second target. F5 remains a known numerical failure. This does not qualify M1 or E1.
+The Results page keeps execution outcome, production date, source/input freshness,
+and scientific qualification separate. Historical values remain visible and the
+complete retained F1/F5 tables remain downloadable when outdated. Missing,
+corrupt, and interrupted records remain explicit. F1's historical pass and F5's
+established failure do not qualify M1 or E1 or claim current code passed.
 
 ### What each signal establishes
 
@@ -160,7 +110,7 @@ startup and integrity-harness visibility. The previous installed gate passed in 
 |---|---|
 | Implementation inventory (Map view) | Code or other assets exist and have an owner. |
 | Milestone status (this plan) | Planned, active, blocked or qualified work against stated acceptance requirements. |
-| Recorded execution and freshness (Tests view) | A check passed, failed or could not run, and whether that record still applies to current inputs. |
+| Recorded execution and freshness (Results view) | A check passed, failed or could not run, and whether that record still applies to current inputs. |
 | Scientific qualification | Reviewed scientific evidence supports the stated capability and domain. |
 
 A file count, line count or passing test does not complete a milestone, and
@@ -294,10 +244,10 @@ flowchart LR
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Constants and numerical policy | [ ] | 0.25–0.75 | — | Specifications and executable prerequisites | Verify units, physical bounds and tolerance meanings; remove unjustified claims. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
-| C2 — Parameter coordinates and scaling | [ ] | 0.25–0.75 | — | C1 | Define common coordinate identities and dimensional scaling, including derivative coordinate transformations. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
-| C3 — Diagnostics and availability | [ ] | 0.25–0.75 | — | C1 | Define residuals, termination and unavailable-result information. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
-| C4 — Core qualification | [ ] | 0.25–0.75 | — | C2, C3 | Focused checks, cost review and independent acceptance. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
+| C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside C1. |
+| C2 — Parameter coordinates and scaling | [x] | 0 | 2.0 | C1 | Define and qualify common coordinate identities and dimensional scaling, including derivative coordinate transformations, with one-slot ownership for scalar coordinates. | [2026-09-10: C2 qualification after correction](reviews/core-c2-2026-09-10.md); supervisor correction closed by exact-one-index validation, red/value evidence, corrected installed-wheel gates, and independent `Supported` review. |
+| C3 — Diagnostics and availability | [x] | 0 | 2.0 | C1 | Define residuals, termination and unavailable-result information; preserve typed nonfinite/domain/singular/infeasible/budget outcomes through existing producers; correct solver budget classification and reject nonfinite density candidates before publication; retain valid outputs, evidence and independent review. | [2026-09-10: C3 correction qualification](reviews/core-c3-2026-09-10.md); implementation tree `cb8302f`, installed wheel `f93b7c9a385fa5c53ab091636a8b7285ac906020b4daaad0dda5282172138ba7`, scripted producer harness removed, genuine current-wheel replays passed, density publication branches source-reviewed only, fresh independent `Supported` review passed; pinned F5 remains outside scope. |
+| C4 — Core qualification | [x] | 0 | 0.25 | C2, C3 | Revalidate C1–C3 against one final installed wheel, inspect integrated residual/termination/availability behavior, measure equivalent-work cost against Core budgets, retain failures and claim limits, and obtain independent final acceptance. | [2026-09-10: C4 qualification](reviews/core-c4-2026-09-10.md); final wheel replay and cost review passed, with independent `Supported` acceptance; pinned F5 and source-reviewed density limits remain explicit. |
 
 ```mermaid
 flowchart TD
@@ -508,27 +458,21 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: implement and verify the complete test-recording and synchronized
-companion design. This is the active prerequisite to Core/C1.
-Repository and delivery choices precede repository separation or issue publication,
-not this authorized local implementation work. The first scientific slice is C1. Its design can use the mapped consumers and working baseline;
-implementation follows its Ready review. Remaining thermal and equilibrium
-questions belong to their dependent slices, not a blanket preparation gate.
-
+Current stage: bounded Core C1 through C4 are qualified; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
-| Preparation | Bring the automated test system fully online | Active: correct reboot persistence, integrity-harness registration and Contributions/Properties suite names, then obtain full implementation and Core-readiness review. |
-| 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; no scientific row qualified. |
-| 2 | Select implementation repository and delivery route | Await owner choice: independent private successor and name, or existing repository; draft PRs or reviewed direct integration. Prepare exact preservation of dirty work and independent downstream clones before any move. |
-| 3 | Complete CSE setup | Verify/register the missing repository-local CSE hook and rerun routing checks in the selected checkout. The stable hook runtime exists. This is setup work, not numerical acceptance. |
-| 4 | Publish bounded Core/C1 work | After external-write authority, publish the selected issue structure and C1 definition; link the scientific row without duplicating qualification status. |
-| 5 | Review C1 design | Verify constant units, physical bounds, tolerance meanings, consumers and falsifiers; record Ready or the exact required correction. |
-| 6 | Implement and qualify C1 | Correct demonstrated defects, execute relevant checks on the installed wheel, obtain final independent review and update C1. |
-| 7 | Finish Core | C2 coordinates and C3 diagnostics, then C4 integrated qualification; only then begin Contributions. |
+| Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
+| 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; C1 qualification state is kept current. |
+| C1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
+| C1-correction | Correct and requalify C1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
+| C2-build | Implement and qualify bounded C2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, scalar exact-one-slot correction, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and C3 remain outside scope. |
+| C3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, record source-reviewed density branch limits, and pass independent `Supported` review. |
+| C4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel C1–C3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
+| Next | Contributions qualification | Ready to start; do not widen the qualified Core claim. |
 
-Local test-system implementation and validation are authorized, followed by
-slice-scoped Core work. Repository creation, remote changes and issue publication
-remain separate actions; they do not block this local work.
+Local C1 design and validation are followed by slice-scoped Core work. Repository
+creation, remote changes and issue publication are separate actions and do not
+block this local scientific queue.
 
 ### Gates and authority
 

@@ -26,6 +26,28 @@ of the energy. It does not authorize charged physical states. Parameters fixed
 by the request have zero derivatives; dependent combining-rule outputs carry
 the chain from independent coefficients. Discrete topology is not fitted.
 
+## ALG-PARAMETERS
+
+Resolve source values into documented native units before constructing active
+coordinates. Native units are dimensionless for segment count, `k_ij`, `l_ij`,
+and association volume; Angstrom for sigma; and Kelvin for dispersion and
+association energy-over-k. An active scalar owns one native slot for a scalar
+family, both reciprocal row-major off-diagonal slots for an unordered
+unlike-component `k_ij` or `l_ij` pair, or the corresponding association
+site-pair slots. A distinct association site pair owns both reciprocal slots;
+a same-site association pair may own its one diagonal slot when active.
+Component diagonal interaction slots remain fixed. The coordinate is linear in
+every owned slot, with unit derivative; no implicit log or normalization is
+applied.
+
+For `p_native = s_p p_source`, apply
+`dF/dp_source = s_p dF/dp_native` and
+`d2F/(dp_source dq_source) = s_p s_q
+d2F/(dp_native dq_native)`. Active pair derivatives sum the two raw
+reciprocal-slot derivatives. The pure packing coefficient has no `k_ij` or
+`l_ij` dependency under `packing_coefficient_parameter_derivative`; their
+energy and cross-diameter dependencies remain on the common Helmholtz tape.
+
 ## ALG-ASSOCIATION
 
 Use EqID: `association_mass_action`, EqID: `association_helmholtz` and the
@@ -80,7 +102,16 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
-Retain failed attempts and initialization/termination details.
+Retain the native optimizer `solver_status` alongside the convergence stop,
+residual, and failed-attempt initialization/termination details. The Ipopt driver
+scales its extensive Gibbs objective by `1 / feed_total` internally; this
+preserves the minimizer while keeping objective derivatives on the same
+numerical scale as the normalized material-balance rows. It accepts Ipopt's
+tiny-step termination only when the recomputed residual meets the declared
+equilibrium criterion; a tiny-step status alone is never success. Ipopt unscales
+final constraint multipliers before the
+TNLP callback receives them, and the Engine preserves that original extensive
+Gibbs-objective meaning.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
@@ -155,12 +186,30 @@ successful zero residual. Fitted values remain candidate parameters.
 
 ## ALG-TERMINATION
 
+Core C1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
+is only the lower bound for the intensive `log(x_i)` coordinate. Free-phase
+disappearance compares the dimensionless amount ratio
+`n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
+that topology rejection is not a stability or accuracy conclusion. Packing
+admission rejects the equal-sphere face-centred-cubic geometric boundary
+`eta >= CLOSE_PACKING_FRACTION`; this is a conservative PC-SAFT domain
+constraint, not a mathematical singularity claim.
+
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
 application accuracy criteria stay beside their accepted reference cases.
-Keep the achieved error, criterion, scale, iteration/evaluation budget and
-termination reason visible. Distinguish converged, stagnated, exhausted,
+Keep the achieved error, criterion, scale, iteration/evaluation budget, native
+solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
+`CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
+`STOP_AT_TINY_STEP` with a finite non-converged residual is stalled and
+unavailable, while a finite criterion-meeting tiny-step result remains
+eligible. A tiny-step status alone never establishes success; recomputed
+residual and topology criteria still apply.
+Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
-diagnosis and do not determine success.
+diagnosis and do not determine success. Density root producers classify all
+optional diagnostics before publishing a criterion-meeting root; nonfinite
+floor, contraction or amplification is unavailable and throws the existing
+convergence failure.
 
 Propagate inner-solve/input error into an outer accuracy estimate using the
 applicable local conditioning and scale. A first-order estimate or pivot ratio
@@ -169,6 +218,13 @@ accuracy than supplied inputs support, and do not loosen accepted thresholds
 to force convergence. Source rounding, numerical error, experimental uncertainty
 and model discrepancy are distinct. Missing accuracy/runtime thresholds stay
 owner decisions; historical microbenchmarks are not universal limits.
+`Stop::nonfinite` is unavailable and has precedence over finite convergence and
+floor predicates whenever the residual or an optional diagnostic is non-finite.
+For equilibrium, `success` requires accepted solver status, finite residuals and
+declared topology; an unsuccessful result retains `solver_status`, residuals,
+the convergence record and failure message while clearing candidate state and
+action arrays, so `has_state()` is the availability predicate. A successful
+result retains the same convergence record alongside its state.
 
 ## Verification obligations
 

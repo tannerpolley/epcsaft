@@ -5,7 +5,7 @@ Description=ePC-SAFT greenfield live companion
 Type=simple
 WorkingDirectory=~/Workspaces/Engineering/ePC-SAFT-greenfield
 Environment=PATH=~/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/python3 tools/serve-roadmap.py --port 8766
+ExecStart=/usr/local/bin/quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute
 Restart=on-failure
 RestartSec=5s
 

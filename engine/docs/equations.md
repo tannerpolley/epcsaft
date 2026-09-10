@@ -46,6 +46,35 @@ l_{11}&\theta\\
 \end{bmatrix}.
 $$
 
+## `active_parameter_coordinate_identity`
+
+- Section: Native phase coordinates
+- Status: Implementation convention
+- Source: Native active-coordinate convention for explicit storage slots
+- Description: Define one linear active coordinate and its derivative identity over the slots it owns.
+- Change note: A symmetric unlike pair owns both reciprocal off-diagonal slots; fixed slots have zero coordinate derivative.
+
+$$
+p_s(\theta_a)=\theta_a\;(s\in S_a),\qquad
+\frac{\partial p_s}{\partial\theta_a}=1\;(s\in S_a),\qquad
+\frac{\partial F}{\partial\theta_a}=\sum_{s\in S_a}\frac{\partial F}{\partial p_s}.
+$$
+
+## `active_parameter_unit_transformation`
+
+- Section: Native phase coordinates
+- Status: Exact derivation
+- Source: Multivariate chain rule for linear unit conversion
+- Description: Transform active-coordinate gradients and mixed Hessians between source and native units.
+- Change note: Supported parameter conversions have a multiplicative scale and no additive offset.
+
+$$
+p^{\mathrm{native}}=s_p p^{\mathrm{source}},\qquad
+\frac{\partial F}{\partial p^{\mathrm{source}}}=s_p\frac{\partial F}{\partial p^{\mathrm{native}}},\qquad
+\frac{\partial^2F}{\partial p^{\mathrm{source}}\partial q^{\mathrm{source}}}
+=s_p s_q\frac{\partial^2F}{\partial p^{\mathrm{native}}\partial q^{\mathrm{native}}}.
+$$
+
 ## `angstrom_number_density`
 
 - Section: Symbols, bases, and units

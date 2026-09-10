@@ -43,24 +43,6 @@ def _stopping_criterion(*, threshold: float, verdict: bool, name: str) -> dict[s
     }
 
 
-@pytest.mark.evidence(
-    test_id="python.diagnostics.trace-convergence-round-trip",
-    title="Trace and convergence round trip",
-    kind="Numerical",
-    category="Bindings/Python",
-    requirement_id="B1",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Numerical",
-    expected_comparisons=(
-        "trace_identity/residual",
-        "trace_identity/iterations",
-        "trace_identity/residual_criterion",
-    ),
-    basis="Relationship",
-    method="public trace convergence round trip",
-    claim="Captured and uncaptured public convergence diagnostics retain the same residual and iteration values.",
-)
 def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     components = ("methane", "ethane")
     temperature = 300.0
@@ -189,16 +171,6 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     assert "DENSITY_ROOT_RESIDUAL" in repr(convergence)
 
 
-@pytest.mark.evidence(
-    test_id="python.surface.reference-requires-stoichiometry",
-    title="Reference requires stoichiometry",
-    kind="Package",
-    category="Surface",
-    requirement_id="S1",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Outcome only",
-)
 def test_reference_requires_stoichiometry() -> None:
     parameters = Parameters.from_json(
         parameters_json("figiel-2025-reference-electrolytes", 3),

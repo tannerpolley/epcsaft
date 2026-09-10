@@ -96,6 +96,12 @@ struct Reference final {
     bool derivative_available = false;
 };
 
+std::vector<epcsaft::ActiveParameter> active_parameters(const TestCase& test_case) {
+    return test_case.active.has_value()
+        ? std::vector<epcsaft::ActiveParameter>{*test_case.active}
+        : std::vector<epcsaft::ActiveParameter>{};
+}
+
 std::vector<double> composition(const std::vector<double>& amounts) {
     double total = 0.0;
     for (double amount : amounts) total += amount;
@@ -308,9 +314,10 @@ Reference evaluate_reference(const TestCase& test_case, bool derivatives = true)
     if (value_quality && derivatives) {
         try {
             result.tensor = properties_support::reference_tensor(test_case.parameters, test_case.temperature,
-                test_case.volume, test_case.amounts, result.sites, test_case.active);
+                test_case.volume, test_case.amounts, result.sites, active_parameters(test_case));
             result.association_tensor = properties_support::reference_tensor(test_case.parameters,
-                test_case.temperature, test_case.volume, test_case.amounts, result.sites, test_case.active, true);
+                test_case.temperature, test_case.volume, test_case.amounts, result.sites,
+                active_parameters(test_case), true);
             result.condition = result.tensor.scaled_condition;
             result.value_status = result.value_available ? "passed" : "reference_newton_defect";
             const auto finite_tensor = [](const properties_support::ReferenceTensor& tensor) {
@@ -1392,6 +1399,6 @@ void association_comparison() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.association.comparison", "Fixed_depth_native_association_comparison", "Numerical", "Contributions/Properties", "Explicit", "Numerical", "Association", "P2/M4", "site-fraction/*,candidate-residual/*,reference-residual/*,association-energy/*,residual-energy/*,association-gradient/*,residual-gradient/*,association-hessian/*,residual-hessian/*,reference-quality/*,reference-linear-residual/*,centered-gradient/*,centered-hessian/*,centered-mixed/*,analytic-control/*,k-residual-identity/*,production-weighted-hessian/*,extensive-scaling/*,failure-continuation", "engine/tests/native/association_comparison_checks.cpp", "association_comparison_checks", "association-comparison", ""}, association_comparison}
+        {{"native.association.comparison", "Fixed_depth_native_association_comparison", "Numerical", "Contributions/Properties", "Explicit", "Numerical", "Association", "P2/M4", "site-fraction/*,candidate-residual/*,reference-residual/*,association-energy/*,residual-energy/*,association-gradient/*,residual-gradient/*,association-hessian/*,residual-hessian/*,reference-quality/*,centered-gradient/*,centered-hessian/*,centered-mixed/*,analytic-control/*,k-residual-identity/*,production-weighted-hessian/*,extensive-scaling/*,failure-continuation", "engine/tests/native/association_comparison_checks.cpp", "association_comparison_checks", "association-comparison", ""}, association_comparison}
     });
 }

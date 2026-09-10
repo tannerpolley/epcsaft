@@ -196,28 +196,29 @@ inline ReferenceTensor reference_tensor(
     double volume,
     const std::vector<double>& amounts,
     const std::vector<double>& site_fractions,
-    std::optional<epcsaft::ActiveParameter> active = std::nullopt,
+    std::vector<epcsaft::ActiveParameter> active = {},
     bool association_only = false
 ) {
     using AD = CppAD::AD<double>;
     const std::size_t components = parameters.component_count();
     const std::size_t sites_count = site_fractions.size();
-    const std::size_t width = 2 + components + (active.has_value() ? 1 : 0);
+    const std::size_t width = 2 + components + active.size();
     const std::size_t full_width = width + sites_count;
     std::vector<double> point;
     point.reserve(full_width);
     point.push_back(temperature);
     point.push_back(volume);
     point.insert(point.end(), amounts.begin(), amounts.end());
-    if (active.has_value()) {
-        const auto& values = active->family == epcsaft::ParameterFamily::Kij
+    for (const auto& item : active) {
+        const auto& values = item.family == epcsaft::ParameterFamily::Kij
             ? parameters.k_ij
-            : active->family == epcsaft::ParameterFamily::DispersionEnergyOverK
+            : item.family == epcsaft::ParameterFamily::Lij ? parameters.l_ij
+            : item.family == epcsaft::ParameterFamily::DispersionEnergyOverK
             ? parameters.dispersion_energy_over_k
-            : active->family == epcsaft::ParameterFamily::AssociationEnergyOverK
+            : item.family == epcsaft::ParameterFamily::AssociationEnergyOverK
             ? parameters.association_energy_over_k
             : parameters.association_volume;
-        point.push_back(values[active->indices.front()]);
+        point.push_back(values[item.indices.front()]);
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     std::vector<AD> independent(point.begin(), point.end());
@@ -233,7 +234,7 @@ inline ReferenceTensor reference_tensor(
     for (const AD& amount : amount_values) composition.push_back(amount / total);
     const std::vector<AD> sites(independent.begin() + width, independent.end());
     std::vector<epcsaft::detail::ActiveParameter> active_set;
-    if (active.has_value()) active_set.push_back(*active);
+    active_set = active;
     const auto tape_parameters = epcsaft::detail::make_tape_parameters(
         parameters, active_set,
         std::vector<AD>(independent.begin() + 2 + components,
@@ -330,8 +331,16 @@ inline ReferenceTensor reference_tensor(
         if (coordinate == 0) return temperature;
         if (coordinate == 1) return volume;
         if (coordinate < 2 + components) return total_amount;
-        const auto& family = active.value();
-        return family.family == epcsaft::ParameterFamily::AssociationEnergyOverK ? 1000.0 : 0.1;
+        switch (active[coordinate - 2 - components].family) {
+        case epcsaft::ParameterFamily::SegmentCount: return 1.0;
+        case epcsaft::ParameterFamily::SigmaConstant: return 3.0;
+        case epcsaft::ParameterFamily::DispersionEnergyOverK: return 1000.0;
+        case epcsaft::ParameterFamily::Kij:
+        case epcsaft::ParameterFamily::Lij: return 1.0;
+        case epcsaft::ParameterFamily::AssociationEnergyOverK: return 1000.0;
+        case epcsaft::ParameterFamily::AssociationVolume: return 0.1;
+        }
+        return 1.0;
     };
     const Eigen::MatrixXd site_diagonal = Eigen::Map<const Eigen::VectorXd>(
         site_fractions.data(), static_cast<Eigen::Index>(sites_count)).asDiagonal();
@@ -435,7 +444,6 @@ inline ReferenceTensor reference_tensor(
         result.first_sensitivity_residual = 0.0;
         result.second_sensitivity_residual = 0.0;
         result.sensitivity_error_proxy = 0.0;
-        result.newton_defect = 0.0;
     } else if (std::isfinite(result.scaled_condition)
         && std::isfinite(result.first_sensitivity_residual)
         && std::isfinite(result.second_sensitivity_residual)) {

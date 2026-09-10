@@ -40,7 +40,11 @@ std::vector<std::size_t> phase_offsets(const CompiledSystem& compiled) {
 
 double maximum_abs(const std::vector<double>& values) {
     double result = 0.0;
-    for (const double value : values) result = std::max(result, std::abs(value));
+    for (const double value : values) {
+        const double magnitude = std::abs(value);
+        if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+        result = std::max(result, magnitude);
+    }
     return result;
 }
 
@@ -133,6 +137,29 @@ void clear_state(EquilibriumResult& result) {
     result.multipliers.clear();
     result.constraint_multipliers.clear();
     result.coordinates.clear();
+}
+
+const char* solver_status_name(Ipopt::SolverReturn status) noexcept {
+    switch (status) {
+    case Ipopt::SUCCESS: return "SUCCESS";
+    case Ipopt::MAXITER_EXCEEDED: return "MAXITER_EXCEEDED";
+    case Ipopt::CPUTIME_EXCEEDED: return "CPUTIME_EXCEEDED";
+    case Ipopt::STOP_AT_TINY_STEP: return "STOP_AT_TINY_STEP";
+    case Ipopt::STOP_AT_ACCEPTABLE_POINT: return "STOP_AT_ACCEPTABLE_POINT";
+    case Ipopt::LOCAL_INFEASIBILITY: return "LOCAL_INFEASIBILITY";
+    case Ipopt::USER_REQUESTED_STOP: return "USER_REQUESTED_STOP";
+    case Ipopt::FEASIBLE_POINT_FOUND: return "FEASIBLE_POINT_FOUND";
+    case Ipopt::DIVERGING_ITERATES: return "DIVERGING_ITERATES";
+    case Ipopt::RESTORATION_FAILURE: return "RESTORATION_FAILURE";
+    case Ipopt::ERROR_IN_STEP_COMPUTATION: return "ERROR_IN_STEP_COMPUTATION";
+    case Ipopt::INVALID_NUMBER_DETECTED: return "INVALID_NUMBER_DETECTED";
+    case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: return "TOO_FEW_DEGREES_OF_FREEDOM";
+    case Ipopt::INVALID_OPTION: return "INVALID_OPTION";
+    case Ipopt::OUT_OF_MEMORY: return "OUT_OF_MEMORY";
+    case Ipopt::INTERNAL_ERROR: return "INTERNAL_ERROR";
+    case Ipopt::UNASSIGNED: return "UNASSIGNED";
+    }
+    return "UNKNOWN";
 }
 
 void require_solution_shape(
@@ -315,15 +342,20 @@ ResidualSummary summarize_residuals(
     const std::size_t count = std::min(rows.size(), values.size());
     for (std::size_t index = 0; index < count; ++index) {
         const double magnitude = std::abs(values[index]);
-        result.maximum = std::max(result.maximum, magnitude);
+        if (!std::isfinite(magnitude)) result.maximum = std::numeric_limits<double>::infinity();
+        else result.maximum = std::max(result.maximum, magnitude);
         if (rows[index].kind == RowKind::Chemical || rows[index].kind == RowKind::Pressure) {
-            result.intensive = std::max(result.intensive, magnitude);
+            if (!std::isfinite(magnitude)) result.intensive = std::numeric_limits<double>::infinity();
+            else result.intensive = std::max(result.intensive, magnitude);
         } else if (rows[index].kind == RowKind::Moiety) {
-            result.balance = std::max(result.balance, magnitude);
+            if (!std::isfinite(magnitude)) result.balance = std::numeric_limits<double>::infinity();
+            else result.balance = std::max(result.balance, magnitude);
         } else if (rows[index].kind == RowKind::Normalization) {
-            result.normalization = std::max(result.normalization, magnitude);
+            if (!std::isfinite(magnitude)) result.normalization = std::numeric_limits<double>::infinity();
+            else result.normalization = std::max(result.normalization, magnitude);
         } else if (rows[index].kind == RowKind::Electro) {
-            result.charge = std::max(result.charge, magnitude);
+            if (!std::isfinite(magnitude)) result.charge = std::numeric_limits<double>::infinity();
+            else result.charge = std::max(result.charge, magnitude);
         }
     }
     return result;
@@ -490,13 +522,16 @@ bool GibbsMinimizer::eval_h(
     }
     std::fill(values, values + nele_hess, 0.0);
     const auto base = point(n, x);
-    const auto hessian = compiled_.hessian(
+    const auto objective_hessian = compiled_.hessian(base);
+    const auto lagrangian_hessian = compiled_.hessian(
         base, std::vector<double>(lambda, lambda + m));
     Ipopt::Index entry = 0;
     for (Ipopt::Index row = 0; row < n; ++row) {
         for (Ipopt::Index column = 0; column <= row; ++column) {
-            values[entry++] = obj_factor * hessian[static_cast<std::size_t>(row) * n
-                                                   + static_cast<std::size_t>(column)];
+            const std::size_t index = static_cast<std::size_t>(row) * n
+                + static_cast<std::size_t>(column);
+            values[entry++] = obj_factor * objective_hessian[index]
+                + lagrangian_hessian[index] - objective_hessian[index];
         }
     }
     return entry == nele_hess;
@@ -544,8 +579,10 @@ EquilibriumResult solve_equilibrium(
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
     Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
+    const double objective_scale = 1.0 / compiled.feed_total;
     application->Options()->SetIntegerValue("print_level", 0);
     application->Options()->SetStringValue("nlp_scaling_method", "none");
+    application->Options()->SetNumericValue("obj_scaling_factor", objective_scale);
     application->Options()->SetStringValue("hessian_approximation", "exact");
     application->Options()->SetNumericValue("tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
     application->Options()->SetNumericValue("acceptable_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
@@ -556,8 +593,8 @@ EquilibriumResult solve_equilibrium(
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
     application->Initialize();
     application->OptimizeTNLP(nlp);
-
     EquilibriumResult result;
+    result.solver_status = solver_status_name(nlp->status());
     result.rows = compiled.rows;
     result.phase_count = compiled.problem.phases.size();
     std::vector<double> point = nlp->solution();
@@ -590,13 +627,18 @@ EquilibriumResult solve_equilibrium(
     result.hessian_calls = nlp->hessian_calls();
     convergence.iterations = result.iterations;
     convergence.evaluations = result.evaluations;
-    if (nlp->status() == Ipopt::LOCAL_INFEASIBILITY) {
-        convergence.stop = core::Stop::infeasible;
-    } else {
+    switch (nlp->status()) {
+    case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
+    case Ipopt::DIVERGING_ITERATES: convergence.stop = core::Stop::left_domain; break;
+    case Ipopt::ERROR_IN_STEP_COMPUTATION: convergence.stop = core::Stop::singular; break;
+    case Ipopt::LOCAL_INFEASIBILITY:
+    case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: convergence.stop = core::Stop::infeasible; break;
+    default:
         convergence.stop = core::classify(
             convergence.residual, *convergence.criterion,
             convergence.floor, convergence.contraction,
-            nlp->status() != Ipopt::SUCCESS
+            (nlp->status() == Ipopt::MAXITER_EXCEEDED ||
+             nlp->status() == Ipopt::CPUTIME_EXCEEDED), convergence.amplification
         );
     }
     result.message = core::describe(convergence);
@@ -632,7 +674,7 @@ EquilibriumResult solve_equilibrium(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         if (spec.amount.kind == AmountKind::Free
-            && amount <= policy::STABILITY_COMPOSITION_FLOOR.value) {
+            && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value) {
             topology_ok = false;
             topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
                 + std::to_string(deficit);
@@ -659,7 +701,10 @@ EquilibriumResult solve_equilibrium(
             }
         }
     }
-    const bool accepted = nlp->status() == Ipopt::SUCCESS
+    const bool solver_ok = nlp->status() == Ipopt::SUCCESS
+        || (nlp->status() == Ipopt::STOP_AT_TINY_STEP
+            && result.convergence.stop == core::Stop::converged);
+    const bool accepted = solver_ok
         && (result.convergence.stop == core::Stop::converged
             || result.convergence.stop == core::Stop::converged_to_floor)
         && topology_ok;
@@ -692,7 +737,7 @@ EquilibriumResult solve_equilibrium(
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
     result.reduced_hessian_minimum = reduced_hessian_minimum_at(
-        compiled, primal_point, nlp->constraint_multipliers());
+        compiled, primal_point, result.constraint_multipliers);
     if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
         result.success = false;
         result.message = "reduced_hessian_stability is not positive definite";

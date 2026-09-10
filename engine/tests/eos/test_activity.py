@@ -4,8 +4,6 @@ import math
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from epcsaft import Mixture, Parameters
 from tests.packets import ORACLE, parameters_json
 
@@ -124,25 +122,6 @@ for _row in _AQUEOUS_ACTIVITY_ROWS:
 _PUBLISHED_MODEL_ROWS: list[dict[str, Any]] = json.loads(ORACLE.read_text())["cases"]["aqueous_lithium_bromide_published_model"]
 
 
-@pytest.mark.evidence(
-    test_id="python.activity.aqueous-source",
-    title="Aqueous activity source reproduction",
-    kind="Numerical",
-    category="Properties",
-    property_group="Total",
-    requirement_id="M2",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Numerical",
-    expected_comparisons=("activity_row/*", "activity_aard/*"),
-    expected_counts={
-        "activity_row/*": sum(len(rows) for rows in _AQUEOUS_ACTIVITY_GROUPS.values()),
-        "activity_aard/*": len(_AQUEOUS_ACTIVITY_GROUPS),
-    },
-    basis="Experimental",
-    method="AARD",
-    claim="Retained evaluated reference rows have AARD no greater than the test-owned source adequacy bar.",
-)
 def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
     for salt, salt_rows in _AQUEOUS_ACTIVITY_GROUPS.items():
         assert len(salt_rows) == 6
@@ -245,22 +224,6 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
         assert aard <= SOURCE_ADEQUACY_AARD, f"{salt}: {deviations}"
 
 
-@pytest.mark.evidence(
-    test_id="python.activity.published-curve",
-    title="Published activity model curve reproduction",
-    kind="Numerical",
-    category="Properties",
-    property_group="Total",
-    requirement_id="M2",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Numerical",
-    expected_comparisons=("published_curve_aard",),
-    expected_counts={"published_row/*": len(_PUBLISHED_MODEL_ROWS)},
-    basis="Cross-model sanity",
-    method="AARD against digitized curve",
-    claim="The retained published curve is compared with its supplied digitization envelope; equation matching is not established.",
-)
 def test_published_model_curve_reproduces_source(evidence: Any) -> None:
     """Class-3 published-model reproduction; not solver numerical accuracy.
 

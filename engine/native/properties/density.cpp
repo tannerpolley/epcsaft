@@ -58,6 +58,26 @@ bool association_failure(const std::runtime_error& error) {
         && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
 }
 
+DensityRoot publish_root(
+    double density,
+    double pressure_residual,
+    double pressure_slope,
+    std::size_t iteration_count,
+    std::optional<std::size_t> stable_count,
+    DensityBranch root_branch,
+    const core::Convergence& record,
+    bool at_iteration_cap = false
+) {
+    if (record.stop == core::Stop::nonfinite
+        || (at_iteration_cap && record.stop != core::Stop::converged)) {
+        throw core::ConvergenceFailure(record);
+    }
+    return {
+        density, pressure_residual, pressure_slope, iteration_count,
+        stable_count, root_branch, record
+    };
+}
+
 bool far_side_has_no_crossing(const HelmholtzModel& model, double temperature, double pressure,
                               const std::vector<double>& composition, double density,
                               DensityBranch branch, double log_lower, double log_upper,
@@ -140,20 +160,113 @@ DensityRoot refine(
             ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
         history.contraction(), iterations + 1, evaluations, core::Stop::stalled
     };
-    record.stop = core::classify(
-        record.residual, *record.criterion, record.floor, record.contraction,
-        iterations == maximum
+    record.stop = core::classify(record.residual, *record.criterion, record.floor,
+                                 record.contraction, iterations == maximum,
+                                 record.amplification);
+    const auto root = publish_root(
+        density, point.residual, point.slope, iterations + 1, std::nullopt,
+        DensityBranch::Unspecified, record, iterations == maximum
     );
     parent_scope.probe(
         "density_root",
         {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
         static_cast<std::uint32_t>(iterations)
     );
-    if (iterations == maximum) {
-        throw core::ConvergenceFailure(record);
+    return root;
+}
+
+std::optional<DensityRoot> anchor(
+    const HelmholtzModel& model,
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    DensityBranch branch,
+    double lower,
+    double upper,
+    double log_lower,
+    double log_upper,
+    std::size_t intervals,
+    double density,
+    std::size_t& evaluations
+) {
+    core::Scope anchor_scope("density_anchor");
+    core::ResidualHistory history;
+    core::Convergence anchor_record;
+    std::size_t iteration = 0;
+    for (; iteration < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
+         ++iteration) {
+        const auto point = at_density(model, temperature, pressure, composition, density,
+                                      evaluations, DerivativeOrder::PressureSlope);
+        history.push(std::abs(point.residual));
+        const double derivative = residual_derivative(point, density, pressure, temperature);
+        const double candidate = std::isfinite(derivative) && derivative != 0.0
+            ? density - point.residual / derivative
+            : density;
+        anchor_scope.probe("density_newton_step", {density, point.residual, derivative, candidate},
+                           static_cast<std::uint32_t>(iteration));
+        anchor_record = {
+            std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
+            point.gradient_floor / density,
+            std::isfinite(derivative) && derivative != 0.0
+                ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
+            history.contraction(), iteration + 1, evaluations, core::Stop::stalled
+        };
+        if (anchor_record.residual <= anchor_record.criterion->value
+            && point.slope > 0.0) {
+            const bool far_side_clear = far_side_has_no_crossing(
+                model, temperature, pressure, composition, density, branch,
+                log_lower, log_upper, intervals, anchor_scope, evaluations
+            );
+            anchor_record.evaluations = evaluations;
+            anchor_record.stop = core::classify(
+                anchor_record.residual, *anchor_record.criterion,
+                anchor_record.floor, anchor_record.contraction, false,
+                anchor_record.amplification
+            );
+            if (far_side_clear) {
+                try {
+                    const auto result = publish_root(
+                        density, point.residual, point.slope, iteration + 1,
+                        std::nullopt, branch, anchor_record
+                    );
+                    anchor_scope.finish(anchor_record);
+                    return result;
+                } catch (const core::ConvergenceFailure&) {
+                    anchor_scope.finish(anchor_record);
+                    throw;
+                }
+            }
+            anchor_scope.finish(anchor_record);
+            break;
+        }
+        if (!std::isfinite(derivative) || derivative == 0.0) {
+            anchor_record.stop = !std::isfinite(anchor_record.residual)
+                || (anchor_record.floor.has_value()
+                    && !std::isfinite(*anchor_record.floor))
+                || (anchor_record.contraction.has_value()
+                    && !std::isfinite(*anchor_record.contraction))
+                || (anchor_record.amplification.has_value()
+                    && !std::isfinite(*anchor_record.amplification))
+                ? core::Stop::nonfinite
+                : core::Stop::singular;
+            anchor_scope.finish(anchor_record);
+            break;
+        }
+        if (!(candidate > lower && candidate < upper)
+            || !std::isfinite(candidate)) {
+            anchor_record.stop = core::Stop::left_domain;
+            anchor_scope.finish(anchor_record);
+            break;
+        }
+        density = candidate;
     }
-    return {density, point.residual, point.slope, iterations + 1, std::nullopt,
-            DensityBranch::Unspecified, record};
+    if (iteration == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) {
+        anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
+                                            anchor_record.floor, anchor_record.contraction, true,
+                                            anchor_record.amplification);
+        anchor_scope.finish(anchor_record);
+    }
+    return std::nullopt;
 }
 
 }  // namespace
@@ -193,74 +306,13 @@ DensityRoot solve_density(
     bool have_result = false;
     if (branch != DensityBranch::Unspecified && anchor_density.has_value()
         && std::isfinite(*anchor_density) && *anchor_density > lower && *anchor_density < upper) {
-        core::Scope anchor("density_anchor");
-        double density = *anchor_density;
-        core::ResidualHistory history;
-        core::Convergence anchor_record;
-        std::size_t iteration = 0;
-        for (; iteration < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
-             ++iteration) {
-            const auto point = at_density(model, temperature, pressure, mole_fractions, density,
-                                          evaluations, DerivativeOrder::PressureSlope);
-            history.push(std::abs(point.residual));
-            const double derivative = residual_derivative(point, density, pressure, temperature);
-            const double candidate = std::isfinite(derivative) && derivative != 0.0
-                ? density - point.residual / derivative
-                : density;
-            anchor.probe("density_newton_step", {density, point.residual, derivative, candidate},
-                         static_cast<std::uint32_t>(iteration));
-            anchor_record = {
-                std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
-                point.gradient_floor / density,
-                std::isfinite(derivative) && derivative != 0.0
-                    ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
-                history.contraction(), iteration + 1, evaluations, core::Stop::stalled
-            };
-            if (anchor_record.residual <= anchor_record.criterion->value
-                && point.slope > 0.0) {
-                const bool far_side_clear = far_side_has_no_crossing(
-                    model, temperature, pressure, mole_fractions, density, branch,
-                    log_lower, log_upper, intervals, anchor, evaluations
-                );
-                anchor_record.evaluations = evaluations;
-                if (far_side_clear) {
-                    anchor_record.stop = core::classify(
-                        anchor_record.residual, *anchor_record.criterion,
-                        anchor_record.floor, anchor_record.contraction, false
-                    );
-                    anchor.finish(anchor_record);
-                    result = {
-                        density, point.residual, point.slope, iteration + 1,
-                        std::nullopt, branch, anchor_record
-                    };
-                    have_result = true;
-                    break;
-                }
-                anchor_record.stop = core::classify(
-                    anchor_record.residual, *anchor_record.criterion,
-                    anchor_record.floor, anchor_record.contraction, false
-                );
-                anchor.finish(anchor_record);
-                break;
-            }
-            if (!std::isfinite(derivative) || derivative == 0.0) {
-                anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                                                     anchor_record.floor, anchor_record.contraction, false);
-                anchor.finish(anchor_record);
-                break;
-            }
-            if (!(candidate > lower && candidate < upper)
-                || !std::isfinite(candidate)) {
-                anchor_record.stop = core::Stop::left_domain;
-                anchor.finish(anchor_record);
-                break;
-            }
-            density = candidate;
-        }
-        if (iteration == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)) {
-            anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                                                 anchor_record.floor, anchor_record.contraction, true);
-            anchor.finish(anchor_record);
+        const auto anchored = anchor(
+            model, temperature, pressure, mole_fractions, branch, lower, upper,
+            log_lower, log_upper, intervals, *anchor_density, evaluations
+        );
+        if (anchored.has_value()) {
+            result = *anchored;
+            have_result = true;
         }
     }
     if (!have_result) {

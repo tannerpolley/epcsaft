@@ -13,6 +13,7 @@ class Stop:
     left_domain: Stop
     singular: Stop
     infeasible: Stop
+    nonfinite: Stop
 
 class Category:
     ThermodynamicConstraint: Category
@@ -240,6 +241,7 @@ class CompiledSystem:
 class EquilibriumResult:
     success: bool
     message: str
+    solver_status: str
     temperature: list[float]
     pressure: list[float]
     amounts: list[float]

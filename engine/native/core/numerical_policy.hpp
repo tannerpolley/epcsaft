@@ -13,12 +13,14 @@
 //                                  the model wrong, not merely different
 //   3  algorithm tolerance      -- a convergence or discretisation choice with a
 //                                  stated source and a stated consequence
-//   4  unjustified legacy       -- a number nobody can source
+//   4  unjustified legacy       -- a number nobody can source; this category is empty
 //
 // Category 4 is empty and must stay empty. An entry that cannot be justified
-// into category 3 with a source does not get carried; the audit found the
-// drifted values below by comparing against the paper, and they are pinned here
-// so a solver stage cannot quietly move them again.
+// into category 3 with a source does not get carried; a provisional category-3
+// choice may remain only when its rationale, predicate, failure meaning and
+// unresolved accuracy are explicit. The audit found the drifted values below
+// by comparing against the paper, and they are pinned here so a solver stage
+// cannot quietly move them again.
 //
 // Stages add their own entries as they are written. Nothing outside this header
 // may define a tolerance.
@@ -48,13 +50,13 @@ constexpr Tolerance derived(const Tolerance& upstream, double factor,
 
 // ---------------------------------------------------------------- constraints
 
-// Above this the hard-sphere term's logarithm has no real value: the packing
-// fraction of identical spheres in a face-centred cubic lattice. Not a
-// tolerance -- a state at or above it is not a fluid.
+// Dimensionless packing fraction. Reject eta >= the equal-sphere
+// face-centred-cubic geometric limit as a conservative PC-SAFT admission
+// bound; this is a domain constraint, not a mathematical singularity claim.
 inline constexpr Tolerance CLOSE_PACKING_FRACTION{"CLOSE_PACKING_FRACTION",
     PI / (3.0 * 1.4142135623730951),
     Category::ThermodynamicConstraint,
-    "face-centred cubic close packing, pi/(3 sqrt 2)",
+    "equal-sphere face-centred-cubic admission bound; eta >= value is a domain failure",
 };
 
 // A site fraction is a probability. Outside (0, 1] the mass-action system has
@@ -204,7 +206,12 @@ inline constexpr Tolerance STABILITY_CANDIDATE_GAP{"STABILITY_CANDIDATE_GAP",
 inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "Pereira 2012; drifted to 1e-10 f_k in the superseded tree",
+    "dimensionless x_i coordinate; require x_i >= floor for log(x_i); Pereira 2012; provisional domain cutoff, not an accuracy bound",
+};
+inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
+    1.0e-8,
+    Category::AlgorithmTolerance,
+    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff; not a stability result or accuracy bound",
 };
 
 inline constexpr Tolerance STABILITY_MULTIPLIER_GAP{"STABILITY_MULTIPLIER_GAP",
@@ -283,14 +290,18 @@ inline constexpr Tolerance FLOOR_MARGIN{
     "FLOOR_MARGIN",
     10.0,
     Category::AlgorithmTolerance,
-    "guessed: a decade of slack across the first-order bound's norm inequalities",
+    "provisional guessed decade of slack across first-order bound norm inequalities; "
+    "predicate: residual <= FLOOR_MARGIN * floor; failure meaning: classified "
+    "converged_to_floor; numerical adequacy/calibration remains open, not an accuracy bound",
 };
 
 inline constexpr Tolerance STALL_WINDOW{
     "STALL_WINDOW",
     5.0,
     Category::AlgorithmTolerance,
-    "guessed: below Ipopt's acceptable_iter default of 15",
+    "provisional guessed window below Ipopt acceptable_iter default 15; predicate: "
+    "residual history has STALL_WINDOW entries without contraction; failure meaning: "
+    "classified stalled; numerical adequacy/calibration remains open, not an accuracy bound",
 };
 
 }  // namespace epcsaft::policy

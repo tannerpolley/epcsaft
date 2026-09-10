@@ -256,6 +256,42 @@ HelmholtzModel::HelmholtzModel(
     std::set<std::pair<ParameterFamily, std::size_t>> seen;
     for (const auto& item : active_) {
         require(!item.indices.empty(), "active_parameter.indices");
+        if (item.family == ParameterFamily::SegmentCount ||
+            item.family == ParameterFamily::SigmaConstant ||
+            item.family == ParameterFamily::DispersionEnergyOverK) {
+            require(item.indices.size() == 1, "active_parameter.indices");
+        }
+        if (item.family == ParameterFamily::Kij || item.family == ParameterFamily::Lij) {
+            require(item.indices.size() == 2, "active_parameter.indices");
+            const auto first = item.indices[0];
+            const auto second = item.indices[1];
+            require(first < second && first / components != first % components,
+                    "active_parameter.indices");
+            require(first / components == second % components &&
+                        first % components == second / components,
+                    "active_parameter.indices");
+        }
+        if (item.family == ParameterFamily::AssociationEnergyOverK ||
+            item.family == ParameterFamily::AssociationVolume) {
+            require(sites != 0 && (item.indices.size() == 1 || item.indices.size() == 2),
+                    "active_parameter.indices");
+            const auto first = item.indices[0];
+            require(first < site_pairs, "active_parameter.indices");
+            const auto row = first / sites;
+            const auto column = first % sites;
+            if (item.indices.size() == 1) {
+                require(row == column && parameters_.association_active[first] != 0,
+                        "active_parameter.indices");
+            } else {
+                const auto second = item.indices[1];
+                require(second < site_pairs, "active_parameter.indices");
+                require(first < second && row != column && second == column * sites + row,
+                        "active_parameter.indices");
+                require(parameters_.association_active[first] != 0 &&
+                            parameters_.association_active[second] != 0,
+                        "active_parameter.indices");
+            }
+        }
         for (const std::size_t index : item.indices) {
             std::size_t size = 0;
             switch (item.family) {
@@ -263,6 +299,7 @@ HelmholtzModel::HelmholtzModel(
             case ParameterFamily::SigmaConstant: size = components; break;
             case ParameterFamily::DispersionEnergyOverK: size = components; break;
             case ParameterFamily::Kij: size = pairs; break;
+            case ParameterFamily::Lij: size = pairs; break;
             case ParameterFamily::AssociationEnergyOverK: size = site_pairs; break;
             case ParameterFamily::AssociationVolume: size = site_pairs; break;
             }
@@ -386,6 +423,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         case ParameterFamily::DispersionEnergyOverK:
             values = &parameters_.dispersion_energy_over_k; break;
         case ParameterFamily::Kij: values = &parameters_.k_ij; break;
+        case ParameterFamily::Lij: values = &parameters_.l_ij; break;
         case ParameterFamily::AssociationEnergyOverK:
             values = &parameters_.association_energy_over_k; break;
         case ParameterFamily::AssociationVolume: values = &parameters_.association_volume; break;

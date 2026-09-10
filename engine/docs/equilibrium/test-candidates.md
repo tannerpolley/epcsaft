@@ -12,12 +12,12 @@ sequence remains in `docs/scientific/implementation-plan.md`.
 
 These two native checks protect the identified producer corrections. They test independent differential identities. F1 passes after the 2026-09-08
 caloric correction; F5 remains a known failure. A failure is diagnostic evidence, not a qualified
-Engine result. The native checks print their ladder values and maximum errors;
-the live view reads output captured by
-`python3 tools/run-numerical-evidence.py F1 F5` directly from
-`build/numerical-evidence/`. Run metadata identifies the source, wheel and
-executable. The retained preparation tables support the original diagnosis;
-they are not the live numerical source.
+Engine result. The native checks print their ladder values and maximum errors to
+ordinary process output. Run `properties_checks F1` and `equilibrium_checks F5`
+from the configured build directory recorded in
+`build/environment-wheel/meson-build-dir`. The retained pre-cutover tables
+preserve source, wheel, executable, and physical-input provenance; they are
+historical evidence, not a current-code pass.
 
 ### F1 residual internal energy
 
