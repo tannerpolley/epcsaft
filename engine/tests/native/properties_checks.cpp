@@ -1191,6 +1191,61 @@ void core_c2_parameter_coordinates() {
     auto binary = properties_support::neutral_binary();
     const auto kij = epcsaft::ParameterFamily::Kij;
     const auto lij = epcsaft::ParameterFamily::Lij;
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::SegmentCount, {0, 1}}));
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::SigmaConstant, {0, 1}}));
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::DispersionEnergyOverK, {0, 1}}));
+    constexpr double scalar_temperature = 300.0;
+    constexpr double scalar_volume = 1.0 / 1.2e4;
+    const std::vector<double> scalar_amounts = {0.4, 0.6};
+    const auto fixed_scalar = epcsaft::HelmholtzModel(binary).evaluate(
+        scalar_temperature, scalar_volume, scalar_amounts, epcsaft::DerivativeOrder::Value);
+    const std::vector<epcsaft::ParameterFamily> scalar_families = {
+        epcsaft::ParameterFamily::SegmentCount,
+        epcsaft::ParameterFamily::SigmaConstant,
+        epcsaft::ParameterFamily::DispersionEnergyOverK
+    };
+    const std::array<const char*, 3> scalar_names = {
+        "segment-count", "sigma", "dispersion-energy-over-k"
+    };
+    for (std::size_t i = 0; i < scalar_families.size(); ++i) {
+        const auto family = scalar_families[i];
+        const auto active_value = epcsaft::HelmholtzModel(
+            binary, {{family, {0}}}).evaluate(
+                scalar_temperature, scalar_volume, scalar_amounts,
+                epcsaft::DerivativeOrder::Value).value;
+        CHECK(close(active_value, fixed_scalar.value, 1e-12));
+        auto overwritten = binary;
+        switch (family) {
+        case epcsaft::ParameterFamily::SegmentCount:
+            overwritten.segment_count[1] = overwritten.segment_count[0];
+            break;
+        case epcsaft::ParameterFamily::SigmaConstant:
+            overwritten.sigma_constant[1] = overwritten.sigma_constant[0];
+            break;
+        case epcsaft::ParameterFamily::DispersionEnergyOverK:
+            overwritten.dispersion_energy_over_k[1] =
+                overwritten.dispersion_energy_over_k[0];
+            break;
+        default:
+            break;
+        }
+        const auto overwritten_value = epcsaft::HelmholtzModel(overwritten).evaluate(
+            scalar_temperature, scalar_volume, scalar_amounts,
+            epcsaft::DerivativeOrder::Value).value;
+        CHECK(!close(overwritten_value, fixed_scalar.value, 1e-12));
+        recording_support::compare(
+            (std::string("c2-scalar-value/") + scalar_names[i]).c_str(),
+            "residual_helmholtz", "1", active_value, fixed_scalar.value,
+            recording_support::fields({
+                model_inputs(binary, scalar_temperature, scalar_volume, scalar_amounts),
+                recording_support::field("family", scalar_names[i]),
+                recording_support::field("active_index", std::size_t{0})
+            }), "Identity", "single-slot-coordinate", "fixed value is preserved",
+            "reference_or_one", 0.0, 1e-12,
+            close(active_value, fixed_scalar.value, 1e-12),
+            "c2-scalar-values", scalar_names[i], "a^{res}", "T,V,\\mathbf{n}",
+            "a_{active}=a_{fixed}", "scalar");
+    }
     CHECK(rejects(binary, {kij, {1}}));
     CHECK(rejects(binary, {kij, {0}}));
     CHECK(rejects(binary, {kij, {1, 1}}));
@@ -1307,6 +1362,9 @@ void core_c2_parameter_coordinates() {
         }
     }
     recording_support::expect_group(recording_support::active_test_id(),
+        "c2-scalar-values", "c2-scalar-value/", scalar_families.size(),
+        "Core C2 scalar coordinate value identity", "family");
+    recording_support::expect_group(recording_support::active_test_id(),
         "c2-falsifier", "c2-falsifier", 1, "Core C2 Hessian action", "row");
     recording_support::expect_group(recording_support::active_test_id(),
         "c2-association-gradient", "c2-association-gradient", 1,
@@ -1347,7 +1405,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4"}, hessian_fd_and_pressure_slope},
         {{"native.properties.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P3", "excluded-inert,all-pairs-active", "engine/tests/native/properties_checks.cpp", "properties_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
-        {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "C2", "c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
+        {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "C2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "M4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
     });

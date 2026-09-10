@@ -47,7 +47,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 <!-- roadmap-summary:start -->
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
-| Core | █████░░░░░ 50.0% (2/4) | 0.5–1.5 | 3.5 (partial) |
+| Core | ██░░░░░░░░ 25.0% (1/4) | 0.75–2.25 | 3.7 (partial) |
 | Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/6) | 12–36 | — |
@@ -56,7 +56,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **2/35 qualified milestones (5.7%)**; **36.5–111.5 remaining Astra hours**.
+Total: **1/35 qualified milestones (2.9%)**; **36.75–112.25 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -245,7 +245,7 @@ flowchart LR
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | C1 — Constants and numerical policy | [x] | 0 | 2.5 | Specifications and executable prerequisites | Verify units, physical bounds, tolerance meanings and extensive-objective multiplier scaling; preserve explicit provisional limits; retain falsifying evidence and independent final review. | [2026-09-10: C1 qualification](reviews/core-c1-2026-09-09.md); corrected evidence and independent `Ship` review passed; pinned F5 remains outside C1. |
-| C2 — Parameter coordinates and scaling | [x] | 0 | 1.0 | C1 | Define and qualify common coordinate identities and dimensional scaling, including derivative coordinate transformations. | [2026-09-10: C2 qualification](reviews/core-c2-2026-09-10.md); issue #220, installed-wheel rows, focused/native/full gates, and independent `Supported` review passed. |
+| C2 — Parameter coordinates and scaling | [-] | 0.25–0.75 | 1.2 | C1 | Correct and requalify the shared scalar-coordinate ownership contract after the supervisor found multi-slot scalar activation overwrote unequal component values. | [2026-09-10: C2 correction evidence](reviews/core-c2-2026-09-10.md); pre-fix red run, corrected installed-wheel rows and gates passed; independent correction review pending. |
 | C3 — Diagnostics and availability | [ ] | 0.25–0.75 | — | C1 | Define residuals, termination and unavailable-result information. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 | C4 — Core qualification | [ ] | 0.25–0.75 | — | C2, C3 | Focused checks, cost review and independent acceptance. | [2026-09-09: existing Core review](reviews/core-readiness-2026-09-09.md); gaps remain, not qualified. |
 
@@ -465,7 +465,7 @@ Current stage: C1 and bounded Core/C2 qualification are complete; C3 remains que
 | 1 | Reconcile current documentation and live roadmap | Complete: one execution queue, slice-scoped gates, current application scope and Markdown-derived HTML; C1 qualification state is kept current. |
 | C1-design | [Define bounded Core constants slice (#215)](https://github.com/tannerpolley/ePC-SAFT/issues/215) | Verify units and provenance, physical bounds, numerical tolerance meanings, consumers and falsifiers; record a scoped Ready review or exact correction. |
 | C1-correction | Correct and requalify C1 | Complete: isolated regular/pinned Hessian evidence, recorded optimizer termination and tiny-feed KKT evidence, restored provisional-policy limits, used independent constant references, retained selected evidence, and passed independent `Ship` review. |
-| C2-build | Implement and qualify bounded C2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and C3 remain outside scope. |
+| C2-correction | Correct scalar active-coordinate ownership | In progress: reject multi-slot `SegmentCount`, `SigmaConstant`, and `DispersionEnergyOverK` coordinates, prove single-slot value identity on unequal components, rebuild evidence, and obtain fresh final review. |
 | Next | Define bounded C3 slice | C2 is qualified for its stated native coordinate identities, pair/site ownership, derivative transformations, and smooth finite numerical fixtures; diagnostics/availability work remains separate. |
 
 Local C1 design and validation are followed by slice-scoped Core work. Repository

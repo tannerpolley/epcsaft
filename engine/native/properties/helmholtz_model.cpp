@@ -256,6 +256,11 @@ HelmholtzModel::HelmholtzModel(
     std::set<std::pair<ParameterFamily, std::size_t>> seen;
     for (const auto& item : active_) {
         require(!item.indices.empty(), "active_parameter.indices");
+        if (item.family == ParameterFamily::SegmentCount ||
+            item.family == ParameterFamily::SigmaConstant ||
+            item.family == ParameterFamily::DispersionEnergyOverK) {
+            require(item.indices.size() == 1, "active_parameter.indices");
+        }
         if (item.family == ParameterFamily::Kij || item.family == ParameterFamily::Lij) {
             require(item.indices.size() == 2, "active_parameter.indices");
             const auto first = item.indices[0];
