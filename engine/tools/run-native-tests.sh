@@ -4,33 +4,31 @@ set -euo pipefail
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
 cd "$workspace_root"
-if [[ "${EPCSAFT_RECORD_LOCK_HELD:-0}" != 1 ]]; then
-    mkdir -p build/numerical-evidence
-    exec {record_lock_fd}>build/numerical-evidence/.lock
-    flock "$record_lock_fd"
-    export EPCSAFT_RECORD_LOCK_HELD=1
-fi
 
-# Keep the supported direct native route on the measured fast native subset.
-# Each registered case is run through the shared wheel/identity recorder;
-# full equilibrium, boundary, and model-floor suites remain explicit owners.
-if (($# == 0)); then
-    names=(contributions properties diagnostics specification)
+if [[ "${EPCSAFT_NATIVE_BUILD_READY:-0}" != 1 ]]; then
+    EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
+fi
+build_dir="$(<build/environment-wheel/meson-build-dir)"
+tests=("$@")
+if ((${#tests[@]} == 0)); then
+    tests=(contributions properties diagnostics specification)
+fi
+set +e
+logbase="testlog-${BASHPID}-$(date +%s%N)"
+.venv/bin/meson test -C "$build_dir" "${tests[@]}" --print-errorlogs --no-rebuild --logbase "$logbase"
+meson_status=$?
+set -e
+mkdir -p build/test-results
+report="$(mktemp build/test-results/native.xml.XXXXXX)"
+meson_report="$build_dir/meson-logs/${logbase}.junit.xml"
+if [[ -f "$meson_report" ]]; then
+    cp "$meson_report" "$report"
 else
-    names=("$@")
+    cat >"$report" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" errors="1" failures="0" skipped="0"><testsuite name="native" tests="1" errors="1"><testcase name="meson invocation"><error message="Meson did not produce a JUnit report for this invocation"/></testcase></testsuite></testsuites>
+EOF
 fi
-for name in "${names[@]}"; do
-    case "${name,,}" in
-        contributions|properties|diagnostics|specification) ;;
-        *)
-            echo "unsupported direct native suite: $name (slow suites require an explicit owner command)" >&2
-            exit 2
-            ;;
-    esac
-done
-
-EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
-for name in "${names[@]}"; do
-    .venv/bin/python tools/run-numerical-evidence.py \
-        --native-suite "$name" --explicit --no-build --timeout 600
-done
+mv "$report" build/test-results/native.xml
+rm -f "$build_dir/meson-logs/${logbase}."*
+exit "$meson_status"

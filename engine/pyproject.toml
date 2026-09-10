@@ -13,8 +13,9 @@ dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = [".."]
-addopts = "-p tools.pytest_recording -m 'not expensive and not slow'"
+addopts = "-m 'not expensive and not slow'"
+junit_logging = "system-out"
+junit_log_passing_tests = true
 markers = [
   "expensive: slow white-box numerical sentinel run explicitly",
   "slow: compact numerical evidence retained for full verification",

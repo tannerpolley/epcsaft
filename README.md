@@ -8,11 +8,13 @@ scientific owners and one equilibrium driver. The
 [implementation plan](docs/scientific/implementation-plan.md) distinguishes
 required capability from implemented and numerically qualified behavior.
 
-For the live Map, Plan and Tests website, run
-`python3 tools/serve-roadmap.py --port 8766` and open the
+For the live Map, Plan and Results website, run
+`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`
+and open the
 [Quarto companion](http://127.0.0.1:8766/). The companion is a read-only
-viewer: it renders the plan and the results recorded by the normal check
-commands, and starting it or refreshing a page never runs tests.
+viewer: Quarto renders the project map, plan, ordinary check reports, and
+retained numerical results. Starting or refreshing it never builds the Engine,
+collects tests, or runs a scientific calculation.
 
 To keep the companion running for this checkout, install the user service and
 enable it:
@@ -75,7 +77,7 @@ Run the affected-area gate during normal development:
 bash tools/check-affected.sh
 ```
 
-Run the parallel fast installed-wheel gate with:
+Run the fast installed-wheel gate with:
 
 ```bash
 bash tools/check-all.sh

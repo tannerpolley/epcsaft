@@ -10,6 +10,7 @@ summarized by presence only.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import subprocess
@@ -42,7 +43,7 @@ def project_files(root: Path = ROOT) -> list[str]:
         ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         capture_output=True, check=True,
     )
-    return sorted({item for item in result.stdout.decode().split("\0") if item})
+    return sorted({item for item in result.stdout.decode().split("\0") if item and (root / item).exists()})
 
 
 def resolve(path: str, rules: list[list[str]]) -> tuple[str | None, str | None, bool]:
@@ -50,11 +51,16 @@ def resolve(path: str, rules: list[list[str]]) -> tuple[str | None, str | None, 
 
     best: list[list[str]] = []
     for rule in rules:
-        prefix = rule[0]
-        if path == prefix or (prefix.endswith("/") and path.startswith(prefix)):
-            if not best or len(prefix) > len(best[0][0]):
+        pattern = rule[0]
+        matched = fnmatch.fnmatchcase(path, pattern) if any(c in pattern for c in "*?[") else (
+            path == pattern or (pattern.endswith("/") and path.startswith(pattern))
+        )
+        specificity = len(pattern.replace("*", "").replace("?", ""))
+        if matched:
+            best_specificity = len(best[0][0].replace("*", "").replace("?", "")) if best else -1
+            if specificity > best_specificity:
                 best = [rule]
-            elif len(prefix) == len(best[0][0]) and rule[1:] != best[0][1:]:
+            elif pattern == best[0][0] and rule[1:] != best[0][1:]:
                 best.append(rule)
     if not best:
         return None, None, False
@@ -100,6 +106,10 @@ def self_test() -> None:
     assert resolve("engine/native/a.cpp", rules) == ("engine", "specification", False)
     assert resolve("README.md", rules) == ("documentation", "specification", False)
     assert resolve("README.md.bak", rules) == (None, None, False)
+    assert resolve(
+        "analyses/case/scripts/run.py",
+        [["analyses/", "analyses", "evidence"], ["analyses/**/scripts/**", "analyses", "tooling"]],
+    ) == ("analyses", "tooling", False)
     live = project_map()
     assert any(node["id"] == "engine.core" and node["files"].get("runtime") for node in live["nodes"])
     print("project map self-test passed")

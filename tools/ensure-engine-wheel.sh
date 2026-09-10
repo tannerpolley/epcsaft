@@ -4,16 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-# Fingerprints hash sorted file and dependency records.  Pin the collation
-# locale so a shell and the managed companion service select the same cache
-# key regardless of the caller's locale.
+# Fingerprints hash sorted file and dependency records. Pin collation so every
+# shell selects the same cache key.
 export LC_ALL=C
-
-mkdir -p build/numerical-evidence
-if [[ "${EPCSAFT_RECORD_LOCK_HELD:-0}" != 1 ]]; then
-    exec {record_lock_fd}>build/numerical-evidence/.lock
-    flock "$record_lock_fd"
-fi
 
 prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
 if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
@@ -27,19 +20,6 @@ if [[ ! -x "$python" ]]; then
     exit 1
 fi
 export PATH="$repo_root/.venv/bin:$PATH"
-
-# Bind any resulting wheel/native build to the source generation captured
-# before preparation starts.  A source edit during compilation must fail
-# closed instead of stamping the later generation onto an older build.
-preparation_input_generation="$($python - "$repo_root" <<'PY'
-import sys
-from pathlib import Path
-
-from tools.test_records import input_generation
-
-print(input_generation(Path(sys.argv[1]).resolve()))
-PY
-)"
 
 read -r -a cc_command <<<"${CC:-cc}"
 read -r -a cxx_command <<<"${CXX:-c++}"
@@ -161,30 +141,34 @@ fingerprint_tree() {
     )"
 }
 
-source_files=(
-    tools/ensure-engine-wheel.sh
-    engine/LICENSE
-    engine/README.md
-    engine/meson.build
-    engine/pyproject.toml
-)
-while IFS= read -r -d '' path; do
-    source_files+=("$path")
-done < <(find engine/native engine/src engine/tests/native -type f -print0 | sort -z)
-while IFS= read -r -d '' path; do
-    source_files+=("$path")
-done < <(
-    {
-        find engine/build/subprojects -maxdepth 1 -type f -name '*.wrap' -print0
-        find engine/build/subprojects/packagefiles -type f -print0
-    } | sort -z
-)
+compute_source_sha256() {
+    local -a current_files=(
+        tools/ensure-engine-wheel.sh engine/LICENSE engine/README.md
+        engine/meson.build engine/pyproject.toml
+    )
+    while IFS= read -r -d '' path; do current_files+=("$path"); done < <(
+        find engine/native engine/src engine/tests/native -type f -print0 | sort -z
+    )
+    while IFS= read -r -d '' path; do current_files+=("$path"); done < <(
+        {
+            find engine/build/subprojects -maxdepth 1 -type f -name '*.wrap' -print0
+            find engine/build/subprojects/packagefiles -type f -print0
+        } | sort -z
+    )
+    { for path in "${current_files[@]}"; do sha256sum "$path"; done; } |
+        sha256sum | cut -d ' ' -f 1
+}
 
-source_sha256="$({
-    for path in "${source_files[@]}"; do
-        sha256sum "$path"
-    done
-} | sha256sum | cut -d ' ' -f 1)"
+assert_source_unchanged() {
+    local current
+    current="$(compute_source_sha256)"
+    if [[ "$current" != "$source_sha256" ]]; then
+        echo "Engine source changed during preparation; refusing identity publication" >&2
+        exit 1
+    fi
+}
+
+source_sha256="$(compute_source_sha256)"
 
 runtime_id="$("$python" - <<'PY'
 import platform
@@ -317,28 +301,28 @@ record_preparation_binding() {
     if [[ ! -d "$build_dir" ]]; then
         return 0
     fi
-    "$python" - "$repo_root" "$build_dir" "$1" "$preparation_input_generation" <<'PY'
+    "$python" - "$repo_root" "$build_dir" "$1" "$build_fingerprint" <<'PY'
+import hashlib
+import json
 import sys
 from pathlib import Path
-
-from tools.test_records import atomic_json, input_generation, sha256
 
 root = Path(sys.argv[1]).resolve()
 build_dir = Path(sys.argv[2]).resolve()
 wheel = Path(sys.argv[3]).resolve()
-expected_generation = sys.argv[4]
+build_fingerprint = sys.argv[4]
 if not build_dir.is_dir() or not wheel.is_file():
     raise SystemExit("prepared build or wheel is unavailable")
-current_generation = input_generation(root)
-if current_generation != expected_generation:
-    raise SystemExit("computational inputs changed during wheel preparation")
-atomic_json(root / "build/environment-wheel/preparation.json", {
+path = root / "build/environment-wheel/preparation.json"
+temporary = path.with_suffix(".json.tmp")
+temporary.write_text(json.dumps({
     "schema_version": 1,
-    "input_generation": expected_generation,
+    "build_fingerprint": build_fingerprint,
     "build_dir": str(build_dir.relative_to(root)),
     "wheel": str(wheel.relative_to(root)),
-    "wheel_sha256": sha256(wheel),
-})
+    "wheel_sha256": hashlib.sha256(wheel.read_bytes()).hexdigest(),
+}, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+temporary.replace(path)
 PY
 }
 
@@ -357,9 +341,10 @@ if [[ "$wheel_current" == true ]]; then
         if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
             ensure_configured_build
         fi
-        uv pip check --python "$python"
-        printf '%s\n' "$verification_output"
-        record_preparation_binding "$wheel"
+    uv pip check --python "$python"
+    printf '%s\n' "$verification_output"
+    assert_source_unchanged
+    record_preparation_binding "$wheel"
         echo "Engine wheel is current; native rebuild skipped"
         exit 0
     fi
@@ -384,8 +369,9 @@ if [[ "$wheel_current" != true ]]; then
         fi
     fi
 
-    if [[ "$cache_valid" == true ]]; then
-        cp "${cached_wheels[0]}" "$wheelhouse/"
+if [[ "$cache_valid" == true ]]; then
+    assert_source_unchanged
+    cp "${cached_wheels[0]}" "$wheelhouse/"
         wheel_origin="cache"
     else
         uv build \
@@ -402,7 +388,8 @@ if [[ "$wheel_current" != true ]]; then
             echo "expected exactly one Engine wheel, found ${#built_wheels[@]}" >&2
             exit 1
         fi
-        rm -rf -- "$cache_entry"
+    assert_source_unchanged
+    rm -rf -- "$cache_entry"
         mkdir -p "$cache_entry"
         cp "${built_wheels[0]}" "$cache_entry/"
         sha256sum "${built_wheels[0]}" | cut -d ' ' -f 1 >"$cache_entry/wheel.sha256"
@@ -426,6 +413,7 @@ if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
     # the caller did not request a native test preparation.
     ensure_configured_build
 fi
+assert_source_unchanged
 printf '%s\n' "$build_fingerprint" >"$stamp"
 sha256sum "$wheel" | cut -d ' ' -f 1 >"$wheel_hash_stamp"
 record_preparation_binding "$wheel"

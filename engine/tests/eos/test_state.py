@@ -55,34 +55,6 @@ SYMMETRIC_STATE_CRITERION = {
 }
 
 
-@pytest.mark.evidence(
-    test_id="python.state.relabelling-identities",
-    title="Relabelling and state identities",
-    kind="Numerical",
-    category="Properties",
-    property_group="Total",
-    requirement_id="M5",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Numerical",
-    expected_comparisons=(
-        "state_identity/pressure",
-        "state_identity/residual_helmholtz",
-        "state_identity/compressibility_factor",
-        "state_identity/relative_permittivity",
-        "state_identity/residual_chemical_potential/*",
-        "state_identity/euler_identity",
-        "state_identity/codata_pressure",
-        "state_identity/pressure_anchor",
-        "state_identity/anchored_density",
-    ),
-    expected_counts={
-        "state_identity/residual_chemical_potential/*": len(_MEA_ORDER),
-    },
-    basis="Relationship",
-    method="relabelled state identity",
-    claim="Permuting component labels preserves scalar state properties and reverses component vectors.",
-)
 def test_relabelling_and_state_identities(evidence: Any) -> None:
     packet = parameters_json("mea-co2-h2o-nine-species-estimation", 3)
     order = _MEA_ORDER
@@ -304,21 +276,6 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     close(anchored.molar_density, state.molar_density, 1e-10)
 
 
-@pytest.mark.evidence(
-    test_id="python.state.pure-mixture-equivalence",
-    title="Pure and one-component mixture equivalence",
-    kind="Numerical",
-    category="Properties",
-    property_group="Total",
-    requirement_id="M5",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Numerical",
-    expected_comparisons=("pure_mixture_identity",),
-    basis="Relationship",
-    method="pure/mixture identity",
-    claim="A pure component and its one-component mixture have the same pressure at the same state.",
-)
 def test_pure_is_one_component_mixture(evidence: Any) -> None:
     packet = parameters_json("gross-2001-methane-ethane", 2)
     temperature = 300.0
@@ -362,16 +319,6 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
     close(pure.pressure, mixture.pressure, 1e-12)
 
 
-@pytest.mark.evidence(
-    test_id="python.surface.mapping-fails-closed",
-    title="Physical input mapping fails closed by name",
-    kind="Package",
-    category="Surface",
-    requirement_id="S1",
-    execution_policy="Automatic fast",
-    lifecycle="Implemented",
-    evidence_expectation="Outcome only",
-)
 def test_mapping_fails_closed_by_name() -> None:
     with pytest.raises(ParameterError, match="model/electrolyte/ionic_dispersion"):
         Parameters.from_json(

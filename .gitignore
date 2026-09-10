@@ -14,3 +14,6 @@
 
 # Owner-requested independent downstream draft clones; not Engine dependencies
 /downstream/
+
+/.quarto/
+**/*.quarto_ipynb
