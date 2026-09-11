@@ -481,11 +481,17 @@ If it reports the departure entropy relative to an ideal gas at the same
 `T,P`, the result is named separately and equals `s_V^r/R + ln Z`. No result
 named only `residual_entropy` may switch reference convention by state route.
 
-`c_p^r` requires finite, sufficiently conditioned `Z + rho_m Z_rho`. A
-specified-pressure state additionally requires a positive value because that
-route admits only mechanically stable roots. Explicit-density evaluation does
-not reject a finite state solely because the slope is negative; it reports the
-mathematical EOS result and does not certify that state as stable.
+For the current central state result, `c_p^r` is available only when
+`D = Z + rho_m Z_rho = P_rho/(RT)` is finite and positive and the resulting
+quotient is finite. Positivity is the existing mechanically stable branch rule;
+no additional universal slope cutoff is adopted. A numerical accuracy claim at
+that state additionally requires a recorded fixed-pressure enthalpy-derivative
+ladder on the same branch. A near-zero positive `D` is retained as conditioning
+stress outside the qualified claim, not silently rejected or treated as
+accurate. P4 owns general per-action conditioning and unavailable behavior.
+Explicit-density evaluation does not reject an otherwise finite state solely
+because the slope is negative; it reports the other mathematical EOS results
+without certifying stability and leaves `c_p^r` unavailable.
 
 ## 9. General phase energy and caloric basis
 

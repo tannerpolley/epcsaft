@@ -340,8 +340,12 @@ choose an unresolved scientific contract while coding, or start a later row.
   `residual_heat_capacity_cp` on the current `(T, rho, x)` state owner. Preserve
   the corrected `u^r=-RT^2 a_T`, the existing contribution/Euler/pressure
   identities, fixed-density mathematical states and fixed-pressure stable-root
-  requirement. Ideal/Total assembly, new public containers, density changes and
-  general actions are P2–P4, not P1.
+  requirement. For the central state, `c_p^r` is available only for finite
+  positive `D=Z+rho Z_rho=P_rho/(RT)` and a finite quotient; adopt no additional
+  universal cutoff. Qualify accuracy by a same-branch fixed-pressure ladder and
+  retain near-zero positive `D` as conditioning stress outside the claim.
+  Ideal/Total assembly, new public containers, density changes and general
+  actions are P2–P4, not P1.
 - **Build:** begin verify-only in `engine/tests/native/properties_checks.cpp`.
   Add the missing independent centered/refined temperature ladders for
   `c_v^r=(du^r/dT)_(rho,x)` and `c_p^r=(dh^r/dT)_(P,x)` on a declared pressure
@@ -354,12 +358,11 @@ choose an unresolved scientific contract while coding, or start a later row.
   justified dilute limits. After rebuilding the sole wheel, run the focused
   `properties` native test and `bash tools/check-affected.sh HEAD`; run
   `bash tools/check-all.sh` for the final P1 candidate.
-- **Stop condition:** if `c_p^r` qualification needs a new threshold for
-  `Z+rho Z_rho`, first establish its dimensionless conditioning/error basis and
-  add it to the existing numerical-policy owner. Return an unexplained ladder
-  disagreement to Diagnose; do not loosen a tolerance, reject a finite
-  fixed-density state for mechanical instability, or mark P1 qualified from F1
-  alone.
+- **Stop condition:** return an unexplained ladder disagreement or branch change
+  to Diagnose. Do not add a slope threshold without a separately justified
+  dimensionless error basis, loosen a tolerance, reject the other outputs of a
+  finite fixed-density state for mechanical instability, or mark P1 qualified
+  from F1 alone.
 
 ##### P2 — Association elimination and density closure
 
