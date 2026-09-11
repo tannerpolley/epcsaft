@@ -79,6 +79,41 @@ Parameters neutral_binary() {
     return p;
 }
 
+Parameters electrolyte_fixture() {
+    Parameters p;
+    p.segment_count = {1.0, 1.3, 1.0, 1.0};
+    p.sigma_constant = {3.1, 3.7, 2.6, 3.4};
+    p.dispersion_energy_over_k = {200.0, 240.0, 180.0, 220.0};
+    p.molar_mass_kg_per_mol = {0.018, 0.046, 0.023, 0.071};
+    p.k_ij.assign(16, 0.0);
+    p.k_ij_reciprocal_temperature_slope.assign(16, 0.0);
+    p.k_ij_reference_temperature_k.assign(16, 0.0);
+    p.l_ij.assign(16, 0.0);
+    p.charge_number = {0, 0, 1, -2};
+    p.packing_diameter_angstrom = {0.0, 0.0, 1.7, 2.8};
+    p.debye_huckel_diameter_angstrom = {0.0, 0.0, 2.1, 3.9};
+    p.born_diameter_angstrom = {0.0, 0.0, 3.2, 5.1};
+    p.solvation_factor = {1.2, 0.8, 1.1, 1.3};
+    p.relative_permittivity = {70.0, 55.0, 12.0, 18.0};
+    p.permittivity_term_component = {0, 1};
+    p.permittivity_term_coefficient = {0.02, -0.01};
+    p.permittivity_term_power = {1, 2};
+    p.permittivity_reference_temperature_k = {300.0, 300.0, 300.0, 300.0};
+    p.ion_suppression_coefficient = {0.0, 0.0, 5.0, 8.0};
+    p.dielectric_volume_m3_per_mol = {1.5e-4, 2.5e-4, 0.0, 0.0};
+    p.dielectric_temperature_k = {450.0, 600.0, 0.0, 0.0};
+    p.dipole_scaling_debye2 = {1.0, 2.0, 0.0, 0.0};
+    p.polarizability_scaling_angstrom3 = {1.1, 1.5, 0.0, 0.0};
+    p.correlation_integral_parameter = {0.2, 0.5, 0.0, 0.0};
+    p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckelBorn;
+    p.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+    p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
+    p.ionic_region_relative_permittivity = 15.0;
+    p.born_c_shell = 1.0;
+    p.born_c_dielectric = 1.0;
+    return p;
+}
+
 std::vector<double> as_double(const std::vector<int>& values) {
     return std::vector<double>(values.begin(), values.end());
 }
@@ -642,6 +677,324 @@ void inactive_terms_contribute_nothing() {
         "reference_or_one", 0.0, 0.0, electrolyte.debye_huckel == 0.0,
         "p5-debye", "inactive", "a^{DH}", "T,\\rho,\\mathbf{x}", "a^{DH}=0", "term");
     CHECK(electrolyte.debye_huckel == 0.0);
+}
+
+// These references use only the accepted scalar equations, including numerical
+// radial and finite-size integrals; they do not route through the contribution owners.
+void electrolyte_born_and_dielectric_match_independent_equations() {
+    const double temperature = 320.0, density = 9.0e3;
+    const std::vector<double> x = {0.4, 0.3, 0.2, 0.1};
+    Parameters p = electrolyte_fixture();
+    const auto inputs = [&](const Parameters& parameters, double rho,
+                            const std::vector<double>& composition,
+                            const std::string& extra) {
+        return recording_support::fields({
+            model_inputs(parameters, temperature, rho, composition),
+            recording_support::field("packing_diameter_A", parameters.packing_diameter_angstrom),
+            recording_support::field("dh_diameter_A", parameters.debye_huckel_diameter_angstrom),
+            recording_support::field("born_diameter_A", parameters.born_diameter_angstrom),
+            recording_support::field("solvation", parameters.solvation_factor),
+            recording_support::field("epsilon_r", parameters.relative_permittivity),
+            recording_support::field("permittivity_term_component", as_double(parameters.permittivity_term_component)),
+            recording_support::field("permittivity_term_coefficient", parameters.permittivity_term_coefficient),
+            recording_support::field("permittivity_term_power", as_double(parameters.permittivity_term_power)),
+            recording_support::field("permittivity_reference_temperature_K", parameters.permittivity_reference_temperature_k),
+            recording_support::field("ion_suppression", parameters.ion_suppression_coefficient),
+            recording_support::field("dielectric_volume_m3_per_mol", parameters.dielectric_volume_m3_per_mol),
+            recording_support::field("dielectric_temperature_K", parameters.dielectric_temperature_k),
+            recording_support::field("dipole_scaling_debye2", parameters.dipole_scaling_debye2),
+            recording_support::field("polarizability_scaling_A3", parameters.polarizability_scaling_angstrom3),
+            recording_support::field("correlation_integral_parameter", parameters.correlation_integral_parameter),
+            recording_support::field("epsilon_inner", parameters.ionic_region_relative_permittivity),
+            recording_support::field("born_c_shell", parameters.born_c_shell),
+            recording_support::field("born_c_dielectric", parameters.born_c_dielectric),
+            recording_support::field("permittivity_form", static_cast<int>(parameters.permittivity_form.require("permittivity_form"))),
+            recording_support::field("electrolyte_form", static_cast<int>(parameters.electrolyte_form.require("electrolyte_form"))),
+            extra,
+        });
+    };
+    const auto record = [&](const char* id, const char* quantity, const char* unit,
+                            double model, double reference, const std::string& values,
+                            const char* claim, double tolerance) {
+        const bool matches = close(model, reference, tolerance);
+        recording_support::compare(
+            id, quantity, unit, model, reference, values, "Relationship",
+            "independent_equation_evaluation", claim, "reference_or_one", 0.0, tolerance,
+            matches, "c3-electrolyte", id, quantity, "T,rho,x", claim, "state"
+        );
+        CHECK(matches);
+    };
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c3-electrolyte", "chi-", 8,
+        "finite-size chi integral and refinement values", "reduced_diameter");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c3-electrolyte", "dh-", 4,
+        "Debye-Huckel dilute and finite multivalent values", "rho");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c3-electrolyte", "born-", 5,
+        "two-region Born values and limits", "state");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c3-electrolyte", "dielectric-", 12,
+        "four dielectric forms and their limits", "state");
+
+    const auto chi_integral = [](double reduced, int intervals) {
+        return 3.0 * simpson(
+            [reduced](double t) { return t * t / (1.0 + reduced * t); },
+            0.0, 1.0, intervals
+        );
+    };
+    for (const double reduced : {0.0, 5.0e-4, 2.0e-3, 0.5}) {
+        const bool use_series = reduced < epcsaft::policy::SCREENING_SERIES_SWITCH.value;
+        const double coarse = chi_integral(reduced, 1000);
+        const double reference = chi_integral(reduced, 4000);
+        const double cancellation_bound = use_series ? 1.0e-12
+            : std::max(1.0e-12, 64.0 * std::numeric_limits<double>::epsilon()
+                / (reduced * reduced * reduced));
+        const std::string point = recording_support::number(reduced);
+        record((std::string("chi-value-") + point).c_str(), "chi", "1",
+               epcsaft::finite_size_chi(reduced, use_series), reference,
+               inputs(p, density, x, recording_support::fields({
+                   recording_support::field("reduced_diameter", reduced),
+                   recording_support::field("series_branch", static_cast<int>(use_series)),
+                   recording_support::field("reference_panels", 4000),
+                   recording_support::field("cancellation_bound", cancellation_bound),
+               })),
+               "chi=3 integral_0^1 t^2/(1+y t) dt", cancellation_bound);
+        record((std::string("chi-refine-") + point).c_str(), "chi_integral", "1",
+               coarse, reference, inputs(p, density, x, recording_support::fields({
+                   recording_support::field("reduced_diameter", reduced),
+                   recording_support::field("coarse_panels", 1000),
+                   recording_support::field("reference_panels", 4000),
+               })),
+               "Simpson chi integral reaches a refinement plateau", 1.0e-11);
+    }
+
+    const auto component_permittivity = epcsaft::component_relative_permittivities(temperature, p);
+    const double epsilon_0 = 70.0 + 0.02 * (temperature - 300.0);
+    const double epsilon_1 = 55.0 - 0.01 * std::pow(temperature - 300.0, 2);
+    record("dielectric-temperature-0", "epsilon_r", "1", component_permittivity[0], epsilon_0,
+           inputs(p, density, x, "component:0"), "component temperature polynomial", 1.0e-12);
+    record("dielectric-temperature-1", "epsilon_r", "1", component_permittivity[1], epsilon_1,
+           inputs(p, density, x, "component:1"), "component temperature polynomial", 1.0e-12);
+    const double solvent_mass = x[0] * p.molar_mass_kg_per_mol[0]
+        + x[1] * p.molar_mass_kg_per_mol[1];
+    const double salt_free = (x[0] * p.molar_mass_kg_per_mol[0] * epsilon_0
+        + x[1] * p.molar_mass_kg_per_mol[1] * epsilon_1) / solvent_mass;
+    const double expected_ion_suppression = salt_free
+        / (1.0 + x[2] * p.ion_suppression_coefficient[2]
+           + x[3] * p.ion_suppression_coefficient[3]);
+    record("dielectric-ion-specific", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, x, p),
+           expected_ion_suppression, inputs(p, density, x, "form:ion-specific"),
+           "asymmetric-mass salt-free permittivity with ion-specific suppression", 1.0e-12);
+    const std::vector<double> single_solvent_x = {0.7, 0.0, 0.2, 0.1};
+    const double expected_single = epsilon_0 / (1.0 + 0.2 * 5.0 + 0.1 * 8.0);
+    record("dielectric-single-ion-specific", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, single_solvent_x, p),
+           expected_single, inputs(p, density, single_solvent_x, "form:Zuber-single-solvent"),
+           "single-solvent unequal ion suppression", 1.0e-12);
+    Parameters equal_suppression = p;
+    equal_suppression.ion_suppression_coefficient[2] = 6.0;
+    equal_suppression.ion_suppression_coefficient[3] = 6.0;
+    record("dielectric-equal-suppression", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, x, equal_suppression),
+           salt_free / (1.0 + 6.0 * (x[2] + x[3])),
+           inputs(equal_suppression, density, x, "form:equal-ion-fraction"),
+           "equal coefficients reduce to composition suppression", 1.0e-12);
+    Parameters component_mixing = p;
+    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    record("dielectric-component-mixing", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, x, component_mixing),
+           salt_free * (x[0] + x[1]) + x[2] * 12.0 + x[3] * 18.0,
+           inputs(component_mixing, density, x, "form:component-mixing"),
+           "component mixing retains ion mole fractions", 1.0e-12);
+    const std::vector<double> salt_free_x = {4.0 / 7.0, 3.0 / 7.0, 0.0, 0.0};
+    record("dielectric-ion-salt-free", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, salt_free_x, p), salt_free,
+           inputs(p, density, salt_free_x, "limit:salt-free-ion-suppression"),
+           "ion suppression returns the salt-free solvent value without ions", 1.0e-12);
+    record("dielectric-component-salt-free", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(
+               temperature, density, salt_free_x, component_mixing
+           ), salt_free, inputs(component_mixing, density, salt_free_x,
+                                "limit:salt-free-component-mixing"),
+           "component mixing returns the salt-free solvent value without ions", 1.0e-12);
+    Parameters density_temperature = p;
+    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    const double mixed_volume = (x[0] * 1.5e-4 + x[1] * 2.5e-4) / (x[0] + x[1]);
+    const double mixed_temperature = (x[0] * 450.0 + x[1] * 600.0) / (x[0] + x[1]);
+    const double expected_density = 1.0 + density * (x[0] + x[1]) * mixed_volume
+        * (mixed_temperature / temperature - 1.0);
+    record("dielectric-density-temperature", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, x, density_temperature),
+           expected_density, inputs(density_temperature, density, x, "form:density-temperature"),
+           "density-temperature solvent mixtures", 1.0e-12);
+    record("dielectric-density-dilute", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, 1.0e-6, x, density_temperature), 1.0,
+           inputs(density_temperature, 1.0e-6, x, "limit:dilute"),
+           "density-temperature permittivity tends to one", 1.0e-10);
+    Parameters dipolar = p;
+    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+    const auto dipolar_reference = [&](double rho) {
+        const double number_density = rho * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3;
+        double sum = 0.0, correlation = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) {
+            sum += x[i] * (dipolar.dipole_scaling_debye2[i] * 1.0e-19
+                / (epcsaft::BOLTZMANN_J_PER_K * temperature)
+                + 3.0 * dipolar.polarizability_scaling_angstrom3[i]);
+            correlation += x[i] * dipolar.correlation_integral_parameter[i];
+        }
+        const double y = 4.0 * epcsaft::PI / 9.0 * number_density * sum;
+        const double integral = 1.0 + correlation * (std::exp(-y) - 1.0);
+        return 1.0 + 3.0 * y * (1.0 + y + ((17.0 / 16.0) * integral - 1.0) * y * y);
+    };
+    record("dielectric-dipolar", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, density, x, dipolar),
+           dipolar_reference(density), inputs(dipolar, density, x, "form:dipolar"),
+           "dipolar density and correlation integral", 1.0e-12);
+    record("dielectric-dipolar-dilute", "epsilon_bulk", "1",
+           epcsaft::bulk_relative_permittivity(temperature, 1.0e-6, x, dipolar), 1.0,
+           inputs(dipolar, 1.0e-6, x, "limit:dilute"),
+           "dipolar permittivity tends to one", 1.0e-10);
+
+    const auto electrolyte = epcsaft::electrolyte_contribution(
+        temperature, density, temperature, density, x, x, p
+    );
+    record("dh-bulk", "epsilon_bulk", "1", electrolyte.bulk_relative_permittivity,
+           expected_ion_suppression, inputs(p, density, x, "case:multivalent"),
+           "shared ion-suppressed bulk permittivity", 1.0e-12);
+    const double charge_square_sum = x[2] + 4.0 * x[3];
+    const double kappa = std::sqrt(density * epcsaft::AVOGADRO_PER_MOL
+        * epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C * charge_square_sum
+        / (epcsaft::VACUUM_PERMITTIVITY_F_PER_M * expected_ion_suppression
+           * epcsaft::BOLTZMANN_J_PER_K * temperature));
+    const double chi_cation_argument =
+        kappa * p.debye_huckel_diameter_angstrom[2] * epcsaft::ANGSTROM_M;
+    const double chi_anion_argument =
+        kappa * p.debye_huckel_diameter_angstrom[3] * epcsaft::ANGSTROM_M;
+    const double chi_quadrature_bound = std::max(
+        0.4 * chi_cation_argument * chi_cation_argument / std::pow(4000.0, 4),
+        0.4 * chi_anion_argument * chi_anion_argument / std::pow(4000.0, 4)
+    );
+    const double weighted_chi = x[2] * chi_integral(chi_cation_argument, 4000)
+        + 4.0 * x[3] * chi_integral(chi_anion_argument, 4000);
+    const double expected_dh = -kappa * epcsaft::ELEMENTARY_CHARGE_C
+        * epcsaft::ELEMENTARY_CHARGE_C * weighted_chi
+        / (12.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M
+           * expected_ion_suppression * epcsaft::BOLTZMANN_J_PER_K * temperature);
+    record("dh-finite-multivalent", "debye_huckel", "1", electrolyte.debye_huckel,
+           expected_dh, inputs(p, density, x, recording_support::fields({
+               "case:multivalent-unequal-dh-diameter",
+               recording_support::field("chi_cation_argument", chi_cation_argument),
+               recording_support::field("chi_anion_argument", chi_anion_argument),
+               recording_support::field("chi_reference_panels", 4000),
+               recording_support::field("chi_simpson_bound", chi_quadrature_bound),
+           })),
+           "screening and integral chi finite-density Debye-Huckel reference", 1.0e-10);
+    const double dilute_coefficient = -std::sqrt(
+        epcsaft::AVOGADRO_PER_MOL * epcsaft::ELEMENTARY_CHARGE_C
+        * epcsaft::ELEMENTARY_CHARGE_C * charge_square_sum
+        / (epcsaft::VACUUM_PERMITTIVITY_F_PER_M * expected_ion_suppression
+           * epcsaft::BOLTZMANN_J_PER_K * temperature)
+    ) * epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C * charge_square_sum
+        / (12.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M
+           * expected_ion_suppression * epcsaft::BOLTZMANN_J_PER_K * temperature);
+    for (const double rho : {1.0e-6, 1.0e-8}) {
+        const auto dilute = epcsaft::electrolyte_contribution(
+            temperature, rho, temperature, rho, x, x, p
+        );
+        const double coefficient = dilute.debye_huckel / std::sqrt(rho);
+        record((std::string("dh-dilute-") + recording_support::number(rho)).c_str(),
+               "debye_huckel_coefficient_ratio", "1", coefficient / dilute_coefficient, 1.0,
+               inputs(p, rho, x, recording_support::fields({
+                   "limit:Debye-square-root",
+                   recording_support::field("actual_coefficient", coefficient),
+                   recording_support::field("analytic_coefficient", dilute_coefficient),
+                   recording_support::field("relative_bound", 5.0e-5),
+               })), "Debye-Huckel dilute coefficient relative error", 5.0e-5);
+    }
+
+    const auto born_reference = [&](const Parameters& parameters, double bulk) {
+        double solvation = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) solvation += x[i] * parameters.solvation_factor[i];
+        double radial = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) {
+            const int charge = parameters.charge_number[i];
+            if (charge == 0) continue;
+            const double inner = parameters.born_diameter_angstrom[i] * epcsaft::ANGSTROM_M;
+            const double outer = inner * (1.0 + parameters.born_c_shell
+                * (solvation - 1.0) / std::abs(charge));
+            const double outer_region = simpson(
+                [bulk](double) { return 1.0 - 1.0 / bulk; },
+                0.0, 1.0 / outer, 2
+            );
+            const double inner_region = simpson(
+                [&parameters](double) {
+                    return parameters.born_c_dielectric
+                        * (1.0 - 1.0 / parameters.ionic_region_relative_permittivity)
+                        ;
+                }, 1.0 / outer, 1.0 / inner, 2
+            );
+            radial += x[i] * charge * charge * (outer_region + inner_region);
+        }
+        return -epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C * radial
+            / (4.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M
+               * epcsaft::BOLTZMANN_J_PER_K * temperature);
+    };
+    const double born = epcsaft::born_contribution(
+        temperature, x, p, electrolyte.bulk_relative_permittivity
+    );
+    record("born-two-region", "born", "1", born,
+           born_reference(p, expected_ion_suppression),
+           inputs(p, density, x, recording_support::fields({
+               "case:two-region-c-shell=c-dielectric=1",
+               recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
+               recording_support::field("reference_bulk_relative_permittivity", expected_ion_suppression),
+               recording_support::field("radial_panels_per_region", 2),
+           })),
+           "independent two-region radial charging integral", 1.0e-12);
+    Parameters direct = p;
+    direct.solvation_factor = {1.0, 1.0, 1.0, 1.0};
+    const double direct_born = epcsaft::born_contribution(
+        temperature, x, direct, electrolyte.bulk_relative_permittivity
+    );
+    record("born-direct-limit", "born", "1", direct_born,
+           born_reference(direct, expected_ion_suppression),
+           inputs(direct, density, x, recording_support::fields({
+               "limit:outer=inner",
+               recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
+           })),
+           "direct Born limit has no shell interval", 1.0e-12);
+    Parameters equal_permittivity = p;
+    equal_permittivity.ionic_region_relative_permittivity = electrolyte.bulk_relative_permittivity;
+    record("born-equal-permittivity", "born", "1",
+           epcsaft::born_contribution(temperature, x, equal_permittivity,
+                                      electrolyte.bulk_relative_permittivity),
+           born_reference(equal_permittivity, expected_ion_suppression),
+           inputs(equal_permittivity, density, x, recording_support::fields({
+               "limit:epsilon-inner=epsilon-bulk",
+               recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
+           })),
+           "equal permittivity cancels shell-radius dependence", 1.0e-12);
+    Parameters zero_contrast = p;
+    zero_contrast.ionic_region_relative_permittivity = 1.0;
+    record("born-zero-contrast", "born", "1",
+           epcsaft::born_contribution(temperature, x, zero_contrast, 1.0), 0.0,
+           inputs(zero_contrast, density, x, recording_support::fields({
+               "limit:epsilon-inner=epsilon-bulk=1",
+               recording_support::field("born_bulk_relative_permittivity", 1.0),
+           })),
+           "unit permittivities give zero Born contrast", 1.0e-14);
+    Parameters charge_scaled = direct;
+    charge_scaled.charge_number = {0, 0, 2, -4};
+    record("born-charge-square", "born", "1",
+           epcsaft::born_contribution(temperature, x, charge_scaled,
+                                      electrolyte.bulk_relative_permittivity),
+           4.0 * direct_born, inputs(charge_scaled, density, x, recording_support::fields({
+               "limit:charges-doubled",
+               recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
+           })),
+           "charge-balanced multivalent Born term scales as z^2", 1.0e-12);
 }
 
 void same_sign_exclusion_is_a_limit() {
@@ -1688,6 +2041,7 @@ int main(int argc, char** argv) {
         {{"native.contributions.p3", "Component_relabelling_invariance", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "hard-chain,dispersion", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P3", "hard-chain:1,dispersion:1"}, relabelling_components_changes_nothing},
         {{"native.contributions.p4", "Association_mass_action", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "mass-action-*,site-floor-*,site-ceiling-*,site-symmetry", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P4", "mass-action-*:2,site-floor-*:2,site-ceiling-*:2,site-symmetry:1"}, association_solve_satisfies_mass_action},
         {{"native.contributions.c2", "Association_closed_forms_and_limits", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "symmetric-*,unequal-*,limit-*,cross-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C2", "symmetric-x-*:2,symmetric-helmholtz:1,unequal-*:6,limit-*:6,cross-*:4"}, association_equations_match_closed_forms_and_limits},
+        {{"native.contributions.c3", "Electrolyte_Born_and_dielectric", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "chi-*,dh-*,born-*,dielectric-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C3", "chi-*:8,dh-*:4,born-*:5,dielectric-*:12"}, electrolyte_born_and_dielectric_match_independent_equations},
         {{"native.contributions.p5", "Inactive_terms_vanish", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "association,born,debye-huckel", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P5", "association:1,born:1,debye-huckel:1"}, inactive_terms_contribute_nothing},
         {{"native.contributions.p6", "Same_sign_ionic_exclusion", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "excluded-pure-ion,all-pairs-pure-ion,excluded-zero,all-pairs-negative,half-mixture-different", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P6", "excluded-pure-ion:1,all-pairs-pure-ion:1,excluded-zero:1,all-pairs-negative:1,half-mixture-different:1"}, same_sign_exclusion_is_a_limit},
         {{"native.contributions.p7", "Packing_fraction_bound", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "density-scaling,low-positive,policy-lower,policy-upper", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P7", "density-scaling:1,low-positive:1,policy-lower:1,policy-upper:1"}, packing_fraction_is_bounded},
