@@ -143,7 +143,9 @@ directions. The plan records the precise inputs and remaining specifications.
 1. Identify the physical question, requested observable, domain and existing owner.
 2. Apply the implementation plan's milestone reuse map and adoption gate.
    Inspect current and superseded owners/evidence, preserve justified behavior,
-   and settle only the demonstrated mathematical or implementation gap.
+   and separate unresolved scientific decisions from specified implementation.
+   Resolve the method/coordinate/domain questions and smallest falsifier before
+   dependent coding; independent in-scope mapping work may proceed.
 3. Change the smallest complete scientific slice, including required documentation
    and numerical evidence; preserve the one-driver and ownership requirements.
 4. Review agreement and limitations, then update the implementation plan against

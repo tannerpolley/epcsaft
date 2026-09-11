@@ -510,7 +510,7 @@ dependency order above and delivers to the independent repository.
 | Gate | Required evidence | What follows |
 |---|---|---|
 | Slice definition and reuse decision | Concrete gap, current/old owners and revision, keep/repair/adapt/reject decision, preserved behavior, equations/inputs/domain, falsifier, exclusions and remaining effort | Review the bounded change |
-| Design Ready | Reuse decision supports the smallest complete change; one integrated reviewer for bounded supported work, scientific-basis and execution review for material changes; lead resolves findings | Verify, repair or adapt only that slice |
+| Design Ready / implementation handoff | Reuse decision and resolved method/domain/coordinate contract support a bounded build list and independent kernel checks; unresolved choices are excluded from dependent coding; applicable design review resolves findings | Implement only the specified portion; continue independent work within the slice |
 | Execution checks | Identified non-editable wheel and relevant installed tests; equation index, architecture, budgets and input checks | Assess actual numerical evidence |
 | Scientific qualification | Falsifier and preserved reference cases pass; tolerances/limits and failure behavior justified; independent final-tree review supports the claim | Mark the milestone qualified |
 | Integration | Affected docs and evidence agree with code; focused reviewed changes and authorized Git delivery | Integrate the bounded change |
@@ -559,6 +559,54 @@ not replace it. A fast check, hook, equation index or completed issue is not
 scientific qualification. Use the installed CSE stages; do not create another
 lifecycle registry. This private scientific package needs no inferred release,
 compatibility, deployment or CI work.
+
+### Design resolution and implementation handoff
+
+A milestone may contain both unresolved scientific work and implementation
+whose behavior is already specified. Separate them in the existing issue;
+Design Ready applies to the bounded buildable portion, not an entire layer.
+The [milestone reuse map](#milestone-reuse-map) identifies the current split.
+Do not reopen settled equations or qualified work simply to fill a template.
+
+**Resolve first when needed:** name the actual open question, the existing
+source/owner and the observation that would distinguish the alternatives.
+Use Research for unresolved authority/applicability and Diagnose for unexplained
+numerical behavior. Establish the selected equations and stable representation,
+independent coordinates/implicit dependencies, domain/branch and unavailable
+behavior before asking an implementation worker to choose them while coding.
+Routine file layout, local names and equivalent code choices remain with the
+implementer; they do not need a scientific design cycle or user approval.
+
+**Handoff for dependent implementation:** keep one concise block in the same
+issue, with links rather than copied doctrine:
+
+- **Resolved:** accepted method/representation, units/coordinates/domain,
+  source and reuse decision; list any deliberately excluded open question.
+- **Build:** exact behavior changes, existing owners/callers to edit, preserved
+  behavior and superseded implementation to retire. No hidden algorithm choice.
+- **Check:** smallest independent values/identities, tolerances and commands.
+  For a new or repaired numerical representation, first demonstrate that the
+  kernel resolves its motivating failure and relevant branch/replay behavior;
+  production integration and full evidence refresh follow that result.
+- **Stop condition:** the specific scientific assumption whose failure returns
+  this portion to diagnosis/design; preserve independent implementation work.
+
+For verify-only work with an accepted design, the existing equations, explicit
+reference calculation and numerical cases are the handoff; no new prototype,
+formal derivation or second planning document is required. For mixed work, proceed
+with independent mapping/fixture/caller edits while an unrelated design question
+is resolved, within the existing layer/slice order. Pause only code that depends
+on an unresolved choice. An implementer who encounters a new scientific choice
+reports it rather than guessing a method or silently weakening the check.
+
+A complete handoff makes implementation bounded; it does not make every C++/AD
+change trivial or remove review. Assign model/effort by the current activity:
+unresolved scientific diagnosis/design and difficult independent acceptance need
+strong reasoning; a cheaper implementation worker is appropriate when the
+handoff is concrete. Preserve the owner's configured model choices. Estimate
+remaining design, implementation and verification separately in the issue, then
+update the existing milestone's total; add no new progress system or routine
+model-switching ceremony.
 
 ### Parameter-driven state direction — 2026-09-08
 
@@ -639,7 +687,9 @@ Model identifiers and reasoning effort belong in task configuration, not a
 permanent hierarchy in this plan. Use the owner's current selection. Keep routine
 coordination, inventories and evidence formatting small; reserve stronger
 reasoning for unresolved scientific algorithms and independent acceptance. Apply
-the correction/escalation rule in the gate above. Short baton prompts point to
+the design/implementation handoff and correction/escalation rules above. A
+worker implementing a settled method does not need to redo scientific design;
+unresolved methods are assigned separately. Short baton prompts point to
 the current issue and scientific owners; they do not duplicate them.
 
 ## Required scientific choices
@@ -675,7 +725,11 @@ This is the implementation inventory, separate from qualification. **Verify**
 means preserve the current owner and close evidence gaps; **repair** means fix a
 demonstrated defect; **adapt** means transfer justified behavior into that owner;
 **add** means implement only behavior absent from both usable implementations.
-None of these labels establishes numerical acceptance. Each linked delivery issue
+The two work columns distinguish unresolved decisions from specified coding or
+verification. “None” means no open scientific choice identified for the stated
+scope; it is not a new qualification or permission to skip checks. Later slices
+recheck this inventory against their actual owner/evidence. Build work can proceed
+only for the portion whose decisions and prerequisites are settled. Each linked delivery issue
 must resolve the applicable candidates before Design Ready using the
 [adoption gate](#gates-and-authority).
 
@@ -688,34 +742,40 @@ inputs and comparisons already under `analyses/` before copying them again.
 The [transfer audit](reviews/transfer-audit-2026-09-06.md) supplies historical
 F1–F5 diagnoses and E1–E12 evidence candidates, not current scheduling authority.
 
-| Milestones | Disposition and existing implementation/evidence | Remaining change and exclusions |
-|---|---|---|
-| CORE1–CORE4 | Verify only if affected: qualified `engine/native/core/` and linked Core records. | Preserve accepted constants, scaling and diagnostics; no restart for this plan revision. |
-| C1 | Repair/verify current `contributions/helmholtz.hpp` and `ideal.hpp`; old `engine/src/epcsaft/_native/helmholtz.hpp` and `thermochemistry.py` are comparisons. | Finish the existing candidate and its independent thermal/AD checks; no replacement residual kernel or second thermal owner. |
-| C2 | Verify current `contributions/association.hpp` and contribution sum; old association cases supply additional comparisons. | Mass action, topology/multiplicity and scalar support limits. Zero new runtime by default; implicit elimination belongs to P2. |
-| C3 | Verify current `contributions/electrolyte.hpp` and `born.hpp`; reuse retained ionic/source cases. | Formula, unit, dielectric and singular-limit checks; repair only demonstrated discrepancies. No new electrolyte model or retired polar terms. |
-| C4 | Verify existing Contributions cases and retained references. | Integrated acceptance and equivalent-work cost; reuse lower-slice evidence that still applies. |
-| P1 | Repair/verify current `properties/helmholtz_model.cpp` and state checks; F1 correction already exists. | Preserve the corrected residual-energy identity; qualify remaining calorics without rewriting state evaluation. |
-| P2 | Repair/verify current `properties/density.cpp` and `helmholtz_tape.hpp`; old pressure-closure/association cases. | Zero-support elimination, branch identity, implicit pressure chain and state reuse; keep valid roots and caller chart. |
-| P3 | Adapt old `engine/src/epcsaft/thermochemistry.py` and total-enthalpy consumer algebra into current Contributions/Properties; retain `infinite_dilution_reference.cpp`. | Complete explicit Ideal/Total/reference outputs and K(T) consistency. Reject duplicated Python numerics and erroneous residual-dependent anchors. Caloric properties remain current; PH/PS/UV solves do not. |
-| P4 | Adapt old `_native/derivatives.hpp` and `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py` onto the current tape. | Preserve supported actions, add missing balanced-coordinate/selective chains and third-order actions; no independent derivative engine or dense tensors without need. |
-| P5 | Verify existing identity, pressure-closure and derivative cases on the combined Properties owner. | Independent integrated acceptance; no second implementation or duplicate evidence harness. |
-| E1 | Repair current `equilibrium/request_compile.cpp` and `gibbs_minimizer.cpp`; inspect old `engine/cpp/equilibrium/reactive_finite_phase.cpp` evaluation reuse. | Correct full weighted/pinned curvature (F5), preserve shared rows and local checks, remove measured duplicate evaluation; no alternate minimizer. |
-| E2 | Repair/verify current compiler, stoichiometry, boundary starts and specification cases; old declared/reactive equilibrium examples. | Complete declared TP/bubble/dew/fraction/amount cells and support admission. No discovery or thermal-specification prerequisite. |
-| E3 (future) | Preserve old thermochemistry components and existing thermal test candidates. | PH/PS/UV are deferred; no implementation, qualification dependency or current estimate. |
-| E4 | Adapt relevant old continuation/start behavior to current `phase_boundary.cpp` and shared rows. | Qualify declared-branch following, disappearance and stopping. Old HELD/GREPE search is reference material for a deferred search extension, not a second solver to import. |
-| E5 | Adapt old `engine/cpp/equilibrium/solved_state_sensitivity.*`, `chemical_equilibrium*`, and `engine/tests/equilibrium/numerical/test_higher_actions.py` onto current `implicit_sensitivity.cpp`. | Preserve bounded ordinary A2/A3 and second-enthalpy actions; qualify complete mixed chains/availability. Old unavailable third-enthalpy cases are limits, not completed capability. |
-| E6 | Verify existing declared-equilibrium cases and applicable preserved actions. | Integrated numerical/local-stability/failure/cost review for current declared scope; no phase-search or PH/PS/UV acceptance gate. |
-| R1–R3 | Adapt old `engine/cpp/regression/ceres_least_squares.*`, native EOS/equilibrium evaluators and numerical recovery/scaling cases; current regression is a placeholder. | Reuse valid fitting/scaling/Jacobian/failure logic with current native producers; complete observations, rank and conditional uncertainty. Reject obsolete handles, duplicate evaluators, fingerprint sidecars and unsupported covariance claims. |
-| R4 | Reuse `analyses/2026-pure-saturation-regression/` inputs/results and manufactured recovery checks. | Current-wheel fitting acceptance; historical fit success is not held-out predictive acceptance. |
-| S1–S3 | Repair/extend current `surface/parameter_builder.cpp`, `parameters.py` and feed mapping; inspect old admission/conversion cases. | Explicit support/charge, SI/reference mapping and request-specific availability; no replacement parameter system or source-range policing. |
-| S4 | Verify current native-input and physical-unit cases. | Qualify the revised mappings against numerical producers, not API snapshots. |
-| B1–B3 | Adapt current `native/bindings/`, `eos.py`, `equilibrium/problem.py` and `reference.py`; old output/action adapters are comparisons. | Expose qualified outputs/actions with their units and failure meaning; no compatibility framework or Python physics. |
-| B4 | Reuse existing installed-wheel numerical checks and downstream call patterns. | Verify end-to-end current behavior and ownership; no duplicate packaging or installation route. |
-| A1 | Adapt the current MEA clone's shared evaluator, state packet and selected candidate. | Replay declared speciation/VLE/heat and consumed actions; preserve source inputs and failed holdouts. No new parameter campaign by default. |
-| A2 | Adapt the current absorber clone's Case 3C, reactive adapter and Jacobian assembly. | Repair wheel/API/caloric/action gaps and verify column refinement/conservation; preserve transport/discretization. A nonisothermal column does not require Engine PH/PS/UV flash. |
-| A3 | Adapt the current Lithium clone's direct LLE producer, surrogate and IDAES/PROMMIS pipeline. | Verify direct declared states/actions, then affected artifacts/process results; preserve adopted inputs, failed rows and domain limits. No new flowsheet or discovery algorithm. |
-| A4 | Reuse all three current application records and selected comparisons. | Cross-application acceptance on the same identified wheel; report declared/local scope without a global-stability claim. |
+| Milestones | Existing implementation/reuse | Resolve before dependent coding | Build or verify once settled |
+|---|---|---|---|
+| CORE1–CORE4 | Verify only if affected: qualified `engine/native/core/` and linked Core records. | None for the qualified scope; revisit only an evidenced regression. | Preserve the accepted core owners and records; run only checks invalidated by a later change. |
+| C1 | Keep qualified current contributions/helmholtz.hpp and ideal.hpp with the C1 record at 800ba8a; old residual/thermal implementations remain comparison sources. | None for the bounded qualified C1 slice at 800ba8a. A new failure would reopen only its affected claim. | Preserve the accepted residual/ideal kernels, anchors, interval and AD replay checks. No new implementation or repeat qualification for this planning revision. |
+| C2 | Verify current `contributions/association.hpp` and contribution sum; old association cases supply additional comparisons. | No open scientific choice in the accepted scalar-equation design. Reference/unit/topology test errors are corrected against those equations; a demonstrated production defect needs bounded diagnosis. | Implement/correct the specified analytic mass-action, multiplicity, asymmetric topology and scalar-limit checks; retain zero runtime additions unless a defect is established. P2 owns implicit elimination. |
+| C3 | Verify current `contributions/electrolyte.hpp` and `born.hpp`; reuse retained ionic/source cases. | No open model choice in the accepted formula-verification design. Establish the specified independent integral/reference and numerical error bound; diagnose an actual discrepancy before changing formulas. | Add the specified finite-size DH, two-region Born, unit and dielectric-limit comparisons to the existing suite. No new model, retired polar terms or unsupported derivative claim. |
+| C4 | Verify existing Contributions cases and retained references. | No new algorithm. Select only integrated comparison or equal-accuracy cost gaps not already covered by applicable evidence. | Run the identified integration/cost checks and independent acceptance; reuse lower-slice records that still apply. |
+| P1 | Repair/verify current `properties/helmholtz_model.cpp` and state checks; F1 correction already exists. | The residual-energy identity and F1 correction are settled. Resolve only a new discrepancy or missing reference/conditioning basis for another caloric check. | Retain the corrected state evaluator; add missing independent caloric/limit comparisons and fix only diagnosed terms. |
+| P2 | Repair/verify current `properties/density.cpp` and `helmholtz_tape.hpp`; old pressure-closure/association cases. | Resolve regular zero-support association elimination versus genuinely nonsmooth ionic insertion, and the density branch/anchor/disappearance contract; derive the corresponding implicit pressure chain. | Implement the selected correction in the current tape/density owners; preserve valid roots, caller coordinates and state reuse; verify support and pressure-closure ladders. |
+| P3 | Adapt old `engine/src/epcsaft/thermochemistry.py` and total-enthalpy consumer algebra into current Contributions/Properties; retain `infinite_dilution_reference.cpp`. | Finish source-pressure/density-reference conversions, four reaction-basis mappings, gauge/thermal consistency and required-input rules; decide the mapping of sourced total anchors after the residual correction. | Adapt justified old thermochemistry into current native Contributions/Properties; wire explicit Ideal/Total/reference outputs and K(T). Reject duplicate Python physics and erroneous anchors. PH/PS/UV solves remain deferred. |
+| P4 | Adapt old `_native/derivatives.hpp` and `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py` onto the current tape. | Specify each requested observable and independent coordinate chart, derivative order and direct/implicit chain through third order; settle full/selected dependencies and singular/unavailable behavior. | Adapt existing tape and old supported actions to that contract; add only missing contractions, selection/reuse and balanced-coordinate mapping. No second derivative engine or unjustified dense tensor. |
+| P5 | Verify existing identity, pressure-closure and derivative cases on the combined Properties owner. | Select independent action ladders, branch cases and numerical/conditioning limits only where upstream evidence leaves a gap. No new property method by default. | Execute repeated-state, closure, availability and selective/full comparisons; review integration and equivalent-work cost. |
+| E1 | Repair current `equilibrium/request_compile.cpp` and `gibbs_minimizer.cpp`; inspect old `engine/cpp/equilibrium/reactive_finite_phase.cpp` evaluation reuse. | Diagnose F5 and complete the weighted objective/constraint derivative chain for pinned/free intensives at arbitrary callback points; establish a correction against the focused Hessian ladder. | Repair the existing shared rows/Hessian owner and adopt justified point-evaluation reuse; preserve local checks and exact objective-factor/multiplier meaning. No alternate minimizer. |
+| E2 | Repair/verify current compiler, stoichiometry, boundary starts and specification cases; old declared/reactive equilibrium examples. | Finish admissible declared specification combinations and their rank/support/amount semantics using the accepted formulation; resolve any cell the existing compiler cannot represent. | Map TP/bubble/dew/fraction/amount inputs to the existing compiler and shared driver, add missing admission/initialization and independent cases. No thermal flash or discovery prerequisite. |
+| E3 (future) | Preserve old thermochemistry components and existing thermal test candidates. | Deferred: no design work now. On owner resumption, derive thermal balance/rank/reference requirements. | No current implementation or acceptance gate; preserve source equations and old thermochemistry components. |
+| E4 | Adapt relevant old continuation/start behavior to current `phase_boundary.cpp` and shared rows. | Select the smallest justified declared-branch predictor/corrector and step-admission/stopping policy from existing work; define coalescence/disappearance behavior and supporting numerical limits. | Adapt that controller around current phase_boundary/shared rows and verify branch following. Do not import HELD/GREPE search or a second solver; phase discovery remains future work. |
+| E5 | Adapt old `engine/cpp/equilibrium/solved_state_sensitivity.*`, `chemical_equilibrium*`, and `engine/tests/equilibrium/numerical/test_higher_actions.py` onto current `implicit_sensitivity.cpp`. | Complete the requested mixed implicit chains on fixed support/branch, observable-specific energy order and per-action availability; reconcile old A2/A3 and caloric action domains. | Adapt old supported actions to current implicit_sensitivity; reuse linear algebra/state work and verify independent action ladders. Preserve old unavailable third-enthalpy cases as limits until the required extension is supported. |
+| E6 | Verify existing declared-equilibrium cases and applicable preserved actions. | No new equilibrium method. Resolve only uncovered reference-case, local-acceptance or equal-accuracy performance criteria. | Run the bounded declared-phase/action/failure integration checks and independent acceptance; no PH/PS/UV or discovery gate. |
+| R1 | Adapt old `engine/cpp/regression/ceres_least_squares.*`, native EOS/equilibrium evaluators and numerical recovery/scaling cases; current regression is a placeholder. | Finish the initial observation/coordinate contract: physical quantity, state specification, units, parameter sharing/fixing and bounds/transforms; use the accepted density/phase scope only. | Adapt old native evaluator and coordinate mappings to current producers; implement the declared rows without unused expression machinery. |
+| R2 | Adapt old `engine/cpp/regression/ceres_least_squares.*`, native EOS/equilibrium evaluators and numerical recovery/scaling cases; current regression is a placeholder. | Establish the complete physical-to-optimizer Jacobian/scaling chain and which qualified implicit prediction actions it consumes; resolve any unsupported chain before fitting integration. | Adapt the existing native fitting wrapper and valid Jacobian/scaling logic; wire observations, bounds and failures and verify manufactured recovery. No replacement optimizer by default. |
+| R3 | Adapt old `engine/cpp/regression/ceres_least_squares.*`, native EOS/equilibrium evaluators and numerical recovery/scaling cases; current regression is a placeholder. | Specify the admitted absolute-uncertainty/relative-weight cases, rank/bound interpretation and conditional covariance availability; reuse the accepted statistical equations and resolve only missing cases. | Adapt old trial-failure and diagnostic handling, implement those branches and numerical rank/scaling checks; reject obsolete orchestration and unconditional uncertainty claims. |
+| R4 | Reuse `analyses/2026-pure-saturation-regression/` inputs/results and manufactured recovery checks. | Choose the retained demonstration and any missing identifiability/holdout criterion. Historical fit success alone does not settle predictive acceptance. | Replay the existing fit inputs with the integrated current fitter, retain failed rows and assess reuse/cost and independent acceptance. |
+| S1 | Repair/extend current `surface/parameter_builder.cpp`, `parameters.py` and feed mapping; inspect old admission/conversion cases. | No new physics once upstream support/charge rules are settled. Resolve only an uncovered species/site/feed mapping ambiguity that changes physical meaning. | Repair current selection, site preparation, explicit charge and amount/fraction admission; reuse existing topology and input owners. |
+| S2 | Repair/extend current `surface/parameter_builder.cpp`, `parameters.py` and feed mapping; inspect old admission/conversion cases. | Consume P3’s settled reference/reaction-basis conversions; resolve any remaining source-unit/coefficient convention before its mapping is coded. | Implement the explicit SI/coefficient/reference transformations once in the current input owner and verify dimensional numerical cases. |
+| S3 | Repair/extend current `surface/parameter_builder.cpp`, `parameters.py` and feed mapping; inspect old admission/conversion cases. | Derive the required-input/output availability matrix from qualified P3/P4/E5 owners; settle any unspecified full/selected default without inventing physical defaults. | Implement the agreed request selection/admission and per-output failure mapping; preserve valid partial values and use existing producers. |
+| S4 | Verify current native-input and physical-unit cases. | No new numerical method. Identify only missing physical-input/conversion comparison coverage. | Execute the selected input-to-native numerical checks and independent mapping review. |
+| B1 | Adapt current `native/bindings/`, `eos.py`, `equilibrium/problem.py` and `reference.py`; old output/action adapters are comparisons. | Settle the thin public naming/container and Pure/Mixture interface decisions still open in the plan; physical outputs and units come from qualified owners. | Extend existing bindings and Python mappings to those exact contracts; no compatibility framework or Python numerics. |
+| B2 | Adapt current `native/bindings/`, `eos.py`, `equilibrium/problem.py` and `reference.py`; old output/action adapters are comparisons. | Consume P4/E5’s resolved direction/order/coordinate and availability contracts; resolve only an ambiguous public representation. | Map requests and returned actions/units through existing bindings; do not derive new thermodynamics in Python. |
+| B3 | Adapt current `native/bindings/`, `eos.py`, `equilibrium/problem.py` and `reference.py`; old output/action adapters are comparisons. | Consume the established branch/residual/failure meanings; resolve only a missing public representation for a valid partial result. | Expose those diagnostics and partial outputs in the existing interface without fabricated success or values. |
+| B4 | Reuse existing installed-wheel numerical checks and downstream call patterns. | No new API or scientific method. Select any missing end-to-end numerical coverage against actual application calls. | Reuse installed-wheel cases to verify current state/equilibrium/regression mappings, selective/full agreement and availability. |
+| A1 | Adapt the current MEA clone's shared evaluator, state packet and selected candidate. | Resolve only source/reference or observation-basis ambiguity affecting the selected retained MEA candidate; use existing acceptance criteria or justify missing ones. A new chemistry/parameter campaign is outside the default slice. | Adapt the existing evaluator/wheel interface and replay declared speciation/VLE/heat and consumed actions; preserve failed holdouts and original inputs. |
+| A2 | Adapt the current absorber clone's Case 3C, reactive adapter and Jacobian assembly. | Complete the actual Case 3C thermodynamic-to-column derivative/basis mapping and disposition of required modes/operating failures; settle missing caloric, conservation/refinement criteria before dependent edits. | Preserve column transport/discretization; adapt wheel/property/action interfaces and existing Jacobian assembly, then run node and column refinement checks. No Engine thermal-flash solver is needed. |
+| A3 | Adapt the current Lithium clone's direct LLE producer, surrogate and IDAES/PROMMIS pipeline. | Reconcile current direct-producer output/action and local-acceptance meaning with its fixed topology, adopted inputs and calibration; resolve only inconsistencies affecting that bounded pipeline. | Adapt the existing direct LLE producer, rerun affected surrogate verification and connect existing IDAES/PROMMIS consumers. No new flowsheet, broad source campaign or discovery algorithm. |
+| A4 | Reuse all three current application records and selected comparisons. | Agree any still-missing cross-application comparison/accuracy basis; carry the upstream declared/local claim limits rather than inventing a global certificate. | Use one identified wheel and retained application records for the selected comparisons, performance checks and independent final acceptance. |
 
 Native paths in this table omit `engine/native/` when the current layer is clear.
 Detailed old dependency/caller inspection belongs only to the selected slice.
@@ -763,25 +823,13 @@ Reconciliation of old run identities and the seven source-readiness labels are
 not prerequisites. Additional phase analyses, tie lines or pure-property studies
 are required only for a calculation or expanded claim that actually consumes them.
 
-Remaining design is attached to the affected milestones:
-
-- P3: standard-state conversions, four reaction bases and consistent thermal
-  references; compare supplied/corrected calorics before adopting residual-dependent
-  references. Retained conversion arithmetic does not qualify physical conventions.
-- P4/E5: direct-state and pressure-closed coordinate charts, balanced composition
-  directions, implicit mixed actions through third order and per-action failures.
-  Pressure and density are not independent coordinates of the same closed state.
-- E1/E2/E4: weighted objective/constraint curvature for pinned/free intensives,
-  declared specifications, initial states and branch continuation using the
-  existing driver. E3 and phase search are future work, outside this queue.
-- R1–R3: observation meaning, weights, active/fixed/shared coordinates, bounds,
-  exact implicit Jacobians, rank and conditional uncertainty. Reaction fitting
-  remains application-owned.
-- Each qualification row: independently justified reference cases, numerical
-  limits and equal-accuracy performance. Compare identical inputs/supports,
-  starts, outputs/actions and branch; separate initialization from warm timings,
-  count evaluations and linear solves, and remove measured duplicate work.
-  Failed solves or omitted derivatives cannot count as speedups.
+The [milestone reuse map](#milestone-reuse-map) owns the per-milestone split
+between unresolved design and specified implementation. Record its actual
+resolution and handoff in the linked issue rather than maintaining another open
+question list here. Qualification still compares the same inputs/supports,
+starts, outputs/actions and branch; separate initialization from warm timings,
+count evaluations and linear solves, and justify numerical limits. Failed solves
+or omitted derivatives cannot count as speedups.
 
 The [equilibrium candidates](../../engine/docs/equilibrium/test-candidates.md)
 identify ethanol saturation, binary bubble/dew, zero-component flash, declared

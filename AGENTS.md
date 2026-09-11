@@ -10,8 +10,11 @@ Use the installed CSE skills. Read `docs/scientific/README.md`,
 the smallest applicable CSE route. Then read only the relevant equations,
 algorithms, accepted decisions and `docs/scientific/implementation-plan.md`
 entries. Before each milestone implementation, apply that plan's reuse map and
-required adoption decision: preserve justified current/old behavior and change
-only the demonstrated gap. Its deferred scope is not a completion prerequisite. The project map owns architectural detail and directory responsibilities.
+required adoption decision. Separate unresolved scientific choices from
+specified implementation and complete the bounded handoff before dependent
+coding; preserve justified behavior and change only the demonstrated gap.
+Deferred scope is not a completion prerequisite. The project map owns
+architectural detail and directory responsibilities.
 
 Before Serena inspection, activate the exact checkout root and verify the returned
 path. Use Serena for C++/Python symbol and caller navigation; normal environment
