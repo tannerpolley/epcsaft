@@ -395,6 +395,213 @@ void association_solve_satisfies_mass_action() {
     CHECK(identical_sites);
 }
 
+// Closed forms here are independent reductions of the accepted mass-action
+// equation. They cover multiplicity and support without adding another solver.
+void association_equations_match_closed_forms_and_limits() {
+    const double temperature = 300.0, density = 1.5e4;
+    const std::vector<double> pure = {1.0, 0.0};
+    Parameters symmetric = neutral_binary();
+    symmetric.site_component = {0, 0};
+    symmetric.site_multiplicity = {1, 1};
+    symmetric.association_active = {0, 1, 1, 0};
+    symmetric.association_energy_over_k = {0.0, 2425.7, 2425.7, 0.0};
+    symmetric.association_volume = {0.0, 0.0451, 0.0451, 0.0};
+    const auto sigma = epcsaft::segment_sigma(temperature, symmetric);
+    const auto diameter = epcsaft::segment_diameter(temperature, symmetric, sigma);
+    const auto fractions = epcsaft::solve_site_fractions(
+        temperature, density, pure, symmetric, sigma, diameter
+    );
+    const auto delta = epcsaft::association_delta(
+        temperature, density, pure, symmetric, sigma, diameter
+    );
+    const double k = density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 * delta[1];
+    const double expected_x = 2.0 / (1.0 + std::sqrt(1.0 + 4.0 * k));
+    const auto symmetric_result = evaluate(symmetric, temperature, density, pure);
+    const double expected_association = 2.0 * (
+        std::log(expected_x) - expected_x / 2.0 + 0.5
+    );
+    const auto inputs = [&](const Parameters& parameters, const std::vector<double>& x,
+                            const std::string& extra) {
+        return recording_support::fields({model_inputs(parameters, temperature, density, x),
+            recording_support::field("l_ij", parameters.l_ij), extra});
+    };
+    const auto record = [&](const char* id, const char* quantity, double model,
+                            double reference, const std::string& values,
+                            const char* claim, double tolerance = 1.0e-12,
+                            const char* unit = "1") {
+        const bool matches = close(model, reference, tolerance);
+        recording_support::compare(
+            id, quantity, unit, model, reference, values, "Relationship",
+            "independent_closed_form", claim, "reference_or_one", 0.0, tolerance,
+            matches, "c2-association", id, quantity, "T,rho,x,sites", claim, "site"
+        );
+        CHECK(matches);
+    };
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c2-association", "symmetric-x-", 2,
+        "symmetric two-site association closed form", "site");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c2-association", "unequal-", 6,
+        "unequal multiplicity association closed form and relabelling", "site");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c2-association", "limit-", 6,
+        "association scalar support limits", "site");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c2-association", "cross-", 4,
+        "asymmetric cross-association contact, strength and residuals", "site");
+    record("symmetric-x-0", "site_fraction", fractions[0], expected_x,
+           inputs(symmetric, pure, recording_support::field("K", k)),
+           "X=2/(1+sqrt(1+4K))");
+    record("symmetric-x-1", "site_fraction", fractions[1], expected_x,
+           inputs(symmetric, pure, recording_support::field("K", k)),
+           "X=2/(1+sqrt(1+4K))");
+    record("symmetric-helmholtz", "association_helmholtz", symmetric_result.association,
+           expected_association, inputs(symmetric, pure, recording_support::field("K", k)),
+           "a_assoc=sum nu(log(X)-X/2+1/2)");
+
+    Parameters unequal = symmetric;
+    unequal.site_multiplicity = {2, 3};
+    const auto unequal_fractions = epcsaft::solve_site_fractions(
+        temperature, density, pure, unequal, sigma, diameter
+    );
+    const auto unequal_result = evaluate(unequal, temperature, density, pure);
+    const double discriminant = std::pow(1.0 + k * 5.0, 2) - 24.0 * k * k;
+    const double bonds = 12.0 * k / (1.0 + 5.0 * k + std::sqrt(discriminant));
+    const double expected_a = 1.0 - bonds / 2.0, expected_b = 1.0 - bonds / 3.0;
+    const double expected_unequal_association = 2.0 * (
+        std::log(expected_a) - expected_a / 2.0 + 0.5
+    ) + 3.0 * (std::log(expected_b) - expected_b / 2.0 + 0.5);
+    record("unequal-x-a", "site_fraction", unequal_fractions[0], expected_a,
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
+           "b=K(mA-b)(mB-b)");
+    record("unequal-x-b", "site_fraction", unequal_fractions[1], expected_b,
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
+           "b=K(mA-b)(mB-b)");
+    record("unequal-conservation", "bonded_count", 2.0 * (1.0 - unequal_fractions[0]),
+           3.0 * (1.0 - unequal_fractions[1]),
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
+           "mA(1-XA)=mB(1-XB)");
+    record("unequal-helmholtz", "association_helmholtz", unequal_result.association,
+           expected_unequal_association,
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
+           "a_assoc uses explicit unequal multiplicities");
+    Parameters relabelled = unequal;
+    relabelled.site_multiplicity = {3, 2};
+    const auto relabelled_fractions = epcsaft::solve_site_fractions(
+        temperature, density, pure, relabelled, sigma, diameter
+    );
+    const auto relabelled_result = evaluate(relabelled, temperature, density, pure);
+    record("unequal-relabel-x", "site_fraction", relabelled_fractions[0], unequal_fractions[1],
+           inputs(relabelled, pure, "site_order:BA"), "site relabelling preserves fractions");
+    record("unequal-relabel-helmholtz", "association_helmholtz",
+           relabelled_result.association, unequal_result.association,
+           inputs(relabelled, pure, "site_order:BA"), "site relabelling preserves a_assoc");
+
+    Parameters zero_strength = symmetric;
+    zero_strength.association_energy_over_k = {0.0, 0.0, 0.0, 0.0};
+    const auto zero_strength_fractions = epcsaft::solve_site_fractions(
+        temperature, density, pure, zero_strength, sigma, diameter
+    );
+    const auto zero_strength_result = evaluate(zero_strength, temperature, density, pure);
+    record("limit-zero-strength-x", "site_fraction", zero_strength_fractions[0], 1.0,
+           inputs(zero_strength, pure, "limit:zero-strength"), "Delta=0 gives X=1");
+    record("limit-zero-strength-energy", "association_helmholtz",
+           zero_strength_result.association, 0.0,
+           inputs(zero_strength, pure, "limit:zero-strength"), "X=1 gives a_assoc=0");
+    const auto zero_density_fractions = epcsaft::solve_site_fractions(
+        temperature, 0.0, pure, symmetric, sigma, diameter
+    );
+    record("limit-zero-density-x", "site_fraction", zero_density_fractions[0], 1.0,
+           recording_support::fields({model_inputs(symmetric, temperature, 0.0, pure),
+               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
+           "rho_N=0 gives X=1");
+    const auto zero_density_terms = epcsaft::residual_helmholtz(
+        temperature, 0.0, pure, symmetric, sigma, diameter, zero_density_fractions, 0.0, 0.0
+    );
+    record("limit-zero-density-energy", "association_helmholtz",
+           zero_density_terms.association, 0.0,
+           recording_support::fields({model_inputs(symmetric, temperature, 0.0, pure),
+               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
+           "rho_N=0 and X=1 give a_assoc=0");
+    Parameters absent = symmetric;
+    absent.site_component = {1};
+    absent.site_multiplicity = {1};
+    absent.association_active = {1};
+    absent.association_energy_over_k = {2425.7};
+    absent.association_volume = {0.0451};
+    const std::vector<double> absent_x = {1.0, 0.0};
+    const auto absent_sigma = epcsaft::segment_sigma(temperature, absent);
+    const auto absent_diameter = epcsaft::segment_diameter(temperature, absent, absent_sigma);
+    const auto absent_fractions = epcsaft::solve_site_fractions(
+        temperature, density, absent_x, absent, absent_sigma, absent_diameter
+    );
+    const auto absent_result = evaluate(absent, temperature, density, absent_x);
+    record("limit-absent-self-x", "site_fraction", absent_fractions[0], 1.0,
+           inputs(absent, absent_x, "limit:absent-self-associated-component"),
+           "zero-weight self-associated site gives X=1");
+    record("limit-absent-energy", "association_helmholtz", absent_result.association, 0.0,
+           inputs(absent, absent_x, "limit:absent-self-associated-component"),
+           "zero-weight site gives a_assoc=0");
+
+    Parameters cross = symmetric;
+    cross.site_component = {0, 1};
+    cross.site_multiplicity = {1, 2};
+    cross.association_energy_over_k = {0.0, 2400.0, 2400.0, 0.0};
+    cross.association_volume = {0.0, 0.04, 0.04, 0.0};
+    cross.l_ij = {0.0, 0.12, 0.12, 0.0};
+    const double cross_temperature = 320.0, cross_density = 9.0e3;
+    const std::vector<double> cross_x = {0.25, 0.75};
+    const auto cross_sigma = epcsaft::segment_sigma(cross_temperature, cross);
+    const auto cross_diameter = epcsaft::segment_diameter(cross_temperature, cross, cross_sigma);
+    const auto cross_delta = epcsaft::association_delta(
+        cross_temperature, cross_density, cross_x, cross, cross_sigma, cross_diameter
+    );
+    const double rho_n = cross_density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3;
+    const double zeta_2 = epcsaft::PI / 6.0 * rho_n * (
+        cross_x[0] * cross.segment_count[0] * std::pow(cross_diameter[0], 2)
+        + cross_x[1] * cross.segment_count[1] * std::pow(cross_diameter[1], 2)
+    );
+    const double eta = epcsaft::PI / 6.0 * rho_n * (
+        cross_x[0] * cross.segment_count[0] * std::pow(cross_diameter[0], 3)
+        + cross_x[1] * cross.segment_count[1] * std::pow(cross_diameter[1], 3)
+    );
+    const double reduced = cross_diameter[0] * cross_diameter[1]
+        / (cross_diameter[0] + cross_diameter[1]);
+    const double contact = 1.0 / (1.0 - eta)
+        + 3.0 * reduced * zeta_2 / std::pow(1.0 - eta, 2)
+        + 2.0 * reduced * reduced * zeta_2 * zeta_2 / std::pow(1.0 - eta, 3);
+    const double sigma_01 = 0.5 * (cross_sigma[0] + cross_sigma[1]) * (1.0 - cross.l_ij[1]);
+    const auto expected_delta = [&](std::size_t pair) {
+        return contact * (std::exp(cross.association_energy_over_k[pair] / cross_temperature) - 1.0)
+            * std::pow(sigma_01, 3) * cross.association_volume[pair];
+    };
+    const auto cross_fractions = epcsaft::solve_site_fractions(
+        cross_temperature, cross_density, cross_x, cross, cross_sigma, cross_diameter
+    );
+    const double cross_residual_a = cross_fractions[0] * (
+        1.0 + rho_n * cross_x[1] * cross.site_multiplicity[1]
+        * cross_fractions[1] * expected_delta(1)
+    ) - 1.0;
+    const double cross_residual_b = cross_fractions[1] * (
+        1.0 + rho_n * cross_x[0] * cross.site_multiplicity[0]
+        * cross_fractions[0] * expected_delta(2)
+    ) - 1.0;
+    const auto cross_inputs = recording_support::fields({
+        model_inputs(cross, cross_temperature, cross_density, cross_x),
+        recording_support::field("l_ij", cross.l_ij), recording_support::field("contact", contact),
+        recording_support::field("sigma_01", sigma_01),
+        recording_support::field("site_fractions", cross_fractions),
+    });
+    record("cross-strength-ab", "Delta_AB", cross_delta[1], expected_delta(1), cross_inputs,
+           "unlike-diameter contact and reciprocal AB strength", 1.0e-12, "angstrom^3");
+    record("cross-strength-ba", "Delta_BA", cross_delta[2], expected_delta(2), cross_inputs,
+           "unlike-diameter contact and reciprocal BA strength", 1.0e-12, "angstrom^3");
+    record("cross-residual-a", "association_residual", cross_residual_a, 0.0, cross_inputs,
+           "full asymmetric cross mass-action residual", epcsaft::policy::ASSOCIATION_RESIDUAL.value);
+    record("cross-residual-b", "association_residual", cross_residual_b, 0.0, cross_inputs,
+           "full asymmetric cross mass-action residual", epcsaft::policy::ASSOCIATION_RESIDUAL.value);
+}
+
 // A term that is switched off contributes nothing, whatever else is in the
 // parameter record.
 void inactive_terms_contribute_nothing() {
@@ -1480,6 +1687,7 @@ int main(int argc, char** argv) {
         {{"native.contributions.p2", "Residual_vanishes_at_zero_density", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "density-monotonic/*,zero-density-limit", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P2", "density-monotonic/*:4,zero-density-limit:1"}, residual_vanishes_at_zero_density},
         {{"native.contributions.p3", "Component_relabelling_invariance", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "hard-chain,dispersion", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P3", "hard-chain:1,dispersion:1"}, relabelling_components_changes_nothing},
         {{"native.contributions.p4", "Association_mass_action", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "mass-action-*,site-floor-*,site-ceiling-*,site-symmetry", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P4", "mass-action-*:2,site-floor-*:2,site-ceiling-*:2,site-symmetry:1"}, association_solve_satisfies_mass_action},
+        {{"native.contributions.c2", "Association_closed_forms_and_limits", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "symmetric-*,unequal-*,limit-*,cross-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C2", "symmetric-x-*:2,symmetric-helmholtz:1,unequal-*:6,limit-*:6,cross-*:4"}, association_equations_match_closed_forms_and_limits},
         {{"native.contributions.p5", "Inactive_terms_vanish", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "association,born,debye-huckel", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P5", "association:1,born:1,debye-huckel:1"}, inactive_terms_contribute_nothing},
         {{"native.contributions.p6", "Same_sign_ionic_exclusion", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "excluded-pure-ion,all-pairs-pure-ion,excluded-zero,all-pairs-negative,half-mixture-different", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P6", "excluded-pure-ion:1,all-pairs-pure-ion:1,excluded-zero:1,all-pairs-negative:1,half-mixture-different:1"}, same_sign_exclusion_is_a_limit},
         {{"native.contributions.p7", "Packing_fraction_bound", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "density-scaling,low-positive,policy-lower,policy-upper", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P7", "density-scaling:1,low-positive:1,policy-lower:1,policy-upper:1"}, packing_fraction_is_bounded},

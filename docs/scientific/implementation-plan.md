@@ -59,7 +59,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
 | Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
-| Contributions | ██░░░░░░░░ 25.0% (1/4) | 1.5–4.5 | 5 (partial) |
+| Contributions | █████░░░░░ 50.0% (2/4) | 1–3 | 5.5 (partial) |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/5) | 10–30 | — |
 | Regression | ░░░░░░░░░░ 0.0% (0/4) | 4–12 | — |
@@ -67,7 +67,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **5/34 qualified milestones (14.7%)**; **33.5–102.5 remaining Astra hours**.
+Total: **6/34 qualified milestones (17.6%)**; **33–101 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -282,7 +282,7 @@ flowchart TD
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | C1 — Hard-chain and dispersion | [x] | 0 | 5.0 | CORE4 qualified | Preserve existing hard-chain/dispersion kernels; qualify their formulas and analytic limits and finish the current explicit ideal thermal/mixing owner. | [2026-09-10: C1 qualification](reviews/c1-2026-09-10.md); 167 current-wheel comparisons, independent derivative replay, applicable fast gates and independent CSE/Ponytail review support the bounded native claim; pinned F5 remains excluded. |
-| C2 — Association equations | [ ] | 0.5–1.5 | — | C1 | Verify existing site topology, mass-action equations and scalar support limits; repair only a demonstrated discrepancy. | — |
+| C2 — Association equations | [x] | 0 | 0.5 | C1 | Verify existing site topology, mass-action equations and scalar support limits; repair only a demonstrated discrepancy. | [2026-09-10: C2 qualification](reviews/c2-2026-09-10.md); 19 current-wheel scalar comparisons, independent mixed-site root and CSE/Ponytail acceptance passed; existing runtime and excluded implicit-support limits preserved. |
 | C3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | C1 | Verify existing electrolyte/Born/dielectric formulas, charge conventions and singular limits; add no new model. | — |
 | C4 — Contributions qualification | [ ] | 0.5–1.5 | — | C2, C3 | Integrated contribution reference checks, reuse/duplication/cost review and independent acceptance of preserved and corrected owners. | — |
 
@@ -486,7 +486,7 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core CORE1 through CORE4 and Contributions C1 are qualified; C2 and C3 have Ready reuse/verification designs. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core CORE1 through CORE4 and Contributions C1–C2 are qualified; C3 has a Ready keep/verify handoff. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
@@ -498,8 +498,8 @@ Current stage: bounded Core CORE1 through CORE4 and Contributions C1 are qualifi
 | CORE4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel CORE1–CORE3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
 | Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
 | C1 | [Qualify hard-chain, dispersion and ideal Helmholtz formulation (#6)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/6) | Complete on 2026-09-10: retained native formulas, explicit thermal inputs, off-normalized caller checks and independent CSE/Ponytail acceptance qualify the bounded C1 slice. Properties implementation and pinned F5 remain outside scope. |
-| C2-design | [Qualify association equations and support limits (#8)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/8) | Ready on 2026-09-10 after independent integrated review; C1 prerequisite qualified; next bounded verification slice. Existing association-harness work remains separately owned; no alternate solver adopted. |
-| C3-design | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Ready on 2026-09-10 after independent integrated review; C1 prerequisite qualified; follows the current C2 assignment. Initial scope adds numerical falsifiers to existing formulas, with no assumed runtime correction. |
+| C2 | [Qualify association equations and support limits (#8)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/8) | Complete on 2026-09-10: 19 independent scalar-equation/limit comparisons and CSE/Ponytail acceptance qualify the bounded existing association owner with zero runtime additions. The separate association experiments and Properties P2 implicit-support limits remain excluded. |
+| C3-design | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Ready on 2026-09-10 after independent integrated review; C1 prerequisite qualified; next specified verification slice after qualified C2. Initial scope adds numerical falsifiers to existing formulas, with no assumed runtime correction. |
 
 Repository separation is a completed delivery prerequisite. It does not change
 scientific milestone qualification; subsequent work follows the scientific
