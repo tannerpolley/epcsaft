@@ -2422,6 +2422,578 @@ void core_c2_parameter_coordinates() {
         "relative_error", "Sg,S H S", "T,V,n", "source=S*native");
 }
 
+std::vector<std::pair<const char*, epcsaft::IdealCorrelation>> p3_forms() {
+    const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
+    return {
+        {"polynomial", epcsaft::IdealCorrelation{
+            epcsaft::IdealPolynomial{{30.0, 0.0}, 300.0, 1000.0, 50.0}, 1.0e5}},
+        {"shomate", epcsaft::IdealCorrelation{
+            epcsaft::IdealShomate{{30.0, 0.0, 0.0, 0.0, 0.0, -9.0,
+                                   50.0 - 30.0 * std::log(0.3), 0.0}, 1000.0}, 1.0e5}},
+        {"nasa7", epcsaft::IdealCorrelation{
+            epcsaft::IdealNASA7{{30.0 / R, 0.0, 0.0, 0.0, 0.0,
+                                 1000.0 / R - 30.0 * 300.0 / R,
+                                 50.0 / R - 30.0 * std::log(300.0) / R}}, 1.0e5}},
+        {"nasa9", epcsaft::IdealCorrelation{
+            epcsaft::IdealNASA9{{0.0, 0.0, 30.0 / R, 0.0, 0.0, 0.0, 0.0,
+                                 1000.0 / R - 30.0 * 300.0 / R,
+                                 50.0 / R - 30.0 * std::log(300.0) / R}}, 1.0e5}},
+        {"dippr107", epcsaft::IdealCorrelation{
+            epcsaft::IdealDIPPR107{{0.0, 30.0, 0.0, 0.0, 0.0},
+                                   300.0, 1000.0, 50.0}, 1.0e5}},
+    };
+}
+
+epcsaft::ThermochemistryRecord p3_record(const epcsaft::IdealCorrelation& correlation) {
+    epcsaft::ThermochemistryRecord result;
+    result.standard_pressure = 1.0e5;
+    result.component_intervals.push_back({
+        epcsaft::IdealInterval{250.0, 350.0, true, true, correlation}
+    });
+    return result;
+}
+
+epcsaft::ThermochemistryRecord p3_binary_record() {
+    epcsaft::ThermochemistryRecord result;
+    result.standard_pressure = 1.0e5;
+    result.component_intervals = {
+        {epcsaft::IdealInterval{250.0, 350.0, true, true, p3_forms()[0].second}},
+        {epcsaft::IdealInterval{250.0, 350.0, true, true,
+            epcsaft::IdealCorrelation{epcsaft::IdealPolynomial{{40.0, 0.0}, 300.0, 2000.0, 70.0}, 1.0e5}}}
+    };
+    return result;
+}
+
+std::string p3_inputs(const char* form, double temperature = 320.0) {
+    return recording_support::fields({
+        recording_support::field("form", form),
+        recording_support::field("T", temperature),
+        recording_support::field("rho", 1000.0),
+        recording_support::field("P0", 1.0e5),
+    });
+}
+
+void p3_compare(const std::string& id, const char* quantity, const char* unit,
+                double model, double reference, const std::string& inputs,
+                const char* group, const char* point, double tolerance = 2.0e-12) {
+    const bool ok = close(model, reference, tolerance);
+    recording_support::compare(
+        id.c_str(), quantity, unit, model, reference, inputs, "Relationship",
+        "independent-reference", "P3 property/reference relation", "reference_or_one",
+        0.0, tolerance, ok, group, point, quantity, "T,rho,P0", "model=reference", "state"
+    );
+    CHECK(ok);
+}
+
+void properties_thermochemistry_p3() {
+    const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
+    const double temperature = 320.0;
+    const double density = 1000.0;
+    const double standard_entropy = 50.0 + 30.0 * std::log(temperature / 300.0);
+    const double expected_h = 1000.0 + 30.0 * (temperature - 300.0);
+    const double expected_u = expected_h - R * temperature;
+    const double expected_s = standard_entropy
+        - R * std::log(density * R * temperature / 1.0e5);
+    const auto forms = p3_forms();
+
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-form-values", "p3-form-value/", forms.size() * 5,
+        "all ideal forms match independent values", "form,quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-form-derivatives", "p3-form-derivative/", forms.size() * 8,
+        "ideal h and s temperature identities", "form,quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-form-derivative-refinement", "p3-form-derivative-refinement/", forms.size() * 2,
+        "final ideal derivative estimates refine", "form,quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-total", "p3-total/", forms.size() * 6,
+        "production Ideal/Total state identities", "form,quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-boundaries", "p3-boundary/", 6,
+        "endpoint and invalid interval behavior", "case");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-endpoints", "p3-endpoint/", forms.size() * 10,
+        "all ideal forms match both owned endpoints", "form,endpoint,quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-mixing", "p3-mixing/", 5,
+        "multicomponent ideal mixing and anchors", "quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-availability", "p3-availability/", 5,
+        "typed thermochemistry availability causes", "case");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-reference", "p3-reference/", 13,
+        "fixed standard-state conversion and pressure invariance", "quantity");
+    recording_support::expect_group(recording_support::active_test_id(),
+        "p3-reaction", "p3-reaction/", 33,
+        "reaction basis and K(T) relations", "basis,quantity");
+
+    for (const auto& [name, correlation] : forms) {
+        const auto record = p3_record(correlation);
+        const auto ideal = epcsaft::evaluate_ideal_properties(record, temperature, density, {1.0});
+        CHECK(ideal.value.has_value() && ideal.status == epcsaft::ThermochemistryStatus::Available);
+        const auto inputs = p3_inputs(name);
+        p3_compare(std::string("p3-form-value/") + name + "/h", "ideal_enthalpy", "J/mol",
+                   ideal.value->enthalpy, expected_h, inputs, "p3-form-values", name);
+        p3_compare(std::string("p3-form-value/") + name + "/u", "ideal_internal_energy", "J/mol",
+                   ideal.value->internal_energy, expected_u, inputs, "p3-form-values", name);
+        p3_compare(std::string("p3-form-value/") + name + "/s", "ideal_entropy", "J/(mol K)",
+                   ideal.value->entropy, expected_s, inputs, "p3-form-values", name);
+        p3_compare(std::string("p3-form-value/") + name + "/cp", "ideal_heat_capacity_cp", "J/(mol K)",
+                   ideal.value->isobaric_heat_capacity, 30.0, inputs, "p3-form-values", name);
+        p3_compare(std::string("p3-form-value/") + name + "/cv", "ideal_heat_capacity_cv", "J/(mol K)",
+                   ideal.value->isochoric_heat_capacity, 30.0 - R, inputs, "p3-form-values", name);
+
+        constexpr std::array<double, 4> steps = {0.1, 0.03, 0.01, 0.003};
+        double refined_dh[2] = {}, refined_ds[2] = {};
+        for (std::size_t step = 0; step < steps.size(); ++step) {
+            const double delta = steps[step];
+            const auto plus = epcsaft::evaluate_ideal_correlation(correlation, temperature + delta, 1.0e5);
+            const auto minus = epcsaft::evaluate_ideal_correlation(correlation, temperature - delta, 1.0e5);
+            const double dh_dt = (plus.h - minus.h) / (2.0 * delta);
+            const double t_ds_dt = temperature * (plus.s - minus.s) / (2.0 * delta);
+            const auto point = std::string(name) + "/" + recording_support::number(delta);
+            const double derivative_tolerance = delta <= 0.01 ? 1.0e-8 : 1.0e-5;
+            p3_compare(std::string("p3-form-derivative/") + point + "/dh", "dh_dT", "J/(mol K)",
+                       dh_dt, ideal.value->isobaric_heat_capacity, inputs, "p3-form-derivatives", point.c_str(), derivative_tolerance);
+            p3_compare(std::string("p3-form-derivative/") + point + "/ds", "T_ds_dT", "J/(mol K)",
+                       t_ds_dt, ideal.value->isobaric_heat_capacity, inputs, "p3-form-derivatives", point.c_str(), derivative_tolerance);
+            if (step == 2) { refined_dh[0] = dh_dt; refined_ds[0] = t_ds_dt; }
+            if (step == 3) { refined_dh[1] = dh_dt; refined_ds[1] = t_ds_dt; }
+        }
+        p3_compare(std::string("p3-form-derivative-refinement/") + name + "/dh", "dh_dT_refinement", "J/(mol K)",
+                   refined_dh[1], refined_dh[0], inputs, "p3-form-derivative-refinement", name, 1.0e-8);
+        p3_compare(std::string("p3-form-derivative-refinement/") + name + "/ds", "T_ds_dT_refinement", "J/(mol K)",
+                   refined_ds[1], refined_ds[0], inputs, "p3-form-derivative-refinement", name, 1.0e-8);
+
+        epcsaft::HelmholtzModel model(properties_support::ethane(), {}, record);
+        const auto state = model.state(temperature, density, {1.0});
+        CHECK(state.thermochemistry_status == epcsaft::ThermochemistryStatus::Available);
+        CHECK(state.ideal_enthalpy.has_value() && state.ideal_internal_energy.has_value()
+              && state.ideal_entropy.has_value() && state.ideal_isobaric_heat_capacity.has_value()
+              && state.ideal_isochoric_heat_capacity.has_value()
+              && state.total_enthalpy.has_value() && state.total_internal_energy.has_value()
+              && state.total_entropy.has_value() && state.total_isochoric_heat_capacity.has_value());
+        p3_compare(std::string("p3-total/") + name + "/h", "total_h_decomposition", "J/mol",
+                   *state.total_enthalpy, *state.ideal_enthalpy + state.residual_enthalpy,
+                   inputs, "p3-total", name);
+        p3_compare(std::string("p3-total/") + name + "/u", "total_u_decomposition", "J/mol",
+                   *state.total_internal_energy, *state.ideal_internal_energy + state.residual_internal_energy,
+                   inputs, "p3-total", name);
+        p3_compare(std::string("p3-total/") + name + "/s", "total_s_decomposition", "J/(mol K)",
+                   *state.total_entropy, *state.ideal_entropy + state.residual_entropy,
+                   inputs, "p3-total", name);
+        p3_compare(std::string("p3-total/") + name + "/cp", "total_cp_decomposition", "J/(mol K)",
+                   *state.total_isobaric_heat_capacity,
+                   *state.ideal_isobaric_heat_capacity + *state.residual_isobaric_heat_capacity,
+                   inputs, "p3-total", name);
+        p3_compare(std::string("p3-total/") + name + "/cv", "total_cv_decomposition", "J/(mol K)",
+                   *state.total_isochoric_heat_capacity,
+                   *state.ideal_isochoric_heat_capacity + state.residual_isochoric_heat_capacity,
+                   inputs, "p3-total", name);
+        p3_compare(std::string("p3-total/") + name + "/pv", "total_h_u_pv", "J/mol",
+                   *state.total_enthalpy,
+                   *state.total_internal_energy + state.pressure / state.molar_density,
+                   inputs, "p3-total", name);
+    }
+
+    for (const auto& [name, correlation] : forms) {
+        for (double endpoint_temperature : {250.0, 350.0}) {
+            const auto endpoint_state = epcsaft::evaluate_ideal_properties(
+                p3_record(correlation), endpoint_temperature, density, {1.0}
+            );
+            CHECK(endpoint_state.value.has_value());
+            const double h = 1000.0 + 30.0 * (endpoint_temperature - 300.0);
+            const double u = h - R * endpoint_temperature;
+            const double s = 50.0 + 30.0 * std::log(endpoint_temperature / 300.0)
+                - R * std::log(density * R * endpoint_temperature / 1.0e5);
+            const auto point = std::string(name) + "/" + recording_support::number(endpoint_temperature);
+            const auto endpoint_inputs = p3_inputs(name, endpoint_temperature);
+            p3_compare(std::string("p3-endpoint/") + point + "/h", "ideal_enthalpy", "J/mol",
+                       endpoint_state.value->enthalpy, h, endpoint_inputs, "p3-endpoints", point.c_str());
+            p3_compare(std::string("p3-endpoint/") + point + "/u", "ideal_internal_energy", "J/mol",
+                       endpoint_state.value->internal_energy, u, endpoint_inputs, "p3-endpoints", point.c_str());
+            p3_compare(std::string("p3-endpoint/") + point + "/s", "ideal_entropy", "J/(mol K)",
+                       endpoint_state.value->entropy, s, endpoint_inputs, "p3-endpoints", point.c_str());
+            p3_compare(std::string("p3-endpoint/") + point + "/cp", "ideal_heat_capacity_cp", "J/(mol K)",
+                       endpoint_state.value->isobaric_heat_capacity, 30.0, endpoint_inputs, "p3-endpoints", point.c_str());
+            p3_compare(std::string("p3-endpoint/") + point + "/cv", "ideal_heat_capacity_cv", "J/(mol K)",
+                       endpoint_state.value->isochoric_heat_capacity, 30.0 - R, endpoint_inputs, "p3-endpoints", point.c_str());
+        }
+    }
+
+    const auto binary = epcsaft::evaluate_ideal_properties(
+        p3_binary_record(), temperature, density, {0.25, 0.75}
+    );
+    CHECK(binary.value.has_value());
+    const double binary_h = 0.25 * expected_h + 0.75 * (2000.0 + 40.0 * (temperature - 300.0));
+    const double binary_u = binary_h - R * temperature;
+    const double binary_cp = 0.25 * 30.0 + 0.75 * 40.0;
+    const double binary_s = 0.25 * (standard_entropy - R * std::log(
+        0.25 * density * R * temperature / 1.0e5))
+        + 0.75 * (70.0 + 40.0 * std::log(temperature / 300.0) - R * std::log(
+            0.75 * density * R * temperature / 1.0e5));
+    p3_compare("p3-mixing/h", "ideal_enthalpy", "J/mol", binary.value->enthalpy, binary_h,
+               "x=0.25,0.75,T=320", "p3-mixing", "h");
+    p3_compare("p3-mixing/u", "ideal_internal_energy", "J/mol", binary.value->internal_energy, binary_u,
+               "x=0.25,0.75,T=320", "p3-mixing", "u");
+    p3_compare("p3-mixing/s", "ideal_entropy", "J/(mol K)", binary.value->entropy, binary_s,
+               "x=0.25,0.75,T=320", "p3-mixing", "s");
+    p3_compare("p3-mixing/cp", "ideal_heat_capacity_cp", "J/(mol K)", binary.value->isobaric_heat_capacity,
+               binary_cp, "x=0.25,0.75,T=320", "p3-mixing", "cp");
+    p3_compare("p3-mixing/cv", "ideal_heat_capacity_cv", "J/(mol K)", binary.value->isochoric_heat_capacity,
+               binary_cp - R, "x=0.25,0.75,T=320", "p3-mixing", "cv");
+
+    const auto endpoint_record = p3_record(forms.front().second);
+    const auto endpoint = epcsaft::evaluate_ideal_thermal(
+        endpoint_record.component_intervals.front(), 250.0, endpoint_record.standard_pressure
+    );
+    const bool endpoint_value = std::isfinite(endpoint.value.h) && !endpoint.derivatives_available;
+    recording_support::compare_custom("p3-boundary/endpoint", "endpoint_value_available", "bool",
+        endpoint_value ? 1.0 : 0.0, 1.0, "T=250", "Availability", "endpoint-owner",
+        "owned endpoint has value and no cross-interval derivative", "absolute", endpoint_value,
+        "p3-boundaries", "endpoint");
+    const auto outside = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, endpoint_record
+    ).state(400.0, density, {1.0});
+    const bool outside_partial = !outside.ideal_enthalpy.has_value()
+        && std::isfinite(outside.residual_enthalpy);
+    recording_support::compare_custom("p3-boundary/outside", "residual_only", "bool",
+        outside_partial ? 1.0 : 0.0, 1.0, "T=400", "Availability", "interval-owner",
+        "outside interval preserves residual-only state", "absolute", outside_partial,
+        "p3-boundaries", "outside");
+    bool gap_failed = false, overlap_failed = false, pressure_failed = false;
+    try {
+        auto gap = endpoint_record;
+        gap.component_intervals.front().push_back(
+            epcsaft::IdealInterval{351.0, 360.0, true, true, forms.front().second}
+        );
+        epcsaft::validate_thermochemistry(gap, 1);
+    } catch (const std::invalid_argument&) { gap_failed = true; }
+    try {
+        auto overlap = endpoint_record;
+        overlap.component_intervals.front().push_back(
+            epcsaft::IdealInterval{250.0, 350.0, true, true, forms.front().second}
+        );
+        epcsaft::validate_thermochemistry(overlap, 1);
+    } catch (const std::invalid_argument&) { overlap_failed = true; }
+    try {
+        auto invalid = endpoint_record;
+        invalid.component_intervals.front().front().correlation.source_pressure = 0.0;
+        epcsaft::validate_thermochemistry(invalid, 1);
+    } catch (const std::invalid_argument&) { pressure_failed = true; }
+    recording_support::compare_custom("p3-boundary/gap", "gap_rejected", "bool",
+        gap_failed ? 1.0 : 0.0, 1.0, "351-360 after 250-350", "Availability", "interval-owner",
+        "gapped intervals are rejected", "absolute", gap_failed, "p3-boundaries", "gap");
+    recording_support::compare_custom("p3-boundary/overlap", "overlap_rejected", "bool",
+        overlap_failed ? 1.0 : 0.0, 1.0, "250-350 plus 250-350", "Availability", "interval-owner",
+        "overlapping intervals are rejected", "absolute", overlap_failed, "p3-boundaries", "overlap");
+    recording_support::compare_custom("p3-boundary/pressure", "invalid_pressure_rejected", "bool",
+        pressure_failed ? 1.0 : 0.0, 1.0, "Psrc=0", "Availability", "input-validation",
+        "invalid source pressure is rejected", "absolute", pressure_failed, "p3-boundaries", "pressure");
+    bool missing_component_failed = false;
+    try {
+        auto missing = endpoint_record;
+        missing.component_intervals.clear();
+        epcsaft::validate_thermochemistry(missing, 1);
+    } catch (const std::invalid_argument&) { missing_component_failed = true; }
+    recording_support::compare_custom("p3-boundary/missing-component", "missing_component_rejected", "bool",
+        missing_component_failed ? 1.0 : 0.0, 1.0, "component thermal record absent", "Availability",
+        "input-validation", "missing component thermochemistry is unavailable", "absolute",
+        missing_component_failed, "p3-boundaries", "missing-component");
+
+    const auto missing_record_state = epcsaft::HelmholtzModel(properties_support::ethane()).state(
+        temperature, density, {1.0}
+    );
+    recording_support::compare_custom("p3-availability/missing-record", "thermochemistry_status", "enum",
+        static_cast<double>(missing_record_state.thermochemistry_status), 0.0, "no record",
+        "Availability", "status-owner", "missing record has a typed cause", "absolute",
+        missing_record_state.thermochemistry_status == epcsaft::ThermochemistryStatus::MissingRecord,
+        "p3-availability", "missing-record");
+    recording_support::compare_custom("p3-availability/outside", "thermochemistry_status", "enum",
+        static_cast<double>(outside.thermochemistry_status), 2.0, "T=400 outside [250,350]",
+        "Availability", "status-owner", "outside interval has a typed cause", "absolute",
+        outside.thermochemistry_status == epcsaft::ThermochemistryStatus::OutsideInterval,
+        "p3-availability", "outside");
+    auto nonfinite_record = endpoint_record;
+    std::get<epcsaft::IdealPolynomial>(
+        nonfinite_record.component_intervals.front().front().correlation.form
+    ).coefficients[0] = 1.0e308;
+    const auto nonfinite = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, nonfinite_record
+    ).state(temperature, density, {1.0});
+    recording_support::compare_custom("p3-availability/nonfinite", "thermochemistry_status", "enum",
+        static_cast<double>(nonfinite.thermochemistry_status), 3.0, "finite record with nonfinite evaluation",
+        "Availability", "status-owner", "nonfinite evaluation has a typed cause", "absolute",
+        nonfinite.thermochemistry_status == epcsaft::ThermochemistryStatus::Nonfinite,
+        "p3-availability", "nonfinite");
+    const auto negative_d = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, endpoint_record
+    ).state(280.0, 4000.0, {1.0});
+    const bool negative_d_partial = negative_d.thermochemistry_status == epcsaft::ThermochemistryStatus::Available
+        && !negative_d.total_isobaric_heat_capacity.has_value()
+        && std::isfinite(negative_d.residual_enthalpy);
+    recording_support::compare_custom("p3-availability/negative-D", "partial_state", "bool",
+        negative_d_partial ? 1.0 : 0.0, 1.0, "T=280,rho=4000,D<0",
+        "Availability", "partial-state", "negative-D preserves other fields and total cp unavailability",
+        "absolute", negative_d_partial, "p3-availability", "negative-D");
+    const auto available_state = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, endpoint_record
+    ).state(temperature, density, {1.0});
+    recording_support::compare_custom("p3-availability/available", "thermochemistry_status", "enum",
+        static_cast<double>(available_state.thermochemistry_status), 1.0, "T=320 inside [250,350]",
+        "Availability", "status-owner", "available record has a typed cause", "absolute",
+        available_state.thermochemistry_status == epcsaft::ThermochemistryStatus::Available,
+        "p3-availability", "available");
+
+    auto high_pressure = endpoint_record;
+    high_pressure.standard_pressure = 2.0e5;
+    const auto low_state = epcsaft::evaluate_ideal_properties(endpoint_record, temperature, density, {1.0});
+    const auto high_ideal = epcsaft::evaluate_ideal_properties(high_pressure, temperature, density, {1.0});
+    CHECK(low_state.value.has_value() && high_ideal.value.has_value());
+    p3_compare("p3-reference/h", "h_pressure_invariance", "J/mol",
+               high_ideal.value->enthalpy, low_state.value->enthalpy, "P0=1e5 to 2e5",
+               "p3-reference", "h");
+    p3_compare("p3-reference/u", "u_pressure_invariance", "J/mol",
+               high_ideal.value->internal_energy, low_state.value->internal_energy, "P0=1e5 to 2e5",
+               "p3-reference", "u");
+    p3_compare("p3-reference/s", "s_pressure_invariance", "J/(mol K)",
+               high_ideal.value->entropy, low_state.value->entropy, "P0=1e5 to 2e5",
+               "p3-reference", "s");
+    p3_compare("p3-reference/cp", "cp_pressure_invariance", "J/(mol K)",
+               high_ideal.value->isobaric_heat_capacity, low_state.value->isobaric_heat_capacity,
+               "P0=1e5 to 2e5", "p3-reference", "cp");
+    p3_compare("p3-reference/cv", "cv_pressure_invariance", "J/(mol K)",
+               high_ideal.value->isochoric_heat_capacity, low_state.value->isochoric_heat_capacity,
+               "P0=1e5 to 2e5", "p3-reference", "cv");
+    const auto low_total = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, endpoint_record
+    ).state(temperature, density, {1.0});
+    const auto high_total = epcsaft::HelmholtzModel(
+        properties_support::ethane(), {}, high_pressure
+    ).state(temperature, density, {1.0});
+    for (const auto& item : std::array<std::tuple<const char*, double, double, const char*>, 5>{
+        std::tuple{"h", *low_total.total_enthalpy, *high_total.total_enthalpy, "J/mol"},
+        {"u", *low_total.total_internal_energy, *high_total.total_internal_energy, "J/mol"},
+        {"s", *low_total.total_entropy, *high_total.total_entropy, "J/(mol K)"},
+        {"cp", *low_total.total_isobaric_heat_capacity, *high_total.total_isobaric_heat_capacity, "J/(mol K)"},
+        {"cv", *low_total.total_isochoric_heat_capacity, *high_total.total_isochoric_heat_capacity, "J/(mol K)"}
+    }) {
+        const auto [quantity, low, high, unit] = item;
+        const auto point = std::string("total-") + quantity;
+        p3_compare(std::string("p3-reference/") + point, "total_pressure_invariance", unit,
+                   high, low, "State P0=1e5 to 2e5", "p3-reference", point.c_str());
+    }
+    const auto converted = epcsaft::pressure_to_density_standard(
+        1234.0, 5678.0, 21.0, 300.0, 1.0e5, 1000.0
+    );
+    const double shift = R * 300.0 * std::log(R * 300.0 * 1000.0 / 1.0e5);
+    p3_compare("p3-reference/g", "g_density_conversion", "J/mol",
+               converted.gibbs, 1234.0 + shift, "P0=1e5,rho0=1000",
+               "p3-reference", "g");
+    p3_compare("p3-reference/h0", "h_density_conversion", "J/mol",
+               converted.enthalpy, 5678.0 - R * 300.0, "P0=1e5,rho0=1000",
+               "p3-reference", "h0");
+    p3_compare("p3-reference/s0", "s_density_conversion", "J/(mol K)",
+               converted.entropy, 21.0 - R - shift / 300.0, "P0=1e5,rho0=1000",
+               "p3-reference", "s0");
+
+    const epcsaft::ReactionLogPolynomial correlation{
+        2.0, -1200.0, 0.4, -0.003, 300.0, 293.15, 393.15, "P0"
+    };
+    const std::vector<double> stoichiometry = {1.0, -1.0};
+    const auto direct = epcsaft::direct_activities({0.8, 1.2}, "P0");
+    const auto x_activity = epcsaft::mole_fraction_activities({2.0, 3.0}, {0.4, 0.6}, "P0");
+    const auto c_activity = epcsaft::molarity_activities({2.0, 3.0}, 500.0, {0.4, 0.6}, 100.0, "P0");
+    const auto m_activity = epcsaft::molality_activities({2.0, 3.0}, {1.0, 2.0}, 1.0, 1.0, "P0");
+    p3_compare("p3-reaction/direct", "ln_q", "1",
+               epcsaft::reaction_ln_quotient(stoichiometry, direct, {}, correlation),
+               std::log(0.8 / 1.2), "basis=activity", "p3-reaction", "direct");
+    p3_compare("p3-reaction/x", "ln_q", "1",
+               epcsaft::reaction_ln_quotient(stoichiometry, x_activity, {}, correlation),
+               std::log(0.8 / 1.8), "basis=mole-fraction", "p3-reaction", "x");
+    p3_compare("p3-reaction/c", "ln_q", "1",
+               epcsaft::reaction_ln_quotient(stoichiometry, c_activity, {}, correlation),
+               std::log(4.0 / 9.0), "basis=molarity,rho=500,c0=100 mol/m3", "p3-reaction", "c");
+    p3_compare("p3-reaction/c-delta-nu", "ln_q", "1",
+               epcsaft::reaction_ln_quotient({2.0, -1.0}, c_activity, {}, correlation),
+               std::log(16.0 / 9.0), "basis=molarity,rho=500,Delta_nu=1", "p3-reaction", "c-delta-nu");
+    p3_compare("p3-reaction/m", "ln_q", "1",
+               epcsaft::reaction_ln_quotient(stoichiometry, m_activity, {}, correlation),
+               std::log(2.0 / 6.0), "basis=molality,m0=1 mol/kg", "p3-reaction", "m");
+    const auto neutral = epcsaft::direct_activities({1.0, 1.0}, "P0");
+    p3_compare("p3-reaction/neutral-ionic", "ln_q", "1",
+               epcsaft::reaction_ln_quotient(stoichiometry, neutral, {1, 1}, correlation),
+               0.0, "charge-neutral ionic contraction", "p3-reaction", "neutral-ionic");
+    bool gauge_failed = false;
+    try {
+        epcsaft::reaction_ln_quotient({1.0}, epcsaft::direct_activities({1.0}, "P0"), {1}, correlation);
+    } catch (const std::invalid_argument& error) {
+        gauge_failed = std::string(error.what()) == "ionic-gauge-missing";
+    }
+    recording_support::compare_custom("p3-reaction/gauge", "ionic_gauge_required", "bool",
+        gauge_failed ? 1.0 : 0.0, 1.0, "charged nonneutral reaction", "Availability",
+        "ionic-gauge", "nonneutral ionic contraction remains unavailable without a real gauge",
+        "absolute", gauge_failed, "p3-reaction", "gauge");
+    bool mismatch_failed = false;
+    try {
+        epcsaft::reaction_ln_quotient(stoichiometry, epcsaft::direct_activities({0.8, 1.2}, "rho0"), {}, correlation);
+    } catch (const std::invalid_argument& error) {
+        mismatch_failed = std::string(error.what()) == "reference-basis-mismatch";
+    }
+    recording_support::compare_custom("p3-reaction/mismatch", "basis_identity_required", "bool",
+        mismatch_failed ? 1.0 : 0.0, 1.0, "activity id=rho0,K id=P0", "Availability",
+        "standard-state-identity", "quotient and K standard-state identities must match",
+        "absolute", mismatch_failed, "p3-reaction", "mismatch");
+
+    const auto reaction = epcsaft::evaluate_reaction_properties(correlation, 350.0);
+    const double expected_ln_k = 2.0 - 1200.0 / 350.0
+        + 0.4 * std::log(350.0 / 300.0) - 0.003 * 350.0;
+    const double expected_derivative = 1200.0 / (350.0 * 350.0) + 0.4 / 350.0 - 0.003;
+    p3_compare("p3-reaction/ln-k", "ln_k", "1", reaction.ln_k, expected_ln_k,
+               "T=350", "p3-reaction", "ln-k");
+    CHECK(reaction.k.has_value());
+    p3_compare("p3-reaction/k", "K", "1", *reaction.k, std::exp(expected_ln_k),
+               "T=350", "p3-reaction", "k");
+    p3_compare("p3-reaction/dk", "dln_k_dT", "1/K", reaction.derivative, expected_derivative,
+               "T=350", "p3-reaction", "dk");
+    p3_compare("p3-reaction/h", "reaction_enthalpy", "J/mol", reaction.enthalpy,
+               R * 350.0 * 350.0 * expected_derivative, "T=350", "p3-reaction", "h");
+
+    const auto log_correlation = epcsaft::normalize_log10_reciprocal_correlation(
+        2677.91, 0.3869, 0.0004277, 293.15, 393.15, "P0", 300.0
+    );
+    const auto log_reaction = epcsaft::evaluate_reaction_properties(log_correlation, 300.0);
+    p3_compare("p3-reaction/log10-ln", "ln_k", "1", log_reaction.ln_k,
+               -std::log(10.0) * (2677.91 / 300.0 + 0.3869 + 0.0004277 * 300.0),
+               "T=300", "p3-reaction", "log10-ln");
+    CHECK(log_reaction.k.has_value());
+    p3_compare("p3-reaction/log10-k", "K", "1", *log_reaction.k,
+               std::exp(log_reaction.ln_k), "T=300", "p3-reaction", "log10-k");
+    p3_compare("p3-reaction/log10-dk", "dln_k_dT", "1/K", log_reaction.derivative,
+               std::log(10.0) * (2677.91 / (300.0 * 300.0) - 0.0004277),
+               "T=300", "p3-reaction", "log10-dk");
+    const auto legacy = epcsaft::normalize_legacy_reaction_correlation(
+        2.0, -1200.0, 0.4, -0.003, 300.0, 293.15, 393.15, "P0"
+    );
+    p3_compare("p3-reaction/legacy", "ln_k", "1",
+               epcsaft::evaluate_reaction_properties(legacy, 350.0).ln_k,
+               2.0 - 1200.0 / 350.0 + 0.4 * std::log(350.0) - 0.003 * 350.0,
+               "legacy ln(T/1 K)", "p3-reaction", "legacy");
+    bool endpoints = false, finite_k = true, outside_k = false;
+    try {
+        const auto lower = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_min);
+        const auto upper = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_max);
+        endpoints = true;
+        finite_k = lower.k.has_value() && upper.k.has_value();
+    } catch (const std::exception&) {}
+    try {
+        epcsaft::evaluate_reaction_properties(correlation, 280.0);
+    } catch (const std::invalid_argument&) { outside_k = true; }
+    recording_support::compare_custom("p3-reaction/endpoints", "K_endpoint_available", "bool",
+        endpoints ? 1.0 : 0.0, 1.0, "Tmin/Tmax inclusive", "Availability", "correlation-interval",
+        "correlation endpoints are owned and available", "absolute", endpoints, "p3-reaction", "endpoints");
+    recording_support::compare_custom("p3-reaction/finite-k", "K_finite", "bool",
+        finite_k ? 1.0 : 0.0, 1.0, "Tmin/Tmax", "Availability", "finite-K",
+        "finite ln K produces finite K", "absolute", finite_k, "p3-reaction", "finite-k");
+    const auto overflow = epcsaft::evaluate_reaction_properties(
+        {1000.0, 0.0, 0.0, 0.0, 300.0, 293.15, 393.15, "P0"}, 300.0
+    );
+    const auto underflow = epcsaft::evaluate_reaction_properties(
+        {-1000.0, 0.0, 0.0, 0.0, 300.0, 293.15, 393.15, "P0"}, 300.0
+    );
+    const bool k_separate = !overflow.k.has_value() && !underflow.k.has_value()
+        && std::isfinite(overflow.ln_k) && std::isfinite(underflow.ln_k)
+        && std::isfinite(overflow.derivative) && std::isfinite(underflow.enthalpy);
+    recording_support::compare_custom("p3-reaction/k-unavailable", "K_availability_separate", "bool",
+        k_separate ? 1.0 : 0.0, 1.0, "ln K=+/-1000", "Availability", "finite-K",
+        "finite ln K, derivative and enthalpy survive K overflow/underflow",
+        "absolute", k_separate, "p3-reaction", "k-unavailable");
+    recording_support::compare_custom("p3-reaction/outside", "K_outside_rejected", "bool",
+        outside_k ? 1.0 : 0.0, 1.0, "T=280 outside [293.15,393.15]", "Availability",
+        "correlation-interval", "out-of-domain K is unavailable", "absolute", outside_k,
+        "p3-reaction", "outside");
+
+    const std::vector<double> density_stoichiometry = {2.0, -1.0};
+    const auto density_reaction = epcsaft::reaction_pressure_to_density(
+        reaction, density_stoichiometry, "P0=1e5;rho0=1000", 350.0, 1.0e5, 1000.0
+    );
+    const double density_shift = std::log(R * 350.0 * 1000.0 / 1.0e5);
+    p3_compare("p3-reaction/density-ln", "ln_k_density", "1", density_reaction.ln_k,
+               reaction.ln_k - density_shift, "P0=1e5,rho0=1000,Delta_nu=1",
+               "p3-reaction", "density-ln");
+    CHECK(density_reaction.k.has_value());
+    p3_compare("p3-reaction/density-k", "K_density", "1", *density_reaction.k,
+               std::exp(reaction.ln_k - density_shift), "P0=1e5,rho0=1000,Delta_nu=1",
+               "p3-reaction", "density-k");
+    p3_compare("p3-reaction/density-dk", "dln_k_density_dT", "1/K", density_reaction.derivative,
+               reaction.derivative - 1.0 / 350.0, "P0=1e5,rho0=1000,Delta_nu=1",
+               "p3-reaction", "density-dk");
+    p3_compare("p3-reaction/density-h", "reaction_enthalpy_density", "J/mol", density_reaction.enthalpy,
+               reaction.enthalpy - R * 350.0, "P0=1e5,rho0=1000,Delta_nu=1",
+               "p3-reaction", "density-h");
+    const bool density_identity = density_reaction.standard_state_id == "P0=1e5;rho0=1000";
+    recording_support::compare_custom("p3-reaction/density-identity", "standard_state_identity", "bool",
+        density_identity ? 1.0 : 0.0, 1.0, "explicit P0/rho0 identity", "Availability",
+        "standard-state-identity", "density conversion retains the caller's exact target identity",
+        "absolute", density_identity, "p3-reaction", "density-identity");
+
+    const auto converted_reaction = epcsaft::reaction_standard_state_conversion(
+        reaction, stoichiometry, {1000.0, 3000.0}, {500.0, 1000.0},
+        {1200.0, 3400.0}, {700.0, 1000.0}, "Q", 350.0
+    );
+    const double gibbs_shift = -1500.0;
+    p3_compare("p3-reaction/std-ln", "ln_k_standard", "1", converted_reaction.ln_k,
+               reaction.ln_k + gibbs_shift / (R * 350.0), "P0 to Q",
+               "p3-reaction", "std-ln");
+    CHECK(converted_reaction.k.has_value());
+    p3_compare("p3-reaction/std-k", "K_standard", "1", *converted_reaction.k,
+               std::exp(reaction.ln_k + gibbs_shift / (R * 350.0)), "P0 to Q",
+               "p3-reaction", "std-k");
+    const double enthalpy_shift = -1900.0;
+    p3_compare("p3-reaction/std-dk", "dln_k_standard_dT", "1/K", converted_reaction.derivative,
+               reaction.derivative - enthalpy_shift / (R * 350.0 * 350.0), "P0 to Q",
+               "p3-reaction", "std-dk");
+    p3_compare("p3-reaction/std-h", "reaction_enthalpy_standard", "J/mol", converted_reaction.enthalpy,
+               reaction.enthalpy - enthalpy_shift, "P0 to Q",
+               "p3-reaction", "std-h");
+
+    const double tref = correlation.reference_temperature;
+    const double species_h_ref = R * (-correlation.b + correlation.c * tref + correlation.d * tref * tref);
+    const auto species_h = [=](double t) {
+        return species_h_ref + R * (correlation.c * (t - tref) + correlation.d * (t * t - tref * tref));
+    };
+    const auto species_cp = [=](double t) { return R * (correlation.c + 2.0 * correlation.d * t); };
+    p3_compare("p3-reaction/species-vanthoff", "species_delta_h", "J/mol",
+               species_h(350.0), reaction.enthalpy, "supplied h_i(Tref),cp_i(T)",
+               "p3-reaction", "species-vanthoff");
+    const double species_cp_fd = (species_h(350.003) - species_h(349.997)) / 0.006;
+    p3_compare("p3-reaction/species-cp", "d_species_delta_h_dT", "J/(mol K)",
+               species_cp_fd, species_cp(350.0), "supplied h_i(Tref),cp_i(T)",
+               "p3-reaction", "species-cp");
+    constexpr int integration_steps = 1000;
+    const double integration_step = (350.0 - tref) / integration_steps;
+    double species_integral = species_h(tref) / (R * tref * tref) + species_h(350.0) / (R * 350.0 * 350.0);
+    for (int i = 1; i < integration_steps; ++i) {
+        const double t = tref + i * integration_step;
+        species_integral += (i % 2 == 0 ? 2.0 : 4.0) * species_h(t) / (R * t * t);
+    }
+    species_integral *= integration_step / 3.0;
+    p3_compare("p3-reaction/species-integral", "ln_k_species_integral", "1",
+               species_integral, reaction.ln_k
+                   - epcsaft::evaluate_reaction_properties(correlation, tref).ln_k,
+               "supplied h_i(Tref),cp_i(T),Simpson-1000", "p3-reaction", "species-integral", 1.0e-8);
+    bool missing_standard_state = false;
+    try {
+        auto missing = correlation;
+        missing.standard_state_id.clear();
+        epcsaft::evaluate_reaction_properties(missing, 350.0);
+    } catch (const std::invalid_argument&) { missing_standard_state = true; }
+    recording_support::compare_custom("p3-reaction/missing-standard-state", "standard_state_required", "bool",
+        missing_standard_state ? 1.0 : 0.0, 1.0, "correlation identity absent and no gauge substitute",
+        "Availability", "input-validation", "missing source standard state remains unavailable",
+        "absolute", missing_standard_state, "p3-reaction", "missing-standard-state");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -2437,6 +3009,7 @@ int main(int argc, char** argv) {
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
         {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9"}, properties_p2, "P2"},
+        {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:33"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
     });
 }

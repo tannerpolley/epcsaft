@@ -98,9 +98,11 @@ void require(bool condition, const char* field) {
 
 HelmholtzModel::HelmholtzModel(
     Parameters parameters,
-    std::vector<detail::ActiveParameter> active
+    std::vector<detail::ActiveParameter> active,
+    std::optional<ThermochemistryRecord> thermochemistry
 )
-    : parameters_(std::move(parameters)), active_(std::move(active)) {
+    : parameters_(std::move(parameters)), active_(std::move(active)),
+      thermochemistry_(std::move(thermochemistry)) {
     const std::size_t components = parameters_.component_count();
     const std::size_t sites = parameters_.site_count();
     const std::size_t pairs = components * components;
@@ -255,6 +257,9 @@ HelmholtzModel::HelmholtzModel(
     require(has_ion == parameters_.ionic_dispersion.declared(), "ionic_dispersion");
     require(has_ion == parameters_.electrolyte_form.declared(), "electrolyte_form");
     require(parameters_.electrolyte_form.declared() == parameters_.permittivity_form.declared(), "permittivity_form");
+    if (thermochemistry_.has_value()) {
+        validate_thermochemistry(*thermochemistry_, components);
+    }
 
     std::set<std::pair<ParameterFamily, std::size_t>> seen;
     for (const auto& item : active_) {
@@ -657,6 +662,29 @@ State HelmholtzModel::state(
             - temperature * dpressure_dt * dpressure_dt
                 / dpressure_dv - GAS_CONSTANT_J_PER_MOL_K;
         if (std::isfinite(cp)) result.residual_isobaric_heat_capacity = cp;
+    }
+    if (thermochemistry_.has_value()) {
+        const auto ideal = evaluate_ideal_properties(
+            *thermochemistry_, temperature, molar_density, mole_fractions
+        );
+        result.thermochemistry_status = ideal.status;
+        if (ideal.value.has_value()) {
+            result.ideal_enthalpy = ideal.value->enthalpy;
+            result.ideal_internal_energy = ideal.value->internal_energy;
+            result.ideal_entropy = ideal.value->entropy;
+            result.ideal_isobaric_heat_capacity = ideal.value->isobaric_heat_capacity;
+            result.ideal_isochoric_heat_capacity = ideal.value->isochoric_heat_capacity;
+            result.total_enthalpy = ideal.value->enthalpy + result.residual_enthalpy;
+            result.total_internal_energy = ideal.value->internal_energy
+                + result.residual_internal_energy;
+            result.total_entropy = ideal.value->entropy + result.residual_entropy;
+            result.total_isochoric_heat_capacity = ideal.value->isochoric_heat_capacity
+                + result.residual_isochoric_heat_capacity;
+            if (result.residual_isobaric_heat_capacity.has_value()) {
+                result.total_isobaric_heat_capacity = ideal.value->isobaric_heat_capacity
+                    + *result.residual_isobaric_heat_capacity;
+            }
+        }
     }
     result.molar_density = molar_density;
     result.pressure_density_derivative = dpressure_drho;

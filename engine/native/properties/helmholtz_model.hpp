@@ -2,6 +2,7 @@
 
 #include "core/convergence.hpp"
 #include "properties/helmholtz_tape.hpp"
+#include "properties/thermochemistry.hpp"
 
 #include <array>
 #include <cstddef>
@@ -51,6 +52,17 @@ struct State final {
     double residual_enthalpy = 0.0;
     double residual_isochoric_heat_capacity = 0.0;
     std::optional<double> residual_isobaric_heat_capacity;
+    std::optional<double> ideal_enthalpy;
+    std::optional<double> ideal_internal_energy;
+    std::optional<double> ideal_entropy;
+    std::optional<double> ideal_isobaric_heat_capacity;
+    std::optional<double> ideal_isochoric_heat_capacity;
+    std::optional<double> total_enthalpy;
+    std::optional<double> total_internal_energy;
+    std::optional<double> total_entropy;
+    std::optional<double> total_isobaric_heat_capacity;
+    std::optional<double> total_isochoric_heat_capacity;
+    ThermochemistryStatus thermochemistry_status = ThermochemistryStatus::MissingRecord;
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
     std::vector<double> site_fractions;
@@ -73,7 +85,8 @@ class HelmholtzModel final {
 public:
     explicit HelmholtzModel(
         Parameters parameters,
-        std::vector<ActiveParameter> active = {}
+        std::vector<ActiveParameter> active = {},
+        std::optional<ThermochemistryRecord> thermochemistry = std::nullopt
     );
 
     HelmholtzDerivatives evaluate(
@@ -132,6 +145,7 @@ private:
 
     Parameters parameters_;
     std::vector<ActiveParameter> active_;
+    std::optional<ThermochemistryRecord> thermochemistry_;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable SweepCounters counters_;
     mutable std::mutex mutex_;
