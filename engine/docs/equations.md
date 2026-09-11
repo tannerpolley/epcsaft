@@ -1037,13 +1037,11 @@ $$
 - Status: Source equation
 - Source: Standard isothermal mechanical-stability criterion
 - Description: Positive isothermal pressure slope required for a stable density root.
-- Change note: The implementation adds a documented numerical conditioning floor.
+- Change note: Finite positive slope defines local mechanical stability; numerical conditioning is recorded separately.
 
 $$
-\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}>0,
-\qquad
-P_\rho>10^{-10}\frac{P^\star}{\rho_{\mathrm{ideal}}}
-\quad\text{for certified roots}.
+\left(\frac{\partial P}{\partial\rho_m}\right)_{T,\boldsymbol{x}}
+=P_\rho>0.
 $$
 
 ## `modified_fraction_chart`
