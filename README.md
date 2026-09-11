@@ -12,7 +12,10 @@ issues and reviews; current development and delivery use this repository.
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
 scientific owners and one equilibrium driver. The
 [implementation plan](docs/scientific/implementation-plan.md) distinguishes
-required capability from implemented and numerically qualified behavior.
+required capability from implemented and numerically qualified behavior. Before
+implementation, follow its [milestone reuse map](docs/scientific/implementation-plan.md#milestone-reuse-map)
+and adoption gate. Its deferred thermal-flash and phase-search work does not
+block current completion.
 
 For the live Map, Plan and Results website, run
 `quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`

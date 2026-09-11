@@ -5,7 +5,11 @@ These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
 Algorithm IDs below are stable references. Current implementation and required
 numerical falsifiers are mapped in [implementation plan](../../../docs/scientific/implementation-plan.md).
-No section claims that all required actions currently exist.
+No section claims that all required actions currently exist. The implementation
+plan owns current versus deferred scope: PH/PS/UV and phase discovery are future
+work. Reuse current/old numerical owners and independent cases under its
+adoption gate before implementing a method. Declared-branch continuation and
+mechanical/local stability checks remain current requirements.
 
 ## ALG-ADMISSION
 

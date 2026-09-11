@@ -21,29 +21,38 @@ that dependency before declaring the layer complete.
 
 Contributions owns contribution formulas;
 association elimination/CppAD chains are qualified with Properties. Complete Properties
-thermal properties before Equilibrium, and complete Equilibrium thermal
-specifications before Regression. Within Equilibrium, phase specifications
-precede PH/PS/UV; the thermal milestone is not deferred past that layer.
+caloric properties/actions consumed by current applications before Equilibrium.
+Current Equilibrium work covers declared phase/reaction specifications and
+branch-local actions. PH/PS/UV and the phase-stability/discovery algorithm are
+future work; neither blocks Regression or current application acceptance.
+Declared-branch continuation remains E4; local stability and failure checks remain required.
 
 ### How progress and effort are counted
 
 The milestone tables below are the sole editable progress record. `[ ]` means
 pending or reopened, `[-]` active, `[!]` blocked, and `[x]` qualified complete.
-Progress counts qualified milestones equally, not effort or existing scaffolding.
-Core milestones are qualified; Contributions and later layers remain pending. Existing code is retained in the code/evidence map.
+Progress counts current-scope qualified milestones equally, not implementation
+coverage or effort. The milestone reuse map separately identifies existing work;
+unqualified does not mean unimplemented. Deferred work is listed outside the
+counted rows and is not marked complete.
+The rows below own current qualification; the reuse map identifies the existing
+implementation separately.
 
 Historical label mapping: former Core `C1`–`C4` are current `CORE1`–`CORE4`; former Contributions `P1`–`P4` are current `C1`–`C4`; former Properties `M1`–`M5` are current `P1`–`P5`. Historical reviews, equation IDs and numerical test identifiers retain their original labels.
 
-Time estimates below are **provisional active elapsed hours for Astra-led agent
-work**, including repository inspection, design, tool/build execution, numerical
+Time estimates below are **legacy provisional Astra-equivalent elapsed ranges**, including repository inspection, design, tool/build execution, numerical
 validation and independent review. They are subjective planning ranges, not
 measured Astra throughput or human labor estimates. Assume one accountable lead
 and the strict sequential layer order; independent reviewers may assist within
 a layer. Concurrent agent-hours are not added to elapsed time. Owner response,
 external source acquisition, usage-limit pauses and unavailable physical inputs
 are excluded. Difficult numerical failures can exceed the upper estimate.
-Recalibrate against measured Astra elapsed time after Core before using later
-ranges as a schedule. Never weaken science to meet an estimate. Relevance and
+Before each slice becomes Ready, replace its remaining estimate from the
+identified repair/transfer/addition and verification work in its issue. Record
+actual active wall time without relabeling work by another model as measured
+Astra performance; model/effort stays in task configuration. Do not count
+unchanged implementation as work to rebuild. These uncalibrated totals are not
+a delivery forecast. Never weaken science to meet an estimate. Relevance and
 priority are 1–5 judgments; sequence governs even when a later easy fix is tempting.
 
 <!-- roadmap-summary:start -->
@@ -52,13 +61,13 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
 | Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
-| Equilibrium | ░░░░░░░░░░ 0.0% (0/6) | 12–36 | — |
+| Equilibrium | ░░░░░░░░░░ 0.0% (0/5) | 10–30 | — |
 | Regression | ░░░░░░░░░░ 0.0% (0/4) | 4–12 | — |
 | Surface | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **4/35 qualified milestones (11.4%)**; **36–110 remaining Astra hours**.
+Total: **4/34 qualified milestones (11.8%)**; **34–104 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -123,8 +132,10 @@ work must be accepted before other work begins.
 ### Keeping this plan current
 
 At start, inspect the live checkout and evidence, select the first eligible row,
-and mark it active when its bounded design work begins; implementation requires
-the Ready disposition described below and its layer prerequisites.
+and mark it active when its bounded design work begins. First apply the
+[reuse map](#milestone-reuse-map) and record the required adoption decision in
+the linked issue. Implementation requires that bounded Ready disposition and
+current-scope layer prerequisites; a milestone title does not authorize a rewrite.
 At completion or handoff, update that row's status, remaining range, accumulated
 active elapsed hours, and evidence link. Use `—` for unmeasured time, never a
 fabricated zero. The linked record must identify the date, inspected revision
@@ -133,8 +144,8 @@ claim limits, independent review, and next action or blocker. Revalidate equatio
 and algorithms with code and evidence in the same scientific change.
 
 A discovered defect reopens the affected row and any dependent completed rows;
-block active dependents until repaired. Finish every row in a layer before the
-next layer starts. Do not mark a row done from a build or readiness check alone.
+block active dependents until repaired. Finish every current-scope row in a layer before the
+next layer starts; deferred capabilities do not reopen or block current rows. Do not mark a row done from a build or readiness check alone.
 Keep these scope requirements below; only the milestone tables own status.
 
 Run `python3 tools/check-roadmap.py --write` after table updates, then
@@ -178,14 +189,15 @@ required. Recalibrate estimates using measured elapsed work at each handoff.
 
 - Shared specification compiler, rows and Ipopt driver exist.
 - Qualify exact objective/constraint curvature and declared TP, reactive, bubble/dew, fraction/amount specifications.
-- Complete and qualify PH/PS/UV using Properties properties; retain consistent references and explicit failures.
-- Complete continuation/disappearance and explicitly selected stability/discovery with truthful search claims.
+- Preserve and qualify declared-branch continuation/disappearance and explicit failure behavior.
+- Retain PH/PS/UV and phase-stability/discovery methods as future work outside current completion; preserve truthful local-versus-global claims.
 - Qualify solved-state actions through third order, selected independent cases, performance and independent acceptance.
 
 ### Regression scope
 
-- Implement built-in initial density/phase observations using existing producers.
-- Implement residual-EOS active/fixed/shared coordinates, transforms and bounds.
+- Adapt justified old native regression and built-in density/phase observations to existing producers; retain one current fitting owner.
+- Preserve/adapt residual-EOS active/fixed/shared coordinates, transforms and bounds.
+- Implement only observation forms consumed by the initial density/phase scope; broader equation definitions do not authorize unused expression machinery.
 - Qualify exact prediction Jacobians including implicit equilibrium chains and manufactured recovery.
 - Qualify weights, invalid-trial handling, rank and conditional uncertainty diagnostics.
 - Complete real-data demonstrations, evaluation reuse/cost review and independent acceptance; reaction fitting remains outside initial Engine scope.
@@ -211,7 +223,7 @@ required. Recalibrate estimates using measured elapsed work at each handoff.
 - MEA: strongest retained parameter candidate demonstrates valid equilibrium and every required consumed output; predictive fine-tuning is separate.
 - Absorber: qualify required calorics/actions, refined Case 3C, and resolve or explicitly disposition failed operating cases.
 - Lithium: qualify declared reactive LLE and required observables; reaction calibration stays application-owned.
-- Complete chosen cross-package comparisons and separate discovery evidence using identified non-editable wheels.
+- Complete chosen declared-phase cross-package comparisons using identified non-editable wheels; discovery evidence is deferred and no global certificate is implied.
 - Review all required capability evidence and equivalent-work performance; transfer draft changes only with owner authorization.
 
 Easy wins are components of these requirements, not automatic checkmarks. The
@@ -222,8 +234,8 @@ to improve the displayed percentage.
 ## Milestone estimates and dependency graphs
 
 These are subdivisions of the existing layer estimates, not extra hours or new
-runtime directories. **Actual time taken is not yet measured**; every range is
-remaining active Astra elapsed time under the assumptions above. Includes local
+runtime directories. Actual hours are recorded where measured; remaining ranges retain the
+provisional baseline until the bounded reuse decision supports recalibration. Includes local
 validation per milestone; each final qualification row covers integrated checks
 and review without counting all validation twice. The scope lists above retain requirements; these rows alone own completion.
 
@@ -269,10 +281,10 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | CORE4 qualified | Qualify hard-chain/dispersion formulas and analytic limits; establish the ideal-gas Helmholtz formulation with explicit thermal and mixing inputs. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| C2 — Association equations | [ ] | 0.5–1.5 | — | C1 | Qualify site topology, mass-action equations and support-limit mathematics. | — |
-| C3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | C1 | Qualify accepted formulas, charge conventions and singular limits. | — |
-| C4 — Contributions qualification | [ ] | 0.5–1.5 | — | C2, C3 | Contribution reference checks, duplication/cost review and independent acceptance. | — |
+| C1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | CORE4 qualified | Preserve existing hard-chain/dispersion kernels; qualify their formulas and analytic limits and finish the current explicit ideal thermal/mixing owner. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| C2 — Association equations | [ ] | 0.5–1.5 | — | C1 | Verify existing site topology, mass-action equations and scalar support limits; repair only a demonstrated discrepancy. | — |
+| C3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | C1 | Verify existing electrolyte/Born/dielectric formulas, charge conventions and singular limits; add no new model. | — |
+| C4 — Contributions qualification | [ ] | 0.5–1.5 | — | C2, C3 | Integrated contribution reference checks, reuse/duplication/cost review and independent acceptance of preserved and corrected owners. | — |
 
 ```mermaid
 flowchart TD
@@ -292,11 +304,11 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| P1 — Residual properties and caloric correction | [ ] | 1–3 | — | C4 qualified | Verify the residual-energy correction and thermodynamic identities. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
-| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 | Qualify implicit kernels, support limits and pressure-to-density branch closure; reuse the resolved state. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 | Derive Ideal properties from the ideal contribution and Total properties from the governing definitions; qualify thermal inputs, mixing, reference offsets and K(T) without treating physical ideal behavior as a reference convention. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 | Qualify CppAD and implicit chains, actions through third order and parameter Jacobians; selected properties reuse shared work and agree with full evaluation. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P5 — Properties qualification | [ ] | 1–3 | — | P4 | Independent identities/step ladders, repeated-mixture state changes, unavailable-input behavior, selective/full agreement, measured reuse/cost and review. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P1 — Residual properties and caloric correction | [ ] | 1–3 | — | C4 qualified | Preserve the existing residual-energy correction; qualify remaining caloric identities on the current state owner. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
+| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 | Repair existing implicit elimination and density closure; qualify support limits, branch identity, pressure chains and resolved-state reuse. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 | Adapt justified old thermochemistry/reference algebra into current native owners; qualify Ideal/Total properties, explicit references and K(T) consistency. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 | Preserve/adapt existing derivative machinery and old supported actions; complete missing balanced-coordinate, selective and third-order chains with parameter Jacobians. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P5 — Properties qualification | [ ] | 1–3 | — | P4 | Reuse existing identities/step ladders; qualify repeated-state, availability, selective/full agreement and equivalent-work cost independently. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 
 ```mermaid
 flowchart TD
@@ -318,12 +330,11 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| E1 — Shared formulation and exact curvature | [ ] | 2–6 | — | P5 qualified | Qualify shared rows and complete multiplier/objective-weighted Hessians, including pinned cases. | — |
-| E2 — Declared phase and reaction specifications | [ ] | 2–6 | — | E1 | TP, bubble/dew, phase fractions/amounts and explicit supports. | — |
-| E3 — Thermal specifications | [ ] | 2–6 | — | E2 | PH, PS and UV with consistent references and balances. | — |
-| E4 — Continuation and explicit phase search | [ ] | 2–6 | — | E2 | Branch following/disappearance; separately selected stability/discovery using the same driver. | — |
-| E5 — Solved-state derivative actions | [ ] | 3–9 | — | E3, E4 | First through third actions on smooth fixed branches, not derivatives of discrete phase selection. | — |
-| E6 — Equilibrium qualification | [ ] | 1–3 | — | E5 | Selected independent cases, residuals, failure handling, cost and review. | — |
+| E1 — Shared formulation and exact curvature | [ ] | 2–6 | — | P5 qualified | Repair shared rows and full multiplier/objective-weighted curvature, including pinned cases; adopt justified old evaluation reuse without another solver. | — |
+| E2 — Declared phase and reaction specifications | [ ] | 2–6 | — | E1 | Complete and qualify existing declared TP, bubble/dew, phase fractions/amounts and explicit-support specifications. | — |
+| E4 — Declared-branch continuation | [ ] | 2–6 | — | E2 | Adapt declared-branch continuation around the existing driver; qualify following, disappearance and stopping without phase discovery. | — |
+| E5 — Solved-state derivative actions | [ ] | 3–9 | — | E2, E4 | Adapt preserved ordinary higher actions to the current implicit owner; qualify first through third actions and consumed caloric actions on smooth declared branches. | — |
+| E6 — Equilibrium qualification | [ ] | 1–3 | — | E5 | Integrated declared-phase cases, local checks, preserved actions, failure handling, cost and independent review; PH/PS/UV and discovery are deferred. | — |
 
 ```mermaid
 flowchart TD
@@ -332,25 +343,40 @@ flowchart TD
   start --> E1
   E2["E2: Declared phase and reaction specifications"]
   E1 --> E2
-  E3["E3: Thermal specifications"]
-  E2 --> E3
-  E4["E4: Continuation and explicit phase search"]
+  E4["E4: Declared-branch continuation"]
   E2 --> E4
   E5["E5: Solved-state derivative actions"]
-  E3 --> E5
   E4 --> E5
   E6["E6: Equilibrium qualification"]
   E5 --> E6
 ```
 
+### Deferred work
+
+Owner decision 2026-09-10: these remain future capabilities and are excluded
+from the current milestone count, estimates, dependencies and application
+acceptance. Their equations, source references, test candidates and historical
+failures remain available. Resume only on a new owner instruction.
+
+| Future capability | Existing identity and reuse source | Resume condition |
+|---|---|---|
+| PH, PS and UV equilibrium specifications | **E3**, preserved thermal equations and old thermochemistry/enthalpy components | Owner selects a thermal-flash implementation; derive its balance/rank conditions and reuse current Properties and the one driver. |
+| Phase-stability/discovery algorithm | Search portion formerly included in **E4**; old HELD/GREPE and retained negative cutover evidence | Owner selects explicit search work; use the common thermodynamics/driver and justify search claims. |
+
+E4 now covers declared-branch continuation only. Current work still checks
+mechanical density stability, declared-phase local feasibility/curvature,
+coalescence, rank loss and failed/unavailable actions where applicable. Neither
+a declared-phase solve nor an unperformed search is a global certificate.
+Caloric properties and actions consumed by MEA/absorber remain in scope.
+
 ### Regression
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| R1 — Built-in observations and coordinates | [ ] | 1–3 | — | E6 qualified | Density and phase observations, active/fixed/shared EOS fields, bounds/transforms. | — |
-| R2 — Exact prediction Jacobians and fitting | [ ] | 1–3 | — | R1 | Compose property/equilibrium chains; manufactured parameter recovery. | — |
-| R3 — Failures and statistical diagnostics | [ ] | 1–3 | — | R2 | Reject invalid trials; weights, rank, bounds and conditional covariance. | — |
-| R4 — Regression qualification | [ ] | 1–3 | — | R3 | Real-data demonstration, reuse/cost analysis and independent review. | — |
+| R1 — Built-in observations and coordinates | [ ] | 1–3 | — | E6 qualified | Adapt old native observation/evaluator and coordinate logic to existing density/phase producers; preserve active/fixed/shared fields, bounds and transforms. | — |
+| R2 — Exact prediction Jacobians and fitting | [ ] | 1–3 | — | R1 | Adapt valid old fitting/Jacobian/scaling logic to current property/equilibrium chains; independently verify manufactured parameter recovery. | — |
+| R3 — Failures and statistical diagnostics | [ ] | 1–3 | — | R2 | Preserve useful old trial failures and diagnostics; qualify weights, rank, bounds and conditional covariance without obsolete orchestration. | — |
+| R4 — Regression qualification | [ ] | 1–3 | — | R3 | Reuse retained real-data inputs and fit comparisons; qualify the integrated current fitter, reuse/cost and independent review. | — |
 
 ```mermaid
 flowchart TD
@@ -369,10 +395,10 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| S1 — Species, support and amount admission | [ ] | 0.5–1.5 | — | R4 qualified | Prepare reusable parameter-bundle species/site mappings; verify explicit charge/support and fraction-versus-amount semantics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| S2 — Units and reference input mapping | [ ] | 0.5–1.5 | — | S1 | SI state units, coefficient units and four declared reaction bases. | — |
-| S3 — Request-specific requirements | [ ] | 0.5–1.5 | — | S2 | Require only inputs consumed by requested properties; distinguish full/selected output availability, caller tolerances and mathematical validity. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| S4 — Surface qualification | [ ] | 0.5–1.5 | — | S3 | Verify physical inputs against qualified native owners and review. | — |
+| S1 — Species, support and amount admission | [ ] | 0.5–1.5 | — | R4 qualified | Repair current species/site/support preparation and charge admission; preserve explicit fraction-versus-amount semantics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| S2 — Units and reference input mapping | [ ] | 0.5–1.5 | — | S1 | Extend current SI/coefficient/reference mapping using justified existing conversions for the four declared reaction bases. | — |
+| S3 — Request-specific requirements | [ ] | 0.5–1.5 | — | S2 | Extend existing admission only for consumed inputs and requested outputs; preserve valid partial results and explicit domain failures. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| S4 — Surface qualification | [ ] | 0.5–1.5 | — | S3 | Qualify existing/revised physical mappings against native numerical owners and independent review. | — |
 
 ```mermaid
 flowchart TD
@@ -391,10 +417,10 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| B1 — Expose qualified native capabilities | [ ] | 0.5–1.5 | — | S4 qualified | Expose reusable parameter-driven Mixture and native state/equilibrium/regression capabilities; explicit ideal/residual/total quantities without duplicate numerics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| B2 — Derivative requests and results | [ ] | 0.5–1.5 | — | B1 | Full/selective state requests, balanced composition directions, units, derivative orders and per-output availability. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| B3 — Diagnostics and partial outputs | [ ] | 0.5–1.5 | — | B1 | Branches, achieved residuals, unmet tolerances and nonfabricated partial results. | — |
-| B4 — Installed-wheel qualification | [ ] | 0.5–1.5 | — | B2, B3 | Verify the installed wheel through parameter-to-mixture/state numerical cases, full/selective agreement and repeated-state reuse; independent review. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| B1 — Expose qualified native capabilities | [ ] | 0.5–1.5 | — | S4 qualified | Extend the existing thin bindings to qualified native capabilities; preserve distinct physical outputs without duplicate numerics. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| B2 — Derivative requests and results | [ ] | 0.5–1.5 | — | B1 | Adapt existing action mapping to requested directions/orders/units and per-output availability; retain the native derivative owner. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| B3 — Diagnostics and partial outputs | [ ] | 0.5–1.5 | — | B1 | Preserve existing diagnostics and extend missing branch/residual/tolerance/partial-output mapping without fabricated values. | — |
+| B4 — Installed-wheel qualification | [ ] | 0.5–1.5 | — | B2, B3 | Reuse installed-wheel numerical cases to qualify current parameter-to-state/equilibrium/regression behavior and selective/full agreement. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
 
 ```mermaid
 flowchart TD
@@ -414,10 +440,10 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| A1 — MEA numerical demonstration | [ ] | 1–3 | — | B4 qualified | Strongest retained fixed-parameter candidate; equilibrium and consumed outputs. | — |
-| A2 — Absorber qualification | [ ] | 2–7 | — | A1 | Calorics/actions, refined Case 3C and disposition of operating failures. | — |
-| A3 — Lithium qualification | [ ] | 2–7 | — | B4 qualified | Reproduce the existing ePC-SAFT producer → surrogate → IDAES/PROMMIS route with its adopted inputs and limits; application-owned reaction calibration. | — |
-| A4 — Cross-package and final acceptance | [ ] | 1–3 | — | A2, A3 | Selected comparisons, explicit discovery, wheel identity, performance and final evidence review. | — |
+| A1 — MEA numerical demonstration | [ ] | 1–3 | — | B4 qualified | Adapt the current MEA evaluator and retained candidate; replay declared equilibrium and all consumed outputs/actions without a new fitting campaign. | — |
+| A2 — Absorber qualification | [ ] | 2–7 | — | A1 | Preserve current refined Case 3C and process equations; repair caloric/action integration and disposition operating failures with numerical evidence. | — |
+| A3 — Lithium qualification | [ ] | 2–7 | — | B4 qualified | Preserve the current declared reactive-LLE producer → surrogate → IDAES/PROMMIS route, adopted inputs and application reaction calibration; qualify current-wheel states/actions. | — |
+| A4 — Cross-package and final acceptance | [ ] | 1–3 | — | A2, A3 | Selected declared-phase application comparisons, wheel identity, equivalent-work performance and independent final evidence review; no discovery gate. | — |
 
 ```mermaid
 flowchart TD
@@ -481,12 +507,49 @@ dependency order above and delivers to the independent repository.
 
 | Gate | Required evidence | What follows |
 |---|---|---|
-| Slice definition | Concrete capability/failure, equations, consumed inputs, units/domain, owner/callers and numerical falsifier | Design review |
-| Design Ready | One fresh integrated reviewer for bounded supported work; scientific-basis and numerical-execution reviewers for material changes, with the lead resolving findings | Build that slice |
+| Slice definition and reuse decision | Concrete gap, current/old owners and revision, keep/repair/adapt/reject decision, preserved behavior, equations/inputs/domain, falsifier, exclusions and remaining effort | Review the bounded change |
+| Design Ready | Reuse decision supports the smallest complete change; one integrated reviewer for bounded supported work, scientific-basis and execution review for material changes; lead resolves findings | Verify, repair or adapt only that slice |
 | Execution checks | Identified non-editable wheel and relevant installed tests; equation index, architecture, budgets and input checks | Assess actual numerical evidence |
 | Scientific qualification | Falsifier and preserved reference cases pass; tolerances/limits and failure behavior justified; independent final-tree review supports the claim | Mark the milestone qualified |
 | Integration | Affected docs and evidence agree with code; focused reviewed changes and authorized Git delivery | Integrate the bounded change |
 | Manuscript promotion, when requested | Investigator selects the reviewed result and intended use | Write for that use |
+
+A milestone authorizes only the demonstrated gap between reusable, accepted
+behavior and the required outcome. Before implementation, record one compact
+reuse decision in the existing delivery issue:
+
+| Existing owner or candidate at an identified revision | Keep / repair / adapt / reject | Exact remaining change and preservation check |
+|---|---|---|
+
+Populate it for every proposed replacement or added numerical responsibility.
+Identify current callers, units/domain, the relevant old working diff, retained
+independent references and known failures. Search the mapped current/old owner
+and existing tests before calling behavior absent. A replacement needs a
+reproducible defect, incompatibility with accepted requirements or measured
+unnecessary cost; naming, style and file size alone do not justify it.
+
+Admit old code only when its equations, inputs, derivative dependencies and
+failure meaning match the accepted scope, and its relevant numerical behavior
+can be preserved or corrected with an independent falsifier. Historical parity
+is evidence only for justified old behavior, never the sole oracle. Keep one
+current numerical owner and existing dependencies; extract useful science while
+rejecting duplicate solvers/evaluators, application-selected physics, speculative
+abstractions and unsupported certificates. Name each rejected candidate and its
+reason in that same issue. Do not create another migration registry or harness.
+
+For verify-only slices, begin with zero runtime additions. For repairs/transfers,
+name the bounded change, supported behavior to retain and superseded path to
+retire once callers move. Add missing capability only after documenting why the
+existing owners cannot supply it. Unrelated findings stay outside the slice;
+accepted scientific requirements remain binding unless the owner changes them.
+
+Run the smallest independent kernel/caller falsifier first. After it passes,
+complete the applicable installed-wheel gates and integrated checks, then refresh
+the final evidence and live views. Reuse unaffected, identified evidence; repeat
+passed checks only when changes invalidate them. Review the complete candidate
+once per pass and return consolidated findings. After one substantive failed
+correction of the same mechanism, reassess the algorithm and task model before
+another full pass; do not compensate by loosening tolerances or adding ceremony.
 
 A failed numerical comparison returns to diagnosis. An unresolved physical input
 blocks only requests that consume it. Reviewers advise on the evidence; they do
@@ -568,26 +631,14 @@ separately authorized.
 Draft PR delivery is the current user-level default; reviewed direct integration
 is an available choice, not an adopted change.
 
-### AI model allocation proposal
+### Task model and review cost
 
-AI model settings belong in task configuration. The following allocation is a
-recommendation awaiting owner selection, not a permanent agent hierarchy.
-Preserve any explicit model choice; keep one accountable writer per slice.
-
-| Work | Recommended task model / effort |
-|---|---|
-| Accountable scientific implementation; Core and ordinary input/binding work | Astra High |
-| Contributions, caloric references, implicit model derivatives | Astra Extra High |
-| Exact equilibrium curvature, continuation, higher actions and implicit fit Jacobians | Astra Extra High |
-| Independent scientific-basis review | Fresh Astra Extra High |
-| Independent numerical execution and caller review | Fresh Sol High; Astra for difficult mathematical review |
-| Bounded inventories, source tracing, command execution and documentation checks | Luna High |
-| Application acceptance | Astra High; Extra High for coupled numerical diagnosis |
-
-Use independent subtasks only where they improve evidence or speed. Max/Ultra
-are not defaults. The current reconciliation uses explicitly requested Luna High
-read-only inspections. Task configuration, not a prose role name, determines the
-actual model and effort.
+Model identifiers and reasoning effort belong in task configuration, not a
+permanent hierarchy in this plan. Use the owner's current selection. Keep routine
+coordination, inventories and evidence formatting small; reserve stronger
+reasoning for unresolved scientific algorithms and independent acceptance. Apply
+the correction/escalation rule in the gate above. Short baton prompts point to
+the current issue and scientific owners; they do not duplicate them.
 
 ## Required scientific choices
 
@@ -602,19 +653,72 @@ scientific conflicts or changes of scope to the owner.
 | Runtime inputs | The caller supplies species, parameters and physical configuration. The Engine does not track or reject published parameter validity ranges. Retain mathematical input checks and numerical failure information. Missing data is supplied/prepared outside the Engine; no guessed defaults. |
 | Units | Public state inputs/outputs use K, Pa, mol, m³, mol/m³, J/mol and J/(mol·K), with dimensionless mole fractions. Arbitrary source-unit conversion stays outside the Engine. Reconcile EOS coefficient units and dimensional reaction conventions explicitly; this choice does not silently reinterpret existing parameter files. |
 | Equilibrium | One Ipopt driver with exact curvature, including bubble/dew. Compose supported physical constraints internally; no user expressions or evaluator callbacks. Caller seeds and optional continuation are supported. |
-| Specification milestones | Qualify TP, bubble/dew at fixed T or P, and vapor-fraction specifications at fixed T or P first. PH, PS and UV remain required for final completion in a later thermal milestone. Support both explicitly distinguished phase fractions and absolute phase amounts. |
-| Phase count | Default phase-equilibrium requests declare phase counts and types. Stability/search is a separate mode explicitly selected at the beginning, never automatically injected. |
-| Search claims | Report the actual bounded search and witnesses. No witness is not global certification; universal certification is not the completion requirement. |
+| Specification milestones | Qualify TP, bubble/dew at fixed T or P, and vapor-fraction specifications at fixed T or P first. PH, PS and UV are deferred future work and are not required for current completion. Support both explicitly distinguished phase fractions and absolute phase amounts. |
+| Phase count | Current requests declare phase counts, types and supports. Implementing phase-stability/discovery is deferred; never inject search into the current route. Preserve mechanical/local checks and report that global stability was not established. |
+| Search claims | Future work: report actual bounded search and witnesses when implemented. For current declared-phase results, do not fabricate a search status or global certificate; retained historical witnesses remain evidence only for their original run. |
 | Tolerances/results | Caller-selectable tolerances. Return available candidate values with warnings, achieved residuals and an explicit unmet-tolerance indication; do not silently label a missed tolerance as satisfied. When no finite evaluable candidate exists, return its absence and failure diagnostics without fabricated state values. |
 | Reaction conventions | Support explicitly selected conventions with required conversion inputs. Do not infer a literature convention. Prepare activity-, mole-fraction-, molarity- and molality-based conventions. Require caller-declared stoichiometry, standard concentration/molality and solvent basis where applicable. Use the native temperature basis ln K = a + b/T + c ln(T/Tref) + dT, with explicit Tref and algebraic source/pKa conversion outside the Engine. Require an explicit caller ionic gauge where needed; no hardcoded hydronium convention. Exact standard-state definitions and conversion derivations remain design work. If supplied K(T) and species thermochemistry are inconsistent for a request consuming both, report the inconsistency rather than silently choosing one. |
 | Calorics | Native thermal correlation forms with caller-supplied explicit references. Initial native forms are polynomial heat capacity about an explicit reference temperature (including constant cp), Shomate, NASA7, NASA9 and DIPPR107; distinguish standard states, reference constants and temperature dependence. Preserve supplied piecewise forms; do not silently smooth discontinuities, and report affected unavailable derivatives at boundaries. Compare supplied and corrected caloric references before adopting inputs that depended on the erroneous residual-energy calculation. Agents may adopt corrected references after preserving sourced total-property anchors and standard states, identity checks and independent review. Require thermal inputs only for requests consuming them; missing total calorics must not disable otherwise valid TP/bubble/dew calculations. |
 | State derivatives | General directional derivatives through third order for admitted smooth observables. Cover composition, density, temperature and pressure with correct independent-coordinate and implicit chains. Callers specify balanced composition directions summing to zero; the Engine must not silently select a compensating species. Preserve valid central values and actions when another action is singular/unavailable. |
 | Fitting | Built-in observable composition, no caller evaluator functions. Initially fit only parameters entering residual-EOS contributions. Exact prediction Jacobians include implicit chains; higher parameter orders are deferred unless a concrete method demonstrates sufficient benefit. Reaction and reference-thermal fitting are deferred in Engine. Lithium apparent-reaction-coordinate calibration stays application-owned and consumes general equilibrium calls. |
-| Initial fitting observations | Density, saturation/bubble/dew pressure or temperature, phase compositions and phase fractions. Add caloric observations with the thermal milestone; this does not enable fitting reaction/reference coefficients. |
+| Initial fitting observations | Density, saturation/bubble/dew pressure or temperature, phase compositions and phase fractions. Caloric-observation fitting is future work; current property/caloric consumers remain required; this does not enable fitting reaction/reference coefficients. |
 | Failed fit trial | Reject an invalid trial using supported optimizer behavior; retain its cause and never silently discard the failed observation. |
 | Statistics | Distinguish absolute measurement uncertainties from relative weights. Covariance claims depend on rank, bounds and stated statistical assumptions. |
 | Evidence | Use the mapped application calculations and every required consumed output/action. Agents may adopt case-specific numerical limits supported by conditioning, refinement and independent review; return unresolved scientific conflicts to the owner. Unapproved cross-model/experimental thresholds remain comparison-only. Retain justified case-specific numerical limits; changed defaults or new limits need conditioning/refinement evidence, never silent relaxation. |
 | Performance | Measure equivalent accepted work, propose workload budgets, and remove wasted native computation. Estimate unavoidable evaluation/derivative/linear-algebra costs and compare actual profiles; distinguish a practical lower-bound estimate from a proven theoretical minimum. |
+
+## Milestone reuse map
+
+This is the implementation inventory, separate from qualification. **Verify**
+means preserve the current owner and close evidence gaps; **repair** means fix a
+demonstrated defect; **adapt** means transfer justified behavior into that owner;
+**add** means implement only behavior absent from both usable implementations.
+None of these labels establishes numerical acceptance. Each linked delivery issue
+must resolve the applicable candidates before Design Ready using the
+[adoption gate](#gates-and-authority).
+
+`old/` below denotes `~/Workspaces/Engineering/ePC-SAFT-project/`,
+inspected at `4563c6a89f8837ebb1bc24408b7177fa8d209e9d`. This is a source locator,
+not an installed dependency or a claim that all working files equal that commit.
+At adoption, inspect the relevant working diff and pin the actual source and
+result identities in the issue. `current/` denotes this checkout. Reuse retained
+inputs and comparisons already under `analyses/` before copying them again.
+The [transfer audit](reviews/transfer-audit-2026-09-06.md) supplies historical
+F1–F5 diagnoses and E1–E12 evidence candidates, not current scheduling authority.
+
+| Milestones | Disposition and existing implementation/evidence | Remaining change and exclusions |
+|---|---|---|
+| CORE1–CORE4 | Verify only if affected: qualified `engine/native/core/` and linked Core records. | Preserve accepted constants, scaling and diagnostics; no restart for this plan revision. |
+| C1 | Repair/verify current `contributions/helmholtz.hpp` and `ideal.hpp`; old `engine/src/epcsaft/_native/helmholtz.hpp` and `thermochemistry.py` are comparisons. | Finish the existing candidate and its independent thermal/AD checks; no replacement residual kernel or second thermal owner. |
+| C2 | Verify current `contributions/association.hpp` and contribution sum; old association cases supply additional comparisons. | Mass action, topology/multiplicity and scalar support limits. Zero new runtime by default; implicit elimination belongs to P2. |
+| C3 | Verify current `contributions/electrolyte.hpp` and `born.hpp`; reuse retained ionic/source cases. | Formula, unit, dielectric and singular-limit checks; repair only demonstrated discrepancies. No new electrolyte model or retired polar terms. |
+| C4 | Verify existing Contributions cases and retained references. | Integrated acceptance and equivalent-work cost; reuse lower-slice evidence that still applies. |
+| P1 | Repair/verify current `properties/helmholtz_model.cpp` and state checks; F1 correction already exists. | Preserve the corrected residual-energy identity; qualify remaining calorics without rewriting state evaluation. |
+| P2 | Repair/verify current `properties/density.cpp` and `helmholtz_tape.hpp`; old pressure-closure/association cases. | Zero-support elimination, branch identity, implicit pressure chain and state reuse; keep valid roots and caller chart. |
+| P3 | Adapt old `engine/src/epcsaft/thermochemistry.py` and total-enthalpy consumer algebra into current Contributions/Properties; retain `infinite_dilution_reference.cpp`. | Complete explicit Ideal/Total/reference outputs and K(T) consistency. Reject duplicated Python numerics and erroneous residual-dependent anchors. Caloric properties remain current; PH/PS/UV solves do not. |
+| P4 | Adapt old `_native/derivatives.hpp` and `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py` onto the current tape. | Preserve supported actions, add missing balanced-coordinate/selective chains and third-order actions; no independent derivative engine or dense tensors without need. |
+| P5 | Verify existing identity, pressure-closure and derivative cases on the combined Properties owner. | Independent integrated acceptance; no second implementation or duplicate evidence harness. |
+| E1 | Repair current `equilibrium/request_compile.cpp` and `gibbs_minimizer.cpp`; inspect old `engine/cpp/equilibrium/reactive_finite_phase.cpp` evaluation reuse. | Correct full weighted/pinned curvature (F5), preserve shared rows and local checks, remove measured duplicate evaluation; no alternate minimizer. |
+| E2 | Repair/verify current compiler, stoichiometry, boundary starts and specification cases; old declared/reactive equilibrium examples. | Complete declared TP/bubble/dew/fraction/amount cells and support admission. No discovery or thermal-specification prerequisite. |
+| E3 (future) | Preserve old thermochemistry components and existing thermal test candidates. | PH/PS/UV are deferred; no implementation, qualification dependency or current estimate. |
+| E4 | Adapt relevant old continuation/start behavior to current `phase_boundary.cpp` and shared rows. | Qualify declared-branch following, disappearance and stopping. Old HELD/GREPE search is reference material for a deferred search extension, not a second solver to import. |
+| E5 | Adapt old `engine/cpp/equilibrium/solved_state_sensitivity.*`, `chemical_equilibrium*`, and `engine/tests/equilibrium/numerical/test_higher_actions.py` onto current `implicit_sensitivity.cpp`. | Preserve bounded ordinary A2/A3 and second-enthalpy actions; qualify complete mixed chains/availability. Old unavailable third-enthalpy cases are limits, not completed capability. |
+| E6 | Verify existing declared-equilibrium cases and applicable preserved actions. | Integrated numerical/local-stability/failure/cost review for current declared scope; no phase-search or PH/PS/UV acceptance gate. |
+| R1–R3 | Adapt old `engine/cpp/regression/ceres_least_squares.*`, native EOS/equilibrium evaluators and numerical recovery/scaling cases; current regression is a placeholder. | Reuse valid fitting/scaling/Jacobian/failure logic with current native producers; complete observations, rank and conditional uncertainty. Reject obsolete handles, duplicate evaluators, fingerprint sidecars and unsupported covariance claims. |
+| R4 | Reuse `analyses/2026-pure-saturation-regression/` inputs/results and manufactured recovery checks. | Current-wheel fitting acceptance; historical fit success is not held-out predictive acceptance. |
+| S1–S3 | Repair/extend current `surface/parameter_builder.cpp`, `parameters.py` and feed mapping; inspect old admission/conversion cases. | Explicit support/charge, SI/reference mapping and request-specific availability; no replacement parameter system or source-range policing. |
+| S4 | Verify current native-input and physical-unit cases. | Qualify the revised mappings against numerical producers, not API snapshots. |
+| B1–B3 | Adapt current `native/bindings/`, `eos.py`, `equilibrium/problem.py` and `reference.py`; old output/action adapters are comparisons. | Expose qualified outputs/actions with their units and failure meaning; no compatibility framework or Python physics. |
+| B4 | Reuse existing installed-wheel numerical checks and downstream call patterns. | Verify end-to-end current behavior and ownership; no duplicate packaging or installation route. |
+| A1 | Adapt the current MEA clone's shared evaluator, state packet and selected candidate. | Replay declared speciation/VLE/heat and consumed actions; preserve source inputs and failed holdouts. No new parameter campaign by default. |
+| A2 | Adapt the current absorber clone's Case 3C, reactive adapter and Jacobian assembly. | Repair wheel/API/caloric/action gaps and verify column refinement/conservation; preserve transport/discretization. A nonisothermal column does not require Engine PH/PS/UV flash. |
+| A3 | Adapt the current Lithium clone's direct LLE producer, surrogate and IDAES/PROMMIS pipeline. | Verify direct declared states/actions, then affected artifacts/process results; preserve adopted inputs, failed rows and domain limits. No new flowsheet or discovery algorithm. |
+| A4 | Reuse all three current application records and selected comparisons. | Cross-application acceptance on the same identified wheel; report declared/local scope without a global-stability claim. |
+
+Native paths in this table omit `engine/native/` when the current layer is clear.
+Detailed old dependency/caller inspection belongs only to the selected slice.
+A useful equation, algorithm or numerical case can be adopted without importing
+its old surrounding abstractions. Negative results remain useful exclusions.
 
 ## Code and evidence map
 
@@ -627,15 +731,17 @@ scientific conflicts or changes of scope to the owner.
 | Equilibrium rows and ALG-EQUILIBRIUM | `engine/native/equilibrium/request_compile.cpp`, `gibbs_minimizer.cpp`, `phase_boundary.cpp` | Compiler/shared minimizer exist. F5 exact pinned Hessian and callback objective-factor weighting are incorrect. E12 directional weighted-gradient ladder at nonzero multipliers, obj_factor 0, 0.5 and 1, including free T/P away from seeds; zero curvature is not exact. Boundary seeds are not continuation. |
 | EqID: `implicit_sensitivity`; ALG-ACTIONS | `engine/native/equilibrium/implicit_sensitivity.cpp` | A1 path exists with silent unavailable cases; E3 needs reasons/rank/linear residual and complete mixed chains. A2/A3 required by downstream uses are absent or unqualified; E10 independent action ladder. |
 | EqID: `standard_pressure_density_conversion`; ALG-REFERENCE | `engine/native/properties/infinite_dilution_reference.cpp`; no complete common thermochemistry owner | E4/E7/E9: consistent fixed-P0 conversion, typed K(T), total properties and reference derivatives. Reaction gauge alone cannot supply absolute calorics. |
-| ALG-FIT | `engine/native/regression/` placeholder | General observation algebra/fitting absent; E9 property fits, fixed-coordinate zero derivative, domain failures, chain rules and conditional covariance. Extend active coordinates beyond the six present EOS families only with complete defining chains. |
-| Stability/discovery | No qualified current discovery owner | Discover mapping incomplete/rejected. E8/E11: instability witnesses, declared-vs-discovered comparisons, charge/support and genuine bound meaning; local inner minima and exhausted search are not global proof. |
+| ALG-FIT | `engine/native/regression/` placeholder; old native Ceres/evaluator implementations mapped above | Current integration absent; adapt justified existing fitting behavior before adding missing observation algebra; E9 property fits, fixed-coordinate zero derivative, domain failures, chain rules and conditional covariance. Extend active coordinates beyond the six present EOS families only with complete defining chains. |
+| Stability/discovery (future) | No qualified current discovery owner; retained old search methods and cutover failure | Deferred by owner on 2026-09-10; not a current completion gate. Discover mapping incomplete/rejected. E8/E11: instability witnesses, declared-vs-discovered comparisons, charge/support and genuine bound meaning; local inner minima and exhausted search are not global proof. |
 | Installed-wheel/application evidence | `tools/verify-installed-wheel.py`, `tools/check-all.sh`; three downstream repositories | Fast installed-wheel gate passes; see the S0 execution record below. The gate does not run the focused F1/F5 checks and does not qualify application calculations. |
 
 The table names intended numerical falsifiers, not newly executed passing tests.
 Existing compact checks live under `engine/tests/`; exact existing/proposed
 case dispositions and the audit E1–E12 evidence identifiers are in the
 [transfer audit](reviews/transfer-audit-2026-09-06.md). These identifiers describe
-scientific evidence, not an additional execution sequence. Do not infer implementation from
+scientific evidence, not an additional execution sequence. In particular, audit
+E3/E4 labels in this table are historical evidence IDs, not the current deferred
+E3 milestone or the narrowed E4 scope. Do not infer implementation from
 an EqID annotation or a source file's existence.
 
 ## Application scope and remaining scientific design
@@ -663,9 +769,9 @@ Remaining design is attached to the affected milestones:
 - P4/E5: direct-state and pressure-closed coordinate charts, balanced composition
   directions, implicit mixed actions through third order and per-action failures.
   Pressure and density are not independent coordinates of the same closed state.
-- E1–E4: weighted objective/constraint curvature for pinned/free intensives,
-  well-posed shared specifications, initial states, continuation and explicitly
-  requested search. All use the single equilibrium driver.
+- E1/E2/E4: weighted objective/constraint curvature for pinned/free intensives,
+  declared specifications, initial states and branch continuation using the
+  existing driver. E3 and phase search are future work, outside this queue.
 - R1–R3: observation meaning, weights, active/fixed/shared coordinates, bounds,
   exact implicit Jacobians, rank and conditional uncertainty. Reaction fitting
   remains application-owned.
@@ -677,7 +783,8 @@ Remaining design is attached to the affected milestones:
 
 The [equilibrium candidates](../../engine/docs/equilibrium/test-candidates.md)
 identify ethanol saturation, binary bubble/dew, zero-component flash, declared
-VLLE, PR natural-gas and Phasepy ethanol/water comparisons. Cross-model deviations
+VLLE, PR natural-gas and Phasepy ethanol/water comparisons. Thermal-flash and
+phase-discovery candidates remain preserved future references. Cross-model deviations
 remain distinct from numerical error; no universal percentage is adopted.
 
 ### Application setup changes before new-wheel runs

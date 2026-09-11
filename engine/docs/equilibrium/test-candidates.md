@@ -6,7 +6,10 @@ against other equilibrium models with justified allowances for EOS differences.
 No upstream calculation was rerun during this inventory. Numbers below are
 upstream assertions or displayed examples; rounded examples need reproduction
 before use. This document owns candidate selection only; the current completion
-sequence remains in `docs/scientific/implementation-plan.md`.
+sequence remains in `docs/scientific/implementation-plan.md`. PH/PS/UV and
+phase-discovery candidates are retained for future implementation and do not
+add current checks or acceptance gates. Reuse applicable declared-phase cases
+for the bounded gap before inventing another test campaign.
 
 ## Focused falsifiers retained before producer corrections
 

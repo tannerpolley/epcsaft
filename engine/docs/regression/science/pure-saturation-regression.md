@@ -4,6 +4,10 @@ Required general fitting mathematics; pure saturation is one observation
 construction. Installed availability is recorded in the
 [transfer plan](../../../../docs/scientific/implementation-plan.md).
 
+Use the plan's adoption gate to adapt justified existing native fitting and
+evaluator logic. Implement only observation forms consumed by current scope;
+the broader algebra below defines meaning rather than requiring unused nodes.
+
 An observation combines a state/equilibrium specification, an expression, a
 reported value and an explicit discrepancy/uncertainty model. Expressions use
 four node kinds: Leaf (property, coordinate or constant), weighted Sum,
