@@ -8,6 +8,7 @@
 /.management-state/
 /.workflow/
 /docs/scientific/.research/
+/docs/baton_pass/
 
 # Serena code-navigation state, per checkout
 .serena/*

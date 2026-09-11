@@ -1064,6 +1064,57 @@ void check_c1_multiplier_scale() {
     CHECK(tiny_intensive_difference <= 1.0e-8);
 }
 
+void check_c1_ideal_caller_chart() {
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::flash(2);
+    problem.feed.values = {0.2, 0.9};
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
+    auto point = compiled.generic_point();
+    CHECK(point.size() >= 2);
+    if (point.size() < 2) return;
+    point[0] = std::log(0.2);
+    point[1] = std::log(0.9);
+    const auto base = compiled.evaluate(point);
+    const auto analytic = compiled.objective_gradient(point);
+    const auto inputs = [&](std::size_t column, double step) {
+        return recording_support::fields({
+            recording_support::field("T", problem.temperature.value),
+            recording_support::field("P", problem.pressure.value),
+            recording_support::field("feed", problem.feed.values),
+            recording_support::field("x", std::vector<double>{0.2, 0.9}),
+            recording_support::field("sum_x", 1.1),
+            recording_support::field("coordinate", column),
+            recording_support::field("step", step),
+            recording_support::field("objective", base.objective),
+        });
+    };
+    recording_support::expect_group(
+        recording_support::active_test_id(), "c1-equilibrium-caller", "objective-gradient/", 6,
+        "off-normalized CompiledSystem objective gradient matches objective value ladder", "coordinate,step");
+    for (const std::size_t column : {std::size_t(0), std::size_t(1)}) {
+        for (const double step : {1.0e-2, 3.0e-3, 1.0e-3}) {
+            auto plus = point;
+            auto minus = point;
+            plus[column] += step;
+            minus[column] -= step;
+            const double finite_difference =
+                (compiled.evaluate(plus).objective - compiled.evaluate(minus).objective)
+                / (2.0 * step);
+            const double tolerance = step == 1.0e-2 ? 1.0e-4
+                : step == 3.0e-3 ? 1.0e-5 : 1.0e-6;
+            const bool verdict = close_with_tolerance(analytic[column], finite_difference, tolerance);
+            const std::string point_id = std::to_string(column) + "/" + recording_support::number(step);
+            recording_support::compare(
+                (std::string("objective-gradient/") + point_id).c_str(), "objective_gradient", "1",
+                analytic[column], finite_difference, inputs(column, step), "Relationship",
+                "centered_objective_value_ladder", "off-normalized caller gradient matches objective",
+                "reference_or_one", 0.0, tolerance, verdict, "c1-equilibrium-caller", point_id.c_str(),
+                "dG/dz", "T,P,feed,x,sum_x,coordinate,step", "dG/dz=\u0394G/(2\u0394z)", "coordinate,step");
+            CHECK(verdict);
+        }
+    }
+}
+
 void check_s8() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto small = equilibrium_support::flash(2);
@@ -1572,6 +1623,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},
         {{"native.equilibrium.c1", "Core_C1_amount_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "CORE1", "c1-amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_amount_scale},
         {{"native.equilibrium.c1-multipliers", "Core_C1_multiplier_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "CORE1", "c1-multiplier-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_multiplier_scale},
+        {{"native.equilibrium.c1-ideal-caller", "Contributions_C1_ideal_caller_chart", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C1", "objective-gradient/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1", "objective-gradient/*:6"}, check_c1_ideal_caller_chart},
         {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
         {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
         {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},

@@ -59,7 +59,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Layer | Qualified progress | Remaining Astra h | Measured actual h |
 |---|---|---:|---:|
 | Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
-| Contributions | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
+| Contributions | ██░░░░░░░░ 25.0% (1/4) | 1.5–4.5 | 5 (partial) |
 | Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/5) | 10–30 | — |
 | Regression | ░░░░░░░░░░ 0.0% (0/4) | 4–12 | — |
@@ -67,7 +67,7 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **4/34 qualified milestones (11.8%)**; **34–104 remaining Astra hours**.
+Total: **5/34 qualified milestones (14.7%)**; **33.5–102.5 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -281,7 +281,7 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| C1 — Hard-chain and dispersion | [ ] | 0.5–1.5 | — | CORE4 qualified | Preserve existing hard-chain/dispersion kernels; qualify their formulas and analytic limits and finish the current explicit ideal thermal/mixing owner. | [2026-09-08: Contributions scope](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| C1 — Hard-chain and dispersion | [x] | 0 | 5.0 | CORE4 qualified | Preserve existing hard-chain/dispersion kernels; qualify their formulas and analytic limits and finish the current explicit ideal thermal/mixing owner. | [2026-09-10: C1 qualification](reviews/c1-2026-09-10.md); 167 current-wheel comparisons, independent derivative replay, applicable fast gates and independent CSE/Ponytail review support the bounded native claim; pinned F5 remains excluded. |
 | C2 — Association equations | [ ] | 0.5–1.5 | — | C1 | Verify existing site topology, mass-action equations and scalar support limits; repair only a demonstrated discrepancy. | — |
 | C3 — Electrolyte, Born and dielectric terms | [ ] | 0.5–1.5 | — | C1 | Verify existing electrolyte/Born/dielectric formulas, charge conventions and singular limits; add no new model. | — |
 | C4 — Contributions qualification | [ ] | 0.5–1.5 | — | C2, C3 | Integrated contribution reference checks, reuse/duplication/cost review and independent acceptance of preserved and corrected owners. | — |
@@ -486,7 +486,7 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core CORE1 through CORE4 are qualified and repository separation is complete; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core CORE1 through CORE4 and Contributions C1 are qualified; C2 and C3 have Ready reuse/verification designs. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
@@ -497,7 +497,9 @@ Current stage: bounded Core CORE1 through CORE4 are qualified and repository sep
 | CORE3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, record source-reviewed density branch limits, and pass independent `Supported` review. |
 | CORE4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel CORE1–CORE3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
 | Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
-| Next | Contributions qualification | Ready to start; do not widen the qualified Core claim. |
+| C1 | [Qualify hard-chain, dispersion and ideal Helmholtz formulation (#6)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/6) | Complete on 2026-09-10: retained native formulas, explicit thermal inputs, off-normalized caller checks and independent CSE/Ponytail acceptance qualify the bounded C1 slice. Properties implementation and pinned F5 remain outside scope. |
+| C2-design | [Qualify association equations and support limits (#8)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/8) | Ready on 2026-09-10 after independent integrated review; C1 prerequisite qualified; next bounded verification slice. Existing association-harness work remains separately owned; no alternate solver adopted. |
+| C3-design | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Ready on 2026-09-10 after independent integrated review; C1 prerequisite qualified; follows the current C2 assignment. Initial scope adds numerical falsifiers to existing formulas, with no assumed runtime correction. |
 
 Repository separation is a completed delivery prerequisite. It does not change
 scientific milestone qualification; subsequent work follows the scientific
@@ -658,7 +660,7 @@ scientific conflicts or changes of scope to the owner.
 | Search claims | Future work: report actual bounded search and witnesses when implemented. For current declared-phase results, do not fabricate a search status or global certificate; retained historical witnesses remain evidence only for their original run. |
 | Tolerances/results | Caller-selectable tolerances. Return available candidate values with warnings, achieved residuals and an explicit unmet-tolerance indication; do not silently label a missed tolerance as satisfied. When no finite evaluable candidate exists, return its absence and failure diagnostics without fabricated state values. |
 | Reaction conventions | Support explicitly selected conventions with required conversion inputs. Do not infer a literature convention. Prepare activity-, mole-fraction-, molarity- and molality-based conventions. Require caller-declared stoichiometry, standard concentration/molality and solvent basis where applicable. Use the native temperature basis ln K = a + b/T + c ln(T/Tref) + dT, with explicit Tref and algebraic source/pKa conversion outside the Engine. Require an explicit caller ionic gauge where needed; no hardcoded hydronium convention. Exact standard-state definitions and conversion derivations remain design work. If supplied K(T) and species thermochemistry are inconsistent for a request consuming both, report the inconsistency rather than silently choosing one. |
-| Calorics | Native thermal correlation forms with caller-supplied explicit references. Initial native forms are polynomial heat capacity about an explicit reference temperature (including constant cp), Shomate, NASA7, NASA9 and DIPPR107; distinguish standard states, reference constants and temperature dependence. Preserve supplied piecewise forms; do not silently smooth discontinuities, and report affected unavailable derivatives at boundaries. Compare supplied and corrected caloric references before adopting inputs that depended on the erroneous residual-energy calculation. Agents may adopt corrected references after preserving sourced total-property anchors and standard states, identity checks and independent review. Require thermal inputs only for requests consuming them; missing total calorics must not disable otherwise valid TP/bubble/dew calculations. |
+| Calorics | Native thermal correlation forms with caller-supplied explicit references. Initial native forms are polynomial heat capacity in powers of `(T−Tref)` about an explicit reference temperature (including constant cp), Shomate, NASA7, NASA9 and DIPPR107; distinguish standard states, reference constants and temperature dependence. Preserve supplied piecewise forms with source-declared endpoint ownership; reject ambiguous overlaps and gaps, do not silently smooth discontinuities, and report affected unavailable derivatives at boundaries. Never integrate an anchor through an uncovered interval. Compare supplied and corrected caloric references before adopting inputs that depended on the erroneous residual-energy calculation. Agents may adopt corrected references after preserving sourced total-property anchors and standard states, identity checks and independent review. Require thermal inputs only for requests consuming them; missing total calorics must not disable otherwise valid TP/bubble/dew calculations. |
 | State derivatives | General directional derivatives through third order for admitted smooth observables. Cover composition, density, temperature and pressure with correct independent-coordinate and implicit chains. Callers specify balanced composition directions summing to zero; the Engine must not silently select a compensating species. Preserve valid central values and actions when another action is singular/unavailable. |
 | Fitting | Built-in observable composition, no caller evaluator functions. Initially fit only parameters entering residual-EOS contributions. Exact prediction Jacobians include implicit chains; higher parameter orders are deferred unless a concrete method demonstrates sufficient benefit. Reaction and reference-thermal fitting are deferred in Engine. Lithium apparent-reaction-coordinate calibration stays application-owned and consumes general equilibrium calls. |
 | Initial fitting observations | Density, saturation/bubble/dew pressure or temperature, phase compositions and phase fractions. Caloric-observation fitting is future work; current property/caloric consumers remain required; this does not enable fitting reaction/reference coefficients. |

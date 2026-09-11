@@ -30,6 +30,79 @@ of the energy. It does not authorize charged physical states. Parameters fixed
 by the request have zero derivatives; dependent combining-rule outputs carry
 the chain from independent coefficients. Discrete topology is not fitted.
 
+## ALG-CALORICS
+
+Evaluate one explicitly selected source correlation on its declared domain.
+Use its own integration constants and pressure standard; do not infer a common
+anchor, source interval or continuity at a join. For piecewise inputs, require
+adjacent intervals to meet at one explicitly owned endpoint, reject overlaps and
+gaps, and return the owned branch value with cross-join derivatives unavailable
+when the branch is discontinuous. Differentiate smooth correlations on the same
+selected interval; reselect the source interval when a temperature leaves it. Missing
+thermal inputs make only consumers of those inputs unavailable.
+
+For the centered polynomial, evaluate $C_p=\sum_k a_k(T-T_{ref})^k$ and anchor
+$h$ and $s$ at the supplied $T_{ref}$. The constant term uses the exact
+$a_0\log(T/T_{ref})$ identity. No insertion derivative at a zero composition
+amount is promised.
+
+For each nonzero degree $k\geq1$, let $\Delta=T-T_{ref}$ and
+$u=\Delta/T_{ref}$. Accumulate the entropy contribution as
+$a_k|\Delta|^k$ times a dimensionless moment, multiplying the coefficient
+before each power. This avoids the artificial overflow of $T_{ref}^k$ or
+$|\Delta|^k$ before a small coefficient is applied. It does not cure an
+ill-conditioned sum of distinct polynomial terms or a genuinely unrepresentable
+result. The constant logarithm uses `log1p(u)` near the anchor and a difference
+of positive logarithms away from it, avoiding overflow/underflow of $T/T_{ref}$.
+
+For $0\leq u<1$, use
+\[
+\frac{I_k(u)}{u^k}=\frac{u}{1+u}\sum_{j\geq0}t_j,\qquad
+ t_0=\frac1{k+1},\qquad
+ \frac{t_{j+1}}{t_j}=\frac{u}{1+u}\frac{j+1}{k+j+2},\qquad
+ I_k(u)=\int_0^u\frac{z^k}{1+z}\,dz.
+\]
+The ratio is at most $1/2$. With $b$ binary significand digits, retain the
+initial term and $b+2$ updates; the relative geometric tail is below $2^{-b-2}$.
+For $u\geq1$, use $J_0=\log(1+u)$ and
+$J_p=1/p-J_{p-1}/u$ through $p=k$. Its error multiplier $1/u\leq1$
+avoids the unstable near-anchor forward recurrence. Form $1/u=T_{ref}/\Delta$
+and the initial logarithm from positive temperatures so an overflowing ratio
+need not be formed in this branch.
+
+For $u<0$, write $v=-u$ and $c_k=\exp(-1/k)$. Below $c_k$, use
+\[
+\frac{I_k(-v)}{v^k}=(-1)^{k+1}v
+ \sum_{j=0}^{N-1}\frac{v^j}{k+j+1},\qquad
+ N=(b+2+\lceil3\log_2(k+1)\rceil)(k+1).
+\]
+Evaluate this positive series by backward Horner summation. The omitted sum
+is bounded by $v^N/[(k+N+1)(1-v)]$; since $v\leq\exp(-1/k)$,
+$v^N\leq\exp(-N/k)$. Differentiating the positive-term geometric majorant
+bounds differentiated tails as well; the degree-dependent margin suppresses
+these through the third order tested here. Floating-point rounding remains
+separate from this truncation estimate.
+
+At and above $c_k$, use the finite logarithmic tail
+\[
+\frac{I_k(-v)}{v^k}=(-1)^{k+1}
+ \frac{-\log(T/T_{ref})-\sum_{p=1}^k v^p/p}{v^k}.
+\]
+Here $v^k\geq e^{-1}$ and the numerator is at least $e^{-2}/2$, as seen
+by retaining terms $p=k+1,\ldots,2k$ in the logarithmic remainder. Thus neither
+the normalization nor a vanishing remainder amplifies roundoff as in a
+fixed crossover independent of degree. Use the positive-temperature logarithm
+even when subtraction rounds $v$ to one. Finite-precision summation error still
+depends on degree and conditioning; the evidence qualifies its recorded cases.
+
+Source coefficients, degree and interval ownership are immutable during a tape's
+lifetime. Every temperature-dependent representation choice uses scalar
+conditional expressions with finite clamped arguments in its inactive branches.
+No recording-time value extraction or temperature-dependent loop count is used.
+The same tape replays on its selected smooth source interval, including across
+these arithmetic representation changes and the reference. Selecting another
+physical source interval remains a separate admission operation.
+
 ## ALG-PARAMETERS
 
 Resolve source values into documented native units before constructing active

@@ -2,6 +2,7 @@
 
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
+#include "contributions/helmholtz.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -501,11 +502,7 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
     scope.probe("row_values", result.values);
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         const auto& derivative = *derivatives[phase];
-        double ideal = 0.0;
-        for (const std::size_t species : problem.phases[phase].support) {
-            ideal += x[phase][species] * (std::log(std::max(x[phase][species], std::numeric_limits<double>::min()))
-                                          - std::log(volume[phase]) - 1.0);
-        }
+        double ideal = ideal_mechanical_helmholtz(x[phase], volume[phase], 1.0);
         result.objective += amount[phase] * (
             derivative.value + ideal + pressure * volume[phase] / rt
             + std::inner_product(standard.value.begin(), standard.value.end(),
@@ -786,13 +783,11 @@ std::vector<double> CompiledSystem::objective_gradient(const std::vector<double>
         const auto derivative = model->evaluate(T, volume, x, DerivativeOrder::Hessian);
         double standard = 0.0;
         double standard_term_temperature_derivative = 0.0;
-        double ideal = 0.0;
+        double ideal = ideal_mechanical_helmholtz(x, volume, 1.0, false);
         for (std::size_t species = 0; species < components; ++species) {
             standard += standard_at_temperature.value[species] * x[species];
             standard_term_temperature_derivative +=
                 standard_at_temperature.temperature_derivative[species] * x[species];
-            if (x[species] > 0.0) ideal += x[species] * (
-                std::log(x[species]) - std::log(volume) - 1.0);
         }
         const double sum_x = std::accumulate(x.begin(), x.end(), 0.0);
         const double bracket = derivative.value + ideal + P * volume / rt + standard;
