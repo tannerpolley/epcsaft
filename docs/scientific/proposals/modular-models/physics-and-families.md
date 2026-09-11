@@ -56,6 +56,11 @@ the word “ion.” [Figiel2025](references.md#figiel2025), [YangPair2024](refer
 
 ## Branching development
 
+The [expanded TikZ family atlas](family-tree-guide.md) provides three detailed
+diagram pages and a clickable index of 56 primary publication records,
+including later Binding-MSA/ePPC-SAFT work and published corrections. The
+Mermaid diagram below remains the compact orientation map.
+
 ```mermaid
 flowchart TD
   W["Wertheim thermodynamic perturbation theory"] --> S["SAFT: Chapman et al., 1989–1990"]

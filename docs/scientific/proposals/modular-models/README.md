@@ -21,6 +21,7 @@ every combination of available contributions is a validated equation of state.
 | Document | Question answered |
 |---|---|
 | [Physics and family map](physics-and-families.md) | Which molecular effects are modeled, how did the families develop, and which choices are alternatives? |
+| [Illustrated family atlas](family-tree-guide.md) | A five-page TikZ PDF expanding the tree with 56 primary publication records and a clickable DOI index. |
 | [Model specification and compatibility](model-specification.md) | What exactly is selected, how are parameters tied to it, and how is double counting assessed? |
 | [Derivatives and qualification](derivatives-and-evidence.md) | What can shared machinery automate, and what numerical and physical evidence remains necessary? |
 | [Electrolyte paper comparison](electrolyte-comparison.md) | What do Yang, Bülow, Figiel, Rueben, Biazi and related papers actually contribute and establish? |

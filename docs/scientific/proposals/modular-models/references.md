@@ -8,6 +8,10 @@ export. No library records or attachments were changed. DOI links identify
 publications; Zotero parent/attachment keys identify the locally consulted
 sources without embedding private machine paths.
 
+The [expanded family atlas guide](family-tree-guide.md#evidence-behind-the-expanded-branches)
+records additional sources and their claim locators, including the 2025
+Binding-MSA branch. Its PDF has a unified numbered index for all 56 records.
+
 **Evidence classes.** “Source” means a paper's equations, assumptions or reported
 results; “repository” means the inspected canonical owner or retained analysis;
 “synthesis” means the proposed compatibility/architecture interpretation.
@@ -97,11 +101,12 @@ publication was in 2005; the journal-volume citation is 2006.
 
 Vrabec and Gross, *Vapor-liquid equilibria simulation and an equation of state
 contribution for dipole-quadrupole interactions*.
+[Journal article, 2008](https://doi.org/10.1021/jp072619u).
 [Author preprint](https://arxiv.org/abs/0904.4637).
 Zotero parent `7H3X4JVA` records the 2009 arXiv version. Use: direct evidence
 that a distinct dipole–quadrupole cross contribution exists. Locator: abstract
-and interaction/formulation development. The preprint date is not asserted
-to be the journal publication date.
+and interaction/formulation development. The expanded atlas verifies the 2008
+journal identity; the preprint date is not the journal publication date.
 
 ### Kleiner2007
 
@@ -140,12 +145,13 @@ this proposal's selected initial scope.
 Cameretti, Sadowski and Mollerup (2005), *Modeling of Aqueous Electrolyte
 Solutions with Perturbed-Chain Statistical Associated Fluid Theory*.
 [DOI](https://doi.org/10.1021/ie0488142).
-Zotero parent `CNAR9DGU`. A related same-year record is retained as parent
-`VZWJHRBS`, [DOI 10.1021/ie051055i](https://doi.org/10.1021/ie051055i).
+Zotero parent `CNAR9DGU`. The same-year correction is retained as parent
+`VZWJHRBS`, [DOI 10.1021/ie051055i](https://doi.org/10.1021/ie051055i),
+PDF `RPMVXCZ2`.
 Use: the early DH-based electrolyte PC-SAFT branch. Locator: electrolyte model
-development. Any future exact reproduction must reconcile the related records
-and corrections before selecting coefficients; this historical map does not
-claim that both records define separate runtime models.
+development. The expanded atlas inspection confirms that p. 8944 is headed
+“Additions and Corrections,” replacing Eq. (13) and providing corrected
+parameters in Table 2. These records do not define separate model families.
 
 ### Held2008
 
