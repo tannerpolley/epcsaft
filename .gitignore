@@ -10,7 +10,10 @@
 /docs/scientific/.research/
 
 # Serena code-navigation state, per checkout
-.serena/
+.serena/*
+!.serena/.gitignore
+!.serena/project.yml
+/compile_commands.json
 
 # Owner-requested independent downstream draft clones; not Engine dependencies
 /downstream/

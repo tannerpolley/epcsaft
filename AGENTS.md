@@ -12,11 +12,12 @@ algorithms, accepted decisions and `docs/scientific/implementation-plan.md`
 entries. The project map owns architectural detail and directory responsibilities.
 
 Before Serena inspection, activate the exact checkout root and verify the returned
-path. Keep `.serena/project.yml` and memories as pointers to these current owners,
-not copied doctrine. After changing Serena's project instructions, verify them
-through a fresh server activation; reactivation can reuse cached configuration.
-If the server returns stale instructions, use the current files and report that
-the Serena connection needs restarting.
+path. Use Serena for C++/Python symbol and caller navigation; normal environment
+setup maintains its root compilation database. Symbol queries synchronize source
+file changes. Read the current owner files for guidance; activation messages and
+memories are navigation pointers, not cached authority. Ordinary source and doc
+edits require no manual refresh. After changing Serena's own configuration, verify
+it with a fresh server session; same-project activation can reuse cached settings.
 
 All equilibrium specifications use one driver and shared thermodynamics.
 Preserve one installed Engine wheel and explicit physical inputs. A scientific

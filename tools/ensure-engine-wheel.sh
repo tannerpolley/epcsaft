@@ -281,20 +281,30 @@ cache_entry="$cache_root/$cache_key"
 build_dir="$repo_root/build/engine-meson/$runtime_id-$toolchain_fingerprint"
 build_dir_stamp="$wheelhouse/meson-build-dir"
 configured_build_stamp="$build_dir/epcsaft-build.sha256"
+configured_database_stamp="$build_dir/epcsaft-configure.sha256"
 mkdir -p "$repo_root/build" "$cache_root"
 exec {wheelhouse_lock_fd}>"$repo_root/build/environment-wheel.lock"
 flock "$wheelhouse_lock_fd"
 
-ensure_configured_build() {
+ensure_compile_database() {
     if [[ ! -f "$build_dir/meson-info/meson-info.json" ]]; then
         meson setup "$build_dir" engine
+    elif [[ ! -f "$configured_database_stamp" ]] \
+        || [[ "$(<"$configured_database_stamp")" != "$build_fingerprint" ]]; then
+        meson setup --reconfigure "$build_dir" engine
     fi
+    printf '%s\n' "$build_fingerprint" >"$configured_database_stamp"
+    printf '%s\n' "$build_dir" >"$build_dir_stamp"
+    bash "$repo_root/tools/prepare-serena-cpp.sh"
+}
+
+ensure_configured_build() {
+    ensure_compile_database
     if [[ ! -f "$configured_build_stamp" ]] \
         || [[ "$(<"$configured_build_stamp")" != "$build_fingerprint" ]]; then
         meson compile -C "$build_dir"
         printf '%s\n' "$build_fingerprint" >"$configured_build_stamp"
     fi
-    printf '%s\n' "$build_dir" >"$build_dir_stamp"
 }
 
 record_preparation_binding() {
@@ -338,8 +348,10 @@ fi
 if [[ "$wheel_current" == true ]]; then
     wheel="${wheels[0]}"
     if verification_output="$("$python" tools/verify-installed-wheel.py --wheel "$wheel" 2>&1)"; then
-        if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
+        if [[ "$prepare_native_build" == 1 || -f "$configured_build_stamp" ]]; then
             ensure_configured_build
+        else
+            ensure_compile_database
         fi
     uv pip check --python "$python"
     printf '%s\n' "$verification_output"
@@ -406,12 +418,14 @@ wheel="${wheels[0]}"
 uv pip install --python "$python" --no-deps --reinstall-package epcsaft "$wheel"
 uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
-if [[ "$prepare_native_build" == 1 || -d "$build_dir" ]]; then
+if [[ "$prepare_native_build" == 1 || -f "$configured_build_stamp" || "$wheel_origin" == rebuilt ]]; then
     # Wheel creation can update the extension without compiling Meson's test
     # executables.  Always pass through the configured-build check after a
     # wheel install, and keep an existing configured tree current even when
     # the caller did not request a native test preparation.
     ensure_configured_build
+else
+    ensure_compile_database
 fi
 assert_source_unchanged
 printf '%s\n' "$build_fingerprint" >"$stamp"
