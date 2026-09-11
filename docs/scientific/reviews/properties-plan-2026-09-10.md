@@ -63,11 +63,12 @@ at `(280 K, 4000 mol/m3)`, `D=-0.0777101` and `c_p^r` is unavailable. These
 probes justify the handoff cases and availability rule only; the worker must
 implement retained comparison rows and run them from the final P1 wheel.
 
-Disposition: the roadmap is explicit enough to publish the P1 delivery issue
-and assign its bounded verification work to a Luna max worker. Design Ready
-still requires that issue's identified-revision adoption decision and fresh
-independent pre-Build review. No later Properties implementation is authorized
-until its own named design gate and prerequisites are complete.
+Disposition: [P1 delivery issue #14](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/14)
+publishes the identified-revision adoption decision, exact cases, ladders,
+criteria, change budget, commands, evidence and stop rules for a Luna max
+worker. Fresh independent pre-Build review is the remaining Design Ready gate.
+No later Properties implementation is authorized until its own named design
+gate and prerequisites are complete.
 
 ## Evidence limits and next action
 
