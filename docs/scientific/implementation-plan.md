@@ -304,11 +304,11 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| P1 — Residual properties and caloric correction | [ ] | 1–3 | — | C4 qualified | Preserve the existing residual-energy correction; qualify remaining caloric identities on the current state owner. | [2026-09-08: caloric correction](reviews/caloric-correction-2026-09-08.md); F1 and native model checks pass; broader qualification pending. |
-| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 | Repair existing implicit elimination and density closure; qualify support limits, branch identity, pressure chains and resolved-state reuse. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 | Adapt justified old thermochemistry/reference algebra into current native owners; qualify Ideal/Total properties, explicit references and K(T) consistency. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 | Preserve/adapt existing derivative machinery and old supported actions; complete missing balanced-coordinate, selective and third-order chains with parameter Jacobians. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
-| P5 — Properties qualification | [ ] | 1–3 | — | P4 | Reuse existing identities/step ladders; qualify repeated-state, availability, selective/full agreement and equivalent-work cost independently. | [2026-09-08: scope clarified](CONTEXT.md#residual-ideal-and-state-responsibilities); not qualified. |
+| P1 — Residual properties and caloric correction | [-] | 1–3 | — | C4 qualified | Starting with zero runtime additions, preserve F1 and independently qualify residual `s`, `u`, `h`, `c_v` and conditioned `c_p` at fixed density or pressure as defined, including identities, low-density limits and explicit `c_p` unavailability. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md) and [execution handoff](implementation-plan.md#properties-execution-handoffs--2026-09-10); planning active, Design Ready review pending. The [F1 correction](reviews/caloric-correction-2026-09-08.md) remains preserved evidence, not P1 qualification. |
+| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 qualified | Resolve the zero-support association and density branch contracts, then repair only demonstrated gaps; qualify implicit residuals/conditioning, root count and identity, anchor/disappearance behavior, pressure closure and resolved-state reuse. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P2 execution handoff below; design resolution and qualification pending. |
+| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 qualified | Resolve the exact output/availability and reference-basis matrix, then adapt the qualified ideal correlations and justified old reference algebra into native owners; qualify Ideal/Residual/Total calorics, fixed-reference conversions and typed `K(T)` consistency. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P3 execution handoff below; design resolution and qualification pending. |
+| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 qualified | Freeze the observable × coordinate × order matrix first; then reuse the common tape for balanced-composition, fixed-density/fixed-pressure and parameter actions, selected dependencies and requested smooth actions through third order without dense tensors or a second derivative engine. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P4 execution handoff below; action matrix and qualification pending. |
+| P5 — Properties qualification | [ ] | 1–3 | — | P4 qualified | On one final wheel, revalidate P1–P4; qualify repeated-state freshness, density/pressure route agreement, per-output availability, full/selected equivalence, equivalent accepted work, budgets and independent final acceptance. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P5 execution handoff below; integration qualification pending. |
 
 ```mermaid
 flowchart TD
@@ -325,6 +325,133 @@ flowchart TD
   P5["P5: Properties qualification"]
   P4 --> P5
 ```
+
+#### Properties execution handoffs — 2026-09-10
+
+These blocks are the roadmap-level minimum for a worker issue; they do not
+replace the required issue reuse decision or fresh independent pre-Build review.
+Only P1 is currently eligible. A worker must not cross a named stop condition,
+choose an unresolved scientific contract while coding, or start a later row.
+
+##### P1 — Residual properties and caloric correction
+
+- **Resolved:** use EqIDs `residual_entropy`, `residual_internal_energy`,
+  `residual_enthalpy`, `residual_heat_capacity_cv` and
+  `residual_heat_capacity_cp` on the current `(T, rho, x)` state owner. Preserve
+  the corrected `u^r=-RT^2 a_T`, the existing contribution/Euler/pressure
+  identities, fixed-density mathematical states and fixed-pressure stable-root
+  requirement. Ideal/Total assembly, new public containers, density changes and
+  general actions are P2–P4, not P1.
+- **Build:** begin verify-only in `engine/tests/native/properties_checks.cpp`.
+  Add the missing independent centered/refined temperature ladders for
+  `c_v^r=(du^r/dT)_(rho,x)` and `c_p^r=(dh^r/dT)_(P,x)` on a declared pressure
+  branch, plus the existing residual identities across neutral, associating and
+  electrolyte owners. Change `engine/native/properties/helmholtz_model.cpp` only
+  for a reproduced equation or availability defect; add no alternate evaluator.
+- **Check:** retain `native.properties.f1` and `native.properties.m2`; record
+  every ladder step and conditioning denominator, require refinement before
+  selecting a case tolerance, and verify residual quantities approach their
+  justified dilute limits. After rebuilding the sole wheel, run the focused
+  `properties` native test and `bash tools/check-affected.sh HEAD`; run
+  `bash tools/check-all.sh` for the final P1 candidate.
+- **Stop condition:** if `c_p^r` qualification needs a new threshold for
+  `Z+rho Z_rho`, first establish its dimensionless conditioning/error basis and
+  add it to the existing numerical-policy owner. Return an unexplained ladder
+  disagreement to Diagnose; do not loosen a tolerance, reject a finite
+  fixed-density state for mechanical instability, or mark P1 qualified from F1
+  alone.
+
+##### P2 — Association elimination and density closure
+
+- **Resolve first:** for exact-zero associating support, distinguish the regular
+  unweighted mass-action Jacobian from the singular composition-weighted
+  stationary representation required by ALG-ASSOCIATION; define which value and
+  derivative actions remain available without a composition floor. For density,
+  define `Unspecified`, `Vapor` and `Liquid` root selection, stable-root count,
+  returned branch, anchor continuation and branch-disappearance behavior under
+  ALG-DENSITY. Derive the fixed-pressure implicit chain from
+  `P_rho`; no phase-equilibrium or global-stability claim enters this row.
+- **Build:** repair only diagnosed gaps in
+  `engine/native/properties/helmholtz_tape.hpp` and
+  `engine/native/properties/density.cpp`. Preserve branch/count/conditioning on
+  the native resolved state for later bindings, reuse the resolved density for
+  all requested state work, and retain valid roots and partial outputs.
+- **Check:** add zero/nonzero-support mass-action value and derivative-residual
+  ladders with condition diagnostics; pressure residual/slope and implicit-chain
+  ladders for one-root and multiple-root cases; vapor/liquid identity, ambiguous
+  unspecified-root, warm-anchor replay and branch-disappearance cases. Preserve
+  `native.properties.m8` and the current density diagnostics.
+- **Stop condition:** return to Diagnose/Design if the unweighted defining
+  Jacobian is itself singular, a tangent/spinodal root is needed, the bounded
+  scan cannot establish the requested branch, or a proposed fix requires a
+  composition floor, alternate density solver or phase search.
+
+##### P3 — Ideal and Total properties and references
+
+- **Resolve first:** publish one native output/availability matrix for Ideal,
+  Residual and Total `h`, `u`, `s`, `c_p` and `c_v`, naming each governing
+  equation, unit, standard pressure/density basis and required thermal inputs.
+  Complete the fixed-`P0`/fixed-`rho0` conversion, four declared reaction-basis
+  mappings, ionic gauge requirements, `K(T)` derivative meaning and the
+  disposition of sourced total anchors affected by F1. Missing inputs disable
+  only consuming outputs.
+- **Build:** reuse `engine/native/contributions/ideal.hpp`, adapt only justified
+  behavior from old `engine/src/epcsaft/thermochemistry.py`, and extend the
+  current native Properties/reference owners. Keep all thermodynamic arithmetic
+  native, one value per meaning, and retire adapted duplicate Python arithmetic;
+  PH/PS/UV solves and reaction/reference fitting remain deferred.
+- **Check:** for every admitted thermal form and interval, verify component and
+  mixture anchor values, `dh/dT=c_p`, `ds/dT=c_p/T`, governing Total identities,
+  pressure/density reference conversion and `K(T)` value/temperature derivative.
+  Exercise missing-input, interval endpoint/gap/overlap, inconsistent
+  thermochemistry/`K(T)` and residual-only availability paths.
+- **Stop condition:** do not map an anchor or reaction convention whose source
+  standard state is incomplete, infer an ionic gauge, integrate through an
+  uncovered interval, substitute residual values for Total outputs, or copy
+  thermodynamic calculations into Python.
+
+##### P4 — General property derivative actions
+
+- **Resolve first:** freeze a table whose rows are the qualified P1/P3
+  observables and whose columns state `(T,rho,x;theta)` or fixed-branch
+  `(T,P,x;theta)`, balanced composition directions, parameter directions,
+  requested action order, required energy order, units and singular/unavailable
+  behavior. Explicitly reconcile the “actions through third order” requirement
+  with ALG-ACTIONS' higher energy-order requirements for calorics; an
+  implementation worker must not infer that matrix.
+- **Build:** reuse `engine/native/properties/helmholtz_tape.hpp` and justified
+  pieces of old `engine/src/epcsaft/_native/derivatives.hpp` and
+  `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py`.
+  Implement only missing directional contractions, balanced-coordinate mapping,
+  parameter Jacobians and dependency-driven full/selected evaluation. Preserve
+  central values when an action is unavailable; add no dense tensor owner,
+  second AD engine or cache hierarchy.
+- **Check:** use independent directional step ladders for every admitted matrix
+  cell, including direct versus fixed-pressure implicit chains, zero-sum
+  composition directions, active/fixed parameter directions, mixed actions and
+  singular branches. Verify selected output equals the same full-output field
+  and does not perform unrelated derivative sweeps; preserve current M3–M5, M7
+  and M9 checks where still applicable.
+- **Stop condition:** return an action to Design when it needs an unspecified
+  observable definition or energy order, crosses an interval/support/branch,
+  has a singular defining Jacobian, or cannot meet the frozen numerical ladder.
+  Do not normalize an unbalanced caller direction by silently choosing a
+  compensating species.
+
+##### P5 — Properties qualification
+
+- **Resolved:** this is verify-only integration; it introduces no property,
+  reference method, derivative representation or public API.
+- **Check:** build one non-editable wheel and replay all still-applicable P1–P4
+  falsifiers. Add only uncovered integration rows for changing `T`, composition
+  and branch on one retained mixture; same-branch density/pressure route
+  agreement; full/selected value and failure agreement; valid partial outputs;
+  and repeated-state/tape freshness. Measure equivalent accepted work with
+  `properties_floor`, inspect the Properties and total code budgets, retain all
+  failures and claim limits, and obtain independent final-tree capability review.
+- **Stop condition:** any failed owner-specific check reopens its earliest P1–P4
+  row. Do not hide it in P5, repeat unaffected campaigns, add a new method, or
+  proceed to Equilibrium until every current Properties row is qualified.
 
 ### Equilibrium
 
@@ -486,7 +613,11 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core CORE1 through CORE4 and Contributions C1 through C4 are qualified. The requested Contributions delivery is complete; Properties remains pending and is outside this assignment. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core CORE1 through CORE4 and Contributions C1 through C4
+are qualified. P1 planning is active; implementation remains gated on its
+linked issue reuse decision and independent Design Ready review. The read-only
+companion presents ordinary execution records and retained historical evidence;
+it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
@@ -499,8 +630,9 @@ Current stage: bounded Core CORE1 through CORE4 and Contributions C1 through C4 
 | Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
 | C1 | [Qualify hard-chain, dispersion and ideal Helmholtz formulation (#6)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/6) | Complete on 2026-09-10: retained native formulas, explicit thermal inputs, off-normalized caller checks and independent CSE/Ponytail acceptance qualify the bounded C1 slice. Properties implementation and pinned F5 remain outside scope. |
 | C2 | [Qualify association equations and support limits (#8)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/8) | Complete on 2026-09-10: 19 independent scalar-equation/limit comparisons and CSE/Ponytail acceptance qualify the bounded existing association owner with zero runtime additions. The separate association experiments and Properties P2 implicit-support limits remain excluded. |
-| C3 | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Active on 2026-09-10: verify the Ready keep/verify design with bounded native scalar references and one current wheel; C1/C2 prerequisites qualified. No runtime correction is presumed. |
+| C3 | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Complete on 2026-09-10: 29 retained scalar/reference comparisons, final-wheel replay and independent CSE/Ponytail acceptance qualified the existing contribution owners with no runtime additions. |
 | C4 | [Integrated Contributions qualification (#13)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/13) | Complete on 2026-09-10: final-wheel replay, retained-value agreement, bounded cost and independent ownership/acceptance review passed. Stop at Contributions; Properties and excluded failures remain pending. |
+| P1-design | [Properties execution handoff](#p1--residual-properties-and-caloric-correction) | Active on 2026-09-10: publish the bounded verify-first issue, resolve the `c_p^r` conditioning basis, record the current/old reuse decision and obtain fresh independent Design Ready review before a Luna implementation worker changes code. |
 
 Repository separation is a completed delivery prerequisite. It does not change
 scientific milestone qualification; subsequent work follows the scientific
@@ -750,10 +882,10 @@ F1–F5 diagnoses and E1–E12 evidence candidates, not current scheduling autho
 | C2 | Verify current `contributions/association.hpp` and contribution sum; old association cases supply additional comparisons. | No open scientific choice in the accepted scalar-equation design. Reference/unit/topology test errors are corrected against those equations; a demonstrated production defect needs bounded diagnosis. | Implement/correct the specified analytic mass-action, multiplicity, asymmetric topology and scalar-limit checks; retain zero runtime additions unless a defect is established. P2 owns implicit elimination. |
 | C3 | Verify current `contributions/electrolyte.hpp` and `born.hpp`; reuse retained ionic/source cases. | No open model choice in the accepted formula-verification design. Establish the specified independent integral/reference and numerical error bound; diagnose an actual discrepancy before changing formulas. | Add the specified finite-size DH, two-region Born, unit and dielectric-limit comparisons to the existing suite. No new model, retired polar terms or unsupported derivative claim. |
 | C4 | Verify existing Contributions cases and retained references. | No new algorithm. Select only integrated comparison or equal-accuracy cost gaps not already covered by applicable evidence. | Run the identified integration/cost checks and independent acceptance; reuse lower-slice records that still apply. |
-| P1 | Repair/verify current `properties/helmholtz_model.cpp` and state checks; F1 correction already exists. | The residual-energy identity and F1 correction are settled. Resolve only a new discrepancy or missing reference/conditioning basis for another caloric check. | Retain the corrected state evaluator; add missing independent caloric/limit comparisons and fix only diagnosed terms. |
+| P1 | Verify current `properties/helmholtz_model.cpp` and `tests/native/properties_checks.cpp`; the F1 correction and residual `s/u/h` identities already exist. | Establish the missing `c_v^r` and fixed-pressure `c_p^r` ladders and the `Z+rho Z_rho` conditioning/unavailability basis. The residual-energy identity and F1 correction are settled. | Start with zero runtime additions. Retain the corrected evaluator; add the bounded caloric/limit comparisons and repair only a reproduced equation or availability defect. |
 | P2 | Repair/verify current `properties/density.cpp` and `helmholtz_tape.hpp`; old pressure-closure/association cases. | Resolve regular zero-support association elimination versus genuinely nonsmooth ionic insertion, and the density branch/anchor/disappearance contract; derive the corresponding implicit pressure chain. | Implement the selected correction in the current tape/density owners; preserve valid roots, caller coordinates and state reuse; verify support and pressure-closure ladders. |
 | P3 | Adapt old `engine/src/epcsaft/thermochemistry.py` and total-enthalpy consumer algebra into current Contributions/Properties; retain `infinite_dilution_reference.cpp`. | Finish source-pressure/density-reference conversions, four reaction-basis mappings, gauge/thermal consistency and required-input rules; decide the mapping of sourced total anchors after the residual correction. | Adapt justified old thermochemistry into current native Contributions/Properties; wire explicit Ideal/Total/reference outputs and K(T). Reject duplicate Python physics and erroneous anchors. PH/PS/UV solves remain deferred. |
-| P4 | Adapt old `_native/derivatives.hpp` and `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py` onto the current tape. | Specify each requested observable and independent coordinate chart, derivative order and direct/implicit chain through third order; settle full/selected dependencies and singular/unavailable behavior. | Adapt existing tape and old supported actions to that contract; add only missing contractions, selection/reuse and balanced-coordinate mapping. No second derivative engine or unjustified dense tensor. |
+| P4 | Adapt old `engine/src/epcsaft/_native/derivatives.hpp` and `engine/tests/eos/numerical/test_fixed_pressure_composition_derivatives.py` onto the current tape. | Freeze the observable × coordinate × action-order matrix, including the energy order required by caloric actions; settle full/selected dependencies and singular/unavailable behavior. | Adapt existing tape and old supported actions to that contract; add only missing contractions, selection/reuse and balanced-coordinate mapping. No second derivative engine or unjustified dense tensor. |
 | P5 | Verify existing identity, pressure-closure and derivative cases on the combined Properties owner. | Select independent action ladders, branch cases and numerical/conditioning limits only where upstream evidence leaves a gap. No new property method by default. | Execute repeated-state, closure, availability and selective/full comparisons; review integration and equivalent-work cost. |
 | E1 | Repair current `equilibrium/request_compile.cpp` and `gibbs_minimizer.cpp`; inspect old `engine/cpp/equilibrium/reactive_finite_phase.cpp` evaluation reuse. | Diagnose F5 and complete the weighted objective/constraint derivative chain for pinned/free intensives at arbitrary callback points; establish a correction against the focused Hessian ladder. | Repair the existing shared rows/Hessian owner and adopt justified point-evaluation reuse; preserve local checks and exact objective-factor/multiplier meaning. No alternate minimizer. |
 | E2 | Repair/verify current compiler, stoichiometry, boundary starts and specification cases; old declared/reactive equilibrium examples. | Finish admissible declared specification combinations and their rank/support/amount semantics using the accepted formulation; resolve any cell the existing compiler cannot represent. | Map TP/bubble/dew/fraction/amount inputs to the existing compiler and shared driver, add missing admission/initialization and independent cases. No thermal flash or discovery prerequisite. |
