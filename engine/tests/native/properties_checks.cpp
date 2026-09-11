@@ -3,6 +3,7 @@
 #include "recording_support.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -21,6 +22,100 @@ namespace {
 
 bool close(double left, double right, double tolerance) {
     return std::abs(left - right) <= tolerance * std::max(1.0, std::abs(right));
+}
+
+struct P1Case final {
+    const char* name;
+    epcsaft::Parameters parameters;
+    std::vector<double> composition;
+    double temperature, pressure;
+    epcsaft::DensityBranch branch;
+    const char* branch_name;
+};
+
+std::array<P1Case, 5> p1_cases() {
+    return {{
+        {"ethane-vapor", properties_support::ethane(), {1.0}, 200.0, 217800.69494692178,
+         epcsaft::DensityBranch::Vapor, "vapor"},
+        {"ethane-liquid", properties_support::ethane(), {1.0}, 200.0, 217800.69494692178,
+         epcsaft::DensityBranch::Liquid, "liquid"},
+        {"associating-binary", properties_support::associating_binary(), {0.1385, 0.8615},
+         313.15, 1.0e5, epcsaft::DensityBranch::Liquid, "liquid"},
+        {"aqueous-electrolyte", properties_support::aqueous_electrolyte(), {0.98, 0.01, 0.01},
+         298.15, 1.0e5, epcsaft::DensityBranch::Liquid, "liquid"},
+        {"nine-species", properties_support::nine_species(),
+         {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0},
+         313.15, 1.0e5, epcsaft::DensityBranch::Liquid, "liquid"},
+    }};
+}
+
+bool finite_state_without_cp(const epcsaft::State& state) {
+    return std::isfinite(state.residual_helmholtz) && std::isfinite(state.pressure)
+        && std::isfinite(state.residual_entropy) && std::isfinite(state.residual_internal_energy)
+        && std::isfinite(state.residual_enthalpy)
+        && std::isfinite(state.residual_isochoric_heat_capacity)
+        && std::isfinite(state.molar_density)
+        && std::isfinite(state.pressure_density_derivative);
+}
+
+void p1_group(const char* id, const char* prefix, std::size_t count,
+              const char* definition, const char* coordinates) {
+    recording_support::expect_group(
+        recording_support::active_test_id(), id, prefix, count, definition, coordinates
+    );
+}
+
+std::string p1_pressure_record(const char* prefix, const epcsaft::State& state,
+                               double target_pressure, const char* requested_branch) {
+    const auto* convergence = state.density_convergence.has_value()
+        ? &*state.density_convergence : nullptr;
+    const bool accepted = convergence != nullptr
+        && convergence->criterion != nullptr
+        && convergence->stop == epcsaft::core::Stop::converged
+        && std::isfinite(convergence->residual)
+        && convergence->residual <= convergence->criterion->value;
+    CHECK(accepted);
+    if (!accepted) return {};
+    const auto name = [prefix](const char* suffix) {
+        return std::string(prefix) + "_" + suffix;
+    };
+    return recording_support::fields({
+        recording_support::field(name("requested_branch").c_str(), requested_branch),
+        recording_support::field(name("target_pressure").c_str(), target_pressure),
+        recording_support::field(name("achieved_pressure").c_str(), state.pressure),
+        recording_support::field(name("density").c_str(), state.molar_density),
+        recording_support::field(name("convergence_stop").c_str(),
+                                 epcsaft::core::stop_name(convergence->stop)),
+        recording_support::field(name("convergence_residual").c_str(), convergence->residual),
+        recording_support::field(name("convergence_criterion").c_str(),
+                                 convergence->criterion->value)
+    });
+}
+
+void p1_compare(const std::string& id, const char* quantity, const char* unit,
+                double model, double reference, const std::string& inputs, double tolerance,
+                const char* group, const char* point) {
+    const bool ok = close(model, reference, tolerance);
+    const bool cv = std::string(group) == "p1-cv";
+    const bool cp = std::string(group) == "p1-cp";
+    recording_support::compare(
+        id.c_str(), quantity, unit, model, reference, inputs, "Relationship",
+        cv ? "centered_temperature_derivative"
+           : cp ? "independent_fixed_pressure_derivative" : "dilute_density_refinement",
+        cv ? "c_v^r=(du^r/dT)_(rho,x)"
+           : cp ? "c_p^r=(dh^r/dT)_(P,x)" : "field/rho has a converged dilute limit",
+        "reference_or_one", 0.0, tolerance, ok, group, point
+    );
+    CHECK(ok);
+}
+
+void p1_observe(const std::string& id, const char* quantity, const char* unit, double value,
+                const std::string& inputs, const char* basis, const char* method,
+                const char* claim, const char* group, const char* point) {
+    recording_support::observe(
+        id.c_str(), quantity, unit, value, std::nullopt, inputs, basis, method, claim,
+        group, point
+    );
 }
 
 std::string model_inputs(const epcsaft::Parameters& parameters, double temperature,
@@ -170,6 +265,96 @@ void residual_internal_energy_identity_ladder() {
     CHECK(close(state.residual_internal_energy, enthalpy_identity, 1.0e-10));
 }
 
+void residual_properties_and_caloric_ladders() {
+    constexpr double gas_constant = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
+    constexpr std::array<double, 4> deltas = {0.1, 0.03, 0.01, 0.003};
+    const auto cases = p1_cases();
+    p1_group("p1-cv", "cv-ladder/", cases.size() * deltas.size(), "fixed-density residual isochoric heat-capacity ladder", "T,rho,x,delta_T");
+    p1_group("p1-cp", "cp-ladder/", cases.size() * deltas.size(), "fixed-pressure residual isobaric heat-capacity ladder", "T,P,x,delta_T");
+    p1_group("p1-dilute", "dilute-state/", 4, "neutral residual caloric dilute ladder", "T,rho,x");
+    p1_group("p1-dilute-limit", "dilute-limit/", 5, "neutral residual caloric field over density limit", "T,rho,x");
+    p1_group("p1-conditioning", "conditioning/", 4, "residual isobaric heat-capacity conditioning", "T,rho,x,D");
+
+    for (const auto& item : cases) {
+        epcsaft::HelmholtzModel model(item.parameters);
+        const auto pressure_state = model.state_at_pressure(item.temperature, item.pressure, item.composition, item.branch);
+        const auto density_state = model.state(item.temperature, pressure_state.molar_density, item.composition);
+        const double D = pressure_state.pressure_density_derivative / (gas_constant * item.temperature);
+        CHECK(std::isfinite(D) && D > 0.0);
+        CHECK(std::isfinite(density_state.residual_isochoric_heat_capacity));
+        CHECK(pressure_state.residual_isobaric_heat_capacity.has_value());
+        const double cp = *pressure_state.residual_isobaric_heat_capacity;
+        CHECK(std::isfinite(cp));
+        const auto inputs = recording_support::fields({model_inputs(item.parameters, item.temperature, 1.0 / pressure_state.molar_density, item.composition), p1_pressure_record("central", pressure_state, item.pressure, item.branch_name), recording_support::field("D", D)});
+        double cv_coarse = 0.0;
+        double cp_coarse = 0.0;
+        for (std::size_t step = 0; step < deltas.size(); ++step) {
+            const double delta = deltas[step];
+            const auto cv_plus = model.state(item.temperature + delta, pressure_state.molar_density, item.composition);
+            const auto cv_minus = model.state(item.temperature - delta, pressure_state.molar_density, item.composition);
+            const double cv_reference = (cv_plus.residual_internal_energy - cv_minus.residual_internal_energy) / (2.0 * delta);
+            const double tolerance = delta <= 0.01 ? 1.0e-8 : 1.0e-5;
+            const std::string point = std::string(item.name) + "/" + recording_support::number(delta);
+            p1_compare("cv-ladder/" + point, "residual_isochoric_heat_capacity", "J/mol/K", density_state.residual_isochoric_heat_capacity, cv_reference, recording_support::fields({inputs, recording_support::field("route", "fixed-density"), recording_support::field("delta_T", delta), recording_support::field("P_plus", cv_plus.pressure), recording_support::field("P_minus", cv_minus.pressure)}), tolerance, "p1-cv", point.c_str());
+            const auto cp_plus = model.state_at_pressure(item.temperature + delta, item.pressure, item.composition, item.branch);
+            const auto cp_minus = model.state_at_pressure(item.temperature - delta, item.pressure, item.composition, item.branch);
+            CHECK(close(cp_plus.pressure, item.pressure, 1.0e-9));
+            CHECK(close(cp_minus.pressure, item.pressure, 1.0e-9));
+            const double cp_reference = (cp_plus.residual_enthalpy - cp_minus.residual_enthalpy) / (2.0 * delta);
+            p1_compare("cp-ladder/" + point, "residual_isobaric_heat_capacity", "J/mol/K", cp, cp_reference, recording_support::fields({inputs, p1_pressure_record("plus", cp_plus, item.pressure, item.branch_name), p1_pressure_record("minus", cp_minus, item.pressure, item.branch_name), recording_support::field("route", "fixed-pressure"), recording_support::field("delta_T", delta)}), tolerance, "p1-cp", point.c_str());
+            if (step == 2) {
+                cv_coarse = cv_reference;
+                cp_coarse = cp_reference;
+            } else if (step == 3) {
+                CHECK(close(cv_coarse, cv_reference, 2.0e-8));
+                CHECK(close(cp_coarse, cp_reference, 2.0e-8));
+            }
+        }
+    }
+
+    epcsaft::HelmholtzModel dilute_model(properties_support::neutral_binary());
+    const std::vector<double> dilute_composition = {0.4, 0.6};
+    const std::array<double, 4> dilute_densities = {10.0, 1.0, 0.1, 0.01};
+    std::array<epcsaft::State, 4> dilute_states;
+    for (std::size_t index = 0; index < dilute_densities.size(); ++index) {
+        dilute_states[index] = dilute_model.state(300.0, dilute_densities[index], dilute_composition);
+        const auto& state = dilute_states[index];
+        CHECK(finite_state_without_cp(state));
+        CHECK(state.residual_isobaric_heat_capacity.has_value());
+        const double D = state.pressure_density_derivative / (gas_constant * 300.0);
+        p1_observe("dilute-state/" + recording_support::number(dilute_densities[index]), "residual_helmholtz_over_rho", "m3/mol", state.residual_helmholtz / dilute_densities[index], recording_support::fields({model_inputs(dilute_model.parameters(), 300.0, 1.0 / dilute_densities[index], dilute_composition), recording_support::field("D", D), recording_support::field("fields_over_rho", std::vector<double>{state.residual_entropy / dilute_densities[index], state.residual_internal_energy / dilute_densities[index], state.residual_enthalpy / dilute_densities[index], state.residual_isochoric_heat_capacity / dilute_densities[index], *state.residual_isobaric_heat_capacity / dilute_densities[index]})}), "Observation", "dilute_ladder", "residual state over density remains finite", "p1-dilute", recording_support::number(dilute_densities[index]).c_str());
+    }
+    const auto& coarse = dilute_states[2];
+    const auto& fine = dilute_states[3];
+    const auto dilute_inputs = recording_support::fields({model_inputs(dilute_model.parameters(), 300.0, 1.0 / dilute_densities[2], dilute_composition), recording_support::field("rho_coarse", dilute_densities[2]), recording_support::field("rho_fine", dilute_densities[3])});
+    const std::array<std::pair<const char*, double epcsaft::State::*>, 4> dilute_fields = {{{"residual_entropy", &epcsaft::State::residual_entropy}, {"residual_internal_energy", &epcsaft::State::residual_internal_energy}, {"residual_enthalpy", &epcsaft::State::residual_enthalpy}, {"residual_isochoric_heat_capacity", &epcsaft::State::residual_isochoric_heat_capacity}}};
+    for (const auto& [quantity, field] : dilute_fields) {
+        p1_compare(std::string("dilute-limit/") + quantity, quantity,
+                   std::string(quantity) == "residual_entropy"
+                       || std::string(quantity) == "residual_isochoric_heat_capacity"
+                       ? "J m3/(mol2 K)" : "J m3/mol2",
+                   coarse.*field / dilute_densities[2], fine.*field / dilute_densities[3],
+                   dilute_inputs, 5.0e-6, "p1-dilute-limit", quantity);
+    }
+    p1_compare("dilute-limit/residual_isobaric_heat_capacity", "residual_isobaric_heat_capacity", "J m3/(mol2 K)", *coarse.residual_isobaric_heat_capacity / dilute_densities[2], *fine.residual_isobaric_heat_capacity / dilute_densities[3], dilute_inputs, 5.0e-6, "p1-dilute-limit", "residual_isobaric_heat_capacity");
+
+    epcsaft::HelmholtzModel conditioning_model(properties_support::ethane());
+    const auto conditioned = conditioning_model.state(280.0, 3000.0, {1.0});
+    const auto unavailable = conditioning_model.state(280.0, 4000.0, {1.0});
+    const double conditioned_D = conditioned.pressure_density_derivative / (gas_constant * 280.0);
+    const double unavailable_D = unavailable.pressure_density_derivative / (gas_constant * 280.0);
+    CHECK(std::isfinite(conditioned_D) && conditioned_D > 0.0);
+    CHECK(conditioned.residual_isobaric_heat_capacity.has_value());
+    p1_observe("conditioning/near-zero-positive-D", "D", "1", conditioned_D, recording_support::fields({model_inputs(conditioning_model.parameters(), 280.0, 1.0 / 3000.0, {1.0}), recording_support::field("D", conditioned_D), recording_support::field("cp", *conditioned.residual_isobaric_heat_capacity)}), "Observation", "conditioning_stress", "near-zero positive D is conditioning stress", "p1-conditioning", "near-zero-positive-D");
+    p1_observe("conditioning/near-zero-positive-cp", "residual_isobaric_heat_capacity", "J/mol/K", *conditioned.residual_isobaric_heat_capacity, recording_support::fields({model_inputs(conditioning_model.parameters(), 280.0, 1.0 / 3000.0, {1.0}), recording_support::field("D", conditioned_D)}), "Observation", "conditioning_stress", "finite c_p^r retained for positive D", "p1-conditioning", "near-zero-positive-cp");
+    CHECK(std::isfinite(unavailable_D) && unavailable_D < 0.0);
+    const bool unavailable_cp = !unavailable.residual_isobaric_heat_capacity.has_value();
+    recording_support::compare_custom("conditioning/negative-D-cp-unavailable", "residual_isobaric_heat_capacity_available", "bool", unavailable_cp ? 0.0 : 1.0, 0.0, recording_support::fields({model_inputs(conditioning_model.parameters(), 280.0, 1.0 / 4000.0, {1.0}), recording_support::field("D", unavailable_D), recording_support::field("unavailable_reason", "nonpositive mechanical denominator")}), "Availability", "mechanical_conditioning", "c_p^r is unavailable when D<0", "absolute", unavailable_cp, "p1-conditioning", "negative-D-cp-unavailable");
+    CHECK(unavailable_cp);
+    const bool finite_other_outputs = finite_state_without_cp(unavailable);
+    recording_support::compare_custom("conditioning/negative-D-other-fields-finite", "residual_properties_finite", "bool", finite_other_outputs ? 1.0 : 0.0, 1.0, recording_support::fields({model_inputs(conditioning_model.parameters(), 280.0, 1.0 / 4000.0, {1.0}), recording_support::field("D", unavailable_D)}), "Availability", "partial_availability", "other residual outputs remain finite when c_p^r is unavailable", "absolute", finite_other_outputs, "p1-conditioning", "negative-D-other-fields-finite");
+    CHECK(finite_other_outputs);
+}
 void derivatives_and_limits() {
     const std::vector<std::pair<epcsaft::Parameters, std::vector<double>>> cases = {
         {properties_support::neutral_binary(), {0.4, 0.6}},
@@ -1398,6 +1583,7 @@ void core_c2_parameter_coordinates() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.properties.p1", "Residual_properties_and_caloric_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P1", "cv-ladder/*,cp-ladder/*,dilute-state/*,dilute-limit/*,conditioning/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P1", "cv-ladder/*:20,cp-ladder/*:20,dilute-state/*:4,dilute-limit/*:5,conditioning/*:4"}, residual_properties_and_caloric_ladders, "P1"},
         {{"native.properties.f1", "Residual_internal_energy_identity_ladder", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "P1", "a_res,pressure,compressibility_factor,residual_entropy,residual_enthalpy,temperature-ladder/*,internal-energy-identity,enthalpy-internal-energy-identity", "engine/tests/native/properties_checks.cpp", "properties_checks", "F1", "a_res:1,pressure:1,compressibility_factor:1,residual_entropy:1,residual_enthalpy:1,temperature-ladder/*:4,internal-energy-identity:1,enthalpy-internal-energy-identity:1"}, residual_internal_energy_identity_ladder, "F1"},
         {{"native.properties.m2", "Derivatives_and_limits", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P1", "value-state/*,residual-sum/*,gradient-density/*,hessian-symmetry/*,euler/*,internal-energy/*,internal-energy-entropy/*,chemical-potential/*,low-density/*,low-density-z/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M2", "value-state/*:4,residual-sum/*:4,gradient-density/*:4,hessian-symmetry/*:178,euler/*:4,internal-energy/*:4,internal-energy-entropy/*:4,chemical-potential/*:4,low-density/*:4,low-density-z/*:4"}, derivatives_and_limits},
         {{"native.properties.m3", "Finite_difference_gradient", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "gradient/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M3", "gradient/*:5"}, finite_difference_gradient},
