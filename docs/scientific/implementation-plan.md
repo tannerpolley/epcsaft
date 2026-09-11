@@ -60,14 +60,14 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 |---|---|---:|---:|
 | Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
 | Contributions | ██████████ 100.0% (4/4) | 0–0 | 6.35 |
-| Properties | ██░░░░░░░░ 20.0% (1/5) | 7–20 | 1.9 (partial) |
+| Properties | ████░░░░░░ 40.0% (2/5) | 6–18 | 5 (partial) |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/5) | 10–30 | — |
 | Regression | ░░░░░░░░░░ 0.0% (0/4) | 4–12 | — |
 | Surface | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **9/34 qualified milestones (26.5%)**; **31–94 remaining Astra hours**.
+Total: **10/34 qualified milestones (29.4%)**; **30–92 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -305,7 +305,7 @@ flowchart TD
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
 | P1 — Residual properties and caloric correction | [x] | 0 | 0.5 | C4 qualified | Starting with zero runtime additions, preserve F1 and independently qualify residual `s`, `u`, `h`, `c_v` and conditioned `c_p` at fixed density or pressure as defined, including identities, low-density limits and explicit `c_p` unavailability. | [2026-09-11: P1 qualification](reviews/p1-2026-09-11.md); 53 retained rows on the installed wheel, including 47 checked comparisons and six explicit observations. Runtime additions remain zero; F1 and M2 are revalidated. P2 remains design-gated and the final independent reviewer is reserved for the complete P1–P5 candidate. |
-| P2 — Association elimination and density closure | [-] | 1–2 | 1.4 | P1 qualified | Resolve the zero-support association and density branch contracts, then repair only demonstrated gaps; qualify implicit residuals/conditioning, root count and identity, anchor/disappearance behavior, pressure closure and resolved-state reuse. | [2026-09-11: P2 Design Ready](reviews/p2-design-2026-09-11.md), published as issue #16: the unweighted mass-action Jacobian, bounded density branch/count/anchor semantics, fixed-pressure chain, falsifiers and stop conditions are frozen; no runtime implementation started. |
+| P2 — Association elimination and density closure | [x] | 0 | 4.5 | P1 qualified | Resolve the zero-support association and density branch contracts, then repair only demonstrated gaps; qualify implicit residuals/conditioning, root count and identity, anchor/disappearance behavior, pressure closure and resolved-state reuse. | [2026-09-11: P2 qualification](reviews/p2-2026-09-11.md), following [P2 Design Ready](reviews/p2-design-2026-09-11.md): manager review and 37 retained final-wheel rows support the replaced association elimination, bounded density branch/count/anchor behavior, fixed-pressure ladders and explicit claim limits; the independent reviewer remains reserved for the complete P1–P5 candidate. |
 | P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 qualified | Resolve the exact output/availability and reference-basis matrix, then adapt the qualified ideal correlations and justified old reference algebra into native owners; qualify Ideal/Residual/Total calorics, fixed-reference conversions and typed `K(T)` consistency. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P3 execution handoff below; design resolution and qualification pending. |
 | P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 qualified | Freeze the observable × coordinate × order matrix first; then reuse the common tape for balanced-composition, fixed-density/fixed-pressure and parameter actions, selected dependencies and requested smooth actions through third order without dense tensors or a second derivative engine. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P4 execution handoff below; action matrix and qualification pending. |
 | P5 — Properties qualification | [ ] | 1–3 | — | P4 qualified | On one final wheel, revalidate P1–P4; qualify repeated-state freshness, density/pressure route agreement, per-output availability, full/selected equivalence, equivalent accepted work, budgets and independent final acceptance. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P5 execution handoff below; integration qualification pending. |

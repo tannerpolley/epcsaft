@@ -57,30 +57,33 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     const std::vector<double>& sites,
     const std::vector<double>& composition,
     const Parameters& parameters,
-    double total,
     double number_density,
     const std::vector<double>& delta
 ) {
     const std::size_t sites_count = sites.size();
-    Eigen::MatrixXd association_hessian = Eigen::MatrixXd::Zero(
+    Eigen::MatrixXd mass_action_jacobian = Eigen::MatrixXd::Zero(
         static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count));
     for (std::size_t a = 0; a < sites_count; ++a) {
-        const double mass_a = composition[parameters.site_component[a]]
-            * parameters.site_multiplicity[a];
+        double bonded = 0.0;
         for (std::size_t b = 0; b < sites_count; ++b) {
             const double mass_b = composition[parameters.site_component[b]]
                 * parameters.site_multiplicity[b];
-            association_hessian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
-                -total * (
-                    (a == b ? mass_a / (sites[a] * sites[a]) : 0.0)
-                    + number_density * mass_a * mass_b * delta[a * sites_count + b]
-                );
+            const double delta_ab = delta[a * sites_count + b];
+            bonded += mass_b * sites[b] * delta_ab;
+            mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
+                sites[a] * number_density * mass_b * delta_ab;
         }
+        mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(a)) +=
+            1.0 + number_density * bonded;
     }
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization(association_hessian);
-    if (sites_count != 0
-        && factorization.rank() != static_cast<Eigen::Index>(sites_count)) {
-        throw std::runtime_error("association Hessian is singular");
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian);
+    if (sites_count != 0) {
+        const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
+        if (!std::isfinite(pivots.maxCoeff())
+            || pivots.minCoeff() <= policy::ASSOCIATION_JACOBIAN_CONDITION.value
+                * pivots.maxCoeff()) {
+            throw std::runtime_error("association Jacobian is ill-conditioned");
+        }
     }
     return factorization;
 }
@@ -443,7 +446,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         scope.probe("recording", 1.0);
     }
     tape_->function.new_dynamic(sites);
-    std::vector<double> weight(1 + sites.size(), 0.0);
+    std::vector<double> weight(1 + 2 * sites.size(), 0.0);
     weight.front() = 1.0;
     HelmholtzDerivatives result;
     result.site_fractions = sites;
@@ -464,7 +467,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     );
     const double number_density = density * NUMBER_DENSITY_PER_ANGSTROM3;
     auto factorization = site_factorization(
-        sites, composition, parameters_, total, number_density, delta);
+        sites, composition, parameters_, number_density, delta);
     if (order == DerivativeOrder::PressureSlope) {
         result.gradient = tape_->function.Reverse(1, weight);
         ++counters_.reverse;
@@ -474,21 +477,23 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         ++counters_.forward;
         const auto second = tape_->function.Reverse(2, weight);
         ++counters_.reverse;
+        Eigen::VectorXd potential_cross(static_cast<Eigen::Index>(sites.size()));
+        Eigen::VectorXd mass_action_cross(static_cast<Eigen::Index>(sites.size()));
+        for (std::size_t site = 0; site < sites.size(); ++site) {
+            potential_cross(static_cast<Eigen::Index>(site)) = first[1 + site];
+            mass_action_cross(static_cast<Eigen::Index>(site)) =
+                first[1 + sites.size() + site];
+        }
         double site_correction = 0.0;
         if (!sites.empty()) {
-            Eigen::VectorXd cross_v(static_cast<Eigen::Index>(sites.size()));
-            for (std::size_t site = 0; site < sites.size(); ++site) {
-                cross_v(static_cast<Eigen::Index>(site)) = first[1 + site];
-            }
-            site_correction = cross_v.dot(factorization.solve(cross_v));
-            Eigen::VectorXd D(static_cast<Eigen::Index>(sites.size()));
-            for (std::size_t site = 0; site < sites.size(); ++site) {
-                D(static_cast<Eigen::Index>(site)) = total
-                    * composition[parameters_.site_component[site]]
-                    * parameters_.site_multiplicity[site]
-                    / sites[site];
-            }
-            result.gradient_floor = std::abs(cross_v.dot(factorization.solve(D)))
+            site_correction = potential_cross.dot(
+                factorization.solve(mass_action_cross)
+            );
+            const Eigen::VectorXd ones =
+                Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites.size()));
+            result.gradient_floor = std::abs(
+                potential_cross.dot(factorization.solve(ones))
+            )
                 * policy::ASSOCIATION_RESIDUAL.value;
         }
         result.volume_second_derivative = second[3] - site_correction;
@@ -504,6 +509,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     Eigen::MatrixXd cross = Eigen::MatrixXd::Zero(
         static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(total_coordinates)
     );
+    Eigen::MatrixXd mass_action_cross = Eigen::MatrixXd::Zero(
+        static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(total_coordinates)
+    );
     Eigen::MatrixXd base = Eigen::MatrixXd::Zero(
         static_cast<Eigen::Index>(total_coordinates), static_cast<Eigen::Index>(total_coordinates)
     );
@@ -515,6 +523,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         for (std::size_t site = 0; site < sites_count; ++site) {
             cross(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(column)) =
                 first[1 + site];
+            mass_action_cross(
+                static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(column)
+            ) = first[1 + sites_count + site];
         }
         const auto second = tape_->function.Reverse(2, weight);
         ++counters_.reverse;
@@ -529,8 +540,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
         static_cast<Eigen::Index>(total_coordinates)
     );
     if (sites_count != 0) {
-        correction = cross.transpose() * factorization.solve(cross);
-        const Eigen::MatrixXd propagated = factorization.solve(cross).transpose();
+        correction = cross.transpose() * factorization.solve(mass_action_cross);
+        const Eigen::MatrixXd propagated =
+            factorization.solve(mass_action_cross).transpose();
         double maximum = 0.0;
         for (Eigen::Index row = 0; row < propagated.rows(); ++row) {
             double norm = 0.0;
@@ -665,6 +677,8 @@ State HelmholtzModel::state_at_pressure(
     );
     State result = state(temperature, root.molar_density, mole_fractions);
     result.density_convergence = root.convergence;
+    result.density_branch = root.branch;
+    result.stable_root_count = root.stable_root_count;
     scope.finish(root.convergence);
     return result;
 }

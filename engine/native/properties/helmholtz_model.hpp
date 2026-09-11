@@ -33,6 +33,7 @@ struct SweepCounters final {
     std::size_t recordings = 0;
 };
 
+enum class DensityBranch { Unspecified, Vapor, Liquid };
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -54,9 +55,9 @@ struct State final {
     double pressure_density_derivative = 0.0;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
+    DensityBranch density_branch = DensityBranch::Unspecified;
+    std::optional<std::size_t> stable_root_count;
 };
-
-enum class DensityBranch { Unspecified, Vapor, Liquid };
 
 struct DensityRoot final {
     double molar_density = 0.0;

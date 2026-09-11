@@ -1,12 +1,14 @@
 #include "properties/helmholtz_model.hpp"
 #include "properties_support.hpp"
 #include "recording_support.hpp"
+#include "contributions/association.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
@@ -1167,19 +1169,19 @@ void density_and_reference() {
     );
     const auto anchored_liquid = ethane.state_at_pressure(
         280.0, 1e6, {1.0}, epcsaft::DensityBranch::Liquid,
-        cold_vapor.molar_density
+        cold_liquid.molar_density
     );
     const auto anchored_vapor = ethane.state_at_pressure(
         280.0, 1e6, {1.0}, epcsaft::DensityBranch::Vapor,
-        cold_liquid.molar_density
+        cold_vapor.molar_density
     );
     const auto anchored_inputs = recording_support::fields({
         model_inputs(ethane.parameters(), 280.0, 1.0 / cold_liquid.molar_density, {1.0}),
         recording_support::field("P", 1e6),
         recording_support::field("cold_liquid_density", cold_liquid.molar_density),
         recording_support::field("cold_vapor_density", cold_vapor.molar_density),
-        recording_support::field("liquid_anchor", cold_vapor.molar_density),
-        recording_support::field("vapor_anchor", cold_liquid.molar_density),
+        recording_support::field("liquid_anchor", cold_liquid.molar_density),
+        recording_support::field("vapor_anchor", cold_vapor.molar_density),
     });
     recording_support::compare(
         "anchored-liquid", "molar_density", "mol/m3", anchored_liquid.molar_density,
@@ -1311,6 +1313,847 @@ void density_and_reference() {
     CHECK(close(activity.mean_ionic_log_molality_scale,
                 -gamma_coefficient * (std::sqrt(1e-8) - std::sqrt(1e-12)),
                 1e-2));
+}
+
+std::vector<double> p2_association_residuals(
+    double temperature, double volume, const std::vector<double>& composition,
+    const epcsaft::Parameters& parameters, const std::vector<double>& sites
+) {
+    const double density = 1.0 / volume;
+    const auto sigma = epcsaft::segment_sigma(temperature, parameters);
+    const auto diameter = epcsaft::segment_diameter(temperature, parameters, sigma);
+    const auto delta = epcsaft::association_delta(
+        temperature, density, composition, parameters, sigma, diameter
+    );
+    return epcsaft::association_residuals(
+        density, composition, parameters, sites, delta
+    );
+}
+
+struct P2AssociationConditioning final {
+    Eigen::MatrixXd jacobian;
+    std::size_t rank = 0;
+    double pivot_ratio = 1.0;
+};
+
+P2AssociationConditioning p2_association_conditioning(
+    double temperature, double density, const std::vector<double>& composition,
+    const epcsaft::Parameters& parameters, const std::vector<double>& sites
+) {
+    const std::size_t count = sites.size();
+    const auto sigma = epcsaft::segment_sigma(temperature, parameters);
+    const auto diameter = epcsaft::segment_diameter(temperature, parameters, sigma);
+    const auto delta = epcsaft::association_delta(
+        temperature, density, composition, parameters, sigma, diameter
+    );
+    const double number_density = density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3;
+    Eigen::MatrixXd jacobian = Eigen::MatrixXd::Zero(
+        static_cast<Eigen::Index>(count), static_cast<Eigen::Index>(count)
+    );
+    for (std::size_t a = 0; a < count; ++a) {
+        double bonded = 0.0;
+        for (std::size_t b = 0; b < count; ++b) {
+            const auto component = static_cast<std::size_t>(parameters.site_component[b]);
+            const double mass = composition[component] * parameters.site_multiplicity[b];
+            bonded += mass * sites[b] * delta[a * count + b];
+        }
+        for (std::size_t b = 0; b < count; ++b) {
+            const auto component = static_cast<std::size_t>(parameters.site_component[b]);
+            const double mass = composition[component] * parameters.site_multiplicity[b];
+            jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
+                (a == b ? 1.0 + number_density * bonded : 0.0)
+                + sites[a] * number_density * mass * delta[a * count + b];
+        }
+    }
+    P2AssociationConditioning result{std::move(jacobian)};
+    if (count == 0) return result;
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(result.jacobian);
+    result.rank = static_cast<std::size_t>(factorization.rank());
+    const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
+    result.pivot_ratio = pivots.minCoeff() / pivots.maxCoeff();
+    return result;
+}
+
+enum class P2AssociationDirection { Temperature, Volume, AssociationEnergy };
+
+struct P2AssociationAction final {
+    double residual = 0.0;
+    std::size_t rank = 0;
+    double pivot_ratio = 1.0;
+};
+
+P2AssociationAction p2_association_action(
+    double temperature, double volume, const std::vector<double>& composition,
+    const epcsaft::Parameters& parameters, const std::vector<double>& sites,
+    P2AssociationDirection direction
+) {
+    const auto conditioning = p2_association_conditioning(
+        temperature, 1.0 / volume, composition, parameters, sites
+    );
+    using AD = CppAD::AD<double>;
+    const double coordinate = direction == P2AssociationDirection::Temperature
+        ? temperature
+        : direction == P2AssociationDirection::Volume
+            ? volume : parameters.association_energy_over_k[1];
+    std::vector<AD> independent = {AD(coordinate)};
+    CppAD::Independent(independent);
+    const AD temperature_ad = direction == P2AssociationDirection::Temperature
+        ? independent.front() : AD(temperature);
+    const AD volume_ad = direction == P2AssociationDirection::Volume
+        ? independent.front() : AD(volume);
+    std::vector<AD> composition_ad(composition.begin(), composition.end());
+    std::vector<AD> sites_ad(sites.begin(), sites.end());
+    std::vector<epcsaft::detail::ActiveParameter> active;
+    if (direction == P2AssociationDirection::AssociationEnergy) {
+        active.push_back({
+            epcsaft::detail::ParameterFamily::AssociationEnergyOverK, {1, 4}
+        });
+    }
+    const auto tape_parameters = epcsaft::detail::make_tape_parameters(
+        parameters, active, independent
+    );
+    const auto sigma = epcsaft::segment_sigma(temperature_ad, tape_parameters);
+    const auto diameter = epcsaft::segment_diameter(
+        temperature_ad, tape_parameters, sigma
+    );
+    const auto density_ad = AD(1.0) / volume_ad;
+    const auto delta = epcsaft::association_delta_values(
+        temperature_ad, density_ad, composition_ad, tape_parameters, sigma, diameter,
+        tape_parameters.association_energy_over_k, tape_parameters.association_volume
+    );
+    const auto residuals = epcsaft::association_residuals(
+        density_ad, composition_ad, tape_parameters, sites_ad, delta
+    );
+    CppAD::ADFun<double> function(independent, residuals);
+    const auto jacobian = function.Jacobian(std::vector<double>{coordinate});
+    Eigen::VectorXd f_direction(static_cast<Eigen::Index>(sites.size()));
+    for (std::size_t site = 0; site < sites.size(); ++site) {
+        f_direction(static_cast<Eigen::Index>(site)) =
+            jacobian[site];
+    }
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(conditioning.jacobian);
+    const Eigen::VectorXd x_direction = -factorization.solve(f_direction);
+    const double residual = (conditioning.jacobian * x_direction + f_direction)
+        .lpNorm<Eigen::Infinity>();
+    return {residual, conditioning.rank, conditioning.pivot_ratio};
+}
+
+double p2_pressure_slope_floor_reference(
+    double temperature, double volume, const std::vector<double>& composition,
+    const epcsaft::Parameters& parameters, const std::vector<double>& sites
+) {
+    const double density = 1.0 / volume;
+    const auto conditioning = p2_association_conditioning(
+        temperature, density, composition, parameters, sites
+    );
+    if (sites.empty()) return 0.0;
+    const double step = volume * 1.0e-6;
+    const auto plus = p2_association_residuals(
+        temperature, volume + step, composition, parameters, sites
+    );
+    const auto minus = p2_association_residuals(
+        temperature, volume - step, composition, parameters, sites
+    );
+    Eigen::VectorXd potential_cross(static_cast<Eigen::Index>(sites.size()));
+    for (std::size_t site = 0; site < sites.size(); ++site) {
+        const auto component = static_cast<std::size_t>(parameters.site_component[site]);
+        const double mass = composition[component] * parameters.site_multiplicity[site];
+        const double f_volume = (plus[site] - minus[site]) / (2.0 * step);
+        potential_cross(static_cast<Eigen::Index>(site)) =
+            -mass / sites[site] * f_volume;
+    }
+    const Eigen::VectorXd ones =
+        Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites.size()));
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(conditioning.jacobian);
+    return std::abs(potential_cross.dot(factorization.solve(ones)))
+        * epcsaft::policy::ASSOCIATION_RESIDUAL.value;
+}
+
+struct P2PressureChain final {
+    double measured = 0.0;
+    double predicted = 0.0;
+    double pressure_density_derivative = 0.0;
+    double reduced_residual = 0.0;
+    std::size_t stable_root_count = 0;
+    epcsaft::DensityBranch branch = epcsaft::DensityBranch::Unspecified;
+    std::size_t association_rank = 0;
+    double association_pivot_ratio = 1.0;
+};
+
+P2PressureChain p2_fixed_pressure_chain(
+    const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& composition, epcsaft::DensityBranch branch,
+    double step, bool enthalpy
+) {
+    const auto central = model.state_at_pressure(
+        temperature, pressure, composition, branch
+    );
+    const auto plus = model.state_at_pressure(
+        temperature + step, pressure, composition, branch
+    );
+    const auto minus = model.state_at_pressure(
+        temperature - step, pressure, composition, branch
+    );
+    const auto fixed_plus = model.state(
+        temperature + step, central.molar_density, composition
+    );
+    const auto fixed_minus = model.state(
+        temperature - step, central.molar_density, composition
+    );
+    const double pressure_temperature =
+        (fixed_plus.pressure - fixed_minus.pressure) / (2.0 * step);
+    const double density_temperature =
+        -pressure_temperature / central.pressure_density_derivative;
+    const double density_step = central.molar_density * 1.0e-5;
+    const auto density_plus = model.state(
+        temperature, central.molar_density + density_step, composition
+    );
+    const auto density_minus = model.state(
+        temperature, central.molar_density - density_step, composition
+    );
+    const auto quantity = [enthalpy](const epcsaft::State& state) {
+        return enthalpy ? state.residual_enthalpy : state.molar_density;
+    };
+    const double quantity_temperature = quantity(fixed_plus) - quantity(fixed_minus);
+    const double quantity_density = quantity(density_plus) - quantity(density_minus);
+    const double predicted = quantity_temperature / (2.0 * step)
+        + quantity_density / (2.0 * density_step) * density_temperature;
+    const double measured = (quantity(plus) - quantity(minus)) / (2.0 * step);
+    const auto conditioning = p2_association_conditioning(
+        temperature, central.molar_density, composition,
+        model.parameters(), central.site_fractions
+    );
+    return {
+        measured, predicted, central.pressure_density_derivative,
+        central.density_convergence.has_value()
+            ? central.density_convergence->residual : std::numeric_limits<double>::infinity(),
+        central.stable_root_count.value_or(0), central.density_branch,
+        conditioning.rank, conditioning.pivot_ratio
+    };
+}
+
+void properties_p2() {
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-support-residual", "support-residual/", 4,
+        "exact-support association residual", "support");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-support-hessian", "support-hessian/", 6,
+        "association trace implicit Hessian", "trace");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-support-floor", "support-floor/", 2,
+        "exact-support pressure-slope residual floor", "support");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-association-action", "association-action/", 3,
+        "association implicit linear residual", "direction");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-root-residual", "root-residual/", 2,
+        "density root pressure residual is dimensional", "branch");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-root-convergence", "root-convergence/", 2,
+        "density root reduced convergence residual", "branch");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-root-coalescing", "root-coalescing/", 1,
+        "density scan coalesces a root at a grid point", "case");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-root-metadata", "root-metadata/", 2,
+        "two-root branch and count metadata", "branch");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-single-metadata", "single-metadata/", 1,
+        "single-root metadata is unbranched", "state");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-anchor", "anchor/", 3,
+        "anchored local continuation", "case");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-anchor-invalid", "anchor-invalid/", 1,
+        "invalid anchor is rejected at the trust boundary", "case");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-density-selection", "density-selection/", 1,
+        "unspecified multi-root selection is ambiguous", "case");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-fixed-pressure", "fixed-pressure/", 9,
+        "fixed-pressure density implicit derivative ladder", "delta_T");
+
+    const auto associating_parameters = properties_support::associating_binary();
+    epcsaft::HelmholtzModel associating(associating_parameters);
+    const auto record_zero_support = [&](const char* point,
+                                         const epcsaft::HelmholtzModel& model,
+                                         double temperature_value, double density_value,
+                                         const std::vector<double>& composition) {
+        const auto state = model.state(temperature_value, density_value, composition);
+        const auto residuals = p2_association_residuals(
+            temperature_value, 1.0 / density_value, composition,
+            model.parameters(), state.site_fractions
+        );
+        double residual = 0.0;
+        bool finite = finite_state_without_cp(state);
+        for (const double value : state.site_fractions) finite = finite && std::isfinite(value);
+        for (const double value : residuals) residual = std::max(residual, std::abs(value));
+        recording_support::compare_custom(
+            (std::string("support-residual/") + point).c_str(),
+            "association_residual_infinity", "1", residual, 0.0,
+            recording_support::fields({
+                model_inputs(model.parameters(), temperature_value, 1.0 / density_value, composition),
+                recording_support::field("support", point),
+                recording_support::field("site_fractions", state.site_fractions),
+            }), "Relationship", "mass-action",
+            "exact neutral/zero-ion support remains finite and converged", "absolute",
+            residual <= 2e-13 && finite, "p2-support-residual", point,
+            "||F_a||_inf", "T,rho,x", "||F_a||_inf<=2e-13", "support");
+        CHECK(finite && residual <= 2e-13);
+    };
+    const std::array<std::vector<double>, 2> supports = {{{1.0, 0.0}, {0.0, 1.0}}};
+    for (std::size_t support = 0; support < supports.size(); ++support) {
+        const auto& composition = supports[support];
+        constexpr double temperature = 300.0;
+        constexpr double density = 5000.0;
+        const auto state = associating.state(temperature, density, composition);
+        const auto residuals = p2_association_residuals(
+            temperature, 1.0 / density, composition,
+            associating.parameters(), state.site_fractions
+        );
+        double residual = 0.0;
+        bool finite = finite_state_without_cp(state);
+        for (const double value : state.site_fractions) finite = finite && std::isfinite(value);
+        for (const double value : residuals) residual = std::max(residual, std::abs(value));
+        const auto pressure_slope = associating.evaluate(
+            temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::PressureSlope
+        );
+        const double expected_floor = p2_pressure_slope_floor_reference(
+            temperature, 1.0 / density, composition,
+            associating.parameters(), state.site_fractions
+        );
+        const auto inputs = recording_support::fields({
+            model_inputs(associating.parameters(), temperature, 1.0 / density, composition),
+            recording_support::field("support", support),
+            recording_support::field("site_fractions", state.site_fractions),
+            recording_support::field("association_floor", pressure_slope.gradient_floor),
+            recording_support::field("expected_floor", expected_floor),
+        });
+        const auto point = std::to_string(support);
+        recording_support::compare_custom(
+            (std::string("support-residual/") + point).c_str(),
+            "association_residual_infinity", "1", residual, 0.0, inputs,
+            "Relationship", "mass-action", "exact support remains finite and converged",
+            "absolute", residual <= 2e-13 && finite,
+            "p2-support-residual", point.c_str(), "||F_a||_inf", "T,rho,x",
+            "||F_a||_inf<=2e-13", "support");
+        CHECK(finite && residual <= 2e-13);
+        const double floor_scale = std::max(expected_floor, 1.0e-300);
+        const double floor_error = std::abs(pressure_slope.gradient_floor - expected_floor);
+        const bool floor_ok = floor_error <= 1.0e-6 * floor_scale;
+        recording_support::compare_custom(
+            (std::string("support-floor/") + point).c_str(), "gradient_floor", "1",
+            pressure_slope.gradient_floor, expected_floor, inputs, "Relationship",
+            "mass-action-residual-bound", "PressureSlope floor uses U^{-1} one",
+            "relative", floor_ok, "p2-support-floor", point.c_str(), "floor",
+            "T,rho,x", "floor=bound(U^{-1}1)", "support");
+        CHECK(floor_ok);
+    }
+    record_zero_support(
+        "aqueous-zero-ion", epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()),
+        298.15, 5000.0, {1.0, 0.0, 0.0}
+    );
+    record_zero_support(
+        "nine-zero-ion", epcsaft::HelmholtzModel(properties_support::nine_species()),
+        313.15, 5000.0, {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0}
+    );
+
+    const std::array<double, 5> association_trace = {
+        1e-2, 1e-3, 1e-4, 1e-5, 0.0
+    };
+    std::array<double, 5> trace_to_zero_errors{};
+    const auto zero_derivatives = associating.evaluate(
+        300.0, 1.0 / 5000.0, {1.0, 0.0}, epcsaft::DerivativeOrder::Hessian
+    );
+    for (std::size_t trace_index = 0; trace_index < association_trace.size(); ++trace_index) {
+        const double trace = association_trace[trace_index];
+        const std::vector<double> composition = {1.0 - trace, trace};
+        const auto state = associating.state(300.0, 5000.0, composition);
+        const auto derivatives = associating.evaluate(
+            300.0, 1.0 / 5000.0, composition, epcsaft::DerivativeOrder::Hessian
+        );
+        const auto reference = properties_support::reference_tensor(
+            associating.parameters(), 300.0, 1.0 / 5000.0, composition,
+            state.site_fractions
+        );
+        double hessian_error = 0.0;
+        double trace_to_zero_error = 0.0;
+        for (std::size_t index = 0; index < derivatives.hessian.size(); ++index) {
+            hessian_error = std::max(
+                hessian_error,
+                std::abs(derivatives.hessian[index] - reference.hessian[index])
+                    / std::max(1.0, std::abs(reference.hessian[index]))
+            );
+            trace_to_zero_error = std::max(
+                trace_to_zero_error,
+                std::abs(derivatives.hessian[index] - zero_derivatives.hessian[index])
+                    / std::max(1.0, std::abs(zero_derivatives.hessian[index]))
+            );
+        }
+        trace_to_zero_errors[trace_index] = trace_to_zero_error;
+        const auto point = std::to_string(trace);
+        recording_support::compare(
+            (std::string("support-hessian/") + point).c_str(), "relative_hessian_error", "1",
+            hessian_error, 0.0,
+            recording_support::fields({
+                model_inputs(associating.parameters(), 300.0, 1.0 / 5000.0, composition),
+                recording_support::field("trace_amount", trace),
+                recording_support::field("trace_to_zero_error", trace_to_zero_error),
+                recording_support::field("scaled_trace_to_zero_error",
+                    trace == 0.0 ? 0.0 : trace_to_zero_error / trace),
+            }), "Relationship", "AD-reference",
+            "association implicit Hessian remains support-reduced", "absolute", 1e-12, 0.0,
+            hessian_error <= 1e-12, "p2-support-hessian", point.c_str(), "Hres",
+            "T,rho,x", "Himplicit=Hreference", "trace");
+        CHECK(hessian_error <= 1e-12);
+    }
+    const bool trace_refines = trace_to_zero_errors[0] >= trace_to_zero_errors[1]
+        && trace_to_zero_errors[1] >= trace_to_zero_errors[2]
+        && trace_to_zero_errors[2] >= trace_to_zero_errors[3]
+        && trace_to_zero_errors[3] >= trace_to_zero_errors[4];
+    recording_support::compare_custom(
+        "support-hessian/trace-to-zero", "refinement", "bool",
+        trace_refines ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("trace_errors", std::vector<double>(
+                trace_to_zero_errors.begin(), trace_to_zero_errors.end())),
+            recording_support::field("terminal_error", trace_to_zero_errors.back()),
+            recording_support::field("scaled_terminal_error",
+                trace_to_zero_errors[3] / association_trace[3]),
+        }), "Relationship", "scaled-trace-ladder",
+        "trace-to-zero Hessian error refines to the exact-zero row", "absolute", trace_refines,
+        "p2-support-hessian", "trace-to-zero", "refinement", "trace",
+        "error(trace)<=error(previous);error(0)=0", "trace");
+    CHECK(trace_refines);
+
+    const std::vector<double> action_composition = {0.4, 0.6};
+    const std::array<P2AssociationDirection, 3> directions = {
+        P2AssociationDirection::Temperature,
+        P2AssociationDirection::Volume,
+        P2AssociationDirection::AssociationEnergy
+    };
+    const std::array<const char*, 3> direction_names = {
+        "temperature", "volume", "association-energy"
+    };
+    const std::array<double, 3> direction_steps = {
+        1e-3, 1.0 / 5000.0 * 1e-3, 1e-3
+    };
+    const auto action_state = associating.state(300.0, 5000.0, action_composition);
+    for (std::size_t index = 0; index < directions.size(); ++index) {
+        std::vector<epcsaft::ActiveParameter> active;
+        if (directions[index] == P2AssociationDirection::AssociationEnergy) {
+            active.push_back({epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}});
+        }
+        const epcsaft::HelmholtzModel production_model(
+            associating_parameters, active
+        );
+        const auto production = production_model.evaluate(
+            300.0, 1.0 / 5000.0, action_composition, epcsaft::DerivativeOrder::Hessian
+        );
+        const auto reference = properties_support::reference_tensor(
+            associating_parameters, 300.0, 1.0 / 5000.0, action_composition,
+            action_state.site_fractions, active
+        );
+        const std::size_t coordinate = directions[index] == P2AssociationDirection::Temperature
+            ? 0 : directions[index] == P2AssociationDirection::Volume
+                ? 1 : 2 + action_composition.size();
+        const double production_error = std::abs(
+            production.hessian[coordinate * production.gradient.size() + coordinate]
+            - reference.hessian[coordinate * reference.gradient.size() + coordinate]
+        ) / std::max(1.0, std::abs(reference.hessian[coordinate * reference.gradient.size() + coordinate]));
+        const auto action = p2_association_action(
+            300.0, 1.0 / 5000.0, action_composition,
+            associating.parameters(), action_state.site_fractions,
+            directions[index]
+        );
+        const bool action_ok = production_error <= 1e-10
+            && action.rank == action_state.site_fractions.size()
+            && std::isfinite(action.pivot_ratio)
+            && action.pivot_ratio > epcsaft::policy::ASSOCIATION_JACOBIAN_CONDITION.value
+            && std::isfinite(action.residual) && action.residual <= 1e-10;
+        const auto inputs = recording_support::fields({
+            model_inputs(associating.parameters(), 300.0, 1.0 / 5000.0, action_composition),
+            recording_support::field("direction", direction_names[index]),
+            recording_support::field("production_hessian_coordinate", coordinate),
+            recording_support::field("production_reference_error", production_error),
+            recording_support::field("step", direction_steps[index]),
+            recording_support::field("rank", action.rank),
+            recording_support::field("pivot_ratio", action.pivot_ratio),
+        });
+        recording_support::compare_custom(
+            (std::string("association-action/") + direction_names[index]).c_str(),
+            "production_action_error", "1", production_error, 0.0, inputs, "Relationship",
+            "production-vs-raw-residual", "production Hessian matches independent raw-residual elimination",
+            "absolute", action_ok, "p2-association-action", direction_names[index],
+            "H_q,||UX_q+F_q||inf", "T,rho,V,theta", "H_production=H_raw;||UX_q+F_q||inf<=1e-10", "direction");
+        CHECK(action_ok);
+    }
+
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    constexpr double temperature = 200.0;
+    constexpr double pressure = 217800.69494692178;
+    const std::vector<double> composition = {1.0};
+    const auto vapor_root = epcsaft::solve_density(
+        ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, std::nullopt
+    );
+    const auto liquid_root = epcsaft::solve_density(
+        ethane, temperature, pressure, composition, epcsaft::DensityBranch::Liquid, std::nullopt
+    );
+    const auto vapor_state = ethane.state_at_pressure(
+        temperature, pressure, composition, epcsaft::DensityBranch::Vapor
+    );
+    const auto liquid_state = ethane.state_at_pressure(
+        temperature, pressure, composition, epcsaft::DensityBranch::Liquid
+    );
+    const std::array<const epcsaft::DensityRoot*, 2> roots = {&vapor_root, &liquid_root};
+    const std::array<const epcsaft::State*, 2> states = {&vapor_state, &liquid_state};
+    const std::array<const char*, 2> names = {"vapor", "liquid"};
+    const std::array<epcsaft::DensityBranch, 2> branches = {
+        epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid
+    };
+    for (std::size_t index = 0; index < roots.size(); ++index) {
+        const auto& root = *roots[index];
+        const auto& state = *states[index];
+        const auto root_state = ethane.state(temperature, root.molar_density, composition);
+        const double root_pressure = root_state.pressure - pressure;
+        const double pressure_error = std::abs(root.pressure_residual - root_pressure);
+        const auto inputs = recording_support::fields({
+            model_inputs(ethane.parameters(), temperature, 1.0 / root.molar_density, composition),
+            recording_support::field("P_star", pressure),
+            recording_support::field("requested_branch", names[index]),
+            recording_support::field("stable_root_count", root.stable_root_count.value_or(0)),
+            recording_support::field("density", root.molar_density),
+            recording_support::field("root_pressure_residual_Pa", root.pressure_residual),
+            recording_support::field("reduced_convergence_residual", root.convergence.residual),
+            recording_support::field("pressure_density_derivative", root_state.pressure_density_derivative),
+            recording_support::field("D", root_state.pressure_density_derivative
+                / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature)),
+            recording_support::field("stop", epcsaft::core::stop_name(root.convergence.stop)),
+            recording_support::field("criterion", root.convergence.criterion->name),
+            recording_support::field("association_rank", std::size_t{0}),
+            recording_support::field("association_pivot_ratio", 1.0),
+        });
+        recording_support::compare(
+            (std::string("root-residual/") + names[index]).c_str(), "pressure_residual", "Pa",
+            root.pressure_residual, root_pressure, inputs, "Identity", "state-replay",
+            "DensityRoot pressure residual is P(root)-P", "absolute", 1e-7, 0.0,
+            pressure_error <= 1e-7, "p2-root-residual", names[index], "P_{root}-P",
+            "T,P,x,branch", "rP=P(root)-P", "branch");
+        CHECK(pressure_error <= 1e-7);
+        recording_support::compare(
+            (std::string("root-convergence/") + names[index]).c_str(), "reduced_residual", "1",
+            root.convergence.residual, 0.0, inputs, "Availability", "density-policy",
+            "density convergence uses the reduced pressure residual", "absolute", 1e-12, 0.0,
+            root.convergence.residual <= 1e-12, "p2-root-convergence", names[index],
+            "r_reduced", "T,P,x,branch", "r_reduced<=1e-12", "branch");
+        CHECK(root.convergence.residual <= 1e-12);
+        const double reuse_error = std::abs(state.molar_density - root.molar_density);
+        const bool metadata = root.branch == branches[index]
+            && root.stable_root_count == std::optional<std::size_t>{2}
+            && state.density_branch == branches[index]
+            && state.stable_root_count == std::optional<std::size_t>{2}
+            && reuse_error <= 1e-12 * std::max(1.0, root.molar_density);
+        const auto metadata_inputs = recording_support::fields({
+            inputs,
+            recording_support::field("state_branch", names[index]),
+            recording_support::field("state_count", state.stable_root_count.value_or(0)),
+            recording_support::field("state_density", state.molar_density),
+            recording_support::field("density_reuse_error", reuse_error),
+        });
+        recording_support::compare(
+            (std::string("root-metadata/") + names[index]).c_str(), "molar_density", "mol/m3",
+            state.molar_density, root.molar_density, metadata_inputs, "Identity",
+            "state-propagation", "selected root and State retain density, branch and count",
+            "reference_or_one", 0.0, 1e-12, metadata, "p2-root-metadata", names[index],
+            "rho", "T,P,x,branch", "rho_state=rho_root;branch=count", "branch");
+        CHECK(metadata);
+    }
+
+    bool ambiguous = false;
+    try {
+        (void)epcsaft::solve_density(
+            ethane, temperature, pressure, composition, epcsaft::DensityBranch::Unspecified,
+            std::nullopt
+        );
+    } catch (const std::runtime_error& error) {
+        ambiguous = std::string(error.what()).find("ambiguous") != std::string::npos;
+    }
+    recording_support::compare_custom(
+        "density-selection/ambiguous", "selected", "bool", ambiguous ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("T", temperature),
+            recording_support::field("P_star", pressure),
+            recording_support::field("requested_branch", "unspecified"),
+            recording_support::field("stable_root_count", 2U),
+            recording_support::field("outcome", "ambiguous"),
+        }), "Availability", "bounded-scan", "unspecified multi-root request fails closed",
+        "absolute", ambiguous, "p2-density-selection", "ambiguous", "selected",
+        "T,P,x,branch,count", "no selected density", "case");
+    CHECK(ambiguous);
+
+    constexpr double coalescing_temperature = 320.0;
+    const double coalescing_upper = ethane.molar_density_upper_bound(
+        coalescing_temperature, composition
+    ) * epcsaft::policy::DENSITY_UPPER_FRACTION.value;
+    double coalescing_pressure = 1e6;
+    double coalescing_density = 0.0;
+    for (std::size_t iteration = 0; iteration < 40; ++iteration) {
+        const double ideal_density = coalescing_pressure
+            / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * coalescing_temperature);
+        const double lower_density = ideal_density
+            * epcsaft::policy::DENSITY_LOWER_FRACTION.value;
+        coalescing_density = std::exp(
+            std::log(lower_density) + 0.5
+            * (std::log(coalescing_upper) - std::log(lower_density))
+        );
+        coalescing_pressure = ethane.state(
+            coalescing_temperature, coalescing_density, composition
+        ).pressure;
+    }
+    const auto coalescing_root = epcsaft::solve_density(
+        ethane, coalescing_temperature, coalescing_pressure, composition,
+        epcsaft::DensityBranch::Vapor,
+        std::nullopt
+    );
+    const double coalescing_alignment = std::abs(
+        coalescing_root.molar_density - coalescing_density
+    ) / std::max(1.0, coalescing_density);
+    const bool coalesced = close(
+        coalescing_root.molar_density, coalescing_density, 1e-12
+    ) && coalescing_root.stable_root_count == std::optional<std::size_t>{1};
+    recording_support::compare_custom(
+        "root-coalescing/grid", "grid_alignment", "1", coalescing_alignment, 0.0,
+        recording_support::fields({
+            recording_support::field("T", coalescing_temperature),
+            recording_support::field("P_star", coalescing_pressure),
+            recording_support::field("grid_index", std::size_t{20}),
+            recording_support::field("grid_density", coalescing_density),
+            recording_support::field("root_density", coalescing_root.molar_density),
+            recording_support::field("stable_root_count",
+                coalescing_root.stable_root_count.value_or(0)),
+        }), "Relationship", "bounded-scan", "grid-point root is coalesced once",
+        "absolute", coalesced, "p2-root-coalescing", "grid", "rho",
+        "T,P,x,grid_index", "rho_root=rho_grid", "case");
+    CHECK(coalesced);
+
+    const auto supercritical_vapor = ethane.state_at_pressure(
+        320.0, 1e6, composition, epcsaft::DensityBranch::Vapor
+    );
+    const auto supercritical_liquid = ethane.state_at_pressure(
+        320.0, 1e6, composition, epcsaft::DensityBranch::Liquid
+    );
+    const auto supercritical_root = epcsaft::solve_density(
+        ethane, 320.0, 1e6, composition, epcsaft::DensityBranch::Vapor, std::nullopt
+    );
+    const auto supercritical_inputs = recording_support::fields({
+        model_inputs(ethane.parameters(), 320.0, 1.0 / supercritical_vapor.molar_density, composition),
+        recording_support::field("P", 1e6),
+        recording_support::field("vapor_density", supercritical_vapor.molar_density),
+        recording_support::field("liquid_density", supercritical_liquid.molar_density),
+        recording_support::field("root_density", supercritical_root.molar_density),
+        recording_support::field("root_branch", "unspecified"),
+        recording_support::field("root_count", supercritical_root.stable_root_count.value_or(0)),
+        recording_support::field("state_branch", "unspecified"),
+        recording_support::field("state_count", supercritical_vapor.stable_root_count.value_or(0)),
+    });
+    recording_support::compare(
+        "single-metadata/root", "molar_density", "mol/m3", supercritical_root.molar_density,
+        supercritical_vapor.molar_density, supercritical_inputs, "Relationship", "single-root",
+        "one stable root is shared by DensityRoot and both State requests", "reference_or_one", 0.0, 1e-12,
+        supercritical_root.branch == epcsaft::DensityBranch::Unspecified
+            && supercritical_root.stable_root_count == std::optional<std::size_t>{1}
+            && supercritical_vapor.density_branch == epcsaft::DensityBranch::Unspecified
+            && supercritical_vapor.stable_root_count == std::optional<std::size_t>{1}
+            && supercritical_liquid.density_branch == epcsaft::DensityBranch::Unspecified
+            && supercritical_liquid.stable_root_count == std::optional<std::size_t>{1}
+            && close(supercritical_root.molar_density, supercritical_vapor.molar_density, 1e-12),
+        "p2-single-metadata", "root", "rho", "T,P,x", "rho_root=rho_state;branch=count", "state");
+
+    const auto cold_vapor = ethane.state_at_pressure(
+        280.0, 1e6, composition, epcsaft::DensityBranch::Vapor
+    );
+    const auto cold_liquid = ethane.state_at_pressure(
+        280.0, 1e6, composition, epcsaft::DensityBranch::Liquid
+    );
+    const auto anchored_vapor = ethane.state_at_pressure(
+        280.0, 1e6, composition, epcsaft::DensityBranch::Vapor,
+        cold_vapor.molar_density
+    );
+    const auto anchored_liquid = ethane.state_at_pressure(
+        280.0, 1e6, composition, epcsaft::DensityBranch::Liquid,
+        cold_liquid.molar_density
+    );
+    const auto anchor_inputs = recording_support::fields({
+        recording_support::field("T", 280.0), recording_support::field("P", 1e6),
+        recording_support::field("requested_branch", "vapor/liquid"),
+        recording_support::field("returned_branch", "vapor/liquid"),
+        recording_support::field("stable_root_count", "absent"),
+        recording_support::field("envelope_log_half_width",
+            epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value),
+        recording_support::field("scan_intervals",
+            static_cast<std::size_t>(epcsaft::policy::DENSITY_ANCHOR_SCAN_INTERVALS.value)),
+        recording_support::field("cold_vapor_density", cold_vapor.molar_density),
+        recording_support::field("cold_liquid_density", cold_liquid.molar_density),
+        recording_support::field("vapor_density", anchored_vapor.molar_density),
+        recording_support::field("liquid_density", anchored_liquid.molar_density),
+        recording_support::field("vapor_reduced_residual",
+            anchored_vapor.density_convergence->residual),
+        recording_support::field("liquid_reduced_residual",
+            anchored_liquid.density_convergence->residual),
+        recording_support::field("association_rank", std::size_t{0}),
+        recording_support::field("association_pivot_ratio", 1.0),
+    });
+    recording_support::compare(
+        "anchor/vapor", "molar_density", "mol/m3", anchored_vapor.molar_density,
+        cold_vapor.molar_density, anchor_inputs, "Relationship", "local-continuation",
+        "vapor anchor replays the local vapor root", "reference_or_one", 0.0, 1e-12,
+        close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-12),
+        "p2-anchor", "vapor", "rho_v", "T,P,x",
+        "rho_anchor_v=rho_v", "case");
+    CHECK(close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-12));
+    recording_support::compare(
+        "anchor/liquid", "molar_density", "mol/m3", anchored_liquid.molar_density,
+        cold_liquid.molar_density, anchor_inputs, "Relationship", "local-continuation",
+        "liquid anchor replays the local liquid root", "reference_or_one", 0.0, 1e-12,
+        close(anchored_liquid.molar_density, cold_liquid.molar_density, 1e-12),
+        "p2-anchor", "liquid", "rho_l", "T,P,x",
+        "rho_anchor_l=rho_l", "case");
+    CHECK(close(anchored_liquid.molar_density, cold_liquid.molar_density, 1e-12));
+
+    const auto association_anchor = associating.state_at_pressure(
+        376.88, 101330.0, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid
+    );
+    bool branch_unreachable = false;
+    bool typed_failure = false;
+    double failure_envelope = 0.0;
+    std::size_t failure_intervals = 0;
+    epcsaft::core::Stop failure_stop = epcsaft::core::Stop::stalled;
+    double failure_residual = 0.0;
+    try {
+        (void)associating.state_at_pressure(
+            376.88, 101330.0, {0.99, 0.01}, epcsaft::DensityBranch::Liquid,
+            association_anchor.molar_density
+        );
+    } catch (const epcsaft::core::ConvergenceFailure& error) {
+        typed_failure = true;
+        branch_unreachable = error.record.stop == epcsaft::core::Stop::left_domain;
+        failure_envelope = epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+        failure_intervals = static_cast<std::size_t>(
+            epcsaft::policy::DENSITY_ANCHOR_SCAN_INTERVALS.value);
+        failure_stop = error.record.stop;
+        failure_residual = error.record.residual;
+    } catch (const std::runtime_error&) {
+        branch_unreachable = false;
+    }
+    const auto unreachable_inputs = recording_support::fields({
+        recording_support::field("T", 376.88), recording_support::field("P", 101330.0),
+        recording_support::field("anchor_x", std::vector<double>{0.1385, 0.8615}),
+        recording_support::field("target_x", std::vector<double>{0.99, 0.01}),
+        recording_support::field("anchor_density", association_anchor.molar_density),
+        recording_support::field("typed_failure", typed_failure ? 1U : 0U),
+        recording_support::field("stop", epcsaft::core::stop_name(failure_stop)),
+        recording_support::field("residual", failure_residual),
+        recording_support::field("envelope_log_half_width", failure_envelope),
+        recording_support::field("scan_intervals", failure_intervals),
+    });
+    recording_support::compare_custom(
+        "anchor/unreachable", "branch_reachable", "bool", branch_unreachable ? 1.0 : 0.0, 1.0,
+        unreachable_inputs, "Availability", "local-continuation", "unreachable anchored branch fails closed",
+        "absolute", branch_unreachable && typed_failure
+            && failure_envelope == epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
+            && failure_intervals == static_cast<std::size_t>(
+                epcsaft::policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
+        "p2-anchor", "unreachable", "reachable",
+        "T,P,x_anchor,x_target", "no cold fallback", "case");
+    CHECK(branch_unreachable && typed_failure);
+
+    bool invalid_anchor = false;
+    try {
+        (void)epcsaft::solve_density(
+            ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, -1.0
+        );
+    } catch (const std::invalid_argument&) {
+        invalid_anchor = true;
+    }
+    recording_support::compare_custom(
+        "anchor-invalid/negative", "accepted", "bool", invalid_anchor ? 1.0 : 0.0, 1.0,
+        recording_support::fields({
+            recording_support::field("T", temperature),
+            recording_support::field("P_star", pressure),
+            recording_support::field("anchor_density", -1.0),
+            recording_support::field("outcome", "invalid-anchor"),
+        }), "Availability", "trust-boundary", "nonpositive anchor is rejected",
+        "absolute", invalid_anchor, "p2-anchor-invalid", "negative", "accepted",
+        "T,P,x,anchor", "anchor rejected", "case");
+    CHECK(invalid_anchor);
+
+    struct P2ChainCase final {
+        const epcsaft::HelmholtzModel* model;
+        double temperature;
+        double pressure;
+        std::vector<double> composition;
+        epcsaft::DensityBranch branch;
+        const char* branch_name;
+        const char* point;
+        const char* quantity;
+        const char* unit;
+        bool enthalpy;
+    };
+    const std::array<double, 3> delta_temperatures = {1e-2, 3e-3, 1e-3};
+    const std::array<P2ChainCase, 3> chain_cases = {{
+        {&ethane, 320.0, 1e6, composition, epcsaft::DensityBranch::Vapor,
+            "vapor", "one-root-density", "density_temperature_derivative", "mol/m3/K", false},
+        {&ethane, 200.0, pressure, composition, epcsaft::DensityBranch::Liquid,
+            "liquid", "multi-root-enthalpy", "residual_enthalpy_temperature_derivative", "J/mol/K", true},
+        {&associating, 313.15, 1e5, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid,
+            "liquid", "associating-enthalpy", "residual_enthalpy_temperature_derivative", "J/mol/K", true},
+    }};
+    const auto record_chain = [&](const char* point, const char* quantity,
+                                  const char* unit, double temperature_value,
+                                  double pressure_value,
+                                  const char* requested_branch,
+                                  double delta_temperature,
+                                  const P2PressureChain& chain) {
+        const bool ok = close(chain.measured, chain.predicted, 5e-6)
+            && chain.pressure_density_derivative > 0.0
+            && std::isfinite(chain.reduced_residual);
+        recording_support::compare(
+            (std::string("fixed-pressure/") + point).c_str(), quantity, unit,
+            chain.measured, chain.predicted,
+            recording_support::fields({
+                recording_support::field("T", temperature_value),
+                recording_support::field("P_star", pressure_value),
+                recording_support::field("requested_branch", requested_branch),
+                recording_support::field("returned_branch",
+                    chain.branch == epcsaft::DensityBranch::Unspecified
+                        ? "unspecified" : requested_branch),
+                recording_support::field("stable_root_count", chain.stable_root_count),
+                recording_support::field("P_rho", chain.pressure_density_derivative),
+                recording_support::field("D", chain.pressure_density_derivative
+                    / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature_value)),
+                recording_support::field("reduced_residual", chain.reduced_residual),
+                recording_support::field("association_rank", chain.association_rank),
+                recording_support::field("association_pivot_ratio",
+                    chain.association_pivot_ratio),
+                recording_support::field("delta_T", delta_temperature),
+            }), "Relationship", "implicit-chain",
+            "fixed-pressure property chain includes density response",
+            "reference_or_one", 0.0, 5e-6, ok, "p2-fixed-pressure", point,
+            quantity, "T,P,x,branch,delta_T", "Q_P=Q_T+Q_rho rho_P", "case");
+        CHECK(ok);
+    };
+    for (const auto& item : chain_cases) {
+        for (const double delta_temperature : delta_temperatures) {
+            const auto chain = p2_fixed_pressure_chain(
+                *item.model, item.temperature, item.pressure, item.composition,
+                item.branch, delta_temperature, item.enthalpy
+            );
+            const std::string point = std::string(item.point) + "/"
+                + std::to_string(delta_temperature);
+            record_chain(point.c_str(), item.quantity, item.unit, item.temperature,
+                item.pressure, item.branch_name, delta_temperature, chain);
+        }
+    }
 }
 
 void cache_invariance() {
@@ -1593,6 +2436,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
+        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9"}, properties_p2, "P2"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
     });
 }

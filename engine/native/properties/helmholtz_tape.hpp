@@ -269,6 +269,7 @@ struct HelmholtzTape final {
                 -total * multiplicity / sites[site] * residuals[site]
             );
         }
+        dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         auto result = std::make_unique<HelmholtzTape>();
         result->function = CppAD::ADFun<double>(independent, dependent);
         result->predicates = std::move(predicates);

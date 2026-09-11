@@ -78,32 +78,6 @@ DensityRoot publish_root(
     };
 }
 
-bool far_side_has_no_crossing(const HelmholtzModel& model, double temperature, double pressure,
-                              const std::vector<double>& composition, double density,
-                              DensityBranch branch, double log_lower, double log_upper,
-                              std::size_t intervals, core::Scope& anchor,
-                              std::size_t& evaluations) {
-    for (std::size_t index = 0; index <= intervals; ++index) {
-        const double grid_density = std::exp(log_lower + static_cast<double>(index)
-            / intervals * (log_upper - log_lower));
-        if ((branch == DensityBranch::Liquid && grid_density <= density)
-            || (branch == DensityBranch::Vapor && grid_density >= density)) {
-            continue;
-        }
-        try {
-            const auto point = at_density(model, temperature, pressure, composition, grid_density,
-                                          evaluations, DerivativeOrder::Gradient);
-            anchor.probe("far_side_residual", {grid_density, point.residual}, static_cast<std::uint32_t>(index));
-            if ((branch == DensityBranch::Liquid && !(point.residual > 0.0))
-                || (branch == DensityBranch::Vapor && !(point.residual < 0.0))) return false;
-        } catch (const std::runtime_error& error) {
-            if (association_failure(error)) return false;
-            throw;
-        }
-    }
-    return true;
-}
-
 DensityRoot refine(
     const HelmholtzModel& model,
     double temperature,
@@ -164,7 +138,7 @@ DensityRoot refine(
                                  record.contraction, iterations == maximum,
                                  record.amplification);
     const auto root = publish_root(
-        density, point.residual, point.slope, iterations + 1, std::nullopt,
+        density, point.pressure - pressure, point.slope, iterations + 1, std::nullopt,
         DensityBranch::Unspecified, record, iterations == maximum
     );
     parent_scope.probe(
@@ -175,7 +149,43 @@ DensityRoot refine(
     return root;
 }
 
-std::optional<DensityRoot> anchor(
+std::size_t local_stable_root_count(
+    const HelmholtzModel& model,
+    double temperature,
+    double pressure,
+    const std::vector<double>& composition,
+    double log_lower,
+    double log_upper,
+    core::Scope& anchor_scope,
+    std::size_t& evaluations
+) {
+    const auto intervals = static_cast<std::size_t>(
+        policy::DENSITY_ANCHOR_SCAN_INTERVALS.value
+    );
+    std::size_t stable_roots = 0;
+    bool previous_available = false;
+    double previous_density = 0.0;
+    double previous_residual = 0.0;
+    for (std::size_t index = 0; index <= intervals; ++index) {
+        const double density = std::exp(log_lower + static_cast<double>(index) / intervals
+            * (log_upper - log_lower));
+        const auto point = at_density(model, temperature, pressure, composition, density,
+            evaluations, DerivativeOrder::Gradient);
+        if (previous_available && previous_residual * point.residual <= 0.0) {
+            const auto root = refine(model, temperature, pressure, composition, previous_density,
+                density, previous_residual, anchor_scope, evaluations);
+            if (root.pressure_density_derivative > 0.0) {
+                ++stable_roots;
+            }
+        }
+        previous_available = point.residual != 0.0;
+        previous_density = density;
+        previous_residual = point.residual;
+    }
+    return stable_roots;
+}
+
+DensityRoot anchor(
     const HelmholtzModel& model,
     double temperature,
     double pressure,
@@ -183,13 +193,15 @@ std::optional<DensityRoot> anchor(
     DensityBranch branch,
     double lower,
     double upper,
-    double log_lower,
-    double log_upper,
-    std::size_t intervals,
     double density,
     std::size_t& evaluations
 ) {
     core::Scope anchor_scope("density_anchor");
+    const double log_anchor = std::log(density);
+    const double local_lower = std::exp(std::max(std::log(lower),
+        log_anchor - policy::DENSITY_ANCHOR_LOG_WINDOW.value));
+    const double local_upper = std::exp(std::min(std::log(upper),
+        log_anchor + policy::DENSITY_ANCHOR_LOG_WINDOW.value));
     core::ResidualHistory history;
     core::Convergence anchor_record;
     std::size_t iteration = 0;
@@ -213,9 +225,9 @@ std::optional<DensityRoot> anchor(
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
-            const bool far_side_clear = far_side_has_no_crossing(
-                model, temperature, pressure, composition, density, branch,
-                log_lower, log_upper, intervals, anchor_scope, evaluations
+            const auto local_stable_roots = local_stable_root_count(
+                model, temperature, pressure, composition,
+                std::log(local_lower), std::log(local_upper), anchor_scope, evaluations
             );
             anchor_record.evaluations = evaluations;
             anchor_record.stop = core::classify(
@@ -223,20 +235,15 @@ std::optional<DensityRoot> anchor(
                 anchor_record.floor, anchor_record.contraction, false,
                 anchor_record.amplification
             );
-            if (far_side_clear) {
-                try {
-                    const auto result = publish_root(
-                        density, point.residual, point.slope, iteration + 1,
-                        std::nullopt, branch, anchor_record
-                    );
-                    anchor_scope.finish(anchor_record);
-                    return result;
-                } catch (const core::ConvergenceFailure&) {
-                    anchor_scope.finish(anchor_record);
-                    throw;
-                }
+            if (local_stable_roots == 1) {
+                const auto result = publish_root(
+                    density, point.pressure - pressure, point.slope, iteration + 1,
+                    std::nullopt, branch, anchor_record
+                );
+                anchor_scope.finish(anchor_record);
+                return result;
             }
-            anchor_scope.finish(anchor_record);
+            anchor_record.stop = core::Stop::infeasible;
             break;
         }
         if (!std::isfinite(derivative) || derivative == 0.0) {
@@ -249,13 +256,11 @@ std::optional<DensityRoot> anchor(
                     && !std::isfinite(*anchor_record.amplification))
                 ? core::Stop::nonfinite
                 : core::Stop::singular;
-            anchor_scope.finish(anchor_record);
             break;
         }
-        if (!(candidate > lower && candidate < upper)
+        if (!(candidate > local_lower && candidate < local_upper)
             || !std::isfinite(candidate)) {
             anchor_record.stop = core::Stop::left_domain;
-            anchor_scope.finish(anchor_record);
             break;
         }
         density = candidate;
@@ -264,9 +269,9 @@ std::optional<DensityRoot> anchor(
         anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
                                             anchor_record.floor, anchor_record.contraction, true,
                                             anchor_record.amplification);
-        anchor_scope.finish(anchor_record);
     }
-    return std::nullopt;
+    anchor_scope.finish(anchor_record);
+    throw core::ConvergenceFailure(anchor_record);
 }
 
 }  // namespace
@@ -303,19 +308,24 @@ DensityRoot solve_density(
     const double log_upper = std::log(upper);
     std::size_t evaluations = 0;
     DensityRoot result;
-    bool have_result = false;
-    if (branch != DensityBranch::Unspecified && anchor_density.has_value()
-        && std::isfinite(*anchor_density) && *anchor_density > lower && *anchor_density < upper) {
-        const auto anchored = anchor(
-            model, temperature, pressure, mole_fractions, branch, lower, upper,
-            log_lower, log_upper, intervals, *anchor_density, evaluations
-        );
-        if (anchored.has_value()) {
-            result = *anchored;
-            have_result = true;
+    if (anchor_density.has_value()) {
+        if (branch == DensityBranch::Unspecified) {
+            throw std::invalid_argument("density anchor requires explicit branch");
         }
-    }
-    if (!have_result) {
+        if (!std::isfinite(*anchor_density)
+            || *anchor_density <= 0.0) {
+            throw std::invalid_argument("invalid density anchor");
+        }
+        if (!(*anchor_density > lower && *anchor_density < upper)) {
+            core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
+                std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
+            throw core::ConvergenceFailure(record);
+        }
+        result = anchor(
+            model, temperature, pressure, mole_fractions, branch, lower, upper,
+            *anchor_density, evaluations
+        );
+    } else {
         std::vector<DensityRoot> roots;
         bool previous_available = false;
         double previous_density = 0.0;
@@ -339,7 +349,8 @@ DensityRoot solve_density(
                 {density, point.residual},
                 static_cast<std::uint32_t>(index)
             );
-            if (previous_available && previous_residual * point.residual <= 0.0) {
+            if (previous_available && previous_residual != 0.0
+                && previous_residual * point.residual <= 0.0) {
                 scope.probe(
                     "density_bracket",
                     {previous_density, density, previous_residual, point.residual},
@@ -350,7 +361,7 @@ DensityRoot solve_density(
                     previous_density, density, previous_residual, scope, evaluations
                 ));
             }
-            previous_available = true;
+            previous_available = point.residual != 0.0;
             previous_density = density;
             previous_residual = point.residual;
         }
@@ -364,11 +375,14 @@ DensityRoot solve_density(
         if (stable.empty()) {
             throw std::runtime_error("no stable density root (count 0)");
         }
+        std::sort(stable.begin(), stable.end(), [](const auto& left, const auto& right) {
+            return left.molar_density < right.molar_density;
+        });
         scope.probe("stable_root_count", static_cast<double>(stable.size()));
         if (stable.size() == 1) {
             result = stable.front();
             result.stable_root_count = 1;
-            result.branch = branch;
+            result.branch = DensityBranch::Unspecified;
         } else {
             if (branch == DensityBranch::Unspecified) {
                 throw std::runtime_error(
@@ -376,9 +390,6 @@ DensityRoot solve_density(
                     + std::to_string(stable.size()) + ")"
                 );
             }
-            std::sort(stable.begin(), stable.end(), [](const auto& left, const auto& right) {
-                return left.molar_density < right.molar_density;
-            });
             result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
             result.stable_root_count = stable.size();
             result.branch = branch;
