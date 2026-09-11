@@ -41,6 +41,14 @@ when the branch is discontinuous. Differentiate smooth correlations on the same
 selected interval; reselect the source interval when a temperature leaves it. Missing
 thermal inputs make only consumers of those inputs unavailable.
 
+Ideal and Total calorics consume one component interval vector in installed EOS
+component order and one explicit $P_0$. Ideal $h,u,s,c_p,c_v$ follow their
+registered equations; Total values add the existing residual fields at the same
+state. Missing thermal input leaves residual outputs intact and makes only Ideal
+and Total consumers unavailable. An owned endpoint has a value, but a derivative
+that would cross an undeclared join is unavailable. No total value falls back to
+its residual part.
+
 For the centered polynomial, evaluate $C_p=\sum_k a_k(T-T_{ref})^k$ and anchor
 $h$ and $s$ at the supplied $T_{ref}$. The constant term uses the exact
 $a_0\log(T/T_{ref})$ identity. No insertion derivative at a zero composition
@@ -250,6 +258,21 @@ unavailable. Differentiate both the source correlation and EOS reference path,
 including its density closure. Fixed source pressure P0 must not become trial
 pressure. Reference-gauge choices that preserve reaction affinities do not
 supply absolute caloric data.
+
+Reaction activities and $K(T)$ use one declared standard-state identity. Direct
+activities are dimensionless caller inputs; mole-fraction activities use explicit
+$x_i^\circ=1$; molarity and molality require explicit positive standards and the
+matching density or solvent-mass inputs. Do not infer a basis from units. Ionic
+contractions require either a charge-neutral reference contraction or an explicit
+ionic gauge; that gauge cannot manufacture missing species calorics.
+
+Evaluate an admitted natural-log correlation as
+$a+b/T+c\ln(T/T_{ref})+dT$ with explicit positive $T_{ref}$, analytic derivative,
+declared interval and standard-state identity. Convert legacy logarithm bases by
+algebra only. When matching species thermochemistry is supplied, require both
+the van 't Hoff enthalpy relation and heat-capacity/integral consistency; otherwise
+report consistency unavailable. A mismatch is a reference inconsistency, never
+a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
 

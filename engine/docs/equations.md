@@ -1412,16 +1412,42 @@ $$
 \sum_i\nu_i\,\mu_{p,i}=\boldsymbol\lambda\cdot(\mathbf{B}\boldsymbol\nu)+\varphi_p\,(\boldsymbol z\cdot\boldsymbol\nu)=0.
 $$
 
+## `reaction_activity_quotient`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Chemical-potential definition on one declared standard-state basis
+- Description: Products-positive reaction quotient from dimensionless activities on one identified basis. Activities and the equilibrium constant must use the same basis.
+- Change note: Zero activities may have limiting values, but logarithmic insertion derivatives are not implied.
+
+$$
+\mu_i=\mu_i^{\circ,b}+RT\ln a_i^{b},\qquad
+\ln Q_b=\sum_i\nu_i\ln a_i^{b},\qquad
+\ln K_b=-\frac{\sum_i\nu_i\mu_i^{\circ,b}}{RT}.
+$$
+
+## `reaction_standard_state_conversion`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Invariance of chemical potential under a declared standard-state change
+- Description: Convert a reaction constant only from explicit per-species standard chemical-potential offsets. Units alone do not define a conversion.
+- Change note: Mole-fraction uses explicit dimensionless standard fraction one; molarity and molality require explicit positive standard concentration or molality and the matching coefficient/reference path.
+
+$$
+\ln K_c=\ln K_b+\frac{1}{RT}\sum_i\nu_i\left(\mu_i^{\circ,b}-\mu_i^{\circ,c}\right).
+$$
+
 ## `reaction_constant_ln_polynomial`
 
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
 - Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
 - Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
-- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
+- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
 
 $$
-\ln K=a+\frac{b}{T}+c\ln T+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
+\ln K=a+\frac{b}{T}+c\ln\frac{T}{T_{ref}}+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
 $$
 
 ## `reaction_constant_log10_reciprocal`
@@ -1619,7 +1645,8 @@ $$
 - Change note: Reconciled against transfer audit 2026-09-06; required mathematics, not an availability claim.
 
 $$
-g^{\circ}_{i,\rho}=g^{\circ}_{i,P}+RT\ln\frac{RT\rho_0}{P_0},\qquad h^{\circ}_{i,\rho}=h^{\circ}_{i,P}-RT,\qquad \ln K_\rho=\ln K_P-\Delta\nu\ln\frac{RT\rho_0}{P_0},\qquad \frac{d\ln K_\rho}{dT}=\frac{d\ln K_P}{dT}-\frac{\Delta\nu}{T}.
+g^{\circ}_{i,\rho}=g^{\circ}_{i,P}+RT\ln\frac{RT\rho_0}{P_0},\qquad h^{\circ}_{i,\rho}=h^{\circ}_{i,P}-RT,\qquad s^{\circ}_{i,\rho}=s^{\circ}_{i,P}-R\left(1+\ln\frac{RT\rho_0}{P_0}\right),\\
+\ln K_\rho=\ln K_P-\Delta\nu\ln\frac{RT\rho_0}{P_0},\qquad \frac{d\ln K_\rho}{dT}=\frac{d\ln K_P}{dT}-\frac{\Delta\nu}{T}.
 $$
 
 ## `standard_state_transfer_temperature_derivative`
@@ -1670,6 +1697,66 @@ $$
 \boldsymbol{\nu}\,\mathbf{h}^{\circ}=\Delta_r\mathbf{h}^{\circ},\qquad \mathbf{h}^{\circ}=\boldsymbol{\nu}^{\mathsf T}\left(\boldsymbol{\nu}\boldsymbol{\nu}^{\mathsf T}\right)^{-1}\Delta_r\mathbf{h}^{\circ},\qquad \boldsymbol{\nu}\left(\mathbf{h}^{\circ}+\mathbf{B}^{\mathsf T}\mathbf{c}\right)=\Delta_r\mathbf{h}^{\circ}\ \text{for every }\mathbf{c}
 $$
 
+## `ideal_enthalpy`
+
+- Section: Reference thermochemistry / Ideal calorics
+- Status: Exact derivation
+- Source: Ideal-gas mixture calorics on declared component pressure-standard records
+- Description: Molar ideal enthalpy is the linear mixture of component standard enthalpies.
+- Change note: Every component record must be available on its selected source interval.
+
+$$
+h^{id}=\sum_i x_i h_i^{\circ}(T,P_0).
+$$
+
+## `ideal_internal_energy`
+
+- Section: Reference thermochemistry / Ideal calorics
+- Status: Exact derivation
+- Source: Ideal-gas identity $h-u=RT$
+- Description: Molar ideal internal energy on the same declared thermochemical basis as ideal enthalpy.
+- Change note: No trial-pressure or density-standard offset is inserted into the physical value.
+
+$$
+u^{id}=h^{id}-RT.
+$$
+
+## `ideal_entropy`
+
+- Section: Reference thermochemistry / Ideal calorics
+- Status: Exact derivation
+- Source: Ideal-gas mixture entropy at the phase's actual molar density
+- Description: Molar ideal entropy from component pressure-standard entropies plus ideal mixing and density terms.
+- Change note: Use $x_i\ln x_i\to0$ at zero amount; no logarithmic insertion derivative is promised there.
+
+$$
+s^{id}=\sum_i x_i\left[s_i^{\circ}(T,P_0)-R\ln\frac{x_i\rho RT}{P_0}\right].
+$$
+
+## `ideal_heat_capacity_cp`
+
+- Section: Reference thermochemistry / Ideal calorics
+- Status: Exact derivation
+- Source: Ideal-gas mixture calorics
+- Description: Molar ideal isobaric heat capacity is the linear mixture of component source correlations.
+- Change note: Each source is evaluated only on its selected interval.
+
+$$
+c_p^{id}=\sum_i x_i c_{p,i}^{\circ}(T).
+$$
+
+## `ideal_heat_capacity_cv`
+
+- Section: Reference thermochemistry / Ideal calorics
+- Status: Exact derivation
+- Source: Ideal-gas identity $c_p-c_v=R$
+- Description: Molar ideal isochoric heat capacity on the same selected source intervals.
+- Change note: It inherits ideal-$c_p$ availability.
+
+$$
+c_v^{id}=c_p^{id}-R.
+$$
+
 ## `total_enthalpy`
 
 - Section: Reference thermochemistry / Totals
@@ -1692,6 +1779,42 @@ $$
 
 $$
 S=\sum_i n_i\left[s^{\circ}_i(T,P^{\circ})-R\ln\frac{n_iRT}{VP^{\circ}}\right]+S^{\mathrm{res}}(T,V,\mathbf{n}),\qquad S^{\mathrm{res}}=-\left(\frac{\partial A^{\mathrm{res}}}{\partial T}\right)_{V,\mathbf{n}}
+$$
+
+## `total_internal_energy`
+
+- Section: Reference thermochemistry / Totals
+- Status: Exact derivation
+- Source: Residual-plus-ideal decomposition at fixed $(T,V,\mathbf n)$
+- Description: Molar total internal energy is the ideal value plus the residual EOS value and obeys the full pressure-volume identity.
+- Change note: Unavailable without declared reference thermochemistry.
+
+$$
+u=u^{id}+u^{res}=h-\frac{P}{\rho}.
+$$
+
+## `total_heat_capacity_cp`
+
+- Section: Reference thermochemistry / Totals
+- Status: Exact derivation
+- Source: Residual-plus-ideal decomposition on a regular fixed-pressure branch
+- Description: Molar total isobaric heat capacity combines ideal and residual values at the same state.
+- Change note: It is unavailable when either input is unavailable, including a nonpositive mechanical denominator for the residual term.
+
+$$
+c_p=c_p^{id}+c_p^{res}.
+$$
+
+## `total_heat_capacity_cv`
+
+- Section: Reference thermochemistry / Totals
+- Status: Exact derivation
+- Source: Residual-plus-ideal decomposition at fixed density
+- Description: Molar total isochoric heat capacity combines ideal and residual values at the same state.
+- Change note: It does not inherit the fixed-pressure mechanical-stability condition.
+
+$$
+c_v=c_v^{id}+c_v^{res}.
 $$
 
 ## `transfer_free_energy`
