@@ -865,6 +865,15 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     DerivativeOrder order
 ) const {
     std::lock_guard<std::mutex> lock(mutex_);
+    return evaluate_locked(temperature, volume, amounts, order);
+}
+
+HelmholtzDerivatives HelmholtzModel::evaluate_locked(
+    double temperature,
+    double volume,
+    const std::vector<double>& amounts,
+    DerivativeOrder order
+) const {
     core::Scope scope("evaluate");
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
@@ -1344,6 +1353,104 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, root.molar_density, mole_fractions,
         observables, validation, &root, pressure_directions);
+}
+
+NeutralPropertyDerivatives HelmholtzModel::neutral_property(
+    double temperature,
+    double molar_density,
+    NeutralProperty property,
+    DerivativeOrder order
+) const {
+    core::Scope scope("neutral_property");
+    std::lock_guard<std::mutex> lock(mutex_);
+    require(order != DerivativeOrder::PressureSlope, "neutral property derivative order");
+    require(
+        property == NeutralProperty::ResidualHelmholtz || property == NeutralProperty::Pressure,
+        "neutral property"
+    );
+    require(parameters_.component_count() == 1, "neutral property components");
+    require(parameters_.site_count() == 0, "neutral property association sites");
+    require(active_.empty(), "neutral property active parameters");
+    require(parameters_.charge_number.front() == 0, "neutral property charge");
+    require(!parameters_.electrolyte_form.declared(), "neutral property electrolyte");
+    require(!parameters_.permittivity_form.declared(), "neutral property permittivity");
+    require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
+
+    const double volume = 1.0 / molar_density;
+    const std::vector<double> amounts = {1.0};
+    const auto energy_order = property == NeutralProperty::ResidualHelmholtz
+        ? order
+        : (order == DerivativeOrder::Value ? DerivativeOrder::Gradient : DerivativeOrder::Hessian);
+    const auto energy = evaluate_locked(
+        temperature, volume, amounts, energy_order
+    );
+    const double v1 = -1.0 / (molar_density * molar_density);
+    const double v2 = 2.0 / (molar_density * molar_density * molar_density);
+
+    NeutralPropertyDerivatives result;
+    if (property == NeutralProperty::ResidualHelmholtz) {
+        result.value = energy.value;
+        if (order == DerivativeOrder::Value) return result;
+        const auto& phi_gradient = energy.gradient;
+        const double phi_t = phi_gradient[0];
+        const double phi_v = phi_gradient[1];
+        result.gradient = {phi_t, phi_v * v1};
+        if (order == DerivativeOrder::Gradient) return result;
+        const auto& phi_hessian = energy.hessian;
+        const double phi_tt = phi_hessian[0];
+        const double phi_tv = phi_hessian[1];
+        const double phi_vv = phi_hessian[4];
+        result.hessian = {
+            phi_tt, phi_tv * v1,
+            phi_tv * v1, phi_vv * v1 * v1 + phi_v * v2,
+        };
+        return result;
+    }
+
+    const auto& phi_gradient = energy.gradient;
+    const auto& phi_hessian = energy.hessian;
+    const double phi_v = phi_gradient[1];
+
+    result.value = GAS_CONSTANT_J_PER_MOL_K * temperature
+        * (molar_density - phi_v);
+    if (order == DerivativeOrder::Value) return result;
+    const double phi_tv = phi_hessian[1];
+    const double phi_vv = phi_hessian[4];
+    const double p_t = GAS_CONSTANT_J_PER_MOL_K * (molar_density - phi_v)
+        - GAS_CONSTANT_J_PER_MOL_K * temperature * phi_tv;
+    const double p_rho = GAS_CONSTANT_J_PER_MOL_K * temperature * (1.0 - phi_vv * v1);
+    result.gradient = {p_t, p_rho};
+    if (order == DerivativeOrder::Gradient) return result;
+
+    std::vector<double> point = {temperature, volume, 1.0};
+    const std::vector<double> weight = {1.0};
+    auto third = [&](std::size_t direction) {
+        tape_->function.Forward(0, point);
+        ++counters_.forward;
+        std::vector<double> first(3, 0.0);
+        first[direction] = 1.0;
+        tape_->function.Forward(1, first);
+        ++counters_.forward;
+        tape_->function.Forward(2, std::vector<double>(3, 0.0));
+        ++counters_.forward;
+        const auto reverse = tape_->function.Reverse(3, weight);
+        ++counters_.reverse;
+        return reverse;
+    };
+    const auto third_t = third(0);
+    const auto third_v = third(1);
+    const double phi_ttv = 2.0 * third_t[5];
+    const double phi_tvv = 2.0 * third_v[2];
+    const double phi_vvv = 2.0 * third_v[5];
+    const double p_tt = -2.0 * GAS_CONSTANT_J_PER_MOL_K * phi_tv
+        - GAS_CONSTANT_J_PER_MOL_K * temperature * phi_ttv;
+    const double p_t_rho = GAS_CONSTANT_J_PER_MOL_K * (1.0 - phi_vv * v1)
+        - GAS_CONSTANT_J_PER_MOL_K * temperature * phi_tvv * v1;
+    const double p_rho_rho = -GAS_CONSTANT_J_PER_MOL_K * temperature
+        * (phi_vvv * v1 * v1 + phi_vv * v2);
+    result.hessian = {p_tt, p_t_rho, p_t_rho, p_rho_rho};
+    return result;
 }
 
 State HelmholtzModel::state(

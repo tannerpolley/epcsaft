@@ -93,6 +93,21 @@ class Parameters:
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
 
+class DerivativeOrder:
+    Value: DerivativeOrder
+    Gradient: DerivativeOrder
+    PressureSlope: DerivativeOrder
+    Hessian: DerivativeOrder
+
+class NeutralProperty:
+    ResidualHelmholtz: NeutralProperty
+    Pressure: NeutralProperty
+
+class NeutralPropertyDerivatives:
+    value: float
+    gradient: list[float]
+    hessian: list[float]
+
 class DensityBranch:
     Unspecified: DensityBranch
     Vapor: DensityBranch
@@ -129,6 +144,7 @@ class SweepCounters:
 class HelmholtzModel:
     def __init__(self, parameters: Parameters) -> None: ...
     def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> State: ...
+    def neutral_property(self, temperature: float, molar_density: float, property: NeutralProperty, order: DerivativeOrder) -> NeutralPropertyDerivatives: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
     def counters(self) -> SweepCounters: ...
     def reset_counters(self) -> None: ...

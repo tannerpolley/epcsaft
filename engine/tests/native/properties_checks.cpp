@@ -4115,6 +4115,77 @@ void properties_p4() {
         && thermal_boundary && counter_ok);
 }
 
+void neutral_property_pressure_hessian() {
+    auto parameters = properties_support::ethane();
+    parameters.segment_count[0] = 2.002;
+    parameters.sigma_constant[0] = 3.6184;
+    parameters.dispersion_energy_over_k[0] = 208.11;
+    parameters.molar_mass_kg_per_mol[0] = 0.044096;
+    epcsaft::HelmholtzModel model(parameters);
+    constexpr double temperature = 400.0;
+    constexpr double density = 60.0;
+    const auto inputs = model_inputs(parameters, temperature, 1.0 / density, {1.0});
+    const auto actual = model.neutral_property(
+        temperature, density, epcsaft::NeutralProperty::Pressure,
+        epcsaft::DerivativeOrder::Hessian
+    );
+    const auto value_after_hessian = model.neutral_property(
+        temperature, density, epcsaft::NeutralProperty::Pressure,
+        epcsaft::DerivativeOrder::Value
+    );
+    const auto state = model.state(temperature, density, {1.0});
+    recording_support::expect_group(
+        recording_support::active_test_id(), "issue10-pressure", "issue10-pressure/", 2,
+        "neutral pressure agrees with state", "T,rho"
+    );
+    recording_support::expect_group(
+        recording_support::active_test_id(), "issue10-hessian", "issue10-hessian/", 2,
+        "neutral pressure Hessian action", "T,rho"
+    );
+    recording_support::compare(
+        "issue10-pressure/value", "pressure", "Pa", actual.value, state.pressure, inputs,
+        "Relationship", "state", "neutral pressure equals state pressure",
+        "reference_or_one", 0.0, 1.0e-12,
+        close(actual.value, state.pressure, 1.0e-12), "issue10-pressure", "value",
+        "P", "T,rho", "P_neutral=P_state", "T,rho"
+    );
+    recording_support::compare(
+        "issue10-pressure/value-after-hessian", "pressure", "Pa",
+        value_after_hessian.value, actual.value, inputs,
+        "Relationship", "order-transition", "value remains valid after Hessian",
+        "reference_or_one", 0.0, 1.0e-12,
+        close(value_after_hessian.value, actual.value, 1.0e-12),
+        "issue10-pressure", "value-after-hessian", "P", "T,rho",
+        "P_value=P_hessian", "T,rho"
+    );
+    const double delta = 1.0e-4;
+    const auto plus = model.neutral_property(
+        temperature + 400.0 * delta, density + 100.0 * delta,
+        epcsaft::NeutralProperty::Pressure, epcsaft::DerivativeOrder::Gradient
+    );
+    const auto minus = model.neutral_property(
+        temperature - 400.0 * delta, density - 100.0 * delta,
+        epcsaft::NeutralProperty::Pressure, epcsaft::DerivativeOrder::Gradient
+    );
+    constexpr const char* units[] = {"Pa/K", "Pa m3/mol"};
+    for (std::size_t row = 0; row < 2; ++row) {
+        const double centered = (plus.gradient[row] - minus.gradient[row]) / (2.0 * delta);
+        const double expected = actual.hessian[row] * 400.0
+            + actual.hessian[row * 2 + 1] * 100.0;
+        recording_support::compare(
+            (std::string("issue10-hessian/") + std::to_string(row)).c_str(),
+            "pressure_hessian_action", units[row], centered, expected,
+            recording_support::fields({inputs, recording_support::field("delta", delta),
+                                       recording_support::field("direction", row)}),
+            "Relationship", "centered_gradient", "pressure Hessian action",
+            "reference_or_one", 0.0, 1.0e-6,
+            close(centered, expected, 1.0e-6), "issue10-hessian",
+            std::to_string(row).c_str(), "H*d", "T,rho", "H*d=finite_difference", "T,rho"
+        );
+        CHECK(close(centered, expected, 1.0e-6));
+    }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -4133,5 +4204,6 @@ int main(int argc, char** argv) {
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:33"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:148"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
+        {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},
     });
 }

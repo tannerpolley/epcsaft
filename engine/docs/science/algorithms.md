@@ -231,6 +231,7 @@ reuse must preserve all coefficient, T, density and implicit-site dependencies.
 |---|---|
 | pressure, chemical potential, residual h/u values | first |
 | first derivatives of those quantities; fixed-composition cp/cv values | second |
+| pressure Hessian on the independent T/rho chart (`pressure_state_hessian`) | third |
 | cp/cv sensitivities | third |
 | first equilibrium action (A1) | second |
 | second equilibrium action (A2) | third |

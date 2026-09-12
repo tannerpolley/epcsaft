@@ -1373,6 +1373,24 @@ $$
 Z_\rho=a_\rho+\rho_ma_{\rho\rho}.
 $$
 
+## `pressure_state_hessian`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Differentiate Eq.~`pressure` with Eq.~`compressibility_factor`, at fixed composition and physical parameters
+- Description: Pressure gradient and Hessian on the independent SI temperature/molar-density chart. Here a denotes dimensionless molar residual Helmholtz energy, r denotes molar density, and subscripts denote partial derivatives.
+- Change note: Defines the missing property slice for the planned IDAES prototype (issue #10); does not claim implemented or qualified third energy derivatives. Requires a smooth branch and complete implicit chains wherever association is present.
+
+$$
+\begin{aligned}
+P_T &= R(r+r^2a_r)+RT r^2a_{Tr},\\
+P_r &= RT(1+2ra_r+r^2a_{rr}),\\
+P_{TT} &= 2Rr^2a_{Tr}+RT r^2a_{TTr},\\
+P_{Tr} &= R(1+2ra_r+r^2a_{rr})+RT(2ra_{Tr}+r^2a_{Trr}),\\
+P_{rr} &= RT(2a_r+4ra_{rr}+r^2a_{rrr}).
+\end{aligned}
+$$
+
 ## `pressure_equality`
 
 - Section: Equilibrium

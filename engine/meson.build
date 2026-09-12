@@ -132,6 +132,30 @@ epcsaft_native = static_library(
   pic: true,
 )
 
+asl_library = shared_library(
+  'epcsaft_asl',
+  'native/bindings/asl_adapter.cpp',
+  cpp_args: native_warnings,
+  dependencies: [
+    threads_dep,
+    ipopt_dep,
+    eigen_dep,
+    ceres_dep,
+    highs_dep,
+    nlopt_dep,
+    boost_headers_dep,
+    cppad_headers_dep,
+  ],
+  include_directories: native_inc,
+  link_args: release_link_args + [
+    '-Wl,--exclude-libs,ALL',
+    '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
+  ],
+  link_with: epcsaft_native,
+  install: true,
+  install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
+)
+
 # Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
 py.extension_module(
   '_core',
