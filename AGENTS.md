@@ -121,10 +121,6 @@ its limits, unresolved work and Git state. Update the owning issue body and
 repository evidence together when a capability claim changes. A successful
 build, readiness label or reviewer opinion is not numerical acceptance.
 
-Run `bash "$HOME/.codex/hooks/codex-cleanup.sh" --repo-root .` after file changes
-or task-owned processes/artifacts. Agents run it; never ask the user to do so.
-Remove only task-created ignored artifacts or exact user-authorized candidates.
-
 For roadmap work, preserve the GitHub parent/sub-issue hierarchy and native
 dependencies. Use explicit `work:*` labels for authorization, pause, claim and
 review; only `tools/reconcile-issue-roadmap.py` writes derived `status:*` labels.
