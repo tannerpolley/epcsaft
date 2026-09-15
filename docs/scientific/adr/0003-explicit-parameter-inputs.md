@@ -22,7 +22,7 @@ retain provenance separately; they do not select runtime physics. Native
 behavior follows physical topology and declared formulations, never application,
 source, component-name or fingerprint allowlists.
 
-The project map and implementation plan own current scope and availability.
+The project map and GitHub issue roadmap own current scope and availability.
 Residual polar terms remain excluded by ADR 0006. Historical loader names,
 catalog migration records and previous package arrangements are recoverable
 from this decision's Git history; they are not current callable requirements.

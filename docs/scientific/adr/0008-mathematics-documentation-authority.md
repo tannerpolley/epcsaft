@@ -19,8 +19,9 @@ Permanent equation definitions are edited in `engine/docs/equations.md`;
 Markdown with LaTeX equations and precise pseudocode serves both humans and
 agents. Additional rendered views must use those same sources. The scientific
 context maps EOS conventions, equilibrium formulation, algorithms and fitting
-meaning to their permanent owners. `docs/scientific/implementation-plan.md` owns the one
-current implementation gap plan. Superseded setup lives only in Git history
+meaning to their permanent owners. ADR 0010 supersedes this decision's former
+local implementation-plan ownership clause with GitHub issue ownership.
+Superseded setup lives only in Git history
 under ADR 0009; dated reviews retain evidence for their inspected snapshot.
 
 This replaces the former YAML-first equation ownership and stage-document

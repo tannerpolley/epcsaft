@@ -18,7 +18,7 @@ Retain one-question analysis sets with their actual inputs, scripts, results,
 figures and interpretation. Preserve the established
 `analyses/reproduction/<short-id>/` layout. Do not create a miscellaneous
 administrative directory that duplicates those owners, GitHub state or the
-implementation plan.
+GitHub issue roadmap.
 
 The retired directory names, decision crosswalk and migration evidence remain
 in Git history. Current setup has no aliases, redirects or competing decision

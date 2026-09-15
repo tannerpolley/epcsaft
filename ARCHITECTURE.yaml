@@ -1,7 +1,8 @@
 version: 17
 # Project structure declaration: components, Engine layers, path ownership and
-# code budgets. Implemented and qualified capability is in
-# docs/scientific/implementation-plan.md; dependencies live in pyproject.toml.
+# code budgets. Implementation plans and dependencies are in GitHub issues;
+# qualified capability remains in repository evidence. Package dependencies live
+# in pyproject.toml.
 
 # The rule this file exists to state: C++ is organised by dependency layer,
 # because include direction is the only structural fact a checker can enforce.
@@ -18,7 +19,7 @@ artifact:
   public_modules: [epcsaft, epcsaft.equilibrium]
 
 plan:
-  transfer: docs/scientific/implementation-plan.md
+  delivery: https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones
   scientific_authority: docs/scientific/CONTEXT.md
   acceptance: engine/tests/oracle
   historical_evidence: docs/scientific/reviews
@@ -87,7 +88,7 @@ project_map: {
     "engine.core": {"name": "Core", "parent": "engine", "purpose": "Constants, coordinates, numerical policy and diagnostics."},
     "engine.contributions": {"name": "Contributions", "parent": "engine", "purpose": "Ideal and individual residual Helmholtz formulations."},
     "engine.properties": {"name": "Properties", "parent": "engine", "purpose": "State evaluation, Ideal/Residual/Total quantities, density closure and derivative chains."},
-    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions; PH/PS/UV and discovery are future scope in the implementation plan."},
+    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions; PH/PS/UV and discovery are future scope in GitHub issues."},
     "engine.regression": {"name": "Regression", "parent": "engine", "purpose": "Observation composition, fitting and fit diagnostics."},
     "engine.surface": {"name": "Surface", "parent": "engine", "purpose": "Physical input construction, resolution and admission."},
     "engine.bindings": {"name": "Bindings/Python", "parent": "engine", "purpose": "Native-language translation and the public Python input/output interfaces."},
@@ -148,6 +149,7 @@ project_map: {
     ["uv.lock", "workspace", "configuration"],
     [".gitignore", "workspace", "configuration"],
     [".gitattributes", "workspace", "configuration"],
+    [".agents/", "workspace", "configuration"],
     [".codex/", "workspace", "configuration"],
     [".github/", "workspace", "configuration"],
     [".serena/", "workspace", "configuration"],

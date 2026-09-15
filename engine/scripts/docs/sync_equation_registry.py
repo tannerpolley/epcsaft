@@ -141,8 +141,8 @@ def self_check(docs: Path) -> None:
         synchronize(target, check=True)
         scientific = Path(temporary) / "docs" / "scientific"
         (scientific / "reviews").mkdir(parents=True)
-        plan = scientific / "implementation-plan.md"
-        plan.write_text("EqID: missing_equation\n", encoding="utf-8")
+        context = scientific / "CONTEXT.md"
+        context.write_text("EqID: missing_equation\n", encoding="utf-8")
         (scientific / "reviews" / "dated.md").write_text(
             "EqID: historical_equation\n", encoding="utf-8")
         try:
@@ -150,8 +150,8 @@ def self_check(docs: Path) -> None:
         except ValueError as error:
             assert "missing_equation" in str(error) and "historical_equation" not in str(error)
         else:
-            raise AssertionError("implementation plan references were not checked")
-        plan.write_text("", encoding="utf-8")
+            raise AssertionError("live scientific references were not checked")
+        context.write_text("", encoding="utf-8")
         synchronize(target, check=True)
         first = re.search(r"^## `[^`]+`.*?(?=^## `|\Z)", source, re.MULTILINE | re.DOTALL)
         assert first is not None

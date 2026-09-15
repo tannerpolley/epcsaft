@@ -11,19 +11,19 @@ issues and reviews; current development and delivery use this repository.
 
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
 scientific owners and one equilibrium driver. The
-[implementation plan](docs/scientific/implementation-plan.md) distinguishes
-required capability from implemented and numerically qualified behavior. Before
-implementation, follow its [milestone reuse map](docs/scientific/implementation-plan.md#milestone-reuse-map)
-and adoption gate. Its deferred thermal-flash and phase-search work does not
-block current completion.
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+owns implementation plans, dependencies and delivery status. Each leaf issue
+records its reuse decision, acceptance and evidence links. Repository scientific
+records distinguish required capability from implemented and numerically
+qualified behavior.
 
-For the live Map, Plan and Results website, run
+For the live Map, Roadmap and Results website, run
 `quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`
 and open the
-[Quarto companion](http://127.0.0.1:8766/). The companion is a read-only
-viewer: Quarto renders the project map, plan, ordinary check reports, and
-retained numerical results. Starting or refreshing it never builds the Engine,
-collects tests, or runs a scientific calculation.
+[Quarto companion](http://127.0.0.1:8766/). The companion links to the GitHub
+roadmap and renders the local project map, ordinary check reports, and retained
+numerical results. Starting or refreshing it never builds the Engine, collects
+tests, or runs a scientific calculation.
 
 To keep the companion running for this checkout, install the user service and
 enable it:

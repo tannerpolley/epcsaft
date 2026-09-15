@@ -5,7 +5,6 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 python3 engine/scripts/docs/sync_equation_registry.py --check
-python3 tools/check-roadmap.py
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 
