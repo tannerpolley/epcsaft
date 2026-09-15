@@ -1379,7 +1379,7 @@ $$
 - Status: Exact derivation
 - Source: Differentiate Eq.~`pressure` with Eq.~`compressibility_factor`, at fixed composition and physical parameters
 - Description: Pressure gradient and Hessian on the independent SI temperature/molar-density chart. Here a denotes dimensionless molar residual Helmholtz energy, r denotes molar density, and subscripts denote partial derivatives.
-- Change note: Defines the missing property slice for the planned IDAES prototype (issue #10); does not claim implemented or qualified third energy derivatives. Requires a smooth branch and complete implicit chains wherever association is present.
+- Change note: Implemented for the bounded single-component neutral slice by `HelmholtzModel::neutral_property` using the existing Helmholtz tape and falsified by `native.properties.issue10` plus the adapter campaign. Association, electrolyte and active-parameter cases remain unavailable; broader use requires a smooth branch and complete implicit chains.
 
 $$
 \begin{aligned}
