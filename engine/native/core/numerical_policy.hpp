@@ -3,6 +3,7 @@
 #include "core/physical_constants.hpp"
 
 #include <cmath>
+#include <limits>
 
 // Every number in the engine that is not a physical constant, with the reason it
 // has the value it has. Four categories:
@@ -83,6 +84,10 @@ inline constexpr Tolerance ASSOCIATION_RESIDUAL{"ASSOCIATION_RESIDUAL",
     "carried unchanged; Newton reaches it in 3-8 steps from a warm start",
 };
 
+inline constexpr Tolerance ASSOCIATION_ACTION_RESIDUAL{"ASSOCIATION_ACTION_RESIDUAL",
+    1.0e-10, Category::AlgorithmTolerance,
+    "approved P4 normalized mass-action coefficient residual; exceeding it makes the action unavailable"};
+
 // A budget, not a convergence criterion. Newton with the analytic Jacobian
 // converges in single digits; reaching this many steps means the step selection
 // is failing and the caller should hear about it rather than get a wrong answer
@@ -101,6 +106,10 @@ inline constexpr Tolerance ASSOCIATION_JACOBIAN_CONDITION{"ASSOCIATION_JACOBIAN_
     Category::AlgorithmTolerance,
     "relative pivot floor in the dense solve",
 };
+
+inline constexpr Tolerance ASSOCIATION_JACOBIAN_RANK{"ASSOCIATION_JACOBIAN_RANK",
+    std::numeric_limits<double>::epsilon(), Category::AlgorithmTolerance,
+    "FullPivLU relative rank base; multiply by the site count"};
 
 // ------------------------------------------------------------------- density
 

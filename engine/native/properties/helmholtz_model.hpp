@@ -32,9 +32,62 @@ struct SweepCounters final {
     std::size_t reverse = 0;
     std::size_t hessian_calls = 0;
     std::size_t recordings = 0;
+    std::size_t directional_paths = 0;
+    std::size_t maximum_energy_order = 0;
+};
+
+struct ParameterActionDirection final {
+    ParameterFamily family;
+    std::vector<std::size_t> indices;
+    double value = 0.0;
+};
+enum class PropertyObservable {
+    IdealEnthalpy, IdealInternalEnergy, IdealEntropy, IdealIsobaricHeatCapacity,
+    IdealIsochoricHeatCapacity, ResidualEnthalpy, ResidualInternalEnergy,
+    ResidualEntropy, ResidualIsobaricHeatCapacity, ResidualIsochoricHeatCapacity,
+    TotalEnthalpy, TotalInternalEnergy, TotalEntropy, TotalIsobaricHeatCapacity,
+    TotalIsochoricHeatCapacity
+};
+enum class PropertyActionStatus {
+    Available, MissingThermochemistry, OutsideInterval, ThermalBoundary,
+    SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
+    AssociationResidual, DensityUnavailable, PressureSingular,
+    CentralPropertyUnavailable, Nonfinite
+};
+struct DensityActionDirection final {
+    double temperature = 0.0, molar_density = 0.0;
+    std::vector<double> composition;
+    std::vector<ParameterActionDirection> parameter;
+};
+struct PressureActionDirection final {
+    double temperature = 0.0, pressure = 0.0;
+    std::vector<double> composition;
+    std::vector<ParameterActionDirection> parameter;
+};
+struct PropertyActionResult final {
+    PropertyObservable observable;
+    std::optional<double> value, action;
+    PropertyActionStatus status = PropertyActionStatus::Nonfinite;
+    std::size_t energy_order = 0;
 };
 
 enum class DensityBranch { Unspecified, Vapor, Liquid };
+struct PropertyActionDiagnostics final {
+    std::size_t site_rank = 0, site_factorizations = 0, site_solves = 0;
+    double site_pivot_ratio = 0.0, association_residual = 0.0;
+    double pressure_density_derivative = 0.0, pressure_residual = 0.0;
+    double stability_determinant = 0.0;
+    std::size_t pressure_factorizations = 0, pressure_solves = 0;
+    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0;
+    std::size_t forward_sweeps = 0, dense_hessian_calls = 0;
+    DensityBranch branch = DensityBranch::Unspecified;
+    std::optional<std::size_t> stable_root_count;
+};
+struct PropertyActionBatch final {
+    std::vector<PropertyActionResult> results;
+    std::size_t maximum_energy_order = 0;
+    PropertyActionDiagnostics diagnostics;
+};
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -107,6 +160,17 @@ public:
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt
     ) const;
+    PropertyActionBatch density_actions(
+        double, double, const std::vector<double>&,
+        const std::vector<PropertyObservable>&,
+        const std::vector<DensityActionDirection>&
+    ) const;
+    PropertyActionBatch pressure_actions(
+        double, double, const std::vector<double>&, DensityBranch,
+        const std::vector<PropertyObservable>&,
+        const std::vector<PressureActionDirection>&,
+        std::optional<double> = std::nullopt
+    ) const;
     double packing_fraction_coefficient(
         double temperature,
         const std::vector<double>& mole_fractions
@@ -140,8 +204,10 @@ private:
     detail::PredicateSignature predicate_signature(
         double temperature,
         double density,
-        const std::vector<double>& composition
+        const std::vector<double>& composition,
+        bool residual = true, bool ideal = false
     ) const;
+    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
 
     Parameters parameters_;
     std::vector<ActiveParameter> active_;

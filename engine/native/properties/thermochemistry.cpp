@@ -95,26 +95,28 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
                     [temperature](const auto& intervals) { return !contains_temperature(intervals, temperature); }))
         return {std::nullopt, ThermochemistryStatus::OutsideInterval};
 
-    IdealProperties result;
-    const double gas_constant = GAS_CONSTANT_J_PER_MOL_K;
     try {
+        std::vector<IdealCorrelation> correlations;
+        std::vector<bool> supported;
+        correlations.reserve(mole_fractions.size());
+        supported.reserve(mole_fractions.size());
         for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-            const auto thermal = evaluate_ideal_thermal(
-                record.component_intervals[component], temperature, record.standard_pressure
-            ).value;
-            const double fraction = mole_fractions[component];
-            result.enthalpy += fraction * thermal.h;
-            result.isobaric_heat_capacity += fraction * thermal.cp;
-            if (fraction > 0.0) result.entropy += fraction * (thermal.s - gas_constant * std::log(
-                fraction * molar_density * gas_constant * temperature / record.standard_pressure));
+            correlations.push_back(ideal_interval(
+                record.component_intervals[component], temperature).correlation);
+            supported.push_back(mole_fractions[component] > 0.0);
         }
+        const auto value = evaluate_ideal_mixture(
+            correlations, record.standard_pressure, temperature, molar_density,
+            mole_fractions, supported);
+        IdealProperties result{
+            value.enthalpy, value.internal_energy, value.entropy,
+            value.isobaric_heat_capacity, value.isochoric_heat_capacity};
+        if (!std::isfinite(result.enthalpy) || !std::isfinite(result.internal_energy)
+            || !std::isfinite(result.entropy) || !std::isfinite(result.isobaric_heat_capacity)
+            || !std::isfinite(result.isochoric_heat_capacity))
+            return {std::nullopt, ThermochemistryStatus::Nonfinite};
+        return {result, ThermochemistryStatus::Available};
     } catch (const std::domain_error&) { return {std::nullopt, ThermochemistryStatus::Nonfinite}; }
-    result.internal_energy = result.enthalpy - gas_constant * temperature;
-    result.isochoric_heat_capacity = result.isobaric_heat_capacity - gas_constant;
-    if (!std::isfinite(result.enthalpy) || !std::isfinite(result.internal_energy)
-        || !std::isfinite(result.entropy) || !std::isfinite(result.isobaric_heat_capacity)
-        || !std::isfinite(result.isochoric_heat_capacity)) return {std::nullopt, ThermochemistryStatus::Nonfinite};
-    return {result, ThermochemistryStatus::Available};
 }
 
 DensityStandardState pressure_to_density_standard(

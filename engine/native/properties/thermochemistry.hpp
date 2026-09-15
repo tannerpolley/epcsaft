@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,42 @@ struct IdealPropertiesEvaluation final {
     std::optional<IdealProperties> value;
     ThermochemistryStatus status = ThermochemistryStatus::Nonfinite;
 };
+
+template <typename Scalar>
+struct IdealMixtureValue final {
+    Scalar enthalpy = Scalar(0.0);
+    Scalar internal_energy = Scalar(0.0);
+    Scalar entropy = Scalar(0.0);
+    Scalar isobaric_heat_capacity = Scalar(0.0);
+    Scalar isochoric_heat_capacity = Scalar(0.0);
+};
+
+template <typename Scalar>
+IdealMixtureValue<Scalar> evaluate_ideal_mixture(
+    const std::vector<IdealCorrelation>& correlations, double pressure,
+    const Scalar& temperature, const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const std::vector<bool>& supported
+) {
+    if (correlations.size() != mole_fractions.size()
+        || supported.size() != mole_fractions.size())
+        throw std::invalid_argument("ideal mixture size");
+    IdealMixtureValue<Scalar> result;
+    const Scalar gas_constant = Scalar(GAS_CONSTANT_J_PER_MOL_K);
+    for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+        const auto thermal = evaluate_ideal_correlation(
+            correlations[i], temperature, pressure);
+        result.enthalpy += mole_fractions[i] * thermal.h;
+        result.isobaric_heat_capacity += mole_fractions[i] * thermal.cp;
+        if (supported[i]) result.entropy += mole_fractions[i] * (thermal.s
+            - gas_constant * scalar_log(mole_fractions[i] * molar_density
+                * gas_constant * temperature / Scalar(pressure)));
+    }
+    result.internal_energy = result.enthalpy - gas_constant * temperature;
+    result.isochoric_heat_capacity = result.isobaric_heat_capacity - gas_constant;
+    return result;
+}
+
 void validate_thermochemistry(const ThermochemistryRecord&, std::size_t component_count);
 IdealPropertiesEvaluation evaluate_ideal_properties(
     const ThermochemistryRecord&, double temperature, double molar_density,
