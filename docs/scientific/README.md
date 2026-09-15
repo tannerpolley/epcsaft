@@ -12,7 +12,9 @@ same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
 neither becomes a second Engine specification. This is the repository's accepted CSE Markdown layout.
 
 The [implementation plan](implementation-plan.md) is the single current gap
-and completion plan. [Dated reviews](reviews/transfer-audit-2026-09-06.md)
+and completion plan. Its milestone reuse map and adoption gate must be applied
+before implementation. Its design-resolution/handoff rule separates open
+scientific choices from specified coding; the same plan owns current/deferred scope. [Dated reviews](reviews/transfer-audit-2026-09-06.md)
 retain numerical evidence and inspected limitations; they do not issue current
 instructions. Keep a record only while it supports a scientific result,
 derivation, accepted decision or diagnosis. Update current owners in place and

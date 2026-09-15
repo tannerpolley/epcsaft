@@ -224,6 +224,6 @@ void run_floor() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.properties_floor", "Model_floor_measurements", "Tooling", "Properties", "Explicit", "Outcome_only", nullptr, "M5", nullptr, "engine/tests/native/properties_floor.cpp", "properties_floor", "run"}, run_floor},
+        {{"native.properties_floor", "Model_floor_measurements", "Tooling", "Properties", "Explicit", "Outcome_only", nullptr, "P5", nullptr, "engine/tests/native/properties_floor.cpp", "properties_floor", "run"}, run_floor},
     });
 }

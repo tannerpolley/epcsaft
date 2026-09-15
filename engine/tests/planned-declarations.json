@@ -8,7 +8,7 @@
     "lifecycle": "Planned",
     "execution_policy": "Explicit",
     "evidence_expectation": "Numerical",
-    "requirement_id": "M5",
+    "requirement_id": "P5",
     "expected_comparison_keys": ["feos/*"],
     "unmet_prerequisite": "FEOS source packet and an admitted matching implementation."
   },
@@ -35,7 +35,7 @@
     "execution_policy": "Explicit",
     "evidence_expectation": "Numerical",
     "property_group": "Ideal",
-    "requirement_id": "M3",
+    "requirement_id": "P3",
     "expected_comparison_keys": ["ideal-caloric/*"],
     "unmet_prerequisite": "Accepted ideal-gas caloric input correlations and reference conventions."
   }

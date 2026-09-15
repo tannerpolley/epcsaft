@@ -123,23 +123,29 @@ rather than substitute another equilibrium method.
 Runtime accepts caller-supplied physical inputs and one documented unit system;
 source-parameter validity ranges are the caller's responsibility. Mathematical
 input validity and numerical diagnostics remain Engine responsibilities.
-Phase counts/types are declared by default. Stability and phase search are a
-separate mode selected explicitly at the outset. Caller tolerances govern solve
+Current phase counts/types/supports are declared. A phase-stability/discovery
+algorithm is deferred future work; current mechanical/local checks and explicit
+limits on global claims remain required. Caller tolerances govern solve
 requests; available candidates that miss them retain warnings and achieved
 residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
 Initial fitting targets residual-EOS parameters only; reaction/reference fitting
 is deferred. Concrete input forms and outstanding qualification are recorded in
 the implementation plan's required scientific choices.
-Phase specifications are the first milestone; PH, PS and UV remain required
-later. Initial fitting uses density and phase observations. Public state units
+Declared phase specifications are current work; PH, PS and UV are deferred
+future implementations outside current completion. Caloric properties/actions
+consumed by MEA and the absorber remain current requirements. Initial fitting uses density and phase observations. Public state units
 follow SI molar conventions; composition actions use explicit zero-sum
 directions. The plan records the precise inputs and remaining specifications.
 
 ## How the setup evolves
 
 1. Identify the physical question, requested observable, domain and existing owner.
-2. Settle missing mathematics or method choices through the applicable CSE route.
+2. Apply the implementation plan's milestone reuse map and adoption gate.
+   Inspect current and superseded owners/evidence, preserve justified behavior,
+   and separate unresolved scientific decisions from specified implementation.
+   Resolve the method/coordinate/domain questions and smallest falsifier before
+   dependent coding; independent in-scope mapping work may proceed.
 3. Change the smallest complete scientific slice, including required documentation
    and numerical evidence; preserve the one-driver and ownership requirements.
 4. Review agreement and limitations, then update the implementation plan against
@@ -195,7 +201,7 @@ an architecture scan nor a successful solve proves model validity.
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
 | capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
-| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's C1, P1, … rows (implementation plan) |
+| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's CORE1, C1, P1, … rows (implementation plan) |
 | artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
 | qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 
@@ -212,7 +218,8 @@ The owner selected strict layer completion: Core, Contributions, Properties, Equ
 Regression, Surface, Bindings/Python, then application acceptance. The
 [implementation plan](implementation-plan.md#official-dependency-order-progress--2026-09-08)
 owns milestone status, generated progress and rough effort estimates.
-Finish and verify each layer's agreed scope before expanding the next; later
+Finish and verify each layer's current agreed scope before expanding the next;
+deferred PH/PS/UV and phase search do not block that order; later
 integration defects reopen the affected earlier milestone. Design readiness
 is scoped to the affected slice; the implementation plan owns its gates and
 current execution queue. Infrastructure needed to execute checks is a prerequisite. Existing

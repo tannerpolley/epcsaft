@@ -37,8 +37,12 @@ roughly 675 additional lines for reference thermochemistry, property chains
 and compact derivative actions. Equilibrium allows roughly 1,820: historical
 planning estimated about 1,400 for stability, with the balance assuming reuse
 of the compiler, rows and factorizations for continuation and derivatives.
-This equilibrium estimate has the greatest uncertainty and must be challenged
-by a concrete method design before implementation.
+This historical equilibrium allowance includes search work now deferred by the
+implementation plan; it is not permission to build that work or spend the spare
+lines. All numeric ceilings stay unchanged. Before each slice, inspect its
+current/old owners and justify only the bounded repair, adaptation or missing
+capability. Verify-only slices begin with zero new runtime. Reuse decisions and
+measured equivalent-work costs, not line count alone, justify replacement.
 
 Regression's target follows the retained small fitting-wrapper and four-node
 observation design. Binding/Python growth assumes replacement of interface

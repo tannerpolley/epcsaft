@@ -87,7 +87,7 @@ project_map: {
     "engine.core": {"name": "Core", "parent": "engine", "purpose": "Constants, coordinates, numerical policy and diagnostics."},
     "engine.contributions": {"name": "Contributions", "parent": "engine", "purpose": "Ideal and individual residual Helmholtz formulations."},
     "engine.properties": {"name": "Properties", "parent": "engine", "purpose": "State evaluation, Ideal/Residual/Total quantities, density closure and derivative chains."},
-    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared equilibrium assembly and driver, continuation, stability and solved-state actions."},
+    "engine.equilibrium": {"name": "Equilibrium", "parent": "engine", "purpose": "Shared declared-phase equilibrium, branch continuation and solved-state actions; PH/PS/UV and discovery are future scope in the implementation plan."},
     "engine.regression": {"name": "Regression", "parent": "engine", "purpose": "Observation composition, fitting and fit diagnostics."},
     "engine.surface": {"name": "Surface", "parent": "engine", "purpose": "Physical input construction, resolution and admission."},
     "engine.bindings": {"name": "Bindings/Python", "parent": "engine", "purpose": "Native-language translation and the public Python input/output interfaces."},
@@ -172,7 +172,7 @@ native:
     core: policy, the declared-choice and convergence contracts, the trace
     contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
     properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
-    equilibrium: one equilibrium driver, shared rows, continuation and stability
+    equilibrium: one equilibrium driver, shared rows and branch continuation; discovery is deferred
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes

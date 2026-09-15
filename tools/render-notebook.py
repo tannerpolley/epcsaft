@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "build/notebook-data"
@@ -74,6 +74,11 @@ def source_link(path: str, tracked: set[str], remote: str | None, revision: str)
 
 def roadmap_rows() -> list[dict[str, Any]]:
     return ROADMAP["rows"](PLAN.read_text(encoding="utf-8"))
+
+
+def rebase_plan_links(record: str) -> str:
+    return re.sub(r"\]\(([^)]+)\)", lambda match:
+                  "](" + urljoin(PLAN.relative_to(ROOT).as_posix(), match[1]) + ")", record)
 
 
 def load_json(path: Path) -> tuple[Any | None, str | None]:
@@ -245,7 +250,7 @@ def render_plan(rows: list[dict[str, Any]]) -> str:
         lines.append(table(
             ("Milestone", "Status", "Remaining h", "Prerequisites", "Acceptance requirement", "Evidence record"),
             [
-                (row["id"], STATUS[row["status"]], row["remaining"], row["prerequisites"], row["required"], re.sub(r"\[([^]]+)\]\([^)]+\)", r"\1", row["record"]))
+                (row["id"], STATUS[row["status"]], row["remaining"], row["prerequisites"], row["required"], rebase_plan_links(row["record"]))
                 for row in rows if row["layer"] == layer
             ],
         ))
@@ -524,6 +529,12 @@ def main() -> None:
             "native.contributions.p1",
             "native.contributions.p2",
         ]
+        assert rebase_plan_links(
+            "[context](CONTEXT.md#anchor) [review](reviews/c1.md) [issue](https://example.test/6)"
+        ) == (
+            "[context](docs/scientific/CONTEXT.md#anchor) "
+            "[review](docs/scientific/reviews/c1.md) [issue](https://example.test/6)"
+        )
         retained = ET.parse(ROOT / "build/test-results/native.xml").getroot()
         retained_output = "\n".join(
             node.text or ""

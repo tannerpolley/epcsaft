@@ -8,13 +8,100 @@
 #include <cppad/cppad.hpp>
 
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
 
 namespace epcsaft {
+
+// EqID: phase_helmholtz_amount_volume
+// The mechanical ideal term is deliberately independent of the residual tape.
+// Its caller may use an off-normalized composition chart; no normalization is
+// implied here.
+template <typename Scalar>
+Scalar ideal_mechanical_helmholtz(
+    const std::vector<Scalar>& amounts, const Scalar& volume, const Scalar& rho0,
+    bool clamp_subnormal = true
+) {
+    if constexpr (std::is_same_v<Scalar, double>) {
+        if (!(volume > 0.0) || !std::isfinite(volume)
+            || !(rho0 > 0.0) || !std::isfinite(rho0))
+            throw std::invalid_argument("invalid ideal mechanical scale");
+    }
+    Scalar result = Scalar(0.0);
+    const Scalar log_scale = scalar_log(volume) + scalar_log(rho0);
+    for (const Scalar& amount : amounts) {
+        if constexpr (std::is_same_v<Scalar, double>) {
+            if (!std::isfinite(amount) || amount < 0.0)
+                throw std::invalid_argument("invalid ideal amount");
+            if (amount > 0.0) {
+                const double log_amount =
+                    std::log(clamp_subnormal
+                                 ? std::max(amount, std::numeric_limits<double>::min())
+                                 : amount);
+                result += amount * (log_amount - log_scale - 1.0);
+            }
+        } else {
+            const Scalar log_amount = scalar_log(
+                clamp_subnormal
+                    ? scalar_select_less(
+                        amount, Scalar(std::numeric_limits<double>::min()),
+                        Scalar(std::numeric_limits<double>::min()), amount)
+                    : amount);
+            result += scalar_select_less(
+                Scalar(0.0), amount,
+                amount * (log_amount - log_scale - Scalar(1.0)),
+                Scalar(0.0));
+        }
+    }
+    return result;
+}
+
+// EqID: ideal_gas_helmholtz
+// h and s are explicit source-anchored standard-state values at T and P0.
+template <typename Scalar>
+Scalar ideal_reference_helmholtz(
+    const Scalar& temperature,
+    const Scalar& rho0,
+    const Scalar& pressure0,
+    const std::vector<Scalar>& mole_fractions,
+    const std::vector<Scalar>& enthalpy,
+    const std::vector<Scalar>& entropy
+) {
+    if (mole_fractions.size() != enthalpy.size()
+        || mole_fractions.size() != entropy.size()) {
+        throw std::invalid_argument("ideal thermal input size");
+    }
+    if constexpr (std::is_same_v<Scalar, double>) {
+        if (!(temperature > 0.0) || !std::isfinite(temperature)
+            || !(rho0 > 0.0) || !std::isfinite(rho0)
+            || !(pressure0 > 0.0) || !std::isfinite(pressure0))
+            throw std::invalid_argument("invalid ideal reference scale");
+        for (const double fraction : mole_fractions)
+            if (!std::isfinite(fraction) || fraction < 0.0)
+                throw std::invalid_argument("invalid ideal mole fraction");
+        for (std::size_t i = 0; i < enthalpy.size(); ++i)
+            if (!std::isfinite(enthalpy[i]) || !std::isfinite(entropy[i]))
+                throw std::invalid_argument("nonfinite ideal reference value");
+    }
+    const Scalar rt = Scalar(GAS_CONSTANT_J_PER_MOL_K) * temperature;
+    const Scalar log_standard = scalar_log(Scalar(GAS_CONSTANT_J_PER_MOL_K))
+        + scalar_log(temperature) + scalar_log(rho0) - scalar_log(pressure0);
+    Scalar result = Scalar(0.0);
+    for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+        result += mole_fractions[i] * (
+            enthalpy[i] / rt - entropy[i] / Scalar(GAS_CONSTANT_J_PER_MOL_K)
+            + log_standard);
+    }
+    if constexpr (std::is_same_v<Scalar, double>) {
+        if (!std::isfinite(result)) throw std::domain_error("nonfinite ideal reference result");
+    }
+    return result;
+}
 
 inline constexpr std::array<double, 7> A0 = {
     0.9105631445, 0.6361281449, 2.6861347891, -26.547362491,
