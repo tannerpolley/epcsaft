@@ -11,30 +11,29 @@ once; their YAML index is generated. Optional HTML/PDF views must render the
 same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
 neither becomes a second Engine specification. This is the repository's accepted CSE Markdown layout.
 
-The [implementation plan](implementation-plan.md) is the single current gap
-and completion plan. Its milestone reuse map and adoption gate must be applied
-before implementation. Its design-resolution/handoff rule separates open
-scientific choices from specified coding; the same plan owns current/deferred scope. [Dated reviews](reviews/transfer-audit-2026-09-06.md)
-retain numerical evidence and inspected limitations; they do not issue current
+The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+is the sole current gap and completion plan. Issue bodies own design, scope,
+acceptance, reuse and handoff; native relationships own hierarchy and
+prerequisites. The local [roadmap authority note](implementation-plan.md) contains
+no editable status. [Dated reviews](reviews/transfer-audit-2026-09-06.md) retain
+numerical evidence and inspected limitations; they do not issue current
 instructions. Keep a record only while it supports a scientific result,
-derivation, accepted decision or diagnosis. Update current owners in place and
-remove superseded instructions and duplicate progress summaries; Git preserves
-edit history. GitHub issues track bounded delivery and link to the plan's
-scientific qualification rows rather than repeating their status.
+derivation, accepted decision or diagnosis. Update current scientific owners in
+place and remove duplicate progress summaries; Git preserves edit history.
 
 [Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
 ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 
 ## Live companion
 
-The root Quarto project presents the current map, implementation plan, ordinary
-check reports, and retained thermodynamic comparisons as one read-only local
-website. Start it with
+The root Quarto project presents the current map, a link to the GitHub roadmap,
+ordinary check reports, and retained thermodynamic comparisons as one read-only
+local website. Start it with
 `quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`.
 Quarto owns rendering, navigation, watching, serving, and reload. Its
 presentation reader only reads current owners and completed records; it never
-builds, collects, tests, or calculates. The implementation plan owns milestone
-status and qualification. The
+builds, collects, tests, calculates, or mirrors issue status. GitHub issues own
+roadmap state; repository evidence owns scientific qualification. The
 [test-system design](test-system-design.md) defines the one-way result and freshness
 and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)
 records the retired system's bounded checks; it is historical evidence, not a
@@ -56,4 +55,4 @@ IDs, duplicate algorithm IDs, unresolved equation/algorithm references, and a
 stale generated index. They cannot prove
 scientific agreement: result-level numerical checks and review must falsify
 wrong coefficients, derivative chains, bases and stopping claims. Update the
-transfer plan only when identified evidence supports the changed capability.
+owning issue and retained evidence when a capability changes.

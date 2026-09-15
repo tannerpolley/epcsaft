@@ -8,13 +8,14 @@ are its first required acceptance uses; application names never select physics.
 Use the installed CSE skills. Read `docs/scientific/README.md`,
 `docs/scientific/CONTEXT.md` and the nearest subtree `AGENTS.md` before selecting
 the smallest applicable CSE route. Then read only the relevant equations,
-algorithms, accepted decisions and `docs/scientific/implementation-plan.md`
-entries. Before each milestone implementation, apply that plan's reuse map and
-required adoption decision. Separate unresolved scientific choices from
-specified implementation and complete the bounded handoff before dependent
-coding; preserve justified behavior and change only the demonstrated gap.
-Deferred scope is not a completion prerequisite. The project map owns
-architectural detail and directory responsibilities.
+algorithms, accepted decisions, retained evidence and the current GitHub leaf
+issue. Use `.agents/skills/manage-github-roadmap/SKILL.md` for roadmap work.
+The issue body owns design, implementation plan, scope, acceptance, reuse and
+handoff; native parent/sub-issues and `Blocked by` relationships own structure
+and prerequisites. Separate unresolved scientific choices from specified
+implementation before dependent coding; preserve justified behavior and change
+only the demonstrated gap. Deferred scope is not a completion prerequisite.
+The project map owns architectural detail and directory responsibilities.
 
 Before Serena inspection, activate the exact checkout root and verify the returned
 path. Use Serena for C++/Python symbol and caller navigation; normal environment
@@ -28,7 +29,7 @@ All equilibrium specifications use one driver and shared thermodynamics.
 Preserve one installed Engine wheel and explicit physical inputs. A scientific
 change updates or explicitly revalidates its mathematics, algorithms, code and
 numerical evidence together. Code behavior cannot redefine accepted doctrine;
-unresolved scientific choices remain explicit in the implementation plan.
+unresolved implementation choices remain explicit in the owning GitHub issue.
 
 ## Execution and collaboration
 
@@ -45,8 +46,8 @@ slice. Treat downstream clones as independent current applications; investigate
 historical inconsistencies only when they affect the current calculation.
 Update affected authoritative docs and their live views in the same change;
 remove superseded instructions instead of appending competing policy. Keep
-progress in the implementation plan and delivery in linked issues. Retain
-records for their scientific use, never merely to narrate task history.
+plans, progress, dependencies and delivery in the owning GitHub issue. Retain
+repository records for their scientific use, never merely to narrate task history.
 
 One accountable lead owns each scientific slice across its required files.
 Keep one writer per file. Delegate bounded independent inspections when parallel
@@ -109,22 +110,24 @@ target below ten seconds. Slow evidence, analysis reproductions, full native
 clang-tidy and sanitizers require an explicit owner command justified by the
 changed claim. `bash tools/run-slice.sh khudaida` runs the canonical phase-equilibrium
 slice. Broaden or repeat verification only for new changes, failures or unresolved
-risks. This project has no CI/CD.
+risks. This project has no scientific CI/CD. The metadata-only issue-roadmap
+workflow may reconcile labels from GitHub relationships; it never builds, tests,
+starts workers or establishes scientific qualification.
 
 ## Completion
 
 Report the changed behavior, checks actually executed, numerical evidence and
-its limits, unresolved work and Git state. Update the implementation plan only
-when code and evidence support the new capability claim. A successful build,
-readiness check or reviewer opinion is not numerical acceptance.
+its limits, unresolved work and Git state. Update the owning issue body and
+repository evidence together when a capability claim changes. A successful
+build, readiness label or reviewer opinion is not numerical acceptance.
 
 Run `bash "$HOME/.codex/hooks/codex-cleanup.sh" --repo-root .` after file changes
 or task-owned processes/artifacts. Agents run it; never ask the user to do so.
 Remove only task-created ignored artifacts or exact user-authorized candidates.
 
-For roadmap work, update the implementation plan's authoritative milestone row at
-start, completion and handoff: status, remaining/actual Astra elapsed hours and
-a dated evidence record. Reopen affected and dependent qualifications when a
-claim changes. Run `python3 tools/check-roadmap.py --write` after row edits; the
-normal readiness gate checks the derived summary. No readiness check alone
-qualifies a scientific row.
+For roadmap work, preserve the GitHub parent/sub-issue hierarchy and native
+dependencies. Use explicit `work:*` labels for authorization, pause, claim and
+review; only `tools/reconcile-issue-roadmap.py` writes derived `status:*` labels.
+At start, completion and handoff update the issue's plan, remaining/actual work,
+evidence link and limitations. Reopen affected work and reconcile dependents when
+a claim changes. A ready label never authorizes execution, publication or merge.

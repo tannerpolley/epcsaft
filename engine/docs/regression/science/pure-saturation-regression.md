@@ -2,7 +2,7 @@
 
 Required general fitting mathematics; pure saturation is one observation
 construction. Installed availability is recorded in the
-[transfer plan](../../../../docs/scientific/implementation-plan.md).
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones).
 
 Use the plan's adoption gate to adapt justified existing native fitting and
 evaluator logic. Implement only observation forms consumed by current scope;

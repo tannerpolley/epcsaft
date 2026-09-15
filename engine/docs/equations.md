@@ -5,7 +5,7 @@ Canonical, human-editable equation definitions. Edit each equation here once;
 The index is not an implementation-availability declaration. Symbols, source
 applicability and conventions are in [full-eos.md](science/full-eos.md) and
 [formulation.md](equilibrium/formulation.md); methods and derivative domains
-are in [algorithms.md](science/algorithms.md). The [transfer plan](../../docs/scientific/implementation-plan.md)
+are in [algorithms.md](science/algorithms.md). The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
 links the current implementation and numerical evidence gaps.
 
 Each definition has one stable heading, the five metadata lines, and one
@@ -675,7 +675,7 @@ $$
 - Status: Exact derivation
 - Source: Exact Jacobian of Eqs.~`phase_mole_fraction`--`phase_molar_density`
 - Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in docs/scientific/implementation-plan.md; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification is linked from its GitHub issue; the generic EOS tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
@@ -693,7 +693,7 @@ $$
 - Status: Exact derivation
 - Source: Exact second-order multivariable chain rule
 - Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification tracked in docs/scientific/implementation-plan.md; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification is linked from its GitHub issue; the generic EOS tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}

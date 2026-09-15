@@ -38,7 +38,7 @@ and compact derivative actions. Equilibrium allows roughly 1,820: historical
 planning estimated about 1,400 for stability, with the balance assuming reuse
 of the compiler, rows and factorizations for continuation and derivatives.
 This historical equilibrium allowance includes search work now deferred by the
-implementation plan; it is not permission to build that work or spend the spare
+owning GitHub issue; it is not permission to build that work or spend the spare
 lines. All numeric ceilings stay unchanged. Before each slice, inspect its
 current/old owners and justify only the bounded repair, adaptation or missing
 capability. Verify-only slices begin with zero new runtime. Reuse decisions and

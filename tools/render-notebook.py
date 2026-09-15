@@ -15,15 +15,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urljoin
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "build/notebook-data"
-PLAN = ROOT / "docs/scientific/implementation-plan.md"
 LEGACY = ROOT / "build/numerical-evidence"
 MAP = runpy.run_path(str(ROOT / "tools/project-map.py"))
-ROADMAP = runpy.run_path(str(ROOT / "tools/check-roadmap.py"))
-STATUS = {"[ ]": "Planned", "[-]": "Active", "[!]": "Blocked", "[x]": "Qualified"}
 
 
 def command(*args: str) -> str:
@@ -70,15 +67,6 @@ def source_link(path: str, tracked: set[str], remote: str | None, revision: str)
     if path not in tracked or remote is None:
         return f"`{path}`" + (" (untracked)" if path not in tracked else "")
     return f"[{path}]({remote}/blob/{revision}/{quote(path)})"
-
-
-def roadmap_rows() -> list[dict[str, Any]]:
-    return ROADMAP["rows"](PLAN.read_text(encoding="utf-8"))
-
-
-def rebase_plan_links(record: str) -> str:
-    return re.sub(r"\]\(([^)]+)\)", lambda match:
-                  "](" + urljoin(PLAN.relative_to(ROOT).as_posix(), match[1]) + ")", record)
 
 
 def load_json(path: Path) -> tuple[Any | None, str | None]:
@@ -144,7 +132,7 @@ def copy_table(label: str, path: Path | None) -> str | None:
     return f"build/notebook-data/{label}.csv"
 
 
-def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
+def render_map(latest: list[dict[str, Any]]) -> str:
     project = MAP["project_map"]()
     tracked = set(command("git", "ls-files").splitlines())
     remote = repository_url()
@@ -154,12 +142,6 @@ def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
     for node in nodes.values():
         if node.get("parent"):
             children.setdefault(node["parent"], []).append(node["id"])
-
-    def milestones(node_ids: set[str]) -> list[dict[str, Any]]:
-        names = {nodes[node_id]["name"] for node_id in node_ids}
-        if "applications" in node_ids:
-            names.add("Application acceptance")
-        return [row for row in rows if row["layer"] in names]
 
     def checks(node_ids: set[str]) -> list[dict[str, Any]]:
         slugs = {node_id.split(".")[-1].replace("bindings", "") for node_id in node_ids}
@@ -172,7 +154,7 @@ def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
 
     sections = [
         "The map is derived from `ARCHITECTURE.yaml` and files that exist in this checkout. "
-        "Milestones come only from `implementation-plan.md`. Engine aggregates every descendant layer.",
+        "Implementation status remains in the linked GitHub issue roadmap. Engine aggregates every descendant layer.",
         "",
     ]
     for node in project["nodes"]:
@@ -180,17 +162,6 @@ def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
             continue
         descendant_ids = {node["id"], *children.get(node["id"], [])}
         sections.extend([f"## {node['name']}", "", node["purpose"], ""])
-        owned_milestones = milestones(descendant_ids)
-        if owned_milestones:
-            sections.extend([
-                "### Milestones",
-                "",
-                table(("ID", "Layer", "Status", "Prerequisites"), [
-                    (item["id"], item["layer"], STATUS[item["status"]], item["prerequisites"])
-                    for item in owned_milestones
-                ]),
-                "",
-            ])
         owned_checks = checks(descendant_ids)
         if owned_checks:
             sections.extend([
@@ -212,14 +183,6 @@ def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
         for child_id in children.get(node["id"], []):
             child = nodes[child_id]
             sections.extend([f"### {child['name']}", "", child["purpose"], ""])
-            child_milestones = milestones({child_id})
-            if child_milestones:
-                sections.extend([
-                    table(("Milestone", "Status", "Requirement"), [
-                        (item["id"], STATUS[item["status"]], item["required"]) for item in child_milestones
-                    ]),
-                    "",
-                ])
             for role, paths in sorted(child.get("files", {}).items()):
                 sections.extend(f"- **{role}:** {source_link(path, tracked, remote, revision)}" for path in paths)
             sections.append("")
@@ -233,29 +196,6 @@ def render_map(rows: list[dict[str, Any]], latest: list[dict[str, Any]]) -> str:
     sections.extend(f"- Unmapped: `{path}`" for path in project["unmapped"])
     sections.extend(f"- Ambiguous: `{path}`" for path in project["ambiguous"])
     return "\n".join(sections)
-
-
-def render_plan(rows: list[dict[str, Any]]) -> str:
-    counts = {label: 0 for label in STATUS.values()}
-    for row in rows:
-        counts[STATUS[row["status"]]] += 1
-    lines = [
-        "This is a read-only rendering of the authoritative implementation plan. A check outcome does not change qualification.",
-        "",
-        table(("Planned", "Active", "Blocked", "Qualified"), [tuple(counts[key] for key in ("Planned", "Active", "Blocked", "Qualified"))]),
-        "",
-    ]
-    for layer in ROADMAP["LAYERS"]:
-        lines.extend([f"## {layer}", ""])
-        lines.append(table(
-            ("Milestone", "Status", "Remaining h", "Prerequisites", "Acceptance requirement", "Evidence record"),
-            [
-                (row["id"], STATUS[row["status"]], row["remaining"], row["prerequisites"], row["required"], rebase_plan_links(row["record"]))
-                for row in rows if row["layer"] == layer
-            ],
-        ))
-        lines.append("")
-    return "\n".join(lines)
 
 
 def ordinary_xml_results(document: ET.Element, path: Path, source_time: datetime) -> list[tuple[str, str, str, str, str]]:
@@ -373,7 +313,7 @@ def current_comparisons(source_time: datetime) -> tuple[list[tuple[Any, ...]], l
     return rows, csv_paths, errors
 
 
-def render_results(rows: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+def render_results() -> tuple[str, list[dict[str, Any]]]:
     manifest, manifest_error = load_json(LEGACY / "manifest.json")
     runs = manifest.get("runs", []) if isinstance(manifest, dict) and isinstance(manifest.get("runs"), list) else []
     latest = [run for run in runs if str(run.get("test_id", "")).startswith(("native.", "python."))]
@@ -383,7 +323,7 @@ def render_results(rows: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]
         "Values below remain visible when preview is stopped because they are rendered into this page.",
         "",
         "::: {.callout-important}",
-        "Historical passes do not claim the current checkout passed. No official milestone is qualified unless the Plan page says so.",
+        "Historical passes do not claim the current checkout passed. Scientific qualification comes from linked repository evidence and its owning GitHub issue.",
         ":::",
         "",
         "## Ordinary current check reports",
@@ -481,7 +421,7 @@ def render_results(rows: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]
             f"- Produced: {cell(run.get('finished_at'))}",
             f"- Outcome detail: {cell(run.get('outcome_reason'))}",
             "- Applicability: **Outdated** after the notebook cutover changed the recorded input set; values are historical, not a current-code pass.",
-            "- Qualification: **Not qualified**; the implementation plan remains authoritative.",
+            "- Qualification: **Not qualified**; consult the owning GitHub issue and retained evidence.",
             f"- Full retained table: [{path.name if path else 'unavailable'}]({download})" if download else f"- Full retained table: unavailable ({cell(error)})",
             "",
         ])
@@ -529,12 +469,6 @@ def main() -> None:
             "native.contributions.p1",
             "native.contributions.p2",
         ]
-        assert rebase_plan_links(
-            "[context](CONTEXT.md#anchor) [review](reviews/c1.md) [issue](https://example.test/6)"
-        ) == (
-            "[context](docs/scientific/CONTEXT.md#anchor) "
-            "[review](docs/scientific/reviews/c1.md) [issue](https://example.test/6)"
-        )
         retained = ET.parse(ROOT / "build/test-results/native.xml").getroot()
         retained_output = "\n".join(
             node.text or ""
@@ -549,10 +483,8 @@ def main() -> None:
         print("reader self-test passed")
         return
     OUT.mkdir(parents=True, exist_ok=True)
-    rows = roadmap_rows()
-    results, latest = render_results(rows)
-    write(OUT / "plan.md", render_plan(rows))
-    write(OUT / "map.md", render_map(rows, latest))
+    results, latest = render_results()
+    write(OUT / "map.md", render_map(latest))
     write(OUT / "results.md", results)
 
 

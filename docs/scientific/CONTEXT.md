@@ -1,5 +1,7 @@
 # Scientific context
 
+repository role: tool
+
 default deliverable: capability
 
 ## Purpose and first acceptance
@@ -35,12 +37,12 @@ flowchart TD
 
 The review arrow means a discrepancy prompts diagnosis or a justified proposed
 scientific revision. Code behavior never silently changes the mathematics.
-The implementation plan records missing and unqualified capability separately
-from this intended architecture.
+GitHub leaf issues record missing and unqualified capability separately from
+this intended architecture.
 
 | Owner | Responsibility |
 |---|---|
-| `docs/scientific/` | This map, current implementation plan, accepted decisions, review evidence and writing guidance |
+| `docs/scientific/` | This map, accepted decisions, review evidence and writing guidance |
 | `engine/docs/` | Canonical equations, conventions, formulation and algorithms |
 | `data/` | Reusable scientific inputs, provenance and explicit materialization |
 | `engine/native/` | Shared scientific calculations and numerical solves |
@@ -137,25 +139,62 @@ residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
 Initial fitting targets residual-EOS parameters only; reaction/reference fitting
 is deferred. Concrete input forms and outstanding qualification are recorded in
-the implementation plan's required scientific choices.
+the owning GitHub issues.
 Declared phase specifications are current work; PH, PS and UV are deferred
 future implementations outside current completion. Caloric properties/actions
 consumed by MEA and the absorber remain current requirements. Initial fitting uses density and phase observations. Public state units
 follow SI molar conventions; composition actions use explicit zero-sum
-directions. The plan records the precise inputs and remaining specifications.
+directions. Owning GitHub issues record precise implementation inputs and
+remaining work.
+
+### Accepted cross-cutting scientific requirements
+
+- Callers supply species, parameters and physical configuration. The Engine
+  validates mathematics and reports numerical failure; it neither guesses inputs
+  nor polices source-published fit ranges.
+- Public state quantities use K, Pa, mol, m³, mol/m³, J/mol and J/(mol·K), with
+  dimensionless mole fractions. Source-unit and reaction-convention conversions
+  are explicit and never silently reinterpret parameter records.
+- The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
+  vapor-fraction specifications at fixed T or P. Phase fractions and absolute
+  phase amounts are distinct. PH, PS, UV and phase discovery remain future work.
+- Current requests declare phase counts, types and supports. Mechanical and local
+  checks remain available, but no declared-phase result implies global stability
+  or an unperformed search.
+- Caller tolerances govern solve requests. Return finite candidates with achieved
+  residuals and explicit unmet-tolerance warnings; return named absence and
+  diagnostics when no finite candidate exists.
+- Reaction conventions require explicit stoichiometry, standard concentration or
+  molality, solvent basis and ionic gauge where applicable. Native `K(T)` uses
+  `ln K = a + b/T + c ln(T/Tref) + dT` with explicit `Tref`; inconsistent supplied
+  thermochemistry and `K(T)` remain an error rather than a hidden preference.
+- Native calorics use caller-supplied references and supported polynomial,
+  Shomate, NASA7, NASA9 and DIPPR107 forms. Preserve source-owned piecewise
+  endpoints, reject gaps or ambiguous overlaps, never smooth discontinuities or
+  integrate an anchor through a gap, and require inputs only for consuming outputs.
+- General directional actions cover admitted smooth observables through third
+  order in composition, density, temperature, pressure and active parameters.
+  Composition directions are caller-supplied and zero-sum; singular actions do
+  not erase valid central values or other available actions.
+- Built-in regression observations initially cover density, saturation/bubble/dew
+  pressure or temperature, phase compositions and phase fractions. Fit only
+  residual-EOS parameters initially, retain failed-trial causes, include complete
+  implicit prediction Jacobians, distinguish absolute uncertainty from relative
+  weights, and condition covariance claims on rank, bounds and stated assumptions.
 
 ## How the setup evolves
 
 1. Identify the physical question, requested observable, domain and existing owner.
-2. Apply the implementation plan's milestone reuse map and adoption gate.
-   Inspect current and superseded owners/evidence, preserve justified behavior,
-   and separate unresolved scientific decisions from specified implementation.
+2. Apply the current leaf issue's reuse decision and adoption gate. Inspect
+   current and superseded owners/evidence, preserve justified behavior, and
+   separate unresolved scientific decisions from specified implementation.
    Resolve the method/coordinate/domain questions and smallest falsifier before
    dependent coding; independent in-scope mapping work may proceed.
 3. Change the smallest complete scientific slice, including required documentation
    and numerical evidence; preserve the one-driver and ownership requirements.
-4. Review agreement and limitations, then update the implementation plan against
-   the actual code and installed wheel. Application acceptance remains distinct.
+4. Review agreement and limitations, then update the owning issue and retained
+   evidence against the actual code and installed wheel. Application acceptance
+   remains distinct.
 
 New capability must earn its equations, inputs, ownership, evidence and budget.
 The code floor is an aspirational engineering target; soft and hard ceilings
@@ -176,7 +215,8 @@ recovery question. Historical stage completion is never current acceptance.
 | Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
 | Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
-| Current code owners, missing implementation and required evidence | [implementation plan](implementation-plan.md) |
+| Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones) |
+| Current code owners and required scientific evidence | This context, canonical Engine documents, tests, analyses and dated reviews |
 | Project structure: components, Engine layers, path ownership and artifact roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [adr/](adr/README.md), sole sequence |
@@ -207,7 +247,7 @@ an architecture scan nor a successful solve proves model validity.
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
 | capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
-| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; the plan's CORE1, C1, P1, … rows (implementation plan) |
+| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers |
 | artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
 | qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 
@@ -222,12 +262,12 @@ terms remain retired by ADR 0006; dipolar relative permittivity is distinct.
 
 The owner selected strict layer completion: Core, Contributions, Properties, Equilibrium,
 Regression, Surface, Bindings/Python, then application acceptance. The
-[implementation plan](implementation-plan.md#official-dependency-order-progress--2026-09-08)
-owns milestone status, generated progress and rough effort estimates.
+[GitHub milestones](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+and their native issue relationships own status, prerequisites, scope,
+acceptance, reuse decisions and estimates.
 Finish and verify each layer's current agreed scope before expanding the next;
 deferred PH/PS/UV and phase search do not block that order; later
-integration defects reopen the affected earlier milestone. Design readiness
-is scoped to the affected slice; the implementation plan owns its gates and
-current execution queue. Infrastructure needed to execute checks is a prerequisite. Existing
-higher layers may be used to verify a lower layer without claiming their own
-completion.
+integration defects reopen the affected earlier issue. Design readiness is
+scoped to the affected slice; the leaf issue owns its gates and execution plan.
+Infrastructure needed to execute checks is a prerequisite. Existing higher
+layers may be used to verify a lower layer without claiming their own completion.

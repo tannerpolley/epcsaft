@@ -8,9 +8,9 @@ applications own chemistry selections, fit adoption and application evidence.
 Read [equations](docs/equations.md), [EOS conventions](docs/science/full-eos.md),
 [equilibrium formulation](docs/equilibrium/formulation.md) and
 [algorithms](docs/science/algorithms.md) for required mathematics. Read the
-[current transfer plan](../docs/scientific/implementation-plan.md) for implemented,
-incorrect, missing and unqualified behavior. A definition in the equation
-index does not establish that the installed Engine implements it.
+[current GitHub leaf issue](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues)
+for implemented, incorrect, missing and unqualified behavior. A definition in
+the equation index does not establish that the installed Engine implements it.
 
 Existing research documents and dated evidence retain their original source
 locators and historical software names. They inform scientific choices but do

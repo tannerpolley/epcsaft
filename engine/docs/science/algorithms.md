@@ -4,7 +4,7 @@ Accepted requirements, reconciled against the 2026-09-06 transfer audit.
 These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
 Algorithm IDs below are stable references. Current implementation and required
-numerical falsifiers are mapped in [implementation plan](../../../docs/scientific/implementation-plan.md).
+numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues).
 No section claims that all required actions currently exist. The implementation
 plan owns current versus deferred scope: PH/PS/UV and phase discovery are future
 work. Reuse current/old numerical owners and independent cases under its
@@ -373,7 +373,7 @@ result retains the same convergence record alongside its state.
 
 Before a scientific behavior change is accepted, update or explicitly revalidate
 the affected equation/algorithm IDs and execute the smallest independent
-falsifier identified in the transfer plan. Important examples are caloric
+falsifier identified in the owning issue. Important examples are caloric
 identities, association support boundaries, full weighted-Hessian directional
 checks with nonzero multipliers, implicit action ladders and independent
 reference-state transformations. Finite checks establish bounded evidence,

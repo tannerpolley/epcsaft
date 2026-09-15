@@ -2,8 +2,8 @@
 
 Follow root `AGENTS.md`. Before changing Engine behavior, read the relevant
 canonical mathematics and algorithms mapped in `../docs/scientific/CONTEXT.md`;
-`../docs/scientific/implementation-plan.md` distinguishes required capability
-from installed availability.
+the current GitHub leaf issue distinguishes planned work from installed
+availability and links its required evidence.
 
 `engine/` owns the sole `epcsaft` runtime. Preserve one Python build, one Meson
 graph, one version, one Python-free native archive and one extension. Follow

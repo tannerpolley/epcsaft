@@ -3,7 +3,7 @@
 This document specifies required phase, reaction and reactive-phase mathematics.
 [Equation definitions](../equations.md) own the displayed relations;
 [algorithms](../science/algorithms.md) own their numerical solution.
-[implementation plan](../../../docs/scientific/implementation-plan.md) records implementation gaps.
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones) records implementation gaps.
 A proposed or registered equation is not a capability claim. Current completion
 covers declared-phase specifications. PH/PS/UV and a phase-stability/discovery
 algorithm are deferred in the plan; their mathematics below remains reference
@@ -126,7 +126,7 @@ invalid. A finite outer approximation alone does not close the global gap.
 EqID: `outer_approximation_bound` and the historical tunneling/candidate
 relations describe source methods, not a selected current discovery algorithm.
 Search/controller selection and a justified bound are deferred future work in
-the implementation plan, not prerequisites for declared-phase acceptance. Budget exhaustion never means proven stable.
+GitHub future-work issues, not prerequisites for declared-phase acceptance. Budget exhaustion never means proven stable.
 
 ## Sensitivity and validity
 

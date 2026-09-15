@@ -5,9 +5,10 @@ The project notebook answers three questions from existing owners:
 1. **What exists?** `ARCHITECTURE.yaml` owns components, Engine layers, path
    ownership, and artifact roles. `tools/project-map.py` resolves only files
    that exist in the checkout and reports unmapped or ambiguous paths.
-2. **What remains?** `docs/scientific/implementation-plan.md` owns milestone
-   status, prerequisites, requirements, and qualification evidence in
-   Component → Layer → Milestone order.
+2. **What remains?** The
+   [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+   owns milestone plans, prerequisites and status. The notebook links to it and
+   does not copy its mutable state.
 3. **What happened?** Ordinary pytest XML, Meson logs, retained analysis
    tables, and the pre-cutover numerical manifest own execution outcomes,
    dates, inputs, values, failures, and build provenance.
@@ -31,15 +32,15 @@ tools/render-notebook.py (read-only projection)
 Quarto Markdown and HTML
 ```
 
-`tools/render-notebook.py` uses only the Python standard library and the two
-existing owner parsers. It validates JSON, confines legacy paths to the legacy
+`tools/render-notebook.py` uses only the Python standard library and the project
+map parser. It validates JSON, confines legacy paths to the legacy
 result root, verifies retained comparison-table SHA-256 values, and reports
 missing, corrupt, partial, or unavailable inputs explicitly. It neither runs
 nor imports a test suite.
 
 The root Quarto project owns navigation, page rendering, static serving, and
-preview reload. Its declared resources include the project map, implementation
-plan, ordinary test reports, and retained legacy manifest, so Quarto 1.10.18
+preview reload. Its declared resources include the project map, ordinary test
+reports, and retained legacy manifest, so Quarto 1.10.18
 re-renders when those files change outside the page-source directory. There is
 no custom HTTP endpoint, browser application, poller, reload server, worker,
 scheduler, cache selector, retry loop, or recovery state.
@@ -53,7 +54,7 @@ The notebook keeps these independent:
 | Execution | Passed, failed, skipped, errored, interrupted, or unavailable in the recorded run. |
 | Produced | Timestamp written by the result owner, or the result-file modification time when that is all the ordinary format provides. |
 | Source / inputs | Results newer than the relevant Engine source/input modification boundary are **Unverified**: modification time does not prove matching inputs. Older results are **Outdated by modification time**. Recorded fingerprints/provenance remain directly inspectable but are not continuously recertified. |
-| Scientific qualification | Comes only from the implementation-plan milestone row and its reviewed evidence. |
+| Scientific qualification | Comes from retained repository evidence accepted through its owning GitHub issue. |
 
 Historical values remain rendered and downloadable when outdated. An old pass
 never becomes a current-code pass. A failed or interrupted run remains failed

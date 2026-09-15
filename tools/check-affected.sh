@@ -27,7 +27,6 @@ if ((${#changed[@]} == 0)); then
 fi
 
 paths="$(printf '%s\n' "${changed[@]}")"
-python3 tools/check-roadmap.py
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|CONTEXT.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
