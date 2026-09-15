@@ -30,6 +30,18 @@ void register_eos(py::module_& module) {
     py::class_<epcsaft::Parameters>(module, "Parameters")
         .def_property_readonly("component_count", &epcsaft::Parameters::component_count)
         .def_property_readonly("site_count", &epcsaft::Parameters::site_count);
+    py::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
+        .value("Value", epcsaft::DerivativeOrder::Value)
+        .value("Gradient", epcsaft::DerivativeOrder::Gradient)
+        .value("PressureSlope", epcsaft::DerivativeOrder::PressureSlope)
+        .value("Hessian", epcsaft::DerivativeOrder::Hessian);
+    py::enum_<epcsaft::NeutralProperty>(module, "NeutralProperty")
+        .value("ResidualHelmholtz", epcsaft::NeutralProperty::ResidualHelmholtz)
+        .value("Pressure", epcsaft::NeutralProperty::Pressure);
+    py::class_<epcsaft::NeutralPropertyDerivatives>(module, "NeutralPropertyDerivatives")
+        .def_readonly("value", &epcsaft::NeutralPropertyDerivatives::value)
+        .def_readonly("gradient", &epcsaft::NeutralPropertyDerivatives::gradient)
+        .def_readonly("hessian", &epcsaft::NeutralPropertyDerivatives::hessian);
     py::enum_<epcsaft::DensityBranch>(module, "DensityBranch")
         .value("Unspecified", epcsaft::DensityBranch::Unspecified)
         .value("Vapor", epcsaft::DensityBranch::Vapor)
@@ -63,6 +75,7 @@ void register_eos(py::module_& module) {
     py::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
         .def(py::init<epcsaft::Parameters>())
         .def("state", &epcsaft::HelmholtzModel::state)
+        .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("anchor_density") = std::nullopt)

@@ -49,6 +49,12 @@ from this intended architecture.
 | `analyses/` | One-question calculations, retained results and interpretation using the installed wheel |
 | Official application repositories | Application chemistry, parameter adoption, process equations and application acceptance |
 
+The bounded neutral Pyomo/IDAES adapter ships `libepcsaft_asl.so` in the same
+non-editable Engine wheel. The compiled ASL binding transports shared native
+Helmholtz pressure derivatives; the [adapter analysis](../../analyses/2026-idaes-asl-adapter/README.md)
+owns process equations, units, scaling, execution and retained evidence. Its
+pure-neutral qualification does not qualify general property actions or applications.
+
 ## Engine responsibilities
 
 Native dependencies run downward in `ARCHITECTURE.yaml`; Python exposes

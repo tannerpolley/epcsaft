@@ -239,6 +239,9 @@ PY
         printf '%s-flags=%s\n' "$package" "$(pkg-config --cflags --libs "$package")"
         printf '%s-metadata=%s\n' "$package" "$(sha256sum "$pc_file" | cut -d ' ' -f 1)"
     done
+    for header in engine/build/subprojects/packagefiles/asl/funcadd.h engine/build/subprojects/packagefiles/asl/stdio1.h; do
+        printf 'asl-header=%s:%s\n' "$header" "$(sha256sum "$header" | cut -d ' ' -f 1)"
+    done
     fingerprint_tree eigen-headers "$(pkg-config --variable=prefix eigen3)/include/eigen3/Eigen"
     fingerprint_tree ipopt-headers "$(pkg-config --variable=includedir ipopt)"
     printf 'ceres-imported-target=%s\n' "$(sha256sum "$ceres_identity" | cut -d ' ' -f 1)"

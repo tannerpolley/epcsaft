@@ -17,6 +17,14 @@ using ActiveParameter = detail::ActiveParameter;
 
 enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian };
 
+enum class NeutralProperty { ResidualHelmholtz, Pressure };
+
+struct NeutralPropertyDerivatives final {
+    double value = 0.0;
+    std::vector<double> gradient;
+    std::vector<double> hessian;
+};
+
 struct HelmholtzDerivatives final {
     double value = 0.0;
     std::vector<double> gradient;
@@ -148,6 +156,12 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order
     ) const;
+    NeutralPropertyDerivatives neutral_property(
+        double temperature,
+        double molar_density,
+        NeutralProperty property,
+        DerivativeOrder order
+    ) const;
     State state(
         double temperature,
         double molar_density,
@@ -208,6 +222,12 @@ private:
         bool residual = true, bool ideal = false
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
+    HelmholtzDerivatives evaluate_locked(
+        double temperature,
+        double volume,
+        const std::vector<double>& amounts,
+        DerivativeOrder order
+    ) const;
 
     Parameters parameters_;
     std::vector<ActiveParameter> active_;

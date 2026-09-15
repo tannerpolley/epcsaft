@@ -21,6 +21,7 @@ NATIVE_ENTRYPOINTS = (
     "solve_equilibrium",
 )
 NATIVE_MEMBER_PREFIX = "epcsaft/_core."
+ASL_MEMBER = "epcsaft/libepcsaft_asl.so"
 TRANSIENT_WHEEL_RUNPATH = b"/wheel/platlib/lib"
 
 
@@ -40,10 +41,14 @@ def verify(wheel: Path) -> None:
             for member in members
             if member.startswith("epcsaft/") and member.endswith(".so")
         ]
-        if len(matches) != 1 or not matches[0].startswith(NATIVE_MEMBER_PREFIX):
-            raise SystemExit(f"expected only the epcsaft._core extension, found {matches}")
-        if TRANSIENT_WHEEL_RUNPATH in archive.read(matches[0]):
-            raise SystemExit(f"transient build runpath embedded in {matches[0]}")
+        extensions = [member for member in matches if member.startswith(NATIVE_MEMBER_PREFIX)]
+        if len(extensions) != 1 or len(matches) != 2 or ASL_MEMBER not in matches:
+            raise SystemExit(
+                f"expected one epcsaft._core extension and {ASL_MEMBER}, found {matches}"
+            )
+        for member in matches:
+            if TRANSIENT_WHEEL_RUNPATH in archive.read(member):
+                raise SystemExit(f"transient build runpath embedded in {member}")
 
     epcsaft_distributions = [
         distribution
@@ -65,6 +70,9 @@ def verify(wheel: Path) -> None:
         raise SystemExit(f"unexpected Engine install source: {installed_from}")
 
     installed_root = Path(distribution.locate_file("")).resolve()
+    installed_asl = Path(distribution.locate_file(ASL_MEMBER)).resolve()
+    if not installed_asl.is_file() or installed_root not in installed_asl.parents:
+        raise SystemExit(f"ASL library is outside the installed wheel: {installed_asl}")
     origins = []
     for name in PUBLIC_MODULES:
         module = import_module(name)
