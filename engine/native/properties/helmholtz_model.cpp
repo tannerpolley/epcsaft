@@ -1075,6 +1075,77 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     return result;
 }
 
+double HelmholtzModel::third_directional(double temperature, double volume, const std::vector<double>& amounts,
+    const std::array<std::vector<double>, 3>& directions) const {
+    validate_point(temperature, volume, amounts);
+    const std::size_t components = parameters_.component_count();
+    const std::size_t width = 2 + components + active_.size();
+    for (const auto& direction : directions)
+        require(direction.size() == width && finite_vector(direction), "direction");
+    for (std::size_t component = 0; component < components; ++component) {
+        if (amounts[component] != 0.0) continue;
+        for (const auto& direction : directions)
+            require(direction[2 + component] == 0.0, "zero-support direction");
+    }
+    std::vector<double> point = {temperature, volume};
+    point.insert(point.end(), amounts.begin(), amounts.end());
+    for (const auto& item : active_) point.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
+    double total = 0.0; for (double amount : amounts) total += amount;
+    std::array<double, 3> norms{};
+    std::array<std::vector<double>, 3> normalized;
+    for (std::size_t direction = 0; direction < directions.size(); ++direction) {
+        double magnitude = 0.0;
+        for (std::size_t i = 0; i < width; ++i) {
+            const double scale = i == 0 ? temperature : i == 1 ? volume
+                : i < 2 + components ? total : std::max(1.0, std::abs(point[i]));
+            magnitude = std::max(magnitude, std::abs(directions[direction][i]) / scale);
+        }
+        require(std::isfinite(magnitude), "direction");
+        if (magnitude == 0.0) return 0.0;
+        norms[direction] = magnitude;
+        normalized[direction] = directions[direction];
+        for (double& value : normalized[direction]) value /= magnitude;
+    }
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
+    const double density = total / volume;
+    std::vector<double> composition(amounts);
+    for (double& amount : composition) amount /= total;
+    const auto signature = predicate_signature(temperature, density, composition);
+    if (!tape_ || tape_->predicates != signature || !tape_->residual_available) {
+        tape_ = detail::HelmholtzTape::record(parameters_, active_, point,
+            refreshed.site_fractions, signature, {}, 0.0, true);
+        ++counters_.recordings;
+    }
+    std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> factorization;
+    if (tape_->site_count != 0) {
+        const auto sigma = segment_sigma(temperature, parameters_),
+                   diameter = segment_diameter(temperature, parameters_, sigma);
+        factorization = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(site_factorization(
+            refreshed.site_fractions, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3,
+            association_delta(temperature, density, composition, parameters_, sigma, diameter)));
+    }
+    constexpr std::array<std::array<double, 3>, 4> signs{{
+        {{1.0, 1.0, 1.0}}, {{1.0, -1.0, -1.0}},
+        {{-1.0, 1.0, -1.0}}, {{-1.0, -1.0, 1.0}}
+    }};
+    double coefficient = 0.0;
+    for (const auto& sign : signs) {
+        std::vector<std::vector<double>> series(4, std::vector<double>(width, 0.0));
+        series.front() = point;
+        for (std::size_t i = 0; i < width; ++i)
+            series[1][i] = sign[0] * normalized[0][i]
+                + sign[1] * normalized[1][i] + sign[2] * normalized[2][i];
+        coefficient += tape_->implicit_taylor(
+            series, 3, factorization.get(), nullptr, &counters_.forward).front();
+    }
+    counters_.directional_paths += signs.size(); counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, std::size_t{3});
+    const double result = coefficient * norms[0] * norms[1] * norms[2] / 4.0;
+    require(std::isfinite(result), "third directional");
+    return result;
+}
+
 PropertyActionBatch HelmholtzModel::directional_actions(
     double temperature, double molar_density, const std::vector<double>& mole_fractions,
     const std::vector<PropertyObservable>& observables,

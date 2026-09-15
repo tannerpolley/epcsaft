@@ -156,6 +156,7 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order
     ) const;
+    double third_directional(double, double, const std::vector<double>&, const std::array<std::vector<double>, 3>&) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
