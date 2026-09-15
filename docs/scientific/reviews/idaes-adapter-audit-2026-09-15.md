@@ -12,8 +12,8 @@ Local branch ownership is:
 - `idaes/adapter/historical-prototype` preserves the original prototype at `c995e39`.
 - `idaes/adapter/neutral-current-engine` preserves the pre-rebase sprint at `0194d4e`.
 - `idaes/adapter/qualification-repair` contains the rebased repair and retained evidence.
-- `idaes/adapter/properties-integration` identifies the previous accepted P3-based tip
-  until it is advanced to the final rebased commit.
+- `idaes/adapter/properties-integration` is advanced to the final rebased tip during
+  closeout.
 
 ## Findings and disposition
 
@@ -59,6 +59,26 @@ The stable derivative, domain, whole-NLP and independent-reference tables are
 identical to the pre-rebase accepted tables after line-ending normalization. The
 adapter source SHA-256 is unchanged. The rebuilt wheel and ASL library identities
 changed because the branch now inherits qualified P4/P5.
+
+Commit `3460a53` retains the promoted clean-source campaign, corrected equation
+status and interruption-check semantics. The final interruption replay ran from
+that clean commit and records its source identity in both retained summaries.
+
+## Claude Fable review and disposition
+
+Claude Fable 5.1 reviewed the rebased implementation and evidence with no workspace
+tools. It confirmed the adapter/Properties seam, pressure chain rule, CppAD reverse
+indexing, mutex handling and unchanged Contributions. Its `REVISE` verdict identified
+three record-integrity corrections:
+
+1. Promoted evidence was not yet committed. Commit `3460a53` now retains it, and
+   this follow-up records the clean interruption replay.
+2. The `pressure_state_hessian` change note still called the implemented derivative
+   slice missing. The canonical equation and generated index now state the bounded
+   implemented and tested scope.
+3. SIGTERM and SIGINT both reported return code `-2` without explaining that the
+   SIGTERM handler deliberately raises `KeyboardInterrupt`. The checker now asserts
+   and records that mapping; both paths passed again from clean commit `3460a53`.
 
 This accepts only the issue #10 neutral propane adapter analysis. The issue-owned
 use of `epcsaft._core` is a comparison exception, not a public B1/B2 derivative API.
