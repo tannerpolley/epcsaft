@@ -11,6 +11,12 @@ if TYPE_CHECKING:
     from .equilibrium import Problem
 
 State = _core.State
+PropertyObservable = _core.PropertyObservable
+PropertyActionStatus = _core.PropertyActionStatus
+DensityActionDirection = _core.DensityActionDirection
+PressureActionDirection = _core.PressureActionDirection
+PropertyActionResult = _core.PropertyActionResult
+PropertyActionBatch = _core.PropertyActionBatch
 ParameterError = _core.ParameterError
 EosError = _core.EosError
 
@@ -26,7 +32,7 @@ def _branch(phase: str | None) -> _core.DensityBranch:
 
 
 class Mixture:
-    __slots__ = ("parameters", "component_ids", "site_ids", "_model")
+    __slots__ = ("_model", "component_ids", "parameters", "site_ids")
 
     parameters: Parameters
     component_ids: tuple[str, ...]
@@ -77,6 +83,35 @@ class Mixture:
         )
         return Reference(self._model, T, P, solvent_fractions, ion_indices, stoichiometry, native)
 
+    def density_actions(
+        self,
+        T: float,
+        rho: float,
+        *,
+        x: Sequence[float],
+        observables: Sequence[PropertyObservable],
+        directions: Sequence[DensityActionDirection],
+    ) -> PropertyActionBatch:
+        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
+        return self._model.density_actions(T, rho, x, observables, directions)
+
+    def pressure_actions(
+        self,
+        T: float,
+        P: float,
+        *,
+        x: Sequence[float],
+        phase: str,
+        observables: Sequence[PropertyObservable],
+        directions: Sequence[PressureActionDirection],
+        anchor: State | None = None,
+    ) -> PropertyActionBatch:
+        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
+        return self._model.pressure_actions(
+            T, P, x, _branch(phase), observables, directions,
+            anchor.molar_density if anchor else None,
+        )
+
     def counters(self) -> _core.SweepCounters:
         return self._model.counters()
 
@@ -85,7 +120,7 @@ class Mixture:
 
 
 class Pure:
-    __slots__ = ("parameters", "component_ids", "site_ids", "_model")
+    __slots__ = ("_model", "component_ids", "parameters", "site_ids")
 
     parameters: Parameters
     component_ids: tuple[str, ...]
@@ -116,8 +151,47 @@ class Pure:
         assert P is not None
         return self._model.state_at_pressure(T, P, (1.0,), branch, None)
 
+    def density_actions(
+        self,
+        T: float,
+        rho: float,
+        *,
+        observables: Sequence[PropertyObservable],
+        directions: Sequence[DensityActionDirection],
+    ) -> PropertyActionBatch:
+        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
+        native = tuple(
+            DensityActionDirection(
+                item.temperature, item.molar_density,
+                item.composition or (0.0,),
+            )
+            for item in directions
+        )
+        return self._model.density_actions(T, rho, (1.0,), observables, native)
+
+    def pressure_actions(
+        self,
+        T: float,
+        P: float,
+        *,
+        phase: str,
+        observables: Sequence[PropertyObservable],
+        directions: Sequence[PressureActionDirection],
+    ) -> PropertyActionBatch:
+        """Evaluate order 1-3 SI-coordinate actions in the observable's unit."""
+        native = tuple(
+            PressureActionDirection(
+                item.temperature, item.pressure,
+                item.composition or (0.0,),
+            )
+            for item in directions
+        )
+        return self._model.pressure_actions(
+            T, P, (1.0,), _branch(phase), observables, native, None,
+        )
+
     def saturation(self, T: float) -> Problem:
-        from .equilibrium import Amounts, Free, Pinned, Phase, Problem
+        from .equilibrium import Amounts, Free, Phase, Pinned, Problem
 
         return Problem(
             phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
