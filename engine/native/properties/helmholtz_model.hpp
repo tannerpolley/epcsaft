@@ -2,6 +2,7 @@
 
 #include "core/convergence.hpp"
 #include "properties/helmholtz_tape.hpp"
+#include "properties/thermochemistry.hpp"
 
 #include <array>
 #include <cstddef>
@@ -31,8 +32,62 @@ struct SweepCounters final {
     std::size_t reverse = 0;
     std::size_t hessian_calls = 0;
     std::size_t recordings = 0;
+    std::size_t directional_paths = 0;
+    std::size_t maximum_energy_order = 0;
 };
 
+struct ParameterActionDirection final {
+    ParameterFamily family;
+    std::vector<std::size_t> indices;
+    double value = 0.0;
+};
+enum class PropertyObservable {
+    IdealEnthalpy, IdealInternalEnergy, IdealEntropy, IdealIsobaricHeatCapacity,
+    IdealIsochoricHeatCapacity, ResidualEnthalpy, ResidualInternalEnergy,
+    ResidualEntropy, ResidualIsobaricHeatCapacity, ResidualIsochoricHeatCapacity,
+    TotalEnthalpy, TotalInternalEnergy, TotalEntropy, TotalIsobaricHeatCapacity,
+    TotalIsochoricHeatCapacity
+};
+enum class PropertyActionStatus {
+    Available, MissingThermochemistry, OutsideInterval, ThermalBoundary,
+    SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
+    AssociationResidual, DensityUnavailable, PressureSingular,
+    CentralPropertyUnavailable, Nonfinite
+};
+struct DensityActionDirection final {
+    double temperature = 0.0, molar_density = 0.0;
+    std::vector<double> composition;
+    std::vector<ParameterActionDirection> parameter;
+};
+struct PressureActionDirection final {
+    double temperature = 0.0, pressure = 0.0;
+    std::vector<double> composition;
+    std::vector<ParameterActionDirection> parameter;
+};
+struct PropertyActionResult final {
+    PropertyObservable observable;
+    std::optional<double> value, action;
+    PropertyActionStatus status = PropertyActionStatus::Nonfinite;
+    std::size_t energy_order = 0;
+};
+
+enum class DensityBranch { Unspecified, Vapor, Liquid };
+struct PropertyActionDiagnostics final {
+    std::size_t site_rank = 0, site_factorizations = 0, site_solves = 0;
+    double site_pivot_ratio = 0.0, association_residual = 0.0;
+    double pressure_density_derivative = 0.0, pressure_residual = 0.0;
+    double stability_determinant = 0.0;
+    std::size_t pressure_factorizations = 0, pressure_solves = 0;
+    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0;
+    std::size_t forward_sweeps = 0, dense_hessian_calls = 0;
+    DensityBranch branch = DensityBranch::Unspecified;
+    std::optional<std::size_t> stable_root_count;
+};
+struct PropertyActionBatch final {
+    std::vector<PropertyActionResult> results;
+    std::size_t maximum_energy_order = 0;
+    PropertyActionDiagnostics diagnostics;
+};
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -50,13 +105,24 @@ struct State final {
     double residual_enthalpy = 0.0;
     double residual_isochoric_heat_capacity = 0.0;
     std::optional<double> residual_isobaric_heat_capacity;
+    std::optional<double> ideal_enthalpy;
+    std::optional<double> ideal_internal_energy;
+    std::optional<double> ideal_entropy;
+    std::optional<double> ideal_isobaric_heat_capacity;
+    std::optional<double> ideal_isochoric_heat_capacity;
+    std::optional<double> total_enthalpy;
+    std::optional<double> total_internal_energy;
+    std::optional<double> total_entropy;
+    std::optional<double> total_isobaric_heat_capacity;
+    std::optional<double> total_isochoric_heat_capacity;
+    ThermochemistryStatus thermochemistry_status = ThermochemistryStatus::MissingRecord;
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
+    DensityBranch density_branch = DensityBranch::Unspecified;
+    std::optional<std::size_t> stable_root_count;
 };
-
-enum class DensityBranch { Unspecified, Vapor, Liquid };
 
 struct DensityRoot final {
     double molar_density = 0.0;
@@ -72,7 +138,8 @@ class HelmholtzModel final {
 public:
     explicit HelmholtzModel(
         Parameters parameters,
-        std::vector<ActiveParameter> active = {}
+        std::vector<ActiveParameter> active = {},
+        std::optional<ThermochemistryRecord> thermochemistry = std::nullopt
     );
 
     HelmholtzDerivatives evaluate(
@@ -92,6 +159,17 @@ public:
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt
+    ) const;
+    PropertyActionBatch density_actions(
+        double, double, const std::vector<double>&,
+        const std::vector<PropertyObservable>&,
+        const std::vector<DensityActionDirection>&
+    ) const;
+    PropertyActionBatch pressure_actions(
+        double, double, const std::vector<double>&, DensityBranch,
+        const std::vector<PropertyObservable>&,
+        const std::vector<PressureActionDirection>&,
+        std::optional<double> = std::nullopt
     ) const;
     double packing_fraction_coefficient(
         double temperature,
@@ -126,11 +204,14 @@ private:
     detail::PredicateSignature predicate_signature(
         double temperature,
         double density,
-        const std::vector<double>& composition
+        const std::vector<double>& composition,
+        bool residual = true, bool ideal = false
     ) const;
+    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
 
     Parameters parameters_;
     std::vector<ActiveParameter> active_;
+    std::optional<ThermochemistryRecord> thermochemistry_;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable SweepCounters counters_;
     mutable std::mutex mutex_;

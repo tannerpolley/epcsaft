@@ -60,14 +60,14 @@ priority are 1–5 judgments; sequence governs even when a later easy fix is tem
 |---|---|---:|---:|
 | Core | ██████████ 100.0% (4/4) | 0–0 | 6.75 |
 | Contributions | ██████████ 100.0% (4/4) | 0–0 | 6.35 |
-| Properties | ░░░░░░░░░░ 0.0% (0/5) | 8–24 | — |
+| Properties | ██████████ 100.0% (5/5) | 0–0 | 15 |
 | Equilibrium | ░░░░░░░░░░ 0.0% (0/5) | 10–30 | — |
 | Regression | ░░░░░░░░░░ 0.0% (0/4) | 4–12 | — |
 | Surface | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Bindings/Python | ░░░░░░░░░░ 0.0% (0/4) | 2–6 | — |
 | Application acceptance | ░░░░░░░░░░ 0.0% (0/4) | 6–20 | — |
 
-Total: **8/34 qualified milestones (23.5%)**; **32–98 remaining Astra hours**.
+Total: **13/34 qualified milestones (38.2%)**; **24–74 remaining Astra hours**.
 <!-- roadmap-summary:end -->
 
 The summary is generated from the tables; do not edit its counts or estimates.
@@ -304,11 +304,11 @@ flowchart TD
 
 | Milestone | Status | Remaining h | Actual h | Prerequisites | Required evidence | Record |
 |---|---|---:|---:|---|---|---|
-| P1 — Residual properties and caloric correction | [-] | 1–3 | — | C4 qualified | Starting with zero runtime additions, preserve F1 and independently qualify residual `s`, `u`, `h`, `c_v` and conditioned `c_p` at fixed density or pressure as defined, including identities, low-density limits and explicit `c_p` unavailability. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md) and [execution handoff](implementation-plan.md#properties-execution-handoffs--2026-09-10); issue #14 owns delivery, scientific contract and reuse decision resolved, independent Design Ready review pending. The [F1 correction](reviews/caloric-correction-2026-09-08.md) remains preserved evidence, not P1 qualification. |
-| P2 — Association elimination and density closure | [ ] | 1–3 | — | P1 qualified | Resolve the zero-support association and density branch contracts, then repair only demonstrated gaps; qualify implicit residuals/conditioning, root count and identity, anchor/disappearance behavior, pressure closure and resolved-state reuse. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P2 execution handoff below; design resolution and qualification pending. |
-| P3 — Ideal and Total properties and references | [ ] | 2–6 | — | P2 qualified | Resolve the exact output/availability and reference-basis matrix, then adapt the qualified ideal correlations and justified old reference algebra into native owners; qualify Ideal/Residual/Total calorics, fixed-reference conversions and typed `K(T)` consistency. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P3 execution handoff below; design resolution and qualification pending. |
-| P4 — General property derivative actions | [ ] | 3–9 | — | P2, P3 qualified | Freeze the observable × coordinate × order matrix first; then reuse the common tape for balanced-composition, fixed-density/fixed-pressure and parameter actions, selected dependencies and requested smooth actions through third order without dense tensors or a second derivative engine. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P4 execution handoff below; action matrix and qualification pending. |
-| P5 — Properties qualification | [ ] | 1–3 | — | P4 qualified | On one final wheel, revalidate P1–P4; qualify repeated-state freshness, density/pressure route agreement, per-output availability, full/selected equivalence, equivalent accepted work, budgets and independent final acceptance. | [2026-09-10: plan review](reviews/properties-plan-2026-09-10.md); see the P5 execution handoff below; integration qualification pending. |
+| P1 — Residual properties and caloric correction | [x] | 0 | 0.5 | C4 qualified | Starting with zero runtime additions, preserve F1 and independently qualify residual `s`, `u`, `h`, `c_v` and conditioned `c_p` at fixed density or pressure as defined, including identities, low-density limits and explicit `c_p` unavailability. | [2026-09-11: P1 qualification](reviews/p1-2026-09-11.md); 53 retained rows on the installed wheel, including 47 checked comparisons and six explicit observations. Runtime additions remain zero; F1 and M2 are revalidated. P2 remains design-gated and the final independent reviewer is reserved for the complete P1–P5 candidate. |
+| P2 — Association elimination and density closure | [x] | 0 | 4.5 | P1 qualified | Resolve the zero-support association and density branch contracts, then repair only demonstrated gaps; qualify implicit residuals/conditioning, root count and identity, anchor/disappearance behavior, pressure closure and resolved-state reuse. | [2026-09-11: P2 qualification](reviews/p2-2026-09-11.md), following [P2 Design Ready](reviews/p2-design-2026-09-11.md): manager review and 37 retained final-wheel rows support the replaced association elimination, bounded density branch/count/anchor behavior, fixed-pressure ladders and explicit claim limits; the independent reviewer remains reserved for the complete P1–P5 candidate. |
+| P3 — Ideal and Total properties and references | [x] | 0 | 4.0 | P2 qualified | Resolve the exact output/availability and reference-basis matrix, then adapt the qualified ideal correlations and justified old reference algebra into native owners; qualify Ideal/Residual/Total calorics, fixed-reference conversions and typed `K(T)` consistency. | [2026-09-11: P3 qualification](reviews/p3-2026-09-11.md), following [P3 design and canonical contract](reviews/properties-plan-2026-09-10.md); issue #18 and commit `211320d` freeze the matrix. Manager review accepts 217 passing installed-wheel rows after two worker correction rounds and the user-authorized bounded manager completion: molarity scaling, separate Gibbs/enthalpy shifts, optional finite K, explicit log10 `Tref`, and explicit density-standard identity are qualified at the exact 420-line production ceiling. The independent reviewer remains reserved for the combined P1–P5 candidate. |
+| P4 — General property derivative actions | [x] | 0 | 6.0 | P2, P3 qualified | Freeze the observable × coordinate × order matrix first; then reuse the common tape for balanced-composition, fixed-density/fixed-pressure and parameter actions, selected dependencies and requested smooth actions through third order without dense tensors or a second derivative engine. | [2026-09-15: P4 qualification](reviews/p4-2026-09-15.md), following the retained [acceptance and recovery record](reviews/p4-2026-09-12.md). The identified wheel passes all 328 P4 comparisons, including the 90-cell matrix, numerical association conditioning failures, malformed requests, freshness and shared-work checks. |
+| P5 — Properties qualification | [x] | 0 | 0.0 | P4 qualified | On one final wheel, revalidate P1–P4; qualify repeated-state freshness, density/pressure route agreement, per-output availability, full/selected equivalence, equivalent accepted work, budgets and independent final acceptance. | [2026-09-15: P5 integration qualification](reviews/p5-2026-09-15.md): 1,289 comparisons in 14 cases and `properties_floor` pass on the final wheel; final CSE review is Supported with limitations and Claude Fable 5.1 returns ACCEPT with zero findings. |
 
 ```mermaid
 flowchart TD
@@ -330,7 +330,7 @@ flowchart TD
 
 These blocks are the roadmap-level minimum for a worker issue; they do not
 replace the required issue reuse decision or fresh independent pre-Build review.
-Only P1 is currently eligible. A worker must not cross a named stop condition,
+P1–P5 are qualified; no Properties slice is active. A worker must not cross a named stop condition,
 choose an unresolved scientific contract while coding, or start a later row.
 
 ##### P1 — Residual properties and caloric correction
@@ -342,8 +342,9 @@ choose an unresolved scientific contract while coding, or start a later row.
   identities, fixed-density mathematical states and fixed-pressure stable-root
   requirement. For the central state, `c_p^r` is available only for finite
   positive `D=Z+rho Z_rho=P_rho/(RT)` and a finite quotient; adopt no additional
-  universal cutoff. Qualify accuracy by a same-branch fixed-pressure ladder and
-  retain near-zero positive `D` as conditioning stress outside the claim.
+  universal cutoff. Qualify accuracy by a requested-branch fixed-pressure ladder;
+  returned branch identity remains P2 scope. Retain near-zero positive `D` as
+  conditioning stress outside the claim.
   Ideal/Total assembly, new public containers, density changes and general
   actions are P2–P4, not P1.
 - **Build:** begin verify-only in `engine/tests/native/properties_checks.cpp`.
@@ -617,8 +618,8 @@ must be revised rather than forcing milestone work to fit an old estimate.
 ## Current execution queue
 
 Current stage: bounded Core CORE1 through CORE4 and Contributions C1 through C4
-are qualified. P1 planning is active; implementation remains gated on its
-linked issue reuse decision and independent Design Ready review. The read-only
+are qualified. P1–P5 Properties are qualified on their bounded numerical
+evidence and final independent reviews. The read-only
 companion presents ordinary execution records and retained historical evidence;
 it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
@@ -635,7 +636,7 @@ it is not an execution or integrity harness.
 | C2 | [Qualify association equations and support limits (#8)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/8) | Complete on 2026-09-10: 19 independent scalar-equation/limit comparisons and CSE/Ponytail acceptance qualify the bounded existing association owner with zero runtime additions. The separate association experiments and Properties P2 implicit-support limits remain excluded. |
 | C3 | [Qualify electrolyte, Born and dielectric formulas (#9)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/9) | Complete on 2026-09-10: 29 retained scalar/reference comparisons, final-wheel replay and independent CSE/Ponytail acceptance qualified the existing contribution owners with no runtime additions. |
 | C4 | [Integrated Contributions qualification (#13)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/13) | Complete on 2026-09-10: final-wheel replay, retained-value agreement, bounded cost and independent ownership/acceptance review passed. Stop at Contributions; Properties and excluded failures remain pending. |
-| P1-design | [Qualify P1 residual state and caloric identities (#14)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/14) | Active on 2026-09-10: bounded verify-first issue published; `c_p^r` conditioning and current/old reuse decisions resolved. Fresh independent Design Ready review remains before a Luna max implementation worker changes code. |
+| P1 | [Qualify P1 residual state and caloric identities (#14)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/14) | Complete on 2026-09-11: 53 retained rows on one installed wheel pass the bounded residual caloric ladders, dilute limits and conditioning/availability checks with zero runtime additions. The final independent reviewer remains reserved for the complete P1–P5 candidate. |
 
 Repository separation is a completed delivery prerequisite. It does not change
 scientific milestone qualification; subsequent work follows the scientific

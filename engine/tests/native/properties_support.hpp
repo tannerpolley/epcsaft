@@ -203,7 +203,9 @@ inline ReferenceTensor reference_tensor(
         const auto& values = item.family == epcsaft::ParameterFamily::Kij
             ? parameters.k_ij
             : item.family == epcsaft::ParameterFamily::Lij ? parameters.l_ij
-                                                            : parameters.dispersion_energy_over_k;
+            : item.family == epcsaft::ParameterFamily::AssociationEnergyOverK
+                ? parameters.association_energy_over_k
+                : parameters.dispersion_energy_over_k;
         point.push_back(values[item.indices.front()]);
     }
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());

@@ -41,6 +41,14 @@ when the branch is discontinuous. Differentiate smooth correlations on the same
 selected interval; reselect the source interval when a temperature leaves it. Missing
 thermal inputs make only consumers of those inputs unavailable.
 
+Ideal and Total calorics consume one component interval vector in installed EOS
+component order and one explicit $P_0$. Ideal $h,u,s,c_p,c_v$ follow their
+registered equations; Total values add the existing residual fields at the same
+state. Missing thermal input leaves residual outputs intact and makes only Ideal
+and Total consumers unavailable. An owned endpoint has a value, but a derivative
+that would cross an undeclared join is unavailable. No total value falls back to
+its residual part.
+
 For the centered polynomial, evaluate $C_p=\sum_k a_k(T-T_{ref})^k$ and anchor
 $h$ and $s$ at the supplied $T_{ref}$. The constant term uses the exact
 $a_0\log(T/T_{ref})$ identity. No insertion derivative at a zero composition
@@ -236,6 +244,48 @@ insertion Hessians at zero ionic strength do not satisfy that assumption.
 Fixed-composition heat capacities and reacting equilibrium heat capacities
 are different observables with different chains.
 
+For the P4 native caloric action surface, each of Ideal, Residual and Total
+`h`, `u`, `s`, `cp`, and `cv` admits mixed directional orders one through three
+in `(T,rho,x;theta)` or `(T,P,x;theta)` on one accepted density branch.
+Composition directions preserve normalization, charge balance and exact support;
+known fixed parameter slots project to zero, while unknown slots are input
+errors. The [accepted P4 design](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/19)
+specifies the qualification cases and numerical limits.
+
+| Caloric family | Value energy order | First action | Second action | Third action |
+|---|---:|---:|---:|---:|
+| `h`, `u`, `s` | 1 | 2 | 3 | 4 |
+| `cp`, `cv` | 2 | 3 | 4 | 5 |
+
+Use the same residual-potential/mass-action tape and a single factorization of
+the accepted unweighted site Jacobian for the batch. Obtain each implicit site
+Taylor coefficient from the defining mass-action coefficient, then reuse each
+directional path and its lower coefficients across all selected properties.
+Pressure closure composes the full implicit density chain through the requested
+order; a first density tangent alone is insufficient at orders two and three.
+The pressure root search precedes this resolved-state action work.
+
+Select dependencies before recording: density-chart Ideal-only work does not
+consume the residual EOS, residual-only work does not consume thermal intervals,
+and pressure-chart Ideal entropy retains the implicit density dependence.
+At fixed density and composition, Ideal thermal fields have no explicit residual
+parameter dependence. Total actions use the corresponding Ideal and Residual
+actions, preserving the Ideal temperature and composition terms.
+
+Preserve independently available central values when an action is unavailable.
+Distinguish missing thermal data, thermal interval boundaries, support changes,
+singular or ill-conditioned site equations, excessive implicit residual,
+unavailable density branches and nonfinite completed results. A zero or
+nonfinite leading jet coefficient required for division, including the
+pressure-volume derivative used by `cp`, remains a native `domain_error`; it is
+outside the per-result typed-status contract. Branch and tape-predicate changes
+are rejected by the finite-difference admission ladder before comparison; the
+local action request has no perturbation size from which to report them as
+runtime statuses.
+Positive finite `P_rho` is required for pressure-chart actions and direct residual
+or total `cp`; it is not required for direct `cv`. Malformed inputs remain
+validation errors rather than scientific unavailability.
+
 The conservative absorber's first exact residual Jacobian already needs A2
 equilibrium and caloric actions. A limited-memory outer Hessian does not remove
 that need. An exact outer Hessian may require A3. The older ordinary seven-state
@@ -250,6 +300,21 @@ unavailable. Differentiate both the source correlation and EOS reference path,
 including its density closure. Fixed source pressure P0 must not become trial
 pressure. Reference-gauge choices that preserve reaction affinities do not
 supply absolute caloric data.
+
+Reaction activities and $K(T)$ use one declared standard-state identity. Direct
+activities are dimensionless caller inputs; mole-fraction activities use explicit
+$x_i^\circ=1$; molarity and molality require explicit positive standards and the
+matching density or solvent-mass inputs. Do not infer a basis from units. Ionic
+contractions require either a charge-neutral reference contraction or an explicit
+ionic gauge; that gauge cannot manufacture missing species calorics.
+
+Evaluate an admitted natural-log correlation as
+$a+b/T+c\ln(T/T_{ref})+dT$ with explicit positive $T_{ref}$, analytic derivative,
+declared interval and standard-state identity. Convert legacy logarithm bases by
+algebra only. When matching species thermochemistry is supplied, require both
+the van 't Hoff enthalpy relation and heat-capacity/integral consistency; otherwise
+report consistency unavailable. A mismatch is a reference inconsistency, never
+a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
 

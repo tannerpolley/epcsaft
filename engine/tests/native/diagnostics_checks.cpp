@@ -379,6 +379,7 @@ void same_state(const epcsaft::State& left, const epcsaft::State& right) {
     SAME(pressure_density_derivative); SAME(residual_chemical_potential_over_rt);
     SAME(log_fugacity_coefficient); SAME(residual_isobaric_heat_capacity);
     SAME(site_fractions);
+    SAME(density_branch); SAME(stable_root_count);
     CHECK(left.density_convergence.has_value() == right.density_convergence.has_value());
 #undef SAME
 }

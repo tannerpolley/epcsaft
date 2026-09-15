@@ -4,17 +4,22 @@
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
 #include "contributions/helmholtz.hpp"
+#include "properties/thermochemistry.hpp"
 
 #include <cppad/cppad.hpp>
 
+#include <Eigen/Dense>
+
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace epcsaft::detail {
 
-// Source: TRANSFER.md, Stage 2; the potential form keeps site fractions as
-// dynamic parameters and exposes Phi plus association residuals on one tape.
 using AD = CppAD::AD<double>;
 
 struct TapeParameters final {
@@ -173,16 +178,23 @@ inline TapeParameters make_tape_parameters(
 struct HelmholtzTape final {
     CppAD::ADFun<double> function;
     PredicateSignature predicates;
-    std::size_t site_count = 0;
+    std::size_t regular_count = 0, site_count = 0, ideal_offset = 0;
+    bool residual_available = true, ideal_available = false;
+    std::vector<double> site_values;
 
     static std::unique_ptr<HelmholtzTape> record(
         const Parameters& parameters,
         const std::vector<ActiveParameter>& active,
         const std::vector<double>& point,
         const std::vector<double>& site_fractions,
-        PredicateSignature predicates
+        PredicateSignature predicates,
+        const std::vector<IdealCorrelation>& ideal_correlations = {},
+        double ideal_pressure = 0.0,
+        bool include_residual = true
     ) {
         const std::size_t components = parameters.component_count();
+        const std::size_t point_size = point.size();
+        const std::size_t sites_count = include_residual ? site_fractions.size() : 0;
         double total_value = 0.0;
         for (std::size_t component = 0; component < components; ++component) {
             total_value += point[2 + component];
@@ -194,8 +206,10 @@ struct HelmholtzTape final {
             reference_composition.push_back(point[2 + component] / total_value);
         }
         std::vector<AD> independent(point.begin(), point.end());
-        std::vector<AD> dynamic(site_fractions.begin(), site_fractions.end());
-        CppAD::Independent(independent, dynamic);
+        if (include_residual) {
+            independent.insert(independent.end(), site_fractions.begin(), site_fractions.end());
+        }
+        CppAD::Independent(independent);
 
         std::vector<AD> amounts(
             independent.begin() + 2,
@@ -211,69 +225,125 @@ struct HelmholtzTape final {
         for (const AD& amount : amounts) {
             composition.push_back(amount / total);
         }
-        const std::vector<AD> sites = dynamic;
-        const auto tape_parameters = make_tape_parameters(
-            parameters,
-            active,
-            std::vector<AD>(
-                independent.begin() + 2 + static_cast<std::ptrdiff_t>(components),
-                independent.end()
-            )
-        );
-        const auto sigma = segment_sigma(independent[0], tape_parameters);
-        const auto diameter = segment_diameter(
-            independent[0], tape_parameters, sigma
-        );
-        const auto electrolyte = electrolyte_contribution(
-            independent[0], density, point[0], reference_density,
-            composition, reference_composition,
-            parameters
-        );
-        const auto born = born_contribution(
-            independent[0], composition, parameters,
-            electrolyte.bulk_relative_permittivity
-        );
-        const auto contributions = residual_helmholtz(
-            independent[0], density, composition, tape_parameters, sigma,
-            diameter, sites, electrolyte.debye_huckel, born
-        );
-        const auto delta = association_delta_values(
-            independent[0], density, composition, tape_parameters, sigma,
-            diameter, tape_parameters.association_energy_over_k,
-            tape_parameters.association_volume
-        );
-        const auto residuals = association_residuals(
-            density, composition, tape_parameters, sites, delta
-        );
-        AD potential = contributions.association;
-        for (std::size_t site = 0; site < sites.size(); ++site) {
-            const std::size_t component = static_cast<std::size_t>(
-                parameters.site_component[site]
-            );
-            potential -= AD(0.5) * composition[component]
-                * parameters.site_multiplicity[site] * residuals[site];
+        std::vector<AD> dependent;
+        if (include_residual) {
+            const std::vector<AD> sites(
+                independent.end() - static_cast<std::ptrdiff_t>(sites_count), independent.end());
+            const auto tape_parameters = make_tape_parameters(
+                parameters, active,
+                std::vector<AD>(
+                    independent.begin() + 2 + static_cast<std::ptrdiff_t>(components),
+                    independent.begin() + static_cast<std::ptrdiff_t>(point_size)));
+            const auto sigma = segment_sigma(independent[0], tape_parameters);
+            const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
+            const auto electrolyte = electrolyte_contribution(
+                independent[0], density, point[0], reference_density,
+                composition, reference_composition, parameters);
+            const auto born = born_contribution(
+                independent[0], composition, parameters,
+                electrolyte.bulk_relative_permittivity);
+            const auto contributions = residual_helmholtz(
+                independent[0], density, composition, tape_parameters, sigma,
+                diameter, sites, electrolyte.debye_huckel, born);
+            const auto delta = association_delta_values(
+                independent[0], density, composition, tape_parameters, sigma,
+                diameter, tape_parameters.association_energy_over_k,
+                tape_parameters.association_volume);
+            const auto residuals = association_residuals(
+                density, composition, tape_parameters, sites, delta);
+            AD potential = contributions.association;
+            for (std::size_t site = 0; site < sites.size(); ++site) {
+                const std::size_t component = static_cast<std::size_t>(
+                    parameters.site_component[site]);
+                potential -= AD(0.5) * composition[component]
+                    * parameters.site_multiplicity[site] * residuals[site];
+            }
+            dependent.push_back(total * (
+                contributions.hard_chain + contributions.dispersion
+                + contributions.debye_huckel + contributions.born + potential));
+            dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
-        AD phi = total * (
-            contributions.hard_chain + contributions.dispersion
-            + contributions.debye_huckel + contributions.born + potential
-        );
-        std::vector<AD> dependent = {phi};
-        for (std::size_t site = 0; site < sites.size(); ++site) {
-            const std::size_t component = static_cast<std::size_t>(
-                parameters.site_component[site]
-            );
-            const AD multiplicity = AD(
-                composition[component] * parameters.site_multiplicity[site]
-            );
-            dependent.push_back(
-                -total * multiplicity / sites[site] * residuals[site]
-            );
+        if (!ideal_correlations.empty()) {
+            std::vector<bool> supported;
+            supported.reserve(components);
+            for (std::size_t i = 0; i < components; ++i) {
+                supported.push_back(point[2 + i] > 0.0);
+            }
+            const auto ideal = evaluate_ideal_mixture(
+                ideal_correlations, ideal_pressure, independent[0], density,
+                composition, supported);
+            dependent.insert(dependent.end(), {
+                ideal.enthalpy, ideal.internal_energy, ideal.entropy,
+                ideal.isobaric_heat_capacity, ideal.isochoric_heat_capacity});
         }
         auto result = std::make_unique<HelmholtzTape>();
         result->function = CppAD::ADFun<double>(independent, dependent);
         result->predicates = std::move(predicates);
-        result->site_count = sites.size();
+        result->regular_count = point_size;
+        result->site_count = sites_count;
+        result->ideal_offset = include_residual ? 1 + sites_count : 0;
+        result->residual_available = include_residual;
+        result->ideal_available = !ideal_correlations.empty();
+        result->site_values = include_residual ? site_fractions : std::vector<double>{};
         return result;
+    }
+
+    std::vector<double> implicit_taylor(
+        const std::vector<std::vector<double>>& regular_coefficients,
+        std::size_t order,
+        const Eigen::FullPivLU<Eigen::MatrixXd>* factorization = nullptr,
+        std::size_t* solve_count = nullptr,
+        std::size_t* forward_count = nullptr,
+        double* coefficient_residual = nullptr,
+        std::vector<std::vector<double>>* output_prefix = nullptr
+    ) {
+        const std::size_t input_count = regular_count + site_count;
+        std::vector<double> input(input_count), output;
+        if (output_prefix != nullptr) output_prefix->clear();
+        // Without U, callers may consume only the site-independent Ideal outputs.
+        for (std::size_t current = 0; current <= order; ++current) {
+            input.assign(input_count, 0.0);
+            std::copy(regular_coefficients[current].begin(), regular_coefficients[current].end(), input.begin());
+            if (!current) {
+                std::copy(site_values.begin(), site_values.end(), input.begin() + regular_count);
+                output = function.Forward(0, input);
+                if (forward_count != nullptr) ++*forward_count;
+                if (output_prefix != nullptr) output_prefix->push_back(output);
+                continue;
+            }
+            const auto known = function.Forward(current, input);
+            if (forward_count != nullptr) ++*forward_count;
+            if (site_count && factorization != nullptr) {
+                std::vector<double> rhs(site_count);
+                for (std::size_t site = 0; site < site_count; ++site)
+                    rhs[site] = -known[1 + site];
+                const Eigen::VectorXd coefficient = factorization->solve(
+                    Eigen::Map<const Eigen::VectorXd>(rhs.data(),
+                        static_cast<Eigen::Index>(site_count)));
+                for (std::size_t site = 0; site < site_count; ++site)
+                    input[regular_count + site] = coefficient[static_cast<Eigen::Index>(site)];
+                if (solve_count != nullptr) ++*solve_count;
+            }
+            output = known;
+            if (site_count && factorization != nullptr) {
+                output = function.Forward(current, input);
+                if (forward_count != nullptr) ++*forward_count;
+            }
+            if (output_prefix != nullptr) output_prefix->push_back(output);
+            if (coefficient_residual != nullptr && site_count != 0 && factorization != nullptr) {
+                double scale = 1.0;
+                for (std::size_t site = 0; site < site_count; ++site)
+                    scale = std::max(scale, std::abs(known[1 + site]));
+                for (std::size_t site = 0; site < site_count; ++site) {
+                    const double residual = std::isfinite(known[1 + site])
+                        && std::isfinite(output[1 + site])
+                        ? std::abs(output[1 + site]) / scale
+                        : std::numeric_limits<double>::infinity();
+                    *coefficient_residual = std::max(*coefficient_residual, residual);
+                }
+            }
+        }
+        return output;
     }
 };
 

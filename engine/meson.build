@@ -94,6 +94,7 @@ properties_sources = files(
   'native/properties/helmholtz_model.cpp',
   'native/properties/density.cpp',
   'native/properties/infinite_dilution_reference.cpp',
+  'native/properties/thermochemistry.cpp',
 )
 surface_sources = files('native/surface/parameter_builder.cpp')
 # Stages 4, 5, 6
