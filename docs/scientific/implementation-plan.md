@@ -458,7 +458,7 @@ must be revised rather than forcing milestone work to fit an old estimate.
 
 ## Current execution queue
 
-Current stage: bounded Core C1 through C4 are qualified; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
+Current stage: bounded Core C1 through C4 are qualified and repository separation is complete; Contributions is next. The read-only companion presents ordinary execution records and retained historical evidence; it is not an execution or integrity harness.
 | Order | Task | State and completion condition |
 |---|---|---|
 | Preparation | Notebook cutover correction closeout | Complete: current ordinary reports remain inspectable, stale publications fail closed, and historical F1/F5 records remain separate and outdated. |
@@ -468,11 +468,12 @@ Current stage: bounded Core C1 through C4 are qualified; Contributions is next. 
 | C2-build | Implement and qualify bounded C2 slice | Complete: common coordinate identities, component/site-pair ownership, `Lij` tape propagation, derivative transformations, scalar exact-one-slot correction, installed-wheel falsifiers, retained evidence, and independent `Supported` review passed; public source-unit fitting coordinates and C3 remain outside scope. |
 | C3-correction | [Correct and requalify bounded Core diagnostics and availability slice (#221)](https://github.com/tannerpolley/ePC-SAFT/issues/221) | Complete: preserve the accepted Ipopt and density publication runtime fixes, remove the scripted producer harness and its build registrations, rebuild, retain genuine current-wheel evidence, record source-reviewed density branch limits, and pass independent `Supported` review. |
 | C4 | [Integrated Core qualification](reviews/core-c4-2026-09-10.md) | Complete: final-wheel C1–C3 replay, budget/cost review and independent `Supported` acceptance passed; pinned F5 and source-reviewed density limits remain bounded. |
+| Delivery | [Independent greenfield repository (#3)](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/3) | Complete on 2026-09-10: private successor created with preserved history and accepted Core `cea695f` as `main`; both active Codex worktrees reconnected in place with verified unchanged files, indexes and HEADs; active association delivery moved. Scientific qualification is unchanged. |
 | Next | Contributions qualification | Ready to start; do not widen the qualified Core claim. |
 
-Local C1 design and validation are followed by slice-scoped Core work. Repository
-creation, remote changes and issue publication are separate actions and do not
-block this local scientific queue.
+Repository separation is a completed delivery prerequisite. It does not change
+scientific milestone qualification; subsequent work follows the scientific
+dependency order above and delivers to the independent repository.
 
 ### Gates and authority
 
@@ -541,12 +542,27 @@ C4 as its integrated acceptance checklist. Reviewer assignments, commands and
 file edits belong inside the issue, not in additional subissues. Create later
 issues when their scientific boundaries are clear.
 
-The current checkout is a linked worktree of `ePC-SAFT-project`; its `origin`
-points to the private `tannerpolley/ePC-SAFT` repository. Changing that remote
-here affects shared Git configuration. An independent private successor is the
-recommendation, pending owner selection; it requires an independent Git directory
-and preserved dirty work, not merely changing `origin`. Keep downstream clones
-independent and keep real-repository synchronization separately authorized.
+The current checkout owns its independent Git directory. Its `origin` is the
+private [tannerpolley/ePC-SAFT-greenfield](https://github.com/tannerpolley/ePC-SAFT-greenfield)
+repository, whose `main` starts at accepted Core commit
+`cea695fb7dc7754f79b9df7731e6d52ca8b93f9d` with history preserved. The original
+`ePC-SAFT-project` checkout, remote, branches and unrelated worktrees remain
+unchanged. Older Core/notebook issues and reviews retain their historical links
+to `tannerpolley/ePC-SAFT`; they are not a second current delivery destination.
+
+The two active Codex worktrees were reconnected without changing their paths or
+working files: `9d0d` retains `codex/association-harness` at `29ba249`, and `ec1d`
+retains detached `3636664`. Their staged, unstaged, untracked and ignored contents,
+indexes, reflogs and Codex ownership metadata were preserved; both tasks verified
+the new common Git directory and remote before resuming. These are migration
+checkpoints, not integration or scientific acceptance of their ongoing work.
+Association delivery now uses [issue #1](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/1)
+and [issue #2](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/2), transferred
+from old issues #217 and #222. Its [replacement draft #4](https://github.com/tannerpolley/ePC-SAFT-greenfield/pull/4) targets the new `main`;
+reconciling the ongoing branch with the newer Core baseline remains with that
+work's owner. Inactive old worktrees, including `278b`, remain with the original
+repository. Keep downstream clones independent and real-application synchronization
+separately authorized.
 Draft PR delivery is the current user-level default; reviewed direct integration
 is an available choice, not an adopted change.
 
