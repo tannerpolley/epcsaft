@@ -5,6 +5,7 @@
 #include <pybind11/stl.h>
 
 #include <optional>
+#include <utility>
 
 namespace py = pybind11;
 
@@ -42,6 +43,65 @@ void register_eos(py::module_& module) {
         .def_readonly("value", &epcsaft::NeutralPropertyDerivatives::value)
         .def_readonly("gradient", &epcsaft::NeutralPropertyDerivatives::gradient)
         .def_readonly("hessian", &epcsaft::NeutralPropertyDerivatives::hessian);
+    py::enum_<epcsaft::PropertyObservable>(module, "PropertyObservable")
+        .value("IdealEnthalpy", epcsaft::PropertyObservable::IdealEnthalpy)
+        .value("IdealInternalEnergy", epcsaft::PropertyObservable::IdealInternalEnergy)
+        .value("IdealEntropy", epcsaft::PropertyObservable::IdealEntropy)
+        .value("IdealIsobaricHeatCapacity", epcsaft::PropertyObservable::IdealIsobaricHeatCapacity)
+        .value("IdealIsochoricHeatCapacity", epcsaft::PropertyObservable::IdealIsochoricHeatCapacity)
+        .value("ResidualEnthalpy", epcsaft::PropertyObservable::ResidualEnthalpy)
+        .value("ResidualInternalEnergy", epcsaft::PropertyObservable::ResidualInternalEnergy)
+        .value("ResidualEntropy", epcsaft::PropertyObservable::ResidualEntropy)
+        .value("ResidualIsobaricHeatCapacity", epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity)
+        .value("ResidualIsochoricHeatCapacity", epcsaft::PropertyObservable::ResidualIsochoricHeatCapacity)
+        .value("TotalEnthalpy", epcsaft::PropertyObservable::TotalEnthalpy)
+        .value("TotalInternalEnergy", epcsaft::PropertyObservable::TotalInternalEnergy)
+        .value("TotalEntropy", epcsaft::PropertyObservable::TotalEntropy)
+        .value("TotalIsobaricHeatCapacity", epcsaft::PropertyObservable::TotalIsobaricHeatCapacity)
+        .value("TotalIsochoricHeatCapacity", epcsaft::PropertyObservable::TotalIsochoricHeatCapacity);
+    py::enum_<epcsaft::PropertyActionStatus>(module, "PropertyActionStatus")
+        .value("Available", epcsaft::PropertyActionStatus::Available)
+        .value("MissingThermochemistry", epcsaft::PropertyActionStatus::MissingThermochemistry)
+        .value("OutsideInterval", epcsaft::PropertyActionStatus::OutsideInterval)
+        .value("ThermalBoundary", epcsaft::PropertyActionStatus::ThermalBoundary)
+        .value("SupportChange", epcsaft::PropertyActionStatus::SupportChange)
+        .value("IonicInsertion", epcsaft::PropertyActionStatus::IonicInsertion)
+        .value("AssociationSingular", epcsaft::PropertyActionStatus::AssociationSingular)
+        .value("AssociationIllConditioned", epcsaft::PropertyActionStatus::AssociationIllConditioned)
+        .value("AssociationResidual", epcsaft::PropertyActionStatus::AssociationResidual)
+        .value("DensityUnavailable", epcsaft::PropertyActionStatus::DensityUnavailable)
+        .value("PressureSingular", epcsaft::PropertyActionStatus::PressureSingular)
+        .value("CentralPropertyUnavailable", epcsaft::PropertyActionStatus::CentralPropertyUnavailable)
+        .value("Nonfinite", epcsaft::PropertyActionStatus::Nonfinite);
+    py::class_<epcsaft::DensityActionDirection>(module, "DensityActionDirection")
+        .def(py::init([](double temperature, double molar_density,
+                         std::vector<double> composition) {
+            return epcsaft::DensityActionDirection{
+                temperature, molar_density, std::move(composition), {}};
+        }), py::arg("temperature") = 0.0, py::arg("molar_density") = 0.0,
+            py::arg("composition") = std::vector<double>{})
+        .def_readonly("temperature", &epcsaft::DensityActionDirection::temperature)
+        .def_readonly("molar_density", &epcsaft::DensityActionDirection::molar_density)
+        .def_readonly("composition", &epcsaft::DensityActionDirection::composition);
+    py::class_<epcsaft::PressureActionDirection>(module, "PressureActionDirection")
+        .def(py::init([](double temperature, double pressure,
+                         std::vector<double> composition) {
+            return epcsaft::PressureActionDirection{
+                temperature, pressure, std::move(composition), {}};
+        }), py::arg("temperature") = 0.0, py::arg("pressure") = 0.0,
+            py::arg("composition") = std::vector<double>{})
+        .def_readonly("temperature", &epcsaft::PressureActionDirection::temperature)
+        .def_readonly("pressure", &epcsaft::PressureActionDirection::pressure)
+        .def_readonly("composition", &epcsaft::PressureActionDirection::composition);
+    py::class_<epcsaft::PropertyActionResult>(module, "PropertyActionResult")
+        .def_readonly("observable", &epcsaft::PropertyActionResult::observable)
+        .def_readonly("value", &epcsaft::PropertyActionResult::value)
+        .def_readonly("action", &epcsaft::PropertyActionResult::action)
+        .def_readonly("status", &epcsaft::PropertyActionResult::status)
+        .def_readonly("energy_order", &epcsaft::PropertyActionResult::energy_order);
+    py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
+        .def_readonly("results", &epcsaft::PropertyActionBatch::results)
+        .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order);
     py::enum_<epcsaft::DensityBranch>(module, "DensityBranch")
         .value("Unspecified", epcsaft::DensityBranch::Unspecified)
         .value("Vapor", epcsaft::DensityBranch::Vapor)
@@ -76,6 +136,29 @@ void register_eos(py::module_& module) {
         .def(py::init<epcsaft::Parameters>())
         .def("state", &epcsaft::HelmholtzModel::state)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
+        .def("density_actions", [](const epcsaft::HelmholtzModel& model,
+                                    double temperature, double molar_density,
+                                    const std::vector<double>& composition,
+                                    const std::vector<epcsaft::PropertyObservable>& observables,
+                                    const std::vector<epcsaft::DensityActionDirection>& directions) {
+            epcsaft::core::Scope scope("density_actions");
+            return model.density_actions(
+                temperature, molar_density, composition, observables, directions);
+        })
+        .def("pressure_actions", [](const epcsaft::HelmholtzModel& model,
+                                     double temperature, double pressure,
+                                     const std::vector<double>& composition,
+                                     epcsaft::DensityBranch branch,
+                                     const std::vector<epcsaft::PropertyObservable>& observables,
+                                     const std::vector<epcsaft::PressureActionDirection>& directions,
+                                     std::optional<double> anchor_density) {
+            epcsaft::core::Scope scope("pressure_actions");
+            return model.pressure_actions(temperature, pressure, composition, branch,
+                observables, directions, anchor_density);
+        },
+             py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
+             py::arg("branch"), py::arg("observables"), py::arg("directions"),
+             py::arg("anchor_density") = std::nullopt)
         .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("anchor_density") = std::nullopt)

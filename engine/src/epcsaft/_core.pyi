@@ -108,6 +108,63 @@ class NeutralPropertyDerivatives:
     gradient: list[float]
     hessian: list[float]
 
+class PropertyObservable:
+    IdealEnthalpy: PropertyObservable
+    IdealInternalEnergy: PropertyObservable
+    IdealEntropy: PropertyObservable
+    IdealIsobaricHeatCapacity: PropertyObservable
+    IdealIsochoricHeatCapacity: PropertyObservable
+    ResidualEnthalpy: PropertyObservable
+    ResidualInternalEnergy: PropertyObservable
+    ResidualEntropy: PropertyObservable
+    ResidualIsobaricHeatCapacity: PropertyObservable
+    ResidualIsochoricHeatCapacity: PropertyObservable
+    TotalEnthalpy: PropertyObservable
+    TotalInternalEnergy: PropertyObservable
+    TotalEntropy: PropertyObservable
+    TotalIsobaricHeatCapacity: PropertyObservable
+    TotalIsochoricHeatCapacity: PropertyObservable
+
+class PropertyActionStatus:
+    Available: PropertyActionStatus
+    MissingThermochemistry: PropertyActionStatus
+    OutsideInterval: PropertyActionStatus
+    ThermalBoundary: PropertyActionStatus
+    SupportChange: PropertyActionStatus
+    IonicInsertion: PropertyActionStatus
+    AssociationSingular: PropertyActionStatus
+    AssociationIllConditioned: PropertyActionStatus
+    AssociationResidual: PropertyActionStatus
+    DensityUnavailable: PropertyActionStatus
+    PressureSingular: PropertyActionStatus
+    CentralPropertyUnavailable: PropertyActionStatus
+    Nonfinite: PropertyActionStatus
+
+class DensityActionDirection:
+    temperature: float
+    molar_density: float
+    composition: list[float]
+    def __init__(self, temperature: float = 0.0, molar_density: float = 0.0,
+                 composition: Sequence[float] = ()) -> None: ...
+
+class PressureActionDirection:
+    temperature: float
+    pressure: float
+    composition: list[float]
+    def __init__(self, temperature: float = 0.0, pressure: float = 0.0,
+                 composition: Sequence[float] = ()) -> None: ...
+
+class PropertyActionResult:
+    observable: PropertyObservable
+    value: Optional[float]
+    action: Optional[float]
+    status: PropertyActionStatus
+    energy_order: int
+
+class PropertyActionBatch:
+    results: list[PropertyActionResult]
+    maximum_energy_order: int
+
 class DensityBranch:
     Unspecified: DensityBranch
     Vapor: DensityBranch
@@ -145,6 +202,14 @@ class HelmholtzModel:
     def __init__(self, parameters: Parameters) -> None: ...
     def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> State: ...
     def neutral_property(self, temperature: float, molar_density: float, property: NeutralProperty, order: DerivativeOrder) -> NeutralPropertyDerivatives: ...
+    def density_actions(self, temperature: float, molar_density: float,
+                        mole_fractions: Sequence[float], observables: Sequence[PropertyObservable],
+                        directions: Sequence[DensityActionDirection]) -> PropertyActionBatch: ...
+    def pressure_actions(self, temperature: float, pressure: float,
+                         mole_fractions: Sequence[float], branch: DensityBranch,
+                         observables: Sequence[PropertyObservable],
+                         directions: Sequence[PressureActionDirection],
+                         anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
     def counters(self) -> SweepCounters: ...
     def reset_counters(self) -> None: ...
