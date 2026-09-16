@@ -172,6 +172,121 @@ StandardTerm standard_term(
     return result;
 }
 
+std::vector<double> pinned_hessian(
+    const CompiledSystem& compiled, const std::vector<double>& point,
+    const std::vector<double>& multipliers
+) {
+    const std::size_t n = point.size();
+    std::vector<double> result(n * n, 0.0);
+    // The pinned objective is constant; only optimizer constraint weights matter.
+    if (multipliers.empty()) return result;
+    if (multipliers.size() != compiled.rows.size())
+        throw std::invalid_argument("constraint multiplier count");
+    const auto& problem = compiled.problem;
+    const auto& model = *compiled.model;
+    const auto& parameters = model.parameters();
+    const std::size_t components = parameters.component_count();
+    const std::size_t physical = 2 + components;
+    const auto shape = layouts(compiled);
+    const std::size_t temperature_index = compiled.primal_size - compiled.free_intensive_count;
+    const double temperature = problem.temperature.free
+        ? point[temperature_index] : problem.temperature.value;
+    const auto standard = standard_term(temperature, components, problem.reactions,
+                                        problem.standard_gibbs_j_per_mol);
+    const auto charges = species_z(parameters);
+    for (std::size_t phase = 0; phase < shape.size(); ++phase) {
+        std::vector<double> chemical(components, 0.0);
+        double pressure_weight = 0.0;
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+            const auto& descriptor = compiled.rows[row];
+            if (descriptor.phase != phase) continue;
+            if (descriptor.kind == RowKind::Chemical)
+                chemical[descriptor.index] += multipliers[row];
+            if (descriptor.kind == RowKind::Pressure) pressure_weight += multipliers[row];
+        }
+        using AD = CppAD::AD<double>;
+        std::vector<AD> q(point.begin(), point.end());
+        CppAD::Independent(q);
+        const AD T = problem.temperature.free ? q[temperature_index] : AD(temperature);
+        const AD P = problem.pressure.free ? q[compiled.primal_size - 1]
+                                          : AD(problem.pressure.value);
+        std::vector<AD> x(components, AD(0.0));
+        for (std::size_t local = 0; local < shape[phase].x.size(); ++local)
+            x[problem.phases[phase].support[local]] = CppAD::exp(q[shape[phase].x[local]]);
+        const auto diameter = segment_diameter(T, parameters, segment_sigma(T, parameters));
+        const AD volume = packing_fraction_from_geometry(AD(1.0), x, parameters, diameter)
+            / CppAD::exp(q[shape[phase].volume]);
+        const AD amount = shape[phase].amount.has_value() ? q[*shape[phase].amount]
+            : AD(phase_amount(problem.phases[phase], compiled.n_feed));
+        AD simple = pressure_weight * (AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T));
+        for (std::size_t local = 0; local < shape[phase].x.size(); ++local) {
+            const std::size_t species = problem.phases[phase].support[local];
+            const AD delta_T = T - temperature;
+            // Current standard_state is affine in T, hence (g/RT)''=-2(g/RT)'/T.
+            const AD standard_value = standard.value[species]
+                + standard.temperature_derivative[species] * delta_T
+                - standard.temperature_derivative[species] / temperature * delta_T * delta_T;
+            simple += chemical[species] * (q[shape[phase].x[local]]
+                - CppAD::log(volume) + standard_value);
+        }
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+            const auto& descriptor = compiled.rows[row];
+            if (descriptor.kind == RowKind::Moiety) {
+                for (std::size_t species = 0; species < components; ++species)
+                    simple += multipliers[row] * amount * compiled.B[descriptor.index][species]
+                        * x[species] / compiled.feed_total;
+            } else if (descriptor.phase == phase && descriptor.kind == RowKind::Electro) {
+                for (std::size_t species = 0; species < components; ++species)
+                    simple += multipliers[row] * charges[species] * x[species];
+            } else if (descriptor.phase == phase && descriptor.kind == RowKind::Normalization) {
+                for (const auto& fraction : x) simple += multipliers[row] * fraction;
+            }
+        }
+        std::vector<AD> output = {T, volume};
+        output.insert(output.end(), x.begin(), x.end());
+        output.push_back(simple);
+        CppAD::ADFun<double> geometry(q, output);
+        const auto values = geometry.Forward(0, point);
+        const std::vector<double> amounts(values.begin() + 2, values.begin() + physical);
+        const auto derivative = model.evaluate(temperature, values[1], amounts, DerivativeOrder::Hessian);
+        const std::size_t width = derivative.gradient.size();
+        std::vector<double> contraction(width, 0.0);
+        contraction[1] = -pressure_weight * values[1];
+        std::copy(chemical.begin(), chemical.end(), contraction.begin() + 2);
+        std::vector<double> map_weights(physical + 1, 0.0);
+        map_weights.back() = 1.0;
+        for (std::size_t i = 0; i < physical; ++i) {
+            for (std::size_t k = 0; k < width; ++k)
+                map_weights[i] += derivative.hessian[i * width + k] * contraction[k];
+        }
+        map_weights[1] -= pressure_weight * derivative.gradient[1];
+        const auto mapped = geometry.Hessian(point, map_weights);
+        const auto jacobian = geometry.Jacobian(point);
+        std::vector<std::vector<double>> directions(n, std::vector<double>(width, 0.0));
+        std::vector<double> volume_hessian_action(n, 0.0);
+        for (std::size_t column = 0; column < n; ++column) {
+            for (std::size_t i = 0; i < physical; ++i) {
+                directions[column][i] = jacobian[i * n + column];
+                volume_hessian_action[column] += derivative.hessian[width + i]
+                    * directions[column][i];
+            }
+        }
+        // ponytail: quadratic contraction calls; batch them if measured solve cost requires it.
+        for (std::size_t row = 0; row < n; ++row) {
+            for (std::size_t column = 0; column <= row; ++column) {
+                const double value = mapped[row * n + column]
+                    + model.third_directional(temperature, values[1], amounts,
+                        {contraction, directions[row], directions[column]})
+                    - pressure_weight * (directions[row][1] * volume_hessian_action[column]
+                        + directions[column][1] * volume_hessian_action[row]);
+                result[row * n + column] += value;
+                if (row != column) result[column * n + row] += value;
+            }
+        }
+    }
+    return result;
+}
+
 }  // namespace
 
 CompiledSystem compile_problem(
@@ -821,7 +936,7 @@ std::vector<double> CompiledSystem::hessian(
     core::Scope scope("equilibrium_hessian");
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
-    if (pinned_count != 0) return result;
+    if (pinned_count != 0) return pinned_hessian(*this, point, constraint_multipliers);
     const std::size_t components = model->parameters().component_count();
     std::size_t offset = 0;
     std::vector<std::size_t> offsets;

@@ -1203,6 +1203,45 @@ void check_s10() {
     const bool pinned_ok = check_weighted_hessian_gradient_ladder(
         pinned, pinned_point, pinned_lambda, "pinned", 1.0e-5, &pinned_false_verdicts
     );
+    // Free intensive values must be differentiated at the callback point,
+    // including reaction offsets and simultaneous temperature/pressure freedom.
+    bool intensive_curvature_ok = true;
+    for (int variant = 0; variant < 5; ++variant) {
+        auto request = pinned_problem;
+        request.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
+        request.pressure = epcsaft::equilibrium::FreeValue::fixed(100000.0);
+        const char* label = "pinned-free-T";
+        if (variant == 1) {
+            request.pressure = epcsaft::equilibrium::FreeValue::variable(100000.0);
+            request.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(0.2);
+            auto third_phase = request.phases[1];
+            third_phase.name = "L2";
+            third_phase.kind = epcsaft::equilibrium::PhaseKind::Liquid;
+            third_phase.amount = epcsaft::equilibrium::AmountSpec::pinned(0.3);
+            request.phases.push_back(third_phase);
+            label = "pinned-free-TP";
+        } else if (variant == 2) {
+            request.reactions = {{"A-to-B", {-1.0, 1.0}, 1.0, 850.0}};
+            label = "pinned-reactive-T";
+        } else if (variant >= 3) {
+            request.temperature.value = 300.0;
+            label = variant == 3 ? "pinned-association-T" : "pinned-ionic-T";
+            if (variant == 4) request.feed.values = {0.98, 0.01, 0.01};
+        }
+        epcsaft::HelmholtzModel action_model(variant == 3
+            ? properties_support::associating_binary() : variant == 4
+            ? properties_support::aqueous_electrolyte() : properties_support::neutral_binary());
+        const auto compiled = epcsaft::equilibrium::compile_problem(action_model, request);
+        auto callback_point = compiled.generic_point();
+        callback_point[compiled.primal_size - compiled.free_intensive_count] = variant >= 3 ? 313.0 : 193.0;
+        if (variant == 1) callback_point[compiled.primal_size - 1] = 120000.0;
+        std::vector<double> weights(callback_rows(compiled).size(), 0.0);
+        for (std::size_t row = 0; row < weights.size(); ++row)
+            weights[row] = 0.35 + 0.1 * static_cast<double>(row);
+        expect_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label);
+        intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
+            compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
+    }
     const std::array<double, 3> objective_factors = {0.0, 0.5, 1.0};
     for (std::size_t i = 0; i < objective_factors.size(); ++i) {
         const auto inputs = recording_support::fields({
@@ -1218,17 +1257,18 @@ void check_s10() {
             "regular Hessian ladder has no false verdicts", "absolute", 0.0, 0.0,
             regular_false_verdicts[i] == 0, "f5-hessian-summary", "regular", "count",
             "objective_factor", "false_verdict_count=0", "objective_factor");
-        recording_support::compare_custom(
+        recording_support::compare(
             (std::string("f5-summary/pinned/")
                 + recording_support::number(objective_factors[i])).c_str(),
             "false_verdict_count", "count", static_cast<double>(pinned_false_verdicts[i]),
             0.0, inputs, "Relationship", "hessian-ladder-summary",
-            "pinned Hessian ladder false-verdict count is retained", "model > 0",
-            pinned_false_verdicts[i] > 0, "f5-hessian-summary", "pinned", "count",
-            "objective_factor", "false_verdict_count>0", "objective_factor");
+            "pinned Hessian ladder has no false verdicts", "absolute", 0.0, 0.0,
+            pinned_false_verdicts[i] == 0, "f5-hessian-summary", "pinned", "count",
+            "objective_factor", "false_verdict_count=0", "objective_factor");
     }
     CHECK(regular_ok);
     CHECK(pinned_ok);
+    CHECK(intensive_curvature_ok);
 }
 
 void check_s11() {
