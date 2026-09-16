@@ -3,7 +3,7 @@
 ## Result
 
 The complete nonequilibrium prototype is supported on current main base
-`bc628c2e`. Clean source commit `d56fa2bb` built the one non-editable Engine wheel
+`7ac882e0`. Clean source commit `9486fccb` built the one non-editable Engine wheel
 and produced the retained campaign in `analyses/2026-idaes-asl-adapter/results/`.
 The adapter changes no equilibrium code and performs no phase or reaction solve.
 
@@ -17,7 +17,7 @@ the process uses the retained propane packet fingerprint
 
 ## Numerical evidence
 
-The 16.00-second campaign passed 54 conditioning states, seven independent
+The 17.26-second campaign passed 54 conditioning states, seven independent
 references, 72 scalar derivative ladders, 216 whole-NLP directional ladders,
 27 explicit Hessian matrices and four optimal KKT cases. The minimum sampled
 pressure slope divided by `RT` is 0.9498 against the 0.8 admission limit. Maximum
