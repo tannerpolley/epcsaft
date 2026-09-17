@@ -1,14 +1,14 @@
 {
  "schema_version": 1,
  "issue": "#42 E5",
- "source_commit": "2570018b0de9ace4241d0db828032e0585df4ce7",
+ "source_commit": "54378fd731f2d5ab8412814bd8985cdd2a1fce8b",
  "source_dirty": false,
  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
- "wheel_sha256": "31297253b45becde82c6f25172f8e12f90aacee58d87696d8498a770c5be224a",
+ "wheel_sha256": "c96c7a28b192f2ae30db013b346c39dbd896e832ec622c66f73e42fe6b2867fc",
  "executables": {
-  "specification_checks": "f2dba873de2786816a531941be76830be350ac9ab94cbf9483348faadf63361f",
-  "equilibrium_checks": "5d39a702642bae9c164298f19a28968007ce9e99b84b37e02bc48c67ffa51b24",
-  "boundary_checks": "fca5827eb8dbc47d27af5a2a9904fb927eb24acc180b1d5eecc68fe53429b044",
+  "specification_checks": "81308094c35a9a59ff5afce8c113e9a323bb3235c71ceeccd56cf6a30eee1d24",
+  "equilibrium_checks": "57284b470407a4291e3739efc1055096d38bd9fa2faa7aa227b7df11c66433a9",
+  "boundary_checks": "06874327a15d5fc66209cd5a5b8e61aab268b52641f4c8525ba840f6eba1932c",
   "properties_checks": "5851a446242740579366e4a136b74c09f5c13f48d4508795093de5940276c986"
  },
  "selectors": {
@@ -38,7 +38,7 @@
    "observation_only": 216
   },
   "equilibrium_E5-4": {
-   "comparisons": 62,
+   "comparisons": 63,
    "false": 0,
    "observation_only": 30
   },
@@ -58,7 +58,7 @@
    "observation_only": 24
   },
   "equilibrium_E5-8": {
-   "comparisons": 13,
+   "comparisons": 14,
    "false": 0,
    "observation_only": 0
   },
@@ -90,14 +90,14 @@
   "s9-reactive-lever": 1.792571646674901e-11,
   "s9-parameter-sensitivity": 7.960300418830002e-09,
   "e2-2-thermal": 1.0092705986998794e-07,
-  "e5-1": 1.0212116876573418e-05,
+  "e5-1": 3.424385567996069e-06,
   "e5-9": 4.614095128395978e-11,
   "e5-2": 2.346971148692635,
   "e5-3": 0.08222564435702218,
-  "e5-4": 1.698757278844644e-05,
-  "e5-5": 2.9895154410897857e-05,
-  "e5-6": 1.1692395673890132e-06,
-  "e5-7": 2.2395254375253526e-07,
+  "e5-4": 7.120986556582304e-07,
+  "e5-5": 2.3118217215675925e-07,
+  "e5-6": 7.944845492602326e-08,
+  "e5-7": 9.938266591624778e-08,
   "f5-jacobian": 5.597246346411566e-07,
   "f5-hessian-ladder": 2.0136233269685277e-06,
   "f5-correlated-jacobian": 1.8339970926477267e-12,
@@ -112,7 +112,7 @@
   "p4-pressure": 3.075861808638121e-05,
   "p4-supplemental": 5
  },
- "total_comparisons": 7121,
+ "total_comparisons": 7123,
  "total_false_verdicts": 0,
  "logs": [
   "boundary_S9.log",
