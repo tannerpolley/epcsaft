@@ -348,6 +348,40 @@ equilibrium and caloric actions. A limited-memory outer Hessian does not remove
 that need. An exact outer Hessian may require A3. The older ordinary seven-state
 absorber route only needing A1 does not define the new application's requirement.
 
+Solved-state actions (E5) are evaluated by one native owner,
+`solved_state_actions(compiled, central, request)`, at an accepted result; the
+owner never re-solves, compiles or mutates. Admission requires the central
+classified residual, the quantity the driver certifies (owner decision
+2026-09-16), at or below `min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL)`; no
+candidate-topology event and every supported composition above
+`STABILITY_COMPOSITION_FLOOR`; a finite square full-rank row Jacobian,
+factorised once; and, for a thermal direction, a reaction target whose
+temperature dependence is not frozen by a point-only supplied Gibbs vector
+(`missing_thermochemistry`). A mixed action of order k is the half-sign
+polarisation of k diagonal control paths q(t) = q0 + t w with the first sign
+fixed positive: along each path the state y(t) = sum_j y_j t^j follows the
+coefficient recurrence J y_j = -[t^j] F(y(t), q(t)) with the unknown y_j set to
+zero, where the row owner composes the analytic geometry, ideal, balance, charge
+and standard-state terms (Taylor in the driven or free temperature through order
+three) with the model's residual gradient coefficients G_1 = H z_1,
+G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
++ D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
+(E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
+owner). Each solved coefficient is re-evaluated; its normalised row residual
+must meet `EQUILIBRIUM_ROW_RESIDUAL` (`linear_solve_residual`). Observables are
+mapped along the same curved path: normalised composition, molar density 1/v,
+packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
+same gradient series; phase calorics compose the P4 density-chart actions of
+each order with the lower-order curvature terms, [t^2] g = Dg[z_2]
++ D2g[z_1, z_1]/2 and [t^3] g = Dg[z_3] + D2g[z_1, z_2] + D3g[z_1, z_1, z_1]/6.
+Precedence is input validation; central solve and classified rows; support,
+chart and topology; finite, rank and linear residual; the selected P4
+dependency; a completed nonfinite value. A zero direction returns an exact zero
+after admission, and a fixed T or P keeps its identity action. `support_change`
+and `ionic_insertion` are unforced: a zero-feed non-participant species leaves
+a rank-deficient balance row, so no admitted central state carries a removed
+species.
+
 ## ALG-REFERENCE
 
 Use the explicitly declared solvent/reference path and source standard state.

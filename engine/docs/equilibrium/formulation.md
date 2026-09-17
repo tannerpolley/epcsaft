@@ -163,8 +163,10 @@ GitHub future-work issues, not prerequisites for declared-phase acceptance. Budg
 
 EqID: `implicit_sensitivity` applies on a smooth fixed branch and support with
 a square full-rank row Jacobian. Solve its linear system rather than forming
-an inverse. EqID: `implicit_second_action` defines second directional actions;
-third actions differentiate the same equation again. All direct and implicit
+an inverse. EqID: `implicit_second_action` defines second directional actions,
+the third-order relation and the diagonal coefficient recurrence that realises
+them; admission at an accepted result uses the classified residual of the
+solved chart. All direct and implicit
 terms of the requested observable must be included. Energy derivative order
 is determined by the observable, as tabulated in the algorithms specification.
 

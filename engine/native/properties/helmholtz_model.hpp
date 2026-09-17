@@ -96,6 +96,9 @@ struct PropertyActionBatch final {
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
 };
+struct ResidualEnergyAction final {
+    std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
+};
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -156,7 +159,9 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order
     ) const;
-    double third_directional(double, double, const std::vector<double>&, const std::array<std::vector<double>, 3>&) const;
+    // Mixed contraction of the extensive residual Helmholtz scalar with three or four
+    // directions of width 2 + C + A in [T, V, n, active parameters]: E3 or E4.
+    ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -224,6 +229,7 @@ private:
         bool residual = true, bool ideal = false
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
+    bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,
         double volume,

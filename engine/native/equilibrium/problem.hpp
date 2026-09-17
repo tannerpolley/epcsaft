@@ -193,6 +193,27 @@ struct PhasePoint final {
     StandardTerm standard;
 };
 
+// Taylor series of one phase along a path: point[k] is the k-th coefficient of the phase as
+// the model sees it, (T, v, x, active parameters); gradient[k] the matching coefficient of
+// the extensive residual Helmholtz gradient; amount[k] and packing[k] the phase amount and
+// packing fraction.
+struct PhaseSeries final {
+    std::vector<std::vector<double>> point, gradient;
+    std::vector<double> amount, packing;
+};
+
+// Defining rows and physical state along y(t) = sum_k y_k t^k with controls
+// q(t) = q0 + t dq, dq = [T, P, n_feed (C), active parameters (A)]; a free T or P entry of
+// dq is unused. `energy` is the worst status of the model's residual contractions.
+struct RowSeries final {
+    std::vector<std::vector<double>> rows;
+    std::vector<double> temperature, pressure;
+    std::vector<PhaseSeries> phase;
+    PropertyActionStatus energy = PropertyActionStatus::Available;
+    PropertyActionDiagnostics energy_diagnostics;
+    std::size_t maximum_energy_order = 0;
+};
+
 struct CompiledSystem final {
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
@@ -246,6 +267,12 @@ struct CompiledSystem final {
     // Multiplier-weighted constraint curvature only; the objective curvature is separate.
     std::vector<double> constraint_hessian_at(
         const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+    ) const;
+    // Row and physical Taylor coefficients through `order` (at most 3) along the state
+    // coefficients `state` (state[0] is the prepared point) and the control direction.
+    RowSeries row_series(
+        const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
+        const std::vector<double>& control, std::size_t order
     ) const;
 
     std::size_t unknown_count() const noexcept {
@@ -319,6 +346,128 @@ EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
+);
+
+// ---- Solved-state derivative actions (E5): native records, no public promise.
+
+enum class SolvedStateObservableKind {
+    Temperature, Pressure, PhaseAmount, PhaseComponentAmount, PhaseMoleFraction, PhaseVolume,
+    PhaseMolarDensity, PhasePackingFraction, PhasePressure, PhaseResidualChemicalPotentialOverRt,
+    PhaseProperty
+};
+
+struct SolvedStateObservable final {
+    SolvedStateObservableKind kind = SolvedStateObservableKind::Temperature;
+    std::size_t phase = 0;
+    std::size_t component = 0;
+    PropertyObservable property = PropertyObservable::IdealEnthalpy;
+};
+
+// Physical-unit external controls: a free T or P component must be zero.
+struct SolvedStateActionDirection final {
+    double temperature_k = 0.0;
+    double pressure_pa = 0.0;
+    std::vector<double> feed_amounts_mol;
+    std::vector<double> active_parameters;
+};
+
+struct SolvedStateActionRequest final {
+    std::vector<SolvedStateObservable> observables;
+    std::vector<SolvedStateActionDirection> directions;
+};
+
+enum class SolvedStateActionStatus {
+    Available, CentralSolveUnavailable, DefiningEquationsNotSatisfied,
+    PhaseBoundaryNotDifferentiable, NonuniqueCoalescedPhases, RankDeficient, NonfiniteJacobian,
+    LinearSolveResidual, SupportChange, IonicInsertion, EnergyOrderUnavailable,
+    DensityUnavailable, PressureSingular, AssociationSingular, AssociationIllConditioned,
+    AssociationResidual, MissingThermochemistry, OutsideInterval, ThermalBoundary,
+    CentralPropertyUnavailable, Nonfinite
+};
+
+struct SolvedStateActionResult final {
+    SolvedStateObservable observable;
+    std::string unit;
+    std::size_t order = 0;
+    std::optional<double> value;
+    std::optional<double> action;
+    SolvedStateActionStatus status = SolvedStateActionStatus::CentralSolveUnavailable;
+    std::optional<PropertyActionDiagnostics> property_diagnostics;
+    std::optional<std::string> diagnostic_message;
+};
+
+struct SolvedStateActionDiagnostics final {
+    std::size_t equation_count = 0;
+    std::size_t state_dimension = 0;
+    std::size_t maximum_energy_order = 0;
+    std::size_t state_factorizations = 0;
+    std::size_t linear_solves = 0;
+    std::optional<std::size_t> rank;
+    std::optional<double> condition_estimate;
+    std::optional<double> maximum_linear_residual;
+    std::optional<double> central_residual;
+    std::optional<double> central_floor;
+};
+
+struct SolvedStateActionBatch final {
+    std::vector<SolvedStateActionResult> results;
+    SolvedStateActionDiagnostics diagnostics;
+};
+
+inline const char* solved_state_status_name(SolvedStateActionStatus status) noexcept {
+    switch (status) {
+    case SolvedStateActionStatus::Available: return "available";
+    case SolvedStateActionStatus::CentralSolveUnavailable: return "central_solve_unavailable";
+    case SolvedStateActionStatus::DefiningEquationsNotSatisfied: return "defining_equations_not_satisfied";
+    case SolvedStateActionStatus::PhaseBoundaryNotDifferentiable: return "phase_boundary_not_differentiable";
+    case SolvedStateActionStatus::NonuniqueCoalescedPhases: return "nonunique_coalesced_phases";
+    case SolvedStateActionStatus::RankDeficient: return "rank_deficient";
+    case SolvedStateActionStatus::NonfiniteJacobian: return "nonfinite_jacobian";
+    case SolvedStateActionStatus::LinearSolveResidual: return "linear_solve_residual";
+    case SolvedStateActionStatus::SupportChange: return "support_change";
+    case SolvedStateActionStatus::IonicInsertion: return "ionic_insertion";
+    case SolvedStateActionStatus::EnergyOrderUnavailable: return "energy_order_unavailable";
+    case SolvedStateActionStatus::DensityUnavailable: return "density_unavailable";
+    case SolvedStateActionStatus::PressureSingular: return "pressure_singular";
+    case SolvedStateActionStatus::AssociationSingular: return "association_singular";
+    case SolvedStateActionStatus::AssociationIllConditioned: return "association_ill_conditioned";
+    case SolvedStateActionStatus::AssociationResidual: return "association_residual";
+    case SolvedStateActionStatus::MissingThermochemistry: return "missing_thermochemistry";
+    case SolvedStateActionStatus::OutsideInterval: return "outside_interval";
+    case SolvedStateActionStatus::ThermalBoundary: return "thermal_boundary";
+    case SolvedStateActionStatus::CentralPropertyUnavailable: return "central_property_unavailable";
+    case SolvedStateActionStatus::Nonfinite: return "nonfinite";
+    }
+    return "unknown";
+}
+
+inline SolvedStateActionStatus solved_state_status(PropertyActionStatus status) noexcept {
+    switch (status) {
+    case PropertyActionStatus::Available: return SolvedStateActionStatus::Available;
+    case PropertyActionStatus::MissingThermochemistry: return SolvedStateActionStatus::MissingThermochemistry;
+    case PropertyActionStatus::OutsideInterval: return SolvedStateActionStatus::OutsideInterval;
+    case PropertyActionStatus::ThermalBoundary: return SolvedStateActionStatus::ThermalBoundary;
+    case PropertyActionStatus::SupportChange: return SolvedStateActionStatus::SupportChange;
+    case PropertyActionStatus::IonicInsertion: return SolvedStateActionStatus::IonicInsertion;
+    case PropertyActionStatus::AssociationSingular: return SolvedStateActionStatus::AssociationSingular;
+    case PropertyActionStatus::AssociationIllConditioned: return SolvedStateActionStatus::AssociationIllConditioned;
+    case PropertyActionStatus::AssociationResidual: return SolvedStateActionStatus::AssociationResidual;
+    case PropertyActionStatus::DensityUnavailable: return SolvedStateActionStatus::DensityUnavailable;
+    case PropertyActionStatus::PressureSingular: return SolvedStateActionStatus::PressureSingular;
+    case PropertyActionStatus::CentralPropertyUnavailable: return SolvedStateActionStatus::CentralPropertyUnavailable;
+    case PropertyActionStatus::Nonfinite: return SolvedStateActionStatus::Nonfinite;
+    }
+    return SolvedStateActionStatus::Nonfinite;
+}
+
+std::string solved_state_observable_id(const SolvedStateObservable& observable);
+
+// Exact first-, second- or third-order mixed directional actions of physical solved-state
+// observables at one accepted result; no nonlinear solve, no compilation, no mutation.
+SolvedStateActionBatch solved_state_actions(
+    const CompiledSystem& compiled,
+    const EquilibriumResult& central,
+    const SolvedStateActionRequest& request
 );
 
 }  // namespace epcsaft::equilibrium

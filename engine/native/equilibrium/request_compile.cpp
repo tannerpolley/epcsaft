@@ -3,6 +3,7 @@
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
 #include "contributions/helmholtz.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -273,9 +274,13 @@ std::vector<double> pinned_hessian(
         // ponytail: quadratic contraction calls; batch them if measured solve cost requires it.
         for (std::size_t row = 0; row < n; ++row) {
             for (std::size_t column = 0; column <= row; ++column) {
-                const double value = mapped[row * n + column]
-                    + model.third_directional(temperature, values[1], amounts,
-                        {contraction, directions[row], directions[column]})
+                const auto energy = model.residual_energy_action(temperature, values[1], amounts,
+                    {contraction, directions[row], directions[column]});
+                if (!energy.action.has_value()) {
+                    throw std::runtime_error(std::string("third directional energy contraction unavailable: ")
+                        + solved_state_status_name(solved_state_status(energy.status)));
+                }
+                const double value = mapped[row * n + column] + *energy.action
                     - pressure_weight * (directions[row][1] * volume_hessian_action[column]
                         + directions[column][1] * volume_hessian_action[row]);
                 result[row * n + column] += value;
@@ -284,6 +289,113 @@ std::vector<double> pinned_hessian(
         }
     }
     return result;
+}
+
+std::vector<double> active_values(const HelmholtzModel& model) {
+    const auto& p = model.parameters();
+    std::vector<double> result;
+    for (const auto& item : model.active_parameters()) {
+        const std::vector<double>& family = item.family == ParameterFamily::SegmentCount ? p.segment_count
+            : item.family == ParameterFamily::SigmaConstant ? p.sigma_constant
+            : item.family == ParameterFamily::DispersionEnergyOverK ? p.dispersion_energy_over_k
+            : item.family == ParameterFamily::Kij ? p.k_ij : item.family == ParameterFamily::Lij ? p.l_ij
+            : item.family == ParameterFamily::AssociationEnergyOverK ? p.association_energy_over_k
+            : p.association_volume;
+        result.push_back(family[item.indices.front()]);
+    }
+    return result;
+}
+
+// The geometry map and every analytic row term as one CppAD function of (y, controls) with
+// controls [T, P, n_feed, active parameters]: outputs per phase [T, v, x (C), active (A),
+// N, eta], then the analytic part of each row (the residual gradient terms are added by the
+// model's contractions in row_series).
+CppAD::ADFun<double> record_geometry(
+    const CompiledSystem& compiled, const PhasePoint& prepared, const StandardTerm& standard
+) {
+    using AD = CppAD::AD<double>;
+    const auto& problem = compiled.problem;
+    const auto& model = *compiled.model;
+    const auto& parameters = model.parameters();
+    const std::size_t components = parameters.component_count();
+    const std::size_t n = prepared.point.size();
+    std::vector<AD> u(prepared.point.begin(), prepared.point.end());
+    u.push_back(prepared.temperature);
+    u.push_back(prepared.pressure);
+    for (const double amount : compiled.n_feed) u.push_back(amount);
+    for (const double value : active_values(model)) u.push_back(value);
+    CppAD::Independent(u);
+    const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
+    const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
+    AD feed_total = AD(0.0);
+    for (std::size_t i = 0; i < components; ++i) feed_total += u[n + 2 + i];
+    const std::vector<AD> theta(u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components), u.end());
+    const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(), theta);
+    const auto sigma = segment_sigma(T, tape_parameters);
+    const auto diameter = segment_diameter(T, tape_parameters, sigma);
+    const auto charges = species_z(parameters);
+    std::vector<std::optional<std::size_t>> phi(problem.phases.size());
+    std::size_t phi_offset = 0;
+    for (const auto& row : compiled.rows)
+        if (row.kind == RowKind::Electro) phi[row.phase] = compiled.primal_size + compiled.rank + phi_offset++;
+    std::vector<AD> output;
+    std::vector<AD> row_values(compiled.rows.size(), AD(0.0));
+    const AD delta_T = T - prepared.temperature;
+    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+        const auto& spec = problem.phases[phase];
+        const auto& layout = prepared.shape[phase];
+        std::vector<AD> x(components, AD(0.0));
+        for (std::size_t local = 0; local < spec.support.size(); ++local)
+            x[spec.support[local]] = CppAD::exp(u[layout.x[local]]);
+        const AD eta = CppAD::exp(u[layout.volume]);
+        const AD volume = packing_fraction_from_geometry(AD(1.0), x, tape_parameters, diameter) / eta;
+        const AD amount = layout.amount.has_value() ? u[*layout.amount] : AD(spec.amount.fraction) * feed_total;
+        output.push_back(T);
+        output.push_back(volume);
+        output.insert(output.end(), x.begin(), x.end());
+        output.insert(output.end(), theta.begin(), theta.end());
+        output.push_back(amount);
+        output.push_back(eta);
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+            const auto& item = compiled.rows[row];
+            if (item.kind == RowKind::Moiety) {
+                for (std::size_t species = 0; species < components; ++species)
+                    row_values[row] += amount * compiled.B[item.index][species] * x[species];
+                continue;
+            }
+            if (item.phase != phase) continue;
+            if (item.kind == RowKind::Chemical) {
+                const std::size_t species = item.index;
+                AD value = CppAD::log(x[species]) - CppAD::log(volume);
+                AD power = AD(1.0);
+                // Exact Taylor term of the standard state in the free or driven temperature.
+                for (std::size_t k = 0; k < standard.derivative.size(); ++k) {
+                    value += standard.derivative[k][species] * power;
+                    power *= delta_T / AD(static_cast<double>(k + 1));
+                }
+                for (std::size_t balance = 0; balance < compiled.rank; ++balance)
+                    value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
+                if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
+                row_values[row] = value;
+            } else if (item.kind == RowKind::Pressure) {
+                row_values[row] = AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T);
+            } else if (item.kind == RowKind::Electro) {
+                for (std::size_t species = 0; species < components; ++species)
+                    row_values[row] += AD(charges[species]) * x[species];
+            } else {
+                for (const std::size_t species : spec.support) row_values[row] += x[species];
+                row_values[row] -= AD(1.0);
+            }
+        }
+    }
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+        if (compiled.rows[row].kind != RowKind::Moiety) continue;
+        for (std::size_t species = 0; species < components; ++species)
+            row_values[row] -= compiled.B[compiled.rows[row].index][species] * u[n + 2 + species];
+        row_values[row] /= AD(compiled.feed_total);
+    }
+    output.insert(output.end(), row_values.begin(), row_values.end());
+    return CppAD::ADFun<double>(u, output);
 }
 
 std::string represented(double value) {
@@ -1028,6 +1140,116 @@ std::vector<double> CompiledSystem::hessian_at(
         for (std::size_t index = 0; index < result.size(); ++index) result[index] += weighted[index];
     }
     scope.probe("entries", static_cast<double>(result.size()));
+    return result;
+}
+
+RowSeries CompiledSystem::row_series(
+    const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
+    const std::vector<double>& control, std::size_t order
+) const {
+    core::Scope scope("equilibrium_row_series");
+    const std::size_t n = prepared.point.size();
+    const std::size_t components = model->parameters().component_count();
+    const std::size_t width = 2 + components + model->active_parameters().size();
+    if (state.size() != order + 1 || control.size() != width || order > 3)
+        throw std::invalid_argument("row series shape");
+    for (const auto& item : state)
+        if (item.size() != n) throw std::invalid_argument("row series state");
+    auto geometry = record_geometry(*this, prepared, standard_term(*this, prepared.temperature, 3));
+    const std::size_t stride = width + 2;
+    std::vector<std::vector<double>> output(order + 1);
+    for (std::size_t k = 0; k <= order; ++k) {
+        std::vector<double> input(n + width, 0.0);
+        std::copy(state[k].begin(), state[k].end(), input.begin());
+        if (k == 0) {
+            input[n] = prepared.temperature;
+            input[n + 1] = prepared.pressure;
+            std::copy(n_feed.begin(), n_feed.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2));
+            const auto values = active_values(*model);
+            std::copy(values.begin(), values.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2 + components));
+        } else if (k == 1) {
+            std::copy(control.begin(), control.end(), input.begin() + static_cast<std::ptrdiff_t>(n));
+        }
+        output[k] = geometry.Forward(k, input);
+    }
+    RowSeries result;
+    result.rows.assign(order + 1, std::vector<double>(rows.size(), 0.0));
+    result.temperature.assign(order + 1, 0.0);
+    result.pressure.assign(order + 1, 0.0);
+    result.phase.resize(problem.phases.size());
+    const std::size_t row_offset = problem.phases.size() * stride;
+    const std::size_t temperature_index = primal_size - free_intensive_count;
+    for (std::size_t k = 0; k <= order; ++k) {
+        for (std::size_t row = 0; row < rows.size(); ++row) result.rows[k][row] = output[k][row_offset + row];
+        result.temperature[k] = k == 0 ? prepared.temperature
+            : problem.temperature.free ? state[k][temperature_index] : k == 1 ? control[0] : 0.0;
+        result.pressure[k] = k == 0 ? prepared.pressure
+            : problem.pressure.free ? state[k][primal_size - 1] : k == 1 ? control[1] : 0.0;
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+            auto& series = result.phase[phase];
+            const auto begin = output[k].begin() + static_cast<std::ptrdiff_t>(phase * stride);
+            series.point.emplace_back(begin, begin + static_cast<std::ptrdiff_t>(width));
+            series.amount.push_back(begin[static_cast<std::ptrdiff_t>(width)]);
+            series.packing.push_back(begin[static_cast<std::ptrdiff_t>(width + 1)]);
+        }
+    }
+    // Residual gradient coefficients: the Hessian action of each coefficient plus the model's
+    // third and fourth contractions of the lower coefficients (Faa di Bruno through order 3).
+    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+        auto& series = result.phase[phase];
+        const auto& derivative = prepared.derivative[phase];
+        series.gradient.assign(order + 1, std::vector<double>(width, 0.0));
+        series.gradient[0] = derivative.gradient;
+        std::vector<std::size_t> needed = {1};
+        for (const std::size_t species : problem.phases[phase].support) needed.push_back(2 + species);
+        const auto contraction = [&](std::vector<std::vector<double>> directions, std::size_t component) {
+            std::vector<double> unit(width, 0.0);
+            unit[component] = 1.0;
+            directions.push_back(unit);
+            const auto energy = model->residual_energy_action(
+                prepared.temperature, prepared.volume[phase], prepared.composition[phase], directions);
+            result.maximum_energy_order = std::max(result.maximum_energy_order, directions.size());
+            auto& total = result.energy_diagnostics;
+            total.forward_sweeps += energy.diagnostics.forward_sweeps;
+            total.directional_paths += energy.diagnostics.directional_paths;
+            total.site_solves += energy.diagnostics.site_solves;
+            total.site_factorizations += energy.diagnostics.site_factorizations;
+            total.recordings += energy.diagnostics.recordings;
+            total.site_rank = energy.diagnostics.site_rank;
+            total.site_pivot_ratio = std::max(total.site_pivot_ratio, energy.diagnostics.site_pivot_ratio);
+            total.association_residual = std::max(total.association_residual, energy.diagnostics.association_residual);
+            if (energy.status != PropertyActionStatus::Available && result.energy == PropertyActionStatus::Available)
+                result.energy = energy.status;
+            return energy.action.value_or(std::numeric_limits<double>::quiet_NaN());
+        };
+        for (std::size_t k = 1; k <= order; ++k) {
+            for (std::size_t i = 0; i < width; ++i)
+                for (std::size_t j = 0; j < width; ++j)
+                    series.gradient[k][i] += derivative.hessian[i * width + j] * series.point[k][j];
+            if (k == 2) {
+                for (const std::size_t j : needed)
+                    series.gradient[2][j] += 0.5 * contraction({series.point[1], series.point[1]}, j);
+            } else if (k == 3) {
+                for (const std::size_t j : needed) {
+                    series.gradient[3][j] += contraction({series.point[1], series.point[2]}, j)
+                        + contraction({series.point[1], series.point[1], series.point[1]}, j) / 6.0;
+                }
+            }
+        }
+        for (std::size_t k = 0; k <= order; ++k) {
+            for (std::size_t row = 0; row < rows.size(); ++row) {
+                if (rows[row].phase != phase) continue;
+                if (rows[row].kind == RowKind::Chemical) {
+                    result.rows[k][row] += series.gradient[k][2 + rows[row].index];
+                } else if (rows[row].kind == RowKind::Pressure) {
+                    for (std::size_t j = 0; j <= k; ++j)
+                        result.rows[k][row] -= series.point[j][1] * series.gradient[k - j][1];
+                }
+            }
+        }
+    }
+    scope.probe("order", static_cast<double>(order));
+    scope.probe("energy_order", static_cast<double>(result.maximum_energy_order));
     return result;
 }
 

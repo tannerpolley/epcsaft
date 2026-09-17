@@ -853,11 +853,11 @@ $$
 - Section: Equilibrium
 - Status: Exact derivation
 - Source: Twice differentiating F(y(theta),theta)=0 on a smooth fixed branch with nonsingular F_y
-- Description: a and b are independent parameter directions; subscripts on F are partial derivatives and y_a is a total directional action. Solve linear systems without explicitly inverting F_y.
-- Change note: Reconciled against transfer audit 2026-09-06; required mathematics, not an availability claim.
+- Description: a, b and c are independent parameter directions; subscripts on F are partial derivatives and y_a is a total directional action. The third relation uses the augmented variable z=(y,theta), tangents t_a=(y_a,a) and second variations u_ab=(y_ab,0). Along a diagonal path theta(t)=theta_0+t w the coefficients of y(t)=sum_k y_k t^k satisfy the same recurrence with the unknown coefficient set to zero; mixed actions follow by half-sign polarisation of the diagonal paths. Solve linear systems without explicitly inverting F_y.
+- Change note: Reconciled against transfer audit 2026-09-06; E5 (2026-09-16) adds the third-order relation and the coefficient recurrence that realises A1 to A3; required mathematics, not an availability claim.
 
 $$
-F_y y_a=-F_a,\qquad F_y y_{ab}=-\left(F_{ab}+F_{ay}y_b+F_{yb}y_a+F_{yy}[y_a,y_b]\right).
+F_y y_a=-F_a,\qquad F_y y_{ab}=-\left(F_{ab}+F_{ay}y_b+F_{yb}y_a+F_{yy}[y_a,y_b]\right),\qquad F_y y_{abc}=-\left(D^3F[t_a,t_b,t_c]+D^2F[u_{ab},t_c]+D^2F[u_{ac},t_b]+D^2F[u_{bc},t_a]\right),\qquad F_y y_k=-[t^k]F\bigl(y(t),\theta(t)\bigr)\big|_{y_k=0}.
 $$
 
 ## `implicit_sensitivity`

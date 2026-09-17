@@ -2424,47 +2424,9 @@ void core_c2_parameter_coordinates() {
         "relative_error", "Sg,S H S", "T,V,n", "source=S*native");
 }
 
-std::vector<std::pair<const char*, epcsaft::IdealCorrelation>> p3_forms() {
-    const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
-    return {
-        {"polynomial", epcsaft::IdealCorrelation{
-            epcsaft::IdealPolynomial{{30.0, 0.0}, 300.0, 1000.0, 50.0}, 1.0e5}},
-        {"shomate", epcsaft::IdealCorrelation{
-            epcsaft::IdealShomate{{30.0, 0.0, 0.0, 0.0, 0.0, -9.0,
-                                   50.0 - 30.0 * std::log(0.3), 0.0}, 1000.0}, 1.0e5}},
-        {"nasa7", epcsaft::IdealCorrelation{
-            epcsaft::IdealNASA7{{30.0 / R, 0.0, 0.0, 0.0, 0.0,
-                                 1000.0 / R - 30.0 * 300.0 / R,
-                                 50.0 / R - 30.0 * std::log(300.0) / R}}, 1.0e5}},
-        {"nasa9", epcsaft::IdealCorrelation{
-            epcsaft::IdealNASA9{{0.0, 0.0, 30.0 / R, 0.0, 0.0, 0.0, 0.0,
-                                 1000.0 / R - 30.0 * 300.0 / R,
-                                 50.0 / R - 30.0 * std::log(300.0) / R}}, 1.0e5}},
-        {"dippr107", epcsaft::IdealCorrelation{
-            epcsaft::IdealDIPPR107{{0.0, 30.0, 0.0, 0.0, 0.0},
-                                   300.0, 1000.0, 50.0}, 1.0e5}},
-    };
-}
-
-epcsaft::ThermochemistryRecord p3_record(const epcsaft::IdealCorrelation& correlation) {
-    epcsaft::ThermochemistryRecord result;
-    result.standard_pressure = 1.0e5;
-    result.component_intervals.push_back({
-        epcsaft::IdealInterval{250.0, 350.0, true, true, correlation}
-    });
-    return result;
-}
-
-epcsaft::ThermochemistryRecord p3_binary_record() {
-    epcsaft::ThermochemistryRecord result;
-    result.standard_pressure = 1.0e5;
-    result.component_intervals = {
-        {epcsaft::IdealInterval{250.0, 350.0, true, true, p3_forms()[0].second}},
-        {epcsaft::IdealInterval{250.0, 350.0, true, true,
-            epcsaft::IdealCorrelation{epcsaft::IdealPolynomial{{40.0, 0.0}, 300.0, 2000.0, 70.0}, 1.0e5}}}
-    };
-    return result;
-}
+using properties_support::p3_forms;
+using properties_support::p3_record;
+using properties_support::p3_binary_record;
 
 std::string p3_inputs(const char* form, double temperature = 320.0) {
     return recording_support::fields({

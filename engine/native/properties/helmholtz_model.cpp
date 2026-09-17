@@ -93,6 +93,24 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     return factorization;
 }
 
+// One central association factorization with its rank and pivot diagnostics; a failure
+// is reported through `status` and the factorization is still returned.
+std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
+    const Parameters& parameters, double temperature, double density, const std::vector<double>& sites,
+    const std::vector<double>& composition, PropertyActionStatus& status, PropertyActionDiagnostics& diagnostics
+) {
+    if (sites.empty()) return nullptr;
+    const auto sigma = segment_sigma(temperature, parameters), diameter = segment_diameter(temperature, parameters, sigma);
+    auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(site_factorization(
+        sites, composition, parameters, density * NUMBER_DENSITY_PER_ANGSTROM3,
+        association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
+    diagnostics.site_factorizations = 1;
+    diagnostics.site_rank = static_cast<std::size_t>(result->rank());
+    const auto pivots = result->matrixLU().diagonal().cwiseAbs();
+    if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
+    return result;
+}
+
 void require(bool condition, const char* field) {
     if (!condition) {
         throw std::invalid_argument(std::string("invalid ") + field);
@@ -903,14 +921,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         "predicate_signature",
         std::vector<double>(signature.begin(), signature.end())
     );
-    if (tape_ == nullptr || tape_->predicates != signature
-        || !tape_->residual_available) {
-        tape_ = detail::HelmholtzTape::record(
-            parameters_, active_, point, sites, signature, {}, 0.0, true
-        );
-        ++counters_.recordings;
-        scope.probe("recording", 1.0);
-    }
+    if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
     std::vector<double> full_point = point;
     full_point.insert(full_point.end(), sites.begin(), sites.end());
     const auto values = tape_->function.Forward(0, full_point);
@@ -1063,75 +1074,78 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     return result;
 }
 
-double HelmholtzModel::third_directional(double temperature, double volume, const std::vector<double>& amounts,
-    const std::array<std::vector<double>, 3>& directions) const {
+ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
+    const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
     validate_point(temperature, volume, amounts);
-    const std::size_t components = parameters_.component_count();
+    const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
+    require(order == 3 || order == 4, "energy action order");
     for (const auto& direction : directions)
         require(direction.size() == width && finite_vector(direction), "direction");
-    for (std::size_t component = 0; component < components; ++component) {
-        if (amounts[component] != 0.0) continue;
-        for (const auto& direction : directions)
-            require(direction[2 + component] == 0.0, "zero-support direction");
-    }
+    double total = 0.0; for (double amount : amounts) total += amount;
+    ResidualEnergyAction result;
+    std::vector<ActionDirection> inserted;
+    for (const auto& direction : directions)
+        inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
+    if ((result.status = support_status(*this, amounts, inserted)) != PropertyActionStatus::Available) return result;
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
     for (const auto& item : active_) point.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
-    double total = 0.0; for (double amount : amounts) total += amount;
-    std::array<double, 3> norms{};
-    std::array<std::vector<double>, 3> normalized;
-    for (std::size_t direction = 0; direction < directions.size(); ++direction) {
-        double magnitude = 0.0;
+    std::vector<double> norms(order);
+    std::vector<std::vector<double>> normalized(directions);
+    for (std::size_t direction = 0; direction < order; ++direction) {
         for (std::size_t i = 0; i < width; ++i) {
             const double scale = i == 0 ? temperature : i == 1 ? volume
                 : i < 2 + components ? total : std::max(1.0, std::abs(point[i]));
-            magnitude = std::max(magnitude, std::abs(directions[direction][i]) / scale);
+            norms[direction] = std::max(norms[direction], std::abs(directions[direction][i]) / scale);
         }
-        require(std::isfinite(magnitude), "direction");
-        if (magnitude == 0.0) return 0.0;
-        norms[direction] = magnitude;
-        normalized[direction] = directions[direction];
-        for (double& value : normalized[direction]) value /= magnitude;
+        for (double& value : normalized[direction]) value /= std::max(norms[direction], std::numeric_limits<double>::min());
     }
-
     std::lock_guard<std::mutex> lock(mutex_);
     const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
     const double density = total / volume;
-    std::vector<double> composition(amounts);
-    for (double& amount : composition) amount /= total;
-    const auto signature = predicate_signature(temperature, density, composition);
-    if (!tape_ || tape_->predicates != signature || !tape_->residual_available) {
-        tape_ = detail::HelmholtzTape::record(parameters_, active_, point,
-            refreshed.site_fractions, signature, {}, 0.0, true);
-        ++counters_.recordings;
-    }
-    std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> factorization;
-    if (tape_->site_count != 0) {
-        const auto sigma = segment_sigma(temperature, parameters_),
-                   diameter = segment_diameter(temperature, parameters_, sigma);
-        factorization = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(site_factorization(
-            refreshed.site_fractions, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3,
-            association_delta(temperature, density, composition, parameters_, sigma, diameter)));
-    }
-    constexpr std::array<std::array<double, 3>, 4> signs{{
-        {{1.0, 1.0, 1.0}}, {{1.0, -1.0, -1.0}},
-        {{-1.0, 1.0, -1.0}}, {{-1.0, -1.0, 1.0}}
-    }};
+    std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
+    result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
+        predicate_signature(temperature, density, composition), {}, 0.0, true) ? 1 : 0;
+    result.status = PropertyActionStatus::Available;
+    const auto factorization = association_factorization(parameters_, temperature, density,
+        refreshed.site_fractions, composition, result.status, result.diagnostics);
+    if (result.status != PropertyActionStatus::Available) return result;
+    if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return result; }
+    // Half of the 2^q sign paths, first sign fixed positive, each weighted by its sign product.
     double coefficient = 0.0;
-    for (const auto& sign : signs) {
-        std::vector<std::vector<double>> series(4, std::vector<double>(width, 0.0));
+    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));
         series.front() = point;
-        for (std::size_t i = 0; i < width; ++i)
-            series[1][i] = sign[0] * normalized[0][i]
-                + sign[1] * normalized[1][i] + sign[2] * normalized[2][i];
-        coefficient += tape_->implicit_taylor(
-            series, 3, factorization.get(), nullptr, &counters_.forward).front();
+        double weight = 1.0;
+        for (std::size_t direction = 0; direction < order; ++direction) {
+            const double sign = direction != 0 && (mask & (std::size_t(1) << (direction - 1))) ? -1.0 : 1.0;
+            weight *= sign;
+            for (std::size_t i = 0; i < width; ++i) series[1][i] += sign * normalized[direction][i];
+        }
+        coefficient += weight * tape_->implicit_taylor(series, order, factorization.get(), &result.diagnostics.site_solves,
+            &result.diagnostics.forward_sweeps, &result.diagnostics.association_residual).front();
+        ++result.diagnostics.directional_paths;
     }
-    counters_.directional_paths += signs.size(); counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, std::size_t{3});
-    const double result = coefficient * norms[0] * norms[1] * norms[2] / 4.0;
-    require(std::isfinite(result), "third directional");
+    counters_.directional_paths += result.diagnostics.directional_paths; counters_.forward += result.diagnostics.forward_sweeps;
+    counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order);
+    double action = coefficient / static_cast<double>(std::size_t(1) << (order - 1));
+    for (const double norm : norms) action *= norm;
+    if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) result.status = PropertyActionStatus::AssociationResidual;
+    else if (!std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;
+    else result.action = action;
     return result;
+}
+
+// Record the shared tape when the predicate signature or output selection changed.
+bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::vector<double>& sites,
+    const detail::PredicateSignature& signature, const std::vector<IdealCorrelation>& correlations,
+    double ideal_pressure, bool residual) const {
+    if (tape_ != nullptr && tape_->predicates == signature && tape_->residual_available == residual
+        && tape_->ideal_available == !correlations.empty()) return false;
+    tape_ = detail::HelmholtzTape::record(parameters_, active_, point, sites, signature, correlations, ideal_pressure, residual);
+    ++counters_.recordings;
+    return true;
 }
 
 PropertyActionBatch HelmholtzModel::directional_actions(
@@ -1181,26 +1195,13 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         }
     }
     const auto signature = predicate_signature(temperature, molar_density, mole_fractions, need_residual, ideal_available);
-    std::size_t recordings = 0;
-    if (tape_ == nullptr || tape_->predicates != signature
-        || tape_->residual_available != need_residual
-        || tape_->ideal_available != ideal_available) {
-        tape_ = detail::HelmholtzTape::record(
-            parameters_, active_, point, sites, signature,
-            ideal_available ? correlations : std::vector<IdealCorrelation>{},
-            ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual);
-        ++recordings;
-        ++counters_.recordings;
-    }
+    PropertyActionBatch result;
+    result.diagnostics.recordings = ensure_tape(point, sites, signature,
+        ideal_available ? correlations : std::vector<IdealCorrelation>{},
+        ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
     tape_->site_values = sites;
-    std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> factorization;
-    if (need_residual && tape_->site_count != 0) {
-        factorization = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(
-            site_factorization(tape_->site_values, mole_fractions, parameters_,
-                molar_density * NUMBER_DENSITY_PER_ANGSTROM3,
-                association_delta(temperature, molar_density, mole_fractions,
-                    parameters_, sigma, diameter), &association_status));
-    }
+    const auto factorization = need_residual ? association_factorization(parameters_, temperature, molar_density,
+        tape_->site_values, mole_fractions, association_status, result.diagnostics) : nullptr;
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
     context.maximum_order = directions.size()
@@ -1208,7 +1209,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto result_support = support_status(*this, mole_fractions, all);
     const bool temperature_action = std::any_of(all.begin(), all.end(),
         [](const auto& direction) { return direction.temperature != 0.0; });
-    PropertyActionBatch result;
+    auto diagnostics = result.diagnostics;
     if (!pressure_chain || association_status != PropertyActionStatus::Available) {
         std::vector<std::size_t> ids(all.size());
         for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = i;
@@ -1294,8 +1295,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
                 density_123 = density_solve(density_123);
             }
         }
-        result.diagnostics.pressure_factorizations = 1;
-        result.diagnostics.pressure_solves = pressure_solves;
+        diagnostics.pressure_factorizations = 1;
+        diagnostics.pressure_solves = pressure_solves;
         for (std::size_t row = 0; row < result.results.size() && directions.size() >= 2; ++row) {
             if (result.results[row].status != PropertyActionStatus::Available) continue;
             const auto usable = [&](const PropertyActionBatch& batch) {
@@ -1332,18 +1333,11 @@ PropertyActionBatch HelmholtzModel::directional_actions(
                 result.results[row].status = PropertyActionStatus::Nonfinite;
         }
     }
-    result.diagnostics.recordings = recordings;
+    result.diagnostics = diagnostics;
     result.diagnostics.thermal_evaluations = ideal_available ? correlations.size() : 0;
     result.diagnostics.directional_paths = context.paths.size();
     result.diagnostics.forward_sweeps = context.forward_sweeps;
     result.diagnostics.dense_hessian_calls = 0;
-    result.diagnostics.site_factorizations = factorization ? 1 : 0;
-    if (factorization) {
-        result.diagnostics.site_rank = static_cast<std::size_t>(factorization->rank());
-        const auto pivots = factorization->matrixLU().diagonal().cwiseAbs();
-        if (pivots.size() != 0 && pivots.minCoeff() > 0.0)
-            result.diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
-    }
     result.diagnostics.site_solves = context.solves;
     result.diagnostics.association_residual = context.coefficient_residual;
     if (association_status == PropertyActionStatus::Available
