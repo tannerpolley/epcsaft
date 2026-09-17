@@ -10,6 +10,8 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <functional>
+#include <memory>
 #include <limits>
 #include <string>
 #include <stdexcept>
@@ -2306,6 +2308,10 @@ struct Fixture final {
     std::vector<SolvedStateActionDirection> directions;
     std::vector<SolvedStateObservable> observables;
     bool scaled = true;
+    // Corner branch admission for a pure declared phase (case 6) and an analytic corner
+    // reference for selected observables (the A->2B pure-state relation).
+    std::optional<epcsaft::DensityBranch> corner_branch;
+    std::function<std::optional<double>(const SolvedStateObservable&, double)> analytic;
 
     // A fresh model with every active parameter shifted (reciprocal pairs move together).
     epcsaft::HelmholtzModel model(const std::vector<double>& shift = {}) const {
@@ -2454,13 +2460,18 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
         else if (solved.phase_count != central.phase_count) failure = "corner phase count";
         else if (!solved.requested_tolerance_met.value_or(false)) failure = "corner row tolerance";
         else if (!(solved.convergence.residual <= limit)) failure = "corner classified rows";
+        else if (fixture.corner_branch.has_value()) {
+            const auto root = epcsaft::solve_density(model, problem.temperature.value, problem.pressure.value, {1.0}, *fixture.corner_branch, std::nullopt);
+            if (!(std::abs(std::log(solved.molar_densities[0] / root.molar_density)) <= 1.0e-8)) failure = "corner branch";
+        }
         if (!failure.empty()) {
             result.rejected.push_back(failure);
             for (auto& value : result.value) value.reset();
             return result;
         }
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
-            const auto value = mapped(fixture.observables[i], model, solved);
+            const auto analytic = fixture.analytic ? fixture.analytic(fixture.observables[i], problem.temperature.value) : std::nullopt;
+            const auto value = analytic.has_value() ? analytic : mapped(fixture.observables[i], model, solved);
             if (value.has_value() && result.value[i].has_value()) *result.value[i] += weight * *value;
             else result.value[i].reset();
         }
@@ -2521,29 +2532,45 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             const auto& fine = ladder[2].value[i];
             const double h1 = LADDER[order - 1][0], h2 = LADDER[order - 1][1], h3 = LADDER[order - 1][2];
             const bool structural = fine.has_value() && mid.has_value() && *fine == 0.0 && *mid == 0.0;
+            const bool complete = fine.has_value() && mid.has_value() && coarse.has_value();
+            // A finest step whose difference grows again is rounding-bounded (the corner
+            // solves agree to ~1e-15 relative); its ladder extrapolates from the two coarser
+            // steps and certifies nothing beyond their agreement (Execution review, 2026-09-16).
+            const bool noise_bounded = complete && std::abs(*mid - *fine) > std::abs(*coarse - *mid);
             std::optional<double> extrapolated;
-            if (fine.has_value() && mid.has_value()) extrapolated = *fine + (*fine - *mid) / (h2 * h2 / (h3 * h3) - 1.0);
+            if (complete && noise_bounded) extrapolated = *mid + (*mid - *coarse) / (h1 * h1 / (h2 * h2) - 1.0);
+            else if (fine.has_value() && mid.has_value()) extrapolated = *fine + (*fine - *mid) / (h2 * h2 / (h3 * h3) - 1.0);
             const double criterion = structural ? STRUCTURAL_ZERO : CRITERION[order - 1] * std::max(1.0, std::abs(extrapolated.value_or(0.0)));
             const double expected_rate = (h1 * h1 - h2 * h2) / (h2 * h2 - h3 * h3);
-            bool refined = fine.has_value() && mid.has_value() && std::abs(*fine - *mid) <= 2.0 * criterion;
+            bool refined = complete && (noise_bounded ? std::abs(*coarse - *mid) : std::abs(*fine - *mid)) <= 2.0 * criterion;
             double rate = nan;
-            if (fine.has_value() && mid.has_value() && coarse.has_value() && !refined) {
+            if (complete && !refined && !noise_bounded) {
                 rate = (*coarse - *mid) / (*mid - *fine);
                 refined = rate >= 0.5 * expected_rate && rate <= 2.0 * expected_rate;
             }
             const bool verdict = item.status == SolvedStateActionStatus::Available && item.action.has_value() && extrapolated.has_value()
                 && std::abs(action - *extrapolated) <= criterion;
+            // The best-step relative agreement is the falsifying strength independent of the
+            // absolute floor: a row with |R| <= c would pass a zero action on the criterion alone.
+            double best_step = nan;
+            for (const auto* step : {&coarse, &mid, &fine})
+                if (step->has_value() && std::isfinite(action))
+                    best_step = std::min(std::isfinite(best_step) ? best_step : std::numeric_limits<double>::infinity(),
+                                         std::abs(action - **step) / std::max(std::abs(**step), std::numeric_limits<double>::min()));
             const auto ladder_inputs = recording_support::fields({inputs, recording_support::field("reference_steps",
                 std::vector<double>{coarse.value_or(nan), mid.value_or(nan), fine.value_or(nan)}),
-                recording_support::field("rate", rate), recording_support::field("expected_rate", expected_rate)});
+                recording_support::field("rate", rate), recording_support::field("expected_rate", expected_rate),
+                recording_support::field("noise_bounded", noise_bounded ? 1U : 0U),
+                recording_support::field("absolute_floor", !structural && std::abs(extrapolated.value_or(0.0)) <= CRITERION[order - 1] ? 1U : 0U),
+                recording_support::field("best_step_relative_agreement", best_step)});
             recording_support::compare(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
                 ladder_inputs, "Relationship", "centered-solve-ladder", "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
                 structural ? "strict_absolute" : "reference_or_one", structural ? STRUCTURAL_ZERO : 0.0, structural ? 0.0 : CRITERION[order - 1],
                 verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
             recording_support::compare_custom((id + "/rate").c_str(), "difference_ratio", "1", rate, expected_rate, ladder_inputs,
                 "Relationship", "centered-solve-ladder",
-                "the reference ladder certifies second-order convergence or its last two steps agree within twice the criterion",
-                "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected", refined,
+                "the reference ladder certifies second-order convergence, or its last two informative steps agree within twice the criterion",
+                "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected || (noise_bounded && |coarse-mid| <= 2c)", refined,
                 group, id.c_str(), "(\\Delta_1-\\Delta_2)/(\\Delta_2-\\Delta_3)", "case,observable,order", "\\approx(h_1^2-h_2^2)/(h_2^2-h_3^2)", "observable,order");
             ok = ok && verdict && refined;
         }
@@ -2891,6 +2918,22 @@ void check_e5_reactive() {
         f.observables = {obs(Kind::PhaseMoleFraction, 0, 1), obs(Kind::PhaseComponentAmount, 0, 0), obs(Kind::PhaseComponentAmount, 0, 1), obs(Kind::PhaseAmount, 0),
             obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalEnthalpy), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalIsobaricHeatCapacity)};
         f.scaled = false;
+        // E2's independent pure-state relation y^2/(1-y) = K_P P0 / (phi P) at each corner
+        // temperature supplies the composition and amount references; calorics use fresh solves.
+        const epcsaft::ReactionLogPolynomial pressure_law{-10.0 / R, 3000.0 / R, 10.0 / R, 0.0, tref, 250.0, 450.0, "pressure-basis-P0"};
+        const auto ethane = std::make_shared<epcsaft::HelmholtzModel>(properties_support::ethane());
+        f.analytic = [ethane, pressure_law, R](const SolvedStateObservable& item, double T) -> std::optional<double> {
+            if (item.kind != Kind::PhaseMoleFraction && item.kind != Kind::PhaseComponentAmount && item.kind != Kind::PhaseAmount) return std::nullopt;
+            const auto pure = ethane->state_at_pressure(T, 2.0e5, {1.0}, epcsaft::DensityBranch::Vapor);
+            const double compressibility = 2.0e5 / (pure.molar_density * R * T);
+            const double phi = std::exp(pure.residual_chemical_potential_over_rt[0]) / compressibility;
+            const double a = std::exp(epcsaft::evaluate_reaction_properties(pressure_law, T).ln_k) * 1.0e5 / (phi * 2.0e5);
+            const double y = 2.0 * a / (a + std::sqrt(a * a + 4.0 * a));
+            const double total = 1.5 / (2.0 - y);
+            if (item.kind == Kind::PhaseMoleFraction) return item.component == 1 ? y : 1.0 - y;
+            if (item.kind == Kind::PhaseAmount) return total;
+            return item.component == 1 ? total * y : total * (1.0 - y);
+        };
         all_ok = (qualify(f, "e5-3")) && all_ok;
     }
     CHECK(all_ok);
@@ -2940,6 +2983,28 @@ void check_e5_associating() {
         "Relationship", "selection", "selected A3 property results equal their full-batch values", "reference_or_one", 2.0e-12, 0.0,
         ok && worst <= 2.0e-12, "e5-4", "selected-vs-full", "\\Delta", "selection", "\\Delta\\leq2\\times10^{-12}", "case");
     all_ok = (ok && worst <= 2.0e-12) && all_ok;
+    // Mixed-action symmetry: the direction order changes neither A2 nor A3.
+    auto rotated = fixture;
+    rotated.directions = {fixture.directions[1], fixture.directions[2], fixture.directions[0]};
+    auto swapped_pair = fixture;
+    swapped_pair.directions = {fixture.directions[1], fixture.directions[0]};
+    const auto natural_two = actions(fixture, model, central, fixture.observables, 2);
+    const auto swapped_two = actions(swapped_pair, model, central, fixture.observables, 2);
+    const auto rotated_three = actions(rotated, model, central, fixture.observables, 3);
+    double asymmetry = 0.0;
+    bool symmetric = true;
+    for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
+        symmetric = symmetric && swapped_two.results[i].action.has_value() && natural_two.results[i].action.has_value()
+            && rotated_three.results[i].action.has_value() && full.results[i].action.has_value();
+        if (!symmetric) break;
+        asymmetry = std::max({asymmetry, std::abs(*swapped_two.results[i].action - *natural_two.results[i].action) / std::max(1.0, std::abs(*natural_two.results[i].action)),
+            std::abs(*rotated_three.results[i].action - *full.results[i].action) / std::max(1.0, std::abs(*full.results[i].action))});
+    }
+    recording_support::compare("e5-4/associating/mixed-symmetry", "action_difference", "1", asymmetry, 0.0,
+        recording_support::fields({recording_support::field("results", fixture.observables.size())}),
+        "Relationship", "symmetry", "A2 and A3 mixed actions are invariant under direction-order permutation", "reference_or_one", 1.0e-10, 0.0,
+        symmetric && asymmetry <= 1.0e-10, "e5-4", "mixed-symmetry", "\\Delta", "order", "\\Delta\\leq10^{-10}", "case");
+    all_ok = (symmetric && asymmetry <= 1.0e-10) && all_ok;
     // Radial identities: molar h has Dh[r] = 0 and D2h[v, r] = -Dh[v]; extensive H = N h has DH[r] = H, D2H[v, r] = 0.
     auto radial = fixture;
     radial.directions = {direction(0.0, 0.0, {0.02, -0.01}, {0.0, 0.0}), direction(0.0, 0.0, {0.25, 0.75}, {0.0, 0.0})};
@@ -3002,6 +3067,7 @@ Fixture two_root_case(PhaseKind kind) {
     f.directions = {direction(0.1, 2000.0, {0.0}), direction(-0.05, -1000.0, {0.0}), direction(0.03, 500.0, {0.0})};
     f.observables = {obs(Kind::PhasePressure, 0), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualEnthalpy),
                      obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualIsobaricHeatCapacity), obs(Kind::PhaseMolarDensity, 0)};
+    f.corner_branch = kind == PhaseKind::Vapor ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid;
     return f;
 }
 
@@ -3186,6 +3252,13 @@ void check_e5_refusals() {
     all_ok = (record_bool("e5-8/typed/removed-ions", "e5-8", "a neutral-limit feed with removed ions has no admitted central state (NOT_RUN rank record); E5 types it central_solve_unavailable, so ionic_insertion is unforced",
         !water_central.success && water_central.solver_status == "NOT_RUN" && ionic_batch.results[0].status == SolvedStateActionStatus::CentralSolveUnavailable,
         recording_support::fields({recording_support::field("status", status_field(ionic_batch, 0)), recording_support::field("message", water_central.message)}))) && all_ok;
+    // The matrix owner on a rank-deficient Jacobian: the exact all-pinned system loses one
+    // rank at its generic point; nonfinite and excessive-residual paths remain unexecuted.
+    const auto inspected = epcsaft::equilibrium::inspect_sensitivity(exact_compiled, exact_compiled.generic_point(), {});
+    all_ok = (record_bool("e5-8/matrix/rank-deficient", "e5-8", "the shared matrix owner reports the rank-deficient all-pinned Jacobian as singular with its rank below the dimension",
+        !inspected.nonsingular && inspected.rank + 1 == exact_compiled.generic_point().size() && inspected.rank == exact_compiled.jacobian_rank,
+        recording_support::fields({recording_support::field("rank", inspected.rank), recording_support::field("dimension", exact_compiled.generic_point().size()),
+            recording_support::field("condition", inspected.condition_estimate)}))) && all_ok;
     // Central preservation: an unavailable property action keeps the central value and its available siblings.
     auto partial = electrolyte_case(false);
     partial.observables = {obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalEnthalpy), obs(Kind::PhaseMolarDensity, 0), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualEnthalpy)};

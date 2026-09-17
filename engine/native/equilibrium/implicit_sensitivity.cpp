@@ -476,6 +476,19 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
         result.temperature = k == 0 ? 0.0 : series.temperature[k];
         result.molar_density = k == 0 ? 0.0 : map.density[k];
         for (std::size_t i = 0; i < components; ++i) result.composition.push_back(k == 0 ? 0.0 : map.mole_fraction[i][k]);
+        // The solved coefficients satisfy the normalisation and charge rows to the linear
+        // residual policy; the P4 trust boundary requires them exactly, so the roundoff
+        // component along (1, z) is removed before the call.
+        const auto charges = species_z(model.parameters());
+        double sum = 0.0, charge = 0.0, zz = 0.0, z1 = 0.0;
+        for (std::size_t i = 0; i < components; ++i) {
+            sum += result.composition[i]; charge += charges[i] * result.composition[i];
+            zz += charges[i] * charges[i]; z1 += charges[i];
+        }
+        const double c = static_cast<double>(components), det = c * zz - z1 * z1;
+        const double alpha = det != 0.0 ? (sum * zz - charge * z1) / det : sum / c;
+        const double beta = det != 0.0 ? (c * charge - z1 * sum) / det : 0.0;
+        for (std::size_t i = 0; i < components; ++i) result.composition[i] -= alpha + beta * charges[i];
         for (std::size_t a = 0; a < model.active_parameters().size(); ++a) {
             const auto& active = model.active_parameters()[a];
             result.parameter.push_back({active.family, active.indices, k == 0 ? 0.0 : item.point[k][2 + components + a]});
@@ -667,17 +680,23 @@ SolvedStateActionBatch solved_state_actions(
             if (*batch.diagnostics.rank < n) gate = SolvedStateActionStatus::RankDeficient;
         }
     }
+    const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = std::any_of(controls.begin(), controls.end(), [](const auto& c) { return c[0] != 0.0; });
-    if (gate == SolvedStateActionStatus::Available && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
+    if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
         gate = SolvedStateActionStatus::MissingThermochemistry;
+    // A central-state gate precedes the selected dependency: it overrides every
+    // state-dependent row's status, keeping the mapped value and property diagnostics.
     const auto apply_state_gate = [&](SolvedStateActionStatus status) {
-        for (auto& item : batch.results)
-            if (state_dependent(item.observable, problem) && item.status == SolvedStateActionStatus::Available)
-                item.status = status;
+        for (auto& item : batch.results) {
+            if (!state_dependent(item.observable, problem)) continue;
+            item.status = status;
+            item.action.reset();
+            item.diagnostic_message.reset();
+        }
         return batch;
     };
     if (gate != SolvedStateActionStatus::Available) return apply_state_gate(gate);
-    if (std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; })) {
+    if (zero) {
         for (auto& item : batch.results)
             if (item.status == SolvedStateActionStatus::Available && item.value.has_value()) item.action = 0.0;
         return finish(SolvedStateActionStatus::Available);
