@@ -1,8 +1,8 @@
 {
  "schema_version": 1,
  "issue": "#39 E2",
- "source_commit": "39b5242a3d6956b04420678ae235ca69d6f55b40",
- "source_dirty": true,
+ "source_commit": "a5c751d1b95142ffe4eee22ffe96ec2fafb5fe96",
+ "source_dirty": false,
  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
  "wheel_sha256": "b8f57dfd61870923fbde2518cfa27734eab4e7f56fcdd05cd053550be47168ec",
  "executables": {
