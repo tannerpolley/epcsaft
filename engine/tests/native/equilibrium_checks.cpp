@@ -1243,7 +1243,8 @@ void check_s10() {
             request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, 850.0}};
             label = "pinned-reactive-T";
         } else if (variant == 5) {
-            // Non-affine correlated standard state: its exact s', s'' enter the T column and curvature.
+            // Non-affine correlated standard state: its exact s', s'' enter the T column and
+            // curvature; the callback point below evaluates at 313 K inside [250, 450] K.
             request.temperature.value = 300.0;
             request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, std::nullopt, legacy_isomerisation(1.0, moderate_isomerisation_a())}};
             label = "pinned-correlated-T";
@@ -1266,6 +1267,30 @@ void check_s10() {
         intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
             compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
         if (variant == 5) {
+            // The pinned ladder criterion (1e-5) is looser than the affine-shortcut defect at this
+            // point (~2e-6), so the T,T curvature entry is compared directly at 1e-9 scaled: the
+            // falsifier flips if the retired s'' = -2 s'/T shortcut returns.
+            epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
+            const auto shape = nlp.shape();
+            const std::size_t t_index = compiled.primal_size - compiled.free_intensive_count;
+            std::vector<Ipopt::Number> hessian(static_cast<std::size_t>(shape.hessian_entries), 0.0);
+            CHECK(nlp.eval_h(shape.variables, callback_point.data(), true, 0.0, shape.constraints,
+                             weights.data(), true, shape.hessian_entries, nullptr, nullptr, hessian.data()));
+            const double h_tt = hessian[t_index * (t_index + 1) / 2 + t_index];
+            const double tt_step = centered_step(callback_point[t_index]);
+            auto plus = callback_point, minus = callback_point;
+            plus[t_index] += tt_step; minus[t_index] -= tt_step;
+            const double h_tt_centered = (weighted_gradient(compiled, plus, weights, 0.0)[t_index]
+                - weighted_gradient(compiled, minus, weights, 0.0)[t_index]) / (2.0 * tt_step);
+            const bool tt_ok = close_with_tolerance(h_tt, h_tt_centered, 1.0e-9);
+            recording_support::compare("correlated-jacobian/hessian-TT", "weighted_lagrangian_hessian", "coordinate",
+                h_tt, h_tt_centered, recording_support::fields({weighted_hessian_context(compiled),
+                    recording_support::field("point", callback_point), recording_support::field("step", tt_step)}),
+                "Relationship", "weighted_hessian_gradient_finite_difference",
+                "correlated standard-state T,T curvature is exact beyond the affine shortcut",
+                "reference_or_one", 0.0, 1.0e-9, tt_ok, "f5-correlated-jacobian", "hessian-TT",
+                "\\nabla^2\\mathcal L_{TT}", "\\mathbf{z},\\lambda,\\Delta T", "exact s''", "entry");
+            correlated_jacobian_ok = correlated_jacobian_ok && tt_ok;
             // Rows, Jacobian temperature column and lever column against centered differences.
             std::vector<double> full = callback_point;
             full.resize(compiled.unknown_count(), 0.0);
@@ -1829,12 +1854,15 @@ void check_e2_thermal() {
             if (offset.qualified) {
                 isomerisation_ok = isomerisation_ok && verdict;
             } else {
+                const bool bounded = std::isfinite(result.convergence.residual)
+                    && result.convergence.residual <= dilute_bound;
                 recording_support::compare_custom((id + "/row-bound").c_str(), "row_residual", "1",
                     result.convergence.residual, dilute_bound, inputs, "Relationship", "conditioning",
                     "dilute recovered chemical row stays within row_tolerance/(N x_A)",
-                    "isfinite(model) && model <= reference", std::isfinite(result.convergence.residual)
-                        && result.convergence.residual <= dilute_bound, "e2-2-thermal", id.c_str(),
+                    "isfinite(model) && model <= reference", bounded, "e2-2-thermal", id.c_str(),
                     "|r|", "T,P,K(T)", "|r|\\leq tol/(N x_A)", "case");
+                // The documented limit is asserted; the unavailable x_B row above is not.
+                isomerisation_ok = isomerisation_ok && bounded;
             }
         }
     }
