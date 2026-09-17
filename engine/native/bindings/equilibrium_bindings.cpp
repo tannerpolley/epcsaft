@@ -95,7 +95,6 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("has_ions", &CompiledSystem::has_ions)
         .def_readonly("has_reaction", &CompiledSystem::has_reaction)
         .def_readonly("conserves_total_moles", &CompiledSystem::conserves_total_moles)
-        .def("unknown_count", &CompiledSystem::unknown_count)
         .def_readonly("jacobian_rank", &CompiledSystem::jacobian_rank)
         .def_readonly("removed_species", &CompiledSystem::removed_species)
         .def("generic_point", &CompiledSystem::generic_point)
