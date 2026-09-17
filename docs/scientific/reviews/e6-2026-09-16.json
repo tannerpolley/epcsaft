@@ -1,0 +1,818 @@
+{
+ "schema_version": 1,
+ "issue": "#43 E6",
+ "source_commit": "9c6efafedf83e009c9c078001eda91d5c583bc72",
+ "source_dirty": false,
+ "wheel": {
+  "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+  "sha256": "c96c7a28b192f2ae30db013b346c39dbd896e832ec622c66f73e42fe6b2867fc",
+  "package_version": "0.2.0.dev0",
+  "direct_url": {
+   "url": "file://~/Workspaces/Engineering/ePC-SAFT-greenfield/build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+   "archive_info": {}
+  },
+  "installation": "non-editable wheel (archive_info direct_url; no editable finder)"
+ },
+ "executables": {
+  "specification_checks": {
+   "path": "~/Workspaces/Engineering/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/specification_checks",
+   "sha256": "81308094c35a9a59ff5afce8c113e9a323bb3235c71ceeccd56cf6a30eee1d24"
+  },
+  "equilibrium_checks": {
+   "path": "~/Workspaces/Engineering/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/equilibrium_checks",
+   "sha256": "57284b470407a4291e3739efc1055096d38bd9fa2faa7aa227b7df11c66433a9"
+  },
+  "boundary_checks": {
+   "path": "~/Workspaces/Engineering/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/boundary_checks",
+   "sha256": "06874327a15d5fc66209cd5a5b8e61aab268b52641f4c8525ba840f6eba1932c"
+  },
+  "properties_checks": {
+   "path": "~/Workspaces/Engineering/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7/properties_checks",
+   "sha256": "5851a446242740579366e4a136b74c09f5c13f48d4508795093de5940276c986"
+  }
+ },
+ "build_dir": "~/Workspaces/Engineering/ePC-SAFT-greenfield/build/engine-meson/cpython-313-linux-x86_64-x86_64-f6db693e21e289603ae71c78242a17b102f1e324061021d5dca361f47a0bfef7",
+ "sources": {
+  "may_2015_csv": {
+   "path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.csv",
+   "sha256": "5cd1e74925a3c6504f5106dcf911f2cae2d6e99a5133fccc20454d8991bdbc7f"
+  },
+  "may_2015_metadata": {
+   "path": "analyses/reproduction/2015-may/inputs/source/may-2015-methane-ethane-vle.yaml",
+   "sha256": "67ea81fea458e46da6743bfc5d7bec960469fbea565cc2d556e5f07d734d1d23",
+   "historical_case_yaml_metadata_sha256": "d3fbd456f0285c022c2236c3966eb5e913f711a677d09191d99d5e2629a3b2e7"
+  },
+  "neutral_held_cases": {
+   "path": "analyses/reproduction/2015-may/inputs/source/may-2015-neutral-held-cases.yaml",
+   "sha256": "a7b1a3c921cfb39945925cf04fc32a38ee11f1af670a86d3ffce5366dd52a8c4",
+   "tolerance_sha256": "ad744526678355be6ca47cf27ab9ff7ae66b7661c27e36ffe259c5b6295f1016"
+  },
+  "nist_ethane": {
+   "path": "data/packets/nist-srd69-pure-saturation-properties/1/observations/ethane-saturation.csv",
+   "sha256": "b01333e827933c0a7148672c8ae3eef78393320c0d18f2c4d5a0fc40d9bef6b2",
+   "packet": "nist-srd69-pure-saturation-properties v1"
+  },
+  "parameters": {
+   "path": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+   "sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+   "fingerprint": {
+    "parameter_file": "data/packets/gross-2001-methane-ethane/2/parameters/parameters.json",
+    "parameter_sha256": "7dd1899712aacfbc3395d86349768b0d93dd5dfd75b2e0f0700640be618aa9c2",
+    "components": [
+     "methane",
+     "ethane"
+    ],
+    "m": [
+     1.0,
+     1.6069
+    ],
+    "sigma_angstrom": [
+     3.7039,
+     3.5206
+    ],
+    "epsilon_over_k_K": [
+     150.03,
+     191.42
+    ],
+    "molar_mass_kg_per_mol": [
+     0.016043,
+     0.03007
+    ],
+    "k_ij": 0.0,
+    "l_ij": 0.0,
+    "public_call": "epcsaft.Parameters.from_json(path, components=order); Mixture/Pure; equilibrium.Problem; solve_equilibrium(model, problem)"
+   }
+  }
+ },
+ "equation_ids": [
+  "phase_helmholtz_amount_volume",
+  "system_gibbs_helmholtz_coordinates",
+  "phase_packing_volume",
+  "chemical_potential_stationarity",
+  "pressure_equality",
+  "phase_normalization",
+  "phase_support",
+  "phase_electroneutrality",
+  "material_balance",
+  "interphase_potential_equality",
+  "reaction_affinity",
+  "reduced_hessian_stability",
+  "implicit_sensitivity",
+  "implicit_second_action"
+ ],
+ "algorithm_ids": [
+  "ALG-EQUILIBRIUM",
+  "ALG-ACTIONS",
+  "ALG-TERMINATION"
+ ],
+ "environment": {
+  "python": "3.13.14",
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "eigen": "3.4.0",
+  "cppad": "20250000.3",
+  "ipopt": "3.11.9",
+  "boost": "1.88.0",
+  "cpu": "AMD Ryzen 5 5500 (12 logical)",
+  "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "threads": {
+   "OPENBLAS_NUM_THREADS": "1",
+   "OMP_NUM_THREADS": "1"
+  },
+  "numerical_precision": "double"
+ },
+ "selectors": {
+  "boundary_E4-A": {
+   "comparisons": 21,
+   "false": 0,
+   "observation_only": 5,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_E4-B": {
+   "comparisons": 21,
+   "false": 0,
+   "observation_only": 5,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_E4-C": {
+   "comparisons": 917,
+   "false": 0,
+   "observation_only": 306,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_E4-D": {
+   "comparisons": 2583,
+   "false": 0,
+   "observation_only": 862,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_E4-E": {
+   "comparisons": 22,
+   "false": 0,
+   "observation_only": 6,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_E4-P": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S10": {
+   "comparisons": 100,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S14": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S15c": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S3": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S4": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S5": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "boundary_S9": {
+   "comparisons": 128,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_C1": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_C3": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E2-2": {
+   "comparisons": 20,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E2-6": {
+   "comparisons": 11,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E2-R": {
+   "comparisons": 30,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-1": {
+   "comparisons": 363,
+   "false": 0,
+   "observation_only": 180,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-2": {
+   "comparisons": 579,
+   "false": 0,
+   "observation_only": 288,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-3": {
+   "comparisons": 447,
+   "false": 0,
+   "observation_only": 216,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-4": {
+   "comparisons": 63,
+   "false": 0,
+   "observation_only": 30,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-5": {
+   "comparisons": 73,
+   "false": 0,
+   "observation_only": 36,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-6": {
+   "comparisons": 98,
+   "false": 0,
+   "observation_only": 48,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-7": {
+   "comparisons": 51,
+   "false": 0,
+   "observation_only": 24,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_E5-8": {
+   "comparisons": 14,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_F5": {
+   "comparisons": 4865,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S11": {
+   "comparisons": 5,
+   "false": 0,
+   "observation_only": 1,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S13": {
+   "comparisons": 4,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S15": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S16": {
+   "comparisons": 24,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S1": {
+   "comparisons": 70,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S2": {
+   "comparisons": 4,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S6": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S7": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "equilibrium_S8": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "probe_references": {
+   "comparisons": 128,
+   "false": 12,
+   "observation_only": 60,
+   "failed_state": 1,
+   "not_evaluated": 4
+  },
+  "properties_P4": {
+   "comparisons": 328,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C1": {
+   "comparisons": 480,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C2": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C3": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C4": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C5": {
+   "comparisons": 10,
+   "false": 0,
+   "observation_only": 6,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C6": {
+   "comparisons": 10,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C7": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C8": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_C9": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_E2-0": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 1,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_E2-2": {
+   "comparisons": 8,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_E2-3": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0,
+   "failed_state": 0,
+   "not_evaluated": 0
+  },
+  "specification_E2-4": {
+   "comparisons": 7,
+   "false": 0,
+   "observation_only": 1,
+   "failed_state": 0,
+   "not_evaluated": 0
+  }
+ },
+ "ledger_state_counts": {
+  "Complete": 9096,
+  "Observation only": 2074,
+  "Unavailable": 387,
+  "Failed": 9,
+  "Not evaluated": 4
+ },
+ "total_comparisons": 11570,
+ "total_false_verdicts": 12,
+ "reference_summaries": {
+  "may": {
+   "Complete": 12,
+   "Failed": 1,
+   "Non-admission": 0,
+   "reference_miss": 4
+  },
+  "nist": {
+   "admitted_rows": 10,
+   "failed_rows": 0,
+   "aard_pressure": 0.0019207788050457219,
+   "max_abs_relative_pressure": 0.0038846417097814115,
+   "aard_density": 0.0057828224576229525,
+   "max_abs_relative_density": 0.009210195305709079
+  }
+ },
+ "equivalent_work": [
+  {
+   "row": "model-construction",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.00016761300139478408,
+   "min_s": 0.0001475650024076458,
+   "max_s": 0.00022100299975136295,
+   "failures": 0,
+   "counters": null
+  },
+  {
+   "row": "syn-tp-01-neutral-binary-liquid",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.003605369998695096,
+   "min_s": 0.003375150998181198,
+   "max_s": 0.00398202300129924,
+   "failures": 0,
+   "counters": {
+    "iterations": 6,
+    "evaluations": 7,
+    "hessian_calls": 7
+   }
+  },
+  {
+   "row": "syn-bd-01-bubble",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.010893095000938047,
+   "min_s": 0.010645783000654774,
+   "max_s": 0.011260039998887805,
+   "failures": 0,
+   "counters": {
+    "iterations": 7,
+    "evaluations": 8,
+    "hessian_calls": 8
+   }
+  },
+  {
+   "row": "syn-bd-01-dew",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.010986057997797616,
+   "min_s": 0.010534865999943577,
+   "max_s": 0.011979492999671493,
+   "failures": 0,
+   "counters": {
+    "iterations": 7,
+    "evaluations": 8,
+    "hessian_calls": 8
+   }
+  },
+  {
+   "row": "e4-a-bubble-branch-180-181",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.029201782002928667,
+   "min_s": 0.02803926200067508,
+   "max_s": 0.03200277100040694,
+   "failures": 0,
+   "counters": {
+    "attempts": 4,
+    "accepted_steps": 4,
+    "retries": 0,
+    "corrector_iterations": 15,
+    "corrector_evaluations": 20
+   }
+  },
+  {
+   "row": "e4-b-interior-lever",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.023354396002105204,
+   "min_s": 0.022685918997012777,
+   "max_s": 0.025207394999597454,
+   "failures": 0,
+   "counters": {
+    "attempts": 4,
+    "accepted_steps": 4,
+    "retries": 0,
+    "corrector_iterations": 44,
+    "corrector_evaluations": 77
+   }
+  },
+  {
+   "row": "syn-warm-01-neutral-seed-reuse",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.006772572000045329,
+   "min_s": 0.006362487001752015,
+   "max_s": 0.008410279999225168,
+   "failures": 0,
+   "counters": {
+    "iterations": 8,
+    "evaluations": 13,
+    "hessian_calls": 9
+   }
+  },
+  {
+   "row": "syn-warm-01-neutral-cold",
+   "warmups": 3,
+   "repeats": 7,
+   "median_s": 0.007644790999620454,
+   "min_s": 0.007000949000939727,
+   "max_s": 0.009757515003002482,
+   "failures": 0,
+   "counters": {
+    "iterations": 9,
+    "evaluations": 15,
+    "hessian_calls": 10
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/S1",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.07065764999788371,
+   "min_s": 0.06679430800068076,
+   "max_s": 0.07899285899839015,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/S11",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.025418039000214776,
+   "min_s": 0.024504384000465507,
+   "max_s": 0.027216898000915535,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/S7",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.0546991289993457,
+   "min_s": 0.05230884699994931,
+   "max_s": 0.05699384299805388,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/S16",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.08471368899699883,
+   "min_s": 0.07680323199747363,
+   "max_s": 0.09271390399953816,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/boundary_checks/S4",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.17422249000082957,
+   "min_s": 0.1661807679993217,
+   "max_s": 0.17694310799925006,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/boundary_checks/E4-B",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.051564667999628,
+   "min_s": 0.0507249709989992,
+   "max_s": 0.05185178399915458,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/boundary_checks/E4-C",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 4.015355735999037,
+   "min_s": 3.4880000569974072,
+   "max_s": 5.146260312998493,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/boundary_checks/E4-D",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 11.215617779998865,
+   "min_s": 9.575641583000106,
+   "max_s": 11.596785470002942,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/boundary_checks/E4-E",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.18827471299664467,
+   "min_s": 0.16305184500015457,
+   "max_s": 0.2061900179978693,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/E5-1",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.6646265569979732,
+   "min_s": 0.6264324650001072,
+   "max_s": 0.7274059289993602,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/E5-3",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 1.1681242669983476,
+   "min_s": 1.085420804000023,
+   "max_s": 1.247046467000473,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  },
+  {
+   "row": "native-selector/equilibrium_checks/E5-4",
+   "warmups": 1,
+   "repeats": 7,
+   "median_s": 0.5140221250003378,
+   "min_s": 0.5036042970023118,
+   "max_s": 0.5384991419996368,
+   "failures": 0,
+   "counters": {
+    "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
+   }
+  }
+ ],
+ "logs": [
+  "boundary_E4-A.log",
+  "boundary_E4-B.log",
+  "boundary_E4-C.log",
+  "boundary_E4-D.log",
+  "boundary_E4-E.log",
+  "boundary_E4-P.log",
+  "boundary_S10.log",
+  "boundary_S14.log",
+  "boundary_S15c.log",
+  "boundary_S3.log",
+  "boundary_S4.log",
+  "boundary_S5.log",
+  "boundary_S9.log",
+  "equilibrium_C1.log",
+  "equilibrium_C3.log",
+  "equilibrium_E2-2.log",
+  "equilibrium_E2-6.log",
+  "equilibrium_E2-R.log",
+  "equilibrium_E5-1.log",
+  "equilibrium_E5-2.log",
+  "equilibrium_E5-3.log",
+  "equilibrium_E5-4.log",
+  "equilibrium_E5-5.log",
+  "equilibrium_E5-6.log",
+  "equilibrium_E5-7.log",
+  "equilibrium_E5-8.log",
+  "equilibrium_F5.log",
+  "equilibrium_S11.log",
+  "equilibrium_S13.log",
+  "equilibrium_S15.log",
+  "equilibrium_S16.log",
+  "equilibrium_S1.log",
+  "equilibrium_S2.log",
+  "equilibrium_S6.log",
+  "equilibrium_S7.log",
+  "equilibrium_S8.log",
+  "probe_references.log",
+  "properties_P4.log",
+  "specification_C1.log",
+  "specification_C2.log",
+  "specification_C3.log",
+  "specification_C4.log",
+  "specification_C5.log",
+  "specification_C6.log",
+  "specification_C7.log",
+  "specification_C8.log",
+  "specification_C9.log",
+  "specification_E2-0.log",
+  "specification_E2-2.log",
+  "specification_E2-3.log",
+  "specification_E2-4.log"
+ ]
+}
