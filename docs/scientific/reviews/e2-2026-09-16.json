@@ -1,13 +1,13 @@
 {
  "schema_version": 1,
  "issue": "#39 E2",
- "source_commit": "ccfeef02a6a20febed78fc2ceada250572f0d7be",
+ "source_commit": "6b220fcfb4d32cfab46b7baae98377923ab9d9f3",
  "source_dirty": true,
  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
- "wheel_sha256": "37e74ecca4fdc9c6de2cf7c3b06dababb8a52d8e5117516d8f62f9f1c1a71082",
+ "wheel_sha256": "35e24893ee410b05cf76422dfada798bab94acc4122d10ca09a315859b5b49f2",
  "executables": {
-  "specification_checks": "188eeac2eb4c428a475790d8db4289428178b4b3316adf5f84b63f3e8cb95314",
-  "equilibrium_checks": "60bac3cec204a80360c24f665dd011b92173636626aabd8ee0d9eefe84a981dd",
+  "specification_checks": "847adafe478e87202101910969a8ebbe36254c40cd9edfb7b2b006c0c51e8d73",
+  "equilibrium_checks": "483167422749eb68d6509b65a9434fdee754136f262f872f47924dacadcecfd7",
   "boundary_checks": "7bad5a084eec409c6c87f068860e284d70aed552531264c9d76e6202c3925f59"
  },
  "selectors": {
@@ -42,7 +42,7 @@
    "observation_only": 0
   },
   "equilibrium_F5": {
-   "comparisons": 4450,
+   "comparisons": 4864,
    "false": 0,
    "observation_only": 0
   },
@@ -127,6 +127,7 @@
   "e2-reuse": 1.4631111946140835e-16,
   "f5-jacobian": 6.271301913329808e-07,
   "f5-hessian-ladder": 2.0136233287448846e-06,
+  "f5-correlated-jacobian": 7.606380802993584e-13,
   "s11-standard-affinity": 6.821210263296962e-13,
   "s11-gap": 0.0034822631410276195,
   "s11-final-gap": 3.881688452933574e-05,
@@ -151,7 +152,7 @@
   "e2-2-reaction": 1.1102230246251565e-16,
   "e2-4-charge": 0.0
  },
- "total_comparisons": 5276,
+ "total_comparisons": 5690,
  "total_false_verdicts": 6,
  "logs": [
   "boundary_S14.log",
