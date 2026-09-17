@@ -61,9 +61,37 @@ shared recorder and defaults to the fast suites:
 bash engine/tools/run-native-tests.sh
 ```
 
-It accepts only `contributions`, `properties`, `diagnostics`, and
-`specification`; the equilibrium, boundary, and Properties-floor suites remain
+It runs `contributions`, `properties`, `diagnostics`, `specification` and
+`surface_example`; the equilibrium, boundary, and Properties-floor suites remain
 explicit owner commands.
+
+## C++ usage and debugging
+
+`tests/native/surface_example.cpp` is an ordinary Python-free caller of the
+native archive. It includes only `surface/parameter_builder.hpp` and
+`equilibrium/problem.hpp` and shows, in order: a `ParameterDocument` with
+explicit units (species index = position in `component_ids`), one reusable
+`HelmholtzModel`, a full `State` in the T-P and T-rho charts, selected
+observables with first- and second-order actions, a bubble point and a
+two-phase flash, exact solved-state actions with the caller-formed fugacity
+`a_i R T (1 mol/m^3)`, a partial result without thermochemistry, and two
+inspectable failures. Its mixture is manufactured. It returns nonzero when one
+of its identities fails, and it links `epcsaft_native`; there is no installed
+SDK or ABI.
+
+```bash
+meson compile -C build/engine-dev surface_example
+meson test -C build/engine-dev surface_example --print-errorlogs
+build/engine-dev/surface_example            # prints every value with its unit
+```
+
+For a debugger, configure an unstripped debug tree once and run the same target:
+
+```bash
+meson setup build/engine-debug engine -Dbuildtype=debug -Dstrip=false
+meson compile -C build/engine-debug surface_example
+gdb --args build/engine-debug/surface_example
+```
 
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
