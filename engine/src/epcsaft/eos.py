@@ -11,6 +11,17 @@ if TYPE_CHECKING:
     from .equilibrium import Problem
 
 State = _core.State
+IdealPolynomial = _core.IdealPolynomial
+IdealShomate = _core.IdealShomate
+IdealNASA7 = _core.IdealNASA7
+IdealNASA9 = _core.IdealNASA9
+IdealDIPPR107 = _core.IdealDIPPR107
+IdealCorrelation = _core.IdealCorrelation
+IdealInterval = _core.IdealInterval
+ThermochemistryRecord = _core.ThermochemistryRecord
+ParameterFamily = _core.ParameterFamily
+ActiveParameter = _core.ActiveParameter
+GAS_CONSTANT_J_PER_MOL_K = _core.GAS_CONSTANT_J_PER_MOL_K
 PropertyObservable = _core.PropertyObservable
 PropertyActionStatus = _core.PropertyActionStatus
 DensityActionDirection = _core.DensityActionDirection
@@ -39,13 +50,20 @@ class Mixture:
     site_ids: tuple[tuple[str, str], ...]
     _model: _core.HelmholtzModel
 
-    def __init__(self, parameters: Parameters) -> None:
+    def __init__(
+        self,
+        parameters: Parameters,
+        *,
+        thermochemistry: ThermochemistryRecord | None = None,
+        active_parameters: Sequence[ActiveParameter] | None = None,
+    ) -> None:
+        """Thermal intervals follow component_ids order; the native model copies every input."""
         if len(parameters.component_ids) < 2:
             raise ParameterError("Mixture requires at least two components")
         self.parameters = parameters
         self.component_ids = parameters.component_ids
         self.site_ids = parameters.site_ids
-        self._model = _core.HelmholtzModel(parameters._native)
+        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry)
 
     def state(
         self,
@@ -127,13 +145,19 @@ class Pure:
     site_ids: tuple[tuple[str, str], ...]
     _model: _core.HelmholtzModel
 
-    def __init__(self, parameters: Parameters) -> None:
+    def __init__(
+        self,
+        parameters: Parameters,
+        *,
+        thermochemistry: ThermochemistryRecord | None = None,
+        active_parameters: Sequence[ActiveParameter] | None = None,
+    ) -> None:
         if len(parameters.component_ids) != 1:
             raise ParameterError("Pure requires exactly one component")
         self.parameters = parameters
         self.component_ids = parameters.component_ids
         self.site_ids = parameters.site_ids
-        self._model = _core.HelmholtzModel(parameters._native)
+        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry)
 
     def state(
         self,

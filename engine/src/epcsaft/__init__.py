@@ -1,8 +1,18 @@
 from . import _core
 from .eos import (
+    ActiveParameter,
     DensityActionDirection,
     EosError,
+    GAS_CONSTANT_J_PER_MOL_K,
+    IdealCorrelation,
+    IdealDIPPR107,
+    IdealInterval,
+    IdealNASA7,
+    IdealNASA9,
+    IdealPolynomial,
+    IdealShomate,
     Mixture,
+    ParameterFamily,
     PressureActionDirection,
     PropertyActionBatch,
     PropertyActionResult,
@@ -10,6 +20,7 @@ from .eos import (
     PropertyObservable,
     Pure,
     State,
+    ThermochemistryRecord,
 )
 from .parameters import ParameterError, Parameters
 from .reference import Activity, Reference
@@ -21,14 +32,24 @@ ConvergenceError = _core.ConvergenceError
 DeclarationError = _core.DeclarationError
 
 __all__ = (
+    "ActiveParameter",
     "Activity",
     "Convergence",
     "ConvergenceError",
     "DeclarationError",
     "DensityActionDirection",
     "EosError",
+    "GAS_CONSTANT_J_PER_MOL_K",
+    "IdealCorrelation",
+    "IdealDIPPR107",
+    "IdealInterval",
+    "IdealNASA7",
+    "IdealNASA9",
+    "IdealPolynomial",
+    "IdealShomate",
     "Mixture",
     "ParameterError",
+    "ParameterFamily",
     "Parameters",
     "PressureActionDirection",
     "PropertyActionBatch",
@@ -39,5 +60,6 @@ __all__ = (
     "Reference",
     "State",
     "Stop",
+    "ThermochemistryRecord",
     "trace",
 )

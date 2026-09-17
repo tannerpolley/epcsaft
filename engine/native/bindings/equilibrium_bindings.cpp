@@ -10,6 +10,7 @@ namespace py = pybind11;
 namespace epcsaft::equilibrium {
 
 void register_equilibrium(py::module_& module) {
+    module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;
     py::enum_<PhaseKind>(module, "PhaseKind")
         .value("Liquid", PhaseKind::Liquid)
         .value("Vapor", PhaseKind::Vapor);
@@ -55,7 +56,8 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("name", &ReactionSpec::name)
         .def_readwrite("stoichiometry", &ReactionSpec::stoichiometry)
         .def_readwrite("equilibrium_constant", &ReactionSpec::equilibrium_constant)
-        .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol);
+        .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol)
+        .def_readwrite("correlation", &ReactionSpec::correlation);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)

@@ -1,4 +1,7 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
+
+GAS_CONSTANT_J_PER_MOL_K: float
+EOS_STANDARD_STATE_ID: str
 
 class ParameterError(ValueError): ...
 class EosError(RuntimeError): ...
@@ -92,6 +95,83 @@ class Parameters:
     def site_count(self) -> int: ...
 
 def build_parameters(document: ParameterDocument) -> Parameters: ...
+
+class IdealPolynomial:
+    coefficients: list[float]
+    reference_temperature: float
+    reference_enthalpy: float
+    reference_entropy: float
+    def __init__(self, coefficients: Sequence[float], reference_temperature: float,
+                 reference_enthalpy: float, reference_entropy: float) -> None: ...
+
+class IdealShomate:
+    coefficients: list[float]
+    formation_enthalpy: float
+    def __init__(self, coefficients: Sequence[float], formation_enthalpy: float) -> None: ...
+
+class IdealNASA7:
+    coefficients: list[float]
+    def __init__(self, coefficients: Sequence[float]) -> None: ...
+
+class IdealNASA9:
+    coefficients: list[float]
+    def __init__(self, coefficients: Sequence[float]) -> None: ...
+
+class IdealDIPPR107:
+    coefficients: list[float]
+    reference_temperature: float
+    reference_enthalpy: float
+    reference_entropy: float
+    def __init__(self, coefficients: Sequence[float], reference_temperature: float,
+                 reference_enthalpy: float, reference_entropy: float) -> None: ...
+
+IdealForm = Union[IdealPolynomial, IdealShomate, IdealNASA7, IdealNASA9, IdealDIPPR107]
+
+class IdealCorrelation:
+    form: IdealForm
+    source_pressure: float
+    def __init__(self, form: IdealForm, source_pressure: float) -> None: ...
+
+class IdealInterval:
+    lower: float
+    upper: float
+    lower_inclusive: bool
+    upper_inclusive: bool
+    correlation: IdealCorrelation
+    def __init__(self, lower: float, upper: float, lower_inclusive: bool,
+                 upper_inclusive: bool, correlation: IdealCorrelation) -> None: ...
+
+class ThermochemistryRecord:
+    standard_pressure: float
+    component_intervals: list[list[IdealInterval]]
+    def __init__(self, standard_pressure: float,
+                 component_intervals: Sequence[Sequence[IdealInterval]]) -> None: ...
+
+class ReactionLogPolynomial:
+    a: float
+    b: float
+    c: float
+    d: float
+    reference_temperature: float
+    temperature_min: float
+    temperature_max: float
+    standard_state_id: str
+    def __init__(self, a: float, b: float, c: float, d: float, reference_temperature: float,
+                 temperature_min: float, temperature_max: float, standard_state_id: str) -> None: ...
+
+class ParameterFamily:
+    SegmentCount: ParameterFamily
+    SigmaConstant: ParameterFamily
+    DispersionEnergyOverK: ParameterFamily
+    Kij: ParameterFamily
+    Lij: ParameterFamily
+    AssociationEnergyOverK: ParameterFamily
+    AssociationVolume: ParameterFamily
+
+class ActiveParameter:
+    family: ParameterFamily
+    indices: list[int]
+    def __init__(self, family: ParameterFamily, indices: Sequence[int]) -> None: ...
 
 class DerivativeOrder:
     Value: DerivativeOrder
@@ -187,6 +267,16 @@ class State:
     residual_enthalpy: float
     residual_isochoric_heat_capacity: float
     residual_isobaric_heat_capacity: Optional[float]
+    ideal_enthalpy: Optional[float]
+    ideal_internal_energy: Optional[float]
+    ideal_entropy: Optional[float]
+    ideal_isobaric_heat_capacity: Optional[float]
+    ideal_isochoric_heat_capacity: Optional[float]
+    total_enthalpy: Optional[float]
+    total_internal_energy: Optional[float]
+    total_entropy: Optional[float]
+    total_isobaric_heat_capacity: Optional[float]
+    total_isochoric_heat_capacity: Optional[float]
     molar_density: float
     pressure_density_derivative: float
     site_fractions: list[float]
@@ -199,7 +289,8 @@ class SweepCounters:
     recordings: int
 
 class HelmholtzModel:
-    def __init__(self, parameters: Parameters) -> None: ...
+    def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
+                 thermochemistry: Optional[ThermochemistryRecord] = None) -> None: ...
     def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> State: ...
     def neutral_property(self, temperature: float, molar_density: float, property: NeutralProperty, order: DerivativeOrder) -> NeutralPropertyDerivatives: ...
     def density_actions(self, temperature: float, molar_density: float,
@@ -268,6 +359,7 @@ class ReactionSpec:
     stoichiometry: list[float]
     equilibrium_constant: Optional[float]
     affinity_j_per_mol: Optional[float]
+    correlation: Optional[ReactionLogPolynomial]
     def __init__(self) -> None: ...
 
 class EquilibriumProblem:

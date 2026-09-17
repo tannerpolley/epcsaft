@@ -32,6 +32,12 @@ bool same(double a, double b, double tolerance = 1.0e-12) {
     return std::abs(a - b) <= std::max(tolerance, tolerance * std::max(std::abs(a), std::abs(b)));
 }
 
+// Full-precision machine-readable rows: the C++ reference of the installed-wheel Python checks.
+void row(const std::string& id, const char* unit, double value) { std::printf("EPCSAFT_ROW\t%s\t%s\t%.17g\n", id.c_str(), unit, value); }
+void rows(const std::string& id, const char* unit, const std::vector<double>& values) {
+    for (std::size_t i = 0; i < values.size(); ++i) row(id + "/" + std::to_string(i), unit, values[i]);
+}
+
 // Species index = position in component_ids, in every vector below. Every entry states its unit.
 ParameterDocument associating_binary() {
     ParameterDocument doc;
@@ -97,6 +103,13 @@ int main() {
     const core::Convergence& root = *at_pressure.density_convergence;  // the density owner's own verdict
     std::printf("  density root: %s, residual %.1e against %s = %.1e; P(state) - P = %.1e Pa\n", core::stop_name(root.stop), root.residual,
                 root.criterion->name, root.criterion->value, at_pressure.pressure - 1.0e5);
+    const double energy[4] = {*at_pressure.ideal_enthalpy, *at_pressure.ideal_internal_energy, *at_pressure.total_enthalpy, *at_pressure.total_internal_energy};
+    const double entropy[6] = {*at_pressure.ideal_entropy, *at_pressure.ideal_isobaric_heat_capacity, *at_pressure.ideal_isochoric_heat_capacity,
+                               *at_pressure.total_entropy, *at_pressure.total_isobaric_heat_capacity, *at_pressure.total_isochoric_heat_capacity};
+    rows("state/energy", "J/mol", {energy, energy + 4});  // ideal h, u; total h, u
+    rows("state/entropy", "J/(mol K)", {entropy, entropy + 6});  // ideal s, cp, cv; total s, cp, cv
+    rows("state/root", "mixed", {at_pressure.molar_density, at_pressure.pressure, at_pressure.pressure_density_derivative, root.residual,
+                                 static_cast<double>(at_pressure.stable_root_count.value_or(0))});
     expect(at_pressure.density_branch == DensityBranch::Liquid && root.residual <= root.criterion->value, "the liquid density root meets its owner's criterion");
     expect(same(at_density.pressure, at_pressure.pressure) && same(at_density.residual_enthalpy, at_pressure.residual_enthalpy), "both charts give the same state");
 
@@ -112,6 +125,8 @@ int main() {
                 mixed.results[0].action.value_or(std::nan("")));
     std::printf("  d h_res/dT at rho = %.6f J/(mol K); d2 h_res/(dT d rho) * 1 mol/m^3 = %.6e J/(mol K)\n", fixed_density.results[0].action.value_or(std::nan("")),
                 mixed_density.results[0].action.value_or(std::nan("")));
+    rows("action/pressure", "J/(mol K)", {*first.results[0].action, *first.results[1].action, *mixed.results[0].action, *mixed.results[1].action});
+    rows("action/density", "J/(mol K)", {*fixed_density.results[0].action, *fixed_density.results[1].action, *mixed_density.results[0].action, *mixed_density.results[1].action});
     expect(first.results[0].status == PropertyActionStatus::Available && same(*first.results[0].value, at_pressure.residual_enthalpy)
            && same(*first.results[1].value, *at_pressure.total_isobaric_heat_capacity)
            && same(*mixed_density.results[0].value, at_pressure.residual_enthalpy), "selected central values equal the full state in both charts");
@@ -136,6 +151,11 @@ int main() {
     std::printf("  bubble P = %.2f Pa; flash: N_L = %.6f mol, N_V = %.6f mol, x_L = (%.6f, %.6f), y_V = (%.6f, %.6f), |r| = %.2e\n", boiling.pressure[0],
                 split.amounts[0], split.amounts[1], split.mole_fractions[0], split.mole_fractions[1], split.mole_fractions[2], split.mole_fractions[3], split.residual_norm());
     std::printf("  rho_L = %.4f mol/m^3, rho_V = %.6f mol/m^3\n", split.molar_densities[0], split.molar_densities[1]);
+    row("bubble/pressure", "Pa", boiling.pressure[0]);
+    rows("flash/amounts", "mol", split.amounts);
+    rows("flash/mole_fractions", "1", split.mole_fractions);
+    rows("flash/multipliers", "1", split.multipliers);  // reduced-energy balance coordinates
+    rows("flash/constraint_multipliers", "1", split.constraint_multipliers);  // optimizer duals, rows order
     expect(split.molar_densities[0] > split.molar_densities[1], "the declared liquid is the dense phase and the declared vapor the dilute one");
     double balance = std::abs(split.amounts[0] + split.amounts[1] - 1.0);
     for (std::size_t i = 0; i < 2; ++i) balance = std::max(balance, std::abs(split.amounts[0] * split.mole_fractions[i] + split.amounts[1] * split.mole_fractions[2 + i] - feed[i]));
@@ -158,6 +178,11 @@ int main() {
     std::printf("  along the two-phase state at fixed P and feed: d x_L[b]/dT = %.6e 1/K, d h_L/dT = %.4f J/(mol K) (composition shifts),\n"
                 "  d rho_L/dT = %.4f mol/(m^3 K), condition = %.2e\n", thermal.results[2].action.value_or(std::nan("")), thermal.results[3].action.value_or(std::nan("")),
                 thermal.results[4].action.value_or(std::nan("")), thermal.diagnostics.condition_estimate.value_or(std::nan("")));
+    for (std::size_t i = 0; i < request.observables.size(); ++i) {
+        row("solved/thermal/" + std::to_string(i), thermal.results[i].unit.c_str(), *thermal.results[i].action);
+        row("solved/radial/" + std::to_string(i), radial.results[i].unit.c_str(), *radial.results[i].action);
+    }
+    row("solved/condition", "1", *thermal.diagnostics.condition_estimate);
     expect(same(*thermal.results[4].value, split.molar_densities[0]), "the solved-state density value is the result's liquid density");
     expect(same(*radial.results[0].action, *radial.results[0].value, 5.0e-6), "Euler: D n_i[n_feed] = n_i");
     expect(std::abs(*radial.results[1].action) <= 1.0e-12 * std::max(1.0, std::abs(*radial.results[1].value)), "Euler: D ln a_i[n_feed] = 0");
@@ -187,6 +212,7 @@ int main() {
     unattainable.row_tolerance = 1.0e-18;
     const EquilibriumResult floor = solve_equilibrium(model, unattainable);
     std::printf("  unmet tolerance: success = %d, stop = %s, achieved |r| = %.2e\n  %s\n", floor.success, core::stop_name(floor.convergence.stop), floor.convergence.residual, floor.message.c_str());
+    row("floor/residual", "1", floor.convergence.residual);
     expect(!floor.success && floor.requested_tolerance_met.has_value() && !*floor.requested_tolerance_met && std::isfinite(floor.convergence.residual),
            "an unattainable tolerance is reported as unmet with the achieved residual");
 

@@ -93,6 +93,26 @@ meson compile -C build/engine-debug surface_example
 gdb --args build/engine-debug/surface_example
 ```
 
+## Python counterpart
+
+The installed package transports the same native records with the same meanings
+and SI molar units; Python performs no thermodynamic arithmetic. Thermal
+intervals follow `Parameters.component_ids` order, every record field is
+required, and the model copies its inputs at construction.
+
+```python
+from epcsaft import IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ThermochemistryRecord
+from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
+
+cp = IdealCorrelation(IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), source_pressure=1.0e5)
+record = ThermochemistryRecord(1.0e5, [[IdealInterval(250.0, 450.0, True, True, cp)], ...])
+model = Mixture(parameters, thermochemistry=record)           # residual-only without a record
+state = model.state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
+state.total_enthalpy, state.ideal_entropy                     # None when the record does not cover T
+ln_k = ReactionLogPolynomial(a, b, c, d, Tref, Tmin, Tmax, EOS_STANDARD_STATE_ID)
+Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)             # exactly one of K, affinity or ln K(T)
+```
+
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
 wheel build and installation.

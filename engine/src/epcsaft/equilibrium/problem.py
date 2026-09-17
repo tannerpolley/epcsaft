@@ -108,11 +108,12 @@ class Molalities(Feed):
 
 
 class Reaction:
-    __slots__ = ("name", "stoichiometry", "equilibrium_constant", "affinity_j_per_mol")
+    __slots__ = ("name", "stoichiometry", "equilibrium_constant", "affinity_j_per_mol", "correlation")
     name: str
     stoichiometry: Mapping[str, float]
     equilibrium_constant: float | None
     affinity_j_per_mol: float | None
+    correlation: _core.ReactionLogPolynomial | None
 
     def __init__(
         self,
@@ -121,16 +122,22 @@ class Reaction:
         equilibrium_constant: float | None = None,
         name: str | None = None,
         affinity_j_per_mol: float | None = None,
+        correlation: _core.ReactionLogPolynomial | None = None,
     ) -> None:
-        if equilibrium_constant is None and affinity_j_per_mol is None:
-            raise TypeError("Reaction requires equilibrium_constant or affinity_j_per_mol")
-        if equilibrium_constant is not None and affinity_j_per_mol is not None:
-            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol")
+        """Exactly one target; a correlation is ln K(T) on EOS_STANDARD_STATE_ID."""
+        targets = sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation))
+        if targets == 0:
+            raise TypeError("Reaction requires equilibrium_constant, affinity_j_per_mol or correlation")
+        if targets != 1:
+            raise _core.ParameterError(
+                "reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation"
+            )
         name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
         self.equilibrium_constant = equilibrium_constant
         self.affinity_j_per_mol = affinity_j_per_mol
+        self.correlation = correlation
 
 
 def _index(component_ids: tuple[str, ...], name: str) -> int:
@@ -222,6 +229,7 @@ class Problem:
             reaction_item.stoichiometry = _vector(reaction.stoichiometry, model.component_ids)
             reaction_item.equilibrium_constant = reaction.equilibrium_constant
             reaction_item.affinity_j_per_mol = reaction.affinity_j_per_mol
+            reaction_item.correlation = reaction.correlation
             native_reactions.append(reaction_item)
         native.reactions = native_reactions
         return native
@@ -322,13 +330,14 @@ def _feed_from_mapping(value: object) -> Feed:
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
-    if "equilibrium_constant" not in value and "affinity_j_per_mol" not in value:
-        raise _core.ParameterError("missing equilibrium_constant or affinity_j_per_mol")
+    if not {"equilibrium_constant", "affinity_j_per_mol", "correlation"} & set(value):
+        raise _core.ParameterError("missing equilibrium_constant, affinity_j_per_mol or correlation")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
         equilibrium_constant=cast(float | None, value.get("equilibrium_constant")),
         affinity_j_per_mol=cast(float | None, value.get("affinity_j_per_mol")),
+        correlation=cast(_core.ReactionLogPolynomial | None, value.get("correlation")),
     )
 
 

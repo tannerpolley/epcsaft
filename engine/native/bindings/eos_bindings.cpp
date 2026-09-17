@@ -4,12 +4,118 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <array>
 #include <optional>
 #include <utility>
 
 namespace py = pybind11;
 
+namespace {
+
+// Physical input records: every field is required and transported unchanged; the native
+// model copies them at construction and native admission owns their consistency.
+void register_thermal_inputs(py::module_& module) {
+    using namespace epcsaft;
+    module.attr("GAS_CONSTANT_J_PER_MOL_K") = GAS_CONSTANT_J_PER_MOL_K;
+    py::class_<IdealPolynomial>(module, "IdealPolynomial")
+        .def(py::init([](std::vector<double> coefficients, double reference_temperature,
+                         double reference_enthalpy, double reference_entropy) {
+            return IdealPolynomial{std::move(coefficients), reference_temperature,
+                                   reference_enthalpy, reference_entropy};
+        }), py::arg("coefficients"), py::arg("reference_temperature"),
+            py::arg("reference_enthalpy"), py::arg("reference_entropy"))
+        .def_readwrite("coefficients", &IdealPolynomial::coefficients)
+        .def_readwrite("reference_temperature", &IdealPolynomial::reference_temperature)
+        .def_readwrite("reference_enthalpy", &IdealPolynomial::reference_enthalpy)
+        .def_readwrite("reference_entropy", &IdealPolynomial::reference_entropy);
+    py::class_<IdealShomate>(module, "IdealShomate")
+        .def(py::init([](std::array<double, 8> coefficients, double formation_enthalpy) {
+            return IdealShomate{coefficients, formation_enthalpy};
+        }), py::arg("coefficients"), py::arg("formation_enthalpy"))
+        .def_readwrite("coefficients", &IdealShomate::coefficients)
+        .def_readwrite("formation_enthalpy", &IdealShomate::formation_enthalpy);
+    py::class_<IdealNASA7>(module, "IdealNASA7")
+        .def(py::init([](std::array<double, 7> coefficients) { return IdealNASA7{coefficients}; }),
+             py::arg("coefficients"))
+        .def_readwrite("coefficients", &IdealNASA7::coefficients);
+    py::class_<IdealNASA9>(module, "IdealNASA9")
+        .def(py::init([](std::array<double, 9> coefficients) { return IdealNASA9{coefficients}; }),
+             py::arg("coefficients"))
+        .def_readwrite("coefficients", &IdealNASA9::coefficients);
+    py::class_<IdealDIPPR107>(module, "IdealDIPPR107")
+        .def(py::init([](std::array<double, 5> coefficients, double reference_temperature,
+                         double reference_enthalpy, double reference_entropy) {
+            return IdealDIPPR107{coefficients, reference_temperature,
+                                 reference_enthalpy, reference_entropy};
+        }), py::arg("coefficients"), py::arg("reference_temperature"),
+            py::arg("reference_enthalpy"), py::arg("reference_entropy"))
+        .def_readwrite("coefficients", &IdealDIPPR107::coefficients)
+        .def_readwrite("reference_temperature", &IdealDIPPR107::reference_temperature)
+        .def_readwrite("reference_enthalpy", &IdealDIPPR107::reference_enthalpy)
+        .def_readwrite("reference_entropy", &IdealDIPPR107::reference_entropy);
+    py::class_<IdealCorrelation>(module, "IdealCorrelation")
+        .def(py::init([](decltype(IdealCorrelation::form) form, double source_pressure) {
+            return IdealCorrelation{std::move(form), source_pressure};
+        }), py::arg("form"), py::arg("source_pressure"))
+        .def_readwrite("form", &IdealCorrelation::form)
+        .def_readwrite("source_pressure", &IdealCorrelation::source_pressure);
+    py::class_<IdealInterval>(module, "IdealInterval")
+        .def(py::init([](double lower, double upper, bool lower_inclusive, bool upper_inclusive,
+                         IdealCorrelation correlation) {
+            return IdealInterval{lower, upper, lower_inclusive, upper_inclusive,
+                                 std::move(correlation)};
+        }), py::arg("lower"), py::arg("upper"), py::arg("lower_inclusive"),
+            py::arg("upper_inclusive"), py::arg("correlation"))
+        .def_readwrite("lower", &IdealInterval::lower)
+        .def_readwrite("upper", &IdealInterval::upper)
+        .def_readwrite("lower_inclusive", &IdealInterval::lower_inclusive)
+        .def_readwrite("upper_inclusive", &IdealInterval::upper_inclusive)
+        .def_readwrite("correlation", &IdealInterval::correlation);
+    py::class_<ThermochemistryRecord>(module, "ThermochemistryRecord")
+        .def(py::init([](double standard_pressure,
+                         std::vector<std::vector<IdealInterval>> component_intervals) {
+            return ThermochemistryRecord{standard_pressure, std::move(component_intervals)};
+        }), py::arg("standard_pressure"), py::arg("component_intervals"))
+        .def_readwrite("standard_pressure", &ThermochemistryRecord::standard_pressure)
+        .def_readwrite("component_intervals", &ThermochemistryRecord::component_intervals);
+    py::class_<ReactionLogPolynomial>(module, "ReactionLogPolynomial")
+        .def(py::init([](double a, double b, double c, double d, double reference_temperature,
+                         double temperature_min, double temperature_max,
+                         std::string standard_state_id) {
+            return ReactionLogPolynomial{a, b, c, d, reference_temperature, temperature_min,
+                                         temperature_max, std::move(standard_state_id)};
+        }), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
+            py::arg("reference_temperature"), py::arg("temperature_min"),
+            py::arg("temperature_max"), py::arg("standard_state_id"))
+        .def_readwrite("a", &ReactionLogPolynomial::a)
+        .def_readwrite("b", &ReactionLogPolynomial::b)
+        .def_readwrite("c", &ReactionLogPolynomial::c)
+        .def_readwrite("d", &ReactionLogPolynomial::d)
+        .def_readwrite("reference_temperature", &ReactionLogPolynomial::reference_temperature)
+        .def_readwrite("temperature_min", &ReactionLogPolynomial::temperature_min)
+        .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
+        .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
+    py::enum_<ParameterFamily>(module, "ParameterFamily")
+        .value("SegmentCount", ParameterFamily::SegmentCount)
+        .value("SigmaConstant", ParameterFamily::SigmaConstant)
+        .value("DispersionEnergyOverK", ParameterFamily::DispersionEnergyOverK)
+        .value("Kij", ParameterFamily::Kij)
+        .value("Lij", ParameterFamily::Lij)
+        .value("AssociationEnergyOverK", ParameterFamily::AssociationEnergyOverK)
+        .value("AssociationVolume", ParameterFamily::AssociationVolume);
+    // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
+    py::class_<ActiveParameter>(module, "ActiveParameter")
+        .def(py::init([](ParameterFamily family, std::vector<std::size_t> indices) {
+            return ActiveParameter{family, std::move(indices)};
+        }), py::arg("family"), py::arg("indices"))
+        .def_readwrite("family", &ActiveParameter::family)
+        .def_readwrite("indices", &ActiveParameter::indices);
+}
+
+}  // namespace
+
 void register_eos(py::module_& module) {
+    register_thermal_inputs(module);
     py::class_<epcsaft::ParameterEntry>(module, "ParameterEntry")
         .def(py::init<>())
         .def_readwrite("identity", &epcsaft::ParameterEntry::identity)
@@ -123,6 +229,16 @@ void register_eos(py::module_& module) {
         .def_readonly("residual_enthalpy", &epcsaft::State::residual_enthalpy)
         .def_readonly("residual_isochoric_heat_capacity", &epcsaft::State::residual_isochoric_heat_capacity)
         .def_readonly("residual_isobaric_heat_capacity", &epcsaft::State::residual_isobaric_heat_capacity)
+        .def_readonly("ideal_enthalpy", &epcsaft::State::ideal_enthalpy)
+        .def_readonly("ideal_internal_energy", &epcsaft::State::ideal_internal_energy)
+        .def_readonly("ideal_entropy", &epcsaft::State::ideal_entropy)
+        .def_readonly("ideal_isobaric_heat_capacity", &epcsaft::State::ideal_isobaric_heat_capacity)
+        .def_readonly("ideal_isochoric_heat_capacity", &epcsaft::State::ideal_isochoric_heat_capacity)
+        .def_readonly("total_enthalpy", &epcsaft::State::total_enthalpy)
+        .def_readonly("total_internal_energy", &epcsaft::State::total_internal_energy)
+        .def_readonly("total_entropy", &epcsaft::State::total_entropy)
+        .def_readonly("total_isobaric_heat_capacity", &epcsaft::State::total_isobaric_heat_capacity)
+        .def_readonly("total_isochoric_heat_capacity", &epcsaft::State::total_isochoric_heat_capacity)
         .def_readonly("molar_density", &epcsaft::State::molar_density)
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
         .def_readonly("site_fractions", &epcsaft::State::site_fractions)
@@ -133,7 +249,10 @@ void register_eos(py::module_& module) {
         .def_readonly("hessian_calls", &epcsaft::SweepCounters::hessian_calls)
         .def_readonly("recordings", &epcsaft::SweepCounters::recordings);
     py::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
-        .def(py::init<epcsaft::Parameters>())
+        .def(py::init<epcsaft::Parameters, std::vector<epcsaft::ActiveParameter>,
+                      std::optional<epcsaft::ThermochemistryRecord>>(),
+             py::arg("parameters"), py::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
+             py::arg("thermochemistry") = std::nullopt)
         .def("state", &epcsaft::HelmholtzModel::state)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,

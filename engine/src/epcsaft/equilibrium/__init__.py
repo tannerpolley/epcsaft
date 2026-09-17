@@ -22,6 +22,8 @@ from .problem import (
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
+ReactionLogPolynomial = _core.ReactionLogPolynomial
+EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
 
 __all__ = (
     "Amounts",
@@ -29,6 +31,7 @@ __all__ = (
     "ContinuationResult",
     "ContinuationStop",
     "Discover",
+    "EOS_STANDARD_STATE_ID",
     "EquilibriumResult",
     "Feed",
     "Free",
@@ -39,6 +42,7 @@ __all__ = (
     "Phase",
     "Problem",
     "Reaction",
+    "ReactionLogPolynomial",
     "bubble_point",
     "continue_equilibrium",
     "dew_point",
