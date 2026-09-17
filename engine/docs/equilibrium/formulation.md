@@ -81,6 +81,18 @@ Counts and a generic-point rank check do not prove existence, uniqueness or
 regularity at the computed solution. Energy specifications add rows/unknowns
 and require their own count derivation; they cannot inherit this rule blindly.
 
+The resolved feed n_feed is the amount basis of the whole problem, and returned
+phase amounts are on that same basis. An amounts feed is absolute mol and is
+never normalized. A mole-fraction feed resolves to n_i = x_i, mol per mol of
+feed; a mass-fraction feed resolves to n_i = w_i / M_i, mol per kg of feed. A
+fraction feed must sum to one within the composition-sum policy value; it is
+rejected otherwise and never renormalized. A molality feed is absolute mol:
+solute entries are mol per kg of solvent times the stated solvent mass, and
+solvent entries are relative molar amounts rescaled so the solvent mass equals
+the stated value. One declared solvent needs no amount. Several declared solvents
+with no positive solvent amount are rejected, because their ratio is a physical
+input; a declared solvent left at zero beside a supplied one stays zero.
+
 A pinned amount is feed-relative, N_p = v_p Σ n_feed with 0 ≤ v_p ≤ 1. When the
 declared reaction space conserves total moles, rank([B; e]) = rank(B) with
 e ∝ (1, …, 1), the pins additionally satisfy Σ v_p ≤ 1, and Σ v_p = 1 when every

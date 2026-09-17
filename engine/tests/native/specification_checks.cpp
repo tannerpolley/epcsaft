@@ -3,6 +3,7 @@
 #include "core/physical_constants.hpp"
 #include "equilibrium_support.hpp"
 #include "recording_support.hpp"
+#include "surface/parameter_builder.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -156,6 +157,16 @@ void check_c4() {
     mass.feed.kind = epcsaft::equilibrium::FeedKind::MassFractions;
     mass.feed.values = {0.5 * model.parameters().molar_mass_kg_per_mol[0],
                         0.5 * model.parameters().molar_mass_kg_per_mol[1]};
+    // That mass-proportional vector is not a fraction feed (D1): it is rejected, and the same
+    // equimolar mixture is stated as true mass fractions.
+    bool unnormalized_rejected = false;
+    try { (void)epcsaft::equilibrium::compile_problem(model, mass); }
+    catch (const std::invalid_argument& error) {
+        unnormalized_rejected = std::string(error.what()).find("mass fractions must sum to one") != std::string::npos;
+    }
+    CHECK(unnormalized_rejected);
+    const double feed_mass = mass.feed.values[0] + mass.feed.values[1];
+    for (double& value : mass.feed.values) value /= feed_mass;
     auto molality = amounts;
     molality.feed.kind = epcsaft::equilibrium::FeedKind::Molalities;
     molality.feed.values = {0.0, 1.0 / model.parameters().molar_mass_kg_per_mol[0]};
@@ -991,6 +1002,244 @@ void check_e2_charge() {
     CHECK(solved.success && std::abs(charge) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
 }
 
+// S1 (#51): physical inputs through the shared admission owner. Manufactured verification only.
+namespace s1 {
+
+using Order = std::vector<std::size_t>;
+using epcsaft::equilibrium::compile_problem;
+constexpr std::array<double, 3> CHARGE = {0.0, 2.0, -1.0};
+const Order IDENTITY = {0, 1, 2}, PERMUTED = {2, 0, 1};
+const std::vector<double> X = {0.94, 0.02, 0.04}, FEED = {50.0, 1.0, 2.0};
+
+// The water / cation / anion mixture of properties_support::aqueous_electrolyte() as a caller
+// states it, with explicit units; position k holds species order[k]. The cation carries +2
+// so that an exchanged ionic charge moves z^2 and the feed charge.
+epcsaft::ParameterDocument document(const Order& order, const std::array<double, 3>& charge = CHARGE) {
+    std::array<std::size_t, 3> pos{};
+    for (std::size_t k = 0; k < 3; ++k) pos[order[k]] = k;
+    const char* name[3] = {"water", "cation", "anion"};
+    const double segment[3] = {1.2047, 1.0, 1.0}, sigma[3] = {2.7927, 2.8232, 2.756};
+    const double epsilon[3] = {353.95, 230.0, 170.0}, solvation[3] = {1.5, 1.0, 1.0};
+    const double mass[3] = {18.0153, 0.02298977, 0.0354527};
+    const char* mass_unit[3] = {"gram / mole", "kilogram / mole", "kg / mol"};
+    const double ion_diameter[3] = {0.0, 2.484416, 2.42528}, born[3] = {0.0, 3.445, 4.1};
+    epcsaft::ParameterDocument doc;
+    doc.component_ids.resize(3);
+    doc.site_component = {static_cast<int>(pos[0]), static_cast<int>(pos[0])};
+    doc.site_multiplicity = {1, 1};
+    doc.electrolyte_choice = "born";
+    doc.ionic_dispersion_choice = "exclude-same-sign-ion-pairs";
+    doc.permittivity_choice = "ion-specific-suppression";
+    const auto add = [&](const char* field, std::vector<std::size_t> index, double value, const char* unit) {
+        doc.entries.push_back({field + std::string("#") + std::to_string(doc.entries.size()), field,
+                               std::move(index), value, unit});
+    };
+    for (std::size_t c = 0; c < 3; ++c) {
+        doc.component_ids[pos[c]] = name[c];
+        add("molar_mass", {pos[c]}, mass[c], mass_unit[c]);
+        add("charge_number", {pos[c]}, charge[c], "elementary-charge");
+        add("segment_count", {pos[c]}, segment[c], "dimensionless");
+        add("sigma_constant", {pos[c]}, sigma[c], "angstrom");
+        add("dispersion_energy_over_k", {pos[c]}, epsilon[c], "kelvin");
+        add("solvation_factor", {pos[c]}, solvation[c], "dimensionless");
+        if (c == 0) continue;
+        add("packing_diameter", {pos[c]}, ion_diameter[c], "angstrom");
+        add("debye_huckel_diameter", {pos[c]}, ion_diameter[c], "angstrom");
+        add("born_diameter", {pos[c]}, born[c], "angstrom");
+        add("ion_suppression_coefficient", {pos[c]}, 7.01, "dimensionless");
+    }
+    add("relative_permittivity", {pos[0]}, 78.09, "dimensionless");
+    add("sigma_term_amplitude", {0, pos[0]}, 10.11, "angstrom");
+    add("sigma_term_exponent", {0, pos[0]}, -0.01775, "1 / kelvin");
+    add("sigma_term_amplitude", {1, pos[0]}, -1.417, "angstrom");
+    add("sigma_term_exponent", {1, pos[0]}, -0.01146, "1 / kelvin");
+    add("k_ij", {pos[0], pos[1]}, -0.3, "dimensionless");
+    add("k_ij", {pos[2], pos[0]}, 0.0, "dimensionless");
+    add("k_ij", {pos[1], pos[2]}, 0.8, "dimensionless");
+    add("ionic_region_relative_permittivity", {}, 8.0, "dimensionless");
+    add("born_c_shell", {}, 0.0, "dimensionless");
+    add("born_c_dielectric", {}, 0.0, "dimensionless");
+    add("association_energy_over_k", {0, 1}, 2425.7, "kelvin");
+    add("association_volume", {1, 0}, 0.04509, "dimensionless");
+    return doc;
+}
+
+// The accepted relabelling criterion for associating and ionic mixtures (tests/eos/test_state.py).
+bool agrees(const std::string& id, const char* quantity, const char* unit, double value,
+           double reference, const char* claim, const std::string& inputs) {
+    const bool verdict = recording_support::scalar_verdict(value, reference, "symmetric_close", 1.0e-12, 1.0e-12);
+    recording_support::compare(id.c_str(), quantity, unit, value, reference, inputs,
+        "Relationship", "input-mapping", claim, "symmetric_close", 1.0e-12, 1.0e-12, verdict, "s1");
+    return verdict;
+}
+
+// Position i of `state` holds the species at position order[i] of `reference`.
+void same_state(const std::string& id, const epcsaft::State& state, const epcsaft::State& reference,
+                const Order& order, const char* claim) {
+    const auto inputs = recording_support::fields({recording_support::field("T", 298.15),
+        recording_support::field("rho", state.molar_density), recording_support::field("reference_x", X)});
+    CHECK(agrees(id + "/P", "pressure", "Pa", state.pressure, reference.pressure, claim, inputs));
+    CHECK(agrees(id + "/a_res", "residual_helmholtz", "1", state.residual_helmholtz, reference.residual_helmholtz, claim, inputs));
+    CHECK(agrees(id + "/Z", "compressibility_factor", "1", state.compressibility_factor, reference.compressibility_factor, claim, inputs));
+    for (std::size_t i = 0; i < 3; ++i) {
+        CHECK(agrees(id + "/mu_res/" + std::to_string(i), "residual_chemical_potential_over_rt", "1",
+                    state.residual_chemical_potential_over_rt[i],
+                    reference.residual_chemical_potential_over_rt[order[i]], claim, inputs));
+    }
+}
+
+// Two liquids that both carry the ions: only then does a charge row, and its potential, exist.
+epcsaft::equilibrium::EquilibriumProblem two_liquids(const std::vector<double>& feed) {
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature.value = 298.15;
+    problem.phases.push_back(equilibrium_support::phase("L2", epcsaft::equilibrium::PhaseKind::Liquid));
+    for (auto& phase : problem.phases) phase.support = {0, 1, 2};
+    problem.feed.values = feed;
+    return problem;
+}
+
+void same_rows(const std::string& id, const epcsaft::equilibrium::CompiledSystem& system,
+               const std::vector<double>& point, const epcsaft::equilibrium::CompiledSystem& reference,
+               const std::vector<double>& reference_point, const Order& order, const char* claim) {
+    using epcsaft::equilibrium::RowKind;
+    const auto values = system.evaluate(point).values, expected = reference.evaluate(reference_point).values;
+    CHECK(system.charge_row_count == 1 && reference.charge_row_count == 1 && values.size() == expected.size());
+    const auto inputs = recording_support::fields({recording_support::field("feed", system.problem.feed.values)});
+    for (std::size_t row = 0; row < system.rows.size(); ++row) {
+        const auto& item = system.rows[row];
+        const bool by_species = item.kind == RowKind::Chemical || item.kind == RowKind::Moiety;
+        const std::size_t index = by_species ? order[item.index] : item.index;
+        std::size_t match = 0;
+        while (match < reference.rows.size() && !(reference.rows[match].kind == item.kind
+               && reference.rows[match].phase == item.phase && reference.rows[match].index == index)) ++match;
+        CHECK(match < reference.rows.size());
+        CHECK(agrees(id + "/" + std::to_string(row), epcsaft::equilibrium::row_kind_name(item.kind), "1",
+                    values[row], expected[match], claim, inputs));
+    }
+}
+
+void check_document() {
+    const double rho = 5.7e4;  // compressed liquid: the 1 bar liquid root is 5.67e4 mol/m^3
+    epcsaft::HelmholtzModel model(epcsaft::build_parameters(document(IDENTITY)));
+    epcsaft::HelmholtzModel permuted(epcsaft::build_parameters(document(PERMUTED)));
+    auto qualified = properties_support::aqueous_electrolyte();
+    qualified.charge_number = {0, 2, -1};
+    const auto state = model.state(298.15, rho, X);
+    same_state("s1-f1", state, epcsaft::HelmholtzModel(qualified).state(298.15, rho, X), IDENTITY,
+               "document input equals the qualified raw parameters");
+    const auto x_permuted = equilibrium_support::permute_vector(X, PERMUTED);
+    same_state("s1-f2/state", permuted.state(298.15, rho, x_permuted), state, PERMUTED,
+               "species order does not change the physical state");
+
+    const auto reference = compile_problem(model, two_liquids(FEED));
+    const auto system = compile_problem(permuted, two_liquids(equilibrium_support::permute_vector(FEED, PERMUTED)));
+    auto reference_point = reference.generic_point();
+    for (std::size_t k = 0; k < reference.rank + reference.charge_row_count; ++k) {
+        reference_point[reference.primal_size + k] = 0.3 + 0.2 * static_cast<double>(k);
+    }
+    const auto shape = reference.prepare(reference_point).shape, target = system.prepare(reference_point).shape;
+    auto point = reference_point;
+    for (std::size_t phase = 0; phase < shape.size(); ++phase) {
+        for (std::size_t j = 0; j < 3; ++j) point[target[phase].x[j]] = reference_point[shape[phase].x[PERMUTED[j]]];
+    }
+    for (std::size_t j = 0; j < 3; ++j) point[system.primal_size + j] = reference_point[reference.primal_size + PERMUTED[j]];
+    same_rows("s1-f2/row", system, point, reference, reference_point, PERMUTED,
+              "species order does not change the equilibrium rows");
+
+    // Only the phase amounts are extensive; ln x, ln eta and the multipliers are not.
+    for (const double scale : {1024.0, 1.0e-3}) {
+        auto feed = FEED;
+        for (double& value : feed) value *= scale;
+        auto scaled_point = reference_point;
+        for (const auto& layout : shape) scaled_point[*layout.amount] *= scale;
+        same_rows("s1-f3/" + recording_support::number(scale), compile_problem(model, two_liquids(feed)),
+                  scaled_point, reference, reference_point, IDENTITY, "feed scale leaves the rows unchanged");
+    }
+
+    // Negative controls: each wrong mapping must move a value far beyond the criterion.
+    const auto moved = [&](const char* id, const char* claim, double value, double reference) {
+        const double change = std::abs(value - reference) / std::abs(reference);
+        return e2::record_bool(id, "s1", claim, change > 1.0e-6,
+            recording_support::fields({recording_support::field("x", X), recording_support::field("relative_change", change)}));
+    };
+    CHECK(moved("s1-f2n/misplaced-x", "composition permuted without its document moves P",
+                model.state(298.15, rho, x_permuted).pressure, state.pressure));
+    epcsaft::HelmholtzModel exchanged(epcsaft::build_parameters(document(IDENTITY, {0.0, -1.0, 2.0})));
+    CHECK(moved("s1-f2n/exchanged-charge-state", "exchanged ionic charges move a_res",
+                exchanged.state(298.15, rho, X).residual_helmholtz, state.residual_helmholtz));
+    CHECK(e2::record_rejection("s1-f2n/exchanged-charge-feed", "s1", exchanged, two_liquids(FEED),
+                               "feed carries net z", recording_support::fields({recording_support::field("feed", FEED)})));
+}
+
+void check_feed() {
+    using epcsaft::equilibrium::FeedKind;
+    epcsaft::HelmholtzModel model(epcsaft::build_parameters(document(IDENTITY)));
+    const auto inputs = [](const epcsaft::equilibrium::EquilibriumProblem& problem) {
+        return recording_support::fields({recording_support::field("feed", problem.feed.values),
+            recording_support::field("feed_kind", epcsaft::equilibrium::feed_kind_name(problem.feed.kind))});
+    };
+    auto fractions = two_liquids(X);
+    fractions.feed.kind = FeedKind::MoleFractions;
+    CHECK(compile_problem(model, fractions).n_feed == X);
+    fractions.feed.values[0] += 1.0e-13;
+    CHECK(compile_problem(model, fractions).n_feed == fractions.feed.values);
+    fractions.feed.values[0] = X[0] + 1.0e-9;
+    CHECK(e2::record_rejection("s1-f5/mole-sum", "s1", model, fractions, "mole fractions must sum to one", inputs(fractions)));
+
+    // n_i = w_i / M_i against literal kg/mol constants: the document states water in gram / mole.
+    const double molar_mass[3] = {0.0180153, 0.02298977, 0.0354527};
+    double feed_mass = 0.0;
+    for (std::size_t i = 0; i < 3; ++i) feed_mass += FEED[i] * molar_mass[i];
+    auto mass = two_liquids(FEED);
+    mass.feed.kind = FeedKind::MassFractions;
+    for (std::size_t i = 0; i < 3; ++i) mass.feed.values[i] = FEED[i] * molar_mass[i] / feed_mass;
+    const auto resolved = compile_problem(model, mass).n_feed;
+    for (std::size_t i = 0; i < 3; ++i) {
+        CHECK(agrees("s1-f5/mass/" + std::to_string(i), "feed_amount", "mol/kg", resolved[i],
+                    FEED[i] / feed_mass, "mass fractions resolve to w_i / M_i", inputs(mass)));
+    }
+    mass.feed.values[0] += 1.0e-9;
+    CHECK(e2::record_rejection("s1-f5/mass-sum", "s1", model, mass, "mass fractions must sum to one", inputs(mass)));
+
+    // D2: relative solvent amounts are required for several solvents and keep their meaning.
+    epcsaft::HelmholtzModel neutral(properties_support::neutral_ternary());
+    const double m0 = 0.016043, m1 = 0.03007;
+    auto molality = equilibrium_support::flash(3);
+    molality.feed.kind = FeedKind::Molalities;
+    molality.feed.solvent = {0, 1};
+    molality.feed.values = {0.0, 0.0, 0.5};
+    CHECK(e2::record_rejection("s1-f5/solvent-amounts", "s1", neutral, molality,
+                               "molality feed omits the relative solvent amounts", inputs(molality)));
+    molality.feed.values = {2.0, 0.0, 0.5};
+    const auto one_supplied = compile_problem(neutral, molality).n_feed;
+    CHECK(agrees("s1-f5/molality/one-supplied", "feed_amount", "mol", one_supplied[0], 1.0 / m0,
+                "a supplied solvent carries the solvent mass", inputs(molality)));
+    CHECK(one_supplied[1] == 0.0 && one_supplied[2] == 0.5);
+    molality.feed.values = {1.0, 3.0, 0.5};
+    const auto both_supplied = compile_problem(neutral, molality).n_feed;
+    CHECK(agrees("s1-f5/molality/ratio-0", "feed_amount", "mol", both_supplied[0], 1.0 / (m0 + 3.0 * m1),
+                "supplied solvent ratios are rescaled to the solvent mass", inputs(molality)));
+    CHECK(agrees("s1-f5/molality/ratio-1", "feed_amount", "mol", both_supplied[1], 3.0 / (m0 + 3.0 * m1),
+                "supplied solvent ratios are rescaled to the solvent mass", inputs(molality)));
+
+    auto missing = document(IDENTITY), duplicate = missing, unconsumed = missing;
+    missing.entries.erase(missing.entries.begin() + 2);
+    duplicate.entries.push_back(duplicate.entries[2]);
+    unconsumed.permittivity_choice = "solvent-only";
+    const auto rejects = [&](const char* id, const epcsaft::ParameterDocument& doc, const char* phrase) {
+        std::string message;
+        try { (void)epcsaft::build_parameters(doc); }
+        catch (const std::invalid_argument& error) { message = error.what(); }
+        return e2::record_bool(id, "s1", phrase, message.find(phrase) != std::string::npos,
+            recording_support::fields({recording_support::field("message", message)}));
+    };
+    CHECK(rejects("s1-f5/builder-missing", missing, "missing component/water/segment_count"));
+    CHECK(rejects("s1-f5/builder-duplicate", duplicate, "duplicate"));
+    CHECK(rejects("s1-f5/builder-unconsumed", unconsumed, "unconsumed"));
+}
+
+}  // namespace s1
+
 }  // namespace
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
@@ -1007,5 +1256,7 @@ int main(int argc, char** argv) {
         {{"native.specification.e2-reaction", "Specification_E2_reaction", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-2/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-2"}, check_e2_reaction},
         {{"native.specification.e2-support", "Specification_E2_support", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-3/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-3"}, check_e2_support},
         {{"native.specification.e2-charge", "Specification_E2_charge", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-4"}, check_e2_charge},
+        {{"native.specification.s1-document", "Specification_S1_document", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f1/*,s1-f2/*,s1-f3/*,s1-f2n/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-document"}, s1::check_document},
+        {{"native.specification.s1-feed", "Specification_S1_feed", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f5/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-feed"}, s1::check_feed},
     });
 }
