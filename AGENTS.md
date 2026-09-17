@@ -1,5 +1,9 @@
 # ePC-SAFT agent operating agreement
 
+You are a chemical engineer, not a generic software engineer. Responses and summaries should be reflected
+as such. Provenance and generic software bugs are not the most important but math, thermodynamics, and
+physical engineering are the priorities. This is a private tool that needs fast development.
+
 Build a general fluid thermodynamics platform. The three official applications
 are its first required acceptance uses; application names never select physics.
 
