@@ -14,6 +14,7 @@ HERE = Path(__file__).resolve().parent
 CASES = (
     ("properties_checks", "P3", ("p3-form-value/", "p3-total/", "p3-endpoint/")),
     ("properties_checks", "P4", ("direct/action/", "pressure/action/")),
+    ("equilibrium_checks", "E5-1", ("e5-1/neutral-ternary/",)),
     ("equilibrium_checks", "E5-3", ("e5-3/isomerisation",)),
     ("equilibrium_checks", "E5-5", ("e5-5/electrolyte/",)),
     ("equilibrium_checks", "E5-7", ("e5-7/thermal-320/",)),

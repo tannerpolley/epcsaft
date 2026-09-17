@@ -103,11 +103,9 @@ int main() {
     const core::Convergence& root = *at_pressure.density_convergence;  // the density owner's own verdict
     std::printf("  density root: %s, residual %.1e against %s = %.1e; P(state) - P = %.1e Pa\n", core::stop_name(root.stop), root.residual,
                 root.criterion->name, root.criterion->value, at_pressure.pressure - 1.0e5);
-    const double energy[4] = {*at_pressure.ideal_enthalpy, *at_pressure.ideal_internal_energy, *at_pressure.total_enthalpy, *at_pressure.total_internal_energy};
-    const double entropy[6] = {*at_pressure.ideal_entropy, *at_pressure.ideal_isobaric_heat_capacity, *at_pressure.ideal_isochoric_heat_capacity,
-                               *at_pressure.total_entropy, *at_pressure.total_isobaric_heat_capacity, *at_pressure.total_isochoric_heat_capacity};
-    rows("state/energy", "J/mol", {energy, energy + 4});  // ideal h, u; total h, u
-    rows("state/entropy", "J/(mol K)", {entropy, entropy + 6});  // ideal s, cp, cv; total s, cp, cv
+    rows("state/calorics", "J/mol or J/(mol K)", {*at_pressure.ideal_enthalpy, *at_pressure.ideal_internal_energy, *at_pressure.ideal_entropy,
+        *at_pressure.ideal_isobaric_heat_capacity, *at_pressure.ideal_isochoric_heat_capacity, *at_pressure.total_enthalpy, *at_pressure.total_internal_energy,
+        *at_pressure.total_entropy, *at_pressure.total_isobaric_heat_capacity, *at_pressure.total_isochoric_heat_capacity});  // ideal, then total: h, u, s, cp, cv
     rows("state/root", "mixed", {at_pressure.molar_density, at_pressure.pressure, at_pressure.pressure_density_derivative, root.residual,
                                  static_cast<double>(at_pressure.stable_root_count.value_or(0))});
     expect(at_pressure.density_branch == DensityBranch::Liquid && root.residual <= root.criterion->value, "the liquid density root meets its owner's criterion");

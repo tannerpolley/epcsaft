@@ -26,14 +26,16 @@ ROWS = {
     line.split("\t")[1]: float(line.split("\t")[3])
     for line in (Path(__file__).parent / "oracle" / "native-rows.tsv").read_text().splitlines()[1:]
 }
-# The retained same-owner transport rule: max(1e-12, 1e-12 max(|model|, |reference|)).
-SAME = {"type": "scalar", "rule": "symmetric_close", "atol": 1e-12, "rtol": 1e-12}
+def same(evidence: Any, name: str, model: float | None, reference: float | None = None,
+         atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
+    """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
 
-
-def same(evidence: Any, name: str, model: float | None, reference: float | None = None) -> None:
+    The default is the retained same-owner transport rule against the recorded C++ row `name`.
+    """
     reference = ROWS[name] if reference is None else reference
-    evidence.compare(name, model=model, reference=reference, criterion=SAME)
-    assert model is not None and math.isclose(model, reference, rel_tol=1e-12, abs_tol=1e-12), name
+    evidence.compare(name, model=model, reference=reference, **inputs,
+                     criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+    assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
 
 
 def parameters(

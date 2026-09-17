@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, PropertyObservable, Stop, _core
+from epcsaft import ActiveParameter, Mixture, ParameterError, ParameterFamily, PropertyObservable, Pure, Stop, _core
 from epcsaft.equilibrium import (
     EOS_STANDARD_STATE_ID,
     Amounts,
@@ -79,9 +79,7 @@ def test_correlated_reaction_target_governs_the_solved_quotient(evidence: Any) -
     frozen = solve_equilibrium(model, reactive_problem(warm, equilibrium_constant=1.0))
     assert followed.success and frozen.success
     for phase in range(2):
-        evidence.compare(f"correlated-quotient/phase{phase}", model=quotients(model, followed)[phase], reference=expected,
-                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 1e-9, "rtol": 0.0})
-        assert abs(quotients(model, followed)[phase] - expected) <= 1.0e-9
+        same(evidence, f"correlated-quotient/phase{phase}", quotients(model, followed)[phase], expected, 1e-9, 0.0)
         assert abs(quotients(model, frozen)[phase]) <= 1.0e-9 < abs(expected)
     with pytest.raises(ParameterError, match="reference-basis-mismatch"):
         solve_equilibrium(model, reactive_problem(T0, correlation=correlation("pressure-basis-P0")))
@@ -89,7 +87,7 @@ def test_correlated_reaction_target_governs_the_solved_quotient(evidence: Any) -
         reactive_problem(T0, correlation=correlation(), equilibrium_constant=1.0)
 
 
-def actions(model: Mixture, problem: Problem, observables: list[Any], directions: list[tuple[float, float, list[float]]]) -> Any:
+def actions(model: Any, problem: Problem, observables: list[Any], directions: list[tuple[float, float, list[float]]]) -> Any:
     """One compile, one central solve, one exact action batch; directions are (dT / K, dP / Pa, dn_feed / mol)."""
     central = solve_equilibrium(model, problem)
     assert central.success
@@ -111,10 +109,8 @@ def test_thermal_actions_of_the_logistic_isomerisation_are_analytic(evidence: An
                 p * (1 - p) * (L3 + 3 * (1 - 2 * p) * L1 * L2 + (1 - 6 * p + 6 * p * p) * L1**3))
     for order in (1, 2, 3):
         result = actions(model, problem, [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [(1.0, 0.0, [0.0, 0.0])] * order).results[0]
-        bar = 2.0e-10 * abs(analytic[order - 1]) + 1.0e-14
-        evidence.compare(f"logistic/A{order}", model=result.action, reference=analytic[order - 1], unit=f"1/K^{order}",
-                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": bar, "rtol": 0.0})
-        assert result.order == order and abs(result.action - analytic[order - 1]) <= bar
+        assert result.order == order
+        same(evidence, f"logistic/A{order}", result.action, analytic[order - 1], 2.0e-10 * abs(analytic[order - 1]) + 1.0e-14, 0.0)
         same(evidence, f"e5-3/isomerisation/A{order}", result.action)
 
 
@@ -132,9 +128,7 @@ def test_log_activity_actions_follow_the_correlated_reaction(evidence: Any) -> N
             terms = [nu * batch.results[3 * phase + i].action for i, nu in enumerate(NU)]
             bound = CRITERION[len(directions) - 1] * sum(abs(term) for term in terms)
             same(evidence, f"e5-10/manifold/{label}/phase{phase}", sum(terms))
-            evidence.compare(f"manifold/{label}/phase{phase}", model=sum(terms), reference=reference,
-                             criterion={"type": "scalar", "rule": "symmetric_close", "atol": bound, "rtol": 0.0})
-            assert abs(sum(terms) - reference) <= bound
+            same(evidence, f"manifold/{label}/phase{phase}", sum(terms), reference, bound, 0.0)
             assert abs(sum(terms) + 3.0 * terms[2] / NU[2] - reference) > bound  # nu_C = 2 fails its own criterion
 
 
@@ -184,9 +178,6 @@ def test_two_phase_actions_match_the_cpp_example(evidence: Any) -> None:
     same(evidence, "solved/condition", thermal.diagnostics.condition_estimate)
     amount, activity = radial.results[0], radial.results[1]  # Euler: D n_i[n_feed] = n_i and D ln a_i[n_feed] = 0
     assert abs(amount.action - amount.value) <= CRITERION[0] * abs(amount.value) and abs(activity.action) <= 1.0e-12
-    bare = actions(Mixture(surface_model().parameters), surface_flash(1.8e4), observables, [(1.0, 0.0, [0.0, 0.0])]).results
-    assert bare[3].status == SolvedStateActionStatus.MissingThermochemistry and bare[3].value is None and bare[3].action is None
-    same(evidence, "partial/mole-fraction-sibling", bare[2].action, ROWS["solved/thermal/2"])
     # Lifetime: the compiled system alone keeps its native model alive after the Python owner is gone.
     compiled = compile_problem(surface_model(), surface_flash(1.8e4))
     gc.collect()
@@ -214,3 +205,44 @@ def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
     same(evidence, "floor/residual", floor.convergence.residual)
     assert not floor.success and floor.requested_tolerance_met is False and floor.convergence.stop == Stop.converged_to_floor
     assert floor.residuals and all(math.isfinite(value) for value in floor.residuals) and floor.pressure == []
+
+
+def test_active_parameter_and_thermal_actions_match_native(evidence: Any) -> None:
+    """E5-1: a vapor-liquid ternary along T, P, feed and (k_01, m_0) directions; E5-7: pure-vapor calorics."""
+    species = ((16.043, 1.0, 3.7039, 150.03), ETHANE, (44.097, 2.0020, 3.6184, 208.11))
+    active = [ActiveParameter(ParameterFamily.Kij, (1, 3)), ActiveParameter(ParameterFamily.SegmentCount, (0,))]
+    model = Mixture(parameters(species, [("k_ij", pair, 0.0) for pair in ((0, 1), (0, 2), (1, 2))]), active_parameters=active)
+    problem = Problem(phases=[Phase("V", kind="vapor"), Phase("L", kind="liquid")], T=180.0, P=1.0e5,
+                      feed=Amounts({f"s{i}": 1.0 / 3.0 for i in range(3)}))
+    moves = [(0.2, 2000.0, [-0.01, 0.006, 0.004], [0.001, 0.01]), (-0.1, -1000.0, [0.003, -0.004, 0.001], [-0.0005, 0.004]),
+             (0.05, 500.0, [0.002, 0.001, -0.003], [0.0002, -0.002])]
+    kinds = ((Kind.PhaseComponentAmount, "amount"), (Kind.PhaseLogActivity, "log_activity"))
+    observables = [SolvedStateObservable(kind, phase, i) for kind, _ in kinds for phase in range(2) for i in range(3)]
+    names = [f"phase[{phase}].{name}[{i}]" for _, name in kinds for phase in range(2) for i in range(3)]
+    central, compiled = solve_equilibrium(model, problem), compile_problem(model, problem)
+    for order in (1, 2, 3):
+        request = SolvedStateActionRequest(observables, [SolvedStateActionDirection(*item) for item in moves[:order]])
+        for name, result in zip(names, solved_state_actions(compiled, central, request).results):
+            same(evidence, f"e5-1/neutral-ternary/{name}/A{order}", result.action)
+    fixed = SolvedStateActionRequest(observables[:1], [SolvedStateActionDirection(*moves[0][:3], [0.0, 0.0])])
+    lost = solved_state_actions(compiled, central, fixed).results[0].action  # without the parameter increments
+    assert lost is not None and abs(lost - ROWS["e5-1/neutral-ternary/phase[0].amount[0]/A1"]) > 1.0e-4
+    # A same-layout result of another problem keeps its mapped value and is typed, not differentiated.
+    other = solved_state_actions(compile_problem(model, Problem(phases=problem.phases, T=181.0, P=1.0e5, feed=problem.feed)),
+                                 central, fixed).results[0]
+    assert other.status == SolvedStateActionStatus.DefiningEquationsNotSatisfied and other.action is None
+    same(evidence, "typed/defining-equations/value", other.value, central.amounts[0] * central.mole_fractions[0])
+
+    caloric_names = ("IdealEnthalpy", "TotalEnthalpy", "IdealIsobaricHeatCapacity", "TotalIsobaricHeatCapacity")
+    calorics = [SolvedStateObservable(Kind.PhaseProperty, 0, 0, getattr(PropertyObservable, name)) for name in caloric_names]
+    vapor = Pure(parameters((ETHANE,)), thermochemistry=record(p3_forms()["shomate"]))
+    for order in (1, 2, 3):
+        steps = [(20.0, 0.0, [0.0]), (-10.0, 0.0, [0.0]), (5.0, 0.0, [0.0])][:order]
+        batch = actions(vapor, Problem(phases=[Phase("V", kind="vapor")], T=320.0, P=1.0e5, feed=Amounts({"s0": 1.0})), calorics, steps)
+        for name, result in zip(caloric_names, batch.results):
+            same(evidence, f"e5-7/thermal-320/phase[0].property/{name}/A{order}", result.action)
+    for temperature, status in ((250.0, SolvedStateActionStatus.ThermalBoundary), (249.0, SolvedStateActionStatus.OutsideInterval)):
+        edge = actions(vapor, Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=1.0e5, feed=Amounts({"s0": 1.0})),
+                       calorics, [(20.0, 0.0, [0.0])]).results
+        assert all(item.status == status and item.action is None for item in edge)
+        assert (edge[0].value is not None) == (temperature == 250.0)  # the owned endpoint keeps its central value

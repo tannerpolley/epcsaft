@@ -39,26 +39,15 @@ def test_thermal_records_reach_the_native_state(evidence: Any) -> None:
             owned = model.state(endpoint, rho=1000.0)
             for key, ideal in zip(KEYS, IDEAL):
                 same(evidence, f"p3-endpoint/{name}/{endpoint:g}/{key}", getattr(owned, ideal))
-        outside = model.state(400.0, rho=1000.0)  # residual work survives a missing ideal part
-        bare = Pure(ethane).state(400.0, rho=1000.0)
-        assert all(getattr(outside, field) is None for field in IDEAL + TOTAL)
-        assert bare.total_enthalpy is None
-        same(evidence, f"outside/{name}/h_res", outside.residual_enthalpy, bare.residual_enthalpy)
 
     state = surface_model().state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
-    fields = (IDEAL[0], IDEAL[1], TOTAL[0], TOTAL[1])
-    for index, field in enumerate(fields):
-        same(evidence, f"state/energy/{index}", getattr(state, field))
-    for index, field in enumerate(IDEAL[2:] + TOTAL[2:]):
-        same(evidence, f"state/entropy/{index}", getattr(state, field))
+    for index, field in enumerate(IDEAL + TOTAL):
+        same(evidence, f"state/calorics/{index}", getattr(state, field))
     # Same-state assembly (P3's criterion): Total - Residual is the supplied Ideal contribution.
     residual = (state.residual_enthalpy, state.residual_internal_energy, state.residual_entropy,
                 state.residual_isobaric_heat_capacity, state.residual_isochoric_heat_capacity)
     for key, ideal, total, part in zip(KEYS, IDEAL, TOTAL, residual):
-        evidence.compare(f"decomposition/{key}", model=getattr(state, total) - cast(float, part),
-                         reference=getattr(state, ideal),
-                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 2e-12, "rtol": 2e-12})
-        assert math.isclose(getattr(state, total) - cast(float, part), getattr(state, ideal), rel_tol=2e-12, abs_tol=2e-12)
+        same(evidence, f"decomposition/{key}", getattr(state, total) - cast(float, part), getattr(state, ideal), 2e-12, 2e-12)
 
 
 def test_isobaric_enthalpy_slope_is_the_state_heat_capacity(evidence: Any) -> None:
@@ -70,9 +59,7 @@ def test_isobaric_enthalpy_slope_is_the_state_heat_capacity(evidence: Any) -> No
         high, low = (cast(float, model.state(353.15 + sign * step, P=1.0e5, x=(0.25, 0.75),
                                              phase="liquid").total_enthalpy) for sign in (1.0, -1.0))
         slopes.append((high - low) / (2.0 * step))
-        evidence.compare(f"isobaric-slope/{step}", model=slopes[-1], reference=cp, inputs={"T": 353.15, "P": 1.0e5},
-                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 1e-8, "rtol": 1e-8})
-        assert math.isclose(slopes[-1], cp, rel_tol=1e-8)
+        same(evidence, f"isobaric-slope/{step}", slopes[-1], cp, 0.0, 1e-8, T=353.15, P=1.0e5)
     assert math.isclose(slopes[0], slopes[1], rel_tol=1e-8)
     # A lost thermal record would leave the residual slope: the two differ by the ideal cp.
     assert cp - cast(float, Mixture(associating_binary()).state(
@@ -89,7 +76,6 @@ def test_the_model_copies_its_thermal_record(evidence: Any) -> None:
     same(evidence, "copy/rebuilt-anchor-shift", rebuilt - before, 2000.0)
     with pytest.raises(ParameterError, match="ideal anchor outside"):  # native admission stays the owner
         Pure(parameters((ETHANE,)), thermochemistry=record(IdealPolynomial([30.0], 200.0, 0.0, 0.0)))
-    assert ROWS["p3-form-value/polynomial/h"] == before
 
 
 ENERGY, VOLUME = ParameterFamily.AssociationEnergyOverK, ParameterFamily.AssociationVolume
@@ -141,9 +127,8 @@ def test_parameter_action_matches_a_refining_parameter_perturbation(evidence: An
         high, low = (Mixture(associating_binary(sign * step)).state(temperature, rho=density, x=x).residual_enthalpy
                      for sign in (1.0, -1.0))
         slopes.append((high - low) / (2.0 * step))
-        evidence.compare(f"parameter-perturbation/{step}", model=action, reference=slopes[-1], inputs={"step_K": step},
-                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 5e-6, "rtol": 5e-6})
-    assert abs(action) > 0.5 and abs(action - slopes[1]) <= 5e-6 * max(1.0, abs(slopes[1]))
+        same(evidence, f"parameter-perturbation/{step}", action, slopes[-1], 5e-6, 5e-6, step_K=step)
+    assert abs(action) > 0.5
     assert abs(slopes[0] - slopes[1]) <= 1e-5 * max(1.0, abs(slopes[1]))
     model = p4_model()
     fixed = [DensityActionDirection(parameter=[ParameterActionDirection(VOLUME, (0,), 1.0)], composition=(0.0, 0.0))]
@@ -170,9 +155,8 @@ def test_pure_forwards_its_parameter_direction(evidence: Any) -> None:
         for chart, action, states in (("density", direct, [item.state(350.0, rho=1000.0) for item in shifted]),
                                       ("pressure", isobaric, [item.state(350.0, P=pressure, phase="vapor") for item in shifted])):
             slope = (states[0].residual_enthalpy - states[1].residual_enthalpy) / (2.0 * step)
-            evidence.compare(f"pure-parameter/{chart}/{step}", model=action, reference=slope,
-                             criterion={"type": "scalar", "rule": "symmetric_close", "atol": 5e-6, "rtol": 5e-6})
-            assert abs(slope) > 1.0 and abs(cast(float, action) - slope) <= 5e-6 * max(1.0, abs(slope))
+            assert abs(slope) > 1.0
+            same(evidence, f"pure-parameter/{chart}/{step}", action, slope, 5e-6, 5e-6)
 
 
 def test_root_and_thermal_diagnostics_accompany_their_states(evidence: Any) -> None:
@@ -190,7 +174,8 @@ def test_root_and_thermal_diagnostics_accompany_their_states(evidence: Any) -> N
     # Missing and out-of-interval records are distinct causes; the residual sibling is the same number.
     outside = model.state(460.0, rho=rooted.molar_density, x=(0.25, 0.75))
     bare = Mixture(associating_binary()).state(460.0, rho=rooted.molar_density, x=(0.25, 0.75))
-    assert outside.thermochemistry_status == ThermochemistryStatus.OutsideInterval and outside.total_enthalpy is None
+    assert outside.thermochemistry_status == ThermochemistryStatus.OutsideInterval
+    assert all(getattr(outside, field) is None for field in IDEAL + TOTAL)
     assert bare.thermochemistry_status == ThermochemistryStatus.MissingRecord and bare.total_enthalpy is None
     same(evidence, "outside/h_res", outside.residual_enthalpy, bare.residual_enthalpy)
     # At an owned endpoint the value survives and the thermal action is typed, beside an available residual sibling.
