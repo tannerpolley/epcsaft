@@ -30,6 +30,13 @@ void require_positive(double value, const char* name) {
     }
 }
 
+// A fraction feed is admitted within the composition policy and never renormalized.
+void require_unit_sum(const std::vector<double>& values, const char* name) {
+    if (!(std::abs(vector_norm(values) - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
+        throw std::invalid_argument(std::string(name) + " must sum to one");
+    }
+}
+
 Eigen::MatrixXd reaction_matrix(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 ) {
@@ -88,12 +95,11 @@ std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& fe
     if (feed.kind == FeedKind::Amounts) {
         result = feed.values;
     } else if (feed.kind == FeedKind::MoleFractions) {
-        const double total = vector_norm(feed.values);
-        if (!(total > 0.0)) throw std::invalid_argument("feed has zero total");
-        for (std::size_t i = 0; i < components; ++i) result[i] = feed.values[i] / total;
+        require_unit_sum(feed.values, "mole fractions");
+        result = feed.values;
     } else if (feed.kind == FeedKind::MassFractions) {
         const auto& masses = model.parameters().molar_mass_kg_per_mol;
-        require_positive(vector_norm(feed.values), "mass fractions");
+        require_unit_sum(feed.values, "mass fractions");
         for (std::size_t i = 0; i < components; ++i) {
             require_positive(masses[i], "molar mass");
             result[i] = feed.values[i] / masses[i];
@@ -115,6 +121,9 @@ std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& fe
                 solvent_mass += amount * model.parameters().molar_mass_kg_per_mol[index];
                 ++supplied_solvents;
             }
+        }
+        if (supplied_solvents == 0 && feed.solvent.size() > 1) {
+            throw std::invalid_argument("molality feed omits the relative solvent amounts");
         }
         if (supplied_solvents == 0) solvent_mass = feed.solvent_mass_kg;
         if (!(solvent_mass > 0.0)) throw std::invalid_argument("solvent has zero mass");

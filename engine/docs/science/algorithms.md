@@ -371,7 +371,14 @@ owner). Each solved coefficient is re-evaluated; its normalised row residual
 must meet `EQUILIBRIUM_ROW_RESIDUAL` (`linear_solve_residual`). Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
-same gradient series; phase calorics compose the P4 density-chart actions of
+same gradient series; the log activity on the EOS density basis,
+ln a_i = ln(x_i rho / (1 mol/m^3)) + mu_res_i/RT, is the series logarithm of
+the normalised x_i rho plus that potential. It carries no standard-state term
+and no ionic gauge, is rejected outside the phase support, and for an ion is
+the model's unconstrained single-species value, physical only in
+charge-neutral combinations. Fugacity is f_i = a_i R T (1 mol/m^3) and the full
+chemical potential g_i(T)/RT + ln a_i needs the caller's thermochemical datum;
+neither is a solved-state observable. Phase calorics compose the P4 density-chart actions of
 each order with the lower-order curvature terms, [t^2] g = Dg[z_2]
 + D2g[z_1, z_1]/2 and [t^3] g = Dg[z_3] + D2g[z_1, z_2] + D3g[z_1, z_1, z_1]/6.
 Precedence is input validation; central solve and classified rows; support,

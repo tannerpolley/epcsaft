@@ -226,26 +226,6 @@ class Problem:
         native.reactions = native_reactions
         return native
 
-    def levers(self, model: _Model | None = None) -> str:
-        if isinstance(self.phases, Discover):
-            phase_text = "discover"
-        else:
-            phase_text = " · ".join(
-                f"{phase.name} {'free' if isinstance(phase.amount, Free) else f'pinned {phase.amount.value:g}'}"
-                for phase in self.phases
-            )
-        T_text = "free" if isinstance(self.T, Free) else "fixed"
-        P_text = "free" if isinstance(self.P, Free) else "fixed"
-        text = f"{phase_text} · T {T_text} · P {P_text}"
-        if model is not None:
-            compiled = _core.compile_problem(model._model, self._native(model))
-            text += (
-                f" · k = {compiled.pinned_count}, f = {compiled.free_intensive_count}"
-                f" · rank B = {compiled.rank} · charge rows {compiled.charge_row_count}"
-            )
-        print(text)
-        return text
-
 
 def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     allowed = {

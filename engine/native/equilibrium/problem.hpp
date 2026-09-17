@@ -353,7 +353,10 @@ EquilibriumResult solve_equilibrium(
 enum class SolvedStateObservableKind {
     Temperature, Pressure, PhaseAmount, PhaseComponentAmount, PhaseMoleFraction, PhaseVolume,
     PhaseMolarDensity, PhasePackingFraction, PhasePressure, PhaseResidualChemicalPotentialOverRt,
-    PhaseProperty
+    PhaseProperty,
+    // ln a_i = ln(x_i rho / (1 mol/m^3)) + mu_res_i/RT on EOS_STANDARD_STATE_ID; it excludes any
+    // standard-state term, and f_i = a_i R T (1 mol/m^3) in Pa.
+    PhaseLogActivity
 };
 
 struct SolvedStateObservable final {

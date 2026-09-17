@@ -260,14 +260,14 @@ terms remain retired by ADR 0006; dipolar relative permittivity is distinct.
 
 ## Implementation completion order
 
-The owner selected strict layer completion: Core, Contributions, Properties, Equilibrium,
-Regression, Surface, Bindings/Python, then application acceptance. The
-[GitHub milestones](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
-and their native issue relationships own status, prerequisites, scope,
-acceptance, reuse decisions and estimates.
-Finish and verify each layer's current agreed scope before expanding the next;
-deferred PH/PS/UV and phase search do not block that order; later
-integration defects reopen the affected earlier issue. Design readiness is
+The [GitHub milestones](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+and owning issues define the current completion order, status, scope,
+acceptance, reuse decisions and estimates. Native issue relationships own
+prerequisites; milestone numbering expresses delivery priority, not an additional
+scientific dependency. Do not maintain a competing sequence here.
+Finish and verify each prerequisite's current agreed scope before dependent
+implementation; deferred PH/PS/UV and phase search do not block current work.
+Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher
 layers may be used to verify a lower layer without claiming their own completion.

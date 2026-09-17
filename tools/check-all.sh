@@ -34,7 +34,7 @@ run_check python-tests bash -c \
     'cd "$1/engine" && ../.venv/bin/python -m pytest -q --junitxml=../build/test-results/pytest.xml' \
     _ "$repo_root"
 run_check native-tests env EPCSAFT_NATIVE_BUILD_READY=1 \
-    engine/tools/run-native-tests.sh contributions properties diagnostics specification
+    engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
 run_check analysis-layout .venv/bin/python tools/check-analysis-layout.py

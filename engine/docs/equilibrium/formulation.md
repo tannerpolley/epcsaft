@@ -81,6 +81,18 @@ Counts and a generic-point rank check do not prove existence, uniqueness or
 regularity at the computed solution. Energy specifications add rows/unknowns
 and require their own count derivation; they cannot inherit this rule blindly.
 
+The resolved feed n_feed is the amount basis of the whole problem, and returned
+phase amounts are on that same basis. An amounts feed is absolute mol and is
+never normalized. A mole-fraction feed resolves to n_i = x_i, mol per mol of
+feed; a mass-fraction feed resolves to n_i = w_i / M_i, mol per kg of feed. A
+fraction feed must sum to one within the composition-sum policy value; it is
+rejected otherwise and never renormalized. A molality feed is absolute mol:
+solute entries are mol per kg of solvent times the stated solvent mass, and
+solvent entries are relative molar amounts rescaled so the solvent mass equals
+the stated value. One declared solvent needs no amount. Several declared solvents
+with no positive solvent amount are rejected, because their ratio is a physical
+input; a declared solvent left at zero beside a supplied one stays zero.
+
 A pinned amount is feed-relative, N_p = v_p Σ n_feed with 0 ≤ v_p ≤ 1. When the
 declared reaction space conserves total moles, rank([B; e]) = rank(B) with
 e ∝ (1, …, 1), the pins additionally satisfy Σ v_p ≤ 1, and Σ v_p = 1 when every
@@ -93,7 +105,18 @@ reports generic rank loss and no nonlinear solve is run.
 
 Reaction targets are one of a constant affinity, a scalar K, or the P3
 correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
-exp(μ_i^res / RT); any other correlation identity is rejected. A supplied
+exp(μ_i^res / RT); any other correlation identity is rejected. A scalar K is a
+temperature-independent target: its series is −RT ln K, −R ln K, 0, 0, so it
+states zero density-basis reaction enthalpy and differs from a correlated target
+by Δ_r h / T at first temperature order. A temperature-dependent source constant
+is therefore stated as a correlation on the EOS basis, not as its value at one
+temperature; the engine does not detect that misuse. The two native conversions,
+an ideal-gas pressure basis (a − Δν ln(R T_ref ρ₀ / P₀), c − Δν) and a
+standard-state shift with temperature-independent Δh and Δs (a − Δs / R,
+b + Δh / R, old minus new), have an exact polynomial image of
+a + b/T + c ln(T/T_ref) + dT. A condensed-phase reference (molality or infinite
+dilution, solution molarity, a pure-liquid mole-fraction reference) transfers
+through the residual potential of the reference state and has none. A supplied
 constant standard Gibbs vector must satisfy every reaction target at the
 evaluation temperature by the same criterion as the inferred vector, and a
 free temperature admits it only when the targets are constant. Supplied species

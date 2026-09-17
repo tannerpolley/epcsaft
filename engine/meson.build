@@ -239,6 +239,18 @@ equilibrium_checks = executable(
 )
 test('equilibrium', equilibrium_checks, timeout: 600)
 
+# A Python-free caller of the native interface; it includes no test support header.
+surface_example = executable(
+  'surface_example',
+  'tests/native/surface_example.cpp',
+  cpp_args: native_warnings,
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('surface_example', surface_example)
+
 boundary_checks = executable(
   'boundary_checks',
   'tests/native/boundary_checks.cpp',
