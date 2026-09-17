@@ -11,13 +11,13 @@ fi
 EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
 candidate_dir="$(mktemp -d /tmp/epcsaft-khudaida.XXXXXX)"
+qualification_dir="$(mktemp -d /tmp/epcsaft-khudaida-qualification.XXXXXX)"
 if .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py \
-    --output-dir "$candidate_dir"; then
-    case "$candidate_dir" in
-        /tmp/epcsaft-khudaida.*) rm -rf -- "$candidate_dir" ;;
-        *) echo "refusing to remove unexpected candidate path: $candidate_dir" >&2; exit 1 ;;
-    esac
+    --output-dir "$candidate_dir" && \
+    .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/qualify.py \
+    --results-dir "$candidate_dir" --output-dir "$qualification_dir"; then
+    find "$candidate_dir" "$qualification_dir" -depth -delete
 else
-    echo "Khudaida candidate retained at $candidate_dir" >&2
+    echo "Khudaida candidates retained at $candidate_dir and $qualification_dir" >&2
     exit 1
 fi
