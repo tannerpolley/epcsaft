@@ -238,6 +238,20 @@ Series combine(const Series& left, const Series& right, double sign) {
     return result;
 }
 
+// Logarithm of a series with a positive centre: k s_0 L_k = k s_k - sum_{j<k} j L_j s_{k-j}.
+Series logarithm(const Series& value) {
+    if (value.empty() || !std::isfinite(value.front()) || !(value.front() > 0.0))
+        throw std::domain_error("series logarithm has a nonpositive or nonfinite center");
+    Series result(value.size(), 0.0);
+    result.front() = std::log(value.front());
+    for (std::size_t k = 1; k < value.size(); ++k) {
+        double sum = static_cast<double>(k) * value[k];
+        for (std::size_t j = 1; j < k; ++j) sum -= static_cast<double>(j) * result[j] * value[k - j];
+        result[k] = sum / (static_cast<double>(k) * value.front());
+    }
+    return result;
+}
+
 bool is_phase_kind(SolvedStateObservableKind kind) {
     return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure;
 }
@@ -245,7 +259,8 @@ bool is_phase_kind(SolvedStateObservableKind kind) {
 bool has_component(SolvedStateObservableKind kind) {
     return kind == SolvedStateObservableKind::PhaseComponentAmount
         || kind == SolvedStateObservableKind::PhaseMoleFraction
-        || kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt;
+        || kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt
+        || kind == SolvedStateObservableKind::PhaseLogActivity;
 }
 
 bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable& b) {
@@ -299,10 +314,12 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("solved-state observable component ordinal");
         if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= 15)
             throw std::invalid_argument("solved-state property observable");
-        if (item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
+        const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
+        if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
             if (std::find(support.begin(), support.end(), item.component) == support.end())
-                throw std::invalid_argument("residual chemical potential outside the phase support");
+                throw std::invalid_argument(std::string(log_activity ? "log activity" : "residual chemical potential")
+                                            + " outside the phase support");
         }
         for (std::size_t j = 0; j < i; ++j)
             if (same_observable(item, request.observables[j]))
@@ -452,6 +469,10 @@ Series observable_series(const SolvedStateObservable& observable, const RowSerie
     case SolvedStateObservableKind::PhasePressure: return maps[observable.phase].pressure;
     case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:
         return maps[observable.phase].potential[observable.component];
+    case SolvedStateObservableKind::PhaseLogActivity:
+        return combine(logarithm(product(maps[observable.phase].mole_fraction[observable.component],
+                                         maps[observable.phase].density)),
+                       maps[observable.phase].potential[observable.component], 1.0);
     default: return {};
     }
 }
@@ -544,6 +565,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::PhasePressure: return phase + ".pressure";
     case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:
         return phase + ".residual_chemical_potential_over_rt" + component;
+    case SolvedStateObservableKind::PhaseLogActivity: return phase + ".log_activity" + component;
     case SolvedStateObservableKind::PhaseProperty: return phase + ".property/" + property_name(observable.property);
     }
     return "unknown";

@@ -2340,8 +2340,10 @@ std::vector<SolvedStateObservable> geometry_observables(const EquilibriumProblem
             result.push_back(obs(Kind::PhaseComponentAmount, phase, i));
             result.push_back(obs(Kind::PhaseMoleFraction, phase, i));
             const auto& support = problem.phases[phase].support;
-            if (support.empty() || std::find(support.begin(), support.end(), i) != support.end())
+            if (support.empty() || std::find(support.begin(), support.end(), i) != support.end()) {
                 result.push_back(obs(Kind::PhaseResidualChemicalPotentialOverRt, phase, i));
+                result.push_back(obs(Kind::PhaseLogActivity, phase, i));
+            }
         }
     }
     return result;
@@ -2369,6 +2371,9 @@ std::optional<double> mapped(const SolvedStateObservable& item, const epcsaft::H
     case Kind::PhasePackingFraction: return result.packing_fractions[item.phase];
     case Kind::PhasePressure: return state(item.phase).pressure;
     case Kind::PhaseResidualChemicalPotentialOverRt: return state(item.phase).residual_chemical_potential_over_rt[item.component];
+    case Kind::PhaseLogActivity:  // ln(x rho / (1 mol/m^3)) + mu_res/RT through the public State
+        return std::log(x(item.phase)[item.component] * result.molar_densities[item.phase])
+            + state(item.phase).residual_chemical_potential_over_rt[item.component];
     case Kind::PhaseProperty: {
         const auto s = state(item.phase);
         switch (item.property) {
@@ -2649,7 +2654,8 @@ void check_e5_neutral() {
     permuted.active = {{epcsaft::ParameterFamily::Kij, {5, 7}}, {epcsaft::ParameterFamily::SegmentCount, {1}}};
     for (auto& d : permuted.directions) d.feed_amounts_mol = equilibrium_support::permute_vector(d.feed_amounts_mol, order);
     for (auto& item : permuted.observables)
-        if (item.kind == Kind::PhaseComponentAmount || item.kind == Kind::PhaseMoleFraction || item.kind == Kind::PhaseResidualChemicalPotentialOverRt)
+        if (item.kind == Kind::PhaseComponentAmount || item.kind == Kind::PhaseMoleFraction
+            || item.kind == Kind::PhaseResidualChemicalPotentialOverRt || item.kind == Kind::PhaseLogActivity)
             item.component = static_cast<std::size_t>(std::find(order.begin(), order.end(), item.component) - order.begin());
     const auto permuted_model = permuted.model();
     const auto permuted_batch = actions(permuted, permuted_model, epcsaft::equilibrium::solve_equilibrium(permuted_model, permuted.problem), permuted.observables, 2);
@@ -2954,7 +2960,8 @@ Fixture associating_case() {
     f.directions = {direction(0.2, 15000.0, {-0.01, 0.01}, {0.03, 0.001}), direction(-0.1, -10000.0, {0.005, -0.005}, {-0.02, -0.0005}),
                     direction(0.05, 6000.0, {0.002, -0.002}, {0.01, 0.0002})};
     f.observables = {obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualEnthalpy), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalEnthalpy),
-                     obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalIsobaricHeatCapacity), obs(Kind::PhaseAmount, 0), obs(Kind::PhaseMolarDensity, 0)};
+                     obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalIsobaricHeatCapacity), obs(Kind::PhaseAmount, 0), obs(Kind::PhaseMolarDensity, 0),
+                     obs(Kind::PhaseLogActivity, 0, 0), obs(Kind::PhaseLogActivity, 0, 1)};
     f.scaled = false;  // owner decision 2026-09-16: the scaled A3 corners leave the feed domain
     return f;
 }
@@ -3091,7 +3098,9 @@ Fixture thermal_case(double temperature, bool with_record) {
 void check_e5_electrolyte() {
     bool all_ok = true;
     using namespace e5;
-    all_ok = (qualify(electrolyte_case(true), "e5-5")) && all_ok;
+    auto with_record = electrolyte_case(true);
+    for (std::size_t i = 0; i < 3; ++i) with_record.observables.push_back(obs(Kind::PhaseLogActivity, 0, i));  // solvent and both ions
+    all_ok = (qualify(with_record, "e5-5")) && all_ok;
     // Residual-only without a record: residual siblings stay available, total rows are typed.
     auto residual_only = electrolyte_case(false);
     residual_only.observables.push_back(obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalEnthalpy));
@@ -3194,6 +3203,8 @@ void check_e5_refusals() {
     auto restricted = fixture.problem; restricted.phases[0].support = {0, 1};
     const auto restricted_compiled = epcsaft::equilibrium::compile_problem(model, restricted);
     invalid("unsupported-potential", "residual chemical potential outside the phase support", unsupported, restricted_compiled, epcsaft::equilibrium::solve_equilibrium(model, restricted));
+    unsupported.observables = {obs(Kind::PhaseLogActivity, 0, 2)};
+    invalid("unsupported-log-activity", "log activity outside the phase support", unsupported, restricted_compiled, epcsaft::equilibrium::solve_equilibrium(model, restricted));
     auto free_t = base;
     const auto pinned = pinned_case(0.01);
     const auto pinned_model = pinned.model();
@@ -3272,6 +3283,119 @@ void check_e5_refusals() {
     CHECK(all_ok);
 }
 
+// S3 (#53): exact identities of solved-state actions on manufactured systems. Nonzero references
+// use the retained CRITERION, zeros the retained STRUCTURAL_ZERO; no stencil and no new threshold.
+void check_e5_identities() {
+    bool all_ok = true;
+    using namespace e5;
+    const auto within = [&](const std::string& id, const char* claim, double value, double reference, double tolerance,
+                            const SolvedStateActionBatch& batch, const std::string& stated) {
+        const bool verdict = std::isfinite(value) && std::abs(value - reference) <= tolerance;
+        recording_support::compare(id.c_str(), "action_identity", "1", value, reference,
+            recording_support::fields({stated, recording_support::field("tolerance", tolerance),
+                recording_support::field("condition_estimate", batch.diagnostics.condition_estimate.value_or(0.0)),
+                recording_support::field("linear_residual", batch.diagnostics.maximum_linear_residual.value_or(0.0))}),
+            "Relationship", "exact-identity", claim, "absolute", tolerance, 0.0, verdict, "e5-10");
+        all_ok = verdict && all_ok;
+    };
+    const auto action = [](const SolvedStateActionBatch& batch, std::size_t i) { return batch.results[i].action.value_or(std::nan("")); };
+
+    // H3: Euler homogeneity in the feed amounts, radial and mixed with a non-radial direction.
+    auto neutral = neutral_case();
+    const auto neutral_model = neutral.model();
+    const auto neutral_central = epcsaft::equilibrium::solve_equilibrium(neutral_model, neutral.problem);
+    neutral.directions = {direction(0.0, 0.0, neutral.problem.feed.values, {0.0, 0.0}), direction(0.0, 0.0, {-0.01, 0.006, 0.004}, {0.0, 0.0})};
+    std::vector<SolvedStateObservable> list;
+    std::vector<bool> extensive;
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        list.push_back(obs(Kind::PhaseAmount, phase)); extensive.push_back(true);
+        list.push_back(obs(Kind::PhaseMolarDensity, phase)); extensive.push_back(false);
+        for (std::size_t i = 0; i < 3; ++i) {
+            list.push_back(obs(Kind::PhaseComponentAmount, phase, i)); extensive.push_back(true);
+            list.push_back(obs(Kind::PhaseMoleFraction, phase, i)); extensive.push_back(false);
+            list.push_back(obs(Kind::PhaseLogActivity, phase, i)); extensive.push_back(false);
+        }
+    }
+    const auto euler = recording_support::fields({recording_support::field("n_feed", neutral.directions[0].feed_amounts_mol),
+        recording_support::field("v", neutral.directions[1].feed_amounts_mol)});
+    const auto radial = actions(neutral, neutral_model, neutral_central, list, 1);
+    const auto mixed = actions(neutral, neutral_model, neutral_central, list, 2);
+    std::swap(neutral.directions[0], neutral.directions[1]);
+    const auto skew = actions(neutral, neutral_model, neutral_central, list, 1);
+    double wrong_sign = 0.0;
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        const std::string id = "e5-10/euler/" + epcsaft::equilibrium::solved_state_observable_id(list[i]);
+        const double value = radial.results[i].value.value_or(std::nan("")), first = action(skew, i);
+        if (extensive[i]) {
+            within(id + "/radial", "degree one: D y[n] = y", action(radial, i), value, CRITERION[0] * std::abs(value), radial, euler);
+            within(id + "/mixed", "degree one: D2 y[n, v] = 0", action(mixed, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(first)), mixed, euler);
+        } else {
+            within(id + "/radial", "degree zero: D y[n] = 0", action(radial, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(value)), radial, euler);
+            within(id + "/mixed", "degree zero: D2 y[n, v] = -D y[v]", action(mixed, i), -first, CRITERION[1] * std::abs(first), mixed, euler);
+            wrong_sign = std::max(wrong_sign, std::abs(action(mixed, i) - first) / std::abs(first));
+        }
+    }
+    all_ok = (record_bool("e5-10/euler/wrong-sign", "e5-10", "the mixed identity with the wrong sign misses by a relative two",
+        wrong_sign > 1.0, recording_support::fields({recording_support::field("relative_defect", wrong_sign)}))) && all_ok;
+
+    // H4: in each liquid of A + B = C, sum_i nu_i ln a_i = ln K(T) along every admitted control path.
+    const std::vector<double> nu = {-1.0, -1.0, 1.0};
+    const double b = 1500.0, t0 = 298.15;  // labelled manufactured EOS-basis ln K = b (1/T - 1/T0), K(T0) = 1
+    auto reactive = reactive_case();
+    reactive.problem.standard_gibbs_j_per_mol.clear();
+    reactive.problem.reactions[0].equilibrium_constant.reset();
+    reactive.problem.reactions[0].correlation = epcsaft::ReactionLogPolynomial{-b / t0, b, 0.0, 0.0, t0, 250.0, 450.0,
+        epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
+    const auto reactive_model = reactive.model();
+    const auto reactive_central = epcsaft::equilibrium::solve_equilibrium(reactive_model, reactive.problem);
+    all_ok = reactive_central.success && all_ok;
+    list.clear();
+    for (std::size_t phase = 0; phase < 2; ++phase) for (std::size_t i = 0; i < 3; ++i) list.push_back(obs(Kind::PhaseLogActivity, phase, i));
+    const auto manifold = [&](const char* label, std::vector<SolvedStateActionDirection> directions, double reference, bool values) {
+        reactive.directions = std::move(directions);
+        const std::size_t order = reactive.directions.size();
+        const auto batch = actions(reactive, reactive_model, reactive_central, list, order);
+        std::vector<double> d_t, d_p;
+        for (const auto& item : reactive.directions) { d_t.push_back(item.temperature_k); d_p.push_back(item.pressure_pa); }
+        const auto stated = recording_support::fields({recording_support::field("b", b), recording_support::field("T0", t0),
+            recording_support::field("dT", d_t), recording_support::field("dP", d_p), recording_support::field("feed_direction", reactive.directions[0].feed_amounts_mol)});
+        for (std::size_t phase = 0; phase < 2; ++phase) {
+            double sum = 0.0, scale = 0.0, perturbed = 0.0;
+            for (std::size_t i = 0; i < 3; ++i) {
+                const double term = values ? batch.results[3 * phase + i].value.value_or(std::nan("")) : action(batch, 3 * phase + i);
+                sum += nu[i] * term; scale += std::abs(nu[i] * term); perturbed += (i == 2 ? 2.0 : nu[i]) * term;
+            }
+            const std::string id = std::string("e5-10/manifold/") + label + "/phase" + std::to_string(phase);
+            // The central identity holds to the retained affinity bound of e5-3; actions to the retained criterion.
+            const double tolerance = values ? 1.0e-9 : CRITERION[order - 1] * scale;
+            within(id, "sum_i nu_i ln a_i follows ln K(T) in each phase", sum, reference, tolerance, batch, stated);
+            all_ok = (record_bool((id + "/perturbed-nu").c_str(), "e5-10", "a wrong stoichiometric coefficient fails the identity's own criterion",
+                std::abs(perturbed - reference) > tolerance, recording_support::fields({stated, recording_support::field("defect", perturbed - reference),
+                    recording_support::field("tolerance", tolerance), recording_support::field("defect_over_tolerance", std::abs(perturbed - reference) / tolerance),
+                    recording_support::field("term_scale", scale)}))) && all_ok;
+        }
+        return batch;
+    };
+    // Two phases, three species and one reaction leave no intensive freedom at fixed T and P, so a feed
+    // direction moves only the phase amounts: the manifold identity would read 0 = 0 there. Pressure and
+    // temperature directions do move the intensive state; K does not depend on pressure.
+    const auto v = direction(0.0, 0.0, {0.001, -0.001, 0.0}), dP = direction(0.0, 1.0e5, {0.0, 0.0, 0.0}), dT = direction(1.0, 0.0, {0.0, 0.0, 0.0});
+    const auto invariant = manifold("value", {v}, 0.0, true);
+    manifold("pressure", {dP}, 0.0, false);
+    manifold("pressure-temperature", {dP, dT}, 0.0, false);
+    manifold("temperature", {dT}, -b / (t0 * t0), false);
+    manifold("temperature-temperature", {dT, dT}, 2.0 * b / (t0 * t0 * t0), false);
+    // Third order is where the weight j of the series logarithm first matters.
+    manifold("temperature-temperature-temperature", {dT, dT, dT}, -6.0 * b / (t0 * t0 * t0 * t0), false);
+    manifold("pressure-temperature-temperature", {dP, dT, dT}, 0.0, false);
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        within("e5-10/phase-rule/" + epcsaft::equilibrium::solved_state_observable_id(list[i]), "a feed direction leaves the invariant intensive state unchanged",
+               action(invariant, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(invariant.results[i].value.value_or(std::nan("")))), invariant,
+               recording_support::fields({recording_support::field("feed_direction", v.feed_amounts_mol)}));
+    }
+    CHECK(all_ok);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -3301,5 +3425,6 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.e5-roots", "Equilibrium_E5_roots", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "e5-6/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-6"}, check_e5_roots},
         {{"native.equilibrium.e5-thermal", "Equilibrium_E5_thermal", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "e5-7/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-7"}, check_e5_thermal},
         {{"native.equilibrium.e5-refusals", "Equilibrium_E5_refusals", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "e5-8/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-8"}, check_e5_refusals},
+        {{"native.equilibrium.e5-identities", "Equilibrium_E5_identities", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "S3", "e5-10/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-10"}, check_e5_identities},
     });
 }
