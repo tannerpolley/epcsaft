@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 
@@ -280,18 +281,20 @@ struct Path final {
 
 // A predicted free amount below zero is projected onto its bound rather than rejected: the
 // amount bound is the disappearance boundary itself, and only the bound-constrained corrector
-// can report the typed event there. Every other coordinate outside its domain is rejected.
-bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y) {
+// can report the typed event there (counted in `projected`). Every other coordinate outside
+// its domain is rejected.
+bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::size_t& projected) {
     if (!std::all_of(y.begin(), y.end(), [](double v) { return std::isfinite(v); })) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled.problem.phases) {
         for (std::size_t i = 0; i < phase.support.size(); ++i, ++offset)
             if (y[offset] < std::log(policy::STABILITY_COMPOSITION_FLOOR.value) || y[offset] > 0.0) return false;
         if (phase.amount.kind == AmountKind::Free) {
-            if (y[offset] < 0.0) y[offset] = 0.0;
+            if (y[offset] < 0.0) { y[offset] = 0.0; ++projected; }
             ++offset;
         }
-        if (y[offset] < std::log(1.0e-12) || y[offset] > std::log(policy::PACKING_FRACTION_CEILING.value)) return false;
+        if (y[offset] < std::log(policy::PACKING_FRACTION_FLOOR.value)
+            || y[offset] > std::log(policy::PACKING_FRACTION_CEILING.value)) return false;
         ++offset;
     }
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
@@ -299,29 +302,88 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y) {
     return true;
 }
 
+// Per-phase normalised composition and log packing read from the coordinate chart.
+struct PhaseSignature final {
+    std::vector<double> composition;
+    double log_eta = 0.0;
+};
+
+std::vector<PhaseSignature> signatures(const CompiledSystem& compiled, const std::vector<double>& y) {
+    const auto phase_offsets = offsets(compiled);
+    const std::size_t components = compiled.model->parameters().component_count();
+    std::vector<PhaseSignature> result;
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+        const auto& spec = compiled.problem.phases[phase];
+        PhaseSignature item;
+        item.composition.assign(components, 0.0);
+        double total = 0.0;
+        for (std::size_t i = 0; i < spec.support.size(); ++i) {
+            item.composition[spec.support[i]] = std::exp(y[phase_offsets[phase] + i]);
+            total += item.composition[spec.support[i]];
+        }
+        for (double& value : item.composition) value /= total;
+        std::size_t cursor = phase_offsets[phase] + spec.support.size();
+        if (spec.amount.kind == AmountKind::Free) ++cursor;
+        item.log_eta = y[cursor];
+        result.push_back(std::move(item));
+    }
+    return result;
+}
+
+// Passage through a critical point between consecutive accepted states swaps a pair's
+// identities: every nonzero component of the inter-phase difference vector (delta ln eta and
+// each delta x_i) changes sign while both states pass the coincidence predicate. That is the
+// pair's coalescence (owner decision 2026-09-16); zero components carry no sign information.
+std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
+    const CompiledSystem& compiled, const std::vector<double>& before, const std::vector<double>& after
+) {
+    const auto a = signatures(compiled, before);
+    const auto b = signatures(compiled, after);
+    for (std::size_t left = 0; left + 1 < a.size(); ++left) {
+        for (std::size_t right = left + 1; right < a.size(); ++right) {
+            std::vector<double> before_delta{a[left].log_eta - a[right].log_eta};
+            std::vector<double> after_delta{b[left].log_eta - b[right].log_eta};
+            for (std::size_t i = 0; i < a[left].composition.size(); ++i) {
+                before_delta.push_back(a[left].composition[i] - a[right].composition[i]);
+                after_delta.push_back(b[left].composition[i] - b[right].composition[i]);
+            }
+            bool informative = false, swapped = true;
+            for (std::size_t i = 0; i < before_delta.size(); ++i) {
+                if (before_delta[i] == 0.0 || after_delta[i] == 0.0) continue;
+                informative = true;
+                swapped = swapped && (before_delta[i] > 0.0) != (after_delta[i] > 0.0);
+            }
+            if (informative && swapped) return std::make_pair(left, right);
+        }
+    }
+    return std::nullopt;
+}
+
 // Corrected-phase branch identity: the corrected density and the anchored locally unique
-// root must share the anchor's window, with a positive corrected pressure slope.
+// root must share the anchor's window, with a positive corrected pressure slope. The physical
+// state is recomputed from the coordinates, never taken from the supplied result's arrays.
 Attempt admit_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope
 ) {
     Attempt outcome;
-    const std::size_t components = model.parameters().component_count();
+    const PhasePoint prepared = compiled.prepare(result.coordinates);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
-        const std::vector<double> x(result.mole_fractions.begin() + static_cast<std::ptrdiff_t>(phase * components),
-                                    result.mole_fractions.begin() + static_cast<std::ptrdiff_t>((phase + 1) * components));
-        const double corrected = result.molar_densities[phase];
+        std::vector<double> x = prepared.composition[phase];
+        const double total = std::accumulate(x.begin(), x.end(), 0.0);
+        for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
+        const double corrected = 1.0 / prepared.volume[phase];
         const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
-        const auto state = model.state(result.temperature.front(), corrected, x);
+        const auto state = model.state(prepared.temperature, corrected, x);
         double anchor = anchors.empty() ? 0.0 : anchors[phase];
         DensityRoot root;
         try {
             if (initial) {
-                root = solve_density(model, result.temperature.front(), result.pressure.front(), x, branch, std::nullopt);
+                root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, std::nullopt);
                 anchor = root.molar_density;
             }
-            root = solve_density(model, result.temperature.front(), result.pressure.front(), x, branch, anchor);
+            root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
         } catch (const std::exception& error) {
             outcome.stop = ContinuationStop::branch_lost;
             outcome.message = "phase " + spec.name + " has no locally unique anchored root: " + error.what();
@@ -525,6 +587,12 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             attempt.stop = ContinuationStop::invalid_path;
             attempt.terminal = true;
             attempt.message = generated;
+        } else if (!compiled.feasible) {
+            // Same layout, generic-point rank loss at the generated problem.
+            attempt.stop = ContinuationStop::singular_jacobian;
+            attempt.terminal = true;
+            attempt.message = "generated problem loses generic rank (nullity "
+                + std::to_string(compiled.generic_nullity) + ")";
         } else {
             const auto jacobian = current.jacobian(y_current);
             const auto tangent = sensitivity(current, y_current, path.lever(current.lever_jacobian(y_current).size() / current.rows.size()));
@@ -532,19 +600,38 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                 // A state-local tangent cannot change by halving the step: singular is terminal
                 // (owner decision 2026-09-16), the branch end at that accepted state.
                 const bool numeric = std::all_of(jacobian.begin(), jacobian.end(), [](double v) { return std::isfinite(v); });
+                const auto info = inspect_sensitivity(current, y_current, {});
                 attempt.stop = numeric ? ContinuationStop::singular_jacobian : ContinuationStop::nonfinite;
                 attempt.terminal = true;
-                attempt.message = numeric ? "implicit tangent is unavailable at the accepted state"
-                                          : "nonfinite operands in the implicit tangent";
+                attempt.message = numeric
+                    ? "implicit tangent is unavailable at the accepted state (rank "
+                        + std::to_string(info.rank) + " of " + std::to_string(y_current.size())
+                        + ", condition estimate " + std::to_string(info.condition_estimate) + ")"
+                    : "nonfinite operands in the implicit tangent";
             } else {
                 std::vector<double> predicted = y_current;
                 for (std::size_t i = 0; i < predicted.size(); ++i) predicted[i] += (q_try - q) * tangent[i];
-                if (!inside_domain(compiled, predicted)) {
+                std::size_t projected = 0;
+                const bool inside = inside_domain(compiled, predicted, projected);
+                attempt_scope.probe("predictor_projected", static_cast<double>(projected));
+                if (!inside) {
                     attempt.stop = ContinuationStop::left_domain;
                     attempt.message = "predicted coordinates leave the admitted domain";
                 } else {
                     attempt = admit_result(model, compiled, solve_equilibrium_from_coordinates(model, problem, predicted),
                                            anchors, false, attempt_scope);
+                    if (attempt.accepted) {
+                        if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) {
+                            attempt.accepted = false;
+                            attempt.terminal = true;
+                            attempt.stop = ContinuationStop::phases_coalesced;
+                            attempt.result->topology_event = TopologyEvent::PhasesCoalesced;
+                            attempt.result->topology_pair = pair;
+                            attempt.message = "phases " + compiled.problem.phases[pair->first].name + " and "
+                                + compiled.problem.phases[pair->second].name
+                                + " swapped identity between accepted states: passage through a critical point";
+                        }
+                    }
                 }
             }
         }

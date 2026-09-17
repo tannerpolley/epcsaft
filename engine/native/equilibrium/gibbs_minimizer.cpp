@@ -402,7 +402,7 @@ bool GibbsMinimizer::get_bounds_info(
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
-        x_l[offset] = std::log(1.0e-12);
+        x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
         x_u[offset++] = std::log(policy::PACKING_FRACTION_CEILING.value);
     }
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();

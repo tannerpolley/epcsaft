@@ -614,7 +614,7 @@ std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
     for (std::size_t span = 0; span < trace.spans.size(); ++span) {
         const std::string name = trace.spans[span].name;
         if (name != "equilibrium_continuation_attempt" && name != "equilibrium_continuation_initial") continue;
-        double q = std::numeric_limits<double>::quiet_NaN(), accepted = 0.0, present = 0.0;
+        double q = std::numeric_limits<double>::quiet_NaN(), accepted = 0.0, present = 0.0, projected = 0.0;
         std::string cause = "absent";
         std::optional<double> residual;
         for (const auto& event : trace.events) {
@@ -624,6 +624,7 @@ std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
             else if (label == "accepted") accepted = event.values.front();
             else if (label == "driver_result_present") present = event.values.front();
             else if (label == "row_residual") residual = event.values.front();
+            else if (label == "predictor_projected") projected = event.values.front();
             else if (label != "selected_density" && label != "corrected_density" && label != "anchor_density"
                      && label != "corrected_displacement" && label != "corrected_slope" && label != "density_residual") cause = label;
         }
@@ -631,6 +632,7 @@ std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
         recording_support::observe(id.c_str(), "path_value", "1", q, std::nullopt,
             recording_support::fields({recording_support::field("span", name), recording_support::field("accepted", accepted),
                 recording_support::field("driver_result_present", present), recording_support::field("cause", cause),
+                recording_support::field("predictor_projected", projected),
                 recording_support::field("row_residual", residual.has_value() ? recording_support::number(*residual) : "unmeasured")}),
             "Relationship", "continuation-attempt", "retained attempt from the existing Core trace", group, id.c_str());
         ++rows;
@@ -808,18 +810,59 @@ void check_e4_d() {
     request.options = options(0.001, 0.0000625, 20000, 4);
     epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    // The bubble branch passes through the mixture critical point: the pair's identities swap
+    // between consecutive accepted states, which the controller reports as the pair's coalescence
+    // (owner decision 2026-09-16). A step or window limit is a failed event row here.
     const bool coalesced = result.stop == ContinuationStop::phases_coalesced && result.event_pair == std::make_pair(std::size_t{0}, std::size_t{1});
-    // A singular implicit tangent at the last accepted state is the branch end near the
-    // mixture critical point (owner decision 2026-09-16); cold bubble solves at 260-280 K collapse.
-    // An anchored-root loss that survives the retry ladder down to minimum_step is the
-    // demonstrated near-critical branch end (owner decision 2026-09-16, #41).
-    const bool branch_loss = result.stop == ContinuationStop::branch_lost || result.stop == ContinuationStop::singular_jacobian
-        || (result.stop == ContinuationStop::step_too_small && result.cause_stop == ContinuationStop::branch_lost
-            && result.attempted_path.value_or(2.0) - result.reached_path <= 2.0 * request.options.minimum_step);
-    CHECK(record_bool("e4-d/event", "e4-d", "the bubble branch ends at a named coalescence, singular tangent or persisting near-critical anchor loss, never at the target",
-        !result.success && (coalesced || branch_loss) && !result.states.empty() && result.reached_path < 1.0,
+    CHECK(record_bool("e4-d/event", "e4-d", "the bubble branch ends at the named coalescence of L and V, never at the target",
+        !result.success && coalesced && !result.states.empty() && result.reached_path < 1.0 && result.last_result.has_value(),
         recording_support::fields({summary(result), recording_support::field("last_T", 180.0 + 100.0 * result.reached_path),
             recording_support::field("states", result.states.size())})));
+    CHECK(branch_rows("e4-d", "bubble", model, request.start_problem, result));
+    // The swap itself: every nonzero component of the inter-phase difference vector (delta ln eta,
+    // delta x_i) changes sign between the last accepted state and the rejected swapped state.
+    if (!result.states.empty() && result.last_result.has_value() && result.last_result->has_state()) {
+        const auto& before = result.states.back();
+        const auto& after = *result.last_result;
+        std::vector<double> before_delta{std::log(before.packing_fractions[0] / before.packing_fractions[1])};
+        std::vector<double> after_delta{std::log(after.packing_fractions[0] / after.packing_fractions[1])};
+        for (std::size_t i = 0; i < 2; ++i) {
+            before_delta.push_back(before.mole_fractions[i] - before.mole_fractions[2 + i]);
+            after_delta.push_back(after.mole_fractions[i] - after.mole_fractions[2 + i]);
+        }
+        double worst = -std::numeric_limits<double>::infinity();
+        for (std::size_t i = 0; i < before_delta.size(); ++i) worst = std::max(worst, before_delta[i] * after_delta[i]);
+        recording_support::compare_custom("e4-d/swap", "sign_product_max", "1", worst, 0.0,
+            recording_support::fields({recording_support::field("T_before", before.temperature.front()),
+                recording_support::field("T_after", after.temperature.front()),
+                recording_support::field("before_delta", before_delta), recording_support::field("after_delta", after_delta),
+                recording_support::field("rho_before", before.molar_densities), recording_support::field("rho_after", after.molar_densities),
+                recording_support::field("x_before", before.mole_fractions), recording_support::field("x_after", after.mole_fractions),
+                recording_support::field("row_residual_after", after.convergence.residual)}),
+            "Relationship", "phase-swap", "every nonzero inter-phase difference component changes sign across the critical point",
+            "model < reference", worst < 0.0, "e4-d", "swap", "\\max_i \\Delta_i^- \\Delta_i^+", "component", "\\Delta_i^- \\Delta_i^+ < 0", "component");
+        CHECK(worst < 0.0);
+    }
+    // Retained degeneration measurements at the last accepted state before the swap: phase
+    // distance, corrected slopes and densities.
+    if (!result.states.empty()) {
+        const auto& last = result.states.back();
+        const auto compiled = epcsaft::equilibrium::compile_problem(model, boundary_at(180.0 + 100.0 * result.reached_path));
+        const auto topology = epcsaft::equilibrium::check_topology(compiled, last.coordinates);
+        std::vector<double> slopes;
+        for (std::size_t phase = 0; phase < 2; ++phase) {
+            const std::vector<double> x(last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase),
+                                        last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase + 2));
+            slopes.push_back(model.state(last.temperature.front(), last.molar_densities[phase], x).pressure_density_derivative);
+        }
+        recording_support::observe("e4-d/last-state", "phase_distance", "1", topology.distances.empty() ? 0.0 : topology.distances.front(), std::nullopt,
+            recording_support::fields({recording_support::field("T", last.temperature.front()), recording_support::field("P", last.pressure.front()),
+                recording_support::field("x", last.mole_fractions), recording_support::field("rho", last.molar_densities),
+                recording_support::field("corrected_slopes", slopes), recording_support::field("row_residual", last.convergence.residual),
+                recording_support::field("coincidence_threshold", epcsaft::policy::PHASE_COINCIDENCE_DISTANCE.value)}),
+            "Relationship", "anchored-branch", "degeneration measurements at the last accepted state before the swap",
+            "e4-d", "last-state");
+    }
     attempt_rows("e4-d", capture.trace());
 }
 
@@ -869,9 +912,11 @@ void check_e4_e() {
         }
         const auto lhs = epcsaft::equilibrium::matvec(compiled.B, totals), rhs = epcsaft::equilibrium::matvec(compiled.B, feed);
         for (std::size_t r = 0; r < lhs.size(); ++r) balance_error = std::max(balance_error, std::abs(lhs[r] - rhs[r]));
+        std::array<double, 2> phase_affinity{};
         for (std::size_t row = 0; row < state.rows.size(); ++row)
             if (state.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical)
-                affinity = std::max(affinity, std::abs(problem.reactions[0].stoichiometry[state.rows[row].index] * state.residuals[row]));
+                phase_affinity[state.rows[row].phase] += problem.reactions[0].stoichiometry[state.rows[row].index] * state.residuals[row];
+        affinity = std::max(std::abs(phase_affinity[0]), std::abs(phase_affinity[1]));
         const double limit = std::max(state.convergence.criterion->value, state.convergence.floor.value_or(0.0));
         const bool verdict = composition_error <= 1.0e-8 && amount_error <= 1.0e-8 && balance_error <= 1.0e-12 && affinity <= limit;
         const auto id = std::string("e4-e/state/") + std::to_string(k);
@@ -908,6 +953,20 @@ void check_e4_paths() {
     expect_invalid("e4-paths/support", support, "support differs");
     auto reaction = base; reaction.target_problem.reactions = {{"A=B", {-1.0, 1.0}, 2.0, std::nullopt}};
     expect_invalid("e4-paths/reaction", reaction, "reaction count differs");
+    auto law = base;
+    law.start_problem.reactions = {{"A=B", {-1.0, 1.0}, 1.0, std::nullopt}};
+    law.target_problem.reactions = {{"A=B", {-1.0, 1.0}, 2.0, std::nullopt}};
+    expect_invalid("e4-paths/reaction-law", law, "reaction A=B differs");
+    // Exact all-pinned endpoints pass pin admission but lose generic rank (E2-0 exact-sum record).
+    ContinuationRequest pinned;
+    pinned.start_problem = equilibrium_support::flash(2);
+    pinned.start_problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.5)),
+                                   equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.5))};
+    pinned.start_problem.temperature = FreeValue::variable(300.0);
+    pinned.start_problem.pressure = FreeValue::variable(1.0e5);
+    pinned.target_problem = pinned.start_problem;
+    pinned.target_problem.feed.values = {1.2, 0.8};
+    expect_invalid("e4-paths/rank-deficient-endpoint", pinned, "endpoint is not full rank");
     auto amount = base; amount.target_problem.phases[1].amount = AmountSpec::free();
     expect_invalid("e4-paths/amount-kind", amount, "amount declaration differs");
     auto flags = base; flags.target_problem.temperature = FreeValue::variable(181.0); flags.target_problem.pressure = FreeValue::fixed(1.0e5);

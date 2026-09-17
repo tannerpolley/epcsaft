@@ -264,7 +264,12 @@ accepted coordinates up to the caller's retry allowance and minimum step;
 invalid paths, nonfinite operands, infeasible solves, a singular implicit
 tangent at the accepted state (halving cannot change it), typed
 disappearance/coalescence and a corrected density outside the branch window
-are terminal. A partial prefix is never target success, a step or budget limit
+are terminal. Passage through a critical point between consecutive accepted
+states, where every nonzero component of a pair's inter-phase difference vector
+(delta ln eta and each delta x_i) changes sign, is that pair's coalescence:
+terminal `phases_coalesced` with the pair named and the swapped state retained
+as the last result, never a relabeled continuation (owner decision 2026-09-16).
+A partial prefix is never target success, a step or budget limit
 is never a topology event, and every attempt is retained by the existing Core
 trace scopes. Reusing only an initial seed is not continuation. The result is
 a declared local branch, not a discovery or global-stability certificate.

@@ -129,12 +129,17 @@ For free phase amounts the classifying stationarity residuals are the
 first-order conditions in the solved logarithmic chart, N_p x_i μ̃_i / N_feed for
 composition and N_p / N_feed times the pressure row for packing, which are the
 quantities the constrained minimizer controls; the unscaled chemical and
-pressure rows are retained as diagnostics and are unbounded where an amount or
-a fraction vanishes. A pinned specification classifies its unscaled rows, which
+pressure rows are retained as diagnostics and are certified only to the
+criterion times N_feed / (N_p x_i), which is unbounded where an amount or a
+fraction vanishes. The amount-stationarity component (phase Gibbs energy equal
+to the balance dual) is not a classified row; it is bounded by the optimizer's
+dual tolerance and checked by the retained Gibbs-dual identities. A pinned specification classifies its unscaled rows, which
 are its constraints. Report achieved balance, charge, normalization, pressure,
 stationarity/affinity and phase-distinctness diagnostics on declared scales. A stationary candidate
 is not automatically a stable equilibrium. A requested distinct phase set
-that coalesces must report the degeneration explicitly.
+that coalesces must report the degeneration explicitly, including a pair whose
+identities swap between consecutive states of a followed branch (passage
+through a critical point).
 
 ## Discovery and global claims
 
