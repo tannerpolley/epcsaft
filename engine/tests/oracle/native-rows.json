@@ -1,8 +1,8 @@
 {
   "rows": 302,
-  "recorded_at_revision": "1199004eb3ce17080fb6cb2d8909a08eda1bc2b4",
-  "build_fingerprint": "a03d1d0bd3e4134ac6e443f8c943f6554850d5d9736593a85da4c0d6ce3abc5f",
-  "wheel_sha256": "f7d5fd40b13b737f5c8cae0ddfe212046e0fb8e17549ef7e72d694e21950fbaa",
+  "recorded_at_revision": "4f5cc6df2ce3bc4192c443766e787e27e896b93d",
+  "build_fingerprint": "436402ead5baf155426bdfebd480beb241808ce0fc0e7532e43dc8e9c2669882",
+  "wheel_sha256": "19f11a7f62c693ee52c62417f8c06e9ba7e8b695a8bd556f5533bc258fbfa658",
   "commands": [
     {
       "command": "properties_checks P3",

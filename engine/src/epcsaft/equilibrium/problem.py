@@ -370,6 +370,24 @@ def solve_equilibrium(
     return _core.solve_equilibrium(model._model, problem._native(model), start)
 
 
+def compile_problem(model: _Model, problem: Problem) -> _core.CompiledSystem:
+    """Compile once for solved-state actions; the result keeps the native model alive."""
+    return _core.compile_problem(model._model, problem._native(model))
+
+
+def solved_state_actions(
+    compiled: _core.CompiledSystem,
+    central: _core.EquilibriumResult,
+    request: _core.SolvedStateActionRequest,
+) -> _core.SolvedStateActionBatch:
+    """Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.
+
+    Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments
+    (active width, native units); a free T or P entry must be zero. No solve is repeated.
+    """
+    return _core.solved_state_actions(compiled, central, request)
+
+
 class Continuation:
     __slots__ = ("initial_step", "minimum_step", "max_steps", "max_retries_per_step")
 
@@ -434,8 +452,10 @@ __all__ = (
     "Problem",
     "Reaction",
     "bubble_point",
+    "compile_problem",
     "continue_equilibrium",
     "dew_point",
     "problem_from_mapping",
     "solve_equilibrium",
+    "solved_state_actions",
 )

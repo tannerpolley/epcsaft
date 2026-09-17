@@ -4,19 +4,25 @@ from typing import Any, cast
 
 import pytest
 
-from epcsaft import IdealPolynomial, Mixture, ParameterError, Pure
-from tests.native_inputs import ETHANE, ROWS, associating_binary, p3_forms, parameters, record, same
+from epcsaft import (
+    ActiveParameter,
+    DensityActionDirection,
+    IdealPolynomial,
+    Mixture,
+    ParameterActionDirection,
+    ParameterError,
+    ParameterFamily,
+    PressureActionDirection,
+    PropertyActionStatus,
+    PropertyObservable,
+    Pure,
+)
+from tests.native_inputs import ETHANE, ROWS, associating_binary, p3_forms, parameters, record, same, surface_model
 
 IDEAL = ("ideal_enthalpy", "ideal_internal_energy", "ideal_entropy",
          "ideal_isobaric_heat_capacity", "ideal_isochoric_heat_capacity")
 TOTAL = tuple(name.replace("ideal", "total") for name in IDEAL)
 KEYS = ("h", "u", "s", "cp", "cv")
-
-
-def surface_model(**inputs: Any) -> Mixture:
-    """The C++ example's model: constant cp with anchors at 300 K and 1 bar on [250, 450] K."""
-    forms = (IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), IdealPolynomial([35.0, 0.0], 300.0, 2000.0, 70.0))
-    return Mixture(associating_binary(), thermochemistry=record(*forms, upper=450.0), **inputs)
 
 
 def test_thermal_records_reach_the_native_state(evidence: Any) -> None:
@@ -82,3 +88,86 @@ def test_the_model_copies_its_thermal_record(evidence: Any) -> None:
     with pytest.raises(ParameterError, match="ideal anchor outside"):  # native admission stays the owner
         Pure(parameters((ETHANE,)), thermochemistry=record(IdealPolynomial([30.0], 200.0, 0.0, 0.0)))
     assert ROWS["p3-form-value/polynomial/h"] == before
+
+
+ENERGY, VOLUME = ParameterFamily.AssociationEnergyOverK, ParameterFamily.AssociationVolume
+PAIR = (1, 4)  # both native slots of the reciprocal site pair (0, 1) in the 4 x 4 site matrix
+P4_STATE = (313.15, 42441.09427799721, (0.25, 0.75))
+OBSERVABLES = tuple(getattr(PropertyObservable, f"{group}{name}") for group in ("Ideal", "Residual", "Total") for name in (
+    "Enthalpy", "InternalEnergy", "Entropy", "IsobaricHeatCapacity", "IsochoricHeatCapacity"))
+
+
+def p4_model() -> Mixture:
+    forms = (p3_forms()["polynomial"], IdealPolynomial([40.0, 0.0], 300.0, 2000.0, 70.0))
+    return Mixture(associating_binary(), thermochemistry=record(*forms),
+                   active_parameters=[ActiveParameter(ENERGY, PAIR), ActiveParameter(VOLUME, PAIR)])
+
+
+def test_mixed_state_parameter_actions_match_native_in_both_charts(evidence: Any) -> None:
+    """P4's three mixed T, rho or P, x and reciprocal-pair parameter directions, orders one to three."""
+    model = p4_model()
+    temperature, density, x = P4_STATE
+    raw = ((0.2, 5.0, 15000.0, (-0.01, 0.01), 0.03, 0.001), (-0.1, -3.0, -10000.0, (0.005, -0.005), -0.02, -0.0005),
+           (0.05, 2.0, 6000.0, (0.002, -0.002), 0.01, 0.0002))
+    moves = [[ParameterActionDirection(ENERGY, PAIR, item[4]), ParameterActionDirection(VOLUME, PAIR, item[5])] for item in raw]
+    direct = [DensityActionDirection(item[0], item[1], item[3], move) for item, move in zip(raw, moves)]
+    isobaric = [PressureActionDirection(item[0], item[2], item[3], move) for item, move in zip(raw, moves)]
+    pressure = model.state(temperature, rho=density, x=x).pressure
+    for order in (1, 2, 3):
+        batches = (("direct", model.density_actions(temperature, density, x=x, observables=OBSERVABLES, directions=direct[:order])),
+                   ("pressure", model.pressure_actions(temperature, pressure, x=x, phase="liquid", observables=OBSERVABLES,
+                                                       directions=isobaric[:order])))
+        for chart, batch in batches:
+            for index, result in enumerate(batch.results):
+                assert result.status == PropertyActionStatus.Available
+                same(evidence, f"{chart}/action/{index}/{order}", result.action)
+        assert batches[1][1].diagnostics.stable_root_count is not None and batches[0][1].diagnostics.stable_root_count is None
+    # Losing the parameter part moves the first-order residual-enthalpy action ten orders above the criterion.
+    bare = model.density_actions(temperature, density, x=x, observables=OBSERVABLES[5:6],
+                                 directions=[DensityActionDirection(*raw[0][:2], raw[0][3])]).results[0].action
+    assert abs(cast(float, bare) - ROWS["direct/action/5/1"]) > 0.1
+
+
+def test_parameter_action_matches_a_refining_parameter_perturbation(evidence: Any) -> None:
+    """d h_res / d(eps_AB / k) against rebuilt models; P4's 5e-6 first-order criterion and 2x refinement."""
+    temperature, density, x = P4_STATE
+    unit = [DensityActionDirection(parameter=[ParameterActionDirection(ENERGY, PAIR, 1.0)], composition=(0.0, 0.0))]
+    action = cast(float, p4_model().density_actions(temperature, density, x=x, observables=OBSERVABLES[5:6],
+                                                    directions=unit).results[0].action)
+    slopes = []
+    for step in (1.0, 0.3):
+        high, low = (Mixture(associating_binary(sign * step)).state(temperature, rho=density, x=x).residual_enthalpy
+                     for sign in (1.0, -1.0))
+        slopes.append((high - low) / (2.0 * step))
+        evidence.compare(f"parameter-perturbation/{step}", model=action, reference=slopes[-1], inputs={"step_K": step},
+                         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 5e-6, "rtol": 5e-6})
+    assert abs(action) > 0.5 and abs(action - slopes[1]) <= 5e-6 * max(1.0, abs(slopes[1]))
+    assert abs(slopes[0] - slopes[1]) <= 1e-5 * max(1.0, abs(slopes[1]))
+    model = p4_model()
+    fixed = [DensityActionDirection(parameter=[ParameterActionDirection(VOLUME, (0,), 1.0)], composition=(0.0, 0.0))]
+    zero = model.density_actions(temperature, density, x=x, observables=OBSERVABLES[5:6], directions=fixed).results[0]
+    assert zero.status == PropertyActionStatus.Available and abs(cast(float, zero.action)) <= 1e-12  # known fixed slot
+    unknown = [DensityActionDirection(parameter=[ParameterActionDirection(VOLUME, (999,), 1.0)], composition=(0.0, 0.0))]
+    with pytest.raises(ParameterError):
+        model.density_actions(temperature, density, x=x, observables=OBSERVABLES[5:6], directions=unknown)
+
+
+def test_pure_forwards_its_parameter_direction(evidence: Any) -> None:
+    """A Pure scalar-parameter action is nonzero and equals a perturbed-epsilon difference in both charts."""
+    epsilon = ParameterFamily.DispersionEnergyOverK
+    model = Pure(parameters((ETHANE,)), active_parameters=[ActiveParameter(epsilon, (0,))])
+    move = [ParameterActionDirection(epsilon, (0,), 1.0)]
+    observable = (PropertyObservable.ResidualEnthalpy,)
+    direct = model.density_actions(350.0, 1000.0, observables=observable,
+                                   directions=[DensityActionDirection(parameter=move)]).results[0].action
+    pressure = model.state(350.0, rho=1000.0).pressure
+    isobaric = model.pressure_actions(350.0, pressure, phase="vapor", observables=observable,
+                                      directions=[PressureActionDirection(parameter=move)]).results[0].action
+    for step in (0.1, 0.03):
+        shifted = [Pure(parameters(((*ETHANE[:3], ETHANE[3] + sign * step),))) for sign in (1.0, -1.0)]
+        for chart, action, states in (("density", direct, [item.state(350.0, rho=1000.0) for item in shifted]),
+                                      ("pressure", isobaric, [item.state(350.0, P=pressure, phase="vapor") for item in shifted])):
+            slope = (states[0].residual_enthalpy - states[1].residual_enthalpy) / (2.0 * step)
+            evidence.compare(f"pure-parameter/{chart}/{step}", model=action, reference=slope,
+                             criterion={"type": "scalar", "rule": "symmetric_close", "atol": 5e-6, "rtol": 5e-6})
+            assert abs(slope) > 1.0 and abs(cast(float, action) - slope) <= 5e-6 * max(1.0, abs(slope))

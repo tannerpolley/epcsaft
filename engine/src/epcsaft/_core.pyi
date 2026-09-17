@@ -220,19 +220,29 @@ class PropertyActionStatus:
     CentralPropertyUnavailable: PropertyActionStatus
     Nonfinite: PropertyActionStatus
 
+class ParameterActionDirection:
+    family: ParameterFamily
+    indices: list[int]
+    value: float
+    def __init__(self, family: ParameterFamily, indices: Sequence[int], value: float) -> None: ...
+
 class DensityActionDirection:
     temperature: float
     molar_density: float
     composition: list[float]
+    parameter: list[ParameterActionDirection]
     def __init__(self, temperature: float = 0.0, molar_density: float = 0.0,
-                 composition: Sequence[float] = ()) -> None: ...
+                 composition: Sequence[float] = (),
+                 parameter: Sequence[ParameterActionDirection] = ()) -> None: ...
 
 class PressureActionDirection:
     temperature: float
     pressure: float
     composition: list[float]
+    parameter: list[ParameterActionDirection]
     def __init__(self, temperature: float = 0.0, pressure: float = 0.0,
-                 composition: Sequence[float] = ()) -> None: ...
+                 composition: Sequence[float] = (),
+                 parameter: Sequence[ParameterActionDirection] = ()) -> None: ...
 
 class PropertyActionResult:
     observable: PropertyObservable
@@ -241,14 +251,34 @@ class PropertyActionResult:
     status: PropertyActionStatus
     energy_order: int
 
-class PropertyActionBatch:
-    results: list[PropertyActionResult]
-    maximum_energy_order: int
-
 class DensityBranch:
     Unspecified: DensityBranch
     Vapor: DensityBranch
     Liquid: DensityBranch
+
+class PropertyActionDiagnostics:
+    site_rank: int
+    site_factorizations: int
+    site_solves: int
+    site_pivot_ratio: float
+    association_residual: float
+    pressure_density_derivative: float
+    pressure_residual: float
+    stability_determinant: float
+    pressure_factorizations: int
+    pressure_solves: int
+    thermal_evaluations: int
+    recordings: int
+    directional_paths: int
+    forward_sweeps: int
+    dense_hessian_calls: int
+    branch: DensityBranch
+    stable_root_count: Optional[int]
+
+class PropertyActionBatch:
+    results: list[PropertyActionResult]
+    maximum_energy_order: int
+    diagnostics: PropertyActionDiagnostics
 
 class State:
     hard_chain: float
@@ -499,6 +529,93 @@ class ContinuationResult:
 
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult: ...
 
+class SolvedStateObservableKind:
+    Temperature: SolvedStateObservableKind
+    Pressure: SolvedStateObservableKind
+    PhaseAmount: SolvedStateObservableKind
+    PhaseComponentAmount: SolvedStateObservableKind
+    PhaseMoleFraction: SolvedStateObservableKind
+    PhaseVolume: SolvedStateObservableKind
+    PhaseMolarDensity: SolvedStateObservableKind
+    PhasePackingFraction: SolvedStateObservableKind
+    PhasePressure: SolvedStateObservableKind
+    PhaseResidualChemicalPotentialOverRt: SolvedStateObservableKind
+    PhaseProperty: SolvedStateObservableKind
+    PhaseLogActivity: SolvedStateObservableKind
+
+class SolvedStateObservable:
+    kind: SolvedStateObservableKind
+    phase: int
+    component: int
+    property: PropertyObservable
+    def __init__(self, kind: SolvedStateObservableKind, phase: int = 0, component: int = 0,
+                 property: PropertyObservable = ...) -> None: ...
+
+class SolvedStateActionDirection:
+    temperature_k: float
+    pressure_pa: float
+    feed_amounts_mol: list[float]
+    active_parameters: list[float]
+    def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
+                 active_parameters: Sequence[float]) -> None: ...
+
+class SolvedStateActionRequest:
+    observables: list[SolvedStateObservable]
+    directions: list[SolvedStateActionDirection]
+    def __init__(self, observables: Sequence[SolvedStateObservable],
+                 directions: Sequence[SolvedStateActionDirection]) -> None: ...
+
+class SolvedStateActionStatus:
+    Available: SolvedStateActionStatus
+    CentralSolveUnavailable: SolvedStateActionStatus
+    DefiningEquationsNotSatisfied: SolvedStateActionStatus
+    PhaseBoundaryNotDifferentiable: SolvedStateActionStatus
+    NonuniqueCoalescedPhases: SolvedStateActionStatus
+    RankDeficient: SolvedStateActionStatus
+    NonfiniteJacobian: SolvedStateActionStatus
+    LinearSolveResidual: SolvedStateActionStatus
+    SupportChange: SolvedStateActionStatus
+    IonicInsertion: SolvedStateActionStatus
+    EnergyOrderUnavailable: SolvedStateActionStatus
+    DensityUnavailable: SolvedStateActionStatus
+    PressureSingular: SolvedStateActionStatus
+    AssociationSingular: SolvedStateActionStatus
+    AssociationIllConditioned: SolvedStateActionStatus
+    AssociationResidual: SolvedStateActionStatus
+    MissingThermochemistry: SolvedStateActionStatus
+    OutsideInterval: SolvedStateActionStatus
+    ThermalBoundary: SolvedStateActionStatus
+    CentralPropertyUnavailable: SolvedStateActionStatus
+    Nonfinite: SolvedStateActionStatus
+
+class SolvedStateActionResult:
+    observable: SolvedStateObservable
+    unit: str
+    order: int
+    value: Optional[float]
+    action: Optional[float]
+    status: SolvedStateActionStatus
+    property_diagnostics: Optional[PropertyActionDiagnostics]
+    diagnostic_message: Optional[str]
+
+class SolvedStateActionDiagnostics:
+    equation_count: int
+    state_dimension: int
+    maximum_energy_order: int
+    state_factorizations: int
+    linear_solves: int
+    rank: Optional[int]
+    condition_estimate: Optional[float]
+    maximum_linear_residual: Optional[float]
+    central_residual: Optional[float]
+    central_floor: Optional[float]
+
+class SolvedStateActionBatch:
+    results: list[SolvedStateActionResult]
+    diagnostics: SolvedStateActionDiagnostics
+
+def solved_state_actions(compiled: CompiledSystem, central: EquilibriumResult,
+                         request: SolvedStateActionRequest) -> SolvedStateActionBatch: ...
 def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
 def solve_equilibrium(

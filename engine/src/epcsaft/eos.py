@@ -26,6 +26,8 @@ PropertyObservable = _core.PropertyObservable
 PropertyActionStatus = _core.PropertyActionStatus
 DensityActionDirection = _core.DensityActionDirection
 PressureActionDirection = _core.PressureActionDirection
+ParameterActionDirection = _core.ParameterActionDirection
+PropertyActionDiagnostics = _core.PropertyActionDiagnostics
 PropertyActionResult = _core.PropertyActionResult
 PropertyActionBatch = _core.PropertyActionBatch
 ParameterError = _core.ParameterError
@@ -187,7 +189,7 @@ class Pure:
         native = tuple(
             DensityActionDirection(
                 item.temperature, item.molar_density,
-                item.composition or (0.0,),
+                item.composition or (0.0,), item.parameter,
             )
             for item in directions
         )
@@ -206,7 +208,7 @@ class Pure:
         native = tuple(
             PressureActionDirection(
                 item.temperature, item.pressure,
-                item.composition or (0.0,),
+                item.composition or (0.0,), item.parameter,
             )
             for item in directions
         )

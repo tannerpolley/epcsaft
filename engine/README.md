@@ -113,6 +113,31 @@ ln_k = ReactionLogPolynomial(a, b, c, d, Tref, Tmin, Tmax, EOS_STANDARD_STATE_ID
 Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)             # exactly one of K, affinity or ln K(T)
 ```
 
+Actions are order one to three contractions along caller directions and keep the
+observable's unit. A state direction holds K, mol/m^3 or Pa, a zero-sum
+composition increment and native family/slot parameter increments; a solved-state
+direction holds K, Pa, absolute feed mol (component width) and one increment per
+active parameter (active width). A free T or P is an output: its entry is zero.
+
+```python
+from epcsaft import ActiveParameter, DensityActionDirection, ParameterActionDirection, ParameterFamily
+from epcsaft.equilibrium import (SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
+                                 SolvedStateObservableKind as Kind, compile_problem, solved_state_actions)
+
+pair = ActiveParameter(ParameterFamily.AssociationEnergyOverK, (1, 4))  # both slots of site pair (0, 1)
+model = Mixture(parameters, thermochemistry=record, active_parameters=[pair])
+move = DensityActionDirection(1.0, 0.0, (0.0, 0.0), [ParameterActionDirection(pair.family, pair.indices, 0.03)])
+batch = model.density_actions(T, rho, x=x, observables=observables, directions=[move])
+batch.results[0].action, batch.results[0].status, batch.diagnostics  # None beside a typed status when unavailable
+
+central = solve_equilibrium(model, problem)
+compiled = compile_problem(model, problem)                    # one compile; no solve is repeated
+warm = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [0.0])
+request = SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseLogActivity, 0, 1)], [warm])
+row = solved_state_actions(compiled, central, request).results[0]
+fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
+```
+
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
 wheel build and installation.

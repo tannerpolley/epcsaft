@@ -179,39 +179,71 @@ void register_eos(py::module_& module) {
         .value("PressureSingular", epcsaft::PropertyActionStatus::PressureSingular)
         .value("CentralPropertyUnavailable", epcsaft::PropertyActionStatus::CentralPropertyUnavailable)
         .value("Nonfinite", epcsaft::PropertyActionStatus::Nonfinite);
+    // A native family/slot coordinate increment in its ALG-PARAMETERS unit.
+    py::class_<epcsaft::ParameterActionDirection>(module, "ParameterActionDirection")
+        .def(py::init([](epcsaft::ParameterFamily family, std::vector<std::size_t> indices, double value) {
+            return epcsaft::ParameterActionDirection{family, std::move(indices), value};
+        }), py::arg("family"), py::arg("indices"), py::arg("value"))
+        .def_readonly("family", &epcsaft::ParameterActionDirection::family)
+        .def_readonly("indices", &epcsaft::ParameterActionDirection::indices)
+        .def_readonly("value", &epcsaft::ParameterActionDirection::value);
     py::class_<epcsaft::DensityActionDirection>(module, "DensityActionDirection")
-        .def(py::init([](double temperature, double molar_density,
-                         std::vector<double> composition) {
+        .def(py::init([](double temperature, double molar_density, std::vector<double> composition,
+                         std::vector<epcsaft::ParameterActionDirection> parameter) {
             return epcsaft::DensityActionDirection{
-                temperature, molar_density, std::move(composition), {}};
+                temperature, molar_density, std::move(composition), std::move(parameter)};
         }), py::arg("temperature") = 0.0, py::arg("molar_density") = 0.0,
-            py::arg("composition") = std::vector<double>{})
+            py::arg("composition") = std::vector<double>{},
+            py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
         .def_readonly("temperature", &epcsaft::DensityActionDirection::temperature)
         .def_readonly("molar_density", &epcsaft::DensityActionDirection::molar_density)
-        .def_readonly("composition", &epcsaft::DensityActionDirection::composition);
+        .def_readonly("composition", &epcsaft::DensityActionDirection::composition)
+        .def_readonly("parameter", &epcsaft::DensityActionDirection::parameter);
     py::class_<epcsaft::PressureActionDirection>(module, "PressureActionDirection")
-        .def(py::init([](double temperature, double pressure,
-                         std::vector<double> composition) {
+        .def(py::init([](double temperature, double pressure, std::vector<double> composition,
+                         std::vector<epcsaft::ParameterActionDirection> parameter) {
             return epcsaft::PressureActionDirection{
-                temperature, pressure, std::move(composition), {}};
+                temperature, pressure, std::move(composition), std::move(parameter)};
         }), py::arg("temperature") = 0.0, py::arg("pressure") = 0.0,
-            py::arg("composition") = std::vector<double>{})
+            py::arg("composition") = std::vector<double>{},
+            py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
         .def_readonly("temperature", &epcsaft::PressureActionDirection::temperature)
         .def_readonly("pressure", &epcsaft::PressureActionDirection::pressure)
-        .def_readonly("composition", &epcsaft::PressureActionDirection::composition);
+        .def_readonly("composition", &epcsaft::PressureActionDirection::composition)
+        .def_readonly("parameter", &epcsaft::PressureActionDirection::parameter);
     py::class_<epcsaft::PropertyActionResult>(module, "PropertyActionResult")
         .def_readonly("observable", &epcsaft::PropertyActionResult::observable)
         .def_readonly("value", &epcsaft::PropertyActionResult::value)
         .def_readonly("action", &epcsaft::PropertyActionResult::action)
         .def_readonly("status", &epcsaft::PropertyActionResult::status)
         .def_readonly("energy_order", &epcsaft::PropertyActionResult::energy_order);
-    py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
-        .def_readonly("results", &epcsaft::PropertyActionBatch::results)
-        .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order);
     py::enum_<epcsaft::DensityBranch>(module, "DensityBranch")
         .value("Unspecified", epcsaft::DensityBranch::Unspecified)
         .value("Vapor", epcsaft::DensityBranch::Vapor)
         .value("Liquid", epcsaft::DensityBranch::Liquid);
+    using Diagnostics = epcsaft::PropertyActionDiagnostics;
+    py::class_<Diagnostics>(module, "PropertyActionDiagnostics")
+        .def_readonly("site_rank", &Diagnostics::site_rank)
+        .def_readonly("site_factorizations", &Diagnostics::site_factorizations)
+        .def_readonly("site_solves", &Diagnostics::site_solves)
+        .def_readonly("site_pivot_ratio", &Diagnostics::site_pivot_ratio)
+        .def_readonly("association_residual", &Diagnostics::association_residual)
+        .def_readonly("pressure_density_derivative", &Diagnostics::pressure_density_derivative)
+        .def_readonly("pressure_residual", &Diagnostics::pressure_residual)
+        .def_readonly("stability_determinant", &Diagnostics::stability_determinant)
+        .def_readonly("pressure_factorizations", &Diagnostics::pressure_factorizations)
+        .def_readonly("pressure_solves", &Diagnostics::pressure_solves)
+        .def_readonly("thermal_evaluations", &Diagnostics::thermal_evaluations)
+        .def_readonly("recordings", &Diagnostics::recordings)
+        .def_readonly("directional_paths", &Diagnostics::directional_paths)
+        .def_readonly("forward_sweeps", &Diagnostics::forward_sweeps)
+        .def_readonly("dense_hessian_calls", &Diagnostics::dense_hessian_calls)
+        .def_readonly("branch", &Diagnostics::branch)
+        .def_readonly("stable_root_count", &Diagnostics::stable_root_count);
+    py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
+        .def_readonly("results", &epcsaft::PropertyActionBatch::results)
+        .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order)
+        .def_readonly("diagnostics", &epcsaft::PropertyActionBatch::diagnostics);
     py::class_<epcsaft::State>(module, "State")
         .def_readonly("hard_chain", &epcsaft::State::hard_chain)
         .def_readonly("dispersion", &epcsaft::State::dispersion)

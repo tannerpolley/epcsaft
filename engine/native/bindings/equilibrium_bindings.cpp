@@ -195,6 +195,96 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("rank", &SensitivityInfo::rank)
         .def_readonly("condition_estimate", &SensitivityInfo::condition_estimate)
         .def_readonly("nonsingular", &SensitivityInfo::nonsingular);
+    // E5 solved-state actions: the existing native records and owner, transported unchanged.
+    py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
+        .value("Temperature", SolvedStateObservableKind::Temperature)
+        .value("Pressure", SolvedStateObservableKind::Pressure)
+        .value("PhaseAmount", SolvedStateObservableKind::PhaseAmount)
+        .value("PhaseComponentAmount", SolvedStateObservableKind::PhaseComponentAmount)
+        .value("PhaseMoleFraction", SolvedStateObservableKind::PhaseMoleFraction)
+        .value("PhaseVolume", SolvedStateObservableKind::PhaseVolume)
+        .value("PhaseMolarDensity", SolvedStateObservableKind::PhaseMolarDensity)
+        .value("PhasePackingFraction", SolvedStateObservableKind::PhasePackingFraction)
+        .value("PhasePressure", SolvedStateObservableKind::PhasePressure)
+        .value("PhaseResidualChemicalPotentialOverRt",
+               SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt)
+        .value("PhaseProperty", SolvedStateObservableKind::PhaseProperty)
+        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity);
+    py::class_<SolvedStateObservable>(module, "SolvedStateObservable")
+        .def(py::init([](SolvedStateObservableKind kind, std::size_t phase, std::size_t component,
+                         PropertyObservable property) {
+            return SolvedStateObservable{kind, phase, component, property};
+        }), py::arg("kind"), py::arg("phase") = 0, py::arg("component") = 0,
+            py::arg("property") = PropertyObservable::IdealEnthalpy)
+        .def_readonly("kind", &SolvedStateObservable::kind)
+        .def_readonly("phase", &SolvedStateObservable::phase)
+        .def_readonly("component", &SolvedStateObservable::component)
+        .def_readonly("property", &SolvedStateObservable::property);
+    py::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
+        .def(py::init([](double temperature_k, double pressure_pa, std::vector<double> feed_amounts_mol,
+                         std::vector<double> active_parameters) {
+            return SolvedStateActionDirection{temperature_k, pressure_pa, std::move(feed_amounts_mol),
+                                              std::move(active_parameters)};
+        }), py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
+            py::arg("active_parameters"))
+        .def_readonly("temperature_k", &SolvedStateActionDirection::temperature_k)
+        .def_readonly("pressure_pa", &SolvedStateActionDirection::pressure_pa)
+        .def_readonly("feed_amounts_mol", &SolvedStateActionDirection::feed_amounts_mol)
+        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters);
+    py::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
+        .def(py::init([](std::vector<SolvedStateObservable> observables,
+                         std::vector<SolvedStateActionDirection> directions) {
+            return SolvedStateActionRequest{std::move(observables), std::move(directions)};
+        }), py::arg("observables"), py::arg("directions"))
+        .def_readonly("observables", &SolvedStateActionRequest::observables)
+        .def_readonly("directions", &SolvedStateActionRequest::directions);
+    py::enum_<SolvedStateActionStatus>(module, "SolvedStateActionStatus")
+        .value("Available", SolvedStateActionStatus::Available)
+        .value("CentralSolveUnavailable", SolvedStateActionStatus::CentralSolveUnavailable)
+        .value("DefiningEquationsNotSatisfied", SolvedStateActionStatus::DefiningEquationsNotSatisfied)
+        .value("PhaseBoundaryNotDifferentiable", SolvedStateActionStatus::PhaseBoundaryNotDifferentiable)
+        .value("NonuniqueCoalescedPhases", SolvedStateActionStatus::NonuniqueCoalescedPhases)
+        .value("RankDeficient", SolvedStateActionStatus::RankDeficient)
+        .value("NonfiniteJacobian", SolvedStateActionStatus::NonfiniteJacobian)
+        .value("LinearSolveResidual", SolvedStateActionStatus::LinearSolveResidual)
+        .value("SupportChange", SolvedStateActionStatus::SupportChange)
+        .value("IonicInsertion", SolvedStateActionStatus::IonicInsertion)
+        .value("EnergyOrderUnavailable", SolvedStateActionStatus::EnergyOrderUnavailable)
+        .value("DensityUnavailable", SolvedStateActionStatus::DensityUnavailable)
+        .value("PressureSingular", SolvedStateActionStatus::PressureSingular)
+        .value("AssociationSingular", SolvedStateActionStatus::AssociationSingular)
+        .value("AssociationIllConditioned", SolvedStateActionStatus::AssociationIllConditioned)
+        .value("AssociationResidual", SolvedStateActionStatus::AssociationResidual)
+        .value("MissingThermochemistry", SolvedStateActionStatus::MissingThermochemistry)
+        .value("OutsideInterval", SolvedStateActionStatus::OutsideInterval)
+        .value("ThermalBoundary", SolvedStateActionStatus::ThermalBoundary)
+        .value("CentralPropertyUnavailable", SolvedStateActionStatus::CentralPropertyUnavailable)
+        .value("Nonfinite", SolvedStateActionStatus::Nonfinite);
+    py::class_<SolvedStateActionResult>(module, "SolvedStateActionResult")
+        .def_readonly("observable", &SolvedStateActionResult::observable)
+        .def_readonly("unit", &SolvedStateActionResult::unit)
+        .def_readonly("order", &SolvedStateActionResult::order)
+        .def_readonly("value", &SolvedStateActionResult::value)
+        .def_readonly("action", &SolvedStateActionResult::action)
+        .def_readonly("status", &SolvedStateActionResult::status)
+        .def_readonly("property_diagnostics", &SolvedStateActionResult::property_diagnostics)
+        .def_readonly("diagnostic_message", &SolvedStateActionResult::diagnostic_message);
+    py::class_<SolvedStateActionDiagnostics>(module, "SolvedStateActionDiagnostics")
+        .def_readonly("equation_count", &SolvedStateActionDiagnostics::equation_count)
+        .def_readonly("state_dimension", &SolvedStateActionDiagnostics::state_dimension)
+        .def_readonly("maximum_energy_order", &SolvedStateActionDiagnostics::maximum_energy_order)
+        .def_readonly("state_factorizations", &SolvedStateActionDiagnostics::state_factorizations)
+        .def_readonly("linear_solves", &SolvedStateActionDiagnostics::linear_solves)
+        .def_readonly("rank", &SolvedStateActionDiagnostics::rank)
+        .def_readonly("condition_estimate", &SolvedStateActionDiagnostics::condition_estimate)
+        .def_readonly("maximum_linear_residual", &SolvedStateActionDiagnostics::maximum_linear_residual)
+        .def_readonly("central_residual", &SolvedStateActionDiagnostics::central_residual)
+        .def_readonly("central_floor", &SolvedStateActionDiagnostics::central_floor);
+    py::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch")
+        .def_readonly("results", &SolvedStateActionBatch::results)
+        .def_readonly("diagnostics", &SolvedStateActionBatch::diagnostics);
+    module.def("solved_state_actions", &solved_state_actions,
+               py::arg("compiled"), py::arg("central"), py::arg("request"));
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),

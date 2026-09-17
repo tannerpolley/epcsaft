@@ -16,6 +16,7 @@ from epcsaft import (
     IdealNASA9,
     IdealPolynomial,
     IdealShomate,
+    Mixture,
     Parameters,
     ThermochemistryRecord,
     _core,
@@ -37,22 +38,21 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
 
 def parameters(
     species: Sequence[tuple[float, float, float, float]],  # g/mol, segments, sigma / angstrom, epsilon / K
-    pairs: Sequence[tuple[str, tuple[int, int], float]] = (),  # k_ij and association site-pair entries
+    pairs: Sequence[tuple[str, tuple[int, ...], float]] = (),  # k_ij and association site-pair entries
     sites: tuple[Sequence[int], Sequence[int]] = ((), ()),
-    ions: dict[str, Any] | None = None,
+    charges: Sequence[int] | None = None,
+    extra: Sequence[tuple[str, tuple[int, ...], float, str]] = (),
+    choices: tuple[str, str, str] = ("none", "", "none"),  # electrolyte, ionic dispersion, permittivity
 ) -> Parameters:
     document = _core.ParameterDocument()
     document.component_ids = [f"s{i}" for i in range(len(species))]
     document.site_component, document.site_multiplicity = list(sites[0]), list(sites[1])
-    document.electrolyte_choice = document.permittivity_choice = "none"
-    rows: list[tuple[str, tuple[int, ...], float, str]] = list(ions["entries"]) if ions else []
-    if ions:
-        document.electrolyte_choice, document.ionic_dispersion_choice, document.permittivity_choice = ions["choices"]
+    document.electrolyte_choice, document.ionic_dispersion_choice, document.permittivity_choice = choices
+    rows: list[tuple[str, tuple[int, ...], float, str]] = list(extra)
     for i, (mass, segments, sigma, epsilon) in enumerate(species):
         rows += [("molar_mass", (i,), mass, "gram / mole"), ("segment_count", (i,), segments, "dimensionless"),
                  ("sigma_constant", (i,), sigma, "angstrom"), ("dispersion_energy_over_k", (i,), epsilon, "kelvin")]
-        if not ions:
-            rows.append(("charge_number", (i,), 0.0, "elementary-charge"))
+        rows.append(("charge_number", (i,), float(charges[i]) if charges else 0.0, "elementary-charge"))
     rows += [(field, index, value, "kelvin" if field == "association_energy_over_k" else "dimensionless")
              for field, index, value in pairs]
     entries = []
@@ -69,9 +69,29 @@ def parameters(
 ETHANE = (30.07, 1.6069, 3.5206, 191.42)
 
 
-def associating_binary() -> Parameters:
-    """properties_support::associating_binary(), the surface example's amine-water-like pair."""
-    edges = (((0, 1), 2383.4744, 0.118488), ((0, 3), 2093.8222, 0.1540467874409226),
+def aqueous_electrolyte() -> Parameters:
+    """properties_support::aqueous_electrolyte(): water, Na+ and Cl- with Debye-Huckel and Born terms."""
+    extra: list[tuple[str, tuple[int, ...], float, str]] = [
+        ("relative_permittivity", (0,), 78.09, "dimensionless"), ("ionic_region_relative_permittivity", (), 8.0, "dimensionless"),
+        ("born_c_shell", (), 0.0, "dimensionless"), ("born_c_dielectric", (), 0.0, "dimensionless"),
+        ("ion_suppression_coefficient", (), 7.01, "dimensionless"),
+        ("sigma_term_amplitude", (0, 0), 10.11, "angstrom"), ("sigma_term_exponent", (0, 0), -0.01775, "1 / kelvin"),
+        ("sigma_term_amplitude", (1, 0), -1.417, "angstrom"), ("sigma_term_exponent", (1, 0), -0.01146, "1 / kelvin")]
+    for i, (solvation, diameter, born) in enumerate(((1.5, None, None), (1.0, 2.484416, 3.445), (1.0, 2.42528, 4.1))):
+        extra.append(("solvation_factor", (i,), solvation, "dimensionless"))
+        if diameter is not None and born is not None:
+            extra += [("packing_diameter", (i,), diameter, "angstrom"), ("debye_huckel_diameter", (i,), diameter, "angstrom"),
+                      ("born_diameter", (i,), born, "angstrom")]
+    pairs = [("k_ij", (0, 1), -0.3), ("k_ij", (0, 2), 0.0), ("k_ij", (1, 2), 0.8),
+             ("association_energy_over_k", (0, 1), 2425.7), ("association_volume", (0, 1), 0.04509)]
+    species = ((18.0153, 1.2047, 2.7927, 353.95), (22.98977, 1.0, 2.8232, 230.0), (35.4527, 1.0, 2.756, 170.0))
+    return parameters(species, pairs, ((0, 0), (1, 1)), (0, 1, -1), extra,
+                      ("born", "exclude-same-sign-ion-pairs", "ion-fraction-suppression"))
+
+
+def associating_binary(shift: float = 0.0) -> Parameters:
+    """properties_support::associating_binary(); `shift` / K moves the reciprocal site pair (0, 1) energy."""
+    edges = (((0, 1), 2383.4744 + shift, 0.118488), ((0, 3), 2093.8222, 0.1540467874409226),
              ((1, 2), 2093.8222, 0.1540467874409226), ((2, 3), 1804.17, 0.2039))
     pairs: list[tuple[str, tuple[int, int], float]] = [("k_ij", (0, 1), -0.052)]
     for index, energy, volume in edges:
@@ -96,3 +116,9 @@ def record(*forms: Any, lower: float = 250.0, upper: float = 350.0) -> Thermoche
     """One closed interval per component at 1 bar, in component order."""
     return ThermochemistryRecord(1.0e5, [[IdealInterval(lower, upper, True, True, IdealCorrelation(form, 1.0e5))]
                                          for form in forms])
+
+
+def surface_model(**inputs: Any) -> Mixture:
+    """The C++ example's model: constant cp with anchors at 300 K and 1 bar on [250, 450] K."""
+    forms = (IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), IdealPolynomial([35.0, 0.0], 300.0, 2000.0, 70.0))
+    return Mixture(associating_binary(), thermochemistry=record(*forms, upper=450.0), **inputs)
