@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "issue": "#43 E6",
- "source_commit": "9c6efafedf83e009c9c078001eda91d5c583bc72",
+ "source_commit": "88c8e531bae080ef8bd96b1ab42daa2e135cd982",
  "source_dirty": false,
  "wheel": {
   "path": "build/environment-wheel/epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
@@ -108,11 +108,22 @@
  "environment": {
   "python": "3.13.14",
   "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "buildtype": "release",
+  "compile_flags": "-O3 -DNDEBUG -std=c++17 (release; see compile_commands.json)",
   "eigen": "3.4.0",
-  "cppad": "20250000.3",
   "ipopt": "3.11.9",
-  "boost": "1.88.0",
-  "cpu": "AMD Ryzen 5 5500 (12 logical)",
+  "meson_subprojects": [
+   "CppAD-20250000.3",
+   "HiGHS-1.15.1",
+   "nlopt-2.11.0"
+  ],
+  "linked_blas_lapack_openmp": [
+   "liblapack.so.3",
+   "libblas.so.3"
+  ],
+  "blas_note": "reference libblas/liblapack, no OpenBLAS or OpenMP runtime linked: one numerical thread by construction; the thread variables are inert",
+  "cpu": "AMD Ryzen 5 5500",
+  "cpu_governor": "powersave",
   "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
   "threads": {
    "OPENBLAS_NUM_THREADS": "1",
@@ -120,6 +131,7 @@
   },
   "numerical_precision": "double"
  },
+ "test_case_source_revision": "88c8e531bae080ef8bd96b1ab42daa2e135cd982",
  "selectors": {
   "boundary_E4-A": {
    "comparisons": 21,
@@ -375,9 +387,9 @@
   },
   "probe_references": {
    "comparisons": 128,
-   "false": 12,
+   "false": 8,
    "observation_only": 60,
-   "failed_state": 1,
+   "failed_state": 0,
    "not_evaluated": 4
   },
   "properties_P4": {
@@ -483,16 +495,17 @@
   "Complete": 9096,
   "Observation only": 2074,
   "Unavailable": 387,
-  "Failed": 9,
+  "Failed": 8,
+  "Non-admission": 1,
   "Not evaluated": 4
  },
  "total_comparisons": 11570,
- "total_false_verdicts": 12,
+ "total_false_verdicts": 8,
  "reference_summaries": {
   "may": {
    "Complete": 12,
-   "Failed": 1,
-   "Non-admission": 0,
+   "Failed": 0,
+   "Non-admission": 1,
    "reference_miss": 4
   },
   "nist": {
@@ -509,9 +522,9 @@
    "row": "model-construction",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.00016761300139478408,
-   "min_s": 0.0001475650024076458,
-   "max_s": 0.00022100299975136295,
+   "median_s": 0.0001332789979642257,
+   "min_s": 0.00012223799785715528,
+   "max_s": 0.00014962999921408482,
    "failures": 0,
    "counters": null
   },
@@ -519,9 +532,9 @@
    "row": "syn-tp-01-neutral-binary-liquid",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.003605369998695096,
-   "min_s": 0.003375150998181198,
-   "max_s": 0.00398202300129924,
+   "median_s": 0.0034644490006030537,
+   "min_s": 0.0032751360013207886,
+   "max_s": 0.00352876900069532,
    "failures": 0,
    "counters": {
     "iterations": 6,
@@ -533,9 +546,9 @@
    "row": "syn-bd-01-bubble",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.010893095000938047,
-   "min_s": 0.010645783000654774,
-   "max_s": 0.011260039998887805,
+   "median_s": 0.009599463999620639,
+   "min_s": 0.009438473000045633,
+   "max_s": 0.009810568000830244,
    "failures": 0,
    "counters": {
     "iterations": 7,
@@ -547,9 +560,9 @@
    "row": "syn-bd-01-dew",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.010986057997797616,
-   "min_s": 0.010534865999943577,
-   "max_s": 0.011979492999671493,
+   "median_s": 0.009714800002257107,
+   "min_s": 0.009620603999792365,
+   "max_s": 0.010084760000609094,
    "failures": 0,
    "counters": {
     "iterations": 7,
@@ -561,9 +574,9 @@
    "row": "e4-a-bubble-branch-180-181",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.029201782002928667,
-   "min_s": 0.02803926200067508,
-   "max_s": 0.03200277100040694,
+   "median_s": 0.024784268000075826,
+   "min_s": 0.024003239999728976,
+   "max_s": 0.026983503998053493,
    "failures": 0,
    "counters": {
     "attempts": 4,
@@ -577,9 +590,9 @@
    "row": "e4-b-interior-lever",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.023354396002105204,
-   "min_s": 0.022685918997012777,
-   "max_s": 0.025207394999597454,
+   "median_s": 0.021385541000199737,
+   "min_s": 0.021019307998358272,
+   "max_s": 0.02289717399980873,
    "failures": 0,
    "counters": {
     "attempts": 4,
@@ -593,9 +606,9 @@
    "row": "syn-warm-01-neutral-seed-reuse",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.006772572000045329,
-   "min_s": 0.006362487001752015,
-   "max_s": 0.008410279999225168,
+   "median_s": 0.006492672997410409,
+   "min_s": 0.006237557001441019,
+   "max_s": 0.0066336960007902235,
    "failures": 0,
    "counters": {
     "iterations": 8,
@@ -607,9 +620,9 @@
    "row": "syn-warm-01-neutral-cold",
    "warmups": 3,
    "repeats": 7,
-   "median_s": 0.007644790999620454,
-   "min_s": 0.007000949000939727,
-   "max_s": 0.009757515003002482,
+   "median_s": 0.0068557309969037306,
+   "min_s": 0.006604612000955967,
+   "max_s": 0.007061805998091586,
    "failures": 0,
    "counters": {
     "iterations": 9,
@@ -621,9 +634,9 @@
    "row": "native-selector/equilibrium_checks/S1",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.07065764999788371,
-   "min_s": 0.06679430800068076,
-   "max_s": 0.07899285899839015,
+   "median_s": 0.06619242500164546,
+   "min_s": 0.06569216099887853,
+   "max_s": 0.06895749799878104,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -633,9 +646,9 @@
    "row": "native-selector/equilibrium_checks/S11",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.025418039000214776,
-   "min_s": 0.024504384000465507,
-   "max_s": 0.027216898000915535,
+   "median_s": 0.024341110001842026,
+   "min_s": 0.022888838000653777,
+   "max_s": 0.02619425000011688,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -645,9 +658,9 @@
    "row": "native-selector/equilibrium_checks/S7",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.0546991289993457,
-   "min_s": 0.05230884699994931,
-   "max_s": 0.05699384299805388,
+   "median_s": 0.054412099001638126,
+   "min_s": 0.05254758700175444,
+   "max_s": 0.05749640799695044,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -657,9 +670,9 @@
    "row": "native-selector/equilibrium_checks/S16",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.08471368899699883,
-   "min_s": 0.07680323199747363,
-   "max_s": 0.09271390399953816,
+   "median_s": 0.07529324799907045,
+   "min_s": 0.07375003700144589,
+   "max_s": 0.07641527399755432,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -669,9 +682,9 @@
    "row": "native-selector/boundary_checks/S4",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.17422249000082957,
-   "min_s": 0.1661807679993217,
-   "max_s": 0.17694310799925006,
+   "median_s": 0.17382135099978768,
+   "min_s": 0.16752468399863574,
+   "max_s": 0.1789463599998271,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -681,9 +694,9 @@
    "row": "native-selector/boundary_checks/E4-B",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.051564667999628,
-   "min_s": 0.0507249709989992,
-   "max_s": 0.05185178399915458,
+   "median_s": 0.05604707199745462,
+   "min_s": 0.05313653700068244,
+   "max_s": 0.05739775400070357,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -693,9 +706,9 @@
    "row": "native-selector/boundary_checks/E4-C",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 4.015355735999037,
-   "min_s": 3.4880000569974072,
-   "max_s": 5.146260312998493,
+   "median_s": 1.8820369130007748,
+   "min_s": 1.829296134001197,
+   "max_s": 1.929750592000346,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -705,9 +718,9 @@
    "row": "native-selector/boundary_checks/E4-D",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 11.215617779998865,
-   "min_s": 9.575641583000106,
-   "max_s": 11.596785470002942,
+   "median_s": 4.980336692999117,
+   "min_s": 4.869836972000485,
+   "max_s": 5.087469994999992,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -717,9 +730,9 @@
    "row": "native-selector/boundary_checks/E4-E",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.18827471299664467,
-   "min_s": 0.16305184500015457,
-   "max_s": 0.2061900179978693,
+   "median_s": 0.10341362599865533,
+   "min_s": 0.09837514799801284,
+   "max_s": 0.11119270099879941,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -729,9 +742,9 @@
    "row": "native-selector/equilibrium_checks/E5-1",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.6646265569979732,
-   "min_s": 0.6264324650001072,
-   "max_s": 0.7274059289993602,
+   "median_s": 0.5238070919986058,
+   "min_s": 0.49628577299881727,
+   "max_s": 0.5426502559967048,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -741,9 +754,9 @@
    "row": "native-selector/equilibrium_checks/E5-3",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 1.1681242669983476,
-   "min_s": 1.085420804000023,
-   "max_s": 1.247046467000473,
+   "median_s": 1.0770120270026382,
+   "min_s": 1.062935173002188,
+   "max_s": 1.180258270000195,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
@@ -753,9 +766,9 @@
    "row": "native-selector/equilibrium_checks/E5-4",
    "warmups": 1,
    "repeats": 7,
-   "median_s": 0.5140221250003378,
-   "min_s": 0.5036042970023118,
-   "max_s": 0.5384991419996368,
+   "median_s": 0.49230811699817423,
+   "min_s": 0.4688797720009461,
+   "max_s": 0.5469980250018125,
    "failures": 0,
    "counters": {
     "reason": "native runner exposes counters only inside its retained comparison rows; wall time covers the whole selector including its retained reference solves"
