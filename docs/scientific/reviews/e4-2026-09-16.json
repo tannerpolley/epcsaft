@@ -1,14 +1,14 @@
 {
  "schema_version": 1,
- "issue": "#39 E2",
- "source_commit": "a5c751d1b95142ffe4eee22ffe96ec2fafb5fe96",
+ "issue": "#41 E4",
+ "source_commit": "e2a37983b22244e1b11267e6fd91fc4794487db2",
  "source_dirty": false,
  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
- "wheel_sha256": "b8f57dfd61870923fbde2518cfa27734eab4e7f56fcdd05cd053550be47168ec",
+ "wheel_sha256": "65c60e27e5c44db28181ae5b102240f69a7b77e19fb0e9349ab8c1b6154d311d",
  "executables": {
-  "specification_checks": "269015d39b604c387795af47229e7f7b6fc0cf44c7c8ead6c84593c019dd516a",
-  "equilibrium_checks": "c5f2cdd6a018c088d71167181e4fa0b736d384e85efee3f8e0022221341e79a7",
-  "boundary_checks": "e4d7ff1e67879154061350bd16eec0c2b07874010ab460b69d8b1779f1529851"
+  "specification_checks": "c45ac440d33a88635fd2cf54b974a1c0499ed508564aaa1d1ca00b0569509847",
+  "equilibrium_checks": "fa0cf740aa32a71ff0aa3bcbc4f9b0e4a70428fb7645ea33891460650427f4ce",
+  "boundary_checks": "cde7374b55d243375287ed3ecd201a60653e84294542d2758d63f4011d1f7cd7"
  },
  "selectors": {
   "boundary_E4-A": {
@@ -27,9 +27,9 @@
    "observation_only": 306
   },
   "boundary_E4-D": {
-   "comparisons": 925,
+   "comparisons": 2584,
    "false": 0,
-   "observation_only": 924
+   "observation_only": 862
   },
   "boundary_E4-E": {
    "comparisons": 22,
@@ -37,7 +37,7 @@
    "observation_only": 6
   },
   "boundary_E4-P": {
-   "comparisons": 10,
+   "comparisons": 12,
    "false": 0,
    "observation_only": 0
   },
@@ -191,6 +191,7 @@
   "e4-a": 0.00995033085316775,
   "e4-b": 0.009950330853167861,
   "e4-c": 0.00995033085289941,
+  "e4-d": 0.00995033085316775,
   "e4-e": 0.009950330853118234,
   "e4-paths": 4.834378258806815,
   "s10-jacobian": 1.0902129821133144e-07,
@@ -244,7 +245,7 @@
   "e2-2-reaction": 8.326672684688674e-17,
   "e2-4-charge": 0.0
  },
- "total_comparisons": 7729,
+ "total_comparisons": 9390,
  "total_false_verdicts": 0,
  "logs": [
   "boundary_E4-A.log",
