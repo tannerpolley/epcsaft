@@ -481,7 +481,7 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
         CHECK(std::abs(result.residuals[row]) <= limit);
     }
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
-    CHECK(result.convergence.residual == compiled.evaluate(result.coordinates).residual_norm());
+    CHECK(result.convergence.residual == compiled.classified_residual_norm(result.coordinates));
     const std::size_t components = model.parameters().component_count();
     const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * result.temperature.front();
     const auto charges = epcsaft::equilibrium::species_z(model.parameters());
@@ -1621,8 +1621,12 @@ void check_c3_availability() {
         && failure.amounts.empty() && failure.mole_fractions.empty()
         && failure.molar_densities.empty() && failure.coordinates.empty();
     const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
+    // The vanished phase's KKT-scaled stationarity rows vanish with its amount, so the
+    // classified residual meets the association floor while the topology predicate fails:
+    // unavailable by topology, with the tiny-step solver status retained.
     const bool tiny_step_stalled = failure.solver_status == "STOP_AT_TINY_STEP"
-        && failure.convergence.stop == epcsaft::core::Stop::stalled;
+        && (failure.convergence.stop == epcsaft::core::Stop::stalled
+            || failure.convergence.stop == epcsaft::core::Stop::converged_to_floor);
 
     epcsaft::HelmholtzModel success_model(properties_support::neutral_binary());
     auto success_problem = equilibrium_support::flash(2);
@@ -1748,8 +1752,10 @@ bool record_bool(const char* id, const char* group, const char* claim, bool verd
     return verdict;
 }
 
+// The classifying residual: KKT-scaled stationarity rows for free-amount cells, unscaled
+// rows for pinned cells (owner decision 2026-09-16); the unscaled rows stay diagnostics.
 double largest_row(const epcsaft::equilibrium::EquilibriumResult& result) {
-    return result.residual_norm();
+    return result.convergence.residual;
 }
 
 std::string solve_inputs(const epcsaft::equilibrium::EquilibriumProblem& problem,

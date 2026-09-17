@@ -10,6 +10,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace epcsaft::equilibrium {
@@ -221,6 +222,13 @@ struct CompiledSystem final {
 
     PhasePoint prepare(const std::vector<double>& point) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
+    // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
+    // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order
+    // conditions of the constrained Gibbs minimum in the solved chart; a pinned
+    // (feasibility) cell classifies its rows unscaled. Balance, charge and normalization
+    // rows are unchanged in both routes.
+    std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
+    double classified_residual_norm(const std::vector<double>& point) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
     std::vector<double> jacobian(const std::vector<double>& point) const;
@@ -253,6 +261,10 @@ CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
 
+// Candidate-topology outcome of the existing producer loop: the first vanished free phase
+// in declaration order, else the first coincident pair in lexicographic ordinal order.
+enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
+
 struct EquilibriumResult final {
     bool success = false;
     std::string message;
@@ -266,6 +278,8 @@ struct EquilibriumResult final {
     std::vector<double> multipliers;
     std::vector<double> constraint_multipliers;
     std::vector<double> residuals;
+    // The residuals the classification actually used (see CompiledSystem::classified_residuals).
+    std::vector<double> classified_residuals;
     std::vector<double> sensitivity;
     std::vector<double> coordinates;
     std::size_t phase_count = 0;
@@ -281,6 +295,9 @@ struct EquilibriumResult final {
     std::size_t generic_nullity = 0;
     // Absent without a finite final row residual; otherwise residual <= caller row_tolerance.
     std::optional<bool> requested_tolerance_met;
+    TopologyEvent topology_event = TopologyEvent::None;
+    std::optional<std::size_t> topology_phase;
+    std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()

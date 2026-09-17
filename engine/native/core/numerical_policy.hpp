@@ -254,6 +254,18 @@ inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
     "association residual entering the assembly floor",
 };
 
+// The optimizer works below the caller's row criterion: the recomputed row maximum tracks
+// the Ipopt tolerance and overshoots it by a hair (measured 1.0002-1.02x), so classifying
+// at the same value is systematically marginal. Inner Ipopt tolerances are
+// min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL) times this factor; the caller criterion alone
+// classifies rows. Owner decision 2026-09-16 (E4); provisional, not an accuracy bound.
+inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER_TOLERANCE_FACTOR",
+    0.1,
+    Category::AlgorithmTolerance,
+    "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, "
+    "dual_inf_tol and constr_viol_tol settings; the caller criterion classifies rows",
+};
+
 inline constexpr Tolerance EQUILIBRIUM_MAX_ITERATIONS{"EQUILIBRIUM_MAX_ITERATIONS",
     200.0,
     Category::AlgorithmTolerance,

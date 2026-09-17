@@ -125,8 +125,14 @@ of the original fixed-T/P minimization. Their algorithm must satisfy the actual
 constraint Jacobian and, when advertised, weighted Hessian requirements in
 [ALG-EQUILIBRIUM](../science/algorithms.md#alg-equilibrium).
 
-Report achieved balance, charge, normalization, pressure, stationarity/affinity
-and phase-distinctness diagnostics on declared scales. A stationary candidate
+For free phase amounts the classifying stationarity residuals are the
+first-order conditions in the solved logarithmic chart, N_p x_i μ̃_i / N_feed for
+composition and N_p / N_feed times the pressure row for packing, which are the
+quantities the constrained minimizer controls; the unscaled chemical and
+pressure rows are retained as diagnostics and are unbounded where an amount or
+a fraction vanishes. A pinned specification classifies its unscaled rows, which
+are its constraints. Report achieved balance, charge, normalization, pressure,
+stationarity/affinity and phase-distinctness diagnostics on declared scales. A stationary candidate
 is not automatically a stable equilibrium. A requested distinct phase set
 that coalesces must report the degeneration explicitly.
 

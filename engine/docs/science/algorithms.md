@@ -214,9 +214,12 @@ is a capability requirement, not a claim that the current implementation
 satisfies it.
 
 The caller supplies one dimensionless row tolerance per solve request; the
-named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That one value sets
-the Ipopt `tol`, `acceptable_tol`, `dual_inf_tol` and `constr_viol_tol`
-settings and classifies the recomputed rows. A caller-valued criterion is owned
+named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That value alone
+classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol`,
+`dual_inf_tol` and `constr_viol_tol` settings are the smaller of the request
+and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
+recomputed row maximum tracks the optimizer tolerance and overshoots it by a
+hair when both coincide. A caller-valued criterion is owned
 by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
@@ -232,18 +235,39 @@ Standard-state terms carry exact value, first and second temperature
 derivatives from the reaction target owner; no affine shortcut is assumed.
 For an unpinned cell the chemical rows are not optimizer constraints: they are
 recovered from the objective gradient `N x_i mu_i` through least-squares balance
-multipliers, so their recomputed residual is bounded only by the dual tolerance
-divided by `N x_i`. A dilute participant can therefore return `stalled` with
-`requested_tolerance_met` false at optimizer success while its composition is
-accurate; this is a conditioning limit of log-composition coordinates, not a
-convergence failure of the shared driver. Species thermochemistry attached to a
+multipliers, so their unscaled residual is bounded only by the dual tolerance
+divided by `N x_i` and diverges where a phase or a fraction vanishes. The driver
+therefore classifies the free-amount route by the KKT-scaled stationarity
+residuals `N_p x_i mu_i / N_feed` and `N_p / N_feed` times the pressure row (the
+first-order conditions in the solved chart; owner decision 2026-09-16), keeps
+the unscaled rows in `residuals` as diagnostics, and classifies a pinned cell by
+its unscaled rows, which are its constraints. Species thermochemistry attached to a
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
-Continuation requires a predictor/corrector, step admission, branch checks and
-explicit stopping behavior. Reusing only an initial seed is not continuation.
-Controller and step policy remain to be qualified on the retained boundary
-cases; no new numerical constants are selected here.
+Declared-branch continuation follows one straight dimensionless path `q` in
+`[0, 1]` between two problems with identical declarations; only fixed
+intensives and resolved feed amounts move. The controller predicts each step
+from the implicit tangent (EqID: `implicit_sensitivity` with the existing lever
+Jacobian and linear solve), corrects with the same Ipopt driver seeded by the
+full predicted coordinate vector (a predicted free amount below zero is
+projected onto its bound, the disappearance boundary the bound-constrained
+corrector then reports; every other coordinate outside its domain is a
+rejected left-domain step), and accepts a state only when the driver
+accepts it, every recomputed row meets the caller `row_tolerance`, the
+candidate-topology predicate reports no event, and each corrected phase density
+shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
+its cold declared root at `q = 0` or of the previous accepted density
+afterwards, with a positive corrected pressure slope. Finite step failures
+(left domain, stalled, missing anchored root) halve the step from the last
+accepted coordinates up to the caller's retry allowance and minimum step;
+invalid paths, nonfinite operands, infeasible solves, a singular implicit
+tangent at the accepted state (halving cannot change it), typed
+disappearance/coalescence and a corrected density outside the branch window
+are terminal. A partial prefix is never target success, a step or budget limit
+is never a topology event, and every attempt is retained by the existing Core
+trace scopes. Reusing only an initial seed is not continuation. The result is
+a declared local branch, not a discovery or global-stability certificate.
 
 ## ALG-ACTIONS
 

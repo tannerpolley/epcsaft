@@ -6,6 +6,8 @@
 
 #include <cstddef>
 #include <optional>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace epcsaft::core { class Scope; }
@@ -30,6 +32,75 @@ struct NlpShape final {
 };
 
 std::vector<double> boundary_start(const CompiledSystem& compiled);
+
+// The producer's candidate-topology predicate on full coordinates: first vanished free phase
+// in declaration order, else the first coincident pair; shared by the driver and continuation.
+struct TopologyCheck final {
+    TopologyEvent event = TopologyEvent::None;
+    std::optional<std::size_t> phase;
+    std::optional<std::pair<std::size_t, std::size_t>> pair;
+    std::vector<double> distances;
+    double distance = 0.0;
+};
+
+TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& coordinates);
+
+// Internal corrector route for continuation: the full compiled coordinate vector is the
+// seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
+EquilibriumResult solve_equilibrium_from_coordinates(
+    const HelmholtzModel& model,
+    const EquilibriumProblem& problem,
+    const std::vector<double>& coordinates
+);
+
+// ---------------------------------------------------------------- continuation
+
+enum class ContinuationStop {
+    reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
+    phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
+    step_too_small, budget_exhausted
+};
+
+const char* continuation_stop_name(ContinuationStop stop) noexcept;
+
+struct ContinuationOptions final {
+    double initial_step = 0.0;
+    double minimum_step = 0.0;
+    std::size_t max_steps = 0;
+    std::size_t max_retries_per_step = 0;
+};
+
+struct ContinuationRequest final {
+    EquilibriumProblem start_problem;
+    EquilibriumProblem target_problem;
+    std::optional<EquilibriumResult> start_result;
+    ContinuationOptions options;
+};
+
+struct ContinuationResult final {
+    bool success = false;
+    std::string message;
+    ContinuationStop stop = ContinuationStop::initial_failure;
+    std::vector<double> path_values;
+    std::vector<EquilibriumResult> states;
+    double reached_path = 0.0;
+    std::optional<double> attempted_path;
+    std::optional<std::size_t> event_phase;
+    std::optional<std::pair<std::size_t, std::size_t>> event_pair;
+    std::size_t attempts = 0;
+    std::size_t accepted_steps = 0;
+    std::size_t retries = 0;
+    std::optional<EquilibriumResult> last_result;
+    std::optional<ContinuationStop> cause_stop;
+    std::optional<core::Convergence> cause_convergence;
+    std::optional<std::string> cause_message;
+};
+
+// Declared-branch continuation along a straight path in fixed intensives and resolved feed
+// amounts, with a tangent predictor and the one Ipopt driver as corrector.
+ContinuationResult continue_equilibrium(
+    const HelmholtzModel& model, const ContinuationRequest& request
+);
 
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,

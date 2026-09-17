@@ -381,6 +381,34 @@ def solve_equilibrium(
     return _core.solve_equilibrium(model._model, problem._native(model), start)
 
 
+class Continuation:
+    __slots__ = ("initial_step", "minimum_step", "max_steps", "max_retries_per_step")
+
+    def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int) -> None:
+        self.initial_step = initial_step
+        self.minimum_step = minimum_step
+        self.max_steps = max_steps
+        self.max_retries_per_step = max_retries_per_step
+
+
+def continue_equilibrium(
+    model: _Model,
+    start: Problem,
+    target: Problem,
+    options: Continuation,
+    start_result: _core.EquilibriumResult | None = None,
+) -> _core.ContinuationResult:
+    request = _core.ContinuationRequest()
+    request.start_problem = start._native(model)
+    request.target_problem = target._native(model)
+    request.start_result = start_result
+    request.options.initial_step = options.initial_step
+    request.options.minimum_step = options.minimum_step
+    request.options.max_steps = options.max_steps
+    request.options.max_retries_per_step = options.max_retries_per_step
+    return _core.continue_equilibrium(model._model, request)
+
+
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
     reactions = () if reactions is None else reactions
     return Problem(
@@ -405,6 +433,7 @@ def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reactio
 
 __all__ = (
     "Amounts",
+    "Continuation",
     "Discover",
     "Feed",
     "Free",
@@ -416,6 +445,7 @@ __all__ = (
     "Problem",
     "Reaction",
     "bubble_point",
+    "continue_equilibrium",
     "dew_point",
     "problem_from_mapping",
     "solve_equilibrium",

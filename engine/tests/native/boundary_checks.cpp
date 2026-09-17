@@ -4,11 +4,13 @@
 #include "recording_support.hpp"
 
 #include "core/numerical_policy.hpp"
+#include "equilibrium/stoichiometry.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <optional>
 #include <string>
 
 namespace {
@@ -511,6 +513,442 @@ void check_s15c() {
     CHECK(result.message.find("distance") != std::string::npos);
 }
 
+// ------------------------------------------------------------------ E4 continuation
+
+namespace e4 {
+
+using epcsaft::equilibrium::AmountSpec;
+using epcsaft::equilibrium::ContinuationOptions;
+using epcsaft::equilibrium::ContinuationRequest;
+using epcsaft::equilibrium::ContinuationResult;
+using epcsaft::equilibrium::ContinuationStop;
+using epcsaft::equilibrium::EquilibriumProblem;
+using epcsaft::equilibrium::EquilibriumResult;
+using epcsaft::equilibrium::FreeValue;
+using epcsaft::equilibrium::PhaseKind;
+
+ContinuationOptions options(double initial, double minimum, std::size_t steps, std::size_t retries) {
+    ContinuationOptions result;
+    result.initial_step = initial; result.minimum_step = minimum;
+    result.max_steps = steps; result.max_retries_per_step = retries;
+    return result;
+}
+
+std::string summary(const ContinuationResult& result) {
+    return recording_support::fields({
+        recording_support::field("stop", epcsaft::equilibrium::continuation_stop_name(result.stop)),
+        recording_support::field("path_values", result.path_values),
+        recording_support::field("reached_path", result.reached_path),
+        recording_support::field("attempted_path", epcsaft::core::optional_number(result.attempted_path)),
+        recording_support::field("attempts", result.attempts),
+        recording_support::field("accepted_steps", result.accepted_steps),
+        recording_support::field("retries", result.retries),
+        recording_support::field("event_phase", result.event_phase.has_value() ? std::to_string(*result.event_phase) : "absent"),
+        recording_support::field("cause", result.cause_stop.has_value() ? epcsaft::equilibrium::continuation_stop_name(*result.cause_stop) : "absent"),
+        recording_support::field("message", result.message)});
+}
+
+bool record_bool(const char* id, const char* group, const char* claim, bool verdict, const std::string& inputs) {
+    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, inputs, "Relationship",
+        "continuation", claim, "absolute", 0.0, 0.0, verdict, group, id, "verdict", "inputs", claim, "case");
+    return verdict;
+}
+
+// Corrected-phase branch identity recomputed through the public density owner: the corrected
+// density and the anchored locally unique root share the anchor window; slope positive.
+bool branch_rows(const char* group, const char* label, const epcsaft::HelmholtzModel& model,
+                 const EquilibriumProblem& problem, const ContinuationResult& result) {
+    bool ok = true;
+    const std::size_t components = model.parameters().component_count();
+    std::vector<double> anchors;
+    for (std::size_t k = 0; k < result.states.size(); ++k) {
+        const auto& state = result.states[k];
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+            const std::vector<double> x(state.mole_fractions.begin() + static_cast<std::ptrdiff_t>(phase * components),
+                                        state.mole_fractions.begin() + static_cast<std::ptrdiff_t>((phase + 1) * components));
+            const auto branch = problem.phases[phase].kind == PhaseKind::Vapor ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid;
+            const double corrected = state.molar_densities[phase];
+            const double anchor = k == 0
+                ? epcsaft::solve_density(model, state.temperature[0], state.pressure[0], x, branch, std::nullopt).molar_density
+                : anchors[phase];
+            const auto root = epcsaft::solve_density(model, state.temperature[0], state.pressure[0], x, branch, anchor);
+            const auto physical = model.state(state.temperature[0], corrected, x);
+            const double displacement = std::abs(std::log(corrected / anchor));
+            const double selected_displacement = std::abs(std::log(root.molar_density / anchor));
+            const double pressure_row = [&] {
+                double worst = 0.0;
+                for (std::size_t row = 0; row < state.rows.size(); ++row)
+                    if (state.rows[row].kind == epcsaft::equilibrium::RowKind::Pressure && state.rows[row].phase == phase)
+                        worst = std::max(worst, std::abs(state.classified_residuals[row]));
+                return worst;
+            }();
+            const bool verdict = std::isfinite(corrected) && corrected > 0.0 && physical.pressure_density_derivative > 0.0
+                && root.convergence.residual <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
+                && displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
+                && selected_displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
+                && pressure_row <= problem.row_tolerance && state.requested_tolerance_met.value_or(false);
+            const auto id = std::string(group) + "/branch/" + label + "/" + std::to_string(k) + "/" + std::to_string(phase);
+            recording_support::compare_custom(id.c_str(), "corrected_displacement", "1", displacement,
+                epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value,
+                recording_support::fields({recording_support::field("q", result.path_values[k]),
+                    recording_support::field("phase", phase), recording_support::field("selected_density", root.molar_density),
+                    recording_support::field("corrected_density", corrected), recording_support::field("anchor", anchor),
+                    recording_support::field("selected_displacement", selected_displacement),
+                    recording_support::field("corrected_slope", physical.pressure_density_derivative),
+                    recording_support::field("branch", root.branch == epcsaft::DensityBranch::Vapor ? "vapor" : root.branch == epcsaft::DensityBranch::Liquid ? "liquid" : "unspecified"),
+                    recording_support::field("stable_root_count", root.stable_root_count.has_value() ? std::to_string(*root.stable_root_count) : "absent"),
+                    recording_support::field("density_residual", root.convergence.residual),
+                    recording_support::field("pressure_row", pressure_row),
+                    recording_support::field("row_residual", state.convergence.residual)}),
+                "Relationship", "anchored-branch", "corrected and selected densities share the anchored locally unique window",
+                "model <= reference && selected_displacement <= reference && slope > 0 && pressure_row <= row_tolerance", verdict, group, id.c_str(), "|\\\\ln(\\\\rho/\\\\rho_a)|", "q,phase", "|\\\\ln(\\\\rho/\\\\rho_a)|\\\\leq w", "q,phase");
+            ok = ok && verdict;
+        }
+        anchors = state.molar_densities;
+    }
+    return ok;
+}
+
+std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
+    std::size_t rows = 0;
+    for (std::size_t span = 0; span < trace.spans.size(); ++span) {
+        const std::string name = trace.spans[span].name;
+        if (name != "equilibrium_continuation_attempt" && name != "equilibrium_continuation_initial") continue;
+        double q = std::numeric_limits<double>::quiet_NaN(), accepted = 0.0, present = 0.0;
+        std::string cause = "absent";
+        std::optional<double> residual;
+        for (const auto& event : trace.events) {
+            if (event.span != span) continue;
+            const std::string label = event.name;
+            if (label == "path_value") q = event.values.front();
+            else if (label == "accepted") accepted = event.values.front();
+            else if (label == "driver_result_present") present = event.values.front();
+            else if (label == "row_residual") residual = event.values.front();
+            else if (label != "selected_density" && label != "corrected_density" && label != "anchor_density"
+                     && label != "corrected_displacement" && label != "corrected_slope" && label != "density_residual") cause = label;
+        }
+        const auto id = std::string(group) + "/attempt/" + std::to_string(rows);
+        recording_support::observe(id.c_str(), "path_value", "1", q, std::nullopt,
+            recording_support::fields({recording_support::field("span", name), recording_support::field("accepted", accepted),
+                recording_support::field("driver_result_present", present), recording_support::field("cause", cause),
+                recording_support::field("row_residual", residual.has_value() ? recording_support::number(*residual) : "unmeasured")}),
+            "Relationship", "continuation-attempt", "retained attempt from the existing Core trace", group, id.c_str());
+        ++rows;
+    }
+    return rows;
+}
+
+EquilibriumProblem boundary_at(double temperature) {
+    auto problem = equilibrium_support::boundary();
+    problem.feed.values = {0.5, 0.5};
+    problem.temperature = FreeValue::fixed(temperature);
+    return problem;
+}
+
+struct Interior final {
+    double bubble_pressure = 0.0;
+    std::vector<double> feed;
+    EquilibriumProblem problem;
+    EquilibriumResult start;
+};
+
+// The E4-C interior two-free start at half the bubble pressure; the recorded coordinate seed
+// from the issue is used only if a cold solve of the same problem is not accepted.
+Interior interior(const epcsaft::HelmholtzModel& model) {
+    Interior result;
+    const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, boundary_at(180.0));
+    CHECK(bubble.success);
+    result.bubble_pressure = bubble.pressure.front();
+    result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
+                   0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
+    result.problem = boundary_at(180.0);
+    result.problem.feed.values = result.feed;
+    result.problem.phases[1].amount = AmountSpec::free();
+    result.problem.pressure = FreeValue::fixed(0.5 * result.bubble_pressure);
+    result.start = epcsaft::equilibrium::solve_equilibrium(model, result.problem);
+    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
+        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
+            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
+            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
+        result.start = epcsaft::equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
+    }
+    return result;
+}
+
+}  // namespace e4
+
+void check_e4_a() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    ContinuationRequest request;
+    request.start_problem = boundary_at(180.0);
+    request.target_problem = boundary_at(181.0);
+    request.options = options(0.25, 0.25, 4, 2);
+    epcsaft::core::Capture capture;
+    const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    const std::vector<double> expected = {0.0, 0.25, 0.5, 0.75, 1.0};
+    bool path_ok = result.success && result.path_values.size() == 5 && result.states.size() == 5;
+    for (std::size_t k = 0; path_ok && k < 5; ++k) path_ok = std::abs(result.path_values[k] - expected[k]) <= 1.0e-15;
+    CHECK(record_bool("e4-a/path", "e4-a", "declared bubble branch reaches 181 K in four accepted steps",
+        path_ok && result.attempts == 4 && result.accepted_steps == 4 && result.retries == 0
+            && !result.event_phase.has_value() && !result.event_pair.has_value(), summary(result)));
+    if (!path_ok) return;
+    bool cold_ok = true;
+    for (std::size_t k = 0; k < 5; ++k) {
+        const auto cold = epcsaft::equilibrium::solve_equilibrium(model, boundary_at(180.0 + expected[k]));
+        const auto& state = result.states[k];
+        const double pressure_error = std::abs(state.pressure.front() / cold.pressure.front() - 1.0);
+        double composition_error = 0.0;
+        for (std::size_t i = 0; i < state.mole_fractions.size(); ++i)
+            composition_error = std::max(composition_error, std::abs(state.mole_fractions[i] - cold.mole_fractions[i]));
+        const bool verdict = cold.success && pressure_error <= 1.0e-8 && composition_error <= 1.0e-8;
+        const auto id = std::string("e4-a/cold/") + std::to_string(k);
+        recording_support::compare(id.c_str(), "pressure_relative_error", "1", pressure_error, 0.0,
+            recording_support::fields({recording_support::field("q", expected[k]), recording_support::field("T", 180.0 + expected[k]),
+                recording_support::field("P_path", state.pressure.front()), recording_support::field("P_cold", cold.pressure.front()),
+                recording_support::field("composition_error", composition_error), recording_support::field("x_path", state.mole_fractions)}),
+            "Relationship", "branch-identity", "continuation state equals the independent cold solve",
+            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-a", id.c_str(), "\\\\Delta P/P", "q,T", "\\\\Delta P/P\\\\leq10^{-8}", "q");
+        cold_ok = cold_ok && verdict;
+    }
+    CHECK(cold_ok);
+    CHECK(branch_rows("e4-a", "bubble", model, request.start_problem, result));
+    CHECK(attempt_rows("e4-a", capture.trace()) == 5);
+}
+
+void check_e4_b() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    const auto start = interior(model);
+    CHECK(start.start.success && start.start.requested_tolerance_met.value_or(false));
+    if (!start.start.success) return;
+    const std::vector<double> x_l = {start.start.mole_fractions[0], start.start.mole_fractions[1]};
+    const std::vector<double> x_v = {start.start.mole_fractions[2], start.start.mole_fractions[3]};
+    ContinuationRequest request;
+    request.start_problem = start.problem;
+    request.target_problem = start.problem;
+    request.target_problem.feed.values = {0.4 * x_l[0] + 0.6 * x_v[0], 0.4 * x_l[1] + 0.6 * x_v[1]};
+    request.start_result = start.start;
+    request.options = options(0.25, 0.25, 4, 2);
+    epcsaft::core::Capture capture;
+    const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    CHECK(record_bool("e4-b/path", "e4-b", "interior tie line follows the feed lever in four accepted steps",
+        result.success && result.path_values.size() == 5 && result.attempts == 4 && result.accepted_steps == 4 && result.retries == 0,
+        summary(result)));
+    if (!result.success) return;
+    bool lever_ok = true;
+    for (std::size_t k = 0; k < result.states.size(); ++k) {
+        const double q = result.path_values[k];
+        const auto& state = result.states[k];
+        std::vector<double> z_input(2), z_lever(2, 0.0);
+        for (std::size_t i = 0; i < 2; ++i) z_input[i] = (1.0 - q) * start.feed[i] + q * request.target_problem.feed.values[i];
+        double amount_total = 0.0;
+        for (std::size_t phase = 0; phase < 2; ++phase) {
+            amount_total += state.amounts[phase];
+            for (std::size_t i = 0; i < 2; ++i) z_lever[i] += state.amounts[phase] * state.mole_fractions[phase * 2 + i];
+        }
+        double lever_error = 0.0, composition_error = 0.0, amount_error = 0.0;
+        for (std::size_t i = 0; i < 2; ++i) {
+            lever_error = std::max(lever_error, std::abs(z_lever[i] / amount_total - z_input[i]));
+            composition_error = std::max({composition_error, std::abs(state.mole_fractions[i] - x_l[i]), std::abs(state.mole_fractions[2 + i] - x_v[i])});
+        }
+        const double feed_total = z_input[0] + z_input[1];
+        const double total_error = std::abs(amount_total - feed_total) / std::max(1.0, feed_total);
+        amount_error = std::max(std::abs(state.amounts[0] - ((1.0 - q) * start.start.amounts[0] + 0.4 * q)),
+                                std::abs(state.amounts[1] - ((1.0 - q) * start.start.amounts[1] + 0.6 * q)));
+        const bool verdict = lever_error <= 1.0e-8 && total_error <= 1.0e-10 && composition_error <= 1.0e-8 && amount_error <= 1.0e-8;
+        const auto id = std::string("e4-b/lever/") + std::to_string(k);
+        recording_support::compare(id.c_str(), "lever_rule_error", "1", lever_error, 0.0,
+            recording_support::fields({recording_support::field("q", q), recording_support::field("z_input", z_input),
+                recording_support::field("amounts", state.amounts), recording_support::field("x", state.mole_fractions),
+                recording_support::field("total_error", total_error), recording_support::field("composition_error", composition_error),
+                recording_support::field("amount_error", amount_error)}),
+            "Relationship", "lever-rule", "returned amounts and compositions reconstruct the input feed",
+            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-b", id.c_str(), "\\\\Delta z", "q", "\\\\Delta z\\\\leq10^{-8}", "q");
+        lever_ok = lever_ok && verdict;
+    }
+    CHECK(lever_ok);
+    CHECK(branch_rows("e4-b", "tie-line", model, start.problem, result));
+    CHECK(attempt_rows("e4-b", capture.trace()) == 5);
+}
+
+void check_e4_c() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    const auto start = interior(model);
+    CHECK(start.start.success);
+    if (!start.start.success) return;
+    ContinuationRequest request;
+    request.start_problem = start.problem;
+    request.target_problem = start.problem;
+    request.target_problem.pressure = FreeValue::fixed(2.0 * start.bubble_pressure);
+    request.start_result = start.start;
+    request.options = options(0.002, 0.000125, 8192, 4);
+    epcsaft::core::Capture capture;
+    const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    bool distinct = true;
+    for (std::size_t k = 1; k < result.states.size(); ++k)
+        distinct = distinct && result.states[k].amounts != result.states[k - 1].amounts;
+    CHECK(record_bool("e4-c/event", "e4-c", "the vapor phase disappears before twice the bubble pressure",
+        !result.success && result.stop == ContinuationStop::phase_disappeared && result.event_phase == std::optional<std::size_t>(1)
+            && result.attempted_path > result.reached_path && distinct && result.states.size() == result.path_values.size(),
+        recording_support::fields({summary(result), recording_support::field("P_bubble", start.bubble_pressure),
+            recording_support::field("feed", start.feed), recording_support::field("start_coordinates", start.start.coordinates),
+            recording_support::field("states", result.states.size())})));
+    CHECK(branch_rows("e4-c", "prefix", model, start.problem, result));
+    attempt_rows("e4-c", capture.trace());
+}
+
+void check_e4_d() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    ContinuationRequest request;
+    request.start_problem = boundary_at(180.0);
+    request.target_problem = boundary_at(280.0);
+    request.options = options(0.001, 0.0000625, 20000, 4);
+    epcsaft::core::Capture capture;
+    const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    const bool coalesced = result.stop == ContinuationStop::phases_coalesced && result.event_pair == std::make_pair(std::size_t{0}, std::size_t{1});
+    // A singular implicit tangent at the last accepted state is the branch end near the
+    // mixture critical point (owner decision 2026-09-16); cold bubble solves at 260-280 K collapse.
+    // An anchored-root loss that survives the retry ladder down to minimum_step is the
+    // demonstrated near-critical branch end (owner decision 2026-09-16, #41).
+    const bool branch_loss = result.stop == ContinuationStop::branch_lost || result.stop == ContinuationStop::singular_jacobian
+        || (result.stop == ContinuationStop::step_too_small && result.cause_stop == ContinuationStop::branch_lost
+            && result.attempted_path.value_or(2.0) - result.reached_path <= 2.0 * request.options.minimum_step);
+    CHECK(record_bool("e4-d/event", "e4-d", "the bubble branch ends at a named coalescence, singular tangent or persisting near-critical anchor loss, never at the target",
+        !result.success && (coalesced || branch_loss) && !result.states.empty() && result.reached_path < 1.0,
+        recording_support::fields({summary(result), recording_support::field("last_T", 180.0 + 100.0 * result.reached_path),
+            recording_support::field("states", result.states.size())})));
+    attempt_rows("e4-d", capture.trace());
+}
+
+void check_e4_e() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(equilibrium_support::synthetic_reactive_ternary());
+    auto problem = equilibrium_support::synthetic_reactive_problem();
+    const auto first = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    recording_support::observe("e4-e/start", "row_residual", "1", first.convergence.residual, std::nullopt,
+        recording_support::fields({recording_support::field("solver_status", first.solver_status),
+            recording_support::field("stop", epcsaft::core::stop_name(first.convergence.stop)),
+            recording_support::field("floor", epcsaft::core::optional_number(first.convergence.floor)),
+            recording_support::field("row_tolerance", problem.row_tolerance),
+            recording_support::field("requested_tolerance_met", first.requested_tolerance_met.has_value() ? (*first.requested_tolerance_met ? "true" : "false") : "absent"),
+            recording_support::field("message", first.message)}),
+        "Relationship", "reactive-continuation", "accepted reactive two-liquid start at the caller criterion", "e4-e", "start");
+    CHECK(first.success && first.requested_tolerance_met.value_or(false));
+    if (!first.success) return;
+    std::vector<double> x1(first.mole_fractions.begin(), first.mole_fractions.begin() + 3);
+    std::vector<double> x2(first.mole_fractions.begin() + 3, first.mole_fractions.end());
+    ContinuationRequest request;
+    request.start_problem = problem;
+    request.target_problem = problem;
+    for (std::size_t i = 0; i < 3; ++i) request.target_problem.feed.values[i] = 0.4 * x1[i] + 0.6 * x2[i];
+    request.start_result = first;
+    request.options = options(0.25, 0.25, 4, 2);
+    epcsaft::core::Capture capture;
+    const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+    CHECK(record_bool("e4-e/path", "e4-e", "reactive two-liquid branch follows the feed path in four accepted steps",
+        result.success && result.path_values.size() == 5 && result.attempts == 4 && result.accepted_steps == 4 && result.retries == 0,
+        summary(result)));
+    if (!result.success) return;
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
+    bool rows_ok = true;
+    for (std::size_t k = 0; k < result.states.size(); ++k) {
+        const double q = result.path_values[k];
+        const auto& state = result.states[k];
+        double composition_error = 0.0, amount_error = 0.0, balance_error = 0.0, affinity = 0.0;
+        for (std::size_t i = 0; i < 3; ++i)
+            composition_error = std::max({composition_error, std::abs(state.mole_fractions[i] - x1[i]), std::abs(state.mole_fractions[3 + i] - x2[i])});
+        amount_error = std::max(std::abs(state.amounts[0] - ((1.0 - q) * first.amounts[0] + 0.4 * q)),
+                                std::abs(state.amounts[1] - ((1.0 - q) * first.amounts[1] + 0.6 * q)));
+        std::vector<double> feed(3), totals(3, 0.0);
+        for (std::size_t i = 0; i < 3; ++i) {
+            feed[i] = (1.0 - q) * problem.feed.values[i] + q * request.target_problem.feed.values[i];
+            totals[i] = state.amounts[0] * state.mole_fractions[i] + state.amounts[1] * state.mole_fractions[3 + i];
+        }
+        const auto lhs = epcsaft::equilibrium::matvec(compiled.B, totals), rhs = epcsaft::equilibrium::matvec(compiled.B, feed);
+        for (std::size_t r = 0; r < lhs.size(); ++r) balance_error = std::max(balance_error, std::abs(lhs[r] - rhs[r]));
+        for (std::size_t row = 0; row < state.rows.size(); ++row)
+            if (state.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical)
+                affinity = std::max(affinity, std::abs(problem.reactions[0].stoichiometry[state.rows[row].index] * state.residuals[row]));
+        const double limit = std::max(state.convergence.criterion->value, state.convergence.floor.value_or(0.0));
+        const bool verdict = composition_error <= 1.0e-8 && amount_error <= 1.0e-8 && balance_error <= 1.0e-12 && affinity <= limit;
+        const auto id = std::string("e4-e/state/") + std::to_string(k);
+        recording_support::compare(id.c_str(), "amount_error", "mol", amount_error, 0.0,
+            recording_support::fields({recording_support::field("q", q), recording_support::field("amounts", state.amounts),
+                recording_support::field("x", state.mole_fractions), recording_support::field("composition_error", composition_error),
+                recording_support::field("balance_error", balance_error), recording_support::field("affinity", affinity),
+                recording_support::field("limit", limit)}),
+            "Relationship", "reactive-continuation", "reactive two-liquid amounts interpolate with unchanged compositions and zero affinity",
+            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-e", id.c_str(), "\\\\Delta N", "q", "\\\\Delta N\\\\leq10^{-8}", "q");
+        rows_ok = rows_ok && verdict;
+    }
+    CHECK(rows_ok);
+    CHECK(branch_rows("e4-e", "reactive", model, problem, result));
+    CHECK(attempt_rows("e4-e", capture.trace()) == 5);
+}
+
+void check_e4_paths() {
+    using namespace e4;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    const auto opts = options(0.5, 0.5, 2, 1);
+    const auto expect_invalid = [&](const char* id, ContinuationRequest request, const char* phrase) {
+        request.options = opts;
+        const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
+        CHECK(record_bool(id, "e4-paths", phrase, !result.success && result.stop == ContinuationStop::invalid_path
+            && result.states.empty() && result.attempts == 0 && result.message.find(phrase) != std::string::npos, summary(result)));
+    };
+    ContinuationRequest base;
+    base.start_problem = boundary_at(180.0);
+    base.target_problem = boundary_at(181.0);
+    auto swapped = base; std::swap(swapped.target_problem.phases[0], swapped.target_problem.phases[1]);
+    expect_invalid("e4-paths/phase-order", swapped, "identity differs");
+    auto support = base; support.target_problem.phases[0].support = {0};
+    expect_invalid("e4-paths/support", support, "support differs");
+    auto reaction = base; reaction.target_problem.reactions = {{"A=B", {-1.0, 1.0}, 2.0, std::nullopt}};
+    expect_invalid("e4-paths/reaction", reaction, "reaction count differs");
+    auto amount = base; amount.target_problem.phases[1].amount = AmountSpec::free();
+    expect_invalid("e4-paths/amount-kind", amount, "amount declaration differs");
+    auto flags = base; flags.target_problem.temperature = FreeValue::variable(181.0); flags.target_problem.pressure = FreeValue::fixed(1.0e5);
+    expect_invalid("e4-paths/intensive-flags", flags, "temperature free/fixed declaration differs");
+    auto tolerance = base; tolerance.target_problem.row_tolerance = 1.0e-8;
+    expect_invalid("e4-paths/row-tolerance", tolerance, "row_tolerance differs");
+    auto noop = base; noop.target_problem = noop.start_problem;
+    expect_invalid("e4-paths/no-op", noop, "no fixed intensive or resolved feed differs");
+    EquilibriumProblem liquid = equilibrium_support::flash(2);
+    liquid.feed.values = {1.0, 0.0};
+    ContinuationRequest zero_to_positive;
+    zero_to_positive.start_problem = liquid;
+    zero_to_positive.target_problem = liquid;
+    zero_to_positive.target_problem.feed.values = {1.0, 1.0};
+    expect_invalid("e4-paths/zero-to-positive", zero_to_positive, "admitted support of phase L differs");
+    ContinuationRequest positive_to_zero;
+    positive_to_zero.start_problem = liquid; positive_to_zero.start_problem.feed.values = {1.0, 1.0};
+    positive_to_zero.target_problem = liquid;
+    expect_invalid("e4-paths/positive-to-zero", positive_to_zero, "admitted support of phase L differs");
+    // Real two-root admission falsifier: a selected liquid root cannot certify a vapor density.
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    const double T = 200.0, P = 217800.69494692178;
+    const auto liquid_root = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Liquid, std::nullopt);
+    const auto vapor_root = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Vapor, std::nullopt);
+    const auto relabelled = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Vapor, liquid_root.molar_density);
+    const double displacement = std::abs(std::log(vapor_root.molar_density / liquid_root.molar_density));
+    const double relabelled_displacement = std::abs(std::log(relabelled.molar_density / liquid_root.molar_density));
+    const bool rejected = liquid_root.stable_root_count.value_or(0) == 2 && displacement > epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
+        && relabelled_displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
+        && std::abs(std::log(vapor_root.molar_density / relabelled.molar_density)) > epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+    recording_support::compare_custom("e4-paths/two-root-admission", "log_displacement", "1", displacement,
+        epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value,
+        recording_support::fields({recording_support::field("T", T), recording_support::field("P", P),
+            recording_support::field("rho_liquid", liquid_root.molar_density), recording_support::field("rho_vapor", vapor_root.molar_density),
+            recording_support::field("rho_anchored_with_vapor_label", relabelled.molar_density),
+            recording_support::field("relabelled_displacement", relabelled_displacement)}),
+        "Relationship", "anchored-branch", "a corrected vapor density is outside the selected liquid root window even with a swapped label",
+        "model > reference", rejected, "e4-paths", "two-root", "|\\\\ln(\\\\rho_V/\\\\rho_L)|", "T,P", "|\\\\ln(\\\\rho_V/\\\\rho_L)|>w", "case");
+    CHECK(rejected);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -522,5 +960,11 @@ int main(int argc, char** argv) {
         {{"native.boundary.s10", "Boundary_S10", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S10"}, check_s10},
         {{"native.boundary.s14", "Boundary_S14", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pinned-pressure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S14"}, check_s14},
         {{"native.boundary.s15c", "Boundary_S15c", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "coincident-failure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S15c"}, check_s15c},
+        {{"native.boundary.e4-a", "Boundary_E4_A", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-a/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-A"}, check_e4_a},
+        {{"native.boundary.e4-b", "Boundary_E4_B", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-b/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-B"}, check_e4_b},
+        {{"native.boundary.e4-c", "Boundary_E4_C", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-c/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-C"}, check_e4_c},
+        {{"native.boundary.e4-d", "Boundary_E4_D", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-d/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-D"}, check_e4_d},
+        {{"native.boundary.e4-e", "Boundary_E4_E", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-e/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-E"}, check_e4_e},
+        {{"native.boundary.e4-paths", "Boundary_E4_paths", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-paths/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-P"}, check_e4_paths},
     });
 }

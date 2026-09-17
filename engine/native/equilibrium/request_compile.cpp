@@ -682,6 +682,32 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     return result;
 }
 
+std::vector<double> CompiledSystem::classified_residuals(
+    const PhasePoint& prepared, const std::vector<double>& values
+) const {
+    std::vector<double> result = values;
+    if (pinned_count != 0 || values.size() != rows.size()) return result;
+    for (std::size_t row = 0; row < rows.size(); ++row) {
+        const auto& item = rows[row];
+        if (item.kind == RowKind::Chemical) {
+            result[row] *= prepared.amount[item.phase] * prepared.composition[item.phase][item.index] / feed_total;
+        } else if (item.kind == RowKind::Pressure) {
+            result[row] *= prepared.amount[item.phase] / feed_total;
+        }
+    }
+    return result;
+}
+
+double CompiledSystem::classified_residual_norm(const std::vector<double>& point) const {
+    const auto prepared = prepare(point);
+    double result = 0.0;
+    for (const double value : classified_residuals(prepared, evaluate_at(prepared).values)) {
+        if (!std::isfinite(value)) return std::numeric_limits<double>::infinity();
+        result = std::max(result, std::abs(value));
+    }
+    return result;
+}
+
 std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) const {
     return jacobian_at(prepare(point));
 }

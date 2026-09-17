@@ -1,0 +1,286 @@
+{
+ "schema_version": 1,
+ "issue": "#39 E2",
+ "source_commit": "39b5242a3d6956b04420678ae235ca69d6f55b40",
+ "source_dirty": true,
+ "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+ "wheel_sha256": "b8f57dfd61870923fbde2518cfa27734eab4e7f56fcdd05cd053550be47168ec",
+ "executables": {
+  "specification_checks": "269015d39b604c387795af47229e7f7b6fc0cf44c7c8ead6c84593c019dd516a",
+  "equilibrium_checks": "c5f2cdd6a018c088d71167181e4fa0b736d384e85efee3f8e0022221341e79a7",
+  "boundary_checks": "e4d7ff1e67879154061350bd16eec0c2b07874010ab460b69d8b1779f1529851"
+ },
+ "selectors": {
+  "boundary_E4-A": {
+   "comparisons": 21,
+   "false": 0,
+   "observation_only": 5
+  },
+  "boundary_E4-B": {
+   "comparisons": 21,
+   "false": 0,
+   "observation_only": 5
+  },
+  "boundary_E4-C": {
+   "comparisons": 917,
+   "false": 0,
+   "observation_only": 306
+  },
+  "boundary_E4-D": {
+   "comparisons": 925,
+   "false": 0,
+   "observation_only": 924
+  },
+  "boundary_E4-E": {
+   "comparisons": 22,
+   "false": 0,
+   "observation_only": 6
+  },
+  "boundary_E4-P": {
+   "comparisons": 10,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S10": {
+   "comparisons": 100,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S14": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S15c": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S3": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S4": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S5": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S9": {
+   "comparisons": 128,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_C1": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_C3": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-2": {
+   "comparisons": 20,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-6": {
+   "comparisons": 11,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-R": {
+   "comparisons": 30,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_F5": {
+   "comparisons": 4865,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S11": {
+   "comparisons": 5,
+   "false": 0,
+   "observation_only": 1
+  },
+  "equilibrium_S13": {
+   "comparisons": 4,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S15": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S16": {
+   "comparisons": 24,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S1": {
+   "comparisons": 70,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S2": {
+   "comparisons": 4,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S6": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S7": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S8": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C1": {
+   "comparisons": 480,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C4": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C8": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-0": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 1
+  },
+  "specification_E2-2": {
+   "comparisons": 8,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-3": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-4": {
+   "comparisons": 7,
+   "false": 0,
+   "observation_only": 1
+  }
+ },
+ "largest_absolute_error_by_group": {
+  "e4-a": 0.00995033085316775,
+  "e4-b": 0.009950330853167861,
+  "e4-c": 0.00995033085289941,
+  "e4-e": 0.009950330853118234,
+  "e4-paths": 4.834378258806815,
+  "s10-jacobian": 1.0902129821133144e-07,
+  "s14-pressure": 1.3322676295501878e-15,
+  "s15c-failure": 0.0,
+  "s3-pressure": 4.618527782440651e-14,
+  "s3-composition": 2.220446049250313e-16,
+  "s4-temperature-ladder": 0.6329328539463859,
+  "s5-temperature": 1.9488766156428028e-09,
+  "s9-sensitivity": 1.0344461398581473e-09,
+  "s9-pinned-sensitivity": 4.055107183376094e-08,
+  "s9-reactive-jacobian": 1.792571646674901e-11,
+  "s9-reactive-lever": 1.792571646674901e-11,
+  "s9-parameter-sensitivity": 7.960300418830002e-09,
+  "c1-amount-scale": 0.0,
+  "e2-2-thermal": 1.0092705986998794e-07,
+  "e2-6-solve": 1.2378986724570495e-14,
+  "e2-7-criterion": 8.868096469260249e-14,
+  "e2-reuse": 1.942890293094024e-16,
+  "f5-jacobian": 5.597246346411566e-07,
+  "f5-hessian-ladder": 2.0136233287448846e-06,
+  "f5-correlated-jacobian": 1.8339970926477267e-12,
+  "s11-standard-affinity": 6.821210263296962e-13,
+  "s11-gap": 0.0034822631408691906,
+  "s11-final-gap": 3.881688387463722e-05,
+  "s13-phase-count": 0.0,
+  "s13-composition": 0.0,
+  "s13-density-root": 1.9283186158958188e-14,
+  "s15-vanished-phase": 0.0,
+  "s15-deficit": 0.0,
+  "s15-distance": 26.807219413590516,
+  "s16-composition": 3.424593941758758e-12,
+  "s16-affinity": 2.2219521222943683e-09,
+  "s1-residual": 6.703297916743622e-09,
+  "s1-gibbs-dual": 4.007461029686965e-12,
+  "s1-feed-dual": 4.500844141830385e-12,
+  "s1-affinity": 5.201650221664522e-10,
+  "s1-charge": 0.0,
+  "s2-binary-success": 0.0,
+  "s2-binary-curvature": 0.009739562688140156,
+  "s2-reactive-success": 0.0,
+  "s2-reactive-curvature": 3.636678712370593e-05,
+  "s6-one-success": 0.0,
+  "s6-two-success": 0.0,
+  "s6-objective-gap": 0.36713155751638854,
+  "s7-continuation": 1.3349321648092882e-12,
+  "s8-amount-scale": 0.0,
+  "c4-feed": 0.0,
+  "c8-charge": 0.0,
+  "c8-boundary-charge": 0.0,
+  "e2-2-reaction": 8.326672684688674e-17,
+  "e2-4-charge": 0.0
+ },
+ "total_comparisons": 7729,
+ "total_false_verdicts": 0,
+ "logs": [
+  "boundary_E4-A.log",
+  "boundary_E4-B.log",
+  "boundary_E4-C.log",
+  "boundary_E4-D.log",
+  "boundary_E4-E.log",
+  "boundary_E4-P.log",
+  "boundary_S10.log",
+  "boundary_S14.log",
+  "boundary_S15c.log",
+  "boundary_S3.log",
+  "boundary_S4.log",
+  "boundary_S5.log",
+  "boundary_S9.log",
+  "equilibrium_C1.log",
+  "equilibrium_C3.log",
+  "equilibrium_E2-2.log",
+  "equilibrium_E2-6.log",
+  "equilibrium_E2-R.log",
+  "equilibrium_F5.log",
+  "equilibrium_S11.log",
+  "equilibrium_S13.log",
+  "equilibrium_S15.log",
+  "equilibrium_S16.log",
+  "equilibrium_S1.log",
+  "equilibrium_S2.log",
+  "equilibrium_S6.log",
+  "equilibrium_S7.log",
+  "equilibrium_S8.log",
+  "specification_C1.log",
+  "specification_C4.log",
+  "specification_C8.log",
+  "specification_E2-0.log",
+  "specification_E2-2.log",
+  "specification_E2-3.log",
+  "specification_E2-4.log"
+ ]
+}

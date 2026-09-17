@@ -206,7 +206,11 @@ std::vector<double> add_multipliers(
     std::vector<double> result = point;
     result.resize(point.size() + width, 0.0);
     if (width == 0) return result;
-    const auto values = compiled.evaluate(result).values;
+    // Recover the balance and charge multipliers by the KKT-weighted least squares of the
+    // chemical rows: the free-amount minimizer's stationarity conditions carry the weights
+    // N_p x_i / N_feed, so the weighted fit is the one whose classified residual is minimal.
+    const auto prepared = compiled.prepare(result);
+    const auto values = compiled.evaluate_at(prepared).values;
     std::vector<std::size_t> chemical;
     std::vector<std::size_t> phi_phase;
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -220,14 +224,16 @@ std::vector<double> add_multipliers(
     const auto z = species_z(compiled.model->parameters());
     for (std::size_t row = 0; row < chemical.size(); ++row) {
         const auto& item = compiled.rows[chemical[row]];
-        rhs(static_cast<Eigen::Index>(row)) = values[chemical[row]];
+        const double weight = prepared.amount[item.phase] * prepared.composition[item.phase][item.index]
+            / compiled.feed_total;
+        rhs(static_cast<Eigen::Index>(row)) = weight * values[chemical[row]];
         for (std::size_t column = 0; column < compiled.rank; ++column) {
             matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                compiled.B[column][item.index];
+                weight * compiled.B[column][item.index];
         }
         for (std::size_t column = 0; column < phi_phase.size(); ++column) {
             matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(compiled.rank + column)) =
-                z[item.index] * (item.phase == phi_phase[column] ? 1.0 : 0.0);
+                weight * z[item.index] * (item.phase == phi_phase[column] ? 1.0 : 0.0);
         }
     }
     const Eigen::VectorXd solved = matrix.colPivHouseholderQr().solve(rhs);
@@ -604,13 +610,9 @@ void GibbsMinimizer::finalize_solution(
     constraint_multipliers_.assign(lambda, lambda + m);
 }
 
-EquilibriumResult solve_equilibrium(
-    const HelmholtzModel& model,
-    const EquilibriumProblem& request,
-    const std::optional<EquilibriumResult>& start
-) {
-    core::Scope scope("solve_equilibrium");
-    CompiledSystem compiled = compile_problem(model, request);
+namespace {
+
+EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
     result.rows = compiled.rows;
     result.phase_count = compiled.problem.phases.size();
@@ -625,11 +627,19 @@ EquilibriumResult solve_equilibrium(
         result.convergence.stop = core::Stop::infeasible;
         scope.probe("generic_nullity", static_cast<double>(compiled.generic_nullity));
         scope.finish(result.convergence);
-        return result;
     }
+    return result;
+}
+
+// The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
+EquilibriumResult run_driver(
+    const HelmholtzModel& model, const CompiledSystem& compiled,
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope
+) {
     const double row_tolerance = compiled.problem.row_tolerance;
-    std::vector<double> initial = boundary_start(compiled);
-    if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+    // The optimizer works one policy decade below the caller criterion, which alone classifies.
+    const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+        * policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value;
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
     Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
     const double objective_scale = 1.0 / compiled.feed_total;
@@ -637,11 +647,11 @@ EquilibriumResult solve_equilibrium(
     application->Options()->SetStringValue("nlp_scaling_method", "none");
     application->Options()->SetNumericValue("obj_scaling_factor", objective_scale);
     application->Options()->SetStringValue("hessian_approximation", "exact");
-    application->Options()->SetNumericValue("tol", row_tolerance);
-    application->Options()->SetNumericValue("acceptable_tol", row_tolerance);
+    application->Options()->SetNumericValue("tol", inner_tolerance);
+    application->Options()->SetNumericValue("acceptable_tol", inner_tolerance);
     application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("dual_inf_tol", row_tolerance);
-    application->Options()->SetNumericValue("constr_viol_tol", row_tolerance);
+    application->Options()->SetNumericValue("dual_inf_tol", inner_tolerance);
+    application->Options()->SetNumericValue("constr_viol_tol", inner_tolerance);
     application->Options()->SetIntegerValue("max_iter",
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
     application->Initialize();
@@ -650,8 +660,10 @@ EquilibriumResult solve_equilibrium(
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
-    const auto evaluation = compiled.evaluate(full);
+    const auto prepared = compiled.prepare(full);
+    const auto evaluation = compiled.evaluate_at(prepared);
     result.residuals = evaluation.values;
+    result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
     const auto residuals = summarize_residuals(result.rows, result.residuals);
     scope.probe("maximum_residual", residuals.maximum);
@@ -669,7 +681,7 @@ EquilibriumResult solve_equilibrium(
     scope.probe("prepared_points", static_cast<double>(nlp->work().prepared_points));
     core::Convergence& convergence = result.convergence;
     convergence = {};
-    convergence.residual = maximum_abs(result.residuals);
+    convergence.residual = maximum_abs(result.classified_residuals);
     if (row_tolerance == policy::EQUILIBRIUM_ROW_RESIDUAL.value) {
         convergence.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
     } else {
@@ -714,6 +726,10 @@ EquilibriumResult solve_equilibrium(
         ? full[intensive_offset] : compiled.problem.temperature.value;
     bool topology_ok = true;
     std::string topology_failure;
+    const auto topology = check_topology(compiled, full);
+    result.topology_event = topology.event;
+    result.topology_phase = topology.phase;
+    result.topology_pair = topology.pair;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
         std::vector<double> composition(model.parameters().component_count(), 0.0);
@@ -735,33 +751,19 @@ EquilibriumResult solve_equilibrium(
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
-        if (spec.amount.kind == AmountKind::Free
-            && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value) {
+        if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
             topology_ok = false;
             topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
                 + std::to_string(deficit);
         }
     }
-    if (compiled.problem.phases.size() > 1) {
-        for (std::size_t left = 0; left < compositions.size(); ++left) {
-            for (std::size_t right = left + 1; right < compositions.size(); ++right) {
-                const auto left_eta = offsets[left] + compiled.problem.phases[left].support.size()
-                    + (compiled.problem.phases[left].amount.kind == AmountKind::Free ? 1 : 0);
-                const auto right_eta = offsets[right] + compiled.problem.phases[right].support.size()
-                    + (compiled.problem.phases[right].amount.kind == AmountKind::Free ? 1 : 0);
-                const double distance = std::max(
-                    std::abs(full[left_eta] - full[right_eta]),
-                    largest_difference(compositions[left], compositions[right]));
-                scope.probe("phase_distance", distance);
-                if (distance <= policy::PHASE_COINCIDENCE_DISTANCE.value) {
-                    topology_ok = false;
-                    topology_failure = "phases_coincide: phase distance between "
-                        + compiled.problem.phases[left].name + " and "
-                        + compiled.problem.phases[right].name + " is too small: "
-                        + std::to_string(distance);
-                }
-            }
-        }
+    for (const double distance : topology.distances) scope.probe("phase_distance", distance);
+    if (topology.event == TopologyEvent::PhasesCoalesced) {
+        topology_ok = false;
+        topology_failure = "phases_coincide: phase distance between "
+            + compiled.problem.phases[topology.pair->first].name + " and "
+            + compiled.problem.phases[topology.pair->second].name + " is too small: "
+            + std::to_string(topology.distance);
     }
     const bool solver_ok = nlp->status() == Ipopt::SUCCESS
         || (nlp->status() == Ipopt::STOP_AT_TINY_STEP
@@ -825,6 +827,82 @@ EquilibriumResult solve_equilibrium(
     scope.probe("feasible", compiled.feasible ? 1.0 : 0.0);
     scope.probe("square", compiled.is_square() ? 1.0 : 0.0);
     return result;
+}
+
+}  // namespace
+
+TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& full) {
+    TopologyCheck result;
+    if (full.size() < compiled.primal_size) return result;
+    const std::size_t components = compiled.model->parameters().component_count();
+    const auto offsets = phase_offsets(compiled);
+    std::vector<std::vector<double>> compositions;
+    std::vector<std::size_t> eta_index;
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+        const auto& spec = compiled.problem.phases[phase];
+        std::vector<double> composition(components, 0.0);
+        double total = 0.0;
+        for (std::size_t i = 0; i < spec.support.size(); ++i) {
+            composition[spec.support[i]] = std::exp(full[offsets[phase] + i]);
+            total += composition[spec.support[i]];
+        }
+        for (double& value : composition) value /= std::max(total, std::numeric_limits<double>::min());
+        std::size_t cursor = offsets[phase] + spec.support.size();
+        const double amount = spec.amount.kind == AmountKind::Free
+            ? full[cursor++] : specified_amount(spec, compiled.n_feed);
+        eta_index.push_back(cursor);
+        compositions.push_back(std::move(composition));
+        if (spec.amount.kind == AmountKind::Free
+            && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value
+            && result.event == TopologyEvent::None) {
+            result.event = TopologyEvent::PhaseDisappeared;
+            result.phase = phase;
+        }
+    }
+    for (std::size_t left = 0; left + 1 < compositions.size(); ++left) {
+        for (std::size_t right = left + 1; right < compositions.size(); ++right) {
+            const double distance = std::max(
+                std::abs(full[eta_index[left]] - full[eta_index[right]]),
+                largest_difference(compositions[left], compositions[right]));
+            result.distances.push_back(distance);
+            if (distance <= policy::PHASE_COINCIDENCE_DISTANCE.value
+                && result.event == TopologyEvent::None) {
+                result.event = TopologyEvent::PhasesCoalesced;
+                result.pair = std::make_pair(left, right);
+                result.distance = distance;
+            }
+        }
+    }
+    return result;
+}
+
+EquilibriumResult solve_equilibrium(
+    const HelmholtzModel& model,
+    const EquilibriumProblem& request,
+    const std::optional<EquilibriumResult>& start
+) {
+    core::Scope scope("solve_equilibrium");
+    CompiledSystem compiled = compile_problem(model, request);
+    EquilibriumResult result = structural_result(compiled, scope);
+    if (!compiled.feasible) return result;
+    std::vector<double> initial = boundary_start(compiled);
+    if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+    return run_driver(model, compiled, std::move(initial), std::move(result), scope);
+}
+
+EquilibriumResult solve_equilibrium_from_coordinates(
+    const HelmholtzModel& model,
+    const EquilibriumProblem& request,
+    const std::vector<double>& coordinates
+) {
+    core::Scope scope("solve_equilibrium");
+    CompiledSystem compiled = compile_problem(model, request);
+    EquilibriumResult result = structural_result(compiled, scope);
+    if (!compiled.feasible) return result;
+    if (coordinates.size() != compiled.unknown_count() || !numeric_state(coordinates)) {
+        throw std::invalid_argument("continuation coordinates do not match the compiled layout");
+    }
+    return run_driver(model, compiled, coordinates, std::move(result), scope);
 }
 
 }  // namespace epcsaft::equilibrium

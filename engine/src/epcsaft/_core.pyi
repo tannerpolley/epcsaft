@@ -334,6 +334,7 @@ class EquilibriumResult:
     packing_fractions: list[float]
     multipliers: list[float]
     residuals: list[float]
+    classified_residuals: list[float]
     sensitivity: list[float]
     coordinates: list[float]
     phase_count: int
@@ -348,6 +349,63 @@ class EquilibriumResult:
     jacobian_rank: int
     generic_nullity: int
     requested_tolerance_met: Optional[bool]
+    topology_event: TopologyEvent
+    topology_phase: Optional[int]
+    topology_pair: Optional[tuple[int, int]]
+
+class TopologyEvent:
+    None_: TopologyEvent
+    PhaseDisappeared: TopologyEvent
+    PhasesCoalesced: TopologyEvent
+
+class ContinuationStop:
+    reached_target: ContinuationStop
+    initial_failure: ContinuationStop
+    invalid_path: ContinuationStop
+    singular_jacobian: ContinuationStop
+    branch_lost: ContinuationStop
+    phase_disappeared: ContinuationStop
+    phases_coalesced: ContinuationStop
+    left_domain: ContinuationStop
+    infeasible: ContinuationStop
+    nonfinite: ContinuationStop
+    stalled: ContinuationStop
+    step_too_small: ContinuationStop
+    budget_exhausted: ContinuationStop
+
+class ContinuationOptions:
+    initial_step: float
+    minimum_step: float
+    max_steps: int
+    max_retries_per_step: int
+    def __init__(self) -> None: ...
+
+class ContinuationRequest:
+    start_problem: EquilibriumProblem
+    target_problem: EquilibriumProblem
+    start_result: Optional[EquilibriumResult]
+    options: ContinuationOptions
+    def __init__(self) -> None: ...
+
+class ContinuationResult:
+    success: bool
+    message: str
+    stop: ContinuationStop
+    path_values: list[float]
+    states: list[EquilibriumResult]
+    reached_path: float
+    attempted_path: Optional[float]
+    event_phase: Optional[int]
+    event_pair: Optional[tuple[int, int]]
+    attempts: int
+    accepted_steps: int
+    retries: int
+    last_result: Optional[EquilibriumResult]
+    cause_stop: Optional[ContinuationStop]
+    cause_convergence: Optional[Convergence]
+    cause_message: Optional[str]
+
+def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult: ...
 
 def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
