@@ -30,7 +30,8 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
          atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
     """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
 
-    The default is the retained same-owner transport rule against the recorded C++ row `name`.
+    The default is the retained same-owner transport rule against the recorded C++ row `name`,
+    without the absolute floor when that row lies below 1e-9.
     """
     if reference is None:  # a recorded row below the absolute floor must still match relatively
         reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
