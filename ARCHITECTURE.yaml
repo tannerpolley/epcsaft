@@ -42,7 +42,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    3400
+    3450
   ],
   "equilibrium": [
     5000,
@@ -72,7 +72,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    17400
+    17450
   ]
 }
 

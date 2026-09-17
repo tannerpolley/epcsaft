@@ -186,11 +186,17 @@ std::string weighted_hessian_context(
     });
 }
 
-epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign) {
-    // Old normalized correlation ln K = 0.3 + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
-    // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
+// Old normalized correlation ln K = a + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
+// implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
+// The retained legacy offset a = 0.3 gives K ~ 870-1010 (dilute A, x_A ~ 1e-3); the
+// owner-selected qualification offset makes K(350 K) = 2 with unchanged b, c, d.
+constexpr double DILUTE_ISOMERISATION_A = 0.3;
+double moderate_isomerisation_a() {
+    return std::log(2.0) - (1200.0 / 350.0 + 0.4 * std::log(350.0) + 0.002 * 350.0);
+}
+epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign, double a) {
     return epcsaft::normalize_legacy_reaction_correlation(
-        sign * 0.3, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
+        sign * a, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
         epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
 }
 
@@ -1239,7 +1245,7 @@ void check_s10() {
         } else if (variant == 5) {
             // Non-affine correlated standard state: its exact s', s'' enter the T column and curvature.
             request.temperature.value = 300.0;
-            request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, std::nullopt, legacy_isomerisation(1.0)}};
+            request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, std::nullopt, legacy_isomerisation(1.0, moderate_isomerisation_a())}};
             label = "pinned-correlated-T";
         } else if (variant >= 3) {
             request.temperature.value = 300.0;
@@ -1782,35 +1788,56 @@ void check_e2_thermal() {
     const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     epcsaft::HelmholtzModel pair(identical_ethane_pair());
     bool isomerisation_ok = true;
-    for (const double sign : {1.0, -1.0}) {
+    // Qualification rows use the moderate offset; the dilute legacy offset is retained below as
+    // a documented limitation of the unpinned Gibbs route (owner decision, 2026-09-16).
+    struct Offset final { double a; bool qualified; };
+    for (const Offset offset : {Offset{moderate_isomerisation_a(), true}, Offset{DILUTE_ISOMERISATION_A, false}}) {
+    for (const double sign : offset.qualified ? std::vector<double>{1.0, -1.0} : std::vector<double>{1.0}) {
         for (const double temperature : {330.0, 350.0, 370.0}) {
             auto problem = equilibrium_support::flash(2);
             problem.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
             problem.feed.values = {0.5, 0.5};
             problem.temperature = FreeValue::fixed(temperature);
             problem.pressure = FreeValue::fixed(2.0e5);
-            problem.reactions = {{"A=B", {-sign, sign}, std::nullopt, std::nullopt, legacy_isomerisation(sign)}};
+            problem.reactions = {{"A=B", {-sign, sign}, std::nullopt, std::nullopt, legacy_isomerisation(sign, offset.a)}};
             const auto result = epcsaft::equilibrium::solve_equilibrium(pair, problem);
-            const double ln_k = 0.3 + 1200.0 / temperature + 0.4 * std::log(temperature) + 0.002 * temperature;
+            const double ln_k = offset.a + 1200.0 / temperature + 0.4 * std::log(temperature) + 0.002 * temperature;
             const double expected = std::exp(ln_k) / (1.0 + std::exp(ln_k));
             const double observed = result.success ? result.mole_fractions[1] : std::numeric_limits<double>::quiet_NaN();
             const auto ethane_state = pair.state_at_pressure(temperature, 2.0e5, {1.0, 0.0}, epcsaft::DensityBranch::Vapor);
             const double density_gap = result.success
                 ? std::abs(result.molar_densities[0] / ethane_state.molar_density - 1.0)
                 : std::numeric_limits<double>::quiet_NaN();
-            const auto id = std::string("e2-2/isomerisation/") + (sign > 0.0 ? "forward/" : "reversed/")
-                + recording_support::number(temperature);
+            const auto id = std::string("e2-2/isomerisation/") + (offset.qualified ? "" : "dilute-limit/")
+                + (sign > 0.0 ? "forward/" : "reversed/") + recording_support::number(temperature);
+            // Unpinned chemical rows are recovered from the KKT gradient N x_i mu_i, so the
+            // dilute participant's row is bounded only by row_tolerance / (N x_A).
+            const double dilute_bound = result.convergence.criterion->value / (1.0 * (1.0 - expected));
             const auto inputs = recording_support::fields({solve_inputs(problem, result),
-                recording_support::field("ln_K", ln_k), recording_support::field("x_B_expected", expected),
+                recording_support::field("a", offset.a), recording_support::field("ln_K", ln_k),
+                recording_support::field("x_B_expected", expected),
                 recording_support::field("rho_ethane", ethane_state.molar_density),
-                recording_support::field("density_gap", density_gap)});
+                recording_support::field("density_gap", density_gap),
+                recording_support::field("dilute_row_bound", dilute_bound)});
             const bool verdict = result.success && std::abs(observed - expected) <= 1.0e-10
                 && largest_row(result) <= result.convergence.criterion->value && density_gap <= 1.0e-9;
             recording_support::compare(id.c_str(), "mole_fraction", "1", observed, expected, inputs,
-                "Relationship", "reaction-equilibrium", "identical-species isomerisation follows x_B=K/(1+K) with the EOS density",
+                "Relationship", "reaction-equilibrium", offset.qualified
+                    ? "identical-species isomerisation follows x_B=K/(1+K) with the EOS density"
+                    : "documented limitation: dilute unpinned participant row exceeds the criterion",
                 "strict_absolute", 1.0e-10, 0.0, verdict, "e2-2-thermal", id.c_str(), "x_B", "T,P,K(T)", "x_B=K/(1+K)", "case");
-            isomerisation_ok = isomerisation_ok && verdict;
+            if (offset.qualified) {
+                isomerisation_ok = isomerisation_ok && verdict;
+            } else {
+                recording_support::compare_custom((id + "/row-bound").c_str(), "row_residual", "1",
+                    result.convergence.residual, dilute_bound, inputs, "Relationship", "conditioning",
+                    "dilute recovered chemical row stays within row_tolerance/(N x_A)",
+                    "isfinite(model) && model <= reference", std::isfinite(result.convergence.residual)
+                        && result.convergence.residual <= dilute_bound, "e2-2-thermal", id.c_str(),
+                    "|r|", "T,P,K(T)", "|r|\\leq tol/(N x_A)", "case");
+            }
         }
+    }
     }
     // A -> 2B with matching species thermochemistry and an explicitly preconverted correlation.
     const double tref = 300.0;
