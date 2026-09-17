@@ -10,4 +10,14 @@ if [[ "${1:-}" != "khudaida" ]]; then
 fi
 EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
-(cd analyses/reproduction/2026-khudaida && ../../../.venv/bin/python -m pytest -q tests/test_phase_equilibrium_campaign.py)
+candidate_dir="$(mktemp -d /tmp/epcsaft-khudaida.XXXXXX)"
+if .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py \
+    --output-dir "$candidate_dir"; then
+    case "$candidate_dir" in
+        /tmp/epcsaft-khudaida.*) rm -rf -- "$candidate_dir" ;;
+        *) echo "refusing to remove unexpected candidate path: $candidate_dir" >&2; exit 1 ;;
+    esac
+else
+    echo "Khudaida candidate retained at $candidate_dir" >&2
+    exit 1
+fi
