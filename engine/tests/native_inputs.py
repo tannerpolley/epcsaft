@@ -32,7 +32,8 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
 
     The default is the retained same-owner transport rule against the recorded C++ row `name`.
     """
-    reference = ROWS[name] if reference is None else reference
+    if reference is None:  # a recorded row below the absolute floor must still match relatively
+        reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
     evidence.compare(name, model=model, reference=reference, **inputs,
                      criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
     assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name

@@ -145,10 +145,11 @@ missing record from a temperature outside its intervals; `density_branch` and
 reduced-energy balance and charge coordinates of the solution;
 `constraint_multipliers` are the optimizer's raw duals of its implemented, scaled
 constraints (the non-chemical, non-pressure entries of `rows` in order, or every
-row when a phase amount is pinned). Neither is a chemical or electric potential. A
-solve that misses the caller's `row_tolerance` returns `success = False`,
-`requested_tolerance_met = False`, its finite row residuals and the owner's stop;
-the native result carries no state vectors for it.
+row when a phase amount is pinned). Neither is a chemical or electric potential.
+Read `requested_tolerance_met` independently of `success`: a floor-limited point the
+native owner accepts keeps its state with `success = True` and
+`requested_tolerance_met = False`; one it rejects returns `success = False`, its finite
+row residuals and the owner's stop, and carries no state vectors.
 
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached

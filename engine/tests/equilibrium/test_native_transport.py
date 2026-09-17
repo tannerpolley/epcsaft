@@ -70,7 +70,8 @@ def test_correlated_reaction_target_governs_the_solved_quotient(evidence: Any) -
     central = solve_equilibrium(model, reactive_problem(T0, correlation=correlation()))
     assert central.success
     for phase, value in enumerate(quotients(model, central)):
-        same(evidence, f"e5-10/manifold/value/phase{phase}", value)
+        name = f"e5-10/manifold/value/phase{phase}"  # formed here from public States: the affinity bound applies
+        same(evidence, name, value, ROWS[name], 1.0e-9, 0.0)
         assert abs(value) <= 1.0e-9  # the retained central reaction-affinity bound at K(T0) = 1
     # One kelvin away the correlated solve follows ln K(T); a scalar K(T0) = 1 loses that response.
     warm = T0 + 1.0
