@@ -105,7 +105,18 @@ reports generic rank loss and no nonlinear solve is run.
 
 Reaction targets are one of a constant affinity, a scalar K, or the P3
 correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
-exp(μ_i^res / RT); any other correlation identity is rejected. A supplied
+exp(μ_i^res / RT); any other correlation identity is rejected. A scalar K is a
+temperature-independent target: its series is −RT ln K, −R ln K, 0, 0, so it
+states zero density-basis reaction enthalpy and differs from a correlated target
+by Δ_r h / T at first temperature order. A temperature-dependent source constant
+is therefore stated as a correlation on the EOS basis, not as its value at one
+temperature; the engine does not detect that misuse. The two native conversions,
+an ideal-gas pressure basis (a − Δν ln(R T_ref ρ₀ / P₀), c − Δν) and a
+standard-state shift with temperature-independent Δh and Δs (a − Δs / R,
+b + Δh / R, old minus new), have an exact polynomial image of
+a + b/T + c ln(T/T_ref) + dT. A condensed-phase reference (molality or infinite
+dilution, solution molarity, a pure-liquid mole-fraction reference) transfers
+through the residual potential of the reference state and has none. A supplied
 constant standard Gibbs vector must satisfy every reaction target at the
 evaluation temperature by the same criterion as the inferred vector, and a
 free temperature admits it only when the targets are constant. Supplied species

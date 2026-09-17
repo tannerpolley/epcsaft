@@ -1240,6 +1240,122 @@ void check_feed() {
 
 }  // namespace s1
 
+// S2 (#52): source-to-native reaction reference mapping. Manufactured coefficients only: no
+// application constant is stated here, and an EOS-basis polynomial appears only as the exact
+// algebraic image of a declared source basis.
+namespace s2 {
+
+constexpr double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
+const std::vector<double> NU = {-1.0, 2.0};  // A -> 2B, products positive, dnu = +1
+const std::array<double, 3> GRID = {280.0, 350.0, 420.0};
+const char* const QUANTITY[5] = {"ln_K", "dh_over_RT", "T_dlnK_dT", "T2_d2lnK_dT2", "T3_d3lnK_dT3"};
+
+// Dimensionless O(1) values, so the absolute floor of the criterion cannot hide a derivative defect.
+std::array<double, 5> scaled(const epcsaft::ReactionProperties& p, double t) {
+    return {p.ln_k, p.enthalpy / (R * t), t * p.derivative, t * t * p.second_derivative,
+            t * t * t * p.third_derivative};
+}
+
+// Largest relative defect over the five quantities; every row is recorded and asserted unless `control`.
+double compare_image(const std::string& id, double t, const epcsaft::ReactionProperties& converted,
+                     const epcsaft::ReactionLogPolynomial& image, const std::string& source, const char* claim,
+                     bool control = false) {
+    const auto value = scaled(converted, t), expected = scaled(epcsaft::evaluate_reaction_properties(image, t), t);
+    const auto inputs = recording_support::fields({source, recording_support::field("T", t),
+        recording_support::field("a_image", image.a), recording_support::field("b_image", image.b),
+        recording_support::field("c_image", image.c), recording_support::field("d_image", image.d)});
+    double worst = 0.0;
+    for (std::size_t k = 0; k < 5; ++k) {
+        worst = std::max(worst, std::abs(value[k] - expected[k]) / std::max(1.0, std::abs(expected[k])));
+        if (control) continue;
+        CHECK(s1::agrees(id + "/" + recording_support::number(t) + "/" + QUANTITY[k], QUANTITY[k], "1",
+                         value[k], expected[k], claim, inputs));
+    }
+    return worst;
+}
+
+void check_reference_mapping() {
+    using epcsaft::equilibrium::EOS_STANDARD_STATE_ID;
+    const double p0 = 1.0e5, tref = 300.0, dnu = NU[0] + NU[1];
+    const epcsaft::ReactionLogPolynomial source{-4.0, 1500.0, 1.2, 0.003, tref, 250.0, 450.0, "manufactured-pressure-basis-P0"};
+    // G1: ideal-gas pressure basis -> EOS density basis (rho0 = 1 mol/m^3) has an exact polynomial image.
+    const epcsaft::ReactionLogPolynomial density{source.a - dnu * std::log(R * tref * 1.0 / p0), source.b,
+        source.c - dnu, source.d, tref, 250.0, 450.0, EOS_STANDARD_STATE_ID};
+    // G2: old basis b -> new basis c with constant h and s: DH, DS = sum nu (b - c) give a - DS/R, b + DH/R.
+    const std::vector<double> h_old = {1000.0, 3000.0}, s_old = {10.0, 30.0}, h_new = {-500.0, 800.0}, s_new = {4.0, 12.0};
+    double dh = 0.0, ds = 0.0;
+    for (std::size_t i = 0; i < 2; ++i) { dh += NU[i] * (h_old[i] - h_new[i]); ds += NU[i] * (s_old[i] - s_new[i]); }
+    const epcsaft::ReactionLogPolynomial shifted{source.a - ds / R, source.b + dh / R, source.c, source.d,
+        tref, 250.0, 450.0, "manufactured-shifted-basis"};
+    CHECK(std::abs(dnu) >= 1.0 && std::abs(dh) >= 1.0e3);
+    const auto stated = recording_support::fields({recording_support::field("a_source", source.a),
+        recording_support::field("b_source", source.b), recording_support::field("c_source", source.c),
+        recording_support::field("d_source", source.d), recording_support::field("T_ref", tref)});
+    const auto pressure = recording_support::fields({stated, recording_support::field("P0", p0),
+        recording_support::field("rho0", 1.0), recording_support::field("dnu", dnu)});
+    const auto shift = recording_support::fields({stated, recording_support::field("DH", dh), recording_support::field("DS", ds)});
+    for (const double t : GRID) {
+        const auto at_t = epcsaft::evaluate_reaction_properties(source, t);
+        compare_image("s2-g1", t, epcsaft::reaction_pressure_to_density(at_t, NU, EOS_STANDARD_STATE_ID, t, p0, 1.0),
+                      density, pressure, "pressure-to-density conversion equals its polynomial image through third order");
+        std::vector<double> g_old(2), g_new(2);
+        for (std::size_t i = 0; i < 2; ++i) { g_old[i] = h_old[i] - t * s_old[i]; g_new[i] = h_new[i] - t * s_new[i]; }
+        compare_image("s2-g2", t, epcsaft::reaction_standard_state_conversion(at_t, NU, g_old, g_new, h_old, h_new,
+                      shifted.standard_state_id, t), shifted, shift, "constant-enthalpy shift equals its polynomial image through third order");
+        const double exchanged = compare_image("s2-g2n", t, epcsaft::reaction_standard_state_conversion(
+            at_t, NU, g_new, g_old, h_new, h_old, shifted.standard_state_id, t), shifted, shift, "", true);
+        CHECK(e2::record_bool(("s2-g2n/" + recording_support::number(t)).c_str(), "s2", "exchanged old and new bases miss the image",
+            exchanged > 1.0e-6, recording_support::fields({shift, recording_support::field("T", t), recording_support::field("relative_defect", exchanged)})));
+
+        // G3: a correlated target carries the series of -R T ln K(T); a constant K equal to K(T) does not.
+        const double ln_k = density.a + density.b / t + density.c * std::log(t / tref) + density.d * t;
+        const double l1 = -density.b / (t * t) + density.c / t + density.d;
+        const double l2 = 2.0 * density.b / (t * t * t) - density.c / (t * t);
+        const double l3 = -6.0 * density.b / (t * t * t * t) + 2.0 * density.c / (t * t * t);
+        const double analytic[4] = {-ln_k, -(ln_k + t * l1), -t * (2.0 * l1 + t * l2), -t * t * (3.0 * l2 + t * l3)};
+        const double constant[4] = {-ln_k, -ln_k, 0.0, 0.0};
+        epcsaft::equilibrium::ReactionSpec correlated{"A=2B", NU, std::nullopt, std::nullopt, density};
+        epcsaft::equilibrium::ReactionSpec fixed{"A=2B", NU, std::exp(ln_k), std::nullopt, std::nullopt};
+        const auto series = epcsaft::equilibrium::reaction_target_series(t, {correlated}, 3);
+        const auto flat = epcsaft::equilibrium::reaction_target_series(t, {fixed}, 3);
+        const auto inputs = recording_support::fields({recording_support::field("T", t), recording_support::field("ln_K", ln_k),
+            recording_support::field("a", density.a), recording_support::field("b", density.b),
+            recording_support::field("c", density.c), recording_support::field("d", density.d), recording_support::field("T_ref", tref)});
+        double power = 1.0 / (R * t);  // t_k T^(k-1) / R is dimensionless
+        for (std::size_t k = 0; k < 4; ++k, power *= t) {
+            const std::string point = recording_support::number(t) + "/" + std::to_string(k);
+            CHECK(s1::agrees("s2-g3/correlated/" + point, "target_series", "1", series[k][0] * power, analytic[k],
+                             "a correlated target carries its temperature series", inputs));
+            CHECK(s1::agrees("s2-g3/constant/" + point, "target_series", "1", flat[k][0] * power, constant[k],
+                             "a scalar K is a temperature-independent target", inputs));
+        }
+        const double omitted = std::abs(series[1][0] - flat[1][0]);  // = |Dh / T|, J/(mol K)
+        const double criterion = std::max(1.0e-12, 1.0e-12 * std::abs(series[1][0]));
+        CHECK(e2::record_bool(("s2-g3n/" + recording_support::number(t)).c_str(), "s2",
+            "a constant K omits the reaction enthalpy Dh/T from the first temperature order", omitted / criterion >= 1.0e6,
+            recording_support::fields({inputs, recording_support::field("abs_dh_over_T", omitted),
+                recording_support::field("ratio_to_criterion", omitted / criterion)})));
+        CHECK(s1::agrees("s2-g3n/dh/" + recording_support::number(t), "omitted_first_order", "J/(mol K)",
+                         flat[1][0] - series[1][0], R * t * l1, "the omitted term is the van 't Hoff Dh/T", inputs));
+    }
+
+    // G4: the unit vocabulary is closed; a unit is rejected, never reinterpreted.
+    const auto rejected = [](std::size_t entry, const char* unit, const char* phrase) {
+        auto document = s1::document(s1::IDENTITY);
+        document.entries[entry].unit = unit;
+        std::string message;
+        try { (void)epcsaft::build_parameters(document); }
+        catch (const std::invalid_argument& error) { message = error.what(); }
+        return e2::record_bool((std::string("s2-g4/") + unit).c_str(), "s2", phrase, message.find(phrase) != std::string::npos,
+            recording_support::fields({recording_support::field("field", document.entries[entry].field),
+                recording_support::field("message", message)}));
+    };
+    CHECK(rejected(3, "meter", "unit meter for sigma_constant"));  // an unlisted unit
+    CHECK(rejected(4, "angstrom", "unit angstrom for dispersion_energy_over_k"));  // a listed unit of the wrong dimension
+}
+
+}  // namespace s2
+
 }  // namespace
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
@@ -1258,5 +1374,6 @@ int main(int argc, char** argv) {
         {{"native.specification.e2-charge", "Specification_E2_charge", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-4"}, check_e2_charge},
         {{"native.specification.s1-document", "Specification_S1_document", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f1/*,s1-f2/*,s1-f3/*,s1-f2n/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-document"}, s1::check_document},
         {{"native.specification.s1-feed", "Specification_S1_feed", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f5/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-feed"}, s1::check_feed},
+        {{"native.specification.s2-reference", "Specification_S2_reference", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S2", "s2-g1/*,s2-g2/*,s2-g2n/*,s2-g3/*,s2-g3n/*,s2-g4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S2-reference"}, s2::check_reference_mapping},
     });
 }
