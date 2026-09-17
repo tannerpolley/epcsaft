@@ -79,6 +79,7 @@ void check_c1() {
                     const int rank = static_cast<int>(problem.feed.values.size()) - reaction_count;
                     bool accepted = false;
                     std::size_t jacobian_rank = 0, generic_nullity = 0, row_count = 0, unknown_count = 0;
+                    std::size_t support_count = 0, charge_rows = 0;
                     std::string solver_status = "not-compiled";
                     try {
                         const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
@@ -87,6 +88,8 @@ void check_c1() {
                         generic_nullity = compiled.generic_nullity;
                         row_count = compiled.rows.size();
                         unknown_count = compiled.unknown_count();
+                        charge_rows = compiled.charge_row_count;
+                        for (const auto& item : compiled.problem.phases) support_count += item.support.size();
                         // Structural degeneracy is reported before any nonlinear work; every
                         // lattice all-pinned cell is rank deficient and returns the exact NOT_RUN record.
                         if (!compiled.feasible) {
@@ -123,6 +126,8 @@ void check_c1() {
                             recording_support::field("phases", phases),
                             recording_support::field("rank", rank),
                             recording_support::field("accepted", accepted ? 1U : 0U),
+                            recording_support::field("support_count", support_count),
+                            recording_support::field("charge_rows", charge_rows),
                             recording_support::field("rows", row_count),
                             recording_support::field("unknowns", unknown_count),
                             recording_support::field("jacobian_rank", jacobian_rank),
@@ -891,6 +896,10 @@ void check_e2_reaction() {
         for (std::size_t i = 0; i < 3; ++i) original[order[i]] = row[i];
         mapped_basis.push_back(original);
     }
+    bool same_topology = charged_compiled.rows.size() == permuted_compiled.rows.size();
+    for (std::size_t row = 0; same_topology && row < charged_compiled.rows.size(); ++row)
+        same_topology = charged_compiled.rows[row].kind == permuted_compiled.rows[row].kind
+            && charged_compiled.rows[row].phase == permuted_compiled.rows[row].phase;
     auto charge_feed = charged;
     charge_feed.feed.values = {0.98, 0.02, 0.0};
     auto charge_reaction = charged;
@@ -900,7 +909,7 @@ void check_e2_reaction() {
         charged_compiled.rank == 2 && permuted_compiled.rank == 2
             && charged_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
             && permuted_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
-            && charged_compiled.rows.size() == permuted_compiled.rows.size()
+            && same_topology
             && charged_compiled.charge_row_count == permuted_compiled.charge_row_count
             && epcsaft::equilibrium::same_subspace(charged_compiled.B, mapped_basis, 1.0e-12)
             && rejection(salt, charge_feed).find("feed carries net z") != std::string::npos

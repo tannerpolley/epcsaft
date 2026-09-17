@@ -230,6 +230,15 @@ curvature; the weighted constraint curvature is recombined when the optimizer
 multipliers change, and the final row certification is a fresh evaluation.
 Standard-state terms carry exact value, first and second temperature
 derivatives from the reaction target owner; no affine shortcut is assumed.
+For an unpinned cell the chemical rows are not optimizer constraints: they are
+recovered from the objective gradient `N x_i mu_i` through least-squares balance
+multipliers, so their recomputed residual is bounded only by the dual tolerance
+divided by `N x_i`. A dilute participant can therefore return `stalled` with
+`requested_tolerance_met` false at optimizer success while its composition is
+accurate; this is a conditioning limit of log-composition coordinates, not a
+convergence failure of the shared driver. Species thermochemistry attached to a
+model is compared with every target kind, including scalar `K` and affinity,
+and the comparison is skipped where the temperature leaves a species interval.
 
 Continuation requires a predictor/corrector, step admission, branch checks and
 explicit stopping behavior. Reusing only an initial seed is not continuation.

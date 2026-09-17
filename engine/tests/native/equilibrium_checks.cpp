@@ -186,6 +186,14 @@ std::string weighted_hessian_context(
     });
 }
 
+epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign) {
+    // Old normalized correlation ln K = 0.3 + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
+    // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
+    return epcsaft::normalize_legacy_reaction_correlation(
+        sign * 0.3, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
+        epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
+}
+
 void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compiled,
                              const std::vector<double>& point) {
     const auto analytic = compiled.jacobian(point);
@@ -1210,7 +1218,8 @@ void check_s10() {
     // Free intensive values must be differentiated at the callback point,
     // including reaction offsets and simultaneous temperature/pressure freedom.
     bool intensive_curvature_ok = true;
-    for (int variant = 0; variant < 5; ++variant) {
+    bool correlated_jacobian_ok = true;
+    for (int variant = 0; variant < 6; ++variant) {
         auto request = pinned_problem;
         request.temperature = epcsaft::equilibrium::FreeValue::variable(180.0);
         request.pressure = epcsaft::equilibrium::FreeValue::fixed(100000.0);
@@ -1227,6 +1236,11 @@ void check_s10() {
         } else if (variant == 2) {
             request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, 850.0}};
             label = "pinned-reactive-T";
+        } else if (variant == 5) {
+            // Non-affine correlated standard state: its exact s', s'' enter the T column and curvature.
+            request.temperature.value = 300.0;
+            request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, std::nullopt, legacy_isomerisation(1.0)}};
+            label = "pinned-correlated-T";
         } else if (variant >= 3) {
             request.temperature.value = 300.0;
             label = variant == 3 ? "pinned-association-T" : "pinned-ionic-T";
@@ -1245,6 +1259,37 @@ void check_s10() {
         expect_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label);
         intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
             compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
+        if (variant == 5) {
+            // Rows, Jacobian temperature column and lever column against centered differences.
+            std::vector<double> full = callback_point;
+            full.resize(compiled.unknown_count(), 0.0);
+            const auto jacobian = compiled.jacobian(full);
+            const auto levers = compiled.lever_jacobian(full);
+            const std::size_t lever_width = levers.size() / compiled.rows.size();
+            const std::size_t column = compiled.primal_size - compiled.free_intensive_count;
+            const double step = 1.0e-3;
+            auto warmer = full, colder = full;
+            warmer[column] += step; colder[column] -= step;
+            const auto warm = compiled.evaluate(warmer).values, cold = compiled.evaluate(colder).values;
+            for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+                const double centered = (warm[row] - cold[row]) / (2.0 * step);
+                const double analytic = jacobian[row * full.size() + column];
+                const bool verdict = close(analytic, centered)
+                    && (compiled.rows[row].kind != epcsaft::equilibrium::RowKind::Chemical
+                        || close(levers[row * lever_width], centered));
+                const auto id = std::string("correlated-jacobian/") + std::to_string(row);
+                recording_support::compare(id.c_str(), "equilibrium_jacobian", "1", analytic, centered,
+                    recording_support::fields({weighted_hessian_context(compiled),
+                        recording_support::field("point", full), recording_support::field("row", row),
+                        recording_support::field("lever_column", levers[row * lever_width]),
+                        recording_support::field("delta_T", step)}),
+                    "Relationship", "finite-difference",
+                    "correlated standard-state temperature column matches centered rows",
+                    "reference_or_one", 0.0, 1.0e-6, verdict, "f5-correlated-jacobian", id.c_str(),
+                    "J_{r,T}", "T,P,\\mathbf{x},\\Delta T", "J_{r,T}=\\Delta r/\\Delta T", "row");
+                correlated_jacobian_ok = correlated_jacobian_ok && verdict;
+            }
+        }
     }
     const std::array<double, 3> objective_factors = {0.0, 0.5, 1.0};
     for (std::size_t i = 0; i < objective_factors.size(); ++i) {
@@ -1273,6 +1318,7 @@ void check_s10() {
     CHECK(regular_ok);
     CHECK(pinned_ok);
     CHECK(intensive_curvature_ok);
+    CHECK(correlated_jacobian_ok);
 }
 
 void check_s11() {
@@ -1717,14 +1763,6 @@ epcsaft::Parameters identical_ethane_pair() {
     return result;
 }
 
-epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign) {
-    // Old normalized correlation ln K = 0.3 + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
-    // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
-    return epcsaft::normalize_legacy_reaction_correlation(
-        sign * 0.3, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
-        epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
-}
-
 epcsaft::ThermochemistryRecord species_record(double cp_a, double cp_b) {
     epcsaft::ThermochemistryRecord record;
     record.standard_pressure = 1.0e5;
@@ -2011,20 +2049,25 @@ void check_e2_solve() {
             "e2-7-criterion", id.c_str(), "met", "tolerance,residual", "met=(|r|\\leq tol)", "tolerance");
         CHECK(criterion_ok && flag_ok && warning_ok && (!default_request || result.success));
     }
-    // Owned caller criterion survives copies through the trace after the source record is gone.
+    // Owned caller criterion survives copies through the trace after the source record is gone,
+    // on the existing finite-floor fixture (aqueous electrolyte, association gradient floor).
     std::optional<epcsaft::core::Convergence> copied;
     {
         epcsaft::core::Capture capture;
-        auto request = equilibrium_support::flash(2);
+        epcsaft::HelmholtzModel salt(properties_support::aqueous_electrolyte());
+        auto request = equilibrium_support::flash(3);
+        request.feed.values = {0.98, 0.01, 0.01};
+        request.temperature.value = 298.15;
         request.row_tolerance = 1.0e-8;
         {
-            const auto result = epcsaft::equilibrium::solve_equilibrium(model, request);
-            CHECK(result.success);
+            const auto result = epcsaft::equilibrium::solve_equilibrium(salt, request);
+            CHECK(result.success && result.convergence.floor.has_value());
         }
         for (const auto& span : capture.trace().spans)
             if (std::string(span.name) == "solve_equilibrium" && span.convergence.has_value()) copied = span.convergence;
     }
     const bool lifetime_ok = copied.has_value() && copied->criterion != nullptr && copied->criterion_owner
+        && copied->floor.has_value() && std::isfinite(*copied->floor)
         && copied->criterion == copied->criterion_owner.get() && copied->criterion->value == 1.0e-8
         && std::string(copied->criterion->name) == "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL"
         && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
@@ -2032,6 +2075,7 @@ void check_e2_solve() {
     CHECK(record_bool("e2-7/owned-criterion-lifetime", "e2-7-criterion",
         "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
         recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
+            recording_support::field("floor", copied ? epcsaft::core::optional_number(copied->floor) : "absent"),
             recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")})));
 }
 
@@ -2159,7 +2203,7 @@ void check_e2_reuse() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
+        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
         {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},

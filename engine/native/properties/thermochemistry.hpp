@@ -122,6 +122,8 @@ ReactionProperties reaction_pressure_to_density(
     const ReactionProperties&, const std::vector<double>& stoichiometry,
     const std::string& density_standard_state_id, double temperature, double pressure, double density
 );
+// Constant-enthalpy reference shift: the derivative corrections assume the old/new
+// standard-state enthalpy difference is temperature independent (no heat-capacity shift).
 ReactionProperties reaction_standard_state_conversion(
     const ReactionProperties&, const std::vector<double>& stoichiometry,
     const std::vector<double>& old_standard_gibbs_j_per_mol,
