@@ -138,6 +138,18 @@ row = solved_state_actions(compiled, central, request).results[0]
 fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
 ```
 
+Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
+missing record from a temperature outside its intervals; `density_branch` and
+`stable_root_count` exist only after a pressure-root search, so a T-rho state reports
+`Unspecified` and `None`. `EquilibriumResult.multipliers` are the dimensionless
+reduced-energy balance and charge coordinates of the solution;
+`constraint_multipliers` are the optimizer's raw duals of its implemented, scaled
+constraints (the non-chemical, non-pressure entries of `rows` in order, or every
+row when a phase amount is pinned). Neither is a chemical or electric potential. A
+solve that misses the caller's `row_tolerance` returns `success = False`,
+`requested_tolerance_met = False`, its finite row residuals and the owner's stop;
+the native result carries no state vectors for it.
+
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
 wheel build and installation.

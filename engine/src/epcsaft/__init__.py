@@ -2,6 +2,7 @@ from . import _core
 from .eos import (
     ActiveParameter,
     DensityActionDirection,
+    DensityBranch,
     EosError,
     GAS_CONSTANT_J_PER_MOL_K,
     IdealCorrelation,
@@ -23,6 +24,7 @@ from .eos import (
     Pure,
     State,
     ThermochemistryRecord,
+    ThermochemistryStatus,
 )
 from .parameters import ParameterError, Parameters
 from .reference import Activity, Reference
@@ -40,6 +42,7 @@ __all__ = (
     "ConvergenceError",
     "DeclarationError",
     "DensityActionDirection",
+    "DensityBranch",
     "EosError",
     "GAS_CONSTANT_J_PER_MOL_K",
     "IdealCorrelation",
@@ -65,5 +68,6 @@ __all__ = (
     "State",
     "Stop",
     "ThermochemistryRecord",
+    "ThermochemistryStatus",
     "trace",
 )

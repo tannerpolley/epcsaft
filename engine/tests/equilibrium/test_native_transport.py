@@ -5,12 +5,13 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, PropertyObservable
+from epcsaft import Mixture, ParameterError, PropertyObservable, Stop, _core
 from epcsaft.equilibrium import (
     EOS_STANDARD_STATE_ID,
     Amounts,
     Free,
     Phase,
+    Pinned,
     Problem,
     Reaction,
     ReactionLogPolynomial,
@@ -192,3 +193,24 @@ def test_two_phase_actions_match_the_cpp_example(evidence: Any) -> None:
     request = SolvedStateActionRequest(observables[4:], [SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])])
     central = solve_equilibrium(surface_model(), surface_flash(1.8e4))
     same(evidence, "solved/thermal/4", solved_state_actions(compiled, central, request).results[0].action)
+
+
+def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
+    model = surface_model()
+    split = solve_equilibrium(model, surface_flash(1.8e4))
+    for name, values in (("amounts", split.amounts), ("mole_fractions", split.mole_fractions),
+                         ("multipliers", split.multipliers), ("constraint_multipliers", split.constraint_multipliers)):
+        for index, value in enumerate(values):
+            same(evidence, f"flash/{name}/{index}", value)
+    # Two producers, two bases: reduced-energy balance coordinates of the solution against the optimizer's
+    # duals of its implemented constraints (here the material-balance and normalization rows, in rows order).
+    implemented = [row.kind for row in split.rows if row.kind not in (_core.RowKind.Chemical, _core.RowKind.Pressure)]
+    assert implemented == [_core.RowKind.Moiety] * 2 + [_core.RowKind.Normalization] * 2
+    assert len(split.multipliers) == 2 and len(split.constraint_multipliers) == len(implemented)
+    assert all(abs(a - b) > 1.0 for a, b in zip(split.multipliers, split.constraint_multipliers))
+    same(evidence, "bubble/pressure", solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0))).pressure[0])
+    # An unattainable row tolerance: no success, the achieved finite residuals and the owner's stop stay inspectable.
+    floor = solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0), row_tolerance=1.0e-18))
+    same(evidence, "floor/residual", floor.convergence.residual)
+    assert not floor.success and floor.requested_tolerance_met is False and floor.convergence.stop == Stop.converged_to_floor
+    assert floor.residuals and all(math.isfinite(value) for value in floor.residuals) and floor.pressure == []

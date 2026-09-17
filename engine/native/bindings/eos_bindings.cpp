@@ -244,6 +244,11 @@ void register_eos(py::module_& module) {
         .def_readonly("results", &epcsaft::PropertyActionBatch::results)
         .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order)
         .def_readonly("diagnostics", &epcsaft::PropertyActionBatch::diagnostics);
+    py::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
+        .value("MissingRecord", epcsaft::ThermochemistryStatus::MissingRecord)
+        .value("Available", epcsaft::ThermochemistryStatus::Available)
+        .value("OutsideInterval", epcsaft::ThermochemistryStatus::OutsideInterval)
+        .value("Nonfinite", epcsaft::ThermochemistryStatus::Nonfinite);
     py::class_<epcsaft::State>(module, "State")
         .def_readonly("hard_chain", &epcsaft::State::hard_chain)
         .def_readonly("dispersion", &epcsaft::State::dispersion)
@@ -274,7 +279,11 @@ void register_eos(py::module_& module) {
         .def_readonly("molar_density", &epcsaft::State::molar_density)
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
         .def_readonly("site_fractions", &epcsaft::State::site_fractions)
-        .def_readonly("density_convergence", &epcsaft::State::density_convergence);
+        .def_readonly("density_convergence", &epcsaft::State::density_convergence)
+        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
+        .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
+        .def_readonly("density_branch", &epcsaft::State::density_branch)
+        .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
     py::class_<epcsaft::SweepCounters>(module, "SweepCounters")
         .def_readonly("forward", &epcsaft::SweepCounters::forward)
         .def_readonly("reverse", &epcsaft::SweepCounters::reverse)

@@ -7,6 +7,7 @@ import pytest
 from epcsaft import (
     ActiveParameter,
     DensityActionDirection,
+    DensityBranch,
     IdealPolynomial,
     Mixture,
     ParameterActionDirection,
@@ -16,6 +17,7 @@ from epcsaft import (
     PropertyActionStatus,
     PropertyObservable,
     Pure,
+    ThermochemistryStatus,
 )
 from tests.native_inputs import ETHANE, ROWS, associating_binary, p3_forms, parameters, record, same, surface_model
 
@@ -171,3 +173,30 @@ def test_pure_forwards_its_parameter_direction(evidence: Any) -> None:
             evidence.compare(f"pure-parameter/{chart}/{step}", model=action, reference=slope,
                              criterion={"type": "scalar", "rule": "symmetric_close", "atol": 5e-6, "rtol": 5e-6})
             assert abs(slope) > 1.0 and abs(cast(float, action) - slope) <= 5e-6 * max(1.0, abs(slope))
+
+
+def test_root_and_thermal_diagnostics_accompany_their_states(evidence: Any) -> None:
+    model = surface_model()
+    rooted = model.state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
+    closure = cast(Any, rooted.density_convergence)
+    for index, value in enumerate((rooted.molar_density, rooted.pressure, rooted.pressure_density_derivative,
+                                   closure.residual, float(cast(int, rooted.stable_root_count)))):
+        same(evidence, f"state/root/{index}", value)  # rho, achieved P, dP/drho, root residual, stable roots
+    assert rooted.density_branch == DensityBranch.Liquid and closure.residual <= closure.criterion.value
+    direct = model.state(353.15, rho=rooted.molar_density, x=(0.25, 0.75))  # no root search, so no root evidence
+    assert direct.density_branch == DensityBranch.Unspecified and direct.stable_root_count is None
+    assert direct.density_convergence is None and direct.thermochemistry_status == ThermochemistryStatus.Available
+    same(evidence, "charts/h_res", direct.residual_enthalpy, rooted.residual_enthalpy)
+    # Missing and out-of-interval records are distinct causes; the residual sibling is the same number.
+    outside = model.state(460.0, rho=rooted.molar_density, x=(0.25, 0.75))
+    bare = Mixture(associating_binary()).state(460.0, rho=rooted.molar_density, x=(0.25, 0.75))
+    assert outside.thermochemistry_status == ThermochemistryStatus.OutsideInterval and outside.total_enthalpy is None
+    assert bare.thermochemistry_status == ThermochemistryStatus.MissingRecord and bare.total_enthalpy is None
+    same(evidence, "outside/h_res", outside.residual_enthalpy, bare.residual_enthalpy)
+    # At an owned endpoint the value survives and the thermal action is typed, beside an available residual sibling.
+    endpoint = Pure(parameters((ETHANE,)), thermochemistry=record(p3_forms()["polynomial"])).density_actions(
+        250.0, 1000.0, observables=(PropertyObservable.IdealEnthalpy, PropertyObservable.ResidualEnthalpy),
+        directions=[DensityActionDirection(1.0)]).results
+    same(evidence, "p3-endpoint/polynomial/250/h", endpoint[0].value)
+    assert endpoint[0].status == PropertyActionStatus.ThermalBoundary and endpoint[0].action is None
+    assert endpoint[1].status == PropertyActionStatus.Available and endpoint[1].action is not None

@@ -121,7 +121,11 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("mole_fractions", &EquilibriumResult::mole_fractions)
         .def_readonly("molar_densities", &EquilibriumResult::molar_densities)
         .def_readonly("packing_fractions", &EquilibriumResult::packing_fractions)
+        // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
         .def_readonly("multipliers", &EquilibriumResult::multipliers)
+        // Raw optimizer duals of the implemented, scaled constraints: the non-chemical, non-pressure
+        // entries of `rows` in order, or every row when a phase amount is pinned. Not potentials.
+        .def_readonly("constraint_multipliers", &EquilibriumResult::constraint_multipliers)
         .def_readonly("residuals", &EquilibriumResult::residuals)
         .def_readonly("classified_residuals", &EquilibriumResult::classified_residuals)
         .def_readonly("sensitivity", &EquilibriumResult::sensitivity)

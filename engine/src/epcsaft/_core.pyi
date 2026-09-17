@@ -256,6 +256,12 @@ class DensityBranch:
     Vapor: DensityBranch
     Liquid: DensityBranch
 
+class ThermochemistryStatus:
+    MissingRecord: ThermochemistryStatus
+    Available: ThermochemistryStatus
+    OutsideInterval: ThermochemistryStatus
+    Nonfinite: ThermochemistryStatus
+
 class PropertyActionDiagnostics:
     site_rank: int
     site_factorizations: int
@@ -311,6 +317,9 @@ class State:
     pressure_density_derivative: float
     site_fractions: list[float]
     density_convergence: Optional[Convergence]
+    thermochemistry_status: ThermochemistryStatus
+    density_branch: DensityBranch
+    stable_root_count: Optional[int]
 
 class SweepCounters:
     forward: int
@@ -455,6 +464,7 @@ class EquilibriumResult:
     molar_densities: list[float]
     packing_fractions: list[float]
     multipliers: list[float]
+    constraint_multipliers: list[float]
     residuals: list[float]
     classified_residuals: list[float]
     sensitivity: list[float]
