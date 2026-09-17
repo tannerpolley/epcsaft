@@ -35,23 +35,11 @@ bool positive_vector(const std::vector<double>& values) {
     });
 }
 
-bool symmetric(const std::vector<double>& values, std::size_t size) {
+template <typename Value>
+bool symmetric(const std::vector<Value>& values, std::size_t size) {
     for (std::size_t row = 0; row < size; ++row) {
         for (std::size_t column = row + 1; column < size; ++column) {
-            if (values[row * size + column] != values[column * size + row]) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-bool symmetric(const std::vector<int>& values, std::size_t size) {
-    for (std::size_t row = 0; row < size; ++row) {
-        for (std::size_t column = row + 1; column < size; ++column) {
-            if (values[row * size + column] != values[column * size + row]) {
-                return false;
-            }
+            if (values[row * size + column] != values[column * size + row]) return false;
         }
     }
     return true;

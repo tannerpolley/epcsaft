@@ -81,6 +81,26 @@ Counts and a generic-point rank check do not prove existence, uniqueness or
 regularity at the computed solution. Energy specifications add rows/unknowns
 and require their own count derivation; they cannot inherit this rule blindly.
 
+A pinned amount is feed-relative, N_p = v_p Σ n_feed with 0 ≤ v_p ≤ 1. When the
+declared reaction space conserves total moles, rank([B; e]) = rank(B) with
+e ∝ (1, …, 1), the pins additionally satisfy Σ v_p ≤ 1, and Σ v_p = 1 when every
+phase is pinned; a nonconserving reaction space admits no universal total-mole
+sum rule. Reaction participation is sign independent: a species with nonzero
+stoichiometry is retained in support regardless of orientation. An all-pinned
+nonreactive declaration compiles square by count but its retained balance and
+normalization rows are dependent, Σ_i balance_i = Σ_p v_p normalization_p, so it
+reports generic rank loss and no nonlinear solve is run.
+
+Reaction targets are one of a constant affinity, a scalar K, or the P3
+correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
+exp(μ_i^res / RT); any other correlation identity is rejected. A supplied
+constant standard Gibbs vector must satisfy every reaction target at the
+evaluation temperature by the same criterion as the inferred vector, and a
+free temperature admits it only when the targets are constant. Supplied species
+thermochemistry is compared with each target through Gibbs, enthalpy and heat
+capacity on the density basis; a mismatch is a reference inconsistency, not a
+preference for either input.
+
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be
 constructed as data specifications of these rows. Names may help users
 construct a problem; they must not select application-specific physics.

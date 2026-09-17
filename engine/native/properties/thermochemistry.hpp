@@ -92,10 +92,18 @@ struct ReactionLogPolynomial final {
     std::string standard_state_id;
 };
 struct ReactionProperties final {
+    // derivative, second_derivative, third_derivative are d^k ln K / dT^k.
     double ln_k = 0.0, derivative = 0.0, enthalpy = 0.0;
+    double second_derivative = 0.0, third_derivative = 0.0;
     std::optional<double> k;
     std::string standard_state_id;
 };
+// Reaction Gibbs/enthalpy/heat capacity of supplied species thermochemistry on the
+// EOS density basis (1 mol/m^3); absent when a participating interval excludes T.
+struct ReactionThermochemistry final { double gibbs = 0.0, enthalpy = 0.0, heat_capacity = 0.0; };
+std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
+    const ThermochemistryRecord&, const std::vector<double>& stoichiometry, double temperature
+);
 
 double reaction_ln_quotient(
     const std::vector<double>&, const ActivitySet&, const std::vector<int>&,

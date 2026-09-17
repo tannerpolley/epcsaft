@@ -95,7 +95,9 @@ inline epcsaft::equilibrium::EquilibriumProblem boundary() {
     return result;
 }
 
-inline epcsaft::Parameters ascani_reactive_ternary() {
+// Synthetic three-species associating parameters; manufactured numerical evidence, not
+// literature data.
+inline epcsaft::Parameters synthetic_reactive_ternary() {
     auto result = properties_support::parameters(3);
     result.segment_count = {2.40, 1.08, 2.80};
     result.sigma_constant = {3.20, 3.00, 3.80};
@@ -128,7 +130,7 @@ inline epcsaft::Parameters relabel_neutral_binary() {
     return result;
 }
 
-inline epcsaft::equilibrium::EquilibriumProblem ascani_reactive_problem() {
+inline epcsaft::equilibrium::EquilibriumProblem synthetic_reactive_problem() {
     auto result = flash(3);
     result.phases = {
         phase("L1", epcsaft::equilibrium::PhaseKind::Liquid),
@@ -136,7 +138,8 @@ inline epcsaft::equilibrium::EquilibriumProblem ascani_reactive_problem() {
     };
     result.phases[0].composition_guess = {0.05, 0.90, 0.05};
     result.phases[1].composition_guess = {0.05, 0.05, 0.90};
-    result.reactions = {{"A+B=C", {-1.0, -1.0, 1.0}, 2.25, std::nullopt}};
+    // Manufactured numerical case: supplied g=0 governs, so the consistent target is K=1.
+    result.reactions = {{"A+B=C", {-1.0, -1.0, 1.0}, 1.0, std::nullopt}};
     result.standard_gibbs_j_per_mol = {0.0, 0.0, 0.0};
     result.feed.values = {0.05, 0.475, 0.475};
     result.temperature = epcsaft::equilibrium::FreeValue::fixed(298.15);
@@ -145,7 +148,7 @@ inline epcsaft::equilibrium::EquilibriumProblem ascani_reactive_problem() {
 }
 
 enum class PhaseSet { OneLiquid, OneVapor, Two, TwoVaporLiquid, Three, ThreeVaporLiquid };
-enum class AmountPattern { AllFree, FirstPinned, LastPinned, SplitPinned };
+enum class AmountPattern { AllFree, FirstPinned, LastPinned, SplitPinned, AllPinned };
 enum class IntensivePattern { BothFixed, TemperatureFree, PressureFree, BothFree };
 enum class Chemistry { Neutral, Isomerisation, Electrolyte, TwoReactions };
 
@@ -171,12 +174,16 @@ inline epcsaft::equilibrium::EquilibriumProblem lattice_problem(
             (std::string("p") + std::to_string(phase_index)).c_str(), kind
         );
         item.name = std::string("p") + std::to_string(phase_index);
+        // A single declared phase pinned alone is an all-pinned row; its admitted fraction is 1.
+        const double lone_pin = count == 1 ? 1.0 : 0.0;
         if (amounts == AmountPattern::FirstPinned && phase_index == 0)
-            item.amount = epcsaft::equilibrium::AmountSpec::pinned(0.0);
+            item.amount = epcsaft::equilibrium::AmountSpec::pinned(lone_pin);
         if (amounts == AmountPattern::LastPinned && phase_index + 1 == count)
-            item.amount = epcsaft::equilibrium::AmountSpec::pinned(0.0);
+            item.amount = epcsaft::equilibrium::AmountSpec::pinned(lone_pin);
         if (amounts == AmountPattern::SplitPinned && phase_index > 0)
             item.amount = epcsaft::equilibrium::AmountSpec::pinned(0.25);
+        if (amounts == AmountPattern::AllPinned)
+            item.amount = epcsaft::equilibrium::AmountSpec::pinned(1.0 / static_cast<double>(count));
         result.phases.push_back(item);
     }
     result.temperature = intensives == IntensivePattern::TemperatureFree
@@ -209,9 +216,9 @@ inline std::array<PhaseSet, 6> phase_sets() {
             PhaseSet::TwoVaporLiquid, PhaseSet::Three, PhaseSet::ThreeVaporLiquid};
 }
 
-inline std::array<AmountPattern, 4> amount_patterns() {
+inline std::array<AmountPattern, 5> amount_patterns() {
     return {AmountPattern::AllFree, AmountPattern::FirstPinned,
-            AmountPattern::LastPinned, AmountPattern::SplitPinned};
+            AmountPattern::LastPinned, AmountPattern::SplitPinned, AmountPattern::AllPinned};
 }
 
 inline std::array<IntensivePattern, 4> intensive_patterns() {
@@ -236,8 +243,58 @@ inline int pinned_phases(
         || phase_set == PhaseSet::OneVapor ? 1
         : phase_set == PhaseSet::Two || phase_set == PhaseSet::TwoVaporLiquid ? 2 : 3;
     if (pattern == AmountPattern::AllFree) return 0;
+    if (pattern == AmountPattern::AllPinned) return count;
     if (pattern == AmountPattern::SplitPinned) return count > 1 ? count - 1 : 0;
     return 1;
+}
+
+// Reorder every per-component record so species identity, not vector position, is tested.
+inline epcsaft::Parameters permute_parameters(
+    const epcsaft::Parameters& source, const std::vector<std::size_t>& order
+) {
+    const std::size_t n = order.size();
+    auto result = source;
+    const auto permute = [&](auto& target, const auto& origin) {
+        for (std::size_t i = 0; i < n; ++i) target[i] = origin[order[i]];
+    };
+    const auto permute_matrix = [&](auto& target, const auto& origin) {
+        for (std::size_t i = 0; i < n; ++i)
+            for (std::size_t j = 0; j < n; ++j) target[i * n + j] = origin[order[i] * n + order[j]];
+    };
+    permute(result.segment_count, source.segment_count);
+    permute(result.sigma_constant, source.sigma_constant);
+    permute(result.dispersion_energy_over_k, source.dispersion_energy_over_k);
+    permute(result.molar_mass_kg_per_mol, source.molar_mass_kg_per_mol);
+    permute(result.charge_number, source.charge_number);
+    permute(result.packing_diameter_angstrom, source.packing_diameter_angstrom);
+    permute(result.debye_huckel_diameter_angstrom, source.debye_huckel_diameter_angstrom);
+    permute(result.born_diameter_angstrom, source.born_diameter_angstrom);
+    permute(result.solvation_factor, source.solvation_factor);
+    permute(result.relative_permittivity, source.relative_permittivity);
+    permute(result.permittivity_reference_temperature_k, source.permittivity_reference_temperature_k);
+    permute(result.ion_suppression_coefficient, source.ion_suppression_coefficient);
+    permute(result.dielectric_volume_m3_per_mol, source.dielectric_volume_m3_per_mol);
+    permute(result.dielectric_temperature_k, source.dielectric_temperature_k);
+    permute(result.dipole_scaling_debye2, source.dipole_scaling_debye2);
+    permute(result.polarizability_scaling_angstrom3, source.polarizability_scaling_angstrom3);
+    permute(result.correlation_integral_parameter, source.correlation_integral_parameter);
+    permute_matrix(result.k_ij, source.k_ij);
+    permute_matrix(result.k_ij_reciprocal_temperature_slope, source.k_ij_reciprocal_temperature_slope);
+    permute_matrix(result.k_ij_reference_temperature_k, source.k_ij_reference_temperature_k);
+    permute_matrix(result.l_ij, source.l_ij);
+    std::vector<int> inverse(n);
+    for (std::size_t i = 0; i < n; ++i) inverse[order[i]] = static_cast<int>(i);
+    for (auto& component : result.sigma_term_component) component = inverse[component];
+    for (auto& component : result.site_component) component = inverse[component];
+    for (auto& component : result.permittivity_term_component) component = inverse[component];
+    return result;
+}
+
+template <class Vector>
+Vector permute_vector(const Vector& source, const std::vector<std::size_t>& order) {
+    Vector result = source;
+    for (std::size_t i = 0; i < order.size(); ++i) result[i] = source[order[i]];
+    return result;
 }
 
 }  // namespace equilibrium_support

@@ -64,12 +64,16 @@ struct PhaseSpec final {
     std::string name;
     PhaseKind kind = PhaseKind::Liquid;
     std::vector<std::size_t> support;
+    // An omitted support is completed; an explicitly declared support never gains an index,
+    // and a declared empty support is rejected.
+    bool support_declared = false;
     AmountSpec amount;
     std::vector<double> composition_guess;
     std::optional<double> packing_guess;
 
     bool is_pinned() const noexcept { return amount.kind == AmountKind::Pinned; }
     bool is_free() const noexcept { return amount.kind == AmountKind::Free; }
+    bool has_explicit_support() const noexcept { return support_declared || !support.empty(); }
 };
 
 struct FeedSpec final {
@@ -81,11 +85,17 @@ struct FeedSpec final {
     bool has_solvent() const noexcept { return !solvent.empty(); }
 };
 
+// The only admitted correlation identity: activity (rho x / (1 mol/m^3)) exp(mu_res / RT).
+inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-basis";
+
+// Exactly one target: scalar K, affinity in J/mol, or the P3 ln K(T) correlation on the
+// EOS density basis. No target silently overrides another.
 struct ReactionSpec final {
     std::string name;
     std::vector<double> stoichiometry;
-    double equilibrium_constant = 1.0;
+    std::optional<double> equilibrium_constant;
     std::optional<double> affinity_j_per_mol;
+    std::optional<ReactionLogPolynomial> correlation;
 };
 
 struct EquilibriumProblem final {
@@ -96,6 +106,8 @@ struct EquilibriumProblem final {
     std::vector<ReactionSpec> reactions;
     std::vector<double> standard_gibbs_j_per_mol;
     bool topology_declared = true;
+    // Caller row criterion for the solve; the named policy value is the only default.
+    double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
 
     std::size_t component_count() const noexcept {
         return feed.values.size();
@@ -147,6 +159,39 @@ struct PointEvaluation final {
     }
 };
 
+struct Layout final {
+    std::vector<std::size_t> x;
+    std::optional<std::size_t> amount;
+    std::size_t volume = 0;
+};
+
+struct PackingTerms final {
+    double coefficient = 0.0;
+    double temperature_derivative = 0.0;
+    std::vector<double> component;
+    std::vector<double> parameter_derivative;
+};
+
+// derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.
+struct StandardTerm final {
+    std::vector<std::vector<double>> derivative;
+};
+
+// One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.
+struct PhasePoint final {
+    std::vector<double> point;
+    std::vector<Layout> shape;
+    double temperature = 0.0;
+    double pressure = 0.0;
+    std::vector<std::vector<double>> composition;
+    std::vector<double> amount;
+    std::vector<double> volume;
+    std::vector<double> eta;
+    std::vector<PackingTerms> packing;
+    std::vector<HelmholtzDerivatives> derivative;
+    StandardTerm standard;
+};
+
 struct CompiledSystem final {
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
@@ -171,16 +216,28 @@ struct CompiledSystem final {
     double feed_total = 0.0;
     bool has_ions = false;
     bool has_reaction = false;
+    bool conserves_total_moles = true;
     std::size_t jacobian_rank = 0;
 
+    PhasePoint prepare(const std::vector<double>& point) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
+    PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
     std::vector<double> jacobian(const std::vector<double>& point) const;
+    std::vector<double> jacobian_at(const PhasePoint& prepared) const;
     std::vector<double> lever_jacobian(const std::vector<double>& point) const;
     std::vector<double> objective_gradient(const std::vector<double>& point) const;
+    std::vector<double> objective_gradient_at(const PhasePoint& prepared) const;
     std::vector<double> hessian(
         const std::vector<double>& point,
         const std::vector<double>& constraint_multipliers = {}
+    ) const;
+    std::vector<double> hessian_at(
+        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+    ) const;
+    // Multiplier-weighted constraint curvature only; the objective curvature is separate.
+    std::vector<double> constraint_hessian_at(
+        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
     ) const;
 
     std::size_t unknown_count() const noexcept {
@@ -219,6 +276,11 @@ struct EquilibriumResult final {
     double reduced_hessian_minimum = 0.0;
     core::Convergence convergence;
     std::vector<Row> rows;
+    std::size_t unknown_count = 0;
+    std::size_t jacobian_rank = 0;
+    std::size_t generic_nullity = 0;
+    // Absent without a finite final row residual; otherwise residual <= caller row_tolerance.
+    std::optional<bool> requested_tolerance_met;
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()

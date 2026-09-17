@@ -40,6 +40,7 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("name", &PhaseSpec::name)
         .def_readwrite("kind", &PhaseSpec::kind)
         .def_readwrite("support", &PhaseSpec::support)
+        .def_readwrite("support_declared", &PhaseSpec::support_declared)
         .def_readwrite("amount", &PhaseSpec::amount)
         .def_readwrite("composition_guess", &PhaseSpec::composition_guess)
         .def_readwrite("packing_guess", &PhaseSpec::packing_guess);
@@ -63,7 +64,8 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("feed", &EquilibriumProblem::feed)
         .def_readwrite("reactions", &EquilibriumProblem::reactions)
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
-        .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared);
+        .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
+        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
         .value("Pressure", RowKind::Pressure)
@@ -92,14 +94,22 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("feed_total", &CompiledSystem::feed_total)
         .def_readonly("has_ions", &CompiledSystem::has_ions)
         .def_readonly("has_reaction", &CompiledSystem::has_reaction)
+        .def_readonly("conserves_total_moles", &CompiledSystem::conserves_total_moles)
+        .def("unknown_count", &CompiledSystem::unknown_count)
         .def_readonly("jacobian_rank", &CompiledSystem::jacobian_rank)
         .def_readonly("removed_species", &CompiledSystem::removed_species)
         .def("generic_point", &CompiledSystem::generic_point)
-        .def("evaluate", &CompiledSystem::evaluate)
-        .def("jacobian", &CompiledSystem::jacobian)
+        .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
+            return system.evaluate(point); })
+        .def("jacobian", [](const CompiledSystem& system, const std::vector<double>& point) {
+            return system.jacobian(point); })
         .def("lever_jacobian", &CompiledSystem::lever_jacobian)
-        .def("objective_gradient", &CompiledSystem::objective_gradient)
-        .def("hessian", &CompiledSystem::hessian);
+        .def("objective_gradient", [](const CompiledSystem& system, const std::vector<double>& point) {
+            return system.objective_gradient(point); })
+        .def("hessian", [](const CompiledSystem& system, const std::vector<double>& point,
+                           const std::vector<double>& multipliers) {
+            return system.hessian(point, multipliers); },
+            py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult")
         .def_readonly("success", &EquilibriumResult::success)
         .def_readonly("message", &EquilibriumResult::message)
@@ -121,7 +131,11 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("objective", &EquilibriumResult::objective)
         .def_readonly("reduced_hessian_minimum", &EquilibriumResult::reduced_hessian_minimum)
         .def_readonly("convergence", &EquilibriumResult::convergence)
-        .def_readonly("rows", &EquilibriumResult::rows);
+        .def_readonly("rows", &EquilibriumResult::rows)
+        .def_readonly("unknown_count", &EquilibriumResult::unknown_count)
+        .def_readonly("jacobian_rank", &EquilibriumResult::jacobian_rank)
+        .def_readonly("generic_nullity", &EquilibriumResult::generic_nullity)
+        .def_readonly("requested_tolerance_met", &EquilibriumResult::requested_tolerance_met);
     py::class_<SensitivityInfo>(module, "SensitivityInfo")
         .def_readonly("equations", &SensitivityInfo::equations)
         .def_readonly("parameters", &SensitivityInfo::parameters)

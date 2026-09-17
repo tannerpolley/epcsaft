@@ -203,6 +203,7 @@ public:
     void reset_counters() const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
+    const std::optional<ThermochemistryRecord>& thermochemistry() const { return thermochemistry_; }
 
 private:
     friend DensityRoot solve_density(

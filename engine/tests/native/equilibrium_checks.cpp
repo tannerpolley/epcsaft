@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
+#include "properties/thermochemistry.hpp"
 #include "equilibrium_support.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
@@ -56,7 +57,10 @@ std::string weighted_hessian_context(
     for (const auto& reaction : problem.reactions) {
         if (!reaction_definition.empty()) reaction_definition += ',';
         reaction_definition += reaction.name + ":K="
-            + recording_support::number(reaction.equilibrium_constant) + ":nu=";
+            + (reaction.equilibrium_constant.has_value()
+               ? recording_support::number(*reaction.equilibrium_constant)
+               : reaction.affinity_j_per_mol.has_value() ? "A=" + recording_support::number(*reaction.affinity_j_per_mol)
+               : std::string("correlation")) + ":nu=";
         for (std::size_t index = 0; index < reaction.stoichiometry.size(); ++index) {
             if (index != 0) reaction_definition += ',';
             reaction_definition += recording_support::number(reaction.stoichiometry[index]);
@@ -582,8 +586,8 @@ void check_s1() {
     epcsaft::HelmholtzModel ternary_model(properties_support::neutral_ternary());
     verify_s1(ternary_model, flash,
               epcsaft::equilibrium::solve_equilibrium(ternary_model, flash), "ternary");
-    epcsaft::HelmholtzModel reactive_model(equilibrium_support::ascani_reactive_ternary());
-    const auto reactive = equilibrium_support::ascani_reactive_problem();
+    epcsaft::HelmholtzModel reactive_model(equilibrium_support::synthetic_reactive_ternary());
+    const auto reactive = equilibrium_support::synthetic_reactive_problem();
     verify_s1(reactive_model, reactive,
               epcsaft::equilibrium::solve_equilibrium(reactive_model, reactive), "reactive");
     auto ethane = equilibrium_support::flash(1);
@@ -632,8 +636,8 @@ void check_s2() {
         "\\lambda_{min}(H)>0", "stability");
     CHECK(result.success && binary_curvature_positive);
     const auto reactive = epcsaft::equilibrium::solve_equilibrium(
-        epcsaft::HelmholtzModel(equilibrium_support::ascani_reactive_ternary()),
-        equilibrium_support::ascani_reactive_problem());
+        epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()),
+        equilibrium_support::synthetic_reactive_problem());
     recording_support::compare(
         "reactive-success", "success", "bool", reactive.success ? 1.0 : 0.0, 1.0,
         recording_support::fields({recording_support::field("T", 298.15),
@@ -657,8 +661,8 @@ void check_s2() {
 }
 
 void check_s6() {
-    epcsaft::HelmholtzModel model(equilibrium_support::ascani_reactive_ternary());
-    auto two = equilibrium_support::ascani_reactive_problem();
+    epcsaft::HelmholtzModel model(equilibrium_support::synthetic_reactive_ternary());
+    auto two = equilibrium_support::synthetic_reactive_problem();
     two.reactions.clear();
     auto one = two;
     one.phases.resize(1);
@@ -704,8 +708,8 @@ void check_s6() {
 }
 
 void check_s7() {
-    epcsaft::HelmholtzModel model(equilibrium_support::ascani_reactive_ternary());
-    auto problem = equilibrium_support::ascani_reactive_problem();
+    epcsaft::HelmholtzModel model(equilibrium_support::synthetic_reactive_ternary());
+    auto problem = equilibrium_support::synthetic_reactive_problem();
     problem.reactions.clear();
     const auto first = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(first.success);
@@ -1221,7 +1225,7 @@ void check_s10() {
             request.phases.push_back(third_phase);
             label = "pinned-free-TP";
         } else if (variant == 2) {
-            request.reactions = {{"A-to-B", {-1.0, 1.0}, 1.0, 850.0}};
+            request.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, 850.0}};
             label = "pinned-reactive-T";
         } else if (variant >= 3) {
             request.temperature.value = 300.0;
@@ -1291,7 +1295,7 @@ void check_s11() {
     CHECK(std::isfinite(affinity.front()));
     CHECK(std::abs(affinity.front() + epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0
                    * std::log(2.0)) < 1.0e-10);
-    epcsaft::HelmholtzModel model(equilibrium_support::ascani_reactive_ternary());
+    epcsaft::HelmholtzModel model(equilibrium_support::synthetic_reactive_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases.front().kind = epcsaft::equilibrium::PhaseKind::Vapor;
     problem.phases.front().composition_guess = {2.0 / 9.0, 4.0 / 9.0, 1.0 / 3.0};
@@ -1501,12 +1505,12 @@ void check_s15() {
     CHECK(deficit_ok);
     CHECK(distance_ok);
     CHECK(driving_row);
-    auto symmetric = equilibrium_support::ascani_reactive_problem();
+    auto symmetric = equilibrium_support::synthetic_reactive_problem();
     symmetric.phases[0].composition_guess.clear();
     symmetric.phases[1].composition_guess.clear();
     bool refused = false;
     try { (void)epcsaft::equilibrium::solve_equilibrium(
-        epcsaft::HelmholtzModel(equilibrium_support::ascani_reactive_ternary()), symmetric); }
+        epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()), symmetric); }
     catch (const std::runtime_error& error) {
         refused = std::string(error.what()).find("start_symmetric") != std::string::npos;
     }
@@ -1592,8 +1596,8 @@ void check_c3_availability() {
 }
 
 void check_s16() {
-    epcsaft::HelmholtzModel model(equilibrium_support::ascani_reactive_ternary());
-    auto problem = equilibrium_support::ascani_reactive_problem();
+    epcsaft::HelmholtzModel model(equilibrium_support::synthetic_reactive_ternary());
+    auto problem = equilibrium_support::synthetic_reactive_problem();
     const auto first = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(first.success);
     if (!first.success) return;
@@ -1651,6 +1655,506 @@ void check_s16() {
     }
 }
 
+// ------------------------------------------------------------------ E2 solves
+
+namespace e2 {
+
+using epcsaft::equilibrium::AmountSpec;
+using epcsaft::equilibrium::FreeValue;
+using epcsaft::equilibrium::PhaseKind;
+
+bool record_bool(const char* id, const char* group, const char* claim, bool verdict,
+                 const std::string& inputs) {
+    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, inputs,
+        "Relationship", "equilibrium", claim, "absolute", 0.0, 0.0, verdict, group, id,
+        "verdict", "inputs", claim, "case");
+    return verdict;
+}
+
+double largest_row(const epcsaft::equilibrium::EquilibriumResult& result) {
+    return result.residual_norm();
+}
+
+std::string solve_inputs(const epcsaft::equilibrium::EquilibriumProblem& problem,
+                         const epcsaft::equilibrium::EquilibriumResult& result) {
+    return recording_support::fields({
+        recording_support::field("feed", problem.feed.values),
+        recording_support::field("T", problem.temperature.value),
+        recording_support::field("P", problem.pressure.value),
+        recording_support::field("solver_status", result.solver_status),
+        recording_support::field("stop", epcsaft::core::stop_name(result.convergence.stop)),
+        recording_support::field("residual", result.convergence.residual),
+        recording_support::field("x", result.mole_fractions),
+        recording_support::field("amounts", result.amounts),
+        recording_support::field("rho", result.molar_densities)});
+}
+
+bool not_run_record(const epcsaft::equilibrium::EquilibriumResult& result,
+                    const epcsaft::equilibrium::CompiledSystem& compiled) {
+    return !result.success && result.solver_status == "NOT_RUN"
+        && result.message == "rank-deficient declared equations; nonlinear solve not run"
+        && result.rows.size() == compiled.rows.size()
+        && result.unknown_count == compiled.unknown_count()
+        && result.jacobian_rank == compiled.jacobian_rank
+        && result.generic_nullity == compiled.generic_nullity && result.generic_nullity > 0
+        && result.residuals.empty() && result.iterations == 0 && result.evaluations == 0
+        && result.hessian_calls == 0 && result.convergence.stop == epcsaft::core::Stop::infeasible
+        && std::isnan(result.convergence.residual) && result.convergence.criterion == nullptr
+        && !result.requested_tolerance_met.has_value() && !result.convergence.floor.has_value()
+        && !result.convergence.amplification.has_value() && !result.has_state()
+        && result.coordinates.empty() && result.multipliers.empty();
+}
+
+epcsaft::Parameters identical_ethane_pair() {
+    auto result = properties_support::parameters(2);
+    const auto ethane = properties_support::ethane();
+    for (std::size_t i = 0; i < 2; ++i) {
+        result.segment_count[i] = ethane.segment_count[0];
+        result.sigma_constant[i] = ethane.sigma_constant[0];
+        result.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+        result.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+    }
+    return result;
+}
+
+epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign) {
+    // Old normalized correlation ln K = 0.3 + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
+    // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
+    return epcsaft::normalize_legacy_reaction_correlation(
+        sign * 0.3, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
+        epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
+}
+
+epcsaft::ThermochemistryRecord species_record(double cp_a, double cp_b) {
+    epcsaft::ThermochemistryRecord record;
+    record.standard_pressure = 1.0e5;
+    const double anchor_entropy = std::log(350.0 / 300.0);
+    record.component_intervals = {
+        {epcsaft::IdealInterval{250.0, 450.0, true, true, epcsaft::IdealCorrelation{
+            epcsaft::IdealPolynomial{{cp_a}, 350.0, 1500.0, 30.0 * anchor_entropy}, 1.0e5}}},
+        {epcsaft::IdealInterval{250.0, 450.0, true, true, epcsaft::IdealCorrelation{
+            epcsaft::IdealPolynomial{{cp_b}, 350.0, 1000.0, 20.0 * anchor_entropy}, 1.0e5}}}};
+    return record;
+}
+
+}  // namespace e2
+
+void check_e2_thermal() {
+    using namespace e2;
+    const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
+    epcsaft::HelmholtzModel pair(identical_ethane_pair());
+    bool isomerisation_ok = true;
+    for (const double sign : {1.0, -1.0}) {
+        for (const double temperature : {330.0, 350.0, 370.0}) {
+            auto problem = equilibrium_support::flash(2);
+            problem.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
+            problem.feed.values = {0.5, 0.5};
+            problem.temperature = FreeValue::fixed(temperature);
+            problem.pressure = FreeValue::fixed(2.0e5);
+            problem.reactions = {{"A=B", {-sign, sign}, std::nullopt, std::nullopt, legacy_isomerisation(sign)}};
+            const auto result = epcsaft::equilibrium::solve_equilibrium(pair, problem);
+            const double ln_k = 0.3 + 1200.0 / temperature + 0.4 * std::log(temperature) + 0.002 * temperature;
+            const double expected = std::exp(ln_k) / (1.0 + std::exp(ln_k));
+            const double observed = result.success ? result.mole_fractions[1] : std::numeric_limits<double>::quiet_NaN();
+            const auto ethane_state = pair.state_at_pressure(temperature, 2.0e5, {1.0, 0.0}, epcsaft::DensityBranch::Vapor);
+            const double density_gap = result.success
+                ? std::abs(result.molar_densities[0] / ethane_state.molar_density - 1.0)
+                : std::numeric_limits<double>::quiet_NaN();
+            const auto id = std::string("e2-2/isomerisation/") + (sign > 0.0 ? "forward/" : "reversed/")
+                + recording_support::number(temperature);
+            const auto inputs = recording_support::fields({solve_inputs(problem, result),
+                recording_support::field("ln_K", ln_k), recording_support::field("x_B_expected", expected),
+                recording_support::field("rho_ethane", ethane_state.molar_density),
+                recording_support::field("density_gap", density_gap)});
+            const bool verdict = result.success && std::abs(observed - expected) <= 1.0e-10
+                && largest_row(result) <= result.convergence.criterion->value && density_gap <= 1.0e-9;
+            recording_support::compare(id.c_str(), "mole_fraction", "1", observed, expected, inputs,
+                "Relationship", "reaction-equilibrium", "identical-species isomerisation follows x_B=K/(1+K) with the EOS density",
+                "strict_absolute", 1.0e-10, 0.0, verdict, "e2-2-thermal", id.c_str(), "x_B", "T,P,K(T)", "x_B=K/(1+K)", "case");
+            isomerisation_ok = isomerisation_ok && verdict;
+        }
+    }
+    // A -> 2B with matching species thermochemistry and an explicitly preconverted correlation.
+    const double tref = 300.0;
+    const epcsaft::ReactionLogPolynomial pressure_law{-10.0 / R, 3000.0 / R, 10.0 / R, 0.0, tref, 250.0, 450.0, "pressure-basis-P0"};
+    const epcsaft::ReactionLogPolynomial density_law{
+        pressure_law.a - std::log(R * tref * 1.0 / 1.0e5), pressure_law.b, pressure_law.c - 1.0, 0.0,
+        tref, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
+    const auto p3_pressure = epcsaft::evaluate_reaction_properties(pressure_law, 350.0);
+    const auto p3_density = epcsaft::reaction_pressure_to_density(
+        p3_pressure, {-1.0, 2.0}, epcsaft::equilibrium::EOS_STANDARD_STATE_ID, 350.0, 1.0e5, 1.0);
+    const auto p3_preconverted = epcsaft::evaluate_reaction_properties(density_law, 350.0);
+    const double cp_density = R * (2.0 * 350.0 * p3_density.derivative + 350.0 * 350.0 * p3_density.second_derivative);
+    const auto p3_inputs = recording_support::fields({recording_support::field("T", 350.0),
+        recording_support::field("a_rho", density_law.a), recording_support::field("b_rho", density_law.b),
+        recording_support::field("c_rho", density_law.c), recording_support::field("ln_K_preconverted", p3_preconverted.ln_k)});
+    recording_support::compare("e2-2/a-to-2b/ln_K_rho", "ln_K", "1", p3_density.ln_k, 3.5505788308151547, p3_inputs,
+        "Relationship", "standard-state-conversion", "P3 pressure-to-density conversion reproduces the preconverted correlation",
+        "strict_absolute", 1.0e-12, 0.0, std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12
+            && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12,
+        "e2-2-thermal", "ln_K_rho", "\\ln K_\\rho", "T", "\\ln K_\\rho=3.5505788308151547", "case");
+    recording_support::compare("e2-2/a-to-2b/dh_rho", "reaction_enthalpy", "J/mol", p3_density.enthalpy, -2410.061916353634, p3_inputs,
+        "Relationship", "standard-state-conversion", "density-basis reaction enthalpy", "strict_absolute", 1.0e-9, 0.0,
+        std::abs(p3_density.enthalpy + 2410.061916353634) <= 1.0e-9, "e2-2-thermal", "dh_rho", "\\Delta h_\\rho", "T", "\\Delta h_\\rho", "case");
+    recording_support::compare("e2-2/a-to-2b/dcp_rho", "reaction_heat_capacity", "J/(mol K)", cp_density, 1.6855373818467605, p3_inputs,
+        "Relationship", "standard-state-conversion", "density-basis reaction heat capacity from P3 derivatives", "strict_absolute", 1.0e-12, 0.0,
+        std::abs(cp_density - 1.6855373818467605) <= 1.0e-12, "e2-2-thermal", "dcp_rho", "\\Delta c_{p,\\rho}", "T", "\\Delta c_{p,\\rho}", "case");
+    CHECK(std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12 && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12);
+    CHECK(std::abs(p3_density.enthalpy + 2410.061916353634) <= 1.0e-9 && std::abs(cp_density - 1.6855373818467605) <= 1.0e-12);
+    epcsaft::HelmholtzModel thermal(identical_ethane_pair(), {}, species_record(30.0, 20.0));
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    const auto pure = ethane.state_at_pressure(350.0, 2.0e5, {1.0}, epcsaft::DensityBranch::Vapor);
+    const double compressibility = 2.0e5 / (pure.molar_density * R * 350.0);
+    const double phi = std::exp(pure.residual_chemical_potential_over_rt[0]) / compressibility;
+    const double a = std::exp(p3_pressure.ln_k) * 1.0e5 / (phi * 2.0e5);
+    const double y = 2.0 * a / (a + std::sqrt(a * a + 4.0 * a));
+    const double total = 1.5 / (2.0 - y);
+    auto doubling = equilibrium_support::flash(2);
+    doubling.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
+    doubling.phases[0].composition_guess = {1.0 - y, y};
+    doubling.feed.values = {0.5, 0.5};
+    doubling.temperature = FreeValue::fixed(350.0);
+    doubling.pressure = FreeValue::fixed(2.0e5);
+    doubling.reactions = {{"A=2B", {-1.0, 2.0}, std::nullopt, std::nullopt, density_law}};
+    const auto doubling_result = epcsaft::equilibrium::solve_equilibrium(thermal, doubling);
+    const double composition_gap = doubling_result.success ? std::abs(doubling_result.mole_fractions[1] - y) : std::numeric_limits<double>::quiet_NaN();
+    const double amount_gap = doubling_result.success
+        ? std::max(std::abs(doubling_result.amounts[0] * doubling_result.mole_fractions[0] - total * (1.0 - y)),
+                   std::abs(doubling_result.amounts[0] * doubling_result.mole_fractions[1] - total * y))
+        : std::numeric_limits<double>::quiet_NaN();
+    const bool doubling_ok = doubling_result.success && composition_gap <= 1.0e-8 && amount_gap <= 1.0e-8
+        && largest_row(doubling_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    recording_support::compare("e2-2/a-to-2b/x_B", "mole_fraction", "1",
+        doubling_result.success ? doubling_result.mole_fractions[1] : std::numeric_limits<double>::quiet_NaN(), y,
+        recording_support::fields({solve_inputs(doubling, doubling_result), recording_support::field("Z", compressibility),
+            recording_support::field("phi", phi), recording_support::field("A", a), recording_support::field("N_expected", total),
+            recording_support::field("amount_gap", amount_gap)}),
+        "Relationship", "reaction-equilibrium", "A=2B composition follows the independent pure-state relation y^2/(1-y)=K_P P0/(phi P)",
+        "strict_absolute", 1.0e-8, 0.0, doubling_ok, "e2-2-thermal", "a-to-2b", "x_B", "T,P,K_P,\\phi", "y^2/(1-y)=A", "case");
+    CHECK(doubling_ok);
+    auto unconverted = doubling;
+    unconverted.reactions[0].correlation = pressure_law;
+    std::string mismatch;
+    try { (void)epcsaft::equilibrium::compile_problem(thermal, unconverted); }
+    catch (const std::invalid_argument& error) { mismatch = error.what(); }
+    CHECK(record_bool("e2-2/a-to-2b/reference-basis-mismatch", "e2-2-thermal", "reference-basis-mismatch",
+        mismatch.find("reference-basis-mismatch") != std::string::npos,
+        recording_support::fields({recording_support::field("identity", pressure_law.standard_state_id), recording_support::field("message", mismatch)})));
+    epcsaft::HelmholtzModel mismatched(identical_ethane_pair(), {}, species_record(30.0, 21.0));
+    std::string inconsistency;
+    try { (void)epcsaft::equilibrium::compile_problem(mismatched, doubling); }
+    catch (const std::invalid_argument& error) { inconsistency = error.what(); }
+    CHECK(record_bool("e2-2/a-to-2b/heat-capacity-inconsistency", "e2-2-thermal", "reference inconsistency",
+        inconsistency.find("reference inconsistency") != std::string::npos,
+        recording_support::fields({recording_support::field("cp_B", 21.0), recording_support::field("message", inconsistency)})));
+    // Solved charged reaction with a manufactured consistent standard state at an admitted EOS state.
+    const std::vector<double> x_star = {0.98, 0.01, 0.01};
+    const std::vector<double> nu = {2.0, -1.0, -1.0};
+    const std::vector<double> n_star = {1.96, 0.02, 0.02};
+    for (const std::vector<std::size_t>& order : {std::vector<std::size_t>{0, 1, 2}, std::vector<std::size_t>{2, 0, 1}}) {
+        epcsaft::HelmholtzModel salt(equilibrium_support::permute_parameters(properties_support::aqueous_electrolyte(), order));
+        const auto x = equilibrium_support::permute_vector(x_star, order);
+        const auto state = salt.state_at_pressure(298.15, 1.0e5, x, epcsaft::DensityBranch::Liquid);
+        const double rt = R * 298.15;
+        std::vector<double> gibbs(3);
+        for (std::size_t i = 0; i < 3; ++i)
+            gibbs[i] = -rt * (std::log(state.molar_density * x[i]) + state.residual_chemical_potential_over_rt[i]);
+        const auto stoichiometry = equilibrium_support::permute_vector(nu, order);
+        double contraction = 0.0;
+        for (std::size_t i = 0; i < 3; ++i) contraction += stoichiometry[i] * gibbs[i];
+        auto problem = equilibrium_support::flash(3);
+        problem.feed.values = equilibrium_support::permute_vector(std::vector<double>{0.0, 1.0, 1.0}, order);
+        problem.temperature = FreeValue::fixed(298.15);
+        problem.phases[0].support = {0, 1, 2};
+        problem.phases[0].composition_guess = x;
+        problem.reactions = {{"2W=Na+Cl", stoichiometry, std::exp(-contraction / rt), std::nullopt}};
+        problem.standard_gibbs_j_per_mol = gibbs;
+        const auto result = epcsaft::equilibrium::solve_equilibrium(salt, problem);
+        const auto expected = equilibrium_support::permute_vector(n_star, order);
+        double amount_gap = std::numeric_limits<double>::quiet_NaN(), charge = std::numeric_limits<double>::quiet_NaN();
+        if (result.success) {
+            amount_gap = 0.0; charge = 0.0;
+            for (std::size_t i = 0; i < 3; ++i) {
+                amount_gap = std::max(amount_gap, std::abs(result.amounts[0] * result.mole_fractions[i] - expected[i]));
+                charge += salt.parameters().charge_number[i] * result.mole_fractions[i];
+            }
+        }
+        // Rows use the suite's solved-row comparator max(criterion, floor): the association
+        // gradient floor limits this ionic state (converged_to_floor), as in S1.
+        const double limit = result.convergence.criterion == nullptr ? 0.0 : convergence_limit(result.convergence);
+        const bool ok = result.success && amount_gap <= 1.0e-8 && std::abs(charge) <= 1.0e-10 && largest_row(result) <= limit;
+        const auto id = std::string("e2-2/charged-solve/") + (order[0] == 0 ? "identity" : "permuted");
+        recording_support::compare(id.c_str(), "amount_gap", "mol", ok ? amount_gap : std::numeric_limits<double>::quiet_NaN(), 0.0,
+            recording_support::fields({solve_inputs(problem, result), recording_support::field("n_star", expected),
+                recording_support::field("g_manufactured", gibbs), recording_support::field("K", std::exp(-contraction / rt)),
+                recording_support::field("charge", charge), recording_support::field("row_limit", limit),
+                recording_support::field("floor", epcsaft::core::optional_number(result.convergence.floor)),
+                recording_support::field("order", std::vector<double>(order.begin(), order.end()))}),
+            "Relationship", "reaction-equilibrium", "shared driver reproduces the manufactured charged solution n*",
+            "strict_absolute", 1.0e-8, 0.0, ok, "e2-2-thermal", id.c_str(), "\\Delta n", "T,P,feed,g,K", "\\Delta n\\leq10^{-8}", "case");
+        CHECK(ok);
+    }
+    CHECK(isomerisation_ok);
+}
+
+void check_e2_solve() {
+    using namespace e2;
+    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    auto one = equilibrium_support::flash(2);
+    one.feed.values = {0.5, 0.5};
+    one.phases[0].support = {0, 1};
+    one.phases[0].amount = AmountSpec::pinned(1.0);
+    one.temperature = FreeValue::variable(300.0);
+    auto two = equilibrium_support::boundary();
+    two.feed.values = {0.5, 0.5};
+    two.phases[0].amount = AmountSpec::pinned(0.5);
+    two.phases[1].amount = AmountSpec::pinned(0.5);
+    two.temperature = FreeValue::variable(300.0);
+    for (const auto* item : {&one, &two}) {
+        const auto compiled = epcsaft::equilibrium::compile_problem(model, *item);
+        const auto result = epcsaft::equilibrium::solve_equilibrium(model, *item);
+        const auto id = std::string("e2-6/all-pinned-not-run/") + std::to_string(item->phases.size());
+        CHECK(record_bool(id.c_str(), "e2-6-solve", "nonreactive all-pinned declaration returns the exact pre-solve NOT_RUN record",
+            compiled.is_square() && compiled.generic_nullity > 0 && not_run_record(result, compiled),
+            recording_support::fields({recording_support::field("phases", item->phases.size()),
+                recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
+                recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
+                recording_support::field("message", result.message)})));
+    }
+    // Positive pin in both orientations, then the count-deficient fixed-T/fixed-P form.
+    epcsaft::HelmholtzModel ternary(properties_support::neutral_ternary());
+    auto bubble = equilibrium_support::flash(3);
+    bubble.phases = {equilibrium_support::phase("L", PhaseKind::Liquid),
+                     equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0))};
+    bubble.temperature.value = 180.0;
+    bubble.pressure = FreeValue::variable(1.0e5);
+    const auto bubble_result = epcsaft::equilibrium::solve_equilibrium(ternary, bubble);
+    CHECK(bubble_result.success);
+    for (const bool free_pressure : {true, false}) {
+        auto pinned = bubble;
+        pinned.phases[1].amount = AmountSpec::pinned(0.01);
+        pinned.temperature = free_pressure ? FreeValue::fixed(180.0) : FreeValue::variable(180.0);
+        pinned.pressure = free_pressure ? FreeValue::variable(bubble_result.pressure.front())
+                                        : FreeValue::fixed(bubble_result.pressure.front());
+        const auto compiled = epcsaft::equilibrium::compile_problem(ternary, pinned);
+        const auto result = epcsaft::equilibrium::solve_equilibrium(ternary, pinned, bubble_result);
+        const auto id = std::string("e2-6/positive-pin/") + (free_pressure ? "free-P" : "free-T");
+        const bool ok = result.success && compiled.pinned_count == 1 && compiled.free_intensive_count == 1
+            && largest_row(result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value
+            && result.amounts[1] == 0.01 * compiled.feed_total;
+        recording_support::compare(id.c_str(), "row_residual", "1", largest_row(result), 0.0,
+            recording_support::fields({solve_inputs(pinned, result), recording_support::field("pin", 0.01)}),
+            "Relationship", "equilibrium-residual", "one positive pin with one free intensive solves through the shared driver",
+            "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0, ok, "e2-6-solve", id.c_str(),
+            "|r|", "T,P,feed,pin", "|r|\\leq10^{-10}", "case");
+        CHECK(ok);
+    }
+    auto overdetermined = bubble;
+    overdetermined.phases[1].amount = AmountSpec::pinned(0.01);
+    overdetermined.pressure = FreeValue::fixed(bubble_result.pressure.front());
+    std::string message;
+    try { (void)epcsaft::equilibrium::compile_problem(ternary, overdetermined); }
+    catch (const std::invalid_argument& error) { message = error.what(); }
+    CHECK(record_bool("e2-6/positive-pin/fixed-T-fixed-P", "e2-6-solve", "positive pin with fixed T and P is a named structural rejection",
+        message.find("pinned") != std::string::npos && message.find("free T or P") != std::string::npos,
+        recording_support::fields({recording_support::field("message", message)})));
+    // E2-7: explicit kind under a renamed phase, the single pure vapor phase, and the caller criterion.
+    auto named = equilibrium_support::flash(2);
+    auto renamed = named;
+    renamed.phases[0].name = "liquid-phase";
+    const auto named_result = epcsaft::equilibrium::solve_equilibrium(model, named);
+    const auto renamed_result = epcsaft::equilibrium::solve_equilibrium(model, renamed);
+    CHECK(record_bool("e2-7/rename", "e2-7-criterion", "renaming an explicitly typed phase changes nothing physical",
+        named_result.success && renamed_result.success && named_result.mole_fractions == renamed_result.mole_fractions
+            && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
+        solve_inputs(renamed, renamed_result)));
+    epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    auto vapor = equilibrium_support::flash(1);
+    vapor.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
+    vapor.temperature.value = 320.0;
+    const auto vapor_result = epcsaft::equilibrium::solve_equilibrium(ethane, vapor);
+    const auto vapor_root = epcsaft::solve_density(ethane, 320.0, 1.0e5, {1.0}, epcsaft::DensityBranch::Vapor, std::nullopt);
+    recording_support::compare("e2-7/pure-vapor", "row_residual", "1", largest_row(vapor_result), 0.0,
+        recording_support::fields({solve_inputs(vapor, vapor_result), recording_support::field("root_density", vapor_root.molar_density),
+            recording_support::field("stable_root_count", vapor_root.stable_root_count.value_or(0))}),
+        "Relationship", "equilibrium-residual", "a single declared pure phase solves from its unique density root",
+        "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
+        vapor_result.success && largest_row(vapor_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
+        "e2-7-criterion", "pure-vapor", "|r|", "T,P", "|r|\\leq10^{-10}", "case");
+    CHECK(vapor_result.success && largest_row(vapor_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    for (const double tolerance : {epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 1.0e-8, 1.0e-12}) {
+        auto request = equilibrium_support::flash(2);
+        request.feed.values = {0.5, 0.5};
+        request.row_tolerance = tolerance;
+        const auto result = epcsaft::equilibrium::solve_equilibrium(model, request);
+        const bool default_request = tolerance == epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+        const bool criterion_ok = result.convergence.criterion != nullptr
+            && result.convergence.criterion->value == tolerance
+            && (default_request ? result.convergence.criterion == &epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL
+                                : std::string(result.convergence.criterion->name) == "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL");
+        const bool flag_ok = std::isfinite(result.convergence.residual)
+            ? (result.requested_tolerance_met.has_value()
+               && *result.requested_tolerance_met == (result.convergence.residual <= tolerance))
+            : !result.requested_tolerance_met.has_value();
+        const bool warning_ok = !result.success || !result.requested_tolerance_met.has_value()
+            || *result.requested_tolerance_met || result.message.find("requested row tolerance") != std::string::npos;
+        const auto id = std::string("e2-7/tolerance/") + recording_support::number(tolerance);
+        recording_support::compare(id.c_str(), "requested_tolerance_met", "bool",
+            result.requested_tolerance_met.has_value() ? (*result.requested_tolerance_met ? 1.0 : 0.0) : std::numeric_limits<double>::quiet_NaN(),
+            std::isfinite(result.convergence.residual) ? (result.convergence.residual <= tolerance ? 1.0 : 0.0) : std::numeric_limits<double>::quiet_NaN(),
+            recording_support::fields({solve_inputs(request, result), recording_support::field("row_tolerance", tolerance),
+                recording_support::field("criterion", result.convergence.criterion == nullptr ? "absent" : result.convergence.criterion->name),
+                recording_support::field("floor", epcsaft::core::optional_number(result.convergence.floor)),
+                recording_support::field("success", result.success ? 1U : 0U), recording_support::field("message", result.message)}),
+            "Relationship", "caller-criterion", "requested_tolerance_met is exactly recomputed_residual <= row_tolerance",
+            "absolute", 0.0, 0.0, criterion_ok && flag_ok && warning_ok && (!default_request || result.success),
+            "e2-7-criterion", id.c_str(), "met", "tolerance,residual", "met=(|r|\\leq tol)", "tolerance");
+        CHECK(criterion_ok && flag_ok && warning_ok && (!default_request || result.success));
+    }
+    // Owned caller criterion survives copies through the trace after the source record is gone.
+    std::optional<epcsaft::core::Convergence> copied;
+    {
+        epcsaft::core::Capture capture;
+        auto request = equilibrium_support::flash(2);
+        request.row_tolerance = 1.0e-8;
+        {
+            const auto result = epcsaft::equilibrium::solve_equilibrium(model, request);
+            CHECK(result.success);
+        }
+        for (const auto& span : capture.trace().spans)
+            if (std::string(span.name) == "solve_equilibrium" && span.convergence.has_value()) copied = span.convergence;
+    }
+    const bool lifetime_ok = copied.has_value() && copied->criterion != nullptr && copied->criterion_owner
+        && copied->criterion == copied->criterion_owner.get() && copied->criterion->value == 1.0e-8
+        && std::string(copied->criterion->name) == "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL"
+        && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
+                                   copied->amplification) == copied->stop;
+    CHECK(record_bool("e2-7/owned-criterion-lifetime", "e2-7-criterion",
+        "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
+        recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
+            recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")})));
+}
+
+void check_e2_reuse() {
+    using namespace e2;
+    struct Case final { const char* label; epcsaft::Parameters parameters; epcsaft::equilibrium::EquilibriumProblem problem; bool solved; };
+    auto pinned_problem = equilibrium_support::boundary();
+    pinned_problem.temperature.value = 180.0;
+    auto free_t = pinned_problem;
+    free_t.temperature = FreeValue::variable(180.0);
+    free_t.pressure = FreeValue::fixed(1.0e5);
+    auto reactive = free_t;
+    reactive.reactions = {{"A-to-B", {-1.0, 1.0}, std::nullopt, 850.0}};
+    auto associating = free_t;
+    associating.temperature.value = 300.0;
+    auto regular = equilibrium_support::flash(3);
+    regular.phases = {equilibrium_support::phase("V", PhaseKind::Vapor), equilibrium_support::phase("L", PhaseKind::Liquid)};
+    regular.temperature.value = 180.0;
+    const std::vector<Case> cases = {
+        {"regular", properties_support::neutral_ternary(), regular, true},
+        {"pinned", properties_support::neutral_binary(), pinned_problem, false},
+        {"pinned-free-T", properties_support::neutral_binary(), free_t, false},
+        {"pinned-reactive-T", properties_support::neutral_binary(), reactive, false},
+        {"pinned-association-T", properties_support::associating_binary(), associating, false},
+    };
+    const double criterion = 1.0e-9;
+    for (const auto& item : cases) {
+        const epcsaft::HelmholtzModel model(item.parameters);
+        const auto compiled = epcsaft::equilibrium::compile_problem(model, item.problem);
+        std::vector<double> a;
+        if (item.solved) {
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, item.problem);
+            CHECK(solved.success);
+            a.assign(solved.coordinates.begin(), solved.coordinates.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
+        } else {
+            a = compiled.generic_point();
+            a[compiled.primal_size - compiled.free_intensive_count] = item.problem.temperature.free ? 193.0 : a[compiled.primal_size - compiled.free_intensive_count];
+        }
+        epcsaft::equilibrium::GibbsMinimizer nlp(compiled, a);
+        const auto shape = nlp.shape();
+        const auto n = shape.variables;
+        const auto m = shape.constraints;
+        CHECK(static_cast<std::size_t>(n) == a.size());
+        std::vector<double> lambda_one(static_cast<std::size_t>(m)), lambda_two(static_cast<std::size_t>(m));
+        for (std::size_t row = 0; row < lambda_one.size(); ++row) {
+            lambda_one[row] = 0.35 + 0.1 * static_cast<double>(row);
+            lambda_two[row] = -0.2 + 0.07 * static_cast<double>(row);
+        }
+        auto b = a;
+        for (double& value : b) value += 1.0e-3;
+        std::vector<Ipopt::Index> rows_index(static_cast<std::size_t>(shape.hessian_entries)), cols_index(static_cast<std::size_t>(shape.hessian_entries));
+        CHECK(nlp.eval_h(n, a.data(), true, 1.0, m, lambda_one.data(), true, shape.hessian_entries, rows_index.data(), cols_index.data(), nullptr));
+        const auto callback = [&](const std::vector<double>& point, double objective_factor, const std::vector<double>& lambda) {
+            Ipopt::Number f = 0.0;
+            std::vector<Ipopt::Number> g(static_cast<std::size_t>(m)), grad(static_cast<std::size_t>(n));
+            std::vector<Ipopt::Number> jac(static_cast<std::size_t>(shape.jacobian_entries)), hess(static_cast<std::size_t>(shape.hessian_entries));
+            CHECK(nlp.eval_f(n, point.data(), true, f));
+            CHECK(nlp.eval_g(n, point.data(), false, m, g.data()));
+            CHECK(nlp.eval_grad_f(n, point.data(), false, grad.data()));
+            CHECK(nlp.eval_jac_g(n, point.data(), false, m, shape.jacobian_entries, nullptr, nullptr, jac.data()));
+            CHECK(nlp.eval_h(n, point.data(), false, objective_factor, m, lambda.data(), true, shape.hessian_entries, nullptr, nullptr, hess.data()));
+            std::vector<double> flat = {f};
+            flat.insert(flat.end(), g.begin(), g.end());
+            flat.insert(flat.end(), grad.begin(), grad.end());
+            flat.insert(flat.end(), jac.begin(), jac.end());
+            flat.insert(flat.end(), hess.begin(), hess.end());
+            return flat;
+        };
+        const auto fresh = [&](const std::vector<double>& point, double objective_factor, const std::vector<double>& lambda) {
+            const auto evaluation = compiled.evaluate(point);
+            const auto gradient = compiled.objective_gradient(point);
+            const auto jacobian = compiled.jacobian(point);
+            const auto objective = compiled.hessian(point, {});
+            const auto weighted = compiled.hessian(point, lambda);
+            const auto active = callback_rows(compiled);
+            std::vector<double> flat = {compiled.pinned_count == 0 ? evaluation.objective : 0.0};
+            for (const std::size_t row : active) flat.push_back(evaluation.values[row]);
+            flat.insert(flat.end(), gradient.begin(), gradient.end());
+            for (const std::size_t row : active)
+                for (Ipopt::Index column = 0; column < n; ++column) flat.push_back(jacobian[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)]);
+            for (Ipopt::Index row = 0; row < n; ++row)
+                for (Ipopt::Index column = 0; column <= row; ++column) {
+                    const std::size_t index = static_cast<std::size_t>(row) * static_cast<std::size_t>(n) + static_cast<std::size_t>(column);
+                    flat.push_back(objective_factor * objective[index] + (weighted[index] - objective[index]));
+                }
+            return flat;
+        };
+        const auto compare_flat = [&](const char* step, const std::vector<double>& left, const std::vector<double>& right) {
+            CHECK(left.size() == right.size());
+            double worst = 0.0;
+            for (std::size_t i = 0; i < left.size(); ++i)
+                worst = std::max(worst, std::abs(left[i] - right[i]) / std::max(1.0, std::abs(right[i])));
+            const auto id = std::string("e2-reuse/") + item.label + "/" + step;
+            recording_support::compare(id.c_str(), "callback_difference", "1", worst, 0.0,
+                recording_support::fields({recording_support::field("case", item.label), recording_support::field("step", step),
+                    recording_support::field("entries", left.size()), recording_support::field("point", a)}),
+                "Relationship", "current-point-reuse", "cached callback values equal fresh evaluation at the same point",
+                "reference_or_one", criterion, 0.0, worst <= criterion, "e2-reuse", id.c_str(), "\\Delta", "z,\\lambda,\\sigma",
+                "\\Delta\\leq10^{-9}", "case,step");
+            CHECK(worst <= criterion);
+        };
+        const auto first = callback(a, 0.5, lambda_one);
+        compare_flat("a-first", first, fresh(a, 0.5, lambda_one));
+        compare_flat("a-changed-multipliers", callback(a, 1.0, lambda_two), fresh(a, 1.0, lambda_two));
+        compare_flat("a-zero-objective", callback(a, 0.0, lambda_one), fresh(a, 0.0, lambda_one));
+        compare_flat("b", callback(b, 0.5, lambda_one), fresh(b, 0.5, lambda_one));
+        compare_flat("a-return", callback(a, 0.5, lambda_one), first);
+        const auto& work = nlp.work();
+        const bool work_ok = work.prepared_points == 3 && work.row_evaluations == 3 && work.jacobians == 3
+            && work.gradients == 3 && work.objective_hessians == 3 && work.constraint_hessians == 5;
+        const auto id = std::string("e2-reuse/") + item.label + "/work";
+        recording_support::compare(id.c_str(), "prepared_points", "count", static_cast<double>(work.prepared_points), 3.0,
+            recording_support::fields({recording_support::field("case", item.label),
+                recording_support::field("row_evaluations", work.row_evaluations), recording_support::field("jacobians", work.jacobians),
+                recording_support::field("gradients", work.gradients), recording_support::field("objective_hessians", work.objective_hessians),
+                recording_support::field("constraint_hessians", work.constraint_hessians),
+                recording_support::field("callback_calls", 5U * 5U)}),
+            "Relationship", "current-point-reuse", "five callback rounds at three distinct points prepare each point once",
+            "absolute", 0.0, 0.0, work_ok, "e2-reuse", id.c_str(), "N_{prepare}", "case", "N_{prepare}=3", "case");
+        CHECK(work_ok);
+    }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1669,5 +2173,8 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},
         {{"native.equilibrium.c3", "Core_C3_availability", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "CORE3", "c3-availability", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C3", "c3-availability:2"}, check_c3_availability},
         {{"native.equilibrium.s16", "Equilibrium_S16", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*,affinity/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S16", "continuation/*:18,affinity/*:6"}, check_s16},
+        {{"native.equilibrium.e2-thermal", "Equilibrium_E2_thermal", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-2/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-2"}, check_e2_thermal},
+        {{"native.equilibrium.e2-solve", "Equilibrium_E2_solve", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-6/*,e2-7/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-6"}, check_e2_solve},
+        {{"native.equilibrium.e2-reuse", "Equilibrium_E2_reuse", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-reuse/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-R"}, check_e2_reuse},
     });
 }

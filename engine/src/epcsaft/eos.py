@@ -194,7 +194,7 @@ class Pure:
         from .equilibrium import Amounts, Free, Phase, Pinned, Problem
 
         return Problem(
-            phases=[Phase("L"), Phase("V", amount=Pinned(0.0))],
+            phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
             T=T,
             P=Free(),
             feed=Amounts({self.component_ids[0]: 1.0}),

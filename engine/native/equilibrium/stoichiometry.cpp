@@ -1,10 +1,12 @@
 #include "equilibrium/stoichiometry.hpp"
 
 #include "core/physical_constants.hpp"
+#include "properties/thermochemistry.hpp"
 
 #include <Eigen/Dense>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <numeric>
@@ -173,42 +175,113 @@ std::vector<std::vector<double>> balance_basis(
     return result;
 }
 
+std::vector<std::vector<double>> reaction_target_series(
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+) {
+    require_positive(temperature, "temperature");
+    if (order > 3) throw std::invalid_argument("reaction target order");
+    const double R = GAS_CONSTANT_J_PER_MOL_K;
+    std::vector<std::vector<double>> result(order + 1, std::vector<double>(reactions.size(), 0.0));
+    for (std::size_t row = 0; row < reactions.size(); ++row) {
+        const auto& reaction = reactions[row];
+        // l[k] = d^k ln K / dT^k; t = -R T ln K, so t^(k) = -R (k l[k-1] + T l[k]).
+        std::array<double, 4> l{};
+        if (reaction.affinity_j_per_mol.has_value()) {
+            result[0][row] = *reaction.affinity_j_per_mol;
+            continue;
+        }
+        if (reaction.correlation.has_value()) {
+            if (reaction.correlation->standard_state_id != EOS_STANDARD_STATE_ID) {
+                throw std::invalid_argument("reference-basis-mismatch in reaction "
+                                            + reaction_name(reaction, row));
+            }
+            const auto properties = evaluate_reaction_properties(*reaction.correlation, temperature);
+            l = {properties.ln_k, properties.derivative, properties.second_derivative,
+                 properties.third_derivative};
+        } else {
+            l[0] = std::log(*reaction.equilibrium_constant);
+        }
+        for (std::size_t k = 0; k <= order; ++k) {
+            result[k][row] = -R * ((k == 0 ? 0.0 : static_cast<double>(k) * l[k - 1])
+                                   + temperature * l[k]);
+        }
+    }
+    return result;
+}
+
+std::vector<std::vector<double>> standard_state_series(
+    double temperature, std::size_t components,
+    const std::vector<ReactionSpec>& reactions,
+    const std::vector<double>& supplied, std::size_t order
+) {
+    require_positive(temperature, "temperature");
+    validate_reaction_set(components, reactions);
+    std::vector<std::vector<double>> result(order + 1, std::vector<double>(components, 0.0));
+    if (reactions.empty() && supplied.empty()) return result;
+    const auto targets = reaction_target_series(temperature, reactions, order);
+    if (reactions.empty()) {
+        if (supplied.size() != components) throw std::invalid_argument("standard state size");
+        if (!all_finite(supplied)) throw std::invalid_argument("invalid standard state");
+        result[0] = supplied;
+        return result;
+    }
+    const auto matrix = reaction_matrix(components, reactions);
+    Eigen::VectorXd target(static_cast<Eigen::Index>(reactions.size()));
+    for (std::size_t row = 0; row < reactions.size(); ++row) {
+        target(static_cast<Eigen::Index>(row)) = targets[0][row];
+    }
+    const double criterion = std::sqrt(std::numeric_limits<double>::epsilon())
+        * std::max(1.0, target.norm());
+    if (!supplied.empty()) {
+        if (supplied.size() != components) throw std::invalid_argument("standard state size");
+        if (!all_finite(supplied)) throw std::invalid_argument("invalid standard state");
+        const Eigen::Map<const Eigen::VectorXd> gibbs(supplied.data(),
+                                                      static_cast<Eigen::Index>(components));
+        if ((matrix * gibbs - target).norm() > criterion) {
+            throw std::invalid_argument("inconsistent standard state");
+        }
+        result[0] = supplied;
+        return result;
+    }
+    const auto svd = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    for (std::size_t k = 0; k <= order; ++k) {
+        Eigen::VectorXd right(static_cast<Eigen::Index>(reactions.size()));
+        for (std::size_t row = 0; row < reactions.size(); ++row) {
+            right(static_cast<Eigen::Index>(row)) = targets[k][row];
+        }
+        const Eigen::VectorXd solution = svd.solve(right);
+        if (k == 0 && (matrix * solution - target).norm() > criterion) {
+            throw std::invalid_argument("inconsistent standard state");
+        }
+        result[k].assign(solution.data(), solution.data() + solution.size());
+    }
+    return result;
+}
+
 std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
     const std::vector<double>& supplied
 ) {
-    require_positive(temperature, "temperature");
-    validate_reaction_set(components, reactions);
-    if (!supplied.empty()) {
-        if (supplied.size() != components) throw std::invalid_argument("standard state size");
-        if (!std::all_of(supplied.begin(), supplied.end(), [](double value) {
-                return std::isfinite(value);
-            })) throw std::invalid_argument("invalid standard state");
-        return supplied;
-    }
-    if (reactions.empty()) return std::vector<double>(components, 0.0);
-    const auto matrix = reaction_matrix(components, reactions);
-    Eigen::VectorXd target(static_cast<Eigen::Index>(reactions.size()));
-    for (std::size_t row = 0; row < reactions.size(); ++row) {
-        if (reactions[row].affinity_j_per_mol.has_value()) {
-            target(static_cast<Eigen::Index>(row)) = *reactions[row].affinity_j_per_mol;
-        } else {
-            if (!(reactions[row].equilibrium_constant > 0.0)) {
-                throw std::invalid_argument("equilibrium constant is not positive");
-            }
-            target(static_cast<Eigen::Index>(row)) = -GAS_CONSTANT_J_PER_MOL_K * temperature
-                * std::log(reactions[row].equilibrium_constant);
+    return standard_state_series(temperature, components, reactions, supplied, 0).front();
+}
+
+bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
+    if (basis.empty()) throw std::invalid_argument("empty balance basis");
+    const std::size_t components = basis.front().size();
+    validate_basis_shape(basis, components);
+    Eigen::MatrixXd extended(static_cast<Eigen::Index>(basis.size() + 1),
+                             static_cast<Eigen::Index>(components));
+    for (std::size_t row = 0; row < basis.size(); ++row) {
+        for (std::size_t column = 0; column < components; ++column) {
+            extended(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
+                basis[row][column];
         }
     }
-    const Eigen::VectorXd solution = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)
-        .solve(target);
-    const double error = (matrix * solution - target).norm();
-    if (error > std::sqrt(std::numeric_limits<double>::epsilon())
-        * std::max(1.0, target.norm())) {
-        throw std::invalid_argument("inconsistent standard state");
-    }
-    return std::vector<double>(solution.data(), solution.data() + solution.size());
+    extended.row(static_cast<Eigen::Index>(basis.size())).setConstant(
+        1.0 / std::sqrt(static_cast<double>(components)));
+    return numerical_rank(extended) == numerical_rank(extended.topRows(
+        static_cast<Eigen::Index>(basis.size())));
 }
 
 std::vector<double> matvec(
@@ -261,24 +334,28 @@ void validate_reaction_set(
     if (components == 0) throw std::invalid_argument("no components");
     for (std::size_t row = 0; row < reactions.size(); ++row) {
         const auto& reaction = reactions[row];
+        const std::string label = reaction_name(reaction, row);
         if (reaction.stoichiometry.size() != components) {
             throw std::invalid_argument("stoichiometry size does not match components");
         }
-        if (!std::all_of(reaction.stoichiometry.begin(), reaction.stoichiometry.end(),
-                         [](double value) { return std::isfinite(value); })) {
-            throw std::invalid_argument("invalid stoichiometry in reaction "
-                                        + reaction_name(reaction, row));
+        if (!all_finite(reaction.stoichiometry)) {
+            throw std::invalid_argument("invalid stoichiometry in reaction " + label);
+        }
+        const int targets = reaction.equilibrium_constant.has_value()
+            + reaction.affinity_j_per_mol.has_value() + reaction.correlation.has_value();
+        if (targets != 1) {
+            throw std::invalid_argument("inconsistent standard state: reaction " + label
+                                        + " needs exactly one target");
         }
         if (reaction.affinity_j_per_mol.has_value()
             && !std::isfinite(*reaction.affinity_j_per_mol)) {
-            throw std::invalid_argument("invalid affinity in reaction "
-                                        + reaction_name(reaction, row));
+            throw std::invalid_argument("invalid affinity in reaction " + label);
         }
-        if (!reaction.affinity_j_per_mol.has_value()
-            && (!std::isfinite(reaction.equilibrium_constant)
-                || reaction.equilibrium_constant <= 0.0)) {
+        if (reaction.equilibrium_constant.has_value()
+            && (!std::isfinite(*reaction.equilibrium_constant)
+                || *reaction.equilibrium_constant <= 0.0)) {
             throw std::invalid_argument("equilibrium constant is not positive in reaction "
-                                        + reaction_name(reaction, row));
+                                        + label);
         }
     }
 }
@@ -439,19 +516,7 @@ bool is_orthonormal(
 std::vector<double> reaction_affinity_targets(
     double temperature, const std::vector<ReactionSpec>& reactions
 ) {
-    require_positive(temperature, "temperature");
-    std::vector<double> result;
-    result.reserve(reactions.size());
-    for (const auto& reaction : reactions) {
-        if (reaction.affinity_j_per_mol.has_value()) {
-            result.push_back(*reaction.affinity_j_per_mol);
-            continue;
-        }
-        require_positive(reaction.equilibrium_constant, "equilibrium constant");
-        result.push_back(-GAS_CONSTANT_J_PER_MOL_K * temperature
-                         * std::log(reaction.equilibrium_constant));
-    }
-    return result;
+    return reaction_target_series(temperature, reactions, 0).front();
 }
 
 std::vector<double> project_to_balance(

@@ -250,6 +250,7 @@ class PhaseSpec:
     name: str
     kind: PhaseKind
     support: list[int]
+    support_declared: bool
     amount: AmountSpec
     composition_guess: list[float]
     packing_guess: Optional[float]
@@ -265,7 +266,7 @@ class FeedSpec:
 class ReactionSpec:
     name: str
     stoichiometry: list[float]
-    equilibrium_constant: float
+    equilibrium_constant: Optional[float]
     affinity_j_per_mol: Optional[float]
     def __init__(self) -> None: ...
 
@@ -277,6 +278,7 @@ class EquilibriumProblem:
     reactions: list[ReactionSpec]
     standard_gibbs_j_per_mol: list[float]
     topology_declared: bool
+    row_tolerance: float
     def __init__(self) -> None: ...
 
 class RowKind:
@@ -310,14 +312,16 @@ class CompiledSystem:
     feed_total: float
     has_ions: bool
     has_reaction: bool
+    conserves_total_moles: bool
     jacobian_rank: int
     removed_species: list[int]
+    def unknown_count(self) -> int: ...
     def generic_point(self) -> list[float]: ...
     def evaluate(self, point: Sequence[float]) -> PointEvaluation: ...
     def jacobian(self, point: Sequence[float]) -> list[float]: ...
     def lever_jacobian(self, point: Sequence[float]) -> list[float]: ...
     def objective_gradient(self, point: Sequence[float]) -> list[float]: ...
-    def hessian(self, point: Sequence[float]) -> list[float]: ...
+    def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
     success: bool
@@ -341,6 +345,10 @@ class EquilibriumResult:
     reduced_hessian_minimum: float
     convergence: Convergence
     rows: list[Row]
+    unknown_count: int
+    jacobian_rank: int
+    generic_nullity: int
+    requested_tolerance_met: Optional[bool]
 
 def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <deque>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -33,6 +34,8 @@ struct Convergence final {
     std::size_t iterations = 0;
     std::size_t evaluations = 0;
     Stop stop = Stop::stalled;
+    // Owns a caller-valued criterion; static policy producers leave it empty.
+    std::shared_ptr<const policy::Tolerance> criterion_owner;
 };
 
 inline Stop classify(

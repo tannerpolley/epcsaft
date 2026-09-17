@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <string>
 
@@ -441,25 +442,48 @@ std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
     return result;
 }
 
+const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
+    std::vector<double> candidate = point(n, x);
+    if (!prepared_.has_value() || prepared_->point != candidate) {
+        prepared_ = compiled_.prepare(candidate);
+        rows_.reset();
+        jacobian_.reset();
+        gradient_.reset();
+        objective_hessian_.reset();
+        constraint_hessian_.reset();
+        ++work_.prepared_points;
+    }
+    return *prepared_;
+}
+
+const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Number* x) {
+    const auto& point = prepared(n, x);
+    if (!rows_.has_value()) {
+        rows_ = compiled_.evaluate_at(point);
+        ++work_.row_evaluations;
+    }
+    return *rows_;
+}
+
 bool GibbsMinimizer::eval_f(
     Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number& value
 ) {
     (void)new_x;
     ++evaluations_;
-    value = compiled_.pinned_count == 0 ? compiled_.evaluate(point(n, x)).objective : 0.0;
+    value = compiled_.pinned_count == 0 ? rows_at(n, x).objective : 0.0;
     return std::isfinite(value);
-}
-
-std::vector<double> GibbsMinimizer::objective_gradient(const std::vector<double>& x) const {
-    return compiled_.objective_gradient(x);
 }
 
 bool GibbsMinimizer::eval_grad_f(
     Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f
 ) {
     (void)new_x;
-    const auto gradient = objective_gradient(point(n, x));
-    std::copy(gradient.begin(), gradient.end(), grad_f);
+    const auto& point = prepared(n, x);
+    if (!gradient_.has_value()) {
+        gradient_ = compiled_.objective_gradient_at(point);
+        ++work_.gradients;
+    }
+    std::copy(gradient_->begin(), gradient_->end(), grad_f);
     return true;
 }
 
@@ -468,7 +492,7 @@ bool GibbsMinimizer::eval_g(
     Ipopt::Index m, Ipopt::Number* g
 ) {
     (void)new_x;
-    const auto values = compiled_.evaluate(point(n, x)).values;
+    const auto& values = rows_at(n, x).values;
     const auto rows = constraint_rows();
     for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
     return true;
@@ -491,11 +515,15 @@ bool GibbsMinimizer::eval_jac_g(
         }
         return entry == nele_jac;
     }
-    const auto jacobian = compiled_.jacobian(point(n, x));
+    const auto& point = prepared(n, x);
+    if (!jacobian_.has_value()) {
+        jacobian_ = compiled_.jacobian_at(point);
+        ++work_.jacobians;
+    }
     Ipopt::Index entry = 0;
     for (const std::size_t row : rows) {
         for (Ipopt::Index column = 0; column < n; ++column) {
-            values[entry++] = jacobian[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)];
+            values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)];
         }
     }
     return entry == nele_jac;
@@ -508,7 +536,6 @@ bool GibbsMinimizer::eval_h(
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
     (void)new_x; (void)new_lambda;
-    (void)m; (void)lambda;
     ++hessian_calls_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -521,17 +548,26 @@ bool GibbsMinimizer::eval_h(
         return entry == nele_hess;
     }
     std::fill(values, values + nele_hess, 0.0);
-    const auto base = point(n, x);
-    const auto objective_hessian = compiled_.hessian(base);
-    const auto lagrangian_hessian = compiled_.hessian(
-        base, std::vector<double>(lambda, lambda + m));
+    const auto& point = prepared(n, x);
+    // Objective curvature is multiplier independent; the weighted constraint curvature is
+    // recombined whenever the optimizer multipliers change at the same point.
+    if (!objective_hessian_.has_value()) {
+        objective_hessian_ = compiled_.hessian_at(point, {});
+        ++work_.objective_hessians;
+    }
+    const std::vector<double> multipliers(lambda, lambda + m);
+    if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
+        constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
+        constraint_hessian_multipliers_ = multipliers;
+        ++work_.constraint_hessians;
+    }
     Ipopt::Index entry = 0;
     for (Ipopt::Index row = 0; row < n; ++row) {
         for (Ipopt::Index column = 0; column <= row; ++column) {
             const std::size_t index = static_cast<std::size_t>(row) * n
                 + static_cast<std::size_t>(column);
-            values[entry++] = obj_factor * objective_hessian[index]
-                + lagrangian_hessian[index] - objective_hessian[index];
+            values[entry++] = obj_factor * (*objective_hessian_)[index]
+                + (*constraint_hessian_)[index];
         }
     }
     return entry == nele_hess;
@@ -575,6 +611,23 @@ EquilibriumResult solve_equilibrium(
 ) {
     core::Scope scope("solve_equilibrium");
     CompiledSystem compiled = compile_problem(model, request);
+    EquilibriumResult result;
+    result.rows = compiled.rows;
+    result.phase_count = compiled.problem.phases.size();
+    result.unknown_count = compiled.unknown_count();
+    result.jacobian_rank = compiled.jacobian_rank;
+    result.generic_nullity = compiled.generic_nullity;
+    if (!compiled.feasible) {
+        // Structural rank loss at the generic point: no start, no optimizer, no candidate.
+        result.solver_status = "NOT_RUN";
+        result.message = "rank-deficient declared equations; nonlinear solve not run";
+        result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        result.convergence.stop = core::Stop::infeasible;
+        scope.probe("generic_nullity", static_cast<double>(compiled.generic_nullity));
+        scope.finish(result.convergence);
+        return result;
+    }
+    const double row_tolerance = compiled.problem.row_tolerance;
     std::vector<double> initial = boundary_start(compiled);
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
@@ -584,19 +637,16 @@ EquilibriumResult solve_equilibrium(
     application->Options()->SetStringValue("nlp_scaling_method", "none");
     application->Options()->SetNumericValue("obj_scaling_factor", objective_scale);
     application->Options()->SetStringValue("hessian_approximation", "exact");
-    application->Options()->SetNumericValue("tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
-    application->Options()->SetNumericValue("acceptable_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    application->Options()->SetNumericValue("tol", row_tolerance);
+    application->Options()->SetNumericValue("acceptable_tol", row_tolerance);
     application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("dual_inf_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
-    application->Options()->SetNumericValue("constr_viol_tol", policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    application->Options()->SetNumericValue("dual_inf_tol", row_tolerance);
+    application->Options()->SetNumericValue("constr_viol_tol", row_tolerance);
     application->Options()->SetIntegerValue("max_iter",
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
     application->Initialize();
     application->OptimizeTNLP(nlp);
-    EquilibriumResult result;
     result.solver_status = solver_status_name(nlp->status());
-    result.rows = compiled.rows;
-    result.phase_count = compiled.problem.phases.size();
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
@@ -616,10 +666,19 @@ EquilibriumResult solve_equilibrium(
     scope.probe("active_residual", active_constraint_residual(compiled, full));
     scope.probe("objective", result.objective);
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
+    scope.probe("prepared_points", static_cast<double>(nlp->work().prepared_points));
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.residuals);
-    convergence.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+    if (row_tolerance == policy::EQUILIBRIUM_ROW_RESIDUAL.value) {
+        convergence.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+    } else {
+        // The caller-valued criterion lives with the record so copies outlive the request.
+        convergence.criterion_owner = std::make_shared<const policy::Tolerance>(policy::Tolerance{
+            "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL", row_tolerance,
+            policy::Category::AlgorithmTolerance, "caller-supplied equilibrium row tolerance"});
+        convergence.criterion = convergence.criterion_owner.get();
+    }
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
     result.iterations = nlp->iterations();
@@ -640,6 +699,9 @@ EquilibriumResult solve_equilibrium(
             (nlp->status() == Ipopt::MAXITER_EXCEEDED ||
              nlp->status() == Ipopt::CPUTIME_EXCEEDED), convergence.amplification
         );
+    }
+    if (std::isfinite(convergence.residual)) {
+        result.requested_tolerance_met = convergence.residual <= row_tolerance;
     }
     result.message = core::describe(convergence);
     scope.finish(convergence);
@@ -713,6 +775,10 @@ EquilibriumResult solve_equilibrium(
         if (!topology_ok) result.message = topology_failure;
         clear_state(result);
         return result;
+    }
+    if (result.requested_tolerance_met.has_value() && !*result.requested_tolerance_met) {
+        result.message += "; requested row tolerance " + std::to_string(row_tolerance)
+            + " not met by an available floor-limited state";
     }
     const double temperature = compiled.problem.temperature.free
         ? full[intensive_offset++] : compiled.problem.temperature.value;

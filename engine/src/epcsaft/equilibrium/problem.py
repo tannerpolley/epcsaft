@@ -111,17 +111,21 @@ class Reaction:
     __slots__ = ("name", "stoichiometry", "equilibrium_constant", "affinity_j_per_mol")
     name: str
     stoichiometry: Mapping[str, float]
-    equilibrium_constant: float
+    equilibrium_constant: float | None
     affinity_j_per_mol: float | None
 
     def __init__(
         self,
         stoichiometry: Mapping[str, float],
         *,
-        equilibrium_constant: float,
+        equilibrium_constant: float | None = None,
         name: str | None = None,
         affinity_j_per_mol: float | None = None,
     ) -> None:
+        if equilibrium_constant is None and affinity_j_per_mol is None:
+            raise TypeError("Reaction requires equilibrium_constant or affinity_j_per_mol")
+        if equilibrium_constant is not None and affinity_j_per_mol is not None:
+            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol")
         name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
@@ -144,7 +148,10 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
 
 
 class Problem:
-    __slots__ = ("phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared")
+    __slots__ = (
+        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
+        "row_tolerance",
+    )
     phases: tuple[Phase, ...] | Discover
     T: float | Free
     P: float | Free
@@ -152,6 +159,7 @@ class Problem:
     reactions: tuple[Reaction, ...]
     standard_gibbs_j_per_mol: tuple[float, ...]
     topology_declared: bool
+    row_tolerance: float | None
 
     def __init__(
         self,
@@ -163,7 +171,9 @@ class Problem:
         reactions: Sequence[Reaction] | None = None,
         standard_gibbs_j_per_mol: Sequence[float] | None = None,
         topology_declared: bool | None = None,
+        row_tolerance: float | None = None,
     ) -> None:
+        self.row_tolerance = row_tolerance
         phases = () if phases is None else phases
         reactions = () if reactions is None else reactions
         standard_gibbs_j_per_mol = () if standard_gibbs_j_per_mol is None else standard_gibbs_j_per_mol
@@ -187,6 +197,8 @@ class Problem:
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
+        if self.row_tolerance is not None:
+            native.row_tolerance = self.row_tolerance
         if isinstance(self.phases, Discover):
             native.phases = []
             return native
@@ -195,7 +207,8 @@ class Problem:
             item = _core.PhaseSpec()
             item.name = phase.name
             item.kind = _phase_kind(phase)
-            names = model.component_ids if phase.support is None else phase.support
+            item.support_declared = phase.support is not None
+            names = () if phase.support is None else phase.support
             item.support = [_index(model.component_ids, name) for name in names]
             item.amount = _amount_spec(phase.amount)
             item.composition_guess = list(phase.composition_guess)
@@ -236,7 +249,8 @@ class Problem:
 
 def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     allowed = {
-        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared"
+        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
+        "row_tolerance",
     }
     if set(mapping) - allowed:
         raise _core.ParameterError("unknown Problem key")
@@ -259,6 +273,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         reactions=reactions,
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
         topology_declared=bool(mapping.get("topology_declared", True)),
+        row_tolerance=cast(float | None, mapping.get("row_tolerance")),
     )
 
 
@@ -327,12 +342,12 @@ def _feed_from_mapping(value: object) -> Feed:
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
-    if "equilibrium_constant" not in value:
-        raise _core.ParameterError("missing equilibrium_constant")
+    if "equilibrium_constant" not in value and "affinity_j_per_mol" not in value:
+        raise _core.ParameterError("missing equilibrium_constant or affinity_j_per_mol")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
-        equilibrium_constant=cast(float, value["equilibrium_constant"]),
+        equilibrium_constant=cast(float | None, value.get("equilibrium_constant")),
         affinity_j_per_mol=cast(float | None, value.get("affinity_j_per_mol")),
     )
 
@@ -350,7 +365,7 @@ def _amount_spec(value: Free | Pinned) -> _core.AmountSpec:
 def _phase_kind(phase: Phase) -> _core.PhaseKind:
     kind = phase.kind
     if kind is None:
-        kind = "vapor" if phase.name.upper() == "V" else "liquid"
+        raise _core.ParameterError(f"phase {phase.name} requires an explicit kind (liquid or vapor)")
     if kind.lower() in {"vapor", "gas"}:
         return _core.PhaseKind.Vapor
     if kind.lower() == "liquid":
@@ -369,7 +384,7 @@ def solve_equilibrium(
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
     reactions = () if reactions is None else reactions
     return Problem(
-        phases=[liquid, Phase("V", amount=Pinned(0.0))],
+        phases=[liquid, Phase("V", kind="vapor", amount=Pinned(0.0))],
         T=T,
         P=Free(),
         feed=feed,
@@ -380,7 +395,7 @@ def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Rea
 def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None) -> Problem:
     reactions = () if reactions is None else reactions
     return Problem(
-        phases=[Phase("L", amount=Pinned(0.0)), vapor],
+        phases=[Phase("L", kind="liquid", amount=Pinned(0.0)), vapor],
         T=T,
         P=Free(),
         feed=feed,

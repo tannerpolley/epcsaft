@@ -12,6 +12,16 @@ namespace epcsaft::core { class Scope; }
 
 namespace epcsaft::equilibrium {
 
+// Work actually performed on distinct callback points within one solve.
+struct EvaluationWork final {
+    std::size_t prepared_points = 0;
+    std::size_t row_evaluations = 0;
+    std::size_t jacobians = 0;
+    std::size_t gradients = 0;
+    std::size_t objective_hessians = 0;
+    std::size_t constraint_hessians = 0;
+};
+
 struct NlpShape final {
     Ipopt::Index variables = 0;
     Ipopt::Index constraints = 0;
@@ -97,6 +107,7 @@ public:
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }
 
     double regularization_size() const noexcept { return regularization_size_; }
+    const EvaluationWork& work() const noexcept { return work_; }
 
     NlpShape shape() const {
         const Ipopt::Index variables = static_cast<Ipopt::Index>(
@@ -133,10 +144,21 @@ public:
 private:
     std::vector<double> point(Ipopt::Index n, const Ipopt::Number* x) const;
     std::vector<std::size_t> constraint_rows() const;
-    std::vector<double> objective_gradient(const std::vector<double>& x) const;
+    // One latest-point phase evaluation per solve; every derived quantity is cached
+    // with it and invalidated when the callback point changes.
+    const PhasePoint& prepared(Ipopt::Index n, const Ipopt::Number* x);
+    const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 
     const CompiledSystem& compiled_;
     std::vector<double> start_;
+    std::optional<PhasePoint> prepared_;
+    std::optional<PointEvaluation> rows_;
+    std::optional<std::vector<double>> jacobian_;
+    std::optional<std::vector<double>> gradient_;
+    std::optional<std::vector<double>> objective_hessian_;
+    std::optional<std::vector<double>> constraint_hessian_;
+    std::vector<double> constraint_hessian_multipliers_;
+    EvaluationWork work_;
     std::vector<double> solution_;
     std::vector<double> constraint_multipliers_;
     Ipopt::SolverReturn status_ = Ipopt::UNASSIGNED;

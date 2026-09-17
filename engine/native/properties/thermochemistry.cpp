@@ -63,13 +63,15 @@ bool contains_temperature(const std::vector<IdealInterval>& intervals, double te
     });
 }
 ReactionProperties make_reaction_properties(
-    double ln_k, double derivative, double enthalpy, const std::string& identity
+    double ln_k, double derivative, double enthalpy, const std::string& identity,
+    double second_derivative, double third_derivative
 ) {
     validate_identity(identity);
     const double k = std::exp(ln_k);
-    if (!std::isfinite(ln_k) || !std::isfinite(derivative) || !std::isfinite(enthalpy))
+    if (!std::isfinite(ln_k) || !std::isfinite(derivative) || !std::isfinite(enthalpy)
+        || !std::isfinite(second_derivative) || !std::isfinite(third_derivative))
         throw std::domain_error("nonfinite reaction properties");
-    return {ln_k, derivative, enthalpy,
+    return {ln_k, derivative, enthalpy, second_derivative, third_derivative,
             std::isfinite(k) && k > 0.0 ? std::optional<double>(k) : std::nullopt, identity};
 }
 
@@ -218,7 +220,9 @@ ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial& cor
     const double enthalpy = GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * derivative;
     const double ln_k = correlation.a + correlation.b / temperature
         + correlation.c * std::log(temperature / correlation.reference_temperature) + correlation.d * temperature;
-    return make_reaction_properties(ln_k, derivative, enthalpy, correlation.standard_state_id);
+    const double t2 = temperature * temperature, t3 = t2 * temperature, t4 = t3 * temperature;
+    return make_reaction_properties(ln_k, derivative, enthalpy, correlation.standard_state_id,
+        2.0 * correlation.b / t3 - correlation.c / t2, -6.0 * correlation.b / t4 + 2.0 * correlation.c / t3);
 }
 
 ReactionLogPolynomial normalize_legacy_reaction_correlation(
@@ -246,11 +250,13 @@ ReactionProperties reaction_pressure_to_density(
     const double delta_nu = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
     const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     const double shift = std::log(rt * density / pressure);
+    const double t2 = temperature * temperature;
     return make_reaction_properties(
         pressure_properties.ln_k - delta_nu * shift,
         pressure_properties.derivative - delta_nu / temperature,
-        pressure_properties.enthalpy - delta_nu * rt,
-        density_identity
+        pressure_properties.enthalpy - delta_nu * rt, density_identity,
+        pressure_properties.second_derivative + delta_nu / t2,
+        pressure_properties.third_derivative - 2.0 * delta_nu / (t2 * temperature)
     );
 }
 ReactionProperties reaction_standard_state_conversion(
@@ -277,11 +283,40 @@ ReactionProperties reaction_standard_state_conversion(
         enthalpy_shift += stoichiometry[i] * (old_standard_enthalpy_j_per_mol[i]
                                               - new_standard_enthalpy_j_per_mol[i]);
     }
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature, t2 = temperature * temperature;
     return make_reaction_properties(
         properties.ln_k + gibbs_shift / rt, properties.derivative - enthalpy_shift / (rt * temperature),
-        properties.enthalpy - enthalpy_shift, new_identity
+        properties.enthalpy - enthalpy_shift, new_identity,
+        properties.second_derivative + 2.0 * enthalpy_shift / (rt * t2),
+        properties.third_derivative - 6.0 * enthalpy_shift / (rt * t2 * temperature)
     );
+}
+
+std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
+    const ThermochemistryRecord& record, const std::vector<double>& stoichiometry, double temperature
+) {
+    validate_thermochemistry(record, stoichiometry.size());
+    if (!std::isfinite(temperature) || temperature <= 0.0 || !finite_values(stoichiometry))
+        throw std::invalid_argument("invalid reaction thermochemistry request");
+    ReactionThermochemistry pressure_basis;
+    double delta_nu = 0.0;
+    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
+        if (stoichiometry[i] == 0.0) continue;
+        if (!contains_temperature(record.component_intervals[i], temperature)) return std::nullopt;
+        const auto thermal = evaluate_ideal_correlation(
+            ideal_interval(record.component_intervals[i], temperature).correlation,
+            temperature, record.standard_pressure);
+        pressure_basis.gibbs += stoichiometry[i] * (thermal.h - temperature * thermal.s);
+        pressure_basis.enthalpy += stoichiometry[i] * thermal.h;
+        pressure_basis.heat_capacity += stoichiometry[i] * thermal.cp;
+        delta_nu += stoichiometry[i];
+    }
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    // EqID: standard_pressure_density_conversion applied to the reaction contraction.
+    const double shift = rt * std::log(rt / record.standard_pressure);
+    return ReactionThermochemistry{pressure_basis.gibbs + delta_nu * shift,
+        pressure_basis.enthalpy - delta_nu * rt,
+        pressure_basis.heat_capacity - delta_nu * GAS_CONSTANT_J_PER_MOL_K};
 }
 
 }  // namespace epcsaft

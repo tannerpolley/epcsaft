@@ -22,6 +22,24 @@ std::vector<double> standard_state(
     const std::vector<double>& supplied
 );
 
+// series[k][i] is d^k g_i / dT^k of the minimum-norm standard state (one gauge for every
+// order) or of a supplied constant vector; order <= 3. A supplied vector must satisfy the
+// reaction targets at this temperature by the inferred-vector criterion.
+std::vector<std::vector<double>> standard_state_series(
+    double temperature, std::size_t components,
+    const std::vector<ReactionSpec>& reactions,
+    const std::vector<double>& supplied, std::size_t order
+);
+
+// series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
+// affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
+std::vector<std::vector<double>> reaction_target_series(
+    double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order
+);
+
+// True when the declared reaction space conserves total moles: rank([B; e]) == rank(B).
+bool conserves_total_moles(const std::vector<std::vector<double>>& basis);
+
 std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector

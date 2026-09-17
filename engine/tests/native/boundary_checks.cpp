@@ -272,8 +272,8 @@ void check_s9() {
         }
     }
 
-    epcsaft::HelmholtzModel reactive_model(equilibrium_support::ascani_reactive_ternary());
-    auto reactive = equilibrium_support::ascani_reactive_problem();
+    epcsaft::HelmholtzModel reactive_model(equilibrium_support::synthetic_reactive_ternary());
+    auto reactive = equilibrium_support::synthetic_reactive_problem();
     reactive.phases[1].amount = epcsaft::equilibrium::AmountSpec::pinned(1.0e-2);
     reactive.standard_gibbs_j_per_mol = {1000.0, -1000.0, 0.0};
     reactive.temperature = epcsaft::equilibrium::FreeValue::variable(298.15);

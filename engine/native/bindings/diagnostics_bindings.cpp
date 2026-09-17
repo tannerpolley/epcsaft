@@ -47,7 +47,8 @@ void register_diagnostics(py::module_& module) {
         .def_readonly("residual", &epcsaft::core::Convergence::residual)
         .def_property_readonly("criterion", [](const core::Convergence& record) -> py::object {
             if (record.criterion == nullptr) return py::none();
-            return py::cast(record.criterion, py::return_value_policy::reference);
+            // A value copy outlives the record that may own a caller-valued criterion.
+            return py::cast(*record.criterion);
         })
         .def_readonly("floor", &core::Convergence::floor)
         .def_readonly("amplification", &core::Convergence::amplification)

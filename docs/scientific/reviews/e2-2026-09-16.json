@@ -1,0 +1,178 @@
+{
+ "schema_version": 1,
+ "issue": "#39 E2",
+ "source_commit": "ccfeef02a6a20febed78fc2ceada250572f0d7be",
+ "source_dirty": true,
+ "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+ "wheel_sha256": "37e74ecca4fdc9c6de2cf7c3b06dababb8a52d8e5117516d8f62f9f1c1a71082",
+ "executables": {
+  "specification_checks": "188eeac2eb4c428a475790d8db4289428178b4b3316adf5f84b63f3e8cb95314",
+  "equilibrium_checks": "60bac3cec204a80360c24f665dd011b92173636626aabd8ee0d9eefe84a981dd",
+  "boundary_checks": "7bad5a084eec409c6c87f068860e284d70aed552531264c9d76e6202c3925f59"
+ },
+ "selectors": {
+  "boundary_S14": {
+   "comparisons": 1,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S3": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0
+  },
+  "boundary_S9": {
+   "comparisons": 128,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-2": {
+   "comparisons": 14,
+   "false": 6,
+   "observation_only": 0
+  },
+  "equilibrium_E2-6": {
+   "comparisons": 11,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-R": {
+   "comparisons": 30,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_F5": {
+   "comparisons": 4450,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S11": {
+   "comparisons": 5,
+   "false": 0,
+   "observation_only": 1
+  },
+  "equilibrium_S16": {
+   "comparisons": 24,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S1": {
+   "comparisons": 70,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S2": {
+   "comparisons": 4,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S6": {
+   "comparisons": 3,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S7": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C1": {
+   "comparisons": 480,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C4": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_C8": {
+   "comparisons": 2,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-0": {
+   "comparisons": 12,
+   "false": 0,
+   "observation_only": 1
+  },
+  "specification_E2-2": {
+   "comparisons": 8,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-3": {
+   "comparisons": 6,
+   "false": 0,
+   "observation_only": 0
+  },
+  "specification_E2-4": {
+   "comparisons": 7,
+   "false": 0,
+   "observation_only": 1
+  }
+ },
+ "largest_absolute_error_by_group": {
+  "s14-pressure": 1.3322676295501878e-15,
+  "s3-pressure": 4.618527782440651e-14,
+  "s3-composition": 2.220446049250313e-16,
+  "s9-sensitivity": 1.6966260063533412e-09,
+  "s9-pinned-sensitivity": 4.055107183376094e-08,
+  "s9-reactive-jacobian": 1.792571646674901e-11,
+  "s9-reactive-lever": 1.792571646674901e-11,
+  "s9-parameter-sensitivity": 8.344084090339265e-09,
+  "e2-2-thermal": 1.0052625398770942e-11,
+  "e2-6-solve": 1.2378986724570495e-14,
+  "e2-7-criterion": 8.84555046129468e-13,
+  "e2-reuse": 1.4631111946140835e-16,
+  "f5-jacobian": 6.271301913329808e-07,
+  "f5-hessian-ladder": 2.0136233287448846e-06,
+  "s11-standard-affinity": 6.821210263296962e-13,
+  "s11-gap": 0.0034822631410276195,
+  "s11-final-gap": 3.881688452933574e-05,
+  "s16-composition": 2.8350544134525535e-11,
+  "s16-affinity": 1.8169623305919202e-08,
+  "s1-residual": 3.2825517859436104e-08,
+  "s1-gibbs-dual": 3.109860557959365e-08,
+  "s1-feed-dual": 1.556443796069118e-08,
+  "s1-affinity": 4.910823747650284e-09,
+  "s1-charge": 0.0,
+  "s2-binary-success": 0.0,
+  "s2-binary-curvature": 0.009739562685585705,
+  "s2-reactive-success": 0.0,
+  "s2-reactive-curvature": 3.63667893907551e-05,
+  "s6-one-success": 0.0,
+  "s6-two-success": 0.0,
+  "s6-objective-gap": 0.36713155751639187,
+  "s7-continuation": 1.1625700402362327e-11,
+  "c4-feed": 0.0,
+  "c8-charge": 0.0,
+  "c8-boundary-charge": 0.0,
+  "e2-2-reaction": 1.1102230246251565e-16,
+  "e2-4-charge": 0.0
+ },
+ "total_comparisons": 5276,
+ "total_false_verdicts": 6,
+ "logs": [
+  "boundary_S14.log",
+  "boundary_S3.log",
+  "boundary_S9.log",
+  "equilibrium_E2-2.log",
+  "equilibrium_E2-6.log",
+  "equilibrium_E2-R.log",
+  "equilibrium_F5.log",
+  "equilibrium_S11.log",
+  "equilibrium_S16.log",
+  "equilibrium_S1.log",
+  "equilibrium_S2.log",
+  "equilibrium_S6.log",
+  "equilibrium_S7.log",
+  "specification_C1.log",
+  "specification_C4.log",
+  "specification_C8.log",
+  "specification_E2-0.log",
+  "specification_E2-2.log",
+  "specification_E2-3.log",
+  "specification_E2-4.log"
+ ]
+}

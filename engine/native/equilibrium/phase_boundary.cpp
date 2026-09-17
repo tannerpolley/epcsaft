@@ -145,7 +145,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
                 std::string("boundary seed has no density root: ") + error.what()
             );
         }
+        // Coexistence needs two stable pure roots only when more than one phase is declared;
+        // a single declared pure phase uses the existing unique-root branch rules.
         if (compiled.model->parameters().component_count() == 1
+            && compiled.problem.phases.size() > 1
             && (!root.stable_root_count.has_value() || *root.stable_root_count < 2)) {
             throw std::runtime_error("boundary seed has no coexisting density roots");
         }

@@ -213,6 +213,24 @@ domain; lifting variables does not automatically remove that requirement. This
 is a capability requirement, not a claim that the current implementation
 satisfies it.
 
+The caller supplies one dimensionless row tolerance per solve request; the
+named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That one value sets
+the Ipopt `tol`, `acceptable_tol`, `dual_inf_tol` and `constr_viol_tol`
+settings and classifies the recomputed rows. A caller-valued criterion is owned
+by the convergence record so copies into results, traces and exceptions keep
+it alive. The result reports `requested_tolerance_met` exactly as recomputed
+residual ≤ requested tolerance whenever a finite residual exists; an available
+floor-limited state may miss the request and keeps its state with a warning.
+A structurally square declaration whose generic-point Jacobian loses rank
+returns `NOT_RUN` with `Stop::infeasible`, an unmeasured residual, no
+criterion and the row, unknown, rank and nullity counts, before any start or
+optimizer work. Within one solve the driver prepares each distinct callback
+point once and reuses its phase evaluation for rows, Jacobian, gradient and
+curvature; the weighted constraint curvature is recombined when the optimizer
+multipliers change, and the final row certification is a fresh evaluation.
+Standard-state terms carry exact value, first and second temperature
+derivatives from the reaction target owner; no affine shortcut is assumed.
+
 Continuation requires a predictor/corrector, step admission, branch checks and
 explicit stopping behavior. Reusing only an initial seed is not continuation.
 Controller and step policy remain to be qualified on the retained boundary
@@ -367,7 +385,10 @@ For equilibrium, `success` requires accepted solver status, finite residuals and
 declared topology; an unsuccessful result retains `solver_status`, residuals,
 the convergence record and failure message while clearing candidate state and
 action arrays, so `has_state()` is the availability predicate. A successful
-result retains the same convergence record alongside its state.
+result retains the same convergence record alongside its state. The pre-solve
+`NOT_RUN` record is a structural diagnostic with an unmeasured (NaN) residual
+and absent criterion; it is neither a solver residual nor a physical
+nonexistence claim. `requested_tolerance_met` is absent for that record.
 
 ## Verification obligations
 
