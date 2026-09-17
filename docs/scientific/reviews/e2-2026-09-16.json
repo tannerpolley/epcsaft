@@ -1,10 +1,10 @@
 {
  "schema_version": 1,
  "issue": "#39 E2",
- "source_commit": "5d711b9e2cd48b8c949a3c87518bb40d91098830",
- "source_dirty": true,
+ "source_commit": "9b2c657a830a0c8524ef7ff241fcaf1275949700",
+ "source_dirty": false,
  "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
- "wheel_sha256": "35e24893ee410b05cf76422dfada798bab94acc4122d10ca09a315859b5b49f2",
+ "wheel_sha256": "2f21ae41331f0ced06290ad7d9639613b9d007aeb9c3025adff8c641905ced69",
  "executables": {
   "specification_checks": "847adafe478e87202101910969a8ebbe36254c40cd9edfb7b2b006c0c51e8d73",
   "equilibrium_checks": "b7bce1d9e80b5fd646867e33ef29837682eb51b6863ba84416ce772de0f31026",
