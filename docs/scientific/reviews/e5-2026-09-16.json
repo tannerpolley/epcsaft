@@ -1,0 +1,133 @@
+{
+ "schema_version": 1,
+ "issue": "#42 E5",
+ "source_commit": "2570018b0de9ace4241d0db828032e0585df4ce7",
+ "source_dirty": false,
+ "wheel": "epcsaft-0.2.0.dev0-cp313-cp313-linux_x86_64.whl",
+ "wheel_sha256": "31297253b45becde82c6f25172f8e12f90aacee58d87696d8498a770c5be224a",
+ "executables": {
+  "specification_checks": "f2dba873de2786816a531941be76830be350ac9ab94cbf9483348faadf63361f",
+  "equilibrium_checks": "5d39a702642bae9c164298f19a28968007ce9e99b84b37e02bc48c67ffa51b24",
+  "boundary_checks": "fca5827eb8dbc47d27af5a2a9904fb927eb24acc180b1d5eecc68fe53429b044",
+  "properties_checks": "5851a446242740579366e4a136b74c09f5c13f48d4508795093de5940276c986"
+ },
+ "selectors": {
+  "boundary_S9": {
+   "comparisons": 128,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E2-2": {
+   "comparisons": 20,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_E5-1": {
+   "comparisons": 363,
+   "false": 0,
+   "observation_only": 180
+  },
+  "equilibrium_E5-2": {
+   "comparisons": 579,
+   "false": 0,
+   "observation_only": 288
+  },
+  "equilibrium_E5-3": {
+   "comparisons": 447,
+   "false": 0,
+   "observation_only": 216
+  },
+  "equilibrium_E5-4": {
+   "comparisons": 62,
+   "false": 0,
+   "observation_only": 30
+  },
+  "equilibrium_E5-5": {
+   "comparisons": 73,
+   "false": 0,
+   "observation_only": 36
+  },
+  "equilibrium_E5-6": {
+   "comparisons": 98,
+   "false": 0,
+   "observation_only": 48
+  },
+  "equilibrium_E5-7": {
+   "comparisons": 51,
+   "false": 0,
+   "observation_only": 24
+  },
+  "equilibrium_E5-8": {
+   "comparisons": 13,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_F5": {
+   "comparisons": 4865,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S16": {
+   "comparisons": 24,
+   "false": 0,
+   "observation_only": 0
+  },
+  "equilibrium_S1": {
+   "comparisons": 70,
+   "false": 0,
+   "observation_only": 0
+  },
+  "properties_P4": {
+   "comparisons": 328,
+   "false": 0,
+   "observation_only": 0
+  }
+ },
+ "largest_absolute_error_by_group": {
+  "s9-sensitivity": 1.0344461398581473e-09,
+  "s9-pinned-sensitivity": 5.191992613617913e-08,
+  "s9-reactive-jacobian": 1.792571646674901e-11,
+  "s9-reactive-lever": 1.792571646674901e-11,
+  "s9-parameter-sensitivity": 7.960300418830002e-09,
+  "e2-2-thermal": 1.0092705986998794e-07,
+  "e5-1": 1.0212116876573418e-05,
+  "e5-9": 4.614095128395978e-11,
+  "e5-2": 2.346971148692635,
+  "e5-3": 0.08222564435702218,
+  "e5-4": 1.698757278844644e-05,
+  "e5-5": 2.9895154410897857e-05,
+  "e5-6": 1.1692395673890132e-06,
+  "e5-7": 2.2395254375253526e-07,
+  "f5-jacobian": 5.597246346411566e-07,
+  "f5-hessian-ladder": 2.0136233269685277e-06,
+  "f5-correlated-jacobian": 1.8339970926477267e-12,
+  "s16-composition": 3.424593941758758e-12,
+  "s16-affinity": 2.2219521222943683e-09,
+  "s1-residual": 6.703297916743622e-09,
+  "s1-gibbs-dual": 4.007461029686965e-12,
+  "s1-feed-dual": 4.500844141830385e-12,
+  "s1-affinity": 5.201650221664522e-10,
+  "s1-charge": 0.0,
+  "p4-direct": 1.7448352537030587e-05,
+  "p4-pressure": 3.075861808638121e-05,
+  "p4-supplemental": 5
+ },
+ "total_comparisons": 7121,
+ "total_false_verdicts": 0,
+ "logs": [
+  "boundary_S9.log",
+  "equilibrium_E2-2.log",
+  "equilibrium_E5-1.log",
+  "equilibrium_E5-2.log",
+  "equilibrium_E5-3.log",
+  "equilibrium_E5-4.log",
+  "equilibrium_E5-5.log",
+  "equilibrium_E5-6.log",
+  "equilibrium_E5-7.log",
+  "equilibrium_E5-8.log",
+  "equilibrium_F5.log",
+  "equilibrium_S16.log",
+  "equilibrium_S1.log",
+  "properties_P4.log"
+ ]
+}
