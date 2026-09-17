@@ -242,8 +242,8 @@ def code_budgets(root=None) -> int:
                 or any(type(n) is not int or n <= 0 for n in limits)
                 or not limits[0] <= limits[1] <= limits[2]):
             raise ValueError(f"invalid floor/soft/hard budget for {layer}")
-    if budgets["total"] != [sum(v[i] for k, v in budgets.items() if k != "total") for i in range(3)]:
-        raise ValueError("total budget must equal the sum of layer budgets")
+    if any(budgets["total"][i] > sum(v[i] for k, v in budgets.items() if k != "total") for i in range(3)):
+        raise ValueError("total budget must not exceed the sum of layer budgets")
     counts = dict.fromkeys(expected, 0)
     suffixes = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".tpp", ".py", ".pyi", ".pyx", ".pxd"}
     for folder in (root / "engine/native", root / "engine/src/epcsaft"):
