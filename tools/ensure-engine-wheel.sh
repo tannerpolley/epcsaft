@@ -8,6 +8,12 @@ cd "$repo_root"
 # shell selects the same cache key.
 export LC_ALL=C
 
+build_jobs="${EPCSAFT_BUILD_JOBS:-4}"
+if [[ ! "$build_jobs" =~ ^[1-9][0-9]*$ ]]; then
+    echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2
+    exit 2
+fi
+
 prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
 if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
     echo "EPCSAFT_PREPARE_NATIVE_BUILD must be 0 or 1" >&2
@@ -305,7 +311,7 @@ ensure_configured_build() {
     ensure_compile_database
     if [[ ! -f "$configured_build_stamp" ]] \
         || [[ "$(<"$configured_build_stamp")" != "$build_fingerprint" ]]; then
-        meson compile -C "$build_dir"
+        meson compile -C "$build_dir" -j "$build_jobs"
         printf '%s\n' "$build_fingerprint" >"$configured_build_stamp"
     fi
 }
@@ -395,6 +401,7 @@ if [[ "$cache_valid" == true ]]; then
             --no-build-isolation \
             --out-dir "$wheelhouse" \
             --config-setting="build-dir=$build_dir" \
+            --config-setting="compile-args=-j$build_jobs" \
             engine
         mapfile -t built_wheels < <(
             find "$wheelhouse" -maxdepth 1 -type f -name 'epcsaft-*.whl' -print

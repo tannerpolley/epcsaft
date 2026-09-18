@@ -16,6 +16,11 @@ machine-local content-addressed cache, while Meson keeps incremental Ninja
 state checkout-local. If `ccache` is installed, the native compiler results are
 also reused; it is optional.
 
+Wheel and native-test compilation use at most four concurrent build jobs by
+default. Set `EPCSAFT_BUILD_JOBS` to a positive integer to override this limit;
+for example, `EPCSAFT_BUILD_JOBS=2 bash tools/check-all.sh` uses two jobs.
+The setting changes build scheduling without changing compiler optimization.
+
 Each checkout installs from its own verified wheel path, with dependency
 resolution disabled because the exact root lock already supplied the Engine
 runtime dependencies.
