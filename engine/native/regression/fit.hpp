@@ -45,7 +45,7 @@ struct TrialFailure final {
 // (J^T J)^-1 of the weighted optimizer Jacobian, mapped to physical rows by D = S diag(scale).
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
-    std::string status = "not_evaluated";  // available | rank_deficient | active_bound | unavailable
+    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable
     std::string assumption;
     std::size_t rank = 0;
     std::vector<double> singular_values;

@@ -74,6 +74,7 @@ void register_regression(py::module_& module) {
         .def_readwrite("maximum_iterations", &FitControls::maximum_iterations)
         .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds);
     py::class_<TrialFailure>(module, "TrialFailure")
+        .def_readonly("trial", &TrialFailure::trial)
         .def_readonly("observation", &TrialFailure::observation)
         .def_readonly("optimizer", &TrialFailure::optimizer)
         .def_readonly("status", &TrialFailure::status)

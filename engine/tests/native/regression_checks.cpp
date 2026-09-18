@@ -512,12 +512,16 @@ void check_f9_f10() {
     ratio.observed = 1.0e-308;
     const double wide = *residual(ratio, 19936.48319859253, status);
     CHECK(agree("r1-f10/log_ratio_wide_range", "residual", "1", wide, std::log(19936.48319859253) - std::log(1.0e-308), 0.0, 1.0e-12,
-                fields({field("y", 19936.48319859253), field("y_obs", 1.0e-308)}), "a ratio that overflows still gives the finite log residual", "r1-f10"));
-    ratio.observed = 1.0;
-    const double near = 1.0 + 1.0e-12;  // the rounded double, whose log(y) loses four leading digits
-    CHECK(agree("r1-f10/log_ratio_near_unity", "residual", "1", *residual(ratio, near, status), std::log1p(near - 1.0), 0.0, 1.0e-9,
-                fields({field("y", near), field("y_obs", 1.0), field("naive_log", std::log(near))}),
-                "the residual near unity keeps its leading digits (log1p), where log(y / y_obs) would not", "r1-f10"));
+                fields({field("y", 19936.48319859253), field("y_obs", 1.0e-308)}),
+                "a ratio that overflows still gives the finite log residual (finiteness and branch selection; the formula is the reference)", "r1-f10"));
+    // Off an exactly divisible base the naive log(y / y_obs) loses five digits; the reference is the
+    // 60-digit decimal ln y - ln y_obs of the rounded doubles.
+    ratio.observed = 17541.251290836932;
+    const double near = ratio.observed * (1.0 + 1.0e-12), naive = std::log(near / ratio.observed);
+    CHECK(agree("r1-f10/log_ratio_near_unity", "residual", "1", *residual(ratio, near, status), 1.0000617126413953e-12, 0.0, 1.0e-9,
+                fields({field("y", near), field("y_obs", ratio.observed), field("naive_log", naive)}),
+                "the residual near unity keeps its leading digits (log1p), where log(y / y_obs) is off by 3e-5", "r1-f10"));
+    CHECK(std::abs(naive - 1.0000617126413953e-12) > 1.0e-6 * 1.0000617126413953e-12);
     Observation overflow = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
     overflow.form = ResidualForm::Difference;
     overflow.observed = -1.0e308;
@@ -539,6 +543,32 @@ void check_f9_f10() {
                 refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 0
                     && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost),
                 summary(refused), "r1-f10"));
+    // A finite residual whose weighted form overflows is recorded by the initial-evaluation recorder with its row.
+    Observation steep = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
+    steep.form = ResidualForm::Difference;
+    steep.observed = *kept.value - 1.0e4;
+    steep.scale = 1.0e-300;
+    request.observations = {steep};
+    request.weights = {1.0e40};
+    const auto weighted = fit(request);
+    CHECK(truth("r1-f10/weighted_overflow_typed", "an overflowing weighted residual is a typed initial failure naming its row",
+                weighted.status == "initial_evaluation_failed" && weighted.failures.size() == 1 && weighted.failures[0].observation == 0
+                    && weighted.failures[0].status == ObservationStatus::Nonfinite
+                    && weighted.failures[0].message == "weighted residual not finite" && std::isfinite(weighted.initial_cost),
+                summary(weighted), "r1-f10"));
+    // A finite weighted residual whose optimizer Jacobian overflows is recorded by the trial and final recorders.
+    steep.observed = *kept.value - 1.0;
+    steep.scale = 1.0e-150;
+    request.observations = {steep};
+    request.weights.clear();
+    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 1.0e200, 150.0, 260.0}};
+    const auto steep_fit = fit(request);
+    const bool trial_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
+        return item.status == ObservationStatus::Nonfinite && item.observation == 0 && item.message == "optimizer Jacobian not finite"; });
+    const bool final_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
+        return item.observation == 0 && item.message.find("final weighted residual or Jacobian not finite") != std::string::npos; });
+    CHECK(truth("r1-f10/jacobian_overflow_typed", "an overflowing optimizer Jacobian is recorded by the trial and final recorders and the fit fails typed",
+                trial_recorded && final_recorded && steep_fit.status == "failed" && !steep_fit.usable, summary(steep_fit), "r1-f10"));
 }
 
 // ---- #86: first-order pressure-chart density actions against rebuilt-model closures.
@@ -627,6 +657,12 @@ void check_d86() {
                     && !absent.molar_density.has_value(), "", "d86"));
     // The root search's cause travels with the batch; a record-less throw is an absent record, distinct
     // from the measured (finite, possibly zero) pressure residual of a resolved root.
+    // An anchor outside the density domain throws with a record: the batch carries it, with its stop.
+    const auto anchored = model.pressure_actions(T, P, {1.0}, DensityBranch::Liquid, {}, directions, 1.0e-6);
+    CHECK(truth("d86/density_failure_record", "a root search that throws with a convergence record carries it (stop left_domain)",
+                anchored.density_status == PropertyActionStatus::DensityUnavailable && anchored.density_convergence.has_value()
+                    && anchored.density_convergence->stop == core::Stop::left_domain && !anchored.density_message.empty(),
+                fields({field("message", anchored.density_message), field("anchor", 1.0e-6)}), "d86"));
     CHECK(truth("d86/density_failure_cause", "the failed root search keeps its message and its absent record",
                 absent.density_message.find("no stable density root") != std::string::npos && !absent.density_convergence.has_value()
                     && batch.density_message.empty() && !batch.density_convergence.has_value()
@@ -931,9 +967,9 @@ void check_r3() {
             && item.message.find("segment_count") != std::string::npos; });
     // The optimizer may back off the refused bound and still finish or give up; either way the refusal is
     // retained by name and the result returns typed.
-    CHECK(truth("r3/inadmissible_trial", "a trial the model refuses by name is retained as inadmissible_trial and the fit returns typed",
-                typed && refused.trial_failures > 0 && (refused.status == "converged" || refused.status == "limit_reached" || refused.status == "failed")
-                    && (refused.usable == (refused.status != "failed")), summary(refused), "r3"));
+    CHECK(truth("r3/inadmissible_trial", "a trial the model refuses by name is retained as inadmissible_trial and the fit converges at the bound",
+                typed && refused.trial_failures > 0 && refused.status == "converged" && refused.usable
+                    && refused.covariance.status == "active_bound", summary(refused), "r3"));
 }
 
 }  // namespace
@@ -946,7 +982,7 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:8"}, check_f7_f8, "R1"},
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:5"}, check_f9_f10, "R1"},
-        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:23"}, check_d86, "R1"},
+        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:24"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:40"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},

@@ -731,6 +731,7 @@ class FitControls:
     maximum_elapsed_time_seconds: float
 
 class TrialFailure:
+    trial: int
     observation: int
     optimizer: list[float]
     status: ObservationStatus

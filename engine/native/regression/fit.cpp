@@ -89,6 +89,8 @@ public:
         return false;
     }
 
+private:
+
     const FitRequest& request_;
     FitResult& result_;
     std::vector<ActiveParameter> active_;
@@ -243,7 +245,7 @@ FitResult fit(const FitRequest& request) {
     }
     for (std::size_t i = 0; i < n; ++i) {
         const double weighted = sqrt_weights[i] * initial.residuals[i];
-        if (!std::isfinite(weighted)) {
+        if (!std::isfinite(weighted) || !std::isfinite(weighted * weighted)) {
             evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "weighted residual not finite", true);
             result.status = "initial_evaluation_failed";
             result.message = result.failures.back().message;
@@ -319,7 +321,7 @@ FitResult fit(const FitRequest& request) {
         if (row_finite) continue;
         evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "final weighted residual or Jacobian not finite", true);
         result.status = "failed";
-        result.message = result.failures.back().message;
+        result.message = result.failures.back().message + ": " + result.message;
     }
     result.usable = result.status != "failed" && finite(result.physical);
     if (result.usable) covariance(result, request, n);
