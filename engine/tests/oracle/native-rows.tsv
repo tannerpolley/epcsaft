@@ -362,9 +362,9 @@ equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phas
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	3.4610613257757966e-17
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	2.110192005670957e-17
 regression_checks R2-J2	r4/recovery/epsilon	K	152.00000000000065
-regression_checks R2-J2	r4/recovery/kij	1	-0.020000000000054786
-regression_checks R2-J2	r4/recovery/final_cost	1	1.5214218553418159e-25
-regression_checks R2-J2	r4/recovery/initial_cost	1	0.0898383236040421
+regression_checks R2-J2	r4/recovery/kij	1	-0.020000000000054773
+regression_checks R2-J2	r4/recovery/final_cost	1	1.5211506234012858e-25
+regression_checks R2-J2	r4/recovery/initial_cost	1	0.08983832360404212
 regression_checks R2-J2	r4/recovery/prediction/0	native	1009056.6044857983
 regression_checks R2-J2	r4/recovery/prediction/1	native	1385321.0560158365
 regression_checks R2-J2	r4/recovery/prediction/2	native	1836959.1712050796
@@ -378,7 +378,7 @@ regression_checks R2-J2	r4/recovery/covariance/2	1	1.8684855002687237
 regression_checks R2-J2	r4/recovery/physical_covariance/2	1	1.8684855002687237
 regression_checks R2-J2	r4/recovery/covariance/3	1	3.504618957027581
 regression_checks R2-J2	r4/recovery/physical_covariance/3	1	0.03504618957027581
-regression_checks R2-J2	r4/recovery/variance_factor	1	1.0142812368945439e-25
+regression_checks R2-J2	r4/recovery/variance_factor	1	1.0141004156008572e-25
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/0	1	-0.3385233427337864
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/1	1	0.43073029944228725
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/2	1	-0.31024963485359497
@@ -389,6 +389,7 @@ regression_checks R2-J2	r4/recovery/optimizer_jacobian/6	1	-0.660218218696816
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.014034456489469122
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387151712
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.03049545370593027
+regression_checks D86	d86/density_value	mol/m^3	17541.25129083693
 regression_checks D86	d86/parameter/epsilon/fine	native	45.09136058811254
 regression_checks D86	d86/parameter/m/fine	native	-8782.890598169164
 regression_checks D86	d86/parameter/sigma/fine	native	-14939.210833137411
