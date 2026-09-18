@@ -16,7 +16,7 @@ artifact:
   python: ">=3.13"
   build_owner: pyproject.toml
   native_build_owner: meson.build
-  public_modules: [epcsaft, epcsaft.equilibrium]
+  public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
 
 plan:
   delivery: https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones
@@ -183,7 +183,7 @@ native:
   # with declared phases; it may not reach phase stability, because a fit needs
   # differentiable residuals and a discovered phase count is not one.
   regression_boundary:
-    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary]
+    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
     forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
   invariants:
     static_libraries: 1

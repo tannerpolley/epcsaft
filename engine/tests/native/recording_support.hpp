@@ -538,11 +538,15 @@ inline int run(int argc, char** argv, std::initializer_list<Case> cases) {
     if (argc > 2) return 2;
     int status = 0;
     if (argc == 2) {
+        // A test id or argument selects one case; an alias shared by several cases runs them all.
         const std::string argument = argv[1] == nullptr ? "" : argv[1];
+        bool any = false;
         for (const auto& item : cases) {
-            if (selected(item, argument)) return run_case(item);
+            if (!selected(item, argument)) continue;
+            any = true;
+            status |= run_case(item);
         }
-        return 2;
+        return any ? status : 2;
     }
     for (const auto& item : cases) status |= run_case(item);
     return status;
