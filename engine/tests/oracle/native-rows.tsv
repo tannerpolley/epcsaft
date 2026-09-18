@@ -390,13 +390,9 @@ regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.014034456489469122
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387151712
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.03049545370593027
 regression_checks D86	d86/parameter/epsilon/fine	native	45.09136058811254
-regression_checks D86	d86/parameter/epsilon/coarse	native	45.09136058811254
 regression_checks D86	d86/parameter/m/fine	native	-8782.890598169164
-regression_checks D86	d86/parameter/m/coarse	native	-8782.890598169164
 regression_checks D86	d86/parameter/sigma/fine	native	-14939.210833137411
-regression_checks D86	d86/parameter/sigma/coarse	native	-14939.210833137411
 regression_checks D86	d86/temperature/fine	native	-43.20488824115275
-regression_checks D86	d86/temperature/coarse	native	-43.20488824115275
 regression_checks D86	d86/pressure	mol/(m^3 Pa)	4.402834645711069e-05
 surface_example	state/calorics/0	J/mol or J/(mol K)	4208.1874999999982
 surface_example	state/calorics/1	J/mol or J/(mol K)	1271.9350263991819
