@@ -162,7 +162,7 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     observations.append(regression.density(p, 200.0, 1.0e10, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
     result = regression.fit(p, coordinates(p), observations)
     assert result.status == "initial_evaluation_failed" and not result.usable and result.predictions == []
-    assert [(item.observation, item.status) for item in result.failures] == [(5, regression.ObservationStatus.DensityUnavailable)]
+    assert [(item.trial, item.observation, item.status) for item in result.failures] == [(1, 5, regression.ObservationStatus.DensityUnavailable)]
     single = regression.fit(p, coordinates(p), observations[:1])
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
     one = regression.FitControls()

@@ -246,7 +246,7 @@ FitResult fit(const FitRequest& request) {
     for (std::size_t i = 0; i < n; ++i) {
         const double weighted = sqrt_weights[i] * initial.residuals[i];
         if (!std::isfinite(weighted) || !std::isfinite(weighted * weighted)) {
-            evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "weighted residual not finite", true);
+            evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "weighted residual or its cost not finite", true);
             result.status = "initial_evaluation_failed";
             result.message = result.failures.back().message;
             result.statuses = std::move(initial.statuses);
@@ -314,7 +314,8 @@ FitResult fit(const FitRequest& request) {
               final.gradient.data() + i * tie.size(), result.optimizer_jacobian.data() + i * width);
     }
     for (std::size_t i = 0; i < n; ++i) {
-        const bool row_finite = std::isfinite(result.weighted_residuals[i]) && std::all_of(
+        const bool row_finite = std::isfinite(result.weighted_residuals[i])
+            && std::isfinite(result.weighted_residuals[i] * result.weighted_residuals[i]) && std::all_of(
             result.optimizer_jacobian.begin() + static_cast<std::ptrdiff_t>(i * width),
             result.optimizer_jacobian.begin() + static_cast<std::ptrdiff_t>((i + 1) * width),
             [](double value) { return std::isfinite(value); });

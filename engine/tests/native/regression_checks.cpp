@@ -554,7 +554,7 @@ void check_f9_f10() {
     CHECK(truth("r1-f10/weighted_overflow_typed", "an overflowing weighted residual is a typed initial failure naming its row",
                 weighted.status == "initial_evaluation_failed" && weighted.failures.size() == 1 && weighted.failures[0].observation == 0
                     && weighted.failures[0].status == ObservationStatus::Nonfinite
-                    && weighted.failures[0].message == "weighted residual not finite" && std::isfinite(weighted.initial_cost),
+                    && weighted.failures[0].message == "weighted residual or its cost not finite" && std::isfinite(weighted.initial_cost),
                 summary(weighted), "r1-f10"));
     // A finite weighted residual whose optimizer Jacobian overflows is recorded by the trial and final recorders.
     steep.observed = *kept.value - 1.0;
@@ -980,9 +980,9 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:18"}, check_f2, "R1"},
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},
         {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
-        {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:8"}, check_f7_f8, "R1"},
-        {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:5"}, check_f9_f10, "R1"},
-        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:24"}, check_d86, "R1"},
+        {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},
+        {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:12"}, check_f9_f10, "R1"},
+        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:40"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
