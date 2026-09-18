@@ -93,6 +93,73 @@ meson compile -C build/engine-debug surface_example
 gdb --args build/engine-debug/surface_example
 ```
 
+## Python counterpart
+
+The installed package transports the same native records with the same meanings
+and SI molar units; Python performs no thermodynamic arithmetic. Thermal
+intervals follow `Parameters.component_ids` order and every record field is
+required. A model copies its complete physical inputs at construction; changing
+an input record afterwards never alters the prepared model. Before construction,
+reads of primitive vectors (`coefficients`, `indices`, `composition`) are Python
+copies, so `coefficients[0] = ...` or `indices.append(...)` does not change the
+record: replace the whole field. Bound record elements stay live, so
+`record.component_intervals[0][0].lower = ...` and `interval.correlation.source_pressure = ...`
+do change that input record.
+
+```python
+from epcsaft import IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ThermochemistryRecord
+from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
+
+cp = IdealCorrelation(IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), source_pressure=1.0e5)
+record = ThermochemistryRecord(1.0e5, [[IdealInterval(250.0, 450.0, True, True, cp)], ...])
+model = Mixture(parameters, thermochemistry=record)           # omit the record for residual-only States
+state = model.state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
+state.total_enthalpy, state.ideal_entropy                     # None when the record does not cover T
+ln_k = ReactionLogPolynomial(a, b, c, d, Tref, Tmin, Tmax, EOS_STANDARD_STATE_ID)
+Reaction({"A": -1.0, "B": 1.0}, correlation=ln_k)             # exactly one of K, affinity or ln K(T)
+```
+
+Actions are order one to three contractions along caller directions and keep the
+observable's unit. A state direction holds K, mol/m^3 or Pa, a zero-sum
+composition increment and native family/slot parameter increments; a solved-state
+direction holds K, Pa, absolute feed mol (component width) and one increment per
+active parameter (active width). A free T or P is an output: its entry is zero.
+
+```python
+from epcsaft import ActiveParameter, DensityActionDirection, ParameterActionDirection, ParameterFamily
+from epcsaft.equilibrium import (SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
+                                 SolvedStateObservableKind as Kind, compile_problem, solved_state_actions)
+
+pair = ActiveParameter(ParameterFamily.AssociationEnergyOverK, (1, 4))  # both slots of site pair (0, 1)
+model = Mixture(parameters, thermochemistry=record, active_parameters=[pair])
+move = DensityActionDirection(1.0, 0.0, (0.0, 0.0), [ParameterActionDirection(pair.family, pair.indices, 0.03)])
+batch = model.density_actions(T, rho, x=x, observables=observables, directions=[move])
+batch.results[0].action, batch.results[0].status, batch.diagnostics  # None beside a typed status when unavailable
+
+central = solve_equilibrium(model, problem)
+compiled = compile_problem(model, problem)                    # one compile; no solve is repeated
+warm = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [0.0])
+request = SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseLogActivity, 0, 1)], [warm])
+row = solved_state_actions(compiled, central, request).results[0]
+fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
+```
+
+Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
+missing record from a temperature outside its intervals; `density_branch` and
+`stable_root_count` exist only after a pressure-root search, so a T-rho state reports
+`Unspecified` and `None`. `EquilibriumResult.multipliers` are the dimensionless
+reduced-energy balance and charge coordinates of the solution;
+`constraint_multipliers` are the optimizer's raw duals of its implemented, scaled
+constraints (the non-chemical, non-pressure entries of `rows` in order, or every
+row when a phase amount is pinned). Neither is a chemical or electric potential.
+Read `requested_tolerance_met` independently of `success` (ALG-EQUILIBRIUM,
+ALG-TERMINATION). A floor-limited point that Ipopt reports as successful is accepted
+and keeps its state with `success = True` and `requested_tolerance_met = False`. A
+tiny-step floor-limited point is rejected: `success = False`, finite row residuals, the
+convergence record and the stopping cause remain, and the candidate state vectors are
+cleared: in Python, `success` (equivalently non-empty state vectors) is the availability
+predicate, the native `has_state()`.
+
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
 wheel build and installation.

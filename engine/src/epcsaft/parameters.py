@@ -268,14 +268,46 @@ class Parameters:
         edges = topology.get("edges", ())
         if not isinstance(edges, Sequence) or isinstance(edges, (str, bytes)):
             raise _core.ParameterError("topology.edges must be an array")
-        association_identities: dict[str, tuple[int, int]] = {}
+        association_identities: dict[str, tuple[str, tuple[int, int]]] = {}
         for item_value in edges:
             edge = _mapping(item_value, "topology edge")
             endpoint_a = _mapping(edge.get("endpoint_a"), "topology endpoint")
             endpoint_b = _mapping(edge.get("endpoint_b"), "topology endpoint")
             first = (cast(str, endpoint_a.get("component_id")), cast(str, endpoint_a.get("site_id")))
             second = (cast(str, endpoint_b.get("component_id")), cast(str, endpoint_b.get("site_id")))
+            if first[0] not in positions or second[0] not in positions:
+                continue
             if first not in site_positions or second not in site_positions:
+                raise _core.ParameterError(f"missing topology site {(first if first not in site_positions else second)[0]}/{(first if first not in site_positions else second)[1]}")
+            source = _mapping(edge.get("source"), "topology edge source")
+            if source.get("kind") != "explicit":
+                continue
+            edge_index = (site_positions[first], site_positions[second])
+            energy = _mapping(edge.get("energy_over_k"), "association energy")
+            volume = _mapping(edge.get("volume"), "association volume")
+            if not isinstance(energy.get("identity"), str) or not isinstance(volume.get("identity"), str):
+                raise _core.ParameterError("association edge identities must be strings")
+            for identity, family in ((cast(str, energy.get("identity")), "energy_over_k"), (cast(str, volume.get("identity")), "volume")):
+                if identity in association_identities:
+                    raise _core.ParameterError(f"duplicate association identity {identity}")
+                association_identities[identity] = (family, edge_index)
+
+        def resolve_inputs(values: Sequence[object], family: str) -> list[tuple[int, int]]:
+            try:
+                found = [association_identities[cast(str, value)] for value in values]
+            except KeyError as error:
+                raise _core.ParameterError(f"missing association input {error.args[0]}") from error
+            if any(item[0] != family for item in found):
+                raise _core.ParameterError(f"association {family} input has wrong family")
+            return [item[1] for item in found]
+
+        for item_value in edges:
+            edge = _mapping(item_value, "topology edge")
+            endpoint_a = _mapping(edge.get("endpoint_a"), "topology endpoint")
+            endpoint_b = _mapping(edge.get("endpoint_b"), "topology endpoint")
+            first = (cast(str, endpoint_a.get("component_id")), cast(str, endpoint_a.get("site_id")))
+            second = (cast(str, endpoint_b.get("component_id")), cast(str, endpoint_b.get("site_id")))
+            if first[0] not in positions or second[0] not in positions:
                 continue
             source = _mapping(edge.get("source"), "topology edge source")
             kind = source.get("kind")
@@ -285,8 +317,6 @@ class Parameters:
                 volume = _mapping(edge.get("volume"), "association volume")
                 entries.append(_entry(energy.get("identity"), "association_energy_over_k", edge_index, energy["value"], "association edge"))
                 entries.append(_entry(volume.get("identity"), "association_volume", edge_index, volume["value"], "association edge"))
-                association_identities[cast(str, energy.get("identity"))] = edge_index
-                association_identities[cast(str, volume.get("identity"))] = edge_index
             elif kind == "combining-rule":
                 if source.get("rule_id") != "arithmetic-energy-geometric-volume":
                     raise _core.ParameterError(f"unknown association rule {source.get('rule_id')}")
@@ -295,11 +325,8 @@ class Parameters:
                 volume_inputs = inputs.get("volume")
                 if not isinstance(energy_inputs, Sequence) or not isinstance(volume_inputs, Sequence) or len(energy_inputs) != 2 or len(volume_inputs) != 2:
                     raise _core.ParameterError("combining rule requires two self edges")
-                try:
-                    self_energy = [association_identities[cast(str, value)] for value in energy_inputs]
-                    self_volume = [association_identities[cast(str, value)] for value in volume_inputs]
-                except KeyError as error:
-                    raise _core.ParameterError(f"missing association input {error.args[0]}") from error
+                self_energy = resolve_inputs(energy_inputs, "energy_over_k")
+                self_volume = resolve_inputs(volume_inputs, "volume")
                 if self_energy != self_volume:
                     raise _core.ParameterError(f"association inputs disagree for {source.get('rule_id')}")
                 entries.append(_core.ParameterEntry())

@@ -349,3 +349,55 @@ def test_mapping_fails_closed_by_name() -> None:
     parameters = Parameters.from_json(parameters_json("gross-2001-methane-ethane", 2), components=("methane", "ethane"))
     with pytest.raises(ParameterError):
         Mixture(parameters).state(300.0, P=1e5, x=(0.5, 0.5), phase="gas")
+
+
+def test_association_topology_is_order_independent_and_typed() -> None:
+    mapping = json.loads(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 6).read_text()
+    )
+    reversed_mapping = copy.deepcopy(mapping)
+    reversed_mapping["topology"]["edges"].reverse()
+    first_parameters = Parameters.from_mapping(mapping)
+    second_parameters = Parameters.from_mapping(reversed_mapping)
+    assert first_parameters.component_ids == second_parameters.component_ids
+    assert first_parameters.site_ids == second_parameters.site_ids
+    composition = (0.01, 0.25, 0.25, 0.01, 0.48)
+    first = Mixture(first_parameters).state(293.15, rho=1.0e4, x=composition)
+    second = Mixture(second_parameters).state(293.15, rho=1.0e4, x=composition)
+    for field in (
+        "pressure", "residual_helmholtz", "compressibility_factor", "association",
+        "debye_huckel", "born", "bulk_relative_permittivity",
+    ):
+        assert getattr(first, field) == pytest.approx(getattr(second, field), rel=1e-12, abs=1e-12)
+    assert first.residual_chemical_potential_over_rt == pytest.approx(
+        second.residual_chemical_potential_over_rt, rel=1e-12, abs=1e-12
+    )
+    assert first.site_fractions == pytest.approx(second.site_fractions, rel=1e-12, abs=1e-12)
+
+    missing = copy.deepcopy(mapping)
+    missing["topology"]["edges"][1]["source"]["inputs"]["energy_over_k"][1] = "missing"
+    with pytest.raises(ParameterError, match="missing association input missing"):
+        Parameters.from_mapping(missing)
+    duplicate = copy.deepcopy(mapping)
+    duplicate["topology"]["edges"][5]["energy_over_k"]["identity"] = (
+        duplicate["topology"]["edges"][0]["energy_over_k"]["identity"]
+    )
+    with pytest.raises(ParameterError, match="duplicate association identity"):
+        Parameters.from_mapping(duplicate)
+    non_string = copy.deepcopy(mapping)
+    non_string["topology"]["edges"][0]["energy_over_k"]["identity"] = 123
+    with pytest.raises(ParameterError, match="association edge identities must be strings"):
+        Parameters.from_mapping(non_string)
+    cross_family = copy.deepcopy(mapping)
+    cross_family["topology"]["edges"][1]["source"]["inputs"]["energy_over_k"][0] = (
+        cross_family["topology"]["edges"][0]["volume"]["identity"]
+    )
+    with pytest.raises(ParameterError, match="energy_over_k input has wrong family"):
+        Parameters.from_mapping(cross_family)
+
+    subset = Parameters.from_mapping(mapping, components=("ethanol", "water"))
+    assert subset.component_ids == ("ethanol", "water")
+    invalid_subset = copy.deepcopy(mapping)
+    invalid_subset["topology"]["edges"][2]["endpoint_b"]["site_id"] = "missing"
+    with pytest.raises(ParameterError, match="missing topology site water/missing"):
+        Parameters.from_mapping(invalid_subset, components=("ethanol", "water"))

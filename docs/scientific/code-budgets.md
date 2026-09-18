@@ -23,6 +23,9 @@ Tests, documentation, source data, build outputs and third-party dependencies
 are outside this runtime budget. They remain subject to scope/ownership review;
 none may hide runtime logic to evade a ceiling.
 
+Each total entry may be tighter than the sum of its layer entries, never looser:
+a layer ceiling bounds that layer, and the total independently bounds the whole.
+
 Physical lines are a reproducible size proxy, not a measure of scientific
 complexity. Keep conventional readable formatting. Removing useful comments,
 packing statements onto lines, hiding code in generated strings, relocating
