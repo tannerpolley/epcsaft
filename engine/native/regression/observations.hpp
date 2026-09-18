@@ -20,7 +20,7 @@ enum class ObservationKind {
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
     Available, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
-    NonpositiveLogArgument, ActionUnavailable, Nonfinite
+    NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
 };
 const char* observation_status_name(ObservationStatus status) noexcept;
 

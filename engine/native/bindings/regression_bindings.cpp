@@ -27,7 +27,8 @@ void register_regression(py::module_& module) {
         .value("MissingMolarMass", ObservationStatus::MissingMolarMass)
         .value("NonpositiveLogArgument", ObservationStatus::NonpositiveLogArgument)
         .value("ActionUnavailable", ObservationStatus::ActionUnavailable)
-        .value("Nonfinite", ObservationStatus::Nonfinite);
+        .value("Nonfinite", ObservationStatus::Nonfinite)
+        .value("InadmissibleTrial", ObservationStatus::InadmissibleTrial);
     py::class_<Observation>(module, "Observation")
         .def(py::init<>())
         .def_readwrite("kind", &Observation::kind)
@@ -97,7 +98,6 @@ void register_regression(py::module_& module) {
         .def_readonly("variance_factor", &FitCovariance::variance_factor);
     py::class_<FitResult>(module, "FitResult")
         .def_readonly("status", &FitResult::status)
-        .def_readonly("termination", &FitResult::termination)
         .def_readonly("message", &FitResult::message)
         .def_readonly("usable", &FitResult::usable)
         .def_readonly("physical", &FitResult::physical)
@@ -118,6 +118,7 @@ void register_regression(py::module_& module) {
         .def_readonly("covariance", &FitResult::covariance);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
+        validate(observation, model);
         return predict(model, observation);
     }, py::arg("model"), py::arg("observation"));
     module.def("fit", [](const FitRequest& request) {

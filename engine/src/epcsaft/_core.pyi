@@ -680,6 +680,7 @@ class ObservationStatus:
     NonpositiveLogArgument: ObservationStatus
     ActionUnavailable: ObservationStatus
     Nonfinite: ObservationStatus
+    InadmissibleTrial: ObservationStatus
 
 class Observation:
     kind: ObservationKind
@@ -753,7 +754,6 @@ class FitCovariance:
 
 class FitResult:
     status: str
-    termination: str
     message: str
     usable: bool
     physical: list[float]

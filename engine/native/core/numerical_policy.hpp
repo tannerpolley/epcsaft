@@ -266,6 +266,8 @@ inline constexpr Tolerance FIT_PARAMETER_TOLERANCE{"FIT_PARAMETER_TOLERANCE",
 };
 // Singular values of the weighted optimizer Jacobian below this fraction of the largest are
 // treated as a null direction: covariance is withheld as rank deficient rather than inverted.
+// The published object is (J^T J)^-1, whose condition is cond(J)^2 = 1e28 at the threshold, so
+// a retained direction can carry about one percent SVD error in its smallest singular value.
 inline constexpr Tolerance FIT_RANK_RECIPROCAL_CONDITION{"FIT_RANK_RECIPROCAL_CONDITION",
     1.0e-14,
     Category::AlgorithmTolerance,

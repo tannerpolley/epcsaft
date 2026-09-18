@@ -27,7 +27,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
-| EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free | the driver's free temperature | K |
+| EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
 | PhaseMoleFraction | any declared specification, phase $p$, nonempty species set $S$ within its support | $\sum_{i\in S} x_{p,i}$ | 1 |
 | PhaseFraction | free amounts | $\beta_p = n_p / \sum_q n_q$ over the solved amounts, never the feed total | 1 |
 
@@ -75,8 +75,10 @@ failure. The conditional covariance is $(J^\top J)^{-1}$ of the weighted
 optimizer Jacobian, mapped to physical rows by $D = S\,\mathrm{diag}(s)$; it is
 withheld as `rank_deficient` when a singular value falls below the named
 reciprocal-condition policy, and as `active_bound` at a bound. The variance
-factor $\sum w r^2/(n-\mathrm{rank})$ is reported separately for an unknown
-common variance and is not applied.
+factor $\sum w r^2/(n_w-\mathrm{rank})$ over the $n_w$ rows with positive
+weight is reported separately for an unknown common variance and is not
+applied; a bound is detected in optimizer space against the exact values
+handed to the optimizer.
 
 Fixed-coordinate leaves are valid constants with zero derivative. Observable
 and parameter order, units, bases and chain rules must remain explicit through

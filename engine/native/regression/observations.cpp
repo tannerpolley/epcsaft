@@ -57,6 +57,7 @@ const char* observation_status_name(ObservationStatus status) noexcept {
     case ObservationStatus::NonpositiveLogArgument: return "nonpositive_log_argument";
     case ObservationStatus::ActionUnavailable: return "action_unavailable";
     case ObservationStatus::Nonfinite: return "nonfinite";
+    case ObservationStatus::InadmissibleTrial: return "inadmissible_trial";
     }
     return "unknown";
 }
@@ -138,6 +139,11 @@ Prediction predict(
     equilibrium::EquilibriumResult solved;
     try {
         solved = equilibrium::solve_equilibrium(model, observation.problem, start);
+    } catch (const core::ConvergenceFailure& failure) {
+        result.status = ObservationStatus::CentralSolveUnavailable;
+        result.convergence = failure.record;
+        result.message = failure.what();
+        return result;
     } catch (const std::runtime_error& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;
         result.message = failure.what();

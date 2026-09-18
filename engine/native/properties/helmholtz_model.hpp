@@ -95,9 +95,8 @@ struct PropertyActionBatch final {
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
-    // Pressure chart only: the resolved root and, per direction, the first-order directional
-    // derivative of that density at fixed pressure closure (#86); an empty observable list is
-    // a density-only request.
+    // Pressure chart only: the root and per-direction first-order density derivatives at fixed
+    // pressure closure (#86); no observables means a density-only request.
     std::optional<double> molar_density;
     std::vector<double> density_action;
     PropertyActionStatus density_status = PropertyActionStatus::CentralPropertyUnavailable;

@@ -107,6 +107,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
     result.kind = _KINDS[kind]
+    if phase is None and kind not in ("pressure", "temperature"):
+        raise ParameterError(f"{kind} needs its phase")
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]

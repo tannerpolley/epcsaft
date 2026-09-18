@@ -321,16 +321,24 @@ void check_f5_f6() {
     CHECK(pressure.status == ObservationStatus::Available && direct.success);
     CHECK(agree("r1-f5/bubble_pressure", "pressure", "Pa", *pressure.value, direct.pressure.front(), 0.0, 0.0,
                 field("T_K", 180.0), "the O2 value is the driver's pressure bit for bit", "r1-f5"));
+    // The pinned-zero free-T solve is solved cold from a guess above the answer (a fit's first trial
+    // is always cold); a warm start from the O2 result would return the seed bit for bit and prove nothing.
     auto free_t = bubble;
-    free_t.temperature = FreeValue::variable(180.0);
+    free_t.temperature = FreeValue::variable(190.0);
     free_t.pressure = FreeValue::fixed(*pressure.value);
-    const auto temperature = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t), pressure.solved);
-    CHECK(truth("r1-f5/bubble_temperature_status", "the warm-started pinned-zero free-T solve is accepted (new route)",
+    const auto temperature = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
+    CHECK(truth("r1-f5/bubble_temperature_status", "the cold pinned-zero free-T solve from above is accepted (new route)",
                 temperature.status == ObservationStatus::Available, field("status", observation_status_name(temperature.status)), "r1-f5"));
     if (temperature.status == ObservationStatus::Available) {
-        CHECK(agree("r1-f5/bubble_temperature", "temperature", "K", *temperature.value, 180.0, 1.0e-4, 0.0,
-                    field("P_Pa", *pressure.value), "the round trip P(T) -> T(P) returns 180 K within the 1e-4 K envelope", "r1-f5"));
+        CHECK(agree("r1-f5/bubble_temperature", "temperature", "K", *temperature.value, 180.0, 1.0e-6, 0.0,
+                    fields({field("P_Pa", *pressure.value), field("T_guess", 190.0)}),
+                    "the round trip P(T) -> T(P) returns 180 K within 1e-6 K (observed 1e-11 K)", "r1-f5"));
     }
+    free_t.temperature = FreeValue::variable(170.0);
+    const auto below = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
+    CHECK(truth("r1-f5/bubble_temperature_from_below", "a cold guess below the answer is a typed topology event, a domain limit of the route",
+                below.status == ObservationStatus::TopologyEvent && !below.value.has_value(),
+                fields({field("status", observation_status_name(below.status)), field("T_guess", 170.0)}), "r1-f5"));
     auto dew = bubble;
     dew.phases[0].amount = AmountSpec::pinned(0.0);
     dew.phases[1].amount = AmountSpec::free();
@@ -567,6 +575,10 @@ void check_d86() {
     const auto message = rejection([&] { (void)model.density_actions(T, 1000.0, {1.0}, {}, {{0.0, 0.0, {0.0}, {}}}); });
     CHECK(truth("d86/density_chart_rejected", "a density-chart request without observables is rejected by name",
                 message.find("observables") != std::string::npos, field("message", message), "d86"));
+    const auto support = binary.pressure_actions(Tb, Pb, {1.0, 0.0}, DensityBranch::Liquid, {}, {{0.0, 0.0, {-0.01, 0.01}, {}}});
+    CHECK(truth("d86/support_change", "a direction into an absent species is typed support_change with no action",
+                support.density_status == PropertyActionStatus::SupportChange && support.density_action.empty(),
+                field("status", static_cast<int>(support.density_status)), "d86"));
     const std::vector<ActiveParameter> site = {{ParameterFamily::AssociationEnergyOverK, {1, 4}}};
     const HelmholtzModel associating(properties_support::associating_binary(), site);
     const auto pair = associating.pressure_actions(300.0, 1.0e5, {0.4, 0.6}, DensityBranch::Liquid, {}, {{0.0, 0.0, {0.0, 0.0}, {{site[0].family, site[0].indices, 1.0}}}});
@@ -582,6 +594,14 @@ void check_d86() {
 }
 
 std::string summary(const FitResult& result);
+
+// (J^T J)_{ab} of a result's n x 2 optimizer Jacobian.
+double gram_entry(const FitResult& result, std::size_t a, std::size_t b) {
+    double gram = 0.0;
+    const std::size_t rows = result.optimizer_jacobian.size() / 2;
+    for (std::size_t i = 0; i < rows; ++i) gram += result.optimizer_jacobian[i * 2 + a] * result.optimizer_jacobian[i * 2 + b];
+    return gram;
+}
 
 // ---- R2 J1: prediction gradients against rebuilt-model central differences, then the residual chain.
 CoordinateSet binary_coordinates() {
@@ -735,10 +755,12 @@ void check_j2() {
     auto failing = recovery_request(truth_case, 148.0, 0.0);
     failing.observations.push_back(density(200.0, 1.0e10, {0.5, 0.5}, DensityBranch::Liquid));
     const auto failed = fit(failing);
+    const std::vector<ObservationStatus> expected_statuses = {ObservationStatus::Available, ObservationStatus::Available,
+        ObservationStatus::Available, ObservationStatus::Available, ObservationStatus::Available, ObservationStatus::DensityUnavailable};
     CHECK(truth("r2-j2/initial_failure", "a failing observation at the start is retained with its cause and index",
                 failed.status == "initial_evaluation_failed" && !failed.usable && failed.failures.size() == 1
                     && failed.failures[0].observation == 5 && failed.failures[0].status == ObservationStatus::DensityUnavailable
-                    && failed.predictions.empty(), summary(failed), "r2-j2"));
+                    && failed.predictions.empty() && failed.statuses == expected_statuses, summary(failed), "r2-j2"));
     // R4 rows: the public transport reproduces these native values for the same explicit inputs.
     const auto row = [&](const char* id, const char* unit, double value) {
         recording_support::observe(id, "native", unit, value, std::nullopt, summary(result), "Relationship", "regression",
@@ -789,6 +811,10 @@ void check_r3() {
                 "the zero-weighted row keeps its residual in the report", "r3"));
     CHECK(agree("r3/zero_weight/optimizer_residual", "weighted_residual", "1", ignored.weighted_residuals[5], 0.0, 0.0, 0.0, summary(ignored),
                 "the zero-weighted row contributes nothing to the objective", "r3"));
+    double ignored_sum = 0.0;
+    for (const double r : ignored.weighted_residuals) ignored_sum += r * r;
+    CHECK(agree("r3/zero_weight/variance_factor", "variance_factor", "1", *ignored.covariance.variance_factor, ignored_sum / (5.0 - 2.0), 0.0, 1.0e-12,
+                summary(ignored), "the variance factor divides by the five weighted rows minus the rank, not six", "r3"));
     // Rank deficiency: one observation cannot identify two coordinates.
     auto single = recovery_request(truth_case, 148.0, 0.0);
     single.observations = {truth_case.observations[0]};
@@ -810,10 +836,34 @@ void check_r3() {
     for (std::size_t k = 0; k < 9; ++k)
         CHECK(agree("r3/physical_covariance/" + std::to_string(k), "covariance", "native", tied.covariance.physical[k], hand[k], 0.0, 1.0e-12,
                     summary(tied), "Cov_theta = D Cov_u D^T with D = S diag(scale)", "r3"));
+    // Cov_u is the inverse of J^T J of the independently qualified optimizer Jacobian.
+    double worst = 0.0;
+    for (std::size_t a = 0; a < 2; ++a)
+        for (std::size_t b = 0; b < 2; ++b)
+            worst = std::max(worst, std::abs(cu[a * 2] * gram_entry(tied, 0, b) + cu[a * 2 + 1] * gram_entry(tied, 1, b) - (a == b ? 1.0 : 0.0)));
+    CHECK(agree("r3/covariance_inverse", "max_abs(Cov_u J^T J - I)", "1", worst, 0.0, 1.0e-10, 0.0, summary(tied),
+                "the optimizer covariance inverts the Gram matrix of the qualified Jacobian", "r3"));
     double weighted = 0.0;
     for (const double r : tied.weighted_residuals) weighted += r * r;
     CHECK(agree("r3/variance_factor", "variance_factor", "1", *tied.covariance.variance_factor, weighted / (5.0 - 2.0), 0.0, 1.0e-12,
                 summary(tied), "the variance factor is sum(w r^2) / (n - rank)", "r3"));
+    // A declared bound the model itself refuses (m = 0) is a typed trial failure, not an exception: an
+    // unattainable target (pressures fifty times the truth) drives the optimizer onto that bound.
+    FitRequest inadmissible;
+    inadmissible.parameters = properties_support::neutral_binary();
+    inadmissible.parameters.dispersion_energy_over_k[0] = 148.0;
+    inadmissible.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 140.0, 170.0},
+                                            {ParameterFamily::SegmentCount, {{0}}, 1.0, 2.0, 0.0, 5.0}};
+    for (std::size_t i = 0; i < 3; ++i) {
+        inadmissible.observations.push_back(truth_case.observations[i]);
+        inadmissible.observations.back().observed *= 50.0;
+    }
+    const auto refused = fit(inadmissible);
+    const bool typed = std::any_of(refused.failures.begin(), refused.failures.end(), [&](const TrialFailure& item) {
+        return item.status == ObservationStatus::InadmissibleTrial && item.observation == 3
+            && item.message.find("segment_count") != std::string::npos; });
+    CHECK(truth("r3/inadmissible_trial", "a trial the model refuses by name is retained as inadmissible_trial and the fit returns typed",
+                typed && refused.status == "failed" && !refused.usable && refused.trial_failures > 0, summary(refused), "r3"));
 }
 
 }  // namespace
@@ -823,12 +873,12 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
         {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:18"}, check_f2, "R1"},
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},
-        {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:4,r1-f6/*:3"}, check_f5_f6, "R1"},
+        {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:8"}, check_f7_f8, "R1"},
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:5"}, check_f9_f10, "R1"},
-        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:21"}, check_d86, "R1"},
+        {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:23"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:40"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},
-        {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:19"}, check_r3, "R2"},
+        {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
     });
 }

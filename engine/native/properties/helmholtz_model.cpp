@@ -1211,7 +1211,6 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         [](const auto& direction) { return direction.temperature != 0.0; });
     auto diagnostics = result.diagnostics;
     if (!pressure_chain || association_status != PropertyActionStatus::Available) {
-        if (root != nullptr) result.density_status = association_status;
         std::vector<std::size_t> ids(all.size());
         for (std::size_t i = 0; i < ids.size(); ++i) ids[i] = i;
         context.planning = true;
@@ -1222,6 +1221,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result = evaluate_actions(context, ids, observables, plan, result_support,
             ideal_status, association_status, endpoint, temperature_action,
             root != nullptr, root != nullptr ? root->pressure_density_derivative : 0.0);
+        if (pressure_chain) result.density_status = association_status;
     } else {
         const double inverse_pressure_slope = 1.0 / root->pressure_density_derivative;
         std::size_t pressure_solves = 0;
@@ -1256,9 +1256,9 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             [](const auto& direction) { return direction.temperature != 0.0; });
         context.planning = true;
         (void)property_jets(context, lifted_ids, plan.ideal, plan.residual, true);
-        if (directions.size() >= 2)
+        if (directions.size() >= 2 && !observables.empty())
             (void)property_jets(context, {radial_id}, plan.ideal, plan.residual, false);
-        if (directions.size() == 3) {
+        if (directions.size() == 3 && !observables.empty()) {
             for (const auto id : lifted_ids)
                 (void)property_jets(context, {id, radial_id}, plan.ideal, plan.residual, true);
         }
@@ -1267,20 +1267,21 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             ideal_status, association_status, endpoint, temperature_action, true,
             root->pressure_density_derivative);
         result.molar_density = molar_density;
-        result.density_status = PropertyActionStatus::Available;
+        result.density_status = status;
         for (const auto& direction : lifted) result.density_action.push_back(direction.molar_density);
+        if (!finite_vector(result.density_action)) result.density_status = PropertyActionStatus::Nonfinite;
         std::array<double, 3> density_pairs{};
-        if (directions.size() >= 2) {
+        if (directions.size() >= 2 && !observables.empty()) {
             density_pairs[0] = density_solve(-pressure_of({lifted_ids[0], lifted_ids[1]}));
         }
-        if (directions.size() == 3) {
+        if (directions.size() == 3 && !observables.empty()) {
             density_pairs[1] = density_solve(-pressure_of({lifted_ids[0], lifted_ids[2]}));
             density_pairs[2] = density_solve(-pressure_of({lifted_ids[1], lifted_ids[2]}));
         }
         PropertyActionBatch radial;
         std::vector<PropertyActionBatch> mixed;
         double density_123 = 0.0;
-        if (directions.size() >= 2) {
+        if (directions.size() >= 2 && !observables.empty()) {
             radial = evaluate_actions(context, {radial_id}, observables, plan,
                 PropertyActionStatus::Available, ideal_status, association_status,
                 endpoint, false, true, root->pressure_density_derivative);
@@ -1346,6 +1347,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     result.diagnostics.association_residual = context.coefficient_residual;
     if (association_status == PropertyActionStatus::Available
         && context.coefficient_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) {
+        if (pressure_chain) result.density_status = PropertyActionStatus::AssociationResidual;
         for (auto& item : result.results) {
             if ((!is_ideal(item.observable) || (pressure_chain && property_index(item.observable) == 2))
                 && item.status == PropertyActionStatus::Available) {
@@ -1354,6 +1356,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             }
         }
     }
+    if (result.density_status != PropertyActionStatus::Available) result.density_action.clear();
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
         result.diagnostics.stability_determinant = root->pressure_density_derivative

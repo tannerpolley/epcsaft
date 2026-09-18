@@ -39,15 +39,25 @@ public:
     bool evaluate(const std::vector<double>& optimizer, bool jacobian, Evaluation& out) {
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
+        const std::size_t n = request_.observations.size(), width = active_.size();
+        try {
+            return evaluate_rows(optimizer, jacobian, out, n, width);
+        } catch (const std::exception& error) {  // the model or an owner refused the trial by name
+            return fail(n, optimizer, ObservationStatus::InadmissibleTrial, error.what(), jacobian);
+        }
+    }
+
+private:
+    bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, Evaluation& out,
+                       std::size_t n, std::size_t width) {
         const HelmholtzModel model(request_.coordinates.apply(request_.parameters, optimizer),
                                    active_, request_.thermochemistry);
-        const std::size_t n = request_.observations.size(), width = active_.size();
         out = Evaluation{};
         out.predictions.assign(n, 0.0);
         out.residuals.assign(n, 0.0);
         if (jacobian) out.gradient.assign(n * width, 0.0);
-        // Warm starts come only from a trial in which every observation succeeded, and a warm
-        // start that fails is retried cold, so a rejected far step cannot poison the next trial.
+        // Warm starts come only from a trial in which every observation succeeded (whether or not
+        // the optimizer accepts its step), and a warm start that fails is retried cold.
         auto fresh = starts_;
         for (std::size_t i = 0; i < n; ++i) {
             const auto& observation = request_.observations[i];
@@ -71,7 +81,6 @@ public:
         return true;
     }
 
-private:
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
               std::string message, bool jacobian) {
         result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian});
@@ -160,14 +169,21 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n) {
     const double floor = policy::FIT_RANK_RECIPROCAL_CONDITION.value * (singular.size() > 0 ? singular(0) : 0.0);
     cov.rank = static_cast<std::size_t>(std::count_if(cov.singular_values.begin(), cov.singular_values.end(),
         [&](double value) { return value > floor && value > 0.0; }));
+    // A bound is active in optimizer space, against the exact values handed to the optimizer.
     for (std::size_t c = 0; c < set.coordinates.size(); ++c) {
         const auto& coordinate = set.coordinates[c];
-        const double value = coordinate.origin + coordinate.scale * result.optimizer[c];
-        if (value == coordinate.lower || value == coordinate.upper) cov.active_bounds.push_back(c);
+        const double u = result.optimizer[c];
+        if (u <= (coordinate.lower - coordinate.origin) / coordinate.scale
+            || u >= (coordinate.upper - coordinate.origin) / coordinate.scale) cov.active_bounds.push_back(c);
     }
+    // The variance factor counts only rows that enter the objective (w > 0).
     double weighted_sum = 0.0;
-    for (const double value : result.weighted_residuals) weighted_sum += value * value;
-    if (n > cov.rank) cov.variance_factor = weighted_sum / static_cast<double>(n - cov.rank);
+    std::size_t weighted_rows = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+        weighted_sum += result.weighted_residuals[i] * result.weighted_residuals[i];
+        weighted_rows += request.weights.empty() || request.weights[i] > 0.0 ? 1 : 0;
+    }
+    if (weighted_rows > cov.rank) cov.variance_factor = weighted_sum / static_cast<double>(weighted_rows - cov.rank);
     if (cov.rank < set.coordinates.size()) { cov.status = "rank_deficient"; return; }
     if (!cov.active_bounds.empty()) { cov.status = "active_bound"; return; }
     const Eigen::MatrixXd optimizer = svd.matrixV() * singular.cwiseAbs2().cwiseInverse().asDiagonal()
@@ -216,6 +232,7 @@ FitResult fit(const FitRequest& request) {
     if (!evaluator.evaluate(optimizer, true, initial)) {
         result.status = "initial_evaluation_failed";
         result.message = result.failures.back().message;
+        result.statuses = std::move(initial.statuses);  // the rows evaluated up to the failure
         return result;
     }
     for (std::size_t i = 0; i < n; ++i)
@@ -261,6 +278,7 @@ FitResult fit(const FitRequest& request) {
     if (!set.within_bounds(optimizer) || !evaluator.evaluate(optimizer, true, final)) {
         result.status = "failed";
         result.message = "the final point could not be evaluated: " + result.message;
+        result.statuses = std::move(final.statuses);
         return result;
     }
     const auto tie = set.tie();

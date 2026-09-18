@@ -114,6 +114,7 @@ def test_name_mapping_and_tie_map() -> None:
                 lambda: regression.coordinate(p, "dielectric", "s0", origin=0.0, scale=1.0),
                 lambda: regression.observation(p, "pressure", Problem(phases=Discover(), T=300.0, P=1.0e5, feed=Amounts({"s0": 1.0})), observed=1.0, form="log_ratio", mass_basis=False),
                 lambda: regression.observation(p, "mole_fraction", bubble(300.0), observed=1.0, phase="X", form="log_ratio", mass_basis=False),
+                lambda: regression.observation(p, "phase_fraction", bubble(300.0), observed=1.0, form="log_ratio", mass_basis=False),
                 lambda: regression.density(p, 300.0, 1.0e5, {"s9": 1.0}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False)):
         with pytest.raises(ParameterError):
             bad()
@@ -132,6 +133,12 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     mass_prediction = regression.predict(model, mass)
     assert mass_prediction.unit == "kg/m^3" and mass_prediction.value is not None
     assert math.isclose(mass_prediction.value, state.molar_density * (0.5 * 0.016043 + 0.5 * 0.03007), rel_tol=1.0e-12)
+    # Public predict admits by name: an out-of-range phase or species never becomes a finite value.
+    for phase_index, species_set in ((2, [0]), (0, [99])):
+        broken = regression.observation(p, "mole_fraction", bubble(180.0), observed=1.0, phase="L", species=("s0",), form="log_ratio", mass_basis=False)
+        broken.phase, broken.species = phase_index, species_set
+        with pytest.raises(ParameterError):
+            regression.predict(model, broken)
     none = regression.predict(model, regression.density(p, 200.0, 1.0e10, {"s0": 1.0}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
     assert none.status == regression.ObservationStatus.DensityUnavailable and none.value is None and none.message
     assert prediction.branch == state.density_branch and prediction.stable_root_count == state.stable_root_count

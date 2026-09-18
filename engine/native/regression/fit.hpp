@@ -30,7 +30,8 @@ struct FitRequest final {
     FitControls controls;
 };
 
-// One rejected trial: the observation that failed, its typed cause and the optimizer point.
+// One rejected trial: the observation that failed, its typed cause and the optimizer point. A
+// trial the model itself refuses (InadmissibleTrial) carries the observation count as its index.
 struct TrialFailure final {
     std::size_t trial = 0;
     std::size_t observation = 0;
@@ -48,9 +49,9 @@ struct FitCovariance final {
     std::size_t rank = 0;
     std::vector<double> singular_values;
     std::vector<std::size_t> active_bounds;  // optimizer coordinates at a bound
-    std::vector<double> optimizer;  // U x U row-major
-    std::vector<double> physical;   // R x R row-major
-    std::optional<double> variance_factor;  // sum(w r^2) / (n - rank) when n > rank
+    std::vector<double> optimizer;  // U x U, symmetric
+    std::vector<double> physical;   // R x R, symmetric
+    std::optional<double> variance_factor;  // sum(w r^2) / (n_w - rank) over the n_w rows with w > 0
 };
 
 struct FitResult final {
