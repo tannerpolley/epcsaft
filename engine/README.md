@@ -97,8 +97,14 @@ gdb --args build/engine-debug/surface_example
 
 The installed package transports the same native records with the same meanings
 and SI molar units; Python performs no thermodynamic arithmetic. Thermal
-intervals follow `Parameters.component_ids` order, every record field is
-required, and the model copies its inputs at construction.
+intervals follow `Parameters.component_ids` order and every record field is
+required. A model copies its complete physical inputs at construction; changing
+an input record afterwards never alters the prepared model. Before construction,
+reads of primitive vectors (`coefficients`, `indices`, `composition`) are Python
+copies, so `coefficients[0] = ...` or `indices.append(...)` does not change the
+record: replace the whole field. Bound record elements stay live, so
+`record.component_intervals[0][0].lower = ...` and `interval.correlation.source_pressure = ...`
+do change that input record.
 
 ```python
 from epcsaft import IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ThermochemistryRecord
@@ -106,7 +112,7 @@ from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPoly
 
 cp = IdealCorrelation(IdealPolynomial([80.0, 0.0], 300.0, 1000.0, 50.0), source_pressure=1.0e5)
 record = ThermochemistryRecord(1.0e5, [[IdealInterval(250.0, 450.0, True, True, cp)], ...])
-model = Mixture(parameters, thermochemistry=record)           # residual-only without a record
+model = Mixture(parameters, thermochemistry=record)           # omit the record for residual-only States
 state = model.state(353.15, P=1.0e5, x=(0.25, 0.75), phase="liquid")
 state.total_enthalpy, state.ideal_entropy                     # None when the record does not cover T
 ln_k = ReactionLogPolynomial(a, b, c, d, Tref, Tmin, Tmax, EOS_STANDARD_STATE_ID)
@@ -146,10 +152,12 @@ reduced-energy balance and charge coordinates of the solution;
 `constraint_multipliers` are the optimizer's raw duals of its implemented, scaled
 constraints (the non-chemical, non-pressure entries of `rows` in order, or every
 row when a phase amount is pinned). Neither is a chemical or electric potential.
-Read `requested_tolerance_met` independently of `success`: a floor-limited point the
-native owner accepts keeps its state with `success = True` and
-`requested_tolerance_met = False`; one it rejects returns `success = False`, its finite
-row residuals and the owner's stop, and carries no state vectors.
+Read `requested_tolerance_met` independently of `success` (ALG-EQUILIBRIUM,
+ALG-TERMINATION). A floor-limited point that Ipopt reports as successful is accepted
+and keeps its state with `success = True` and `requested_tolerance_met = False`. A
+tiny-step floor-limited point is rejected: `success = False`, finite row residuals, the
+convergence record and the stopping cause remain, and the candidate state vectors are
+cleared, so `has_state()` is the availability predicate.
 
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached

@@ -1,7 +1,7 @@
 """B1-B3 (#56-#59): public reaction targets, solved-state actions and result diagnostics."""
 import gc
 import math
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -130,7 +130,7 @@ def test_log_activity_actions_follow_the_correlated_reaction(evidence: Any) -> N
             bound = CRITERION[len(directions) - 1] * sum(abs(term) for term in terms)
             same(evidence, f"e5-10/manifold/{label}/phase{phase}", sum(terms))
             same(evidence, f"manifold/{label}/phase{phase}", sum(terms), reference, bound, 0.0)
-            assert abs(sum(terms) + 3.0 * terms[2] / NU[2] - reference) > bound  # nu_C = 2 fails its own criterion
+            assert abs(sum(terms) + terms[2] - reference) > bound  # nu = (-1, -1, 2) fails the identity's own criterion
 
 
 def test_ionic_feed_and_caloric_actions_match_native(evidence: Any) -> None:
@@ -225,6 +225,17 @@ def test_active_parameter_and_thermal_actions_match_native(evidence: Any) -> Non
         request = SolvedStateActionRequest(observables, [SolvedStateActionDirection(*item) for item in moves[:order]])
         for name, result in zip(names, solved_state_actions(compiled, central, request).results):
             same(evidence, f"e5-1/neutral-ternary/{name}/A{order}", result.action)
+    # Euler homogeneity (E5-10): n_feed radial with a non-radial v; amounts are degree one, ln a degree zero.
+    radial, skew = SolvedStateActionDirection(0.0, 0.0, [1.0 / 3.0] * 3, [0.0, 0.0]), SolvedStateActionDirection(0.0, 0.0, [-0.01, 0.006, 0.004], [0.0, 0.0])
+    first = solved_state_actions(compiled, central, SolvedStateActionRequest(observables, [skew])).results
+    mixed = solved_state_actions(compiled, central, SolvedStateActionRequest(observables, [radial, skew])).results
+    for name, one, two in zip(names, first, mixed):
+        slope = cast(float, one.action)
+        if "amount" in name:  # D^2 n_i[n_feed, v] = 0
+            same(evidence, f"euler/mixed/{name}", two.action, 0.0, 1.0e-12 * max(1.0, abs(slope)), 0.0)
+        else:  # D^2 ln a_i[n_feed, v] = -D ln a_i[v], with a nonzero first-order response
+            assert abs(slope) > 1.0e-3
+            same(evidence, f"euler/mixed/{name}", two.action, -slope, CRITERION[1] * abs(slope), 0.0)
     fixed = SolvedStateActionRequest(observables[:1], [SolvedStateActionDirection(*moves[0][:3], [0.0, 0.0])])
     lost = solved_state_actions(compiled, central, fixed).results[0].action  # without the parameter increments
     assert lost is not None and abs(lost - ROWS["e5-1/neutral-ternary/phase[0].amount[0]/A1"]) > 1.0e-4
