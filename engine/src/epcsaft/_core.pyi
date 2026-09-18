@@ -285,6 +285,8 @@ class PropertyActionBatch:
     results: list[PropertyActionResult]
     maximum_energy_order: int
     diagnostics: PropertyActionDiagnostics
+    density_action: list[float]
+    density_status: PropertyActionStatus
 
 class State:
     hard_chain: float
@@ -656,3 +658,120 @@ class ElectrolyteActivity:
 
 def infinite_dilution_reference(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int]) -> InfiniteDilutionReference: ...
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...
+
+class ObservationKind:
+    Density: ObservationKind
+    PhaseDensity: ObservationKind
+    EquilibriumPressure: ObservationKind
+    EquilibriumTemperature: ObservationKind
+    PhaseMoleFraction: ObservationKind
+    PhaseFraction: ObservationKind
+
+class ResidualForm:
+    Difference: ResidualForm
+    LogRatio: ResidualForm
+
+class ObservationStatus:
+    Available: ObservationStatus
+    DensityUnavailable: ObservationStatus
+    CentralSolveUnavailable: ObservationStatus
+    TopologyEvent: ObservationStatus
+    MissingMolarMass: ObservationStatus
+    NonpositiveLogArgument: ObservationStatus
+    ActionUnavailable: ObservationStatus
+    Nonfinite: ObservationStatus
+
+class Observation:
+    kind: ObservationKind
+    temperature: float
+    pressure: float
+    composition: list[float]
+    branch: DensityBranch
+    problem: EquilibriumProblem
+    phase: int
+    species: list[int]
+    mass_basis: bool
+    observed: float
+    form: ResidualForm
+    scale: float
+
+class Prediction:
+    value: Optional[float]
+    unit: str
+    status: ObservationStatus
+    message: str
+    residual: Optional[float]
+    convergence: Optional[Convergence]
+    branch: Optional[DensityBranch]
+    stable_root_count: Optional[int]
+    requested_tolerance_met: Optional[bool]
+
+class Coordinate:
+    family: ParameterFamily
+    slots: list[list[int]]
+    origin: float
+    scale: float
+    lower: float
+    upper: float
+
+class CoordinateSet:
+    coordinates: list[Coordinate]
+    def active(self) -> list[ActiveParameter]: ...
+    def tie(self) -> list[int]: ...
+
+class FitControls:
+    function_tolerance: float
+    gradient_tolerance: float
+    parameter_tolerance: float
+    maximum_iterations: int
+    maximum_elapsed_time_seconds: float
+
+class FitRequest:
+    parameters: Parameters
+    thermochemistry: Optional[ThermochemistryRecord]
+    coordinates: CoordinateSet
+    observations: list[Observation]
+    weights: list[float]
+    controls: FitControls
+
+class TrialFailure:
+    trial: int
+    observation: int
+    optimizer: list[float]
+    status: ObservationStatus
+    message: str
+
+class FitCovariance:
+    status: str
+    assumption: str
+    rank: int
+    singular_values: list[float]
+    active_bounds: list[int]
+    optimizer: list[float]
+    physical: list[float]
+    variance_factor: Optional[float]
+
+class FitResult:
+    status: str
+    termination: str
+    message: str
+    usable: bool
+    physical: list[float]
+    parameters: Parameters
+    predictions: list[float]
+    residuals: list[float]
+    weighted_residuals: list[float]
+    physical_jacobian: list[float]
+    optimizer_jacobian: list[float]
+    statuses: list[ObservationStatus]
+    failures: list[TrialFailure]
+    iterations: int
+    residual_evaluations: int
+    jacobian_evaluations: int
+    trial_failures: int
+    initial_cost: float
+    final_cost: float
+    covariance: FitCovariance
+
+def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
+def fit(request: FitRequest) -> FitResult: ...
