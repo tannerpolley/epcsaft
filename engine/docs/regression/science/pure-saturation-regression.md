@@ -40,7 +40,11 @@ basis without a recorded ionic molar mass is `missing_molar_mass`.
 Residual forms: `Difference` $r=(y-y_{obs})/s$ with a positive
 nondimensionalisation scale $s$ in the observation's unit (not an
 uncertainty), and `LogRatio` $r=\ln(y/y_{obs})$ for positive quantities, which
-carries no scale; a nonpositive log argument is `nonpositive_log_argument`.
+carries no scale, evaluated as $\ln y-\ln y_{obs}$ across the dynamic range
+and as $\mathrm{log1p}$ inside the named `LOG_RATIO_NEAR_UNITY` band; a nonpositive log argument is
+`nonpositive_log_argument` and a residual that overflows is `nonfinite`
+while the independently valid value is retained. A mass basis is defined only
+for the two density kinds and is refused by name elsewhere.
 The two forms are not commensurable by themselves; relative weights
 $w_i\ge 0$ enter the objective as $\sqrt{w_i}\,r_i$ and are declared
 separately from any absolute uncertainty.
@@ -74,7 +78,13 @@ only from a trial in which every observation succeeded and are retried cold on
 failure. The conditional covariance is $(J^\top J)^{-1}$ of the weighted
 optimizer Jacobian, mapped to physical rows by $D = S\,\mathrm{diag}(s)$; it is
 withheld as `rank_deficient` when a singular value falls below the named
-reciprocal-condition policy, and as `active_bound` at a bound. The variance
+reciprocal-condition policy, as `active_bound` at a bound, and as
+`not_converged` for an iterate the optimizer did not accept as converged (its
+rank, singular values and bound diagnostics stay). Rank and the conditional
+covariance describe local conditioning at the fitted point under the stated
+assumptions; a converged multistart spread describes reproducibility across
+those starts; neither establishes structural or global identifiability or
+predictive accuracy. The variance
 factor $\sum w r^2/(n_w-\mathrm{rank})$ over the $n_w$ rows with positive
 weight is reported separately for an unknown common variance and is not
 applied; a bound is detected in optimizer space against the exact values

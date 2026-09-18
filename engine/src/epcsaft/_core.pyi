@@ -285,8 +285,11 @@ class PropertyActionBatch:
     results: list[PropertyActionResult]
     maximum_energy_order: int
     diagnostics: PropertyActionDiagnostics
+    molar_density: Optional[float]
     density_action: list[float]
     density_status: PropertyActionStatus
+    density_message: str
+    density_convergence: Optional[Convergence]
 
 class State:
     hard_chain: float
@@ -727,16 +730,7 @@ class FitControls:
     maximum_iterations: int
     maximum_elapsed_time_seconds: float
 
-class FitRequest:
-    parameters: Parameters
-    thermochemistry: Optional[ThermochemistryRecord]
-    coordinates: CoordinateSet
-    observations: list[Observation]
-    weights: list[float]
-    controls: FitControls
-
 class TrialFailure:
-    trial: int
     observation: int
     optimizer: list[float]
     status: ObservationStatus
@@ -774,4 +768,5 @@ class FitResult:
     covariance: FitCovariance
 
 def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
-def fit(request: FitRequest) -> FitResult: ...
+def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord], coordinates: Sequence[Coordinate],
+        observations: Sequence[Observation], weights: Sequence[float], controls: FitControls) -> FitResult: ...

@@ -86,10 +86,13 @@ def test_public_density_actions_match_the_native_rows(evidence: Any) -> None:
         same(evidence, f"d86/parameter/{name}/fine", batch.density_action[k])
     thermal = model.pressure_actions(200.0, 217800.6949469248, phase="liquid", observables=(),
                                      directions=[PressureActionDirection(temperature=1.0), PressureActionDirection(pressure=1.0)])
+    same(evidence, "d86/density_value", batch.molar_density)
     same(evidence, "d86/temperature/fine", thermal.density_action[0])
     same(evidence, "d86/pressure", thermal.density_action[1])
     absent = model.pressure_actions(200.0, 1.0e10, phase="liquid", observables=(), directions=directions)
     assert absent.density_status == _core.PropertyActionStatus.DensityUnavailable and absent.density_action == []
+    assert absent.molar_density is None and "no stable density root" in absent.density_message and absent.density_convergence is None
+    assert batch.density_message == "" and batch.density_convergence is None
     with pytest.raises(ParameterError):
         model.density_actions(200.0, 1000.0, observables=(), directions=[_core.DensityActionDirection()])
 
@@ -139,6 +142,18 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
         broken.phase, broken.species = phase_index, species_set
         with pytest.raises(ParameterError):
             regression.predict(model, broken)
+    # A mass basis is refused by name for a phase fraction (a two-phase flash whose mass fraction differs from beta).
+    flash = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")], T=180.0, P=1.0e6, feed=Amounts({"s0": 0.5, "s1": 0.5}))
+    beta = regression.predict(model, regression.observation(p, "phase_fraction", flash, observed=1.0, phase="L", form="log_ratio", mass_basis=False))
+    assert beta.value is not None and math.isclose(beta.value, 0.6738453209601837, rel_tol=1.0e-9)
+    with pytest.raises(ParameterError):
+        regression.predict(model, regression.observation(p, "phase_fraction", flash, observed=1.0, phase="L", form="log_ratio", mass_basis=True))
+    # The log ratio stays finite across the dynamic range; a value survives a nonfinite residual.
+    wide = regression.predict(model, regression.density(p, 180.0, 5.0e6, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0e-308, form="log_ratio", mass_basis=False))
+    assert wide.status == regression.ObservationStatus.Available and wide.residual is not None
+    assert math.isclose(wide.residual, math.log(state.molar_density) - math.log(1.0e-308), rel_tol=1.0e-12)
+    overflow = regression.predict(model, regression.density(p, 180.0, 5.0e6, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=-1.0e308, form="difference", scale=1.0e-308, mass_basis=False))
+    assert overflow.status == regression.ObservationStatus.Nonfinite and overflow.value == state.molar_density and overflow.residual is None
     none = regression.predict(model, regression.density(p, 200.0, 1.0e10, {"s0": 1.0}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
     assert none.status == regression.ObservationStatus.DensityUnavailable and none.value is None and none.message
     assert prediction.branch == state.density_branch and prediction.stable_root_count == state.stable_root_count
@@ -150,3 +165,8 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     assert [(item.observation, item.status) for item in result.failures] == [(5, regression.ObservationStatus.DensityUnavailable)]
     single = regression.fit(p, coordinates(p), observations[:1])
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
+    one = regression.FitControls()
+    one.maximum_iterations = 1
+    unfinished = regression.fit(p, coordinates(p), observations[:5], controls=one)
+    assert unfinished.status == "limit_reached" and unfinished.usable and unfinished.covariance.status == "not_converged"
+    assert unfinished.covariance.rank == 2 and unfinished.covariance.optimizer == [] and unfinished.covariance.variance_factor is None

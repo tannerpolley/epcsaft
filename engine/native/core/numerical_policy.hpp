@@ -264,6 +264,14 @@ inline constexpr Tolerance FIT_PARAMETER_TOLERANCE{"FIT_PARAMETER_TOLERANCE",
     Category::AlgorithmTolerance,
     "relative optimizer-coordinate step below which the fit stops",
 };
+// Inside |y - y_obs| < LOG_RATIO_NEAR_UNITY * y_obs the log-ratio residual is evaluated as
+// log1p((y - y_obs) / y_obs), which keeps its leading digits near unity; outside, as the
+// difference of logarithms, which stays finite across the double range.
+inline constexpr Tolerance LOG_RATIO_NEAR_UNITY{"LOG_RATIO_NEAR_UNITY",
+    0.5,
+    Category::AlgorithmTolerance,
+    "relative half-band around unity inside which ln(y / y_obs) is evaluated by log1p",
+};
 // Singular values of the weighted optimizer Jacobian below this fraction of the largest are
 // treated as a null direction: covariance is withheld as rank deficient rather than inverted.
 // The published object is (J^T J)^-1, whose condition is cond(J)^2 = 1e28 at the threshold, so

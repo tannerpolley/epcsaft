@@ -244,7 +244,10 @@ void register_eos(py::module_& module) {
         .def_readonly("results", &epcsaft::PropertyActionBatch::results)
         .def_readonly("maximum_energy_order", &epcsaft::PropertyActionBatch::maximum_energy_order)
         .def_readonly("diagnostics", &epcsaft::PropertyActionBatch::diagnostics)
+        .def_readonly("molar_density", &epcsaft::PropertyActionBatch::molar_density)
         .def_readonly("density_action", &epcsaft::PropertyActionBatch::density_action)
+        .def_readonly("density_message", &epcsaft::PropertyActionBatch::density_message)
+        .def_readonly("density_convergence", &epcsaft::PropertyActionBatch::density_convergence)
         .def_readonly("density_status", &epcsaft::PropertyActionBatch::density_status);
     py::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
         .value("MissingRecord", epcsaft::ThermochemistryStatus::MissingRecord)

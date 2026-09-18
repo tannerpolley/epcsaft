@@ -81,6 +81,7 @@ private:
         return true;
     }
 
+public:
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
               std::string message, bool jacobian) {
         result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian});
@@ -123,12 +124,14 @@ public:
         if (!evaluator_.evaluate(optimizer, jacobian, trial)) return false;
         for (std::size_t i = 0; i < trial.residuals.size(); ++i) {
             residuals[i] = sqrt_weights_[i] * trial.residuals[i];
-            if (!std::isfinite(residuals[i])) return false;
+            if (!std::isfinite(residuals[i]))
+                return evaluator_.fail(i, optimizer, ObservationStatus::Nonfinite, "weighted residual not finite", jacobian);
             if (!jacobian) continue;
             chain(request_, tie_, i, sqrt_weights_[i], trial.predictions[i],
                   trial.gradient.data() + i * tie_.size(), jacobians[0] + i * width);
             if (!std::all_of(jacobians[0] + i * width, jacobians[0] + (i + 1) * width,
-                             [](double value) { return std::isfinite(value); })) return false;
+                             [](double value) { return std::isfinite(value); }))
+                return evaluator_.fail(i, optimizer, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", true);
         }
         return true;
     }
@@ -184,6 +187,9 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n) {
         weighted_rows += request.weights.empty() || request.weights[i] > 0.0 ? 1 : 0;
     }
     if (weighted_rows > cov.rank) cov.variance_factor = weighted_sum / static_cast<double>(weighted_rows - cov.rank);
+    // An unfinished iterate keeps its rank, singular values and bound diagnostics but is not a
+    // parameter-covariance estimate.
+    if (result.status != "converged") { cov.status = "not_converged"; cov.variance_factor.reset(); return; }
     if (cov.rank < set.coordinates.size()) { cov.status = "rank_deficient"; return; }
     if (!cov.active_bounds.empty()) { cov.status = "active_bound"; return; }
     const Eigen::MatrixXd optimizer = svd.matrixV() * singular.cwiseAbs2().cwiseInverse().asDiagonal()
@@ -235,8 +241,17 @@ FitResult fit(const FitRequest& request) {
         result.statuses = std::move(initial.statuses);  // the rows evaluated up to the failure
         return result;
     }
-    for (std::size_t i = 0; i < n; ++i)
-        result.initial_cost += 0.5 * sqrt_weights[i] * sqrt_weights[i] * initial.residuals[i] * initial.residuals[i];
+    for (std::size_t i = 0; i < n; ++i) {
+        const double weighted = sqrt_weights[i] * initial.residuals[i];
+        if (!std::isfinite(weighted)) {
+            evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "weighted residual not finite", true);
+            result.status = "initial_evaluation_failed";
+            result.message = result.failures.back().message;
+            result.statuses = std::move(initial.statuses);
+            return result;
+        }
+        result.initial_cost += 0.5 * weighted * weighted;
+    }
 
     Cost cost(request, evaluator, sqrt_weights);
     ceres::Problem::Options problem_options;
@@ -296,8 +311,17 @@ FitResult fit(const FitRequest& request) {
         chain(request, tie, i, sqrt_weights[i], final.predictions[i],
               final.gradient.data() + i * tie.size(), result.optimizer_jacobian.data() + i * width);
     }
-    result.usable = result.status != "failed" && finite(result.physical)
-        && finite(result.weighted_residuals) && finite(result.optimizer_jacobian);
+    for (std::size_t i = 0; i < n; ++i) {
+        const bool row_finite = std::isfinite(result.weighted_residuals[i]) && std::all_of(
+            result.optimizer_jacobian.begin() + static_cast<std::ptrdiff_t>(i * width),
+            result.optimizer_jacobian.begin() + static_cast<std::ptrdiff_t>((i + 1) * width),
+            [](double value) { return std::isfinite(value); });
+        if (row_finite) continue;
+        evaluator.fail(i, optimizer, ObservationStatus::Nonfinite, "final weighted residual or Jacobian not finite", true);
+        result.status = "failed";
+        result.message = result.failures.back().message;
+    }
+    result.usable = result.status != "failed" && finite(result.physical);
     if (result.usable) covariance(result, request, n);
     return result;
 }

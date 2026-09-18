@@ -124,14 +124,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         weights: Sequence[float] | None = None, controls: FitControls | None = None,
         thermochemistry: ThermochemistryRecord | None = None) -> FitResult:
     """Bounded least squares of sqrt(w_i) r_i over the optimizer coordinates (ALG-FIT)."""
-    request = _core.FitRequest()
-    request.parameters, request.thermochemistry = parameters._native, thermochemistry
-    coordinate_set = CoordinateSet()
-    coordinate_set.coordinates = list(coordinates)
-    request.coordinates, request.observations, request.weights = coordinate_set, list(observations), list(weights or ())
-    if controls is not None:
-        request.controls = controls
-    return _core.fit(request)
+    return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
+                     FitControls() if controls is None else controls)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:

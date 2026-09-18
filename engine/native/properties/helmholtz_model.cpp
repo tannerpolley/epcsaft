@@ -1408,9 +1408,12 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     DensityRoot root;
     try {
         root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error& error) {
         auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size());
         batch.density_status = PropertyActionStatus::DensityUnavailable;
+        batch.density_message = error.what();
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
+            batch.density_convergence = failure->record;
         return batch;
     }
     std::lock_guard<std::mutex> lock(mutex_);

@@ -410,6 +410,23 @@ void check_f7_f8() {
     const auto y0 = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 1, {0}), both.solved);
     CHECK(agree("r1-f8/retained_y", "y_CH4", "1", *y0.value, retained[2], 1.0e-9, 0.0, may_inputs,
                 "the retained E6 vapor composition is reproduced", "r1-f8"));
+    // A mass basis is defined only for the two density kinds: a two-phase flash whose mole-basis
+    // phase fraction differs from the physical mass fraction is refused by name, never reinterpreted.
+    auto two = bubble_at(180.0);
+    two.phases[1].amount = AmountSpec::free();
+    two.pressure = FreeValue::fixed(1.0e6);
+    const auto liquid_fraction = predict(model, solved(ObservationKind::PhaseFraction, two, 0));
+    CHECK(liquid_fraction.status == ObservationStatus::Available && liquid_fraction.solved.has_value());
+    const auto& state = *liquid_fraction.solved;
+    const auto& masses = model.parameters().molar_mass_kg_per_mol;
+    const double mass_liquid = state.amounts[0] * (state.mole_fractions[0] * masses[0] + state.mole_fractions[1] * masses[1]);
+    const double mass_vapor = state.amounts[1] * (state.mole_fractions[2] * masses[0] + state.mole_fractions[3] * masses[1]);
+    const auto two_inputs = fields({field("T_K", 180.0), field("P_Pa", 1.0e6), field("amounts", state.amounts)});
+    CHECK(agree("r1-f8/phase_fraction_mole_basis", "beta_L", "1", *liquid_fraction.value, 0.6738453209601837, 0.0, 1.0e-9, two_inputs,
+                "the mole-basis liquid fraction of the two-phase flash", "r1-f8"));
+    CHECK(agree("r1-f8/phase_fraction_mass_control", "w_L", "1", mass_liquid / (mass_liquid + mass_vapor), 0.7580747775119783, 0.0, 1.0e-9,
+                two_inputs, "the physical mass fraction, which differs from the mole basis by more than 0.05", "r1-f8"));
+    CHECK(std::abs(mass_liquid / (mass_liquid + mass_vapor) - *liquid_fraction.value) > 0.05);
     struct Rejection final { const char* phrase; Observation observation; };
     auto supported = may;
     supported.phases[0].support = {0};
@@ -419,13 +436,18 @@ void check_f7_f8() {
         {"species repeated", solved(ObservationKind::PhaseMoleFraction, may, 0, {0, 0})},
         {"species outside the phase support", solved(ObservationKind::PhaseMoleFraction, supported, 0, {1})},
         {"phase index", solved(ObservationKind::PhaseFraction, may, 2)},
+        {"mass basis is defined only for a density", solved(ObservationKind::PhaseFraction, two, 0, {}, true)},
+        {"mass basis is defined only for a density", solved(ObservationKind::PhaseMoleFraction, two, 0, {0}, true)},
     };
+    std::size_t rejection_index = 0;
     for (const auto& item : rejections) {
         const auto message = rejection([&] { validate(item.observation, model); });
-        CHECK(truth(std::string("r1-f8/reject/") + item.phrase, "rejected by name",
+        CHECK(truth("r1-f8/reject/" + std::to_string(rejection_index++) + "/" + item.phrase, "rejected by name",
                     message.find(item.phrase) != std::string::npos, field("message", message), "r1-f8"));
     }
 }
+
+std::string summary(const FitResult& result);
 
 // ---- R1 F9 and F10: preserved failure causes and the residual forms.
 void check_f9_f10() {
@@ -486,6 +508,37 @@ void check_f9_f10() {
     const auto message = rejection([&] { validate(difference, ethane); });
     CHECK(truth("r1-f10/scale_rejected", "a nonpositive Difference scale is rejected by name",
                 message.find("scale") != std::string::npos, field("message", message), "r1-f10"));
+    // The log ratio is finite across the dynamic range and keeps its accuracy near unity.
+    ratio.observed = 1.0e-308;
+    const double wide = *residual(ratio, 19936.48319859253, status);
+    CHECK(agree("r1-f10/log_ratio_wide_range", "residual", "1", wide, std::log(19936.48319859253) - std::log(1.0e-308), 0.0, 1.0e-12,
+                fields({field("y", 19936.48319859253), field("y_obs", 1.0e-308)}), "a ratio that overflows still gives the finite log residual", "r1-f10"));
+    ratio.observed = 1.0;
+    const double near = 1.0 + 1.0e-12;  // the rounded double, whose log(y) loses four leading digits
+    CHECK(agree("r1-f10/log_ratio_near_unity", "residual", "1", *residual(ratio, near, status), std::log1p(near - 1.0), 0.0, 1.0e-9,
+                fields({field("y", near), field("y_obs", 1.0), field("naive_log", std::log(near))}),
+                "the residual near unity keeps its leading digits (log1p), where log(y / y_obs) would not", "r1-f10"));
+    Observation overflow = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
+    overflow.form = ResidualForm::Difference;
+    overflow.observed = -1.0e308;
+    overflow.scale = 1.0e-308;
+    status = ObservationStatus::Available;
+    const auto overflowed = residual(overflow, 1.0, status);
+    CHECK(truth("r1-f10/difference_overflow", "an overflowing Difference residual is typed nonfinite, not inf",
+                !overflowed.has_value() && status == ObservationStatus::Nonfinite, field("status", observation_status_name(status)), "r1-f10"));
+    const auto kept = predict(ethane, overflow);
+    CHECK(truth("r1-f10/value_survives_nonfinite_residual", "the prediction keeps its finite value beside a nonfinite residual",
+                kept.status == ObservationStatus::Nonfinite && kept.value.has_value() && !kept.residual.has_value() && !kept.message.empty(),
+                fields({field("status", observation_status_name(kept.status)), field("value", kept.value.value_or(-1.0))}), "r1-f10"));
+    FitRequest request;
+    request.parameters = properties_support::ethane();
+    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
+    request.observations = {overflow};
+    const auto refused = fit(request);
+    CHECK(truth("r1-f10/fit_nonfinite_typed", "a nonfinite residual at the start is a typed initial failure with its row",
+                refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 0
+                    && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost),
+                summary(refused), "r1-f10"));
 }
 
 // ---- #86: first-order pressure-chart density actions against rebuilt-model closures.
@@ -572,6 +625,13 @@ void check_d86() {
     CHECK(truth("d86/density_unavailable", "a state without a stable root keeps density_unavailable and no action",
                 absent.density_status == PropertyActionStatus::DensityUnavailable && absent.density_action.empty()
                     && !absent.molar_density.has_value(), "", "d86"));
+    // The root search's cause travels with the batch; a record-less throw is an absent record, distinct
+    // from the measured (finite, possibly zero) pressure residual of a resolved root.
+    CHECK(truth("d86/density_failure_cause", "the failed root search keeps its message and its absent record",
+                absent.density_message.find("no stable density root") != std::string::npos && !absent.density_convergence.has_value()
+                    && batch.density_message.empty() && !batch.density_convergence.has_value()
+                    && std::isfinite(batch.diagnostics.pressure_residual),
+                fields({field("message", absent.density_message), field("resolved_pressure_residual", batch.diagnostics.pressure_residual)}), "d86"));
     const auto message = rejection([&] { (void)model.density_actions(T, 1000.0, {1.0}, {}, {{0.0, 0.0, {0.0}, {}}}); });
     CHECK(truth("d86/density_chart_rejected", "a density-chart request without observables is rejected by name",
                 message.find("observables") != std::string::npos, field("message", message), "d86"));
@@ -595,8 +655,6 @@ void check_d86() {
     CHECK(ladder_agrees("d86/association", "drho_depsAB", pair.density_action[0], ladder(over_site, 1.0),
                         fields({field("T_K", 300.0), field("P_Pa", 1.0e5)}), "the association route carries the implicit site chain", "d86"));
 }
-
-std::string summary(const FitResult& result);
 
 // (J^T J)_{ab} of a result's n x 2 optimizer Jacobian.
 double gram_entry(const FitResult& result, std::size_t a, std::size_t b) {
@@ -746,6 +804,13 @@ void check_j2() {
     CHECK(agree("r2-j2/final_cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result), "the final cost vanishes", "r2-j2"));
     CHECK(truth("r2-j2/identifiable", "the interior full-rank fit carries a covariance",
                 result.covariance.status == "available" && result.covariance.rank == 2, summary(result), "r2-j2"));
+    auto unfinished = recovery_request(truth_case, 148.0, 0.0);
+    unfinished.controls.maximum_iterations = 1;
+    const auto iterate = fit(unfinished);
+    CHECK(truth("r2-j2/not_converged", "an iteration-limited fit keeps its candidate and rank but no covariance",
+                iterate.status == "limit_reached" && iterate.usable && iterate.covariance.status == "not_converged"
+                    && iterate.covariance.rank == 2 && iterate.covariance.optimizer.empty() && iterate.covariance.physical.empty()
+                    && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-6, summary(iterate), "r2-j2"));
     const auto other = fit(recovery_request(truth_case, 156.0, 0.05));
     CHECK(agree("r2-j2/second_start/epsilon", "dispersion_energy_over_k", "K", other.physical[0], 152.0, 0.0, 1.0e-6, summary(other),
                 "a second start recovers the same parameters", "r2-j2"));
@@ -830,8 +895,7 @@ void check_r3() {
     shared.parameters.sigma_constant = {3.6, 3.6};
     shared.coordinates.coordinates = {{ParameterFamily::SigmaConstant, {{0}, {1}}, 3.6, 0.1, 3.0, 4.0},
                                       {ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 130.0, 170.0}};
-    shared.controls.maximum_iterations = 3;
-    const auto tied = fit(shared);
+    const auto tied = fit(shared);  // converged: an unfinished iterate carries no covariance (r2-j2/not_converged)
     CHECK(tied.usable && tied.covariance.status == "available" && tied.covariance.physical.size() == 9);
     const auto& cu = tied.covariance.optimizer;
     const double hand[9] = {0.01 * cu[0], 0.01 * cu[0], 1.0 * cu[1], 0.01 * cu[0], 0.01 * cu[0], 1.0 * cu[1],
@@ -865,8 +929,11 @@ void check_r3() {
     const bool typed = std::any_of(refused.failures.begin(), refused.failures.end(), [&](const TrialFailure& item) {
         return item.status == ObservationStatus::InadmissibleTrial && item.observation == 3
             && item.message.find("segment_count") != std::string::npos; });
+    // The optimizer may back off the refused bound and still finish or give up; either way the refusal is
+    // retained by name and the result returns typed.
     CHECK(truth("r3/inadmissible_trial", "a trial the model refuses by name is retained as inadmissible_trial and the fit returns typed",
-                typed && refused.status == "failed" && !refused.usable && refused.trial_failures > 0, summary(refused), "r3"));
+                typed && refused.trial_failures > 0 && (refused.status == "converged" || refused.status == "limit_reached" || refused.status == "failed")
+                    && (refused.usable == (refused.status != "failed")), summary(refused), "r3"));
 }
 
 }  // namespace

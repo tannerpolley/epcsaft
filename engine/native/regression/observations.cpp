@@ -1,5 +1,6 @@
 #include "regression/observations.hpp"
 
+#include "core/numerical_policy.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 
 #include <cmath>
@@ -38,11 +39,13 @@ double mean_molar_mass(const Parameters& parameters, const double* composition, 
 void finish(Prediction& prediction, const Observation& observation, double value) {
     if (!std::isfinite(value)) {
         prediction.status = ObservationStatus::Nonfinite;
+        prediction.message = "the predicted value is not finite";
         return;
     }
-    prediction.value = value;
+    prediction.value = value;  // an independently valid value survives an unavailable residual
     prediction.status = ObservationStatus::Available;
     prediction.residual = residual(observation, value, prediction.status);
+    if (prediction.status == ObservationStatus::Nonfinite) prediction.message = "the residual is not finite";
 }
 
 }  // namespace
@@ -63,12 +66,22 @@ const char* observation_status_name(ObservationStatus status) noexcept {
 }
 
 std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status) {
-    if (observation.form == ResidualForm::Difference) return (value - observation.observed) / observation.scale;
-    if (!(value > 0.0) || !(observation.observed > 0.0)) {
+    double result = 0.0;
+    if (observation.form == ResidualForm::Difference) {
+        result = (value - observation.observed) / observation.scale;
+    } else if (!(value > 0.0) || !(observation.observed > 0.0)) {
         status = ObservationStatus::NonpositiveLogArgument;
         return std::nullopt;
+    } else {
+        // log1p keeps full accuracy near unity; the difference of logarithms covers the dynamic
+        // range where the ratio itself would overflow or underflow.
+        const double gap = value - observation.observed;
+        result = std::abs(gap) < policy::LOG_RATIO_NEAR_UNITY.value * observation.observed
+            ? std::log1p(gap / observation.observed) : std::log(value) - std::log(observation.observed);
     }
-    return std::log(value / observation.observed);
+    if (std::isfinite(result)) return result;
+    status = ObservationStatus::Nonfinite;
+    return std::nullopt;
 }
 
 double residual_slope(const Observation& observation, double value) {
@@ -80,6 +93,8 @@ void validate(const Observation& observation, const HelmholtzModel& model) {
     require(std::isfinite(observation.observed), "observed value");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
+    require(!observation.mass_basis || observation.kind == ObservationKind::Density
+            || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
     if (observation.kind == ObservationKind::Density) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
         require(std::isfinite(observation.pressure) && observation.pressure > 0.0, "pressure");

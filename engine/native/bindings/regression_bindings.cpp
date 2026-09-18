@@ -73,16 +73,7 @@ void register_regression(py::module_& module) {
         .def_readwrite("parameter_tolerance", &FitControls::parameter_tolerance)
         .def_readwrite("maximum_iterations", &FitControls::maximum_iterations)
         .def_readwrite("maximum_elapsed_time_seconds", &FitControls::maximum_elapsed_time_seconds);
-    py::class_<FitRequest>(module, "FitRequest")
-        .def(py::init<>())
-        .def_readwrite("parameters", &FitRequest::parameters)
-        .def_readwrite("thermochemistry", &FitRequest::thermochemistry)
-        .def_readwrite("coordinates", &FitRequest::coordinates)
-        .def_readwrite("observations", &FitRequest::observations)
-        .def_readwrite("weights", &FitRequest::weights)
-        .def_readwrite("controls", &FitRequest::controls);
     py::class_<TrialFailure>(module, "TrialFailure")
-        .def_readonly("trial", &TrialFailure::trial)
         .def_readonly("observation", &TrialFailure::observation)
         .def_readonly("optimizer", &TrialFailure::optimizer)
         .def_readonly("status", &TrialFailure::status)
@@ -121,10 +112,14 @@ void register_regression(py::module_& module) {
         validate(observation, model);
         return predict(model, observation);
     }, py::arg("model"), py::arg("observation"));
-    module.def("fit", [](const FitRequest& request) {
+    module.def("fit", [](const Parameters& parameters, std::optional<ThermochemistryRecord> thermochemistry,
+                         std::vector<Coordinate> coordinates, std::vector<Observation> observations,
+                         std::vector<double> weights, const FitControls& controls) {
         core::Scope scope("fit");
-        return fit(request);
-    }, py::arg("request"));
+        return fit({parameters, std::move(thermochemistry), {std::move(coordinates)}, std::move(observations),
+                    std::move(weights), controls});
+    }, py::arg("parameters"), py::arg("thermochemistry"), py::arg("coordinates"), py::arg("observations"),
+       py::arg("weights"), py::arg("controls"));
 }
 
 }  // namespace epcsaft::regression

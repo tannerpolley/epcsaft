@@ -95,11 +95,12 @@ struct PropertyActionBatch final {
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
-    // Pressure chart only: the root and per-direction first-order density derivatives at fixed
-    // pressure closure (#86); no observables means a density-only request.
+    // #86 pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
     std::optional<double> molar_density;
     std::vector<double> density_action;
     PropertyActionStatus density_status = PropertyActionStatus::CentralPropertyUnavailable;
+    std::string density_message;
+    std::optional<core::Convergence> density_convergence;
 };
 struct ResidualEnergyAction final {
     std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
