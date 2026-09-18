@@ -245,6 +245,33 @@ inline constexpr Tolerance STABILITY_PACKING_GAP{"STABILITY_PACKING_GAP",
     "Pereira 2012 eps_eta",
 };
 
+// ------------------------------------------------------------- regression
+
+// Ceres trust-region stopping criteria for the bounded least-squares fit (ALG-FIT). The
+// caller's FitControls override them; these are the only defaults and are not accuracy claims.
+inline constexpr Tolerance FIT_FUNCTION_TOLERANCE{"FIT_FUNCTION_TOLERANCE",
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "relative cost decrease below which the trust-region iteration stops",
+};
+inline constexpr Tolerance FIT_GRADIENT_TOLERANCE{"FIT_GRADIENT_TOLERANCE",
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "infinity norm of the projected optimizer-coordinate gradient at which the fit stops",
+};
+inline constexpr Tolerance FIT_PARAMETER_TOLERANCE{"FIT_PARAMETER_TOLERANCE",
+    1.0e-10,
+    Category::AlgorithmTolerance,
+    "relative optimizer-coordinate step below which the fit stops",
+};
+// Singular values of the weighted optimizer Jacobian below this fraction of the largest are
+// treated as a null direction: covariance is withheld as rank deficient rather than inverted.
+inline constexpr Tolerance FIT_RANK_RECIPROCAL_CONDITION{"FIT_RANK_RECIPROCAL_CONDITION",
+    1.0e-14,
+    Category::AlgorithmTolerance,
+    "reciprocal condition number separating an identifiable direction from a null direction",
+};
+
 // ------------------------------------------------------------- equilibrium
 
 inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
