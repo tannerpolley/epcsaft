@@ -579,6 +579,9 @@ void check_d86() {
     CHECK(truth("d86/support_change", "a direction into an absent species is typed support_change with no action",
                 support.density_status == PropertyActionStatus::SupportChange && support.density_action.empty(),
                 field("status", static_cast<int>(support.density_status)), "d86"));
+    // Unfalsified arms of the density status: AssociationResidual and the ill-conditioned/singular site causes
+    // share the caloric gates but the P4 stress fixture throws in state() before a pressure-chart request forms;
+    // PressureSingular is unreachable here because the root search admits only positive pressure slopes.
     const std::vector<ActiveParameter> site = {{ParameterFamily::AssociationEnergyOverK, {1, 4}}};
     const HelmholtzModel associating(properties_support::associating_binary(), site);
     const auto pair = associating.pressure_actions(300.0, 1.0e5, {0.4, 0.6}, DensityBranch::Liquid, {}, {{0.0, 0.0, {0.0, 0.0}, {{site[0].family, site[0].indices, 1.0}}}});

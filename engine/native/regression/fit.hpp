@@ -31,7 +31,8 @@ struct FitRequest final {
 };
 
 // One rejected trial: the observation that failed, its typed cause and the optimizer point. A
-// trial the model itself refuses (InadmissibleTrial) carries the observation count as its index.
+// trial the model or an owner refuses by exception (InadmissibleTrial) carries the observation
+// count as its index and the verbatim message, so an internal error stays visible as its cause.
 struct TrialFailure final {
     std::size_t trial = 0;
     std::size_t observation = 0;
@@ -67,7 +68,7 @@ struct FitResult final {
     std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual
     std::vector<double> physical_jacobian;   // n x R: d(value)/d(theta)
     std::vector<double> optimizer_jacobian;  // n x U: sqrt(w) (dr/dy) (dy/dtheta) S diag(scale)
-    std::vector<ObservationStatus> statuses;
+    std::vector<ObservationStatus> statuses;  // on a failed fit: the rows evaluated up to the failure only
     std::vector<TrialFailure> failures;
     std::size_t iterations = 0;
     std::size_t residual_evaluations = 0;

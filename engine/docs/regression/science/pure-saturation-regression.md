@@ -78,7 +78,10 @@ reciprocal-condition policy, and as `active_bound` at a bound. The variance
 factor $\sum w r^2/(n_w-\mathrm{rank})$ over the $n_w$ rows with positive
 weight is reported separately for an unknown common variance and is not
 applied; a bound is detected in optimizer space against the exact values
-handed to the optimizer.
+handed to the optimizer. The result carries a status (converged, limit_reached,
+initial_evaluation_failed, failed) and the solver's own termination message,
+which distinguishes an iteration limit from a time limit; a nonzero count of
+typed trial failures is a diagnostic of rejected trials, not a failed fit.
 
 Fixed-coordinate leaves are valid constants with zero derivative. Observable
 and parameter order, units, bases and chain rules must remain explicit through
@@ -90,8 +93,8 @@ when the observed quantity is a heat capacity.
 
 Fit the declared discrepancy under stated bounds, transforms, starts, loss and
 numerical controls. Retain raw predictions, physical Jacobians, weighted
-optimizer-coordinate Jacobians, failed row identities, conditioning and
-termination. A failed or unsupported state must not become a successful zero
+optimizer-coordinate Jacobians, failed row identities, conditioning and the
+termination reason (the status and the solver's termination message). A failed or unsupported state must not become a successful zero
 residual or silently disappear from the objective.
 
 Covariance interpretation depends on the data model. With known absolute
