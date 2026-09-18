@@ -157,7 +157,8 @@ ALG-TERMINATION). A floor-limited point that Ipopt reports as successful is acce
 and keeps its state with `success = True` and `requested_tolerance_met = False`. A
 tiny-step floor-limited point is rejected: `success = False`, finite row residuals, the
 convergence record and the stopping cause remain, and the candidate state vectors are
-cleared, so `has_state()` is the availability predicate.
+cleared: in Python, `success` (equivalently non-empty state vectors) is the availability
+predicate, the native `has_state()`.
 
 Create and install wheels only through root setup. When the root environment is
 already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached

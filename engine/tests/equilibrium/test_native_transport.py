@@ -205,6 +205,7 @@ def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
     floor = solve_equilibrium(model, surface_flash(Free(3.0e4), Pinned(0.0), row_tolerance=1.0e-18))
     same(evidence, "floor/residual", floor.convergence.residual)
     assert not floor.success and floor.requested_tolerance_met is False and floor.convergence.stop == Stop.converged_to_floor
+    assert floor.solver_status == "STOP_AT_TINY_STEP"
     assert floor.residuals and all(math.isfinite(value) for value in floor.residuals) and floor.pressure == []
 
 
