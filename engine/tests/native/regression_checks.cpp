@@ -554,7 +554,7 @@ void check_f9_f10() {
     CHECK(truth("r1-f10/weighted_overflow_typed", "an overflowing weighted residual is a typed initial failure naming its row",
                 weighted.status == "initial_evaluation_failed" && weighted.failures.size() == 1 && weighted.failures[0].observation == 0
                     && weighted.failures[0].status == ObservationStatus::Nonfinite
-                    && weighted.failures[0].message == "accumulated weighted cost not finite" && weighted.initial_cost == 0.0,
+                    && weighted.failures[0].message == "weighted residual not finite" && weighted.initial_cost == 0.0,
                 summary(weighted), "r1-f10"));
     // A finite weighted residual whose optimizer Jacobian overflows is recorded by the trial and final recorders.
     steep.observed = *kept.value - 1.0;

@@ -101,6 +101,13 @@ private:
 // The objective the solver accumulates: one half of the running sum of squared weighted residuals
 // in row order. Returns the first row at which the weighted residual, its square or the running sum
 // stops being representable, else none; `cost` holds the objective only when every row is valid.
+// The cause names the row's own residual when that is what overflowed, else the running sum.
+const char* cost_cause(const double* weighted, std::size_t row, const char* prefix) {
+    static const char* const names[4] = {"weighted residual not finite", "accumulated weighted cost not finite",
+                                         "final weighted residual not finite", "final accumulated weighted cost not finite"};
+    return names[(prefix != nullptr ? 2 : 0) + (std::isfinite(weighted[row]) ? 1 : 0)];
+}
+
 std::optional<std::size_t> objective(const double* weighted, std::size_t n, double& cost) {
     double sum = 0.0;
     cost = 0.0;
@@ -142,7 +149,7 @@ public:
         for (std::size_t i = 0; i < n; ++i) residuals[i] = sqrt_weights_[i] * trial.residuals[i];
         double cost = 0.0;
         if (const auto row = objective(residuals, n, cost))
-            return evaluator_.fail(*row, optimizer, ObservationStatus::Nonfinite, "accumulated weighted cost not finite", jacobian);
+            return evaluator_.fail(*row, optimizer, ObservationStatus::Nonfinite, cost_cause(residuals, *row, nullptr), jacobian);
         for (std::size_t i = 0; jacobian && i < n; ++i) {
             chain(request_, tie_, i, sqrt_weights_[i], trial.predictions[i],
                   trial.gradient.data() + i * tie_.size(), jacobians[0] + i * width);
@@ -261,7 +268,7 @@ FitResult fit(const FitRequest& request) {
     std::vector<double> initial_weighted(n);
     for (std::size_t i = 0; i < n; ++i) initial_weighted[i] = sqrt_weights[i] * initial.residuals[i];
     if (const auto row = objective(initial_weighted.data(), n, result.initial_cost)) {
-        evaluator.fail(*row, optimizer, ObservationStatus::Nonfinite, "accumulated weighted cost not finite", true);
+        evaluator.fail(*row, optimizer, ObservationStatus::Nonfinite, cost_cause(initial_weighted.data(), *row, nullptr), true);
         result.status = "initial_evaluation_failed";
         result.message = result.failures.back().message;
         result.statuses = std::move(initial.statuses);
@@ -326,7 +333,7 @@ FitResult fit(const FitRequest& request) {
               final.gradient.data() + i * tie.size(), result.optimizer_jacobian.data() + i * width);
     }
     if (const auto row = objective(result.weighted_residuals.data(), n, result.final_cost)) {
-        evaluator.fail(*row, optimizer, ObservationStatus::Nonfinite, "final accumulated weighted cost not finite", true);
+        evaluator.fail(*row, optimizer, ObservationStatus::Nonfinite, cost_cause(result.weighted_residuals.data(), *row, "final"), true);
         result.status = "failed";
         result.message = result.failures.back().message + ": " + result.message;
     }
