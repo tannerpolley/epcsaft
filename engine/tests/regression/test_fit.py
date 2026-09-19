@@ -165,6 +165,14 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     assert [(item.trial, item.observation, item.status) for item in result.failures] == [(1, 5, regression.ObservationStatus.DensityUnavailable)]
     single = regression.fit(p, coordinates(p), observations[:1])
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
+    # Three finite rows whose accumulated objective overflows: typed at the second row, no infinite cost.
+    y = Pure(parameters((ETHANE,))).state(200.0, P=1.0e5, phase="liquid").molar_density
+    pe = parameters((ETHANE,))
+    steep = [regression.density(pe, 200.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=y - 1.0, form="difference", scale=1.0 / 1.2e154, mass_basis=False) for _ in range(3)]
+    epsilon = [regression.coordinate(pe, "dispersion_energy_over_k", "s0", origin=191.42, scale=10.0, bounds=(150.0, 260.0))]
+    overflowed = regression.fit(pe, epsilon, steep)
+    assert overflowed.status == "initial_evaluation_failed" and not overflowed.usable and overflowed.initial_cost == 0.0
+    assert [(f.observation, f.status, f.message) for f in overflowed.failures] == [(1, regression.ObservationStatus.Nonfinite, "accumulated weighted cost not finite")]
     one = regression.FitControls()
     one.maximum_iterations = 1
     unfinished = regression.fit(p, coordinates(p), observations[:5], controls=one)

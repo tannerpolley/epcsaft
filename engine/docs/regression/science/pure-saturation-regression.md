@@ -88,7 +88,11 @@ predictive accuracy. The variance
 factor $\sum w r^2/(n_w-\mathrm{rank})$ over the $n_w$ rows with positive
 weight is reported separately for an unknown common variance and is not
 applied; a bound is detected in optimizer space against the exact values
-handed to the optimizer. The result carries a status (converged, limit_reached,
+handed to the optimizer. The objective is one half of the running sum of squared weighted residuals in row
+order, as the solver accumulates it; the row at which the weighted residual, its
+square or the running sum stops being representable is a typed `nonfinite` trial
+failure at every evaluation, and no infinite or partial sum is reported as a cost.
+The result carries a status (converged, limit_reached,
 initial_evaluation_failed, failed) and the solver's own termination message,
 which distinguishes an iteration limit from a time limit; a nonzero count of
 typed trial failures is a diagnostic of rejected trials, not a failed fit.

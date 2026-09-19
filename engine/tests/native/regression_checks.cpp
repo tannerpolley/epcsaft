@@ -554,7 +554,7 @@ void check_f9_f10() {
     CHECK(truth("r1-f10/weighted_overflow_typed", "an overflowing weighted residual is a typed initial failure naming its row",
                 weighted.status == "initial_evaluation_failed" && weighted.failures.size() == 1 && weighted.failures[0].observation == 0
                     && weighted.failures[0].status == ObservationStatus::Nonfinite
-                    && weighted.failures[0].message == "weighted residual or its cost not finite" && std::isfinite(weighted.initial_cost),
+                    && weighted.failures[0].message == "accumulated weighted cost not finite" && weighted.initial_cost == 0.0,
                 summary(weighted), "r1-f10"));
     // A finite weighted residual whose optimizer Jacobian overflows is recorded by the trial and final recorders.
     steep.observed = *kept.value - 1.0;
@@ -566,9 +566,25 @@ void check_f9_f10() {
     const bool trial_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
         return item.status == ObservationStatus::Nonfinite && item.observation == 0 && item.message == "optimizer Jacobian not finite"; });
     const bool final_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
-        return item.observation == 0 && item.message.find("final weighted residual or Jacobian not finite") != std::string::npos; });
+        return item.observation == 0 && item.message.find("final optimizer Jacobian not finite") != std::string::npos; });
     CHECK(truth("r1-f10/jacobian_overflow_typed", "an overflowing optimizer Jacobian is recorded by the trial and final recorders and the fit fails typed",
                 trial_recorded && final_recorded && steep_fit.status == "failed" && !steep_fit.usable, summary(steep_fit), "r1-f10"));
+    // Three finite rows whose squares are representable but whose accumulated objective is not: the
+    // failure is typed at the row where the running sum stops being finite, never an infinite cost.
+    Observation steep_row = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
+    steep_row.form = ResidualForm::Difference;
+    steep_row.observed = *kept.value - 1.0;
+    steep_row.scale = 1.0 / 1.2e154;
+    request.observations = {steep_row, steep_row, steep_row};
+    request.weights.clear();
+    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
+    const auto accumulated = fit(request);
+    CHECK(truth("r1-f10/accumulated_cost_typed", "an accumulated objective that overflows is a typed initial failure naming the row where the sum stops being finite",
+                accumulated.status == "initial_evaluation_failed" && !accumulated.usable && accumulated.failures.size() == 1
+                    && accumulated.failures[0].observation == 1 && accumulated.failures[0].status == ObservationStatus::Nonfinite
+                    && accumulated.failures[0].message == "accumulated weighted cost not finite" && accumulated.initial_cost == 0.0
+                    && accumulated.statuses.size() == 3,
+                fields({summary(accumulated), field("row_residual", *predict(ethane, steep_row).residual)}), "r1-f10"));
 }
 
 // ---- #86: first-order pressure-chart density actions against rebuilt-model closures.
@@ -981,7 +997,7 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},
         {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},
-        {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:12"}, check_f9_f10, "R1"},
+        {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:13"}, check_f9_f10, "R1"},
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:40"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},

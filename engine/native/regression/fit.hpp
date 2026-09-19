@@ -74,7 +74,7 @@ struct FitResult final {
     std::size_t residual_evaluations = 0;
     std::size_t jacobian_evaluations = 0;
     std::size_t trial_failures = 0;
-    double initial_cost = 0.0;  // 0.5 sum(w r^2)
+    double initial_cost = 0.0;  // 0.5 sum(w r^2), accumulated in row order; zero, never a partial sum, on a failure
     double final_cost = 0.0;
     FitCovariance covariance;
 };
