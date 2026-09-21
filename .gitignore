@@ -1,4 +1,4 @@
-/.venv/
+/.venv
 /build/
 /.pytest_cache/
 /.mypy_cache/
@@ -16,8 +16,9 @@
 !.serena/project.yml
 /compile_commands.json
 
-# Owner-requested independent downstream draft clones; not Engine dependencies
-/downstream/
+# Independent application clones/worktrees; only their setup guide is tracked
+/downstream/*
+!/downstream/README.md
 
 /.quarto/
 **/*.quarto_ipynb
