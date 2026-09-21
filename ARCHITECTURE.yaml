@@ -133,6 +133,7 @@ project_map: {
     ["analyses/**/figures/**", "analyses", "evidence"],
     ["analyses/", "analyses", "evidence"],
     ["downstream/", "applications", "external"],
+    ["downstream/README.md", "applications", "specification"],
     ["tools/", "tooling", "tooling"],
     ["docs/scientific/reviews/", "documentation", "evidence"],
     ["docs/", "documentation", "specification"],
