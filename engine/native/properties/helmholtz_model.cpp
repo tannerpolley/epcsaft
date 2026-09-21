@@ -440,7 +440,7 @@ void validate_action_request(
     const std::vector<PropertyObservable>& observables,
     const std::vector<DensityActionDirection>& directions
 ) {
-    require(!observables.empty(), "observables"); require(directions.size() >= 1 && directions.size() <= 3, "action order");
+    require(directions.size() >= 1 && directions.size() <= 3, "action order");
     std::vector<bool> seen(15, false);
     for (const auto observable : observables) {
         const auto index = static_cast<std::size_t>(observable);
@@ -1166,7 +1166,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     for (const auto& direction : directions)
         all.push_back({direction.temperature, direction.molar_density,
             direction.composition, project_parameters(*this, direction.parameter)});
-    const bool pressure_chain = root != nullptr && (plan.ideal[2]
+    const bool pressure_chain = root != nullptr && (observables.empty() || plan.ideal[2]
         || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; }));
     const auto point = action_point(*this, temperature, molar_density, mole_fractions);
     const bool need_ideal = std::any_of(plan.ideal.begin(), plan.ideal.end(), [](bool value) { return value; });
@@ -1221,6 +1221,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result = evaluate_actions(context, ids, observables, plan, result_support,
             ideal_status, association_status, endpoint, temperature_action,
             root != nullptr, root != nullptr ? root->pressure_density_derivative : 0.0);
+        if (pressure_chain) result.density_status = association_status;
     } else {
         const double inverse_pressure_slope = 1.0 / root->pressure_density_derivative;
         std::size_t pressure_solves = 0;
@@ -1255,9 +1256,9 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             [](const auto& direction) { return direction.temperature != 0.0; });
         context.planning = true;
         (void)property_jets(context, lifted_ids, plan.ideal, plan.residual, true);
-        if (directions.size() >= 2)
+        if (directions.size() >= 2 && !observables.empty())
             (void)property_jets(context, {radial_id}, plan.ideal, plan.residual, false);
-        if (directions.size() == 3) {
+        if (directions.size() == 3 && !observables.empty()) {
             for (const auto id : lifted_ids)
                 (void)property_jets(context, {id, radial_id}, plan.ideal, plan.residual, true);
         }
@@ -1265,18 +1266,22 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result = evaluate_actions(context, lifted_ids, observables, plan, status,
             ideal_status, association_status, endpoint, temperature_action, true,
             root->pressure_density_derivative);
+        result.molar_density = molar_density;
+        result.density_status = status;
+        for (const auto& direction : lifted) result.density_action.push_back(direction.molar_density);
+        if (!finite_vector(result.density_action)) result.density_status = PropertyActionStatus::Nonfinite;
         std::array<double, 3> density_pairs{};
-        if (directions.size() >= 2) {
+        if (directions.size() >= 2 && !observables.empty()) {
             density_pairs[0] = density_solve(-pressure_of({lifted_ids[0], lifted_ids[1]}));
         }
-        if (directions.size() == 3) {
+        if (directions.size() == 3 && !observables.empty()) {
             density_pairs[1] = density_solve(-pressure_of({lifted_ids[0], lifted_ids[2]}));
             density_pairs[2] = density_solve(-pressure_of({lifted_ids[1], lifted_ids[2]}));
         }
         PropertyActionBatch radial;
         std::vector<PropertyActionBatch> mixed;
         double density_123 = 0.0;
-        if (directions.size() >= 2) {
+        if (directions.size() >= 2 && !observables.empty()) {
             radial = evaluate_actions(context, {radial_id}, observables, plan,
                 PropertyActionStatus::Available, ideal_status, association_status,
                 endpoint, false, true, root->pressure_density_derivative);
@@ -1342,6 +1347,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     result.diagnostics.association_residual = context.coefficient_residual;
     if (association_status == PropertyActionStatus::Available
         && context.coefficient_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) {
+        if (pressure_chain) result.density_status = PropertyActionStatus::AssociationResidual;
         for (auto& item : result.results) {
             if ((!is_ideal(item.observable) || (pressure_chain && property_index(item.observable) == 2))
                 && item.status == PropertyActionStatus::Available) {
@@ -1350,6 +1356,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             }
         }
     }
+    if (result.density_status != PropertyActionStatus::Available) result.density_action.clear();
     if (root != nullptr) {
         result.diagnostics.pressure_density_derivative = root->pressure_density_derivative;
         result.diagnostics.stability_determinant = root->pressure_density_derivative
@@ -1373,6 +1380,7 @@ PropertyActionBatch HelmholtzModel::density_actions(
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     validate_composition(mole_fractions);
+    require(!observables.empty(), "observables");
     validate_action_request(*this, observables, directions);
     std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, molar_density, mole_fractions, observables, directions);
@@ -1400,8 +1408,13 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     DensityRoot root;
     try {
         root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
-    } catch (const std::runtime_error&) {
-        return unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size());
+    } catch (const std::runtime_error& error) {
+        auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size());
+        batch.density_status = PropertyActionStatus::DensityUnavailable;
+        batch.density_message = error.what();
+        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
+            batch.density_convergence = failure->record;
+        return batch;
     }
     std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, root.molar_density, mole_fractions,

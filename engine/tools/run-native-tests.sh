@@ -11,7 +11,7 @@ fi
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 tests=("$@")
 if ((${#tests[@]} == 0)); then
-    tests=(contributions properties diagnostics specification surface_example)
+    tests=(contributions properties diagnostics specification surface_example regression)
 fi
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"

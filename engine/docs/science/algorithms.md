@@ -329,6 +329,12 @@ At fixed density and composition, Ideal thermal fields have no explicit residual
 parameter dependence. Total actions use the corresponding Ideal and Residual
 actions, preserving the Ideal temperature and composition terms.
 
+A pressure-chart request with no observables is a density-only request (#86): the
+batch carries the resolved root and, per direction, the first-order derivative of that
+density along the full control direction at fixed pressure closure, with a density
+status that follows the support, association-residual, root and finiteness gates of
+the caloric actions; the density chart has no such request.
+
 Preserve independently available central values when an action is unavailable.
 Distinguish missing thermal data, thermal interval boundaries, support changes,
 singular or ill-conditioned site equations, excessive implicit residual,
@@ -423,6 +429,11 @@ residuals and Jacobians consistently, then apply the declared bounded fitting
 method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
+The implemented fit (R1--R3) uses the built-in observations and affine, tied
+optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
+region with dense QR on one thread, the named `FIT_*` policy tolerances as the
+only defaults, exact owner actions for every Jacobian and a covariance that is
+withheld under rank deficiency or an active bound.
 
 ## ALG-TERMINATION
 

@@ -6,8 +6,11 @@ from typing import Protocol, cast
 from .. import _core
 
 
-class _Model(Protocol):
+class _Species(Protocol):
     component_ids: tuple[str, ...]
+
+
+class _Model(_Species, Protocol):
     _model: _core.HelmholtzModel
 
 
@@ -193,7 +196,7 @@ class Problem:
         self.standard_gibbs_j_per_mol = tuple(standard_gibbs_j_per_mol)
         self.topology_declared = topology_declared and not isinstance(phases, Discover)
 
-    def _native(self, model: _Model) -> _core.EquilibriumProblem:
+    def _native(self, model: _Species) -> _core.EquilibriumProblem:
         native = _core.EquilibriumProblem()
         native.topology_declared = self.topology_declared
         native.feed.kind = self.feed.basis

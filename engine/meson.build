@@ -106,7 +106,11 @@ equilibrium_sources = files(
   'native/equilibrium/implicit_sensitivity.cpp',
 )
 # Stage 7
-regression_sources = files()
+regression_sources = files(
+  'native/regression/coordinates.cpp',
+  'native/regression/observations.cpp',
+  'native/regression/fit.cpp',
+)
 
 epcsaft_native = static_library(
   'epcsaft_native',
@@ -161,7 +165,8 @@ py.extension_module(
   '_core',
   files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp',
         'native/bindings/diagnostics_bindings.cpp',
-        'native/bindings/equilibrium_bindings.cpp'),
+        'native/bindings/equilibrium_bindings.cpp',
+        'native/bindings/regression_bindings.cpp'),
   cpp_args: native_warnings,
   dependencies: [
     pybind11_dep,
@@ -261,6 +266,19 @@ boundary_checks = executable(
   install: false,
 )
 test('boundary', boundary_checks, timeout: 600)
+
+regression_checks = executable(
+  'regression_checks',
+  'tests/native/regression_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+# R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
+test('regression', regression_checks, args: ['R1'])
+test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
 
 specification_checks = executable(
   'specification_checks',

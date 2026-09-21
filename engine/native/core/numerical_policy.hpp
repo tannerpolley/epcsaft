@@ -245,6 +245,43 @@ inline constexpr Tolerance STABILITY_PACKING_GAP{"STABILITY_PACKING_GAP",
     "Pereira 2012 eps_eta",
 };
 
+// ------------------------------------------------------------- regression
+
+// Ceres trust-region stopping criteria for the bounded least-squares fit (ALG-FIT). The
+// caller's FitControls override them; these are the only defaults and are not accuracy claims.
+inline constexpr Tolerance FIT_FUNCTION_TOLERANCE{"FIT_FUNCTION_TOLERANCE",
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "relative cost decrease below which the trust-region iteration stops",
+};
+inline constexpr Tolerance FIT_GRADIENT_TOLERANCE{"FIT_GRADIENT_TOLERANCE",
+    1.0e-12,
+    Category::AlgorithmTolerance,
+    "infinity norm of the projected optimizer-coordinate gradient at which the fit stops",
+};
+inline constexpr Tolerance FIT_PARAMETER_TOLERANCE{"FIT_PARAMETER_TOLERANCE",
+    1.0e-10,
+    Category::AlgorithmTolerance,
+    "relative optimizer-coordinate step below which the fit stops",
+};
+// Inside |y - y_obs| < LOG_RATIO_NEAR_UNITY * y_obs the log-ratio residual is evaluated as
+// log1p((y - y_obs) / y_obs), which keeps its leading digits near unity; outside, as the
+// difference of logarithms, which stays finite across the double range.
+inline constexpr Tolerance LOG_RATIO_NEAR_UNITY{"LOG_RATIO_NEAR_UNITY",
+    0.5,
+    Category::AlgorithmTolerance,
+    "relative half-band around unity inside which ln(y / y_obs) is evaluated by log1p",
+};
+// Singular values of the weighted optimizer Jacobian below this fraction of the largest are
+// treated as a null direction: covariance is withheld as rank deficient rather than inverted.
+// The published object is (J^T J)^-1, whose condition is cond(J)^2 = 1e28 at the threshold, so
+// a retained direction can carry about one percent SVD error in its smallest singular value.
+inline constexpr Tolerance FIT_RANK_RECIPROCAL_CONDITION{"FIT_RANK_RECIPROCAL_CONDITION",
+    1.0e-14,
+    Category::AlgorithmTolerance,
+    "reciprocal condition number separating an identifiable direction from a null direction",
+};
+
 // ------------------------------------------------------------- equilibrium
 
 inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",

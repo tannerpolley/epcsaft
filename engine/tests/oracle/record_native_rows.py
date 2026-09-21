@@ -19,9 +19,11 @@ CASES = (
     ("equilibrium_checks", "E5-5", ("e5-5/electrolyte/",)),
     ("equilibrium_checks", "E5-7", ("e5-7/thermal-320/",)),
     ("equilibrium_checks", "E5-10", ("e5-10/manifold/",)),
+    ("regression_checks", "R2-J2", ("r4/",)),
+    ("regression_checks", "D86", ("d86/density_value", "d86/parameter/", "d86/temperature/", "d86/pressure")),
     ("surface_example", None, ()),
 )
-SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1")
+SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse")
 
 
 def main() -> None:
@@ -42,6 +44,8 @@ def main() -> None:
                 name = item["comparison_id"]
                 if name.startswith(prefixes) and not name.endswith(SKIPPED_SUFFIXES) and item["model"] is not None:
                     lines.append(f"{source}\t{name}\t{item['unit']}\t{item['model']!r}")
+    if any(item["exit"] != 0 for item in commands):
+        raise SystemExit(f"a native check failed; rows not recorded: {commands}")
     (HERE / "native-rows.tsv").write_text("\n".join(lines) + "\n")
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
     (HERE / "native-rows.json").write_text(json.dumps({
