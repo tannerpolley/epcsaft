@@ -226,6 +226,21 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
+For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
+amounts free, absent complete caller composition guesses, the existing feed-state
+fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$
+bracket an interior root, bisect
+$F(\beta)=\sum_i z_i(K_i-1)/(1-\beta+\beta K_i)$ on $[0,1]$ through the
+binary precision of a double. Seed $x_i=z_i/(1-\beta+\beta K_i)$,
+$y_i=K_i x_i$, $N_V=\beta N_{feed}$ and $N_L=(1-\beta)N_{feed}$, assigning
+by declared phase kind. Nonfinite/nonpositive coordinates or fractions at the
+existing phase-disappearance floor retain the original normalized $z/K,zK$
+and equal-amount seed. No new phase search or equilibrium driver is introduced.
+Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
+redundant density initialization for a previous successful result with compatible
+positive coordinates. Other declarations retain their original initialization,
+including the pure-fluid coexistence check. Final residual and stability checks
+are unchanged.
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root, an anchored closure establishes local uniqueness, and the corrected density
@@ -307,6 +322,14 @@ optimizer work. Within one solve the driver prepares each distinct callback
 point once and reuses its phase evaluation for rows, Jacobian, gradient and
 curvature; the weighted constraint curvature is recombined when the optimizer
 multipliers change, and the final row certification is a fresh evaluation.
+That fresh final preparation also supplies the reduced-Hessian certificate;
+only the coordinate width is reduced to the primal chart, without reevaluating
+the same phase energies separately for its Jacobian and Hessian. Diagnostic
+residual summaries reuse the certified row values. For a no-site EOS Hessian,
+each unit-direction `Forward(1)`/`Reverse(2)` sweep supplies a Hessian column;
+the first sweep's even entries supply the gradient, including active-parameter
+coordinates. The initial value sweep and the association implicit chain remain
+unchanged; a separate no-site first-order reverse sweep is unnecessary.
 Standard-state terms carry exact value, first and second temperature
 derivatives from the reaction target owner; no affine shortcut is assumed.
 For an unpinned cell the chemical rows are not optimizer constraints: they are

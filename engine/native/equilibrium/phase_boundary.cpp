@@ -12,6 +12,20 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+
+bool supports_split_seed(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    const auto components = compiled.model->parameters().component_count();
+    return components > 1 && p.phases.size() == 2
+        && compiled.model->parameters().site_component.empty()
+        && p.phases[0].kind != p.phases[1].kind
+        && !p.temperature.free && !p.pressure.free
+        && !compiled.has_ions && !compiled.has_reaction && compiled.pinned_count == 0
+        && std::all_of(compiled.feed_composition.begin(), compiled.feed_composition.end(),
+            [](double z) { return std::isfinite(z) && z > 0.0; })
+        && p.phases[0].support.size() == components && p.phases[1].support.size() == components;
+}
+
 namespace {
 
 std::vector<std::size_t> offsets(const CompiledSystem& compiled) {
@@ -59,7 +73,7 @@ void validate_density_seed(const DensityRoot& root) {
 }
 
 std::vector<std::vector<double>> start_compositions(
-    const CompiledSystem& compiled, core::Scope& scope
+    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction
 ) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
@@ -95,16 +109,51 @@ std::vector<std::vector<double>> start_compositions(
         throw std::runtime_error("boundary start has no fugacity coefficients");
     const auto& ln_phi_vapor = *vapor.log_fugacity_coefficient;
     const auto& ln_phi_liquid = *liquid.log_fugacity_coefficient;
-    std::vector<double> x(components), y(components);
+    std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
     for (std::size_t i = 0; i < components; ++i) {
         const double k = std::exp(ln_phi_liquid[i] - ln_phi_vapor[i]);
+        k_values[i] = k;
         scope.probe("k_factor", k, static_cast<std::uint32_t>(i));
         x[i] = compiled.feed_composition[i] / k;
         y[i] = compiled.feed_composition[i] * k;
         x_total += x[i]; y_total += y[i];
     }
     for (std::size_t i = 0; i < components; ++i) { x[i] /= x_total; y[i] /= y_total; }
+    if (supports_split_seed(compiled)
+        && std::all_of(k_values.begin(), k_values.end(), [](double k) { return std::isfinite(k) && k > 0.0; })) {
+        const auto balance = [&](double beta) {
+            double value = 0.0;
+            for (std::size_t i = 0; i < components; ++i)
+                value += compiled.feed_composition[i] * (k_values[i] - 1.0)
+                    / ((1.0 - beta) + beta * k_values[i]);
+            return value;
+        };
+        const double left = balance(0.0), right = balance(1.0);
+        if (std::isfinite(left) && std::isfinite(right) && left > 0.0 && right < 0.0) {
+            double lower = 0.0, upper = 1.0;
+            for (int step = 0; step < std::numeric_limits<double>::digits; ++step) {
+                const double beta = 0.5 * (lower + upper);
+                if (balance(beta) > 0.0) lower = beta;
+                else upper = beta;
+            }
+            const double beta = 0.5 * (lower + upper);
+            std::vector<double> trial_x(components), trial_y(components);
+            bool usable = beta > policy::STABILITY_PHASE_AMOUNT_FLOOR.value
+                && 1.0 - beta > policy::STABILITY_PHASE_AMOUNT_FLOOR.value;
+            for (std::size_t i = 0; i < components; ++i) {
+                trial_x[i] = compiled.feed_composition[i] / ((1.0 - beta) + beta * k_values[i]);
+                trial_y[i] = k_values[i] * trial_x[i];
+                usable = usable && std::isfinite(trial_x[i]) && trial_x[i] > 0.0
+                    && std::isfinite(trial_y[i]) && trial_y[i] > 0.0;
+            }
+            if (usable) {
+                vapor_fraction = beta;
+                x = std::move(trial_x); y = std::move(trial_y);
+                scope.probe("vapor_fraction_seed", beta);
+            }
+        }
+    }
     for (std::size_t phase = 0; phase < phases; ++phase)
         result[phase] = compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
     scope.probe("start_rule", 2.0);
@@ -117,7 +166,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
     core::Scope scope("boundary_start");
     std::vector<double> point = compiled.generic_point();
     const auto phase_offsets = offsets(compiled);
-    const auto compositions = start_compositions(compiled, scope);
+    std::optional<double> vapor_fraction;
+    const auto compositions = start_compositions(compiled, scope, vapor_fraction);
     std::size_t free_phases = 0;
     for (const auto& phase : compiled.problem.phases) {
         if (phase.amount.kind == AmountKind::Free) ++free_phases;
@@ -131,13 +181,28 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase]);
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
-        if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) point[cursor++] = free_amount;
+        if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) {
+            point[cursor++] = vapor_fraction.has_value()
+                ? feed_total * (compiled.problem.phases[phase].kind == PhaseKind::Vapor
+                    ? *vapor_fraction : 1.0 - *vapor_fraction) : free_amount;
+        }
         const double t = seed_temperature(compiled);
         const double p = seed_pressure(compiled);
         std::vector<double> composition(compiled.model->parameters().component_count(), 0.0);
         for (std::size_t i = 0; i < compiled.problem.phases[phase].support.size(); ++i) {
             composition[compiled.problem.phases[phase].support[i]] =
                 std::exp(point[phase_offsets[phase] + i]);
+        }
+        if (supports_split_seed(compiled) && compiled.problem.phases[phase].packing_guess.has_value()) {
+            const double packing = *compiled.problem.phases[phase].packing_guess;
+            if (!(std::isfinite(packing)
+                  && packing >= policy::PACKING_FRACTION_FLOOR.value
+                  && packing <= policy::PACKING_FRACTION_CEILING.value)) {
+                throw std::invalid_argument("packing guess is outside the admitted range");
+            }
+            point[cursor] = std::log(packing);
+            scope.probe("packing_guess", packing, static_cast<std::uint32_t>(phase));
+            continue;
         }
         const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor
             ? DensityBranch::Vapor : DensityBranch::Liquid;

@@ -57,10 +57,12 @@ double specified_amount(const PhaseSpec& phase, const std::vector<double>& feed)
 }
 
 double reduced_hessian_minimum_at(
-    const CompiledSystem& compiled, const std::vector<double>& point,
+    const CompiledSystem& compiled, PhasePoint prepared,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.pinned_count != 0 || point.empty()) return 0.0;
+    if (compiled.pinned_count != 0 || prepared.point.empty()) return 0.0;
+    prepared.point.resize(compiled.primal_size);
+    const auto& point = prepared.point;
     const auto rows = [&compiled] {
         std::vector<std::size_t> result;
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -69,7 +71,7 @@ double reduced_hessian_minimum_at(
         }
         return result;
     }();
-    const auto jacobian = compiled.jacobian(point);
+    const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd constraints(static_cast<Eigen::Index>(rows.size()),
                                 static_cast<Eigen::Index>(point.size()));
     for (std::size_t row = 0; row < rows.size(); ++row) {
@@ -83,7 +85,7 @@ double reduced_hessian_minimum_at(
     if (rank >= static_cast<Eigen::Index>(point.size())) return 1.0;
     const Eigen::MatrixXd nullspace = svd.matrixV().rightCols(
         static_cast<Eigen::Index>(point.size()) - rank);
-    const auto exact = compiled.hessian(point, multipliers);
+    const auto exact = compiled.hessian_at(prepared, multipliers);
     Eigen::MatrixXd hessian(static_cast<Eigen::Index>(point.size()),
                             static_cast<Eigen::Index>(point.size()));
     for (std::size_t row = 0; row < point.size(); ++row)
@@ -322,10 +324,31 @@ void copy_previous_phase(
         composition) * density);
 }
 
+bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start) {
+    if (!supports_split_seed(compiled) || !start.success
+        || start.phase_count != compiled.problem.phases.size()
+        || start.amounts.size() != start.phase_count) return false;
+    const std::size_t components = compiled.model->parameters().component_count();
+    for (std::size_t phase = 0; phase < start.phase_count; ++phase) {
+        if (!valid_previous_phase(start, phase, components)
+            || !(std::isfinite(start.amounts[phase]) && start.amounts[phase] > 0.0)) return false;
+        std::vector<double> composition(components);
+        for (std::size_t i = 0; i < components; ++i) {
+            composition[i] = start.mole_fractions[phase * components + i];
+            if (!(composition[i] > 0.0)) return false;
+        }
+        const double packing = compiled.model->packing_fraction_coefficient(
+            start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
+            composition) * start.molar_densities[phase];
+        if (!(std::isfinite(packing) && packing >= policy::PACKING_FRACTION_FLOOR.value
+              && packing <= policy::PACKING_FRACTION_CEILING.value)) return false;
+    }
+    return true;
+}
+
 double active_constraint_residual(
-    const CompiledSystem& compiled, const std::vector<double>& point
+    const CompiledSystem& compiled, const std::vector<double>& values
 ) {
-    const auto values = compiled.evaluate(point).values;
     double result = 0.0;
     for (std::size_t row = 0; row < values.size(); ++row) {
         if (compiled.pinned_count == 0 && compiled.rows[row].kind == RowKind::Chemical) continue;
@@ -704,7 +727,7 @@ EquilibriumResult run_driver(
             rows_before = std::move(rows_after);
         }
     }
-    const auto prepared = compiled.prepare(full);
+    auto prepared = compiled.prepare(full);
     const auto evaluation = compiled.evaluate_at(prepared);
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
@@ -719,7 +742,7 @@ EquilibriumResult run_driver(
     scope.probe("primal_size", static_cast<double>(compiled.primal_size));
     scope.probe("balance_rank", static_cast<double>(compiled.rank));
     scope.probe("pinned_count", static_cast<double>(compiled.pinned_count));
-    scope.probe("active_residual", active_constraint_residual(compiled, full));
+    scope.probe("active_residual", active_constraint_residual(compiled, evaluation.values));
     scope.probe("objective", result.objective);
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
     scope.probe("prepared_points", static_cast<double>(nlp->work().prepared_points));
@@ -868,10 +891,8 @@ EquilibriumResult run_driver(
         result.constraint_multipliers = nlp->constraint_multipliers();
     }
     result.coordinates = full;
-    std::vector<double> primal_point(
-        full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
     result.reduced_hessian_minimum = reduced_hessian_minimum_at(
-        compiled, primal_point, result.constraint_multipliers);
+        compiled, std::move(prepared), result.constraint_multipliers);
     if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
         result.success = false;
         result.message = "reduced_hessian_stability is not positive definite";
@@ -951,7 +972,8 @@ EquilibriumResult solve_equilibrium(
     CompiledSystem compiled = compile_problem(model, request);
     EquilibriumResult result = structural_result(compiled, scope);
     if (!compiled.feasible) return result;
-    std::vector<double> initial = boundary_start(compiled);
+    const bool use_start = start.has_value() && usable_start(compiled, *start);
+    std::vector<double> initial = use_start ? compiled.generic_point() : boundary_start(compiled);
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
     result = run_driver(model, compiled, std::move(initial), std::move(result), scope);
     if (result.success) {

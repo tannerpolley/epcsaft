@@ -32,6 +32,7 @@ struct NlpShape final {
 };
 
 std::vector<double> boundary_start(const CompiledSystem& compiled);
+bool supports_split_seed(const CompiledSystem& compiled);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.

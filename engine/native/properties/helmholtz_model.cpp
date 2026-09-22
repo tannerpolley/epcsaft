@@ -964,19 +964,22 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 factorization.solve(right_hand_side);
         }
     }
-    std::vector<double> gradient_weights(output_count, 0.0);
-    gradient_weights.front() = 1.0;
-    tape_->function.Forward(0, full_point);
-    ++counters_.forward;
-    const auto raw_gradient = tape_->function.Reverse(1, gradient_weights);
-    ++counters_.reverse;
     result.gradient.resize(point_size);
-    for (std::size_t column = 0; column < point_size; ++column) {
-        result.gradient[column] = raw_gradient[column];
-        for (std::size_t site = 0; site < sites_count; ++site) {
-            result.gradient[column] += raw_gradient[point_size + site]
-                * site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(column));
+    if (sites_count != 0) {
+        std::vector<double> gradient_weights(output_count, 0.0);
+        gradient_weights.front() = 1.0;
+        tape_->function.Forward(0, full_point);
+        ++counters_.forward;
+        const auto raw_gradient = tape_->function.Reverse(1, gradient_weights);
+        ++counters_.reverse;
+        for (std::size_t column = 0; column < point_size; ++column) {
+            result.gradient[column] = raw_gradient[column];
+            for (std::size_t site = 0; site < sites_count; ++site) {
+                result.gradient[column] += raw_gradient[point_size + site]
+                    * site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(column));
+            }
         }
+        scope.probe("gradient", result.gradient);
     }
     if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
         std::vector<double> volume_direction(input_count, 0.0);
@@ -999,7 +1002,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             potential_cross.dot(factorization.solve(ones))
         ) * policy::ASSOCIATION_RESIDUAL.value;
     }
-    scope.probe("gradient", result.gradient);
     if (order == DerivativeOrder::Gradient) return result;
 
     std::vector<double> weights(output_count, 0.0);
@@ -1032,6 +1034,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         const auto second = tape_->function.Reverse(2, weights);
         ++counters_.reverse;
         for (std::size_t row = 0; row < point_size; ++row) {
+            if (sites_count == 0) {
+                if (offset == 0) result.gradient[row] = second[2 * row];
+                result.hessian[row * point_size + column] = second[2 * row + 1];
+                continue;
+            }
             double value = 0.0;
             for (std::size_t input = 0; input < input_count; ++input) {
                 double tangent = input == row ? 1.0 : 0.0;
@@ -1045,6 +1052,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             }
             result.hessian[row * point_size + column] = value;
         }
+        if (sites_count == 0 && offset == 0) scope.probe("gradient", result.gradient);
     }
     if (order == DerivativeOrder::PressureSlope) {
         result.volume_second_derivative = result.hessian[1 * point_size + 1];
