@@ -127,6 +127,12 @@ Parameters build_parameters(const ParameterDocument& document) {
     const std::size_t components = document.component_ids.size();
     const std::size_t sites = document.site_component.size();
     if (document.site_multiplicity.size() != sites) reject("site structural lists have different sizes");
+    if (document.base_choice != "pc-saft") reject("unknown base choice " + document.base_choice);
+    if (document.association_choice == "none") {
+        if (sites != 0) reject("association none has unconsumed site topology");
+    } else if (document.association_choice != "general-site") {
+        reject("unknown association choice " + document.association_choice);
+    }
 
     Parameters result;
     result.segment_count.assign(components, 0.0);

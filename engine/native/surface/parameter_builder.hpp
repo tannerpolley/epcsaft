@@ -20,6 +20,8 @@ struct ParameterDocument final {
     std::vector<std::string> component_ids;
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
+    std::string base_choice;
+    std::string association_choice;
     std::string electrolyte_choice;
     std::string ionic_dispersion_choice;
     std::string permittivity_choice;

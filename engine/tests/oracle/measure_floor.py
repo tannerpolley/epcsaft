@@ -58,7 +58,7 @@ def environment() -> dict[str, str]:
 
 def main() -> None:
     methane_ethane = Mixture(Parameters.from_json(
-        parameters_json("gross-2001-methane-ethane", 2),
+        parameters_json("gross-2001-methane-ethane", 3),
         components=("methane", "ethane")))
     mea = Mixture(Parameters.from_json(
         parameters_json("mea-co2-h2o-nine-species-estimation", 3),

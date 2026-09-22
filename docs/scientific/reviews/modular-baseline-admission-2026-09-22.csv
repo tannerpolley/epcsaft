@@ -1,0 +1,434 @@
+case,packet_id,packet_version,components,x,T_K,rho_mol_m3,quantity,index,unit,donor_reference,current,absolute_difference,normalized_error
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,hard_chain,,1,4.5693995720488516,4.5693995720488516,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,dispersion,,1,-8.8978603104700937,-8.8978603104700937,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,association,,1,-5.2629927167338009,-5.2629927167338009,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,debye_huckel,,1,-0.0097518496153936943,-0.0097518496153936943,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,born,,1,-2.8414441852924308,-2.8414441852924308,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,bulk_relative_permittivity,,1,68.487984564111557,68.487984564111557,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_helmholtz,,1,-12.44264949006287,-12.44264949006287,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,pressure,,Pa,17118829.401826367,17118829.401826367,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,compressibility_factor,,1,0.12331532113104138,0.12331532113104138,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_internal_energy,,J/mol,-47956.131267558856,-47956.131267558856,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_entropy,,J/(mol K),-57.391708359178047,-57.391708359178047,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_enthalpy,,J/mol,-50129.394914985773,-50129.394914985773,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_isochoric_heat_capacity,,J/(mol K),35.788353871550591,35.788353871551301,7.1054273576010019e-13,0.019854021179915773
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_isobaric_heat_capacity,,J/(mol K),29.090147860804894,29.090147860805612,7.1764816311770119e-13,0.024669801148883775
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,pressure_density_derivative,,Pa m^3/mol,83885.885340416033,83885.885340416004,2.9103830456733704e-11,0.00034694550029039915
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,site_fractions,0,1,0.042253261412010905,0.042253261412010905,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,site_fractions,1,1,0.042253261412010835,0.042253261412010835,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,log_fugacity_coefficient,0,1,-8.4764995354319392,-8.4764995354319392,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,log_fugacity_coefficient,1,1,-159.4362552094999,-159.4362552094999,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,log_fugacity_coefficient,2,1,-132.4991454552511,-132.4991454552511,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_chemical_potential_over_rt,0,1,-10.569510152992956,-10.569510152992956,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_chemical_potential_over_rt,1,1,-161.52926582706093,-161.52926582706093,0,0
+figiel_fixed_density,figiel-yu-held-2025,3,water;sodium-cation;chloride-anion,0.98;0.01;0.01,298.15,56000.0,residual_chemical_potential_over_rt,2,1,-134.59215607281212,-134.59215607281212,0,0
+neutral_charge,gross-2001-propane,3,propane,1.0,300.0,10.0,pressure,,Pa,24851.063870309004,24851.063870309004,0,0
+neutral_charge,gross-2001-propane,3,propane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0037031939728797499,-0.0037031939728797499,0,0
+neutral_charge,gross-2001-propane,3,propane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-16.548216869755525,-16.548216869755525,0,0
+neutral_charge,gross-2001-propane,3,propane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.027563808662778393,0.027563808662778393,0,0
+neutral_charge,gross-2001-propane,3,propane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2475.8832313005523,2475.8832313005523,0,0
+neutral_charge,gross-2001-methane-ethane,3,ethane,1.0,300.0,10.0,pressure,,Pa,24897.324071705429,24897.324071705429,0,0
+neutral_charge,gross-2001-methane-ethane,3,ethane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0018473605367065129,-0.0018473605367065129,0,0
+neutral_charge,gross-2001-methane-ethane,3,ethane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-8.6393332252249486,-8.6393332252249486,0,0
+neutral_charge,gross-2001-methane-ethane,3,ethane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.013163300989760309,0.013163300989760309,0,0
+neutral_charge,gross-2001-methane-ethane,3,ethane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2485.129157832238,2485.129157832238,0,0
+neutral_charge,gross-2001-methane-ethane,3,methane,1.0,300.0,10.0,pressure,,Pa,24931.950077405025,24931.950077405025,0,0
+neutral_charge,gross-2001-methane-ethane,3,methane,1.0,300.0,10.0,residual_helmholtz,,1,-0.00045869431688116014,-0.00045869431688116014,0,0
+neutral_charge,gross-2001-methane-ethane,3,methane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-2.8694895112430405,-2.8694895112430405,0,0
+neutral_charge,gross-2001-methane-ethane,3,methane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0037550559091446578,0.0037550559091446578,0,0
+neutral_charge,gross-2001-methane-ethane,3,methane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2492.0519524201977,2492.0519524201977,0,0
+neutral_charge,gross-sadowski-2001,3,1-butene,1.0,300.0,10.0,pressure,,Pa,24803.345156830339,24803.345156830339,0,0
+neutral_charge,gross-sadowski-2001,3,1-butene,1.0,300.0,10.0,residual_helmholtz,,1,-0.0056181168002033648,-0.0056181168002033648,0,0
+neutral_charge,gross-sadowski-2001,3,1-butene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-24.605623687308242,-24.605623687308242,0,0
+neutral_charge,gross-sadowski-2001,3,1-butene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.043601751222892109,0.043601751222892109,0,0
+neutral_charge,gross-sadowski-2001,3,1-butene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2466.3486760439346,2466.3486760439346,0,0
+neutral_charge,gross-sadowski-2001,3,1-chlorobutane,1.0,300.0,10.0,pressure,,Pa,24647.259054002803,24647.259054002803,0,0
+neutral_charge,gross-sadowski-2001,3,1-chlorobutane,1.0,300.0,10.0,residual_helmholtz,,1,-0.011885426868487807,-0.011885426868487807,0,0
+neutral_charge,gross-sadowski-2001,3,1-chlorobutane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-50.887513072746628,-50.887513072746628,0,0
+neutral_charge,gross-sadowski-2001,3,1-chlorobutane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10142038424616502,0.10142038424616502,0,0
+neutral_charge,gross-sadowski-2001,3,1-chlorobutane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2435.1797787242044,2435.1797787242044,0,0
+neutral_charge,gross-sadowski-2001,3,1-hexene,1.0,300.0,10.0,pressure,,Pa,24631.799577838829,24631.799577838829,0,0
+neutral_charge,gross-sadowski-2001,3,1-hexene,1.0,300.0,10.0,residual_helmholtz,,1,-0.012508642570024509,-0.012508642570024509,0,0
+neutral_charge,gross-sadowski-2001,3,1-hexene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-54.259659444508159,-54.259659444508159,0,0
+neutral_charge,gross-sadowski-2001,3,1-hexene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1067710282299256,0.1067710282299256,0,0
+neutral_charge,gross-sadowski-2001,3,1-hexene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2432.1049731176472,2432.1049731176472,0,0
+neutral_charge,gross-sadowski-2001,3,1-octene,1.0,300.0,10.0,pressure,,Pa,24384.208951325618,24384.208951325618,0,0
+neutral_charge,gross-sadowski-2001,3,1-octene,1.0,300.0,10.0,residual_helmholtz,,1,-0.022473269584835778,-0.022473269584835778,0,0
+neutral_charge,gross-sadowski-2001,3,1-octene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-97.940164794791343,-97.940164794791343,0,0
+neutral_charge,gross-sadowski-2001,3,1-octene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.20820984226126954,0.20820984226126954,0,0
+neutral_charge,gross-sadowski-2001,3,1-octene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2382.7783194680551,2382.7783194680551,0,0
+neutral_charge,gross-sadowski-2001,3,1-pentene,1.0,300.0,10.0,pressure,,Pa,24727.481415781036,24727.481415781036,0,0
+neutral_charge,gross-sadowski-2001,3,1-pentene,1.0,300.0,10.0,residual_helmholtz,,1,-0.0086640343620132051,-0.0086640343620132051,0,0
+neutral_charge,gross-sadowski-2001,3,1-pentene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-37.612324731677553,-37.612324731677553,0,0
+neutral_charge,gross-sadowski-2001,3,1-pentene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.070394464833271927,0.070394464833271927,0,0
+neutral_charge,gross-sadowski-2001,3,1-pentene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2451.1982651696112,2451.1982651696112,0,0
+neutral_charge,gross-sadowski-2001,3,2-2-dimethylbutane,1.0,300.0,10.0,pressure,,Pa,24655.257605042287,24655.257605042287,0,0
+neutral_charge,gross-sadowski-2001,3,2-2-dimethylbutane,1.0,300.0,10.0,residual_helmholtz,,1,-0.011564993155899638,-0.011564993155899638,0,0
+neutral_charge,gross-sadowski-2001,3,2-2-dimethylbutane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-49.797777421621603,-49.797777421621603,0,0
+neutral_charge,gross-sadowski-2001,3,2-2-dimethylbutane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.094574969758680266,0.094574969758680266,0,0
+neutral_charge,gross-sadowski-2001,3,2-2-dimethylbutane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2436.7806692367776,2436.7806692367776,0,0
+neutral_charge,gross-sadowski-2001,3,2-3-dimethylbutane,1.0,300.0,10.0,pressure,,Pa,24640.382808190108,24640.382808190108,0,0
+neutral_charge,gross-sadowski-2001,3,2-3-dimethylbutane,1.0,300.0,10.0,residual_helmholtz,,1,-0.012162595602480137,-0.012162595602480137,0,0
+neutral_charge,gross-sadowski-2001,3,2-3-dimethylbutane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-52.322527896150476,-52.322527896150476,0,0
+neutral_charge,gross-sadowski-2001,3,2-3-dimethylbutane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10070367405206521,0.10070367405206521,0,0
+neutral_charge,gross-sadowski-2001,3,2-3-dimethylbutane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2433.8119859026069,2433.8119859026069,0,0
+neutral_charge,gross-sadowski-2001,3,2-chloropropane,1.0,300.0,10.0,pressure,,Pa,24751.843014755628,24751.843014755628,0,0
+neutral_charge,gross-sadowski-2001,3,2-chloropropane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0076849430640889456,-0.0076849430640889456,0,0
+neutral_charge,gross-sadowski-2001,3,2-chloropropane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-32.88657012929221,-32.88657012929221,0,0
+neutral_charge,gross-sadowski-2001,3,2-chloropropane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.061652915603353599,0.061652915603353599,0,0
+neutral_charge,gross-sadowski-2001,3,2-chloropropane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2456.0585451332081,2456.0585451332081,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylhexane,1.0,300.0,10.0,pressure,,Pa,24510.830849655555,24510.830849655555,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylhexane,1.0,300.0,10.0,residual_helmholtz,,1,-0.017374718479953866,-0.017374718479953866,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylhexane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-75.60143379390631,-75.60143379390631,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylhexane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.15431341183865233,0.15431341183865233,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylhexane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2407.9925371462205,2407.9925371462205,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylpentane,1.0,300.0,10.0,pressure,,Pa,24627.98676853834,24627.98676853834,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylpentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.012661986163060806,-0.012661986163060806,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylpentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-54.942292082299815,-54.942292082299815,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylpentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10731754869039348,0.10731754869039348,0,0
+neutral_charge,gross-sadowski-2001,3,2-methylpentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2431.344831526344,2431.344831526344,0,0
+neutral_charge,gross-sadowski-2001,3,3-methylpentane,1.0,300.0,10.0,pressure,,Pa,24626.136451024402,24626.136451024402,0,0
+neutral_charge,gross-sadowski-2001,3,3-methylpentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.012735838924978116,-0.012735838924978116,0,0
+neutral_charge,gross-sadowski-2001,3,3-methylpentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-55.070289660100535,-55.070289660100535,0,0
+neutral_charge,gross-sadowski-2001,3,3-methylpentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10768495355632322,0.10768495355632322,0,0
+neutral_charge,gross-sadowski-2001,3,3-methylpentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2430.9731401896429,2430.9731401896429,0,0
+neutral_charge,gross-sadowski-2001,3,argon,1.0,300.0,10.0,pressure,,Pa,24939.15652335254,24939.15652335254,0,0
+neutral_charge,gross-sadowski-2001,3,argon,1.0,300.0,10.0,residual_helmholtz,,1,-0.00016969989687659056,-0.00016969989687659056,0,0
+neutral_charge,gross-sadowski-2001,3,argon,1.0,300.0,10.0,residual_internal_energy,,J/mol,-1.5580424956373446,-1.5580424956373446,0,0
+neutral_charge,gross-sadowski-2001,3,argon,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0019113258526721377,0.0019113258526721377,0,0
+neutral_charge,gross-sadowski-2001,3,argon,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2493.4928309909988,2493.4928309909988,0,0
+neutral_charge,gross-sadowski-2001,3,benzene,1.0,300.0,10.0,pressure,,Pa,24686.001171299187,24686.001171299187,0,0
+neutral_charge,gross-sadowski-2001,3,benzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.01032756695311429,-0.01032756695311429,0,0
+neutral_charge,gross-sadowski-2001,3,benzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-43.488938091100358,-43.488938091100358,0,0
+neutral_charge,gross-sadowski-2001,3,benzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.085489630419621765,0.085489630419621765,0,0
+neutral_charge,gross-sadowski-2001,3,benzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2442.9050007503238,2442.9050007503238,0,0
+neutral_charge,gross-sadowski-2001,3,biphenyl,1.0,300.0,10.0,pressure,,Pa,23919.71836630908,23919.71836630908,0,0
+neutral_charge,gross-sadowski-2001,3,biphenyl,1.0,300.0,10.0,residual_helmholtz,,1,-0.041165404235845693,-0.041165404235845693,0,0
+neutral_charge,gross-sadowski-2001,3,biphenyl,1.0,300.0,10.0,residual_internal_energy,,J/mol,-176.5193387232095,-176.5193387232095,0,0
+neutral_charge,gross-sadowski-2001,3,biphenyl,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.41011162571284748,0.41011162571284748,0,0
+neutral_charge,gross-sadowski-2001,3,biphenyl,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2290.2298189363323,2290.2298189363323,0,0
+neutral_charge,gross-sadowski-2001,3,bromobenzene,1.0,300.0,10.0,pressure,,Pa,24493.110103809355,24493.110103809355,0,0
+neutral_charge,gross-sadowski-2001,3,bromobenzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.018074170752039039,-0.018074170752039039,0,0
+neutral_charge,gross-sadowski-2001,3,bromobenzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-75.542815550504642,-75.542815550504642,0,0
+neutral_charge,gross-sadowski-2001,3,bromobenzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.15870322922762534,0.15870322922762534,0,0
+neutral_charge,gross-sadowski-2001,3,bromobenzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2404.3938363780526,2404.3938363780526,0,0
+neutral_charge,gross-sadowski-2001,3,butane,1.0,300.0,10.0,pressure,,Pa,24788.275091334304,24788.275091334304,0,0
+neutral_charge,gross-sadowski-2001,3,butane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0062230856603020905,-0.0062230856603020905,0,0
+neutral_charge,gross-sadowski-2001,3,butane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-27.226137700243655,-27.226137700243655,0,0
+neutral_charge,gross-sadowski-2001,3,butane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.048603197977240963,0.048603197977240963,0,0
+neutral_charge,gross-sadowski-2001,3,butane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2463.3386428728686,2463.3386428728686,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-dioxide,1.0,300.0,10.0,pressure,,Pa,24912.48468416465,24912.48468416465,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-dioxide,1.0,300.0,10.0,residual_helmholtz,,1,-0.0012392309489308905,-0.0012392309489308905,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-dioxide,1.0,300.0,10.0,residual_internal_energy,,J/mol,-5.9628214116892613,-5.9628214116892613,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-dioxide,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0093788089533034177,0.0093788089533034177,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-dioxide,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2488.1596408811624,2488.1596408811624,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-disulfide,1.0,300.0,10.0,pressure,,Pa,24797.070344235624,24797.070344235624,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-disulfide,1.0,300.0,10.0,residual_helmholtz,,1,-0.0058685894847636151,-0.0058685894847636151,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-disulfide,1.0,300.0,10.0,residual_internal_energy,,J/mol,-24.117650148686085,-24.117650148686085,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-disulfide,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.044668325355891367,0.044668325355891367,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-disulfide,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2465.0882802325145,2465.0882802325145,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-monoxide,1.0,300.0,10.0,pressure,,Pa,24940.553025153036,24940.553025153036,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-monoxide,1.0,300.0,10.0,residual_helmholtz,,1,-0.00011373571976548355,-0.00011373571976548355,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-monoxide,1.0,300.0,10.0,residual_internal_energy,,J/mol,-1.656576543225873,-1.656576543225873,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-monoxide,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0018408844924027951,0.0018408844924027951,0,0
+neutral_charge,gross-sadowski-2001,3,carbon-monoxide,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2493.7722445126706,2493.7722445126706,0,0
+neutral_charge,gross-sadowski-2001,3,chlorine,1.0,300.0,10.0,pressure,,Pa,24876.243037560937,24876.243037560937,0,0
+neutral_charge,gross-sadowski-2001,3,chlorine,1.0,300.0,10.0,residual_helmholtz,,1,-0.0026926789725864953,-0.0026926789725864953,0,0
+neutral_charge,gross-sadowski-2001,3,chlorine,1.0,300.0,10.0,residual_internal_energy,,J/mol,-11.446375323090789,-11.446375323090789,0,0
+neutral_charge,gross-sadowski-2001,3,chlorine,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.019195656209086941,0.019195656209086941,0,0
+neutral_charge,gross-sadowski-2001,3,chlorine,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2480.9137652129189,2480.9137652129189,0,0
+neutral_charge,gross-sadowski-2001,3,chlorobenzene,1.0,300.0,10.0,pressure,,Pa,24560.731537323689,24560.731537323689,0,0
+neutral_charge,gross-sadowski-2001,3,chlorobenzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.015358232343517506,-0.015358232343517506,0,0
+neutral_charge,gross-sadowski-2001,3,chlorobenzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-64.400809508690557,-64.400809508690557,0,0
+neutral_charge,gross-sadowski-2001,3,chlorobenzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.13297415532542156,0.13297415532542156,0,0
+neutral_charge,gross-sadowski-2001,3,chlorobenzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2417.8934841839082,2417.8934841839082,0,0
+neutral_charge,gross-sadowski-2001,3,chloroethane,1.0,300.0,10.0,pressure,,Pa,24808.799415447316,24808.799415447316,0,0
+neutral_charge,gross-sadowski-2001,3,chloroethane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0053987151987888293,-0.0053987151987888293,0,0
+neutral_charge,gross-sadowski-2001,3,chloroethane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-23.179541555305978,-23.179541555305978,0,0
+neutral_charge,gross-sadowski-2001,3,chloroethane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.042271126297004587,0.042271126297004587,0,0
+neutral_charge,gross-sadowski-2001,3,chloroethane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2467.4358570296722,2467.4358570296722,0,0
+neutral_charge,gross-sadowski-2001,3,cyclohexane,1.0,300.0,10.0,pressure,,Pa,24640.549931504866,24640.549931504866,0,0
+neutral_charge,gross-sadowski-2001,3,cyclohexane,1.0,300.0,10.0,residual_helmholtz,,1,-0.012153621905820266,-0.012153621905820266,0,0
+neutral_charge,gross-sadowski-2001,3,cyclohexane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-51.394863698497389,-51.394863698497389,0,0
+neutral_charge,gross-sadowski-2001,3,cyclohexane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10080365178008727,0.10080365178008727,0,0
+neutral_charge,gross-sadowski-2001,3,cyclohexane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2433.8340909103517,2433.8340909103517,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentane,1.0,300.0,10.0,pressure,,Pa,24726.069929072462,24726.069929072462,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0087193423752583397,-0.0087193423752583397,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-37.00318679843194,-37.00318679843194,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.070117852592933932,0.070117852592933932,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2450.9095945291401,2450.9095945291401,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentene,1.0,300.0,10.0,pressure,,Pa,24744.82833485552,24744.82833485552,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentene,1.0,300.0,10.0,residual_helmholtz,,1,-0.0079661263692290731,-0.0079661263692290731,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-33.752572570524336,-33.752572570524336,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.063497790323391076,0.063497790323391076,0,0
+neutral_charge,gross-sadowski-2001,3,cyclopentene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2454.6554079046564,2454.6554079046564,0,0
+neutral_charge,gross-sadowski-2001,3,decane,1.0,300.0,10.0,pressure,,Pa,23986.124024220535,23986.124024220535,0,0
+neutral_charge,gross-sadowski-2001,3,decane,1.0,300.0,10.0,residual_helmholtz,,1,-0.03854901001251599,-0.03854901001251599,0,0
+neutral_charge,gross-sadowski-2001,3,decane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-169.72920204849507,-169.72920204849507,0,0
+neutral_charge,gross-sadowski-2001,3,decane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.38478624672490064,0.38478624672490064,0,0
+neutral_charge,gross-sadowski-2001,3,decane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2303.736455519615,2303.736455519615,0,0
+neutral_charge,gross-sadowski-2001,3,diethyl-ether,1.0,300.0,10.0,pressure,,Pa,24724.811665053905,24724.811665053905,0,0
+neutral_charge,gross-sadowski-2001,3,diethyl-ether,1.0,300.0,10.0,residual_helmholtz,,1,-0.0087720477820437594,-0.0087720477820437594,0,0
+neutral_charge,gross-sadowski-2001,3,diethyl-ether,1.0,300.0,10.0,residual_internal_energy,,J/mol,-38.513221590484882,-38.513221590484882,0,0
+neutral_charge,gross-sadowski-2001,3,diethyl-ether,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.074029520585285474,0.074029520585285474,0,0
+neutral_charge,gross-sadowski-2001,3,diethyl-ether,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2450.6691911025296,2450.6691911025296,0,0
+neutral_charge,gross-sadowski-2001,3,dimethyl-ether,1.0,300.0,10.0,pressure,,Pa,24850.406134291927,24850.406134291927,0,0
+neutral_charge,gross-sadowski-2001,3,dimethyl-ether,1.0,300.0,10.0,residual_helmholtz,,1,-0.0037294650978085867,-0.0037294650978085867,0,0
+neutral_charge,gross-sadowski-2001,3,dimethyl-ether,1.0,300.0,10.0,residual_internal_energy,,J/mol,-16.529686763487899,-16.529686763487899,0,0
+neutral_charge,gross-sadowski-2001,3,dimethyl-ether,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.028914843750256013,0.028914843750256013,0,0
+neutral_charge,gross-sadowski-2001,3,dimethyl-ether,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2475.7511949851059,2475.7511949851059,0,0
+neutral_charge,gross-sadowski-2001,3,dodecane,1.0,300.0,10.0,pressure,,Pa,23529.196319490999,23529.196319490999,0,0
+neutral_charge,gross-sadowski-2001,3,dodecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.057070023709980884,-0.057070023709980884,0,0
+neutral_charge,gross-sadowski-2001,3,dodecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-252.61523888253581,-252.61523888253581,0,0
+neutral_charge,gross-sadowski-2001,3,dodecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.59572537763222599,0.59572537763222599,0,0
+neutral_charge,gross-sadowski-2001,3,dodecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2213.3481857545121,2213.3481857545121,0,0
+neutral_charge,gross-sadowski-2001,3,eicosane,1.0,300.0,10.0,pressure,,Pa,20578.176342251543,20578.176342251543,0,0
+neutral_charge,gross-sadowski-2001,3,eicosane,1.0,300.0,10.0,residual_helmholtz,,1,-0.17853073696867811,-0.17853073696867811,0,0
+neutral_charge,gross-sadowski-2001,3,eicosane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-807.4435410339961,-807.4435410339961,0,0
+neutral_charge,gross-sadowski-2001,3,eicosane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),2.1006722615611202,2.1006722615611202,0,0
+neutral_charge,gross-sadowski-2001,3,eicosane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,1638.3802914741427,1638.3802914741427,0,0
+neutral_charge,gross-sadowski-2001,3,ethane,1.0,300.0,10.0,pressure,,Pa,24897.324071705429,24897.324071705429,0,0
+neutral_charge,gross-sadowski-2001,3,ethane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0018473605367065129,-0.0018473605367065129,0,0
+neutral_charge,gross-sadowski-2001,3,ethane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-8.6393332252249486,-8.6393332252249486,0,0
+neutral_charge,gross-sadowski-2001,3,ethane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.013163300989760309,0.013163300989760309,0,0
+neutral_charge,gross-sadowski-2001,3,ethane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2485.129157832238,2485.129157832238,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-ethanoate,1.0,300.0,10.0,pressure,,Pa,24649.67430303881,24649.67430303881,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-ethanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.011791323401608662,-0.011791323401608662,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-ethanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-51.608050864282248,-51.608050864282248,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-ethanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1063839289066483,0.1063839289066483,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-ethanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2435.6763540672105,2435.6763540672105,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-methanoate,1.0,300.0,10.0,pressure,,Pa,24733.964029581919,24733.964029581919,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-methanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.0084031141426249654,-0.0084031141426249654,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-methanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-36.213780377920209,-36.213780377920209,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-methanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.071396439929489866,0.071396439929489866,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-methanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2452.4896618338112,2452.4896618338112,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-propanoate,1.0,300.0,10.0,pressure,,Pa,24552.465531418376,24552.465531418376,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-propanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.01570126595349974,-0.01570126595349974,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-propanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-68.852083645466777,-68.852083645466777,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-propanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.14584883144333313,0.14584883144333313,0,0
+neutral_charge,gross-sadowski-2001,3,ethyl-propanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2416.2980834757755,2416.2980834757755,0,0
+neutral_charge,gross-sadowski-2001,3,ethylbenzene,1.0,300.0,10.0,pressure,,Pa,24469.386139202725,24469.386139202725,0,0
+neutral_charge,gross-sadowski-2001,3,ethylbenzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.01903343536779389,-0.01903343536779389,0,0
+neutral_charge,gross-sadowski-2001,3,ethylbenzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-80.934218319516035,-80.934218319516035,0,0
+neutral_charge,gross-sadowski-2001,3,ethylbenzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.17010242154687794,0.17010242154687794,0,0
+neutral_charge,gross-sadowski-2001,3,ethylbenzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2399.689586022685,2399.689586022685,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclohexane,1.0,300.0,10.0,pressure,,Pa,24430.231078250432,24430.231078250432,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclohexane,1.0,300.0,10.0,residual_helmholtz,,1,-0.020606921887625293,-0.020606921887625293,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclohexane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-87.091251649591399,-87.091251649591399,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclohexane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.17953254365965574,0.17953254365965574,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclohexane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2391.8771971045085,2391.8771971045085,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclopentane,1.0,300.0,10.0,pressure,,Pa,24540.462340649705,24540.462340649705,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclopentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.016177056592841701,-0.016177056592841701,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclopentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-68.963283015468889,-68.963283015468889,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclopentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.13994531729759477,0.13994531729759477,0,0
+neutral_charge,gross-sadowski-2001,3,ethylcyclopentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2413.870585091699,2413.870585091699,0,0
+neutral_charge,gross-sadowski-2001,3,ethylene,1.0,300.0,10.0,pressure,,Pa,24907.10300269353,24907.10300269353,0,0
+neutral_charge,gross-sadowski-2001,3,ethylene,1.0,300.0,10.0,residual_helmholtz,,1,-0.00145515432389362,-0.00145515432389362,0,0
+neutral_charge,gross-sadowski-2001,3,ethylene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-7.0718057489893278,-7.0718057489893278,0,0
+neutral_charge,gross-sadowski-2001,3,ethylene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.010470599299413417,0.010470599299413417,0,0
+neutral_charge,gross-sadowski-2001,3,ethylene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2487.084140066017,2487.084140066017,0,0
+neutral_charge,gross-sadowski-2001,3,heptadecane,1.0,300.0,10.0,pressure,,Pa,21899.87033003752,21899.87033003752,0,0
+neutral_charge,gross-sadowski-2001,3,heptadecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.12374645831486461,-0.12374645831486461,0,0
+neutral_charge,gross-sadowski-2001,3,heptadecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-555.62331958839832,-555.62331958839832,0,0
+neutral_charge,gross-sadowski-2001,3,heptadecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),1.4047099628905348,1.4047099628905348,0,0
+neutral_charge,gross-sadowski-2001,3,heptadecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,1894.0845907867924,1894.0845907867924,0,0
+neutral_charge,gross-sadowski-2001,3,heptane,1.0,300.0,10.0,pressure,,Pa,24487.335152045267,24487.335152045267,0,0
+neutral_charge,gross-sadowski-2001,3,heptane,1.0,300.0,10.0,residual_helmholtz,,1,-0.018320555269913056,-0.018320555269913056,0,0
+neutral_charge,gross-sadowski-2001,3,heptane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-79.789752468348041,-79.789752468348041,0,0
+neutral_charge,gross-sadowski-2001,3,heptane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.16507898873034563,0.16507898873034563,0,0
+neutral_charge,gross-sadowski-2001,3,heptane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2403.3126487663731,2403.3126487663731,0,0
+neutral_charge,gross-sadowski-2001,3,hexadecane,1.0,300.0,10.0,pressure,,Pa,22285.734084347558,22285.734084347558,0,0
+neutral_charge,gross-sadowski-2001,3,hexadecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.10786882354033712,-0.10786882354033712,0,0
+neutral_charge,gross-sadowski-2001,3,hexadecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-483.06201203285082,-483.06201203285082,0,0
+neutral_charge,gross-sadowski-2001,3,hexadecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),1.2075813107892486,1.2075813107892486,0,0
+neutral_charge,gross-sadowski-2001,3,hexadecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,1969.2802095125494,1969.2802095125494,0,0
+neutral_charge,gross-sadowski-2001,3,hexane,1.0,300.0,10.0,pressure,,Pa,24608.859791466897,24608.859791466897,0,0
+neutral_charge,gross-sadowski-2001,3,hexane,1.0,300.0,10.0,residual_helmholtz,,1,-0.013430982534226341,-0.013430982534226341,0,0
+neutral_charge,gross-sadowski-2001,3,hexane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-58.299278489953693,-58.299278489953693,0,0
+neutral_charge,gross-sadowski-2001,3,hexane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.11558188292526668,0.11558188292526668,0,0
+neutral_charge,gross-sadowski-2001,3,hexane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2427.5302865757408,2427.5302865757408,0,0
+neutral_charge,gross-sadowski-2001,3,isobutane,1.0,300.0,10.0,pressure,,Pa,24799.752255691645,24799.752255691645,0,0
+neutral_charge,gross-sadowski-2001,3,isobutane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0057625092885540286,-0.0057625092885540286,0,0
+neutral_charge,gross-sadowski-2001,3,isobutane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-25.388471941306005,-25.388471941306005,0,0
+neutral_charge,gross-sadowski-2001,3,isobutane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.04447588411774557,0.04447588411774557,0,0
+neutral_charge,gross-sadowski-2001,3,isobutane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2465.6318426576181,2465.6318426576181,0,0
+neutral_charge,gross-sadowski-2001,3,isopentane,1.0,300.0,10.0,pressure,,Pa,24721.090687509884,24721.090687509884,0,0
+neutral_charge,gross-sadowski-2001,3,isopentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0089207988524104727,-0.0089207988524104727,0,0
+neutral_charge,gross-sadowski-2001,3,isopentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-38.758598317051543,-38.758598317051543,0,0
+neutral_charge,gross-sadowski-2001,3,isopentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.072068157004230179,0.072068157004230179,0,0
+neutral_charge,gross-sadowski-2001,3,isopentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2449.922888221809,2449.922888221809,0,0
+neutral_charge,gross-sadowski-2001,3,isopropyl-ethanoate,1.0,300.0,10.0,pressure,,Pa,24582.175241698274,24582.175241698274,0,0
+neutral_charge,gross-sadowski-2001,3,isopropyl-ethanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.014505655894674788,-0.014505655894674788,0,0
+neutral_charge,gross-sadowski-2001,3,isopropyl-ethanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-63.488778744414041,-63.488778744414041,0,0
+neutral_charge,gross-sadowski-2001,3,isopropyl-ethanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.13182873831181904,0.13182873831181904,0,0
+neutral_charge,gross-sadowski-2001,3,isopropyl-ethanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2422.2175485284647,2422.2175485284647,0,0
+neutral_charge,gross-sadowski-2001,3,m-xylene,1.0,300.0,10.0,pressure,,Pa,24458.122650731104,24458.122650731104,0,0
+neutral_charge,gross-sadowski-2001,3,m-xylene,1.0,300.0,10.0,residual_helmholtz,,1,-0.019487166983254912,-0.019487166983254912,0,0
+neutral_charge,gross-sadowski-2001,3,m-xylene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-83.082729490608145,-83.082729490608145,0,0
+neutral_charge,gross-sadowski-2001,3,m-xylene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.17580129193133723,0.17580129193133723,0,0
+neutral_charge,gross-sadowski-2001,3,m-xylene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2397.4476700775604,2397.4476700775604,0,0
+neutral_charge,gross-sadowski-2001,3,methane,1.0,300.0,10.0,pressure,,Pa,24931.950077405025,24931.950077405025,0,0
+neutral_charge,gross-sadowski-2001,3,methane,1.0,300.0,10.0,residual_helmholtz,,1,-0.00045869431688116014,-0.00045869431688116014,0,0
+neutral_charge,gross-sadowski-2001,3,methane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-2.8694895112430405,-2.8694895112430405,0,0
+neutral_charge,gross-sadowski-2001,3,methane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0037550559091446578,0.0037550559091446578,0,0
+neutral_charge,gross-sadowski-2001,3,methane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2492.0519524201977,2492.0519524201977,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-butanoate,1.0,300.0,10.0,pressure,,Pa,24554.454969080452,24554.454969080452,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-butanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.015619601879474582,-0.015619601879474582,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-butanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-68.104229567559102,-68.104229567559102,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-butanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.14369338065059953,0.14369338065059953,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-butanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2416.6865208497779,2416.6865208497779,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-chloride,1.0,300.0,10.0,pressure,,Pa,24864.979807510837,24864.979807510837,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-chloride,1.0,300.0,10.0,residual_helmholtz,,1,-0.0031445249710471391,-0.0031445249710471391,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-chloride,1.0,300.0,10.0,residual_internal_energy,,J/mol,-13.56686225710531,-13.56686225710531,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-chloride,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.023418644042653782,0.023418644042653782,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-chloride,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2478.6625873746129,2478.6625873746129,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-methanoate,1.0,300.0,10.0,pressure,,Pa,24803.250442031662,24803.250442031662,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-methanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.0056214575575727283,-0.0056214575575727283,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-methanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-24.236265236130581,-24.236265236130581,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-methanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.046447872290568924,0.046447872290568924,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-methanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2466.3274547577739,2466.3274547577739,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-n-propyl-ether,1.0,300.0,10.0,pressure,,Pa,24724.578140720816,24724.578140720816,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-n-propyl-ether,1.0,300.0,10.0,residual_helmholtz,,1,-0.0087812962172460138,-0.0087812962172460138,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-n-propyl-ether,1.0,300.0,10.0,residual_internal_energy,,J/mol,-38.480149710127755,-38.480149710127755,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-n-propyl-ether,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.074559152911296403,0.074559152911296403,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-n-propyl-ether,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2450.6219185472432,2450.6219185472432,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-propanoate,1.0,300.0,10.0,pressure,,Pa,24649.886207856118,24649.886207856118,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-propanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.011782339896242241,-0.011782339896242241,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-propanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-51.415610115602142,-51.415610115602142,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-propanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10597712297762432,0.10597712297762432,0,0
+neutral_charge,gross-sadowski-2001,3,methyl-propanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2435.7163109963894,2435.7163109963894,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclohexane,1.0,300.0,10.0,pressure,,Pa,24553.956414843316,24553.956414843316,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclohexane,1.0,300.0,10.0,residual_helmholtz,,1,-0.015633131959980104,-0.015633131959980104,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclohexane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-66.130744622469408,-66.130744622469408,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclohexane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.13233420909682383,0.13233420909682383,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclohexane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2416.5547982833455,2416.5547982833455,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclopentane,1.0,300.0,10.0,pressure,,Pa,24649.664025675,24649.664025675,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclopentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.011788256915027872,-0.011788256915027872,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclopentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-50.173833582399183,-50.173833582399183,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclopentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.097954446876902301,0.097954446876902301,0,0
+neutral_charge,gross-sadowski-2001,3,methylcyclopentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2435.6570350271172,2435.6570350271172,0,0
+neutral_charge,gross-sadowski-2001,3,n-butyl-ethanoate,1.0,300.0,10.0,pressure,,Pa,24427.738752716643,24427.738752716643,0,0
+neutral_charge,gross-sadowski-2001,3,n-butyl-ethanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.020720777454649682,-0.020720777454649682,0,0
+neutral_charge,gross-sadowski-2001,3,n-butyl-ethanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-90.584035175534964,-90.584035175534964,0,0
+neutral_charge,gross-sadowski-2001,3,n-butyl-ethanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1961283668240523,0.1961283668240523,0,0
+neutral_charge,gross-sadowski-2001,3,n-butyl-ethanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2391.4477220311296,2391.4477220311296,0,0
+neutral_charge,gross-sadowski-2001,3,n-butylbenzene,1.0,300.0,10.0,pressure,,Pa,24169.258612510337,24169.258612510337,0,0
+neutral_charge,gross-sadowski-2001,3,n-butylbenzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.031121991102826374,-0.031121991102826374,0,0
+neutral_charge,gross-sadowski-2001,3,n-butylbenzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-133.95391294994306,-133.95391294994306,0,0
+neutral_charge,gross-sadowski-2001,3,n-butylbenzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.2971958596435359,0.2971958596435359,0,0
+neutral_charge,gross-sadowski-2001,3,n-butylbenzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2339.9433217151536,2339.9433217151536,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-benzene,1.0,300.0,10.0,pressure,,Pa,24348.995511251836,24348.995511251836,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-benzene,1.0,300.0,10.0,residual_helmholtz,,1,-0.023878050696268291,-0.023878050696268291,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-benzene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-101.96202633594994,-101.96202633594994,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-benzene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.21969091196496429,0.21969091196496429,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-benzene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2375.7012928300146,2375.7012928300146,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-ethanoate,1.0,300.0,10.0,pressure,,Pa,24549.042153083021,24549.042153083021,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-ethanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.01583839456015694,-0.01583839456015694,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-ethanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-69.308675082195521,-69.308675082195521,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-ethanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1467289397047189,0.1467289397047189,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-ethanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2415.6128343089749,2415.6128343089749,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-methanoate,1.0,300.0,10.0,pressure,,Pa,24652.320387789488,24652.320387789488,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-methanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.011683231691144259,-0.011683231691144259,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-methanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-50.525007872547405,-50.525007872547405,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-methanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.10294175364274483,0.10294175364274483,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-methanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2436.1955981557039,2436.1955981557039,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-propanoate,1.0,300.0,10.0,pressure,,Pa,24438.198399880315,24438.198399880315,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-propanoate,1.0,300.0,10.0,residual_helmholtz,,1,-0.020301857046821119,-0.020301857046821119,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-propanoate,1.0,300.0,10.0,residual_internal_energy,,J/mol,-89.163476709198719,-89.163476709198719,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-propanoate,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.19347764964735145,0.19347764964735145,0,0
+neutral_charge,gross-sadowski-2001,3,n-propyl-propanoate,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2393.5416652301733,2393.5416652301733,0,0
+neutral_charge,gross-sadowski-2001,3,neopentane,1.0,300.0,10.0,pressure,,Pa,24747.111746169565,24747.111746169565,0,0
+neutral_charge,gross-sadowski-2001,3,neopentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0078759214024680235,-0.0078759214024680235,0,0
+neutral_charge,gross-sadowski-2001,3,neopentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-34.362046110856994,-34.362046110856994,0,0
+neutral_charge,gross-sadowski-2001,3,neopentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.061760009661794256,0.061760009661794256,0,0
+neutral_charge,gross-sadowski-2001,3,neopentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2455.1187641139372,2455.1187641139372,0,0
+neutral_charge,gross-sadowski-2001,3,nitrogen,1.0,300.0,10.0,pressure,,Pa,24941.367573321411,24941.367573321411,0,0
+neutral_charge,gross-sadowski-2001,3,nitrogen,1.0,300.0,10.0,residual_helmholtz,,1,-8.1070034559848291e-05,-8.1070034559848291e-05,0,0
+neutral_charge,gross-sadowski-2001,3,nitrogen,1.0,300.0,10.0,residual_internal_energy,,J/mol,-1.4748070304753957,-1.4748070304753957,0,0
+neutral_charge,gross-sadowski-2001,3,nitrogen,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.0016152207251815041,0.0016152207251815041,0,0
+neutral_charge,gross-sadowski-2001,3,nitrogen,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2493.93510520685,2493.93510520685,0,0
+neutral_charge,gross-sadowski-2001,3,nonadecane,1.0,300.0,10.0,pressure,,Pa,21022.479764277625,21022.479764277625,0,0
+neutral_charge,gross-sadowski-2001,3,nonadecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.16006609409121594,-0.16006609409121594,0,0
+neutral_charge,gross-sadowski-2001,3,nonadecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-722.7533941674933,-722.7533941674933,0,0
+neutral_charge,gross-sadowski-2001,3,nonadecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),1.8657141710708676,1.8657141710708676,0,0
+neutral_charge,gross-sadowski-2001,3,nonadecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,1724.1165133581508,1724.1165133581508,0,0
+neutral_charge,gross-sadowski-2001,3,nonane,1.0,300.0,10.0,pressure,,Pa,24183.796310980029,24183.796310980029,0,0
+neutral_charge,gross-sadowski-2001,3,nonane,1.0,300.0,10.0,residual_helmholtz,,1,-0.030557335233808068,-0.030557335233808068,0,0
+neutral_charge,gross-sadowski-2001,3,nonane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-133.81327653348316,-133.81327653348316,0,0
+neutral_charge,gross-sadowski-2001,3,nonane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.29490932744530352,0.29490932744530352,0,0
+neutral_charge,gross-sadowski-2001,3,nonane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2342.9404921982223,2342.9404921982223,0,0
+neutral_charge,gross-sadowski-2001,3,o-xylene,1.0,300.0,10.0,pressure,,Pa,24453.54790086472,24453.54790086472,0,0
+neutral_charge,gross-sadowski-2001,3,o-xylene,1.0,300.0,10.0,residual_helmholtz,,1,-0.019670047518557839,-0.019670047518557839,0,0
+neutral_charge,gross-sadowski-2001,3,o-xylene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-83.645253140353333,-83.645253140353333,0,0
+neutral_charge,gross-sadowski-2001,3,o-xylene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.17739521452142218,0.17739521452142218,0,0
+neutral_charge,gross-sadowski-2001,3,o-xylene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2396.5301216029106,2396.5301216029106,0,0
+neutral_charge,gross-sadowski-2001,3,octadecane,1.0,300.0,10.0,pressure,,Pa,21502.891962737103,21502.891962737103,0,0
+neutral_charge,gross-sadowski-2001,3,octadecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.14013984750654981,-0.14013984750654981,0,0
+neutral_charge,gross-sadowski-2001,3,octadecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-630.91887593893239,-630.91887593893239,0,0
+neutral_charge,gross-sadowski-2001,3,octadecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),1.6119815717133454,1.6119815717133454,0,0
+neutral_charge,gross-sadowski-2001,3,octadecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,1816.9973988017296,1816.9973988017296,0,0
+neutral_charge,gross-sadowski-2001,3,octane,1.0,300.0,10.0,pressure,,Pa,24348.035669631605,24348.035669631605,0,0
+neutral_charge,gross-sadowski-2001,3,octane,1.0,300.0,10.0,residual_helmholtz,,1,-0.023931325001475531,-0.023931325001475531,0,0
+neutral_charge,gross-sadowski-2001,3,octane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-104.39586982958451,-104.39586982958451,0,0
+neutral_charge,gross-sadowski-2001,3,octane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.22318829935565351,0.22318829935565351,0,0
+neutral_charge,gross-sadowski-2001,3,octane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2375.5825713577101,2375.5825713577101,0,0
+neutral_charge,gross-sadowski-2001,3,p-xylene,1.0,300.0,10.0,pressure,,Pa,24455.07180972796,24455.07180972796,0,0
+neutral_charge,gross-sadowski-2001,3,p-xylene,1.0,300.0,10.0,residual_helmholtz,,1,-0.019609890567626111,-0.019609890567626111,0,0
+neutral_charge,gross-sadowski-2001,3,p-xylene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-83.591177162272373,-83.591177162272373,0,0
+neutral_charge,gross-sadowski-2001,3,p-xylene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1766081286891279,0.1766081286891279,0,0
+neutral_charge,gross-sadowski-2001,3,p-xylene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2396.8395599094756,2396.8395599094756,0,0
+neutral_charge,gross-sadowski-2001,3,pentadecane,1.0,300.0,10.0,pressure,,Pa,22639.506968821977,22639.506968821977,0,0
+neutral_charge,gross-sadowski-2001,3,pentadecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.093355225593802937,-0.093355225593802937,0,0
+neutral_charge,gross-sadowski-2001,3,pentadecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-416.7555466365543,-416.7555466365543,0,0
+neutral_charge,gross-sadowski-2001,3,pentadecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),1.0282923058672504,1.0282923058672504,0,0
+neutral_charge,gross-sadowski-2001,3,pentadecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2038.4276046596285,2038.4276046596285,0,0
+neutral_charge,gross-sadowski-2001,3,pentane,1.0,300.0,10.0,pressure,,Pa,24706.277733736697,24706.277733736697,0,0
+neutral_charge,gross-sadowski-2001,3,pentane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0095158588729685589,-0.0095158588729685589,0,0
+neutral_charge,gross-sadowski-2001,3,pentane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-41.351938518064493,-41.351938518064493,0,0
+neutral_charge,gross-sadowski-2001,3,pentane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.078145036065693702,0.078145036065693702,0,0
+neutral_charge,gross-sadowski-2001,3,pentane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2446.9662603681654,2446.9662603681654,0,0
+neutral_charge,gross-sadowski-2001,3,propane,1.0,300.0,10.0,pressure,,Pa,24851.063870309004,24851.063870309004,0,0
+neutral_charge,gross-sadowski-2001,3,propane,1.0,300.0,10.0,residual_helmholtz,,1,-0.0037031939728797499,-0.0037031939728797499,0,0
+neutral_charge,gross-sadowski-2001,3,propane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-16.548216869755525,-16.548216869755525,0,0
+neutral_charge,gross-sadowski-2001,3,propane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.027563808662778393,0.027563808662778393,0,0
+neutral_charge,gross-sadowski-2001,3,propane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2475.8832313005523,2475.8832313005523,0,0
+neutral_charge,gross-sadowski-2001,3,propylene,1.0,300.0,10.0,pressure,,Pa,24861.691075807063,24861.691075807063,0,0
+neutral_charge,gross-sadowski-2001,3,propylene,1.0,300.0,10.0,residual_helmholtz,,1,-0.003276764728618483,-0.003276764728618483,0,0
+neutral_charge,gross-sadowski-2001,3,propylene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-14.676022423031862,-14.676022423031862,0,0
+neutral_charge,gross-sadowski-2001,3,propylene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.024255067217862157,0.024255067217862157,0,0
+neutral_charge,gross-sadowski-2001,3,propylene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2478.0067957970336,2478.0067957970336,0,0
+neutral_charge,gross-sadowski-2001,3,sulfur-dioxide,1.0,300.0,10.0,pressure,,Pa,24864.074295885952,24864.074295885952,0,0
+neutral_charge,gross-sadowski-2001,3,sulfur-dioxide,1.0,300.0,10.0,residual_helmholtz,,1,-0.003181068091595911,-0.003181068091595911,0,0
+neutral_charge,gross-sadowski-2001,3,sulfur-dioxide,1.0,300.0,10.0,residual_internal_energy,,J/mol,-14.163349506091938,-14.163349506091938,0,0
+neutral_charge,gross-sadowski-2001,3,sulfur-dioxide,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.026352470995873477,0.026352470995873477,0,0
+neutral_charge,gross-sadowski-2001,3,sulfur-dioxide,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2478.4826831444084,2478.4826831444084,0,0
+neutral_charge,gross-sadowski-2001,3,tetradecane,1.0,300.0,10.0,pressure,,Pa,22987.116125808243,22987.116125808243,0,0
+neutral_charge,gross-sadowski-2001,3,tetradecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.079136780823862454,-0.079136780823862454,0,0
+neutral_charge,gross-sadowski-2001,3,tetradecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-351.98758101786979,-351.98758101786979,0,0
+neutral_charge,gross-sadowski-2001,3,tetradecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.85583001042270512,0.85583001042270512,0,0
+neutral_charge,gross-sadowski-2001,3,tetradecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2106.5711287480581,2106.5711287480581,0,0
+neutral_charge,gross-sadowski-2001,3,tetralin,1.0,300.0,10.0,pressure,,Pa,24210.943947939453,24210.943947939453,0,0
+neutral_charge,gross-sadowski-2001,3,tetralin,1.0,300.0,10.0,residual_helmholtz,,1,-0.029427033467659999,-0.029427033467659999,0,0
+neutral_charge,gross-sadowski-2001,3,tetralin,1.0,300.0,10.0,residual_internal_energy,,J/mol,-124.83731902621003,-124.83731902621003,0,0
+neutral_charge,gross-sadowski-2001,3,tetralin,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.27726250677901843,0.27726250677901843,0,0
+neutral_charge,gross-sadowski-2001,3,tetralin,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2348.1626316213851,2348.1626316213851,0,0
+neutral_charge,gross-sadowski-2001,3,toluene,1.0,300.0,10.0,pressure,,Pa,24583.049107880768,24583.049107880768,0,0
+neutral_charge,gross-sadowski-2001,3,toluene,1.0,300.0,10.0,residual_helmholtz,,1,-0.014463657155506619,-0.014463657155506619,0,0
+neutral_charge,gross-sadowski-2001,3,toluene,1.0,300.0,10.0,residual_internal_energy,,J/mol,-61.265632227313517,-61.265632227313517,0,0
+neutral_charge,gross-sadowski-2001,3,toluene,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.1251433863890043,0.1251433863890043,0,0
+neutral_charge,gross-sadowski-2001,3,toluene,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2422.357746999422,2422.357746999422,0,0
+neutral_charge,gross-sadowski-2001,3,tridecane,1.0,300.0,10.0,pressure,,Pa,23241.232926273206,23241.232926273206,0,0
+neutral_charge,gross-sadowski-2001,3,tridecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.068787643594220349,-0.068787643594220349,0,0
+neutral_charge,gross-sadowski-2001,3,tridecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-305.62885383817274,-305.62885383817274,0,0
+neutral_charge,gross-sadowski-2001,3,tridecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.73375583039864611,0.73375583039864611,0,0
+neutral_charge,gross-sadowski-2001,3,tridecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2156.6040111858333,2156.6040111858333,0,0
+neutral_charge,gross-sadowski-2001,3,undecane,1.0,300.0,10.0,pressure,,Pa,23778.583488006316,23778.583488006316,0,0
+neutral_charge,gross-sadowski-2001,3,undecane,1.0,300.0,10.0,residual_helmholtz,,1,-0.046947964424751493,-0.046947964424751493,0,0
+neutral_charge,gross-sadowski-2001,3,undecane,1.0,300.0,10.0,residual_internal_energy,,J/mol,-206.93788177452882,-206.93788177452882,0,0
+neutral_charge,gross-sadowski-2001,3,undecane,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),0.47800085997044323,0.47800085997044323,0,0
+neutral_charge,gross-sadowski-2001,3,undecane,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2262.6157662598066,2262.6157662598066,0,0
+neutral_charge,crespo-2021-deea,3,diethylethanolamine,1.0,300.0,10.0,pressure,,Pa,24252.952503469794,24252.952503469794,0,0
+neutral_charge,crespo-2021-deea,3,diethylethanolamine,1.0,300.0,10.0,residual_helmholtz,,1,-0.027758712519742205,-0.027758712519742205,0,0
+neutral_charge,crespo-2021-deea,3,diethylethanolamine,1.0,300.0,10.0,residual_internal_energy,,J/mol,-197.10544529943516,-197.10544529943508,8.5265128291212022e-14,0.00043258636595087702
+neutral_charge,crespo-2021-deea,3,diethylethanolamine,1.0,300.0,10.0,residual_isochoric_heat_capacity,,J/(mol K),2.4993711739170528,2.4993711739170505,2.2204460492503131e-15,0.0008884018798097907
+neutral_charge,crespo-2021-deea,3,diethylethanolamine,1.0,300.0,10.0,pressure_density_derivative,,Pa m^3/mol,2356.6418246801022,2356.6418246801022,0,0

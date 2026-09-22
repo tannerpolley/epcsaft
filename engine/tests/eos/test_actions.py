@@ -64,7 +64,7 @@ def _mixed_difference(
 
 
 def test_public_residual_actions_match_independent_stencils(evidence: Any) -> None:
-    path = parameters_json("gross-2001-methane-ethane", 2)
+    path = parameters_json("gross-2001-methane-ethane", 3)
     components = ("methane", "ethane")
     model = Mixture(Parameters.from_json(path, components=components))
     temperature = 300.0
@@ -160,7 +160,7 @@ def test_public_residual_actions_match_independent_stencils(evidence: Any) -> No
 
 
 def test_public_action_availability_and_pure_identity() -> None:
-    path = parameters_json("gross-2001-methane-ethane", 2)
+    path = parameters_json("gross-2001-methane-ethane", 3)
     observable = PropertyObservable.ResidualEnthalpy
     mixture = Mixture(Parameters.from_json(path, components=("methane", "ethane")))
     support = mixture.density_actions(
@@ -198,7 +198,7 @@ def test_public_action_availability_and_pure_identity() -> None:
 
 
 def test_public_action_rejects_invalid_directions() -> None:
-    path = parameters_json("gross-2001-methane-ethane", 2)
+    path = parameters_json("gross-2001-methane-ethane", 3)
     model = Mixture(Parameters.from_json(path, components=("methane", "ethane")))
     observable = PropertyObservable.ResidualEnthalpy
     valid = DensityActionDirection(1.0, 0.0, (0.0, 0.0))

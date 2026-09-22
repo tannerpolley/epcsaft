@@ -44,6 +44,8 @@ ParameterDocument associating_binary() {
     doc.component_ids = {"associating-a", "associating-b"};
     doc.site_component = {0, 0, 1, 1};  // two sites on each species
     doc.site_multiplicity = {2, 1, 2, 2};
+    doc.base_choice = "pc-saft";
+    doc.association_choice = "general-site";
     doc.electrolyte_choice = "none";
     doc.permittivity_choice = "none";
     const double segment[2] = {4.5354, 2.1945}, sigma[2] = {2.6019, 2.229}, epsilon[2] = {204.0438, 141.66};

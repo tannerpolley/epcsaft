@@ -30,6 +30,8 @@ def _positional_model() -> _core.HelmholtzModel:
     document = _core.ParameterDocument()
     document.component_ids = list(ORDER)
     document.site_component, document.site_multiplicity = [0, 0], [1, 1]
+    document.base_choice = "pc-saft"
+    document.association_choice = "general-site"
     document.electrolyte_choice = "born"
     document.ionic_dispersion_choice = "exclude-same-sign-ion-pairs"
     document.permittivity_choice = "ion-fraction-suppression"

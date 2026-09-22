@@ -82,9 +82,20 @@ class Parameters:
         raw_components = document.get("components")
         if not isinstance(raw_components, Sequence) or isinstance(raw_components, (str, bytes)):
             raise _core.ParameterError("components must be an array")
-        records = [_mapping(item, "components") for item in raw_components]
-        available = [cast(str, item.get("component_id")) for item in records]
+        component_records: dict[str, Mapping[str, object]] = {}
+        for index, item in enumerate(raw_components):
+            record = _mapping(item, "components")
+            component_id = record.get("component_id")
+            if not isinstance(component_id, str) or not component_id:
+                raise _core.ParameterError(f"components[{index}].component_id must be a non-empty string")
+            if component_id in component_records:
+                raise _core.ParameterError(f"duplicate component_id {component_id}")
+            component_records[component_id] = record
+        available = list(component_records)
         selected = available if components is None else list(components)
+        for index, component_id in enumerate(selected):
+            if not isinstance(component_id, str) or not component_id:
+                raise _core.ParameterError(f"component selection[{index}] must be a non-empty string")
         if len(set(selected)) != len(selected):
             raise _core.ParameterError("duplicate selected component")
         if any(item not in available for item in selected):
@@ -93,7 +104,6 @@ class Parameters:
         selected_ids = tuple(selected)
         positions = {item: index for index, item in enumerate(selected_ids)}
         entries: list[_core.ParameterEntry] = []
-        component_records = {cast(str, item.get("component_id")): item for item in records}
         component_fields = {
             "molar_mass": "molar_mass",
             "charge_number": "charge_number",
@@ -116,8 +126,6 @@ class Parameters:
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
                     entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), field, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))
-                elif family == "charge_number":
-                    entries.append(_entry(f"component/{component_id}/charge_number", field, (positions[component_id],), {"magnitude": 0, "unit": "elementary-charge"}, f"component/{component_id}/{family}"))
             coefficients = record.get("coefficients", ())
             if not isinstance(coefficients, Sequence) or isinstance(coefficients, (str, bytes)):
                 raise _core.ParameterError(f"component/{component_id}/coefficients must be an array")
@@ -136,9 +144,11 @@ class Parameters:
             raise _core.ParameterError("correlations must be an array")
         sigma_term = 0
         permittivity_term = 0
-        for item_value in raw_correlations:
+        for correlation_index, item_value in enumerate(raw_correlations):
             item = _mapping(item_value, "correlation")
-            component_id = cast(str, item.get("component_id"))
+            component_id = item.get("component_id")
+            if not isinstance(component_id, str) or not component_id:
+                raise _core.ParameterError(f"correlation[{correlation_index}].component_id must be a non-empty string")
             if component_id not in positions:
                 continue
             correlation_id = item.get("correlation_id")
@@ -148,7 +158,7 @@ class Parameters:
                 raise _core.ParameterError(f"unknown correlation {correlation_id}")
             family = family_value
             form = form_value
-            index = (positions[component_id],)
+            correlation_position = (positions[component_id],)
             if family not in {"segment_diameter", "relative_permittivity"} or form not in {"constant", "constant-plus-sum-of-exponentials", "constant-plus-polynomial-in-temperature"}:
                 raise _core.ParameterError(f"unknown correlation {correlation_id}")
             if form == "constant-plus-sum-of-exponentials" and family != "segment_diameter":
@@ -157,7 +167,7 @@ class Parameters:
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
             base = "sigma_constant" if family == "segment_diameter" else "relative_permittivity"
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
-            entries.append(_entry(constant.get("identity", correlation_id), base, index, constant["value"], cast(str, correlation_id)))
+            entries.append(_entry(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id)))
             if form == "constant-plus-sum-of-exponentials":
                 terms = item.get("terms", ())
                 if not isinstance(terms, Sequence) or isinstance(terms, (str, bytes)):
@@ -171,7 +181,7 @@ class Parameters:
                     sigma_term += 1
             elif form == "constant-plus-polynomial-in-temperature":
                 reference = _mapping(item.get("reference_temperature"), "permittivity reference")
-                entries.append(_entry(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", index, reference, cast(str, correlation_id)))
+                entries.append(_entry(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", correlation_position, reference, cast(str, correlation_id)))
                 terms = item.get("terms", ())
                 if not isinstance(terms, Sequence) or isinstance(terms, (str, bytes)):
                     raise _core.ParameterError(f"{correlation_id} terms must be an array")
@@ -188,10 +198,14 @@ class Parameters:
         if not isinstance(raw_pairs, Sequence) or isinstance(raw_pairs, (str, bytes)):
             raise _core.ParameterError("pairs must be an array")
         pair_fields = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
-        for pair_value in raw_pairs:
+        for index, pair_value in enumerate(raw_pairs):
             pair = _mapping(pair_value, "pair")
-            a = cast(str, pair.get("component_id_a"))
-            b = cast(str, pair.get("component_id_b"))
+            a = pair.get("component_id_a")
+            b = pair.get("component_id_b")
+            if not isinstance(a, str) or not a:
+                raise _core.ParameterError(f"pair[{index}].component_id_a must be a non-empty string")
+            if not isinstance(b, str) or not b:
+                raise _core.ParameterError(f"pair[{index}].component_id_b must be a non-empty string")
             if a not in positions or b not in positions:
                 continue
             pair_entries = pair.get("coefficients", ())
@@ -217,11 +231,14 @@ class Parameters:
         families = document.get("model_families", ())
         if not isinstance(families, Sequence) or isinstance(families, (str, bytes)):
             raise _core.ParameterError("model_families must be an array")
+        for item in families:
+            kind = _mapping(item, "model_families").get("kind")
+            if kind not in ("base", "association", "electrolyte", "permittivity"):
+                raise _core.ParameterError(f"unknown model family kind {kind}")
         electrolyte = _choice(families, "electrolyte", {"none", "fully-dissociated-debye-huckel", "born"})
         permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing"})
-        if _choice(families, "base", {"pc-saft"}) != "pc-saft":
-            raise _core.ParameterError("unknown base model choice")
-        _choice(families, "association", {"none", "general-site"})
+        base = _choice(families, "base", {"pc-saft"})
+        association = _choice(families, "association", {"none", "general-site"})
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
         if electrolyte == "born":
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
@@ -252,10 +269,14 @@ class Parameters:
         sites = topology.get("sites", ())
         if not isinstance(sites, Sequence) or isinstance(sites, (str, bytes)):
             raise _core.ParameterError("topology.sites must be an array")
-        for item_value in sites:
+        for index, item_value in enumerate(sites):
             item = _mapping(item_value, "topology site")
-            component_id = cast(str, item.get("component_id"))
-            site_id = cast(str, item.get("site_id"))
+            component_id = item.get("component_id")
+            site_id = item.get("site_id")
+            if not isinstance(component_id, str) or not component_id:
+                raise _core.ParameterError(f"topology site[{index}].component_id must be a non-empty string")
+            if not isinstance(site_id, str) or not site_id:
+                raise _core.ParameterError(f"topology site[{index}].site_id must be a non-empty string")
             if component_id not in positions:
                 continue
             site_key = (component_id, site_id)
@@ -269,12 +290,22 @@ class Parameters:
         if not isinstance(edges, Sequence) or isinstance(edges, (str, bytes)):
             raise _core.ParameterError("topology.edges must be an array")
         association_identities: dict[str, tuple[str, tuple[int, int]]] = {}
-        for item_value in edges:
+        for index, item_value in enumerate(edges):
             edge = _mapping(item_value, "topology edge")
             endpoint_a = _mapping(edge.get("endpoint_a"), "topology endpoint")
             endpoint_b = _mapping(edge.get("endpoint_b"), "topology endpoint")
-            first = (cast(str, endpoint_a.get("component_id")), cast(str, endpoint_a.get("site_id")))
-            second = (cast(str, endpoint_b.get("component_id")), cast(str, endpoint_b.get("site_id")))
+            first_component_id = endpoint_a.get("component_id")
+            first_site_id = endpoint_a.get("site_id")
+            second_component_id = endpoint_b.get("component_id")
+            second_site_id = endpoint_b.get("site_id")
+            for value, name in ((first_component_id, "endpoint_a.component_id"),
+                                (first_site_id, "endpoint_a.site_id"),
+                                (second_component_id, "endpoint_b.component_id"),
+                                (second_site_id, "endpoint_b.site_id")):
+                if not isinstance(value, str) or not value:
+                    raise _core.ParameterError(f"topology edge[{index}].{name} must be a non-empty string")
+            first = (cast(str, first_component_id), cast(str, first_site_id))
+            second = (cast(str, second_component_id), cast(str, second_site_id))
             if first[0] not in positions or second[0] not in positions:
                 continue
             if first not in site_positions or second not in site_positions:
@@ -343,6 +374,8 @@ class Parameters:
         native_document.component_ids = list(selected_ids)
         native_document.site_component = site_component
         native_document.site_multiplicity = site_multiplicity
+        native_document.base_choice = base
+        native_document.association_choice = association
         native_document.electrolyte_choice = electrolyte
         native_document.ionic_dispersion_choice = str(electrolyte_record.get("ionic_dispersion", ""))
         native_document.permittivity_choice = permittivity
