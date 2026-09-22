@@ -692,7 +692,8 @@ EquilibriumResult run_driver(
     // from an ill-conditioned point (a species near the cutoff scales its row by 1e-20) is
     // otherwise rejected and the optimizer iterate is kept.
     std::size_t polish_evaluations = 0;
-    if (nlp->status() == Ipopt::SUCCESS && compiled.is_square()) {
+    if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
+         || nlp->status() == Ipopt::STOP_AT_TINY_STEP) && compiled.is_square()) {
         auto at = compiled.prepare(full);
         auto rows_before = compiled.evaluate_at(at).values;
         ++polish_evaluations;
@@ -833,7 +834,8 @@ EquilibriumResult run_driver(
             + std::to_string(topology.distance);
     }
     const bool solver_ok = nlp->status() == Ipopt::SUCCESS
-        || (nlp->status() == Ipopt::STOP_AT_TINY_STEP
+        || ((nlp->status() == Ipopt::STOP_AT_TINY_STEP
+             || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT)
             && result.convergence.stop == core::Stop::converged);
     const bool accepted = solver_ok
         && (result.convergence.stop == core::Stop::converged

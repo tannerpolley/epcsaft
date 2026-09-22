@@ -112,6 +112,39 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
          claim="the minimum reduced curvature of the isomerisation is the trace amount to first order in K")
 
 
+def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
+    """At 1e6 mol the former tiny-step state missed x_B by 0.96% and curvature by 1.9%."""
+    total, temperature, k = 1e6, 350.0, 1e-8
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    a = math.log(k) - 1200 / temperature - 0.4 * math.log(temperature / 300) - 0.002 * temperature
+    law = ReactionLogPolynomial(a, 1200, 0.4, 0.002, 300, 250, 450, EOS_STANDARD_STATE_ID)
+    problem = Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=2e5,
+                      feed=Amounts({"s0": total / 2, "s1": total / 2}),
+                      reactions=[Reaction({"s0": -1.0, "s1": 1.0}, correlation=law)])
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    inputs = {"feed_mol": total, "K": k, "T_K": temperature, "P_Pa": 2e5}
+    same(evidence, "large-feed-trace/x_B", result.mole_fractions[1], k / (1 + k),
+         atol=0.0, rtol=1e-6, unit="1", inputs=inputs, basis="Identity",
+         method="logistic-analytic", claim="trace equilibrium is independent of total feed")
+    compiled = compile_problem(model, problem)
+    point = list(result.coordinates[:compiled.primal_size])
+    gradient, jacobian = compiled.objective_gradient(point), compiled.jacobian(point)
+    rows = [i for i, row in enumerate(compiled.rows)
+            if str(row.kind).split(".")[-1] not in ("Chemical", "Pressure")]
+    kkt = max(abs(gradient[j] + sum(mu * jacobian[i * compiled.primal_size + j]
+              for mu, i in zip(result.constraint_multipliers, rows)))
+              for j in range(compiled.primal_size)) / total
+    same(evidence, "large-feed-trace/kkt_per_feed", kkt, 0.0, atol=1e-10, rtol=0.0,
+         unit="1", inputs=inputs, basis="Identity", method="objective-gradient-plus-jacobian",
+         claim="per-feed stationarity meets the existing intensive criterion")
+    assert result.reduced_hessian_minimum > 0.0
+    same(evidence, "large-feed-trace/curvature", result.reduced_hessian_minimum,
+         total * k / (1 + k), atol=0.0, rtol=2 * k + 1e-9, unit="1", inputs=inputs,
+         basis="Relationship", method="trace-amount-scale",
+         claim="large-feed reduced curvature has the analytic trace-amount scale")
+
+
 @pytest.mark.parametrize("total", [1.0, 10.0])
 def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float) -> None:
     """Khudaida Figure 2 point 1: nonzero electrochemical offset, two stable liquid phases.

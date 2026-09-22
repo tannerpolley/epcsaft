@@ -253,12 +253,14 @@ limits.
 Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
-`tau N_feed/(N_p x_i)`; after a successful stop, at most
+`tau N_feed/(N_p x_i)`; after a success, acceptable-point or tiny-step stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
 Jacobian close that gap, each accepted only when it contracts both the raw row
 maximum and the classified residual and keeps every composition above the
 structural cutoff `STABILITY_COMPOSITION_FLOOR`, below the optimizer box when
-the solution lies there (#87, 2026-09-21). Tiny-step stops are not polished.
+the solution lies there (#87, 2026-09-21). Acceptable-point and tiny-step stops
+use this same polish because optimizer stopping can leave the same intensive
+row defect at large feed scales. No additional step or relaxed criterion is used.
 Acceptance is still classified on the caller criterion at the returned point.
 Limits: a pinned declared phase carries its chemical and pressure rows as
 optimizer equality constraints, so a solution below the box makes that
@@ -283,8 +285,10 @@ open. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
-tiny-step termination only when the recomputed residual meets the declared
-equilibrium criterion; a tiny-step status alone is never success. Ipopt unscales
+tiny-step or restoration-produced acceptable-point termination only when the
+recomputed residual meets the declared equilibrium criterion. Neither status
+alone establishes success; final topology, curvature and branch admission still
+apply. Ipopt unscales
 final constraint multipliers before the
 TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
@@ -561,10 +565,11 @@ application accuracy criteria stay beside their accepted reference cases.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
-`STOP_AT_TINY_STEP` with a finite non-converged residual is stalled and
-unavailable, while a finite criterion-meeting tiny-step result remains
-eligible. A tiny-step status alone never establishes success; recomputed
-residual and topology criteria still apply.
+`STOP_AT_TINY_STEP` or `STOP_AT_ACCEPTABLE_POINT` with a finite non-converged
+residual is unavailable, while a finite criterion-meeting result remains
+eligible after the same bounded polish and physical checks. A tiny-step or
+acceptable-point status alone never establishes success; floor-only results
+from either remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
 diagnosis and do not determine success. Density root producers classify all
