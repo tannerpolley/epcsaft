@@ -437,12 +437,15 @@ def test_declared_model_preserves_association_equations(evidence: Any) -> None:
         with pytest.raises(ParameterError, match=kind):
             Parameters.from_mapping(invalid, components=components)
     for extra in ({"kind": "polar", "choice": "dipole"},
-                  {"kind": "association", "choice": "general-site"},
-                  {"kind": "association"}):
+                  {"kind": "association", "choice": "general-site"}):
         invalid = copy.deepcopy(document)
         invalid["model_families"].append(extra)
         with pytest.raises(ParameterError, match=extra["kind"]):
             Parameters.from_mapping(invalid, components=components)
+    malformed_first = copy.deepcopy(document)
+    malformed_first["model_families"].insert(0, {"kind": "association"})
+    with pytest.raises(ParameterError, match="duplicate model choice association"):
+        Parameters.from_mapping(malformed_first, components=components)
 
     ambiguous = copy.deepcopy(document)
     water = copy.deepcopy(next(item for item in document["components"] if item["component_id"] == "water"))
@@ -450,7 +453,6 @@ def test_declared_model_preserves_association_equations(evidence: Any) -> None:
     ambiguous["components"].append(water)
     with pytest.raises(ParameterError, match="duplicate component_id water"):
         Parameters.from_mapping(ambiguous, components=components)
-
 
     unbonded = copy.deepcopy(document)
     unbonded["topology"] = {"sites": [], "edges": []}
