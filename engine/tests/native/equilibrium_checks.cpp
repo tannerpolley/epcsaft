@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <limits>
 #include <string>
@@ -676,6 +677,306 @@ void check_s2() {
         "s2-reactive-curvature", "reactive", "\\lambda_{min}(H)", "T,P,feed",
         "\\lambda_{min}(H)>0", "stability");
     CHECK(reactive.success && reactive_curvature_positive);
+
+    // #84: the native all-solute path must include the density factor, retain
+    // the selected pressure, and reject a charged reaction before any solve.
+    epcsaft::HelmholtzModel reference_model(properties_support::neutral_ternary());
+    const auto ratios = [](std::vector<double> values) {
+        epcsaft::NeutralReferenceDeclaration declaration;
+        declaration.solvent_index = 0;
+        declaration.standard_molality_mol_per_kg = 1.0;
+        declaration.solute_molality_ratios = values;
+        return declaration;
+    };
+    const std::vector<double> nu = {-1.0, 2.0, 0.0};
+    const auto reference = epcsaft::ReactionReference{
+        std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+    const auto first = epcsaft::reaction_reference(
+        reference_model, 300.0, 1.0e5, ratios({0.0, 1.0, 1.0}), nu, reference);
+    const auto second = epcsaft::reaction_reference(
+        reference_model, 300.0, 1.0e5, ratios({0.0, 2.0, 1.0}), nu, reference);
+    CHECK(first.status == epcsaft::NeutralReferenceStatus::Available
+          && second.status == epcsaft::NeutralReferenceStatus::Available);
+    CHECK(first.terminal_contraction.has_value() && second.terminal_contraction.has_value());
+    const double path_gap = std::abs(*first.terminal_contraction - *second.terminal_contraction);
+    recording_support::compare_custom(
+        "neutral-reference/path-gap", "terminal_contraction_gap", "1", path_gap, 5.0e-5,
+        recording_support::fields({recording_support::field("T", 300.0),
+            recording_support::field("P", 1.0e5), recording_support::field("nu", nu)}),
+        "Relationship", "independent-neutral-paths",
+        "independent positive neutral solute paths agree at the finite terminal point",
+        "isfinite(model) && model <= reference", path_gap <= 5.0e-5,
+        "s2-neutral-reference", "path-gap", "|C_a-C_b|", "T,P,nu", "|C_a-C_b|<=5e-5", "path");
+    const double molality = 1.0e-14;
+    const double solvent_moles = 1.0 / reference_model.parameters().molar_mass_kg_per_mol[0];
+    const double total = solvent_moles + 2.0 * molality;
+    const std::vector<double> terminal_x = {
+        solvent_moles / total, molality / total, molality / total};
+    const auto terminal = reference_model.state_at_pressure(
+        300.0, 1.0e5, terminal_x, epcsaft::DensityBranch::Liquid);
+    CHECK(terminal.log_fugacity_coefficient.has_value());
+    double identity = 0.0;
+    for (std::size_t i = 0; i < nu.size(); ++i)
+        identity += nu[i] * ((*terminal.log_fugacity_coefficient)[i]
+            + std::log(1.0e5 / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0)));
+    recording_support::compare(
+        "neutral-reference/lambda-identity", "terminal_contraction", "1",
+        *first.terminal_contraction, identity,
+        recording_support::fields({recording_support::field("rho", terminal.molar_density),
+            recording_support::field("observed_terminal_change", *first.observed_terminal_change)}),
+        "Relationship", "fugacity-pressure-identity",
+        "Lambda includes log(P/(RT rho0)) in the independent fugacity form",
+        "reference_or_one", 0.0, 1.0e-9,
+        close_with_tolerance(*first.terminal_contraction, identity, 1.0e-9),
+        "s2-neutral-reference", "lambda-identity", "C", "rho,phi,T,P", "C=nu.Lambda", "identity");
+    const auto fixed_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu,
+        epcsaft::ReactionReference{1.0e5, reference.source_basis});
+    const auto system_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu, reference);
+    CHECK(fixed_pressure.status == epcsaft::NeutralReferenceStatus::Available
+          && system_pressure.status == epcsaft::NeutralReferenceStatus::Available
+          && fixed_pressure.reference_pressure_pa == 1.0e5
+          && fixed_pressure.terminal_contraction.has_value()
+          && system_pressure.terminal_contraction.has_value());
+    CHECK(std::abs(*fixed_pressure.terminal_contraction - *first.terminal_contraction) <= 1.0e-12);
+    const double pressure_gap = std::abs(
+        *system_pressure.terminal_contraction - *fixed_pressure.terminal_contraction);
+    recording_support::compare_custom(
+        "neutral-reference/pressure-path", "pressure_contraction_gap", "1", pressure_gap, 1.0e-6,
+        recording_support::fields({recording_support::field("system_pressure", 2.0e5),
+            recording_support::field("reference_pressure", 1.0e5)}),
+        "Relationship", "source-pressure-selection",
+        "system and explicit source pressures produce distinct Delta-nu contraction values",
+        "isfinite(model) && model > reference", pressure_gap > 1.0e-6,
+        "s2-neutral-reference", "pressure-path", "|C_P-C_P0|", "T,P,P0", "|gap|>1e-6", "pressure");
+    CHECK(system_pressure.terminal_contraction_pressure_derivative.has_value()
+          && system_pressure.terminal_contraction_pressure_second_derivative.has_value()
+          && fixed_pressure.terminal_contraction_pressure_derivative.has_value()
+          && fixed_pressure.terminal_contraction_pressure_second_derivative.has_value()
+          && *fixed_pressure.terminal_contraction_pressure_derivative == 0.0
+          && *fixed_pressure.terminal_contraction_pressure_second_derivative == 0.0);
+    const double pressure_step = 100.0;
+    const auto lower_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5 - pressure_step, ratios({0.0, 1.0, 1.0}), nu, reference);
+    const auto upper_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5 + pressure_step, ratios({0.0, 1.0, 1.0}), nu, reference);
+    CHECK(lower_pressure.terminal_contraction.has_value()
+          && upper_pressure.terminal_contraction.has_value());
+    const double centered_pressure_derivative =
+        (*upper_pressure.terminal_contraction - *lower_pressure.terminal_contraction)
+        / (2.0 * pressure_step);
+    const double centered_pressure_second_derivative =
+        (*upper_pressure.terminal_contraction
+            - 2.0 * *system_pressure.terminal_contraction
+            + *lower_pressure.terminal_contraction)
+        / (pressure_step * pressure_step);
+    const auto jet_close = [](double left, double right) {
+        return std::abs(left - right) <= 1.0e-3
+            * std::max({std::abs(left), std::abs(right), 1.0e-12});
+    };
+    CHECK(jet_close(*system_pressure.terminal_contraction_pressure_derivative,
+                    centered_pressure_derivative)
+          && jet_close(*system_pressure.terminal_contraction_pressure_second_derivative,
+                       centered_pressure_second_derivative));
+
+    // Identical EOS species provide a finite nonideal counterproof: the density
+    // term and residual chemical potential do not separate into an ideal -1/P law.
+    auto identical_parameters = properties_support::parameters(2);
+    identical_parameters.segment_count = {1.6069, 1.6069};
+    identical_parameters.sigma_constant = {3.5206, 3.5206};
+    identical_parameters.dispersion_energy_over_k = {191.42, 191.42};
+    identical_parameters.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    epcsaft::HelmholtzModel identical_model(identical_parameters);
+    const auto identical_declaration = ratios({0.0, 1.0});
+    const std::vector<double> identical_nu = {-2.0, 1.0};
+    const auto identical_reference = epcsaft::reaction_reference(
+        identical_model, 300.0, 1.0e5, identical_declaration, identical_nu, reference);
+    CHECK(identical_reference.status == epcsaft::NeutralReferenceStatus::Available
+          && identical_reference.terminal_contraction_pressure_derivative.has_value()
+          && identical_reference.terminal_contraction_pressure_second_derivative.has_value());
+    const double identical_molality = 1.0e-14;
+    const double identical_solvent_moles = 1.0 / identical_parameters.molar_mass_kg_per_mol[0];
+    const double identical_total = identical_solvent_moles + identical_molality;
+    const auto identical_terminal = identical_model.state_at_pressure(
+        300.0, 1.0e5,
+        {identical_solvent_moles / identical_total, identical_molality / identical_total},
+        epcsaft::DensityBranch::Liquid);
+    const double identical_cp = -1.0 / (
+        identical_terminal.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0);
+    const double identical_cpp = 1.0 / (
+        identical_terminal.molar_density * identical_terminal.molar_density
+        * epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0
+        * identical_terminal.pressure_density_derivative);
+    CHECK(jet_close(*identical_reference.terminal_contraction_pressure_derivative, identical_cp)
+          && jet_close(*identical_reference.terminal_contraction_pressure_second_derivative,
+                       identical_cpp));
+
+    const auto charged = epcsaft::reaction_reference(
+        epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()), 298.15, 1.0e5,
+        ratios({0.0, 1.0, 1.0}), {-1.0, 1.0, 0.0}, reference);
+    CHECK(charged.status == epcsaft::NeutralReferenceStatus::NonNeutralDeclaration);
+    auto referenced = equilibrium_support::flash(3);
+    referenced.feed.values = {2.0, 0.2, 0.2};
+    referenced.source_reference = ratios({0.0, 1.0, 1.0});
+    const auto law = epcsaft::ReactionLogPolynomial{
+        std::log(0.3), 0.0, 0.0, 0.0, 300.0, 250.0, 350.0, "native-reference-source"};
+    referenced.reactions = {{"A=2B", {-1.0, 2.0, 0.0}, std::nullopt, std::nullopt,
+                             law, reference}};
+    auto free_pressure_reference = referenced;
+    free_pressure_reference.phases = {
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
+            epcsaft::equilibrium::AmountSpec::pinned(0.0)),
+    };
+    free_pressure_reference.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    const auto free_pressure_compiled = epcsaft::equilibrium::compile_problem(
+        reference_model, free_pressure_reference);
+    const auto free_pressure_point = free_pressure_compiled.generic_point();
+    const auto free_pressure_prepared = free_pressure_compiled.prepare(free_pressure_point);
+    CHECK(std::all_of(free_pressure_prepared.standard.pressure_derivative.begin(),
+                      free_pressure_prepared.standard.pressure_derivative.end(),
+                      [](double value) { return std::isfinite(value); }));
+    const std::size_t control_width = 2 + reference_model.parameters().component_count();
+    std::vector<double> pressure_control(control_width, 0.0);
+    pressure_control[1] = 1.0;
+    std::vector<std::vector<double>> pressure_state(3,
+        std::vector<double>(free_pressure_prepared.point.size(), 0.0));
+    pressure_state[0] = free_pressure_prepared.point;
+    pressure_state[1][free_pressure_compiled.primal_size - 1] = 1.0;
+    const auto pressure_series = free_pressure_compiled.row_series(
+        free_pressure_prepared,
+        pressure_state,
+        pressure_control, 2);
+    CHECK(pressure_series.energy == epcsaft::PropertyActionStatus::Available);
+    const auto chemical = std::find_if(
+        free_pressure_compiled.rows.begin(), free_pressure_compiled.rows.end(),
+        [](const auto& row) { return row.kind == epcsaft::equilibrium::RowKind::Chemical; });
+    CHECK(chemical != free_pressure_compiled.rows.end());
+    if (chemical != free_pressure_compiled.rows.end()) {
+        const std::size_t row = static_cast<std::size_t>(
+            std::distance(free_pressure_compiled.rows.begin(), chemical));
+        const double pressure_step = 100.0;
+        auto plus = free_pressure_prepared.point;
+        auto minus = free_pressure_prepared.point;
+        plus[free_pressure_compiled.primal_size - 1] += pressure_step;
+        minus[free_pressure_compiled.primal_size - 1] -= pressure_step;
+        const auto plus_rows = free_pressure_compiled.evaluate_at(
+            free_pressure_compiled.prepare(plus)).values;
+        const auto minus_rows = free_pressure_compiled.evaluate_at(
+            free_pressure_compiled.prepare(minus)).values;
+        const auto central_rows = free_pressure_compiled.evaluate_at(free_pressure_prepared).values;
+        const double centered_first = (plus_rows[row] - minus_rows[row])
+            / (2.0 * pressure_step);
+        const double centered_second_coefficient = (plus_rows[row]
+            - 2.0 * central_rows[row] + minus_rows[row])
+            / (2.0 * pressure_step * pressure_step);
+        const auto close_pressure_jet = [](double actual, double expected) {
+            return std::isfinite(actual) && std::isfinite(expected)
+                && std::abs(actual - expected) <= 2.0e-3
+                    * std::max({std::abs(actual), std::abs(expected), 1.0e-12});
+        };
+        CHECK(close_pressure_jet(pressure_series.rows[1][row], centered_first)
+              && close_pressure_jet(pressure_series.rows[2][row], centered_second_coefficient));
+    }
+    bool pressure_third_rejected = false;
+    try {
+        (void)free_pressure_compiled.row_series(
+            free_pressure_prepared,
+            {free_pressure_prepared.point,
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0)},
+            pressure_control, 3);
+    } catch (const std::invalid_argument&) {
+        pressure_third_rejected = true;
+    }
+    CHECK(pressure_third_rejected);
+    const auto fixed_pressure_compiled = epcsaft::equilibrium::compile_problem(
+        reference_model, referenced);
+    const auto fixed_pressure_prepared = fixed_pressure_compiled.prepare(
+        fixed_pressure_compiled.generic_point());
+    bool fixed_pressure_third_rejected = false;
+    try {
+        (void)fixed_pressure_compiled.row_series(
+            fixed_pressure_prepared,
+            {fixed_pressure_prepared.point,
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0)},
+            pressure_control, 3);
+    } catch (const std::invalid_argument&) {
+        fixed_pressure_third_rejected = true;
+    }
+    CHECK(fixed_pressure_third_rejected);
+    std::fill(pressure_control.begin(), pressure_control.end(), 0.0);
+    pressure_control[2] = 1.0;
+    const auto fixed_feed_series = fixed_pressure_compiled.row_series(
+        fixed_pressure_prepared,
+        {fixed_pressure_prepared.point,
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0)},
+        pressure_control, 3);
+    CHECK(fixed_feed_series.energy == epcsaft::PropertyActionStatus::Available);
+    epcsaft::ThermochemistryRecord thermal_record;
+    thermal_record.standard_pressure = 1.0e5;
+    for (std::size_t i = 0; i < 3; ++i)
+        thermal_record.component_intervals.push_back(
+            properties_support::p3_record(properties_support::p3_forms()[0].second)
+                .component_intervals.front());
+    epcsaft::HelmholtzModel thermal_reference_model(
+        properties_support::neutral_ternary(), {}, thermal_record);
+    const auto referenced_result = epcsaft::equilibrium::solve_equilibrium(
+        thermal_reference_model, referenced);
+    CHECK(referenced_result.success
+          && referenced_result.reference_diagnostics.size() == 1
+          && referenced_result.reference_diagnostics[0].terminal_contraction.has_value());
+    const auto compiled_reference = epcsaft::equilibrium::compile_problem(
+        thermal_reference_model, referenced);
+    epcsaft::equilibrium::SolvedStateActionRequest action_request;
+    epcsaft::equilibrium::SolvedStateObservable composition_observable;
+    composition_observable.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
+    composition_observable.component = 1;
+    action_request.observables = {composition_observable};
+    action_request.directions = {{1.0, 0.0, {0.0, 0.0, 0.0}, {}}};
+    const auto temperature_action = epcsaft::equilibrium::solved_state_actions(
+        compiled_reference, referenced_result, action_request);
+    CHECK(temperature_action.results[0].status
+          == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable);
+    composition_observable.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseProperty;
+    composition_observable.property = epcsaft::PropertyObservable::IdealEnthalpy;
+    const auto total_observable = [&] {
+        auto result = composition_observable;
+        result.property = epcsaft::PropertyObservable::TotalEnthalpy;
+        return result;
+    }();
+    const auto residual_observable = [&] {
+        auto result = composition_observable;
+        result.property = epcsaft::PropertyObservable::ResidualEnthalpy;
+        return result;
+    }();
+    action_request.observables = {composition_observable, total_observable, residual_observable};
+    action_request.directions = {{0.0, 0.0, {0.0, 0.0, 0.0}, {}}};
+    const auto caloric = epcsaft::equilibrium::solved_state_actions(
+        compiled_reference, referenced_result, action_request);
+    const std::vector<double> central_x(
+        referenced_result.mole_fractions.begin(), referenced_result.mole_fractions.begin() + 3);
+    const auto central_state = thermal_reference_model.state(
+        referenced_result.temperature.front(), referenced_result.molar_densities[0], central_x);
+    CHECK(central_state.ideal_enthalpy.has_value() && central_state.total_enthalpy.has_value()
+          && std::isfinite(central_state.residual_enthalpy));
+    CHECK(caloric.results.size() == 3
+          && caloric.results[0].status
+                 == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+          && !caloric.results[0].value.has_value() && !caloric.results[0].action.has_value()
+          && caloric.results[1].status
+                 == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+          && !caloric.results[1].value.has_value() && !caloric.results[1].action.has_value()
+          && caloric.results[2].status
+                 == epcsaft::equilibrium::SolvedStateActionStatus::Available
+          && caloric.results[2].value.has_value()
+          && close_with_tolerance(*caloric.results[2].value, central_state.residual_enthalpy, 1.0e-9));
 }
 
 void check_s6() {
@@ -3407,7 +3708,7 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
-        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
+        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
         {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},

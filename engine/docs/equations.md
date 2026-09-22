@@ -1511,6 +1511,61 @@ $$
 \mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
 $$
 
+## `neutral_reaction_reference_transfer`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
+- Description: Charge-neutral reaction contraction at a declared pure neutral solvent reference. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
+- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Fixed-temperature pressure jets differentiate this terminal state; temperature/parameter derivatives and caloric reference values are not implied.
+
+$$
+\Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
+=\ln\phi_i+\ln(P/(RT\rho_0)),\quad
+C_r=\sum_i\nu_{ri}\Lambda_i^\rho,\quad \sum_i\nu_{ri}z_i=0,\\
+A_r=\left(\sum_{i\ne s}\nu_{ri}\right)\ln(M_s m^\circ),\qquad
+\ln K_{\rho,r}=\begin{cases}
+\ln K_{m,r}+A_r+C_r,&\text{common molality source},\\
+\ln K_{x,r}+C_r,&\text{raw mole-fraction source},
+\end{cases}\\
+n_s=1/M_s,\quad n_i=m r_i\ (i\ne s),\quad \sum_i z_i r_i=0,\quad
+\mathcal M=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\\
+\widehat C_r=C_r(10^{-14}),\qquad
+e_r=\max\{|C_r(10^{-14})-C_r(10^{-12})|,|C_r(10^{-12})-C_r(10^{-10})|\}\le 5\times10^{-5}.
+$$
+
+## `neutral_reaction_reference_pressure_jet`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
+- Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Temperature, parameter and third pressure derivatives remain unavailable.
+
+$$
+C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
+p_V=RT(-V^{-2}-\psi_{VV}),\quad p_{VV}=RT(2V^{-3}-\psi_{VVV}),\\
+C_V=-\Delta\nu/V+\sum_i\nu_i\psi_{n_iV},\qquad
+C_{VV}=\Delta\nu/V^2+\sum_i\nu_i\psi_{n_iVV},\\
+C_P=\frac{C_V}{p_V},\qquad
+C_{PP}=\frac{C_{VV}}{p_V^2}-\frac{C_Vp_{VV}}{p_V^3},\qquad
+g_P=-RT C_P,\quad g_{PP}=-RT C_{PP}.
+$$
+
+## `repeated_direction_energy_third`
+
+- Section: Helmholtz derivatives / Directional actions
+- Status: Exact derivation
+- Source: Multivariate Taylor expansion with one direction inserted at order three and the repeated direction at order one
+- Description: Cancellation-resistant third directional energy action with two equal directions. Brackets extract a Taylor coefficient, not a finite step evaluation; all derivatives include the same implicit association solution.
+- Change note: Pure fifth-order terms cancel and terms with two copies of u start at order six. This evaluates a third derivative, not a public fifth-derivative capability. Normalize directions before coefficient evaluation and restore their three norms afterwards. No association equation or physical parameter changes.
+
+$$
+[t^5]F(p+vt\pm ut^3)=\frac{D^5F[v,v,v,v,v]}{120}
+\pm\frac{D^3F[u,v,v]}{2},\\
+D^3F[u,v,v]=[t^5]\{F(p+vt+ut^3)-F(p+vt-ut^3)\}.
+$$
+
 ## `reference_limit_terminal_pair`
 
 - Section: Electrolyte reference states and reported activities

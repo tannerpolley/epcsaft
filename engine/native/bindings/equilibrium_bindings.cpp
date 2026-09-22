@@ -51,13 +51,50 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("values", &FeedSpec::values)
         .def_readwrite("solvent", &FeedSpec::solvent)
         .def_readwrite("solvent_mass_kg", &FeedSpec::solvent_mass_kg);
+    py::class_<NeutralReferenceDeclaration>(module, "NeutralReferenceDeclaration")
+        .def(py::init<>())
+        .def_readwrite("solvent_index", &NeutralReferenceDeclaration::solvent_index)
+        .def_readwrite("solute_molality_ratios", &NeutralReferenceDeclaration::solute_molality_ratios)
+        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg);
+    py::enum_<ReferenceSourceBasis>(module, "ReferenceSourceBasis")
+        .value("CommonMolalityInfiniteDilution", ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+        .value("RawMoleFractionInfiniteDilution", ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
+    py::enum_<NeutralReferenceStatus>(module, "NeutralReferenceStatus")
+        .value("Available", NeutralReferenceStatus::Available)
+        .value("InvalidDeclaration", NeutralReferenceStatus::InvalidDeclaration)
+        .value("NonNeutralDeclaration", NeutralReferenceStatus::NonNeutralDeclaration)
+        .value("UnsupportedSourceBasis", NeutralReferenceStatus::UnsupportedSourceBasis)
+        .value("FreeTemperature", NeutralReferenceStatus::FreeTemperature)
+        .value("FreePressure", NeutralReferenceStatus::FreePressure)
+        .value("DensityUnavailable", NeutralReferenceStatus::DensityUnavailable)
+        .value("BranchChange", NeutralReferenceStatus::BranchChange)
+        .value("Nonfinite", NeutralReferenceStatus::Nonfinite)
+        .value("TerminalChangeExceeded", NeutralReferenceStatus::TerminalChangeExceeded);
+    py::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
+        .def_readonly("reaction_index", &NeutralReferenceReactionDiagnostic::reaction_index)
+        .def_readonly("terminal_contraction", &NeutralReferenceReactionDiagnostic::terminal_contraction)
+        .def_readonly("observed_terminal_change", &NeutralReferenceReactionDiagnostic::observed_terminal_change)
+        .def_readonly("terminal_contraction_pressure_derivative",
+                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_derivative)
+        .def_readonly("terminal_contraction_pressure_second_derivative",
+                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_second_derivative)
+        .def_readonly("reference_pressure_pa", &NeutralReferenceReactionDiagnostic::reference_pressure_pa)
+        .def_readonly("status", &NeutralReferenceReactionDiagnostic::status)
+        .def_readonly("message", &NeutralReferenceReactionDiagnostic::message);
+    py::class_<ReactionReference>(module, "ReactionReference")
+        .def(py::init([](ReferenceSourceBasis basis, std::optional<double> pressure) {
+            return ReactionReference{pressure, basis};
+        }), py::arg("source_basis"), py::arg("reference_pressure_pa") = py::none())
+        .def_readwrite("source_basis", &ReactionReference::source_basis)
+        .def_readwrite("reference_pressure_pa", &ReactionReference::reference_pressure_pa);
     py::class_<ReactionSpec>(module, "ReactionSpec")
         .def(py::init<>())
         .def_readwrite("name", &ReactionSpec::name)
         .def_readwrite("stoichiometry", &ReactionSpec::stoichiometry)
         .def_readwrite("equilibrium_constant", &ReactionSpec::equilibrium_constant)
         .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol)
-        .def_readwrite("correlation", &ReactionSpec::correlation);
+        .def_readwrite("correlation", &ReactionSpec::correlation)
+        .def_readwrite("reference", &ReactionSpec::reference);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)
@@ -65,6 +102,7 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("pressure", &EquilibriumProblem::pressure)
         .def_readwrite("feed", &EquilibriumProblem::feed)
         .def_readwrite("reactions", &EquilibriumProblem::reactions)
+        .def_readwrite("neutral_reference", &EquilibriumProblem::source_reference)
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
         .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
         .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance);
@@ -112,6 +150,7 @@ void register_equilibrium(py::module_& module) {
             return system.hessian(point, multipliers); },
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult")
+        .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         .def_readonly("success", &EquilibriumResult::success)
         .def_readonly("message", &EquilibriumResult::message)
         .def_readonly("solver_status", &EquilibriumResult::solver_status)
@@ -260,6 +299,7 @@ void register_equilibrium(py::module_& module) {
         .value("AssociationIllConditioned", SolvedStateActionStatus::AssociationIllConditioned)
         .value("AssociationResidual", SolvedStateActionStatus::AssociationResidual)
         .value("MissingThermochemistry", SolvedStateActionStatus::MissingThermochemistry)
+        .value("ReferenceUnavailable", SolvedStateActionStatus::ReferenceUnavailable)
         .value("OutsideInterval", SolvedStateActionStatus::OutsideInterval)
         .value("ThermalBoundary", SolvedStateActionStatus::ThermalBoundary)
         .value("CentralPropertyUnavailable", SolvedStateActionStatus::CentralPropertyUnavailable)

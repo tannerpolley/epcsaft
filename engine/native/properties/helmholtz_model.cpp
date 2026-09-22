@@ -1121,9 +1121,31 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         refreshed.site_fractions, composition, result.status, result.diagnostics);
     if (result.status != PropertyActionStatus::Available) return result;
     if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return result; }
-    // Half of the 2^q sign paths, first sign fixed positive, each weighted by its sign product.
+    std::optional<std::pair<std::size_t, std::size_t>> repeated;
+    if (order == 3) {
+        for (std::size_t i = 0; i < 3; ++i)
+            for (std::size_t j = i + 1; j < 3; ++j)
+                if (normalized[i] == normalized[j] && normalized[3 - i - j] != normalized[i])
+                    repeated = {{3 - i - j, i}};
+    }
     double coefficient = 0.0;
-    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+    if (repeated.has_value()) {
+        // [t^5](F(p+v*t+u*t^3)-F(p+v*t-u*t^3)) = D3F[u,v,v].
+        // The sparse paths avoid subtracting the singular pure-u third derivative
+        // from an otherwise regular mixed response at dilute ionic states.
+        for (const double sign : {1.0, -1.0}) {
+            std::vector<std::vector<double>> series(6, std::vector<double>(width, 0.0));
+            series[0] = point;
+            series[1] = normalized[repeated->second];
+            for (std::size_t i = 0; i < width; ++i)
+                series[3][i] = sign * normalized[repeated->first][i];
+            coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
+                &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
+                &result.diagnostics.association_residual).front();
+            ++result.diagnostics.directional_paths;
+        }
+    } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        // Half of the 2^q linear sign paths, weighted by their sign products.
         std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));
         series.front() = point;
         double weight = 1.0;
@@ -1138,7 +1160,8 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     }
     counters_.directional_paths += result.diagnostics.directional_paths; counters_.forward += result.diagnostics.forward_sweeps;
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order);
-    double action = coefficient / static_cast<double>(std::size_t(1) << (order - 1));
+    double action = repeated.has_value() ? coefficient
+        : coefficient / static_cast<double>(std::size_t(1) << (order - 1));
     for (const double norm : norms) action *= norm;
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) result.status = PropertyActionStatus::AssociationResidual;
     else if (!std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;

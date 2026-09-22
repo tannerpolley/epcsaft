@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -368,6 +369,39 @@ bool thermal_reference_missing(const CompiledSystem& compiled, double temperatur
     return false;
 }
 
+bool has_source_reference(const EquilibriumProblem& problem) {
+    return problem.source_reference.has_value()
+        || std::any_of(problem.reactions.begin(), problem.reactions.end(),
+            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
+}
+
+bool reference_action_direction(const std::vector<std::vector<double>>& controls,
+                                std::size_t components) {
+    return std::any_of(controls.begin(), controls.end(), [components](const auto& control) {
+        if (control[0] != 0.0) return true;
+        return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
+                           control.end(), [](double value) { return value != 0.0; });
+    });
+}
+
+bool caloric_property(PropertyObservable property) {
+    switch (property) {
+    case PropertyObservable::IdealEnthalpy:
+    case PropertyObservable::IdealInternalEnergy:
+    case PropertyObservable::IdealEntropy:
+    case PropertyObservable::IdealIsobaricHeatCapacity:
+    case PropertyObservable::IdealIsochoricHeatCapacity:
+    case PropertyObservable::TotalEnthalpy:
+    case PropertyObservable::TotalInternalEnergy:
+    case PropertyObservable::TotalEntropy:
+    case PropertyObservable::TotalIsobaricHeatCapacity:
+    case PropertyObservable::TotalIsochoricHeatCapacity:
+        return true;
+    default:
+        return false;
+    }
+}
+
 struct Center final {
     PhasePoint prepared;
     Eigen::MatrixXd jacobian;
@@ -377,7 +411,13 @@ struct Center final {
 struct Path final {
     RowSeries series;
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
+    std::optional<std::string> diagnostic_message;
 };
+
+bool is_reference_unavailable(const std::exception& error) {
+    const std::string message = error.what();
+    return message.rfind("reference_unavailable:", 0) == 0;
+}
 
 SolvedStateActionStatus energy_status(PropertyActionStatus status) {
     return status == PropertyActionStatus::Nonfinite ? SolvedStateActionStatus::NonfiniteJacobian
@@ -395,7 +435,15 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     std::vector<double> scale(order + 1, 1.0);
     for (std::size_t k = 1; k <= order; ++k) {
         const std::vector<std::vector<double>> prefix(state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1));
-        const auto series = compiled.row_series(center.prepared, prefix, control, k);
+        RowSeries series;
+        try {
+            series = compiled.row_series(center.prepared, prefix, control, k);
+        } catch (const std::invalid_argument& error) {
+            if (!is_reference_unavailable(error)) throw;
+            path.status = SolvedStateActionStatus::ReferenceUnavailable;
+            path.diagnostic_message = error.what();
+            return path;
+        }
         diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, series.maximum_energy_order);
         if (series.energy != PropertyActionStatus::Available) { path.status = energy_status(series.energy); return path; }
         Eigen::VectorXd right(static_cast<Eigen::Index>(n));
@@ -407,7 +455,14 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
     }
-    path.series = compiled.row_series(center.prepared, state, control, order);
+    try {
+        path.series = compiled.row_series(center.prepared, state, control, order);
+    } catch (const std::invalid_argument& error) {
+        if (!is_reference_unavailable(error)) throw;
+        path.status = SolvedStateActionStatus::ReferenceUnavailable;
+        path.diagnostic_message = error.what();
+        return path;
+    }
     diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, path.series.maximum_energy_order);
     if (path.series.energy != PropertyActionStatus::Available) { path.status = energy_status(path.series.energy); return path; }
     for (std::size_t k = 1; k <= order; ++k) {
@@ -665,6 +720,19 @@ SolvedStateActionBatch solved_state_actions(
             }
         }
     }
+    const bool reference_problem = has_source_reference(problem)
+        && !compiled.reference_diagnostics.empty();
+    if (reference_problem) {
+        for (auto& item : batch.results) {
+            if (item.observable.kind == SolvedStateObservableKind::PhaseProperty
+                && caloric_property(item.observable.property)) {
+                item.status = SolvedStateActionStatus::ReferenceUnavailable;
+                item.value.reset();
+                item.action.reset();
+                item.diagnostic_message = "reference caloric value/action is unavailable";
+            }
+        }
+    }
     // Admission of the central state, in the owner's precedence.
     SolvedStateActionStatus gate = SolvedStateActionStatus::Available;
     if (!(classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
@@ -704,16 +772,26 @@ SolvedStateActionBatch solved_state_actions(
     }
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = std::any_of(controls.begin(), controls.end(), [](const auto& c) { return c[0] != 0.0; });
+    const bool pressure_driven = problem.pressure.free
+        || std::any_of(controls.begin(), controls.end(), [](const auto& c) { return c[1] != 0.0; });
+    const bool reference_pressure_order_unavailable = reference_problem && order > 2
+        && pressure_driven;
+    if (gate == SolvedStateActionStatus::Available && reference_problem
+        && !zero && (reference_pressure_order_unavailable
+                     || reference_action_direction(controls, components))) {
+        gate = SolvedStateActionStatus::ReferenceUnavailable;
+    }
     if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
         gate = SolvedStateActionStatus::MissingThermochemistry;
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.
-    const auto apply_state_gate = [&](SolvedStateActionStatus status) {
+    const auto apply_state_gate = [&](SolvedStateActionStatus status,
+                                      std::optional<std::string> diagnostic_message = std::nullopt) {
         for (auto& item : batch.results) {
             if (!state_dependent(item.observable, problem)) continue;
             item.status = status;
             item.action.reset();
-            item.diagnostic_message.reset();
+            item.diagnostic_message = diagnostic_message;
         }
         return batch;
     };
@@ -737,7 +815,8 @@ SolvedStateActionBatch solved_state_actions(
         }
         core::Scope path_scope("solved_state_action_path");
         const auto path = follow(compiled, center, control, order, batch.diagnostics);
-        if (path.status != SolvedStateActionStatus::Available) return apply_state_gate(path.status);
+        if (path.status != SolvedStateActionStatus::Available)
+            return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(path.series, phase, components));
         for (std::size_t i = 0; i < batch.results.size(); ++i) {

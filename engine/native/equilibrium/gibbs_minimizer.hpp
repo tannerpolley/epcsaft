@@ -192,6 +192,9 @@ public:
 
     double regularization_size() const noexcept { return regularization_size_; }
     const EvaluationWork& work() const noexcept { return work_; }
+    const std::optional<std::string>& preparation_error() const noexcept {
+        return preparation_error_;
+    }
 
     NlpShape shape() const {
         const Ipopt::Index variables = static_cast<Ipopt::Index>(
@@ -242,6 +245,7 @@ private:
     std::optional<std::vector<double>> objective_hessian_;
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;
+    std::optional<std::string> preparation_error_;
     EvaluationWork work_;
     std::vector<double> solution_;
     std::vector<double> constraint_multipliers_;

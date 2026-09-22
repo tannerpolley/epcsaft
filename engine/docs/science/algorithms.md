@@ -253,18 +253,26 @@ limits.
 Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
-`tau N_feed/(N_p x_i)`; after a successful stop, at most
+`tau N_feed/(N_p x_i)`; after a success, acceptable-point or tiny-step stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
 Jacobian close that gap, each accepted only when it contracts both the raw row
 maximum and the classified residual and keeps every composition above the
 structural cutoff `STABILITY_COMPOSITION_FLOOR`, below the optimizer box when
-the solution lies there (#87, 2026-09-21). Tiny-step stops are not polished.
+the solution lies there (#87, 2026-09-21). Try each Newton direction at step
+fractions 1, 1/2 and 1/4, stopping at the first admissible contraction; a
+rejected direction ends polishing. This bounded backtracking preserves the
+three accepted-step budget and allows pressure-row curvature to reject a full
+step without abandoning a contracting half step. Acceptable-point and tiny-step stops
+use this same polish because optimizer stopping can leave the same intensive
+row defect at large feed scales. No additional step or relaxed criterion is used.
 Acceptance is still classified on the caller criterion at the returned point.
-Limits: a pinned declared phase carries its chemical and pressure rows as
-optimizer equality constraints, so a solution below the box makes that
-subproblem infeasible and is not polished; a warm start below the box is pulled
-back into it by the optimizer's bound push and re-recovered by the polish; the polish rejection branch has no persistent
-falsifier. The returned extensive-objective constraint multipliers are
+A square pinned cell carries chemical and pressure rows as optimizer equality
+constraints. Its log-composition bounds therefore use the
+structural cutoff directly: the all-free optimizer box would exclude valid
+trace roots before a successful optimizer stop can reach polishing. In all-free cells a warm start below the box
+is pulled back into it by the optimizer's bound push and re-recovered by the polish.
+The retained MEA 050 case exercises rejection of a full step and acceptance of
+a half step without relaxing the requested tolerance. The returned extensive-objective constraint multipliers are
 reconstructed at the returned point from the row multipliers: a material row
 `(B n - b)/N_feed` carries `-N_feed lambda_j`, a charge row `sum z x` carries
 `-n_p phi_p`, and a free-amount phase's normalization row is zero because the
@@ -272,8 +280,9 @@ objective and material rows obey joint extensive homogeneity in the phase's
 amount, composition and volume. Together with stationarity in its free amount,
 this gives zero normalization multiplier; the reduced-Hessian certificate uses these values at the returned
 point, and the optimizer's own multipliers remain a trace probe (#87 review,
-2026-09-21). A pinned problem is not polished and keeps the optimizer's
-constraint multipliers over every row. The reconstruction assumes no active
+2026-09-21). A pinned problem keeps the optimizer's constraint multipliers
+over every row; its equality-root qualification does not assert a Gibbs minimum.
+The reconstruction assumes no active
 variable bound at the returned point and residual potentials that depend on
 composition and molar volume only. The charge-row scaling `-n_p phi_p` is
 qualified by independent extensive-objective stationarity and public ionic
@@ -283,8 +292,10 @@ open. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
-tiny-step termination only when the recomputed residual meets the declared
-equilibrium criterion; a tiny-step status alone is never success. Ipopt unscales
+tiny-step or restoration-produced acceptable-point termination only when the
+recomputed residual meets the declared equilibrium criterion. Neither status
+alone establishes success; final topology, curvature and branch admission still
+apply. Ipopt unscales
 final constraint multipliers before the
 TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
@@ -417,6 +428,11 @@ Use the same residual-potential/mass-action tape and a single factorization of
 the accepted unweighted site Jacobian for the batch. Obtain each implicit site
 Taylor coefficient from the defining mass-action coefficient, then reuse each
 directional path and its lower coefficients across all selected properties.
+For an E3 energy action with exactly two equal normalized directions, use the
+sparse Taylor paths in EqID: `repeated_direction_energy_third` instead of linear
+polarization. This avoids subtraction of a singular pure-composition third
+derivative from a regular mixed volume response at dilute ionic references.
+All-identical triples, nonrepeated triples and E4 keep their established routes.
 Pressure closure composes the full implicit density chain through the requested
 order; a first density tangent alone is insufficient at orders two and three.
 The pressure root search precedes this resolved-state action work.
@@ -508,6 +524,41 @@ including its density closure. Fixed source pressure P0 must not become trial
 pressure. Reference-gauge choices that preserve reaction affinities do not
 supply absolute caloric data.
 
+For an explicitly referenced neutral reaction, use
+`neutral_reaction_reference_transfer`: one pure neutral solvent, positive
+all-solute molality ratios with zero net charge, and one declared source basis
+per reaction. At each resolved source pressure, evaluate the five molalities
+from 1e-6 through 1e-14 mol/kg on the requested liquid branch. The density owner
+admits a unique mechanically stable cold root with an unspecified branch label;
+this is not a physical liquid/vapor classification. Subsequent anchored roots
+retain the requested branch. Require finite
+states, positive pressure slope, branch continuity and both last contraction
+changes within 5e-5. Retain the terminal contraction and observed change.
+Do not extrapolate this sequence: electrolyte terms can scale as sqrt(m).
+Qualify the finite estimate against a second charge-neutral dilution path;
+agreement is an observed domain check, not a universal limit-error certificate.
+
+Convert the correlation to the density target through the existing reaction/SVD
+owner. Common-molality inputs
+receive the solvent-mass term once; for raw mole-fraction inputs the two basis
+terms cancel. Preserve each reaction's fixed or system-pressure reference.
+At fixed temperature, evaluate system-pressure references at the current
+nonlinear point and use EqID: `neutral_reaction_reference_pressure_jet` for the
+exact first and second pressure derivatives. Reuse a reference path for
+reactions sharing a source pressure. Apply the same current-point jet to row,
+Jacobian, weighted Hessian and solved-state action evaluation, and refresh
+returned diagnostics at the solved pressure. Fixed-source-pressure references
+carry zero system-pressure derivatives.
+The implemented slice admits fixed T/P central solves and feed actions, and
+square pinned free-pressure cells. Pressure/feed actions are supported through
+order two; fixed-T/P feed-only order three remains available. Referenced
+continuation, free temperature, raw lever derivatives, nonzero temperature or
+parameter actions, and third-order actions involving pressure remain
+unavailable. Ideal/Total caloric values and actions remain
+unavailable even with an attached thermal record, while independently valid
+residual properties remain usable. A central finite reference cannot certify
+the missing reference derivatives.
+
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit
 $x_i^\circ=1$; molarity and molality require explicit positive standards and the
@@ -541,9 +592,11 @@ withheld under rank deficiency or an active bound.
 ## ALG-TERMINATION
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
-is the lower box of the intensive `log(x_i)` coordinate inside the optimizer
-subproblem only: its barrier regularises the log chart's trace steps and is
-not a solution domain. `STABILITY_COMPOSITION_FLOOR` is the structural-absence
+is the lower box of the intensive `log(x_i)` coordinate inside the all-free
+optimizer subproblem: its barrier regularises the log chart's trace steps and
+is not a solution domain. Square pinned equation systems use the structural
+cutoff instead, so chemical equalities can reach trace roots below that box.
+`STABILITY_COMPOSITION_FLOOR` is the structural-absence
 cutoff for continuation admission, solved-state differentiability and the
 Newton polish, which carries a trace solution below the box down to the cutoff
 (#87, 2026-09-21). The delivered falsifier reaches x ≈ 1e-12; continuation
@@ -561,10 +614,11 @@ application accuracy criteria stay beside their accepted reference cases.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
-`STOP_AT_TINY_STEP` with a finite non-converged residual is stalled and
-unavailable, while a finite criterion-meeting tiny-step result remains
-eligible. A tiny-step status alone never establishes success; recomputed
-residual and topology criteria still apply.
+`STOP_AT_TINY_STEP` or `STOP_AT_ACCEPTABLE_POINT` with a finite non-converged
+residual is unavailable, while a finite criterion-meeting result remains
+eligible after the same bounded polish and physical checks. A tiny-step or
+acceptable-point status alone never establishes success; floor-only results
+from either remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
 diagnosis and do not determine success. Density root producers classify all

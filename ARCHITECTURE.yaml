@@ -32,6 +32,8 @@ plan:
 # slope-minimum search with explicit unresolved failure replaced a fixed-width stop; then measured 3468 lines.
 # properties hard 3470 -> 3490 (#84, 2026-09-22): owner-approved small increase for
 # shared charge-neutral reference and activity admission; no association change.
+# 2026-09-22 #84: owner-approved small increases for native neutral reaction
+# references and explicit public transport; total hard ceiling unchanged.
 code_budgets: {
   "core": [
     700,
@@ -46,7 +48,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    3490
+    4100
   ],
   "equilibrium": [
     5000,
@@ -66,12 +68,12 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1150
+    1225
   ],
   "python": [
     1350,
     1600,
-    2150
+    2300
   ],
   "total": [
     12300,
