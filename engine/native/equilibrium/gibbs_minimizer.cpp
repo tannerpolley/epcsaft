@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -418,12 +419,14 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
+    const double composition_floor = compiled_.pinned_count != 0 && compiled_.is_square()
+        ? policy::STABILITY_COMPOSITION_FLOOR.value : policy::EQUILIBRIUM_COMPOSITION_BOX.value;
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
-        // The box regularises the log chart's trace steps; the Newton polish below carries a
-        // trace solution past it down to the structural cutoff.
+        // Pinned square cells impose chemical equality and need the full physical support.
+        // All-free cells retain the optimizer box and recover trace states by polishing.
         for (std::size_t i = 0; i < phase.support.size(); ++i) {
-            x_l[offset] = std::log(policy::EQUILIBRIUM_COMPOSITION_BOX.value);
+            x_l[offset] = std::log(composition_floor);
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
@@ -476,7 +479,18 @@ std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
     std::vector<double> candidate = point(n, x);
     if (!prepared_.has_value() || prepared_->point != candidate) {
-        prepared_ = compiled_.prepare(candidate);
+        try {
+            prepared_ = compiled_.prepare(candidate);
+        } catch (const std::exception& error) {
+            prepared_.reset();
+            rows_.reset();
+            jacobian_.reset();
+            gradient_.reset();
+            objective_hessian_.reset();
+            constraint_hessian_.reset();
+            preparation_error_ = error.what();
+            throw;
+        }
         rows_.reset();
         jacobian_.reset();
         gradient_.reset();
@@ -501,21 +515,29 @@ bool GibbsMinimizer::eval_f(
 ) {
     (void)new_x;
     ++evaluations_;
-    value = compiled_.pinned_count == 0 ? rows_at(n, x).objective : 0.0;
-    return std::isfinite(value);
+    try {
+        value = compiled_.pinned_count == 0 ? rows_at(n, x).objective : 0.0;
+        return std::isfinite(value);
+    } catch (const std::exception&) {
+        return false;
+    }
 }
 
 bool GibbsMinimizer::eval_grad_f(
     Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f
 ) {
     (void)new_x;
-    const auto& point = prepared(n, x);
-    if (!gradient_.has_value()) {
-        gradient_ = compiled_.objective_gradient_at(point);
-        ++work_.gradients;
+    try {
+        const auto& point = prepared(n, x);
+        if (!gradient_.has_value()) {
+            gradient_ = compiled_.objective_gradient_at(point);
+            ++work_.gradients;
+        }
+        std::copy(gradient_->begin(), gradient_->end(), grad_f);
+        return true;
+    } catch (const std::exception&) {
+        return false;
     }
-    std::copy(gradient_->begin(), gradient_->end(), grad_f);
-    return true;
 }
 
 bool GibbsMinimizer::eval_g(
@@ -523,10 +545,14 @@ bool GibbsMinimizer::eval_g(
     Ipopt::Index m, Ipopt::Number* g
 ) {
     (void)new_x;
-    const auto& values = rows_at(n, x).values;
-    const auto rows = constraint_rows();
-    for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
-    return true;
+    try {
+        const auto& values = rows_at(n, x).values;
+        const auto rows = constraint_rows();
+        for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
+        return true;
+    } catch (const std::exception&) {
+        return false;
+    }
 }
 
 bool GibbsMinimizer::eval_jac_g(
@@ -546,18 +572,22 @@ bool GibbsMinimizer::eval_jac_g(
         }
         return entry == nele_jac;
     }
-    const auto& point = prepared(n, x);
-    if (!jacobian_.has_value()) {
-        jacobian_ = compiled_.jacobian_at(point);
-        ++work_.jacobians;
-    }
-    Ipopt::Index entry = 0;
-    for (const std::size_t row : rows) {
-        for (Ipopt::Index column = 0; column < n; ++column) {
-            values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)];
+    try {
+        const auto& point = prepared(n, x);
+        if (!jacobian_.has_value()) {
+            jacobian_ = compiled_.jacobian_at(point);
+            ++work_.jacobians;
         }
+        Ipopt::Index entry = 0;
+        for (const std::size_t row : rows) {
+            for (Ipopt::Index column = 0; column < n; ++column) {
+                values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)];
+            }
+        }
+        return entry == nele_jac;
+    } catch (const std::exception&) {
+        return false;
     }
-    return entry == nele_jac;
 }
 
 bool GibbsMinimizer::eval_h(
@@ -579,29 +609,33 @@ bool GibbsMinimizer::eval_h(
         return entry == nele_hess;
     }
     std::fill(values, values + nele_hess, 0.0);
-    const auto& point = prepared(n, x);
-    // Objective curvature is multiplier independent; the weighted constraint curvature is
-    // recombined whenever the optimizer multipliers change at the same point.
-    if (!objective_hessian_.has_value()) {
-        objective_hessian_ = compiled_.hessian_at(point, {});
-        ++work_.objective_hessians;
-    }
-    const std::vector<double> multipliers(lambda, lambda + m);
-    if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
-        constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
-        constraint_hessian_multipliers_ = multipliers;
-        ++work_.constraint_hessians;
-    }
-    Ipopt::Index entry = 0;
-    for (Ipopt::Index row = 0; row < n; ++row) {
-        for (Ipopt::Index column = 0; column <= row; ++column) {
-            const std::size_t index = static_cast<std::size_t>(row) * n
-                + static_cast<std::size_t>(column);
-            values[entry++] = obj_factor * (*objective_hessian_)[index]
-                + (*constraint_hessian_)[index];
+    try {
+        const auto& point = prepared(n, x);
+        // Objective curvature is multiplier independent; the weighted constraint curvature is
+        // recombined whenever the optimizer multipliers change at the same point.
+        if (!objective_hessian_.has_value()) {
+            objective_hessian_ = compiled_.hessian_at(point, {});
+            ++work_.objective_hessians;
         }
+        const std::vector<double> multipliers(lambda, lambda + m);
+        if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
+            constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
+            constraint_hessian_multipliers_ = multipliers;
+            ++work_.constraint_hessians;
+        }
+        Ipopt::Index entry = 0;
+        for (Ipopt::Index row = 0; row < n; ++row) {
+            for (Ipopt::Index column = 0; column <= row; ++column) {
+                const std::size_t index = static_cast<std::size_t>(row) * n
+                    + static_cast<std::size_t>(column);
+                values[entry++] = obj_factor * (*objective_hessian_)[index]
+                    + (*constraint_hessian_)[index];
+            }
+        }
+        return entry == nele_hess;
+    } catch (const std::exception&) {
+        return false;
     }
-    return entry == nele_hess;
 }
 
 bool GibbsMinimizer::intermediate_callback(
@@ -693,6 +727,7 @@ EquilibriumResult run_driver(
     // from an ill-conditioned point (a species near the cutoff scales its row by 1e-20) is
     // otherwise rejected and the optimizer iterate is kept.
     std::size_t polish_evaluations = 0;
+    std::string rejected_preparation = nlp->preparation_error().value_or("");
     if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
          || nlp->status() == Ipopt::STOP_AT_TINY_STEP) && compiled.is_square()) {
         auto at = compiled.prepare(full);
@@ -708,28 +743,56 @@ EquilibriumResult run_driver(
             const Eigen::VectorXd delta = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu().solve(
                     -Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
-            std::vector<double> candidate = full;
-            for (Eigen::Index i = 0; i < n; ++i) candidate[static_cast<std::size_t>(i)] += delta(i);
-            PhasePoint at_candidate;
-            std::vector<double> rows_after;
-            try {
-                at_candidate = compiled.prepare(candidate);
-                rows_after = compiled.evaluate_at(at_candidate).values;
-                ++polish_evaluations;
-            } catch (const std::exception&) { break; }
-            bool inside = true;
-            for (const auto& phase : at_candidate.composition)
-                for (const double x : phase) inside = inside && (x == 0.0 || x >= policy::STABILITY_COMPOSITION_FLOOR.value);
-            const double after = maximum_abs(rows_after);
-            const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
-            scope.probe("polish_step", {defect, after, classified_before, classified_after}, static_cast<std::uint32_t>(step));
-            if (!inside || !(after < defect) || !(classified_after <= classified_before)) break;
-            full = std::move(candidate);
-            at = std::move(at_candidate);
-            rows_before = std::move(rows_after);
+            bool accepted = false;
+            // Curvature can increase a classified row after a full Newton step.
+            // Bounded damping retains the direction, both contraction gates and the cutoff.
+            for (const double alpha : {1.0, 0.5, 0.25}) {
+                std::vector<double> candidate = full;
+                for (Eigen::Index i = 0; i < n; ++i)
+                    candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
+                PhasePoint at_candidate;
+                std::vector<double> rows_after;
+                try {
+                    at_candidate = compiled.prepare(candidate);
+                    rows_after = compiled.evaluate_at(at_candidate).values;
+                    ++polish_evaluations;
+                } catch (const std::exception& error) {
+                    rejected_preparation = error.what();
+                    continue;
+                }
+                bool inside = true;
+                for (const auto& phase : at_candidate.composition)
+                    for (const double x : phase)
+                        inside = inside && (x == 0.0 || x >= policy::STABILITY_COMPOSITION_FLOOR.value);
+                const double after = maximum_abs(rows_after);
+                const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
+                scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
+                    static_cast<std::uint32_t>(step));
+                if (!inside || !(after < defect) || !(classified_after <= classified_before)) continue;
+                full = std::move(candidate);
+                at = std::move(at_candidate);
+                rows_before = std::move(rows_after);
+                accepted = true;
+                break;
+            }
+            if (!accepted) break;
         }
     }
-    auto prepared = compiled.prepare(full);
+    PhasePoint prepared;
+    try {
+        prepared = compiled.prepare(full);
+    } catch (const std::invalid_argument& error) {
+        if (std::string(error.what()).rfind("reference_unavailable:", 0) != 0) throw;
+        result.success = false;
+        result.message = error.what();
+        result.convergence.stop = core::Stop::left_domain;
+        result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        result.iterations = result.convergence.iterations = nlp->iterations();
+        result.evaluations = result.convergence.evaluations = nlp->evaluations() + polish_evaluations;
+        clear_state(result);
+        scope.finish(result.convergence);
+        return result;
+    }
     const auto evaluation = compiled.evaluate_at(prepared);
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
@@ -845,6 +908,9 @@ EquilibriumResult run_driver(
     if (!accepted) {
         result.success = false;
         if (!topology_ok) result.message = topology_failure;
+        if (!rejected_preparation.empty()) {
+            result.message += "; trial preparation failed: " + rejected_preparation;
+        }
         clear_state(result);
         return result;
     }
@@ -859,6 +925,9 @@ EquilibriumResult run_driver(
     result.success = true;
     result.temperature = {temperature};
     result.pressure = {pressure};
+    if (!prepared.standard.reference_diagnostics.empty()) {
+        result.reference_diagnostics = prepared.standard.reference_diagnostics;
+    }
     result.amounts = amounts;
     result.molar_densities.reserve(volumes.size());
     result.packing_fractions.reserve(volumes.size());
@@ -899,6 +968,9 @@ EquilibriumResult run_driver(
     if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
         result.success = false;
         result.message = "reduced_hessian_stability is not positive definite";
+        if (!rejected_preparation.empty()) {
+            result.message += "; trial preparation failed: " + rejected_preparation;
+        }
         clear_state(result);
         return result;
     }

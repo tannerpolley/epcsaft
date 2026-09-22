@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <limits>
 #include <string>
@@ -749,6 +750,68 @@ void check_s2() {
         "system and explicit source pressures produce distinct Delta-nu contraction values",
         "isfinite(model) && model > reference", pressure_gap > 1.0e-6,
         "s2-neutral-reference", "pressure-path", "|C_P-C_P0|", "T,P,P0", "|gap|>1e-6", "pressure");
+    CHECK(system_pressure.terminal_contraction_pressure_derivative.has_value()
+          && system_pressure.terminal_contraction_pressure_second_derivative.has_value()
+          && fixed_pressure.terminal_contraction_pressure_derivative.has_value()
+          && fixed_pressure.terminal_contraction_pressure_second_derivative.has_value()
+          && *fixed_pressure.terminal_contraction_pressure_derivative == 0.0
+          && *fixed_pressure.terminal_contraction_pressure_second_derivative == 0.0);
+    const double pressure_step = 100.0;
+    const auto lower_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5 - pressure_step, ratios({0.0, 1.0, 1.0}), nu, reference);
+    const auto upper_pressure = epcsaft::reaction_reference(
+        reference_model, 300.0, 2.0e5 + pressure_step, ratios({0.0, 1.0, 1.0}), nu, reference);
+    CHECK(lower_pressure.terminal_contraction.has_value()
+          && upper_pressure.terminal_contraction.has_value());
+    const double centered_pressure_derivative =
+        (*upper_pressure.terminal_contraction - *lower_pressure.terminal_contraction)
+        / (2.0 * pressure_step);
+    const double centered_pressure_second_derivative =
+        (*upper_pressure.terminal_contraction
+            - 2.0 * *system_pressure.terminal_contraction
+            + *lower_pressure.terminal_contraction)
+        / (pressure_step * pressure_step);
+    const auto jet_close = [](double left, double right) {
+        return std::abs(left - right) <= 1.0e-3
+            * std::max({std::abs(left), std::abs(right), 1.0e-12});
+    };
+    CHECK(jet_close(*system_pressure.terminal_contraction_pressure_derivative,
+                    centered_pressure_derivative)
+          && jet_close(*system_pressure.terminal_contraction_pressure_second_derivative,
+                       centered_pressure_second_derivative));
+
+    // Identical EOS species provide a finite nonideal counterproof: the density
+    // term and residual chemical potential do not separate into an ideal -1/P law.
+    auto identical_parameters = properties_support::parameters(2);
+    identical_parameters.segment_count = {1.6069, 1.6069};
+    identical_parameters.sigma_constant = {3.5206, 3.5206};
+    identical_parameters.dispersion_energy_over_k = {191.42, 191.42};
+    identical_parameters.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    epcsaft::HelmholtzModel identical_model(identical_parameters);
+    const auto identical_declaration = ratios({0.0, 1.0});
+    const std::vector<double> identical_nu = {-2.0, 1.0};
+    const auto identical_reference = epcsaft::reaction_reference(
+        identical_model, 300.0, 1.0e5, identical_declaration, identical_nu, reference);
+    CHECK(identical_reference.status == epcsaft::NeutralReferenceStatus::Available
+          && identical_reference.terminal_contraction_pressure_derivative.has_value()
+          && identical_reference.terminal_contraction_pressure_second_derivative.has_value());
+    const double identical_molality = 1.0e-14;
+    const double identical_solvent_moles = 1.0 / identical_parameters.molar_mass_kg_per_mol[0];
+    const double identical_total = identical_solvent_moles + identical_molality;
+    const auto identical_terminal = identical_model.state_at_pressure(
+        300.0, 1.0e5,
+        {identical_solvent_moles / identical_total, identical_molality / identical_total},
+        epcsaft::DensityBranch::Liquid);
+    const double identical_cp = -1.0 / (
+        identical_terminal.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0);
+    const double identical_cpp = 1.0 / (
+        identical_terminal.molar_density * identical_terminal.molar_density
+        * epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0
+        * identical_terminal.pressure_density_derivative);
+    CHECK(jet_close(*identical_reference.terminal_contraction_pressure_derivative, identical_cp)
+          && jet_close(*identical_reference.terminal_contraction_pressure_second_derivative,
+                       identical_cpp));
+
     const auto charged = epcsaft::reaction_reference(
         epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()), 298.15, 1.0e5,
         ratios({0.0, 1.0, 1.0}), {-1.0, 1.0, 0.0}, reference);
@@ -760,6 +823,102 @@ void check_s2() {
         std::log(0.3), 0.0, 0.0, 0.0, 300.0, 250.0, 350.0, "native-reference-source"};
     referenced.reactions = {{"A=2B", {-1.0, 2.0, 0.0}, std::nullopt, std::nullopt,
                              law, reference}};
+    auto free_pressure_reference = referenced;
+    free_pressure_reference.phases = {
+        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
+        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor,
+            epcsaft::equilibrium::AmountSpec::pinned(0.0)),
+    };
+    free_pressure_reference.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    const auto free_pressure_compiled = epcsaft::equilibrium::compile_problem(
+        reference_model, free_pressure_reference);
+    const auto free_pressure_point = free_pressure_compiled.generic_point();
+    const auto free_pressure_prepared = free_pressure_compiled.prepare(free_pressure_point);
+    CHECK(std::all_of(free_pressure_prepared.standard.pressure_derivative.begin(),
+                      free_pressure_prepared.standard.pressure_derivative.end(),
+                      [](double value) { return std::isfinite(value); }));
+    const std::size_t control_width = 2 + reference_model.parameters().component_count();
+    std::vector<double> pressure_control(control_width, 0.0);
+    pressure_control[1] = 1.0;
+    std::vector<std::vector<double>> pressure_state(3,
+        std::vector<double>(free_pressure_prepared.point.size(), 0.0));
+    pressure_state[0] = free_pressure_prepared.point;
+    pressure_state[1][free_pressure_compiled.primal_size - 1] = 1.0;
+    const auto pressure_series = free_pressure_compiled.row_series(
+        free_pressure_prepared,
+        pressure_state,
+        pressure_control, 2);
+    CHECK(pressure_series.energy == epcsaft::PropertyActionStatus::Available);
+    const auto chemical = std::find_if(
+        free_pressure_compiled.rows.begin(), free_pressure_compiled.rows.end(),
+        [](const auto& row) { return row.kind == epcsaft::equilibrium::RowKind::Chemical; });
+    CHECK(chemical != free_pressure_compiled.rows.end());
+    if (chemical != free_pressure_compiled.rows.end()) {
+        const std::size_t row = static_cast<std::size_t>(
+            std::distance(free_pressure_compiled.rows.begin(), chemical));
+        const double pressure_step = 100.0;
+        auto plus = free_pressure_prepared.point;
+        auto minus = free_pressure_prepared.point;
+        plus[free_pressure_compiled.primal_size - 1] += pressure_step;
+        minus[free_pressure_compiled.primal_size - 1] -= pressure_step;
+        const auto plus_rows = free_pressure_compiled.evaluate_at(
+            free_pressure_compiled.prepare(plus)).values;
+        const auto minus_rows = free_pressure_compiled.evaluate_at(
+            free_pressure_compiled.prepare(minus)).values;
+        const auto central_rows = free_pressure_compiled.evaluate_at(free_pressure_prepared).values;
+        const double centered_first = (plus_rows[row] - minus_rows[row])
+            / (2.0 * pressure_step);
+        const double centered_second_coefficient = (plus_rows[row]
+            - 2.0 * central_rows[row] + minus_rows[row])
+            / (2.0 * pressure_step * pressure_step);
+        const auto close_pressure_jet = [](double actual, double expected) {
+            return std::isfinite(actual) && std::isfinite(expected)
+                && std::abs(actual - expected) <= 2.0e-3
+                    * std::max({std::abs(actual), std::abs(expected), 1.0e-12});
+        };
+        CHECK(close_pressure_jet(pressure_series.rows[1][row], centered_first)
+              && close_pressure_jet(pressure_series.rows[2][row], centered_second_coefficient));
+    }
+    bool pressure_third_rejected = false;
+    try {
+        (void)free_pressure_compiled.row_series(
+            free_pressure_prepared,
+            {free_pressure_prepared.point,
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(free_pressure_prepared.point.size(), 0.0)},
+            pressure_control, 3);
+    } catch (const std::invalid_argument&) {
+        pressure_third_rejected = true;
+    }
+    CHECK(pressure_third_rejected);
+    const auto fixed_pressure_compiled = epcsaft::equilibrium::compile_problem(
+        reference_model, referenced);
+    const auto fixed_pressure_prepared = fixed_pressure_compiled.prepare(
+        fixed_pressure_compiled.generic_point());
+    bool fixed_pressure_third_rejected = false;
+    try {
+        (void)fixed_pressure_compiled.row_series(
+            fixed_pressure_prepared,
+            {fixed_pressure_prepared.point,
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+             std::vector<double>(fixed_pressure_prepared.point.size(), 0.0)},
+            pressure_control, 3);
+    } catch (const std::invalid_argument&) {
+        fixed_pressure_third_rejected = true;
+    }
+    CHECK(fixed_pressure_third_rejected);
+    std::fill(pressure_control.begin(), pressure_control.end(), 0.0);
+    pressure_control[2] = 1.0;
+    const auto fixed_feed_series = fixed_pressure_compiled.row_series(
+        fixed_pressure_prepared,
+        {fixed_pressure_prepared.point,
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
+         std::vector<double>(fixed_pressure_prepared.point.size(), 0.0)},
+        pressure_control, 3);
+    CHECK(fixed_feed_series.energy == epcsaft::PropertyActionStatus::Available);
     epcsaft::ThermochemistryRecord thermal_record;
     thermal_record.standard_pressure = 1.0e5;
     for (std::size_t i = 0; i < 3; ++i)

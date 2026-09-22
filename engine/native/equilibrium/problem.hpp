@@ -175,9 +175,13 @@ struct PackingTerms final {
     std::vector<double> parameter_derivative;
 };
 
-// derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.
+// derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
+// pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
     std::vector<std::vector<double>> derivative;
+    std::vector<double> pressure_derivative;
+    std::vector<double> pressure_second_derivative;
+    std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 };
 
 // One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.

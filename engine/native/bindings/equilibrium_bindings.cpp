@@ -74,6 +74,10 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("reaction_index", &NeutralReferenceReactionDiagnostic::reaction_index)
         .def_readonly("terminal_contraction", &NeutralReferenceReactionDiagnostic::terminal_contraction)
         .def_readonly("observed_terminal_change", &NeutralReferenceReactionDiagnostic::observed_terminal_change)
+        .def_readonly("terminal_contraction_pressure_derivative",
+                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_derivative)
+        .def_readonly("terminal_contraction_pressure_second_derivative",
+                      &NeutralReferenceReactionDiagnostic::terminal_contraction_pressure_second_derivative)
         .def_readonly("reference_pressure_pa", &NeutralReferenceReactionDiagnostic::reference_pressure_pa)
         .def_readonly("status", &NeutralReferenceReactionDiagnostic::status)
         .def_readonly("message", &NeutralReferenceReactionDiagnostic::message);

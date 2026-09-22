@@ -130,14 +130,20 @@ positive charge-neutral all-solute dilution path. An explicit source-basis enum
 selects common-molality or raw mole-fraction correlations; a nonempty source ID
 records provenance. EqID: `neutral_reaction_reference_transfer` converts each
 source at its declared fixed or system reference pressure, then the existing
-reaction/SVD owner compiles the density-basis target once for fixed T/P.
+reaction/SVD owner compiles the density-basis target. At fixed temperature,
+system-pressure references follow each current nonlinear pressure; a fixed
+source pressure has zero derivatives with respect to system pressure.
 The liquid selector chooses the dense branch when several stable roots exist;
 a unique stable root follows the density owner's unspecified-label semantics.
 Reference qualification must therefore establish the physical solvent state
 for the application; the selector supplies no universal phase classification.
-This qualified finite terminal reference supports central solves and feed
-actions. Free T/P, referenced continuation, raw lever derivatives and nonzero
-T/P/parameter solved-state actions remain unavailable. Ideal/Total caloric
+This qualified finite terminal reference supports fixed-T/P central solves and
+feed actions. Its exact first and second pressure derivatives also support
+square pinned free-pressure cells and pressure/feed actions through order two
+(EqID: `neutral_reaction_reference_pressure_jet`). Feed-only actions at fixed
+T/P retain order three. Third-order actions involving pressure, free temperature,
+referenced continuation, raw lever derivatives and nonzero temperature/parameter
+actions remain unavailable. Ideal/Total caloric
 values and actions are also unavailable; an attached thermochemistry record
 cannot supply missing reference derivatives. Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -97,6 +98,262 @@ std::vector<double> neutral_reference_composition(
     return composition;
 }
 
+struct NeutralReferenceTrace final {
+    double pressure = 0.0;
+    double solvent_mass = 0.0;
+    std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
+    std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
+    std::optional<HelmholtzDerivatives> terminal_derivatives;
+    double pressure_v = 0.0;
+    double pressure_vv = 0.0;
+};
+
+struct NeutralReferenceTraceResult final {
+    std::optional<NeutralReferenceTrace> trace;
+    NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
+    std::string message;
+};
+
+NeutralReferenceTraceResult build_neutral_reference_trace(
+    const HelmholtzModel& model,
+    double temperature,
+    double pressure,
+    const NeutralReferenceDeclaration& declaration,
+    bool pressure_jets
+) {
+    NeutralReferenceTraceResult result;
+    try {
+        const std::size_t components = model.parameters().component_count();
+        const double solvent_mass = validate_neutral_reference_declaration(
+            model.parameters(), declaration, std::vector<double>(components, 0.0));
+        if (!std::isfinite(temperature) || temperature <= 0.0
+            || !std::isfinite(pressure) || pressure <= 0.0) {
+            result.status = NeutralReferenceStatus::InvalidDeclaration;
+            result.message = "neutral reference temperature or pressure is invalid";
+            return result;
+        }
+        NeutralReferenceTrace trace;
+        trace.pressure = pressure;
+        trace.solvent_mass = solvent_mass;
+        std::optional<double> anchor;
+        for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
+            trace.composition[point] = neutral_reference_composition(
+                declaration, solvent_mass, NEUTRAL_REFERENCE_MOLALITIES[point]);
+            try {
+                trace.state[point] = model.state_at_pressure(
+                    temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
+            } catch (const std::exception& error) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = std::string("neutral reference density unavailable: ")
+                    + error.what();
+                return result;
+            }
+            const bool cold_unique_root = point == 0
+                && trace.state[point].density_branch == DensityBranch::Unspecified
+                && trace.state[point].stable_root_count.value_or(0) == 1;
+            if (trace.state[point].density_branch != DensityBranch::Liquid && !cold_unique_root) {
+                result.status = NeutralReferenceStatus::BranchChange;
+                result.message = "neutral reference left the anchored liquid branch";
+                return result;
+            }
+            if (!std::isfinite(trace.state[point].molar_density)
+                || trace.state[point].molar_density <= 0.0
+                || !std::isfinite(trace.state[point].pressure_density_derivative)
+                || trace.state[point].pressure_density_derivative <= 0.0
+                || trace.state[point].residual_chemical_potential_over_rt.size() != components) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference state has invalid density response";
+                return result;
+            }
+            anchor = trace.state[point].molar_density;
+        }
+        if (pressure_jets) {
+            const auto& terminal = trace.state.back();
+            const double volume = 1.0 / terminal.molar_density;
+            const auto derivatives = model.evaluate(
+                temperature, volume, trace.composition.back(), DerivativeOrder::Hessian);
+            const std::size_t width = derivatives.gradient.size();
+            if (width != 2 + components + model.active_parameters().size()
+                || derivatives.hessian.size() != width * width) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure jet has invalid Hessian shape";
+                return result;
+            }
+            std::vector<double> volume_direction(width, 0.0);
+            volume_direction[1] = 1.0;
+            const auto pressure_third = model.residual_energy_action(
+                temperature, volume, trace.composition.back(),
+                {volume_direction, volume_direction, volume_direction});
+            if (!pressure_third.action.has_value()) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure jet unavailable from residual E3";
+                return result;
+            }
+            const double phi_vv = derivatives.hessian[width + 1];
+            const double pressure_v = GAS_CONSTANT_J_PER_MOL_K * temperature
+                * (-1.0 / (volume * volume) - phi_vv);
+            const double pressure_vv = GAS_CONSTANT_J_PER_MOL_K * temperature
+                * (2.0 / (volume * volume * volume) - *pressure_third.action);
+            if (!std::isfinite(pressure_v) || pressure_v >= 0.0
+                || !std::isfinite(pressure_vv)) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure response is nonfinite";
+                return result;
+            }
+            trace.terminal_derivatives = derivatives;
+            trace.pressure_v = pressure_v;
+            trace.pressure_vv = pressure_vv;
+        }
+        result.trace = std::move(trace);
+        result.status = NeutralReferenceStatus::Available;
+        return result;
+    } catch (const std::invalid_argument& error) {
+        const std::string message = error.what();
+        result.status = message.find("charged") != std::string::npos
+                || message.find("charge neutral") != std::string::npos
+            ? NeutralReferenceStatus::NonNeutralDeclaration
+            : NeutralReferenceStatus::InvalidDeclaration;
+        result.message = message;
+        return result;
+    } catch (const std::exception& error) {
+        result.status = NeutralReferenceStatus::Nonfinite;
+        result.message = error.what();
+        return result;
+    }
+}
+
+bool supported_reference_basis(ReferenceSourceBasis basis) {
+    return basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
+        || basis == ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
+}
+
+NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
+    const HelmholtzModel& model,
+    double temperature,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry,
+    const ReactionReference& reference,
+    bool pressure_jets,
+    const NeutralReferenceTrace& trace
+) {
+    NeutralReferenceReactionDiagnostic result;
+    result.reference_pressure_pa = trace.pressure;
+    try {
+        validate_neutral_reference_declaration(
+            model.parameters(), declaration, stoichiometry);
+        if (!supported_reference_basis(reference.source_basis)) {
+            result.status = NeutralReferenceStatus::UnsupportedSourceBasis;
+            result.message = "unsupported neutral reference source basis";
+            return result;
+        }
+        std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
+        for (std::size_t point = 0; point < contractions.size(); ++point) {
+            const auto& state = trace.state[point];
+            const double log_density = std::log(state.molar_density / 1.0);
+            double contraction = 0.0;
+            for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
+                const double chemical = state.residual_chemical_potential_over_rt[component];
+                if (!std::isfinite(chemical)) {
+                    result.status = NeutralReferenceStatus::Nonfinite;
+                    result.message = "neutral reference residual chemical potential is nonfinite";
+                    return result;
+                }
+                contraction += stoichiometry[component] * (log_density + chemical);
+            }
+            if (!std::isfinite(contraction)) {
+                result.status = NeutralReferenceStatus::Nonfinite;
+                result.message = "neutral reference contraction is nonfinite";
+                return result;
+            }
+            contractions[point] = contraction;
+        }
+        result.observed_terminal_change = std::max(
+            std::abs(contractions[4] - contractions[3]),
+            std::abs(contractions[3] - contractions[2]));
+        if (!std::isfinite(*result.observed_terminal_change)) {
+            result.status = NeutralReferenceStatus::Nonfinite;
+            result.message = "neutral reference terminal change is nonfinite";
+            return result;
+        }
+        if (*result.observed_terminal_change > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+            result.status = NeutralReferenceStatus::TerminalChangeExceeded;
+            result.message = "neutral reference terminal change exceeds tolerance";
+            return result;
+        }
+        result.terminal_contraction = contractions.back();
+        if (reference.reference_pressure_pa.has_value()) {
+            result.terminal_contraction_pressure_derivative = 0.0;
+            result.terminal_contraction_pressure_second_derivative = 0.0;
+        } else if (!pressure_jets) {
+            // The reference value and terminal-change gate are available from the
+            // ladder alone.  Defer E2/E3 pressure contractions until a pressure
+            // direction is actually requested by the equilibrium caller.
+        } else {
+            if (!trace.terminal_derivatives.has_value()) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure jet is missing";
+                return result;
+            }
+            const auto& derivatives = *trace.terminal_derivatives;
+            const std::size_t width = derivatives.gradient.size();
+            std::vector<double> volume_direction(width, 0.0);
+            std::vector<double> stoichiometry_direction(width, 0.0);
+            volume_direction[1] = 1.0;
+            for (std::size_t component = 0; component < stoichiometry.size(); ++component)
+                stoichiometry_direction[2 + component] = stoichiometry[component];
+            const double volume = 1.0 / trace.state.back().molar_density;
+            const auto contraction_third = model.residual_energy_action(
+                temperature, volume, trace.composition.back(),
+                {stoichiometry_direction, volume_direction, volume_direction});
+            if (!contraction_third.action.has_value()) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure jet unavailable from residual E3";
+                return result;
+            }
+            double delta_nu = 0.0;
+            double chemical_volume = 0.0;
+            for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
+                delta_nu += stoichiometry[component];
+                chemical_volume += stoichiometry[component]
+                    * derivatives.hessian[(2 + component) * width + 1];
+            }
+            const double contraction_v = -delta_nu / volume + chemical_volume;
+            const double contraction_vv = delta_nu / (volume * volume)
+                + *contraction_third.action;
+            const double volume_pressure = 1.0 / trace.pressure_v;
+            const double volume_pressure_pressure = -trace.pressure_vv
+                / (trace.pressure_v * trace.pressure_v * trace.pressure_v);
+            const double contraction_pressure = contraction_v * volume_pressure;
+            const double contraction_pressure_pressure = contraction_vv
+                    * volume_pressure * volume_pressure
+                + contraction_v * volume_pressure_pressure;
+            if (!std::isfinite(contraction_pressure)
+                || !std::isfinite(contraction_pressure_pressure)) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference pressure jet is nonfinite";
+                return result;
+            }
+            result.terminal_contraction_pressure_derivative = contraction_pressure;
+            result.terminal_contraction_pressure_second_derivative =
+                contraction_pressure_pressure;
+        }
+        result.status = NeutralReferenceStatus::Available;
+        return result;
+    } catch (const std::invalid_argument& error) {
+        const std::string message = error.what();
+        result.status = message.find("charged") != std::string::npos
+                || message.find("charge neutral") != std::string::npos
+            ? NeutralReferenceStatus::NonNeutralDeclaration
+            : NeutralReferenceStatus::InvalidDeclaration;
+        result.message = message;
+        return result;
+    } catch (const std::exception& error) {
+        result.status = NeutralReferenceStatus::Nonfinite;
+        result.message = error.what();
+        return result;
+    }
+}
+
 }  // namespace
 
 std::vector<double> formula_composition(
@@ -173,6 +430,79 @@ double reaction_reference_log_scale(
     return scale;
 }
 
+std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
+    const HelmholtzModel& model,
+    double temperature,
+    double system_pressure,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<std::vector<double>>& stoichiometries,
+    const std::vector<ReactionReference>& references,
+    bool pressure_jets
+) {
+    if (stoichiometries.size() != references.size())
+        throw std::invalid_argument("neutral reference batch size");
+    struct CachedTrace final {
+        double pressure = 0.0;
+        bool pressure_jets = false;
+        NeutralReferenceTraceResult result;
+    };
+    std::vector<CachedTrace> cache;
+    std::vector<NeutralReferenceReactionDiagnostic> result(stoichiometries.size());
+    if (!std::isfinite(temperature) || temperature <= 0.0
+        || !std::isfinite(system_pressure) || system_pressure <= 0.0) {
+        for (auto& diagnostic : result) {
+            diagnostic.status = NeutralReferenceStatus::InvalidDeclaration;
+            diagnostic.message = "neutral reference temperature or system pressure is invalid";
+        }
+        return result;
+    }
+    for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
+        auto& diagnostic = result[row];
+        const auto& reference = references[row];
+        if (!supported_reference_basis(reference.source_basis)) {
+            diagnostic.status = NeutralReferenceStatus::UnsupportedSourceBasis;
+            diagnostic.message = "unsupported neutral reference source basis";
+            continue;
+        }
+        try {
+            validate_neutral_reference_declaration(
+                model.parameters(), declaration, stoichiometries[row]);
+        } catch (const std::invalid_argument& error) {
+            const std::string message = error.what();
+            diagnostic.status = message.find("charged") != std::string::npos
+                    || message.find("charge neutral") != std::string::npos
+                ? NeutralReferenceStatus::NonNeutralDeclaration
+                : NeutralReferenceStatus::InvalidDeclaration;
+            diagnostic.message = message;
+            continue;
+        }
+        const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
+        const bool need_jets = pressure_jets && !reference.reference_pressure_pa.has_value();
+        auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
+            return item.pressure == pressure && (!need_jets || item.pressure_jets);
+        });
+        if (found == cache.end()) {
+            CachedTrace item;
+            item.pressure = pressure;
+            item.pressure_jets = need_jets;
+            item.result = build_neutral_reference_trace(
+                model, temperature, pressure, declaration, need_jets);
+            cache.push_back(std::move(item));
+            found = std::prev(cache.end());
+        }
+        if (!found->result.trace.has_value()) {
+            diagnostic.reference_pressure_pa = pressure;
+            diagnostic.status = found->result.status;
+            diagnostic.message = found->result.message;
+            continue;
+        }
+        diagnostic = neutral_reference_from_trace(
+            model, temperature, declaration, stoichiometries[row], reference,
+            need_jets, *found->result.trace);
+    }
+    return result;
+}
+
 NeutralReferenceReactionDiagnostic reaction_reference(
     const HelmholtzModel& model,
     double temperature,
@@ -181,115 +511,9 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference
 ) {
-    NeutralReferenceReactionDiagnostic result;
-    try {
-        const double solvent_mass = validate_neutral_reference_declaration(
-            model.parameters(), declaration, stoichiometry);
-        if (!std::isfinite(temperature) || temperature <= 0.0
-            || !std::isfinite(system_pressure) || system_pressure <= 0.0) {
-            result.status = NeutralReferenceStatus::InvalidDeclaration;
-            result.message = "neutral reference temperature or system pressure is invalid";
-            return result;
-        }
-        const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
-        if (!std::isfinite(pressure) || pressure <= 0.0) {
-            result.status = NeutralReferenceStatus::InvalidDeclaration;
-            result.message = "neutral reference pressure is invalid";
-            return result;
-        }
-        switch (reference.source_basis) {
-        case ReferenceSourceBasis::CommonMolalityInfiniteDilution:
-        case ReferenceSourceBasis::RawMoleFractionInfiniteDilution:
-            break;
-        default:
-            result.status = NeutralReferenceStatus::UnsupportedSourceBasis;
-            result.message = "unsupported neutral reference source basis";
-            return result;
-        }
-        result.reference_pressure_pa = pressure;
-        std::optional<double> anchor;
-        std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
-        for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
-            const double molality = NEUTRAL_REFERENCE_MOLALITIES[point];
-            const auto composition = neutral_reference_composition(
-                declaration, solvent_mass, molality);
-            State state;
-            try {
-                state = model.state_at_pressure(
-                    temperature, pressure, composition, DensityBranch::Liquid, anchor);
-            } catch (const std::exception& error) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = std::string("neutral reference density unavailable: ")
-                    + error.what();
-                return result;
-            }
-            const bool cold_unique_root = point == 0
-                && state.density_branch == DensityBranch::Unspecified
-                && state.stable_root_count.value_or(0) == 1;
-            if (state.density_branch != DensityBranch::Liquid && !cold_unique_root) {
-                result.status = NeutralReferenceStatus::BranchChange;
-                result.message = "neutral reference left the anchored liquid branch";
-                return result;
-            }
-            if (!std::isfinite(state.molar_density) || state.molar_density <= 0.0
-                || !std::isfinite(state.pressure_density_derivative)
-                || state.pressure_density_derivative <= 0.0
-                || state.residual_chemical_potential_over_rt.size()
-                    != model.parameters().component_count()) {
-                result.status = NeutralReferenceStatus::DensityUnavailable;
-                result.message = "neutral reference state has invalid density response";
-                return result;
-            }
-            const double log_density = std::log(state.molar_density);
-            double contraction = 0.0;
-            for (std::size_t component = 0;
-                 component < state.residual_chemical_potential_over_rt.size(); ++component) {
-                const double chemical = state.residual_chemical_potential_over_rt[component];
-                if (!std::isfinite(chemical)) {
-                    result.status = NeutralReferenceStatus::Nonfinite;
-                    result.message = "neutral reference residual chemical potential is nonfinite";
-                    return result;
-                }
-                contraction += stoichiometry[component] * (log_density + chemical);
-            }
-            if (!std::isfinite(contraction)) {
-                result.status = NeutralReferenceStatus::Nonfinite;
-                result.message = "neutral reference contraction is nonfinite";
-                return result;
-            }
-            contractions[point] = contraction;
-            anchor = state.molar_density;
-        }
-        const double observed_terminal_change = std::max(
-            std::abs(contractions[4] - contractions[3]),
-            std::abs(contractions[3] - contractions[2]));
-        result.observed_terminal_change = observed_terminal_change;
-        if (!std::isfinite(observed_terminal_change)) {
-            result.status = NeutralReferenceStatus::Nonfinite;
-            result.message = "neutral reference terminal change is nonfinite";
-            return result;
-        }
-        if (observed_terminal_change > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
-            result.status = NeutralReferenceStatus::TerminalChangeExceeded;
-            result.message = "neutral reference terminal change exceeds tolerance";
-            return result;
-        }
-        result.terminal_contraction = contractions.back();
-        result.status = NeutralReferenceStatus::Available;
-        return result;
-    } catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        result.status = message.find("charged") != std::string::npos
-                || message.find("charge neutral") != std::string::npos
-            ? NeutralReferenceStatus::NonNeutralDeclaration
-            : NeutralReferenceStatus::InvalidDeclaration;
-        result.message = message;
-        return result;
-    } catch (const std::exception& error) {
-        result.status = NeutralReferenceStatus::Nonfinite;
-        result.message = error.what();
-        return result;
-    }
+    return reaction_references(
+        model, temperature, system_pressure, declaration,
+        {stoichiometry}, {reference}).front();
 }
 
 InfiniteDilutionReference infinite_dilution_reference(

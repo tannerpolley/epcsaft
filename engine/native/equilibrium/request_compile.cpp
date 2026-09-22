@@ -158,7 +158,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     const EquilibriumProblem& request,
     double temperature,
     double pressure,
-    std::vector<NeutralReferenceReactionDiagnostic>& diagnostics
+    std::vector<NeutralReferenceReactionDiagnostic>& diagnostics,
+    bool pressure_jets
 ) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
@@ -167,9 +168,6 @@ std::vector<ReactionSpec> central_reference_reactions(
     if (request.temperature.free) {
         throw std::invalid_argument("reference_unavailable: free temperature is unsupported");
     }
-    if (request.pressure.free) {
-        throw std::invalid_argument("reference_unavailable: free pressure is unsupported");
-    }
     if (!request.standard_gibbs_j_per_mol.empty()) {
         throw std::invalid_argument(
             "reference_unavailable: supplied standard Gibbs conflicts with source reference");
@@ -177,6 +175,9 @@ std::vector<ReactionSpec> central_reference_reactions(
     std::vector<ReactionSpec> result = request.reactions;
     diagnostics.clear();
     diagnostics.reserve(request.reactions.size());
+    std::vector<std::size_t> reference_rows;
+    std::vector<std::vector<double>> stoichiometries;
+    std::vector<ReactionReference> references;
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& reaction = request.reactions[row];
         if (!reaction.reference.has_value()) continue;
@@ -186,9 +187,17 @@ std::vector<ReactionSpec> central_reference_reactions(
                 "reference_unavailable: reaction " + reaction_name(reaction, row)
                 + " needs a scalar K or correlation source");
         }
-        const auto reference = reaction_reference(
-            model, temperature, pressure, *request.source_reference,
-            reaction.stoichiometry, *reaction.reference);
+        reference_rows.push_back(row);
+        stoichiometries.push_back(reaction.stoichiometry);
+        references.push_back(*reaction.reference);
+    }
+    const auto reference_results = reaction_references(
+        model, temperature, pressure, *request.source_reference,
+        stoichiometries, references, pressure_jets);
+    for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
+        const std::size_t row = reference_rows[reference_row];
+        const auto& reaction = request.reactions[row];
+        const auto& reference = reference_results[reference_row];
         auto diagnostic = reference;
         diagnostic.reaction_index = row;
         diagnostics.push_back(diagnostic);
@@ -238,7 +247,10 @@ std::vector<ReactionSpec> central_reference_reactions(
     return result;
 }
 
-StandardTerm standard_term(const CompiledSystem& compiled, double temperature, std::size_t order) {
+StandardTerm standard_term(
+    const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
+    bool pressure_jets
+) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
     if (!compiled.reference_diagnostics.empty()) {
@@ -252,11 +264,61 @@ StandardTerm standard_term(const CompiledSystem& compiled, double temperature, s
                                             ordinary_reactions);
             }
         }
+        auto diagnostics = compiled.reference_diagnostics;
+        auto reactions = problem.reactions;
+        auto gibbs = compiled.standard_gibbs;
+        // Fixed-T/P references do not change with phase coordinates or feed directions.
+        if (problem.pressure.free || pressure_jets) {
+            reactions = central_reference_reactions(
+                *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets);
+            gibbs = standard_state(temperature, components, reactions, {});
+        }
         StandardTerm result;
         result.derivative.assign(order + 1, std::vector<double>(components, 0.0));
+        result.pressure_derivative.assign(components, 0.0);
+        result.pressure_second_derivative.assign(components, 0.0);
+        result.reference_diagnostics = diagnostics;
         for (std::size_t species = 0; species < components; ++species) {
-            result.derivative[0][species] = compiled.standard_gibbs[species]
+            result.derivative[0][species] = gibbs[species]
                 / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+        }
+        if (pressure_jets) {
+            std::vector<ReactionSpec> pressure_reactions = reactions;
+            std::vector<ReactionSpec> pressure_second_reactions = reactions;
+            for (std::size_t row = 0; row < reactions.size(); ++row) {
+                double first = 0.0;
+                double second = 0.0;
+                for (const auto& diagnostic : diagnostics) {
+                    if (diagnostic.reaction_index != row) continue;
+                    if (!diagnostic.terminal_contraction_pressure_derivative.has_value()
+                        || !diagnostic.terminal_contraction_pressure_second_derivative.has_value()) {
+                        throw std::invalid_argument(
+                            "reference_unavailable: reaction pressure derivatives are missing");
+                    }
+                    first = -GAS_CONSTANT_J_PER_MOL_K * temperature
+                        * *diagnostic.terminal_contraction_pressure_derivative;
+                    second = -GAS_CONSTANT_J_PER_MOL_K * temperature
+                        * *diagnostic.terminal_contraction_pressure_second_derivative;
+                    break;
+                }
+                for (auto* target : {&pressure_reactions[row], &pressure_second_reactions[row]}) {
+                    target->equilibrium_constant.reset();
+                    target->correlation.reset();
+                    target->reference.reset();
+                    target->affinity_j_per_mol = target == &pressure_reactions[row]
+                        ? first : second;
+                }
+            }
+            const auto pressure_gibbs = standard_state(
+                temperature, components, pressure_reactions, {});
+            const auto pressure_second_gibbs = standard_state(
+                temperature, components, pressure_second_reactions, {});
+            for (std::size_t species = 0; species < components; ++species) {
+                result.pressure_derivative[species] = pressure_gibbs[species]
+                    / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+                result.pressure_second_derivative[species] = pressure_second_gibbs[species]
+                    / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+            }
         }
         return result;
     }
@@ -272,6 +334,8 @@ StandardTerm standard_term(const CompiledSystem& compiled, double temperature, s
     const double binomial[4][4] = {{1, 0, 0, 0}, {1, 1, 0, 0}, {1, 2, 1, 0}, {1, 3, 3, 1}};
     StandardTerm result;
     result.derivative.assign(order + 1, std::vector<double>(components, 0.0));
+    result.pressure_derivative.assign(components, 0.0);
+    result.pressure_second_derivative.assign(components, 0.0);
     for (std::size_t k = 0; k <= order; ++k) {
         for (std::size_t species = 0; species < components; ++species) {
             double value = 0.0;
@@ -319,6 +383,7 @@ std::vector<double> pinned_hessian(
         const AD T = problem.temperature.free ? q[temperature_index] : AD(temperature);
         const AD P = problem.pressure.free ? q[compiled.primal_size - 1]
                                           : AD(problem.pressure.value);
+        const AD delta_P = P - AD(prepared.pressure);
         std::vector<AD> x(components, AD(0.0));
         for (std::size_t local = 0; local < shape[phase].x.size(); ++local)
             x[problem.phases[phase].support[local]] = CppAD::exp(q[shape[phase].x[local]]);
@@ -334,7 +399,10 @@ std::vector<double> pinned_hessian(
             // Exact second-order Taylor term of the standard state in the free temperature.
             const AD standard_value = standard.derivative[0][species]
                 + standard.derivative[1][species] * delta_T
-                + 0.5 * standard.derivative[2][species] * delta_T * delta_T;
+                + 0.5 * standard.derivative[2][species] * delta_T * delta_T
+                + standard.pressure_derivative[species] * delta_P
+                + 0.5 * standard.pressure_second_derivative[species]
+                    * delta_P * delta_P;
             simple += chemical[species] * (q[shape[phase].x[local]]
                 - CppAD::log(volume) + standard_value);
         }
@@ -450,6 +518,7 @@ CppAD::ADFun<double> record_geometry(
     std::vector<AD> output;
     std::vector<AD> row_values(compiled.rows.size(), AD(0.0));
     const AD delta_T = T - prepared.temperature;
+    const AD delta_P = P - prepared.pressure;
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
         const auto& spec = problem.phases[phase];
         const auto& layout = prepared.shape[phase];
@@ -482,6 +551,9 @@ CppAD::ADFun<double> record_geometry(
                     value += standard.derivative[k][species] * power;
                     power *= delta_T / AD(static_cast<double>(k + 1));
                 }
+                value += standard.pressure_derivative[species] * delta_P
+                    + 0.5 * standard.pressure_second_derivative[species]
+                        * delta_P * delta_P;
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
                     value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
@@ -585,7 +657,7 @@ CompiledSystem compile_problem(
     const double pressure_guess = request.pressure.seed_or(1.0e5);
     const auto central_reactions = central_reference_reactions(
         model, request, temperature_guess, pressure_guess,
-        compiled.reference_diagnostics);
+        compiled.reference_diagnostics, false);
     compiled.standard_gibbs = standard_state(
         temperature_guess, components, central_reactions,
         has_reaction_reference(request) ? std::vector<double>{}
@@ -828,7 +900,8 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point) const {
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));
     }
-    result.standard = standard_term(*this, result.temperature, 2);
+    result.standard = standard_term(
+        *this, result.temperature, result.pressure, 2, problem.pressure.free);
     return result;
 }
 
@@ -990,6 +1063,8 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                 derivative.hessian[(2 + species) * width]
                 + physical_v * packings[row.phase].temperature_derivative / prepared.eta[row.phase]
                 + standard_temperature_derivative[species];
+            if (pressure.has_value()) at(row_index, *pressure) =
+                prepared.standard.pressure_derivative[species];
             for (std::size_t balance_row = 0; balance_row < rank; ++balance_row)
                 at(row_index, primal_size + balance_row) = -B[balance_row][species];
             if (phi[row.phase].has_value()) at(row_index, primal_size + *phi[row.phase]) = -z[species];
@@ -1274,7 +1349,23 @@ RowSeries CompiledSystem::row_series(
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
-    auto geometry = record_geometry(*this, prepared, standard_term(*this, prepared.temperature, 3));
+    if (!reference_diagnostics.empty()) {
+        const bool pressure_varies = problem.pressure.free || control[1] != 0.0;
+        const bool active_varies = std::any_of(
+            control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.end(),
+            [](double value) { return value != 0.0; });
+        if (control[0] != 0.0 || active_varies || (order > 2 && pressure_varies)) {
+            throw std::invalid_argument(
+                "reference_unavailable: row series pressure/T/parameter order is unsupported");
+        }
+    }
+    const bool pressure_jets = problem.pressure.free || control[1] != 0.0;
+    const auto standard = reference_diagnostics.empty()
+        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
+        : pressure_jets
+            ? standard_term(*this, prepared.temperature, prepared.pressure, order, true)
+            : prepared.standard;
+    auto geometry = record_geometry(*this, prepared, standard);
     const std::size_t stride = width + 2;
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {

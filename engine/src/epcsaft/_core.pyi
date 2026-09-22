@@ -424,6 +424,8 @@ class NeutralReferenceReactionDiagnostic:
     reaction_index: int
     terminal_contraction: Optional[float]
     observed_terminal_change: Optional[float]
+    terminal_contraction_pressure_derivative: Optional[float]
+    terminal_contraction_pressure_second_derivative: Optional[float]
     reference_pressure_pa: float
     status: NeutralReferenceStatus
     message: str

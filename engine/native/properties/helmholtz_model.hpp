@@ -189,6 +189,11 @@ struct NeutralReferenceReactionDiagnostic final {
     std::size_t reaction_index = 0;
     std::optional<double> terminal_contraction;
     std::optional<double> observed_terminal_change;
+    // Pressure derivatives of the finite terminal contraction.  These are native
+    // reference-path diagnostics; explicit fixed-pressure sources carry exact zero
+    // system-pressure derivatives.
+    std::optional<double> terminal_contraction_pressure_derivative;
+    std::optional<double> terminal_contraction_pressure_second_derivative;
     double reference_pressure_pa = 0.0;
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
@@ -316,6 +321,19 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference
+);
+
+// Evaluate multiple reaction references while reusing one validated ladder per
+// resolved source pressure within the call.  This remains a native owner; the
+// Python surface exposes only the established singular diagnostic/result path.
+std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
+    const HelmholtzModel& model,
+    double temperature,
+    double system_pressure,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<std::vector<double>>& stoichiometries,
+    const std::vector<ReactionReference>& references,
+    bool pressure_jets = true
 );
 
 struct InfiniteDilutionReference final {

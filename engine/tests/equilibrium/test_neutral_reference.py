@@ -4,9 +4,9 @@ from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure
 from epcsaft.equilibrium import (
-    Amounts, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial,
+    Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
     SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, problem_from_mapping, solve_equilibrium, solved_state_actions,
@@ -65,3 +65,55 @@ def test_neutral_reference_recovers_mole_fraction_law(
     same(evidence, name + "/feed_homogeneity", item.action, 0.0, rtol=0.0, atol=1e-10,
          inputs=inputs, basis="Identity", method="extensive-feed-scaling",
          claim="referenced equilibrium composition remains invariant under total-feed scaling")
+
+
+@pytest.mark.parametrize("constant", [0.3, 1e-10])
+def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float) -> None:
+    """Identical EOS species separate source chemistry from the phase-equilibrium oracle."""
+    temperature = 180.0
+    pure = Pure(parameters((ETHANE,)))
+    lower, upper = 30000.0, 150000.0
+    for _ in range(40):
+        pressure = (lower + upper) / 2
+        liquid = pure.state(temperature, P=pressure, phase="liquid")
+        vapor = pure.state(temperature, P=pressure, phase="vapor")
+        assert liquid.log_fugacity_coefficient is not None
+        assert vapor.log_fugacity_coefficient is not None
+        if liquid.log_fugacity_coefficient[0] > vapor.log_fugacity_coefficient[0]:
+            lower = pressure
+        else:
+            upper = pressure
+    saturation = (lower + upper) / 2
+    assert liquid.log_fugacity_coefficient is not None and vapor.log_fugacity_coefficient is not None
+    assert abs(liquid.log_fugacity_coefficient[0] - vapor.log_fugacity_coefficient[0]) < 1e-8
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    expected = 4 * constant / (1 + math.sqrt(1 + 4 * constant)) ** 2
+    name = f"reference-bubble/{constant:g}"
+    problem = Problem(
+        T=temperature, P=Free(1e5), feed=Amounts({"s0": 2.0, "s1": 0.2}),
+        phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
+            math.log(constant), 0.0, 0.0, 0.0, 300.0, 170.0, 350.0, "analytic-source"),
+            reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))],
+    )
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    assert max(abs(value) for value in result.residuals) < 1e-10
+    same(evidence, name + "/pressure", result.pressure[0], saturation, rtol=1e-7,
+         method="pure-fugacity-bisection", claim="identical-species reactive bubble has pure-EOS pressure")
+    same(evidence, name + "/liquid-composition", result.mole_fractions[1], expected,
+         rtol=1e-8, atol=0.0, method="2A-to-B-analytic", claim="source mole-fraction law at solved pressure")
+    reference = result.neutral_reference_diagnostics[0]
+    liquid = pure.state(temperature, P=saturation, phase="liquid")
+    same(evidence, name + "/reference-pressure", reference.reference_pressure_pa, saturation,
+         rtol=1e-7, method="pure-fugacity-bisection", claim="diagnostics use final pressure, not the seed")
+    same(evidence, name + "/pressure-first", reference.terminal_contraction_pressure_derivative,
+         -1.0 / (liquid.molar_density * R * temperature), rtol=1e-8, atol=0.0,
+         method="identical-species-chemical-potential", claim="nonideal reference C_P=-V/(RT)")
+    same(evidence, name + "/pressure-second",
+         reference.terminal_contraction_pressure_second_derivative,
+         1.0 / (liquid.molar_density**2 * R * temperature * liquid.pressure_density_derivative),
+         rtol=1e-6, atol=0.0, method="identical-species-chemical-potential",
+         claim="reference curvature follows the density response")
