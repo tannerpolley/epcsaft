@@ -97,6 +97,7 @@ struct ReactionSpec final {
     std::optional<double> equilibrium_constant;
     std::optional<double> affinity_j_per_mol;
     std::optional<ReactionLogPolynomial> correlation;
+    std::optional<ReactionReference> reference;
 };
 
 struct EquilibriumProblem final {
@@ -106,6 +107,7 @@ struct EquilibriumProblem final {
     FeedSpec feed;
     std::vector<ReactionSpec> reactions;
     std::vector<double> standard_gibbs_j_per_mol;
+    std::optional<NeutralReferenceDeclaration> source_reference;
     bool topology_declared = true;
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
@@ -240,6 +242,7 @@ struct CompiledSystem final {
     bool has_reaction = false;
     bool conserves_total_moles = true;
     std::size_t jacobian_rank = 0;
+    std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 
     PhasePoint prepare(const std::vector<double>& point) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
@@ -325,6 +328,7 @@ struct EquilibriumResult final {
     TopologyEvent topology_event = TopologyEvent::None;
     std::optional<std::size_t> topology_phase;
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
+    std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()
@@ -384,7 +388,8 @@ enum class SolvedStateActionStatus {
     PhaseBoundaryNotDifferentiable, NonuniqueCoalescedPhases, RankDeficient, NonfiniteJacobian,
     LinearSolveResidual, SupportChange, IonicInsertion, EnergyOrderUnavailable,
     DensityUnavailable, PressureSingular, AssociationSingular, AssociationIllConditioned,
-    AssociationResidual, MissingThermochemistry, OutsideInterval, ThermalBoundary,
+    AssociationResidual, MissingThermochemistry, ReferenceUnavailable,
+    OutsideInterval, ThermalBoundary,
     CentralPropertyUnavailable, Nonfinite
 };
 
@@ -436,6 +441,7 @@ inline const char* solved_state_status_name(SolvedStateActionStatus status) noex
     case SolvedStateActionStatus::AssociationIllConditioned: return "association_ill_conditioned";
     case SolvedStateActionStatus::AssociationResidual: return "association_residual";
     case SolvedStateActionStatus::MissingThermochemistry: return "missing_thermochemistry";
+    case SolvedStateActionStatus::ReferenceUnavailable: return "reference_unavailable";
     case SolvedStateActionStatus::OutsideInterval: return "outside_interval";
     case SolvedStateActionStatus::ThermalBoundary: return "thermal_boundary";
     case SolvedStateActionStatus::CentralPropertyUnavailable: return "central_property_unavailable";

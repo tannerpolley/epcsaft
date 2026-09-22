@@ -9,9 +9,95 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace epcsaft {
+
+namespace {
+
+constexpr std::array<double, 5> NEUTRAL_REFERENCE_MOLALITIES = {
+    policy::REFERENCE_MOLALITY_ONE.value,
+    policy::REFERENCE_MOLALITY_TWO.value,
+    policy::REFERENCE_MOLALITY_THREE.value,
+    policy::REFERENCE_MOLALITY_FOUR.value,
+    policy::REFERENCE_CONVERGENCE_WITNESS.value,
+};
+
+double validate_neutral_reference_declaration(
+    const Parameters& parameters,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry
+) {
+    const std::size_t components = parameters.component_count();
+    if (!declaration.solvent_index.has_value()
+        || *declaration.solvent_index >= components
+        || declaration.solute_molality_ratios.size() != components
+        || !std::isfinite(declaration.standard_molality_mol_per_kg)
+        || declaration.standard_molality_mol_per_kg <= 0.0
+        || stoichiometry.size() != components) {
+        throw std::invalid_argument("invalid neutral reference declaration");
+    }
+    const std::size_t solvent = *declaration.solvent_index;
+    if (parameters.charge_number[solvent] != 0) {
+        throw std::invalid_argument("neutral reference solvent is charged");
+    }
+    const auto& molar_masses = parameters.molar_mass_kg_per_mol;
+    const double solvent_mass = molar_masses[solvent];
+    if (!std::isfinite(solvent_mass) || solvent_mass <= 0.0) {
+        throw std::invalid_argument("neutral reference solvent has invalid molar mass");
+    }
+    double charge = 0.0;
+    double reaction_charge = 0.0;
+    for (std::size_t component = 0; component < components; ++component) {
+        const double ratio = declaration.solute_molality_ratios[component];
+        if (!std::isfinite(ratio)
+            || (component == solvent ? ratio != 0.0 : ratio <= 0.0)) {
+            throw std::invalid_argument("invalid neutral reference solute ratio");
+        }
+        const double coefficient = stoichiometry[component];
+        if (!std::isfinite(coefficient)) {
+            throw std::invalid_argument("invalid neutral reference stoichiometry");
+        }
+        charge += ratio * static_cast<double>(parameters.charge_number[component]);
+        reaction_charge += coefficient * static_cast<double>(parameters.charge_number[component]);
+    }
+    if (!std::isfinite(charge) || charge != 0.0) {
+        throw std::invalid_argument("neutral reference solute ratios are not charge neutral");
+    }
+    if (!std::isfinite(reaction_charge) || reaction_charge != 0.0) {
+        throw std::invalid_argument("neutral reference reaction is not charge neutral");
+    }
+    return solvent_mass;
+}
+
+std::vector<double> neutral_reference_composition(
+    const NeutralReferenceDeclaration& declaration,
+    double solvent_mass,
+    double molality
+) {
+    if (!std::isfinite(molality) || molality <= 0.0) {
+        throw std::invalid_argument("invalid neutral reference molality");
+    }
+    const std::size_t solvent = *declaration.solvent_index;
+    const double solvent_moles = 1.0 / solvent_mass;
+    double total_moles = solvent_moles;
+    for (const double ratio : declaration.solute_molality_ratios)
+        total_moles += molality * ratio;
+    if (!std::isfinite(total_moles) || total_moles <= 0.0) {
+        throw std::invalid_argument("invalid neutral reference composition total");
+    }
+    std::vector<double> composition(declaration.solute_molality_ratios.size(), 0.0);
+    composition[solvent] = solvent_moles / total_moles;
+    for (std::size_t component = 0; component < composition.size(); ++component) {
+        if (component == solvent) continue;
+        composition[component] = molality * declaration.solute_molality_ratios[component]
+            / total_moles;
+    }
+    return composition;
+}
+
+}  // namespace
 
 std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
@@ -68,6 +154,142 @@ std::vector<double> formula_composition(
     composition[ion_indices[0]] = stoichiometry[0] * molality / total_moles;
     composition[ion_indices[1]] = stoichiometry[1] * molality / total_moles;
     return composition;
+}
+
+double reaction_reference_log_scale(
+    const HelmholtzModel& model,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry
+) {
+    const double solvent_mass = validate_neutral_reference_declaration(
+        model.parameters(), declaration, stoichiometry);
+    double solute_stoichiometry = 0.0;
+    const std::size_t solvent = *declaration.solvent_index;
+    for (std::size_t component = 0; component < stoichiometry.size(); ++component)
+        if (component != solvent) solute_stoichiometry += stoichiometry[component];
+    const double scale = solute_stoichiometry
+        * std::log(solvent_mass * declaration.standard_molality_mol_per_kg);
+    if (!std::isfinite(scale)) throw std::invalid_argument("nonfinite neutral reference scale");
+    return scale;
+}
+
+NeutralReferenceReactionDiagnostic reaction_reference(
+    const HelmholtzModel& model,
+    double temperature,
+    double system_pressure,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry,
+    const ReactionReference& reference
+) {
+    NeutralReferenceReactionDiagnostic result;
+    try {
+        const double solvent_mass = validate_neutral_reference_declaration(
+            model.parameters(), declaration, stoichiometry);
+        if (!std::isfinite(temperature) || temperature <= 0.0
+            || !std::isfinite(system_pressure) || system_pressure <= 0.0) {
+            result.status = NeutralReferenceStatus::InvalidDeclaration;
+            result.message = "neutral reference temperature or system pressure is invalid";
+            return result;
+        }
+        const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
+        if (!std::isfinite(pressure) || pressure <= 0.0) {
+            result.status = NeutralReferenceStatus::InvalidDeclaration;
+            result.message = "neutral reference pressure is invalid";
+            return result;
+        }
+        switch (reference.source_basis) {
+        case ReferenceSourceBasis::CommonMolalityInfiniteDilution:
+        case ReferenceSourceBasis::RawMoleFractionInfiniteDilution:
+            break;
+        default:
+            result.status = NeutralReferenceStatus::UnsupportedSourceBasis;
+            result.message = "unsupported neutral reference source basis";
+            return result;
+        }
+        result.reference_pressure_pa = pressure;
+        std::optional<double> anchor;
+        std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
+        for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
+            const double molality = NEUTRAL_REFERENCE_MOLALITIES[point];
+            const auto composition = neutral_reference_composition(
+                declaration, solvent_mass, molality);
+            State state;
+            try {
+                state = model.state_at_pressure(
+                    temperature, pressure, composition, DensityBranch::Liquid, anchor);
+            } catch (const std::exception& error) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = std::string("neutral reference density unavailable: ")
+                    + error.what();
+                return result;
+            }
+            const bool cold_unique_root = point == 0
+                && state.density_branch == DensityBranch::Unspecified
+                && state.stable_root_count.value_or(0) == 1;
+            if (state.density_branch != DensityBranch::Liquid && !cold_unique_root) {
+                result.status = NeutralReferenceStatus::BranchChange;
+                result.message = "neutral reference left the anchored liquid branch";
+                return result;
+            }
+            if (!std::isfinite(state.molar_density) || state.molar_density <= 0.0
+                || !std::isfinite(state.pressure_density_derivative)
+                || state.pressure_density_derivative <= 0.0
+                || state.residual_chemical_potential_over_rt.size()
+                    != model.parameters().component_count()) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "neutral reference state has invalid density response";
+                return result;
+            }
+            const double log_density = std::log(state.molar_density);
+            double contraction = 0.0;
+            for (std::size_t component = 0;
+                 component < state.residual_chemical_potential_over_rt.size(); ++component) {
+                const double chemical = state.residual_chemical_potential_over_rt[component];
+                if (!std::isfinite(chemical)) {
+                    result.status = NeutralReferenceStatus::Nonfinite;
+                    result.message = "neutral reference residual chemical potential is nonfinite";
+                    return result;
+                }
+                contraction += stoichiometry[component] * (log_density + chemical);
+            }
+            if (!std::isfinite(contraction)) {
+                result.status = NeutralReferenceStatus::Nonfinite;
+                result.message = "neutral reference contraction is nonfinite";
+                return result;
+            }
+            contractions[point] = contraction;
+            anchor = state.molar_density;
+        }
+        const double observed_terminal_change = std::max(
+            std::abs(contractions[4] - contractions[3]),
+            std::abs(contractions[3] - contractions[2]));
+        result.observed_terminal_change = observed_terminal_change;
+        if (!std::isfinite(observed_terminal_change)) {
+            result.status = NeutralReferenceStatus::Nonfinite;
+            result.message = "neutral reference terminal change is nonfinite";
+            return result;
+        }
+        if (observed_terminal_change > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+            result.status = NeutralReferenceStatus::TerminalChangeExceeded;
+            result.message = "neutral reference terminal change exceeds tolerance";
+            return result;
+        }
+        result.terminal_contraction = contractions.back();
+        result.status = NeutralReferenceStatus::Available;
+        return result;
+    } catch (const std::invalid_argument& error) {
+        const std::string message = error.what();
+        result.status = message.find("charged") != std::string::npos
+                || message.find("charge neutral") != std::string::npos
+            ? NeutralReferenceStatus::NonNeutralDeclaration
+            : NeutralReferenceStatus::InvalidDeclaration;
+        result.message = message;
+        return result;
+    } catch (const std::exception& error) {
+        result.status = NeutralReferenceStatus::Nonfinite;
+        result.message = error.what();
+        return result;
+    }
 }
 
 InfiniteDilutionReference infinite_dilution_reference(

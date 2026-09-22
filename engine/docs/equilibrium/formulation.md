@@ -103,9 +103,10 @@ nonreactive declaration compiles square by count but its retained balance and
 normalization rows are dependent, Σ_i balance_i = Σ_p v_p normalization_p, so it
 reports generic rank loss and no nonlinear solve is run.
 
-Reaction targets are one of a constant affinity, a scalar K, or the P3
+Ordinary reaction targets are a constant affinity, a scalar K, or the P3
 correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
-exp(μ_i^res / RT); any other correlation identity is rejected. A scalar K is a
+exp(μ_i^res / RT). A correlation on another basis requires the explicit neutral
+reference declaration below. An ordinary scalar K is a
 temperature-independent target: its series is −RT ln K, −R ln K, 0, 0, so it
 states zero density-basis reaction enthalpy and differs from a correlated target
 by Δ_r h / T at first temperature order. A temperature-dependent source constant
@@ -123,6 +124,23 @@ free temperature admits it only when the targets are constant. Supplied species
 thermochemistry is compared with each target through Gibbs, enthalpy and heat
 capacity on the density basis; a mismatch is a reference inconsistency, not a
 preference for either input.
+
+The implemented neutral-reference slice uses one pure neutral solvent and a
+positive charge-neutral all-solute dilution path. An explicit source-basis enum
+selects common-molality or raw mole-fraction correlations; a nonempty source ID
+records provenance. EqID: `neutral_reaction_reference_transfer` converts each
+source at its declared fixed or system reference pressure, then the existing
+reaction/SVD owner compiles the density-basis target once for fixed T/P.
+The liquid selector chooses the dense branch when several stable roots exist;
+a unique stable root follows the density owner's unspecified-label semantics.
+Reference qualification must therefore establish the physical solvent state
+for the application; the selector supplies no universal phase classification.
+This qualified finite terminal reference supports central solves and feed
+actions. Free T/P, referenced continuation, raw lever derivatives and nonzero
+T/P/parameter solved-state actions remain unavailable. Ideal/Total caloric
+values and actions are also unavailable; an attached thermochemistry record
+cannot supply missing reference derivatives. Ordinary unreferenced reactions
+retain their existing consistency checks and derivative behavior.
 
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be
 constructed as data specifications of these rows. Names may help users

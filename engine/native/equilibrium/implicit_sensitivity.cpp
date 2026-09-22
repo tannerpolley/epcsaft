@@ -368,6 +368,39 @@ bool thermal_reference_missing(const CompiledSystem& compiled, double temperatur
     return false;
 }
 
+bool has_source_reference(const EquilibriumProblem& problem) {
+    return problem.source_reference.has_value()
+        || std::any_of(problem.reactions.begin(), problem.reactions.end(),
+            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
+}
+
+bool reference_action_direction(const std::vector<std::vector<double>>& controls,
+                                std::size_t components) {
+    return std::any_of(controls.begin(), controls.end(), [components](const auto& control) {
+        if (control[0] != 0.0 || control[1] != 0.0) return true;
+        return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
+                           control.end(), [](double value) { return value != 0.0; });
+    });
+}
+
+bool caloric_property(PropertyObservable property) {
+    switch (property) {
+    case PropertyObservable::IdealEnthalpy:
+    case PropertyObservable::IdealInternalEnergy:
+    case PropertyObservable::IdealEntropy:
+    case PropertyObservable::IdealIsobaricHeatCapacity:
+    case PropertyObservable::IdealIsochoricHeatCapacity:
+    case PropertyObservable::TotalEnthalpy:
+    case PropertyObservable::TotalInternalEnergy:
+    case PropertyObservable::TotalEntropy:
+    case PropertyObservable::TotalIsobaricHeatCapacity:
+    case PropertyObservable::TotalIsochoricHeatCapacity:
+        return true;
+    default:
+        return false;
+    }
+}
+
 struct Center final {
     PhasePoint prepared;
     Eigen::MatrixXd jacobian;
@@ -665,6 +698,19 @@ SolvedStateActionBatch solved_state_actions(
             }
         }
     }
+    const bool reference_problem = has_source_reference(problem)
+        && !compiled.reference_diagnostics.empty();
+    if (reference_problem) {
+        for (auto& item : batch.results) {
+            if (item.observable.kind == SolvedStateObservableKind::PhaseProperty
+                && caloric_property(item.observable.property)) {
+                item.status = SolvedStateActionStatus::ReferenceUnavailable;
+                item.value.reset();
+                item.action.reset();
+                item.diagnostic_message = "reference caloric value/action is unavailable in Stage A";
+            }
+        }
+    }
     // Admission of the central state, in the owner's precedence.
     SolvedStateActionStatus gate = SolvedStateActionStatus::Available;
     if (!(classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
@@ -704,6 +750,10 @@ SolvedStateActionBatch solved_state_actions(
     }
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = std::any_of(controls.begin(), controls.end(), [](const auto& c) { return c[0] != 0.0; });
+    if (gate == SolvedStateActionStatus::Available && reference_problem
+        && !zero && reference_action_direction(controls, components)) {
+        gate = SolvedStateActionStatus::ReferenceUnavailable;
+    }
     if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
         gate = SolvedStateActionStatus::MissingThermochemistry;
     // A central-state gate precedes the selected dependency: it overrides every

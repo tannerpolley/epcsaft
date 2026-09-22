@@ -398,12 +398,49 @@ class FeedSpec:
     solvent_mass_kg: float
     def __init__(self) -> None: ...
 
+class NeutralReferenceDeclaration:
+    solvent_index: Optional[int]
+    solute_molality_ratios: list[float]
+    standard_molality_mol_per_kg: float
+    def __init__(self) -> None: ...
+
+class ReferenceSourceBasis:
+    CommonMolalityInfiniteDilution: ReferenceSourceBasis
+    RawMoleFractionInfiniteDilution: ReferenceSourceBasis
+
+class NeutralReferenceStatus:
+    Available: NeutralReferenceStatus
+    InvalidDeclaration: NeutralReferenceStatus
+    NonNeutralDeclaration: NeutralReferenceStatus
+    UnsupportedSourceBasis: NeutralReferenceStatus
+    FreeTemperature: NeutralReferenceStatus
+    FreePressure: NeutralReferenceStatus
+    DensityUnavailable: NeutralReferenceStatus
+    BranchChange: NeutralReferenceStatus
+    Nonfinite: NeutralReferenceStatus
+    TerminalChangeExceeded: NeutralReferenceStatus
+
+class NeutralReferenceReactionDiagnostic:
+    reaction_index: int
+    terminal_contraction: Optional[float]
+    observed_terminal_change: Optional[float]
+    reference_pressure_pa: float
+    status: NeutralReferenceStatus
+    message: str
+
+class ReactionReference:
+    source_basis: ReferenceSourceBasis
+    reference_pressure_pa: Optional[float]
+    def __init__(self, source_basis: ReferenceSourceBasis,
+                 reference_pressure_pa: Optional[float] = None) -> None: ...
+
 class ReactionSpec:
     name: str
     stoichiometry: list[float]
     equilibrium_constant: Optional[float]
     affinity_j_per_mol: Optional[float]
     correlation: Optional[ReactionLogPolynomial]
+    reference: Optional[ReactionReference]
     def __init__(self) -> None: ...
 
 class EquilibriumProblem:
@@ -415,6 +452,7 @@ class EquilibriumProblem:
     standard_gibbs_j_per_mol: list[float]
     topology_declared: bool
     row_tolerance: float
+    neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
 class RowKind:
@@ -459,6 +497,7 @@ class CompiledSystem:
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
+    neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
     success: bool
     message: str
     solver_status: str
@@ -598,6 +637,7 @@ class SolvedStateActionStatus:
     AssociationIllConditioned: SolvedStateActionStatus
     AssociationResidual: SolvedStateActionStatus
     MissingThermochemistry: SolvedStateActionStatus
+    ReferenceUnavailable: SolvedStateActionStatus
     OutsideInterval: SolvedStateActionStatus
     ThermalBoundary: SolvedStateActionStatus
     CentralPropertyUnavailable: SolvedStateActionStatus

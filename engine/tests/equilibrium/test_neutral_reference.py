@@ -1,0 +1,67 @@
+"""A nonzero reaction mole change falsifies density and molality reference signs."""
+import math
+from typing import Any
+
+import pytest
+
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture
+from epcsaft.equilibrium import (
+    Amounts, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial,
+    ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
+    SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind as Kind,
+    compile_problem, problem_from_mapping, solve_equilibrium, solved_state_actions,
+)
+from tests.native_inputs import ETHANE, parameters, same
+
+
+@pytest.mark.parametrize("temperature,pressure", [(260.0, 3e6), (280.0, 5e6)])
+@pytest.mark.parametrize("common", [False, True])
+def test_neutral_reference_recovers_mole_fraction_law(
+    evidence: Any, temperature: float, pressure: float, common: bool,
+) -> None:
+    """Identical EOS species: 2A ⇌ B gives x_B = K_x(1-x_B)^2 at any regular T/P."""
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    constant = 0.3
+    expected = 4 * constant / (1 + math.sqrt(1 + 4 * constant)) ** 2
+    ln_k = math.log(constant) - (math.log(ETHANE[0] / 1000) if common else 0.0)
+    basis = Basis.CommonMolalityInfiniteDilution if common else Basis.RawMoleFractionInfiniteDilution
+    law = ReactionLogPolynomial(ln_k, 0.0, 0.0, 0.0, 300.0, 250.0, 350.0, "analytic-source")
+    problem = Problem(
+        T=temperature, P=pressure, feed=Amounts({"s0": 2.0, "s1": 0.2}),
+        phases=[Phase("L", kind="liquid")],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=law,
+                            reference=ReactionReference(basis))],
+    )
+    if common:
+        problem = problem_from_mapping({
+            "T": temperature, "P": pressure, "feed": {"basis": "amounts", "values": {"s0": 2.0, "s1": 0.2}},
+            "phases": [{"name": "L", "kind": "liquid"}],
+            "neutral_reference": {"solvent": "s0", "solute_molality_ratios": {"s1": 1.0},
+                                  "standard_molality_mol_per_kg": 1.0},
+            "reactions": [{"stoichiometry": {"s0": -2.0, "s1": 1.0}, "correlation": law,
+                           "reference": {"source_basis": "CommonMolalityInfiniteDilution"}}],
+        })
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    inputs = {"T_K": temperature, "P_Pa": pressure, "K_x": constant, "common_molality": common}
+    name = f"neutral-reference/{temperature:g}/{common}"
+    same(evidence, name + "/x_B", result.mole_fractions[1], expected, rtol=1e-8, atol=0.0,
+         inputs=inputs, basis="Identity", method="2A-to-B-analytic",
+         claim="density-reference and source molality conversion recover the mole-fraction law")
+    # Independent pressure/fugacity identity, not the reference owner's density expression.
+    state = model.state(temperature, P=pressure, x=(0.5, 0.5), phase="liquid")
+    assert state.log_fugacity_coefficient is not None
+    contraction = -state.log_fugacity_coefficient[0] - math.log(pressure / (R * temperature))
+    same(evidence, name + "/contraction", result.neutral_reference_diagnostics[0].terminal_contraction,
+         contraction, rtol=1e-9, atol=1e-10, inputs=inputs, basis="Identity",
+         method="fugacity-pressure-identity", claim="Lambda includes the standard-density factor")
+    direction = SolvedStateActionDirection(0.0, 0.0, [2.0, 0.2], [])
+    item = solved_state_actions(
+        compile_problem(model, problem), result,
+        SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [direction]),
+    ).results[0]
+    same(evidence, name + "/feed_homogeneity", item.action, 0.0, rtol=0.0, atol=1e-10,
+         inputs=inputs, basis="Identity", method="extensive-feed-scaling",
+         claim="referenced equilibrium composition remains invariant under total-feed scaling")

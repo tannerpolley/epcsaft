@@ -268,8 +268,17 @@ bool same_intensive(const FreeValue& a, const FreeValue& b) {
     return !a.free || (a.absent == b.absent && a.value == b.value);
 }
 
+bool carries_source_reference(const EquilibriumProblem& problem) {
+    return problem.source_reference.has_value()
+        || std::any_of(problem.reactions.begin(), problem.reactions.end(),
+            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
+}
+
 // Every field that is not a path lever must be identical at both endpoints.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    if (carries_source_reference(a) || carries_source_reference(b)) {
+        return "source reference continuation is unavailable in Stage A";
+    }
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";
     if (a.phases.size() != b.phases.size()) return "phase count differs";
     for (std::size_t p = 0; p < a.phases.size(); ++p) {

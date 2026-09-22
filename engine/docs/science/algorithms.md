@@ -512,6 +512,31 @@ including its density closure. Fixed source pressure P0 must not become trial
 pressure. Reference-gauge choices that preserve reaction affinities do not
 supply absolute caloric data.
 
+For an explicitly referenced neutral reaction, use
+`neutral_reaction_reference_transfer`: one pure neutral solvent, positive
+all-solute molality ratios with zero net charge, and one declared source basis
+per reaction. At each resolved source pressure, evaluate the five molalities
+from 1e-6 through 1e-14 mol/kg on the requested liquid branch. The density owner
+admits a unique mechanically stable cold root with an unspecified branch label;
+this is not a physical liquid/vapor classification. Subsequent anchored roots
+retain the requested branch. Require finite
+states, positive pressure slope, branch continuity and both last contraction
+changes within 5e-5. Retain the terminal contraction and observed change.
+Do not extrapolate this sequence: electrolyte terms can scale as sqrt(m).
+Qualify the finite estimate against a second charge-neutral dilution path;
+agreement is an observed domain check, not a universal limit-error certificate.
+
+Convert the correlation to the density target once during compilation and
+reuse that target in the existing reaction/SVD owner. Common-molality inputs
+receive the solvent-mass term once; for raw mole-fraction inputs the two basis
+terms cancel. Preserve each reaction's fixed or system-pressure reference.
+The implemented slice admits fixed T/P central solves and feed actions. It
+refuses referenced continuation and free T/P; nonzero T/P/parameter actions
+return `reference_unavailable`. Ideal/Total caloric values and actions remain
+unavailable even with an attached thermal record, while independently valid
+residual properties remain usable. A central finite reference cannot certify
+the missing reference derivatives.
+
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit
 $x_i^\circ=1$; molarity and molality require explicit positive standards and the

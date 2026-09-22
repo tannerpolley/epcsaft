@@ -640,6 +640,7 @@ namespace {
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
     result.rows = compiled.rows;
+    result.reference_diagnostics = compiled.reference_diagnostics;
     result.phase_count = compiled.problem.phases.size();
     result.unknown_count = compiled.unknown_count();
     result.jacobian_rank = compiled.jacobian_rank;

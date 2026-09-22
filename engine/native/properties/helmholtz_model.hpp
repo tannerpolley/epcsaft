@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace epcsaft {
@@ -151,6 +152,48 @@ struct DensityRoot final {
     core::Convergence convergence;
 };
 
+// A Stage-A neutral reference is a pure, neutral solvent plus one explicit
+// full-width solute molality-ratio vector.  Mixed-solvent declarations are
+// intentionally outside this first native consumer contract.
+struct NeutralReferenceDeclaration final {
+    std::optional<std::size_t> solvent_index;
+    std::vector<double> solute_molality_ratios;
+    double standard_molality_mol_per_kg = 0.0;
+};
+
+enum class ReferenceSourceBasis {
+    CommonMolalityInfiniteDilution,
+    RawMoleFractionInfiniteDilution,
+};
+
+struct ReactionReference final {
+    std::optional<double> reference_pressure_pa;
+    ReferenceSourceBasis source_basis =
+        ReferenceSourceBasis::CommonMolalityInfiniteDilution;
+};
+
+enum class NeutralReferenceStatus {
+    Available,
+    InvalidDeclaration,
+    NonNeutralDeclaration,
+    UnsupportedSourceBasis,
+    FreeTemperature,
+    FreePressure,
+    DensityUnavailable,
+    BranchChange,
+    Nonfinite,
+    TerminalChangeExceeded,
+};
+
+struct NeutralReferenceReactionDiagnostic final {
+    std::size_t reaction_index = 0;
+    std::optional<double> terminal_contraction;
+    std::optional<double> observed_terminal_change;
+    double reference_pressure_pa = 0.0;
+    NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
+    std::string message;
+};
+
 class HelmholtzModel final {
 public:
     explicit HelmholtzModel(
@@ -258,6 +301,21 @@ DensityRoot solve_density(
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
     std::optional<double> anchor_density
+);
+
+double reaction_reference_log_scale(
+    const HelmholtzModel& model,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry
+);
+
+NeutralReferenceReactionDiagnostic reaction_reference(
+    const HelmholtzModel& model,
+    double temperature,
+    double system_pressure,
+    const NeutralReferenceDeclaration& declaration,
+    const std::vector<double>& stoichiometry,
+    const ReactionReference& reference
 );
 
 struct InfiniteDilutionReference final {

@@ -8,6 +8,7 @@ from .problem import (
     MassFractions,
     Molalities,
     MoleFractions,
+    NeutralReference,
     Pinned,
     Phase,
     Problem,
@@ -25,6 +26,9 @@ EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
 ReactionLogPolynomial = _core.ReactionLogPolynomial
+ReactionReference = _core.ReactionReference
+ReferenceSourceBasis = _core.ReferenceSourceBasis
+NeutralReferenceStatus = _core.NeutralReferenceStatus
 SolvedStateActionBatch = _core.SolvedStateActionBatch
 SolvedStateActionDiagnostics = _core.SolvedStateActionDiagnostics
 SolvedStateActionDirection = _core.SolvedStateActionDirection
@@ -48,11 +52,15 @@ __all__ = (
     "MassFractions",
     "Molalities",
     "MoleFractions",
+    "NeutralReference",
+    "NeutralReferenceStatus",
     "Pinned",
     "Phase",
     "Problem",
     "Reaction",
     "ReactionLogPolynomial",
+    "ReactionReference",
+    "ReferenceSourceBasis",
     "SolvedStateActionBatch",
     "SolvedStateActionDiagnostics",
     "SolvedStateActionDirection",
@@ -69,5 +77,3 @@ __all__ = (
     "solve_equilibrium",
     "solved_state_actions",
 )
-
-

@@ -148,9 +148,118 @@ void check_reference_consistency(
     }
 }
 
+bool has_reaction_reference(const EquilibriumProblem& problem) {
+    return std::any_of(problem.reactions.begin(), problem.reactions.end(),
+        [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
+}
+
+std::vector<ReactionSpec> central_reference_reactions(
+    const HelmholtzModel& model,
+    const EquilibriumProblem& request,
+    double temperature,
+    double pressure,
+    std::vector<NeutralReferenceReactionDiagnostic>& diagnostics
+) {
+    if (!has_reaction_reference(request)) return request.reactions;
+    if (!request.source_reference.has_value()) {
+        throw std::invalid_argument("reference_unavailable: source reference declaration is missing");
+    }
+    if (request.temperature.free) {
+        throw std::invalid_argument("reference_unavailable: free temperature is unsupported");
+    }
+    if (request.pressure.free) {
+        throw std::invalid_argument("reference_unavailable: free pressure is unsupported");
+    }
+    if (!request.standard_gibbs_j_per_mol.empty()) {
+        throw std::invalid_argument(
+            "reference_unavailable: supplied standard Gibbs conflicts with source reference");
+    }
+    std::vector<ReactionSpec> result = request.reactions;
+    diagnostics.clear();
+    diagnostics.reserve(request.reactions.size());
+    for (std::size_t row = 0; row < request.reactions.size(); ++row) {
+        const auto& reaction = request.reactions[row];
+        if (!reaction.reference.has_value()) continue;
+        if (reaction.affinity_j_per_mol.has_value()
+            || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value())) {
+            throw std::invalid_argument(
+                "reference_unavailable: reaction " + reaction_name(reaction, row)
+                + " needs a scalar K or correlation source");
+        }
+        const auto reference = reaction_reference(
+            model, temperature, pressure, *request.source_reference,
+            reaction.stoichiometry, *reaction.reference);
+        auto diagnostic = reference;
+        diagnostic.reaction_index = row;
+        diagnostics.push_back(diagnostic);
+        if (reference.status != NeutralReferenceStatus::Available
+            || !reference.terminal_contraction.has_value()) {
+            throw std::invalid_argument(
+                "reference_unavailable: reaction " + reaction_name(reaction, row)
+                + (reference.message.empty() ? "" : " " + reference.message));
+        }
+        double ln_k = 0.0;
+        if (reaction.correlation.has_value()) {
+            try {
+                ln_k = evaluate_reaction_properties(
+                    *reaction.correlation, temperature).ln_k;
+            } catch (const std::exception& error) {
+                throw std::invalid_argument(
+                    "reference_unavailable: reaction " + reaction_name(reaction, row)
+                    + " " + error.what());
+            }
+        } else {
+            ln_k = std::log(*reaction.equilibrium_constant);
+        }
+        double scale = 0.0;
+        if (reaction.reference->source_basis
+                == ReferenceSourceBasis::CommonMolalityInfiniteDilution) {
+            try {
+                scale = reaction_reference_log_scale(
+                    model, *request.source_reference, reaction.stoichiometry);
+            } catch (const std::exception& error) {
+                throw std::invalid_argument(
+                    "reference_unavailable: reaction " + reaction_name(reaction, row)
+                    + " " + error.what());
+            }
+        }
+        const double ln_k_density = ln_k + scale + *reference.terminal_contraction;
+        const double target = -GAS_CONSTANT_J_PER_MOL_K * temperature * ln_k_density;
+        if (!std::isfinite(target)) {
+            throw std::invalid_argument(
+                "reference_unavailable: reaction " + reaction_name(reaction, row)
+                + " has a nonfinite density-basis target");
+        }
+        result[row].equilibrium_constant.reset();
+        result[row].correlation.reset();
+        result[row].affinity_j_per_mol = target;
+        result[row].reference.reset();
+    }
+    return result;
+}
+
 StandardTerm standard_term(const CompiledSystem& compiled, double temperature, std::size_t order) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
+    if (!compiled.reference_diagnostics.empty()) {
+        if (compiled.model->thermochemistry().has_value()) {
+            std::vector<ReactionSpec> ordinary_reactions;
+            ordinary_reactions.reserve(problem.reactions.size());
+            for (const auto& reaction : problem.reactions)
+                if (!reaction.reference.has_value()) ordinary_reactions.push_back(reaction);
+            if (!ordinary_reactions.empty()) {
+                check_reference_consistency(*compiled.model->thermochemistry(), temperature,
+                                            ordinary_reactions);
+            }
+        }
+        StandardTerm result;
+        result.derivative.assign(order + 1, std::vector<double>(components, 0.0));
+        for (std::size_t species = 0; species < components; ++species) {
+            result.derivative[0][species] = compiled.standard_gibbs[species]
+                / (GAS_CONSTANT_J_PER_MOL_K * temperature);
+        }
+        return result;
+    }
     const auto gibbs = standard_state_series(
         temperature, components, problem.reactions, problem.standard_gibbs_j_per_mol, order);
     if (compiled.model->thermochemistry().has_value() && !problem.reactions.empty()) {
@@ -473,8 +582,14 @@ CompiledSystem compile_problem(
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = request.temperature.seed_or(300.0);
+    const double pressure_guess = request.pressure.seed_or(1.0e5);
+    const auto central_reactions = central_reference_reactions(
+        model, request, temperature_guess, pressure_guess,
+        compiled.reference_diagnostics);
     compiled.standard_gibbs = standard_state(
-        temperature_guess, components, request.reactions, request.standard_gibbs_j_per_mol
+        temperature_guess, components, central_reactions,
+        has_reaction_reference(request) ? std::vector<double>{}
+                                        : request.standard_gibbs_j_per_mol
     );
     if (request.temperature.free && !request.standard_gibbs_j_per_mol.empty()) {
         // A constant supplied vector admits a free temperature only for constant targets.
@@ -928,6 +1043,10 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
 
 std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& point) const {
     core::Scope scope("equilibrium_lever_jacobian");
+    if (!reference_diagnostics.empty()) {
+        throw std::invalid_argument(
+            "reference_unavailable: source reference T/P/parameter lever derivatives are not admitted");
+    }
     const auto prepared = prepare(point);
     const std::size_t components = model->parameters().component_count();
     const double T = prepared.temperature;

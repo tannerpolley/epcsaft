@@ -1511,6 +1511,29 @@ $$
 \mathbf{Z}^{\mathsf T}\,\nabla^{2}\mathcal{L}\,\mathbf{Z}\succ 0.
 $$
 
+## `neutral_reaction_reference_transfer`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
+- Description: Charge-neutral reaction contraction at a declared pure neutral solvent reference. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
+- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Fixed-T/P central values and feed actions are available; reference T/P/parameter derivatives and caloric reference values are not implied.
+
+$$
+\Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
+=\ln\phi_i+\ln(P/(RT\rho_0)),\quad
+C_r=\sum_i\nu_{ri}\Lambda_i^\rho,\quad \sum_i\nu_{ri}z_i=0,\\
+A_r=\left(\sum_{i\ne s}\nu_{ri}\right)\ln(M_s m^\circ),\qquad
+\ln K_{\rho,r}=\begin{cases}
+\ln K_{m,r}+A_r+C_r,&\text{common molality source},\\
+\ln K_{x,r}+C_r,&\text{raw mole-fraction source},
+\end{cases}\\
+n_s=1/M_s,\quad n_i=m r_i\ (i\ne s),\quad \sum_i z_i r_i=0,\quad
+\mathcal M=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\\
+\widehat C_r=C_r(10^{-14}),\qquad
+e_r=\max\{|C_r(10^{-14})-C_r(10^{-12})|,|C_r(10^{-12})-C_r(10^{-10})|\}\le 5\times10^{-5}.
+$$
+
 ## `reference_limit_terminal_pair`
 
 - Section: Electrolyte reference states and reported activities
