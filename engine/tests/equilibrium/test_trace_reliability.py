@@ -5,14 +5,15 @@ from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters
 from epcsaft.equilibrium import (
-    Amounts, EOS_STANDARD_STATE_ID, Phase, Problem, Reaction, ReactionLogPolynomial,
+    Amounts, EOS_STANDARD_STATE_ID, Free, Phase, Problem, Reaction, ReactionLogPolynomial,
     SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus,
     SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, solve_equilibrium, solved_state_actions,
 )
 from tests.native_inputs import ETHANE, parameters, same
+from tests.packets import parameters_json
 
 
 @pytest.mark.parametrize("total", [1.0, 10.0])
@@ -109,3 +110,66 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
     same(evidence, f"{label}/curvature_scale", gauged.reduced_hessian_minimum, total * gauged.mole_fractions[1], atol=0.0,
          rtol=2.0 * equilibrium_constant + 1e-9, unit="1", inputs=inputs, basis="Relationship", method="trace-amount-scale",
          claim="the minimum reduced curvature of the isomerisation is the trace amount to first order in K")
+
+
+@pytest.mark.parametrize("total", [1.0, 10.0])
+def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float) -> None:
+    """Khudaida Figure 2 point 1: nonzero electrochemical offset, two stable liquid phases.
+    The independent KKT and public chemical potentials falsify charge-dual sign and amount
+    scaling. The 10 mol case distinguishes phase amount from phase fraction. Existing packet
+    physics is consumed unchanged; this fixed state does not qualify the full LLE curve."""
+    names = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
+    model = Mixture(Parameters.from_json(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 6), components=names))
+    feed = [0.7295582904360919, 0.013336215598851255, 0.20495308450174893,
+            0.02607620473165392, 0.02607620473165392]
+    starts = [(0.6416650425482523, [0.9166627632724768, 0.0010121592710021154,
+               0.001360946512171668, 0.04048206547217478, 0.04048206547217478]),
+              (0.35833495745174776, [0.39451311265799627, 0.03540471872289053,
+               0.5695224773809328, 0.0002798456190902245, 0.0002798456190902245])]
+    problem = Problem(T=293.15, P=1e5, feed=Amounts(dict(zip(names, [total * n for n in feed]))),
+                      phases=[Phase(f"L{p}", kind="liquid", amount=Free(total * n), composition_guess=x)
+                              for p, (n, x) in enumerate(starts)], row_tolerance=1e-10)
+    compiled = compile_problem(model, problem)
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    assert result.reduced_hessian_minimum > 0.0
+    point = list(result.coordinates[:compiled.primal_size])
+    gradient, jacobian = compiled.objective_gradient(point), compiled.jacobian(point)
+    rows = [(i, row) for i, row in enumerate(compiled.rows)
+            if str(row.kind).split(".")[-1] not in ("Chemical", "Pressure")]
+    electro = next(k for k, (_, row) in enumerate(rows) if str(row.kind).split(".")[-1] == "Electro")
+    phase = rows[electro][1].phase
+    inputs = {"feed_mol": total, "T_K": 293.15, "P_Pa": 1e5,
+              "classified_residual": result.convergence.residual,
+              "electrochemical_offset": result.multipliers[compiled.rank]}
+    label = f"ionic-multiplier/{total:g}"
+
+    def stationarity(multipliers: list[float]) -> float:
+        return max(abs(gradient[j] + sum(mu * jacobian[i * compiled.primal_size + j]
+                   for mu, (i, _) in zip(multipliers, rows))) for j in range(compiled.primal_size))
+
+    same(evidence, f"{label}/kkt", stationarity(list(result.constraint_multipliers)), 0.0,
+         atol=1e-12, rtol=0.0, unit="1", inputs=inputs, basis="Identity",
+         method="objective-gradient-plus-jacobian", claim="ionic constraint duals make the extensive objective stationary")
+    wrong = list(result.constraint_multipliers)
+    wrong[electro] = -(result.amounts[phase] / total) * result.multipliers[compiled.rank]
+    if total == 10.0:
+        assert stationarity(wrong) > 1e-6  # phase fractions cannot replace extensive phase amounts
+    potentials = []
+    for p in range(2):
+        x = tuple(result.mole_fractions[5 * p:5 * (p + 1)])
+        state = model.state(293.15, rho=result.molar_densities[p], x=x)
+        potentials.append([math.log(x[i] * state.molar_density)
+                           + state.residual_chemical_potential_over_rt[i] for i in range(5)])
+        same(evidence, f"{label}/charge/{p}", x[3] - x[4], 0.0, atol=1e-12, rtol=0.0,
+             unit="1", inputs=inputs, basis="Identity", method="public-composition",
+             claim="each declared liquid phase is electroneutral")
+    delta = [potentials[phase][i] - potentials[1 - phase][i] for i in range(5)]
+    same(evidence, f"{label}/salt-transfer", delta[3] + delta[4], 0.0, atol=1e-12, rtol=0.0,
+         unit="1", inputs=inputs, basis="Identity", method="public-state-chemical-potential",
+         claim="neutral salt chemical potential is equal across the two liquids")
+    same(evidence, f"{label}/electrochemical-offset", (delta[3] - delta[4]) / 2,
+         result.multipliers[compiled.rank], atol=1e-12, rtol=0.0, unit="1", inputs=inputs,
+         basis="Identity", method="public-state-chemical-potential",
+         claim="the row electrochemical offset matches the charged species chemical potentials")

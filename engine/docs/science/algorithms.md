@@ -260,8 +260,11 @@ point, and the optimizer's own multipliers remain a trace probe (#87 review,
 2026-09-21). A pinned problem is not polished and keeps the optimizer's
 constraint multipliers over every row. The reconstruction assumes no active
 variable bound at the returned point and residual potentials that depend on
-composition and molar volume only; the charge-row scaling `-n_p phi_p` has no
-persistent falsifier because every retained multiplier row is neutral. The Ipopt driver
+composition and molar volume only. The charge-row scaling `-n_p phi_p` is
+qualified by independent extensive-objective stationarity and public ionic
+chemical potentials at Khudaida Figure 2 point 1 with 1 and 10 mol feeds
+(`test_trace_reliability.py`); application-specific ionic qualification remains
+open. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
@@ -471,6 +474,10 @@ species.
 ## ALG-REFERENCE
 
 Use the explicitly declared solvent/reference path and source standard state.
+The two-ion formula must contain charged components with zero stoichiometric
+charge; the solvent composition must also be neutral within the composition
+admission tolerance. The shared composition owner enforces this before either
+reference construction or activity evaluation; neither API supplies an ionic gauge.
 Evaluate the retained molality sequence; return the terminal change and
 criterion separately. Unknown validity or failed limiting convergence remains
 unavailable. Differentiate both the source correlation and EOS reference path,
