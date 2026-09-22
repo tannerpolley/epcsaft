@@ -24,7 +24,7 @@ struct AslFeedMap {
         require(offset.size() == n && matrix.size() == n && problem.feed.values.size() == n);
         require(identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0);
         require(!problem.temperature.free && !problem.pressure.free && problem.feed.kind == FeedKind::Amounts);
-        require(problem.phases.size() == 2 && problem.topology_declared);
+        require(problem.phases.size() == 2 && problem.topology_declared && !problem.source_reference);
         for (const auto& p : problem.phases)
             require(p.kind == PhaseKind::Liquid && p.is_free() && p.support_declared && !p.support.empty());
         for (double q : anchor) require(std::isfinite(q) && q >= 0.0);
@@ -94,7 +94,7 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     }
     w.put("reactions"); w.put(p.reactions.size());
     for (const auto& r : p.reactions) {
-        if (r.correlation || r.equilibrium_constant.has_value() == r.affinity_j_per_mol.has_value())
+        if (r.correlation || r.reference || r.equilibrium_constant.has_value() == r.affinity_j_per_mol.has_value())
             throw std::invalid_argument("ASL requires exactly one scalar reaction target");
         w.put(r.name); w.vector(r.stoichiometry); w.put(r.equilibrium_constant ? "K" : "affinity");
         w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);

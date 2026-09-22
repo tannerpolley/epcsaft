@@ -162,7 +162,8 @@ must reproduce the supplied absolute feed. The selected component mole-fraction
 gap (phase 0 minus phase 1) must exceed `minimum_gap`; indices and supports follow
 the supplied model order. Scalar reaction K or affinity and explicit problem
 standard Gibbs references are transported. Temperature-dependent reaction
-correlations, active parameters and model thermochemistry records are rejected.
+correlations, neutral-reference transformations, active parameters and model
+thermochemistry records are rejected rather than silently omitted.
 
 For an observable `y(n)`, the callback returns `J_y B` and `B.T H_y B`, where
 `B = feed_matrix`; E5 owns these implicit actions, not a finite-difference
