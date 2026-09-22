@@ -194,8 +194,8 @@ def test_result_diagnostics_match_the_cpp_example(evidence: Any) -> None:
                          ("multipliers", split.multipliers), ("constraint_multipliers", split.constraint_multipliers)):
         for index, value in enumerate(values):
             same(evidence, f"flash/{name}/{index}", value)
-    # Two producers, two bases: reduced-energy balance coordinates of the solution against the optimizer's
-    # duals of its implemented constraints (here the material-balance and normalization rows, in rows order).
+    # Two bases at the returned state: reduced-energy balance coordinates and reconstructed
+    # extensive-objective duals (here material-balance and normalization rows, in rows order).
     implemented = [row.kind for row in split.rows if row.kind not in (_core.RowKind.Chemical, _core.RowKind.Pressure)]
     assert implemented == [_core.RowKind.Moiety] * 2 + [_core.RowKind.Normalization] * 2
     assert len(split.multipliers) == 2 and len(split.constraint_multipliers) == len(implemented)

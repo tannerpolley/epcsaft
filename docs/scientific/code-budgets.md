@@ -75,6 +75,26 @@ terms, failure diagnostics or numerical falsifiers. If the smallest correct
 method does not fit, report that evidence and revise the design/budget openly.
 Budget changes must not silently change scientific scope.
 
+## Amendments
+
+- 2026-09-21, Properties hard ceiling 3460 → 3470 (#89, owner-approved small
+  increase). Requirement: replace the density owner's fixed-width slope search
+  with a bounded search using a quadratic-model estimate and an
+  explicit unresolved failure and insert only loop-exposing samples, after a
+  fixed-width stop lost a liquid root 1e-4 K below the critical point.
+  Measured use 3468 lines with single-statement guards in `solve_density`
+  (3478 with the previous three-line guard blocks; both forms are conventional
+  and the file's neighbours use both), including the explicit bracket-collapse
+  failure, its `<limits>` include and the endpoint rule of the refinement
+  added in the correction review rounds. Alternatives costed and rejected: merging
+  the anchored Newton loop into `refine` would obscure its typed left-domain,
+  singular and infeasible stops; moving the search into the equilibrium layer
+  would split the density owner's responsibility; dropping the golden-section
+  constant's comment or the model-limit comment would remove the stated
+  domain. The quadratic interpolation is not a certificate for unsampled EOS
+  curvature. This amendment left two lines above its measured 3468-line use;
+  any later change exceeding the ceiling needs its own justified amendment.
+
 ## Duplication constraints
 
 One common Helmholtz definition supplies properties and their derivatives.

@@ -128,7 +128,8 @@ int main() {
     expect(first.results[0].status == PropertyActionStatus::Available && same(*first.results[0].value, at_pressure.residual_enthalpy)
            && same(*first.results[1].value, *at_pressure.total_isobaric_heat_capacity)
            && same(*mixed_density.results[0].value, at_pressure.residual_enthalpy), "selected central values equal the full state in both charts");
-    expect(same(*first.results[0].action, *at_pressure.residual_isobaric_heat_capacity), "d h_res/dT at constant P is the residual cp");
+    // The T-direction Taylor chain cancels O(1e4) J/(mol K) terms to ~40; its rounding differs from the direct Hessian cp by up to ~2e-12.
+    expect(same(*first.results[0].action, *at_pressure.residual_isobaric_heat_capacity, 1.0e-11), "d h_res/dT at constant P is the residual cp");
 
     std::printf("4. declared equilibria: bubble point (pinned incipient vapor, free P), then a two-phase flash\n");
     EquilibriumProblem bubble;
@@ -153,7 +154,7 @@ int main() {
     rows("flash/amounts", "mol", split.amounts);
     rows("flash/mole_fractions", "1", split.mole_fractions);
     rows("flash/multipliers", "1", split.multipliers);  // reduced-energy balance coordinates
-    rows("flash/constraint_multipliers", "1", split.constraint_multipliers);  // optimizer duals, rows order
+    rows("flash/constraint_multipliers", "1", split.constraint_multipliers);  // extensive-objective duals at returned state
     expect(split.molar_densities[0] > split.molar_densities[1], "the declared liquid is the dense phase and the declared vapor the dilute one");
     double balance = std::abs(split.amounts[0] + split.amounts[1] - 1.0);
     for (std::size_t i = 0; i < 2; ++i) balance = std::max(balance, std::abs(split.amounts[0] * split.mole_fractions[i] + split.amounts[1] * split.mole_fractions[2 + i] - feed[i]));

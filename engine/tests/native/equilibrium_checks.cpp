@@ -211,7 +211,9 @@ void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compile
     for (std::size_t column = 0; column < point.size(); ++column) {
         auto plus = point;
         auto minus = point;
-        const double delta = centered_step(point[column]);
+        // Centred differences balance truncation and rounding at eps^(1/3), not eps^(1/2):
+        // the rows cancel O(10) potentials, so the sqrt(eps) step carries ~5e-7 rounding noise.
+        const double delta = std::cbrt(std::numeric_limits<double>::epsilon()) * std::max(std::abs(point[column]), 1.0);
         plus[column] += delta;
         minus[column] -= delta;
         const auto up = compiled.evaluate(plus).values;
@@ -883,6 +885,9 @@ void check_c1_multiplier_scale() {
         recording_support::field("small_kkt_scale", small_kkt_scale),
         recording_support::field("large_kkt_scale", large_kkt_scale),
     });
+    // Since the #87 correction the returned constraint multipliers are formed at the returned point
+    // from the row multipliers, so these rows verify that reconstruction's KKT residual and feed
+    // scaling, no longer the optimizer's own duals.
     recording_support::compare(
         "c1-multiplier-scale/kkt-small", "kkt_residual", "1", small_kkt_residual, 0.0,
         kkt_inputs, "Relationship", "KKT", "small-feed returned multipliers satisfy KKT",

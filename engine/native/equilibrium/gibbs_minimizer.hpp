@@ -45,6 +45,18 @@ struct TopologyCheck final {
 
 TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& coordinates);
 
+// One density-branch admission owner for public solves and anchored continuation.
+struct BranchCheck final {
+    bool accepted = false;
+    bool terminal = false;
+    std::string message;
+};
+
+BranchCheck check_density_branches(
+    const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
+    const std::vector<double>& anchors, bool initial, core::Scope& scope
+);
+
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(

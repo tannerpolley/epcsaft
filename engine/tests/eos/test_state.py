@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters, Pure
+from epcsaft import DensityBranch, Mixture, ParameterError, Parameters, Pure
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -317,6 +317,47 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
         inputs_latex=r"T,\rho,\mathbf{x}",
     )
     close(pure.pressure, mixture.pressure, 1e-12)
+
+
+@pytest.mark.parametrize(
+    ("temperature", "pressure", "phase", "reference_density"),
+    [(308.8, 5147500.0, "vapor", 5930.399614704038),
+     (308.8, 5147500.0, "liquid", 6828.295025027434),
+     (308.0, 5057915.461281232, "vapor", 5124.770478882947),
+     (308.0, 5057915.461281232, "liquid", 7160.554342626920)],
+)
+def test_pressure_branch_selects_sub_cell_loop_root(
+    evidence: Any, temperature: float, pressure: float, phase: str, reference_density: float,
+) -> None:
+    """#89: pure ethane at 308.8 K / 5147500 Pa has two stable roots 0.14 apart in log density,
+    inside one 40-cell scan interval. References are the retained independent fixed-density
+    bisection roots of analyses/2026-density-closure-diagnosis/results/root-controls.csv.
+    At 308 K the liquid root coincides with a scan node; the independent fixed-density
+    bisection roots still require two distinct branches, regardless of that coincidence."""
+    packet = parameters_json("gross-2001-methane-ethane", 2)
+    model = Pure(Parameters.from_json(packet, components=("ethane",)))
+    state = model.state(temperature, P=pressure, phase=phase)
+    evidence.compare(
+        f"loop_branch_{phase}", quantity="molar_density", model=float(state.molar_density),
+        reference=reference_density, unit="mol/m3",
+        inputs={"T_K": temperature, "P_Pa": pressure, "phase": phase,
+                "stable_root_count": state.stable_root_count,
+                "density_branch": str(state.density_branch),
+                "pressure_density_derivative": float(state.pressure_density_derivative),
+                "_parameters": _parameter_metadata(packet, "gross-2001-methane-ethane", 2, ("ethane",))},
+        criterion={"type": "scalar", "rule": "symmetric_close", "atol": 0.0, "rtol": 1e-8,
+                   "scale": "max(abs(model), abs(reference))",
+                   "combining_rule": "max(atol, rtol*scale)"},
+        basis="Relationship", method="independent fixed-density bisection",
+        claim="A declared branch returns its extreme stable root when the loop is narrower than a scan cell.",
+        relationship_latex=r"\rho_{branch}(T,P^\star)=\rho_{ref}", quantity_latex=r"\rho",
+        inputs_latex=r"T,P^\star,\text{branch}",
+    )
+    close(state.molar_density, reference_density, 1e-8)
+    assert state.density_branch == getattr(DensityBranch, phase.capitalize()) and state.stable_root_count == 2
+    assert state.pressure_density_derivative > 0.0
+    with pytest.raises(RuntimeError, match="ambiguous"):
+        model.state(temperature, P=pressure)
 
 
 def test_mapping_fails_closed_by_name() -> None:

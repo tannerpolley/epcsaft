@@ -397,8 +397,10 @@ bool GibbsMinimizer::get_bounds_info(
     std::fill(x_u, x_u + n, infinity);
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
+        // The box regularises the log chart's trace steps; the Newton polish below carries a
+        // trace solution past it down to the structural cutoff.
         for (std::size_t i = 0; i < phase.support.size(); ++i) {
-            x_l[offset] = std::log(policy::STABILITY_COMPOSITION_FLOOR.value);
+            x_l[offset] = std::log(policy::EQUILIBRIUM_COMPOSITION_BOX.value);
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
@@ -660,6 +662,48 @@ EquilibriumResult run_driver(
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
+    // The optimizer stops on amount-weighted rows, which bounds an intensive trace row only by
+    // tau N_feed/(N_p x_i). Newton on the unweighted rows with the exact Jacobian closes that gap.
+    // A step stands only when it contracts both the raw row maximum and the certified
+    // classified residual and keeps every composition above the structural cutoff; a step
+    // from an ill-conditioned point (a species near the cutoff scales its row by 1e-20) is
+    // otherwise rejected and the optimizer iterate is kept.
+    std::size_t polish_evaluations = 0;
+    if (nlp->status() == Ipopt::SUCCESS && compiled.is_square()) {
+        auto at = compiled.prepare(full);
+        auto rows_before = compiled.evaluate_at(at).values;
+        ++polish_evaluations;
+        for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value); ++step) {
+            const double defect = maximum_abs(rows_before);
+            const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
+            if (!(defect > 0.0) || !std::isfinite(defect)) break;
+            const auto jacobian = compiled.jacobian_at(at);
+            const auto n = static_cast<Eigen::Index>(full.size());
+            if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) break;
+            const Eigen::VectorXd delta = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu().solve(
+                    -Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            std::vector<double> candidate = full;
+            for (Eigen::Index i = 0; i < n; ++i) candidate[static_cast<std::size_t>(i)] += delta(i);
+            PhasePoint at_candidate;
+            std::vector<double> rows_after;
+            try {
+                at_candidate = compiled.prepare(candidate);
+                rows_after = compiled.evaluate_at(at_candidate).values;
+                ++polish_evaluations;
+            } catch (const std::exception&) { break; }
+            bool inside = true;
+            for (const auto& phase : at_candidate.composition)
+                for (const double x : phase) inside = inside && (x == 0.0 || x >= policy::STABILITY_COMPOSITION_FLOOR.value);
+            const double after = maximum_abs(rows_after);
+            const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
+            scope.probe("polish_step", {defect, after, classified_before, classified_after}, static_cast<std::uint32_t>(step));
+            if (!inside || !(after < defect) || !(classified_after <= classified_before)) break;
+            full = std::move(candidate);
+            at = std::move(at_candidate);
+            rows_before = std::move(rows_after);
+        }
+    }
     const auto prepared = compiled.prepare(full);
     const auto evaluation = compiled.evaluate_at(prepared);
     result.residuals = evaluation.values;
@@ -694,7 +738,7 @@ EquilibriumResult run_driver(
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
     result.iterations = nlp->iterations();
-    result.evaluations = nlp->evaluations();
+    result.evaluations = nlp->evaluations() + polish_evaluations;
     result.hessian_calls = nlp->hessian_calls();
     convergence.iterations = result.iterations;
     convergence.evaluations = result.evaluations;
@@ -800,7 +844,29 @@ EquilibriumResult run_driver(
                                      compositions[phase].begin(), compositions[phase].end());
     }
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
-    result.constraint_multipliers = nlp->constraint_multipliers();
+    // Extensive-objective constraint multipliers at the returned (polished) point, from the row
+    // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
+    // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
+    // objective and material rows obey joint extensive homogeneity in amount, composition
+    // and volume, together with stationarity in the free amount. The raw
+    // optimizer values stay a trace probe.
+    scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
+    if (compiled.pinned_count == 0) {
+        result.constraint_multipliers.clear();
+        std::size_t electro = 0;
+        for (const auto& row : compiled.rows) {
+            if (row.kind == RowKind::Moiety) {
+                result.constraint_multipliers.push_back(-compiled.feed_total * full[compiled.primal_size + row.index]);
+            } else if (row.kind == RowKind::Electro) {
+                result.constraint_multipliers.push_back(
+                    -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
+            } else if (row.kind != RowKind::Chemical && row.kind != RowKind::Pressure) {
+                result.constraint_multipliers.push_back(0.0);
+            }
+        }
+    } else {
+        result.constraint_multipliers = nlp->constraint_multipliers();
+    }
     result.coordinates = full;
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
@@ -887,7 +953,21 @@ EquilibriumResult solve_equilibrium(
     if (!compiled.feasible) return result;
     std::vector<double> initial = boundary_start(compiled);
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
-    return run_driver(model, compiled, std::move(initial), std::move(result), scope);
+    result = run_driver(model, compiled, std::move(initial), std::move(result), scope);
+    if (result.success) {
+        BranchCheck branches;
+        try {
+            branches = check_density_branches(model, compiled, result, {}, true, scope);
+        } catch (const std::exception& error) {
+            branches.message = std::string("density branch admission failed: ") + error.what();
+        }
+        if (!branches.accepted) {
+            result.success = false;
+            result.message = branches.message;
+            clear_state(result);
+        }
+    }
+    return result;
 }
 
 EquilibriumResult solve_equilibrium_from_coordinates(

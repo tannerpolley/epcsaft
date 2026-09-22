@@ -61,7 +61,7 @@ source and evidence; a reviewer opinion alone is not acceptance.
 
 Use the user-selected task model as lead. Keep model identifiers, reasoning
 settings and fallback choices in task configuration. Never silently substitute
-another model for an explicitly requested Astra task or delegate. Do not impose
+another model for an explicitly requested premium-model task or delegate. Do not impose
 a permanent planner/coordinator/worker hierarchy. Keep progress and completion
 reports concise; give detailed scientific explanations when requested.
 

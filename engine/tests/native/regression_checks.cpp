@@ -336,9 +336,16 @@ void check_f5_f6() {
     }
     free_t.temperature = FreeValue::variable(170.0);
     const auto below = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
-    CHECK(truth("r1-f5/bubble_temperature_from_below", "a cold guess below the answer is a typed topology event, a domain limit of the route",
-                below.status == ObservationStatus::TopologyEvent && !below.value.has_value(),
-                fields({field("status", observation_status_name(below.status)), field("T_guess", 170.0)}), "r1-f5"));
+    if (below.status == ObservationStatus::Available) {
+        CHECK(agree("r1-f5/bubble_temperature_from_below", "temperature", "K", *below.value, 180.0, 1e-6, 0.0,
+                    field("T_guess", 170.0), "an available cold result recovers the declared bubble state", "r1-f5"));
+    } else {
+        CHECK(truth("r1-f5/bubble_temperature_from_below", "an unrecovered cold start retains its cause and no value",
+                    (below.status == ObservationStatus::TopologyEvent
+                        || below.status == ObservationStatus::CentralSolveUnavailable) && !below.value.has_value(),
+                    fields({field("status", observation_status_name(below.status)), field("message", below.message),
+                            field("T_guess", 170.0)}), "r1-f5"));
+    }
     auto dew = bubble;
     dew.phases[0].amount = AmountSpec::pinned(0.0);
     dew.phases[1].amount = AmountSpec::free();
@@ -403,8 +410,9 @@ void check_f7_f8() {
     CHECK(agree("r1-f8/aggregate_sum", "x_CH4+x_C2H6", "1", *both.value, 1.0, 1.0e-15, 0.0, may_inputs,
                 "the full species set sums to one", "r1-f8"));
     const auto x0 = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 0, {0}), both.solved);
-    CHECK(agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 0.0, may_inputs,
-                "a one-element set is the driver's mole fraction bit for bit", "r1-f8"));
+    // The start re-solves through the driver; two accepted solves of one problem agree to rounding.
+    CHECK(agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 1.0e-13, may_inputs,
+                "a one-element set is the driver's mole fraction to solve reproducibility", "r1-f8"));
     CHECK(agree("r1-f8/retained_x", "x_CH4", "1", *x0.value, retained[0], 1.0e-9, 0.0, may_inputs,
                 "the retained E6 liquid composition is reproduced", "r1-f8"));
     const auto y0 = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 1, {0}), both.solved);

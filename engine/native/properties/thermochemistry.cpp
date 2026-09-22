@@ -259,37 +259,35 @@ ReactionProperties reaction_pressure_to_density(
         pressure_properties.third_derivative - 2.0 * delta_nu / (t2 * temperature)
     );
 }
-ReactionProperties reaction_standard_state_conversion(
-    const ReactionProperties& properties, const std::vector<double>& stoichiometry,
-    const std::vector<double>& old_standard_gibbs_j_per_mol,
-    const std::vector<double>& new_standard_gibbs_j_per_mol,
-    const std::vector<double>& old_standard_enthalpy_j_per_mol,
-    const std::vector<double>& new_standard_enthalpy_j_per_mol,
-    const std::string& new_identity, double temperature
+ReactionLogPolynomial reaction_standard_state_shift(
+    const ReactionLogPolynomial& source, const std::vector<double>& stoichiometry,
+    const std::vector<double>& delta_h, const std::vector<double>& delta_s,
+    const std::vector<double>& delta_cp, const std::vector<double>& delta_cp_slope,
+    double t0, const std::string& identity
 ) {
-    validate_reaction_properties(properties);
-    require_sizes(stoichiometry, old_standard_gibbs_j_per_mol, "standard-state");
-    require_sizes(stoichiometry, new_standard_gibbs_j_per_mol, "standard-state");
-    require_sizes(stoichiometry, old_standard_enthalpy_j_per_mol, "standard-state");
-    require_sizes(stoichiometry, new_standard_enthalpy_j_per_mol, "standard-state");
-    validate_identity(new_identity);
-    if (!std::isfinite(temperature) || temperature <= 0.0 || !finite_values(stoichiometry)
-        || !finite_values(old_standard_gibbs_j_per_mol) || !finite_values(new_standard_gibbs_j_per_mol)
-        || !finite_values(old_standard_enthalpy_j_per_mol) || !finite_values(new_standard_enthalpy_j_per_mol))
-        throw std::invalid_argument("invalid standard-state conversion");
-    double gibbs_shift = 0.0, enthalpy_shift = 0.0;
-    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
-        gibbs_shift += stoichiometry[i] * (old_standard_gibbs_j_per_mol[i] - new_standard_gibbs_j_per_mol[i]);
-        enthalpy_shift += stoichiometry[i] * (old_standard_enthalpy_j_per_mol[i]
-                                              - new_standard_enthalpy_j_per_mol[i]);
+    for (const auto* values : {&delta_h, &delta_s, &delta_cp, &delta_cp_slope}) {
+        require_sizes(stoichiometry, *values, "standard-state");
+        if (!finite_values(*values)) throw std::invalid_argument("invalid standard-state shift");
     }
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature, t2 = temperature * temperature;
-    return make_reaction_properties(
-        properties.ln_k + gibbs_shift / rt, properties.derivative - enthalpy_shift / (rt * temperature),
-        properties.enthalpy - enthalpy_shift, new_identity,
-        properties.second_derivative + 2.0 * enthalpy_shift / (rt * t2),
-        properties.third_derivative - 6.0 * enthalpy_shift / (rt * t2 * temperature)
-    );
+    validate_identity(identity);
+    if (!std::isfinite(t0) || t0 <= 0.0 || !(source.reference_temperature > 0.0)
+        || !finite_values(stoichiometry))
+        throw std::invalid_argument("invalid standard-state shift");
+    double h = 0.0, s = 0.0, cp = 0.0, cp_slope = 0.0;
+    for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
+        h += stoichiometry[i] * delta_h[i];
+        s += stoichiometry[i] * delta_s[i];
+        cp += stoichiometry[i] * delta_cp[i];
+        cp_slope += stoichiometry[i] * delta_cp_slope[i];
+    }
+    // EqID: reaction_standard_state_polynomial_image; the ln(T/T0) term is re-centred on
+    // the source reference temperature.
+    const double r = GAS_CONSTANT_J_PER_MOL_K;
+    const double c0 = (h - cp * t0 + 0.5 * cp_slope * t0 * t0) / r, c1 = (cp - s) / r;
+    const double c2 = (cp_slope * t0 - cp) / r, c3 = -0.5 * cp_slope / r;
+    return {source.a + c1 + c2 * std::log(source.reference_temperature / t0), source.b + c0,
+            source.c + c2, source.d + c3, source.reference_temperature, source.temperature_min,
+            source.temperature_max, identity};
 }
 
 std::optional<ReactionThermochemistry> reaction_thermochemistry_density(

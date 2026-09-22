@@ -28,6 +28,8 @@ plan:
 # working tree (tracked and untracked). Engineering targets, not mathematical
 # lower bounds. See docs/scientific/code-budgets.md for rationale and amendment.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
+# properties hard ceiling 3460 -> 3470 on 2026-09-21 (#89, owner-approved small increase): a bounded
+# slope-minimum search with explicit unresolved failure replaced a fixed-width stop; then measured 3468 lines.
 code_budgets: {
   "core": [
     700,
@@ -42,7 +44,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    3460
+    3470
   ],
   "equilibrium": [
     5000,
@@ -152,6 +154,7 @@ project_map: {
     [".gitignore", "workspace", "configuration"],
     [".gitattributes", "workspace", "configuration"],
     [".agents/", "workspace", "configuration"],
+    [".claude/", "workspace", "configuration"],
     [".codex/", "workspace", "configuration"],
     [".github/", "workspace", "configuration"],
     [".serena/", "workspace", "configuration"],

@@ -164,20 +164,59 @@ Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
 ```text
-scan deterministically in log density within the admitted packing domain
-bracket sign-changing pressure residuals
-refine bracketed candidates with safeguarded steps
-retain finite roots meeting pressure residual and positive-slope criteria
-select only by declared root/branch policy; return root count and branch identity
+scan deterministically in log density within the admitted packing domain,
+    keeping the reduced pressure residual and analytic pressure slope
+at a positive sampled local minimum of the slope, search by golden section:
+    a negative-slope sample exposes a loop and joins the connected cells;
+    a positive quadratic-model minimum estimate stops the search;
+    exhausted work or a collapsed bracket without resolution is a failure
+own an exact stable scan-node root once, keeping its adjacent cells connected
+per cell, discard an entirely negative-slope interval; bisect any slope sign
+    transition to adjacent representable densities or an exact slope zero
+if the target is within the existing reduced-residual tolerance of that
+    turning-point pressure, report an unresolved spinodal
+trim the cell to its positive-slope side and refine each strict pressure
+    crossing once with the existing safeguarded Newton method
+select by declared branch policy and return the stable-root count
 ```
 
-Use gradient-only energy work during the scan when sufficient; evaluate the
-correct reduced pressure slope for refinement and conditioning. Tangent roots
-at a spinodal need separate treatment and are not stable nonsingular roots.
-An unlabelled request with multiple stable roots is ambiguous. Tracking a
-branch through a continuation step must not silently relabel a remaining root
-when the prior branch disappears. Search completeness is bounded by the
-specified scan; mechanical stability does not establish global stability.
+The supported shape is one mechanical loop per isotherm, with one interior
+minimum of `P_rho`. Once a negative-slope sample exposes that loop, its two
+turning points partition the connected domain into increasing, decreasing
+and increasing pressure intervals. Each increasing interval contains at most
+one pressure root. Exact stable scan nodes and strict crossings have separate
+ownership; two approximate Newton results are never counted or merged to
+decide root identity. Association failures break scan connectivity.
+
+Fold bisection uses the existing `DENSITY_MAX_ITERATIONS` budget and stops at
+floating-point adjacency, retaining the stable-side endpoint. It does not
+estimate a fold from pressure-residual coincidence. A target indistinguishable
+from a fold pressure at `DENSITY_ROOT_RESIDUAL` is explicitly unresolved,
+including a true tangent root; this is numerical unavailability, not physical
+nonexistence. The root residual tolerance is unchanged. For an approximate
+root, refinement also requires `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
+with a finite, nonzero derivative. Once the residual passes, midpoint steps
+contract the remaining bracket deterministically. Thus the represented
+crossing lies within the returned local-sensitivity radius
+`tolerance |d rho/d r|`; an exact numerical zero is a separate stop. This
+bracket witness is needed because a small residual alone does not make the
+first-order radius a density-error bound near a fold. It does not bound
+floating-point error in EOS evaluation itself.
+
+The quadratic slope estimate is evaluated only on a sampled local-minimum
+bracket. It is a bound for the interpolating quadratic, not for the EOS:
+a narrower unsampled dip with greater curvature is not excluded. Near a
+critical point the pressure is locally cubic in density, not in log density,
+so that limit does not make the interpolation exact. Search completeness
+therefore remains bounded by the declared scan and supported shape; no
+global stability or complete root enumeration is claimed.
+
+An unspecified request with multiple resolved stable roots is ambiguous.
+A genuine sole root remains unlabelled. An anchored request uses the same
+partition and counting method within its existing local window and keeps the
+requested branch only after local uniqueness is established. That window
+does not establish uniqueness outside itself or global branch persistence;
+a failed anchor must not silently switch to an unrelated cold root.
 
 ## ALG-EQUILIBRIUM
 
@@ -187,8 +226,42 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
+Public solves also apply the continuation owner's density-branch admission to
+each returned phase. A cold pressure closure selects its declared liquid or vapor
+root, an anchored closure establishes local uniqueness, and the corrected density
+must lie in that anchor's window with positive pressure slope. Failure clears the
+state and retains the optimizer and row diagnostics. Continuation uses the same
+predicate with its own anchors and retains its `branch_lost` cause; its internal
+corrector does not independently reselect a cold branch. This is declared-branch
+admission, not global phase discovery, and inherits ALG-DENSITY's finite-search
+limits.
 Retain the native optimizer `solver_status` alongside the convergence stop,
-residual, and failed-attempt initialization/termination details. The Ipopt driver
+residual, and failed-attempt initialization/termination details. The optimizer
+stops on amount-weighted rows, which bounds an intensive trace row only by
+`tau N_feed/(N_p x_i)`; after a successful stop, at most
+`EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
+Jacobian close that gap, each accepted only when it contracts both the raw row
+maximum and the classified residual and keeps every composition above the
+structural cutoff `STABILITY_COMPOSITION_FLOOR`, below the optimizer box when
+the solution lies there (#87, 2026-09-21). Tiny-step stops are not polished.
+Acceptance is still classified on the caller criterion at the returned point.
+Limits: a pinned declared phase carries its chemical and pressure rows as
+optimizer equality constraints, so a solution below the box makes that
+subproblem infeasible and is not polished; a warm start below the box is pulled
+back into it by the optimizer's bound push and re-recovered by the polish; the polish rejection branch has no persistent
+falsifier. The returned extensive-objective constraint multipliers are
+reconstructed at the returned point from the row multipliers: a material row
+`(B n - b)/N_feed` carries `-N_feed lambda_j`, a charge row `sum z x` carries
+`-n_p phi_p`, and a free-amount phase's normalization row is zero because the
+objective and material rows obey joint extensive homogeneity in the phase's
+amount, composition and volume. Together with stationarity in its free amount,
+this gives zero normalization multiplier; the reduced-Hessian certificate uses these values at the returned
+point, and the optimizer's own multipliers remain a trace probe (#87 review,
+2026-09-21). A pinned problem is not polished and keeps the optimizer's
+constraint multipliers over every row. The reconstruction assumes no active
+variable bound at the returned point and residual potentials that depend on
+composition and molar volume only; the charge-row scaling `-n_p phi_p` has no
+persistent falsifier because every retained multiplier row is neutral. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
@@ -437,8 +510,15 @@ withheld under rank deficiency or an active bound.
 
 ## ALG-TERMINATION
 
-Core CORE1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
-is only the lower bound for the intensive `log(x_i)` coordinate. Free-phase
+Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
+is the lower box of the intensive `log(x_i)` coordinate inside the optimizer
+subproblem only: its barrier regularises the log chart's trace steps and is
+not a solution domain. `STABILITY_COMPOSITION_FLOOR` is the structural-absence
+cutoff for continuation admission, solved-state differentiability and the
+Newton polish, which carries a trace solution below the box down to the cutoff
+(#87, 2026-09-21). The delivered falsifier reaches x ≈ 1e-12; continuation
+admission and action availability between 1e-12 and the cutoff are unexercised
+and remain a qualification limit. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
 that topology rejection is not a stability or accuracy conclusion. Packing
