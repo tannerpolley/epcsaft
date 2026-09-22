@@ -211,7 +211,23 @@ counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
 Retain the native optimizer `solver_status` alongside the convergence stop,
-residual, and failed-attempt initialization/termination details. The Ipopt driver
+residual, and failed-attempt initialization/termination details. The optimizer
+stops on amount-weighted rows, which bounds an intensive trace row only by
+`tau N_feed/(N_p x_i)`; after a successful stop, at most
+`EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
+Jacobian close that gap, each accepted only when it contracts both the raw row
+maximum and the classified residual and keeps every composition above the
+structural cutoff `STABILITY_COMPOSITION_FLOOR`, below the optimizer box when
+the solution lies there (#87, 2026-09-21). Tiny-step stops are not polished.
+Acceptance is still classified on the caller criterion at the returned point.
+Limits: a pinned declared phase carries its chemical and pressure rows as
+optimizer equality constraints, so a solution below the box makes that
+subproblem infeasible and is not polished; a warm start below the box is pulled
+back into it by the optimizer's bound push and re-recovered by the polish; the
+reduced-Hessian certificate takes the optimizer's constraint multipliers at the
+polished primal point (the polish moved the balance multipliers by at most
+8.6e-9 relative on the retained cases); the polish rejection branch has no
+persistent falsifier. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
@@ -460,8 +476,15 @@ withheld under rank deficiency or an active bound.
 
 ## ALG-TERMINATION
 
-Core CORE1 keeps the numerical domains separate: `STABILITY_COMPOSITION_FLOOR`
-is only the lower bound for the intensive `log(x_i)` coordinate. Free-phase
+Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
+is the lower box of the intensive `log(x_i)` coordinate inside the optimizer
+subproblem only: its barrier regularises the log chart's trace steps and is
+not a solution domain. `STABILITY_COMPOSITION_FLOOR` is the structural-absence
+cutoff for continuation admission, solved-state differentiability and the
+Newton polish, which carries a trace solution below the box down to the cutoff
+(#87, 2026-09-21). The delivered falsifier reaches x ≈ 1e-12; continuation
+admission and action availability between 1e-12 and the cutoff are unexercised
+and remain a qualification limit. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
 that topology rejection is not a stability or accuracy conclusion. Packing

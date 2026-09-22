@@ -213,13 +213,26 @@ inline constexpr Tolerance STABILITY_CANDIDATE_GAP{"STABILITY_CANDIDATE_GAP",
     "Pereira 2012 eps_b; drifted to 5e-2 in the superseded tree",
 };
 
-// Lower bound on a composition coordinate in the inner problem. The old tree
-// scaled this by the feed (1e-10 f_k), which put solutions closer to the bound
-// than the paper's trace treatment assumes.
-inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
+// Lower box of the ln(x_i) coordinate inside the Ipopt subproblem. Its barrier is the step
+// regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
+// so without the barrier the line search takes steps of order 1e4 in ln x and lands in
+// another basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is
+// not the domain: the Newton polish carries a trace solution below it, down to
+// STABILITY_COMPOSITION_FLOOR (#87, 2026-09-21).
+inline constexpr Tolerance EQUILIBRIUM_COMPOSITION_BOX{"EQUILIBRIUM_COMPOSITION_BOX",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "dimensionless x_i coordinate; require x_i >= floor for log(x_i); Pereira 2012; provisional domain cutoff, not an accuracy bound",
+    "Pereira 2012 inner-problem composition bound; a regularising barrier, not a solution domain or accuracy bound",
+};
+// Structural-absence cutoff for a composition coordinate: continuation admission, solved-
+// state differentiability and the Newton polish treat x_i at or below it as a vanished
+// species. Aqueous ions consumed by the applications reach x ~ 1e-12 (hydronium at pH 10
+// in water), so the cutoff sits far below any consumed trace; the analytic trace solution
+// x_B = K/(1+K) at K = 1e-8 lies below the optimizer box and above this cutoff.
+inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
+    1.0e-20,
+    Category::AlgorithmTolerance,
+    "dimensionless x_i cutoff for continuation admission, action differentiability and the polish domain; not an accuracy bound",
 };
 inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
     1.0e-8,
@@ -301,6 +314,17 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
     Category::AlgorithmTolerance,
     "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, "
     "dual_inf_tol and constr_viol_tol settings; the caller criterion classifies rows",
+};
+
+// Newton polish on the unweighted rows after the amount-weighted optimizer stop (#87,
+// 2026-09-21): the classified criterion bounds an intensive trace row only by
+// tau N_feed/(N_p x_i), so an accepted iterate can carry a 1e-4 relative error in a 1e-8
+// mole fraction. Each step must contract the raw row maximum; quadratic convergence needs
+// at most three steps from an accepted iterate.
+inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
+    3.0,
+    Category::AlgorithmTolerance,
+    "maximum Newton polish steps on the unweighted equilibrium rows; each must contract the raw and classified residuals inside the cutoff",
 };
 
 inline constexpr Tolerance EQUILIBRIUM_MAX_ITERATIONS{"EQUILIBRIUM_MAX_ITERATIONS",
