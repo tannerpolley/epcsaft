@@ -1,0 +1,44 @@
+schema_version = 2
+packet_id = "gross-2001-propane"
+packet_version = "3"
+title = "gross-2001-propane canonical Parameters packet"
+description = "Explicit-neutral-charge successor to immutable gross-2001-propane/2; no fitted coefficient or formulation change."
+license_or_use_basis = "Source-traceable numeric parameter transcription and project-authored packet metadata retained for scientific verification under the source-specific use basis below; no full paper content is included."
+tolerance_rationale = "Fixed zero charge makes the previously selected neutral model explicit without changing its numerical parameters. Migration equality is checked separately; no new physical-validation tolerance or applicability range is asserted."
+
+[[sources]]
+source_id = "gross-sadowski-2001"
+citation = "Gross, J.; Sadowski, G. PC-SAFT: An Equation of State Based on a Perturbation Theory for Chain Molecules. Industrial & Engineering Chemistry Research 2001, 40, 1244-1260."
+doi = "10.1021/ie0003887"
+use_basis = "source-backed installed parameter catalog"
+
+[[sources]]
+source_id = "explicit-neutral-model"
+citation = "Project declaration of the neutral species already selected by gross-2001-propane/2 (electrolyte: none)."
+use_basis = "Exact structural input of the accepted neutral model, not a fitted coefficient or a new observation; predecessor coefficient values and reported conditions are unchanged."
+
+[[domains]]
+domain_id = "propane-fit-range"
+kind = "fit-range"
+temperature_min = 85
+temperature_max = 523
+temperature_unit = "kelvin"
+description = "Source-defined fit-range domain propane-fit-range (temperature 85–523 kelvin); see the cited source and canonical Parameters document."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb"
+source_refs = ["gross-sadowski-2001", "explicit-neutral-model"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Every fixed specification and continuous coefficient declares its unit in the canonical Parameters document; dimensionless values use the explicit dimensionless unit."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "649c2b00969f70ba0476c9a54397f3229f9de0360e4f41912a16db658d280cd6"
+source_refs = ["gross-sadowski-2001", "explicit-neutral-model"]
+domain_refs = ["propane-fit-range"]
+units_basis = "Origin repository, immutable source packet, path, and hash metadata are non-numeric identifiers."

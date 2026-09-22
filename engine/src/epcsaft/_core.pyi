@@ -82,6 +82,8 @@ class ParameterDocument:
     component_ids: list[str]
     site_component: list[int]
     site_multiplicity: list[int]
+    base_choice: str
+    association_choice: str
     electrolyte_choice: str
     ionic_dispersion_choice: str
     permittivity_choice: str

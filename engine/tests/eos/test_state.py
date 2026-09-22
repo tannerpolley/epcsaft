@@ -277,7 +277,7 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
 
 
 def test_pure_is_one_component_mixture(evidence: Any) -> None:
-    packet = parameters_json("gross-2001-methane-ethane", 2)
+    packet = parameters_json("gross-2001-methane-ethane", 3)
     temperature = 300.0
     density = 1.0e4
     composition = (0.0, 1.0)
@@ -334,7 +334,7 @@ def test_pressure_branch_selects_sub_cell_loop_root(
     bisection roots of analyses/2026-density-closure-diagnosis/results/root-controls.csv.
     At 308 K the liquid root coincides with a scan node; the independent fixed-density
     bisection roots still require two distinct branches, regardless of that coincidence."""
-    packet = parameters_json("gross-2001-methane-ethane", 2)
+    packet = parameters_json("gross-2001-methane-ethane", 3)
     model = Pure(Parameters.from_json(packet, components=("ethane",)))
     state = model.state(temperature, P=pressure, phase=phase)
     evidence.compare(
@@ -344,7 +344,7 @@ def test_pressure_branch_selects_sub_cell_loop_root(
                 "stable_root_count": state.stable_root_count,
                 "density_branch": str(state.density_branch),
                 "pressure_density_derivative": float(state.pressure_density_derivative),
-                "_parameters": _parameter_metadata(packet, "gross-2001-methane-ethane", 2, ("ethane",))},
+                "_parameters": _parameter_metadata(packet, "gross-2001-methane-ethane", 3, ("ethane",))},
         criterion={"type": "scalar", "rule": "symmetric_close", "atol": 0.0, "rtol": 1e-8,
                    "scale": "max(abs(model), abs(reference))",
                    "combining_rule": "max(atol, rtol*scale)"},
@@ -383,13 +383,110 @@ def test_mapping_fails_closed_by_name() -> None:
             ionic_mapping,
             components=("water", "lithium-cation", "sodium-cation", "chloride-anion"),
         )
-    mapping = copy.deepcopy(json.loads(parameters_json("gross-2001-methane-ethane", 2).read_text()))
+    mapping = copy.deepcopy(json.loads(parameters_json("gross-2001-methane-ethane", 3).read_text()))
     mapping["components"][0]["fixed"]["molar_mass"]["value"]["unit"] = "gram"
     with pytest.raises(ParameterError, match="(?=.*component/ethane/molar_mass)(?=.*gram)"):
         Parameters.from_mapping(mapping, components=("ethane",))
-    parameters = Parameters.from_json(parameters_json("gross-2001-methane-ethane", 2), components=("methane", "ethane"))
+    parameters = Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane"))
     with pytest.raises(ParameterError):
         Mixture(parameters).state(300.0, P=1e5, x=(0.5, 0.5), phase="gas")
+
+
+
+def test_declared_model_preserves_association_equations(evidence: Any) -> None:
+    # Fixed-density equation control, outside the source's reported 1-bar states.
+    path = parameters_json("figiel-yu-held-2025", 3)
+    document = json.loads(path.read_text())
+    components = ("water", "sodium-cation", "chloride-anion")
+    state = Mixture(Parameters.from_mapping(document, components=components)).state(
+        298.15, rho=56000.0, x=(0.98, 0.01, 0.01)
+    )
+    # Symmetric water 2B reduction: B X² + X - 1 = 0.
+    bond_density = 536.45118457612296
+    fraction = 2.0 / (1.0 + math.sqrt(1.0 + 4.0 * bond_density))
+    association = 2.0 * 0.98 * (math.log(fraction) - fraction / 2.0 + 0.5)
+    assert len(state.site_fractions) == 2
+    assert state.site_fractions == pytest.approx((fraction, fraction), rel=1e-11, abs=1e-12)
+    assert state.association == pytest.approx(association, rel=1e-11, abs=1e-12)
+    evidence.compare(
+        "declared_model/association", quantity="reduced association Helmholtz energy",
+        model=state.association, reference=association, unit="1",
+        inputs={"T_K": 298.15, "rho_mol_m3": 56000.0, "x": [0.98, 0.01, 0.01],
+                "components": components, "bond_density": bond_density,
+                "parameter_sha256": hashlib.sha256(path.read_bytes()).hexdigest()},
+        criterion={"rule": "symmetric_close", "atol": 1e-12, "rtol": 1e-11},
+        basis="Relationship", method="independent symmetric 2B scalar root",
+        claim="The declared general-site choice preserves the association equations.",
+    )
+
+    relabelled = copy.deepcopy(document)
+    relabelled["document_id"] = "display-only"
+    for family in relabelled["model_families"]:
+        family["family_id"] = "display/" + family["kind"]
+    same = Mixture(Parameters.from_mapping(relabelled, components=components)).state(
+        298.15, rho=56000.0, x=(0.98, 0.01, 0.01)
+    )
+    for field in ("pressure", "association", "residual_helmholtz",
+                  "pressure_density_derivative", "site_fractions",
+                  "residual_chemical_potential_over_rt"):
+        assert getattr(same, field) == pytest.approx(getattr(state, field), rel=1e-12, abs=1e-12)
+
+    for kind, choice in (("association", "none"), ("base", "simplified-pc-saft")):
+        invalid = copy.deepcopy(document)
+        next(item for item in invalid["model_families"] if item["kind"] == kind)["choice"] = choice
+        with pytest.raises(ParameterError, match=kind):
+            Parameters.from_mapping(invalid, components=components)
+    for extra in ({"kind": "polar", "choice": "dipole"},
+                  {"kind": "association", "choice": "general-site"}):
+        invalid = copy.deepcopy(document)
+        invalid["model_families"].append(extra)
+        with pytest.raises(ParameterError, match=extra["kind"]):
+            Parameters.from_mapping(invalid, components=components)
+    malformed_first = copy.deepcopy(document)
+    malformed_first["model_families"].insert(0, {"kind": "association"})
+    with pytest.raises(ParameterError, match="duplicate model choice association"):
+        Parameters.from_mapping(malformed_first, components=components)
+
+    ambiguous = copy.deepcopy(document)
+    water = copy.deepcopy(next(item for item in document["components"] if item["component_id"] == "water"))
+    next(item for item in water["coefficients"] if item["family"] == "dispersion_energy_over_k")["value"]["magnitude"] *= 0.9
+    ambiguous["components"].append(water)
+    with pytest.raises(ParameterError, match="duplicate component_id water"):
+        Parameters.from_mapping(ambiguous, components=components)
+
+    unbonded = copy.deepcopy(document)
+    unbonded["topology"] = {"sites": [], "edges": []}
+    next(item for item in unbonded["model_families"] if item["kind"] == "association")["choice"] = "none"
+    assert Mixture(Parameters.from_mapping(unbonded, components=components)).state(
+        298.15, rho=56000.0, x=(0.98, 0.01, 0.01)
+    ).association == 0.0
+
+    missing_charge = copy.deepcopy(document)
+    del next(item for item in missing_charge["components"] if item["component_id"] == "water")["fixed"]["charge_number"]
+    with pytest.raises(ParameterError, match="missing component/water/charge_number"):
+        Parameters.from_mapping(missing_charge, components=components)
+    malformed = copy.deepcopy(document)
+    malformed["components"][0]["component_id"] = 7
+    with pytest.raises(ParameterError, match=r"components\[0\]\.component_id"):
+        Parameters.from_mapping(malformed, components=components)
+    with pytest.raises(ParameterError, match=r"component selection\[0\]"):
+        Parameters.from_mapping(document, components=("",))
+    for section, member, field, message in (
+        ("correlations", 0, "component_id", r"correlation\[0\]\.component_id"),
+        ("pairs", 0, "component_id_a", r"pair\[0\]\.component_id_a"),
+    ):
+        malformed = copy.deepcopy(document)
+        malformed[section][member][field] = 7
+        with pytest.raises(ParameterError, match=message):
+            Parameters.from_mapping(malformed, components=components)
+    malformed = copy.deepcopy(document)
+    malformed["topology"]["sites"][0]["site_id"] = 7
+    with pytest.raises(ParameterError, match=r"topology site\[0\]\.site_id"):
+        Parameters.from_mapping(malformed, components=components)
+    malformed = copy.deepcopy(document)
+    malformed["topology"]["edges"][0]["endpoint_a"]["component_id"] = 7
+    with pytest.raises(ParameterError, match=r"topology edge\[0\]\.endpoint_a\.component_id"):
+        Parameters.from_mapping(malformed, components=components)
 
 
 def test_association_topology_is_order_independent_and_typed() -> None:

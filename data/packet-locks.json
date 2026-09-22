@@ -25,6 +25,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "crespo-2021-deea",
+      "packet_version": "3",
+      "packet_path": "data/packets/crespo-2021-deea/3",
+      "packet_fingerprint": "7b1313dcff06cca794bccfb301f017b0150c788f1aba90b0c98b5f56b38af8f7",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "figiel-2025-aqueous-iodides",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-aqueous-iodides/2",
@@ -88,6 +95,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "gross-2001-methane-ethane",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-2001-methane-ethane/3",
+      "packet_fingerprint": "1356ac151a3e57622578dd5382a125c6772b76331f1eeeca9904976bba29b0bf",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "gross-2001-propane",
       "packet_version": "2",
       "packet_path": "data/packets/gross-2001-propane/2",
@@ -95,10 +109,24 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "gross-2001-propane",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-2001-propane/3",
+      "packet_fingerprint": "92634acb2bb24e3e83f938f4cf6239564940a1fdc88cba956ebcb0b7db041d5a",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "gross-sadowski-2001",
       "packet_version": "2",
       "packet_path": "data/packets/gross-sadowski-2001/2",
       "packet_fingerprint": "d26b819571172306039d87e085777c601e7c6cd992276774cbc226aa8fe61ea1",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "gross-sadowski-2001",
+      "packet_version": "3",
+      "packet_path": "data/packets/gross-sadowski-2001/3",
+      "packet_fingerprint": "6367bac8415bb4dd19373196ab51726f96e9670c0fb93506896d0db9be9928ea",
       "materialization": "byte-for-byte"
     },
     {
@@ -137,13 +165,6 @@
       "materialization": "byte-for-byte"
     },
     {
-      "packet_id": "zuber-2014-electrolyte-permittivity",
-      "packet_version": "1",
-      "packet_path": "data/packets/zuber-2014-electrolyte-permittivity/1",
-      "packet_fingerprint": "84951da9b6aff197c07d874a2283263d9f1466c3db7dc9f9b5e2dfccb68747ef",
-      "materialization": "byte-for-byte"
-    },
-    {
       "packet_id": "mea-co2-h2o-nine-species-estimation",
       "packet_version": "2",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/2",
@@ -155,6 +176,13 @@
       "packet_version": "3",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/3",
       "packet_fingerprint": "056288b6967b4d7c8421183cb9e1f7d2db61bac6cf91d8b56be914ca628e442f",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "zuber-2014-electrolyte-permittivity",
+      "packet_version": "1",
+      "packet_path": "data/packets/zuber-2014-electrolyte-permittivity/1",
+      "packet_fingerprint": "84951da9b6aff197c07d874a2283263d9f1466c3db7dc9f9b5e2dfccb68747ef",
       "materialization": "byte-for-byte"
     }
   ]

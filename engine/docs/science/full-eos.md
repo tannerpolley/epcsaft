@@ -106,6 +106,42 @@ The common Helmholtz definition owns thermodynamic derivatives. Independent
 finite-difference formulas belong to numerical verification, not an alternate
 production equation owner.
 
+### Adopted Figiel input and model identity
+
+The source-complete starting input is the immutable
+[figiel-yu-held-2025/3 packet](../../../data/packets/figiel-yu-held-2025/3/packet.toml),
+with parameter JSON SHA-256
+3d37235cd8217e056f55005bfdf2b65dcf7c4a8621e239bdd40a70c273a9be8c.
+Its packet fingerprint is retained in [packet-locks.json](../../../data/packet-locks.json).
+Supply the JSON to Parameters.from_json and an ordered component subset;
+no paper name selects physics. For the fixed-density equation control, the
+subset is (water, sodium-cation, chloride-anion), T = 298.15 K,
+rho_m = 56000 mol m^-3, and x = (0.98, 0.01, 0.01) in that order. The
+calculated pressure is about 17.1 MPa, outside the packet's reported 1-bar
+conditions; it tests admission and equations, not empirical accuracy.
+
+The document declares base: pc-saft with the Gross reference and
+dispersion rules of §4; association: general-site with explicit water A/B
+sites and no ion sites (§5); electrolyte: born with Debye--Huckel,
+same-sign ionic dispersion exclusion, and corrected SSM+DS Born (§§6–7);
+and permittivity: ion-fraction-suppression with salt-free solvent mass
+averaging and source coefficient 7.01 (§6). Its explicit charge, pair,
+association, and correlation records supply units and source locators.
+Segment, ionic packing, Debye--Huckel, and fitted Born diameters are distinct
+inputs; their source relations are stated in §§4, 6, and 7. Equilibrium and
+reported activities use the existing reference conventions in §10.
+The packet's reported evidence domain is 298.15 K, 1 bar, and ion mole
+fraction up to about 0.38. It does not provide missing ideal caloric inputs.
+
+The [current-wheel admission control](../../../docs/scientific/reviews/modular-baseline-admission-2026-09-22.md)
+retains sampled values, derivative outputs, exact input identities, and limits.
+
+The packet identifies source values and the historical cross-association
+transformation, but does not encode a complete fixed-versus-fitted partition,
+calibration observation list, weights, or objective. Those attachments remain
+open in [Step 1](https://github.com/tannerpolley/ePC-SAFT/issues/25); a
+parameter filename or a fixed field is not evidence of a calibration role.
+
 ## 4. Neutral PC-SAFT
 
 The neutral model uses the Gross2001 temperature-corrected diameters, mixture moments, hard-sphere
@@ -141,6 +177,22 @@ kernel, so Helmholtz values and CppAD composition derivatives consume the same
 definition.
 
 ## 5. Association
+
+The version-1 parameter document declares exactly one choice for each
+base, association, electrolyte, and permittivity family. Unknown or duplicate
+family kinds are input errors. Native admission accepts base pc-saft and
+association none or general-site. Association none requires no selected sites;
+contradictory topology is rejected. General-site with no selected sites has
+the exact zero-association limit. Changing a choice does not establish that
+an existing fit transfers to the new formulation.
+
+Component IDs must be nonempty strings and unique in the supplied document
+before subset selection. Repeated records are ambiguous physical inputs, not
+parameter overrides. Every selected component supplies fixed.charge_number,
+including zero for a neutral species. Python transports that record; native
+admission rejects omission by component identity. No charge is inferred from
+a component name, source label, or absent field. The version-3 Gross/DEEA
+packets state previously implicit neutral charges without changing coefficients.
 
 For each explicit site `A` on component `i`, define the site fraction
 `X_iA` by the fixed-topology mass-action residual

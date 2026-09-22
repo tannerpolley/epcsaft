@@ -47,7 +47,7 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     pressure_target = 1.0e5
     composition = (0.5, 0.5)
     phase = "liquid"
-    parameter_path = parameters_json("gross-2001-methane-ethane", 2)
+    parameter_path = parameters_json("gross-2001-methane-ethane", 3)
     parameters = Parameters.from_json(parameter_path, components=components)
     mixture = Mixture(parameters)
     with trace() as captured:

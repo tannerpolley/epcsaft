@@ -128,6 +128,8 @@ void register_eos(py::module_& module) {
         .def_readwrite("component_ids", &epcsaft::ParameterDocument::component_ids)
         .def_readwrite("site_component", &epcsaft::ParameterDocument::site_component)
         .def_readwrite("site_multiplicity", &epcsaft::ParameterDocument::site_multiplicity)
+        .def_readwrite("base_choice", &epcsaft::ParameterDocument::base_choice)
+        .def_readwrite("association_choice", &epcsaft::ParameterDocument::association_choice)
         .def_readwrite("electrolyte_choice", &epcsaft::ParameterDocument::electrolyte_choice)
         .def_readwrite("ionic_dispersion_choice", &epcsaft::ParameterDocument::ionic_dispersion_choice)
         .def_readwrite("permittivity_choice", &epcsaft::ParameterDocument::permittivity_choice)

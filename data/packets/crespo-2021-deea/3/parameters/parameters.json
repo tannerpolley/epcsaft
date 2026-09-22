@@ -1,0 +1,215 @@
+{
+  "schema": "epcsaft.parameters",
+  "schema_version": 1,
+  "document_id": "crespo-2021-deea",
+  "document_version": 3,
+  "purpose": "external-document",
+  "sources": [
+    {
+      "source_id": "crespo-et-al-2021",
+      "citation": "Crespo, E. A.; Silva, L. P.; Carvalho, P. J.; Coutinho, J. A. P. The Excess Volumes of Protic Ionic Liquids and Its Significance to Their Thermodynamic Modelling. Fluid Phase Equilibria 2021, 113277.",
+      "doi": "10.1016/j.fluid.2021.113277",
+      "use_basis": "Table 3 neutral DEEA PC-SAFT parameters and 2B association topology; kappa_HB is used in the cited PC-SAFT sigma^3*kappa association-strength convention; c_i is excluded as the PIL volume correction"
+    },
+    {
+      "source_id": "explicit-neutral-model",
+      "citation": "Project declaration of the neutral species already selected by crespo-2021-deea/2 (electrolyte: none).",
+      "use_basis": "Exact structural input of the accepted neutral model, not a fitted coefficient or a new observation; predecessor coefficient values and reported conditions are unchanged."
+    }
+  ],
+  "domains": [
+    {
+      "domain_id": "crespo-deea-fit-domain-unreported",
+      "kind": "unknown"
+    }
+  ],
+  "components": [
+    {
+      "component_id": "diethylethanolamine",
+      "aliases": [
+        "2-(diethylamino)ethanol",
+        "DEEA"
+      ],
+      "fixed": {
+        "molar_mass": {
+          "value": {
+            "magnitude": 117.19,
+            "unit": "gram / mole"
+          },
+          "provenance": {
+            "source_id": "crespo-et-al-2021",
+            "locator": "Table 3, diethylethanolamine row, Mw column",
+            "domain_id": "crespo-deea-fit-domain-unreported"
+          }
+        },
+        "charge_number": {
+          "identity": "component/diethylethanolamine/charge_number",
+          "value": {
+            "magnitude": 0,
+            "unit": "elementary-charge"
+          },
+          "provenance": {
+            "source_id": "explicit-neutral-model",
+            "locator": "Explicit zero charge for the same neutral species in the predecessor non-electrolyte parameterization; not a published fitted coordinate.",
+            "domain_id": "crespo-deea-fit-domain-unreported"
+          }
+        }
+      },
+      "coefficients": [
+        {
+          "identity": "component/diethylethanolamine/dispersion_energy_over_k",
+          "family": "dispersion_energy_over_k",
+          "value": {
+            "magnitude": 248.55,
+            "unit": "kelvin"
+          },
+          "provenance": {
+            "source_id": "crespo-et-al-2021",
+            "locator": "Table 3, diethylethanolamine row, epsilon/k_B column",
+            "domain_id": "crespo-deea-fit-domain-unreported"
+          }
+        },
+        {
+          "identity": "component/diethylethanolamine/segment_count",
+          "family": "segment_count",
+          "value": {
+            "magnitude": 3.844,
+            "unit": "dimensionless"
+          },
+          "provenance": {
+            "source_id": "crespo-et-al-2021",
+            "locator": "Table 3, diethylethanolamine row, m column",
+            "domain_id": "crespo-deea-fit-domain-unreported"
+          }
+        },
+        {
+          "identity": "component/diethylethanolamine/segment_diameter",
+          "family": "segment_diameter",
+          "value": {
+            "magnitude": 3.6406,
+            "unit": "angstrom"
+          },
+          "provenance": {
+            "source_id": "crespo-et-al-2021",
+            "locator": "Table 3, diethylethanolamine row, sigma column",
+            "domain_id": "crespo-deea-fit-domain-unreported"
+          }
+        }
+      ],
+      "name": "N,N-diethylethanolamine"
+    }
+  ],
+  "pairs": [],
+  "model_families": [
+    {
+      "family_id": "model/association",
+      "kind": "association",
+      "choice": "general-site",
+      "provenance": {
+        "source_id": "crespo-et-al-2021",
+        "locator": "Table 3, diethylethanolamine row, 2B association scheme expanded as one A site",
+        "domain_id": "crespo-deea-fit-domain-unreported"
+      }
+    },
+    {
+      "family_id": "model/base",
+      "kind": "base",
+      "choice": "pc-saft",
+      "provenance": {
+        "source_id": "crespo-et-al-2021",
+        "locator": "Table 3, diethylethanolamine row, m column",
+        "domain_id": "crespo-deea-fit-domain-unreported"
+      }
+    },
+    {
+      "family_id": "model/electrolyte",
+      "kind": "electrolyte",
+      "choice": "none",
+      "provenance": {
+        "source_id": "crespo-et-al-2021",
+        "locator": "Table 3, diethylethanolamine row, Mw column",
+        "domain_id": "crespo-deea-fit-domain-unreported"
+      }
+    },
+    {
+      "family_id": "model/relative_permittivity",
+      "kind": "permittivity",
+      "choice": "none",
+      "provenance": {
+        "source_id": "crespo-et-al-2021",
+        "locator": "p. 5, PC-SAFT model statement; Table 3, neutral diethylethanolamine row",
+        "domain_id": "crespo-deea-fit-domain-unreported"
+      }
+    }
+  ],
+  "model_coefficients": [],
+  "correlations": [],
+  "topology": {
+    "presets": [],
+    "sites": [
+      {
+        "component_id": "diethylethanolamine",
+        "site_id": "a",
+        "site_role": "donor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "crespo-et-al-2021",
+          "locator": "Table 3, diethylethanolamine row, 2B association scheme expanded as one A site",
+          "domain_id": "crespo-deea-fit-domain-unreported"
+        }
+      },
+      {
+        "component_id": "diethylethanolamine",
+        "site_id": "b",
+        "site_role": "acceptor",
+        "multiplicity": 1,
+        "provenance": {
+          "source_id": "crespo-et-al-2021",
+          "locator": "Table 3, diethylethanolamine row, 2B association scheme expanded as one B site",
+          "domain_id": "crespo-deea-fit-domain-unreported"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "endpoint_a": {
+          "component_id": "diethylethanolamine",
+          "site_id": "a"
+        },
+        "endpoint_b": {
+          "component_id": "diethylethanolamine",
+          "site_id": "b"
+        },
+        "energy_over_k": {
+          "identity": "association/diethylethanolamine/a/diethylethanolamine/b/energy_over_k",
+          "value": {
+            "magnitude": 2033.2,
+            "unit": "kelvin"
+          }
+        },
+        "volume": {
+          "identity": "association/diethylethanolamine/a/diethylethanolamine/b/volume",
+          "value": {
+            "magnitude": 0.02412,
+            "unit": "dimensionless"
+          }
+        },
+        "source": {
+          "kind": "explicit",
+          "provenance": [
+            {
+              "source_id": "crespo-et-al-2021",
+              "locator": "Table 3, diethylethanolamine row, epsilon^HB/k_B column",
+              "domain_id": "crespo-deea-fit-domain-unreported"
+            },
+            {
+              "source_id": "crespo-et-al-2021",
+              "locator": "Table 3, diethylethanolamine row, kappa^HB column",
+              "domain_id": "crespo-deea-fit-domain-unreported"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

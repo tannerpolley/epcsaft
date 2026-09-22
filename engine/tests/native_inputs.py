@@ -51,6 +51,8 @@ def parameters(
     document = _core.ParameterDocument()
     document.component_ids = [f"s{i}" for i in range(len(species))]
     document.site_component, document.site_multiplicity = list(sites[0]), list(sites[1])
+    document.base_choice = "pc-saft"
+    document.association_choice = "general-site" if sites[0] else "none"
     document.electrolyte_choice, document.ionic_dispersion_choice, document.permittivity_choice = choices
     rows: list[tuple[str, tuple[int, ...], float, str]] = list(extra)
     for i, (mass, segments, sigma, epsilon) in enumerate(species):

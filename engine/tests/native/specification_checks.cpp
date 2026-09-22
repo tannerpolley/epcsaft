@@ -1027,6 +1027,8 @@ epcsaft::ParameterDocument document(const Order& order, const std::array<double,
     doc.component_ids.resize(3);
     doc.site_component = {static_cast<int>(pos[0]), static_cast<int>(pos[0])};
     doc.site_multiplicity = {1, 1};
+    doc.base_choice = "pc-saft";
+    doc.association_choice = "general-site";
     doc.electrolyte_choice = "born";
     doc.ionic_dispersion_choice = "exclude-same-sign-ion-pairs";
     doc.permittivity_choice = "ion-specific-suppression";

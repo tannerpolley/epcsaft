@@ -19,7 +19,7 @@ from tests.packets import parameters_json
 
 def mixture() -> Mixture:
     return Mixture(Parameters.from_json(
-        parameters_json("gross-2001-methane-ethane", 2),
+        parameters_json("gross-2001-methane-ethane", 3),
         components=("methane", "ethane"),
     ))
 

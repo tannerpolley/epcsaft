@@ -113,6 +113,8 @@ epcsaft::HelmholtzModel& model_for(
     const auto [m, sigma, epsilon, molar_mass] = inputs;
     epcsaft::ParameterDocument document;
     document.component_ids = {"component-0"};
+    document.base_choice = "pc-saft";
+    document.association_choice = "none";
     document.electrolyte_choice = "none";
     document.ionic_dispersion_choice = "";
     document.permittivity_choice = "none";
