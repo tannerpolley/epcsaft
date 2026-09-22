@@ -38,9 +38,11 @@ SolvedStateActionStatus = _core.SolvedStateActionStatus
 SolvedStateObservable = _core.SolvedStateObservable
 SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
+asl_record = _core.equilibrium_asl_record
 
 __all__ = (
     "Amounts",
+    "asl_record",
     "Continuation",
     "ContinuationResult",
     "ContinuationStop",

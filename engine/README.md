@@ -144,6 +144,37 @@ row = solved_state_actions(compiled, central, request).results[0]
 fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[0]  # f_i = a_i R T (1 mol/m^3), Pa
 ```
 
+For a fixed-T/P, declared two-free-liquid equilibrium, `equilibrium.asl_record`
+constructs the immutable record consumed by the installed
+`epcsaft_equilibrium_phase_component_amount` external function:
+
+```python
+record = equilibrium.asl_record(model, problem, continuation, feed_offset,
+                               feed_matrix, anchor_controls, identity_component, minimum_gap)
+# Pyomo ExternalFunction: (*controls, record, "0" or "1", str(component_index))
+```
+
+Controls and returned amounts are mol on the caller's declared batch basis.
+The feed is `n = feed_offset + feed_matrix @ controls`, with component rows and
+control columns. Offset and columns must be charge neutral; physical feed and
+controls are nonnegative, including zero incoming reactive complexes. The anchor
+must reproduce the supplied absolute feed. The selected component mole-fraction
+gap (phase 0 minus phase 1) must exceed `minimum_gap`; indices and supports follow
+the supplied model order. Scalar reaction K or affinity and explicit problem
+standard Gibbs references are transported. Temperature-dependent reaction
+correlations, active parameters and model thermochemistry records are rejected.
+
+For an observable `y(n)`, the callback returns `J_y B` and `B.T H_y B`, where
+`B = feed_matrix`; E5 owns these implicit actions, not a finite-difference
+callback. Pyomo owns any additional control products, ratios and process units.
+Each new feed continues from the immutable anchor; one exact-iterate cache and
+one immutable record are admitted per process. Use separate processes for
+different records. Failed central/branch/action checks return nonfinite values
+and derivatives with an observable-specific typed error, never a surrogate
+fallback. Use an outer Ipopt executable whose C++ symbols do not interpose on
+the Engine's Ipopt dependency; the retained live campaign verifies the isolated
+official IDAES executable and exact option-file readback.
+
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and
 `stable_root_count` exist only after a pressure-root search, so a T-rho state reports

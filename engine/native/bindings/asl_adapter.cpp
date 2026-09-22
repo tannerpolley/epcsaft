@@ -1,6 +1,7 @@
 #include "properties/helmholtz_model.hpp"
 #include "surface/parameter_builder.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "equilibrium_record.hpp"
 
 #include <array>
 #include <charconv>
@@ -294,14 +295,12 @@ struct EquilibriumContext final {
     std::unique_ptr<epcsaft::HelmholtzModel> model;
     eq::EquilibriumProblem anchor;
     eq::ContinuationOptions options;
-    std::array<double, 4> anchor_feed{};
+    eq::AslFeedMap map;
     eq::EquilibriumResult anchor_result;
     std::unique_ptr<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
-    std::array<double, 4> feed{};
-    std::array<double, 10> values{};
-    std::array<std::array<double, 4>, 10> gradients{};
-    std::array<std::array<double, 10>, 10> hessians{};
+    std::vector<double> feed, values;
+    std::vector<std::vector<double>> gradients, hessians;
     int order = -1;
 };
 
@@ -316,11 +315,8 @@ PreparedEquilibrium& prepared_equilibrium() {
     return result;
 }
 
-std::vector<double> explicit_feed(const std::array<double, 4>& formula) {
-    return {formula[0], formula[1], formula[2], formula[3], formula[3]};
-}
-
-void require_central(const eq::EquilibriumResult& result, const std::string& observable) {
+void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
+    const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)
         throw EquilibriumFailure(ActionStatus::NonuniqueCoalescedPhases, observable);
     if (result.topology_event == eq::TopologyEvent::PhaseDisappeared)
@@ -329,8 +325,8 @@ void require_central(const eq::EquilibriumResult& result, const std::string& obs
     if (!result.requested_tolerance_met.value_or(false))
         throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
     if (result.topology_event != eq::TopologyEvent::None || result.phase_count != 2
-        || result.mole_fractions.size() != 10 || result.amounts.size() != 2
-        || !(result.mole_fractions[0] > result.mole_fractions[5]))
+        || result.mole_fractions.size() != 2 * count || result.amounts.size() != 2
+        || !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap))
         throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable);
     if (!std::isfinite(result.reduced_hessian_minimum) || result.reduced_hessian_minimum <= 0.0)
         throw EquilibriumFailure(ActionStatus::CentralPropertyUnavailable, observable);
@@ -338,13 +334,10 @@ void require_central(const eq::EquilibriumResult& result, const std::string& obs
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v1");
+    reader.field("epcsaft.asl.equilibrium.v2");
     epcsaft::ParameterDocument document;
     reader.field("component_ids");
     document.component_ids = reader.vector([&] { return reader.next(); });
-    if (document.component_ids != std::vector<std::string>{
-            "water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion"})
-        reject("formula controls require the declared water/ethanol/isobutanol/Na/Cl order");
     reader.field("site_component");
     document.site_component = reader.vector([&] { return static_cast<int>(reader.integer()); });
     reader.field("site_multiplicity");
@@ -390,7 +383,16 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         return phase;
     });
     reader.field("reactions");
-    if (reader.integer() != 0) reject("reaction transport is not qualified by this callback");
+    problem.reactions = reader.vector([&] {
+        eq::ReactionSpec r;
+        r.name = reader.next();
+        r.stoichiometry = reader.vector([&] { return reader.number(); });
+        const auto target = reader.next();
+        if (target == "K") r.equilibrium_constant = reader.number();
+        else if (target == "affinity") r.affinity_j_per_mol = reader.number();
+        else reject("unsupported reaction target");
+        return r;
+    });
     reader.field("standard_gibbs_j_per_mol");
     problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
     reader.field("topology_declared");
@@ -402,21 +404,24 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     context->options.minimum_step = reader.number();
     context->options.max_steps = reader.integer();
     context->options.max_retries_per_step = reader.integer();
-    reader.field("anchor_feed_formula");
-    const auto anchor = reader.vector([&] { return reader.number(); }, 4);
+    reader.field("feed_offset");
+    context->map.offset = reader.vector([&] { return reader.number(); });
+    reader.field("feed_matrix");
+    context->map.matrix = reader.vector([&] { return reader.vector([&] { return reader.number(); }); });
+    reader.field("anchor_controls");
+    context->map.anchor = reader.vector([&] { return reader.number(); });
+    reader.field("phase_identity");
+    context->map.identity_component = reader.integer();
+    context->map.minimum_gap = reader.number();
     reader.finish();
-    if (anchor.size() != 4 || document.component_ids.size() != 5
-        || problem.phases.size() != 2 || !problem.topology_declared)
-        reject("equilibrium callback requires four formula controls and two five-component phases");
-    std::copy(anchor.begin(), anchor.end(), context->anchor_feed.begin());
-    if (problem.feed.values != explicit_feed(context->anchor_feed)) reject("anchor feed basis mismatch");
-    for (const auto& phase : problem.phases) {
-        if (!phase.support_declared || phase.support != std::vector<std::size_t>{0, 1, 2, 3, 4})
-            throw EquilibriumFailure(ActionStatus::SupportChange, observable);
-    }
     context->model = std::make_unique<epcsaft::HelmholtzModel>(epcsaft::build_parameters(document));
+    context->map.validate(problem, context->model->parameters());
+    const auto rows = 2 * document.component_ids.size(), n = context->map.anchor.size();
+    context->values.resize(rows);
+    context->gradients.assign(rows, std::vector<double>(n));
+    context->hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
     context->anchor_result = eq::solve_equilibrium(*context->model, problem);
-    require_central(context->anchor_result, observable);
+    require_central(*context, context->anchor_result, observable);
     context->record = raw;
     return context;
 }
@@ -434,11 +439,13 @@ ActionStatus continuation_status(eq::ContinuationStop stop) {
     }
 }
 
-void select_feed(EquilibriumContext& context, const std::array<double, 4>& feed,
+void select_feed(EquilibriumContext& context, const std::vector<double>& feed,
                  const std::string& observable) {
     auto target = context.anchor;
-    target.feed.values = explicit_feed(feed);
-    if (feed == context.anchor_feed) context.central = context.anchor_result;
+    target.feed.values = context.map.amounts(feed);
+    for (const double amount : target.feed.values)
+        if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
+    if (feed == context.map.anchor) context.central = context.anchor_result;
     else {
         const eq::ContinuationRequest request{context.anchor, target, context.anchor_result, context.options};
         const auto result = eq::continue_equilibrium(*context.model, request);
@@ -455,7 +462,7 @@ void select_feed(EquilibriumContext& context, const std::array<double, 4>& feed,
         }
         context.central = result.states.back();
     }
-    require_central(context.central, observable);
+    require_central(context, context.central, observable);
     context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(*context.model, target));
     context.feed = feed;
     context.order = -1;
@@ -464,12 +471,12 @@ void select_feed(EquilibriumContext& context, const std::array<double, 4>& feed,
 eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates) {
     eq::SolvedStateActionRequest request;
     for (std::size_t phase = 0; phase < 2; ++phase)
-        for (std::size_t component = 0; component < 5; ++component)
+        for (std::size_t component = 0; component < context.map.offset.size(); ++component)
             request.observables.push_back({eq::SolvedStateObservableKind::PhaseComponentAmount, phase, component});
     for (const int coordinate : coordinates) {
-        std::array<double, 4> direction{};
+        std::vector<double> direction(context.map.anchor.size(), 0.0);
         if (coordinate >= 0) direction.at(static_cast<std::size_t>(coordinate)) = 1.0;
-        request.directions.push_back({0.0, 0.0, explicit_feed(direction), {}});
+        request.directions.push_back({0.0, 0.0, context.map.amounts(direction, true), {}});
     }
     auto batch = eq::solved_state_actions(*context.compiled, context.central, request);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
@@ -491,50 +498,55 @@ double equilibrium_amount(arglist* arguments) {
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        if (arguments == nullptr || arguments->n != 7 || arguments->nr != 4
+        if (arguments == nullptr || arguments->nr < 1 || arguments->nr > 64 || arguments->n != arguments->nr + 3
             || arguments->at == nullptr || arguments->ra == nullptr || arguments->sa == nullptr)
-            reject("equilibrium callback requires four real and three string arguments");
-        for (int i = 0; i < 7; ++i)
-            if (arguments->at[i] != (i < 4 ? i : 3 - i)) reject("invalid equilibrium argument map");
-        const std::string phase(string_argument(arguments, 5));
-        const std::string component(string_argument(arguments, 6));
-        if (phase.size() != 1 || phase[0] < '0' || phase[0] > '1'
-            || component.size() != 1 || component[0] < '0' || component[0] > '4') reject("invalid observable selector");
-        const auto p = static_cast<std::size_t>(phase[0] - '0');
-        const auto c = static_cast<std::size_t>(component[0] - '0');
+            reject("equilibrium callback requires real controls and three strings");
+        const int n = arguments->nr;
+        for (int i = 0; i < arguments->n; ++i)
+            if (arguments->at[i] != (i < n ? i : n - 1 - i)) reject("invalid equilibrium argument map");
+        auto selector = [&](int index, std::size_t maximum) {
+            const std::string s(string_argument(arguments, index));
+            std::size_t v = 0;
+            const auto parsed = std::from_chars(s.data(), s.data() + s.size(), v);
+            if (s.empty() || parsed.ec != std::errc{} || parsed.ptr != s.data() + s.size() || v >= maximum)
+                reject("invalid observable selector");
+            return v;
+        };
+        const auto p = selector(n + 1, 2), c = selector(n + 2, 64);
         observable = eq::solved_state_observable_id({eq::SolvedStateObservableKind::PhaseComponentAmount, p, c});
-        std::array<double, 4> feed{};
+        std::vector<double> feed(n);
         for (std::size_t i = 0; i < feed.size(); ++i) {
             feed[i] = arguments->ra[i];
             if (!std::isfinite(feed[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
-            if (feed[i] <= 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
+            if (feed[i] < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        const char* record = string_argument(arguments, 4);
+        const char* record = string_argument(arguments, n);
         if (!prepared.context) prepared.context = prepare_equilibrium(record, observable);
         auto& context = *prepared.context;
         if (context.record != record) reject("immutable equilibrium record changed");
+        if (feed.size() != context.map.anchor.size() || c >= context.map.offset.size()) reject("control/observable dimension mismatch");
         if (context.order < 0 || context.feed != feed) select_feed(context, feed, observable);
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
         if (order == 0 && context.order < 0) actions(context, {-1});
         if (order >= 1 && context.order < 1) {
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < n; ++i) {
                 const auto batch = actions(context, {i});
-                for (std::size_t row = 0; row < 10; ++row) context.gradients[row][i] = *batch.results[row].action;
+                for (std::size_t row = 0; row < context.values.size(); ++row) context.gradients[row][i] = *batch.results[row].action;
             }
         }
         if (order >= 2 && context.order < 2) {
             std::size_t packed = 0;
-            for (int j = 0; j < 4; ++j) for (int i = 0; i <= j; ++i) {
+            for (int j = 0; j < n; ++j) for (int i = 0; i <= j; ++i) {
                 const auto batch = actions(context, {i, j});
-                for (std::size_t row = 0; row < 10; ++row) context.hessians[row][packed] = *batch.results[row].action;
+                for (std::size_t row = 0; row < context.values.size(); ++row) context.hessians[row][packed] = *batch.results[row].action;
                 ++packed;
             }
         }
         context.order = std::max(context.order, order);
-        const auto row = p * 5 + c;
+        const auto row = p * context.map.offset.size() + c;
         if (arguments->derivs != nullptr) std::copy(context.gradients[row].begin(), context.gradients[row].end(), arguments->derivs);
         if (arguments->hes != nullptr) std::copy(context.hessians[row].begin(), context.hessians[row].end(), arguments->hes);
-        return context.values[row];  // tau = 1 s: owned amounts become mol/s; directions use the same basis.
+        return context.values[row];  // Absolute phase-component mol on the caller's declared batch basis.
     } catch (const EquilibriumFailure& error) {
         callback_error = error.what();
     } catch (const std::exception& error) {
@@ -571,6 +583,6 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
     );
     exports->Addfunc(
         "epcsaft_equilibrium_phase_component_amount", equilibrium_amount,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, 7, nullptr, exports
+        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -5, nullptr, exports
     );
 }

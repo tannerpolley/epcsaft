@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 GAS_CONSTANT_J_PER_MOL_K: float
 EOS_STANDARD_STATE_ID: str
@@ -676,6 +676,9 @@ class SolvedStateActionBatch:
 def solved_state_actions(compiled: CompiledSystem, central: EquilibriumResult,
                          request: SolvedStateActionRequest) -> SolvedStateActionBatch: ...
 def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem) -> CompiledSystem: ...
+def equilibrium_asl_record(model: Any, problem: Any, continuation: Any, feed_offset: Sequence[float],
+                           feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
+                           identity_component: int, minimum_gap: float) -> str: ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]: ...
 def solve_equilibrium(
     model: HelmholtzModel,
