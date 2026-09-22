@@ -167,9 +167,12 @@ root-selection request, numerical policy and declared search budget.
 scan deterministically in log density within the admitted packing domain,
     keeping the reduced pressure residual and the analytic slope at every point
 if the interior slope minimum on the grid is positive, search it by golden section
-    in log density until a negative slope exposes a loop or the bracket closes to
-    the anchor window
-per cell: refine a sign change with safeguarded Newton from both ends; in a
+    in log density until a negative slope exposes a loop (that sample joins the
+    cells), the quadratic model of the slope through the bracket bounds its
+    minimum positive (exact in the near-critical cubic limit), or the iteration
+    budget ends in an explicit failure; other samples never join the cells
+per cell: refine a sign change with safeguarded Newton from both ends, never
+    declaring the starting endpoint the crossing; in a
     same-sign cell whose slope changes sign, bisect the spinodal's slope sign
     until the residual there crosses zero (then refine both halves) or no
     crossing is possible because |r| cannot fall by more than max|dr/drho|(b-a)
@@ -190,8 +193,20 @@ excursion otherwise. A loop narrower than a cell therefore still yields both
 declared branches (#89, 2026-09-21). Tangent roots at a spinodal need separate
 treatment and are not stable nonsingular roots: a target pressure equal to a
 spinodal pressure within the residual tolerance ends the certified bisection at
-its iteration cap without a crossing. An exactly zero residual at a grid point
-is the root of its cell and the following cell is not scanned. An unlabelled request with multiple stable roots
+its iteration cap without a crossing. Two stable roots closer than the
+refinement accuracy `tol |d rho/d r|` of either are one root at the achievable
+accuracy and are reported as one. A refinement never declares its starting
+cell endpoint the crossing: an endpoint inside the residual tolerance band of a
+root belongs to the neighbouring cell's crossing, and declaring it converged
+reported one near-tangent vapor root twice (#89 correction round 2). An
+isotherm whose slope minimum the quadratic model can neither bound positive
+nor a sample find negative within the search budget is an explicit unresolved
+failure, never a unique root. The slope-model stop is exact where `P_rho` is
+quadratic in log density, the near-critical cubic limit that creates the
+narrow dips; a dip narrower than the sample spacing with curvature above the
+sampled second difference is not excluded by it, and the retained near-critical
+sweep found none. An exactly zero residual at
+a grid point is the root of its cell and the following cell is not scanned. An unlabelled request with multiple stable roots
 is ambiguous. Tracking a branch through a continuation step must not silently
 relabel a remaining root when the prior branch disappears. The supported domain
 is one mechanical loop per isotherm, that is one interior minimum of the slope;
@@ -223,11 +238,20 @@ Acceptance is still classified on the caller criterion at the returned point.
 Limits: a pinned declared phase carries its chemical and pressure rows as
 optimizer equality constraints, so a solution below the box makes that
 subproblem infeasible and is not polished; a warm start below the box is pulled
-back into it by the optimizer's bound push and re-recovered by the polish; the
-reduced-Hessian certificate takes the optimizer's constraint multipliers at the
-polished primal point (the polish moved the balance multipliers by at most
-8.6e-9 relative on the retained cases); the polish rejection branch has no
-persistent falsifier. The Ipopt driver
+back into it by the optimizer's bound push and re-recovered by the polish; the polish rejection branch has no persistent
+falsifier. The returned extensive-objective constraint multipliers are
+reconstructed at the returned point from the row multipliers: a material row
+`(B n - b)/N_feed` carries `-N_feed lambda_j`, a charge row `sum z x` carries
+`-n_p phi_p`, and a free-amount phase's normalization row is zero because the
+objective and material rows are degree-one homogeneous in that phase's
+amounts, so stationarity in its free amount covers the normalization
+direction; the reduced-Hessian certificate uses these values at the returned
+point, and the optimizer's own multipliers remain a trace probe (#87 review,
+2026-09-21). A pinned problem is not polished and keeps the optimizer's
+constraint multipliers over every row. The reconstruction assumes no active
+variable bound at the returned point and residual potentials that depend on
+composition and molar volume only; the charge-row scaling `-n_p phi_p` has no
+persistent falsifier because every retained multiplier row is neutral. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's

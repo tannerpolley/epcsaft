@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -77,21 +78,20 @@ DensityRoot publish_root(
     };
 }
 
-// Safeguarded Newton from a known iterate inside [lower, upper]; lower_residual carries
-// the sign at the lower end so the bracket keeps shrinking around one crossing.
+// Safeguarded Newton from a cell endpoint inside [lower, upper]; lower_residual carries the
+// sign at the lower end so the bracket keeps shrinking around one crossing. The endpoint is
+// never the crossing, so only an iterate the loop produced can be declared converged.
 DensityRoot refine(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, double upper, double lower_residual,
     double density, PressurePoint point, core::Scope& parent_scope, std::size_t& evaluations
 ) {
-    const std::size_t maximum = static_cast<std::size_t>(
-        policy::DENSITY_MAX_ITERATIONS.value
-    );
+    const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
     core::ResidualHistory history;
     history.push(std::abs(point.residual));
     std::size_t iterations = 0;
     for (; iterations < maximum; ++iterations) {
-        if (std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value) break;
+        if (iterations != 0 && std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value) break;
         const double derivative = residual_derivative(point, density, pressure, temperature);
         double candidate = density;
         if (std::isfinite(derivative) && derivative != 0.0) {
@@ -201,7 +201,8 @@ struct ScanPoint final { double density; PressurePoint point; bool linked; };
 // Deterministic log-density grid, then the cells. A loop with positive slopes at both ends
 // of its cell is invisible to the cells; with one mechanical loop P_rho has one interior
 // minimum, so a positive grid minimum of the slope is bracketed and searched by golden
-// section in log density until a negative slope exposes the loop or the bracket closes.
+// section in log density until a negative slope exposes the loop or the quadratic slope model
+// bounds its minimum positive; every other sample stays out of the cell list.
 std::vector<DensityRoot> scan_roots(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, double log_lower, double log_upper,
@@ -232,18 +233,35 @@ std::vector<DensityRoot> scan_roots(
     if (lowest != 0 && points[lowest].point.slope > 0.0) {
         double a = std::log(points[lowest - 1].density), b = std::log(points[lowest + 1].density);
         double x = std::log(points[lowest].density), slope_x = points[lowest].point.slope;
-        while (b - a > policy::DENSITY_ANCHOR_LOG_WINDOW.value && slope_x > 0.0) {
+        double slope_a = points[lowest - 1].point.slope, slope_b = points[lowest + 1].point.slope;
+        // The quadratic model of the slope through (a, x, b) bounds how far its minimum can lie
+        // below the best sample inside the bracket (exact in the near-critical cubic limit, a
+        // model bound elsewhere); a positive bound stops the search, a negative sample exposes
+        // a loop and enters the cell list, and an exhausted budget is an explicit failure.
+        for (std::size_t searched = 0;; ++searched) {
+            if (!(b - a > std::numeric_limits<double>::epsilon() * (1.0 + std::abs(x))))
+                throw std::runtime_error("density slope search bracket collapsed before a certificate");
+            const double curvature = 2.0 * (slope_a / ((a - x) * (a - b)) + slope_x / ((x - a) * (x - b))
+                                            + slope_b / ((b - a) * (b - x)));
+            if (slope_x - 0.5 * std::max(curvature, 0.0) * (b - a) * (b - a) > 0.0) break;
+            if (searched == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value))
+                throw std::runtime_error("density slope minimum unresolved within the search budget");
             const double u = x - a > b - x ? x - GOLDEN_SECTION * (x - a) : x + GOLDEN_SECTION * (b - x);
             const ScanPoint trial{std::exp(u), at_density(model, temperature, pressure, composition,
                 std::exp(u), evaluations, DerivativeOrder::PressureSlope), true};
             scope.probe("density_slope_search", {trial.density, trial.point.residual, trial.point.slope});
-            points.insert(std::upper_bound(points.begin(), points.end(), trial,
-                [](const ScanPoint& l, const ScanPoint& r) { return l.density < r.density; }), trial);
+            if (trial.point.slope < 0.0) {
+                points.insert(std::upper_bound(points.begin(), points.end(), trial,
+                    [](const ScanPoint& l, const ScanPoint& r) { return l.density < r.density; }), trial);
+                break;
+            }
             if (trial.point.slope < slope_x) {
+                (u < x ? slope_b : slope_a) = slope_x;
                 (u < x ? b : a) = x;
                 x = u;
                 slope_x = trial.point.slope;
             } else {
+                (u < x ? slope_a : slope_b) = trial.point.slope;
                 (u < x ? a : b) = u;
             }
         }
@@ -341,27 +359,19 @@ DensityRoot solve_density(
     std::optional<double> anchor_density
 ) {
     core::Scope scope("solve_density");
-    if (!std::isfinite(temperature) || temperature <= 0.0) {
-        throw std::invalid_argument("invalid temperature");
-    }
-    if (!std::isfinite(pressure) || pressure <= 0.0) {
-        throw std::invalid_argument("invalid pressure");
-    }
+    if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
+    if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
     const double ideal_density = pressure
         / (GAS_CONSTANT_J_PER_MOL_K * temperature);
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
     const double upper = model.molar_density_upper_bound(temperature, mole_fractions)
         * policy::DENSITY_UPPER_FRACTION.value;
-    if (!(lower > 0.0) || !(lower < upper)) {
-        throw std::runtime_error("density domain is empty");
-    }
+    if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
     if (anchor_density.has_value()) {
-        if (branch == DensityBranch::Unspecified) {
-            throw std::invalid_argument("density anchor requires explicit branch");
-        }
+        if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
         if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
             throw std::invalid_argument("invalid density anchor");
         }
@@ -380,9 +390,7 @@ DensityRoot solve_density(
         std::copy_if(roots.begin(), roots.end(), std::back_inserter(stable), [](const auto& root) {
             return std::isfinite(root.pressure_density_derivative) && root.pressure_density_derivative > 0.0;
         });
-        if (stable.empty()) {
-            throw std::runtime_error("no stable density root (count 0)");
-        }
+        if (stable.empty()) throw std::runtime_error("no stable density root (count 0)");
         std::sort(stable.begin(), stable.end(), [](const auto& left, const auto& right) {
             return left.molar_density < right.molar_density;
         });

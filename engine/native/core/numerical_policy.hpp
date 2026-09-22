@@ -123,7 +123,7 @@ inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL,
 inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
     60.0,
     Category::AlgorithmTolerance,
-    "budget; 5-8 steps from an anchor, 20-40 for a cold bracket",
+    "budget; 5-8 steps from an anchor, 20-40 for a cold bracket, and the slope-search sample cap",
 };
 
 // The coarse sweep that brackets the roots before Newton refines them. The tree

@@ -1575,13 +1575,13 @@ void properties_p2() {
         recording_support::active_test_id(), "p2-fixed-pressure", "fixed-pressure/", 9,
         "fixed-pressure density implicit derivative ladder", "delta_T");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-vapor", "loop-vapor/", 7,
+        recording_support::active_test_id(), "p2-loop-vapor", "loop-vapor/", 9,
         "declared vapor branch is the smallest stable root of a sub-cell loop", "case");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-liquid", "loop-liquid/", 7,
+        recording_support::active_test_id(), "p2-loop-liquid", "loop-liquid/", 9,
         "declared liquid branch is the largest stable root of a sub-cell loop", "case");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-ambiguous", "loop-ambiguous/", 7,
+        recording_support::active_test_id(), "p2-loop-ambiguous", "loop-ambiguous/", 9,
         "unspecified request on a resolved loop fails closed", "case");
     recording_support::expect_group(
         recording_support::active_test_id(), "p2-loop-action", "loop-action/", 2,
@@ -2174,10 +2174,20 @@ void properties_p2() {
     // fixed density, bisected to machine precision, classified by the analytic slope.
     // The 300 K state sits within 0.05 % of the liquid spinodal pressure: the liquid root lies
     // 1.1 % above the unstable one and the residual dip between them is far narrower than a cell.
-    struct LoopCase final { double temperature, pressure; };
-    const std::array<LoopCase, 7> loop_cases = {{
-        {300.0, 3916073.568}, {305.0, 4758116.154}, {306.0, 4862786.389}, {307.0, 4965901.440},
-        {308.0, 5067464.963}, {308.8, 5147500.0}, {308.9, 5157549.110}}};
+    // The eighth state is 1e-4 K below the critical point: the negative-slope dip is about 0.002 wide
+    // in log density, narrower than any fixed search width, and the pressure extrema differ by 0.021 Pa.
+    // The ninth lies 7.4 Pa above it, near the vapor-side spinodal pressure: the vapor and unstable
+    // roots are 3 mol/m3 apart (hence the denser reference grid) and the vapor root's residual
+    // tolerance band is 0.05 mol/m3 wide, where a shared cell endpoint inside the band was once
+    // reported as a third stable root. Near-tangent roots are compared at the solver's first-order
+    // accuracy tol |d rho/d r| when that exceeds 1e-7 relative, and that accuracy must stay far
+    // below the branch separation.
+    struct LoopCase final { double temperature, pressure; std::size_t reference_points; };
+    const std::array<LoopCase, 9> loop_cases = {{
+        {300.0, 3916073.568, 4000}, {305.0, 4758116.154, 4000}, {306.0, 4862786.389, 4000},
+        {307.0, 4965901.440, 4000}, {308.0, 5067464.963, 4000}, {308.8, 5147500.0, 4000},
+        {308.9, 5157549.110, 4000}, {308.9554032139963, 5163053.740696311, 4000},
+        {308.95547769995335, 5163061.1390785752, 16000}}};
     for (const auto& item : loop_cases) {
         const double reference_upper = ethane.molar_density_upper_bound(item.temperature, composition)
             * epcsaft::policy::DENSITY_UPPER_FRACTION.value;
@@ -2186,8 +2196,9 @@ void properties_p2() {
         };
         std::vector<std::pair<double, double>> references;
         double previous_density = 1000.0, previous_residual = residual_at(previous_density);
-        for (std::size_t index = 1; index <= 4000; ++index) {
-            const double density = 1000.0 * std::pow(reference_upper / 1000.0, static_cast<double>(index) / 4000.0);
+        for (std::size_t index = 1; index <= item.reference_points; ++index) {
+            const double density = 1000.0 * std::pow(reference_upper / 1000.0,
+                                                     static_cast<double>(index) / static_cast<double>(item.reference_points));
             const double residual = residual_at(density);
             if (previous_residual * residual < 0.0) {
                 double lower = previous_density, upper = density, lower_residual = previous_residual;
@@ -2217,15 +2228,20 @@ void properties_p2() {
             const auto root = epcsaft::solve_density(
                 ethane, item.temperature, item.pressure, composition, branches[side].first, std::nullopt);
             const double reference = references[side == 0 ? 0 : 2].first;
-            const bool ok = close(root.molar_density, reference, 1e-7) && root.branch == branches[side].first
+            const double accuracy = std::max(1e-7 * reference, epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
+                * root.convergence.amplification.value_or(0.0));
+            CHECK(accuracy < 1e-2 * (references[2].first - references[0].first));
+            const bool ok = std::abs(root.molar_density - reference) <= accuracy && root.branch == branches[side].first
                 && root.stable_root_count == std::optional<std::size_t>{2} && root.pressure_density_derivative > 0.0
                 && root.convergence.stop == epcsaft::core::Stop::converged;
             recording_support::compare((branches[side].second + label).c_str(), "molar_density", "mol/m3",
                 root.molar_density, reference, recording_support::fields({loop_inputs,
                     recording_support::field("stable_root_count", root.stable_root_count.value_or(0)),
-                    recording_support::field("pressure_density_derivative", root.pressure_density_derivative)}),
+                    recording_support::field("pressure_density_derivative", root.pressure_density_derivative),
+                    recording_support::field("first_order_accuracy", epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
+                        * root.convergence.amplification.value_or(0.0))}),
                 "Relationship", "independent-bisection", "declared branch selects the extreme stable root",
-                "reference_or_one", 0.0, 1e-7, ok, side == 0 ? "p2-loop-vapor" : "p2-loop-liquid",
+                "absolute", accuracy, 0.0, ok, side == 0 ? "p2-loop-vapor" : "p2-loop-liquid",
                 label.c_str(), "rho", "T,P,x,branch", "rho_branch=rho_ref", "case");
             CHECK(ok);
         }
@@ -2589,7 +2605,7 @@ void properties_thermochemistry_p3() {
         "p3-reference", "p3-reference/", 13,
         "fixed standard-state conversion and pressure invariance", "quantity");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p3-reaction", "p3-reaction/", 33,
+        "p3-reaction", "p3-reaction/", 35,
         "reaction basis and K(T) relations", "basis,quantity");
 
     for (const auto& [name, correlation] : forms) {
@@ -2885,6 +2901,34 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/m", "ln_q", "1",
                epcsaft::reaction_ln_quotient(stoichiometry, m_activity, {}, correlation),
                std::log(2.0 / 6.0), "basis=molality,m0=1 mol/kg", "p3-reaction", "m");
+    // Standard-scale identity (#84): for a solute in 1 kg of water, ln a^(m) - ln a^(x)
+    // = ln((n_s + n_w)/(n_w M_w m0)) -> -ln(M_w m0) = 4.0165 at infinite dilution, so a reaction
+    // with one net solute product (the R4/R5 pattern: solute + water -> solute + solute, water on
+    // its own mole-fraction scale) shifts its quotient by exactly that amount, a factor 55.5 in K.
+    {
+        // Species order (MEACOO-, H2O, HCO3-, MEA) with distinct solute amounts; the solvent mass comes
+        // from an independent water amount, so a wrong M_w or m0 convention would fail both rows.
+        const double water_molar_mass = 0.01801528, n_water = 40.0, standard_molality = 1.0;
+        const std::vector<double> amounts = {2.0e-6, n_water, 3.0e-6, 5.0e-6};
+        const double total = amounts[0] + amounts[1] + amounts[2] + amounts[3];
+        const auto x_scale = epcsaft::mole_fraction_activities({1.0, 1.0, 1.0, 1.0},
+            {amounts[0] / total, amounts[1] / total, amounts[2] / total, amounts[3] / total}, "P0");
+        const auto solutes = epcsaft::molality_activities({1.0, 1.0, 1.0, 1.0}, amounts,
+            n_water * water_molar_mass, standard_molality, "P0");
+        // Water stays on its own mole-fraction scale in the molality-basis set, as the source rows state.
+        const auto m_scale = epcsaft::direct_activities(
+            {solutes.values[0], x_scale.values[1], solutes.values[2], solutes.values[3]}, "P0");
+        const std::vector<double> r4_pattern = {-1.0, -1.0, 1.0, 1.0};
+        const double expected = std::log(total / (n_water * water_molar_mass * standard_molality));
+        p3_compare("p3-reaction/molality-scale-solute", "ln_a_m_minus_ln_a_x", "1",
+                   std::log(m_scale.values[2]) - std::log(x_scale.values[2]), expected,
+                   "n_w=40 mol water, n_s=3e-6 mol", "p3-reaction", "molality-scale-solute");
+        p3_compare("p3-reaction/molality-scale-r4", "ln_q_m_minus_ln_q_x", "1",
+                   epcsaft::reaction_ln_quotient(r4_pattern, m_scale, {}, correlation)
+                       - epcsaft::reaction_ln_quotient(r4_pattern, x_scale, {}, correlation),
+                   expected, "R4 pattern, sum nu_solute = +1, quotient owner", "p3-reaction", "molality-scale-r4");
+        CHECK(std::abs(expected - 4.016535) < 1.0e-5);
+    }
     const auto neutral = epcsaft::direct_activities({1.0, 1.0}, "P0");
     p3_compare("p3-reaction/neutral-ionic", "ln_q", "1",
                epcsaft::reaction_ln_quotient(stoichiometry, neutral, {1, 1}, correlation),
@@ -4263,8 +4307,8 @@ int main(int argc, char** argv) {
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
-        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:7,loop-liquid/*:7,loop-ambiguous/*:7,loop-action/*:2"}, properties_p2, "P2"},
-        {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:33"}, properties_thermochemistry_p3, "P3"},
+        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:9,loop-liquid/*:9,loop-ambiguous/*:9,loop-action/*:2"}, properties_p2, "P2"},
+        {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:148"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
         {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},

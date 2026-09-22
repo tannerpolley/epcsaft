@@ -844,7 +844,29 @@ EquilibriumResult run_driver(
                                      compositions[phase].begin(), compositions[phase].end());
     }
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
-    result.constraint_multipliers = nlp->constraint_multipliers();
+    // Extensive-objective constraint multipliers at the returned (polished) point, from the row
+    // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
+    // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
+    // objective and the material rows are degree-one homogeneous in that phase's amounts, so
+    // stationarity in its free amount already covers the normalization direction. The raw
+    // optimizer values stay a trace probe.
+    scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
+    if (compiled.pinned_count == 0) {
+        result.constraint_multipliers.clear();
+        std::size_t electro = 0;
+        for (const auto& row : compiled.rows) {
+            if (row.kind == RowKind::Moiety) {
+                result.constraint_multipliers.push_back(-compiled.feed_total * full[compiled.primal_size + row.index]);
+            } else if (row.kind == RowKind::Electro) {
+                result.constraint_multipliers.push_back(
+                    -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
+            } else if (row.kind != RowKind::Chemical && row.kind != RowKind::Pressure) {
+                result.constraint_multipliers.push_back(0.0);
+            }
+        }
+    } else {
+        result.constraint_multipliers = nlp->constraint_multipliers();
+    }
     result.coordinates = full;
     std::vector<double> primal_point(
         full.begin(), full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));

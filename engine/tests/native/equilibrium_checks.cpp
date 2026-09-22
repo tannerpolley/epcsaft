@@ -885,6 +885,9 @@ void check_c1_multiplier_scale() {
         recording_support::field("small_kkt_scale", small_kkt_scale),
         recording_support::field("large_kkt_scale", large_kkt_scale),
     });
+    // Since the #87 correction the returned constraint multipliers are formed at the returned point
+    // from the row multipliers, so these rows verify that reconstruction's KKT residual and feed
+    // scaling, no longer the optimizer's own duals.
     recording_support::compare(
         "c1-multiplier-scale/kkt-small", "kkt_residual", "1", small_kkt_residual, 0.0,
         kkt_inputs, "Relationship", "KKT", "small-feed returned multipliers satisfy KKT",
