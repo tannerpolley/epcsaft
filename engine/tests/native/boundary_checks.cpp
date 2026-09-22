@@ -135,6 +135,27 @@ void check_s4() {
 }
 
 void check_s5() {
+    // A TP start must satisfy the feed balance before the general driver iterates.
+    epcsaft::HelmholtzModel binary(properties_support::neutral_binary());
+    auto flash = equilibrium_support::flash(2);
+    flash.phases = {equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
+                    equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid)};
+    flash.temperature.value = 180.0;
+    flash.pressure.value = 1.0e6;
+    flash.feed.values = {5.0, 5.0};
+    const auto compiled = epcsaft::equilibrium::compile_problem(binary, flash);
+    const auto seeded = compiled.prepare(epcsaft::equilibrium::boundary_start(compiled));
+    CHECK(seeded.amount[0] > 0.0 && seeded.amount[1] > 0.0);
+    for (std::size_t i = 0; i < 2; ++i) {
+        CHECK(std::abs(seeded.amount[0] * seeded.composition[0][i]
+                     + seeded.amount[1] * seeded.composition[1][i] - 5.0) < 1.0e-12);
+        CHECK(std::abs(seeded.composition[i][0] + seeded.composition[i][1] - 1.0) < 1.0e-12);
+    }
+    // A nonbracketed K estimate retains the original equal-amount fallback.
+    flash.feed.values = {9.99, 0.01};
+    const auto edge = epcsaft::equilibrium::compile_problem(binary, flash);
+    const auto fallback = edge.prepare(epcsaft::equilibrium::boundary_start(edge));
+    CHECK(fallback.amount[0] == 5.0 && fallback.amount[1] == 5.0);
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
     problem.phases = {equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
