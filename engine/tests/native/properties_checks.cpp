@@ -3002,10 +3002,10 @@ void properties_thermochemistry_p3() {
         "standard-state-identity", "density conversion retains the caller's exact target identity",
         "absolute", density_identity, "p3-reaction", "density-identity");
 
-    const auto converted_reaction = epcsaft::reaction_standard_state_conversion(
-        reaction, stoichiometry, {1000.0, 3000.0}, {500.0, 1000.0},
-        {1200.0, 3400.0}, {700.0, 1000.0}, "Q", 350.0
-    );
+    // Old-minus-new species standards at T0 = 350 K: Delta g = {500, 2000} and Delta h = {500, 2400}
+    // J/mol give Delta s = (Delta h - Delta g)/T0; no heat-capacity difference is the constant shift.
+    const auto converted_reaction = epcsaft::evaluate_reaction_properties(epcsaft::reaction_standard_state_shift(
+        correlation, stoichiometry, {500.0, 2400.0}, {0.0, 400.0 / 350.0}, {0.0, 0.0}, {0.0, 0.0}, 350.0, "Q"), 350.0);
     const double gibbs_shift = -1500.0;
     p3_compare("p3-reaction/std-ln", "ln_k_standard", "1", converted_reaction.ln_k,
                reaction.ln_k + gibbs_shift / (R * 350.0), "P0 to Q",

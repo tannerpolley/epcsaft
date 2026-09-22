@@ -1456,6 +1456,25 @@ $$
 \ln K_c=\ln K_b+\frac{1}{RT}\sum_i\nu_i\left(\mu_i^{\circ,b}-\mu_i^{\circ,c}\right).
 $$
 
+## `reaction_standard_state_polynomial_image`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Integration of $\Delta c_p(T)=\Delta c_{p,0}+\Delta c_p'(T-T_0)$ into Eq.~`reaction_standard_state_conversion`; owner decision 2026-09-21 (#84)
+- Description: A standard-state change whose old-minus-new reaction enthalpy, entropy, heat capacity and heat-capacity slope are known at $T_0$ shifts $\ln K$ by a member of the `reaction_constant_ln_polynomial` family, so one correlation form carries the change exactly through every temperature derivative. Zero heat-capacity terms give the constant-enthalpy shift.
+- Change note: Its implementation replaces the former constant-enthalpy point-conversion routine; the general identity in `reaction_standard_state_conversion` remains its source. The reference-state pressure path is not part of this identity; a fixed-pressure or system-pressure reference chain contributes separately.
+
+$$
+\frac{\Delta g(T)}{RT}=\frac{C_0}{T}+C_1+C_2\ln\frac{T}{T_0}+C_3T,\qquad
+C_0=\frac{\Delta h_0-\Delta c_{p,0}T_0+\tfrac12\Delta c_p'T_0^2}{R},\quad
+C_1=\frac{\Delta c_{p,0}-\Delta s_0}{R},\quad
+C_2=\frac{\Delta c_p'T_0-\Delta c_{p,0}}{R},\quad
+C_3=-\frac{\Delta c_p'}{2R},\\
+\delta L'=-\frac{\Delta h(T)}{RT^2},\qquad
+\delta L''=\frac{2\Delta h(T)}{RT^3}-\frac{\Delta c_p(T)}{RT^2},\qquad
+\delta L'''=-\frac{6\Delta h(T)}{RT^4}+\frac{4\Delta c_p(T)}{RT^3}-\frac{\Delta c_p'}{RT^2}.
+$$
+
 ## `reaction_constant_ln_polynomial`
 
 - Section: Equilibrium / Reaction standard states

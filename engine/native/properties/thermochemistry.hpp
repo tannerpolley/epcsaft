@@ -122,15 +122,17 @@ ReactionProperties reaction_pressure_to_density(
     const ReactionProperties&, const std::vector<double>& stoichiometry,
     const std::string& density_standard_state_id, double temperature, double pressure, double density
 );
-// Constant-enthalpy reference shift: the derivative corrections assume the old/new
-// standard-state enthalpy difference is temperature independent (no heat-capacity shift).
-ReactionProperties reaction_standard_state_conversion(
-    const ReactionProperties&, const std::vector<double>& stoichiometry,
-    const std::vector<double>& old_standard_gibbs_j_per_mol,
-    const std::vector<double>& new_standard_gibbs_j_per_mol,
-    const std::vector<double>& old_standard_enthalpy_j_per_mol,
-    const std::vector<double>& new_standard_enthalpy_j_per_mol,
-    const std::string& new_standard_state_id, double temperature
+// Exact polynomial image of a standard-state change. Per species, old-minus-new standard
+// enthalpy, entropy, heat capacity and heat-capacity slope at T0 give
+// Delta g(T)/(RT) = C0/T + C1 + C2 ln(T/T0) + C3 T, which lands in the same ln K family;
+// zero heat-capacity terms reproduce the constant-enthalpy shift exactly.
+ReactionLogPolynomial reaction_standard_state_shift(
+    const ReactionLogPolynomial&, const std::vector<double>& stoichiometry,
+    const std::vector<double>& delta_enthalpy_j_per_mol,
+    const std::vector<double>& delta_entropy_j_per_mol_k,
+    const std::vector<double>& delta_heat_capacity_j_per_mol_k,
+    const std::vector<double>& delta_heat_capacity_slope_j_per_mol_k2,
+    double reference_temperature, const std::string& new_standard_state_id
 );
 
 }  // namespace epcsaft
