@@ -1575,17 +1575,20 @@ void properties_p2() {
         recording_support::active_test_id(), "p2-fixed-pressure", "fixed-pressure/", 9,
         "fixed-pressure density implicit derivative ladder", "delta_T");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-vapor", "loop-vapor/", 9,
+        recording_support::active_test_id(), "p2-loop-vapor", "loop-vapor/", 13,
         "declared vapor branch is the smallest stable root of a sub-cell loop", "case");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-liquid", "loop-liquid/", 9,
+        recording_support::active_test_id(), "p2-loop-liquid", "loop-liquid/", 13,
         "declared liquid branch is the largest stable root of a sub-cell loop", "case");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-loop-ambiguous", "loop-ambiguous/", 9,
+        recording_support::active_test_id(), "p2-loop-ambiguous", "loop-ambiguous/", 13,
         "unspecified request on a resolved loop fails closed", "case");
     recording_support::expect_group(
         recording_support::active_test_id(), "p2-loop-action", "loop-action/", 2,
         "pressure-chart density action on the selected loop branch", "branch");
+    recording_support::expect_group(
+        recording_support::active_test_id(), "p2-fold-resolution", "fold-resolution/", 1,
+        "a pressure at a mechanical fold is explicitly unresolved", "case");
 
     const auto associating_parameters = properties_support::associating_binary();
     epcsaft::HelmholtzModel associating(associating_parameters);
@@ -2182,22 +2185,33 @@ void properties_p2() {
     // reported as a third stable root. Near-tangent roots are compared at the solver's first-order
     // accuracy tol |d rho/d r| when that exceeds 1e-7 relative, and that accuracy must stay far
     // below the branch separation.
-    struct LoopCase final { double temperature, pressure; std::size_t reference_points; };
-    const std::array<LoopCase, 9> loop_cases = {{
+    // The final three inputs put the liquid root exactly on the former scan grid and one
+    // pressure ULP on either side. A grid coincidence must not erase or duplicate a branch.
+    struct LoopCase final {
+        double temperature, pressure; std::size_t reference_points; const char* suffix = "";
+        double reference_lower = 1000.0, reference_upper = 0.0;
+    };
+    const std::array<LoopCase, 13> loop_cases = {{
         {300.0, 3916073.568, 4000}, {305.0, 4758116.154, 4000}, {306.0, 4862786.389, 4000},
         {307.0, 4965901.440, 4000}, {308.0, 5067464.963, 4000}, {308.8, 5147500.0, 4000},
         {308.9, 5157549.110, 4000}, {308.9554032139963, 5163053.740696311, 4000},
-        {308.95547769995335, 5163061.1390785752, 16000}}};
+        {308.95547769995335, 5163061.1390785752, 16000},
+        {308.0, 5057915.461281232, 4000, "/grid"},
+        {308.0, std::nextafter(5057915.461281232, 0.0), 4000, "/grid-below"},
+        {308.0, std::nextafter(5057915.461281232, 1e7), 4000, "/grid-above"},
+        // Residual-only stopping overshot its local sensitivity radius on the liquid branch.
+        {308.9554732140194, 5163060.690898801, 1000, "/radius", 6380.0, 6400.0}}};
     for (const auto& item : loop_cases) {
-        const double reference_upper = ethane.molar_density_upper_bound(item.temperature, composition)
-            * epcsaft::policy::DENSITY_UPPER_FRACTION.value;
+        const double reference_upper = item.reference_upper > 0.0 ? item.reference_upper
+            : ethane.molar_density_upper_bound(item.temperature, composition)
+                * epcsaft::policy::DENSITY_UPPER_FRACTION.value;
         const auto residual_at = [&](double density) {
             return ethane.state(item.temperature, density, composition).pressure - item.pressure;
         };
         std::vector<std::pair<double, double>> references;
-        double previous_density = 1000.0, previous_residual = residual_at(previous_density);
+        double previous_density = item.reference_lower, previous_residual = residual_at(previous_density);
         for (std::size_t index = 1; index <= item.reference_points; ++index) {
-            const double density = 1000.0 * std::pow(reference_upper / 1000.0,
+            const double density = item.reference_lower * std::pow(reference_upper / item.reference_lower,
                                                      static_cast<double>(index) / static_cast<double>(item.reference_points));
             const double residual = residual_at(density);
             if (previous_residual * residual < 0.0) {
@@ -2214,7 +2228,7 @@ void properties_p2() {
         }
         CHECK(references.size() == 3 && references[0].second > 0.0 && references[1].second < 0.0
               && references[2].second > 0.0);
-        const std::string label = std::to_string(item.temperature);
+        const std::string label = std::to_string(item.temperature) + item.suffix;
         const auto loop_inputs = recording_support::fields({
             recording_support::field("T", item.temperature), recording_support::field("P_star", item.pressure),
             recording_support::field("reference_vapor", references[0].first),
@@ -2273,6 +2287,34 @@ void properties_p2() {
             CHECK(ok);
         }
     }
+    // Independently locate the vapor-side fold at 308 K from its analytic fixed-density slope.
+    // A pressure indistinguishable from this maximum cannot certify two nonsingular branches.
+    double fold_lower = 5000.0, fold_upper = 6400.0;
+    CHECK(ethane.state(308.0, fold_lower, composition).pressure_density_derivative > 0.0);
+    CHECK(ethane.state(308.0, fold_upper, composition).pressure_density_derivative < 0.0);
+    for (std::size_t i = 0; i < 80; ++i) {
+        const double middle = 0.5 * (fold_lower + fold_upper);
+        if (ethane.state(308.0, middle, composition).pressure_density_derivative > 0.0)
+            fold_lower = middle;
+        else fold_upper = middle;
+    }
+    const auto fold = ethane.state(308.0, 0.5 * (fold_lower + fold_upper), composition);
+    CHECK(std::abs(fold.pressure_density_derivative) < 1e-8);
+    bool unresolved = false;
+    try {
+        (void)epcsaft::solve_density(ethane, 308.0, fold.pressure, composition,
+                                    epcsaft::DensityBranch::Vapor, std::nullopt);
+    } catch (const std::runtime_error& error) {
+        unresolved = std::string(error.what()).find("unresolved at spinodal") != std::string::npos;
+    }
+    recording_support::compare_custom("fold-resolution/vapor", "unresolved", "bool",
+        unresolved ? 1.0 : 0.0, 1.0, recording_support::fields({
+            recording_support::field("T", 308.0), recording_support::field("P_star", fold.pressure),
+            recording_support::field("fold_density", fold.molar_density),
+            recording_support::field("pressure_density_derivative", fold.pressure_density_derivative)}),
+        "Availability", "independent-slope-bisection", "a mechanical fold is not a resolved stable branch",
+        "absolute", unresolved, "p2-fold-resolution", "vapor", "unresolved", "T,P,x", "P_rho=0", "case");
+    CHECK(unresolved);
 }
 
 void cache_invariance() {
@@ -2907,7 +2949,7 @@ void properties_thermochemistry_p3() {
     // its own mole-fraction scale) shifts its quotient by exactly that amount, a factor 55.5 in K.
     {
         // Species order (MEACOO-, H2O, HCO3-, MEA) with distinct solute amounts; the solvent mass comes
-        // from an independent water amount, so a wrong M_w or m0 convention would fail both rows.
+        // from the water amount. The separate infinite-dilution value check below pins M_w m0.
         const double water_molar_mass = 0.01801528, n_water = 40.0, standard_molality = 1.0;
         const std::vector<double> amounts = {2.0e-6, n_water, 3.0e-6, 5.0e-6};
         const double total = amounts[0] + amounts[1] + amounts[2] + amounts[3];
@@ -3274,8 +3316,12 @@ double p4_pressure_reference(
         const double closure = std::abs(shifted_state.pressure - signed_pressure) / signed_pressure;
         minimum_slope = std::min(minimum_slope, shifted_state.pressure_density_derivative);
         maximum_closure = std::max(maximum_closure, closure);
+        // Density closure is owned in reduced units; relative pressure error is amplified by 1/Z.
+        const double reduced_closure = std::abs(shifted_state.pressure - signed_pressure)
+            / (shifted_state.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * signed_temperature);
         CHECK(std::isfinite(shifted_state.pressure_density_derivative)
-            && shifted_state.pressure_density_derivative > 0.0 && closure <= 1.0e-11);
+            && shifted_state.pressure_density_derivative > 0.0
+            && reduced_closure <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value);
         CHECK(shifted_state.density_branch == central.density_branch
             && shifted_state.stable_root_count == central.stable_root_count
             && shifted_signature == central_signature);
@@ -4307,7 +4353,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
-        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:9,loop-liquid/*:9,loop-ambiguous/*:9,loop-action/*:2"}, properties_p2, "P2"},
+        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:148"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},

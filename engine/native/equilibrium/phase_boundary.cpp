@@ -359,14 +359,16 @@ std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
     return std::nullopt;
 }
 
+}  // namespace
+
 // Corrected-phase branch identity: the corrected density and the anchored locally unique
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
-Attempt admit_branches(
+BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope
 ) {
-    Attempt outcome;
+    BranchCheck outcome;
     const PhasePoint prepared = compiled.prepare(result.coordinates);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
@@ -385,7 +387,6 @@ Attempt admit_branches(
             }
             root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
         } catch (const std::exception& error) {
-            outcome.stop = ContinuationStop::branch_lost;
             outcome.message = "phase " + spec.name + " has no locally unique anchored root: " + error.what();
             return outcome;
         }
@@ -403,7 +404,6 @@ Attempt admit_branches(
             && displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value
             && selected_displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;
         if (!ok) {
-            outcome.stop = ContinuationStop::branch_lost;
             outcome.terminal = true;
             outcome.message = "phase " + spec.name + " corrected density left the anchored branch window";
             return outcome;
@@ -412,6 +412,8 @@ Attempt admit_branches(
     outcome.accepted = true;
     return outcome;
 }
+
+namespace {
 
 ContinuationStop stop_of(const EquilibriumResult& result, bool& terminal) {
     if (result.topology_event == TopologyEvent::PhaseDisappeared) { terminal = true; return ContinuationStop::phase_disappeared; }
@@ -456,8 +458,11 @@ Attempt admit_result(
         outcome.result = std::move(result);
         return outcome;
     }
-    outcome = admit_branches(model, compiled, result, anchors, initial, scope);
-    outcome.convergence = result.convergence;
+    const auto branches = check_density_branches(model, compiled, result, anchors, initial, scope);
+    outcome.accepted = branches.accepted;
+    outcome.terminal = branches.terminal;
+    outcome.message = branches.message;
+    if (!branches.accepted) outcome.stop = ContinuationStop::branch_lost;
     outcome.result = std::move(result);
     return outcome;
 }
@@ -553,7 +558,9 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             }
             admitted = admit_result(model, start, supplied, anchors, true, initial);
         } else {
-            admitted = admit_result(model, start, solve_equilibrium(model, request.start_problem), anchors, true, initial);
+            admitted = admit_result(model, start,
+                solve_equilibrium_from_coordinates(model, request.start_problem, boundary_start(start)),
+                anchors, true, initial);
         }
         initial.probe("accepted", admitted.accepted ? 1.0 : 0.0);
         initial.probe(continuation_stop_name(admitted.accepted ? ContinuationStop::reached_target : admitted.stop), 1.0);

@@ -79,22 +79,27 @@ DensityRoot publish_root(
 }
 
 // Safeguarded Newton from a cell endpoint inside [lower, upper]; lower_residual carries the
-// sign at the lower end so the bracket keeps shrinking around one crossing. The endpoint is
-// never the crossing, so only an iterate the loop produced can be declared converged.
+// sign at the lower end so the bracket keeps shrinking around one crossing. The caller
+// isolates a mechanically stable interval, or supplies an exact scan-node root.
 DensityRoot refine(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, double lower, double upper, double lower_residual,
     double density, PressurePoint point, core::Scope& parent_scope, std::size_t& evaluations
 ) {
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
+    const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
     core::ResidualHistory history;
     history.push(std::abs(point.residual));
     std::size_t iterations = 0;
     for (; iterations < maximum; ++iterations) {
-        if (iterations != 0 && std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value) break;
         const double derivative = residual_derivative(point, density, pressure, temperature);
-        double candidate = density;
-        if (std::isfinite(derivative) && derivative != 0.0) {
+        const bool residual_met = std::abs(point.residual) <= tolerance;
+        if (point.residual == 0.0 || (residual_met && std::isfinite(derivative) && derivative != 0.0
+            && (upper - lower) * std::abs(derivative) <= tolerance)) break;
+        // Once the pressure residual passes, bisect until the bracket witnesses the
+        // tolerance/amplification radius; Newton alone can leave the other end far away.
+        double candidate = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
+        if (!residual_met && std::isfinite(derivative) && derivative != 0.0) {
             candidate = density - point.residual / derivative;
         }
         if (!(candidate > lower && candidate < upper) || !std::isfinite(candidate)) {
@@ -119,6 +124,7 @@ DensityRoot refine(
     const double derivative = residual_derivative(
         point, density, pressure, temperature
     );
+    parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
     core::Convergence record{
         std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
         point.gradient_floor / density,
@@ -129,6 +135,8 @@ DensityRoot refine(
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
+    if (iterations == maximum && record.stop != core::Stop::nonfinite)
+        record.stop = core::Stop::budget_exhausted;
     const auto root = publish_root(
         density, point.pressure - pressure, point.slope, iterations + 1, std::nullopt,
         DensityBranch::Unspecified, record, iterations == maximum
@@ -141,68 +149,56 @@ DensityRoot refine(
     return root;
 }
 
-// One scan cell. A sign change is refined from both ends: safeguarded Newton from the vapor
-// end lands on the smallest crossing (the reduced residual is concave there) and from the
-// liquid end on the largest (convex there away from the spinodal), so a loop narrower than
-// the cell still yields both stable branches. A same-sign cell whose slope changes sign
-// hides an extremum that is bisected and refined on both halves. One loop per cell.
+// Once the single mechanical loop is exposed, each cell contains at most one fold.
+// Isolate its positive-slope interval before refining one strict pressure crossing.
+// Exact scan-node roots belong to scan_roots, not to either adjacent cell.
 void scan_cell(
     const HelmholtzModel& model, double temperature, double pressure,
-    const std::vector<double>& composition, double lower, const PressurePoint& low,
-    double upper, const PressurePoint& high, core::Scope& scope, std::size_t& evaluations,
+    const std::vector<double>& composition, double lower, PressurePoint low,
+    double upper, PressurePoint high, core::Scope& scope, std::size_t& evaluations,
     std::vector<DensityRoot>& roots
 ) {
-    if (low.residual * high.residual <= 0.0) {
-        scope.probe("density_bracket", {lower, upper, low.residual, high.residual});
-        const auto left = refine(model, temperature, pressure, composition, lower, upper,
-                                 low.residual, lower, low, scope, evaluations);
-        const auto right = refine(model, temperature, pressure, composition, lower, upper,
-                                  low.residual, upper, high, scope, evaluations);
-        // Two converged refinements name one root when they agree within the sum of
-        // their first-order radii tol * |d rho / d residual| (merge-biased by design).
-        const double coincidence = policy::DENSITY_ROOT_RESIDUAL.value
-            * (left.convergence.amplification.value_or(0.0)
-               + right.convergence.amplification.value_or(0.0));
-        if (std::abs(right.molar_density - left.molar_density) > coincidence) {
-            roots.push_back(left);
-            roots.push_back(right);
-        } else {
-            roots.push_back(right.convergence.residual < left.convergence.residual ? right : left);
+    if (low.slope <= 0.0 && high.slope <= 0.0) return;
+    if ((low.slope > 0.0) != (high.slope > 0.0)) {
+        const bool stable_left = low.slope > 0.0;
+        double a = lower, b = upper;
+        PressurePoint pa = low, pb = high;
+        for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
+                 && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
+            const double density = a + policy::DENSITY_BISECTION_FRACTION.value * (b - a);
+            if (!(density > a && density < b)) break;
+            const auto point = at_density(model, temperature, pressure, composition, density,
+                                          evaluations, DerivativeOrder::PressureSlope);
+            scope.probe("density_spinodal", {density, point.residual, point.slope});
+            if ((pa.slope > 0.0) == (point.slope > 0.0)) { a = density; pa = point; }
+            else { b = density; pb = point; }
         }
-        return;
+        if (pa.slope != 0.0 && pb.slope != 0.0 && std::nextafter(a, b) < b)
+            throw std::runtime_error("density spinodal unresolved within the search budget");
+        const bool use_a = pa.slope == 0.0 || (pb.slope != 0.0 && stable_left);
+        const double density = use_a ? a : b;
+        const auto point = use_a ? pa : pb;
+        if (std::abs(point.residual) <= policy::DENSITY_ROOT_RESIDUAL.value)
+            throw std::runtime_error("density branch unresolved at spinodal pressure within residual tolerance");
+        if (stable_left) { upper = density; high = point; }
+        else { lower = density; low = point; }
     }
-    if (!(low.slope * high.slope < 0.0)) return;
-    // Bisect the spinodal's slope sign until the residual there changes sign (a hidden pair) or
-    // no crossing is possible: across one spinodal |r| cannot fall by more than max|dr/drho|(b-a).
-    double a = lower, b = upper, density = lower;
-    PressurePoint pa = low, pb = high, point = low;
-    for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
-             && !(low.residual * point.residual < 0.0); ++i) {
-        const double reach = (b - a) * std::max(std::abs(residual_derivative(pa, a, pressure, temperature)),
-                                                std::abs(residual_derivative(pb, b, pressure, temperature)));
-        if (std::min(std::abs(pa.residual), std::abs(pb.residual)) > reach) return;
-        density = std::sqrt(a * b);
-        point = at_density(model, temperature, pressure, composition, density, evaluations,
-                           DerivativeOrder::PressureSlope);
-        scope.probe("density_spinodal", {density, point.residual, point.slope});
-        (pa.slope * point.slope <= 0.0 ? b : a) = density;
-        (pa.slope * point.slope <= 0.0 ? pb : pa) = point;
+    if (low.residual < 0.0 && high.residual > 0.0) {
+        scope.probe("density_bracket", {lower, upper, low.residual, high.residual});
+        const bool from_lower = std::abs(low.residual) < std::abs(high.residual);
+        roots.push_back(refine(model, temperature, pressure, composition, lower, upper,
+            low.residual, from_lower ? lower : upper, from_lower ? low : high, scope, evaluations));
     }
-    if (!(low.residual * point.residual < 0.0)) return;
-    scan_cell(model, temperature, pressure, composition, lower, low, density, point, scope,
-              evaluations, roots);
-    scan_cell(model, temperature, pressure, composition, density, point, upper, high, scope,
-              evaluations, roots);
 }
 
-// linked: the cell ending at this point has no skipped or exactly-zero predecessor.
+// linked: the cell ending at this point has no skipped predecessor.
 struct ScanPoint final { double density; PressurePoint point; bool linked; };
 
 // Deterministic log-density grid, then the cells. A loop with positive slopes at both ends
 // of its cell is invisible to the cells; with one mechanical loop P_rho has one interior
 // minimum, so a positive grid minimum of the slope is bracketed and searched by golden
 // section in log density until a negative slope exposes the loop or the quadratic slope model
-// bounds its minimum positive; every other sample stays out of the cell list.
+// estimates its minimum positive; this finite search is not a completeness certificate.
 std::vector<DensityRoot> scan_roots(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, double log_lower, double log_upper,
@@ -223,24 +219,23 @@ std::vector<DensityRoot> scan_roots(
         }
         scope.probe("density_scan_point", {density, points.back().point.residual,
                     points.back().point.slope}, static_cast<std::uint32_t>(index));
-        linked = points.back().point.residual != 0.0;
+        linked = true;
     }
     std::size_t lowest = 0;
     for (std::size_t i = 1; i + 1 < points.size(); ++i) {
         if (points[i].linked && points[i + 1].linked
+            && points[i].point.slope <= std::min(points[i - 1].point.slope, points[i + 1].point.slope)
             && (lowest == 0 || points[i].point.slope < points[lowest].point.slope)) lowest = i;
     }
     if (lowest != 0 && points[lowest].point.slope > 0.0) {
         double a = std::log(points[lowest - 1].density), b = std::log(points[lowest + 1].density);
         double x = std::log(points[lowest].density), slope_x = points[lowest].point.slope;
         double slope_a = points[lowest - 1].point.slope, slope_b = points[lowest + 1].point.slope;
-        // The quadratic model of the slope through (a, x, b) bounds how far its minimum can lie
-        // below the best sample inside the bracket (exact in the near-critical cubic limit, a
-        // model bound elsewhere); a positive bound stops the search, a negative sample exposes
-        // a loop and enters the cell list, and an exhausted budget is an explicit failure.
+        // A positive lower bound for the interpolating quadratic stops this model-based search.
+        // It is not a bound on unsampled EOS curvature, even near criticality in log density.
         for (std::size_t searched = 0;; ++searched) {
             if (!(b - a > std::numeric_limits<double>::epsilon() * (1.0 + std::abs(x))))
-                throw std::runtime_error("density slope search bracket collapsed before a certificate");
+                throw std::runtime_error("density slope search bracket collapsed before resolution");
             const double curvature = 2.0 * (slope_a / ((a - x) * (a - b)) + slope_x / ((x - a) * (x - b))
                                             + slope_b / ((b - a) * (b - x)));
             if (slope_x - 0.5 * std::max(curvature, 0.0) * (b - a) * (b - a) > 0.0) break;
@@ -267,8 +262,12 @@ std::vector<DensityRoot> scan_roots(
         }
     }
     std::vector<DensityRoot> roots;
-    for (std::size_t i = 1; i < points.size(); ++i) {
-        if (points[i].linked) {
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        const auto& node = points[i];
+        if (node.point.residual == 0.0 && node.point.slope > 0.0)
+            roots.push_back(refine(model, temperature, pressure, composition, node.density,
+                node.density, 0.0, node.density, node.point, scope, evaluations));
+        if (i != 0 && points[i].linked) {
             scan_cell(model, temperature, pressure, composition, points[i - 1].density,
                       points[i - 1].point, points[i].density, points[i].point, scope, evaluations,
                       roots);

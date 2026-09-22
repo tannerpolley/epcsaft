@@ -320,16 +320,22 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
 
 
 @pytest.mark.parametrize(
-    ("phase", "reference_density"),
-    [("vapor", 5930.399614704038), ("liquid", 6828.295025027434)],
+    ("temperature", "pressure", "phase", "reference_density"),
+    [(308.8, 5147500.0, "vapor", 5930.399614704038),
+     (308.8, 5147500.0, "liquid", 6828.295025027434),
+     (308.0, 5057915.461281232, "vapor", 5124.770478882947),
+     (308.0, 5057915.461281232, "liquid", 7160.554342626920)],
 )
-def test_pressure_branch_selects_sub_cell_loop_root(evidence: Any, phase: str, reference_density: float) -> None:
+def test_pressure_branch_selects_sub_cell_loop_root(
+    evidence: Any, temperature: float, pressure: float, phase: str, reference_density: float,
+) -> None:
     """#89: pure ethane at 308.8 K / 5147500 Pa has two stable roots 0.14 apart in log density,
     inside one 40-cell scan interval. References are the retained independent fixed-density
-    bisection roots of analyses/2026-density-closure-diagnosis/results/root-controls.csv."""
+    bisection roots of analyses/2026-density-closure-diagnosis/results/root-controls.csv.
+    At 308 K the liquid root coincides with a scan node; the independent fixed-density
+    bisection roots still require two distinct branches, regardless of that coincidence."""
     packet = parameters_json("gross-2001-methane-ethane", 2)
     model = Pure(Parameters.from_json(packet, components=("ethane",)))
-    temperature, pressure = 308.8, 5147500.0
     state = model.state(temperature, P=pressure, phase=phase)
     evidence.compare(
         f"loop_branch_{phase}", quantity="molar_density", model=float(state.molar_density),

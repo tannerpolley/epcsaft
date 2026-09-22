@@ -336,9 +336,16 @@ void check_f5_f6() {
     }
     free_t.temperature = FreeValue::variable(170.0);
     const auto below = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
-    CHECK(truth("r1-f5/bubble_temperature_from_below", "a cold guess below the answer is a typed topology event, a domain limit of the route",
-                below.status == ObservationStatus::TopologyEvent && !below.value.has_value(),
-                fields({field("status", observation_status_name(below.status)), field("T_guess", 170.0)}), "r1-f5"));
+    if (below.status == ObservationStatus::Available) {
+        CHECK(agree("r1-f5/bubble_temperature_from_below", "temperature", "K", *below.value, 180.0, 1e-6, 0.0,
+                    field("T_guess", 170.0), "an available cold result recovers the declared bubble state", "r1-f5"));
+    } else {
+        CHECK(truth("r1-f5/bubble_temperature_from_below", "an unrecovered cold start retains its cause and no value",
+                    (below.status == ObservationStatus::TopologyEvent
+                        || below.status == ObservationStatus::CentralSolveUnavailable) && !below.value.has_value(),
+                    fields({field("status", observation_status_name(below.status)), field("message", below.message),
+                            field("T_guess", 170.0)}), "r1-f5"));
+    }
     auto dew = bubble;
     dew.phases[0].amount = AmountSpec::pinned(0.0);
     dew.phases[1].amount = AmountSpec::free();

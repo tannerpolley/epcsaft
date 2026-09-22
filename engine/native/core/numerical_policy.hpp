@@ -123,7 +123,7 @@ inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL,
 inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
     60.0,
     Category::AlgorithmTolerance,
-    "budget; 5-8 steps from an anchor, 20-40 for a cold bracket, and the slope-search sample cap",
+    "budget for each root refinement, spinodal bisection and slope-minimum search",
 };
 
 // The coarse sweep that brackets the roots before Newton refines them. The tree
@@ -133,7 +133,7 @@ inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
 inline constexpr Tolerance DENSITY_BRACKET_INTERVALS{"DENSITY_BRACKET_INTERVALS",
     40.0,
     Category::AlgorithmTolerance,
-    "coarse bracket over log volume; refined by Newton, not by subdivision",
+    "coarse log-density scan; slope zeros separate stable brackets before safeguarded Newton",
 };
 
 inline constexpr Tolerance DENSITY_LOWER_FRACTION{"DENSITY_LOWER_FRACTION",

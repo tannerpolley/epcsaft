@@ -154,7 +154,7 @@ int main() {
     rows("flash/amounts", "mol", split.amounts);
     rows("flash/mole_fractions", "1", split.mole_fractions);
     rows("flash/multipliers", "1", split.multipliers);  // reduced-energy balance coordinates
-    rows("flash/constraint_multipliers", "1", split.constraint_multipliers);  // optimizer duals, rows order
+    rows("flash/constraint_multipliers", "1", split.constraint_multipliers);  // extensive-objective duals at returned state
     expect(split.molar_densities[0] > split.molar_densities[1], "the declared liquid is the dense phase and the declared vapor the dilute one");
     double balance = std::abs(split.amounts[0] + split.amounts[1] - 1.0);
     for (std::size_t i = 0; i < 2; ++i) balance = std::max(balance, std::abs(split.amounts[0] * split.mole_fractions[i] + split.amounts[1] * split.mole_fractions[2 + i] - feed[i]));

@@ -847,8 +847,8 @@ EquilibriumResult run_driver(
     // Extensive-objective constraint multipliers at the returned (polished) point, from the row
     // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
     // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
-    // objective and the material rows are degree-one homogeneous in that phase's amounts, so
-    // stationarity in its free amount already covers the normalization direction. The raw
+    // objective and material rows obey joint extensive homogeneity in amount, composition
+    // and volume, together with stationarity in the free amount. The raw
     // optimizer values stay a trace probe.
     scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (compiled.pinned_count == 0) {
@@ -953,7 +953,21 @@ EquilibriumResult solve_equilibrium(
     if (!compiled.feasible) return result;
     std::vector<double> initial = boundary_start(compiled);
     if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
-    return run_driver(model, compiled, std::move(initial), std::move(result), scope);
+    result = run_driver(model, compiled, std::move(initial), std::move(result), scope);
+    if (result.success) {
+        BranchCheck branches;
+        try {
+            branches = check_density_branches(model, compiled, result, {}, true, scope);
+        } catch (const std::exception& error) {
+            branches.message = std::string("density branch admission failed: ") + error.what();
+        }
+        if (!branches.accepted) {
+            result.success = false;
+            result.message = branches.message;
+            clear_state(result);
+        }
+    }
+    return result;
 }
 
 EquilibriumResult solve_equilibrium_from_coordinates(

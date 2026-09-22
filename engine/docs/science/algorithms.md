@@ -165,57 +165,58 @@ root-selection request, numerical policy and declared search budget.
 
 ```text
 scan deterministically in log density within the admitted packing domain,
-    keeping the reduced pressure residual and the analytic slope at every point
-if the interior slope minimum on the grid is positive, search it by golden section
-    in log density until a negative slope exposes a loop (that sample joins the
-    cells), the quadratic model of the slope through the bracket bounds its
-    minimum positive (exact in the near-critical cubic limit), or the iteration
-    budget ends in an explicit failure; other samples never join the cells
-per cell: refine a sign change with safeguarded Newton from both ends, never
-    declaring the starting endpoint the crossing; in a
-    same-sign cell whose slope changes sign, bisect the spinodal's slope sign
-    until the residual there crosses zero (then refine both halves) or no
-    crossing is possible because |r| cannot fall by more than max|dr/drho|(b-a)
-    inside the bracket
-retain finite roots meeting pressure residual and positive-slope criteria; two
-    refinements name one root when they agree within their first-order accuracy
-select only by declared root/branch policy; return root count and branch identity
+    keeping the reduced pressure residual and analytic pressure slope
+at a positive sampled local minimum of the slope, search by golden section:
+    a negative-slope sample exposes a loop and joins the connected cells;
+    a positive quadratic-model minimum estimate stops the search;
+    exhausted work or a collapsed bracket without resolution is a failure
+own an exact stable scan-node root once, keeping its adjacent cells connected
+per cell, discard an entirely negative-slope interval; bisect any slope sign
+    transition to adjacent representable densities or an exact slope zero
+if the target is within the existing reduced-residual tolerance of that
+    turning-point pressure, report an unresolved spinodal
+trim the cell to its positive-slope side and refine each strict pressure
+    crossing once with the existing safeguarded Newton method
+select by declared branch policy and return the stable-root count
 ```
 
-The scan evaluates the reduced pressure slope at every point: it decides the cell
-treatment and starts each refinement. Safeguarded Newton from the vapor end of a
-sign-change cell lands on the smallest crossing because the reduced residual is
-concave below the vapor root; from the liquid end it lands on the largest when
-the reduced residual is convex there, which holds where
-`rho P_rhorho + 2 (P - P*)/rho > 2 P_rho`, satisfied on the liquid branch away
-from the spinodal in the retained sweep, and the bracket safeguard bounds any
-excursion otherwise. A loop narrower than a cell therefore still yields both
-declared branches (#89, 2026-09-21). Tangent roots at a spinodal need separate
-treatment and are not stable nonsingular roots: a target pressure equal to a
-spinodal pressure within the residual tolerance ends the certified bisection at
-its iteration cap without a crossing. Two stable roots closer than the
-refinement accuracy `tol |d rho/d r|` of either are one root at the achievable
-accuracy and are reported as one. A refinement never declares its starting
-cell endpoint the crossing: an endpoint inside the residual tolerance band of a
-root belongs to the neighbouring cell's crossing, and declaring it converged
-reported one near-tangent vapor root twice (#89 correction round 2). An
-isotherm whose slope minimum the quadratic model can neither bound positive
-nor a sample find negative within the search budget is an explicit unresolved
-failure, never a unique root. The slope-model stop is exact where `P_rho` is
-quadratic in log density, the near-critical cubic limit that creates the
-narrow dips; a dip narrower than the sample spacing with curvature above the
-sampled second difference is not excluded by it, and the retained near-critical
-sweep found none. An exactly zero residual at
-a grid point is the root of its cell and the following cell is not scanned. An unlabelled request with multiple stable roots
-is ambiguous. Tracking a branch through a continuation step must not silently
-relabel a remaining root when the prior branch disappears. The supported domain
-is one mechanical loop per isotherm, that is one interior minimum of the slope;
-a second loop, or two roots closer than the anchor window, is not resolved. The
-spinodal split and the slope search act in the cold scan; the anchor uniqueness
-count divides a window narrower than the split can resolve, so it keeps the
-window limit.
-Search completeness is bounded by the specified scan; mechanical stability does
-not establish global stability.
+The supported shape is one mechanical loop per isotherm, with one interior
+minimum of `P_rho`. Once a negative-slope sample exposes that loop, its two
+turning points partition the connected domain into increasing, decreasing
+and increasing pressure intervals. Each increasing interval contains at most
+one pressure root. Exact stable scan nodes and strict crossings have separate
+ownership; two approximate Newton results are never counted or merged to
+decide root identity. Association failures break scan connectivity.
+
+Fold bisection uses the existing `DENSITY_MAX_ITERATIONS` budget and stops at
+floating-point adjacency, retaining the stable-side endpoint. It does not
+estimate a fold from pressure-residual coincidence. A target indistinguishable
+from a fold pressure at `DENSITY_ROOT_RESIDUAL` is explicitly unresolved,
+including a true tangent root; this is numerical unavailability, not physical
+nonexistence. The root residual tolerance is unchanged. For an approximate
+root, refinement also requires `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
+with a finite, nonzero derivative. Once the residual passes, midpoint steps
+contract the remaining bracket deterministically. Thus the represented
+crossing lies within the returned local-sensitivity radius
+`tolerance |d rho/d r|`; an exact numerical zero is a separate stop. This
+bracket witness is needed because a small residual alone does not make the
+first-order radius a density-error bound near a fold. It does not bound
+floating-point error in EOS evaluation itself.
+
+The quadratic slope estimate is evaluated only on a sampled local-minimum
+bracket. It is a bound for the interpolating quadratic, not for the EOS:
+a narrower unsampled dip with greater curvature is not excluded. Near a
+critical point the pressure is locally cubic in density, not in log density,
+so that limit does not make the interpolation exact. Search completeness
+therefore remains bounded by the declared scan and supported shape; no
+global stability or complete root enumeration is claimed.
+
+An unspecified request with multiple resolved stable roots is ambiguous.
+A genuine sole root remains unlabelled. An anchored request uses the same
+partition and counting method within its existing local window and keeps the
+requested branch only after local uniqueness is established. That window
+does not establish uniqueness outside itself or global branch persistence;
+a failed anchor must not silently switch to an unrelated cold root.
 
 ## ALG-EQUILIBRIUM
 
@@ -225,6 +226,15 @@ pins and free intensives from data. Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
+Public solves also apply the continuation owner's density-branch admission to
+each returned phase. A cold pressure closure selects its declared liquid or vapor
+root, an anchored closure establishes local uniqueness, and the corrected density
+must lie in that anchor's window with positive pressure slope. Failure clears the
+state and retains the optimizer and row diagnostics. Continuation uses the same
+predicate with its own anchors and retains its `branch_lost` cause; its internal
+corrector does not independently reselect a cold branch. This is declared-branch
+admission, not global phase discovery, and inherits ALG-DENSITY's finite-search
+limits.
 Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
@@ -243,9 +253,9 @@ falsifier. The returned extensive-objective constraint multipliers are
 reconstructed at the returned point from the row multipliers: a material row
 `(B n - b)/N_feed` carries `-N_feed lambda_j`, a charge row `sum z x` carries
 `-n_p phi_p`, and a free-amount phase's normalization row is zero because the
-objective and material rows are degree-one homogeneous in that phase's
-amounts, so stationarity in its free amount covers the normalization
-direction; the reduced-Hessian certificate uses these values at the returned
+objective and material rows obey joint extensive homogeneity in the phase's
+amount, composition and volume. Together with stationarity in its free amount,
+this gives zero normalization multiplier; the reduced-Hessian certificate uses these values at the returned
 point, and the optimizer's own multipliers remain a trace probe (#87 review,
 2026-09-21). A pinned problem is not polished and keeps the optimizer's
 constraint multipliers over every row. The reconstruction assumes no active

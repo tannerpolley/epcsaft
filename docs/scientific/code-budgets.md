@@ -78,8 +78,8 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-09-21, Properties hard ceiling 3460 → 3470 (#89, owner-approved small
-  increase). Requirement: the density owner's slope-minimum search must stop on
-  a certificate (quadratic model of the slope through the bracket) with an
+  increase). Requirement: replace the density owner's fixed-width slope search
+  with a bounded search using a quadratic-model estimate and an
   explicit unresolved failure and insert only loop-exposing samples, after a
   fixed-width stop lost a liquid root 1e-4 K below the critical point.
   Measured use 3468 lines with single-statement guards in `solve_density`
@@ -90,9 +90,10 @@ Budget changes must not silently change scientific scope.
   the anchored Newton loop into `refine` would obscure its typed left-domain,
   singular and infeasible stops; moving the search into the equilibrium layer
   would split the density owner's responsibility; dropping the golden-section
-  constant's comment or the certificate comment would remove the stated
-  domain. The ceiling is sized to the measured use plus four lines, not to a
-  ratchet; the next Properties addition needs its own amendment.
+  constant's comment or the model-limit comment would remove the stated
+  domain. The quadratic interpolation is not a certificate for unsampled EOS
+  curvature. This amendment left two lines above its measured 3468-line use;
+  any later change exceeding the ceiling needs its own justified amendment.
 
 ## Duplication constraints
 
