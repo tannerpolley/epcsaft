@@ -136,11 +136,54 @@ fraction up to about 0.38. It does not provide missing ideal caloric inputs.
 The [current-wheel admission control](../../../docs/scientific/reviews/modular-baseline-admission-2026-09-22.md)
 retains sampled values, derivative outputs, exact input identities, and limits.
 
-The packet identifies source values and the historical cross-association
-transformation, but does not encode a complete fixed-versus-fitted partition,
-calibration observation list, weights, or objective. Those attachments remain
-open in [Step 1](https://github.com/tannerpolley/ePC-SAFT/issues/25); a
-parameter filename or a fixed field is not evidence of a calibration role.
+Figiel parameter roles and calibration rows remain with the existing
+[reproduction source manifest](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
+the canonical Data packet owns reusable model inputs, while the reproduction
+analysis owns paper-specific fitted targets and partitions. Its
+[parameter-role ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv)
+(SHA-256 `932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b`)
+covers 122 source cells from Tables 2–5, their association/segment-count
+footnotes, and Eq. 11. It classifies 57 cells as fitted in Figiel, 33 inherited
+from cited sources, 13 fixed or assumed, and 19 blank or unpublished. Explicit
+published zero interactions stay fitted records; blank cells remain absent.
+Table 1 solvent-permittivity values and the fixed ionic-region value are
+source-provided inputs in the version-3 Data packet, outside that census and
+not regression targets. The parameter document preserves compatible identities:
+Table 2 water `f_k` is `component/water/solvation_factor`; Table 3 sodium
+`d_i^Born` is `component/sodium-cation/born_diameter`; Table 4 sodium–chloride
+`k_ij` is `pair/chloride-anion/sodium-cation/k_ij`; Table 5 sodium–water `k_ij`
+is `pair/sodium-cation/water/k_ij`; the Eq. 11 coefficient 7.01 is
+`model/relative_permittivity/ion_fraction_suppression_coefficient`; and Table 1
+`epsilon_r,ion = 8` is
+`model/relative_permittivity/ionic_region_relative_permittivity`. The source
+`2B` association choice is materialized as explicit A/B sites, and the Table 3
+segment sigma remains distinct from the fitted Born diameter; packing and
+Debye–Huckel diameters use the source transformation
+`d_i^pack = d_i^DH = 0.88 sigma_i`.
+
+The 407-row [calibration-observation ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv)
+(SHA-256 `4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7`)
+records each row's role, value and unit, species/solvent, temperature,
+pressure, composition basis/value, thermodynamic basis, source locator and
+row, extraction or construction, source hash, and uncertainty status. It retains
+the published order: SI Table S5 water solvation, NaBr MIAC, aqueous MIAC,
+Eq. 19 transfer construction, dielectric correlation, then SI Table S4 density
+and osmotic-coefficient data. The current five-ion Born-diameter tracer uses
+only five SI Table S5 reported averages as targets and their 27 underlying
+literature values as support: `T = 298.15 K`, `P = 1 bar`, `x_ion -> 0`, with
+the x-treatment from gas at 1 bar to a hypothetical dilute-ideal solution at
+1 bar. The SI reports no pointwise uncertainty.
+
+The ledger classifies 191 rows as direct, 47 table-derived, 90 digitized, 43
+constructed, and 36 missing-primary-source. In particular, its 36 NaBr MIAC
+rows for methanol and ethanol remain explicitly missing-primary-source: each
+is dimensionless at 298.15 K and 1 bar on a formula-unit molality basis, but
+the retained lab CSVs have no primary-paper extraction result. Digitized and
+constructed values remain marked as such; Eq. 19 constructed solvation rows
+are not source observations. The ledger preserves calibration roles and
+conditions without asserting a complete replay of the paper's objective,
+weights, or uncertainty model. It is source-design evidence, not a new fit or
+an extension of the baseline's numerical claim.
 
 ## 4. Neutral PC-SAFT
 
