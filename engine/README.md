@@ -161,7 +161,9 @@ controls are nonnegative, including zero incoming reactive complexes. The anchor
 must reproduce the supplied absolute feed. The selected component mole-fraction
 gap (phase 0 minus phase 1) must exceed `minimum_gap`; indices and supports follow
 the supplied model order. Scalar reaction K or affinity and explicit problem
-standard Gibbs references are transported. Temperature-dependent reaction
+standard Gibbs references are transported. Version 3 carries explicit base-EOS
+and association selections; earlier records are rejected without guessed defaults.
+Temperature-dependent reaction
 correlations, neutral-reference transformations, active parameters and model
 thermochemistry records are rejected rather than silently omitted.
 

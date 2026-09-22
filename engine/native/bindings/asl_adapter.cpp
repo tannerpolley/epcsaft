@@ -334,7 +334,7 @@ void require_central(const EquilibriumContext& context, const eq::EquilibriumRes
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v2");
+    reader.field("epcsaft.asl.equilibrium.v3");
     epcsaft::ParameterDocument document;
     reader.field("component_ids");
     document.component_ids = reader.vector([&] { return reader.next(); });
@@ -342,6 +342,10 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     document.site_component = reader.vector([&] { return static_cast<int>(reader.integer()); });
     reader.field("site_multiplicity");
     document.site_multiplicity = reader.vector([&] { return static_cast<int>(reader.integer()); });
+    reader.field("base_choice");
+    document.base_choice = reader.next();
+    reader.field("association_choice");
+    document.association_choice = reader.next();
     reader.field("electrolyte_choice");
     document.electrolyte_choice = reader.next();
     reader.field("ionic_dispersion_choice");

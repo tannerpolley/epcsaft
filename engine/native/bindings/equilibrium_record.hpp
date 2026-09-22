@@ -74,10 +74,12 @@ public:
 inline std::string asl_record(const ParameterDocument& d, const EquilibriumProblem& p,
                               const ContinuationOptions& options, const AslFeedMap& map) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v2");
+    w.put("epcsaft.asl.equilibrium.v3");
     w.put("component_ids"); w.vector(d.component_ids);
     w.put("site_component"); w.vector(d.site_component);
     w.put("site_multiplicity"); w.vector(d.site_multiplicity);
+    w.put("base_choice"); w.put(d.base_choice);
+    w.put("association_choice"); w.put(d.association_choice);
     w.put("electrolyte_choice"); w.put(d.electrolyte_choice);
     w.put("ionic_dispersion_choice"); w.put(d.ionic_dispersion_choice);
     w.put("permittivity_choice"); w.put(d.permittivity_choice);
