@@ -135,8 +135,8 @@ DensityRoot refine(
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
-    if (iterations == maximum && record.stop != core::Stop::nonfinite)
-        record.stop = core::Stop::budget_exhausted;
+    if (iterations == maximum && record.stop == core::Stop::converged)
+        throw std::runtime_error("density root bracket unresolved within the search budget");
     const auto root = publish_root(
         density, point.pressure - pressure, point.slope, iterations + 1, std::nullopt,
         DensityBranch::Unspecified, record, iterations == maximum
