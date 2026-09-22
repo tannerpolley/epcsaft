@@ -437,7 +437,8 @@ def test_declared_model_preserves_association_equations(evidence: Any) -> None:
         with pytest.raises(ParameterError, match=kind):
             Parameters.from_mapping(invalid, components=components)
     for extra in ({"kind": "polar", "choice": "dipole"},
-                  {"kind": "association", "choice": "general-site"}):
+                  {"kind": "association", "choice": "general-site"},
+                  {"kind": "association"}):
         invalid = copy.deepcopy(document)
         invalid["model_families"].append(extra)
         with pytest.raises(ParameterError, match=extra["kind"]):

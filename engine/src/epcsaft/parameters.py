@@ -39,11 +39,12 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
 
 
 def _choice(families: Sequence[object], kind: str, allowed: set[str]) -> str:
-    found: object | None = None
+    unseen = object()
+    found: object = unseen
     for item in families:
         record = _mapping(item, "model_families")
         if record.get("kind") == kind:
-            if found is not None:
+            if found is not unseen:
                 raise _core.ParameterError(f"duplicate model choice {kind}")
             found = record.get("choice")
     if not isinstance(found, str) or found not in allowed:
