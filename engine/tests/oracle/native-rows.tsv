@@ -427,10 +427,10 @@ surface_example	flash/mole_fractions/2	1	0.045656765611790523
 surface_example	flash/mole_fractions/3	1	0.95434323438820956
 surface_example	flash/multipliers/0	1	-1.2878437705797265
 surface_example	flash/multipliers/1	1	1.7608110095231235
-surface_example	flash/constraint_multipliers/0	1	1.2878437705820567
-surface_example	flash/constraint_multipliers/1	1	-1.7608110095214802
-surface_example	flash/constraint_multipliers/2	1	-3.4293702644547531e-12
-surface_example	flash/constraint_multipliers/3	1	-2.0552161497392953e-11
+surface_example	flash/constraint_multipliers/0	1	1.2878437705797265
+surface_example	flash/constraint_multipliers/1	1	-1.7608110095231235
+surface_example	flash/constraint_multipliers/2	1	0
+surface_example	flash/constraint_multipliers/3	1	0
 surface_example	solved/thermal/0	mol	-0.018884589385214121
 surface_example	solved/radial/0	mol	0.23180399706718019
 surface_example	solved/thermal/1	1	-0.0077792789010149984
