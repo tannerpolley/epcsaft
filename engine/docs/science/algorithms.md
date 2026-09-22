@@ -474,6 +474,10 @@ species.
 ## ALG-REFERENCE
 
 Use the explicitly declared solvent/reference path and source standard state.
+The two-ion formula must contain charged components with zero stoichiometric
+charge; the solvent composition must also be neutral within the composition
+admission tolerance. The shared composition owner enforces this before either
+reference construction or activity evaluation; neither API supplies an ionic gauge.
 Evaluate the retained molality sequence; return the terminal change and
 criterion separately. Unknown validity or failed limiting convergence remains
 unavailable. Differentiate both the source correlation and EOS reference path,

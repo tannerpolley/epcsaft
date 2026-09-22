@@ -30,6 +30,8 @@ plan:
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
 # properties hard ceiling 3460 -> 3470 on 2026-09-21 (#89, owner-approved small increase): a bounded
 # slope-minimum search with explicit unresolved failure replaced a fixed-width stop; then measured 3468 lines.
+# properties hard 3470 -> 3490 (#84, 2026-09-22): owner-approved small increase for
+# shared charge-neutral reference and activity admission; no association change.
 code_budgets: {
   "core": [
     700,
@@ -44,7 +46,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    3470
+    3490
   ],
   "equilibrium": [
     5000,

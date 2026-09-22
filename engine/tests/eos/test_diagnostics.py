@@ -1,7 +1,5 @@
 import hashlib
 import json
-from collections.abc import Callable
-from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -171,18 +169,22 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     assert "DENSITY_ROOT_RESIDUAL" in repr(convergence)
 
 
-def test_reference_requires_stoichiometry() -> None:
-    parameters = Parameters.from_json(
-        parameters_json("figiel-2025-reference-electrolytes", 3),
-        components=("water", "lithium-cation", "chloride-anion"),
-    )
-    with pytest.raises(TypeError):
-        reference: Callable[..., object] = Mixture(parameters).reference
-        call = partial(
-            reference,
-            298.15,
-            1.0e5,
-            solvent_fractions=(1.0, 0.0, 0.0),
-            ions=("lithium-cation", "chloride-anion"),
-        )
-        call()
+def test_reference_formula_and_solvent_must_be_electroneutral() -> None:
+    model = Mixture(Parameters.from_json(
+        parameters_json("figiel-2025-validation-parameters", 3),
+        components=("water", "lithium-cation", "chloride-anion", "sodium-cation")))
+    solvent = (1.0, 0.0, 0.0, 0.0)
+    ions = ("lithium-cation", "chloride-anion")
+    reference = model.reference(298.15, 1e5, solvent_fractions=solvent, ions=ions, stoichiometry=(1, 1))
+    # The neutral salt approaches its declared infinite-dilution activity standard.
+    assert abs(reference.activity(1e-8).mean_ionic_molality_scale - 1.0) < 2e-4
+    # 2 Li+ + Cl- has charge +1 per formula; a reference value would be gauge dependent.
+    with pytest.raises(ValueError, match="charge neutral"):
+        model.reference(298.15, 1e5, solvent_fractions=solvent, ions=ions, stoichiometry=(2, 1))
+    reference.stoichiometry = (2, 1)
+    with pytest.raises(ValueError, match="charge neutral"):
+        reference.activity(0.01)
+    # A balanced trace formula cannot neutralize a separately charged solvent.
+    with pytest.raises(ValueError, match="reference solvent composition or molar mass"):
+        model.reference(298.15, 1e5, solvent_fractions=(0.99, 0.0, 0.0, 0.01),
+                        ions=("lithium-cation", "chloride-anion"), stoichiometry=(1, 1))

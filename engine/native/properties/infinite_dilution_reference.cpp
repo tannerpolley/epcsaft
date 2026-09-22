@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <vector>
 
@@ -14,13 +15,16 @@ namespace epcsaft {
 
 std::vector<double> formula_composition(
     const std::vector<double>& solvent_fractions,
-    const std::vector<double>& molar_masses,
+    const Parameters& parameters,
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality
 ) {
     // EqID: formula_unit_composition
+    const auto& molar_masses = parameters.molar_mass_kg_per_mol;
+    const auto& charges = parameters.charge_number;
     if (solvent_fractions.size() != molar_masses.size()
+        || solvent_fractions.size() != charges.size()
         || ion_indices[0] >= solvent_fractions.size()
         || ion_indices[1] >= solvent_fractions.size()
         || ion_indices[0] == ion_indices[1]
@@ -28,8 +32,14 @@ std::vector<double> formula_composition(
         || !std::isfinite(molality) || molality <= 0.0) {
         throw std::invalid_argument("invalid reference composition inputs");
     }
+    if (charges[ion_indices[0]] == 0 || charges[ion_indices[1]] == 0
+        || static_cast<std::int64_t>(stoichiometry[0]) * charges[ion_indices[0]]
+            + static_cast<std::int64_t>(stoichiometry[1]) * charges[ion_indices[1]] != 0) {
+        throw std::invalid_argument("reference formula must be charge neutral with two ions");
+    }
     double fraction_sum = 0.0;
     double solvent_mass = 0.0;
+    double solvent_charge = 0.0;
     for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
         if (!std::isfinite(solvent_fractions[component])
             || solvent_fractions[component] < 0.0
@@ -39,16 +49,18 @@ std::vector<double> formula_composition(
         }
         fraction_sum += solvent_fractions[component];
         solvent_mass += solvent_fractions[component] * molar_masses[component];
+        solvent_charge += solvent_fractions[component] * charges[component];
     }
     if (std::abs(fraction_sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value
         || solvent_fractions[ion_indices[0]] != 0.0
         || solvent_fractions[ion_indices[1]] != 0.0
-        || !(solvent_mass > 0.0) || !std::isfinite(solvent_mass)) {
-        throw std::invalid_argument("invalid reference solvent molar mass");
+        || !(solvent_mass > 0.0) || !std::isfinite(solvent_mass)
+        || std::abs(solvent_charge) > policy::COMPOSITION_SUM_TOLERANCE.value) {
+        throw std::invalid_argument("invalid reference solvent composition or molar mass");
     }
     const double solvent_moles = 1.0 / solvent_mass;
     const double total_moles = solvent_moles
-        + molality * static_cast<double>(stoichiometry[0] + stoichiometry[1]);
+        + molality * (static_cast<double>(stoichiometry[0]) + stoichiometry[1]);
     std::vector<double> composition(solvent_fractions.size(), 0.0);
     for (std::size_t component = 0; component < composition.size(); ++component) {
         composition[component] = solvent_fractions[component] * solvent_moles / total_moles;
@@ -83,7 +95,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         const double molality = molalities[index];
         const auto composition = formula_composition(
             solvent_fractions,
-            model.parameters().molar_mass_kg_per_mol,
+            model.parameters(),
             ion_indices,
             stoichiometry,
             molality
@@ -119,7 +131,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
         const auto composition = formula_composition(
             solvent_fractions,
-            model.parameters().molar_mass_kg_per_mol,
+            model.parameters(),
             ion_indices,
             stoichiometry,
             policy::REFERENCE_CONVERGENCE_WITNESS.value
@@ -175,7 +187,7 @@ ElectrolyteActivity electrolyte_activity(
     core::Scope scope("electrolyte_activity");
     const auto composition = formula_composition(
         solvent_fractions,
-        model.parameters().molar_mass_kg_per_mol,
+        model.parameters(),
         ion_indices,
         stoichiometry,
         molality
@@ -191,7 +203,7 @@ ElectrolyteActivity electrolyte_activity(
         - reference.log_fugacity[0];
     const double second = (*state.log_fugacity_coefficient)[ion_indices[1]]
         - reference.log_fugacity[1];
-    const double coefficient_sum = stoichiometry[0] + stoichiometry[1];
+    const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
