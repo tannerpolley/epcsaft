@@ -944,7 +944,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         return result;
     }
-    const auto jacobian = tape_->function.Jacobian(full_point);
+    // The full tape Jacobian feeds only the site sensitivities and multipliers.
+    const auto jacobian = sites_count == 0 ? std::vector<double>{} : tape_->function.Jacobian(full_point);
     const auto delta = association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
     auto factorization = site_factorization(

@@ -131,7 +131,8 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     prediction = regression.predict(model, item)
     state = model.state(180.0, P=5.0e6, x=(0.5, 0.5), phase="liquid")
     assert prediction.value == state.molar_density and prediction.unit == "mol/m^3"
-    assert prediction.residual == math.log(state.molar_density / 15000.0)
+    assert prediction.residual is not None and math.isclose(  # log(a/b) and log a - log b differ by an ulp
+        prediction.residual, math.log(state.molar_density / 15000.0), rel_tol=1e-15, abs_tol=0.0)
     mass = regression.density(p, 180.0, 5.0e6, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=15000.0, form="log_ratio", mass_basis=True)
     mass_prediction = regression.predict(model, mass)
     assert mass_prediction.unit == "kg/m^3" and mass_prediction.value is not None

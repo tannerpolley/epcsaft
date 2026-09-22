@@ -164,20 +164,43 @@ Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
 ```text
-scan deterministically in log density within the admitted packing domain
-bracket sign-changing pressure residuals
-refine bracketed candidates with safeguarded steps
-retain finite roots meeting pressure residual and positive-slope criteria
+scan deterministically in log density within the admitted packing domain,
+    keeping the reduced pressure residual and the analytic slope at every point
+if the interior slope minimum on the grid is positive, search it by golden section
+    in log density until a negative slope exposes a loop or the bracket closes to
+    the anchor window
+per cell: refine a sign change with safeguarded Newton from both ends; in a
+    same-sign cell whose slope changes sign, bisect the spinodal's slope sign
+    until the residual there crosses zero (then refine both halves) or no
+    crossing is possible because |r| cannot fall by more than max|dr/drho|(b-a)
+    inside the bracket
+retain finite roots meeting pressure residual and positive-slope criteria; two
+    refinements name one root when they agree within their first-order accuracy
 select only by declared root/branch policy; return root count and branch identity
 ```
 
-Use gradient-only energy work during the scan when sufficient; evaluate the
-correct reduced pressure slope for refinement and conditioning. Tangent roots
-at a spinodal need separate treatment and are not stable nonsingular roots.
-An unlabelled request with multiple stable roots is ambiguous. Tracking a
-branch through a continuation step must not silently relabel a remaining root
-when the prior branch disappears. Search completeness is bounded by the
-specified scan; mechanical stability does not establish global stability.
+The scan evaluates the reduced pressure slope at every point: it decides the cell
+treatment and starts each refinement. Safeguarded Newton from the vapor end of a
+sign-change cell lands on the smallest crossing because the reduced residual is
+concave below the vapor root; from the liquid end it lands on the largest when
+the reduced residual is convex there, which holds where
+`rho P_rhorho + 2 (P - P*)/rho > 2 P_rho`, satisfied on the liquid branch away
+from the spinodal in the retained sweep, and the bracket safeguard bounds any
+excursion otherwise. A loop narrower than a cell therefore still yields both
+declared branches (#89, 2026-09-21). Tangent roots at a spinodal need separate
+treatment and are not stable nonsingular roots: a target pressure equal to a
+spinodal pressure within the residual tolerance ends the certified bisection at
+its iteration cap without a crossing. An exactly zero residual at a grid point
+is the root of its cell and the following cell is not scanned. An unlabelled request with multiple stable roots
+is ambiguous. Tracking a branch through a continuation step must not silently
+relabel a remaining root when the prior branch disappears. The supported domain
+is one mechanical loop per isotherm, that is one interior minimum of the slope;
+a second loop, or two roots closer than the anchor window, is not resolved. The
+spinodal split and the slope search act in the cold scan; the anchor uniqueness
+count divides a window narrower than the split can resolve, so it keeps the
+window limit.
+Search completeness is bounded by the specified scan; mechanical stability does
+not establish global stability.
 
 ## ALG-EQUILIBRIUM
 

@@ -211,7 +211,9 @@ void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compile
     for (std::size_t column = 0; column < point.size(); ++column) {
         auto plus = point;
         auto minus = point;
-        const double delta = centered_step(point[column]);
+        // Centred differences balance truncation and rounding at eps^(1/3), not eps^(1/2):
+        // the rows cancel O(10) potentials, so the sqrt(eps) step carries ~5e-7 rounding noise.
+        const double delta = std::cbrt(std::numeric_limits<double>::epsilon()) * std::max(std::abs(point[column]), 1.0);
         plus[column] += delta;
         minus[column] -= delta;
         const auto up = compiled.evaluate(plus).values;

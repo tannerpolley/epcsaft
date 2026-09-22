@@ -403,8 +403,9 @@ void check_f7_f8() {
     CHECK(agree("r1-f8/aggregate_sum", "x_CH4+x_C2H6", "1", *both.value, 1.0, 1.0e-15, 0.0, may_inputs,
                 "the full species set sums to one", "r1-f8"));
     const auto x0 = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 0, {0}), both.solved);
-    CHECK(agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 0.0, may_inputs,
-                "a one-element set is the driver's mole fraction bit for bit", "r1-f8"));
+    // The start re-solves through the driver; two accepted solves of one problem agree to rounding.
+    CHECK(agree("r1-f8/single_species", "x_CH4", "1", *x0.value, both.solved->mole_fractions[0], 0.0, 1.0e-13, may_inputs,
+                "a one-element set is the driver's mole fraction to solve reproducibility", "r1-f8"));
     CHECK(agree("r1-f8/retained_x", "x_CH4", "1", *x0.value, retained[0], 1.0e-9, 0.0, may_inputs,
                 "the retained E6 liquid composition is reproduced", "r1-f8"));
     const auto y0 = predict(model, solved(ObservationKind::PhaseMoleFraction, may, 1, {0}), both.solved);
