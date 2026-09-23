@@ -24,6 +24,12 @@ place and remove duplicate progress summaries; Git preserves edit history.
 [Code budgets](code-budgets.md) define the floor target, soft ceiling and hard
 ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 
+The [modular-model proposal](proposals/modular-models/README.md) retains a
+source-linked design and separate five-step roadmap for selecting complete
+thermodynamic formulations with compatible parameters. It is deferred until
+the current greenfield roadmap is complete and adds no current milestones or
+accepted physics.
+
 ## Live companion
 
 The root Quarto project presents the current map, a link to the GitHub roadmap,

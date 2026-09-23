@@ -291,6 +291,17 @@ specification_checks = executable(
 )
 test('specification', specification_checks)
 
+association_comparison_checks = executable(
+  'association_comparison_checks',
+  'tests/native/association_comparison_checks.cpp',
+  cpp_args: native_warnings,
+  dependencies: [eigen_dep, cppad_headers_dep],
+  include_directories: native_inc,
+  link_with: epcsaft_native,
+  install: false,
+)
+test('association-comparison', association_comparison_checks, timeout: 600)
+
 install_subdir(
   'src/epcsaft',
   exclude_directories: [

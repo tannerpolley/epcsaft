@@ -135,6 +135,15 @@ energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
 ## ALG-ASSOCIATION
 
+The shared model retains at most two most-recently-used thermodynamic recordings,
+keyed by composition support, electrolyte predicates, selected thermal intervals
+and residual/ideal output availability. Parameters and thermal source data remain
+immutable within that model. Switching recordings never reuses a numerical state:
+each caller refreshes the point, site fractions, Taylor coefficients and required
+site factorization under the existing model lock. A miss records the shared EOS
+before replacing the older entry. This bounded reuse avoids rebuilding on every
+aqueous/organic phase switch; it does not change the association solve below.
+
 Use EqID: `association_mass_action`, EqID: `association_helmholtz` and the
 implicit mass-action identities in full EOS §5. Declare initialization and
 iteration budget; use Newton's method on the admitted site domain, with
@@ -261,17 +270,21 @@ residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point or tiny-step stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
-Jacobian close that gap, each accepted only when it contracts both the raw row
-maximum and the classified residual and keeps every composition above the
-structural cutoff `STABILITY_COMPOSITION_FLOOR`, below the optimizer box when
-the solution lies there (#87, 2026-09-21). Try each Newton direction at step
-fractions 1, 1/2 and 1/4, stopping at the first admissible contraction; a
-rejected direction ends polishing. This bounded backtracking preserves the
-three accepted-step budget and allows pressure-row curvature to reject a full
-step without abandoning a contracting half step. Acceptable-point and tiny-step stops
-use this same polish because optimizer stopping can leave the same intensive
-row defect at large feed scales. No additional step or relaxed criterion is used.
-Acceptance is still classified on the caller criterion at the returned point.
+Jacobian close that gap. Each step must contract the raw row maximum and keep
+every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
+below the optimizer box when the solution lies there (#87, 2026-09-21).
+Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
+admissible raw contraction; a rejected direction ends polishing. Among the
+optimizer start and accepted physical iterates, return the point with the lowest
+classified residual, breaking ties by lower raw residual (#66, 2026-09-22).
+The classified residual may rise at an intermediate step through nonlinear
+curvature; requiring it to decrease at every step can reject a direction that
+resolves trace chemical equilibrium in the existing three-step budget.
+Selecting the best classified point prevents degradation of the optimizer
+result or loss of a stricter caller tolerance attained along the path.
+Acceptable-point and tiny-step stops use the same polish. No additional step or
+relaxed criterion is used. Recompute diagnostics at the selected point, and
+apply the unchanged caller criterion and all final physical/branch checks.
 A square pinned cell carries chemical and pressure rows as optimizer equality
 constraints. Its log-composition bounds therefore use the
 structural cutoff directly: the all-free optimizer box would exclude valid

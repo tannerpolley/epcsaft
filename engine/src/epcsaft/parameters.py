@@ -53,7 +53,7 @@ def _choice(families: Sequence[object], kind: str, allowed: set[str]) -> str:
 
 
 class Parameters:
-    __slots__ = ("component_ids", "site_ids", "_native")
+    __slots__ = ("component_ids", "site_ids", "_native", "_document")
 
     component_ids: tuple[str, ...]
     site_ids: tuple[tuple[str, str], ...]
@@ -66,6 +66,7 @@ class Parameters:
         site_ids: tuple[tuple[str, str], ...],
     ) -> None:
         self._native = native
+        self._document: _core.ParameterDocument | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
 
@@ -381,4 +382,6 @@ class Parameters:
         native_document.ionic_dispersion_choice = str(electrolyte_record.get("ionic_dispersion", ""))
         native_document.permittivity_choice = permittivity
         native_document.entries = entries
-        return cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
+        result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
+        result._document = native_document
+        return result

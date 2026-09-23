@@ -295,6 +295,7 @@ private:
     std::vector<ActiveParameter> active_;
     std::optional<ThermochemistryRecord> thermochemistry_;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
+    mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
     mutable SweepCounters counters_;
     mutable std::mutex mutex_;
 };

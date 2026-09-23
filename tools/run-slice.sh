@@ -10,4 +10,14 @@ if [[ "${1:-}" != "khudaida" ]]; then
 fi
 EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
-(cd analyses/reproduction/2026-khudaida && ../../../.venv/bin/python -m pytest -q tests/test_phase_equilibrium_campaign.py)
+candidate_dir="$(mktemp -d /tmp/epcsaft-khudaida.XXXXXX)"
+qualification_dir="$(mktemp -d /tmp/epcsaft-khudaida-qualification.XXXXXX)"
+if .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py \
+    --output-dir "$candidate_dir" && \
+    .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/qualify.py \
+    --results-dir "$candidate_dir" --output-dir "$qualification_dir"; then
+    find "$candidate_dir" "$qualification_dir" -depth -delete
+else
+    echo "Khudaida candidates retained at $candidate_dir and $qualification_dir" >&2
+    exit 1
+fi

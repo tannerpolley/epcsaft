@@ -2320,50 +2320,76 @@ void properties_p2() {
 void cache_invariance() {
     epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
     recording_support::expect_group(
-        recording_support::active_test_id(), "m9-value", "value", 1,
-        "cached value invariance", "state");
+        recording_support::active_test_id(), "m9-value", "value/", 2,
+        "cached value invariance against a fresh model", "state");
     recording_support::expect_group(
-        recording_support::active_test_id(), "m9-gradient", "gradient/", 5,
-        "cached gradient invariance", "coordinate");
+        recording_support::active_test_id(), "m9-gradient", "gradient/", 10,
+        "cached gradient invariance against a fresh model", "coordinate");
     recording_support::expect_group(
-        recording_support::active_test_id(), "m9-hessian", "hessian/", 25,
-        "cached Hessian invariance", "row,column");
-    const auto a = model.evaluate(298.15, 1.0 / 1e3, {0.98, 0.01, 0.01},
-                                  epcsaft::DerivativeOrder::Hessian);
-    model.evaluate(298.15, 1.0 / 1e3, {1.0, 0.0, 0.0}, epcsaft::DerivativeOrder::Value);
-    model.evaluate(298.15, 1.0 / 1e3, {1.0 - 2e-12, 1e-12, 1e-12}, epcsaft::DerivativeOrder::Value);
-    const auto again = model.evaluate(298.15, 1.0 / 1e3, {0.98, 0.01, 0.01},
-                                      epcsaft::DerivativeOrder::Hessian);
-    const auto inputs = model_inputs(model.parameters(), 298.15,
-                                     1.0 / 1e3, {0.98, 0.01, 0.01});
-    recording_support::compare(
-        "value", "residual_helmholtz", "1", a.value, again.value, inputs,
-        "Relationship", "cache-invariance", "repeated evaluation preserves value",
-        "reference_or_one", 0.0, 1e-14, close(a.value, again.value, 1e-14),
-        "m9-value", "state", "a^{res}", "T,V,\\mathbf{n}", "a_{cached}=a", "state");
-    CHECK(close(a.value, again.value, 1e-14));
-    CHECK(a.gradient.size() == again.gradient.size());
-    for (std::size_t i = 0; i < a.gradient.size(); ++i) {
+        recording_support::active_test_id(), "m9-hessian", "hessian/", 50,
+        "cached Hessian invariance against a fresh model", "row,column");
+    (void)model.evaluate(298.15, 1.0e-3, {0.98, 0.01, 0.01},
+                         epcsaft::DerivativeOrder::Hessian);
+    (void)model.evaluate(287.15, 1.0e-3, {1.0, 0.0, 0.0},
+                         epcsaft::DerivativeOrder::Value);
+    const auto a_again = model.evaluate(
+        323.15, 1.5e-3, {1.35, 0.12, 0.03}, epcsaft::DerivativeOrder::Hessian);
+    (void)model.evaluate(305.15, 1.1e-3, {1.067, 0.033, 0.0},
+                         epcsaft::DerivativeOrder::Value);
+    const auto b_again = model.evaluate(
+        315.15, 1.25e-3, {1.25, 0.0, 0.0}, epcsaft::DerivativeOrder::Hessian);
+    const auto fresh_a = epcsaft::HelmholtzModel(
+        properties_support::aqueous_electrolyte()).evaluate(
+            323.15, 1.5e-3, {1.35, 0.12, 0.03}, epcsaft::DerivativeOrder::Hessian);
+    const auto fresh_b = epcsaft::HelmholtzModel(
+        properties_support::aqueous_electrolyte()).evaluate(
+            315.15, 1.25e-3, {1.25, 0.0, 0.0}, epcsaft::DerivativeOrder::Hessian);
+    const std::array<const epcsaft::HelmholtzDerivatives*, 2> retained = {
+        &a_again, &b_again};
+    const std::array<const epcsaft::HelmholtzDerivatives*, 2> fresh = {
+        &fresh_a, &fresh_b};
+    const std::array<const char*, 2> labels = {"a-reuse", "b-eviction-revisit"};
+    const std::array<std::string, 2> inputs = {{
+        model_inputs(model.parameters(), 323.15, 1.5e-3, {1.35, 0.12, 0.03}),
+        model_inputs(model.parameters(), 315.15, 1.25e-3, {1.25, 0.0, 0.0})}};
+    for (std::size_t case_index = 0; case_index < retained.size(); ++case_index) {
+        const auto& actual = *retained[case_index];
+        const auto& reference = *fresh[case_index];
+        const bool value_ok = close(actual.value, reference.value, 1e-14);
         recording_support::compare(
-            (std::string("gradient/") + std::to_string(i)).c_str(), "gradient", "1",
-            a.gradient[i], again.gradient[i], inputs, "Relationship", "cache-invariance",
-            "repeated evaluation preserves gradient", "reference_or_one", 0.0, 1e-14,
-            close(a.gradient[i], again.gradient[i], 1e-14), "m9-gradient",
-            std::to_string(i).c_str(), "\\nabla a", "T,V,\\mathbf{n}",
-            "\\nabla a_{cached}=\\nabla a", "coordinate");
-        CHECK(close(a.gradient[i], again.gradient[i], 1e-14));
-    }
-    CHECK(a.hessian.size() == again.hessian.size());
-    for (std::size_t i = 0; i < a.hessian.size(); ++i) {
-        const std::size_t width = a.gradient.size();
-        const auto point = std::to_string(i / width) + "-" + std::to_string(i % width);
-        recording_support::compare(
-            (std::string("hessian/") + point).c_str(), "hessian", "1", a.hessian[i],
-            again.hessian[i], inputs, "Relationship", "cache-invariance",
-            "repeated evaluation preserves Hessian", "reference_or_one", 0.0, 1e-14,
-            close(a.hessian[i], again.hessian[i], 1e-14), "m9-hessian", point.c_str(),
-            "H^{res}", "T,V,\\mathbf{n}", "H_{cached}=H", "row,col");
-        CHECK(close(a.hessian[i], again.hessian[i], 1e-14));
+            (std::string("value/") + labels[case_index]).c_str(), "residual_helmholtz", "1",
+            actual.value, reference.value, inputs[case_index], "Relationship", "cache-invariance",
+            "retained/evicted signature matches a fresh model", "reference_or_one", 0.0, 1e-14,
+            value_ok, "m9-value", labels[case_index], "a^{res}", "T,V,\\mathbf{n}",
+            "a_{retained}=a_{fresh}", "state");
+        CHECK(value_ok);
+        CHECK(actual.gradient.size() == reference.gradient.size());
+        for (std::size_t i = 0; i < actual.gradient.size(); ++i) {
+            const bool gradient_ok = close(actual.gradient[i], reference.gradient[i], 1e-14);
+            recording_support::compare(
+                (std::string("gradient/") + labels[case_index] + "/" + std::to_string(i)).c_str(),
+                "gradient", "1", actual.gradient[i], reference.gradient[i], inputs[case_index],
+                "Relationship", "cache-invariance", "retained/evicted signature matches a fresh model",
+                "reference_or_one", 0.0, 1e-14, gradient_ok, "m9-gradient", labels[case_index],
+                "\\nabla a", "T,V,\\mathbf{n}", "\\nabla a_{retained}=\\nabla a_{fresh}",
+                "coordinate");
+            CHECK(gradient_ok);
+        }
+        CHECK(actual.hessian.size() == reference.hessian.size());
+        CHECK(!actual.gradient.empty());
+        const std::size_t width = actual.gradient.size();
+        for (std::size_t i = 0; i < actual.hessian.size(); ++i) {
+            const auto point = std::string(labels[case_index]) + "/"
+                + std::to_string(i / width) + "-" + std::to_string(i % width);
+            const bool hessian_ok = close(actual.hessian[i], reference.hessian[i], 1e-14);
+            recording_support::compare(
+                (std::string("hessian/") + point).c_str(), "hessian", "1", actual.hessian[i],
+                reference.hessian[i], inputs[case_index], "Relationship", "cache-invariance",
+                "retained/evicted signature matches a fresh model", "reference_or_one", 0.0, 1e-14,
+                hessian_ok, "m9-hessian", point.c_str(), "H^{res}", "T,V,\\mathbf{n}",
+                "H_{retained}=H_{fresh}", "row,col");
+            CHECK(hessian_ok);
+        }
     }
 }
 
@@ -3439,7 +3465,7 @@ void properties_p4() {
         "p4-pressure", "pressure/", observables.size() * directions.size() * 2,
         "P4 fixed-pressure directional property actions", "observable,order");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p4-supplemental", "supplemental/", 148,
+        "p4-supplemental", "supplemental/", 149,
         "P4 availability, selection and structural counter checks", "case");
     const auto state = model.state(313.15, 42441.09427799721, composition);
     const auto pressure_root = model.state_at_pressure(
@@ -3983,6 +4009,17 @@ void properties_p4() {
         313.15, 42441.09427799721, composition, {observables[5]}, {directions[0]});
     const auto single_cp = model.density_actions(
         313.15, 42441.09427799721, composition, {observables[13]}, {directions[0]});
+    const bool output_selection_return = single_h.results.size() == 1
+        && single_cp.results.size() == 1
+        && result_matches(single_h.results[0], full_one.results[5])
+        && result_matches(single_cp.results[0], full_one.results[13]);
+    recording_support::compare_custom(
+        "supplemental/output-selection-return", "selected_full", "bool",
+        output_selection_return ? 1.0 : 0.0, 1.0,
+        "residual-only then ideal+residual selection at the same state",
+        "Identity", "selected/full", "returning to ideal output selection preserves values and actions",
+        "absolute", output_selection_return, "p4-supplemental", "output-selection-return",
+        "selected_full", "subset", "selected/full");
     epcsaft::HelmholtzModel cold_model(
         model.parameters(), active, p3_binary_record());
     const auto cold_batch = cold_model.density_actions(
@@ -4041,7 +4078,8 @@ void properties_p4() {
         for (std::size_t point = 0; point < 3; ++point) {
             const bool mixed = point == 1;
             const auto& x = mixed ? composition : pure_first;
-            const double t = mixed ? 320.0 : 313.15, rho = mixed ? 6000.0 : 5000.0;
+            const double t = point == 1 ? 320.0 : point == 2 ? 307.15 : 313.15;
+            const double rho = point == 1 ? 6000.0 : point == 2 ? 4500.0 : 5000.0;
             const auto retained = model.density_actions(t, rho, x, freshness_rows, request);
             const auto fresh = epcsaft::HelmholtzModel(model.parameters(), active, p3_binary_record())
                 .density_actions(t, rho, x, freshness_rows, request);
@@ -4264,6 +4302,7 @@ void properties_p4() {
     CHECK(missing_ok && partial_ok && negative_ok && selected_h && selected_cp
         && failure_match && work_reuse && retained_freshness && branch_route_ok
         && electrolyte_total_ok && entropy_ok
+        && output_selection_return
         && fixed_zero && unknown_rejected && support_change && ionic_insertion
         && thermal_boundary && counter_ok);
 }
@@ -4355,8 +4394,8 @@ int main(int argc, char** argv) {
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
         {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
-        {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:148"}, properties_p4, "P4"},
-        {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "gradient/*:5,hessian/*:25"}, cache_invariance},
+        {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
+        {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},
         {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},
     });
 }

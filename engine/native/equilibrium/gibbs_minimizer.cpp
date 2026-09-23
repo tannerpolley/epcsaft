@@ -720,18 +720,18 @@ EquilibriumResult run_driver(
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
-    // The optimizer stops on amount-weighted rows, which bounds an intensive trace row only by
-    // tau N_feed/(N_p x_i). Newton on the unweighted rows with the exact Jacobian closes that gap.
-    // A step stands only when it contracts both the raw row maximum and the certified
-    // classified residual and keeps every composition above the structural cutoff; a step
-    // from an ill-conditioned point (a species near the cutoff scales its row by 1e-20) is
-    // otherwise rejected and the optimizer iterate is kept.
+    // The optimizer's amount-weighted rows underresolve intensive trace defects.
+    // Exact Newton steps contract raw rows inside the physical composition cutoff.
+    // Curvature may raise classified rows temporarily; return the best classified
+    // point visited, including the optimizer start, rather than the last step.
     std::size_t polish_evaluations = 0;
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
          || nlp->status() == Ipopt::STOP_AT_TINY_STEP) && compiled.is_square()) {
         auto at = compiled.prepare(full);
         auto rows_before = compiled.evaluate_at(at).values;
+        std::vector<double> best = full;
+        double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         ++polish_evaluations;
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value); ++step) {
             const double defect = maximum_abs(rows_before);
@@ -744,8 +744,8 @@ EquilibriumResult run_driver(
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu().solve(
                     -Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
             bool accepted = false;
-            // Curvature can increase a classified row after a full Newton step.
-            // Bounded damping retains the direction, both contraction gates and the cutoff.
+            // Bounded damping retains raw contraction and the physical cutoff.
+            // Best-point selection below protects the returned classified residual.
             for (const double alpha : {1.0, 0.5, 0.25}) {
                 std::vector<double> candidate = full;
                 for (Eigen::Index i = 0; i < n; ++i)
@@ -768,15 +768,20 @@ EquilibriumResult run_driver(
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
-                if (!inside || !(after < defect) || !(classified_after <= classified_before)) continue;
+                if (!inside || !(after < defect)) continue;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
                 rows_before = std::move(rows_after);
+                if (classified_after <= best_classified) {
+                    best = full;
+                    best_classified = classified_after;
+                }
                 accepted = true;
                 break;
             }
             if (!accepted) break;
         }
+        full = std::move(best);
     }
     PhasePoint prepared;
     try {
