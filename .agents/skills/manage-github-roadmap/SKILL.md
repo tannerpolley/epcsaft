@@ -71,4 +71,4 @@ A PR that completes a leaf's last acceptance criterion says `Closes #N`; a PR th
 delivers a slice says `Refs #N`. Merging does not finish the handoff: in the same
 closeout, rewrite the issue body's current state and remaining criteria (replace,
 do not append dated blocks), remove the PR's `work:review` and `work:claimed`
-labels, and run the reconciler. A comment alone is not a handoff.
+labels, and run the reconciler with `--apply` (without it the tool only previews). A comment alone is not a handoff.
