@@ -300,7 +300,8 @@ limits.
 Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
-`tau N_feed/(N_p x_i)`; after a success, acceptable-point or tiny-step stop, at most
+`tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
+iteration-budget or time-budget stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
 Jacobian close that gap. Each step must contract the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
@@ -314,7 +315,12 @@ curvature; requiring it to decrease at every step can reject a direction that
 resolves trace chemical equilibrium in the existing three-step budget.
 Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
-Acceptable-point and tiny-step stops use the same polish. No additional step or
+Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
+unattainable request would otherwise return the optimizer's last iterate. A selected
+point whose classified rows meet the caller criterion is accepted after any
+non-error optimizer stop (success, acceptable point, tiny step, restoration failure
+or budget); invalid-number, diverging, step-computation and infeasibility stops stay
+unavailable, and a floor-limited point also needs optimizer success. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A square pinned cell carries chemical and pressure rows as optimizer equality
@@ -688,15 +694,23 @@ admission rejects the equal-sphere face-centred-cubic geometric boundary
 constraint, not a mathematical singularity claim.
 
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
-application accuracy criteria stay beside their accepted reference cases.
+application accuracy criteria stay beside their accepted reference cases. Every
+policy entry is listed in its `ENTRIES` registry, has an Engine consumer (a
+lexical architecture check, not a semantic proof) and is readable as `epcsaft.tolerances()`;
+changing a value means editing its entry and justification and rebuilding.
+A verification check whose error exceeds its criterion but not an attainable
+floor derived from reported quantities (condition estimate times rounding,
+finite-difference noise over step, propagated inner residual) is *tolerance
+gated*: non-failing, recorded with the floor, its inputs and the ratio. The floor
+is never a hand-picked looser tolerance, and an error above it fails. The solve
+counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
-`STOP_AT_TINY_STEP` or `STOP_AT_ACCEPTABLE_POINT` with a finite non-converged
-residual is unavailable, while a finite criterion-meeting result remains
-eligible after the same bounded polish and physical checks. A tiny-step or
-acceptable-point status alone never establishes success; floor-only results
-from either remain unavailable. Recomputed residual and topology criteria apply.
+a non-success optimizer status with a finite non-converged residual is
+unavailable, while a finite criterion-meeting result remains eligible after the
+same bounded polish and physical checks. A non-success status alone never
+establishes success; floor-only results from it remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
 diagnosis and do not determine success. Density root producers classify all
@@ -713,8 +727,8 @@ and model discrepancy are distinct. Missing accuracy/runtime thresholds stay
 owner decisions; historical microbenchmarks are not universal limits.
 `Stop::nonfinite` is unavailable and has precedence over finite convergence and
 floor predicates whenever the residual or an optional diagnostic is non-finite.
-For equilibrium, `success` requires accepted solver status, finite residuals and
-declared topology; an unsuccessful result retains `solver_status`, residuals,
+For equilibrium, `success` requires optimizer success or classified rows meeting
+the caller criterion after a non-error stop, finite residuals and declared topology; an unsuccessful result retains `solver_status`, residuals,
 the convergence record and failure message while clearing candidate state and
 action arrays, so `has_state()` is the availability predicate. A successful
 result retains the same convergence record alongside its state. The pre-solve

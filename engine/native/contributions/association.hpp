@@ -231,8 +231,8 @@ inline std::vector<double> solve_site_fractions(
         policy::ASSOCIATION_MAX_ITERATIONS.value);
     const double tolerance = policy::ASSOCIATION_RESIDUAL.value;
     // Hybrid Newton / damped successive substitution (Kakalis et al.; cited by
-    // Pereira2012 for this system). A Newton step is taken when it stays inside
-    // the physical domain and reduces the residual; otherwise the damped
+    // Pereira2012 for this system). A damped Newton step is taken when some step
+    // length inside the physical domain reduces the residual; otherwise the damped
     // substitution step is used. The converged point and the tolerance are
     // unchanged -- only the path to it.
     auto substitution_step = [&](const std::vector<double>& current) {
@@ -311,15 +311,22 @@ inline std::vector<double> solve_site_fractions(
             try {
                 double pivot_ratio = 0.0;
                 const auto step = solve_linear(jacobian, negative_residual, &pivot_ratio);
-                std::vector<double> candidate(sites, 0.0);
+                // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.
+                double alpha = 1.0;
                 for (std::size_t a = 0; a < sites; ++a) {
-                    candidate[a] = fractions[a] + step[a];
+                    if (step[a] < 0.0)
+                        alpha = std::min(alpha, policy::ASSOCIATION_BOUNDARY_FRACTION.value * fractions[a] / -step[a]);
+                    else if (step[a] > 0.0)
+                        alpha = std::min(alpha, (1.0 - fractions[a]) / step[a]);
                 }
-                if (in_domain(candidate)
-                    && residual_infinity_norm(candidate)
-                        < residual_infinity_norm(fractions)) {
-                    next = std::move(candidate);
-                    last_pivot = pivot_ratio;
+                const double current = residual_infinity_norm(fractions);
+                for (; next.empty() && alpha > std::numeric_limits<double>::epsilon(); alpha *= 0.5) {
+                    std::vector<double> candidate(sites, 0.0);
+                    for (std::size_t a = 0; a < sites; ++a) candidate[a] = fractions[a] + alpha * step[a];
+                    if (in_domain(candidate) && residual_infinity_norm(candidate) < current) {
+                        next = std::move(candidate);
+                        last_pivot = pivot_ratio;
+                    }
                 }
             } catch (const std::exception&) {
                 // singular or ill-conditioned: fall through to substitution

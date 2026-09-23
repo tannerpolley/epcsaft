@@ -206,27 +206,9 @@ public:
                 variables * (variables + 1) / 2};
     }
 
-    bool uses_exact_hessian() const noexcept { return true; }
-
-    bool has_zero_objective() const noexcept { return compiled_.pinned_count != 0; }
-
-    const CompiledSystem& compiled_system() const noexcept { return compiled_; }
-
     std::size_t primal_size() const noexcept { return compiled_.primal_size; }
 
-    std::size_t active_row_count() const noexcept { return constraint_rows().size(); }
-
-    std::size_t multiplier_count() const noexcept {
-        return compiled_.rank + compiled_.charge_row_count;
-    }
-
     bool is_square() const noexcept { return compiled_.is_square(); }
-
-    bool topology_is_declared() const noexcept {
-        return compiled_.problem.topology_declared;
-    }
-
-    const std::vector<double>& starting_point() const noexcept { return start_; }
 
 private:
     std::vector<double> point(Ipopt::Index n, const Ipopt::Number* x) const;

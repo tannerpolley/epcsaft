@@ -86,6 +86,9 @@ inline constexpr Tolerance ASSOCIATION_ACTION_RESIDUAL{"ASSOCIATION_ACTION_RESID
     1.0e-10, Category::AlgorithmTolerance,
     "approved P4 normalized mass-action coefficient residual; exceeding it makes the action unavailable"};
 
+// Strong association starts from X = 1 far above the root, where a full Newton step leaves (0, 1].
+inline constexpr Tolerance ASSOCIATION_BOUNDARY_FRACTION{"ASSOCIATION_BOUNDARY_FRACTION", 0.9,
+    Category::AlgorithmTolerance, "fraction-to-boundary: a damped Newton step keeps X_a >= 0.1 X_a"};
 // A budget, not a convergence criterion. Newton with the analytic Jacobian
 // converges in single digits; reaching this many steps means the step selection
 // is failing and the caller should hear about it rather than get a wrong answer
@@ -368,5 +371,20 @@ inline constexpr Tolerance STALL_WINDOW{
     "residual history has STALL_WINDOW entries without contraction; failure meaning: "
     "classified stalled; numerical adequacy/calibration remains open, not an accuracy bound",
 };
+
+// Every entry, readable as epcsaft.tolerances(); the architecture check requires listing and a consumer.
+inline constexpr const Tolerance* ENTRIES[] = {
+    &CLOSE_PACKING_FRACTION, &SITE_FRACTION_FLOOR, &SITE_FRACTION_CEILING, &ASSOCIATION_RESIDUAL,
+    &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
+    &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
+    &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
+    &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
+    &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
+    &REFERENCE_CONVERGENCE_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &STABILITY_COMPOSITION_FLOOR,
+    &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE,
+    &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &EQUILIBRIUM_ROW_RESIDUAL,
+    &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
+    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
+    &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 }  // namespace epcsaft::policy

@@ -30,6 +30,8 @@ class Tolerance:
     factor: float
     upstream: Optional[Tolerance]
 
+def tolerances() -> list[Tolerance]: ...
+
 class Convergence:
     residual: float
     criterion: Optional[Tolerance]

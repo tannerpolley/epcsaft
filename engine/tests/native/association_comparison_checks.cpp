@@ -1216,20 +1216,21 @@ void emit_derivative_unavailable(const TestCase& test_case, const Candidate& can
 
 bool production_zero_support_status(const TestCase& test_case) {
     if (std::string(test_case.id) != "exact-zero-support") return true;
-    bool failed_as_expected = false;
+    // The former singular-Hessian limitation at an exactly absent associating species is
+    // resolved in production; the probe now requires a finite Hessian there.
+    bool finite = false;
     std::string error_message;
     try {
         epcsaft::HelmholtzModel model(test_case.parameters);
-        model.evaluate(test_case.temperature, test_case.volume, test_case.amounts, epcsaft::DerivativeOrder::Hessian);
+        const auto result = model.evaluate(test_case.temperature, test_case.volume, test_case.amounts, epcsaft::DerivativeOrder::Hessian);
+        finite = std::all_of(result.hessian.begin(), result.hessian.end(), [](double v) { return std::isfinite(v); });
     } catch (const std::exception& error) {
         error_message = error.what();
-        failed_as_expected = error_message.find("association Hessian is singular") != std::string::npos;
     }
     recording_support::observe("production-weighted-hessian/exact-zero-support", "status", "1",
-        failed_as_expected ? 1.0 : 0.0, std::nullopt,
-        "case_id:exact-zero-support;known_status:association Hessian is singular;exception=" + error_message,
-        "Diagnostic", "production_probe", "known exact-zero support limitation", "production-weighted-hessian", "exact-zero-support", "status", "T,V,n", "failure expected", "case");
-    return failed_as_expected;
+        finite ? 1.0 : 0.0, std::nullopt, "case_id:exact-zero-support;exception=" + error_message,
+        "Diagnostic", "production_probe", "exact-zero support Hessian is finite", "production-weighted-hessian", "exact-zero-support", "status", "T,V,n", "finite Hessian", "case");
+    return finite;
 }
 
 bool extensive_scaling(const TestCase& test_case) {

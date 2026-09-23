@@ -33,6 +33,7 @@ trace = _core.Capture
 Stop = _core.Stop
 Convergence = _core.Convergence
 ConvergenceError = _core.ConvergenceError
+tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
 
 __all__ = (
@@ -69,5 +70,6 @@ __all__ = (
     "Stop",
     "ThermochemistryRecord",
     "ThermochemistryStatus",
+    "tolerances",
     "trace",
 )
