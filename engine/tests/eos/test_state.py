@@ -319,6 +319,22 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
     close(pure.pressure, mixture.pressure, 1e-12)
 
 
+def test_neutral_selection_is_the_ion_free_electrolyte_limit() -> None:
+    # DH and Born vanish exactly without ions, so a water-only selection of an
+    # electrolyte packet must equal the electrolyte selection at zero ion amount.
+    packet = parameters_json("figiel-yu-held-2025", 3)
+    water = Pure(Parameters.from_json(packet, components=("water",)))
+    salt = Mixture(Parameters.from_json(packet, components=("water", "sodium-cation", "chloride-anion")))
+    for density in (20.0, 55000.0):
+        pure = water.state(298.15, rho=density)
+        limit = salt.state(298.15, rho=density, x=(1.0, 0.0, 0.0))
+        close(pure.pressure, limit.pressure, 1e-12)
+        close(pure.residual_enthalpy, limit.residual_enthalpy, 1e-12)
+        close(pure.residual_chemical_potential_over_rt[0], limit.residual_chemical_potential_over_rt[0], 1e-12)
+    liquid = water.state(298.15, P=1e5, phase="liquid")
+    close(liquid.molar_density, salt.state(298.15, P=1e5, x=(1.0, 0.0, 0.0), phase="liquid").molar_density, 1e-12)
+
+
 @pytest.mark.parametrize(
     ("temperature", "pressure", "phase", "reference_density"),
     [(308.8, 5147500.0, "vapor", 5930.399614704038),

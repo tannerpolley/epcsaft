@@ -429,6 +429,13 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.association_volume[output] = volume;
         result.association_volume[reverse] = volume;
     }
+    // Selection fixes topology (full EOS §12): an uncharged selection has no
+    // ionic term, so its packet-level electrolyte choices have no consumer.
+    if (std::none_of(result.charge_number.begin(), result.charge_number.end(), [](int z) { return z != 0; })) {
+        result.electrolyte_form = {};
+        result.ionic_dispersion = {};
+        result.permittivity_form = {};
+    }
     return result;
 }
 
