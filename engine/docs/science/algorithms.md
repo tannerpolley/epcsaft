@@ -172,6 +172,11 @@ implicit/explicit chains.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
+Density closure requests only the reduced pressure gradient, a_VV and the
+association floor. With association sites these come from one adjoint sweep
+(the same site multipliers as the Hessian path) and one volume tangent through
+the site sensitivity; the full site Jacobian is formed only for Hessian requests.
+
 Identical unanchored T/P/composition requests for vapor and liquid may share one
 bounded search and its stable-root list: the sibling is the opposite extreme
 stable root, or the same unbranched root when only one exists. Anchored requests
