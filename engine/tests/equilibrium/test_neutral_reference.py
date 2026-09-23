@@ -291,9 +291,12 @@ def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
     observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
-    thermal, feed = solved_state_first_actions(compile_problem(model, problem), result, observable, [
-        SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []),
-        SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])])
+    compiled = compile_problem(model, problem)
+    feed_direction = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])
+    thermal, feed = solved_state_first_actions(compiled, result, observable, [
+        SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []), feed_direction])
+    alone = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [feed_direction]))
     assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
     assert feed.results[0].status == Status.Available and feed.results[0].action is not None
+    assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
     assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]
