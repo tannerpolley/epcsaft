@@ -6,12 +6,10 @@
 #include <Eigen/Dense>
 #include <cppad/cppad.hpp>
 
-#include <array>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <optional>
 #include <utility>
 #include <vector>
 

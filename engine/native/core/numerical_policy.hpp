@@ -2,7 +2,6 @@
 
 #include "core/physical_constants.hpp"
 
-#include <cmath>
 #include <limits>
 
 // Every number in the engine that is not a physical constant, with the reason it

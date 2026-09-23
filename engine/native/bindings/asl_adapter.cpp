@@ -3,7 +3,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium_record.hpp"
 
-#include <array>
 #include <charconv>
 #include <cctype>
 #include <cmath>
