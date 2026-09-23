@@ -183,8 +183,9 @@ own an exact stable scan-node root once, keeping its adjacent cells connected
 per cell, discard an entirely negative-slope interval; bisect any slope sign
     transition to adjacent representable densities or an exact slope zero,
     stopping early at a stable sample whose pressure passes the target
-if the target is within the existing reduced-residual tolerance of that
-    turning-point pressure, report an unresolved spinodal
+if no stable sample brackets the target and it is within the existing
+    reduced-residual tolerance of that turning-point pressure, report an
+    unresolved spinodal
 trim the cell to its positive-slope side and refine each strict pressure
     crossing once with the existing safeguarded Newton method
 select by declared branch policy and return the stable-root count
@@ -204,8 +205,9 @@ monotonically across the stable side, so a stable bisection sample whose
 residual has passed the target by more than `DENSITY_ROOT_RESIDUAL` already
 brackets that side's unique root; the fold itself is resolved only when no such
 sample appears, which is exactly the case needed to show that no root exists. It does not
-estimate a fold from pressure-residual coincidence. A target indistinguishable
-from a fold pressure at `DENSITY_ROOT_RESIDUAL` is explicitly unresolved,
+estimate a fold from pressure-residual coincidence. Without such a stable sample, a
+target indistinguishable from a fold pressure at `DENSITY_ROOT_RESIDUAL` is
+explicitly unresolved,
 including a true tangent root; this is numerical unavailability, not physical
 nonexistence. The root residual tolerance is unchanged. For an approximate
 root, refinement also requires `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
