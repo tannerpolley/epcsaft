@@ -305,7 +305,10 @@ inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
 };
 inline constexpr Tolerance EQUILIBRIUM_ACTION_BACKWARD_ERROR{"EQUILIBRIUM_ACTION_BACKWARD_ERROR", 1.0e-10,
     Category::AlgorithmTolerance, "normwise backward error of each implicit Taylor solve; catches a stale "
-    "Jacobian or jet mismatch; forward accuracy needs the caller's ladder and condition estimate"};
+    "Jacobian or jet mismatch"};
+inline constexpr Tolerance EQUILIBRIUM_ACTION_FORWARD_ERROR{"EQUILIBRIUM_ACTION_FORWARD_ERROR", 1.0e-6,
+    Category::AlgorithmTolerance, "first-order relative forward-error bound 2 cond_inf(J) eta of each Taylor "
+    "coefficient; owner decision 2026-09-23 (#87)"};
 
 // The optimizer works below the caller's row criterion: the recomputed row maximum tracks
 // the Ipopt tolerance and overshoots it by a hair (measured 1.0002-1.02x), so classifying

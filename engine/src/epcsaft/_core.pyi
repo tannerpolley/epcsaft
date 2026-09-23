@@ -646,6 +646,7 @@ class SolvedStateActionStatus:
     ThermalBoundary: SolvedStateActionStatus
     CentralPropertyUnavailable: SolvedStateActionStatus
     Nonfinite: SolvedStateActionStatus
+    IllConditioned: SolvedStateActionStatus
 
 class SolvedStateActionResult:
     observable: SolvedStateObservable
