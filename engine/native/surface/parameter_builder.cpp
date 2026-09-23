@@ -64,6 +64,10 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         return 1.0;
     } else if (expected == "reciprocal temperature" && entry.unit == "1 / kelvin") {
         return 1.0;
+    } else if (expected == "molar volume" && entry.unit == "liter / mole") {
+        return 1.0e-3;
+    } else if ((expected == "debye ** 2" || expected == "angstrom ** 3") && entry.unit == expected) {
+        return 1.0;
     }
     std::ostringstream message;
     message << where(entry) << ": expected " << expected;
@@ -189,6 +193,10 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.permittivity_form = PermittivityForm::IonSuppression;
     } else if (document.permittivity_choice == "component-permittivity-mixing") {
         result.permittivity_form = PermittivityForm::ComponentMixing;
+    } else if (document.permittivity_choice == "solvent-density-temperature") {
+        result.permittivity_form = PermittivityForm::DensityTemperature;
+    } else if (document.permittivity_choice == "dipolar-perturbation") {
+        result.permittivity_form = PermittivityForm::DipolarPerturbation;
     } else if (document.permittivity_choice != "none") {
         reject("unknown permittivity choice " + document.permittivity_choice);
     }
@@ -199,10 +207,19 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::vector<Rule> rules;
     std::map<std::size_t, std::size_t> sigma_term_components;
     std::map<std::size_t, std::size_t> permittivity_term_components;
+    // Density-dependent forms consume only their own records (full EOS 6.2, 6.4).
+    const bool density_temperature = document.permittivity_choice == "solvent-density-temperature";
+    const bool dipolar = document.permittivity_choice == "dipolar-perturbation";
     for (const auto& entry : document.entries) {
+        const bool dipolar_field = entry.field == "dipole_scaling" || entry.field == "polarizability_scaling"
+            || entry.field == "correlation_integral_parameter";
+        const bool density_field = entry.field == "dielectric_volume" || entry.field == "dielectric_temperature";
         if ((entry.field == "ion_suppression_coefficient"
-             && (document.permittivity_choice == "none"
-                 || document.permittivity_choice == "solvent-only"))
+             && document.permittivity_choice != "ion-fraction-suppression"
+             && document.permittivity_choice != "ion-specific-suppression")
+            || (dipolar_field && !dipolar) || (density_field && !density_temperature)
+            || ((entry.field == "relative_permittivity" || entry.field == "permittivity_term_coefficient"
+                 || entry.field == "permittivity_reference_temperature") && (dipolar || density_temperature))
             || ((entry.field == "ionic_region_relative_permittivity"
                  || entry.field == "born_c_shell"
                  || entry.field == "born_c_dielectric"
@@ -248,6 +265,19 @@ Parameters build_parameters(const ParameterDocument& document) {
             else if (entry.field == "debye_huckel_diameter") result.debye_huckel_diameter_angstrom[i] = entry.magnitude * factor;
             else if (entry.field == "born_diameter") result.born_diameter_angstrom[i] = entry.magnitude * factor;
             else result.ion_suppression_coefficient[i] = entry.magnitude * factor;
+        } else if (density_field || dipolar_field) {
+            const auto i = component_index(entry, components);
+            component_fields.emplace(entry.field, i);
+            factor = unit_factor(entry, entry.field == "dielectric_volume" ? "molar volume"
+                : entry.field == "dielectric_temperature" ? "kelvin"
+                : entry.field == "dipole_scaling" ? "debye ** 2"
+                : entry.field == "polarizability_scaling" ? "angstrom ** 3" : "dimensionless");
+            const double value = entry.magnitude * factor;
+            if (entry.field == "dielectric_volume") result.dielectric_volume_m3_per_mol[i] = value;
+            else if (entry.field == "dielectric_temperature") result.dielectric_temperature_k[i] = value;
+            else if (entry.field == "dipole_scaling") result.dipole_scaling_debye2[i] = value;
+            else if (entry.field == "polarizability_scaling") result.polarizability_scaling_angstrom3[i] = value;
+            else result.correlation_integral_parameter[i] = value;
         } else if (entry.field == "sigma_term_amplitude" || entry.field == "sigma_term_exponent") {
             require_index(entry, 2, "sigma term index");
             if (entry.index[0] >= sigma_term_components.size() + 1 || entry.index[1] >= components) {
@@ -365,6 +395,14 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (result.charge_number[i] != 0 && component_fields.find({"packing_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/packing_diameter");
         if (result.charge_number[i] != 0 && component_fields.find({"debye_huckel_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/debye_huckel_diameter");
         if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
+        // Schreckenberg records belong to every neutral solvent only; Rueben records to every component.
+        for (const char* field : {"dielectric_volume", "dielectric_temperature"}) {
+            const bool present = component_fields.find({field, i}) != component_fields.end();
+            if (density_temperature && present != (result.charge_number[i] == 0)) reject((present ? "unconsumed component/" : "missing component/") + document.component_ids[i] + "/" + field);
+        }
+        for (const char* field : {"dipole_scaling", "polarizability_scaling", "correlation_integral_parameter"}) {
+            if (dipolar && component_fields.find({field, i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/" + field);
+        }
     }
     for (std::size_t i = 0; i < components; ++i) for (std::size_t j = i + 1; j < components; ++j) {
         const bool same_sign = result.charge_number[i] * result.charge_number[j] > 0;

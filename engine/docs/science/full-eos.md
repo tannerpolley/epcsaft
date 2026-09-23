@@ -340,15 +340,18 @@ differentiates the displayed composition rule in the common owner.
 ### 6.2 Schreckenberg density topology
 
 Yang2024 Eqs. (1a), (2a), and (2b) specify the
-Schreckenberg/Uematsu--Frank topology; the public input builder does not yet
-admit this family. With `S` the neutral-solvent set,
+Schreckenberg/Uematsu--Frank topology, admitted as the permittivity choice
+`solvent-density-temperature` with component records `dielectric_volume`
+(`liter / mole`) and `dielectric_temperature` (`kelvin`). With `S` the
+neutral-solvent set,
 
 Defining relation: [EqID: `density_correlation_mixed_parameters`](../equations.md#density_correlation_mixed_parameters), [EqID: `density_correlated_bulk_permittivity`](../equations.md#density_correlated_bulk_permittivity).
 
 The source water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 `d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,
 `epsilon_r,bulk -> 1` as `rho_m x_solv -> 0`. Every neutral solvent requires
-both parameters; missing records fail closed.
+both parameters; missing records, records on an ion, or a constant solvent
+permittivity record under this choice fail closed.
 
 ### 6.3 Zuber ion-specific topology
 
@@ -367,7 +370,9 @@ volume data or a mixing rule.
 ### 6.4 Rueben perturbation topology
 
 Rueben2024 Eqs. (4)--(6) are specified in the source's Angstrom number-density
-basis; the public input builder does not yet admit this family. Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
+basis, admitted as the permittivity choice `dipolar-perturbation` with
+component records `dipole_scaling` (`debye ** 2`), `polarizability_scaling`
+(`angstrom ** 3`) and `correlation_integral_parameter` (dimensionless). Let `rho_hat_i = rho_m N_A x_i 10^-30` in particles per Angstrom cubed:
 
 Defining relation: [EqID: `effective_dipolar_density`](../equations.md#effective_dipolar_density), [EqID: `dipolar_correlation_integral`](../equations.md#dipolar_correlation_integral), [EqID: `dipolar_perturbation_bulk_permittivity`](../equations.md#dipolar_perturbation_bulk_permittivity).
 
@@ -448,10 +453,10 @@ Figiel parameters unchanged, the EOS returns `0.70721` for Figiel,
 `0.66422` for Zuber, and `0.55220` for Rueben. Their corresponding practical
 osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
 is assigned to those three osmotic numbers here. The Schreckenberg reference
-sequence fails closed because its requested liquid branch becomes a lone
-stable root during the dilution schedule, and the EOS correctly refuses
-to relabel a single root as a requested phase. That is an unresolved
-reference-path/topology interaction, not a fitted-property result.
+path, which formerly failed on a lone stable root, now completes and gives
+`0.56348`. The #27 common-data comparison
+([analyses/2026-dielectric-alternatives](../../../analyses/2026-dielectric-alternatives/README.md))
+supersedes these single-point diagnostics for water/NaCl at 298.15 K and 1 bar.
 
 Since the retained ePC-SAFT ion, Born, and interaction parameters were not
 fitted with the density topologies, this is equation and topology evidence,
@@ -668,11 +673,11 @@ solvent, temperature, component topology, or larger ion fraction. Solver
 convergence does not expand that evidence.
 
 Relative-permittivity behavior is selected by one source-neutral Model Family
-choice in the canonical Parameters document. The public builder currently admits
-ion-fraction suppression, component-permittivity mixing, ion-specific suppression
-and solvent-only permittivity, plus `none`. Density-volume-temperature and
-dipolar-density perturbation remain specified families requiring implementation
-and qualification before public admission. Citations to the
+choice in the canonical Parameters document. The public builder admits
+ion-fraction suppression, component-permittivity mixing, ion-specific suppression,
+solvent-only, solvent-density-temperature (§6.2) and dipolar-perturbation (§6.4)
+permittivity, plus `none`. A choice consumes only its own records; any other
+permittivity record is rejected. Citations to the
 papers that support a choice and its coefficients remain in provenance; paper
 names do not select runtime implementations. `Parameters.from_mapping(...)`
 and `Parameters.from_json(...)` parse the same strict document, which must

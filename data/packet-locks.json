@@ -32,6 +32,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "dielectric-response-records",
+      "packet_version": "1",
+      "packet_path": "data/packets/dielectric-response-records/1",
+      "packet_fingerprint": "4100b757771565b00c37ff116c4aa1da7b8dac5e71f5e509697e7ddce0735630",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "figiel-2025-aqueous-iodides",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-aqueous-iodides/2",

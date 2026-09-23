@@ -120,6 +120,7 @@ class Parameters:
             "solvation_factor": "solvation_factor",
             "relative_permittivity": "relative_permittivity",
             "ion_specific_suppression_coefficient": "ion_suppression_coefficient",
+            **{name: name for name in ("dielectric_volume", "dielectric_temperature", "dipole_scaling", "polarizability_scaling", "correlation_integral_parameter")},
         }
         for component_id in selected_ids:
             record = component_records[component_id]
@@ -238,7 +239,7 @@ class Parameters:
             if kind not in ("base", "association", "electrolyte", "permittivity"):
                 raise _core.ParameterError(f"unknown model family kind {kind}")
         electrolyte = _choice(families, "electrolyte", {"none", "fully-dissociated-debye-huckel", "born"})
-        permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing"})
+        permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing", "solvent-density-temperature", "dipolar-perturbation"})
         base = _choice(families, "base", {"pc-saft"})
         association = _choice(families, "association", {"none", "general-site"})
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
