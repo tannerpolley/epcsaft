@@ -51,11 +51,17 @@ this intended architecture.
 | `analyses/` | One-question calculations, retained results and interpretation using the installed wheel |
 | Official application repositories | Application chemistry, parameter adoption, process equations and application acceptance |
 
-The bounded neutral Pyomo/IDAES adapter ships `libepcsaft_asl.so` in the same
-non-editable Engine wheel. The compiled ASL binding transports shared native
-Helmholtz pressure derivatives; the [adapter analysis](../../analyses/2026-idaes-asl-adapter/README.md)
-owns process equations, units, scaling, execution and retained evidence. Its
-pure-neutral qualification does not qualify general property actions or applications.
+The Pyomo/IDAES adapter ships `libepcsaft_asl.so` in the same non-editable Engine
+wheel. Its neutral functions transport shared Helmholtz pressure derivatives;
+the [neutral analysis](../../analyses/2026-idaes-asl-adapter/README.md) owns that
+qualification. Its equilibrium function transports E5 phase-component amounts
+and exact first/second feed actions at fixed T/P on a declared two-liquid branch.
+The [Khudaida analysis](../../analyses/2026-khudaida-idaes-settler/README.md) owns
+the nonreactive qualification. An explicit affine feed map, supports, scalar
+reaction targets and phase-identity criterion are caller inputs, not application
+selectors. Each downstream application must qualify its own chemistry, input
+chart, nonlinear process chain and operating domain; neither reference qualifies
+reactive Lithium by implication.
 
 ## Engine responsibilities
 

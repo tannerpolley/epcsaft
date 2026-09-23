@@ -316,15 +316,15 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
     "dual_inf_tol and constr_viol_tol settings; the caller criterion classifies rows",
 };
 
-// Newton polish on the unweighted rows after the amount-weighted optimizer stop (#87,
-// 2026-09-21): the classified criterion bounds an intensive trace row only by
-// tau N_feed/(N_p x_i), so an accepted iterate can carry a 1e-4 relative error in a 1e-8
-// mole fraction. Each step must contract the raw row maximum; quadratic convergence needs
-// at most three steps from an accepted iterate.
+// The optimizer bounds a trace row only by tau N_feed/(N_p x_i) (#87, 2026-09-21).
+// Three exact-Jacobian steps contract raw rows inside the physical cutoff.
+// Return the visited point with lowest classified residual, including the optimizer
+// start; transient classified increases do not discard a useful direction (#66).
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     3.0,
     Category::AlgorithmTolerance,
-    "maximum Newton polish steps on the unweighted equilibrium rows; each must contract the raw and classified residuals inside the cutoff",
+    "maximum raw-contracting Newton steps inside the composition cutoff; return the lowest "
+    "classified residual among the optimizer start and accepted steps",
 };
 
 inline constexpr Tolerance EQUILIBRIUM_MAX_ITERATIONS{"EQUILIBRIUM_MAX_ITERATIONS",

@@ -34,6 +34,10 @@ plan:
 # shared charge-neutral reference and activity admission; no association change.
 # 2026-09-22 #84: owner-approved small increases for native neutral reaction
 # references and explicit public transport; total hard ceiling unchanged.
+# 2026-09-22 #66: owner-approved integration of latest reference/trace repairs
+# and the live IDAES adapter; aggregate hard ceiling 17450 -> 17600.
+# 2026-09-22 #66: latest merged main adds one Python line; aggregate hard
+# ceiling 17600 -> 17601 without changing any layer ceiling or physics.
 code_budgets: {
   "core": [
     700,
@@ -68,7 +72,7 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1225
+    1700
   ],
   "python": [
     1350,
@@ -78,7 +82,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    17450
+    17601
   ]
 }
 

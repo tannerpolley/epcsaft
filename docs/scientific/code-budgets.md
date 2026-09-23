@@ -77,6 +77,21 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-22, aggregate hard ceiling 17600 → 17601 (#66). The latest merged
+  main adds one Python physical line to the 17600-line accepted integration.
+  The owner authorized necessary IDAES integration budget increases. No layer
+  ceiling, thermodynamic method, numerical tolerance or acceptance claim changes.
+
+- 2026-09-22, aggregate hard ceiling 17450 → 17600 (#66). The owner approved
+  necessary budget increases and explicitly requested integration of the latest
+  local reference/trace-recovery and Lithium surrogate-proof work. Combining
+  those reviewed Engine changes with the existing live adapter uses about
+  17544 physical lines. Keep the adapter Bindings ceiling 1700 and the upstream
+  layer ceilings; no new thermodynamic owner or compatibility path is added.
+  Removing required reference derivatives or adapter admission checks, or packing
+  code to conceal the combined size, would invalidate the requested integration.
+  This bounded amendment covers composition of the two lanes, not new physics.
+
 - 2026-09-21, Properties hard ceiling 3460 → 3470 (#89, owner-approved small
   increase). Requirement: replace the density owner's fixed-width slope search
   with a bounded search using a quadratic-model estimate and an
