@@ -160,6 +160,48 @@ std::vector<std::vector<double>> start_compositions(
     return result;
 }
 
+// A pinned-zero vapor at free pressure and fixed temperature is a bubble point. Move the
+// caller's pressure seed by one fugacity step, P1 = P0 sum_{i in vapor} x_i phi_i^L/phi_i^V,
+// from the seeded compositions; phi^L ~ 1/P puts P1 near the bubble pressure. A failed
+// state keeps the caller's seed. Only the start moves; equations and tolerances do not.
+double bubble_seed_pressure(const CompiledSystem& compiled, const std::vector<double>& point,
+                            const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
+    const auto& problem = compiled.problem;
+    const double seed = seed_pressure(compiled);
+    // Pure saturation keeps its coexistence-root start.
+    if (!problem.pressure.free || problem.temperature.free || problem.phases.size() != 2
+        || problem.phases[0].kind == problem.phases[1].kind
+        || compiled.model->parameters().component_count() < 2) return seed;
+    const std::size_t vapor = problem.phases[0].kind == PhaseKind::Vapor ? 0 : 1;
+    const auto& incipient = problem.phases[vapor].amount;
+    if (incipient.kind != AmountKind::Pinned || incipient.fraction != 0.0) return seed;
+    const std::size_t components = compiled.model->parameters().component_count();
+    std::vector<std::vector<double>> x(2, std::vector<double>(components, 0.0));
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        const auto& support = problem.phases[phase].support;
+        for (std::size_t i = 0; i < support.size(); ++i)
+            x[phase][support[i]] = std::exp(point[phase_offsets[phase] + i]);
+    }
+    const double temperature = seed_temperature(compiled);
+    try {
+        const auto liquid = compiled.model->state_at_pressure(
+            temperature, seed, x[1 - vapor], DensityBranch::Liquid);
+        const auto gas = compiled.model->state_at_pressure(
+            temperature, seed, x[vapor], DensityBranch::Vapor);
+        if (!liquid.log_fugacity_coefficient || !gas.log_fugacity_coefficient) return seed;
+        double sum = 0.0;
+        for (const std::size_t i : problem.phases[vapor].support)
+            sum += x[1 - vapor][i] * std::exp((*liquid.log_fugacity_coefficient)[i]
+                                              - (*gas.log_fugacity_coefficient)[i]);
+        const double bubble = seed * sum;
+        if (!(std::isfinite(bubble) && bubble > 0.0)) return seed;
+        scope.probe("bubble_seed_pressure", bubble);
+        return bubble;
+    } catch (const std::exception&) {
+        return seed;
+    }
+}
+
 }  // namespace
 
 std::vector<double> boundary_start(const CompiledSystem& compiled) {
@@ -178,8 +220,11 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
         : feed_total / static_cast<double>(std::max<std::size_t>(1, free_phases));
     scope.probe("free_phases", static_cast<double>(free_phases));
     scope.probe("feed_total", feed_total);
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase]);
+    const double p = bubble_seed_pressure(compiled, point, phase_offsets, scope);
+    if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
         if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) {
             point[cursor++] = vapor_fraction.has_value()
@@ -187,7 +232,6 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
                     ? *vapor_fraction : 1.0 - *vapor_fraction) : free_amount;
         }
         const double t = seed_temperature(compiled);
-        const double p = seed_pressure(compiled);
         std::vector<double> composition(compiled.model->parameters().component_count(), 0.0);
         for (std::size_t i = 0; i < compiled.problem.phases[phase].support.size(); ++i) {
             composition[compiled.problem.phases[phase].support[i]] =
