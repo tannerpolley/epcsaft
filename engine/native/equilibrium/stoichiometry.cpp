@@ -546,15 +546,6 @@ std::vector<double> reconstruct_from_balance(
     return transpose_matvec(basis, coordinates);
 }
 
-double l1_norm(const std::vector<double>& values) {
-    double result = 0.0;
-    for (const double value : values) {
-        if (!std::isfinite(value)) return std::numeric_limits<double>::infinity();
-        result += std::abs(value);
-    }
-    return result;
-}
-
 bool all_finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(),
                        [](double value) { return std::isfinite(value); });
@@ -622,13 +613,6 @@ double maximum_abs(const std::vector<double>& values) {
     return result;
 }
 
-double basis_trace(const std::vector<std::vector<double>>& basis) {
-    const auto gram = gram_matrix(basis);
-    double result = 0.0;
-    for (std::size_t i = 0; i < gram.size(); ++i) result += gram[i][i];
-    return result;
-}
-
 bool same_subspace(
     const std::vector<std::vector<double>>& left,
     const std::vector<std::vector<double>>& right,
@@ -645,30 +629,6 @@ bool same_subspace(
         if (projection_error(left, row) > tolerance) return false;
     }
     return true;
-}
-
-double balance_total(const std::vector<double>& amounts) {
-    if (!all_finite(amounts)) throw std::invalid_argument("invalid balance amounts");
-    return std::accumulate(amounts.begin(), amounts.end(), 0.0);
-}
-
-bool basis_matches_components(
-    const std::vector<std::vector<double>>& basis, std::size_t components
-) {
-    if (components == 0) return false;
-    for (const auto& row : basis) {
-        if (row.size() != components || !all_finite(row)) return false;
-    }
-    return true;
-}
-
-bool contains_reaction_name(
-    const std::vector<ReactionSpec>& reactions, const std::string& name
-) {
-    for (std::size_t index = 0; index < reactions.size(); ++index) {
-        if (reaction_name(reactions[index], index) == name) return true;
-    }
-    return false;
 }
 
 }  // namespace epcsaft::equilibrium
