@@ -196,7 +196,7 @@ def test_temperature_reference_chain_recovers_identical_species_law(
 
     def contraction(state: Any, p: float) -> float:
         assert state.log_fugacity_coefficient is not None
-        return -state.log_fugacity_coefficient[0] - math.log(p / rt)
+        return -float(state.log_fugacity_coefficient[0]) - math.log(p / rt)
 
     ln_k_eff = ln_k + contraction(fixed, reference_pressure or pressure) - contraction(system, pressure)
     slope_t = source_slope + (fixed.residual_enthalpy - system.residual_enthalpy) / (rt * temperature)
