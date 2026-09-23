@@ -468,8 +468,10 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         residual = backward_error(residual, center.jacobian.cwiseAbs().rowwise().sum().maxCoeff(), solution_norm[k], right_norm[k]);
         if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
+        // The first refused coefficient names the cause; 2 cond eta is the first-order forward bound.
+        if (path.status != SolvedStateActionStatus::Available) continue;
         if (residual > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
-        else if (*diagnostics.condition_estimate * residual > policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value)
+        else if (!(2.0 * *diagnostics.condition_estimate * residual <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value))
             path.status = SolvedStateActionStatus::IllConditioned;
     }
     return path;

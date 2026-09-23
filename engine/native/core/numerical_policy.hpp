@@ -307,7 +307,7 @@ inline constexpr Tolerance EQUILIBRIUM_ACTION_BACKWARD_ERROR{"EQUILIBRIUM_ACTION
     Category::AlgorithmTolerance, "normwise backward error of each implicit Taylor solve; catches a stale "
     "Jacobian or jet mismatch"};
 inline constexpr Tolerance EQUILIBRIUM_ACTION_FORWARD_ERROR{"EQUILIBRIUM_ACTION_FORWARD_ERROR", 1.0e-6,
-    Category::AlgorithmTolerance, "first-order relative forward-error bound cond_inf(J) eta of each Taylor "
+    Category::AlgorithmTolerance, "first-order relative forward-error bound 2 cond_inf(J) eta of each Taylor "
     "coefficient; owner decision 2026-09-23 (#87)"};
 
 // The optimizer works below the caller's row criterion: the recomputed row maximum tracks

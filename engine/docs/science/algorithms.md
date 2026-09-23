@@ -543,13 +543,16 @@ owner). Each solved coefficient is re-evaluated; its normwise backward error
 eta_k = |r_k| / (|J| |y_k| + |b_k|) (infinity norms, Rigal–Gaches) must meet
 `EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
 only that y_k solves a nearby linear system; it catches a stale Jacobian or a
-jet mismatch and is invariant to direction and chart scale. Forward accuracy is
-bounded to first order by cond_inf(J) eta_k relative to the largest
-coefficient, with cond_inf(J) = |J| |J^-1| from the central factorization (the
-reported condition estimate); a coefficient whose bound exceeds
-`EQUILIBRIUM_ACTION_FORWARD_ERROR` is refused as `ill_conditioned` (owner
-decision 2026-09-23). The bound is normwise and does not certify small
-coefficients relative to themselves. Observables are
+jet mismatch and is invariant to direction scale and to one common chart
+scale, not to row or per-variable scaling. The first-order forward bound
+|dy_k| / |y_k| <= 2 cond_inf(J) eta_k (Higham, Thm 7.2), with
+cond_inf(J) = |J| |J^-1| from the central factorization (the reported
+condition estimate), refuses a coefficient above
+`EQUILIBRIUM_ACTION_FORWARD_ERROR` as `ill_conditioned` (owner decision
+2026-09-23); the first refused coefficient names the status. For k >= 2 the
+bound holds given the computed lower coefficients: their errors enter b_k and
+are not re-bounded. It is normwise and does not certify small components of y_k
+relative to themselves. Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
 same gradient series; the log activity on the EOS density basis,
