@@ -156,7 +156,7 @@ solve site mass-action values outside the reusable thermodynamic recording
 form partials of the defining equations at the converged value
 solve the implicit linear equations for each requested derivative action
 include those derivatives in the common energy differentiation
-verify derivative linear residual and conditioning
+verify derivative backward error and report conditioning
 ```
 
 An equivalent stationary elimination is allowed only on its regular domain
@@ -539,8 +539,15 @@ three) with the model's residual gradient coefficients G_1 = H z_1,
 G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 + D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
 (E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
-owner). Each solved coefficient is re-evaluated; its normalised row residual
-must meet `EQUILIBRIUM_ROW_RESIDUAL` (`linear_solve_residual`). Observables are
+owner). Each solved coefficient is re-evaluated; its normwise backward error
+eta_k = |r_k| / (|J| |y_k| + |b_k|) (infinity norms, Rigal–Gaches) must meet
+`EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
+only that y_k solves a nearby linear system; it catches a stale Jacobian or a
+jet mismatch and is invariant to direction and chart scale. It does not bound
+forward error: that is about cond(J) eta_k for the largest coefficient, so an
+availability claim for an ill-conditioned state needs the caller's
+finite-difference ladder with the reported condition estimate, including small
+coefficients. Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
 same gradient series; the log activity on the EOS density basis,

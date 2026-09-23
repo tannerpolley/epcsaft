@@ -303,6 +303,9 @@ inline constexpr Tolerance EQUILIBRIUM_ROW_RESIDUAL{"EQUILIBRIUM_ROW_RESIDUAL",
     "dimensionless equilibrium-row infinity norm; two decades above the "
     "association residual entering the assembly floor",
 };
+inline constexpr Tolerance EQUILIBRIUM_ACTION_BACKWARD_ERROR{"EQUILIBRIUM_ACTION_BACKWARD_ERROR", 1.0e-10,
+    Category::AlgorithmTolerance, "normwise backward error of each implicit Taylor solve; catches a stale "
+    "Jacobian or jet mismatch; forward accuracy needs the caller's ladder and condition estimate"};
 
 // The optimizer works below the caller's row criterion: the recomputed row maximum tracks
 // the Ipopt tolerance and overshoots it by a hair (measured 1.0002-1.02x), so classifying

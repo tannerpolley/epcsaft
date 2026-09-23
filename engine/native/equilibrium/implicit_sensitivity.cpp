@@ -86,12 +86,11 @@ double maximum_abs(const Eigen::MatrixXd& matrix) {
     return result;
 }
 
-bool residual_is_small(const Eigen::MatrixXd& matrix,
-                       const Eigen::MatrixXd& solution,
-                       const Eigen::MatrixXd& right) {
-    const double scale = std::max(1.0, maximum_abs(right));
-    return maximum_abs(matrix * solution - right)
-        <= policy::EQUILIBRIUM_ROW_RESIDUAL.value * scale;
+// Normwise backward error |r|/(|J||y| + |b|) in the infinity norm (Rigal-Gaches). Unlike
+// |r|/max(1, |b|), it does not cap the realized amplification |J||y|/|b| or depend on chart scale.
+double backward_error(double residual, double jacobian_norm, double solution, double right) {
+    const double denominator = jacobian_norm * solution + right;
+    return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
 }
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) {
@@ -102,13 +101,6 @@ bool square_and_numeric(const Eigen::MatrixXd& matrix) {
         }
     }
     return true;
-}
-
-double relative_residual(const Eigen::MatrixXd& matrix,
-                         const Eigen::MatrixXd& solution,
-                         const Eigen::MatrixXd& right) {
-    const double scale = std::max(1.0, maximum_abs(right));
-    return maximum_abs(matrix * solution - right) / scale;
 }
 
 }  // namespace
@@ -173,10 +165,14 @@ std::vector<double> solve_implicit(
         }
     }
     const Eigen::MatrixXd result = matrix.fullPivLu().solve(right);
-    if (!result.allFinite() || !residual_is_small(matrix, result, right)) return {};
+    double error = 0.0;
+    for (Eigen::Index j = 0; j < result.cols(); ++j)
+        error = std::max(error, backward_error((matrix * result.col(j) - right.col(j)).cwiseAbs().maxCoeff(),
+            matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.col(j).cwiseAbs().maxCoeff(), right.col(j).cwiseAbs().maxCoeff()));
+    if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
     scope.probe("parameters", static_cast<double>(parameters));
     scope.probe("max_solution", maximum_abs(result));
-    scope.probe("relative_residual", relative_residual(matrix, result, right));
+    scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
     return flatten(result);
@@ -432,7 +428,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     const std::size_t n = center.prepared.point.size();
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
     state[0] = center.prepared.point;
-    std::vector<double> scale(order + 1, 1.0);
+    std::vector<double> right_norm(order + 1, 0.0), solution_norm(order + 1, 0.0);
     for (std::size_t k = 1; k <= order; ++k) {
         const std::vector<std::vector<double>> prefix(state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1));
         RowSeries series;
@@ -449,8 +445,9 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         Eigen::VectorXd right(static_cast<Eigen::Index>(n));
         for (std::size_t row = 0; row < n; ++row) right(static_cast<Eigen::Index>(row)) = -series.rows[k][row];
         if (!right.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
-        scale[k] = std::max(1.0, right.cwiseAbs().maxCoeff());
+        right_norm[k] = right.cwiseAbs().maxCoeff();
         const Eigen::VectorXd solution = center.lu.solve(right);
+        solution_norm[k] = solution.cwiseAbs().maxCoeff();
         ++diagnostics.linear_solves;
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
@@ -468,10 +465,10 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     for (std::size_t k = 1; k <= order; ++k) {
         double residual = 0.0;
         for (const double value : path.series.rows[k]) residual = std::max(residual, std::abs(value));
-        residual /= scale[k];
+        residual = backward_error(residual, center.jacobian.cwiseAbs().rowwise().sum().maxCoeff(), solution_norm[k], right_norm[k]);
         if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
-        if (residual > policy::EQUILIBRIUM_ROW_RESIDUAL.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
+        if (residual > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
     }
     return path;
 }
