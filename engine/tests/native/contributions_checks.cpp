@@ -725,8 +725,8 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         CHECK(matches);
     };
     recording_support::expect_group(
-        recording_support::active_test_id(), "c3-electrolyte", "chi-", 8,
-        "finite-size chi integral and refinement values", "reduced_diameter");
+        recording_support::active_test_id(), "c3-electrolyte", "chi-", 14,
+        "finite-size chi integral and refinement values and taped derivatives", "reduced_diameter");
     recording_support::expect_group(
         recording_support::active_test_id(), "c3-electrolyte", "dh-", 4,
         "Debye-Huckel dilute and finite multivalent values", "rho");
@@ -767,6 +767,31 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
                    recording_support::field("reference_panels", 4000),
                })),
                "Simpson chi integral reaches a refinement plateau", 1.0e-11);
+    }
+
+    // Taped chi' = -3 int t^3/(1+yt)^2 and chi'' = 6 int t^4/(1+yt)^3 on both sides of the
+    // series switch; the former six-term switch at 1e-3 missed chi''(2e-3) by 12 percent.
+    for (const double reduced : {2.0e-3, 0.19, 0.21}) {
+        const bool use_series = reduced < epcsaft::policy::SCREENING_SERIES_SWITCH.value;
+        std::vector<CppAD::AD<double>> y = {reduced};
+        CppAD::Independent(y);
+        std::vector<CppAD::AD<double>> chi = {epcsaft::finite_size_chi(y[0], use_series)};
+        CppAD::ADFun<double> tape(y, chi);
+        tape.Forward(0, std::vector<double>{reduced});
+        const double first = tape.Forward(1, std::vector<double>{1.0})[0];
+        const double second = 2.0 * tape.Forward(2, std::vector<double>{0.0})[0];
+        const auto integral = [reduced](int power, int order) {
+            return simpson([=](double t) { return std::pow(t, power) / std::pow(1.0 + reduced * t, order); }, 0.0, 1.0, 4000);
+        };
+        const std::string point = recording_support::number(reduced);
+        const auto fields = inputs(p, density, x, recording_support::fields({
+            recording_support::field("reduced_diameter", reduced),
+            recording_support::field("series_branch", static_cast<int>(use_series)),
+            recording_support::field("reference_panels", 4000)}));
+        record((std::string("chi-d1-") + point).c_str(), "dchi_dy", "1", first, -3.0 * integral(3, 2), fields,
+               "chi'=-3 integral_0^1 t^3/(1+y t)^2 dt", 1.0e-11);
+        record((std::string("chi-d2-") + point).c_str(), "d2chi_dy2", "1", second, 6.0 * integral(4, 3), fields,
+               "chi''=6 integral_0^1 t^4/(1+y t)^3 dt", 1.0e-9);
     }
 
     const auto component_permittivity = epcsaft::component_relative_permittivities(temperature, p);

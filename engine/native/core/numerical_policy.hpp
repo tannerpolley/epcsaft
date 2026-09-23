@@ -19,9 +19,7 @@
 // Category 4 is empty and must stay empty. An entry that cannot be justified
 // into category 3 with a source does not get carried; a provisional category-3
 // choice may remain only when its rationale, predicate, failure meaning and
-// unresolved accuracy are explicit. The audit found the drifted values below
-// by comparing against the paper, and they are pinned here so a solver stage
-// cannot quietly move them again.
+// unresolved accuracy are explicit.
 //
 // Stages add their own entries as they are written. Nothing outside this header
 // may define a tolerance.
@@ -139,19 +137,19 @@ inline constexpr Tolerance DENSITY_BRACKET_INTERVALS{"DENSITY_BRACKET_INTERVALS"
 inline constexpr Tolerance DENSITY_LOWER_FRACTION{"DENSITY_LOWER_FRACTION",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "Stage 2 brief; logarithmic density scan starts at a dilute ideal-gas fraction",
+    "fraction of the ideal-gas density P/RT where the log scan starts; a root lies above it unless Z > 1e8",
 };
 
 inline constexpr Tolerance DENSITY_UPPER_FRACTION{"DENSITY_UPPER_FRACTION",
     0.999,
     Category::AlgorithmTolerance,
-    "Stage 2 brief; logarithmic density scan stops below close packing",
+    "fraction of the model's close-packing molar density where the log scan stops",
 };
 
 inline constexpr Tolerance DENSITY_BISECTION_FRACTION{"DENSITY_BISECTION_FRACTION",
     0.5,
     Category::AlgorithmTolerance,
-    "Stage 2 brief; safeguarded Newton uses the bracket midpoint",
+    "bracket midpoint of the safeguarded Newton and the fold bisection",
 };
 inline constexpr Tolerance DENSITY_ANCHOR_LOG_WINDOW{"DENSITY_ANCHOR_LOG_WINDOW", 0.009950330853168083,
     Category::AlgorithmTolerance, "approved P2 local density envelope log1p(0.01)"};
@@ -161,57 +159,47 @@ inline constexpr Tolerance DENSITY_ANCHOR_SCAN_INTERVALS{"DENSITY_ANCHOR_SCAN_IN
 inline constexpr Tolerance COMPOSITION_SUM_TOLERANCE{"COMPOSITION_SUM_TOLERANCE",
     1.0e-12,
     Category::AlgorithmTolerance,
-    "carried composition validation threshold from electrolyte_reference.hpp",
+    "absolute defect of a unit sum or charge balance of O(1) terms, about 4500 ulp at 1",
 };
 
+// Trace molalities (mol/kg) of the infinite-dilution reference ladder. Single-ion ln(phi)
+// approaches its limit as -A z^2 sqrt(I) (Debye-Hueckel), so the terminal pair changes by
+// A (1e-5 - 1e-6): measured 1.063e-5 for NaCl in water at 298.15 K against the predicted
+// 1.176 * 9e-6 = 1.06e-5, and the terminal value sits A sqrt(1e-12) ~ 1.2e-6 from the limit.
 inline constexpr Tolerance REFERENCE_MOLALITY_ONE{"REFERENCE_MOLALITY_ONE",
     1.0e-6,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp molality ladder",
+    "trace molality of the infinite-dilution ladder, mol/kg",
 };
 inline constexpr Tolerance REFERENCE_MOLALITY_TWO{"REFERENCE_MOLALITY_TWO",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp molality ladder",
+    "trace molality of the infinite-dilution ladder, mol/kg",
 };
 inline constexpr Tolerance REFERENCE_MOLALITY_THREE{"REFERENCE_MOLALITY_THREE",
     1.0e-10,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp molality ladder",
+    "trace molality of the infinite-dilution ladder, mol/kg",
 };
 inline constexpr Tolerance REFERENCE_MOLALITY_FOUR{"REFERENCE_MOLALITY_FOUR",
     1.0e-12,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp molality ladder",
+    "trace molality of the infinite-dilution ladder, mol/kg",
 };
 inline constexpr Tolerance REFERENCE_CONVERGENCE_WITNESS{"REFERENCE_CONVERGENCE_WITNESS",
     1.0e-14,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp convergence witness",
+    "witness trace molality, mol/kg; its sqrt(I) bias is 1e-7 A z^2",
 };
 inline constexpr Tolerance REFERENCE_CONVERGENCE_TOLERANCE{"REFERENCE_CONVERGENCE_TOLERANCE",
     5.0e-5,
     Category::AlgorithmTolerance,
-    "electrolyte_reference.hpp reference convergence threshold",
+    "terminal ln(phi) change; about 4.7x the 1:1 Debye-Hueckel value, larger changes go to the witness",
 };
 
 // ---------------------------------------------------------------- stability
 //
 // Pereira, Jackson, Galindo and Adjiman, Comput. Chem. Eng. 36 (2012) 99-118.
-// The two entries marked "drifted" were changed in the tree this replaces, with
-// measured consequences; they are pinned at the published values here so the
-// stability stage starts from the paper.
-
-// Gap between the upper and lower bounds within which a candidate phase is
-// accepted. The old tree used 5e-2, five times the paper's value, so candidates
-// qualified before the bounds had closed: the third stage was entered early,
-// took 14-42 percent of all evaluations on the measured feeds, and had 60-90
-// percent of its solutions rejected again by the free-energy test.
-inline constexpr Tolerance STABILITY_CANDIDATE_GAP{"STABILITY_CANDIDATE_GAP",
-    1.0e-2,
-    Category::AlgorithmTolerance,
-    "Pereira 2012 eps_b; drifted to 5e-2 in the superseded tree",
-};
 
 // Lower box of the ln(x_i) coordinate inside the Ipopt subproblem. Its barrier is the step
 // regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
@@ -238,24 +226,6 @@ inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_
     1.0e-8,
     Category::AlgorithmTolerance,
     "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff; not a stability result or accuracy bound",
-};
-
-inline constexpr Tolerance STABILITY_MULTIPLIER_GAP{"STABILITY_MULTIPLIER_GAP",
-    0.5,
-    Category::AlgorithmTolerance,
-    "Pereira 2012 eps_lambda",
-};
-
-inline constexpr Tolerance STABILITY_COMPOSITION_GAP{"STABILITY_COMPOSITION_GAP",
-    1.0e-3,
-    Category::AlgorithmTolerance,
-    "Pereira 2012 eps_x",
-};
-
-inline constexpr Tolerance STABILITY_PACKING_GAP{"STABILITY_PACKING_GAP",
-    1.0e-3,
-    Category::AlgorithmTolerance,
-    "Pereira 2012 eps_eta",
 };
 
 // ------------------------------------------------------------- regression
@@ -362,28 +332,21 @@ inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
     "fluid-coordinate floor of the log-packing chart",
 };
 
-// A budget with a name. The old tree's global search stopped at 3250 samples and
-// reported that as a one-phase result, so a decision that ran out of work was
-// indistinguishable from a decision that converged. Reaching this is a named
-// stop the caller can see, not an answer.
-inline constexpr Tolerance STABILITY_SEARCH_BUDGET{"STABILITY_SEARCH_BUDGET",
-    300.0,
-    Category::AlgorithmTolerance,
-    "budget; the floor analysis puts a binary decision at 40-150 evaluations",
-};
-
 // Below this reduced screening length the closed form of the finite-size correction
 // loses precision to cancellation -- log(1+r) - r + r^2/2 is a difference of terms that
-// agree to leading order -- so the series is used instead. Both forms are exact; this is
-// where double precision stops preferring one.
+// agree to leading order -- so the series through r^24 is used instead. Against 50-digit
+// references (2026-09-23), the worst relative errors of chi and its first and second
+// Taylor derivatives are 3e-14, 7e-13 and 1.1e-11 on either side of 0.2; the former
+// switch at 1e-3 with six series terms left the closed form's second derivative wrong
+// by a factor of 3.3 just above it.
 //
 // It is also a recording-time predicate: the branch taken is baked into a tape, so a tape
 // recorded on one side of it is wrong on the other. That is why the tape cache is keyed on
 // the predicate signature and not on topology alone.
 inline constexpr Tolerance SCREENING_SERIES_SWITCH{"SCREENING_SERIES_SWITCH",
-    1.0e-3,
+    0.2,
     Category::AlgorithmTolerance,
-    "cancellation floor of the closed-form chi; carried from the superseded tree",
+    "crossover of closed-form cancellation and the 24-term series truncation in chi and its derivatives",
 };
 
 // --------------------------------------------------------------- convergence

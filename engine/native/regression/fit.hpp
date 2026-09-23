@@ -10,7 +10,8 @@
 
 namespace epcsaft::regression {
 
-// Ceres trust-region controls; the named policy entries are the only defaults.
+// Ceres trust-region controls; a zero tolerance selects its named policy default. The
+// iteration and time budgets are explicit caller controls, not tolerances.
 struct FitControls final {
     double function_tolerance = 0.0;
     double gradient_tolerance = 0.0;
