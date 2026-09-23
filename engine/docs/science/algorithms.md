@@ -660,10 +660,17 @@ and mixed T/P actions are therefore available at order one; a refused slope
 leaves the value and sibling directions intact. Referenced continuation, free
 temperature, raw lever derivatives, temperature actions above order one,
 parameter actions, and third-order actions involving pressure remain
-unavailable. Ideal/Total caloric values and actions remain
-unavailable even with an attached thermal record, while independently valid
-residual properties remain usable. A central finite reference cannot certify
-the missing reference derivatives.
+unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
+supplied records anchor their species, record-less species are completed from
+the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
+may remain. A heat-capacity value or enthalpy temperature action requests the
+second slope (EqID: `standard_state_transfer_temperature_second_derivative`),
+admitted by the same observed criterion in R units; its refusal leaves enthalpy
+values and feed actions available. Enthalpy values and first feed/temperature
+actions at fixed pressure and heat-capacity values and first feed actions are
+available; pressure-moving caloric actions, heat-capacity temperature actions,
+caloric orders above one, u, s and c_v remain unavailable, while independently
+valid residual properties remain usable.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit

@@ -82,7 +82,9 @@ void validate_thermochemistry(const ThermochemistryRecord& record, std::size_t c
         throw std::invalid_argument("invalid thermochemistry standard pressure");
     if (record.component_intervals.size() != component_count)
         throw std::invalid_argument("thermochemistry component order");
-    for (const auto& intervals : record.component_intervals) validate_ideal_intervals(intervals);
+    // An empty list declares a species without an ideal-gas record (reaction-completed calorics).
+    for (const auto& intervals : record.component_intervals)
+        if (!intervals.empty()) validate_ideal_intervals(intervals);
 }
 
 IdealPropertiesEvaluation evaluate_ideal_properties(
@@ -93,6 +95,9 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
     if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(molar_density) || molar_density <= 0.0)
         throw std::invalid_argument("invalid ideal state");
     validate_composition(mole_fractions);
+    if (std::any_of(record.component_intervals.begin(), record.component_intervals.end(),
+                    [](const auto& intervals) { return intervals.empty(); }))
+        return {std::nullopt, ThermochemistryStatus::MissingRecord};
     if (std::any_of(record.component_intervals.begin(), record.component_intervals.end(),
                     [temperature](const auto& intervals) { return !contains_temperature(intervals, temperature); }))
         return {std::nullopt, ThermochemistryStatus::OutsideInterval};

@@ -390,6 +390,16 @@ enum class SolvedStateActionStatus {
     CentralPropertyUnavailable, Nonfinite, IllConditioned
 };
 
+// Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
+// of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
+struct ReferenceCalorics final {
+    std::vector<double> enthalpy, heat_capacity;
+    SolvedStateActionStatus status = SolvedStateActionStatus::Available;
+    std::string message;
+};
+ReferenceCalorics reference_calorics(
+    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity);
+
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;
     std::string unit;

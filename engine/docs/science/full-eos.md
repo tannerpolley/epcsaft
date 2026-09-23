@@ -631,7 +631,10 @@ term. Missing reference thermochemistry means total calorics are unavailable,
 not equal to residual calorics. Standard-pressure and standard-density bases
 must be converted consistently; see EqID: `standard_pressure_density_conversion`.
 A reaction-consistent reference gauge alone does not determine absolute
-enthalpy, entropy or heat capacity. The source reference pressure is fixed
+enthalpy, entropy or heat capacity. An empty record list declares a species
+without ideal-gas data; on a referenced reactive problem its enthalpy and heat
+capacity are completed from the reaction chain only when supplied records leave
+nothing but the ionic charge gauge (EqID: `reference_species_calorics`). The source reference pressure is fixed
 when trial pressure changes.
 
 ## 10. Electrolyte reference states

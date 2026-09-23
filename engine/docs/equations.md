@@ -1610,7 +1610,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure at the fixed terminal composition of the neutral reaction reference; Lambda = ln phi + ln(P/(RT rho0)) and RT^2 d ln phi_i/dT|_P = -hbar_i^res
 - Description: First temperature derivative at fixed reference pressure of the finite terminal reference and of the density-basis equilibrium constant. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho, and the source basis term A is temperature independent. The target is transported as s=-ln K_rho, whose slope maps to species through the same minimum-norm owner as its value.
-- Change note: Order one only. The slope is admitted when T times the change over the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg) is at most 5e-5, the value criterion in RT units. This is an observed convergence criterion, not a limit-error bound: the Debye-Hueckel sqrt(m) form gives a model-dependent multiple M = -3/2(1 + d ln eps/d ln T) - T alpha_P/2 of the value's terminal change (measured 1.54 for the retained aqueous NaCl case), and a steep declared permittivity can exceed the criterion while the value passes. A system-pressure row combines this slope with the pressure jet at first order. Second temperature derivatives, Delta cp, parameter derivatives and caloric reference values are not implied.
+- Change note: Order one only. The slope is admitted when T times the change over the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg) is at most 5e-5, the value criterion in RT units. This is an observed convergence criterion, not a limit-error bound: the Debye-Hueckel sqrt(m) form gives a model-dependent multiple M = -3/2(1 + d ln eps/d ln T) - T alpha_P/2 of the value's terminal change (measured 1.54 for the retained aqueous NaCl case), and a steep declared permittivity can exceed the criterion while the value passes. A system-pressure row combines this slope with the pressure jet at first order. The second temperature derivative is `standard_state_transfer_temperature_second_derivative`; parameter derivatives are not implied.
 
 $$
 p_T=R(V^{-1}-\psi_V)-RT\psi_{VT},\quad V_T=-p_T/p_V,\\
@@ -1619,6 +1619,24 @@ RT^2\left.\frac{dC}{dT}\right|_P=-\sum_i\nu_i\left(\bar h_i^{res}+RT\right),\\
 \frac{d\ln K_\rho}{dT}=\frac{d\ln K_{src}}{dT}+\left.\frac{dC}{dT}\right|_P,\qquad
 \Delta h_\rho=\Delta h_{src}+RT^2\left.\frac{dC}{dT}\right|_P,\qquad
 s_r'=-\frac{d\ln K_{\rho,r}}{dT}.
+$$
+
+## `standard_state_transfer_temperature_second_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Second implicit differentiation of the pressure closure at the fixed terminal composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
+- Description: Second temperature derivative at fixed reference pressure of the finite terminal contraction along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The two third-order contractions use the exact repeated-direction E3 route, including implicit association. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
+- Change note: Evaluated only when a heat-capacity value or an enthalpy temperature action is requested. Admitted when T^2 times the change over the last three ladder points is at most 5e-5, the value criterion in R units; this is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K measures 7.2e-5 (differences contracting x10 per ladder step, the sqrt(m) form), so its second slope and every heat-capacity consumer stay unavailable while the value, the first slope and enthalpy remain available. Mixed temperature-pressure and third temperature derivatives are not implied.
+
+$$
+\mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad
+D^2C[\mathbf{w},\mathbf{w}]=\sum_i\nu_iD^3\psi[\mathbf{e}_{n_i},\mathbf{w},\mathbf{w}]+\Delta\nu\,V_T^2/V^2,\\
+D^2p[\mathbf{w},\mathbf{w}]=-\frac{2RV_T}{V^2}+\frac{2RTV_T^2}{V^3}
+-R\left(2(\psi_{VT}+V_T\psi_{VV})+T\,D^3\psi[\mathbf{e}_V,\mathbf{w},\mathbf{w}]\right),\\
+V_{TT}=-\frac{D^2p[\mathbf{w},\mathbf{w}]}{p_V},\qquad
+\left.\frac{d^2C}{dT^2}\right|_P=D^2C[\mathbf{w},\mathbf{w}]+C_VV_{TT},\qquad
+\Delta c_{p,\rho}=2RT\frac{d\ln K_\rho}{dT}+RT^2\frac{d^2\ln K_\rho}{dT^2}.
 $$
 
 ## `repeated_direction_energy_third`
@@ -1840,10 +1858,26 @@ $$
 - Status: Implementation convention
 - Source: Minimum-norm conserved gauge as practised in MEA-Thermodynamics (evaluate_direct_absorption_heat.py, build_thermochemistry), made a declared native derivation
 - Description: For an independent reaction-row matrix nu, the minimum-norm solution defines one declared gauge of reaction enthalpies. Adding a conserved-moiety vector preserves reaction enthalpies but does not determine absolute calorics.
-- Change note: Gauge is a convention, not replacement evidence for missing enthalpies, entropies or heat capacities. Equilibrium invariance additionally requires consistent Gibbs reference functions.
+- Change note: Gauge is a convention, not replacement evidence for missing enthalpies, entropies or heat capacities. Equilibrium invariance additionally requires consistent Gibbs reference functions. Native calorics on referenced reactions use `reference_species_calorics`, which anchors this gauge on supplied records and leaves only the ionic charge gauge.
 
 $$
 \boldsymbol{\nu}\,\mathbf{h}^{\circ}=\Delta_r\mathbf{h}^{\circ},\qquad \mathbf{h}^{\circ}=\boldsymbol{\nu}^{\mathsf T}\left(\boldsymbol{\nu}\boldsymbol{\nu}^{\mathsf T}\right)^{-1}\Delta_r\mathbf{h}^{\circ},\qquad \boldsymbol{\nu}\left(\mathbf{h}^{\circ}+\mathbf{B}^{\mathsf T}\mathbf{c}\right)=\Delta_r\mathbf{h}^{\circ}\ \text{for every }\mathbf{c}
+$$
+
+## `reference_species_calorics`
+
+- Section: Reference thermochemistry / Declared derivations
+- Status: Exact derivation
+- Source: Gibbs-Helmholtz on the model Gibbs function G = A_EOS + PV + sum_i n_i RT s_i(T,P) of a referenced reactive problem; standard_pressure_density_conversion and standard_state_transfer_temperature_(second_)derivative
+- Description: Species S with a supplied ideal-gas record keep its h and c_p; species D with an empty record list solve the EOS-basis reaction enthalpies and heat capacities on the density basis, minimum norm. Records fix the conserved moieties, so the remaining null space of nu_D must be parallel to the charges z_D: that ionic charge gauge cancels in every electroneutral phase and in every neutral apparent partial property. Total h and frozen-composition c_p add the residual parts (EqID: `total_enthalpy`); the equilibrium heat capacity is the temperature action of h.
+- Change note: A rows-only-supplied inconsistency beyond sqrt(eps) sum|nu_ri x_i|, a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values, h first actions along feed and temperature at fixed pressure, c_p first actions along feed. Pressure-moving caloric actions need d2C/dTdP for system-pressure rows; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
+
+$$
+h_{\rho,i}=h_{P,i}-RT,\quad c_{p,\rho,i}=c_{p,P,i}-R\ (i\in S),\qquad
+\Delta_rh_\rho=RT^2\frac{d\ln K_\rho}{dT},\\
+\boldsymbol{\nu}_D\,\mathbf{x}_D=\Delta_r\mathbf{x}-\boldsymbol{\nu}_S\,\mathbf{x}_S\quad(\mathbf{x}=\mathbf{h}_\rho,\ \mathbf{c}_{p,\rho}),\qquad
+\mathcal N(\boldsymbol{\nu}_D)\subseteq\operatorname{span}(\mathbf z_D),\\
+h=\sum_ix_i\left(h_{\rho,i}+RT\right)+h^{res},\qquad c_p=\sum_ix_i\left(c_{p,\rho,i}+R\right)+c_p^{res}.
 $$
 
 ## `ideal_enthalpy`

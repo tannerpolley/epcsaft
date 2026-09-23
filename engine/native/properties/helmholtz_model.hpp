@@ -201,6 +201,10 @@ struct NeutralReferenceReactionDiagnostic final {
     // last ladder change is within the value's terminal criterion.
     std::optional<double> terminal_contraction_temperature_derivative;
     std::optional<double> observed_temperature_derivative_change;
+    // d2C/dT2 at the reference pressure, set only for temperature order two and when T^2
+    // times its last ladder change is within the same criterion.
+    std::optional<double> terminal_contraction_temperature_second_derivative;
+    std::optional<double> observed_temperature_second_derivative_change;
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
@@ -345,7 +349,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const std::vector<ReactionReference>& references,
     bool pressure_jets = true,
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
-    bool temperature_jets = false
+    std::size_t temperature_order = 0  // 1: dC/dT; 2: also d2C/dT2
 );
 
 struct InfiniteDilutionReference final {

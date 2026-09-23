@@ -51,6 +51,9 @@ plan:
 # (ADR 0011); measured +143 runtime lines (Contributions +112); contributions hard
 # 1500 -> 1612, properties hard 4145 -> 4150 (tape wiring +5) and aggregate hard
 # 17760 -> 17903, each raised by the measured polar count.
+# 2026-09-23 #138: owner pre-approved up to +250 for reference calorics (record-anchored,
+# reaction-completed h/cp and the order-2 reference slope); measured +199 runtime lines
+# (Properties +33, Equilibrium +166): properties hard 4150 -> 4183, aggregate hard 17903 -> 18102.
 code_budgets: {
   "core": [
     700,
@@ -65,7 +68,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4150
+    4183
   ],
   "equilibrium": [
     5000,
@@ -95,7 +98,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    17903
+    18102
   ]
 }
 
