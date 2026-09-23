@@ -38,6 +38,7 @@ SolvedStateActionStatus = _core.SolvedStateActionStatus
 SolvedStateObservable = _core.SolvedStateObservable
 SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
+solved_state_first_actions = _core.solved_state_first_actions
 
 __all__ = (
     "Amounts",
@@ -76,4 +77,5 @@ __all__ = (
     "problem_from_mapping",
     "solve_equilibrium",
     "solved_state_actions",
+    "solved_state_first_actions",
 )

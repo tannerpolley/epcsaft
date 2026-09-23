@@ -482,5 +482,11 @@ SolvedStateActionBatch solved_state_actions(
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
+// Independent A1 directions at one accepted center; each response retains its own status.
+std::vector<SolvedStateActionBatch> solved_state_first_actions(
+    const CompiledSystem& compiled, const EquilibriumResult& central,
+    const std::vector<SolvedStateObservable>& observables,
+    const std::vector<SolvedStateActionDirection>& directions
+);
 
 }  // namespace epcsaft::equilibrium

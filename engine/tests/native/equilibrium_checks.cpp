@@ -977,6 +977,40 @@ void check_s2() {
                  == epcsaft::equilibrium::SolvedStateActionStatus::Available
           && caloric.results[2].value.has_value()
           && close_with_tolerance(*caloric.results[2].value, central_state.residual_enthalpy, 1.0e-9));
+    const std::vector<epcsaft::equilibrium::SolvedStateObservable> source_observables = {
+        temperature_action.results[0].observable, composition_observable};
+    const std::vector<epcsaft::equilibrium::SolvedStateActionDirection> source_directions = {
+        {1.0, 0.0, {0.0, 0.0, 0.0}, {}}, {0.0, 0.0, {0.01, 0.0, 0.0}, {}}};
+    const auto source_batches = epcsaft::equilibrium::solved_state_first_actions(
+        compiled_reference, referenced_result, source_observables, source_directions);
+    bool source_match = source_batches.size() == source_directions.size();
+    double source_worst = 0.0;
+    std::size_t source_factorizations = 0;
+    for (std::size_t j = 0; j < source_batches.size() && source_match; ++j) {
+        const auto separate = epcsaft::equilibrium::solved_state_actions(
+            compiled_reference, referenced_result, {source_observables, {source_directions[j]}});
+        source_factorizations += source_batches[j].diagnostics.state_factorizations;
+        source_match = source_batches[j].results.size() == separate.results.size();
+        for (std::size_t i = 0; i < separate.results.size() && source_match; ++i) {
+            const auto& actual = source_batches[j].results[i];
+            const auto& expected = separate.results[i];
+            source_match = actual.order == expected.order && actual.unit == expected.unit
+                && actual.status == expected.status && actual.diagnostic_message == expected.diagnostic_message
+                && actual.value.has_value() == expected.value.has_value()
+                && actual.action.has_value() == expected.action.has_value();
+            if (actual.value && expected.value)
+                source_worst = std::max(source_worst, std::abs(*actual.value - *expected.value) / std::max(1.0, std::abs(*expected.value)));
+            if (actual.action && expected.action)
+                source_worst = std::max(source_worst, std::abs(*actual.action - *expected.action) / std::max(1.0, std::abs(*expected.action)));
+        }
+    }
+    CHECK(source_match && source_worst <= 2.0e-12 && source_factorizations == 1
+          && source_batches[0].results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+          && source_batches[0].results[0].value.has_value() && !source_batches[0].results[0].action.has_value()
+          && source_batches[1].results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+          && source_batches[1].results[0].value.has_value() && source_batches[1].results[0].action.has_value()
+          && source_batches[1].results[1].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+          && source_batches[1].results[1].diagnostic_message.has_value());
 }
 
 void check_s6() {
@@ -2943,6 +2977,37 @@ void check_e5_neutral() {
     // Permutations: values and actions follow physical identity, not vector position.
     const auto model = fixture.model();
     const auto central = epcsaft::equilibrium::solve_equilibrium(model, fixture.problem);
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, fixture.problem);
+    auto independent_directions = fixture.directions;
+    independent_directions.push_back(direction(0.0, 0.0, {0.0, 0.0, 0.0}, {0.0, 0.0}));
+    const auto independent = epcsaft::equilibrium::solved_state_first_actions(
+        compiled, central, fixture.observables, independent_directions);
+    bool same_a1 = independent.size() == independent_directions.size();
+    double worst_a1 = 0.0;
+    std::size_t factorizations = 0;
+    for (std::size_t j = 0; j < independent.size() && same_a1; ++j) {
+        const auto separate = epcsaft::equilibrium::solved_state_actions(
+            compiled, central, {fixture.observables, {independent_directions[j]}});
+        factorizations += independent[j].diagnostics.state_factorizations;
+        same_a1 = independent[j].results.size() == separate.results.size();
+        for (std::size_t i = 0; i < separate.results.size() && same_a1; ++i) {
+            const auto& actual = independent[j].results[i];
+            const auto& expected = separate.results[i];
+            same_a1 = actual.order == 1 && actual.unit == expected.unit && actual.status == expected.status
+                && actual.diagnostic_message == expected.diagnostic_message
+                && actual.value.has_value() == expected.value.has_value()
+                && actual.action.has_value() == expected.action.has_value();
+            if (actual.value && expected.value)
+                worst_a1 = std::max(worst_a1, std::abs(*actual.value - *expected.value) / std::max(1.0, std::abs(*expected.value)));
+            if (actual.action && expected.action)
+                worst_a1 = std::max(worst_a1, std::abs(*actual.action - *expected.action) / std::max(1.0, std::abs(*expected.action)));
+        }
+    }
+    all_ok = (record_bool("e5-1/independent-A1", "e5-1", "four independent A1 responses, including zero, equal separate actions with one center factorization",
+        same_a1 && worst_a1 <= 2.0e-12 && factorizations == 1,
+        recording_support::fields({recording_support::field("maximum_scaled_change", worst_a1),
+            recording_support::field("shared_factorizations", factorizations),
+            recording_support::field("directions", independent_directions.size())}))) && all_ok;
     const auto reference_batch = actions(fixture, model, central, fixture.observables, 2);
     Fixture swapped = fixture;
     swapped.label = "phase-swap";
@@ -3210,6 +3275,29 @@ void check_e5_reactive() {
         }
         all_ok = (record_bool("e5-3/scalar-k/point-only-thermal", "e5-3", "a point-only supplied Gibbs vector returns missing_thermochemistry for thermal state actions and keeps fixed-input identities",
             typed, recording_support::fields({recording_support::field("status", status_field(thermal_batch, 2))}))) && all_ok;
+        const auto compiled = epcsaft::equilibrium::compile_problem(model, shifted.problem);
+        const auto nonthermal = epcsaft::equilibrium::solved_state_actions(
+            compiled, shifted_central, {shifted.observables, {scalar.directions[0]}});
+        const auto independent = epcsaft::equilibrium::solved_state_first_actions(
+            compiled, shifted_central, shifted.observables, {thermal.directions[0], scalar.directions[0]});
+        bool isolated = independent.size() == 2;
+        double worst_a1 = 0.0;
+        for (std::size_t j = 0; j < independent.size() && isolated; ++j) {
+            const auto& expected = j == 0 ? thermal_batch : nonthermal;
+            isolated = independent[j].results.size() == expected.results.size();
+            for (std::size_t i = 0; i < expected.results.size() && isolated; ++i) {
+                const auto& actual = independent[j].results[i];
+                const auto& single = expected.results[i];
+                isolated = actual.status == single.status && actual.value.has_value() == single.value.has_value()
+                    && actual.action.has_value() == single.action.has_value();
+                if (actual.action && single.action)
+                    worst_a1 = std::max(worst_a1, std::abs(*actual.action - *single.action) / std::max(1.0, std::abs(*single.action)));
+            }
+        }
+        all_ok = (record_bool("e5-3/scalar-k/independent-thermal", "e5-3", "a refused thermal A1 does not suppress a following available feed A1 at the same center",
+            isolated && worst_a1 <= 2.0e-12 && independent[0].results[2].status == SolvedStateActionStatus::MissingThermochemistry
+                && independent[1].results[2].status == SolvedStateActionStatus::Available,
+            recording_support::fields({recording_support::field("maximum_scaled_change", worst_a1)}))) && all_ok;
     }
     {
         // A -> 2B with matching species thermochemistry: thermal A1-A3 of composition, amounts and calorics.

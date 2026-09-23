@@ -510,6 +510,17 @@ and `ionic_insertion` are unforced: a zero-feed non-participant species leaves
 a rank-deficient balance row, so no admitted central state carries a removed
 species.
 
+`solved_state_first_actions(compiled, central, observables, directions)` evaluates
+independent A1 requests through the same owner. Within that call only, it shares
+the prepared center, central observable values, classified/topology admission
+and defining-row Jacobian factorization. Direction-dependent reference admission,
+thermal availability and propagation remain separate; a refused direction does
+not invalidate siblings or erase their available central values and diagnostics.
+Returned batches follow direction order. Their `state_factorizations` counts
+record actual work: the batch first requiring the factorization reports one,
+subsequent reuse zero. Nothing survives the call. The original request's direction
+list still defines one mixed A1–A3 action, not independent directions.
+
 ## ALG-REFERENCE
 
 Use the explicitly declared solvent/reference path and source standard state.
