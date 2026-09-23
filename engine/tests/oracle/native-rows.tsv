@@ -441,5 +441,5 @@ surface_example	solved/thermal/3	J/mol	-126.93949786638008
 surface_example	solved/radial/3	J/mol	0
 surface_example	solved/thermal/4	mol/m^3	-481.75993780548066
 surface_example	solved/radial/4	mol/m^3	0
-surface_example	solved/condition	1	304.32800028442659
+surface_example	solved/condition	1	480.06250324707855
 surface_example	floor/residual	1	8.8817841970012523e-16

@@ -324,7 +324,8 @@ void register_equilibrium(py::module_& module) {
         .value("OutsideInterval", SolvedStateActionStatus::OutsideInterval)
         .value("ThermalBoundary", SolvedStateActionStatus::ThermalBoundary)
         .value("CentralPropertyUnavailable", SolvedStateActionStatus::CentralPropertyUnavailable)
-        .value("Nonfinite", SolvedStateActionStatus::Nonfinite);
+        .value("Nonfinite", SolvedStateActionStatus::Nonfinite)
+        .value("IllConditioned", SolvedStateActionStatus::IllConditioned);
     py::class_<SolvedStateActionResult>(module, "SolvedStateActionResult")
         .def_readonly("observable", &SolvedStateActionResult::observable)
         .def_readonly("unit", &SolvedStateActionResult::unit)

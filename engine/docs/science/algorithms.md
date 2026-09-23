@@ -543,11 +543,13 @@ owner). Each solved coefficient is re-evaluated; its normwise backward error
 eta_k = |r_k| / (|J| |y_k| + |b_k|) (infinity norms, Rigal–Gaches) must meet
 `EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
 only that y_k solves a nearby linear system; it catches a stale Jacobian or a
-jet mismatch and is invariant to direction and chart scale. It does not bound
-forward error: that is about cond(J) eta_k for the largest coefficient, so an
-availability claim for an ill-conditioned state needs the caller's
-finite-difference ladder with the reported condition estimate, including small
-coefficients. Observables are
+jet mismatch and is invariant to direction and chart scale. Forward accuracy is
+bounded to first order by cond_inf(J) eta_k relative to the largest
+coefficient, with cond_inf(J) = |J| |J^-1| from the central factorization (the
+reported condition estimate); a coefficient whose bound exceeds
+`EQUILIBRIUM_ACTION_FORWARD_ERROR` is refused as `ill_conditioned` (owner
+decision 2026-09-23). The bound is normwise and does not certify small
+coefficients relative to themselves. Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
 same gradient series; the log activity on the EOS density basis,

@@ -469,6 +469,8 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
         if (residual > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
+        else if (*diagnostics.condition_estimate * residual > policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value)
+            path.status = SolvedStateActionStatus::IllConditioned;
     }
     return path;
 }
@@ -804,9 +806,10 @@ static SolvedStateActionBatch evaluate_action(
                 center.lu = center.jacobian.fullPivLu();
                 batch.diagnostics.state_factorizations = 1;
                 shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
-                const double condition = condition_estimate(center.jacobian);
-                if (std::isfinite(condition)) shared->diagnostics.condition_estimate = condition;
+                // cond_inf(J), the norm of the backward error it multiplies in the forward bound.
                 if (*shared->diagnostics.rank < n) shared->matrix_gate = SolvedStateActionStatus::RankDeficient;
+                else shared->diagnostics.condition_estimate = center.jacobian.cwiseAbs().rowwise().sum().maxCoeff()
+                    * center.lu.inverse().cwiseAbs().rowwise().sum().maxCoeff();
             }
             shared->matrix_checked = true;
         }

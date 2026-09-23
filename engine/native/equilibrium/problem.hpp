@@ -394,7 +394,7 @@ enum class SolvedStateActionStatus {
     DensityUnavailable, PressureSingular, AssociationSingular, AssociationIllConditioned,
     AssociationResidual, MissingThermochemistry, ReferenceUnavailable,
     OutsideInterval, ThermalBoundary,
-    CentralPropertyUnavailable, Nonfinite
+    CentralPropertyUnavailable, Nonfinite, IllConditioned
 };
 
 struct SolvedStateActionResult final {
@@ -450,6 +450,7 @@ inline const char* solved_state_status_name(SolvedStateActionStatus status) noex
     case SolvedStateActionStatus::ThermalBoundary: return "thermal_boundary";
     case SolvedStateActionStatus::CentralPropertyUnavailable: return "central_property_unavailable";
     case SolvedStateActionStatus::Nonfinite: return "nonfinite";
+    case SolvedStateActionStatus::IllConditioned: return "ill_conditioned";
     }
     return "unknown";
 }
