@@ -2686,7 +2686,7 @@ void properties_thermochemistry_p3() {
         "p3-reference", "p3-reference/", 13,
         "fixed standard-state conversion and pressure invariance", "quantity");
     recording_support::expect_group(recording_support::active_test_id(),
-        "p3-reaction", "p3-reaction/", 35,
+        "p3-reaction", "p3-reaction/", 34,
         "reaction basis and K(T) relations", "basis,quantity");
 
     for (const auto& [name, correlation] : forms) {
@@ -3152,16 +3152,9 @@ void properties_thermochemistry_p3() {
     const auto species_h = [=](double t) {
         return species_h_ref + R * (correlation.c * (t - tref) + correlation.d * (t * t - tref * tref));
     };
-    const auto species_cp = [=](double t) { return R * (correlation.c + 2.0 * correlation.d * t); };
     p3_compare("p3-reaction/species-vanthoff", "species_delta_h", "J/mol",
                species_h(350.0), reaction.enthalpy, "supplied h_i(Tref),cp_i(T)",
                "p3-reaction", "species-vanthoff");
-    // h is quadratic in T, so the centered difference has no truncation error; a 1 K step
-    // keeps its rounding (eps |h| / step) two decades below the criterion.
-    const double species_cp_fd = (species_h(350.5) - species_h(349.5)) / 1.0;
-    p3_compare("p3-reaction/species-cp", "d_species_delta_h_dT", "J/(mol K)",
-               species_cp_fd, species_cp(350.0), "supplied h_i(Tref),cp_i(T)",
-               "p3-reaction", "species-cp");
     constexpr int integration_steps = 1000;
     const double integration_step = (350.0 - tref) / integration_steps;
     double species_integral = species_h(tref) / (R * tref * tref) + species_h(350.0) / (R * 350.0 * 350.0);

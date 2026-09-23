@@ -317,8 +317,10 @@ Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected
-point whose classified rows meet the caller criterion is accepted whatever the
-optimizer status; a floor-limited point also needs optimizer success. No additional step or
+point whose classified rows meet the caller criterion is accepted after any
+non-error optimizer stop (success, acceptable point, tiny step, restoration failure
+or budget); invalid-number, diverging, step-computation and infeasibility stops stay
+unavailable, and a floor-limited point also needs optimizer success. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A square pinned cell carries chemical and pressure rows as optimizer equality
@@ -693,8 +695,8 @@ constraint, not a mathematical singularity claim.
 
 Numerical policy values stay in `native/core/numerical_policy.hpp`; source and
 application accuracy criteria stay beside their accepted reference cases. Every
-policy entry is listed in its `ENTRIES` registry, has an Engine consumer (the
-architecture check enforces both) and is readable as `epcsaft.tolerances()`;
+policy entry is listed in its `ENTRIES` registry, has an Engine consumer (a
+lexical architecture check, not a semantic proof) and is readable as `epcsaft.tolerances()`;
 changing a value means editing its entry and justification and rebuilding.
 A verification check whose error exceeds its criterion but not an attainable
 floor derived from reported quantities (condition estimate times rounding,
@@ -726,7 +728,7 @@ owner decisions; historical microbenchmarks are not universal limits.
 `Stop::nonfinite` is unavailable and has precedence over finite convergence and
 floor predicates whenever the residual or an optional diagnostic is non-finite.
 For equilibrium, `success` requires optimizer success or classified rows meeting
-the caller criterion, finite residuals and declared topology; an unsuccessful result retains `solver_status`, residuals,
+the caller criterion after a non-error stop, finite residuals and declared topology; an unsuccessful result retains `solver_status`, residuals,
 the convergence record and failure message while clearing candidate state and
 action arrays, so `has_state()` is the availability predicate. A successful
 result retains the same convergence record alongside its state. The pre-solve

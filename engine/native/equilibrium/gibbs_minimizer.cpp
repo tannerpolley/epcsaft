@@ -907,8 +907,8 @@ EquilibriumResult run_driver(
             + compiled.problem.phases[topology.pair->second].name + " is too small: "
             + std::to_string(topology.distance);
     }
-    // The recomputed rows classify: a point meeting the caller criterion is accepted whatever
-    // the optimizer reported; a floor-limited point needs the optimizer's own success.
+    // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
+    // stop (error stops never classify as converged); a floor-limited point needs success.
     const bool solver_ok = nlp->status() == Ipopt::SUCCESS
         || result.convergence.stop == core::Stop::converged;
     const bool accepted = solver_ok

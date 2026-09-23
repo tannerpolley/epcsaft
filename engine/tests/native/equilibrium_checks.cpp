@@ -2915,12 +2915,14 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             // A ladder certified by step agreement records that agreement, not an uncomputed rate.
             const bool by_rate = std::isfinite(rate);
             const double spread = complete ? std::abs(noise_bounded ? *coarse - *mid : *fine - *mid) : nan;
-            recording_support::compare_custom((id + "/rate").c_str(), by_rate ? "difference_ratio" : "step_agreement", "1",
+            recording_support::compare_custom((id + "/rate").c_str(), by_rate ? "difference_ratio" : "step_agreement",
+                by_rate ? "1" : item.unit.c_str(),
                 by_rate ? rate : spread, by_rate ? expected_rate : 2.0 * criterion, ladder_inputs,
                 "Relationship", "centered-solve-ladder",
                 "the reference ladder certifies second-order convergence, or its last two informative steps agree within twice the criterion",
                 "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected || (noise_bounded && |coarse-mid| <= 2c)", refined,
-                group, id.c_str(), "(\\Delta_1-\\Delta_2)/(\\Delta_2-\\Delta_3)", "case,observable,order", "\\approx(h_1^2-h_2^2)/(h_2^2-h_3^2)", "observable,order");
+                group, id.c_str(), by_rate ? "(\\Delta_1-\\Delta_2)/(\\Delta_2-\\Delta_3)" : "|R_i-R_{i+1}|", "case,observable,order",
+                by_rate ? "\\approx(h_1^2-h_2^2)/(h_2^2-h_3^2)" : "\\leq 2c", "observable,order");
             ok = ok && verdict && refined;
         }
     }
