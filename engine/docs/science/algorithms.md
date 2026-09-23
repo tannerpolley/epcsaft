@@ -559,7 +559,9 @@ exact first and second pressure derivatives. Reuse a reference path for
 reactions sharing a source pressure. Apply the same current-point jet to row,
 Jacobian, weighted Hessian and solved-state action evaluation, and refresh
 returned diagnostics at the solved pressure. Fixed-source-pressure references
-carry zero system-pressure derivatives.
+carry zero system-pressure derivatives; their compile-time values are reused at
+every point of the compiled problem, since model, temperature, declaration and
+source pressure are fixed there.
 The implemented slice admits fixed T/P central solves and feed actions, and
 square pinned free-pressure cells. Pressure/feed actions are supported through
 order two; fixed-T/P feed-only order three remains available. Referenced
