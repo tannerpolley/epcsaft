@@ -1240,8 +1240,11 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         ? selected_ideal_correlations(thermochemistry_, temperature, endpoint)
         : std::vector<IdealCorrelation>{};
     const bool ideal_available = need_ideal && correlations.size() == parameters_.component_count();
+    const bool record_missing = !thermochemistry_.has_value() || std::any_of(
+        thermochemistry_->component_intervals.begin(), thermochemistry_->component_intervals.end(),
+        [](const auto& intervals) { return intervals.empty(); });
     const auto ideal_status = !need_ideal || ideal_available ? PropertyActionStatus::Available
-        : thermochemistry_.has_value() ? PropertyActionStatus::OutsideInterval
+        : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;

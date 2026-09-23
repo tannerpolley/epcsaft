@@ -6,6 +6,7 @@
 #include "properties/helmholtz_tape.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <Eigen/Dense>
@@ -161,7 +162,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     std::vector<NeutralReferenceReactionDiagnostic>& diagnostics,
     bool pressure_jets,
     const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr,
-    bool temperature_jets = false
+    std::size_t temperature_order = 0
 ) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
@@ -176,7 +177,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     }
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
-    if (fixed_pressure != nullptr && !temperature_jets) {
+    if (fixed_pressure != nullptr && temperature_order == 0) {
         // Fixed-pressure references depend only on the compiled model, temperature,
         // declaration and stoichiometry; rebuild only system-pressure traces.
         for (const auto& diagnostic : *fixed_pressure)
@@ -208,7 +209,7 @@ std::vector<ReactionSpec> central_reference_reactions(
         solvent_anchor = fixed_pressure->front().solvent_density;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference,
-        stoichiometries, references, pressure_jets, solvent_anchor, temperature_jets);
+        stoichiometries, references, pressure_jets, solvent_anchor, temperature_order);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -668,6 +669,126 @@ void admit_pins(CompiledSystem& compiled) {
 }
 
 }  // namespace
+
+// EqID: reference_species_calorics
+// Supplied ideal-gas records fix h and cp of their species; record-less species solve
+// N_D x_D = Delta_r x - N_S x_S on the density basis for x = h, cp (min-norm), where only
+// the ionic charge gauge may remain free: it cancels in every electroneutral phase.
+ReferenceCalorics reference_calorics(
+    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity
+) {
+    ReferenceCalorics result;
+    const auto refuse = [&](SolvedStateActionStatus status, const std::string& message) {
+        result.status = status;
+        result.message = message;
+        result.enthalpy.clear();
+        result.heat_capacity.clear();
+        return result;
+    };
+    const auto& problem = compiled.problem;
+    const auto& record = compiled.model->thermochemistry();
+    const auto& parameters = compiled.model->parameters();
+    const std::size_t components = parameters.component_count();
+    if (!record.has_value())
+        return refuse(SolvedStateActionStatus::MissingThermochemistry, "reference calorics need a thermochemistry record");
+    const double gas = GAS_CONSTANT_J_PER_MOL_K, rt = gas * temperature;
+    std::vector<double> enthalpy(components, 0.0), capacity(components, 0.0);
+    std::vector<std::size_t> derived;
+    for (std::size_t i = 0; i < components; ++i) {
+        const auto& intervals = record->component_intervals[i];
+        if (intervals.empty()) { derived.push_back(i); continue; }
+        // ponytail: an owned join endpoint is treated as interior; cp there is the selected branch's value.
+        const auto found = std::find_if(intervals.begin(), intervals.end(),
+            [&](const IdealInterval& interval) { return ideal_interval_contains(interval, temperature); });
+        if (found == intervals.end())
+            return refuse(SolvedStateActionStatus::OutsideInterval,
+                          "thermochemistry of species " + std::to_string(i) + " excludes the temperature");
+        const auto value = evaluate_ideal_correlation(found->correlation, temperature, record->standard_pressure);
+        enthalpy[i] = value.h - rt;
+        capacity[i] = value.cp - gas;
+    }
+    std::vector<ReactionSpec> resolved;
+    std::vector<NeutralReferenceReactionDiagnostic> diagnostics;
+    try {
+        resolved = central_reference_reactions(*compiled.model, problem, temperature, pressure, diagnostics,
+            false, &compiled.reference_diagnostics, heat_capacity ? 2 : 1);
+    } catch (const std::invalid_argument& error) {
+        return refuse(SolvedStateActionStatus::ReferenceUnavailable, error.what());
+    }
+    // Delta_r h_rho = RT^2 (ln K_rho)' and Delta_r cp_rho = 2RT (ln K_rho)' + RT^2 (ln K_rho)''.
+    const std::size_t rows = problem.reactions.size();
+    Eigen::VectorXd delta_h(static_cast<Eigen::Index>(rows)), delta_cp(static_cast<Eigen::Index>(rows));
+    for (std::size_t row = 0; row < rows; ++row) {
+        const auto& reaction = problem.reactions[row];
+        std::array<double, 2> slope{};
+        if (reaction.reference.has_value()) {
+            const auto diagnostic = std::find_if(diagnostics.begin(), diagnostics.end(),
+                [row](const auto& item) { return item.reaction_index == row; });
+            const auto& first = diagnostic->terminal_contraction_temperature_derivative;
+            const auto& second = diagnostic->terminal_contraction_temperature_second_derivative;
+            if (!first || (heat_capacity && !second))
+                return refuse(SolvedStateActionStatus::ReferenceUnavailable, "reference_unavailable: reaction "
+                    + reaction_name(reaction, row) + " temperature derivative of order "
+                    + (first ? "2" : "1") + " is unavailable");
+            slope = {*first, second.value_or(0.0)};
+            if (reaction.correlation.has_value()) {
+                const auto source = evaluate_reaction_properties(*reaction.correlation, temperature);
+                slope[0] += source.derivative;
+                slope[1] += source.second_derivative;
+            }
+        } else {
+            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' - 2(ln K)' R)/(RT).
+            const auto targets = reaction_target_series(temperature, {reaction}, 2);
+            slope[0] = -(targets[1][0] - targets[0][0] / temperature) / rt;
+            slope[1] = -(targets[2][0] + 2.0 * gas * slope[0]) / rt;
+        }
+        delta_h(static_cast<Eigen::Index>(row)) = rt * temperature * slope[0];
+        delta_cp(static_cast<Eigen::Index>(row)) = 2.0 * rt * slope[0] + rt * temperature * slope[1];
+    }
+    Eigen::MatrixXd derived_matrix(static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(derived.size()));
+    Eigen::VectorXd derived_charge(static_cast<Eigen::Index>(derived.size()));
+    for (std::size_t j = 0; j < derived.size(); ++j) {
+        derived_charge(static_cast<Eigen::Index>(j)) = parameters.charge_number[derived[j]];
+        for (std::size_t row = 0; row < rows; ++row)
+            derived_matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(j))
+                = problem.reactions[row].stoichiometry[derived[j]];
+    }
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> decomposition;
+    if (!derived.empty()) decomposition.compute(derived_matrix);
+    const auto nullity = derived.empty() ? Eigen::Index(0)
+        : static_cast<Eigen::Index>(derived.size()) - decomposition.rank();
+    if (nullity > 1 || (nullity == 1 && (derived_charge.norm() == 0.0
+            || (derived_matrix * derived_charge).norm()
+                > std::sqrt(std::numeric_limits<double>::epsilon()) * derived_charge.norm())))
+        return refuse(SolvedStateActionStatus::ReferenceUnavailable,
+                      "reference_unavailable: calorics of record-less species are undetermined beyond the charge gauge");
+    for (auto* values : {&enthalpy, &capacity}) {
+        if (values == &capacity && !heat_capacity) break;
+        const auto& delta = values == &enthalpy ? delta_h : delta_cp;
+        Eigen::VectorXd right = delta, scale = delta.cwiseAbs();
+        for (std::size_t row = 0; row < rows; ++row)
+            for (std::size_t i = 0; i < components; ++i) {
+                if (record->component_intervals[i].empty()) continue;
+                const double term = problem.reactions[row].stoichiometry[i] * (*values)[i];
+                right(static_cast<Eigen::Index>(row)) -= term;
+                scale(static_cast<Eigen::Index>(row)) += std::abs(term);
+            }
+        const Eigen::VectorXd solution = derived.empty() ? Eigen::VectorXd() : Eigen::VectorXd(decomposition.solve(right));
+        const Eigen::VectorXd residual = derived.empty() ? right : Eigen::VectorXd(derived_matrix * solution - right);
+        for (Eigen::Index row = 0; row < residual.size(); ++row)
+            if (!(std::abs(residual(row)) <= std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(row))))
+                return refuse(SolvedStateActionStatus::ReferenceUnavailable,
+                              "reference_unavailable: supplied thermochemistry is inconsistent with reaction "
+                              + reaction_name(problem.reactions[static_cast<std::size_t>(row)], static_cast<std::size_t>(row)));
+        for (std::size_t j = 0; j < derived.size(); ++j) (*values)[derived[j]] = solution(static_cast<Eigen::Index>(j));
+    }
+    // Back to the ideal-gas pressure basis consumed by the Total definitions.
+    for (std::size_t i = 0; i < components; ++i) {
+        result.enthalpy.push_back(enthalpy[i] + rt);
+        if (heat_capacity) result.heat_capacity.push_back(capacity[i] + gas);
+    }
+    return result;
+}
 
 CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& request

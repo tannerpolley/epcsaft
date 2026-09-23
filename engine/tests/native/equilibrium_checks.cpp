@@ -825,11 +825,18 @@ void check_s2() {
             reference, epcsaft::ReactionReference{2.0e5, reference.source_basis}};
         const double temperature = 298.15, pressure = 1.0e5, step = 1.0e-2;
         const auto center = epcsaft::reaction_references(
-            ionic, temperature, pressure, declaration, rows, sources, false, std::nullopt, true);
+            ionic, temperature, pressure, declaration, rows, sources, false, std::nullopt, 2);
         const auto lower = epcsaft::reaction_references(
-            ionic, temperature - step, pressure, declaration, rows, sources, false);
+            ionic, temperature - step, pressure, declaration, rows, sources, false, std::nullopt, 1);
         const auto upper = epcsaft::reaction_references(
-            ionic, temperature + step, pressure, declaration, rows, sources, false);
+            ionic, temperature + step, pressure, declaration, rows, sources, false, std::nullopt, 1);
+        // #138 calorics: water carries a manufactured ideal-gas record (cp 33.59 J/(mol K),
+        // h = -241826 J/mol at 298.15 K); Na+ and Cl- have none and are reaction-completed.
+        epcsaft::ThermochemistryRecord water_record;
+        water_record.standard_pressure = 1.0e5;
+        water_record.component_intervals = {{{200.0, 500.0, true, true, {epcsaft::IdealPolynomial{
+            {33.59}, 298.15, -241826.0, 188.83}, 1.0e5}}}, {}, {}};
+        epcsaft::HelmholtzModel ionic_thermal(properties_support::aqueous_electrolyte(), {}, water_record);
         for (std::size_t row = 0; row < rows.size(); ++row) {
             CHECK(center[row].terminal_contraction_temperature_derivative.has_value()
                   && center[row].observed_temperature_derivative_change.has_value()
@@ -893,8 +900,77 @@ void check_s2() {
                 change / *center[row].observed_terminal_change, std::nullopt, inputs,
                 "Relationship", "debye-huckel-sqrt-m-form",
                 "measured slope-to-value terminal-change multiplier for this model and state");
+            // Order two: the ladder differences contract x10 per step (the Debye-Hueckel sqrt(m)
+            // form), but T^2 max|dD2| exceeds 5e-5 here, so the second slope and every consumer of
+            // cp stay refused while h survives.
+            const double second_change = center[row].observed_temperature_second_derivative_change.value_or(0.0);
+            CHECK(second_change > 5.0e-5 && !center[row].terminal_contraction_temperature_second_derivative);
+            recording_support::observe(
+                ("neutral-reference/temperature-second-limit/" + label).c_str(), "T2_d2C_dT2_terminal_change", "1",
+                second_change, std::nullopt, inputs, "Relationship", "observed-slope-convergence",
+                "the ionic second slope's terminal ladder change, above the 5e-5 criterion");
+            const auto thermal_solved = epcsaft::equilibrium::solve_equilibrium(ionic_thermal, problem);
+            CHECK(thermal_solved.success);
+            epcsaft::equilibrium::SolvedStateObservable enthalpy, capacity;
+            enthalpy.kind = capacity.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseProperty;
+            enthalpy.property = epcsaft::PropertyObservable::TotalEnthalpy;
+            capacity.property = epcsaft::PropertyObservable::TotalIsobaricHeatCapacity;
+            const auto calorics = epcsaft::equilibrium::solved_state_actions(
+                epcsaft::equilibrium::compile_problem(ionic_thermal, problem), thermal_solved,
+                {{enthalpy, capacity}, {{0.0, 0.0, {0.0, 0.0, 0.0}, {}}}}).results;
+            CHECK(calorics[1].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+                  && !calorics[1].value.has_value());
+            CHECK(calorics[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && calorics[0].value.has_value());
+            recording_support::observe(
+                ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed") + "/h").c_str(),
+                "h", "J/mol", calorics[0].value.value_or(0.0), std::nullopt, inputs, "Relationship",
+                "reference-species-calorics",
+                "native total caloric value with reaction-completed ions for the installed-wheel comparison");
         }
     }
+    // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
+    // reaction H2O = MEA: d2C/dT2|_P against the centered difference of dC/dT|_P; floor:
+    // truncation step^2 |d4C/dT4|/6 and slope roundoff/step, both below 1e-7 relative.
+    {
+        epcsaft::HelmholtzModel associating(properties_support::associating_binary());
+        epcsaft::NeutralReferenceDeclaration water;
+        water.solvent_index = 1;
+        water.solute_molality_ratios = {1.0, 0.0};
+        water.standard_molality_mol_per_kg = 1.0;
+        const std::vector<std::vector<double>> rows = {{1.0, -1.0}};
+        const std::vector<epcsaft::ReactionReference> sources = {reference};
+        const double temperature = 313.15, pressure = 1.0e5, step = 1.0e-2;
+        const auto center = epcsaft::reaction_references(
+            associating, temperature, pressure, water, rows, sources, false, std::nullopt, 2);
+        const auto lower = epcsaft::reaction_references(
+            associating, temperature - step, pressure, water, rows, sources, false, std::nullopt, 1);
+        const auto upper = epcsaft::reaction_references(
+            associating, temperature + step, pressure, water, rows, sources, false, std::nullopt, 1);
+        CHECK(center[0].terminal_contraction_temperature_second_derivative.has_value()
+              && lower[0].terminal_contraction_temperature_derivative.has_value()
+              && upper[0].terminal_contraction_temperature_derivative.has_value());
+        const double second = center[0].terminal_contraction_temperature_second_derivative.value_or(0.0);
+        const double centered = (upper[0].terminal_contraction_temperature_derivative.value_or(0.0)
+            - lower[0].terminal_contraction_temperature_derivative.value_or(0.0)) / (2.0 * step);
+        const auto inputs = recording_support::fields({
+            recording_support::field("T", temperature), recording_support::field("P", pressure),
+            recording_support::field("step", step)});
+        recording_support::compare(
+            "neutral-reference/temperature-second-slope/associating", "d2C_dT2", "1/K^2",
+            second, centered, inputs, "Relationship", "centered-slope-difference",
+            "d2C/dT2|_P carries the implicit density and association chains through E3",
+            "reference_scale", 0.0, 1.0e-6, std::abs(second - centered) <= 1.0e-6 * std::abs(centered),
+            "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
+        const double change = center[0].observed_temperature_second_derivative_change.value_or(1.0);
+        recording_support::compare_custom(
+            "neutral-reference/temperature-second-limit/associating", "T2_d2C_dT2_terminal_change", "1",
+            change, 5.0e-5, inputs, "Relationship", "observed-slope-convergence",
+            "the second slope's terminal ladder change stays within the value criterion in RT units",
+            "isfinite(model) && model <= reference", change <= 5.0e-5,
+            "s2-neutral-reference", "temperature-second-limit", "T^2|dD2|", "T,P,nu", "T^2|dD2|<=5e-5", "limit");
+    }
+
 
     const auto charged = epcsaft::reaction_reference(
         epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()), 298.15, 1.0e5,
@@ -3887,7 +3963,7 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
-        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
+        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
         {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},

@@ -145,9 +145,9 @@ derivative at the reference pressure supports order-one temperature and mixed
 T/P actions (EqID: `standard_state_transfer_temperature_derivative`). Feed-only
 actions at fixed T/P retain order three. Third-order actions involving pressure,
 temperature actions above order one, free temperature, referenced continuation,
-raw lever derivatives and parameter actions remain unavailable. Ideal/Total caloric
-values and actions are also unavailable; an attached thermochemistry record
-cannot supply missing reference derivatives. Ordinary unreferenced reactions
+raw lever derivatives and parameter actions remain unavailable. Ideal/Total
+enthalpy and heat capacity follow EqID: `reference_species_calorics` at fixed
+pressure; other caloric quantities remain unavailable. Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.
 
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be
