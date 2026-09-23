@@ -36,6 +36,8 @@ plan:
 # references and explicit public transport; total hard ceiling unchanged.
 # 2026-09-22 #66: owner-approved integration of latest reference/trace repairs
 # and the live IDAES adapter; aggregate hard ceiling 17450 -> 17600.
+# 2026-09-22 #66: latest merged main adds one Python line; aggregate hard
+# ceiling 17600 -> 17601 without changing any layer ceiling or physics.
 code_budgets: {
   "core": [
     700,
@@ -80,7 +82,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    17600
+    17601
   ]
 }
 

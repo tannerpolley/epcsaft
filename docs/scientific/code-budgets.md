@@ -77,6 +77,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-22, aggregate hard ceiling 17600 → 17601 (#66). The latest merged
+  main adds one Python physical line to the 17600-line accepted integration.
+  The owner authorized necessary IDAES integration budget increases. No layer
+  ceiling, thermodynamic method, numerical tolerance or acceptance claim changes.
+
 - 2026-09-22, aggregate hard ceiling 17450 → 17600 (#66). The owner approved
   necessary budget increases and explicitly requested integration of the latest
   local reference/trace-recovery and Lithium surrogate-proof work. Combining
