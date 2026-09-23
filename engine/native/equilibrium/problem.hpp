@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <algorithm>
 #include <cmath>
-#include <array>
 #include <limits>
 #include <optional>
 #include <string>
@@ -217,7 +216,6 @@ struct CompiledSystem final {
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
     std::vector<double> n_feed;
-    std::vector<double> n_feed_normalised;
     std::vector<double> feed_composition;
     std::vector<double> balance;
     std::vector<double> standard_gibbs;

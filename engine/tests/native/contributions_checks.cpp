@@ -14,7 +14,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <numeric>
 #include <string>
 #include <tuple>
 #include <utility>

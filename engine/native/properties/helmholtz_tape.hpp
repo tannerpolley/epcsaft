@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
-#include <stdexcept>
 #include <vector>
 
 namespace epcsaft::detail {

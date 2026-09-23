@@ -429,10 +429,6 @@ inline void print_declaration_expectations(const Declaration& declaration) {
     std::fflush(stdout);
 }
 
-inline void print_all(std::initializer_list<Declaration> declarations) {
-    for (const auto& declaration : declarations) print(declaration);
-}
-
 inline bool compare(
     const char* comparison_id, const char* quantity, const char* unit,
     double model, double reference, const std::string& inputs, const char* basis,

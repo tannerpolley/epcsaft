@@ -56,10 +56,6 @@ std::vector<double> reaction_affinities(
     const std::vector<double>& standard_gibbs
 );
 
-std::vector<std::vector<double>> reaction_projector(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
-);
-
 std::size_t reaction_rank(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 );
@@ -70,45 +66,15 @@ void validate_reaction_set(
 
 std::string reaction_name(const ReactionSpec& reaction, std::size_t index);
 
-struct StoichiometryReport final {
-    std::size_t components = 0;
-    std::size_t reactions = 0;
-    std::size_t rank = 0;
-    bool independent = true;
-    bool finite = true;
-};
-
-StoichiometryReport inspect_stoichiometry(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
-);
-
-std::vector<double> reaction_residuals(
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& standard_gibbs,
-    const std::vector<double>& requested_affinities
-);
-
 std::vector<double> balance_residual(
     const std::vector<std::vector<double>>& basis,
     const std::vector<double>& amounts,
     const std::vector<double>& target
 );
 
-std::vector<std::vector<double>> gram_matrix(
-    const std::vector<std::vector<double>>& basis
-);
-
 std::vector<double> transpose_matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector
-);
-
-bool is_orthonormal(
-    const std::vector<std::vector<double>>& basis, double tolerance
-);
-
-std::vector<double> reaction_affinity_targets(
-    double temperature, const std::vector<ReactionSpec>& reactions
 );
 
 std::vector<double> project_to_balance(
@@ -122,16 +88,6 @@ std::vector<double> reconstruct_from_balance(
 );
 
 bool all_finite(const std::vector<double>& values);
-
-double feed_mass_kg(
-    const HelmholtzModel& model, const std::vector<double>& amounts
-);
-
-std::vector<double> scale_amounts(
-    const std::vector<double>& amounts, double total
-);
-
-bool is_composition(const std::vector<double>& values, double tolerance);
 
 double projection_error(
     const std::vector<std::vector<double>>& basis,

@@ -376,22 +376,6 @@ std::size_t reaction_rank(
     return static_cast<std::size_t>(numerical_rank(reaction_matrix(components, reactions)));
 }
 
-std::vector<std::vector<double>> reaction_projector(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
-) {
-    const auto basis = balance_basis(components, reactions);
-    std::vector<std::vector<double>> result(
-        components, std::vector<double>(components, 0.0));
-    for (const auto& row : basis) {
-        for (std::size_t i = 0; i < components; ++i) {
-            for (std::size_t j = 0; j < components; ++j) {
-                result[i][j] += row[i] * row[j];
-            }
-        }
-    }
-    return result;
-}
-
 std::vector<double> reaction_affinities(
     const std::vector<ReactionSpec>& reactions,
     const std::vector<double>& standard_gibbs
@@ -406,52 +390,6 @@ std::vector<double> reaction_affinities(
         result.push_back(std::inner_product(
             reaction.stoichiometry.begin(), reaction.stoichiometry.end(),
             standard_gibbs.begin(), 0.0));
-    }
-    return result;
-}
-
-StoichiometryReport inspect_stoichiometry(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
-) {
-    StoichiometryReport report;
-    report.components = components;
-    report.reactions = reactions.size();
-    if (components == 0) {
-        report.finite = false;
-        report.independent = false;
-        return report;
-    }
-    for (const auto& reaction : reactions) {
-        report.finite = report.finite && reaction.stoichiometry.size() == components;
-        report.finite = report.finite && std::all_of(
-            reaction.stoichiometry.begin(), reaction.stoichiometry.end(),
-            [](double value) { return std::isfinite(value); });
-    }
-    if (!report.finite) {
-        report.independent = false;
-        return report;
-    }
-    report.rank = reaction_rank(components, reactions);
-    report.independent = report.rank == reactions.size();
-    report.finite = report.finite && report.rank <= components;
-    // A dependent reaction set is reported, not silently repaired.
-    return report;
-}
-
-std::vector<double> reaction_residuals(
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& standard_gibbs,
-    const std::vector<double>& requested_affinities
-) {
-    const auto affinities = reaction_affinities(reactions, standard_gibbs);
-    if (!requested_affinities.empty() && requested_affinities.size() != affinities.size()) {
-        throw std::invalid_argument("requested affinity size");
-    }
-    std::vector<double> result = affinities;
-    if (!requested_affinities.empty()) {
-        for (std::size_t i = 0; i < result.size(); ++i) {
-            result[i] -= requested_affinities[i];
-        }
     }
     return result;
 }
@@ -471,26 +409,6 @@ std::vector<double> balance_residual(
     return result;
 }
 
-std::vector<std::vector<double>> gram_matrix(
-    const std::vector<std::vector<double>>& basis
-) {
-    if (basis.empty()) return {};
-    const std::size_t width = basis.front().size();
-    for (const auto& row : basis) {
-        if (row.size() != width) throw std::invalid_argument("basis width");
-    }
-    std::vector<std::vector<double>> result(
-        basis.size(), std::vector<double>(basis.size(), 0.0));
-    for (std::size_t i = 0; i < basis.size(); ++i) {
-        for (std::size_t j = 0; j < basis.size(); ++j) {
-            for (std::size_t column = 0; column < width; ++column) {
-                result[i][j] += basis[i][column] * basis[j][column];
-            }
-        }
-    }
-    return result;
-}
-
 std::vector<double> transpose_matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector
@@ -506,26 +424,6 @@ std::vector<double> transpose_matvec(
         }
     }
     return result;
-}
-
-bool is_orthonormal(
-    const std::vector<std::vector<double>>& basis, double tolerance
-) {
-    if (!(std::isfinite(tolerance) && tolerance >= 0.0)) return false;
-    const auto gram = gram_matrix(basis);
-    for (std::size_t i = 0; i < gram.size(); ++i) {
-        for (std::size_t j = 0; j < gram.size(); ++j) {
-            const double expected = i == j ? 1.0 : 0.0;
-            if (std::abs(gram[i][j] - expected) > tolerance) return false;
-        }
-    }
-    return true;
-}
-
-std::vector<double> reaction_affinity_targets(
-    double temperature, const std::vector<ReactionSpec>& reactions
-) {
-    return reaction_target_series(temperature, reactions, 0).front();
 }
 
 std::vector<double> project_to_balance(
@@ -549,46 +447,6 @@ std::vector<double> reconstruct_from_balance(
 bool all_finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(),
                        [](double value) { return std::isfinite(value); });
-}
-
-double feed_mass_kg(
-    const HelmholtzModel& model, const std::vector<double>& amounts
-) {
-    const auto& masses = model.parameters().molar_mass_kg_per_mol;
-    if (amounts.size() != masses.size()) throw std::invalid_argument("amount size");
-    double result = 0.0;
-    for (std::size_t i = 0; i < amounts.size(); ++i) {
-        if (!std::isfinite(amounts[i]) || amounts[i] < 0.0) {
-            throw std::invalid_argument("invalid amount");
-        }
-        require_positive(masses[i], "molar mass");
-        result += amounts[i] * masses[i];
-    }
-    if (!(std::isfinite(result) && result > 0.0)) {
-        throw std::invalid_argument("feed has zero mass");
-    }
-    return result;
-}
-
-std::vector<double> scale_amounts(
-    const std::vector<double>& amounts, double total
-) {
-    require_positive(total, "amount total");
-    const double source = feed_total(amounts);
-    std::vector<double> result = amounts;
-    const double factor = total / source;
-    for (double& value : result) value *= factor;
-    return result;
-}
-
-bool is_composition(const std::vector<double>& values, double tolerance) {
-    if (!(std::isfinite(tolerance) && tolerance >= 0.0) || values.empty()) return false;
-    double total = 0.0;
-    for (const double value : values) {
-        if (!std::isfinite(value) || value < 0.0) return false;
-        total += value;
-    }
-    return std::abs(total - 1.0) <= tolerance;
 }
 
 double projection_error(
