@@ -202,9 +202,12 @@ std::vector<ReactionSpec> central_reference_reactions(
         stoichiometries.push_back(reaction.stoichiometry);
         references.push_back(*reaction.reference);
     }
+    std::optional<double> solvent_anchor;
+    if (fixed_pressure != nullptr && !fixed_pressure->empty() && fixed_pressure->front().solvent_density > 0.0)
+        solvent_anchor = fixed_pressure->front().solvent_density;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference,
-        stoichiometries, references, pressure_jets);
+        stoichiometries, references, pressure_jets, solvent_anchor);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -465,16 +468,22 @@ std::vector<double> pinned_hessian(
                     * directions[column][i];
             }
         }
-        // ponytail: quadratic contraction calls; batch them if measured solve cost requires it.
+        // Trilinear contraction: a coordinate that does not move this phase contributes exactly zero.
+        // ponytail: quadratic calls over moving pairs; contract a physical basis if cost requires it.
+        std::vector<bool> moves(n);
+        for (std::size_t c = 0; c < n; ++c)
+            moves[c] = std::any_of(directions[c].begin(), directions[c].end(), [](double v) { return v != 0.0; });
         for (std::size_t row = 0; row < n; ++row) {
             for (std::size_t column = 0; column <= row; ++column) {
-                const auto energy = model.residual_energy_action(temperature, values[1], amounts,
-                    {contraction, directions[row], directions[column]});
-                if (!energy.action.has_value()) {
-                    throw std::runtime_error(std::string("third directional energy contraction unavailable: ")
-                        + solved_state_status_name(solved_state_status(energy.status)));
+                double action = 0.0;
+                if (moves[row] && moves[column]) {
+                    const auto energy = model.residual_energy_action(temperature, values[1], amounts,
+                        {contraction, directions[row], directions[column]});
+                    if (!energy.action.has_value()) throw std::runtime_error(std::string("third directional energy "
+                        "contraction unavailable: ") + solved_state_status_name(solved_state_status(energy.status)));
+                    action = *energy.action;
                 }
-                const double value = mapped[row * n + column] + *energy.action
+                const double value = mapped[row * n + column] + action
                     - pressure_weight * (directions[row][1] * volume_hessian_action[column]
                         + directions[column][1] * volume_hessian_action[row]);
                 result[row * n + column] += value;

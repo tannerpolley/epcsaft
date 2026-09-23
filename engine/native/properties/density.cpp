@@ -33,19 +33,10 @@ PressurePoint at_density(const HelmholtzModel& model, double temperature, double
                          std::size_t& evaluations, DerivativeOrder order) {
     ++evaluations;
     const auto derivatives = model.evaluate(temperature, 1.0 / density, composition, order);
-    const double phi_v = derivatives.gradient[1];
-    const double calculated_pressure = GAS_CONSTANT_J_PER_MOL_K * temperature
-        * (density - phi_v);
-    const double z = calculated_pressure / (density * GAS_CONSTANT_J_PER_MOL_K * temperature);
-    return {
-        z - pressure / (density * GAS_CONSTANT_J_PER_MOL_K * temperature),
-        calculated_pressure,
-        order == DerivativeOrder::PressureSlope
-            ? GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (1.0 + derivatives.volume_second_derivative / (density * density))
-            : 0.0,
-        derivatives.gradient_floor,
-    };
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature, calculated = rt * (density - derivatives.gradient[1]);
+    const double scale = density * GAS_CONSTANT_J_PER_MOL_K * temperature;  // z - P/(rho R T), as recorded
+    return {calculated / scale - pressure / scale, calculated, order == DerivativeOrder::PressureSlope
+            ? rt * (1.0 + derivatives.volume_second_derivative / (density * density)) : 0.0, derivatives.gradient_floor};
 }
 
 double residual_derivative(
@@ -158,7 +149,10 @@ void scan_cell(
         const bool stable_left = low.slope > 0.0;
         double a = lower, b = upper;
         PressurePoint pa = low, pb = high;
-        bool bracketed = false;
+        // The stable side's pressure runs monotonically from its cell end toward the fold, so a
+        // cell end already past the target leaves that side rootless without locating the fold.
+        const double margin = policy::DENSITY_ROOT_RESIDUAL.value * GAS_CONSTANT_J_PER_MOL_K * temperature * upper;
+        bool bracketed = stable_left ? low.pressure > pressure + margin : high.pressure < pressure - margin;
         for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
                  && !bracketed && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
             const double density = a + policy::DENSITY_BISECTION_FRACTION.value * (b - a);
@@ -355,9 +349,11 @@ DensityRoot anchor(
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density, DensityRoot* sibling_root
 ) {
     core::Scope scope("solve_density");
+    if (anchor_density.has_value() && sibling_root != nullptr)
+        throw std::invalid_argument("density sibling requires an unanchored root search");
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
@@ -398,6 +394,7 @@ DensityRoot solve_density(
             result = stable.front();
             result.stable_root_count = 1;
             result.branch = DensityBranch::Unspecified;
+            if (sibling_root != nullptr) *sibling_root = result;
         } else {
             if (branch == DensityBranch::Unspecified) {
                 throw std::runtime_error("density root is ambiguous (stable count "
@@ -406,6 +403,12 @@ DensityRoot solve_density(
             result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
             result.stable_root_count = stable.size();
             result.branch = branch;
+            if (sibling_root != nullptr) {
+                *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
+                sibling_root->stable_root_count = stable.size();
+                sibling_root->branch = branch == DensityBranch::Vapor
+                    ? DensityBranch::Liquid : DensityBranch::Vapor;
+            }
         }
     }
     scope.probe("density_root", result.molar_density);

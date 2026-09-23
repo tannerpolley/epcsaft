@@ -172,6 +172,24 @@ implicit/explicit chains.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
+Density closure requests only the reduced pressure gradient, a_VV and the
+association floor. With association sites these come from one adjoint sweep
+(the same site multipliers as the Hessian path) and one volume tangent through
+the site sensitivity; the full site Jacobian is formed only for Hessian requests.
+
+A neutral reference trace at system pressure first tries the compile-time
+pure-solvent liquid density as an anchor for its pure-solvent point: the
+anchored solve must find a locally unique stable root in its window. Any anchored
+failure falls back to the cold scan and its branch admission; later trace points
+anchor on the previous point as before. Like those points, an anchored success is
+admitted by local uniqueness and skips the global scan and its failure checks.
+
+Identical unanchored T/P/composition requests for vapor and liquid may share one
+bounded search and its stable-root list: the sibling is the opposite extreme
+stable root, or the same unbranched root when only one exists. Anchored requests
+cannot supply a sibling. Boundary initialization shares its two feed requests;
+changed phase compositions still resolve their own roots with the same checks.
+
 ```text
 scan deterministically in log density within the admitted packing domain,
     keeping the reduced pressure residual and analytic pressure slope
@@ -204,7 +222,12 @@ floating-point adjacency, retaining the stable-side endpoint. Pressure increases
 monotonically across the stable side, so a stable bisection sample whose
 residual has passed the target by more than `DENSITY_ROOT_RESIDUAL` already
 brackets that side's unique root; the fold itself is resolved only when no such
-sample appears, which is exactly the case needed to show that no root exists. It does not
+sample appears, which is exactly the case needed to show that no root exists.
+A cell whose stable end is already past the target by more than
+`DENSITY_ROOT_RESIDUAL` R T rho_upper in pressure (vapor side above it, liquid
+side below it) is rootless on that side
+without any fold bisection, since the stable pressure only moves further away
+toward the fold. It does not
 estimate a fold from pressure-residual coincidence. Without such a stable sample, a
 target indistinguishable from a fold pressure at `DENSITY_ROOT_RESIDUAL` is
 explicitly unresolved,

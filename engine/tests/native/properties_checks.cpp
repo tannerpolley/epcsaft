@@ -1639,9 +1639,19 @@ void properties_p2() {
             temperature, 1.0 / density, composition,
             associating.parameters(), state.site_fractions
         );
+        // The PressureSlope adjoint gradient and the Gradient-order sensitivity gradient are
+        // algebraically distinct formulas for the same reduced gradient.
+        const auto gradient_order = associating.evaluate(
+            temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::Gradient);
+        double gradient_error = 0.0;
+        for (std::size_t i = 0; i < gradient_order.gradient.size(); ++i)
+            gradient_error = std::max(gradient_error, std::abs(pressure_slope.gradient[i] - gradient_order.gradient[i])
+                / std::max(1.0, std::abs(gradient_order.gradient[i])));
+        CHECK(pressure_slope.gradient.size() == gradient_order.gradient.size() && gradient_error <= 1e-12);
         const auto inputs = recording_support::fields({
             model_inputs(associating.parameters(), temperature, 1.0 / density, composition),
             recording_support::field("support", support),
+            recording_support::field("pressure_slope_gradient_identity_error", gradient_error),
             recording_support::field("site_fractions", state.site_fractions),
             recording_support::field("association_floor", pressure_slope.gradient_floor),
             recording_support::field("expected_floor", expected_floor),

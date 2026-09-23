@@ -16,6 +16,7 @@ namespace epcsaft {
 using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
 
+// PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
 enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
@@ -195,6 +196,7 @@ struct NeutralReferenceReactionDiagnostic final {
     std::optional<double> terminal_contraction_pressure_derivative;
     std::optional<double> terminal_contraction_pressure_second_derivative;
     double reference_pressure_pa = 0.0;
+    double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };
@@ -267,7 +269,7 @@ public:
 private:
     friend DensityRoot solve_density(
         const HelmholtzModel&, double, double, const std::vector<double>&,
-        DensityBranch, std::optional<double>
+        DensityBranch, std::optional<double>, DensityRoot*
     );
 
     void validate_point(
@@ -306,7 +308,8 @@ DensityRoot solve_density(
     double pressure,
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density,
+    DensityRoot* sibling_root = nullptr  // unanchored only: the opposite extreme stable root
 );
 
 double reaction_reference_log_scale(
@@ -334,7 +337,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<std::vector<double>>& stoichiometries,
     const std::vector<ReactionReference>& references,
-    bool pressure_jets = true
+    bool pressure_jets = true,
+    std::optional<double> solvent_anchor = std::nullopt  // tried first for the pure-solvent point
 );
 
 struct InfiniteDilutionReference final {

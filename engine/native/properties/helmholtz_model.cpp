@@ -944,12 +944,49 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         return result;
     }
-    // The full tape Jacobian feeds only the site sensitivities and multipliers.
-    const auto jacobian = sites_count == 0 ? std::vector<double>{} : tape_->function.Jacobian(full_point);
     const auto delta = association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
     auto factorization = site_factorization(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
+    if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
+        // Density closure consumes the reduced gradient, a_VV and the floor only: one adjoint for
+        // the site multipliers and one volume tangent replace the full site Jacobian.
+        std::vector<double> weights(output_count, 0.0), direction(input_count, 0.0);
+        weights.front() = 1.0;
+        direction[1] = 1.0;
+        const auto raw_gradient = tape_->function.Reverse(1, weights);
+        const auto first = tape_->function.Forward(1, direction);
+        Eigen::VectorXd phi_sites(static_cast<Eigen::Index>(sites_count)), volume_rows = phi_sites, cross = phi_sites;
+        for (std::size_t site = 0; site < sites_count; ++site) {
+            const auto s = static_cast<Eigen::Index>(site);
+            phi_sites(s) = raw_gradient[point_size + site];
+            volume_rows(s) = -first[1 + site];
+            cross(s) = -total * composition[static_cast<std::size_t>(parameters_.site_component[site])]
+                * parameters_.site_multiplicity[site] / sites[site] * first[1 + site];
+        }
+        const Eigen::VectorXd multipliers = factorization.transpose().solve(phi_sites);
+        const Eigen::VectorXd volume_sites = factorization.solve(volume_rows);
+        result.gradient_floor = std::abs(cross.dot(factorization.solve(
+            Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites_count))))) * policy::ASSOCIATION_RESIDUAL.value;
+        for (std::size_t site = 0; site < sites_count; ++site) {
+            weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
+            direction[point_size + site] = volume_sites(static_cast<Eigen::Index>(site));
+        }
+        tape_->function.Forward(1, direction);
+        const auto second = tape_->function.Reverse(2, weights);
+        counters_.forward += 2; counters_.reverse += 2;
+        result.gradient.assign(point_size, 0.0);
+        for (std::size_t row = 0; row < point_size; ++row) result.gradient[row] = second[2 * row];
+        result.volume_second_derivative = second[2 * 1 + 1];
+        for (std::size_t site = 0; site < sites_count; ++site)
+            result.volume_second_derivative += volume_sites(static_cast<Eigen::Index>(site)) * second[2 * (point_size + site) + 1];
+        scope.probe("gradient", result.gradient);
+        scope.probe("volume_second_derivative", result.volume_second_derivative);
+        scope.probe("gradient_floor", result.gradient_floor);
+        return result;
+    }
+    // The full tape Jacobian feeds only the site sensitivities and multipliers.
+    const auto jacobian = sites_count == 0 ? std::vector<double>{} : tape_->function.Jacobian(full_point);
     Eigen::MatrixXd site_sensitivity = Eigen::MatrixXd::Zero(
         static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(point_size)
     );
@@ -980,27 +1017,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             }
         }
         scope.probe("gradient", result.gradient);
-    }
-    if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
-        std::vector<double> volume_direction(input_count, 0.0);
-        volume_direction[1] = 1.0;
-        const auto first = tape_->function.Forward(1, volume_direction);
-        ++counters_.forward;
-        Eigen::VectorXd potential_cross(static_cast<Eigen::Index>(sites_count));
-        for (std::size_t site = 0; site < sites_count; ++site) {
-            const std::size_t component = static_cast<std::size_t>(
-                parameters_.site_component[site]
-            );
-            const double mass = composition[component]
-                * parameters_.site_multiplicity[site];
-            potential_cross(static_cast<Eigen::Index>(site)) =
-                -total * mass / sites[site] * first[1 + site];
-        }
-        const Eigen::VectorXd ones =
-            Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites_count));
-        result.gradient_floor = std::abs(
-            potential_cross.dot(factorization.solve(ones))
-        ) * policy::ASSOCIATION_RESIDUAL.value;
     }
     if (order == DerivativeOrder::Gradient) return result;
 
