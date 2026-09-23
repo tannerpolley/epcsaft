@@ -603,6 +603,19 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
     return result;
 }
 
+struct ActionCenter final {
+    Center center;
+    std::vector<SolvedStateActionResult> central_results;
+    std::vector<std::vector<std::size_t>> property_rows;
+    std::vector<std::vector<PropertyObservable>> property_lists;
+    SolvedStateActionDiagnostics diagnostics;
+    SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
+    SolvedStateActionStatus matrix_gate = SolvedStateActionStatus::Available;
+    double classified_residual = 0.0;
+    bool topology_checked = false;
+    bool matrix_checked = false;
+};
+
 }  // namespace
 
 std::string solved_state_observable_id(const SolvedStateObservable& observable) {
@@ -626,11 +639,10 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     return "unknown";
 }
 
-SolvedStateActionBatch solved_state_actions(
-    const CompiledSystem& compiled, const EquilibriumResult& central, const SolvedStateActionRequest& request
+static SolvedStateActionBatch evaluate_action(
+    const CompiledSystem& compiled, const EquilibriumResult& central,
+    const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope
 ) {
-    core::Scope scope("solved_state_actions");
-    validate_request(compiled, central, request);
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
     const std::size_t components = model.parameters().component_count();
@@ -658,17 +670,24 @@ SolvedStateActionBatch solved_state_actions(
         return batch;
     }
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
-    Center center;
-    center.prepared = compiled.prepare(central.coordinates);
-    // The gate quantity is the classified residual the driver certifies (owner decisions 2 and
-    // 6, 2026-09-16); the unscaled rows stay in the central result's diagnostics.
-    const auto evaluation = compiled.evaluate_at(center.prepared);
-    double classified_residual = 0.0;
-    for (const double value : compiled.classified_residuals(center.prepared, evaluation.values))
-        classified_residual = std::isfinite(value) ? std::max(classified_residual, std::abs(value)) : std::numeric_limits<double>::infinity();
-    if (std::isfinite(classified_residual)) batch.diagnostics.central_residual = classified_residual;
-    if (evaluation.floor > 0.0) batch.diagnostics.central_floor = evaluation.floor;
-    scope.probe("central_residual", classified_residual);
+    if (!shared) {
+        shared.emplace();
+        auto& common = *shared;
+        common.center.prepared = compiled.prepare(central.coordinates);
+        // The gate quantity is the classified residual the driver certifies; the unscaled
+        // rows stay in the central result's diagnostics.
+        const auto evaluation = compiled.evaluate_at(common.center.prepared);
+        for (const double value : compiled.classified_residuals(common.center.prepared, evaluation.values))
+            common.classified_residual = std::isfinite(value)
+                ? std::max(common.classified_residual, std::abs(value)) : std::numeric_limits<double>::infinity();
+        common.diagnostics.equation_count = compiled.rows.size();
+        common.diagnostics.state_dimension = compiled.unknown_count();
+        if (std::isfinite(common.classified_residual)) common.diagnostics.central_residual = common.classified_residual;
+        if (evaluation.floor > 0.0) common.diagnostics.central_floor = evaluation.floor;
+    }
+    auto& center = shared->center;
+    batch.diagnostics = shared->diagnostics;
+    scope.probe("central_residual", shared->classified_residual);
     // Controls, their scales and the direction magnitudes.
     std::vector<double> scale(width, 1.0);
     scale[0] = std::max(center.prepared.temperature, 1.0);
@@ -685,67 +704,89 @@ SolvedStateActionBatch solved_state_actions(
         controls.push_back(std::move(control));
         magnitude.push_back(largest);
     }
-    // Central values through the physical map; fixed inputs keep their identity actions.
-    const std::vector<double> no_control(width, 0.0);
-    const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
-    std::vector<PhaseMap> base_maps;
-    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) base_maps.push_back(phase_map(base, phase, components));
+    const bool reference_problem = has_source_reference(problem)
+        && !compiled.reference_diagnostics.empty();
+    if (shared->central_results.empty()) {
+        // Central values and property dependencies are identical for every independent A1.
+        const std::vector<double> no_control(width, 0.0);
+        const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
+        std::vector<PhaseMap> base_maps;
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase)
+            base_maps.push_back(phase_map(base, phase, components));
+        for (auto& item : batch.results) {
+            if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
+            const auto series = observable_series(item.observable, base, base_maps);
+            if (!series.empty() && std::isfinite(series.front())) item.value = series.front();
+        }
+        auto& property_rows = shared->property_rows;
+        auto& property_lists = shared->property_lists;
+        property_rows.resize(problem.phases.size());
+        property_lists.resize(problem.phases.size());
+        for (std::size_t i = 0; i < batch.results.size(); ++i)
+            if (batch.results[i].observable.kind == SolvedStateObservableKind::PhaseProperty)
+                property_rows[batch.results[i].observable.phase].push_back(i);
+        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+            for (const std::size_t row : property_rows[phase])
+                property_lists[phase].push_back(batch.results[row].observable.property);
+            if (property_rows[phase].empty()) continue;
+            const auto chain = property_chain(model, base, base_maps[phase], phase, property_lists[phase], 0);
+            batch.diagnostics.maximum_energy_order = std::max(batch.diagnostics.maximum_energy_order, chain.maximum_energy_order);
+            for (std::size_t i = 0; i < property_rows[phase].size(); ++i) {
+                auto& item = batch.results[property_rows[phase][i]];
+                item.value = chain.value[i];
+                item.property_diagnostics = chain.diagnostics;
+                if (chain.status[i] != PropertyActionStatus::Available) {
+                    item.status = solved_state_status(chain.status[i]);
+                    item.diagnostic_message = std::string("phase_property dependency: ") + solved_state_status_name(item.status);
+                }
+            }
+        }
+        if (reference_problem) {
+            for (auto& item : batch.results) {
+                if (item.observable.kind == SolvedStateObservableKind::PhaseProperty
+                    && caloric_property(item.observable.property)) {
+                    item.status = SolvedStateActionStatus::ReferenceUnavailable;
+                    item.value.reset();
+                    item.action.reset();
+                    item.diagnostic_message = "reference caloric value/action is unavailable";
+                }
+            }
+        }
+        shared->central_results = batch.results;
+        shared->diagnostics = batch.diagnostics;
+    } else {
+        batch.results = shared->central_results;
+    }
     for (auto& item : batch.results) {
-        if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
-        const auto series = observable_series(item.observable, base, base_maps);
-        if (!series.empty() && std::isfinite(series.front())) item.value = series.front();
+        item.order = order;
         if (!state_dependent(item.observable, problem)) {
             const std::size_t index = item.observable.kind == SolvedStateObservableKind::Temperature ? 0 : 1;
             item.action = order == 1 ? controls[0][index] : 0.0;
         }
     }
-    // Property central values and dependency statuses through the P4 owner at a zero direction.
-    std::vector<std::vector<std::size_t>> property_rows(problem.phases.size());
-    for (std::size_t i = 0; i < batch.results.size(); ++i)
-        if (batch.results[i].observable.kind == SolvedStateObservableKind::PhaseProperty)
-            property_rows[batch.results[i].observable.phase].push_back(i);
-    std::vector<std::vector<PropertyObservable>> property_lists(problem.phases.size());
-    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
-        for (const std::size_t row : property_rows[phase]) property_lists[phase].push_back(batch.results[row].observable.property);
-        if (property_rows[phase].empty()) continue;
-        const auto chain = property_chain(model, base, base_maps[phase], phase, property_lists[phase], 0);
-        batch.diagnostics.maximum_energy_order = std::max(batch.diagnostics.maximum_energy_order, chain.maximum_energy_order);
-        for (std::size_t i = 0; i < property_rows[phase].size(); ++i) {
-            auto& item = batch.results[property_rows[phase][i]];
-            item.value = chain.value[i];
-            item.property_diagnostics = chain.diagnostics;
-            if (chain.status[i] != PropertyActionStatus::Available) {
-                item.status = solved_state_status(chain.status[i]);
-                item.diagnostic_message = std::string("phase_property dependency: ") + solved_state_status_name(item.status);
-            }
-        }
-    }
-    const bool reference_problem = has_source_reference(problem)
-        && !compiled.reference_diagnostics.empty();
-    if (reference_problem) {
-        for (auto& item : batch.results) {
-            if (item.observable.kind == SolvedStateObservableKind::PhaseProperty
-                && caloric_property(item.observable.property)) {
-                item.status = SolvedStateActionStatus::ReferenceUnavailable;
-                item.value.reset();
-                item.action.reset();
-                item.diagnostic_message = "reference caloric value/action is unavailable";
-            }
-        }
-    }
+    const auto& property_rows = shared->property_rows;
+    const auto& property_lists = shared->property_lists;
     // Admission of the central state, in the owner's precedence.
-    SolvedStateActionStatus gate = SolvedStateActionStatus::Available;
-    if (!(classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
-        gate = SolvedStateActionStatus::DefiningEquationsNotSatisfied;
-    } else {
-        const auto topology = check_topology(compiled, central.coordinates);
-        if (topology.event == TopologyEvent::PhaseDisappeared) gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
-        else if (topology.event == TopologyEvent::PhasesCoalesced) gate = SolvedStateActionStatus::NonuniqueCoalescedPhases;
-        for (std::size_t phase = 0; phase < problem.phases.size() && gate == SolvedStateActionStatus::Available; ++phase)
-            for (const std::size_t species : problem.phases[phase].support)
-                if (center.prepared.composition[phase][species] <= policy::STABILITY_COMPOSITION_FLOOR.value)
-                    gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
+    if (!shared->topology_checked) {
+        if (!(shared->classified_residual <= std::min(problem.row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
+            shared->central_gate = SolvedStateActionStatus::DefiningEquationsNotSatisfied;
+        } else {
+            const auto topology = check_topology(compiled, central.coordinates);
+            if (topology.event == TopologyEvent::PhaseDisappeared)
+                shared->central_gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
+            else if (topology.event == TopologyEvent::PhasesCoalesced)
+                shared->central_gate = SolvedStateActionStatus::NonuniqueCoalescedPhases;
+            for (std::size_t phase = 0; phase < problem.phases.size()
+                 && shared->central_gate == SolvedStateActionStatus::Available; ++phase)
+                for (const std::size_t species : problem.phases[phase].support)
+                    if (center.prepared.composition[phase][species] <= policy::STABILITY_COMPOSITION_FLOOR.value)
+                        shared->central_gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
+        }
+        shared->topology_checked = true;
     }
+    auto gate = shared->central_gate;
+    batch.diagnostics.rank.reset();
+    batch.diagnostics.condition_estimate.reset();
     if (gate == SolvedStateActionStatus::Available) {
         const auto charges = species_z(model.parameters());
         bool support = false, nonzero_z = false;
@@ -756,19 +797,25 @@ SolvedStateActionBatch solved_state_actions(
         else if (support) gate = SolvedStateActionStatus::SupportChange;
     }
     if (gate == SolvedStateActionStatus::Available) {
-        const std::size_t n = central.coordinates.size();
-        const auto jacobian = compiled.jacobian_at(center.prepared);
-        center.jacobian = dense_matrix(jacobian, compiled.rows.size(), n);
-        if (!square_and_numeric(center.jacobian)) {
-            gate = SolvedStateActionStatus::NonfiniteJacobian;
-        } else {
-            center.lu = center.jacobian.fullPivLu();
-            batch.diagnostics.state_factorizations = 1;
-            batch.diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
-            const double condition = condition_estimate(center.jacobian);
-            if (std::isfinite(condition)) batch.diagnostics.condition_estimate = condition;
-            if (*batch.diagnostics.rank < n) gate = SolvedStateActionStatus::RankDeficient;
+        if (!shared->matrix_checked) {
+            const std::size_t n = central.coordinates.size();
+            const auto jacobian = compiled.jacobian_at(center.prepared);
+            center.jacobian = dense_matrix(jacobian, compiled.rows.size(), n);
+            if (!square_and_numeric(center.jacobian)) {
+                shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
+            } else {
+                center.lu = center.jacobian.fullPivLu();
+                batch.diagnostics.state_factorizations = 1;
+                shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
+                const double condition = condition_estimate(center.jacobian);
+                if (std::isfinite(condition)) shared->diagnostics.condition_estimate = condition;
+                if (*shared->diagnostics.rank < n) shared->matrix_gate = SolvedStateActionStatus::RankDeficient;
+            }
+            shared->matrix_checked = true;
         }
+        batch.diagnostics.rank = shared->diagnostics.rank;
+        batch.diagnostics.condition_estimate = shared->diagnostics.condition_estimate;
+        gate = shared->matrix_gate;
     }
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = std::any_of(controls.begin(), controls.end(), [](const auto& c) { return c[0] != 0.0; });
@@ -855,6 +902,36 @@ SolvedStateActionBatch solved_state_actions(
     }
     scope.probe("results", static_cast<double>(batch.results.size()));
     return batch;
+}
+
+SolvedStateActionBatch solved_state_actions(
+    const CompiledSystem& compiled, const EquilibriumResult& central, const SolvedStateActionRequest& request
+) {
+    core::Scope scope("solved_state_actions");
+    validate_request(compiled, central, request);
+    std::optional<ActionCenter> shared;
+    return evaluate_action(compiled, central, request, shared, scope);
+}
+
+std::vector<SolvedStateActionBatch> solved_state_first_actions(
+    const CompiledSystem& compiled, const EquilibriumResult& central,
+    const std::vector<SolvedStateObservable>& observables,
+    const std::vector<SolvedStateActionDirection>& directions
+) {
+    core::Scope scope("solved_state_first_actions");
+    if (directions.empty()) throw std::invalid_argument("solved-state action order");
+    std::vector<SolvedStateActionRequest> requests;
+    requests.reserve(directions.size());
+    for (const auto& direction : directions) {
+        requests.push_back({observables, {direction}});
+        validate_request(compiled, central, requests.back());
+    }
+    std::optional<ActionCenter> shared;
+    std::vector<SolvedStateActionBatch> batches;
+    batches.reserve(requests.size());
+    for (const auto& request : requests)
+        batches.push_back(evaluate_action(compiled, central, request, shared, scope));
+    return batches;
 }
 
 }  // namespace epcsaft::equilibrium

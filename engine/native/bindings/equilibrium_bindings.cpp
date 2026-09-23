@@ -329,6 +329,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("diagnostics", &SolvedStateActionBatch::diagnostics);
     module.def("solved_state_actions", &solved_state_actions,
                py::arg("compiled"), py::arg("central"), py::arg("request"));
+    module.def("solved_state_first_actions", &solved_state_first_actions);
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),
