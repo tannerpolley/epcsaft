@@ -119,7 +119,8 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     double temperature,
     double pressure,
     const NeutralReferenceDeclaration& declaration,
-    bool pressure_jets
+    bool pressure_jets,
+    std::optional<double> solvent_anchor
 ) {
     NeutralReferenceTraceResult result;
     try {
@@ -135,13 +136,21 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         NeutralReferenceTrace trace;
         trace.pressure = pressure;
         trace.solvent_mass = solvent_mass;
-        std::optional<double> anchor;
+        // A known liquid solvent density is tried first as a locally unique anchor; any failure
+        // falls back to the cold scan and its branch admission.
+        std::optional<double> anchor = solvent_anchor;
         for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
             trace.composition[point] = neutral_reference_composition(
                 declaration, solvent_mass, NEUTRAL_REFERENCE_MOLALITIES[point]);
             try {
-                trace.state[point] = model.state_at_pressure(
-                    temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
+                try {
+                    trace.state[point] = model.state_at_pressure(
+                        temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
+                } catch (const std::exception&) {
+                    if (point != 0 || !anchor) throw;
+                    trace.state[point] = model.state_at_pressure(
+                        temperature, pressure, trace.composition[point], DensityBranch::Liquid, std::nullopt);
+                }
             } catch (const std::exception& error) {
                 result.status = NeutralReferenceStatus::DensityUnavailable;
                 result.message = std::string("neutral reference density unavailable: ")
@@ -437,7 +446,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<std::vector<double>>& stoichiometries,
     const std::vector<ReactionReference>& references,
-    bool pressure_jets
+    bool pressure_jets,
+    std::optional<double> solvent_anchor
 ) {
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
@@ -486,7 +496,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             item.pressure = pressure;
             item.pressure_jets = need_jets;
             item.result = build_neutral_reference_trace(
-                model, temperature, pressure, declaration, need_jets);
+                model, temperature, pressure, declaration, need_jets, solvent_anchor);
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
@@ -499,6 +509,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         diagnostic = neutral_reference_from_trace(
             model, temperature, declaration, stoichiometries[row], reference,
             need_jets, *found->result.trace);
+        diagnostic.solvent_density = found->result.trace->state.front().molar_density;
     }
     return result;
 }
