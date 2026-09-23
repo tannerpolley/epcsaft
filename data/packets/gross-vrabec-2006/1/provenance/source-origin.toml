@@ -1,0 +1,10 @@
+provenance_kind = "source-record-provenance-v1"
+schema_version = 1
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "40e5309f3348bbdc6974cc6f16e7bfc4efd4ab45c988799eb63728bc82003a00"
+origin_repository = "none"
+origin_commit = "0000000000000000000000000000000000000000"
+origin_tree = "0000000000000000000000000000000000000000"
+origin_path = "AIChE J. 52 (2006) 1194-1204, doi:10.1002/aic.10683, Table 2 (p. 1200) and p. 1197; Zotero item WGN5SY8E attachment DWISZT5F, PDF SHA-256 0f342632efca9425db2a2cc26bac652605ae8c787900f3864d060c59d8e2a2e3"

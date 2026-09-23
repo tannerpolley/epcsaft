@@ -89,6 +89,7 @@ class ParameterDocument:
     electrolyte_choice: str
     ionic_dispersion_choice: str
     permittivity_choice: str
+    polar_choice: str
     entries: list[ParameterEntry]
     def __init__(self) -> None: ...
 

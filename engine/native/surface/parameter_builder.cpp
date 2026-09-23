@@ -66,7 +66,7 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         return 1.0;
     } else if (expected == "molar volume" && entry.unit == "liter / mole") {
         return 1.0e-3;
-    } else if ((expected == "debye ** 2" || expected == "angstrom ** 3") && entry.unit == expected) {
+    } else if ((expected == "debye" || expected == "debye ** 2" || expected == "angstrom ** 3") && entry.unit == expected) {
         return 1.0;
     }
     std::ostringstream message;
@@ -201,6 +201,14 @@ Parameters build_parameters(const ParameterDocument& document) {
         reject("unknown permittivity choice " + document.permittivity_choice);
     }
 
+    // The polar family is optional (ADR 0011): absent or none adds no term.
+    const bool polar = document.polar_choice == "dipole-dipole";
+    if (!polar && !document.polar_choice.empty() && document.polar_choice != "none") reject("unknown polar choice " + document.polar_choice);
+    if (polar) {
+        result.dipole_moment_debye.assign(components, 0.0);
+        result.dipole_count.assign(components, 0.0);
+    }
+
     std::set<std::tuple<std::string, Index>> seen;
     std::set<std::pair<std::string, std::size_t>> component_fields;
     std::set<std::string> scalar_fields;
@@ -214,10 +222,11 @@ Parameters build_parameters(const ParameterDocument& document) {
         const bool dipolar_field = entry.field == "dipole_scaling" || entry.field == "polarizability_scaling"
             || entry.field == "correlation_integral_parameter";
         const bool density_field = entry.field == "dielectric_volume" || entry.field == "dielectric_temperature";
+        const bool dipole_field = entry.field == "dipole_moment" || entry.field == "dipole_count";
         if ((entry.field == "ion_suppression_coefficient"
              && document.permittivity_choice != "ion-fraction-suppression"
              && document.permittivity_choice != "ion-specific-suppression")
-            || (dipolar_field && !dipolar) || (density_field && !density_temperature)
+            || (dipolar_field && !dipolar) || (density_field && !density_temperature) || (dipole_field && !polar)
             || ((entry.field == "relative_permittivity" || entry.field == "permittivity_term_coefficient"
                  || entry.field == "permittivity_reference_temperature") && (dipolar || density_temperature))
             || ((entry.field == "ionic_region_relative_permittivity"
@@ -278,6 +287,12 @@ Parameters build_parameters(const ParameterDocument& document) {
             else if (entry.field == "dipole_scaling") result.dipole_scaling_debye2[i] = value;
             else if (entry.field == "polarizability_scaling") result.polarizability_scaling_angstrom3[i] = value;
             else result.correlation_integral_parameter[i] = value;
+        } else if (dipole_field) {
+            const auto i = component_index(entry, components);
+            component_fields.emplace(entry.field, i);
+            factor = unit_factor(entry, entry.field == "dipole_moment" ? "debye" : "dimensionless");
+            if (!std::isfinite(entry.magnitude) || entry.magnitude < 0.0) reject("negative or nonfinite " + where(entry));
+            (entry.field == "dipole_moment" ? result.dipole_moment_debye : result.dipole_count)[i] = entry.magnitude * factor;
         } else if (entry.field == "sigma_term_amplitude" || entry.field == "sigma_term_exponent") {
             require_index(entry, 2, "sigma term index");
             if (entry.index[0] >= sigma_term_components.size() + 1 || entry.index[1] >= components) {
@@ -402,6 +417,9 @@ Parameters build_parameters(const ParameterDocument& document) {
         }
         for (const char* field : {"dipole_scaling", "polarizability_scaling", "correlation_integral_parameter"}) {
             if (dipolar && component_fields.find({field, i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/" + field);
+        }
+        for (const char* field : {"dipole_moment", "dipole_count"}) {
+            if (polar && component_fields.find({field, i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/" + field);
         }
     }
     for (std::size_t i = 0; i < components; ++i) for (std::size_t j = i + 1; j < components; ++j) {

@@ -77,6 +77,17 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-23, Contributions hard ceiling 1500 → 1612, Properties 4145 → 4150 and
+  aggregate hard ceiling 17760 → 17903 (#28). The owner pre-approved at most +250 runtime lines for an
+  optional Gross–Vrabec dipole–dipole term (ADR 0011) and reserved quadrupole and
+  cross terms for a new approval. The measured cost is +143 lines: Contributions
+  +112 (Table 1 constants, the J-integral interpolation and the Padé term), Surface +19
+  (explicit `polar` family and unit-checked `dipole_moment`/`dipole_count`
+  admission), Properties +5, Core +4, Bindings +4 (Python and ASL document
+  transport) and Python −1. Each raised ceiling rises by exactly the measured polar count (+112,
+  +5 and +143), so headroom that existed before this term, including the #84 use, is
+  not consumed.
+
 - 2026-09-22, aggregate hard ceiling 17600 → 17601 (#66). The latest merged
   main adds one Python physical line to the 17600-line accepted integration.
   The owner authorized necessary IDAES integration budget increases. No layer

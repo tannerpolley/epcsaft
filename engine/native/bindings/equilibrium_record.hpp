@@ -83,6 +83,7 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     w.put("electrolyte_choice"); w.put(d.electrolyte_choice);
     w.put("ionic_dispersion_choice"); w.put(d.ionic_dispersion_choice);
     w.put("permittivity_choice"); w.put(d.permittivity_choice);
+    w.put("polar_choice"); w.put(d.polar_choice);
     if (d.entries.size() > 4096) throw std::invalid_argument("ASL record exceeds 4096 parameters");
     w.put("parameter_entries"); w.put(d.entries.size());
     for (const auto& e : d.entries) { w.put(e.identity); w.put(e.field); w.vector(e.index); w.put(e.magnitude); w.put(e.unit); }

@@ -38,15 +38,11 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
     return result
 
 
-def _choice(families: Sequence[object], kind: str, allowed: set[str]) -> str:
-    unseen = object()
-    found: object = unseen
-    for item in families:
-        record = _mapping(item, "model_families")
-        if record.get("kind") == kind:
-            if found is not unseen:
-                raise _core.ParameterError(f"duplicate model choice {kind}")
-            found = record.get("choice")
+def _choice(families: Sequence[object], kind: str, allowed: set[str], default: str | None = None) -> str:
+    choices = [record.get("choice") for record in (_mapping(item, "model_families") for item in families) if record.get("kind") == kind]
+    if len(choices) > 1:
+        raise _core.ParameterError(f"duplicate model choice {kind}")
+    found = choices[0] if choices else default
     if not isinstance(found, str) or found not in allowed:
         raise _core.ParameterError(f"unknown {kind} model choice {found}")
     return found
@@ -120,7 +116,7 @@ class Parameters:
             "solvation_factor": "solvation_factor",
             "relative_permittivity": "relative_permittivity",
             "ion_specific_suppression_coefficient": "ion_suppression_coefficient",
-            **{name: name for name in ("dielectric_volume", "dielectric_temperature", "dipole_scaling", "polarizability_scaling", "correlation_integral_parameter")},
+            **{name: name for name in ("dielectric_volume", "dielectric_temperature", "dipole_scaling", "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count")},
         }
         for component_id in selected_ids:
             record = component_records[component_id]
@@ -236,12 +232,13 @@ class Parameters:
             raise _core.ParameterError("model_families must be an array")
         for item in families:
             kind = _mapping(item, "model_families").get("kind")
-            if kind not in ("base", "association", "electrolyte", "permittivity"):
+            if kind not in ("base", "association", "electrolyte", "permittivity", "polar"):
                 raise _core.ParameterError(f"unknown model family kind {kind}")
         electrolyte = _choice(families, "electrolyte", {"none", "fully-dissociated-debye-huckel", "born"})
         permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing", "solvent-density-temperature", "dipolar-perturbation"})
         base = _choice(families, "base", {"pc-saft"})
         association = _choice(families, "association", {"none", "general-site"})
+        polar = _choice(families, "polar", {"none", "dipole-dipole"}, "none")  # optional family (ADR 0011)
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
         if electrolyte == "born":
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
@@ -382,6 +379,7 @@ class Parameters:
         native_document.electrolyte_choice = electrolyte
         native_document.ionic_dispersion_choice = str(electrolyte_record.get("ionic_dispersion", ""))
         native_document.permittivity_choice = permittivity
+        native_document.polar_choice = polar
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         result._document = native_document
