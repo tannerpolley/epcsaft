@@ -135,6 +135,15 @@ energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
 ## ALG-ASSOCIATION
 
+The shared model retains at most two most-recently-used thermodynamic recordings,
+keyed by composition support, electrolyte predicates, selected thermal intervals
+and residual/ideal output availability. Parameters and thermal source data remain
+immutable within that model. Switching recordings never reuses a numerical state:
+each caller refreshes the point, site fractions, Taylor coefficients and required
+site factorization under the existing model lock. A miss records the shared EOS
+before replacing the older entry. This bounded reuse avoids rebuilding on every
+aqueous/organic phase switch; it does not change the association solve below.
+
 Use EqID: `association_mass_action`, EqID: `association_helmholtz` and the
 implicit mass-action identities in full EOS §5. Declare initialization and
 iteration budget; use Newton's method on the admitted site domain, with

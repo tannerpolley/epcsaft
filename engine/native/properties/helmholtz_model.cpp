@@ -1169,13 +1169,21 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     return result;
 }
 
-// Record the shared tape when the predicate signature or output selection changed.
+// ponytail: retain two signatures for alternating phases; widen only for measured multi-signature churn.
 bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::vector<double>& sites,
     const detail::PredicateSignature& signature, const std::vector<IdealCorrelation>& correlations,
     double ideal_pressure, bool residual) const {
-    if (tape_ != nullptr && tape_->predicates == signature && tape_->residual_available == residual
-        && tape_->ideal_available == !correlations.empty()) return false;
-    tape_ = detail::HelmholtzTape::record(parameters_, active_, point, sites, signature, correlations, ideal_pressure, residual);
+    const auto matches = [&](const auto& tape) {
+        return tape != nullptr && tape->predicates == signature && tape->residual_available == residual
+            && tape->ideal_available == !correlations.empty();
+    };
+    if (matches(tape_)) return false;
+    if (matches(previous_tape_)) {
+        tape_.swap(previous_tape_);
+        return false;
+    }
+    previous_tape_ = detail::HelmholtzTape::record(parameters_, active_, point, sites, signature, correlations, ideal_pressure, residual);
+    tape_.swap(previous_tape_);
     ++counters_.recordings;
     return true;
 }
