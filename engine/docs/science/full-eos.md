@@ -12,6 +12,7 @@ Correct mathematics is not weakened to match an implementation defect.
 | ID | Source | Use |
 |---|---|---|
 | Gross2001 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2001, 40, 1244-1260, DOI `10.1021/ie0003887` | PC-SAFT hard-chain, dispersion, pressure, chemical potential, fugacity, and residual properties |
+| GrossVrabec2006 | Gross and Vrabec, *AIChE J.* 2006, 52, 1194-1204, DOI `10.1002/aic.10683` | Optional dipole-dipole term, Eqs. (7)-(16) and Table 1 constants; Table 2 PCP-SAFT parameters (ADR 0011) |
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
@@ -101,7 +102,8 @@ Current native owners and numerical falsifiers are linked by the
 paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
-separate dipolar-density-perturbation relative-permittivity formulation.
+separate dipolar-density-perturbation relative-permittivity formulation; ADR 0011
+readmits only the optional dipole-dipole term of section 4.1.
 The common Helmholtz definition owns thermodynamic derivatives. Independent
 finite-difference formulas belong to numerical verification, not an alternate
 production equation owner.
@@ -218,6 +220,28 @@ solvent--ion pairs always retain the Gross combining equation with their
 explicit source-backed `k_ij`. These ionic rules are part of the common scalar
 kernel, so Helmholtz values and CppAD composition derivatives consume the same
 definition.
+
+### 4.1 Optional dipole-dipole term
+
+A model that declares `polar: dipole-dipole` adds the GrossVrabec2006 third-order
+Padé dipole-dipole contribution to the residual Helmholtz energy. Every component
+supplies `dipole_moment` (debye) and `dipole_count` n_μ; zero marks a nonpolar
+species. With the reduced moment written
+`q_i = n_μ,i μ_i^2/(4π ε_0 k T m_i σ_i^3)`, ε_i appears only in the J2 energy
+`ε_ij = (ε_i ε_j)^0.5`, which carries no k_ij. The chain lengths in the
+J integrals are capped at 2 (source Eqs. 15-16). The term uses the PC-SAFT
+packing fraction and segment diameters of the same state.
+
+Defining relation: [EqID: `dipolar_helmholtz`](../equations.md#dipolar_helmholtz), [EqID: `dipolar_second_order`](../equations.md#dipolar_second_order), [EqID: `dipolar_third_order`](../equations.md#dipolar_third_order), [EqID: `dipolar_integrals`](../equations.md#dipolar_integrals).
+
+When every dipolar species is absent, A2 = A3 = 0 and the Padé factor takes its
+limit 1. The value and the first composition derivative then equal the analytic
+limit a_dd ≈ A2 ∝ x_μ², so the absent species' dipolar chemical-potential share is
+zero. Higher composition derivatives along an absent dipolar direction are
+outside the claim; public actions report a support change there. The constants are fitted to two-centre
+Lennard-Jones plus point-dipole simulations at 0.55 ≤ T/T_c ≤ 0.99 with
+elongation L* ≤ 1. Polar parameters are valid only with their own fitted m, σ,
+ε/k and k_ij (ADR 0011).
 
 ## 5. Association
 
@@ -736,8 +760,8 @@ reference thermochemistry and fitting have separate responsibilities inside
 the same Engine. Their absence in the current implementation is a transfer
 gap, not a permanent ban on the accepted target. Solids, critical-point
 conditions as an augmented equation system, kinetics and Bjerrum pairing
-require separately justified scientific extensions. Residual polar terms
-remain retired by ADR 0006.
+require separately justified scientific extensions. Residual multipoles other
+than the optional dipole-dipole term (ADR 0011) remain retired by ADR 0006.
 
 Residual EOS parameters and reference thermochemistry are separately declared
 physical records. Public density/pressure state calls supply temperature and

@@ -88,6 +88,10 @@ struct Parameters final {
     std::vector<double> polarizability_scaling_angstrom3;
     std::vector<double> correlation_integral_parameter;
 
+    // Optional residual dipole-dipole term (ADR 0011); empty unless declared
+    std::vector<double> dipole_moment_debye;
+    std::vector<double> dipole_count;
+
     std::size_t component_count() const { return segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }
 };

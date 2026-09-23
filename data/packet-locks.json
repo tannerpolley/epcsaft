@@ -137,6 +137,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "gross-vrabec-2006",
+      "packet_version": "1",
+      "packet_path": "data/packets/gross-vrabec-2006/1",
+      "packet_fingerprint": "bbbdb6915bf20e34c1c741df46544a21dbfb154d5e2364b52c164721a494d00b",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "hamer-wu-1972-aqueous-alkali-halides",
       "packet_version": "1",
       "packet_path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1",

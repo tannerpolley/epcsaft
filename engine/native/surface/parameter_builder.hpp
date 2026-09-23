@@ -25,6 +25,7 @@ struct ParameterDocument final {
     std::string electrolyte_choice;
     std::string ionic_dispersion_choice;
     std::string permittivity_choice;
+    std::string polar_choice;
     std::vector<ParameterEntry> entries;
 };
 

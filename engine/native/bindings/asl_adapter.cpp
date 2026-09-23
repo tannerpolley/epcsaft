@@ -351,6 +351,8 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     document.ionic_dispersion_choice = reader.next();
     reader.field("permittivity_choice");
     document.permittivity_choice = reader.next();
+    reader.field("polar_choice");
+    document.polar_choice = reader.next();
     reader.field("parameter_entries");
     document.entries = reader.vector([&] {
         epcsaft::ParameterEntry entry;

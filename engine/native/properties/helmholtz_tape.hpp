@@ -60,6 +60,8 @@ struct TapeParameters final {
     std::vector<double> dipole_scaling_debye2;
     std::vector<double> polarizability_scaling_angstrom3;
     std::vector<double> correlation_integral_parameter;
+    std::vector<double> dipole_moment_debye;
+    std::vector<double> dipole_count;
 };
 
 enum class ParameterFamily {
@@ -171,6 +173,8 @@ inline TapeParameters make_tape_parameters(
     result.polarizability_scaling_angstrom3 =
         parameters.polarizability_scaling_angstrom3;
     result.correlation_integral_parameter = parameters.correlation_integral_parameter;
+    result.dipole_moment_debye = parameters.dipole_moment_debye;
+    result.dipole_count = parameters.dipole_count;
     return result;
 }
 
@@ -259,7 +263,8 @@ struct HelmholtzTape final {
             }
             dependent.push_back(total * (
                 contributions.hard_chain + contributions.dispersion
-                + contributions.debye_huckel + contributions.born + potential));
+                + contributions.debye_huckel + contributions.born + potential
+                + contributions.dipolar));
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
         if (!ideal_correlations.empty()) {

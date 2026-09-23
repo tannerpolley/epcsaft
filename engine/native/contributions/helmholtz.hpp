@@ -128,6 +128,23 @@ inline constexpr std::array<double, 7> B2 = {
     -38.804430052, 93.626774077, -29.666905585,
 };
 
+// Gross and Vrabec (2006) Table 1, rows n = 0..4 of the dipolar J integrals.
+inline constexpr std::array<std::array<double, 5>, 3> DIPOLE_A = {{
+    {0.3043504, -0.1358588, 1.4493329, 0.3556977, -2.0653308},
+    {0.9534641, -1.8396383, 2.0131180, -7.3724958, 8.2374135},
+    {-1.1610080, 4.5258607, 0.9751222, -12.281038, 5.9397575},
+}};
+inline constexpr std::array<std::array<double, 5>, 3> DIPOLE_B = {{
+    {0.2187939, -1.1896431, 1.1626889, 0.0, 0.0},
+    {-0.5873164, 1.2489132, -0.5085280, 0.0, 0.0},
+    {3.4869576, -14.915974, 15.372022, 0.0, 0.0},
+}};
+inline constexpr std::array<std::array<double, 5>, 3> DIPOLE_C = {{
+    {-0.0646774, 0.1975882, -0.8087562, 0.6902849, 0.0},
+    {-0.9520876, 2.9924258, -2.3802636, -0.2701261, 0.0},
+    {-0.6260979, 1.2924686, 1.6542783, -3.4396744, 0.0},
+}};
+
 template <typename Scalar>
 struct HelmholtzResult final {
     Scalar hard_chain;
@@ -135,6 +152,7 @@ struct HelmholtzResult final {
     Scalar association;
     Scalar debye_huckel;
     Scalar born;
+    Scalar dipolar;
 };
 
 template <typename Scalar>
@@ -205,6 +223,87 @@ Scalar packing_fraction_from_geometry(
             * diameter[component] * diameter[component] * diameter[component];
     }
     return (PI / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
+}
+
+template <typename Scalar>
+// EqID: dipolar_integrals
+// Coefficient a_n(m) = t0 + (m-1)/m t1 + (m-1)(m-2)/m^2 t2 with m capped at 2.
+Scalar dipolar_integral(
+    const std::array<std::array<double, 5>, 3>& table,
+    const std::array<std::array<double, 5>, 3>* energy_table,
+    const Scalar& chain, const Scalar& reduced_energy, const Scalar& eta
+) {
+    const Scalar m = scalar_select_less(chain, Scalar(2.0), chain, Scalar(2.0));
+    const Scalar first = (m - 1.0) / m;
+    const Scalar second = first * (m - 2.0) / m;
+    Scalar value = Scalar(0.0);
+    for (std::size_t n = table[0].size(); n-- > 0;) {
+        Scalar coefficient = table[0][n] + first * table[1][n] + second * table[2][n];
+        if (energy_table != nullptr) {
+            const auto& b = *energy_table;
+            coefficient += (b[0][n] + first * b[1][n] + second * b[2][n]) * reduced_energy;
+        }
+        value = value * eta + coefficient;
+    }
+    return value;
+}
+
+template <typename Scalar, typename ParameterSet>
+// EqID: dipolar_helmholtz
+// Gross and Vrabec (2006) Eqs. 7-9 with q_i = n_i mu_i^2 / (4 pi eps0 k T m_i sigma_i^3).
+// The unlike energy in J2 is sqrt(eps_i eps_j) without k_ij (source p. 1196).
+Scalar dipolar_helmholtz(
+    const Scalar& temperature, const Scalar& number_density, const Scalar& eta,
+    const std::vector<Scalar>& x, const ParameterSet& parameters,
+    const std::vector<Scalar>& sigma, const std::vector<Scalar>& epsilon
+) {
+    const std::size_t size = x.size();
+    constexpr double scale = DEBYE_C_M * DEBYE_C_M
+        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K
+           * ANGSTROM_M * ANGSTROM_M * ANGSTROM_M);
+    std::vector<Scalar> q(size, Scalar(0.0));
+    std::vector<std::size_t> polar;
+    for (std::size_t i = 0; i < size; ++i) {
+        const double mu = parameters.dipole_moment_debye[i];
+        if (mu == 0.0 || parameters.dipole_count[i] == 0.0) continue;
+        polar.push_back(i);
+        q[i] = parameters.dipole_count[i] * mu * mu * scale
+            / (temperature * parameters.segment_count[i] * sigma[i] * sigma[i] * sigma[i]);
+    }
+    Scalar second = Scalar(0.0);
+    Scalar third = Scalar(0.0);
+    for (const std::size_t i : polar) {
+        const Scalar volume_i = sigma[i] * sigma[i] * sigma[i];
+        for (const std::size_t j : polar) {
+            const Scalar volume_j = sigma[j] * sigma[j] * sigma[j];
+            const Scalar sigma_ij = 0.5 * (sigma[i] + sigma[j]);
+            const Scalar j2 = dipolar_integral<Scalar>(
+                DIPOLE_A, &DIPOLE_B,
+                scalar_sqrt(parameters.segment_count[i] * parameters.segment_count[j]),
+                scalar_sqrt(epsilon[i] * epsilon[j]) / temperature, eta);
+            second += x[i] * x[j] * volume_i * volume_j
+                / (sigma_ij * sigma_ij * sigma_ij) * q[i] * q[j] * j2;
+            for (const std::size_t k : polar) {
+                const Scalar j3 = dipolar_integral<Scalar>(
+                    DIPOLE_C, nullptr,
+                    scalar_exp(scalar_log(parameters.segment_count[i]
+                        * parameters.segment_count[j] * parameters.segment_count[k]) / 3.0),
+                    Scalar(0.0), eta);
+                third += x[i] * x[j] * x[k] * volume_i * volume_j
+                    * sigma[k] * sigma[k] * sigma[k]
+                    / (sigma_ij * 0.5 * (sigma[i] + sigma[k]) * 0.5 * (sigma[j] + sigma[k]))
+                    * q[i] * q[j] * q[k] * j3;
+            }
+        }
+    }
+    // EqID: dipolar_second_order
+    const Scalar a2 = -PI * number_density * second;
+    // EqID: dipolar_third_order
+    const Scalar a3 = -4.0 * PI * PI / 3.0 * number_density * number_density * third;
+    // a_dd = A2 / (1 - A3/A2). With every dipole absent A2 = A3 = 0 and the Pade factor
+    // is taken as its limit 1; both selected operands avoid 0/0 on the tape.
+    return a2 * scalar_select_less(Scalar(0.0), a2 * a2, a2, Scalar(1.0))
+        / scalar_select_less(Scalar(0.0), a2 * a2, a2 - a3, Scalar(1.0));
 }
 
 template <typename Scalar, typename ParameterSet>
@@ -357,6 +456,19 @@ HelmholtzResult<Scalar> residual_helmholtz(
         -2.0 * PI * number_density * integral_1 * first_moment -
         PI * number_density * mean_segment_count * c1 * integral_2 * second_moment;
 
+    // Optional: an undeclared polar family leaves the dipole arrays empty.
+    Scalar dipolar = Scalar(0.0);
+    if (!parameters.dipole_moment_debye.empty()) {
+        std::vector<Scalar> epsilon(size);
+        for (std::size_t i = 0; i < size; ++i) {
+            epsilon[i] = dispersion_energy_override == nullptr
+                ? Scalar(parameters.dispersion_energy_over_k[i])
+                : (*dispersion_energy_override)[i];
+        }
+        dipolar = dipolar_helmholtz(
+            temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon);
+    }
+
     // EqID: association_helmholtz
     Scalar association = 0.0;
     for (std::size_t site = 0; site < site_fraction.size(); ++site) {
@@ -367,7 +479,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
             (scalar_log(site_fraction[site]) - site_fraction[site] / 2.0 + 0.5);
     }
     // EqID: residual_helmholtz
-    return {hard_chain, dispersion, association, debye_huckel, born};
+    return {hard_chain, dispersion, association, debye_huckel, born, dipolar};
 }
 
 }  // namespace epcsaft

@@ -531,6 +531,58 @@ $$
 1+3y\left\{1+y+\left[\frac{17}{16}I-1\right]y^2\right\}.
 $$
 
+## `dipolar_helmholtz`
+
+- Section: Contribution intermediates / Dipole-dipole
+- Status: Source equation
+- Source: [GrossVrabec2006], Eq.~(7)
+- Description: Optional third-order Padé dipole-dipole Helmholtz contribution; zero when every dipolar species is absent.
+- Change note: Admitted as an opt-in family by ADR 0011.
+
+$$
+a^{dd}=\frac{A_2}{1-A_3/A_2},\qquad a^{dd}=0\ \text{if}\ A_2=0.
+$$
+
+## `dipolar_integrals`
+
+- Section: Contribution intermediates / Dipole-dipole
+- Status: Source equation
+- Source: [GrossVrabec2006], Eqs.~(10)--(16) and Table 1
+- Description: Pair and triplet correlation integrals with chain-length-interpolated coefficients.
+- Change note: The unlike energy in J2 is the geometric mean without k_ij.
+
+$$
+J_{2,ij}=\sum_{n=0}^{4}\left(a_{n,ij}+b_{n,ij}\frac{\epsilon_{ij}}{kT}\right)\eta^n,\quad
+J_{3,ijk}=\sum_{n=0}^{4}c_{n,ijk}\eta^n,\quad
+a_{n}=a_{0n}+\frac{m-1}{m}a_{1n}+\frac{m-1}{m}\frac{m-2}{m}a_{2n},\quad
+m_{ij}=\min\!\left(\sqrt{m_im_j},2\right),\ m_{ijk}=\min\!\left((m_im_jm_k)^{1/3},2\right),\ \epsilon_{ij}=\sqrt{\epsilon_i\epsilon_j}.
+$$
+
+## `dipolar_second_order`
+
+- Section: Contribution intermediates / Dipole-dipole
+- Status: Exact derivation
+- Source: [GrossVrabec2006], Eq.~(8) with $q_i=(\epsilon_i/kT)n_{\mu,i}\mu_i^{*2}$
+- Description: Second-order dipole-dipole perturbation term.
+- Change note: The reduced moment $q_i=n_{\mu,i}\mu_i^2/(4\pi\varepsilon_0kTm_i\sigma_i^3)$ absorbs $\epsilon_i$.
+
+$$
+A_2=-\pi\widehat{\rho}\sum_i\sum_j x_ix_j\frac{\sigma_i^3\sigma_j^3}{\sigma_{ij}^3}q_iq_jJ_{2,ij}.
+$$
+
+## `dipolar_third_order`
+
+- Section: Contribution intermediates / Dipole-dipole
+- Status: Exact derivation
+- Source: [GrossVrabec2006], Eq.~(9) with the same $q_i$
+- Description: Third-order dipole-dipole perturbation term.
+- Change note: Uses $\sigma_{ij}=(\sigma_i+\sigma_j)/2$ for every pair.
+
+$$
+A_3=-\frac{4\pi^2}{3}\widehat{\rho}^{\,2}\sum_i\sum_j\sum_k x_ix_jx_k
+\frac{\sigma_i^3\sigma_j^3\sigma_k^3}{\sigma_{ij}\sigma_{ik}\sigma_{jk}}q_iq_jq_kJ_{3,ijk}.
+$$
+
 ## `dispersion_chain_coefficients`
 
 - Section: Contribution intermediates / Dispersion
@@ -1675,11 +1727,11 @@ $$
 - Section: Residual Helmholtz energy
 - Status: Implementation convention
 - Source: [Gross2001], PC-SAFT residual decomposition extended by admitted electrolyte terms
-- Description: Sum of every active residual Helmholtz contribution.
+- Description: Sum of every active residual Helmholtz contribution; $a^{dd}$ only when the optional polar family is declared.
 - Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
 
 $$
-a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}.
+a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}+a^{dd}.
 $$
 
 ## `residual_internal_energy`

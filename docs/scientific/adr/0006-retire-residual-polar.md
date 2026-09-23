@@ -2,7 +2,7 @@
 
 Kind: computational-architecture
 
-- Status: accepted
+- Status: accepted; the dipole-dipole term only is superseded by [ADR 0011](0011-optional-dipole-dipole-term.md)
 - Date: 2026-08-27
 
 ## Context
