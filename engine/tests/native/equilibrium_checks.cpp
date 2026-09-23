@@ -920,15 +920,13 @@ void check_s2() {
                 {{enthalpy, capacity}, {{0.0, 0.0, {0.0, 0.0, 0.0}, {}}}}).results;
             CHECK(calorics[1].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
                   && !calorics[1].value.has_value());
-            for (std::size_t i = 0; i < 1; ++i) {
-                CHECK(calorics[i].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
-                      && calorics[i].value.has_value());
-                recording_support::observe(
-                    ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed")
-                     + (i == 0 ? "/h" : "/cp")).c_str(), i == 0 ? "h" : "cp", i == 0 ? "J/mol" : "J/(mol K)",
-                    calorics[i].value.value_or(0.0), std::nullopt, inputs, "Relationship", "reference-species-calorics",
-                    "native total caloric value with reaction-completed ions for the installed-wheel comparison");
-            }
+            CHECK(calorics[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && calorics[0].value.has_value());
+            recording_support::observe(
+                ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed") + "/h").c_str(),
+                "h", "J/mol", calorics[0].value.value_or(0.0), std::nullopt, inputs, "Relationship",
+                "reference-species-calorics",
+                "native total caloric value with reaction-completed ions for the installed-wheel comparison");
         }
     }
     // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
