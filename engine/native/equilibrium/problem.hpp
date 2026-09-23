@@ -74,7 +74,6 @@ struct PhaseSpec final {
 
     bool is_pinned() const noexcept { return amount.kind == AmountKind::Pinned; }
     bool is_free() const noexcept { return amount.kind == AmountKind::Free; }
-    bool has_explicit_support() const noexcept { return support_declared || !support.empty(); }
 };
 
 struct FeedSpec final {
@@ -82,8 +81,6 @@ struct FeedSpec final {
     std::vector<double> values;
     std::vector<std::size_t> solvent;
     double solvent_mass_kg = 1.0;
-
-    bool has_solvent() const noexcept { return !solvent.empty(); }
 };
 
 // The only admitted correlation identity: activity (rho x / (1 mol/m^3)) exp(mu_res / RT).
@@ -139,10 +136,6 @@ struct Row final {
     std::size_t phase = 0;
     std::size_t index = 0;
     const char* eqid = "chemical_potential_stationarity";
-
-    bool is_intensive() const noexcept {
-        return kind == RowKind::Chemical || kind == RowKind::Pressure;
-    }
 };
 
 struct PointEvaluation final {

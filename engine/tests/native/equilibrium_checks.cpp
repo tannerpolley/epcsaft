@@ -2912,7 +2912,11 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 ladder_inputs, "Relationship", "centered-solve-ladder", "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
                 structural ? "strict_absolute" : "reference_or_one", structural ? STRUCTURAL_ZERO : 0.0, structural ? 0.0 : CRITERION[order - 1],
                 verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
-            recording_support::compare_custom((id + "/rate").c_str(), "difference_ratio", "1", rate, expected_rate, ladder_inputs,
+            // A ladder certified by step agreement records that agreement, not an uncomputed rate.
+            const bool by_rate = std::isfinite(rate);
+            const double spread = complete ? std::abs(noise_bounded ? *coarse - *mid : *fine - *mid) : nan;
+            recording_support::compare_custom((id + "/rate").c_str(), by_rate ? "difference_ratio" : "step_agreement", "1",
+                by_rate ? rate : spread, by_rate ? expected_rate : 2.0 * criterion, ladder_inputs,
                 "Relationship", "centered-solve-ladder",
                 "the reference ladder certifies second-order convergence, or its last two informative steps agree within twice the criterion",
                 "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected || (noise_bounded && |coarse-mid| <= 2c)", refined,

@@ -43,6 +43,11 @@ void register_diagnostics(py::module_& module) {
         .def_readonly("source", &policy::Tolerance::source)
         .def_readonly("factor", &policy::Tolerance::factor)
         .def_property_readonly("upstream", tolerance_reference);
+    module.def("tolerances", [] {
+        py::list entries;
+        for (const auto* entry : policy::ENTRIES) entries.append(py::cast(entry, py::return_value_policy::reference));
+        return entries;
+    }, "Every named numerical policy entry (read-only); values change only in numerical_policy.hpp.");
     py::class_<core::Convergence>(module, "Convergence")
         .def_readonly("residual", &epcsaft::core::Convergence::residual)
         .def_property_readonly("criterion", [](const core::Convergence& record) -> py::object {

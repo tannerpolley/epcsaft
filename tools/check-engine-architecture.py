@@ -248,6 +248,13 @@ def rule_policy_entries_name_themselves() -> list[str]:
     ):
         if identifier != name:
             bad.append(f"{path.relative_to(ROOT)}: {identifier} names itself {name}")
+    listed = set(re.findall(r"&(\w+)", text.split("ENTRIES[]", 1)[1])) if "ENTRIES[]" in text else set()
+    consumers = "\n".join(without_comments(source.read_text()) for source in sources() if source != path)
+    for identifier in re.findall(r"inline\s+constexpr\s+Tolerance\s+(\w+)\s*[{=]", text):
+        if identifier not in listed:
+            bad.append(f"{path.relative_to(ROOT)}: {identifier} is missing from ENTRIES")
+        if not re.search(rf"\b{identifier}\b", consumers) and not re.search(rf"derived\({identifier}\b", text):
+            bad.append(f"{path.relative_to(ROOT)}: {identifier} has no consumer in engine/native")
     if "inline const Tolerance" in text:
         bad.append(f"{path.relative_to(ROOT)} still has inline const Tolerance")
     return bad
@@ -408,7 +415,7 @@ def main() -> int:
         ("constants defined once", rule_constants_defined_once()),
         ("no threshold literals", rule_no_threshold_literals()),
         ("solvers are case-blind", rule_solvers_are_case_blind()),
-        ("policy entries name themselves", rule_policy_entries_name_themselves()),
+        ("policy entries are named, listed and consumed", rule_policy_entries_name_themselves()),
         ("budget readers carry records", rule_budget_readers_carry_records()),
         ("core and trace boundaries", rule_core_and_trace_boundaries()),
         ("selectors are declared", rule_declared_selectors()),

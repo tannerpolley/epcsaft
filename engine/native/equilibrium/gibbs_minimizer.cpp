@@ -727,8 +727,12 @@ EquilibriumResult run_driver(
     // point visited, including the optimizer start, rather than the last step.
     std::size_t polish_evaluations = 0;
     std::string rejected_preparation = nlp->preparation_error().value_or("");
+    // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
+    // better point, and the polish never returns a worse classified point than its start.
     if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
-         || nlp->status() == Ipopt::STOP_AT_TINY_STEP) && compiled.is_square()) {
+         || nlp->status() == Ipopt::STOP_AT_TINY_STEP || nlp->status() == Ipopt::MAXITER_EXCEEDED
+         || nlp->status() == Ipopt::CPUTIME_EXCEEDED || nlp->status() == Ipopt::RESTORATION_FAILURE)
+        && compiled.is_square()) {
         auto at = compiled.prepare(full);
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
@@ -903,10 +907,10 @@ EquilibriumResult run_driver(
             + compiled.problem.phases[topology.pair->second].name + " is too small: "
             + std::to_string(topology.distance);
     }
+    // The recomputed rows classify: a point meeting the caller criterion is accepted whatever
+    // the optimizer reported; a floor-limited point needs the optimizer's own success.
     const bool solver_ok = nlp->status() == Ipopt::SUCCESS
-        || ((nlp->status() == Ipopt::STOP_AT_TINY_STEP
-             || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT)
-            && result.convergence.stop == core::Stop::converged);
+        || result.convergence.stop == core::Stop::converged;
     const bool accepted = solver_ok
         && (result.convergence.stop == core::Stop::converged
             || result.convergence.stop == core::Stop::converged_to_floor)

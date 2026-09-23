@@ -1467,8 +1467,11 @@ double p2_pressure_slope_floor_reference(
     const Eigen::VectorXd ones =
         Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites.size()));
     Eigen::FullPivLU<Eigen::MatrixXd> factorization(conditioning.jacobian);
-    return std::abs(potential_cross.dot(factorization.solve(ones)))
-        * epcsaft::policy::ASSOCIATION_RESIDUAL.value;
+    // The floor propagates the achieved site residual, bounded below by eps per site.
+    double achieved = std::numeric_limits<double>::epsilon() * static_cast<double>(sites.size());
+    for (const double value : p2_association_residuals(temperature, volume, composition, parameters, sites))
+        achieved = std::max(achieved, std::abs(value));
+    return std::abs(potential_cross.dot(factorization.solve(ones))) * achieved;
 }
 
 struct P2PressureChain final {
@@ -3153,7 +3156,9 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/species-vanthoff", "species_delta_h", "J/mol",
                species_h(350.0), reaction.enthalpy, "supplied h_i(Tref),cp_i(T)",
                "p3-reaction", "species-vanthoff");
-    const double species_cp_fd = (species_h(350.003) - species_h(349.997)) / 0.006;
+    // h is quadratic in T, so the centered difference has no truncation error; a 1 K step
+    // keeps its rounding (eps |h| / step) two decades below the criterion.
+    const double species_cp_fd = (species_h(350.5) - species_h(349.5)) / 1.0;
     p3_compare("p3-reaction/species-cp", "d_species_delta_h_dT", "J/(mol K)",
                species_cp_fd, species_cp(350.0), "supplied h_i(Tref),cp_i(T)",
                "p3-reaction", "species-cp");

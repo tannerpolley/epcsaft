@@ -246,6 +246,7 @@ an architecture scan nor a successful solve proves model validity.
 | derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
 | convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
 | numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
+| tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; non-failing and recorded with the floor, never a hand-picked looser tolerance (algorithms) |
 | fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
 | typed failure | An unavailable result with a specific reason; not an invented physical value (algorithms) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |

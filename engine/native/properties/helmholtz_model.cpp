@@ -894,9 +894,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     require(positive_vector(sigma), "sigma correlation");
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     require(positive_vector(diameter), "segment diameter");
+    core::Convergence site_record;
     const auto sites = solve_site_fractions(
-        temperature, density, composition, parameters_, sigma, diameter
+        temperature, density, composition, parameters_, sigma, diameter, &site_record
     );
+    // The gradient floor propagates the achieved site residual, not the site tolerance.
+    const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
     std::vector<double> declared_choices;
     if (parameters_.electrolyte_form.declared()) {
         declared_choices.push_back(0.0);
@@ -967,7 +970,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         const Eigen::VectorXd multipliers = factorization.transpose().solve(phi_sites);
         const Eigen::VectorXd volume_sites = factorization.solve(volume_rows);
         result.gradient_floor = std::abs(cross.dot(factorization.solve(
-            Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites_count))))) * policy::ASSOCIATION_RESIDUAL.value;
+            Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites_count))))) * site_residual;
         for (std::size_t site = 0; site < sites_count; ++site) {
             weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
             direction[point_size + site] = volume_sites(static_cast<Eigen::Index>(site));
@@ -1089,7 +1092,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             }
             maximum = std::max(maximum, norm);
         }
-        result.gradient_floor = maximum * policy::ASSOCIATION_RESIDUAL.value;
+        result.gradient_floor = maximum * site_residual;
     }
     result.volume_second_derivative = result.hessian[1 * point_size + 1];
     scope.probe("hessian", result.hessian);
