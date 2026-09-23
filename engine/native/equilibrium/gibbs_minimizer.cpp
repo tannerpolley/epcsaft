@@ -212,7 +212,7 @@ std::vector<double> add_multipliers(
     // Recover the balance and charge multipliers by the KKT-weighted least squares of the
     // chemical rows: the free-amount minimizer's stationarity conditions carry the weights
     // N_p x_i / N_feed, so the weighted fit is the one whose classified residual is minimal.
-    const auto prepared = compiled.prepare(result);
+    const auto prepared = compiled.prepare(result, true);
     const auto values = compiled.evaluate_at(prepared).values;
     std::vector<std::size_t> chemical;
     std::vector<std::size_t> phi_phase;
@@ -480,7 +480,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
     std::vector<double> candidate = point(n, x);
     if (!prepared_.has_value() || prepared_->point != candidate) {
         try {
-            prepared_ = compiled_.prepare(candidate);
+            prepared_ = compiled_.prepare(candidate, true);
         } catch (const std::exception& error) {
             prepared_.reset();
             rows_.reset();
@@ -733,7 +733,7 @@ EquilibriumResult run_driver(
          || nlp->status() == Ipopt::STOP_AT_TINY_STEP || nlp->status() == Ipopt::MAXITER_EXCEEDED
          || nlp->status() == Ipopt::CPUTIME_EXCEEDED || nlp->status() == Ipopt::RESTORATION_FAILURE)
         && compiled.is_square()) {
-        auto at = compiled.prepare(full);
+        auto at = compiled.prepare(full, true);
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
@@ -758,7 +758,7 @@ EquilibriumResult run_driver(
                 PhasePoint at_candidate;
                 std::vector<double> rows_after;
                 try {
-                    at_candidate = compiled.prepare(candidate);
+                    at_candidate = compiled.prepare(candidate, true);
                     rows_after = compiled.evaluate_at(at_candidate).values;
                     ++polish_evaluations;
                 } catch (const std::exception& error) {
