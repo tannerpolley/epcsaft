@@ -96,11 +96,13 @@ DensityRoot refine(
         const bool residual_met = std::abs(point.residual) <= tolerance;
         if (point.residual == 0.0 || (residual_met && std::isfinite(derivative) && derivative != 0.0
             && (upper - lower) * std::abs(derivative) <= tolerance)) break;
-        // Once the pressure residual passes, bisect until the bracket witnesses the
-        // tolerance/amplification radius; Newton alone can leave the other end far away.
+        // Once the residual passes, the bracket must still witness the tolerance/amplification
+        // radius: step a quarter radius past the Newton root toward the far end (bisection fallback).
         double candidate = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
-        if (!residual_met && std::isfinite(derivative) && derivative != 0.0) {
-            candidate = density - point.residual / derivative;
+        if (std::isfinite(derivative) && derivative != 0.0) {
+            const double far = upper - density > density - lower ? upper : lower;
+            candidate = density - point.residual / derivative
+                + (residual_met ? std::copysign(0.25 * tolerance / std::abs(derivative), far - density) : 0.0);
         }
         if (!(candidate > lower && candidate < upper) || !std::isfinite(candidate)) {
             candidate = policy::DENSITY_BISECTION_FRACTION.value * (lower + upper);
@@ -121,9 +123,7 @@ DensityRoot refine(
         density = candidate;
         point = next;
     }
-    const double derivative = residual_derivative(
-        point, density, pressure, temperature
-    );
+    const double derivative = residual_derivative(point, density, pressure, temperature);
     parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
     core::Convergence record{
         std::abs(point.residual), &policy::DENSITY_ROOT_RESIDUAL,
@@ -137,15 +137,10 @@ DensityRoot refine(
                                  record.amplification);
     if (iterations == maximum && record.stop == core::Stop::converged)
         throw std::runtime_error("density root bracket unresolved within the search budget");
-    const auto root = publish_root(
-        density, point.pressure - pressure, point.slope, iterations + 1, std::nullopt,
-        DensityBranch::Unspecified, record, iterations == maximum
-    );
-    parent_scope.probe(
-        "density_root",
-        {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
-        static_cast<std::uint32_t>(iterations)
-    );
+    const auto root = publish_root(density, point.pressure - pressure, point.slope, iterations + 1,
+                                   std::nullopt, DensityBranch::Unspecified, record, iterations == maximum);
+    parent_scope.probe("density_root", {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
+                       static_cast<std::uint32_t>(iterations));
     return root;
 }
 
@@ -163,8 +158,9 @@ void scan_cell(
         const bool stable_left = low.slope > 0.0;
         double a = lower, b = upper;
         PressurePoint pa = low, pb = high;
+        bool bracketed = false;
         for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
-                 && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
+                 && !bracketed && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
             const double density = a + policy::DENSITY_BISECTION_FRACTION.value * (b - a);
             if (!(density > a && density < b)) break;
             const auto point = at_density(model, temperature, pressure, composition, density,
@@ -172,8 +168,12 @@ void scan_cell(
             scope.probe("density_spinodal", {density, point.residual, point.slope});
             if ((pa.slope > 0.0) == (point.slope > 0.0)) { a = density; pa = point; }
             else { b = density; pb = point; }
+            // P rises across the stable side: a stable point past the target already
+            // brackets the unique root; only a rootless side needs the spinodal itself.
+            bracketed = point.slope > 0.0 && std::abs(point.residual) > policy::DENSITY_ROOT_RESIDUAL.value
+                && (stable_left ? low.residual < 0.0 : high.residual > 0.0) && (point.residual > 0.0) == stable_left;
         }
-        if (pa.slope != 0.0 && pb.slope != 0.0 && std::nextafter(a, b) < b)
+        if (!bracketed && pa.slope != 0.0 && pb.slope != 0.0 && std::nextafter(a, b) < b)
             throw std::runtime_error("density spinodal unresolved within the search budget");
         const bool use_a = pa.slope == 0.0 || (pb.slope != 0.0 && stable_left);
         const double density = use_a ? a : b;
