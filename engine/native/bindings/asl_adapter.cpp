@@ -559,6 +559,11 @@ double equilibrium_amount(arglist* arguments) {
     } catch (...) {
         callback_error = EquilibriumFailure(ActionStatus::Nonfinite, observable).what();
     }
+    // A solver only sees an evaluation error; name the typed cause and the trial controls.
+    std::fprintf(stderr, "epcsaft_equilibrium failure: %s controls=", callback_error.c_str());
+    for (int i = 0; arguments != nullptr && arguments->ra != nullptr && i < arguments->nr; ++i)
+        std::fprintf(stderr, "%s%.17g", i != 0 ? "," : "", arguments->ra[i]);
+    std::fputc('\n', stderr);
     if (prepared.context) prepared.context->order = -1;
     invalidate(arguments);
     if (arguments != nullptr) {
