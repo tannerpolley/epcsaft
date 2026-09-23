@@ -25,7 +25,7 @@ every combination of available contributions is a validated equation of state.
 | [Model specification and compatibility](model-specification.md) | What exactly is selected, how are parameters tied to it, and how is double counting assessed? |
 | [Derivatives and qualification](derivatives-and-evidence.md) | What can shared machinery automate, and what numerical and physical evidence remains necessary? |
 | [Electrolyte paper comparison](electrolyte-comparison.md) | What do Yang, Bülow, Figiel, Rueben, Biazi and related papers actually contribute and establish? |
-| [Five-step future roadmap](roadmap.md) | How should this be introduced after current delivery, with concrete outputs and acceptance gates? |
+| [Program issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23) and leaves #25–#29 | How is this introduced, with concrete outputs and acceptance gates? (The issues own the plan.) |
 | [Annotated references](references.md) | Which primary sources and exact locators support the discussion, and where does interpretation begin? |
 
 Read the first three documents for the architecture, the comparison for the
