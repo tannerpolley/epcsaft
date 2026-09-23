@@ -5,7 +5,7 @@
 ## Ownership
 
 - Affected repositories:
-- Related issue (full URL or `None`):
+- Issue: `Closes #N` only if this PR completes the issue's acceptance, otherwise `Refs #N` (or `None`). After merge, update the issue body's current state and remove `work:review`/`work:claimed`.
 - Scientific or capability impact (`none` or exact ADR/result):
 - Architecture, Data, or analysis owner updated:
 

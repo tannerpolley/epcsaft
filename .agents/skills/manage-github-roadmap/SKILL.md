@@ -66,3 +66,9 @@ after verifying the worker stopped; reconcile affected issues. Close a leaf only
 when its acceptance is supported. Reopen it when delivery or qualification is
 invalidated. Automatic unblocking publishes readiness; it never starts work,
 pushes, merges, or expands authority.
+
+A PR that completes a leaf's last acceptance criterion says `Closes #N`; a PR that
+delivers a slice says `Refs #N`. Merging does not finish the handoff: in the same
+closeout, rewrite the issue body's current state and remaining criteria (replace,
+do not append dated blocks), remove the PR's `work:review` and `work:claimed`
+labels, and run the reconciler. A comment alone is not a handoff.
