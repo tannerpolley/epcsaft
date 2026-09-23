@@ -1090,8 +1090,8 @@ void check_s2() {
         }
     }
     CHECK(source_match && source_worst <= 2.0e-12 && source_factorizations == 1
-          && source_batches[0].results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
-          && source_batches[0].results[0].value.has_value() && !source_batches[0].results[0].action.has_value()
+          && source_batches[0].results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+          && source_batches[0].results[0].value.has_value() && source_batches[0].results[0].action.has_value()
           && source_batches[1].results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
           && source_batches[1].results[0].value.has_value() && source_batches[1].results[0].action.has_value()
           && source_batches[1].results[1].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable

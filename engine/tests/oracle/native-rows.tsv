@@ -194,6 +194,10 @@ properties_checks P4	pressure/action/11/3	native	0.00838493671056328
 properties_checks P4	pressure/action/12/3	native	6.847212439577496e-06
 properties_checks P4	pressure/action/13/3	native	-4.901323938990716e-05
 properties_checks P4	pressure/action/14/3	native	-4.602503058727056e-05
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.598686248399813e-08
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.5890085365098835e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.597406752353081e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.6864975547701114e-08
 equilibrium_checks E5-1	e5-1/neutral-ternary/temperature/A1	K	0.2
 equilibrium_checks E5-1	e5-1/neutral-ternary/pressure/A1	Pa	2000
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A1	mol	-0.01400718123095636

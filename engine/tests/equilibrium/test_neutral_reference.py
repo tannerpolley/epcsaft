@@ -8,7 +8,8 @@ from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure
 from epcsaft.equilibrium import (
     Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
-    SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind as Kind,
+    SolvedStateActionRequest, SolvedStateActionStatus as Status, SolvedStateObservable,
+    SolvedStateObservableKind as Kind,
     compile_problem, problem_from_mapping, solve_equilibrium, solved_state_actions,
     solved_state_first_actions,
 )
@@ -229,7 +230,7 @@ def test_temperature_reference_chain_recovers_identical_species_law(
              claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
     twice = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])
     second = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [twice, twice])).results[0]
-    assert second.status.name == "ReferenceUnavailable" and second.action is None
+    assert second.status == Status.ReferenceUnavailable and second.action is None
 
 
 def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
@@ -258,7 +259,7 @@ def test_ionic_temperature_action_matches_resolved_difference(
     def sodium(d_t: float, d_p: float) -> float:
         result = solve_equilibrium(model, _ionic_problem(temperature + d_t, pressure + d_p, reference_pressure))
         assert result.success, result.message
-        return result.mole_fractions[1]
+        return float(result.mole_fractions[1])
 
     problem = _ionic_problem(temperature, pressure, reference_pressure)
     result = solve_equilibrium(model, problem)
@@ -293,6 +294,6 @@ def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:
     thermal, feed = solved_state_first_actions(compile_problem(model, problem), result, observable, [
         SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []),
         SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])])
-    assert thermal.results[0].status.name == "ReferenceUnavailable" and thermal.results[0].action is None
-    assert feed.results[0].status.name == "Available" and feed.results[0].action is not None
+    assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
+    assert feed.results[0].status == Status.Available and feed.results[0].action is not None
     assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]
