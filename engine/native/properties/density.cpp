@@ -349,9 +349,11 @@ DensityRoot anchor(
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density, DensityRoot* sibling_root
 ) {
     core::Scope scope("solve_density");
+    if (anchor_density.has_value() && sibling_root != nullptr)
+        throw std::invalid_argument("density sibling requires an unanchored root search");
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
@@ -392,6 +394,7 @@ DensityRoot solve_density(
             result = stable.front();
             result.stable_root_count = 1;
             result.branch = DensityBranch::Unspecified;
+            if (sibling_root != nullptr) *sibling_root = result;
         } else {
             if (branch == DensityBranch::Unspecified) {
                 throw std::runtime_error("density root is ambiguous (stable count "
@@ -400,6 +403,12 @@ DensityRoot solve_density(
             result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
             result.stable_root_count = stable.size();
             result.branch = branch;
+            if (sibling_root != nullptr) {
+                *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
+                sibling_root->stable_root_count = stable.size();
+                sibling_root->branch = branch == DensityBranch::Vapor
+                    ? DensityBranch::Liquid : DensityBranch::Vapor;
+            }
         }
     }
     scope.probe("density_root", result.molar_density);
