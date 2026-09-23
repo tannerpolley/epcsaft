@@ -196,6 +196,7 @@ struct NeutralReferenceReactionDiagnostic final {
     std::optional<double> terminal_contraction_pressure_derivative;
     std::optional<double> terminal_contraction_pressure_second_derivative;
     double reference_pressure_pa = 0.0;
+    double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };
@@ -336,7 +337,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<std::vector<double>>& stoichiometries,
     const std::vector<ReactionReference>& references,
-    bool pressure_jets = true
+    bool pressure_jets = true,
+    std::optional<double> solvent_anchor = std::nullopt  // tried first for the pure-solvent point
 );
 
 struct InfiniteDilutionReference final {

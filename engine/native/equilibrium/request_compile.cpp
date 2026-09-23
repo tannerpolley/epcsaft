@@ -202,9 +202,12 @@ std::vector<ReactionSpec> central_reference_reactions(
         stoichiometries.push_back(reaction.stoichiometry);
         references.push_back(*reaction.reference);
     }
+    std::optional<double> solvent_anchor;
+    if (fixed_pressure != nullptr && !fixed_pressure->empty() && fixed_pressure->front().solvent_density > 0.0)
+        solvent_anchor = fixed_pressure->front().solvent_density;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference,
-        stoichiometries, references, pressure_jets);
+        stoichiometries, references, pressure_jets, solvent_anchor);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
