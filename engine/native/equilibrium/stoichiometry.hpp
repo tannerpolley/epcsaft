@@ -121,8 +121,6 @@ std::vector<double> reconstruct_from_balance(
     const std::vector<double>& coordinates
 );
 
-double l1_norm(const std::vector<double>& values);
-
 bool all_finite(const std::vector<double>& values);
 
 double feed_mass_kg(
@@ -142,22 +140,10 @@ double projection_error(
 
 double maximum_abs(const std::vector<double>& values);
 
-double basis_trace(const std::vector<std::vector<double>>& basis);
-
 bool same_subspace(
     const std::vector<std::vector<double>>& left,
     const std::vector<std::vector<double>>& right,
     double tolerance
-);
-
-double balance_total(const std::vector<double>& amounts);
-
-bool basis_matches_components(
-    const std::vector<std::vector<double>>& basis, std::size_t components
-);
-
-bool contains_reaction_name(
-    const std::vector<ReactionSpec>& reactions, const std::string& name
 );
 
 }  // namespace epcsaft::equilibrium
