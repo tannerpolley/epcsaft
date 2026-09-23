@@ -101,10 +101,14 @@ std::vector<std::vector<double>> start_compositions(
     }
     const double temperature = seed_temperature(compiled);
     const double pressure = seed_pressure(compiled);
-    const auto vapor = compiled.model->state_at_pressure(
-        temperature, pressure, compiled.feed_composition, DensityBranch::Vapor);
-    const auto liquid = compiled.model->state_at_pressure(
-        temperature, pressure, compiled.feed_composition, DensityBranch::Liquid);
+    DensityRoot liquid_root;
+    const auto vapor_root = solve_density(
+        *compiled.model, temperature, pressure, compiled.feed_composition,
+        DensityBranch::Vapor, std::nullopt, &liquid_root);
+    const auto vapor = compiled.model->state(
+        temperature, vapor_root.molar_density, compiled.feed_composition);
+    const auto liquid = compiled.model->state(
+        temperature, liquid_root.molar_density, compiled.feed_composition);
     if (!vapor.log_fugacity_coefficient || !liquid.log_fugacity_coefficient)
         throw std::runtime_error("boundary start has no fugacity coefficients");
     const auto& ln_phi_vapor = *vapor.log_fugacity_coefficient;

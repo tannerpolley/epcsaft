@@ -267,7 +267,7 @@ public:
 private:
     friend DensityRoot solve_density(
         const HelmholtzModel&, double, double, const std::vector<double>&,
-        DensityBranch, std::optional<double>
+        DensityBranch, std::optional<double>, DensityRoot*
     );
 
     void validate_point(
@@ -306,7 +306,8 @@ DensityRoot solve_density(
     double pressure,
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density,
+    DensityRoot* sibling_root = nullptr  // unanchored only: the opposite extreme stable root
 );
 
 double reaction_reference_log_scale(

@@ -172,6 +172,12 @@ implicit/explicit chains.
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
+Identical unanchored T/P/composition requests for vapor and liquid may share one
+bounded search and its stable-root list: the sibling is the opposite extreme
+stable root, or the same unbranched root when only one exists. Anchored requests
+cannot supply a sibling. Boundary initialization shares its two feed requests;
+changed phase compositions still resolve their own roots with the same checks.
+
 ```text
 scan deterministically in log density within the admitted packing domain,
     keeping the reduced pressure residual and analytic pressure slope
