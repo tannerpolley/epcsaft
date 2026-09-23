@@ -117,3 +117,55 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
          1.0 / (liquid.molar_density**2 * R * temperature * liquid.pressure_density_derivative),
          rtol=1e-6, atol=0.0, method="identical-species-chemical-potential",
          claim="reference curvature follows the density response")
+
+
+def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any) -> None:
+    """Identical species: 2A ⇌ B at system P and 2A ⇌ C at fixed P0 share one bubble.
+
+    With C(P) = -ln φ(P) - ln(P/RT), row r satisfies x_r/x_A^2 = K_r exp(C(P_r) - C(P)),
+    so only the fixed-P0 row carries the pure-liquid factor between P0 and P_sat.
+    """
+    temperature, reference_pressure = 180.0, 1.0e6
+    pure = Pure(parameters((ETHANE,)))
+    model = Mixture(parameters((ETHANE, ETHANE, ETHANE),
+                               [("k_ij", (0, 1), 0.0), ("k_ij", (0, 2), 0.0), ("k_ij", (1, 2), 0.0)]))
+    constants = (0.3, 0.2)
+    law = [ReactionLogPolynomial(math.log(k), 0.0, 0.0, 0.0, 300.0, 170.0, 350.0, "analytic-source")
+           for k in constants]
+    problem = Problem(
+        T=temperature, P=Free(1e5), feed=Amounts({"s0": 2.0, "s1": 0.2, "s2": 0.1}),
+        phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[
+            Reaction({"s0": -2.0, "s1": 1.0}, correlation=law[0],
+                     reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution)),
+            Reaction({"s0": -2.0, "s2": 1.0}, correlation=law[1],
+                     reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution,
+                                                 reference_pressure)),
+        ],
+    )
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    saturation = result.pressure[0]
+
+    def contraction(pressure: float) -> float:
+        coefficient = pure.state(temperature, P=pressure, phase="liquid").log_fugacity_coefficient
+        assert coefficient is not None
+        return -coefficient[0] - math.log(pressure / (R * temperature))
+
+    effective = (constants[0], constants[1] * math.exp(contraction(reference_pressure) - contraction(saturation)))
+    total = sum(effective)
+    solvent = (-1 + math.sqrt(1 + 4 * total)) / (2 * total)
+    inputs = {"T_K": temperature, "P0_Pa": reference_pressure, "K": constants}
+    for row, species in enumerate((1, 2)):
+        same(evidence, f"reference-mixed-pressure/x{species}", result.mole_fractions[species],
+             effective[row] * solvent**2, rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
+             method="identical-species-two-reaction-analytic",
+             claim="free-pressure solve keeps system-pressure and fixed-P0 reference rows distinct")
+    diagnostics = result.neutral_reference_diagnostics
+    same(evidence, "reference-mixed-pressure/system-pressure", diagnostics[0].reference_pressure_pa,
+         saturation, rtol=1e-12, method="solved-pressure", claim="system reference follows solved pressure")
+    same(evidence, "reference-mixed-pressure/fixed-pressure", diagnostics[1].terminal_contraction,
+         contraction(reference_pressure), rtol=1e-9, atol=1e-10, method="pure-fugacity-identity",
+         claim="fixed-P0 reference is independent of the solved pressure")

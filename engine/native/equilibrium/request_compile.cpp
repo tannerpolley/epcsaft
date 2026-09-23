@@ -159,7 +159,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     double temperature,
     double pressure,
     std::vector<NeutralReferenceReactionDiagnostic>& diagnostics,
-    bool pressure_jets
+    bool pressure_jets,
+    const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr
 ) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
@@ -173,6 +174,14 @@ std::vector<ReactionSpec> central_reference_reactions(
             "reference_unavailable: supplied standard Gibbs conflicts with source reference");
     }
     std::vector<ReactionSpec> result = request.reactions;
+    std::vector<NeutralReferenceReactionDiagnostic> reused;
+    if (fixed_pressure != nullptr) {
+        // Fixed-pressure references depend only on the compiled model, temperature,
+        // declaration and stoichiometry; rebuild only system-pressure traces.
+        for (const auto& diagnostic : *fixed_pressure)
+            if (request.reactions[diagnostic.reaction_index].reference->reference_pressure_pa)
+                reused.push_back(diagnostic);
+    }
     diagnostics.clear();
     diagnostics.reserve(request.reactions.size());
     std::vector<std::size_t> reference_rows;
@@ -181,6 +190,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& reaction = request.reactions[row];
         if (!reaction.reference.has_value()) continue;
+        if (std::any_of(reused.begin(), reused.end(),
+                [row](const auto& item) { return item.reaction_index == row; })) continue;
         if (reaction.affinity_j_per_mol.has_value()
             || (!reaction.correlation.has_value() && !reaction.equilibrium_constant.has_value())) {
             throw std::invalid_argument(
@@ -194,13 +205,18 @@ std::vector<ReactionSpec> central_reference_reactions(
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference,
         stoichiometries, references, pressure_jets);
+    std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
-        const std::size_t row = reference_rows[reference_row];
+        resolved.push_back(reference_results[reference_row]);
+        resolved.back().reaction_index = reference_rows[reference_row];
+    }
+    std::sort(resolved.begin(), resolved.end(), [](const auto& a, const auto& b) {
+        return a.reaction_index < b.reaction_index;
+    });
+    for (const auto& reference : resolved) {
+        const std::size_t row = reference.reaction_index;
         const auto& reaction = request.reactions[row];
-        const auto& reference = reference_results[reference_row];
-        auto diagnostic = reference;
-        diagnostic.reaction_index = row;
-        diagnostics.push_back(diagnostic);
+        diagnostics.push_back(reference);
         if (reference.status != NeutralReferenceStatus::Available
             || !reference.terminal_contraction.has_value()) {
             throw std::invalid_argument(
@@ -270,7 +286,8 @@ StandardTerm standard_term(
         // Fixed-T/P references do not change with phase coordinates or feed directions.
         if (problem.pressure.free || pressure_jets) {
             reactions = central_reference_reactions(
-                *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets);
+                *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
+                &compiled.reference_diagnostics);
             gibbs = standard_state(temperature, components, reactions, {});
         }
         StandardTerm result;
