@@ -33,19 +33,10 @@ PressurePoint at_density(const HelmholtzModel& model, double temperature, double
                          std::size_t& evaluations, DerivativeOrder order) {
     ++evaluations;
     const auto derivatives = model.evaluate(temperature, 1.0 / density, composition, order);
-    const double phi_v = derivatives.gradient[1];
-    const double calculated_pressure = GAS_CONSTANT_J_PER_MOL_K * temperature
-        * (density - phi_v);
-    const double z = calculated_pressure / (density * GAS_CONSTANT_J_PER_MOL_K * temperature);
-    return {
-        z - pressure / (density * GAS_CONSTANT_J_PER_MOL_K * temperature),
-        calculated_pressure,
-        order == DerivativeOrder::PressureSlope
-            ? GAS_CONSTANT_J_PER_MOL_K * temperature
-                * (1.0 + derivatives.volume_second_derivative / (density * density))
-            : 0.0,
-        derivatives.gradient_floor,
-    };
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature, calculated = rt * (density - derivatives.gradient[1]);
+    const double scale = density * GAS_CONSTANT_J_PER_MOL_K * temperature;  // z - P/(rho R T), as recorded
+    return {calculated / scale - pressure / scale, calculated, order == DerivativeOrder::PressureSlope
+            ? rt * (1.0 + derivatives.volume_second_derivative / (density * density)) : 0.0, derivatives.gradient_floor};
 }
 
 double residual_derivative(
@@ -158,7 +149,10 @@ void scan_cell(
         const bool stable_left = low.slope > 0.0;
         double a = lower, b = upper;
         PressurePoint pa = low, pb = high;
-        bool bracketed = false;
+        // The stable side's pressure runs monotonically from its cell end toward the fold, so a
+        // cell end already past the target leaves that side rootless without locating the fold.
+        const double margin = policy::DENSITY_ROOT_RESIDUAL.value * GAS_CONSTANT_J_PER_MOL_K * temperature * upper;
+        bool bracketed = stable_left ? low.pressure > pressure + margin : high.pressure < pressure - margin;
         for (std::size_t i = 0; i < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value)
                  && !bracketed && pa.slope != 0.0 && pb.slope != 0.0; ++i) {
             const double density = a + policy::DENSITY_BISECTION_FRACTION.value * (b - a);
