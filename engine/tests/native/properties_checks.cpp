@@ -4605,7 +4605,7 @@ void modular_permittivity_actions() {
 }
 
 // Issue 26: implicit-association E3/E4 energy actions against a centered difference of the
-// next-lower exact order (u^T H v for E3, E3 for E4) along the last direction, Richardson h, h/2.
+// next-lower exact order (u^T H v for E3, E3 for E4) along the last direction, Richardson h, h/2, h/4.
 struct EnergyCase final {
     const char* name;
     epcsaft::Parameters parameters;
@@ -4691,24 +4691,28 @@ void energy_action_ladders() {
                 return (shifted_energy(item, lower, request.back(), h)
                     - shifted_energy(item, lower, request.back(), -h)) / (2.0 * h);
             };
-            const double coarse = difference(1.0e-2), fine = difference(5.0e-3);
-            const double reference = (4.0 * fine - coarse) / 3.0;
-            // Criterion: 1e-7 of the magnitude; the Richardson residual must itself resolve it.
-            const double scale = std::max(std::abs(reference), 1.0e-12);
-            const double truncation = std::abs(fine - coarse) / 3.0;
-            const bool resolved = truncation <= 1.0e-2 * scale;
+            // Two Richardson extrapolations (h, h/2) and (h/2, h/4): their difference bounds the
+            // error of the first and conservatively of the second. The reference must resolve
+            // 1e-7 relative, a decade below the 1e-6 criterion; an omitted implicit or dielectric
+            // chain changes these actions at O(1e-2) (the Z check above shows 5e-2).
+            const double d1 = difference(1.0e-2), d2 = difference(5.0e-3), d3 = difference(2.5e-3);
+            const double r1 = (4.0 * d2 - d1) / 3.0, reference = (4.0 * d3 - d2) / 3.0;
+            const double scale = std::abs(reference);
+            const double uncertainty = std::abs(reference - r1);
+            const bool resolved = uncertainty <= 1.0e-7 * scale;
             const bool ok = action.status == epcsaft::PropertyActionStatus::Available
                 && action.action.has_value() && resolved
-                && std::abs(*action.action - reference) <= 1.0e-7 * scale;
+                && std::abs(*action.action - reference) <= 1.0e-6 * scale;
             const std::string point = std::string(item.name) + "/" + label;
             recording_support::compare_custom(("issue26/energy/" + point).c_str(), "energy_action",
                 "extensive residual scalar", action.action.value_or(std::numeric_limits<double>::quiet_NaN()),
                 reference, recording_support::fields({recording_support::field("case", item.name),
                     recording_support::field("action", label),
                     recording_support::field("status", static_cast<int>(action.status)),
-                    recording_support::field("difference_h", coarse),
-                    recording_support::field("difference_h_over_2", fine),
-                    recording_support::field("richardson_truncation", truncation),
+                    recording_support::field("difference_h", d1),
+                    recording_support::field("difference_h_over_2", d2),
+                    recording_support::field("difference_h_over_4", d3),
+                    recording_support::field("reference_uncertainty", uncertainty),
                     recording_support::field("association_residual", action.diagnostics.association_residual)}),
                 "Relationship", "centered-difference-richardson",
                 "implicit association and permittivity chains complete through fourth order",
