@@ -238,9 +238,15 @@ existing phase-disappearance floor retain the original normalized $z/K,zK$
 and equal-amount seed. No new phase search or equilibrium driver is introduced.
 Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
 redundant density initialization for a previous successful result with compatible
-positive coordinates. Other declarations retain their original initialization,
-including the pure-fluid coexistence check. Final residual and stability checks
-are unchanged.
+positive coordinates. A multicomponent bubble declaration (fixed temperature, free
+pressure, one liquid and one vapor pinned at zero amount) moves the caller's
+pressure seed by one fugacity step,
+$P_1=P_0\sum_{i\in V}x_i\,\phi_i^L(T,P_0,x)/\phi_i^V(T,P_0,y)$, from the seeded
+compositions; the pressure coordinate and every density seed use $P_1$, and a failed
+state keeps $P_0$. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
+bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. Other
+declarations retain their original initialization, including the pure-fluid
+coexistence check. Final residual and stability checks are unchanged.
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root, an anchored closure establishes local uniqueness, and the corrected density

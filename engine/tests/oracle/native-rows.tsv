@@ -361,34 +361,34 @@ equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phas
 equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173926502e-06
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	1.2389339161251837e-17
 equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	-1.2213601000520252e-16
-regression_checks R2-J2	r4/recovery/epsilon	K	152.00000000000105
-regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999985626
-regression_checks R2-J2	r4/recovery/final_cost	1	8.563327468203852e-27
-regression_checks R2-J2	r4/recovery/initial_cost	1	0.08983832360308092
-regression_checks R2-J2	r4/recovery/prediction/0	native	1009056.6044860814
-regression_checks R2-J2	r4/recovery/prediction/1	native	1385321.0560162077
-regression_checks R2-J2	r4/recovery/prediction/2	native	1836959.1712055467
-regression_checks R2-J2	r4/recovery/prediction/3	native	0.955171272667374
-regression_checks R2-J2	r4/recovery/prediction/4	native	460.2037161263536
-regression_checks R2-J2	r4/recovery/covariance/0	1	2.370883642100968
-regression_checks R2-J2	r4/recovery/physical_covariance/0	1	237.08836421009678
-regression_checks R2-J2	r4/recovery/covariance/1	1	1.8684855002689007
-regression_checks R2-J2	r4/recovery/physical_covariance/1	1	1.8684855002689007
-regression_checks R2-J2	r4/recovery/covariance/2	1	1.8684855002689007
-regression_checks R2-J2	r4/recovery/physical_covariance/2	1	1.8684855002689007
-regression_checks R2-J2	r4/recovery/covariance/3	1	3.5046189570274544
-regression_checks R2-J2	r4/recovery/physical_covariance/3	1	0.03504618957027455
-regression_checks R2-J2	r4/recovery/variance_factor	1	5.708884978802568e-27
+regression_checks R2-J2	r4/recovery/epsilon	K	152.00000000000136
+regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999983264
+regression_checks R2-J2	r4/recovery/final_cost	1	1.0855670364471939e-26
+regression_checks R2-J2	r4/recovery/initial_cost	1	0.0898383236030902
+regression_checks R2-J2	r4/recovery/prediction/0	native	1009056.6044860862
+regression_checks R2-J2	r4/recovery/prediction/1	native	1385321.0560162081
+regression_checks R2-J2	r4/recovery/prediction/2	native	1836959.1712055407
+regression_checks R2-J2	r4/recovery/prediction/3	native	0.9551712726673736
+regression_checks R2-J2	r4/recovery/prediction/4	native	460.203716126353
+regression_checks R2-J2	r4/recovery/covariance/0	1	2.3708836421009343
+regression_checks R2-J2	r4/recovery/physical_covariance/0	1	237.08836421009346
+regression_checks R2-J2	r4/recovery/covariance/1	1	1.8684855002688832
+regression_checks R2-J2	r4/recovery/physical_covariance/1	1	1.8684855002688834
+regression_checks R2-J2	r4/recovery/covariance/2	1	1.8684855002688832
+regression_checks R2-J2	r4/recovery/physical_covariance/2	1	1.8684855002688832
+regression_checks R2-J2	r4/recovery/covariance/3	1	3.5046189570274433
+regression_checks R2-J2	r4/recovery/physical_covariance/3	1	0.03504618957027444
+regression_checks R2-J2	r4/recovery/variance_factor	1	7.237113576314625e-27
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/0	1	-0.33852334273378215
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/1	1	0.430730299442296
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/2	1	-0.31024963485359164
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/3	1	0.40333752942708734
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/4	1	-0.2837628554229449
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/1	1	0.4307302994422968
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/2	1	-0.31024963485359114
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/3	1	0.40333752942708784
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/4	1	-0.28376285542294455
 regression_checks R2-J2	r4/recovery/optimizer_jacobian/5	1	0.3778517084795734
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/6	1	-0.6602182186967119
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.014034456489423797
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387156122
-regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.030495453705934136
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/6	1	-0.6602182186967197
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/7	1	0.014034456489427489
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/8	1	0.012968728387155352
+regression_checks R2-J2	r4/recovery/optimizer_jacobian/9	1	-0.030495453705934362
 regression_checks D86	d86/density_value	mol/m^3	17541.251290836917
 regression_checks D86	d86/parameter/epsilon/fine	native	45.091360588112835
 regression_checks D86	d86/parameter/m/fine	native	-8782.890598169157
@@ -418,7 +418,7 @@ surface_example	action/density/0	J/(mol K)	74.642366289098192
 surface_example	action/density/1	J/(mol K)	0.045871714753973697
 surface_example	action/density/2	J/(mol K)	0.001997664484298564
 surface_example	action/density/3	J/(mol K)	-3.2208260039508281e-06
-surface_example	bubble/pressure	Pa	30936.816033816624
+surface_example	bubble/pressure	Pa	30936.816033816511
 surface_example	flash/amounts/0	mol	0.45701296529333796
 surface_example	flash/amounts/1	mol	0.5429870347066621
 surface_example	flash/mole_fractions/0	1	0.49278463704329362
