@@ -371,10 +371,11 @@ bool has_source_reference(const EquilibriumProblem& problem) {
             [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
 }
 
+// Referenced T slopes exist through order one only (EqID: standard_state_transfer_temperature_derivative).
 bool reference_action_direction(const std::vector<std::vector<double>>& controls,
                                 std::size_t components) {
-    return std::any_of(controls.begin(), controls.end(), [components](const auto& control) {
-        if (control[0] != 0.0) return true;
+    return std::any_of(controls.begin(), controls.end(), [&](const auto& control) {
+        if (control[0] != 0.0 && controls.size() > 1) return true;
         return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
                            control.end(), [](double value) { return value != 0.0; });
     });

@@ -1517,7 +1517,7 @@ $$
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
 - Description: Charge-neutral reaction contraction at a declared pure neutral solvent reference. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Fixed-temperature pressure jets differentiate this terminal state; temperature/parameter derivatives and caloric reference values are not implied.
+- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Pressure jets and the first temperature derivative differentiate this terminal state; parameter derivatives and caloric reference values are not implied.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
@@ -1540,7 +1540,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Temperature, parameter and third pressure derivatives remain unavailable.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Parameter and third pressure derivatives remain unavailable; the first temperature derivative is `standard_state_transfer_temperature_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1550,6 +1550,23 @@ C_{VV}=\Delta\nu/V^2+\sum_i\nu_i\psi_{n_iVV},\\
 C_P=\frac{C_V}{p_V},\qquad
 C_{PP}=\frac{C_{VV}}{p_V^2}-\frac{C_Vp_{VV}}{p_V^3},\qquad
 g_P=-RT C_P,\quad g_{PP}=-RT C_{PP}.
+$$
+
+## `standard_state_transfer_temperature_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Implicit differentiation of the pressure closure at the fixed terminal composition of the neutral reaction reference; Lambda = ln phi + ln(P/(RT rho0)) and RT^2 d ln phi_i/dT|_P = -hbar_i^res
+- Description: First temperature derivative at fixed reference pressure of the finite terminal reference and of the density-basis equilibrium constant. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho, and the source basis term A is temperature independent. The target is transported as s=-ln K_rho, whose slope maps to species through the same minimum-norm owner as its value.
+- Change note: Order one only. The slope is admitted when T times the change over the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg) is at most 5e-5, the value criterion in RT units. The Debye-Hueckel sqrt(m) term predicts an O(1) multiple of the value's terminal change. A system-pressure row combines this slope with the pressure jet at first order. Second temperature derivatives, Delta cp, parameter derivatives and caloric reference values are not implied.
+
+$$
+p_T=R(V^{-1}-\psi_V)-RT\psi_{VT},\quad V_T=-p_T/p_V,\\
+\left.\frac{dC}{dT}\right|_P=\sum_i\nu_i\psi_{n_iT}+C_VV_T,\qquad
+RT^2\left.\frac{dC}{dT}\right|_P=-\sum_i\nu_i\left(\bar h_i^{res}+RT\right),\\
+\frac{d\ln K_\rho}{dT}=\frac{d\ln K_{src}}{dT}+\left.\frac{dC}{dT}\right|_P,\qquad
+\Delta h_\rho=\Delta h_{src}+RT^2\left.\frac{dC}{dT}\right|_P,\qquad
+s_r'=-\frac{d\ln K_{\rho,r}}{dT}.
 $$
 
 ## `repeated_direction_energy_third`
@@ -1739,18 +1756,6 @@ $$
 $$
 g^{\circ}_{i,\rho}=g^{\circ}_{i,P}+RT\ln\frac{RT\rho_0}{P_0},\qquad h^{\circ}_{i,\rho}=h^{\circ}_{i,P}-RT,\qquad s^{\circ}_{i,\rho}=s^{\circ}_{i,P}-R\left(1+\ln\frac{RT\rho_0}{P_0}\right),\\
 \ln K_\rho=\ln K_P-\Delta\nu\ln\frac{RT\rho_0}{P_0},\qquad \frac{d\ln K_\rho}{dT}=\frac{d\ln K_P}{dT}-\frac{\Delta\nu}{T}.
-$$
-
-## `standard_state_transfer_temperature_derivative`
-
-- Section: Equilibrium / Reaction standard states
-- Status: Exact derivation
-- Source: Chain rule through the fixed-pressure density root; the transfer itself is registered under the infinite-dilution reference and molality_activity_conversion entries
-- Description: Generic temperature chain rule at a declared fixed pressure and reference composition on a regular density branch. For a source standard-state path that pressure is P0; a trial-pressure reference observable is a different path.
-- Change note: This differentiation identity does not validate the historical declared_solvent_source_reference_transfer convention.
-
-$$
-\left(\frac{d\Delta_i}{dT}\right)_{P}=\left(\frac{\partial\Delta_i}{\partial T}\right)_{\rho}+\left(\frac{\partial\Delta_i}{\partial\rho}\right)_{T}\left(\frac{d\rho}{dT}\right)_{P},\qquad \left(\frac{d\rho}{dT}\right)_{P}=-\frac{(\partial P/\partial T)_{\rho}}{(\partial P/\partial\rho)_{T}}
 $$
 
 ## `system_gibbs_helmholtz_coordinates`

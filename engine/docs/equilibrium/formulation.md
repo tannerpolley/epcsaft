@@ -140,10 +140,12 @@ for the application; the selector supplies no universal phase classification.
 This qualified finite terminal reference supports fixed-T/P central solves and
 feed actions. Its exact first and second pressure derivatives also support
 square pinned free-pressure cells and pressure/feed actions through order two
-(EqID: `neutral_reaction_reference_pressure_jet`). Feed-only actions at fixed
-T/P retain order three. Third-order actions involving pressure, free temperature,
-referenced continuation, raw lever derivatives and nonzero temperature/parameter
-actions remain unavailable. Ideal/Total caloric
+(EqID: `neutral_reaction_reference_pressure_jet`). Its first temperature
+derivative at the reference pressure supports order-one temperature and mixed
+T/P actions (EqID: `standard_state_transfer_temperature_derivative`). Feed-only
+actions at fixed T/P retain order three. Third-order actions involving pressure,
+temperature actions above order one, free temperature, referenced continuation,
+raw lever derivatives and parameter actions remain unavailable. Ideal/Total caloric
 values and actions are also unavailable; an attached thermochemistry record
 cannot supply missing reference derivatives. Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.
