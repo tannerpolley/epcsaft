@@ -239,7 +239,9 @@ struct CompiledSystem final {
     std::size_t jacobian_rank = 0;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 
-    PhasePoint prepare(const std::vector<double>& point) const;
+    // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
+    // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
+    PhasePoint prepare(const std::vector<double>& point, bool state_only = false) const;
     PointEvaluation evaluate(const std::vector<double>& point) const;
     // Residuals that classify a solve: for a free-amount (Gibbs) cell the chemical and
     // pressure rows are scaled by N_p x_i / N_feed and N_p / N_feed, the first-order

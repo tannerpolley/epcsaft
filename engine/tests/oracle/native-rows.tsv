@@ -347,20 +347,20 @@ equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A3	J/mo
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.022314287805547214
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A3	J/(mol K)	0
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.00033272866367722203
-equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	4.884981308350689e-15
-equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-8.881784197001252e-16
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	-4.336808689942018e-19
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	1.3010426069826053e-18
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-4.766360273318355e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	-1.6145989574630967e-15
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.016874139366160654
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.016874139366160598
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038599
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151037493
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173946085e-06
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173946627e-06
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	-1.2789350470592681e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	9.815650726843327e-17
+equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	2.020605904817785e-14
+equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	4.336808689942018e-19
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	4.336808689942018e-19
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	2.7406470986418054e-16
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	4.70676515273191e-16
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.01687413936616057
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.016874139366160668
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038404
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151038165
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944255e-06
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.138946317394439e-06
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	1.6066309185282755e-17
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	4.891827028630398e-17
 regression_checks R2-J2	r4/recovery/epsilon	K	152.00000000000156
 regression_checks R2-J2	r4/recovery/kij	1	-0.019999999999981408
 regression_checks R2-J2	r4/recovery/final_cost	1	6.844223305342472e-27
@@ -418,28 +418,28 @@ surface_example	action/density/0	J/(mol K)	74.642366289048979
 surface_example	action/density/1	J/(mol K)	0.045871714729394476
 surface_example	action/density/2	J/(mol K)	0.0019976645886343476
 surface_example	action/density/3	J/(mol K)	-3.2209975179329136e-06
-surface_example	bubble/pressure	Pa	30936.816033816613
-surface_example	flash/amounts/0	mol	0.45701296529333785
-surface_example	flash/amounts/1	mol	0.54298703470666199
-surface_example	flash/mole_fractions/0	1	0.49278463704329334
-surface_example	flash/mole_fractions/1	1	0.50721536295670666
-surface_example	flash/mole_fractions/2	1	0.045656765611790578
-surface_example	flash/mole_fractions/3	1	0.95434323438820945
-surface_example	flash/multipliers/0	1	-1.287843770579725
-surface_example	flash/multipliers/1	1	1.7608110095231231
-surface_example	flash/constraint_multipliers/0	1	1.287843770579725
-surface_example	flash/constraint_multipliers/1	1	-1.7608110095231231
+surface_example	bubble/pressure	Pa	30936.816033816543
+surface_example	flash/amounts/0	mol	0.45701296529333713
+surface_example	flash/amounts/1	mol	0.54298703470666287
+surface_example	flash/mole_fractions/0	1	0.49278463704329423
+surface_example	flash/mole_fractions/1	1	0.50721536295670577
+surface_example	flash/mole_fractions/2	1	0.045656765611790502
+surface_example	flash/mole_fractions/3	1	0.95434323438820956
+surface_example	flash/multipliers/0	1	-1.2878437705797272
+surface_example	flash/multipliers/1	1	1.7608110095231233
+surface_example	flash/constraint_multipliers/0	1	1.2878437705797272
+surface_example	flash/constraint_multipliers/1	1	-1.7608110095231233
 surface_example	flash/constraint_multipliers/2	1	0
 surface_example	flash/constraint_multipliers/3	1	0
-surface_example	solved/thermal/0	mol	-0.01888458938521418
-surface_example	solved/radial/0	mol	0.23180399706718119
-surface_example	solved/thermal/1	1	-0.0077792789010150184
+surface_example	solved/thermal/0	mol	-0.018884589385214232
+surface_example	solved/radial/0	mol	0.23180399706718036
+surface_example	solved/thermal/1	1	-0.0077792789010150088
 surface_example	solved/radial/1	1	0
-surface_example	solved/thermal/2	1	-0.016319143831975254
+surface_example	solved/thermal/2	1	-0.016319143831975347
 surface_example	solved/radial/2	1	0
-surface_example	solved/thermal/3	J/mol	-126.93949786638008
+surface_example	solved/thermal/3	J/mol	-126.93949786612967
 surface_example	solved/radial/3	J/mol	0
-surface_example	solved/thermal/4	mol/m^3	-481.75993780548066
+surface_example	solved/thermal/4	mol/m^3	-481.75993780548248
 surface_example	solved/radial/4	mol/m^3	0
-surface_example	solved/condition	1	480.06250324707855
+surface_example	solved/condition	1	480.06250324708429
 surface_example	floor/residual	1	8.8817841970012523e-16

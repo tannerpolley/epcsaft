@@ -892,7 +892,7 @@ std::vector<double> CompiledSystem::generic_point() const {
     return point;
 }
 
-PhasePoint CompiledSystem::prepare(const std::vector<double>& point) const {
+PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -920,8 +920,10 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point) const {
         result.volume.push_back(result.packing.back().coefficient / result.eta.back());
         result.amount.push_back(layout.amount.has_value()
             ? point[*layout.amount] : phase_amount(problem.phases[phase], n_feed));
+        const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
+            ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
         result.derivative.push_back(model->evaluate(
-            result.temperature, result.volume.back(), values, DerivativeOrder::Hessian));
+            result.temperature, result.volume.back(), values, order));
         scope.probe("gradient_floor", result.derivative.back().gradient_floor,
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));

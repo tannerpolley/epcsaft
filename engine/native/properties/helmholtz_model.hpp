@@ -17,7 +17,9 @@ using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
 
 // PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
-enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian };
+// Phase Hessians differentiate only V, positive amounts and (unless isothermal) T; other
+// gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
+enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
 

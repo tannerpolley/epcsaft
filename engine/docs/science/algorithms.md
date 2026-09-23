@@ -167,6 +167,17 @@ supply updated values, not automatically derivatives with respect to themselves;
 association values and independent physical coefficients require their actual
 implicit/explicit chains.
 
+Phase Hessian orders differentiate only V, the positive amounts and T when it is
+free (`PhaseHessian`; `IsothermalPhaseHessian` omits T). Fixed controls, absent
+species and active parameters stay in the physical array layout as uncomputed
+padding, not physical zero derivatives; full `Hessian` requests keep every
+coordinate. Site partials of the requested columns use the smaller of forward
+coordinate sweeps and reverse site-output sweeps, never the full tape Jacobian;
+one unweighted factorization and its multiplier solve supply the implicit
+gradient and Hessian, and each Hessian entry contracts the row coordinate's
+site tangent in O(sites). The association gradient floor is the maximum over
+the requested columns only, so it bounds exactly the gradient entries computed.
+
 ## ALG-DENSITY
 
 Inputs include T, composition, target pressure, admissible packing interval,
@@ -175,7 +186,7 @@ root-selection request, numerical policy and declared search budget.
 Density closure requests only the reduced pressure gradient, a_VV and the
 association floor. With association sites these come from one adjoint sweep
 (the same site multipliers as the Hessian path) and one volume tangent through
-the site sensitivity; the full site Jacobian is formed only for Hessian requests.
+the site sensitivity; no request forms the full site Jacobian.
 
 A neutral reference trace at system pressure first tries the compile-time
 pure-solvent liquid density as an anchor for its pure-solvent point: the
@@ -392,6 +403,11 @@ optimizer work. Within one solve the driver prepares each distinct callback
 point once and reuses its phase evaluation for rows, Jacobian, gradient and
 curvature; the weighted constraint curvature is recombined when the optimizer
 multipliers change, and the final row certification is a fresh evaluation.
+Optimizer callbacks, multiplier recovery and Newton polishing prepare phase
+Hessians only (ALG-ASSOCIATION); their rows, Jacobian, gradient and curvature read
+only V, support-amount and free-T entries. The final certification, solved-state
+sensitivities, lever Jacobians and boundary checks use full preparation, so the
+certified floor and reduced-Hessian certificate keep every coordinate.
 That fresh final preparation also supplies the reduced-Hessian certificate;
 only the coordinate width is reduced to the primal chart, without reevaluating
 the same phase energies separately for its Jacobian and Hessian. Diagnostic
