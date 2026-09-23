@@ -181,7 +181,8 @@ A neutral reference trace at system pressure first tries the compile-time
 pure-solvent liquid density as an anchor for its pure-solvent point: the
 anchored solve must find a locally unique stable root in its window. Any anchored
 failure falls back to the cold scan and its branch admission; later trace points
-anchor on the previous point as before.
+anchor on the previous point as before. Like those points, an anchored success is
+admitted by local uniqueness and skips the global scan and its failure checks.
 
 Identical unanchored T/P/composition requests for vapor and liquid may share one
 bounded search and its stable-root list: the sibling is the opposite extreme
