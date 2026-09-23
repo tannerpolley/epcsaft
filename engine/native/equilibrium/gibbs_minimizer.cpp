@@ -698,8 +698,9 @@ EquilibriumResult run_driver(
 ) {
     const double row_tolerance = compiled.problem.row_tolerance;
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
+    // A pinned square system has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
-        * policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value;
+        * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
     Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
     const double objective_scale = 1.0 / compiled.feed_total;

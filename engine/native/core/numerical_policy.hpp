@@ -314,7 +314,9 @@ inline constexpr Tolerance EQUILIBRIUM_ACTION_FORWARD_ERROR{"EQUILIBRIUM_ACTION_
 // the Ipopt tolerance and overshoots it by a hair (measured 1.0002-1.02x), so classifying
 // at the same value is systematically marginal. Inner Ipopt tolerances are
 // min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL) times this factor; the caller criterion alone
-// classifies rows. Owner decision 2026-09-16 (E4); provisional, not an accuracy bound.
+// classifies rows. Owner decision 2026-09-16 (E4); provisional, not an accuracy bound. Pinned
+// square systems use the caller criterion itself; their Newton polish absorbs the overshoot
+// (owner decision 2026-09-23).
 inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER_TOLERANCE_FACTOR",
     0.1,
     Category::AlgorithmTolerance,
