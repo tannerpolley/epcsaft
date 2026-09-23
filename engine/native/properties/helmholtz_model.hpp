@@ -16,6 +16,7 @@ namespace epcsaft {
 using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
 
+// PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
 enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
