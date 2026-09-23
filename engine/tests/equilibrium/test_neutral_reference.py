@@ -8,10 +8,12 @@ from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure
 from epcsaft.equilibrium import (
     Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
-    SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind as Kind,
+    SolvedStateActionRequest, SolvedStateActionStatus as Status, SolvedStateObservable,
+    SolvedStateObservableKind as Kind,
     compile_problem, problem_from_mapping, solve_equilibrium, solved_state_actions,
+    solved_state_first_actions,
 )
-from tests.native_inputs import ETHANE, parameters, same
+from tests.native_inputs import ETHANE, aqueous_electrolyte, parameters, same
 
 
 @pytest.mark.parametrize("temperature,pressure", [(260.0, 3e6), (280.0, 5e6)])
@@ -169,3 +171,132 @@ def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any)
     same(evidence, "reference-mixed-pressure/fixed-pressure", diagnostics[1].terminal_contraction,
          contraction(reference_pressure), rtol=1e-9, atol=1e-10, method="pure-fugacity-identity",
          claim="fixed-P0 reference is independent of the solved pressure")
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 5.0e6])
+def test_temperature_reference_chain_recovers_identical_species_law(
+    evidence: Any, reference_pressure: float | None,
+) -> None:
+    """Identical species: 2A ⇌ B obeys ln K_eff = ln K_src + C(T,P_ref) - C(T,P) with
+    RT² dC/dT|_P = h_res + RT and dC/dP = -V/(RT), both from the pure-fluid state owner.
+
+    A system-pressure row cancels the mixture term exactly, so dx_B/dT is source-driven;
+    a fixed row keeps the residual-enthalpy difference.  Omitting psi_nT or the density
+    slope changes d ln K_eff/dT by ~2e-2 or ~5e-2 per K.
+    """
+    temperature, pressure = 260.0, 3.0e6
+    law = ReactionLogPolynomial(math.log(0.3), 200.0, 3.0, -0.004, 300.0, 250.0, 350.0, "analytic-source")
+    ln_k = (law.a + law.b / temperature + law.c * math.log(temperature / law.reference_temperature)
+            + law.d * temperature)
+    source_slope = -law.b / temperature**2 + law.c / temperature + law.d
+    pure = Pure(parameters((ETHANE,)))
+    system = pure.state(temperature, P=pressure, phase="liquid")
+    fixed = pure.state(temperature, P=reference_pressure or pressure, phase="liquid")
+    rt = R * temperature
+
+    def contraction(state: Any, p: float) -> float:
+        assert state.log_fugacity_coefficient is not None
+        return -float(state.log_fugacity_coefficient[0]) - math.log(p / rt)
+
+    ln_k_eff = ln_k + contraction(fixed, reference_pressure or pressure) - contraction(system, pressure)
+    slope_t = source_slope + (fixed.residual_enthalpy - system.residual_enthalpy) / (rt * temperature)
+    slope_p = 0.0 if reference_pressure is None else 1.0 / (system.molar_density * rt)
+    k = math.exp(ln_k_eff)
+    x = 4 * k / (1 + math.sqrt(1 + 4 * k)) ** 2
+    dx_dlnk = k * (1 - x) ** 2 / (1 + 2 * k * (1 - x))
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    problem = Problem(
+        T=temperature, P=pressure, feed=Amounts({"s0": 2.0, "s1": 0.2}),
+        phases=[Phase("L", kind="liquid")],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=law, reference=ReactionReference(
+            Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
+    )
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    compiled = compile_problem(model, problem)
+    observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
+    name = f"reference-temperature/{'system' if reference_pressure is None else 'fixed'}"
+    inputs = {"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure}
+    same(evidence, name + "/x_B", result.mole_fractions[1], x, rtol=1e-8, atol=0.0, inputs=inputs,
+         basis="Identity", method="2A-to-B-analytic", claim="reference value at the declared pressure")
+    for label, d_t, d_p in (("T", 1.0, 0.0), ("T+P", 1.0, 2.0e5)):
+        direction = SolvedStateActionDirection(d_t, d_p, [0.0, 0.0], [])
+        item = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [direction])).results[0]
+        same(evidence, f"{name}/dx_B/{label}", item.action, dx_dlnk * (slope_t * d_t + slope_p * d_p),
+             rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
+             method="identical-species-residual-enthalpy",
+             claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
+    twice = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])
+    second = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [twice, twice])).results[0]
+    assert second.status == Status.ReferenceUnavailable and second.action is None
+
+
+def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
+    """Manufactured formula reaction H2O ⇌ Na+ + Cl- (charge neutral, not atom balanced) on
+    the native equilibrium_checks aqueous case."""
+    law = ReactionLogPolynomial(math.log(1e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source")
+    return Problem(
+        T=temperature, P=pressure, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}),
+        phases=[Phase("L", kind="liquid")],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -1.0, "s1": 1.0, "s2": 1.0}, correlation=law, reference=ReactionReference(
+            Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
+    )
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
+def test_ionic_temperature_action_matches_resolved_difference(
+    evidence: Any, reference_pressure: float | None,
+) -> None:
+    """The native temperature-slope case: first-order T and T/P actions of x_Na equal centered
+    re-solves; the step pair shows the O(step^2) truncation below the 1e-6 gate."""
+    temperature, pressure = 298.15, 1.0e5
+    model = Mixture(aqueous_electrolyte())
+
+    def sodium(d_t: float, d_p: float) -> float:
+        result = solve_equilibrium(model, _ionic_problem(temperature + d_t, pressure + d_p, reference_pressure))
+        assert result.success, result.message
+        return float(result.mole_fractions[1])
+
+    problem = _ionic_problem(temperature, pressure, reference_pressure)
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    compiled = compile_problem(model, problem)
+    observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
+    name = f"reference-temperature/ionic/{'system' if reference_pressure is None else 'fixed'}"
+    for label, d_t, d_p in (("T", 1.0, 0.0), ("T+P", 1.0, 1.0e5)):
+        direction = SolvedStateActionDirection(d_t, d_p, [0.0, 0.0, 0.0], [])
+        item = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [direction])).results[0]
+        step = 0.05
+        coarse, fine = ((sodium(h * d_t, h * d_p) - sodium(-h * d_t, -h * d_p)) / (2 * h) for h in (2 * step, step))
+        assert item.action is not None
+        assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
+        same(evidence, f"{name}/dx_Na/{label}", item.action)  # the native row of the same solve
+        same(evidence, f"{name}/dx_Na/{label}/resolve", item.action, fine, rtol=1e-6, atol=0.0,
+             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "step": step},
+             basis="Identity", method="centered-resolve-difference",
+             claim="first-order referenced T/P action equals the re-solved composition slope")
+
+
+def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:
+    """A steep declared permittivity, d ln eps/d ln T ~ -76, multiplies the slope's terminal
+    change past 5e-5 while the value criterion holds: only the T direction is refused."""
+    model = Mixture(aqueous_electrolyte(
+        ("permittivity_term_coefficient", (0, 0, 1), -20.0, "1 / kelvin"),
+        ("permittivity_reference_temperature", (0,), 298.15, "kelvin")))
+    problem = _ionic_problem(298.15, 1.0e5, None)
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
+    compiled = compile_problem(model, problem)
+    feed_direction = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])
+    thermal, feed = solved_state_first_actions(compiled, result, observable, [
+        SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []), feed_direction])
+    alone = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [feed_direction]))
+    assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
+    assert feed.results[0].status == Status.Available and feed.results[0].action is not None
+    assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
+    assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]

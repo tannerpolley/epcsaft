@@ -651,8 +651,14 @@ every point of the compiled problem, since model, temperature, declaration and
 source pressure are fixed there.
 The implemented slice admits fixed T/P central solves and feed actions, and
 square pinned free-pressure cells. Pressure/feed actions are supported through
-order two; fixed-T/P feed-only order three remains available. Referenced
-continuation, free temperature, raw lever derivatives, nonzero temperature or
+order two; fixed-T/P feed-only order three remains available. A requested
+temperature direction rebuilds every reference trace with E2 at its last three
+points and uses EqID: `standard_state_transfer_temperature_derivative`: the
+slope passes the value criterion in RT units, and its target slope
+$s_r'=-d\ln K_{\rho,r}/dT$ follows the value's minimum-norm owner. Temperature
+and mixed T/P actions are therefore available at order one; a refused slope
+leaves the value and sibling directions intact. Referenced continuation, free
+temperature, raw lever derivatives, temperature actions above order one,
 parameter actions, and third-order actions involving pressure remain
 unavailable. Ideal/Total caloric values and actions remain
 unavailable even with an attached thermal record, while independently valid
