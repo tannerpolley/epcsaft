@@ -4691,10 +4691,10 @@ void energy_action_ladders() {
                 return (shifted_energy(item, lower, request.back(), h)
                     - shifted_energy(item, lower, request.back(), -h)) / (2.0 * h);
             };
-            // Two Richardson extrapolations (h, h/2) and (h/2, h/4): their difference bounds the
-            // error of the first and conservatively of the second. The reference must resolve
-            // 1e-7 relative, a decade below the 1e-6 criterion; an omitted implicit or dielectric
-            // chain changes these actions at O(1e-2) (the Z check above shows 5e-2).
+            // Two Richardson extrapolations (h, h/2) and (h/2, h/4): their difference is an
+            // asymptotic, conservative estimate of the finer one's error (about 15x it for an h^4
+            // remainder), not a bound. It must resolve 1e-7 relative, a decade below the 1e-6
+            // agreement criterion that this falsifier uses to expose a missing chain.
             const double d1 = difference(1.0e-2), d2 = difference(5.0e-3), d3 = difference(2.5e-3);
             const double r1 = (4.0 * d2 - d1) / 3.0, reference = (4.0 * d3 - d2) / 3.0;
             const double scale = std::abs(reference);
