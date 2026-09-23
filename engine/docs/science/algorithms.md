@@ -204,7 +204,11 @@ floating-point adjacency, retaining the stable-side endpoint. Pressure increases
 monotonically across the stable side, so a stable bisection sample whose
 residual has passed the target by more than `DENSITY_ROOT_RESIDUAL` already
 brackets that side's unique root; the fold itself is resolved only when no such
-sample appears, which is exactly the case needed to show that no root exists. It does not
+sample appears, which is exactly the case needed to show that no root exists.
+A cell whose stable end is already past the target by more than the root
+tolerance (vapor side above it, liquid side below it) is rootless on that side
+without any fold bisection, since the stable pressure only moves further away
+toward the fold. It does not
 estimate a fold from pressure-residual coincidence. Without such a stable sample, a
 target indistinguishable from a fold pressure at `DENSITY_ROOT_RESIDUAL` is
 explicitly unresolved,
