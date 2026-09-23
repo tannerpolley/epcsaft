@@ -189,7 +189,7 @@ inline constexpr Tolerance REFERENCE_MOLALITY_FOUR{"REFERENCE_MOLALITY_FOUR",
 inline constexpr Tolerance REFERENCE_CONVERGENCE_WITNESS{"REFERENCE_CONVERGENCE_WITNESS",
     1.0e-14,
     Category::AlgorithmTolerance,
-    "witness trace molality, mol/kg; its sqrt(I) bias is 1e-7 A z^2",
+    "witness trace molality, mol/kg; its sqrt(I) bias is 1e-7 A z^2 sqrt(I/m)",
 };
 inline constexpr Tolerance REFERENCE_CONVERGENCE_TOLERANCE{"REFERENCE_CONVERGENCE_TOLERANCE",
     5.0e-5,

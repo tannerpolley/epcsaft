@@ -770,7 +770,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
     }
 
     // Taped chi' = -3 int t^3/(1+yt)^2 and chi'' = 6 int t^4/(1+yt)^3 on both sides of the
-    // series switch; the former six-term switch at 1e-3 missed chi''(2e-3) by 12 percent.
+    // series switch; the former closed form missed chi'' by 3.3x at 1e-3 and 2e-3 at 2e-3.
     for (const double reduced : {2.0e-3, 0.19, 0.21}) {
         const bool use_series = reduced < epcsaft::policy::SCREENING_SERIES_SWITCH.value;
         std::vector<CppAD::AD<double>> y = {reduced};
