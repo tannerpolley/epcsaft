@@ -192,14 +192,10 @@ template <typename Scalar>
 // EqID: debye_finite_size_chi
 Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
     if (use_series) {
-        const Scalar reduced_2 = reduced * reduced;
-        const Scalar reduced_3 = reduced_2 * reduced;
-        const Scalar reduced_4 = reduced_3 * reduced;
-        const Scalar reduced_5 = reduced_4 * reduced;
-        const Scalar reduced_6 = reduced_5 * reduced;
-        return Scalar(1.0) - 0.75 * reduced + 0.6 * reduced_2
-            - 0.5 * reduced_3 + (3.0 / 7.0) * reduced_4
-            - 0.375 * reduced_5 + (1.0 / 3.0) * reduced_6;
+        // chi = sum_k 3 (-r)^k / (k + 3), Horner through k = 24 (see SCREENING_SERIES_SWITCH).
+        Scalar sum = Scalar(0.0);
+        for (int k = 24; k >= 0; --k) sum = sum * (-reduced) + 3.0 / (k + 3);
+        return sum;
     }
     return 3.0
         * (scalar_log(Scalar(1.0) + reduced) - reduced

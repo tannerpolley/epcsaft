@@ -397,11 +397,11 @@ $$
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
 - Source: [Bulow2019], finite-size function in Eq.~(2)
-- Description: Exact finite-size DH function and sixth-degree Taylor approximation at zero. The polynomial is not the exact function away from the limit.
-- Change note: A recording-point reduced diameter y_ref may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. Approximation error and derivative validity require qualification over the actual evaluated domain.
+- Description: Exact finite-size DH function and its Taylor series at zero, truncated at degree 24 in the implementation. The polynomial is not the exact function away from the limit.
+- Change note: A recording-point reduced diameter y_ref may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. With the switch at y_ref = 0.2, chi and its first and second Taylor derivatives match 50-digit references to 3e-14, 7e-13 and 1.1e-11 relative on both branches (2026-09-23).
 
 $$
-\chi(y)=\frac{3[\ln(1+y)-y+y^2/2]}{y^3}\quad(y>0),\qquad \chi(0)=1,\qquad y=\kappa d_i^{DH},\qquad \chi(y)=\sum_{k=0}^{6}\frac{3(-y)^k}{k+3}+O(y^7)\quad(y\to0).
+\chi(y)=\frac{3[\ln(1+y)-y+y^2/2]}{y^3}\quad(y>0),\qquad \chi(0)=1,\qquad y=\kappa d_i^{DH},\qquad \chi(y)=\sum_{k=0}^{24}\frac{3(-y)^k}{k+3}+O(y^{25})\quad(y\to0).
 $$
 
 ## `debye_huckel_helmholtz`
