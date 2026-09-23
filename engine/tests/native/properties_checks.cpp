@@ -3270,6 +3270,8 @@ epcsaft::Parameters p4_shifted_parameters(
             apply(result.association_energy_over_k); break;
         case epcsaft::ParameterFamily::AssociationVolume:
             apply(result.association_volume); break;
+        case epcsaft::ParameterFamily::Kij:
+            apply(result.k_ij); break;
         default: throw std::invalid_argument("unsupported P4 reference parameter");
         }
     }
@@ -4440,6 +4442,283 @@ void neutral_property_pressure_hessian() {
 
 }  // namespace
 
+// Issue 26: every native permittivity form on the aqueous 2B-water Na+/Cl- liquid.
+// A density-dependent eps_r enters pressure, the closure and every pressure-chart chain.
+void modular_permittivity_actions() {
+    auto ion_suppression = properties_support::aqueous_electrolyte();
+    auto component_mixing = ion_suppression;
+    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    component_mixing.relative_permittivity = {78.09, 8.0, 8.0};
+    auto density_temperature = ion_suppression;  // Yang2024 water d_V, d_T (full EOS 6.2)
+    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+    auto dipolar = ion_suppression;  // Rueben2024 PT2 records (full EOS 6.4)
+    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563};
+    dipolar.correlation_integral_parameter = {0.1276, 0.215, 0.138};
+    const std::array<std::pair<const char*, epcsaft::Parameters>, 4> forms = {{
+        {"ion-suppression", ion_suppression}, {"component-mixing", component_mixing},
+        {"density-temperature", density_temperature}, {"dipolar", dipolar}}};
+    const std::vector<epcsaft::ActiveParameter> active = {
+        {epcsaft::ParameterFamily::Kij, {1, 3}},
+        {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 2}}};
+    const std::vector<epcsaft::PropertyObservable> observables = {
+        epcsaft::PropertyObservable::ResidualEnthalpy,
+        epcsaft::PropertyObservable::ResidualEntropy,
+        epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity};
+    const auto parameter = [](double kij, double energy) {
+        return std::vector<epcsaft::ParameterActionDirection>{
+            {epcsaft::ParameterFamily::Kij, {1, 3}, kij},
+            {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 2}, energy}};
+    };
+    const std::array<std::vector<epcsaft::ParameterActionDirection>, 3> theta = {
+        parameter(0.01, 20.0), parameter(-0.005, -10.0), parameter(0.002, 5.0)};
+    const std::array<double, 3> temperature_direction = {1.0, -0.5, 0.2};
+    const std::array<std::vector<double>, 3> composition_direction = {{
+        {-0.02, 0.01, 0.01}, {0.01, -0.005, -0.005}, {0.004, -0.002, -0.002}}};
+    const std::array<double, 3> density_direction = {200.0, -100.0, 50.0};
+    const std::array<double, 3> pressure_direction = {3.0e5, -2.0e5, 1.0e5};  // every stencil P > 0
+    const std::array<double, 3> fine_steps = {1.0e-3, 3.0e-3, 1.0e-2};
+    const std::array<double, 3> middle_steps = {3.0e-3, 1.0e-2, 3.0e-2};
+    const std::array<double, 3> tolerances = {5.0e-6, 5.0e-5, 5.0e-4};
+    const std::vector<double> x = {0.96, 0.02, 0.02};
+    // 2 MPa: at least 1 MPa from the ion-bearing vapor-root fold of every form (scan below).
+    constexpr double temperature = 298.15, pressure = 2.0e6;
+    const std::array<double, 12> scan = {
+        2e3, 1e4, 2e4, 5e4, 9e4, 9.5e4, 1e5, 2e5, 5e5, 1e6, 2e6, 5e6};
+    const char* test_id = recording_support::active_test_id();
+    recording_support::expect_group(test_id, "issue26-pressure-identity", "issue26/pressure/",
+        forms.size(), "residual pressure equals the density derivative of a_res", "form");
+    recording_support::expect_group(test_id, "issue26-branch", "issue26/branch/",
+        forms.size() * scan.size(), "declared liquid root persists across the vapor fold", "form,P");
+    recording_support::expect_group(test_id, "issue26-actions", "issue26/action/",
+        forms.size() * 2 * 3 * observables.size(),
+        "liquid electrolyte actions in T, rho or P, x, k_ij and association energy", "form,chart,order,observable");
+    for (const auto& [name, parameters] : forms) {
+        const epcsaft::HelmholtzModel model(parameters, active);
+        double previous_liquid = 0.0;
+        for (const double scan_pressure : scan) {
+            const auto liquid = model.state_at_pressure(
+                temperature, scan_pressure, x, epcsaft::DensityBranch::Liquid);
+            const auto vapor = model.state_at_pressure(
+                temperature, scan_pressure, x, epcsaft::DensityBranch::Vapor);
+            const int roots = liquid.stable_root_count.value_or(-1);
+            // One stable root: both requests return it unlabelled. Two: liquid is the denser.
+            // The liquid root rises monotonically in P, so no request switched branch.
+            const bool ok = liquid.molar_density > previous_liquid
+                && vapor.stable_root_count == liquid.stable_root_count
+                && (roots == 1 ? vapor.molar_density == liquid.molar_density
+                        && liquid.density_branch == epcsaft::DensityBranch::Unspecified
+                    : roots == 2 && vapor.molar_density < 1.0e-2 * liquid.molar_density
+                        && liquid.density_branch == epcsaft::DensityBranch::Liquid)
+                && std::abs(liquid.pressure - scan_pressure) <= epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
+                    * liquid.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature;
+            previous_liquid = liquid.molar_density;
+            const std::string point = std::string(name) + "/" + recording_support::number(scan_pressure);
+            recording_support::compare_custom(("issue26/branch/" + point).c_str(),
+                "liquid_molar_density", "mol/m3", liquid.molar_density, vapor.molar_density,
+                recording_support::fields({recording_support::field("form", name),
+                    recording_support::field("P", scan_pressure),
+                    recording_support::field("stable_roots", roots),
+                    recording_support::field("epsilon_r_liquid", liquid.bulk_relative_permittivity),
+                    recording_support::field("epsilon_r_vapor", vapor.bulk_relative_permittivity),
+                    recording_support::field("liquid_pressure_residual", liquid.pressure - scan_pressure)}),
+                "Relationship", "declared-branch-scan", "liquid root persists; sole roots are unlabelled",
+                "custom", ok, "issue26-branch", point.c_str(), "\\rho_L", "T,P,\\mathbf{x}",
+                "branch", "form,P");
+            CHECK(ok);
+        }
+        const auto root = model.state_at_pressure(
+            temperature, pressure, x, epcsaft::DensityBranch::Liquid);
+        const double rho = root.molar_density;
+        // Z - 1 = rho d(a_res)/d(rho) at fixed T, x: a dropped d(eps_r)/d(rho) fails it.
+        const double h = 1.0e-5 * rho;
+        const double slope = (model.state(temperature, rho + h, x).residual_helmholtz
+            - model.state(temperature, rho - h, x).residual_helmholtz) / (2.0 * h);
+        const double identity_reference = 1.0 + rho * slope;
+        const bool identity_ok = std::abs(root.compressibility_factor - identity_reference)
+            <= 1.0e-8 * std::abs(identity_reference - 1.0);
+        recording_support::compare_custom(
+            (std::string("issue26/pressure/") + name).c_str(), "compressibility_factor", "1",
+            root.compressibility_factor, identity_reference,
+            recording_support::fields({recording_support::field("form", name),
+                recording_support::field("rho", rho),
+                recording_support::field("epsilon_r", root.bulk_relative_permittivity),
+                recording_support::field("relative_step", 1.0e-5)}),
+            "Relationship", "central-difference", "pressure carries every density chain",
+            "relative", identity_ok, "issue26-pressure-identity", name, "Z",
+            "T,\\rho,\\mathbf{x}", "Z=1+\\rho\\,\\partial a^{res}/\\partial\\rho", "form");
+        CHECK(identity_ok);
+        for (const bool pressure_chart : {false, true}) {
+            for (std::size_t order = 1; order <= 3; ++order) {
+                std::vector<epcsaft::DensityActionDirection> density_request;
+                std::vector<epcsaft::PressureActionDirection> pressure_request;
+                for (std::size_t k = 0; k < order; ++k) {
+                    density_request.push_back({temperature_direction[k], density_direction[k],
+                        composition_direction[k], theta[k]});
+                    pressure_request.push_back({temperature_direction[k], pressure_direction[k],
+                        composition_direction[k], theta[k]});
+                }
+                const auto batch = pressure_chart
+                    ? model.pressure_actions(temperature, pressure, x,
+                        epcsaft::DensityBranch::Liquid, observables, pressure_request)
+                    : model.density_actions(temperature, rho, x, observables, density_request);
+                for (std::size_t index = 0; index < observables.size(); ++index) {
+                    const auto reference = [&](double step) {
+                        return pressure_chart
+                            ? p4_pressure_reference(parameters, active, std::nullopt, temperature,
+                                pressure, x, pressure_request, epcsaft::DensityBranch::Liquid,
+                                observables[index], step)
+                            : p4_reference(parameters, active, std::nullopt, temperature, rho, x,
+                                density_request, observables[index], step);
+                    };
+                    const double fine = reference(fine_steps[order - 1]);
+                    const double middle = reference(middle_steps[order - 1]);
+                    const auto& result = batch.results[index];
+                    const bool ok = result.status == epcsaft::PropertyActionStatus::Available
+                        && result.action.has_value()
+                        && close(*result.action, fine, tolerances[order - 1])
+                        && close(fine, middle, 2.0 * tolerances[order - 1]);
+                    const std::string point = std::string(name) + (pressure_chart ? "/P/" : "/rho/")
+                        + std::to_string(order) + "/" + std::to_string(index);
+                    recording_support::compare_custom(("issue26/action/" + point).c_str(),
+                        "action", "native",
+                        result.action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+                        recording_support::fields({recording_support::field("form", name),
+                            recording_support::field("chart", pressure_chart ? "T,P,x,theta" : "T,rho,x,theta"),
+                            recording_support::field("order", order),
+                            recording_support::field("observable", index),
+                            recording_support::field("status", static_cast<int>(result.status)),
+                            recording_support::field("reference_fine", fine),
+                            recording_support::field("reference_middle", middle),
+                            recording_support::field("tolerance", tolerances[order - 1])}),
+                        "Relationship", "central-difference-refinement",
+                        "liquid electrolyte action retains every permittivity chain",
+                        "reference_or_one", ok, "issue26-actions", point.c_str(), "action",
+                        "T,\\rho|P,\\mathbf{x},\\theta", "available", "form,chart,order,observable");
+                    CHECK(ok);
+                }
+            }
+        }
+    }
+}
+
+// Issue 26: implicit-association E3/E4 energy actions against a centered difference of the
+// next-lower exact order (u^T H v for E3, E3 for E4) along the last direction, Richardson h, h/2.
+struct EnergyCase final {
+    const char* name;
+    epcsaft::Parameters parameters;
+    std::vector<epcsaft::ActiveParameter> active;
+    double temperature, molar_density;
+    std::vector<double> composition;
+    std::vector<std::vector<double>> directions;  // width 2 + C + A: T, V, n, theta
+};
+
+double shifted_energy(const EnergyCase& item, const std::vector<std::vector<double>>& lower,
+                      const std::vector<double>& along, double t) {
+    const std::size_t components = item.composition.size();
+    std::vector<double> shift(item.active.size()), amounts(components);
+    for (std::size_t a = 0; a < shift.size(); ++a) shift[a] = t * along[2 + components + a];
+    for (std::size_t i = 0; i < components; ++i) amounts[i] = item.composition[i] + t * along[2 + i];
+    const epcsaft::HelmholtzModel model(
+        p4_shifted_parameters(item.parameters, item.active, shift), item.active);
+    const double temperature = item.temperature + t * along[0];
+    const double volume = 1.0 / item.molar_density + t * along[1];
+    if (lower.size() == 3) return model.residual_energy_action(temperature, volume, amounts, lower).action.value();
+    const auto derivatives = model.evaluate(temperature, volume, amounts, epcsaft::DerivativeOrder::Hessian);
+    const std::size_t width = along.size();
+    CHECK(derivatives.gradient.size() == width);
+    double sum = 0.0;
+    for (std::size_t i = 0; i < width; ++i)
+        for (std::size_t j = 0; j < width; ++j)
+            sum += lower[0][i] * derivatives.hessian[i * width + j] * lower[1][j];
+    return sum;
+}
+
+void energy_action_ladders() {
+    auto density_temperature = properties_support::aqueous_electrolyte();
+    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+    auto dipolar = properties_support::aqueous_electrolyte();
+    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563};
+    dipolar.correlation_integral_parameter = {0.1276, 0.215, 0.138};
+    auto component_mixing = properties_support::aqueous_electrolyte();
+    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    component_mixing.relative_permittivity = {78.09, 8.0, 8.0};
+    const std::vector<epcsaft::ActiveParameter> aqueous_active = {
+        {epcsaft::ParameterFamily::Kij, {1, 3}},
+        {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 2}}};
+    const double aqueous_volume = 1.0 / 56000.0;
+    // Charge-neutral amount directions; V, T, k_ij and association-energy components nonzero.
+    const std::vector<std::vector<double>> aqueous_directions = {
+        {0.5, 1.0e-2 * aqueous_volume, -0.02, 0.01, 0.01, 0.01, 10.0},
+        {-0.3, -0.5e-2 * aqueous_volume, 0.01, -0.005, -0.005, -0.004, -6.0},
+        {0.2, 0.3e-2 * aqueous_volume, 0.004, -0.002, -0.002, 0.002, 4.0},
+        {-0.1, 0.2e-2 * aqueous_volume, -0.006, 0.003, 0.003, -0.003, -3.0}};
+    const std::vector<double> aqueous_x = {0.96, 0.02, 0.02};
+    const double binary_volume = 1.0 / 42441.09427799721;
+    const std::vector<EnergyCase> cases = {
+        {"ion-suppression", properties_support::aqueous_electrolyte(), aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
+        {"component-mixing", component_mixing, aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
+        {"density-temperature", density_temperature, aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
+        {"dipolar", dipolar, aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
+        {"cross-associating-binary", properties_support::associating_binary(),
+         {{epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}},
+          {epcsaft::ParameterFamily::AssociationVolume, {1, 4}}},
+         313.15, 42441.09427799721, {0.25, 0.75}, {
+            {0.5, 1.0e-2 * binary_volume, -0.01, 0.01, 10.0, 1.0e-3},
+            {-0.3, -0.5e-2 * binary_volume, 0.005, -0.004, -6.0, -5.0e-4},
+            {0.2, 0.3e-2 * binary_volume, 0.003, -0.002, 4.0, 3.0e-4},
+            {-0.1, 0.2e-2 * binary_volume, -0.004, 0.003, -3.0, 2.0e-4}}},
+    };
+    const char* test_id = recording_support::active_test_id();
+    recording_support::expect_group(test_id, "issue26-energy", "issue26/energy/", cases.size() * 3,
+        "E3 and E4 residual energy actions match the difference of the next lower exact order",
+        "case,action");
+    for (const auto& item : cases) {
+        const auto& d = item.directions;
+        const std::array<std::pair<const char*, std::vector<std::vector<double>>>, 3> requests = {{
+            {"E3", {d[0], d[1], d[2]}}, {"E3-repeated", {d[0], d[0], d[2]}}, {"E4", {d[0], d[1], d[2], d[3]}}}};
+        const epcsaft::HelmholtzModel model(item.parameters, item.active);
+        for (const auto& [label, request] : requests) {
+            const auto action = model.residual_energy_action(
+                item.temperature, 1.0 / item.molar_density, item.composition, request);
+            const std::vector<std::vector<double>> lower(request.begin(), request.end() - 1);
+            const auto difference = [&](double h) {
+                return (shifted_energy(item, lower, request.back(), h)
+                    - shifted_energy(item, lower, request.back(), -h)) / (2.0 * h);
+            };
+            const double coarse = difference(1.0e-2), fine = difference(5.0e-3);
+            const double reference = (4.0 * fine - coarse) / 3.0;
+            // Criterion: 1e-7 of the magnitude; the Richardson residual must itself resolve it.
+            const double scale = std::max(std::abs(reference), 1.0e-12);
+            const double truncation = std::abs(fine - coarse) / 3.0;
+            const bool resolved = truncation <= 1.0e-2 * scale;
+            const bool ok = action.status == epcsaft::PropertyActionStatus::Available
+                && action.action.has_value() && resolved
+                && std::abs(*action.action - reference) <= 1.0e-7 * scale;
+            const std::string point = std::string(item.name) + "/" + label;
+            recording_support::compare_custom(("issue26/energy/" + point).c_str(), "energy_action",
+                "extensive residual scalar", action.action.value_or(std::numeric_limits<double>::quiet_NaN()),
+                reference, recording_support::fields({recording_support::field("case", item.name),
+                    recording_support::field("action", label),
+                    recording_support::field("status", static_cast<int>(action.status)),
+                    recording_support::field("difference_h", coarse),
+                    recording_support::field("difference_h_over_2", fine),
+                    recording_support::field("richardson_truncation", truncation),
+                    recording_support::field("association_residual", action.diagnostics.association_residual)}),
+                "Relationship", "centered-difference-richardson",
+                "implicit association and permittivity chains complete through fourth order",
+                "relative", ok, "issue26-energy", point.c_str(), label, "T,V,\\mathbf{n},\\theta",
+                "D^kA=\\partial_t D^{k-1}A", "case,action");
+            CHECK(ok);
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.properties.p1", "Residual_properties_and_caloric_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P1", "cv-ladder/*,cp-ladder/*,dilute-state/*,dilute-limit/*,conditioning/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P1", "cv-ladder/*:20,cp-ladder/*:20,dilute-state/*:4,dilute-limit/*:5,conditioning/*:4"}, residual_properties_and_caloric_ladders, "P1"},
@@ -4456,6 +4735,8 @@ int main(int argc, char** argv) {
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},
+        {{"native.properties.issue26", "Modular_permittivity_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/pressure/*,issue26/branch/*,issue26/action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26", "issue26/pressure/*:4,issue26/branch/*:48,issue26/action/*:72"}, modular_permittivity_actions},
+        {{"native.properties.issue26e", "Energy_action_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/energy/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26E", "issue26/energy/*:15"}, energy_action_ladders},
         {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},
     });
 }
