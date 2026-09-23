@@ -160,11 +160,11 @@ std::vector<std::vector<double>> start_compositions(
     return result;
 }
 
-// A pinned-zero vapor at free pressure and fixed temperature is a bubble point. Move the
-// caller's pressure seed by one fugacity step, P1 = P0 sum_{i in vapor} x_i phi_i^L/phi_i^V,
-// from the seeded compositions; phi^L ~ 1/P puts P1 near the bubble pressure. A failed
-// state keeps the caller's seed. Only the start moves; equations and tolerances do not.
-double bubble_seed_pressure(const CompiledSystem& compiled, const std::vector<double>& point,
+// A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
+// move the caller's pressure seed by one fugacity step, P1 = P0 sum_{i in V} x_i phi_i^L/phi_i^V,
+// from the seeded compositions; phi^L ~ 1/P puts P1 at the seeded liquid's saturation pressure.
+// A failed state keeps the caller's seed. Only the start moves; equations and tolerances do not.
+double fugacity_pressure_seed(const CompiledSystem& compiled, const std::vector<double>& point,
                             const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
     const auto& problem = compiled.problem;
     const double seed = seed_pressure(compiled);
@@ -173,8 +173,8 @@ double bubble_seed_pressure(const CompiledSystem& compiled, const std::vector<do
         || problem.phases[0].kind == problem.phases[1].kind
         || compiled.model->parameters().component_count() < 2) return seed;
     const std::size_t vapor = problem.phases[0].kind == PhaseKind::Vapor ? 0 : 1;
-    const auto& incipient = problem.phases[vapor].amount;
-    if (incipient.kind != AmountKind::Pinned || incipient.fraction != 0.0) return seed;
+    const auto& pinned = problem.phases[vapor].amount;
+    if (pinned.kind != AmountKind::Pinned || pinned.fraction != 0.0) return seed;
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> x(2, std::vector<double>(components, 0.0));
     for (std::size_t phase = 0; phase < 2; ++phase) {
@@ -193,10 +193,10 @@ double bubble_seed_pressure(const CompiledSystem& compiled, const std::vector<do
         for (const std::size_t i : problem.phases[vapor].support)
             sum += x[1 - vapor][i] * std::exp((*liquid.log_fugacity_coefficient)[i]
                                               - (*gas.log_fugacity_coefficient)[i]);
-        const double bubble = seed * sum;
-        if (!(std::isfinite(bubble) && bubble > 0.0)) return seed;
-        scope.probe("bubble_seed_pressure", bubble);
-        return bubble;
+        const double stepped = seed * sum;
+        if (!(std::isfinite(stepped) && stepped > 0.0)) return seed;
+        scope.probe("fugacity_pressure_seed", stepped);
+        return stepped;
     } catch (const std::exception&) {
         return seed;
     }
@@ -222,7 +222,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
     scope.probe("feed_total", feed_total);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase]);
-    const double p = bubble_seed_pressure(compiled, point, phase_offsets, scope);
+    const double p = fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
