@@ -352,14 +352,16 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         result.terminal_contraction = contractions.back();
         const std::array<std::array<std::optional<double>, 2>, 3> slopes = {
             temperature_slopes(0), temperature_slopes(1), temperature_slopes(2)};
-        // Order k passes the value's limit check in units of RT: T^k |dD_k| <= 5e-5.
+        // Order one passes the value's limit check in RT units, T|dD| <= 5e-5; order two is
+        // sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
         for (std::size_t k = 0; k < 2; ++k) {
             if (!slopes[0][k] || !slopes[1][k] || !slopes[2][k]) continue;
             const double change = std::pow(temperature, static_cast<double>(k + 1)) * std::max(
                 std::abs(*slopes[2][k] - *slopes[1][k]), std::abs(*slopes[1][k] - *slopes[0][k]));
             (k == 0 ? result.observed_temperature_derivative_change
                     : result.observed_temperature_second_derivative_change) = change;
-            if (change <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+            if (k == 0 ? change <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+                       : GAS_CONSTANT_J_PER_MOL_K * change <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value)
                 (k == 0 ? result.terminal_contraction_temperature_derivative
                         : result.terminal_contraction_temperature_second_derivative) = slopes[2][k];
         }

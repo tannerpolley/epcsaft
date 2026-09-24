@@ -157,23 +157,46 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
         assert item[1].status == Status.Available and item[1].value is not None
 
 
-@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
-def test_ionic_reference_calorics_reproduce_native_rows(evidence: Any, reference_pressure: float | None) -> None:
-    """Aqueous NaCl, H2O ⇌ Na+ + Cl-: water carries a record, the ions are completed up to the
-    charge gauge; the installed wheel reproduces the native total h row."""
-    water = [IdealInterval(200.0, 500.0, True, True, IdealCorrelation(
-        IdealPolynomial([33.59], 298.15, -241826.0, 188.83), 1.0e5))]
-    model = Mixture(aqueous_electrolyte(), thermochemistry=_record(water, [], []))
+def _ionic(temperature: float, reference_pressure: float | None) -> Problem:
     law = ReactionLogPolynomial(math.log(1e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source")
-    problem = Problem(
-        T=298.15, P=1.0e5, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}), phases=[Phase("L", kind="liquid")],
+    return Problem(
+        T=temperature, P=1.0e5, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}), phases=[Phase("L", kind="liquid")],
         neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
                                            standard_molality_mol_per_kg=1.0),
         reactions=[Reaction({"s0": -1.0, "s1": 1.0, "s2": 1.0}, correlation=law, reference=ReactionReference(
             Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
     )
-    items = _values(model, problem, [H, CP], Direction(0.0, 0.0, [0.0, 0.0, 0.0], []))
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
+def test_ionic_reference_calorics_reproduce_native_rows_and_resolves(
+    evidence: Any, reference_pressure: float | None,
+) -> None:
+    """Aqueous NaCl, H2O ⇌ Na+ + Cl-: water carries a record, the ions are completed up to the
+    charge gauge. The installed wheel reproduces the native total h and cp rows, and the
+    equilibrium heat capacity d(nH)/dT|_P, which carries the ionic second slope, equals
+    centered re-solves."""
+    water = [IdealInterval(200.0, 500.0, True, True, IdealCorrelation(
+        IdealPolynomial([33.59], 298.15, -241826.0, 188.83), 1.0e5))]
+    model = Mixture(aqueous_electrolyte(), thermochemistry=_record(water, [], []))
+    zero = Direction(0.0, 0.0, [0.0, 0.0, 0.0], [])
+    items = _values(model, _ionic(298.15, reference_pressure), [H, CP], zero)
     name = f"reference-calorics/ionic/{'system' if reference_pressure is None else 'fixed'}"
     same(evidence, name + "/h", items[0].value)
-    # T^2 max|dD2| = 7.2e-5 > 5e-5 on this ladder: cp needs the refused second slope.
-    assert items[1].status == Status.ReferenceUnavailable and items[1].value is None
+    same(evidence, name + "/cp", items[1].value)
+    thermal = _values(model, _ionic(298.15, reference_pressure), [H, AMOUNT], Direction(1.0, 0.0, [0.0, 0.0, 0.0], []))
+    assert all(item.status == Status.Available for item in thermal)
+    h, n, dh, dn = (math.nan if v is None else v for v in (
+        thermal[0].value, thermal[1].value, thermal[0].action, thermal[1].action))
+
+    def extensive(temperature: float) -> float:
+        values = _values(model, _ionic(temperature, reference_pressure), [H, AMOUNT], zero)
+        return float(values[0].value * values[1].value)
+
+    action = n * dh + h * dn
+    coarse, fine = ((extensive(298.15 + s) - extensive(298.15 - s)) / (2 * s) for s in (0.1, 0.05))
+    assert abs(fine - action) <= abs(coarse - action) / 2  # O(step^2) toward the action
+    same(evidence, name + "/d(nH)/T/resolve", action, fine, rtol=1e-6, atol=0.0,
+         inputs={"T_K": 298.15, "P_Pa": 1.0e5, "P_ref_Pa": reference_pressure, "step": 0.05},
+         basis="Identity", method="centered-resolve-difference",
+         claim="electrolyte equilibrium heat capacity equals the re-solved enthalpy slope")
