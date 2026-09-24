@@ -4,13 +4,13 @@ from typing import Any
 
 import pytest
 
-from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Pure
+from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Pure, _core
 from epcsaft.equilibrium import (
-    Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
+    Amounts, Continuation, ContinuationStop, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
     SolvedStateActionRequest, SolvedStateActionStatus as Status, SolvedStateObservable,
     SolvedStateObservableKind as Kind,
-    compile_problem, problem_from_mapping, solve_equilibrium, solved_state_actions,
+    compile_problem, continue_equilibrium, problem_from_mapping, solve_equilibrium, solved_state_actions,
     solved_state_first_actions,
 )
 from tests.native_inputs import ETHANE, aqueous_electrolyte, parameters, same
@@ -279,6 +279,35 @@ def test_ionic_temperature_action_matches_resolved_difference(
              inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "step": step},
              basis="Identity", method="centered-resolve-difference",
              claim="first-order referenced T/P action equals the re-solved composition slope")
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
+def test_referenced_continuation_follows_the_cold_solves(reference_pressure: float | None) -> None:
+    """The continuation tangent carries the reference T/P chain (the two reference pressures move
+    d ln x_Na/dq by ~2%): it equals centered cold re-solves, and the T/P path lands on them."""
+    model = Mixture(aqueous_electrolyte())
+    start, end = (298.15, 1.0e5), (318.15, 3.0e5)
+
+    def at(q: float) -> Any:
+        result = solve_equilibrium(model, _ionic_problem(
+            (1 - q) * start[0] + q * end[0], (1 - q) * start[1] + q * end[1], reference_pressure))
+        assert result.success, result.message
+        return result
+
+    central, step = at(0.0), 1e-3
+    lever = [end[0] - start[0], end[1] - start[1], 0.0, 0.0, 0.0]
+    tangent = _core.sensitivity(compile_problem(model, _ionic_problem(*start, reference_pressure)),
+                                central.coordinates, lever)
+    resolved = [(u - v) / (2 * step) for u, v in zip(at(step).coordinates, at(-step).coordinates)]
+    assert max(abs(t - r) for t, r in zip(tangent, resolved)) <= 1e-6  # re-solve noise ~4e-8
+    result = continue_equilibrium(
+        model, _ionic_problem(*start, reference_pressure), _ionic_problem(*end, reference_pressure),
+        Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1),
+    )
+    assert result.success and result.stop == ContinuationStop.reached_target, result.message
+    assert result.path_values == [0.0, 0.25, 0.5, 0.75, 1.0] and result.retries == 0
+    for q, state in zip(result.path_values, result.states):
+        assert max(abs(a / b - 1.0) for a, b in zip(state.mole_fractions, at(q).mole_fractions)) <= 1e-8
 
 
 def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:

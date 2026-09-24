@@ -165,24 +165,16 @@ std::vector<double> sensitivity(
     const std::vector<double>& lever
 ) {
     core::Scope scope("sensitivity");
-    const auto F_theta = compiled.lever_jacobian(point);
-    if (compiled.rows.empty() || F_theta.size() % compiled.rows.size() != 0) {
-        throw std::invalid_argument("lever Jacobian shape");
-    }
-    const std::size_t levers = F_theta.size() / compiled.rows.size();
-    if (lever.size() != levers)
+    const std::size_t width = 2 + compiled.model->parameters().component_count()
+        + compiled.model->active_parameters().size();
+    if (lever.size() != width)
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
-    if (F_theta.size() != compiled.rows.size() * levers) {
-        throw std::invalid_argument("lever Jacobian shape");
-    }
-    std::vector<double> selected(compiled.rows.size(), 0.0);
-    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        double F_theta_value = 0.0;
-        for (std::size_t column = 0; column < levers; ++column)
-            F_theta_value += F_theta[levers * row + column] * lever[column];
-        selected[row] = -(-F_theta_value);
-    }
-    return solve_implicit(compiled, point, selected);
+    // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
+    // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
+    const auto prepared = compiled.prepare(point);
+    const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
+    const auto series = compiled.row_series(prepared, state, lever, 1);
+    return solve_implicit(compiled, point, series.rows[1]);
 }
 
 // ------------------------------------------------------------- solved-state actions (E5)
