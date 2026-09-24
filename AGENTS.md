@@ -101,7 +101,9 @@ Use Numerical Verification-Driven Development. Persistent numerical tests must
 falsify claims through values, identities, derivatives, limits or justified
 reference cases. Do not add API-contract, compatibility, snapshot, prose, mock
 or coverage-only tests. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
-with diagnostics, provenance, failures and claim limits. Expensive installed-wheel
+with diagnostics, provenance, failures and claim limits. A refused, unavailable
+or tolerance-gated result is not an end state; `engine/docs/science/algorithms.md`
+(ALG-TERMINATION) owns the fix-before-negative rule. Expensive installed-wheel
 replays belong in analyses. Readiness checks do not establish numerical agreement.
 
 The sole environment is `.codex/environments/environment.toml`. Build and install

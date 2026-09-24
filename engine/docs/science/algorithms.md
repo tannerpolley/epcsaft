@@ -730,9 +730,13 @@ changing a value means editing its entry and justification and rebuilding.
 A verification check whose error exceeds its criterion but not an attainable
 floor derived from reported quantities (condition estimate times rounding,
 finite-difference noise over step, propagated inner residual) is *tolerance
-gated*: non-failing, recorded with the floor, its inputs and the ratio. The floor
-is never a hand-picked looser tolerance, and an error above it fails. The solve
-counterpart is `converged_to_floor`.
+gated*: a diagnosis recorded with the floor, its inputs and the ratio, not an
+acceptable end state. The owning issue attempts the root-cause fix that lowers
+the floor below the criterion (Jacobian scaling or equilibration, higher working
+precision, iterative refinement, a better-resolved reference); the check stays
+gated only while that fix is open or after retained evidence shows it
+impossible. The floor is never a hand-picked looser tolerance, and an error
+above it fails. The solve counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
@@ -746,6 +750,21 @@ diagnosis and do not determine success. Density root producers classify all
 optional diagnostics before publishing a criterion-meeting root; nonfinite
 floor, contraction or amplification is unavailable and throws the existing
 convergence failure.
+
+Fix before a negative disposition (owner decision 2026-09-23): no analysis,
+qualification or issue closes on a result that is refused, failed, unavailable,
+reference unresolved, tolerance gated or a supported negative until its cause
+is diagnosed and a root-cause fix has been attempted and shown impossible, or
+the state is shown outside the stated physical domain, with evidence.
+Conditioning, precision, solver and reference-resolution failures are defects
+to fix. A typed refusal is a final state only for genuinely singular or
+undefined mathematics, such as zero-support insertion or a Jacobian that stays
+singular after equilibration, and it states why. A state outside the stated
+physical domain (e.g. packing at or above close packing) may also close,
+stating the boundary. A model that still misses data after diagnosis and
+attempted fixes is a physical finding that carries both. No value is ever
+invented to avoid a refusal. Reviews ask whether the outcome could be fixed,
+not only whether its label is honest.
 
 Propagate inner-solve/input error into an outer accuracy estimate using the
 applicable local conditioning and scale. A first-order estimate or pivot ratio

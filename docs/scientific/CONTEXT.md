@@ -246,9 +246,9 @@ an architecture scan nor a successful solve proves model validity.
 | derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
 | convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
 | numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
-| tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; non-failing and recorded with the floor, never a hand-picked looser tolerance (algorithms) |
+| tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance (algorithms) |
 | fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
-| typed failure | An unavailable result with a specific reason; not an invented physical value (algorithms) |
+| typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
 | stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
