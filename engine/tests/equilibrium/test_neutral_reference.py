@@ -318,21 +318,28 @@ def _kij_problem(mode: str, shift: float = 0.0) -> Problem:
     return problem
 
 
+@pytest.mark.parametrize("family", ["k_ij", "m_solvent"])
 @pytest.mark.parametrize("mode", ["system", "fixed", "bubble"])
-def test_kij_reference_chain_matches_resolves(evidence: Any, mode: str) -> None:
-    """EqID standard_state_transfer_parameter_derivative: the k_AB action of x_B carries
-    ds/dk = -dC/dk of the reference, whose infinite-dilution B depends on k_AB. Centered re-solves
-    rebuild the model, the reference ladder and the solve (Richardson over 2h, h removes the O(h²)
-    truncation, ~1e-4 at h = 1e-3); the omitted reference term, measured
-    as (dx_B/d ln K_src)(dC/dk) from further re-solves, is about twice the action."""
-    center = 0.02
+def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, family: str) -> None:
+    """EqID standard_state_transfer_parameter_derivative: the theta action of x_B carries
+    ds/dtheta = -dC/dtheta of the reference, whose infinite-dilution B depends on theta. Centered
+    re-solves rebuild the model, the reference ladder and the solve (Richardson over 2h, h removes
+    the O(h²) truncation, ~1e-4 at h = 1e-3). k_AB moves only the dilute solute, so its omitted
+    reference term (dx_B/d ln K_src)(dC/dk) is about twice the action. The solvent segment count
+    also moves the terminal volume: dropping C_V V_theta = -C_P p_theta would shift the action by
+    (dx_B/d ln K_src) C_P p_theta, measured about 180 times the action."""
+    center = 0.02 if family == "k_ij" else ETHANE[1]
 
-    def model(k: float) -> Mixture:
-        return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), k)]),
-                       active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
+    def model(theta: float) -> Mixture:
+        if family == "k_ij":
+            return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), theta)]),
+                           active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
+        solvent = (ETHANE[0], theta, *ETHANE[2:])
+        return Mixture(parameters((solvent, ETHANE), [("k_ij", (0, 1), 0.02)]),
+                       active_parameters=[ActiveParameter(ParameterFamily.SegmentCount, (0,))])
 
-    def solve(k: float, shift: float = 0.0) -> Any:
-        result = solve_equilibrium(model(k), _kij_problem(mode, shift))
+    def solve(theta: float, shift: float = 0.0) -> Any:
+        result = solve_equilibrium(model(theta), _kij_problem(mode, shift))
         assert result.success, result.message
         return result
 
@@ -347,11 +354,12 @@ def test_kij_reference_chain_matches_resolves(evidence: Any, mode: str) -> None:
     coarse, fine = ((pair[0].mole_fractions[1] - pair[1].mole_fractions[1]) / (2 * h)
                     for pair, h in ((far, 2 * step), (near, step)))
     assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
-    inputs = {"T_K": 180.0, "mode": mode, "k_AB": center, "step": step}
-    same(evidence, f"reference-parameter/{mode}/dx_B/dk/resolve", item.action, (4 * fine - coarse) / 3,
+    inputs = {"T_K": 180.0, "mode": mode, family: center, "step": step}
+    same(evidence, f"reference-parameter/{mode}/dx_B/d{family}/resolve", item.action, (4 * fine - coarse) / 3,
          rtol=1e-6, atol=0.0, inputs=inputs, basis="Identity", method="richardson-centered-resolve-difference",
-         claim="first-order referenced k_ij action equals the re-solved composition slope")
-    contraction = [solved.neutral_reference_diagnostics[0].terminal_contraction for solved in near]
-    dc_dk = (contraction[0] - contraction[1]) / (2 * step)
-    dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
-    assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign
+         claim=f"first-order referenced {family} action equals the re-solved composition slope")
+    if family == "k_ij":
+        contraction = [solved.neutral_reference_diagnostics[0].terminal_contraction for solved in near]
+        dc_dk = (contraction[0] - contraction[1]) / (2 * step)
+        dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
+        assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign

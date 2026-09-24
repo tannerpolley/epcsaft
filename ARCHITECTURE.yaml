@@ -57,8 +57,8 @@ plan:
 # 2026-09-23 #140: owner-directed cp-sized order-2 admission (named policy entry), within the #138
 # +250 approval: measured +7 (Core +5, Properties +2); properties hard 4183 -> 4185, aggregate 18102 -> 18109.
 # 2026-09-23 #142: owner-approved amendment for EOS-parameter reference actions (dC/dtheta from the
-# existing dC/dT ladder E2, one active-value owner): measured +36 (Properties +26, Equilibrium +10);
-# properties hard 4185 -> 4211, aggregate 18109 -> 18145.
+# existing dC/dT ladder E2, one active-value owner): measured +46 (Properties +26, Equilibrium +20;
+# 10 inside prior aggregate headroom, 18099 -> 18145); properties hard 4185 -> 4211, aggregate 18109 -> 18145.
 code_budgets: {
   "core": [
     700,
