@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure, _core
 from epcsaft.equilibrium import (
     Amounts, Continuation, ContinuationStop, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
@@ -283,10 +283,23 @@ def test_ionic_temperature_action_matches_resolved_difference(
 
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
 def test_referenced_continuation_follows_the_cold_solves(reference_pressure: float | None) -> None:
-    """The tangent carries the reference T/P chain: each accepted state of a T/P path equals the
-    cold solve at its point."""
+    """The continuation tangent carries the reference T/P chain (the two reference pressures move
+    d ln x_Na/dq by ~2%): it equals centered cold re-solves, and the T/P path lands on them."""
     model = Mixture(aqueous_electrolyte())
     start, end = (298.15, 1.0e5), (318.15, 3.0e5)
+
+    def at(q: float) -> Any:
+        result = solve_equilibrium(model, _ionic_problem(
+            (1 - q) * start[0] + q * end[0], (1 - q) * start[1] + q * end[1], reference_pressure))
+        assert result.success, result.message
+        return result
+
+    central, step = at(0.0), 1e-3
+    lever = [end[0] - start[0], end[1] - start[1], 0.0, 0.0, 0.0]
+    tangent = _core.sensitivity(compile_problem(model, _ionic_problem(*start, reference_pressure)),
+                                central.coordinates, lever)
+    resolved = [(u - v) / (2 * step) for u, v in zip(at(step).coordinates, at(-step).coordinates)]
+    assert max(abs(t - r) for t, r in zip(tangent, resolved)) <= 1e-6  # re-solve noise ~4e-8
     result = continue_equilibrium(
         model, _ionic_problem(*start, reference_pressure), _ionic_problem(*end, reference_pressure),
         Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1),
@@ -294,10 +307,7 @@ def test_referenced_continuation_follows_the_cold_solves(reference_pressure: flo
     assert result.success and result.stop == ContinuationStop.reached_target, result.message
     assert result.path_values == [0.0, 0.25, 0.5, 0.75, 1.0] and result.retries == 0
     for q, state in zip(result.path_values, result.states):
-        cold = solve_equilibrium(model, _ionic_problem(
-            (1 - q) * start[0] + q * end[0], (1 - q) * start[1] + q * end[1], reference_pressure))
-        assert cold.success, cold.message
-        assert max(abs(a / b - 1.0) for a, b in zip(state.mole_fractions, cold.mole_fractions)) <= 1e-8
+        assert max(abs(a / b - 1.0) for a, b in zip(state.mole_fractions, at(q).mole_fractions)) <= 1e-8
 
 
 def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:

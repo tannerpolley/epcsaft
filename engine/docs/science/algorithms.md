@@ -296,9 +296,9 @@ pressure seed by one fugacity step,
 $P_1=P_0\sum_{i\in V}x_i\,\phi_i^L(T,P_0,x)/\phi_i^V(T,P_0,y)$, from the seeded
 compositions; the pressure coordinate and every density seed use $P_1$, the
 incipient vapor seed becomes the same step's
-$y_i=x_i\,\phi_i^L/\phi_i^V\,P_0/P_1$ over its support when the caller supplied
-the liquid composition (a vapor guess adds no independent information once that
-liquid is given; the default $z/K$ liquid would return $y=z$, the trivial
+$y_i=x_i\,\phi_i^L/\phi_i^V\,P_0/P_1$ over its support when the caller-guessed start is used
+(every phase guessed; a vapor guess adds no independent information once the
+liquid is given, while the default $z/K$ liquid would return $y=z$, the trivial
 solution, and keeps its vapor seed), and a failed state keeps $P_0$ and the
 vapor guess. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
 bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. Other

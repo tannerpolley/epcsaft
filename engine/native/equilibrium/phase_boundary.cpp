@@ -206,9 +206,11 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
         const double stepped = seed * sum;
         if (!(std::isfinite(stepped) && stepped > 0.0)) return seed;
         // The step's vapor is as good as the seeded liquid: only a caller liquid carries that
-        // information (the default z/K liquid would return y = z, the trivial solution).
-        const auto& liquid_spec = problem.phases[1 - vapor];
-        if (liquid_spec.composition_guess.size() == liquid_spec.support.size())
+        // information (the default z/K liquid would return y = z, the trivial solution), and
+        // start_compositions keeps caller compositions only when every phase is guessed.
+        const bool caller_start = std::all_of(problem.phases.begin(), problem.phases.end(),
+            [](const PhaseSpec& phase) { return phase.composition_guess.size() == phase.support.size(); });
+        if (caller_start)
             for (std::size_t k = 0; k < support.size(); ++k)
                 if (y[k] > 0.0) point[phase_offsets[vapor] + k] = std::log(y[k] / sum);
         scope.probe("fugacity_pressure_seed", stepped);
