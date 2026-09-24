@@ -745,22 +745,26 @@ unavailable, while a finite criterion-meeting result remains eligible after the
 same bounded polish and physical checks. A non-success status alone never
 establishes success; floor-only results from it remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
-nonfinite, left-domain, singular and infeasible outcomes.
-Fix before a negative disposition (owner decision 2026-09-23): no result closes
-as refused, failed, unavailable, reference unresolved or tolerance gated until
-its cause is diagnosed and a root-cause fix has been attempted and shown
-impossible, or the state is shown outside the stated physical domain, with
-evidence. Conditioning, precision, solver and reference-resolution failures are
-defects to fix. A typed refusal is a final state only for genuinely singular or
-undefined mathematics, such as zero-support insertion, a Jacobian that stays
-singular after equilibration, or a declared domain boundary such as packing
-admission, and it states why. A model that still misses data after diagnosis
-and attempted fixes is a physical finding that carries both. No value is ever
-invented to avoid a refusal. Optional traces aid
+nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
 diagnosis and do not determine success. Density root producers classify all
 optional diagnostics before publishing a criterion-meeting root; nonfinite
 floor, contraction or amplification is unavailable and throws the existing
 convergence failure.
+
+Fix before a negative disposition (owner decision 2026-09-23): no analysis,
+qualification or issue closes on a result that is refused, failed, unavailable,
+reference unresolved, tolerance gated or a supported negative until its cause
+is diagnosed and a root-cause fix has been attempted and shown impossible, or
+the state is shown outside the stated physical domain, with evidence.
+Conditioning, precision, solver and reference-resolution failures are defects
+to fix. A typed refusal is a final state only for genuinely singular or
+undefined mathematics, such as zero-support insertion or a Jacobian that stays
+singular after equilibration, and it states why. A state outside the stated
+physical domain (e.g. packing at or above close packing) may also close,
+stating the boundary. A model that still misses data after diagnosis and
+attempted fixes is a physical finding that carries both. No value is ever
+invented to avoid a refusal. Reviews ask whether the outcome could be fixed,
+not only whether its label is honest.
 
 Propagate inner-solve/input error into an outer accuracy estimate using the
 applicable local conditioning and scale. A first-order estimate or pivot ratio
