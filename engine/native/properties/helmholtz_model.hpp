@@ -205,6 +205,9 @@ struct NeutralReferenceReactionDiagnostic final {
     // times its last ladder change is within the same criterion.
     std::optional<double> terminal_contraction_temperature_second_derivative;
     std::optional<double> observed_temperature_second_derivative_change;
+    // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
+    // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
+    std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
@@ -274,6 +277,7 @@ public:
     void reset_counters() const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
+    std::vector<double> active_parameter_values() const;
     const std::optional<ThermochemistryRecord>& thermochemistry() const { return thermochemistry_; }
 
 private:
@@ -349,7 +353,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const std::vector<ReactionReference>& references,
     bool pressure_jets = true,
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
-    std::size_t temperature_order = 0  // 1: dC/dT; 2: also d2C/dT2
+    std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
+    bool parameter_jets = false  // dC/dtheta for every active parameter
 );
 
 struct InfiniteDilutionReference final {

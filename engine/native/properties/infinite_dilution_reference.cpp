@@ -104,9 +104,10 @@ struct NeutralReferenceTrace final {
     std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
     std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
     std::optional<HelmholtzDerivatives> terminal_derivatives;
-    // E2 at the last three ladder points for the temperature slope and its limit check.
+    // E2 at the last three ladder points for the temperature/parameter slopes and their limit check.
     std::array<std::optional<HelmholtzDerivatives>, 3> thermal_derivatives;
     std::size_t temperature_order = 0;
+    bool parameter_jets = false;
     double pressure_v = 0.0;
     double pressure_vv = 0.0;
 };
@@ -124,7 +125,8 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     const NeutralReferenceDeclaration& declaration,
     bool pressure_jets,
     std::optional<double> solvent_anchor,
-    std::size_t temperature_order
+    std::size_t temperature_order,
+    bool parameter_jets
 ) {
     NeutralReferenceTraceResult result;
     try {
@@ -139,6 +141,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         }
         NeutralReferenceTrace trace;
         trace.temperature_order = temperature_order;
+        trace.parameter_jets = parameter_jets;
         trace.pressure = pressure;
         trace.solvent_mass = solvent_mass;
         // A known liquid solvent density is tried first as a locally unique anchor; any failure
@@ -219,7 +222,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             trace.pressure_vv = pressure_vv;
         }
         // A failed slope evaluation leaves only the slope unavailable, never the value.
-        for (std::size_t point = 0; temperature_order > 0 && point < 3; ++point) {
+        for (std::size_t point = 0; (temperature_order > 0 || parameter_jets) && point < 3; ++point) {
             const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
             try {
                 trace.thermal_derivatives[point] = model.evaluate(temperature,
@@ -263,24 +266,27 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
 ) {
     // EqID: standard_state_transfer_temperature_derivative
     // dC/dT|_P = sum nu psi_{n T} + C_V V_T, V_T = -p_T/p_V, at fixed ladder composition.
+    // EqID: standard_state_transfer_parameter_derivative
+    // The same first slope in an active coordinate theta, with p_theta = -RT psi_{V theta}.
     // EqID: standard_state_transfer_temperature_second_derivative
     // d2C/dT2|_P = D2C[w,w] + C_V V_TT along w = e_T + V_T e_V, V_TT = -D2p[w,w]/p_V.
-    const auto temperature_slopes = [&](std::size_t point) -> std::array<std::optional<double>, 2> {
+    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0) -> std::array<std::optional<double>, 2> {
         const auto& derivatives = trace.thermal_derivatives[point];
         const std::size_t width = derivatives ? derivatives->gradient.size() : 0;
-        if (!derivatives || width < 2 + stoichiometry.size()
+        if (!derivatives || width < 2 + stoichiometry.size() || width <= coordinate
             || derivatives->hessian.size() != width * width) return {};
         const auto& h = derivatives->hessian;
         const double gas = GAS_CONSTANT_J_PER_MOL_K;
         const double rt = gas * temperature;
         const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
         const double volume = 1.0 / trace.state[ladder].molar_density;
-        const double pressure_t = gas * (1.0 / volume - derivatives->gradient[1]) - rt * h[width];
+        const double pressure_t = (coordinate == 0 ? gas * (1.0 / volume - derivatives->gradient[1]) : 0.0)
+            - rt * h[width + coordinate];
         const double pressure_v = rt * (-1.0 / (volume * volume) - h[width + 1]);
         double contraction_t = 0.0, contraction_v = 0.0, delta_nu = 0.0;
         std::vector<double> reaction(width, 0.0);
         for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-            contraction_t += stoichiometry[component] * h[(2 + component) * width];
+            contraction_t += stoichiometry[component] * h[(2 + component) * width + coordinate];
             contraction_v += stoichiometry[component]
                 * (h[(2 + component) * width + 1] - 1.0 / volume);
             delta_nu += stoichiometry[component];
@@ -289,7 +295,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         const double volume_t = -pressure_t / pressure_v;
         const double slope = contraction_t + contraction_v * volume_t;
         if (!(pressure_v < 0.0) || !std::isfinite(slope)) return {};
-        if (trace.temperature_order < 2) return {slope, std::nullopt};
+        if (trace.temperature_order < 2 || coordinate != 0) return {slope, std::nullopt};
         std::vector<double> path(width, 0.0), along_volume(width, 0.0);
         path[0] = 1.0;
         path[1] = volume_t;
@@ -364,6 +370,15 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
                        : GAS_CONSTANT_J_PER_MOL_K * change <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value)
                 (k == 0 ? result.terminal_contraction_temperature_derivative
                         : result.terminal_contraction_temperature_second_derivative) = slopes[2][k];
+        }
+        // A parameter slope passes the value's criterion at the parameter scale max(|theta|, 1).
+        const auto values = model.active_parameter_values();
+        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
+            const auto first = temperature_slopes(0, column + a)[0], middle = temperature_slopes(1, column + a)[0];
+            const auto last = temperature_slopes(2, column + a)[0];
+            auto& admitted = result.terminal_contraction_parameter_derivative.emplace_back();
+            if (first && middle && last && std::max(std::abs(values[a]), 1.0) * std::max(std::abs(*last - *middle),
+                    std::abs(*middle - *first)) <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value) admitted = last;
         }
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;
@@ -523,7 +538,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const std::vector<ReactionReference>& references,
     bool pressure_jets,
     std::optional<double> solvent_anchor,
-    std::size_t temperature_order
+    std::size_t temperature_order,
+    bool parameter_jets
 ) {
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
@@ -531,6 +547,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         double pressure = 0.0;
         bool pressure_jets = false;
         std::size_t temperature_order = 0;
+        bool parameter_jets = false;
         NeutralReferenceTraceResult result;
     };
     std::vector<CachedTrace> cache;
@@ -567,15 +584,16 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const bool need_jets = pressure_jets && !reference.reference_pressure_pa.has_value();
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
             return item.pressure == pressure && (!need_jets || item.pressure_jets)
-                && item.temperature_order >= temperature_order;
+                && item.temperature_order >= temperature_order && (!parameter_jets || item.parameter_jets);
         });
         if (found == cache.end()) {
             CachedTrace item;
             item.pressure = pressure;
             item.pressure_jets = need_jets;
             item.temperature_order = temperature_order;
+            item.parameter_jets = parameter_jets;
             item.result = build_neutral_reference_trace(model, temperature, pressure,
-                declaration, need_jets, solvent_anchor, temperature_order);
+                declaration, need_jets, solvent_anchor, temperature_order, parameter_jets);
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }

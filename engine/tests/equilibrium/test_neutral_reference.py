@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure
+from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Pure
 from epcsaft.equilibrium import (
     Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
@@ -300,3 +300,58 @@ def test_refused_temperature_slope_keeps_value_and_feed_direction() -> None:
     assert feed.results[0].status == Status.Available and feed.results[0].action is not None
     assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
     assert thermal.results[0].value == feed.results[0].value == result.mole_fractions[1]
+
+
+def _kij_problem(mode: str, shift: float = 0.0) -> Problem:
+    """Near-identical ethane 2A ⇌ B at 180 K: a system-P row at 3 MPa, a fixed 5 MPa row, or a
+    free-pressure bubble (system-P row). `shift` moves the source ln K for the dx/d ln K probe."""
+    law = ReactionLogPolynomial(math.log(0.3) + shift, 0.0, 0.0, 0.0, 300.0, 170.0, 350.0, "analytic-source")
+    bubble = mode == "bubble"
+    problem = Problem(
+        T=180.0, P=Free(1e5) if bubble else 3.0e6, feed=Amounts({"s0": 2.0, "s1": 0.2}),
+        phases=[Phase("L", kind="liquid")] + ([Phase("V", kind="vapor", amount=Pinned(0.0))] if bubble else []),
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=law, reference=ReactionReference(
+            Basis.RawMoleFractionInfiniteDilution, 5.0e6 if mode == "fixed" else None))],
+    )
+    return problem
+
+
+@pytest.mark.parametrize("mode", ["system", "fixed", "bubble"])
+def test_kij_reference_chain_matches_resolves(evidence: Any, mode: str) -> None:
+    """EqID standard_state_transfer_parameter_derivative: the k_AB action of x_B carries
+    ds/dk = -dC/dk of the reference, whose infinite-dilution B depends on k_AB. Centered re-solves
+    rebuild the model, the reference ladder and the solve (Richardson over 2h, h removes the O(h²)
+    truncation, ~1e-4 at h = 1e-3); the omitted reference term, measured
+    as (dx_B/d ln K_src)(dC/dk) from further re-solves, is far above the tolerance."""
+    center = 0.02
+
+    def model(k: float) -> Mixture:
+        return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), k)]),
+                       active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
+
+    def solve(k: float, shift: float = 0.0) -> Any:
+        result = solve_equilibrium(model(k), _kij_problem(mode, shift))
+        assert result.success, result.message
+        return result
+
+    problem = _kij_problem(mode)
+    result = solve(center)
+    direction = SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], [1.0])
+    item = solved_state_actions(compile_problem(model(center), problem), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [direction])).results[0]
+    assert item.status == Status.Available and item.action is not None, item.diagnostic_message
+    step = 5.0e-4
+    far, near = ([solve(center + h), solve(center - h)] for h in (2 * step, step))
+    coarse, fine = ((pair[0].mole_fractions[1] - pair[1].mole_fractions[1]) / (2 * h)
+                    for pair, h in ((far, 2 * step), (near, step)))
+    assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
+    inputs = {"T_K": 180.0, "mode": mode, "k_AB": center, "step": step}
+    same(evidence, f"reference-parameter/{mode}/dx_B/dk/resolve", item.action, (4 * fine - coarse) / 3,
+         rtol=1e-6, atol=0.0, inputs=inputs, basis="Identity", method="richardson-centered-resolve-difference",
+         claim="first-order referenced k_ij action equals the re-solved composition slope")
+    contraction = [solved.neutral_reference_diagnostics[0].terminal_contraction for solved in near]
+    dc_dk = (contraction[0] - contraction[1]) / (2 * step)
+    dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
+    assert abs(dx_dlnk * dc_dk) > 1e-3 * abs(item.action)  # omission would fail the 1e-6 check

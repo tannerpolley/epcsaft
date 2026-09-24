@@ -402,8 +402,7 @@ std::vector<double> action_point(
 ) {
     std::vector<double> point = {temperature, 1.0 / rho};
     point.insert(point.end(), composition.begin(), composition.end());
-    for (const auto& item : model.active_parameters())
-        point.push_back(parameter_values(model.parameters(), item.family)[item.indices.front()]);
+    for (const double value : model.active_parameter_values()) point.push_back(value);
     return point;
 }
 
@@ -917,9 +916,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     scope.probe("declared_choices", declared_choices);
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const auto& item : active_) {
-        point.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
-    }
+    for (const double value : active_parameter_values()) point.push_back(value);
     const auto signature = predicate_signature(temperature, density, composition);
     scope.probe(
         "predicate_signature",
@@ -1123,7 +1120,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     if ((result.status = support_status(*this, amounts, inserted)) != PropertyActionStatus::Available) return result;
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const auto& item : active_) point.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
+    for (const double value : active_parameter_values()) point.push_back(value);
     std::vector<double> norms(order);
     std::vector<std::vector<double>> normalized(directions);
     for (std::size_t direction = 0; direction < order; ++direction) {
@@ -1753,6 +1750,12 @@ double HelmholtzModel::molar_density_upper_bound(
     const double coefficient = packing_fraction_coefficient(temperature, mole_fractions);
     require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
     return policy::CLOSE_PACKING_FRACTION.value / coefficient;
+}
+
+std::vector<double> HelmholtzModel::active_parameter_values() const {
+    std::vector<double> result;
+    for (const auto& item : active_) result.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
+    return result;
 }
 
 SweepCounters HelmholtzModel::counters() const {

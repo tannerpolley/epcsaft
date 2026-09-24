@@ -1569,7 +1569,7 @@ $$
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
 - Description: Charge-neutral reaction contraction at a declared pure neutral solvent reference. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Pressure jets and the first temperature derivative differentiate this terminal state; parameter derivatives and caloric reference values are not implied.
+- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Pressure jets and the first temperature and parameter derivatives differentiate this terminal state; caloric reference values are not implied.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
@@ -1592,7 +1592,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Parameter and third pressure derivatives remain unavailable; the first temperature derivative is `standard_state_transfer_temperature_derivative`.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Third pressure derivatives remain unavailable; the first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1610,7 +1610,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure at the fixed terminal composition of the neutral reaction reference; Lambda = ln phi + ln(P/(RT rho0)) and RT^2 d ln phi_i/dT|_P = -hbar_i^res
 - Description: First temperature derivative at fixed reference pressure of the finite terminal reference and of the density-basis equilibrium constant. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho, and the source basis term A is temperature independent. The target is transported as s=-ln K_rho, whose slope maps to species through the same minimum-norm owner as its value.
-- Change note: Order one only. The slope is admitted when T times the change over the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg) is at most 5e-5, the value criterion in RT units. This is an observed convergence criterion, not a limit-error bound: the Debye-Hueckel sqrt(m) form gives a model-dependent multiple M = -3/2(1 + d ln eps/d ln T) - T alpha_P/2 of the value's terminal change (measured 1.54 for the retained aqueous NaCl case), and a steep declared permittivity can exceed the criterion while the value passes. A system-pressure row combines this slope with the pressure jet at first order. The second temperature derivative is `standard_state_transfer_temperature_second_derivative`; parameter derivatives are not implied.
+- Change note: Order one only. The slope is admitted when T times the change over the last three ladder points (1e-10, 1e-12 and 1e-14 mol/kg) is at most 5e-5, the value criterion in RT units. This is an observed convergence criterion, not a limit-error bound: the Debye-Hueckel sqrt(m) form gives a model-dependent multiple M = -3/2(1 + d ln eps/d ln T) - T alpha_P/2 of the value's terminal change (measured 1.54 for the retained aqueous NaCl case), and a steep declared permittivity can exceed the criterion while the value passes. A system-pressure row combines this slope with the pressure jet at first order. The second temperature derivative is `standard_state_transfer_temperature_second_derivative`; parameter derivatives are `standard_state_transfer_parameter_derivative`.
 
 $$
 p_T=R(V^{-1}-\psi_V)-RT\psi_{VT},\quad V_T=-p_T/p_V,\\
@@ -1619,6 +1619,21 @@ RT^2\left.\frac{dC}{dT}\right|_P=-\sum_i\nu_i\left(\bar h_i^{res}+RT\right),\\
 \frac{d\ln K_\rho}{dT}=\frac{d\ln K_{src}}{dT}+\left.\frac{dC}{dT}\right|_P,\qquad
 \Delta h_\rho=\Delta h_{src}+RT^2\left.\frac{dC}{dT}\right|_P,\qquad
 s_r'=-\frac{d\ln K_{\rho,r}}{dT}.
+$$
+
+## `standard_state_transfer_parameter_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and terminal composition of the neutral reaction reference
+- Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the finite terminal reference. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
+- Change note: Order one only. A slope is admitted when max(abs(theta), 1) times its change over the last three ladder points is at most 5e-5. This is the value criterion at the parameter scale of solved-state directions. It is an observed convergence criterion, not a limit-error bound. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. Caloric parameter actions would need d2C/dT dtheta and are not implied.
+
+$$
+p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
+\left.\frac{dC}{d\theta}\right|_{T,P}=\sum_i\nu_i\psi_{n_i\theta}+C_VV_\theta,\\
+\frac{\partial\ln K_\rho}{\partial\theta}=\left.\frac{dC}{d\theta}\right|_{T,P},\qquad
+\frac{\partial s_r}{\partial\theta}=-\left.\frac{dC_r}{d\theta}\right|_{T,P}.
 $$
 
 ## `standard_state_transfer_temperature_second_derivative`
