@@ -143,9 +143,10 @@ square pinned free-pressure cells and pressure/feed actions through order two
 (EqID: `neutral_reaction_reference_pressure_jet`). Its first temperature
 derivative at the reference pressure supports order-one temperature and mixed
 T/P actions (EqID: `standard_state_transfer_temperature_derivative`). Feed-only
-actions at fixed T/P retain order three. Third-order actions involving pressure,
-temperature actions above order one, free temperature, referenced continuation,
-raw lever derivatives and parameter actions remain unavailable. Ideal/Total
+actions at fixed T/P retain order three. Declared-branch continuation along
+fixed T, fixed P and feed uses the same first-order chains for its tangent.
+Third-order actions involving pressure, temperature actions above order one,
+free temperature, raw lever derivatives and parameter actions remain unavailable. Ideal/Total
 enthalpy and heat capacity follow EqID: `reference_species_calorics` at fixed
 pressure; other caloric quantities remain unavailable. Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.

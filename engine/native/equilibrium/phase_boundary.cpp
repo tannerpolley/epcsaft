@@ -166,9 +166,10 @@ std::vector<std::vector<double>> start_compositions(
 
 // A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
 // move the caller's pressure seed by one fugacity step, P1 = P0 sum_{i in V} x_i phi_i^L/phi_i^V,
-// from the seeded compositions; phi^L ~ 1/P puts P1 at the seeded liquid's saturation pressure.
-// A failed state keeps the caller's seed. Only the start moves; equations and tolerances do not.
-double fugacity_pressure_seed(const CompiledSystem& compiled, const std::vector<double>& point,
+// from the seeded compositions; phi^L ~ 1/P puts P1 at the seeded liquid's saturation pressure,
+// and the incipient vapor seed becomes the same step's y_i = x_i (phi_i^L/phi_i^V) P0/P1.
+// A failed state keeps the caller's seeds. Only the start moves; equations and tolerances do not.
+double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
                             const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
     const auto& problem = compiled.problem;
     const double seed = seed_pressure(compiled);
@@ -193,12 +194,23 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, const std::vector<
         const auto gas = compiled.model->state_at_pressure(
             temperature, seed, x[vapor], DensityBranch::Vapor);
         if (!liquid.log_fugacity_coefficient || !gas.log_fugacity_coefficient) return seed;
+        const auto& support = problem.phases[vapor].support;
+        std::vector<double> y(support.size());
         double sum = 0.0;
-        for (const std::size_t i : problem.phases[vapor].support)
-            sum += x[1 - vapor][i] * std::exp((*liquid.log_fugacity_coefficient)[i]
+        for (std::size_t k = 0; k < support.size(); ++k) {
+            const std::size_t i = support[k];
+            y[k] = x[1 - vapor][i] * std::exp((*liquid.log_fugacity_coefficient)[i]
                                               - (*gas.log_fugacity_coefficient)[i]);
+            sum += y[k];
+        }
         const double stepped = seed * sum;
         if (!(std::isfinite(stepped) && stepped > 0.0)) return seed;
+        // The step's vapor is as good as the seeded liquid: only a caller liquid carries that
+        // information (the default z/K liquid would return y = z, the trivial solution).
+        const auto& liquid_spec = problem.phases[1 - vapor];
+        if (liquid_spec.composition_guess.size() == liquid_spec.support.size())
+            for (std::size_t k = 0; k < support.size(); ++k)
+                if (y[k] > 0.0) point[phase_offsets[vapor] + k] = std::log(y[k] / sum);
         scope.probe("fugacity_pressure_seed", stepped);
         return stepped;
     } catch (const std::exception&) {
@@ -316,17 +328,14 @@ bool same_intensive(const FreeValue& a, const FreeValue& b) {
     return !a.free || (a.absent == b.absent && a.value == b.value);
 }
 
-bool carries_source_reference(const EquilibriumProblem& problem) {
-    return problem.source_reference.has_value()
-        || std::any_of(problem.reactions.begin(), problem.reactions.end(),
-            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
-}
-
 // Every field that is not a path lever must be identical at both endpoints.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
-    if (carries_source_reference(a) || carries_source_reference(b)) {
-        return "source reference continuation is unavailable in Stage A";
-    }
+    if (a.source_reference.has_value() != b.source_reference.has_value()
+        || (a.source_reference.has_value()
+            && (a.source_reference->solvent_index != b.source_reference->solvent_index
+                || a.source_reference->solute_molality_ratios != b.source_reference->solute_molality_ratios
+                || a.source_reference->standard_molality_mol_per_kg != b.source_reference->standard_molality_mol_per_kg)))
+        return "source reference declaration differs";
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";
     if (a.phases.size() != b.phases.size()) return "phase count differs";
     for (std::size_t p = 0; p < a.phases.size(); ++p) {
@@ -346,7 +355,10 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
             && same_optional(x.equilibrium_constant, y.equilibrium_constant)
             && same_optional(x.affinity_j_per_mol, y.affinity_j_per_mol)
             && x.correlation.has_value() == y.correlation.has_value()
-            && (!x.correlation.has_value() || same_correlation(*x.correlation, *y.correlation));
+            && (!x.correlation.has_value() || same_correlation(*x.correlation, *y.correlation))
+            && x.reference.has_value() == y.reference.has_value()
+            && (!x.reference.has_value() || (x.reference->reference_pressure_pa == y.reference->reference_pressure_pa
+                                             && x.reference->source_basis == y.reference->source_basis));
         if (!same_law) return "reaction " + reaction_name(x, r) + " differs";
     }
     if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
@@ -724,7 +736,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                 + std::to_string(compiled.generic_nullity) + ")";
         } else {
             const auto jacobian = current.jacobian(y_current);
-            const auto tangent = sensitivity(current, y_current, path.lever(current.lever_jacobian(y_current).size() / current.rows.size()));
+            const auto tangent = sensitivity(current, y_current, path.lever(2 + model.parameters().component_count() + model.active_parameters().size()));
             if (tangent.empty()) {
                 // A state-local tangent cannot change by halving the step: singular is terminal
                 // (owner decision 2026-09-16), the branch end at that accepted state.

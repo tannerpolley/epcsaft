@@ -294,8 +294,13 @@ positive coordinates. A multicomponent bubble declaration (fixed temperature, fr
 pressure, one liquid and one vapor pinned at zero amount) moves the caller's
 pressure seed by one fugacity step,
 $P_1=P_0\sum_{i\in V}x_i\,\phi_i^L(T,P_0,x)/\phi_i^V(T,P_0,y)$, from the seeded
-compositions; the pressure coordinate and every density seed use $P_1$, and a failed
-state keeps $P_0$. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
+compositions; the pressure coordinate and every density seed use $P_1$, the
+incipient vapor seed becomes the same step's
+$y_i=x_i\,\phi_i^L/\phi_i^V\,P_0/P_1$ over its support when the caller supplied
+the liquid composition (a vapor guess adds no independent information once that
+liquid is given; the default $z/K$ liquid would return $y=z$, the trivial
+solution, and keeps its vapor seed), and a failed state keeps $P_0$ and the
+vapor guess. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
 bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. Other
 declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
@@ -433,8 +438,9 @@ and the comparison is skipped where the temperature leaves a species interval.
 Declared-branch continuation follows one straight dimensionless path `q` in
 `[0, 1]` between two problems with identical declarations; only fixed
 intensives and resolved feed amounts move. The controller predicts each step
-from the implicit tangent (EqID: `implicit_sensitivity` with the existing lever
-Jacobian and linear solve), corrects with the same Ipopt driver seeded by the
+from the implicit tangent (EqID: `implicit_sensitivity`: the first row
+coefficient along the lever at the fixed state, the directional series of
+ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
 full predicted coordinate vector (a predicted free amount below zero is
 projected onto its bound, the disappearance boundary the bound-constrained
 corrector then reports; every other coordinate outside its domain is a
@@ -672,7 +678,8 @@ points and uses EqID: `standard_state_transfer_temperature_derivative`: the
 slope passes the value criterion in RT units, and its target slope
 $s_r'=-d\ln K_{\rho,r}/dT$ follows the value's minimum-norm owner. Temperature
 and mixed T/P actions are therefore available at order one; a refused slope
-leaves the value and sibling directions intact. Referenced continuation, free
+leaves the value and sibling directions intact. Continuation tangents use
+the same order-one chains. Free
 temperature, raw lever derivatives, temperature actions above order one,
 parameter actions, and third-order actions involving pressure remain
 unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
