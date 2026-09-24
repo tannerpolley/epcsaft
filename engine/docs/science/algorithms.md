@@ -665,8 +665,8 @@ supplied records anchor their species, record-less species are completed from
 the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
 may remain. A heat-capacity value or enthalpy temperature action requests the
 second slope (EqID: `standard_state_transfer_temperature_second_derivative`),
-admitted by the same observed criterion in R units; its refusal leaves enthalpy
-values and feed actions available. Enthalpy values and first feed/temperature
+admitted when its terminal change is at most 0.01 J/(mol K) in heat-capacity
+units; its refusal leaves enthalpy values and feed actions available. Enthalpy values and first feed/temperature
 actions at fixed pressure and heat-capacity values and first feed actions are
 available; pressure-moving caloric actions, heat-capacity temperature actions,
 caloric orders above one, u, s and c_v remain unavailable, while independently

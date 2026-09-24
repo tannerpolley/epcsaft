@@ -54,6 +54,8 @@ plan:
 # 2026-09-23 #138: owner pre-approved up to +250 for reference calorics (record-anchored,
 # reaction-completed h/cp and the order-2 reference slope); measured +199 runtime lines
 # (Properties +33, Equilibrium +166): properties hard 4150 -> 4183, aggregate hard 17903 -> 18102.
+# 2026-09-23 #140: owner-directed cp-sized order-2 admission (named policy entry), within the #138
+# +250 approval: measured +7 (Core +5, Properties +2); properties hard 4183 -> 4185, aggregate 18102 -> 18109.
 code_budgets: {
   "core": [
     700,
@@ -68,7 +70,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4183
+    4185
   ],
   "equilibrium": [
     5000,
@@ -98,7 +100,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    18102
+    18109
   ]
 }
 

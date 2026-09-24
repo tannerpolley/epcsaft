@@ -900,15 +900,32 @@ void check_s2() {
                 change / *center[row].observed_terminal_change, std::nullopt, inputs,
                 "Relationship", "debye-huckel-sqrt-m-form",
                 "measured slope-to-value terminal-change multiplier for this model and state");
-            // Order two: the ladder differences contract x10 per step (the Debye-Hueckel sqrt(m)
-            // form), but T^2 max|dD2| exceeds 5e-5 here, so the second slope and every consumer of
-            // cp stay refused while h survives.
-            const double second_change = center[row].observed_temperature_second_derivative_change.value_or(0.0);
-            CHECK(second_change > 5.0e-5 && !center[row].terminal_contraction_temperature_second_derivative);
-            recording_support::observe(
-                ("neutral-reference/temperature-second-limit/" + label).c_str(), "T2_d2C_dT2_terminal_change", "1",
-                second_change, std::nullopt, inputs, "Relationship", "observed-slope-convergence",
-                "the ionic second slope's terminal ladder change, above the 5e-5 criterion");
+            // Order two on the ionic ladder (Debye-Hueckel and Born third derivatives) against the
+            // centered difference of the order-one slope; floor: step^2 |d4C/dT4|/6 and slope
+            // roundoff/step, below 1e-7 relative. Admission is sized to cp: R T^2 max|dD2|.
+            CHECK(center[row].terminal_contraction_temperature_second_derivative.has_value()
+                  && lower[row].terminal_contraction_temperature_derivative.has_value()
+                  && upper[row].terminal_contraction_temperature_derivative.has_value());
+            const double second = center[row].terminal_contraction_temperature_second_derivative.value_or(0.0);
+            const double second_centered = (upper[row].terminal_contraction_temperature_derivative.value_or(0.0)
+                - lower[row].terminal_contraction_temperature_derivative.value_or(0.0)) / (2.0 * step);
+            recording_support::compare(
+                ("neutral-reference/temperature-second-slope/" + label).c_str(), "d2C_dT2", "1/K^2",
+                second, second_centered, inputs, "Relationship", "centered-slope-difference",
+                "d2C/dT2|_P carries the ionic, density and association chains through E3",
+                "reference_scale", 0.0, 1.0e-6,
+                std::abs(second - second_centered) <= 1.0e-6 * std::abs(second_centered),
+                "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
+            const double second_change = epcsaft::GAS_CONSTANT_J_PER_MOL_K
+                * center[row].observed_temperature_second_derivative_change.value_or(1.0);
+            recording_support::compare_custom(
+                ("neutral-reference/temperature-second-limit/" + label).c_str(),
+                "R_T2_d2C_dT2_terminal_change", "J/(mol K)", second_change, 1.0e-2, inputs,
+                "Relationship", "observed-slope-convergence",
+                "the second slope's terminal ladder change is negligible at the heat-capacity scale",
+                "isfinite(model) && model <= reference", second_change <= 1.0e-2,
+                "s2-neutral-reference", "temperature-second-limit", "R T^2|dD2|", "T,P,nu",
+                "R T^2|dD2|<=0.01 J/(mol K)", "limit");
             const auto thermal_solved = epcsaft::equilibrium::solve_equilibrium(ionic_thermal, problem);
             CHECK(thermal_solved.success);
             epcsaft::equilibrium::SolvedStateObservable enthalpy, capacity;
@@ -918,15 +935,15 @@ void check_s2() {
             const auto calorics = epcsaft::equilibrium::solved_state_actions(
                 epcsaft::equilibrium::compile_problem(ionic_thermal, problem), thermal_solved,
                 {{enthalpy, capacity}, {{0.0, 0.0, {0.0, 0.0, 0.0}, {}}}}).results;
-            CHECK(calorics[1].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
-                  && !calorics[1].value.has_value());
-            CHECK(calorics[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
-                  && calorics[0].value.has_value());
-            recording_support::observe(
-                ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed") + "/h").c_str(),
-                "h", "J/mol", calorics[0].value.value_or(0.0), std::nullopt, inputs, "Relationship",
-                "reference-species-calorics",
-                "native total caloric value with reaction-completed ions for the installed-wheel comparison");
+            for (std::size_t i = 0; i < 2; ++i) {
+                CHECK(calorics[i].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                      && calorics[i].value.has_value());
+                recording_support::observe(
+                    ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed")
+                     + (i == 0 ? "/h" : "/cp")).c_str(), i == 0 ? "h" : "cp", i == 0 ? "J/mol" : "J/(mol K)",
+                    calorics[i].value.value_or(0.0), std::nullopt, inputs, "Relationship", "reference-species-calorics",
+                    "native total caloric value with reaction-completed ions for the installed-wheel comparison");
+            }
         }
     }
     // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
@@ -962,13 +979,15 @@ void check_s2() {
             "d2C/dT2|_P carries the implicit density and association chains through E3",
             "reference_scale", 0.0, 1.0e-6, std::abs(second - centered) <= 1.0e-6 * std::abs(centered),
             "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
-        const double change = center[0].observed_temperature_second_derivative_change.value_or(1.0);
+        const double change = epcsaft::GAS_CONSTANT_J_PER_MOL_K
+            * center[0].observed_temperature_second_derivative_change.value_or(1.0);
         recording_support::compare_custom(
-            "neutral-reference/temperature-second-limit/associating", "T2_d2C_dT2_terminal_change", "1",
-            change, 5.0e-5, inputs, "Relationship", "observed-slope-convergence",
-            "the second slope's terminal ladder change stays within the value criterion in RT units",
-            "isfinite(model) && model <= reference", change <= 5.0e-5,
-            "s2-neutral-reference", "temperature-second-limit", "T^2|dD2|", "T,P,nu", "T^2|dD2|<=5e-5", "limit");
+            "neutral-reference/temperature-second-limit/associating", "R_T2_d2C_dT2_terminal_change", "J/(mol K)",
+            change, 1.0e-2, inputs, "Relationship", "observed-slope-convergence",
+            "the second slope's terminal ladder change is negligible at the heat-capacity scale",
+            "isfinite(model) && model <= reference", change <= 1.0e-2,
+            "s2-neutral-reference", "temperature-second-limit", "R T^2|dD2|", "T,P,nu",
+            "R T^2|dD2|<=0.01 J/(mol K)", "limit");
     }
 
 
