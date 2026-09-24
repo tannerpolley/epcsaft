@@ -76,16 +76,6 @@ bool valid_point(const std::vector<double>& point) {
         point.begin(), point.end(), [](double value) { return std::isfinite(value); });
 }
 
-double maximum_abs(const Eigen::MatrixXd& matrix) {
-    double result = 0.0;
-    for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
-        for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
-            result = std::max(result, std::abs(matrix(row, column)));
-        }
-    }
-    return result;
-}
-
 // Normwise backward error |r|/(|J||y| + |b|) in the infinity norm (Rigal-Gaches). Unlike
 // |r|/max(1, |b|), it does not cap the realized amplification |J||y|/|b| or depend on chart scale.
 double backward_error(double residual, double jacobian_norm, double solution, double right) {
@@ -93,15 +83,7 @@ double backward_error(double residual, double jacobian_norm, double solution, do
     return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
 }
 
-bool square_and_numeric(const Eigen::MatrixXd& matrix) {
-    if (matrix.rows() != matrix.cols()) return false;
-    for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
-        for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
-            if (!std::isfinite(matrix(row, column))) return false;
-        }
-    }
-    return true;
-}
+bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() == matrix.cols() && matrix.allFinite(); }
 
 }  // namespace
 
@@ -135,7 +117,6 @@ SensitivityInfo inspect_sensitivity(
     scope.probe("parameters", static_cast<double>(result.parameters));
     scope.probe("nonsingular", result.nonsingular ? 1.0 : 0.0);
     scope.probe("rank", static_cast<double>(result.rank));
-    scope.probe("condition", result.condition_estimate);
     return result;
 }
 
@@ -171,7 +152,7 @@ std::vector<double> solve_implicit(
             matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.col(j).cwiseAbs().maxCoeff(), right.col(j).cwiseAbs().maxCoeff()));
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)) return {};
     scope.probe("parameters", static_cast<double>(parameters));
-    scope.probe("max_solution", maximum_abs(result));
+    scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
@@ -407,7 +388,8 @@ bool reference_caloric(PropertyObservable property) {
 
 struct Center final {
     PhasePoint prepared;
-    Eigen::MatrixXd jacobian;
+    Eigen::MatrixXd jacobian;  // equilibrated R J C with power-of-two diagonals row, column
+    Eigen::VectorXd row, column;
     Eigen::FullPivLU<Eigen::MatrixXd> lu;
 };
 
@@ -450,11 +432,14 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, series.maximum_energy_order);
         if (series.energy != PropertyActionStatus::Available) { path.status = energy_status(series.energy); return path; }
         Eigen::VectorXd right(static_cast<Eigen::Index>(n));
-        for (std::size_t row = 0; row < n; ++row) right(static_cast<Eigen::Index>(row)) = -series.rows[k][row];
+        for (std::size_t row = 0; row < n; ++row) right(static_cast<Eigen::Index>(row)) = -center.row(static_cast<Eigen::Index>(row)) * series.rows[k][row];
         if (!right.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         right_norm[k] = right.cwiseAbs().maxCoeff();
-        const Eigen::VectorXd solution = center.lu.solve(right);
-        solution_norm[k] = solution.cwiseAbs().maxCoeff();
+        // Solve R J C z = R b, then refine once with the defect evaluated in extended precision.
+        Eigen::VectorXd scaled = center.lu.solve(right);
+        scaled += center.lu.solve((right.cast<long double>() - center.jacobian.cast<long double>() * scaled.cast<long double>()).cast<double>());
+        solution_norm[k] = scaled.cwiseAbs().maxCoeff();
+        const Eigen::VectorXd solution = center.column.cwiseProduct(scaled);
         ++diagnostics.linear_solves;
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
@@ -471,7 +456,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     if (path.series.energy != PropertyActionStatus::Available) { path.status = energy_status(path.series.energy); return path; }
     for (std::size_t k = 1; k <= order; ++k) {
         double residual = 0.0;
-        for (const double value : path.series.rows[k]) residual = std::max(residual, std::abs(value));
+        for (std::size_t row = 0; row < n; ++row) residual = std::max(residual, std::abs(center.row(static_cast<Eigen::Index>(row)) * path.series.rows[k][row]));
         residual = backward_error(residual, center.jacobian.cwiseAbs().rowwise().sum().maxCoeff(), solution_norm[k], right_norm[k]);
         if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
@@ -876,10 +861,15 @@ static SolvedStateActionBatch evaluate_action(
             if (!square_and_numeric(center.jacobian)) {
                 shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
             } else {
+                // Exact power-of-two column then row equilibration; a zero line keeps scale one.
+                const auto power = [](double value) { return value > 0.0 ? std::exp2(-std::round(std::log2(value))) : 1.0; };
+                center.column = center.jacobian.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
+                center.row = (center.jacobian * center.column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power);
+                center.jacobian = center.row.asDiagonal() * center.jacobian * center.column.asDiagonal();
                 center.lu = center.jacobian.fullPivLu();
                 batch.diagnostics.state_factorizations = 1;
                 shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
-                // cond_inf(J), the norm of the backward error it multiplies in the forward bound.
+                // cond_inf(R J C), the norm of the backward error it multiplies in the forward bound.
                 if (*shared->diagnostics.rank < n) shared->matrix_gate = SolvedStateActionStatus::RankDeficient;
                 else shared->diagnostics.condition_estimate = center.jacobian.cwiseAbs().rowwise().sum().maxCoeff()
                     * center.lu.inverse().cwiseAbs().rowwise().sum().maxCoeff();
