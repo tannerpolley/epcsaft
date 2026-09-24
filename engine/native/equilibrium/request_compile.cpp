@@ -162,7 +162,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     std::vector<NeutralReferenceReactionDiagnostic>& diagnostics,
     bool pressure_jets,
     const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr,
-    std::size_t temperature_order = 0
+    std::size_t temperature_order = 0,
+    bool parameter_jets = false
 ) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
@@ -177,7 +178,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     }
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
-    if (fixed_pressure != nullptr && temperature_order == 0) {
+    if (fixed_pressure != nullptr && temperature_order == 0 && !parameter_jets) {
         // Fixed-pressure references depend only on the compiled model, temperature,
         // declaration and stoichiometry; rebuild only system-pressure traces.
         for (const auto& diagnostic : *fixed_pressure)
@@ -209,7 +210,7 @@ std::vector<ReactionSpec> central_reference_reactions(
         solvent_anchor = fixed_pressure->front().solvent_density;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference,
-        stoichiometries, references, pressure_jets, solvent_anchor, temperature_order);
+        stoichiometries, references, pressure_jets, solvent_anchor, temperature_order, parameter_jets);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -270,7 +271,7 @@ std::vector<ReactionSpec> central_reference_reactions(
 
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
-    bool pressure_jets, bool temperature_jets = false
+    bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {}
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
@@ -288,11 +289,13 @@ StandardTerm standard_term(
         auto diagnostics = compiled.reference_diagnostics;
         auto reactions = problem.reactions;
         auto gibbs = compiled.standard_gibbs;
+        const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
+            [](double value) { return value != 0.0; });
         // Fixed-T/P references do not change with phase coordinates or feed directions.
-        if (problem.pressure.free || pressure_jets || temperature_jets) {
+        if (problem.pressure.free || pressure_jets || temperature_jets || parameter_jets) {
             reactions = central_reference_reactions(
                 *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
-                &compiled.reference_diagnostics, temperature_jets);
+                &compiled.reference_diagnostics, temperature_jets, parameter_jets);
             gibbs = standard_state(temperature, components, reactions, {});
         }
         StandardTerm result;
@@ -333,6 +336,28 @@ StandardTerm standard_term(
                 slopes[row].affinity_j_per_mol = slope;
             }
             result.derivative[1] = standard_state(temperature, components, slopes, {});
+        }
+        // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a,
+        // mapped by the owner of s_r (EqID: standard_state_transfer_parameter_derivative).
+        if (parameter_jets) result.parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+        for (std::size_t a = 0; parameter_jets && a < active_control.size(); ++a) {
+            if (active_control[a] == 0.0) continue;
+            auto slopes = reactions;
+            for (auto& slope : slopes) {
+                slope.equilibrium_constant.reset();
+                slope.correlation.reset();
+                slope.reference.reset();
+                slope.affinity_j_per_mol = 0.0;
+            }
+            for (const auto& diagnostic : diagnostics) {
+                const auto& derivative = diagnostic.terminal_contraction_parameter_derivative;
+                if (derivative.size() != active_control.size() || !derivative[a])
+                    throw std::invalid_argument("reference_unavailable: reaction "
+                        + reaction_name(problem.reactions[diagnostic.reaction_index], diagnostic.reaction_index)
+                        + " parameter derivative is unavailable (terminal change exceeds tolerance)");
+                slopes[diagnostic.reaction_index].affinity_j_per_mol = -*derivative[a];
+            }
+            result.parameter_derivative[a] = standard_state(temperature, components, slopes, {});
         }
         if (pressure_jets) {
             std::vector<ReactionSpec> pressure_reactions = reactions;
@@ -526,21 +551,6 @@ std::vector<double> pinned_hessian(
     return result;
 }
 
-std::vector<double> active_values(const HelmholtzModel& model) {
-    const auto& p = model.parameters();
-    std::vector<double> result;
-    for (const auto& item : model.active_parameters()) {
-        const std::vector<double>& family = item.family == ParameterFamily::SegmentCount ? p.segment_count
-            : item.family == ParameterFamily::SigmaConstant ? p.sigma_constant
-            : item.family == ParameterFamily::DispersionEnergyOverK ? p.dispersion_energy_over_k
-            : item.family == ParameterFamily::Kij ? p.k_ij : item.family == ParameterFamily::Lij ? p.l_ij
-            : item.family == ParameterFamily::AssociationEnergyOverK ? p.association_energy_over_k
-            : p.association_volume;
-        result.push_back(family[item.indices.front()]);
-    }
-    return result;
-}
-
 // The geometry map and every analytic row term as one CppAD function of (y, controls) with
 // controls [T, P, n_feed, active parameters]: outputs per phase [T, v, x (C), active (A),
 // N, eta], then the analytic part of each row (the residual gradient terms are added by the
@@ -558,7 +568,8 @@ CppAD::ADFun<double> record_geometry(
     u.push_back(prepared.temperature);
     u.push_back(prepared.pressure);
     for (const double amount : compiled.n_feed) u.push_back(amount);
-    for (const double value : active_values(model)) u.push_back(value);
+    const auto theta_center = model.active_parameter_values();
+    for (const double value : theta_center) u.push_back(value);
     CppAD::Independent(u);
     const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
     const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
@@ -612,6 +623,8 @@ CppAD::ADFun<double> record_geometry(
                 value += standard.pressure_derivative[species] * delta_P
                     + 0.5 * standard.pressure_second_derivative[species]
                         * delta_P * delta_P;
+                for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a)
+                    value += standard.parameter_derivative[a][species] * (theta[a] - theta_center[a]);
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
                     value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
@@ -1529,23 +1542,21 @@ RowSeries CompiledSystem::row_series(
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
-    if (!reference_diagnostics.empty()) {
-        const bool pressure_varies = problem.pressure.free || control[1] != 0.0;
-        const bool active_varies = std::any_of(
-            control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.end(),
-            [](double value) { return value != 0.0; });
-        if ((control[0] != 0.0 && order > 1) || active_varies || (order > 2 && pressure_varies)) {
-            throw std::invalid_argument(
-                "reference_unavailable: row series pressure/T/parameter order is unsupported");
-        }
-    }
     const bool pressure_jets = problem.pressure.free || control[1] != 0.0;
     const bool temperature_jets = control[0] != 0.0;
+    const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.end());
+    const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
+        [](double value) { return value != 0.0; });
+    if (!reference_diagnostics.empty()
+        && (((temperature_jets || parameter_jets) && order > 1) || (order > 2 && pressure_jets))) {
+        throw std::invalid_argument(
+            "reference_unavailable: row series pressure/T/parameter order is unsupported");
+    }
     const auto standard = reference_diagnostics.empty()
         ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
-        : pressure_jets || temperature_jets
+        : pressure_jets || temperature_jets || parameter_jets
             ? standard_term(*this, prepared.temperature, prepared.pressure, order,
-                            pressure_jets, temperature_jets)
+                            pressure_jets, temperature_jets, active_control)
             : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
     const std::size_t stride = width + 2;
@@ -1557,7 +1568,7 @@ RowSeries CompiledSystem::row_series(
             input[n] = prepared.temperature;
             input[n + 1] = prepared.pressure;
             std::copy(n_feed.begin(), n_feed.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2));
-            const auto values = active_values(*model);
+            const auto values = model->active_parameter_values();
             std::copy(values.begin(), values.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2 + components));
         } else if (k == 1) {
             std::copy(control.begin(), control.end(), input.begin() + static_cast<std::ptrdiff_t>(n));

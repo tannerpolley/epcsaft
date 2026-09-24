@@ -173,6 +173,8 @@ struct StandardTerm final {
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
+    // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
+    std::vector<std::vector<double>> parameter_derivative;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 };
 

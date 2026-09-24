@@ -345,13 +345,17 @@ bool has_source_reference(const EquilibriumProblem& problem) {
             [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
 }
 
-// Referenced T slopes exist through order one only (EqID: standard_state_transfer_temperature_derivative).
+bool parameter_direction(const std::vector<double>& control, std::size_t components) {
+    return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
+                       control.end(), [](double value) { return value != 0.0; });
+}
+
+// Referenced T and parameter slopes exist through order one only (EqIDs:
+// standard_state_transfer_temperature_derivative, standard_state_transfer_parameter_derivative).
 bool reference_action_direction(const std::vector<std::vector<double>>& controls,
                                 std::size_t components) {
-    return std::any_of(controls.begin(), controls.end(), [&](const auto& control) {
-        if (control[0] != 0.0 && controls.size() > 1) return true;
-        return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
-                           control.end(), [](double value) { return value != 0.0; });
+    return controls.size() > 1 && std::any_of(controls.begin(), controls.end(), [&](const auto& control) {
+        return control[0] != 0.0 || parameter_direction(control, components);
     });
 }
 
@@ -909,6 +913,9 @@ static SolvedStateActionBatch evaluate_action(
         else if (pressure_driven || (thermal && cp))
             refuse(item, SolvedStateActionStatus::ReferenceUnavailable,
                    "reference caloric action needs a missing reference order (d2C/dTdP or d3C/dT3)", false);
+        else if (parameter_direction(controls[0], components))
+            refuse(item, SolvedStateActionStatus::ReferenceUnavailable,
+                   "reference caloric parameter actions need d2C/dTdtheta", false);
         else if (thermal && calorics(true).status != SolvedStateActionStatus::Available)
             refuse(item, calorics(true).status, calorics(true).message, false);
         else thermal_enthalpy = thermal_enthalpy || thermal;
