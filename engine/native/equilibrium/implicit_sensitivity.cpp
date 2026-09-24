@@ -169,9 +169,8 @@ std::vector<double> sensitivity(
         + compiled.model->active_parameters().size();
     if (lever.size() != width)
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
-    // F_theta * lever is the first row coefficient along the lever at a fixed state: the same
-    // directional series the solved-state actions use, so source references carry their
-    // T/P chains (the dense lever Jacobian does not).
+    // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
+    // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
     const auto prepared = compiled.prepare(point);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);

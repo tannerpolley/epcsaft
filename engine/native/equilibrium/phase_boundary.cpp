@@ -166,9 +166,8 @@ std::vector<std::vector<double>> start_compositions(
 
 // A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
 // move the caller's pressure seed by one fugacity step, P1 = P0 sum_{i in V} x_i phi_i^L/phi_i^V,
-// from the seeded compositions; phi^L ~ 1/P puts P1 at the seeded liquid's saturation pressure,
-// and the incipient vapor seed becomes the same step's y_i = x_i (phi_i^L/phi_i^V) P0/P1.
-// A failed state keeps the caller's seeds. Only the start moves; equations and tolerances do not.
+// from the seeded compositions (phi^L ~ 1/P: the seeded liquid's saturation pressure) and the same step's
+// y_i = x_i (phi_i^L/phi_i^V) P0/P1. A failed state keeps the caller's seeds; equations and tolerances do not move.
 double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
                             const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
     const auto& problem = compiled.problem;
@@ -205,12 +204,10 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
         }
         const double stepped = seed * sum;
         if (!(std::isfinite(stepped) && stepped > 0.0)) return seed;
-        // The step's vapor is as good as the seeded liquid: only a caller liquid carries that
-        // information (the default z/K liquid would return y = z, the trivial solution), and
-        // start_compositions keeps caller compositions only when every phase is guessed.
-        const bool caller_start = std::all_of(problem.phases.begin(), problem.phases.end(),
-            [](const PhaseSpec& phase) { return phase.composition_guess.size() == phase.support.size(); });
-        if (caller_start)
+        // y is as good as the seeded liquid: only the all-guessed caller start (start_compositions) carries one;
+        // the default z/K liquid would return y = z, the trivial solution.
+        if (std::all_of(problem.phases.begin(), problem.phases.end(),
+                [](const PhaseSpec& phase) { return phase.composition_guess.size() == phase.support.size(); }))
             for (std::size_t k = 0; k < support.size(); ++k)
                 if (y[k] > 0.0) point[phase_offsets[vapor] + k] = std::log(y[k] / sum);
         scope.probe("fugacity_pressure_seed", stepped);
@@ -332,11 +329,9 @@ bool same_intensive(const FreeValue& a, const FreeValue& b) {
 
 // Every field that is not a path lever must be identical at both endpoints.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
-    if (a.source_reference.has_value() != b.source_reference.has_value()
-        || (a.source_reference.has_value()
-            && (a.source_reference->solvent_index != b.source_reference->solvent_index
-                || a.source_reference->solute_molality_ratios != b.source_reference->solute_molality_ratios
-                || a.source_reference->standard_molality_mol_per_kg != b.source_reference->standard_molality_mol_per_kg)))
+    const auto &u = a.source_reference, &v = b.source_reference;
+    if (u.has_value() != v.has_value() || (u && (u->solvent_index != v->solvent_index
+        || u->solute_molality_ratios != v->solute_molality_ratios || u->standard_molality_mol_per_kg != v->standard_molality_mol_per_kg)))
         return "source reference declaration differs";
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";
     if (a.phases.size() != b.phases.size()) return "phase count differs";
@@ -358,9 +353,8 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
             && same_optional(x.affinity_j_per_mol, y.affinity_j_per_mol)
             && x.correlation.has_value() == y.correlation.has_value()
             && (!x.correlation.has_value() || same_correlation(*x.correlation, *y.correlation))
-            && x.reference.has_value() == y.reference.has_value()
-            && (!x.reference.has_value() || (x.reference->reference_pressure_pa == y.reference->reference_pressure_pa
-                                             && x.reference->source_basis == y.reference->source_basis));
+            && x.reference.has_value() == y.reference.has_value() && (!x.reference || (x.reference->source_basis
+                == y.reference->source_basis && x.reference->reference_pressure_pa == y.reference->reference_pressure_pa));
         if (!same_law) return "reaction " + reaction_name(x, r) + " differs";
     }
     if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
