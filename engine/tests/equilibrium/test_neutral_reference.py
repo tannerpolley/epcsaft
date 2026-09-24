@@ -324,7 +324,7 @@ def test_kij_reference_chain_matches_resolves(evidence: Any, mode: str) -> None:
     ds/dk = -dC/dk of the reference, whose infinite-dilution B depends on k_AB. Centered re-solves
     rebuild the model, the reference ladder and the solve (Richardson over 2h, h removes the O(h²)
     truncation, ~1e-4 at h = 1e-3); the omitted reference term, measured
-    as (dx_B/d ln K_src)(dC/dk) from further re-solves, is far above the tolerance."""
+    as (dx_B/d ln K_src)(dC/dk) from further re-solves, is about twice the action."""
     center = 0.02
 
     def model(k: float) -> Mixture:
@@ -354,4 +354,4 @@ def test_kij_reference_chain_matches_resolves(evidence: Any, mode: str) -> None:
     contraction = [solved.neutral_reference_diagnostics[0].terminal_contraction for solved in near]
     dc_dk = (contraction[0] - contraction[1]) / (2 * step)
     dx_dlnk = (solve(center, 1e-4).mole_fractions[1] - solve(center, -1e-4).mole_fractions[1]) / 2e-4
-    assert abs(dx_dlnk * dc_dk) > 1e-3 * abs(item.action)  # omission would fail the 1e-6 check
+    assert abs(dx_dlnk * dc_dk) > 0.5 * abs(item.action)  # measured ~2x the action: omission flips its sign
