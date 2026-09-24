@@ -5,6 +5,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 #include "recording_support.hpp"
+#include <Eigen/Dense>
 
 #include <algorithm>
 #include <array>
@@ -3861,6 +3862,65 @@ void check_e5_refusals() {
         partial_batch.results[0].status == SolvedStateActionStatus::MissingThermochemistry && partial_batch.results[1].status == SolvedStateActionStatus::Available
             && partial_batch.results[1].action.has_value() && partial_batch.results[2].status == SolvedStateActionStatus::Available && partial_batch.results[2].action.has_value(),
         recording_support::fields({recording_support::field("statuses", status_field(partial_batch, 0) + "," + status_field(partial_batch, 1) + "," + status_field(partial_batch, 2))}))) && all_ok;
+    // Forward-error bound 2 cond_inf eta on the equilibrated system (#130). An identical m = 1 pair at
+    // its bubble point (zero-pinned vapor) has the exact feed response dP = drho = 0, dx_V = dx_L = dz,
+    // dN_L = sum dn. At fixed T/(eps/k) every energy scale E is the same reduced state; only the raw-Pa
+    // pressure column grows, so the raw cond_inf(J) grows with E while the equilibrated one must not.
+    // The error is measured in the certified norm |C^-1 dy|/|C^-1 y| over the observable pinned-chart
+    // coordinates [ln x_L, N_L/N_feed (feed total 1), ln v_L, ln x_V, ln v_V, P]; C holds the
+    // power-of-two inverse column maxima of J. The mu/RT multipliers are not observables.
+    const double limit = epcsaft::policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value;
+    const std::size_t column[] = {7, 0, 1, 4, 5, 2, 3, 6};  // chart column of each observable below
+    for (int rung = 0; rung < 16; ++rung) {
+        const double energy = 1.0e4 * std::pow(2.0, 0.25 * rung);
+        auto bubble = pinned_case(0.0);
+        bubble.parameters = properties_support::parameters(2);
+        bubble.parameters.segment_count = {1.0, 1.0};
+        bubble.parameters.sigma_constant = {2.0, 2.0};
+        bubble.parameters.dispersion_energy_over_k = {energy, energy};
+        bubble.parameters.molar_mass_kg_per_mol = {0.03, 0.03};
+        bubble.problem.temperature = FreeValue::fixed(0.7 * energy);
+        bubble.directions = {direction(0.0, 0.0, {0.013, -0.007})};
+        bubble.observables = {obs(Kind::Pressure), obs(Kind::PhaseMoleFraction, 0, 0), obs(Kind::PhaseMoleFraction, 0, 1), obs(Kind::PhaseMoleFraction, 1, 0),
+            obs(Kind::PhaseMoleFraction, 1, 1), obs(Kind::PhaseAmount, 0), obs(Kind::PhaseMolarDensity, 0), obs(Kind::PhaseMolarDensity, 1)};
+        const double exact[] = {0.0, 0.010, -0.010, 0.010, -0.010, 0.006, 0.0, 0.0};
+        const auto bubble_model = bubble.model();
+        const auto bubble_central = epcsaft::equilibrium::solve_equilibrium(bubble_model, bubble.problem);
+        const auto batch = actions(bubble, bubble_model, bubble_central, bubble.observables, 1);
+        const auto& diagnostics = batch.diagnostics;
+        const auto n = static_cast<Eigen::Index>(bubble_central.coordinates.size());
+        const auto values = epcsaft::equilibrium::compile_problem(bubble_model, bubble.problem).jacobian(bubble_central.coordinates);
+        const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), n, n);
+        const double raw_condition = jacobian.cwiseAbs().rowwise().sum().maxCoeff() * jacobian.inverse().cwiseAbs().rowwise().sum().maxCoeff();
+        const bool certified = diagnostics.condition_estimate.has_value() && diagnostics.maximum_linear_residual.has_value();
+        const double bound = certified ? 2.0 * *diagnostics.condition_estimate * *diagnostics.maximum_linear_residual : 0.0;
+        double error = 0.0, norm = 0.0;
+        bool typed = bubble_central.success && certified && bound <= limit && n == 10;  // the chart layout above
+        for (std::size_t i = 0; i < std::size(exact); ++i) {
+            const auto& item = batch.results[i];
+            typed = typed && item.status == SolvedStateActionStatus::Available && item.value.has_value() && item.action.has_value();
+            // Chart coordinate of the observable action (log coordinates for x and v), times C^-1.
+            const double chart = i == 0 || i == 5 ? 1.0 : (i >= 6 ? -1.0 : 1.0) / item.value.value_or(1.0);
+            const double weight = chart * std::exp2(std::round(std::log2(jacobian.col(static_cast<Eigen::Index>(column[i])).cwiseAbs().maxCoeff())));
+            error = std::max(error, std::abs(weight * (item.action.value_or(0.0) - exact[i])));
+            norm = std::max(norm, std::abs(weight * exact[i]));
+        }
+        // The first-order bound excludes the final rounding of each returned double observable.
+        const double floor = std::numeric_limits<double>::epsilon();
+        const bool verdict = typed && error <= (bound + floor) * norm;
+        const auto id = "e5-8/forward-bound/rung" + std::to_string(rung);
+        recording_support::compare_custom(id.c_str(), "forward_error", "1", error / norm, bound,
+            recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("temperature", 0.7 * energy),
+                recording_support::field("pressure", epcsaft::core::optional_number(batch.results[0].value)), recording_support::field("status", status_field(batch, 0)),
+                recording_support::field("raw_condition", raw_condition),
+                recording_support::field("condition", epcsaft::core::optional_number(diagnostics.condition_estimate)),
+                recording_support::field("backward_error", epcsaft::core::optional_number(diagnostics.maximum_linear_residual)),
+                recording_support::field("bound", bound), recording_support::field("limit", limit), recording_support::field("reference_norm", norm)}),
+            "Relationship", "analytic-bubble", "a badly scaled but regular state is admitted and its action agrees with the exact bubble response within 2 cond eta in the equilibrated norm",
+            "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa eta + eps", verdict, "e5-8", id.c_str(), "|C^{-1}dy|/|C^{-1}y|", "E",
+            "|C^{-1}dy|/|C^{-1}y|\\leq2\\kappa_\\infty\\eta+\\epsilon", "case");
+        all_ok = verdict && all_ok;
+    }
     CHECK(all_ok);
 }
 

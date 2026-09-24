@@ -563,20 +563,35 @@ three) with the model's residual gradient coefficients G_1 = H z_1,
 G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 + D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
 (E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
-owner). Each solved coefficient is re-evaluated; its normwise backward error
-eta_k = |r_k| / (|J| |y_k| + |b_k|) (infinity norms, Rigal–Gaches) must meet
+owner). The central Jacobian is equilibrated once to A = R J C with exact
+power-of-two diagonals (column maxima, then row maxima) and factorised; each
+coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
+evaluated in `long double` (x87 80-bit on the supported x86-64 build; plain
+double where `long double` is double), and y_k = C z_k. Each solved coefficient is
+re-evaluated; its normwise backward error
+eta_k = |R r_k| / (|A| |z_k| + |R b_k|) (infinity norms, Rigal–Gaches) must meet
 `EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
 only that y_k solves a nearby linear system; it catches a stale Jacobian or a
-jet mismatch and is invariant to direction scale and to one common chart
-scale, not to row or per-variable scaling. The first-order forward bound
-|dy_k| / |y_k| <= 2 cond_inf(J) eta_k (Higham, Thm 7.2), with
-cond_inf(J) = |J| |J^-1| from the central factorization (the reported
-condition estimate), refuses a coefficient above
+jet mismatch. The first-order forward bound
+|C^-1 dy_k| / |C^-1 y_k| <= 2 cond_inf(A) eta_k (Higham, Thm 7.2), with
+cond_inf(A) = |A| |A^-1| from the central factorization (the reported action
+condition estimate is this equilibrated value, not the raw cond_inf(J) that
+`inspect_sensitivity` reports), refuses a coefficient above
 `EQUILIBRIUM_ACTION_FORWARD_ERROR` as `ill_conditioned` (owner decision
-2026-09-23); the first refused coefficient names the status. For k >= 2 the
+2026-09-23); the first refused coefficient names the status. Equilibration
+removes diagonal unit scales such as the raw-Pa pressure column, leaving the
+refusal to states that stay ill-conditioned after scaling. Refinement is not
+credited by the certificate: eta is re-measured from the re-evaluated series. For k >= 2 the
 bound holds given the computed lower coefficients: their errors enter b_k and
-are not re-bounded. It is normwise and does not certify small components of y_k
-relative to themselves. Observables are
+are not re-bounded. It is normwise in the equilibrated coordinates and does not
+certify small components of y_k relative to themselves; it holds up to the
+double-precision floor of the evaluated residual and excludes the final rounding
+of each returned double. The native `e5-8/forward-bound` rows test it
+against the exact bubble-point feed response of an identical m = 1 pair at
+fixed T/(eps/k), the same reduced state at every energy scale: the raw
+cond_inf(J) grows from 3.5e9 to 4.7e10 over the ladder while cond_inf(A) stays
+22-32, every rung is admitted, and the equilibrated forward error stays within
+2 cond eta + eps. Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
 same gradient series; the log activity on the EOS density basis,
