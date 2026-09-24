@@ -3861,6 +3861,56 @@ void check_e5_refusals() {
         partial_batch.results[0].status == SolvedStateActionStatus::MissingThermochemistry && partial_batch.results[1].status == SolvedStateActionStatus::Available
             && partial_batch.results[1].action.has_value() && partial_batch.results[2].status == SolvedStateActionStatus::Available && partial_batch.results[2].action.has_value(),
         recording_support::fields({recording_support::field("statuses", status_field(partial_batch, 0) + "," + status_field(partial_batch, 1) + "," + status_field(partial_batch, 2))}))) && all_ok;
+    // Forward-error bound 2 cond_inf(J) eta (#130). An identical m = 1 pair at its bubble point
+    // (zero-pinned vapor) has the exact feed response dP = drho = 0, dx_V = dx_L = dz, dN_L = sum dn.
+    // At fixed T/(eps/k) every energy scale E is the same reduced state; only the raw-Pa pressure
+    // column of the chart scales, so cond_inf grows with E. The forward error is taken over the chart
+    // components P, ln x, N_L and ln rho (the multipliers are not observables).
+    const double limit = epcsaft::policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value;
+    for (const double energy : {4.0e4, 8.0e4}) {
+        auto bubble = pinned_case(0.0);
+        bubble.parameters = properties_support::parameters(2);
+        bubble.parameters.segment_count = {1.0, 1.0};
+        bubble.parameters.sigma_constant = {2.0, 2.0};
+        bubble.parameters.dispersion_energy_over_k = {energy, energy};
+        bubble.parameters.molar_mass_kg_per_mol = {0.03, 0.03};
+        bubble.problem.temperature = FreeValue::fixed(0.7 * energy);
+        bubble.directions = {direction(0.0, 0.0, {0.013, -0.007})};
+        bubble.observables = {obs(Kind::Pressure), obs(Kind::PhaseMoleFraction, 0, 0), obs(Kind::PhaseMoleFraction, 0, 1), obs(Kind::PhaseMoleFraction, 1, 0),
+            obs(Kind::PhaseMoleFraction, 1, 1), obs(Kind::PhaseAmount, 0), obs(Kind::PhaseMolarDensity, 0), obs(Kind::PhaseMolarDensity, 1)};
+        const double exact[] = {0.0, 0.010, -0.010, 0.010, -0.010, 0.006, 0.0, 0.0};
+        const auto bubble_model = bubble.model();
+        const auto bubble_central = epcsaft::equilibrium::solve_equilibrium(bubble_model, bubble.problem);
+        const auto batch = actions(bubble, bubble_model, bubble_central, bubble.observables, 1);
+        const double bound = 2.0 * batch.diagnostics.condition_estimate.value_or(0.0) * batch.diagnostics.maximum_linear_residual.value_or(0.0);
+        const bool refused = bound > limit;
+        double error = 0.0, norm = 0.0;
+        bool typed = bubble_central.success;
+        for (std::size_t i = 0; i < std::size(exact); ++i) {
+            const auto& item = batch.results[i];
+            typed = typed && item.value.has_value() && item.status == (refused ? SolvedStateActionStatus::IllConditioned : SolvedStateActionStatus::Available)
+                && item.action.has_value() != refused;
+            const double scale = i == 0 || i == 5 ? 1.0 : item.value.value_or(1.0);
+            error = std::max(error, std::abs(item.action.value_or(exact[i]) - exact[i]) / scale);
+            norm = std::max(norm, std::abs(exact[i]) / scale);
+        }
+        // Each state sits within a factor two of the limit, so dropping or doubling the factor flips it.
+        const bool placed = refused ? bound <= 2.0 * limit : bound > 0.5 * limit;
+        const bool verdict = typed && placed && (refused || error <= bound * norm);
+        const auto id = std::string("e5-8/forward-bound/") + (refused ? "refused" : "admitted");
+        // A refused state withholds its coefficient: its row records the certified bound against the limit.
+        recording_support::compare_custom(id.c_str(), refused ? "forward_bound" : "forward_error", "1", refused ? bound : error / norm, refused ? limit : bound,
+            recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("temperature", 0.7 * energy),
+                recording_support::field("pressure", epcsaft::core::optional_number(batch.results[0].value)), recording_support::field("status", status_field(batch, 0)),
+                recording_support::field("condition", epcsaft::core::optional_number(batch.diagnostics.condition_estimate)),
+                recording_support::field("backward_error", epcsaft::core::optional_number(batch.diagnostics.maximum_linear_residual)),
+                recording_support::field("bound", bound), recording_support::field("limit", limit)}),
+            "Relationship", "analytic-bubble", refused ? "a state certified above the forward limit is typed ill_conditioned with its central values retained"
+                : "an admitted near-limit action agrees with the exact bubble response within 2 cond eta relative to the chart norm",
+            refused ? "limit < 2 kappa eta <= 2 limit, ill_conditioned, no action" : "|dy|/|y| <= 2 kappa eta, limit/2 < 2 kappa eta <= limit, available",
+            verdict, "e5-8", id.c_str(), "|dy|/|y|", "E", "|dy|/|y|\\leq2\\kappa_\\infty\\eta", "case");
+        all_ok = verdict && all_ok;
+    }
     CHECK(all_ok);
 }
 

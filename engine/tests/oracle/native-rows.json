@@ -1,8 +1,8 @@
 {
-  "rows": 452,
-  "recorded_at_revision": "443a9da492fd5ac7724525945d108c6a2a854d51",
-  "build_fingerprint": "4da69f39993e641a600f3634bd7f80444d01adc0a33cb1f064e337969b6bda93",
-  "wheel_sha256": "0d80cc49ceb08b85e5ae3073b2e85af52ff7cddff287124261eaac870ba27285",
+  "rows": 454,
+  "recorded_at_revision": "39b6efc5946264c5bc6fcd1d3cdea847654da6d5",
+  "build_fingerprint": "2b57b3c5484a620b177cb90de5e0613b5b8e38f8100228b19a54159c2149c9b8",
+  "wheel_sha256": "c7218d748c7f2a329a02ce6f3086c559e28c57b55e19d6519212926484e873b2",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -30,6 +30,10 @@
     },
     {
       "command": "equilibrium_checks E5-7",
+      "exit": 0
+    },
+    {
+      "command": "equilibrium_checks E5-8",
       "exit": 0
     },
     {

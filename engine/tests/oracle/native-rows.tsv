@@ -355,6 +355,8 @@ equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealEnthalpy/A3	J/mo
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalEnthalpy/A3	J/mol	-0.022314287805547214
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/IdealIsobaricHeatCapacity/A3	J/(mol K)	0
 equilibrium_checks E5-7	e5-7/thermal-320/phase[0].property/TotalIsobaricHeatCapacity/A3	J/(mol K)	0.00033272866367722203
+equilibrium_checks E5-8	e5-8/forward-bound/admitted	1	1.7429825755159802e-07
+equilibrium_checks E5-8	e5-8/forward-bound/refused	1	1.6536971219699124e-06
 equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	2.020605904817785e-14
 equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
 equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	4.336808689942018e-19

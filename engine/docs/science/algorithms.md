@@ -576,7 +576,13 @@ condition estimate), refuses a coefficient above
 2026-09-23); the first refused coefficient names the status. For k >= 2 the
 bound holds given the computed lower coefficients: their errors enter b_k and
 are not re-bounded. It is normwise and does not certify small components of y_k
-relative to themselves. Observables are
+relative to themselves. The native `e5-8/forward-bound` rows falsify it against
+the exact bubble-point feed response of an identical m = 1 pair at fixed
+T/(eps/k): the same reduced state at every energy scale, where only the raw-Pa
+pressure column, and so cond_inf(J), grows with the scale. An admitted
+near-limit A1 (2 cond eta = 6.6e-7) has a measured forward error of 1.7e-7, and
+the doubled scale is refused; there the refusal follows the pascal pressure scale,
+not a physical near-singularity. Observables are
 mapped along the same curved path: normalised composition, molar density 1/v,
 packing fraction, N v, the phase pressure RT(1/v - a_v) and mu_res/RT from the
 same gradient series; the log activity on the EOS density basis,
