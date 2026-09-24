@@ -352,13 +352,13 @@ bool has_source_reference(const EquilibriumProblem& problem) {
             [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
 }
 
-// Referenced T slopes exist through order one only (EqID: standard_state_transfer_temperature_derivative).
 bool parameter_direction(const std::vector<double>& control, std::size_t components) {
     return std::any_of(control.begin() + static_cast<std::ptrdiff_t>(2 + components),
                        control.end(), [](double value) { return value != 0.0; });
 }
 
-// Referenced temperature and parameter chains are built to order one.
+// Referenced T and parameter slopes exist through order one only (EqIDs:
+// standard_state_transfer_temperature_derivative, standard_state_transfer_parameter_derivative).
 bool reference_action_direction(const std::vector<std::vector<double>>& controls,
                                 std::size_t components) {
     return controls.size() > 1 && std::any_of(controls.begin(), controls.end(), [&](const auto& control) {
