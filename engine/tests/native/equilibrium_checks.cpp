@@ -3895,7 +3895,7 @@ void check_e5_refusals() {
         const bool certified = diagnostics.condition_estimate.has_value() && diagnostics.maximum_linear_residual.has_value();
         const double bound = certified ? 2.0 * *diagnostics.condition_estimate * *diagnostics.maximum_linear_residual : 0.0;
         double error = 0.0, norm = 0.0;
-        bool typed = bubble_central.success && certified && bound <= limit;
+        bool typed = bubble_central.success && certified && bound <= limit && n == 10;  // the chart layout above
         for (std::size_t i = 0; i < std::size(exact); ++i) {
             const auto& item = batch.results[i];
             typed = typed && item.status == SolvedStateActionStatus::Available && item.value.has_value() && item.action.has_value();

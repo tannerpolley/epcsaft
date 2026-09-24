@@ -566,24 +566,27 @@ G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 owner). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised; each
 coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
-evaluated in extended precision, and y_k = C z_k. Each solved coefficient is
+evaluated in `long double` (x87 80-bit on the supported x86-64 build; plain
+double where `long double` is double), and y_k = C z_k. Each solved coefficient is
 re-evaluated; its normwise backward error
 eta_k = |R r_k| / (|A| |z_k| + |R b_k|) (infinity norms, Rigal–Gaches) must meet
 `EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
 only that y_k solves a nearby linear system; it catches a stale Jacobian or a
 jet mismatch. The first-order forward bound
 |C^-1 dy_k| / |C^-1 y_k| <= 2 cond_inf(A) eta_k (Higham, Thm 7.2), with
-cond_inf(A) = |A| |A^-1| from the central factorization (the reported
-condition estimate), refuses a coefficient above
+cond_inf(A) = |A| |A^-1| from the central factorization (the reported action
+condition estimate is this equilibrated value, not the raw cond_inf(J) that
+`inspect_sensitivity` reports), refuses a coefficient above
 `EQUILIBRIUM_ACTION_FORWARD_ERROR` as `ill_conditioned` (owner decision
 2026-09-23); the first refused coefficient names the status. Equilibration
 removes diagonal unit scales such as the raw-Pa pressure column, leaving the
-refusal to states that stay ill-conditioned after scaling; refinement removes
-the LU rounding that equilibration alone leaves. For k >= 2 the
+refusal to states that stay ill-conditioned after scaling. Refinement is not
+credited by the certificate: eta is re-measured from the re-evaluated series. For k >= 2 the
 bound holds given the computed lower coefficients: their errors enter b_k and
 are not re-bounded. It is normwise in the equilibrated coordinates and does not
-certify small components of y_k relative to themselves; it excludes the final
-rounding of each returned double. The native `e5-8/forward-bound` rows test it
+certify small components of y_k relative to themselves; it holds up to the
+double-precision floor of the evaluated residual and excludes the final rounding
+of each returned double. The native `e5-8/forward-bound` rows test it
 against the exact bubble-point feed response of an identical m = 1 pair at
 fixed T/(eps/k), the same reduced state at every energy scale: the raw
 cond_inf(J) grows from 3.5e9 to 4.7e10 over the ladder while cond_inf(A) stays
