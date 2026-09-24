@@ -672,10 +672,15 @@ points and uses EqID: `standard_state_transfer_temperature_derivative`: the
 slope passes the value criterion in RT units, and its target slope
 $s_r'=-d\ln K_{\rho,r}/dT$ follows the value's minimum-norm owner. Temperature
 and mixed T/P actions are therefore available at order one; a refused slope
-leaves the value and sibling directions intact. Referenced continuation, free
-temperature, raw lever derivatives, temperature actions above order one,
-parameter actions, and third-order actions involving pressure remain
-unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
+leaves the value and sibling directions intact. A requested active EOS-parameter
+direction uses the same three E2 evaluations and EqID:
+`standard_state_transfer_parameter_derivative`: each requested slope passes the
+value criterion at the parameter scale max(|theta|, 1), and
+$\partial s_r/\partial\theta=-dC_r/d\theta$ follows the same owner, so parameter
+and mixed T/P/parameter actions are available at order one. Referenced
+continuation, free temperature, raw lever derivatives, temperature and parameter
+actions above order one, caloric parameter actions, and third-order actions
+involving pressure remain unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
 supplied records anchor their species, record-less species are completed from
 the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
 may remain. A heat-capacity value or enthalpy temperature action requests the

@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from epcsaft import (
-    GAS_CONSTANT_J_PER_MOL_K as R, IdealCorrelation, IdealInterval, IdealPolynomial, Mixture,
+    ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, ParameterFamily, IdealCorrelation, IdealInterval, IdealPolynomial, Mixture,
     PropertyObservable as Property, Pure, ThermochemistryRecord,
 )
 from epcsaft.equilibrium import (
@@ -155,6 +155,22 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
             [H, residual], [Direction(0.0, 0.0, [0.0, 0.0], [])])).results
         assert item[0].status == Status.ReferenceUnavailable and item[0].value is None
         assert item[1].status == Status.Available and item[1].value is not None
+
+
+def test_reference_parameter_actions_refuse_missing_orders() -> None:
+    """A k_ij direction reaches only order-one non-caloric actions: h would need d2C/dTdtheta."""
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]), thermochemistry=_record(A_RECORD, []),
+                    active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
+    problem = _problem(T0, None)
+    result = solve_equilibrium(model, problem)
+    compiled = compile_problem(model, problem)
+    fraction = SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)
+    k = Direction(0.0, 0.0, [0.0, 0.0], [1.0])
+    caloric, composition = solved_state_actions(compiled, result, SolvedStateActionRequest([H, fraction], [k])).results
+    assert caloric.status == Status.ReferenceUnavailable and caloric.value is not None and caloric.action is None
+    assert composition.status == Status.Available and composition.action is not None
+    second = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k, k])).results[0]
+    assert second.status == Status.ReferenceUnavailable and second.value is not None and second.action is None
 
 
 def _ionic(temperature: float, reference_pressure: float | None) -> Problem:
