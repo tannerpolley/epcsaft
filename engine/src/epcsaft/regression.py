@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from . import _core
 from ._core import (
     Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
-    ObservationStatus, Prediction, ResidualForm, TrialFailure,
+    ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
 from .equilibrium import Discover, Problem
@@ -22,8 +22,9 @@ _FAMILIES = {
     "l_ij": _core.ParameterFamily.Lij,
     "association_energy_over_k": _core.ParameterFamily.AssociationEnergyOverK,
     "association_volume": _core.ParameterFamily.AssociationVolume,
+    "k_ij_reciprocal_temperature_slope": _core.ParameterFamily.KijReciprocalTemperatureSlope,
 }
-_PAIRS = {"k_ij", "l_ij"}
+_PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}
 _FORMS = {"difference": ResidualForm.Difference, "log_ratio": ResidualForm.LogRatio}
 _KINDS = {
@@ -32,10 +33,11 @@ _KINDS = {
     "temperature": ObservationKind.EquilibriumTemperature,
     "mole_fraction": ObservationKind.PhaseMoleFraction,
     "phase_fraction": ObservationKind.PhaseFraction,
+    "partial_pressure": ObservationKind.PartialPressure,
 }
 __all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
-           "ObservationStatus", "Prediction", "ResidualForm", "TrialFailure", "coordinate", "density", "fit", "fitted_parameters",
-           "observation", "predict")
+           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "coordinate", "density",
+           "differentiate", "fit", "fitted_parameters", "observation", "predict")
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -100,7 +102,8 @@ def density(parameters: Parameters, T: float, P: float, x: Mapping[str, float], 
 def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
-    mole_fraction (summed over `species` in `phase`) or phase_fraction (mole basis)."""
+    mole_fraction (summed over `species` in `phase`), partial_pressure (P times that sum, Pa) or
+    phase_fraction (mole basis)."""
     if kind not in _KINDS:
         raise ParameterError(f"unknown observation kind {kind}")
     if isinstance(problem.phases, Discover):
@@ -118,6 +121,11 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
 def predict(model: Mixture | Pure, item: Observation) -> Prediction:
     """The observation's value and residual from the model's shared owners, with its typed status."""
     return _core.predict(model._model, item)
+
+
+def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradient:
+    """d(value)/d(theta) per active parameter of the model, in its active order, at a fresh prediction."""
+    return _core.differentiate(model._model, item)
 
 
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,

@@ -384,18 +384,6 @@ bool zero_direction(const ActionDirection& direction) {
         && std::all_of(direction.parameter.begin(), direction.parameter.end(),
             [](double value) { return value == 0.0; });
 }
-const std::vector<double>& parameter_values(const Parameters& parameters, ParameterFamily family) {
-    switch (family) {
-    case ParameterFamily::SegmentCount: return parameters.segment_count;
-    case ParameterFamily::SigmaConstant: return parameters.sigma_constant;
-    case ParameterFamily::DispersionEnergyOverK: return parameters.dispersion_energy_over_k;
-    case ParameterFamily::Kij: return parameters.k_ij;
-    case ParameterFamily::Lij: return parameters.l_ij;
-    case ParameterFamily::AssociationEnergyOverK: return parameters.association_energy_over_k;
-    case ParameterFamily::AssociationVolume: return parameters.association_volume;
-    }
-    throw std::invalid_argument("invalid parameter family");
-}
 std::vector<double> action_point(
     const HelmholtzModel& model, double temperature, double rho,
     const std::vector<double>& composition
@@ -411,12 +399,13 @@ void validate_parameter_coordinate(
     const std::vector<std::size_t>& indices, bool active
 ) {
     const auto& parameters = model.parameters();
-    const auto& values = parameter_values(parameters, family);
+    const auto& values = detail::family_values(parameters, family);
     require(!indices.empty(), "parameter indices");
     for (const auto index : indices) require(index < values.size(), "parameter index");
     const bool association = family == ParameterFamily::AssociationEnergyOverK
         || family == ParameterFamily::AssociationVolume;
-    const bool pair = association || family == ParameterFamily::Kij || family == ParameterFamily::Lij;
+    const bool slope = family == ParameterFamily::KijReciprocalTemperatureSlope;
+    const bool pair = association || slope || family == ParameterFamily::Kij || family == ParameterFamily::Lij;
     if (!pair) {
         require(indices.size() == 1, "scalar parameter coordinate");
         return;
@@ -429,9 +418,9 @@ void validate_parameter_coordinate(
         require(indices.size() == 2 && first < indices[1]
             && indices[1] == column * size + row, "reciprocal parameter coordinate");
     }
-    if (active && association) {
-        for (const auto index : indices)
-            require(parameters.association_active[index] != 0, "inactive association coordinate");
+    for (const auto index : indices) {
+        require(!active || !association || parameters.association_active[index] != 0, "inactive association coordinate");
+        require(!active || !slope || parameters.k_ij_reference_temperature_k[index] > 0.0, "k_ij slope without reference temperature");
     }
 }
 
@@ -1754,7 +1743,7 @@ double HelmholtzModel::molar_density_upper_bound(
 
 std::vector<double> HelmholtzModel::active_parameter_values() const {
     std::vector<double> result;
-    for (const auto& item : active_) result.push_back(parameter_values(parameters_, item.family)[item.indices.front()]);
+    for (const auto& item : active_) result.push_back(detail::family_values(parameters_, item.family)[item.indices.front()]);
     return result;
 }
 

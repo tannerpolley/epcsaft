@@ -102,7 +102,8 @@ void register_thermal_inputs(py::module_& module) {
         .value("Kij", ParameterFamily::Kij)
         .value("Lij", ParameterFamily::Lij)
         .value("AssociationEnergyOverK", ParameterFamily::AssociationEnergyOverK)
-        .value("AssociationVolume", ParameterFamily::AssociationVolume);
+        .value("AssociationVolume", ParameterFamily::AssociationVolume)
+        .value("KijReciprocalTemperatureSlope", ParameterFamily::KijReciprocalTemperatureSlope);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     py::class_<ActiveParameter>(module, "ActiveParameter")
         .def(py::init([](ParameterFamily family, std::vector<std::size_t> indices) {

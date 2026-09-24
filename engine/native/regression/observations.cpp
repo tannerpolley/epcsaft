@@ -103,7 +103,7 @@ void validate(const Observation& observation, const HelmholtzModel& model) {
     }
     const auto compiled = equilibrium::compile_problem(model, observation.problem);
     require(observation.phase < compiled.problem.phases.size(), "phase index");
-    if (observation.kind != ObservationKind::PhaseMoleFraction) return;
+    if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure) return;
     require(!observation.species.empty(), "species set is empty");
     const auto& support = compiled.problem.phases[observation.phase].support;
     std::set<std::size_t> seen;
@@ -153,7 +153,8 @@ Prediction predict(
     }
     equilibrium::EquilibriumResult solved;
     try {
-        solved = equilibrium::solve_equilibrium(model, observation.problem, start);
+        result.compiled = equilibrium::compile_problem(model, observation.problem);
+        solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const core::ConvergenceFailure& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;
         result.convergence = failure.record;
@@ -190,8 +191,10 @@ Prediction predict(
         value = solved.temperature.front();
         break;
     case ObservationKind::PhaseMoleFraction:
-        result.unit = "1";
+    case ObservationKind::PartialPressure:
         for (const auto species : observation.species) value += fractions[species];
+        result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
+        if (observation.kind == ObservationKind::PartialPressure) value *= solved.pressure.front();
         break;
     case ObservationKind::PhaseFraction: {
         result.unit = "1";
@@ -256,7 +259,6 @@ PredictionGradient differentiate(
         return gradient;
     }
     const auto& solved = *prediction.solved;
-    const auto compiled = equilibrium::compile_problem(model, observation.problem);
     const auto phase = observation.phase;
     const double* fractions = solved.mole_fractions.data() + phase * components;
     std::vector<SolvedStateObservable> observables;
@@ -264,8 +266,10 @@ PredictionGradient differentiate(
     case ObservationKind::EquilibriumPressure: observables.push_back(observable(Kind::Pressure, 0)); break;
     case ObservationKind::EquilibriumTemperature: observables.push_back(observable(Kind::Temperature, 0)); break;
     case ObservationKind::PhaseMoleFraction:
+    case ObservationKind::PartialPressure:
         for (const auto species : observation.species)
             observables.push_back(observable(Kind::PhaseMoleFraction, phase, species));
+        if (observation.kind == ObservationKind::PartialPressure) observables.push_back(observable(Kind::Pressure, 0));
         break;
     case ObservationKind::PhaseFraction:
         for (std::size_t q = 0; q < solved.phase_count; ++q) observables.push_back(observable(Kind::PhaseAmount, q));
@@ -279,14 +283,18 @@ PredictionGradient differentiate(
     case ObservationKind::Density: break;
     }
     const double mass = observation.mass_basis ? mean_molar_mass(parameters, fractions, missing_mass) : 1.0;
+    // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
+    std::vector<equilibrium::SolvedStateActionDirection> directions(width);
     for (std::size_t k = 0; k < width; ++k) {
-        equilibrium::SolvedStateActionDirection direction;
-        direction.feed_amounts_mol.assign(components, 0.0);
-        direction.active_parameters.assign(width, 0.0);
-        direction.active_parameters[k] = 1.0;
-        const auto batch = equilibrium::solved_state_actions(compiled, solved, {observables, {direction}});
+        directions[k].feed_amounts_mol.assign(components, 0.0);
+        directions[k].active_parameters.assign(width, 0.0);
+        directions[k].active_parameters[k] = 1.0;
+    }
+    const auto batches = width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
+        : equilibrium::solved_state_first_actions(*prediction.compiled, solved, observables, directions);
+    for (std::size_t k = 0; k < width; ++k) {
         std::vector<double> action;
-        for (const auto& item : batch.results) {
+        for (const auto& item : batches[k].results) {
             if (item.status != equilibrium::SolvedStateActionStatus::Available || !item.action.has_value())
                 return unavailable(equilibrium::solved_state_status_name(item.status));
             action.push_back(*item.action);
@@ -306,6 +314,10 @@ PredictionGradient differentiate(
             value = action[0] * mass;
             for (std::size_t i = 0; observation.mass_basis && i < components; ++i)
                 value += solved.molar_densities[phase] * parameters.molar_mass_kg_per_mol[i] * action[1 + i];
+            break;
+        case ObservationKind::PartialPressure:  // d(P sum y) = dP sum y + P sum dy
+            for (const auto species : observation.species) value += fractions[species] * action.back();
+            for (std::size_t i = 0; i + 1 < action.size(); ++i) value += solved.pressure.front() * action[i];
             break;
         default:
             for (const auto item : action) value += item;

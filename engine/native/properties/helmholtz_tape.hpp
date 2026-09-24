@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 namespace epcsaft::detail {
@@ -30,7 +31,7 @@ struct TapeParameters final {
     std::vector<AD> dispersion_energy_over_k;
     std::vector<double> molar_mass_kg_per_mol;
     std::vector<AD> k_ij;
-    std::vector<double> k_ij_reciprocal_temperature_slope;
+    std::vector<AD> k_ij_reciprocal_temperature_slope;
     std::vector<double> k_ij_reference_temperature_k;
     std::vector<AD> l_ij;
     std::vector<int> site_component;
@@ -72,7 +73,25 @@ enum class ParameterFamily {
     Lij,
     AssociationEnergyOverK,
     AssociationVolume,
+    KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
 };
+constexpr std::size_t PARAMETER_FAMILY_COUNT = 8;
+
+// The one family -> storage map, for Parameters (double) and TapeParameters (AD) alike.
+template <class ParameterSet>
+auto& family_values(ParameterSet& parameters, ParameterFamily family) {
+    switch (family) {
+    case ParameterFamily::SegmentCount: return parameters.segment_count;
+    case ParameterFamily::SigmaConstant: return parameters.sigma_constant;
+    case ParameterFamily::DispersionEnergyOverK: return parameters.dispersion_energy_over_k;
+    case ParameterFamily::Kij: return parameters.k_ij;
+    case ParameterFamily::Lij: return parameters.l_ij;
+    case ParameterFamily::AssociationEnergyOverK: return parameters.association_energy_over_k;
+    case ParameterFamily::AssociationVolume: return parameters.association_volume;
+    case ParameterFamily::KijReciprocalTemperatureSlope: return parameters.k_ij_reciprocal_temperature_slope;
+    }
+    throw std::invalid_argument("invalid parameter family");
+}
 
 struct ActiveParameter final {
     ParameterFamily family;
@@ -106,44 +125,14 @@ inline TapeParameters make_tape_parameters(
     const std::vector<AD>& coordinates
 ) {
     TapeParameters result;
-    result.segment_count = active_vector(
-        parameters.segment_count, active, ParameterFamily::SegmentCount,
-        coordinates
-    );
-    result.sigma_constant = active_vector(
-        parameters.sigma_constant, active, ParameterFamily::SigmaConstant,
-        coordinates
-    );
-    result.dispersion_energy_over_k = active_vector(
-        parameters.dispersion_energy_over_k,
-        active,
-        ParameterFamily::DispersionEnergyOverK,
-        coordinates
-    );
-    result.k_ij = active_vector(
-        parameters.k_ij, active, ParameterFamily::Kij, coordinates
-    );
-    result.l_ij = active_vector(
-        parameters.l_ij, active, ParameterFamily::Lij, coordinates
-    );
-    result.association_energy_over_k = active_vector(
-        parameters.association_energy_over_k,
-        active,
-        ParameterFamily::AssociationEnergyOverK,
-        coordinates
-    );
-    result.association_volume = active_vector(
-        parameters.association_volume,
-        active,
-        ParameterFamily::AssociationVolume,
-        coordinates
-    );
+    for (std::size_t family = 0; family < PARAMETER_FAMILY_COUNT; ++family) {
+        const auto item = static_cast<ParameterFamily>(family);
+        family_values(result, item) = active_vector(family_values(parameters, item), active, item, coordinates);
+    }
     result.sigma_term_component = parameters.sigma_term_component;
     result.sigma_term_amplitude = parameters.sigma_term_amplitude;
     result.sigma_term_exponent = parameters.sigma_term_exponent;
     result.molar_mass_kg_per_mol = parameters.molar_mass_kg_per_mol;
-    result.k_ij_reciprocal_temperature_slope =
-        parameters.k_ij_reciprocal_temperature_slope;
     result.k_ij_reference_temperature_k = parameters.k_ij_reference_temperature_k;
     result.site_component = parameters.site_component;
     result.site_multiplicity = parameters.site_multiplicity;

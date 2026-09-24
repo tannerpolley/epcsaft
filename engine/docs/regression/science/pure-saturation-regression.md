@@ -30,6 +30,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
 | PhaseMoleFraction | any declared specification, phase $p$, nonempty species set $S$ within its support | $\sum_{i\in S} x_{p,i}$ | 1 |
 | PhaseFraction | free amounts | $\beta_p = n_p / \sum_q n_q$ over the solved amounts, never the feed total | 1 |
+| PartialPressure | any declared specification, phase $p$, nonempty species set $S$ within its support | $P\sum_{i\in S} x_{p,i}$ with the solved system pressure; `LogRatio` gives $\ln(p_S/p_{S,obs})$ | Pa |
 
 An unavailable prediction is typed, never a zero residual: a vanished or
 coalesced phase is `topology_event` before any solve status; a rejected or
@@ -54,7 +55,9 @@ separately from any absolute uncertainty.
 A physical coordinate is exactly the Properties active-parameter coordinate:
 one component slot for $m$, $\sigma$ and $\varepsilon/k$, one reciprocal pair
 for $k_{ij}$ and $l_{ij}$, one site pair or diagonal self-pair for
-$\varepsilon^{AB}/k$ and $\kappa^{AB}$, in native units (1, Å, K). Every slot
+$\varepsilon^{AB}/k$ and $\kappa^{AB}$, one reciprocal pair with a positive
+reference temperature for the $k_{ij}$ slope $b_{ij}$ of EqID:
+`cross_dispersion_energy`, in native units (1, Å, K). Every slot
 absent from the active list is fixed. An optimizer coordinate is affine,
 $\theta = o + s\,u$ with $s>0$, with inclusive bounds in physical units mapped
 by the same transform; one optimizer coordinate may drive several tied slots of
@@ -68,10 +71,17 @@ owners is indexed by these rows.
 $\partial y/\partial\theta$ comes from the shared owners only: the Properties
 pressure-chart density action for Density and the solved-state actions of the
 equilibrium driver for every other kind (a linear sum over $S$, the quotient
-rule for $\beta_p$, the product rule for a mass basis). The optimizer
+rule for $\beta_p$, the product rule for a mass basis and for
+$\mathrm{d}(P\sum_S x) = \mathrm{d}P\sum_S x + P\sum_S\mathrm{d}x$). One
+first-action batch per state carries every active direction at one factorization
+of the solved Jacobian, reusing the problem compiled for the solve; a referenced
+problem builds its standard-state parameter jets once for all directions, since
+they enter the rows only through $\sum_a (\partial s/\partial\theta_a)(\theta_a-\theta_{a,c})$. The optimizer
 Jacobian is $\sqrt{w}\,(\mathrm{d}r/\mathrm{d}y)\,(\partial y/\partial\theta)\,S\,\mathrm{diag}(s)$
 with $\mathrm{d}r/\mathrm{d}y = 1/s$ or $1/y$. The bounded fit is a
-Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$; a
+Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$,
+with bound-projected steps and no projected line search (whose every trial
+would re-solve and differentiate all states); a
 trial in which any observation or action is unavailable is rejected with its
 typed cause and observation index retained, never zeroed. Warm starts are taken
 only from a trial in which every observation succeeded and are retried cold on
@@ -98,6 +108,9 @@ The result carries a status (converged, limit_reached,
 initial_evaluation_failed, failed) and the solver's own termination message,
 which distinguishes an iteration limit from a time limit; a nonzero count of
 typed trial failures is a diagnostic of rejected trials, not a failed fit.
+Each Ceres iteration's wall time and cost (iteration 0 is the start) and each
+failure's residual/Jacobian flag are reported, so a slow or failing fit is
+visible from its result.
 
 Fixed-coordinate leaves are valid constants with zero derivative. Observable
 and parameter order, units, bases and chain rules must remain explicit through

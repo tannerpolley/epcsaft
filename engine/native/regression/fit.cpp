@@ -291,6 +291,9 @@ FitResult fit(const FitRequest& request) {
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
     options.linear_solver_type = ceres::DENSE_QR;
     options.dense_linear_algebra_library_type = ceres::EIGEN;
+    // No projected line search on bounded problems: each of its trials costs a full Jacobian (every state
+    // re-solved and differentiated) and it collapses the step toward an active bound. Steps are projected.
+    options.max_num_line_search_step_size_iterations = 0;
     options.num_threads = 1;
     options.logging_type = ceres::SILENT;
     options.minimizer_progress_to_stdout = false;
@@ -304,6 +307,10 @@ FitResult fit(const FitRequest& request) {
     ceres::Solve(options, &problem, &summary);
     result.termination = termination_name(summary.termination_type);
     result.iterations = summary.iterations.size();
+    for (const auto& item : summary.iterations) {
+        result.iteration_seconds.push_back(item.iteration_time_in_seconds);
+        result.iteration_costs.push_back(item.cost);
+    }
     result.message = summary.message;
     result.status = summary.termination_type == ceres::CONVERGENCE ? "converged"
         : summary.termination_type == ceres::NO_CONVERGENCE || summary.termination_type == ceres::USER_SUCCESS

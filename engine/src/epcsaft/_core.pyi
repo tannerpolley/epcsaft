@@ -172,6 +172,7 @@ class ParameterFamily:
     Lij: ParameterFamily
     AssociationEnergyOverK: ParameterFamily
     AssociationVolume: ParameterFamily
+    KijReciprocalTemperatureSlope: ParameterFamily
 
 class ActiveParameter:
     family: ParameterFamily
@@ -723,6 +724,7 @@ class ObservationKind:
     EquilibriumTemperature: ObservationKind
     PhaseMoleFraction: ObservationKind
     PhaseFraction: ObservationKind
+    PartialPressure: ObservationKind
 
 class ResidualForm:
     Difference: ResidualForm
@@ -764,6 +766,11 @@ class Prediction:
     stable_root_count: Optional[int]
     requested_tolerance_met: Optional[bool]
 
+class PredictionGradient:
+    value: list[float]
+    status: ObservationStatus
+    message: str
+
 class Coordinate:
     family: ParameterFamily
     slots: list[list[int]]
@@ -790,6 +797,7 @@ class TrialFailure:
     optimizer: list[float]
     status: ObservationStatus
     message: str
+    jacobian: bool
 
 class FitCovariance:
     status: str
@@ -818,10 +826,13 @@ class FitResult:
     residual_evaluations: int
     jacobian_evaluations: int
     trial_failures: int
+    iteration_seconds: list[float]
+    iteration_costs: list[float]
     initial_cost: float
     final_cost: float
     covariance: FitCovariance
 
 def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
+def differentiate(model: HelmholtzModel, observation: Observation) -> PredictionGradient: ...
 def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord], coordinates: Sequence[Coordinate],
         observations: Sequence[Observation], weights: Sequence[float], controls: FitControls) -> FitResult: ...

@@ -356,16 +356,14 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
     the O(h²) truncation, ~1e-4 at h = 1e-3). k_AB moves only the dilute solute, so its omitted
     reference term (dx_B/d ln K_src)(dC/dk) is about twice the action. The solvent segment count
     also moves the terminal volume: dropping C_V V_theta = -C_P p_theta would shift the action by
-    (dx_B/d ln K_src) C_P p_theta, measured about 180 times the action."""
+    (dx_B/d ln K_src) C_P p_theta, measured about 180 times the action. Both parameters stay active, so
+    one set of reference jets serves both directions (#152); the batch equals separate requests."""
     center = 0.02 if family == "k_ij" else ETHANE[1]
 
     def model(theta: float) -> Mixture:
-        if family == "k_ij":
-            return Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), theta)]),
-                           active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
-        solvent = (ETHANE[0], theta, *ETHANE[2:])
-        return Mixture(parameters((solvent, ETHANE), [("k_ij", (0, 1), 0.02)]),
-                       active_parameters=[ActiveParameter(ParameterFamily.SegmentCount, (0,))])
+        kij, segments = (theta, ETHANE[1]) if family == "k_ij" else (0.02, theta)
+        return Mixture(parameters(((ETHANE[0], segments, *ETHANE[2:]), ETHANE), [("k_ij", (0, 1), kij)]),
+                       active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2)), ActiveParameter(ParameterFamily.SegmentCount, (0,))])
 
     def solve(theta: float, shift: float = 0.0) -> Any:
         result = solve_equilibrium(model(theta), _kij_problem(mode, shift))
@@ -374,9 +372,12 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
 
     problem = _kij_problem(mode)
     result = solve(center)
-    direction = SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], [1.0])
-    item = solved_state_actions(compile_problem(model(center), problem), result, SolvedStateActionRequest(
-        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [direction])).results[0]
+    compiled, observable = compile_problem(model(center), problem), [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
+    directions = [SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], unit) for unit in ([1.0, 0.0], [0.0, 1.0])]
+    batch = [item.results[0] for item in solved_state_first_actions(compiled, result, observable, directions)]
+    alone = [solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [d])).results[0] for d in directions]
+    assert [item.action for item in batch] == [item.action for item in alone]
+    item = batch[0 if family == "k_ij" else 1]
     assert item.status == Status.Available and item.action is not None, item.diagnostic_message
     step = 5.0e-4
     far, near = ([solve(center + h), solve(center - h)] for h in (2 * step, step))

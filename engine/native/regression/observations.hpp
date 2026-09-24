@@ -12,10 +12,10 @@ namespace epcsaft::regression {
 
 // The built-in observation inventory (#46). Values come from the shared owners only:
 // Density from the Properties pressure closure, every other kind from one declared
-// specification of the single equilibrium driver.
+// specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
     Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction
+    PhaseFraction, PartialPressure
 };
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
@@ -32,7 +32,7 @@ struct Observation final {
     std::vector<double> composition;
     DensityBranch branch = DensityBranch::Unspecified;
     // Every other kind: the declared problem; `phase` indexes its phases, `species` is a
-    // nonempty set inside that phase's support (PhaseMoleFraction sums the set).
+    // nonempty set inside that phase's support (PhaseMoleFraction and PartialPressure sum the set).
     equilibrium::EquilibriumProblem problem;
     std::size_t phase = 0;
     std::vector<std::size_t> species;
@@ -57,6 +57,7 @@ struct Prediction final {
     std::optional<std::size_t> stable_root_count;
     std::optional<bool> requested_tolerance_met;
     std::optional<equilibrium::EquilibriumResult> solved;  // the accepted central solve
+    std::optional<equilibrium::CompiledSystem> compiled;    // the problem it solved, reused by differentiate
 };
 
 // d(value)/d(theta) per active parameter of the model, in the value's unit per native

@@ -1450,7 +1450,6 @@ std::vector<double> CompiledSystem::hessian_at(
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
     if (pinned_count != 0) return constraint_hessian_at(prepared, constraint_multipliers);
-    const std::size_t components = model->parameters().component_count();
     const double P = prepared.pressure;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
     const auto& standard_value = prepared.standard.derivative[0];
@@ -1552,12 +1551,22 @@ RowSeries CompiledSystem::row_series(
         throw std::invalid_argument(
             "reference_unavailable: row series pressure/T/parameter order is unsupported");
     }
-    const auto standard = reference_diagnostics.empty()
+    // The prepared term already carries the pressure jets of a free-pressure problem. Parameter jets
+    // enter the rows only through sum_a ds/dtheta_a (theta_a - theta_a,center), so jets along every
+    // active parameter serve every direction exactly. If any slope is refused, each direction
+    // resolves its own, leaving sibling directions intact.
+    const bool reuse = !reference_diagnostics.empty() && !temperature_jets && (!pressure_jets || problem.pressure.free);
+    if (reuse && parameter_jets && !prepared.parameter_standard) {
+        try {
+            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, order,
+                pressure_jets, false, std::vector<double>(active_control.size(), 1.0));
+        } catch (const std::invalid_argument&) {}
+    }
+    const auto& standard = reference_diagnostics.empty()
         ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
-        : pressure_jets || temperature_jets || parameter_jets
-            ? standard_term(*this, prepared.temperature, prepared.pressure, order,
-                            pressure_jets, temperature_jets, active_control)
-            : prepared.standard;
+        : !reuse || (parameter_jets && !prepared.parameter_standard)
+            ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
+        : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
     const std::size_t stride = width + 2;
     std::vector<std::vector<double>> output(order + 1);

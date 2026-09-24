@@ -11,19 +11,7 @@ void require(bool condition, const char* what) {
     if (!condition) throw std::invalid_argument(std::string("coordinate ") + what);
 }
 
-template <class ParameterSet>
-auto& family_values(ParameterSet& parameters, ParameterFamily family) {
-    switch (family) {
-    case ParameterFamily::SegmentCount: return parameters.segment_count;
-    case ParameterFamily::SigmaConstant: return parameters.sigma_constant;
-    case ParameterFamily::DispersionEnergyOverK: return parameters.dispersion_energy_over_k;
-    case ParameterFamily::Kij: return parameters.k_ij;
-    case ParameterFamily::Lij: return parameters.l_ij;
-    case ParameterFamily::AssociationEnergyOverK: return parameters.association_energy_over_k;
-    case ParameterFamily::AssociationVolume: return parameters.association_volume;
-    }
-    throw std::invalid_argument("coordinate family");
-}
+using detail::family_values;
 
 }  // namespace
 

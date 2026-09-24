@@ -372,11 +372,12 @@ $$
 - Status: Source equation
 - Source: [Gross2001], Eq.~(A.7)
 - Description: Unlike-pair dispersion energy for an applicable pair.
-- Change note: Keeps k_ij semantically distinct from l_ij and association data.
+- Change note: Keeps k_ij semantically distinct from l_ij and association data. A pair with a declared reference temperature $T_{\mathrm{ref},ij}>0$ takes the record's linear-in-$1/T$ law; its slope $b_{ij}$ (K) is an active-parameter family like $k_{ij}$ (#152).
 
 $$
 \frac{\epsilon_{ij}}{k_B}
-=\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}}\,(1-k_{ij}),
+=\sqrt{\frac{\epsilon_i}{k_B}\frac{\epsilon_j}{k_B}}\,\bigl(1-k_{ij}(T)\bigr),
+\qquad k_{ij}(T)=k_{ij}+b_{ij}\Bigl(\frac{1}{T}-\frac{1}{T_{\mathrm{ref},ij}}\Bigr),
 \qquad z_iz_j\le0.
 $$
 

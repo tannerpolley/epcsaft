@@ -1001,6 +1001,39 @@ EquilibriumResult run_driver(
     return result;
 }
 
+bool incipient(const PhaseSpec& phase) {
+    return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
+}
+
+// A cold reactive boundary at fixed T and free P: the finite phases alone, in reaction equilibrium at
+// the pressure seed, are the solution's finite phases up to their pressure dependence. Their compositions
+// replace the caller's guesses before the ordinary boundary start (#152); none if that solve fails.
+std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled) {
+    const auto& problem = compiled.problem;
+    EquilibriumProblem finite = problem;
+    finite.phases.erase(std::remove_if(finite.phases.begin(), finite.phases.end(), incipient), finite.phases.end());
+    if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || finite.phases.empty()
+        || finite.phases.size() == problem.phases.size()) return std::nullopt;
+    finite.pressure = FreeValue::fixed(problem.pressure.seed_or(1.0e5));
+    EquilibriumResult solved;
+    try {
+        solved = solve_equilibrium(*compiled.model, finite);
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
+    if (!solved.success) return std::nullopt;
+    const std::size_t components = compiled.model->parameters().component_count();
+    CompiledSystem seeded = compiled;
+    std::size_t index = 0;
+    for (auto& phase : seeded.problem.phases) {
+        if (incipient(phase)) continue;
+        phase.composition_guess.clear();
+        for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[index * components + i]);
+        ++index;
+    }
+    return boundary_start(seeded);
+}
+
 }  // namespace
 
 TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& full) {
@@ -1053,15 +1086,28 @@ EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& request,
     const std::optional<EquilibriumResult>& start
 ) {
+    return solve_compiled(compile_problem(model, request), start);
+}
+
+EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start) {
     core::Scope scope("solve_equilibrium");
-    CompiledSystem compiled = compile_problem(model, request);
-    EquilibriumResult result = structural_result(compiled, scope);
-    if (!compiled.feasible) return result;
+    const auto& model = *compiled.model;
+    const EquilibriumResult structural = structural_result(compiled, scope);
+    if (!compiled.feasible) return structural;
     const bool use_start = start.has_value() && usable_start(compiled, *start);
-    std::vector<double> initial = use_start ? compiled.generic_point() : boundary_start(compiled);
-    if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
-    result = run_driver(model, compiled, std::move(initial), std::move(result), scope);
-    if (result.success) {
+    auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled);
+    EquilibriumResult result;
+    // The speciated seed when there is one; the caller's start alone or after the seed's failure.
+    for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
+        std::vector<double> initial;
+        if (attempt == 0) {
+            initial = std::move(*seeded);
+        } else {
+            initial = use_start ? compiled.generic_point() : boundary_start(compiled);
+            if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+        }
+        result = run_driver(model, compiled, std::move(initial), structural, scope);
+        if (!result.success) continue;
         BranchCheck branches;
         try {
             branches = check_density_branches(model, compiled, result, {}, true, scope);
