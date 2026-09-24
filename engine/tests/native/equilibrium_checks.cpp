@@ -900,7 +900,8 @@ void check_s2() {
                 change / *center[row].observed_terminal_change, std::nullopt, inputs,
                 "Relationship", "debye-huckel-sqrt-m-form",
                 "measured slope-to-value terminal-change multiplier for this model and state");
-            // Order two on the ionic ladder (Debye-Hueckel and Born third derivatives) against the
+            // Order two on the ionic ladder (Born, density and association third-derivative chains;
+            // the Debye-Hueckel term vanishes at 1e-14 mol/kg and is not tested here) against the
             // centered difference of the order-one slope; floor: step^2 |d4C/dT4|/6 and slope
             // roundoff/step, below 1e-7 relative. Admission is sized to cp: R T^2 max|dD2|.
             CHECK(center[row].terminal_contraction_temperature_second_derivative.has_value()
@@ -912,7 +913,7 @@ void check_s2() {
             recording_support::compare(
                 ("neutral-reference/temperature-second-slope/" + label).c_str(), "d2C_dT2", "1/K^2",
                 second, second_centered, inputs, "Relationship", "centered-slope-difference",
-                "d2C/dT2|_P carries the ionic, density and association chains through E3",
+                "d2C/dT2|_P carries the Born, density and association chains through E3",
                 "reference_scale", 0.0, 1.0e-6,
                 std::abs(second - second_centered) <= 1.0e-6 * std::abs(second_centered),
                 "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
