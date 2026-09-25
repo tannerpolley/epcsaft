@@ -79,9 +79,15 @@ problem builds its standard-state parameter jets once for all directions, since
 they enter the rows only through $\sum_a (\partial s/\partial\theta_a)(\theta_a-\theta_{a,c})$. The optimizer
 Jacobian is $\sqrt{w}\,(\mathrm{d}r/\mathrm{d}y)\,(\partial y/\partial\theta)\,S\,\mathrm{diag}(s)$
 with $\mathrm{d}r/\mathrm{d}y = 1/s$ or $1/y$. The bounded fit is a
-Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$,
-with bound-projected steps and no projected line search (whose every trial
-would re-solve and differentiate all states); a
+Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$
+without Ceres' projected line search (whose every trial would re-solve and
+differentiate all states). Bounds form an active set: a coordinate on a bound
+whose objective gradient $J^\top r$ points out of the box is held fixed for a
+round, since a clamped step computed as if it could cross is rejected until the
+trust region collapses; a round ends when Ceres stops or an accepted step lands
+a free coordinate on a bound, the set is rebuilt from that point's Jacobian, and
+the fit converges only when a converged round leaves the set unchanged (a KKT
+point); iterations and time are shared by the rounds; a
 trial in which any observation or action is unavailable is rejected with its
 typed cause and observation index retained, never zeroed. Warm starts are taken
 only from a trial in which every observation succeeded and are retried cold on

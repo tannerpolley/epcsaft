@@ -1007,7 +1007,8 @@ bool incipient(const PhaseSpec& phase) {
 
 // A cold reactive boundary at fixed T and free P: the finite phases alone, in reaction equilibrium at
 // the pressure seed, are the solution's finite phases up to their pressure dependence. Their compositions
-// replace the caller's guesses before the ordinary boundary start (#152); none if that solve fails.
+// replace the caller's guesses before the ordinary boundary start, and an unguessed incipient phase starts
+// from the first finite phase on its support (#152); none if any of it fails.
 std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled) {
     const auto& problem = compiled.problem;
     EquilibriumProblem finite = problem;
@@ -1015,23 +1016,23 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || finite.phases.empty()
         || finite.phases.size() == problem.phases.size()) return std::nullopt;
     finite.pressure = FreeValue::fixed(problem.pressure.seed_or(1.0e5));
-    EquilibriumResult solved;
     try {
-        solved = solve_equilibrium(*compiled.model, finite);
+        const auto solved = solve_equilibrium(*compiled.model, finite);
+        if (!solved.success) return std::nullopt;
+        const std::size_t components = compiled.model->parameters().component_count();
+        CompiledSystem seeded = compiled;
+        std::size_t index = 0;
+        for (auto& phase : seeded.problem.phases) {
+            const bool guessed = phase.composition_guess.size() == phase.support.size();
+            if (incipient(phase) && guessed) continue;
+            const std::size_t source = incipient(phase) ? 0 : index++;
+            phase.composition_guess.clear();
+            for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
+        }
+        return boundary_start(seeded);
     } catch (const std::exception&) {
         return std::nullopt;
     }
-    if (!solved.success) return std::nullopt;
-    const std::size_t components = compiled.model->parameters().component_count();
-    CompiledSystem seeded = compiled;
-    std::size_t index = 0;
-    for (auto& phase : seeded.problem.phases) {
-        if (incipient(phase)) continue;
-        phase.composition_guess.clear();
-        for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[index * components + i]);
-        ++index;
-    }
-    return boundary_start(seeded);
 }
 
 }  // namespace

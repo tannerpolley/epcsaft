@@ -75,7 +75,7 @@ enum class ParameterFamily {
     AssociationVolume,
     KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
 };
-constexpr std::size_t PARAMETER_FAMILY_COUNT = 8;
+constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::KijReciprocalTemperatureSlope) + 1;
 
 // The one family -> storage map, for Parameters (double) and TapeParameters (AD) alike.
 template <class ParameterSet>

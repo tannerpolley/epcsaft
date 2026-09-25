@@ -301,7 +301,18 @@ $y_i=x_i\,\phi_i^L/\phi_i^V\,P_0/P_1$ over its support when the caller-guessed s
 liquid is given, while the default $z/K$ liquid would return $y=z$, the trivial
 solution, and keeps its vapor seed), and a failed state keeps $P_0$ and the
 vapor guess. Liquid fugacity coefficients scale as $1/P$, so $P_1$ is the
-bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. Other
+bubble pressure of the seeded liquid; its accuracy is that of the seeded $x$. A cold
+reactive declaration at fixed temperature and free pressure with a phase pinned at
+zero amount first solves its finite phases alone, at the caller's pressure seed and
+with the same reactions and references; at the boundary those phases are the
+solution's phases up to their pressure dependence, so their speciated compositions
+replace the caller's guesses and an unguessed incipient phase takes the first
+finite phase's composition on its support; the start then follows the
+all-guessed rule above (#152: an unspeciated MEA liquid otherwise sends the
+fugacity step to the wrong liquid's bubble pressure and the solve into feasibility
+restoration). A caller start skips this seed. If the sub-solve, the seeding, the
+seeded solve or its density-branch admission fails or throws, the caller's own
+start runs unchanged; only the final attempt's diagnostics are returned. Other
 declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
 Public solves also apply the continuation owner's density-branch admission to

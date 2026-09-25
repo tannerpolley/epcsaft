@@ -254,6 +254,13 @@ inline constexpr Tolerance FIT_PARAMETER_TOLERANCE{"FIT_PARAMETER_TOLERANCE",
     Category::AlgorithmTolerance,
     "relative optimizer-coordinate step below which the fit stops",
 };
+// A coordinate within this many of its own scale units of a bound is on it (snapped, and held while its
+// gradient points out of the box): an interior start a rounding step from a bound is not a free coordinate.
+inline constexpr Tolerance FIT_BOUND_SNAP{"FIT_BOUND_SNAP",
+    1.0e-4,
+    Category::AlgorithmTolerance,
+    "optimizer-coordinate distance to a bound below which the coordinate is on the bound",
+};
 // Inside |y - y_obs| < LOG_RATIO_NEAR_UNITY * y_obs the log-ratio residual is evaluated as
 // log1p((y - y_obs) / y_obs), which keeps its leading digits near unity; outside, as the
 // difference of logarithms, which stays finite across the double range.
@@ -385,7 +392,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
     &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
     &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &STABILITY_COMPOSITION_FLOOR,
-    &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE,
+    &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_BOUND_SNAP,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
     &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
