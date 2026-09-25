@@ -292,10 +292,11 @@ StandardTerm standard_term(
         const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
             [](double value) { return value != 0.0; });
         // Fixed-T/P references do not change with phase coordinates or feed directions.
+        const std::size_t thermal = temperature_jets ? order : 0;
         if (problem.pressure.free || pressure_jets || temperature_jets || parameter_jets) {
             reactions = central_reference_reactions(
                 *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
-                &compiled.reference_diagnostics, temperature_jets, parameter_jets);
+                &compiled.reference_diagnostics, thermal, parameter_jets);
             gibbs = standard_state(temperature, components, reactions, {});
         }
         StandardTerm result;
@@ -303,99 +304,65 @@ StandardTerm standard_term(
         result.pressure_derivative.assign(components, 0.0);
         result.pressure_second_derivative.assign(components, 0.0);
         result.reference_diagnostics = diagnostics;
-        for (std::size_t species = 0; species < components; ++species) {
-            result.derivative[0][species] = gibbs[species]
-                / (GAS_CONSTANT_J_PER_MOL_K * temperature);
-        }
-        if (temperature_jets && order >= 1) {
-            // Transport ds_r/dT with s_r = g_r/(RT) through the same owner as s_r; a
-            // referenced row has s_r = -ln K_rho, so s_r' = -(d ln K_src/dT + dC/dT|_P).
-            const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
-            const auto targets = reaction_target_series(temperature, reactions, 1);
-            auto slopes = reactions;
-            for (std::size_t row = 0; row < reactions.size(); ++row) {
-                double slope = (targets[1][row] - targets[0][row] / temperature) / rt;
-                const auto& source = problem.reactions[row];
-                for (const auto& diagnostic : diagnostics) {
-                    if (diagnostic.reaction_index != row) continue;
-                    if (!diagnostic.terminal_contraction_temperature_derivative.has_value()) {
-                        throw std::invalid_argument("reference_unavailable: reaction "
-                            + reaction_name(source, row) + " temperature derivative is unavailable"
-                            + (diagnostic.observed_temperature_derivative_change
-                                ? " (terminal change exceeds tolerance)" : ""));
-                    }
-                    slope = -*diagnostic.terminal_contraction_temperature_derivative
-                        - (source.correlation.has_value()
-                            ? evaluate_reaction_properties(*source.correlation, temperature).derivative
-                            : 0.0);
-                    break;
-                }
-                slopes[row].equilibrium_constant.reset();
-                slopes[row].correlation.reset();
-                slopes[row].reference.reset();
-                slopes[row].affinity_j_per_mol = slope;
+        const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+        for (std::size_t species = 0; species < components; ++species)
+            result.derivative[0][species] = gibbs[species] / rt;
+        // One slope of s_r = g_r/(RT) per row, mapped to species by the same linear minimum-norm
+        // owner as s. A referenced row has s_r = -ln K_rho, so its slope is -(source slope + slope
+        // of C); an unadmitted slope of C refuses the direction.
+        const auto species_slope = [&](std::vector<double> values, const auto& slope_of, const std::string& name,
+                                       std::size_t source_order) {
+            for (const auto& diagnostic : diagnostics) {
+                const std::size_t row = diagnostic.reaction_index;
+                const std::optional<double> slope = slope_of(diagnostic);
+                if (!slope) throw std::invalid_argument("reference_unavailable: reaction "
+                    + reaction_name(problem.reactions[row], row) + " " + name
+                    + " is unavailable (not admitted or not evaluated)");
+                const auto& source = problem.reactions[row].correlation;
+                const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
+                values[row] = -*slope - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
             }
-            result.derivative[1] = standard_state(temperature, components, slopes, {});
+            auto mapped = reactions;
+            for (std::size_t row = 0; row < mapped.size(); ++row) {
+                mapped[row].equilibrium_constant.reset();
+                mapped[row].correlation.reset();
+                mapped[row].reference.reset();
+                mapped[row].affinity_j_per_mol = values[row];
+            }
+            return standard_state(temperature, components, mapped, {});
+        };
+        using Diagnostic = NeutralReferenceReactionDiagnostic;
+        const std::vector<double> zero(reactions.size(), 0.0);
+        // EqIDs: standard_state_transfer_temperature_(second_)derivative. Unreferenced rows keep
+        // s' = (t' - t/T)/(RT) and s'' = t''/(RT) - 2 s'/T.
+        std::vector<double> first(reactions.size(), 0.0), second(reactions.size(), 0.0);
+        const auto targets = thermal > 0 ? reaction_target_series(temperature, reactions, thermal)
+                                         : std::vector<std::vector<double>>{};
+        for (std::size_t row = 0; thermal > 0 && row < reactions.size(); ++row) {
+            first[row] = (targets[1][row] - targets[0][row] / temperature) / rt;
+            if (thermal > 1) second[row] = targets[2][row] / rt - 2.0 * first[row] / temperature;
         }
-        // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a,
-        // mapped by the owner of s_r (EqID: standard_state_transfer_parameter_derivative).
+        if (thermal > 0) result.derivative[1] = species_slope(first, [](const Diagnostic& d) {
+            return d.terminal_contraction_temperature_derivative; }, "temperature derivative", 1);
+        if (thermal > 1) result.derivative[2] = species_slope(second, [](const Diagnostic& d) {
+            return d.terminal_contraction_temperature_second_derivative; }, "second temperature derivative", 2);
+        // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a
+        // (EqID: standard_state_transfer_parameter_derivative).
         if (parameter_jets) result.parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
         for (std::size_t a = 0; parameter_jets && a < active_control.size(); ++a) {
             if (active_control[a] == 0.0) continue;
-            auto slopes = reactions;
-            for (auto& slope : slopes) {
-                slope.equilibrium_constant.reset();
-                slope.correlation.reset();
-                slope.reference.reset();
-                slope.affinity_j_per_mol = 0.0;
-            }
-            for (const auto& diagnostic : diagnostics) {
-                const auto& derivative = diagnostic.terminal_contraction_parameter_derivative;
-                if (derivative.size() != active_control.size() || !derivative[a])
-                    throw std::invalid_argument("reference_unavailable: reaction "
-                        + reaction_name(problem.reactions[diagnostic.reaction_index], diagnostic.reaction_index)
-                        + " parameter derivative is unavailable (terminal change exceeds tolerance)");
-                slopes[diagnostic.reaction_index].affinity_j_per_mol = -*derivative[a];
-            }
-            result.parameter_derivative[a] = standard_state(temperature, components, slopes, {});
+            result.parameter_derivative[a] = species_slope(zero, [a](const Diagnostic& d) {
+                return a < d.terminal_contraction_parameter_derivative.size()
+                    ? d.terminal_contraction_parameter_derivative[a] : std::nullopt; }, "parameter derivative", 0);
         }
+        // EqIDs: neutral_reaction_reference_pressure_jet, standard_state_transfer_temperature_pressure_derivative.
         if (pressure_jets) {
-            std::vector<ReactionSpec> pressure_reactions = reactions;
-            std::vector<ReactionSpec> pressure_second_reactions = reactions;
-            for (std::size_t row = 0; row < reactions.size(); ++row) {
-                double first = 0.0;
-                double second = 0.0;
-                for (const auto& diagnostic : diagnostics) {
-                    if (diagnostic.reaction_index != row) continue;
-                    if (!diagnostic.terminal_contraction_pressure_derivative.has_value()
-                        || !diagnostic.terminal_contraction_pressure_second_derivative.has_value()) {
-                        throw std::invalid_argument(
-                            "reference_unavailable: reaction pressure derivatives are missing");
-                    }
-                    first = -GAS_CONSTANT_J_PER_MOL_K * temperature
-                        * *diagnostic.terminal_contraction_pressure_derivative;
-                    second = -GAS_CONSTANT_J_PER_MOL_K * temperature
-                        * *diagnostic.terminal_contraction_pressure_second_derivative;
-                    break;
-                }
-                for (auto* target : {&pressure_reactions[row], &pressure_second_reactions[row]}) {
-                    target->equilibrium_constant.reset();
-                    target->correlation.reset();
-                    target->reference.reset();
-                    target->affinity_j_per_mol = target == &pressure_reactions[row]
-                        ? first : second;
-                }
-            }
-            const auto pressure_gibbs = standard_state(
-                temperature, components, pressure_reactions, {});
-            const auto pressure_second_gibbs = standard_state(
-                temperature, components, pressure_second_reactions, {});
-            for (std::size_t species = 0; species < components; ++species) {
-                result.pressure_derivative[species] = pressure_gibbs[species]
-                    / (GAS_CONSTANT_J_PER_MOL_K * temperature);
-                result.pressure_second_derivative[species] = pressure_second_gibbs[species]
-                    / (GAS_CONSTANT_J_PER_MOL_K * temperature);
-            }
+            result.pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
+                return d.terminal_contraction_pressure_derivative; }, "pressure derivative", 0);
+            result.pressure_second_derivative = species_slope(zero, [](const Diagnostic& d) {
+                return d.terminal_contraction_pressure_second_derivative; }, "second pressure derivative", 0);
+            if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
+                return d.terminal_contraction_temperature_pressure_derivative; }, "temperature-pressure derivative", 0);
         }
         return result;
     }
@@ -623,6 +590,8 @@ CppAD::ADFun<double> record_geometry(
                 value += standard.pressure_derivative[species] * delta_P
                     + 0.5 * standard.pressure_second_derivative[species]
                         * delta_P * delta_P;
+                if (!standard.temperature_pressure_derivative.empty())
+                    value += standard.temperature_pressure_derivative[species] * delta_T * delta_P;
                 for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a)
                     value += standard.parameter_derivative[a][species] * (theta[a] - theta_center[a]);
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
@@ -688,7 +657,7 @@ void admit_pins(CompiledSystem& compiled) {
 // N_D x_D = Delta_r x - N_S x_S on the density basis for x = h, cp (min-norm), where only
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
 ReferenceCalorics reference_calorics(
-    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity
+    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity, bool pressure_slope
 ) {
     ReferenceCalorics result;
     const auto refuse = [&](SolvedStateActionStatus status, const std::string& message) {
@@ -696,6 +665,7 @@ ReferenceCalorics reference_calorics(
         result.message = message;
         result.enthalpy.clear();
         result.heat_capacity.clear();
+        result.enthalpy_pressure.clear();
         return result;
     };
     const auto& problem = compiled.problem;
@@ -705,7 +675,7 @@ ReferenceCalorics reference_calorics(
     if (!record.has_value())
         return refuse(SolvedStateActionStatus::MissingThermochemistry, "reference calorics need a thermochemistry record");
     const double gas = GAS_CONSTANT_J_PER_MOL_K, rt = gas * temperature;
-    std::vector<double> enthalpy(components, 0.0), capacity(components, 0.0);
+    std::vector<double> enthalpy(components, 0.0), capacity(components, 0.0), enthalpy_p(components, 0.0);
     std::vector<std::size_t> derived;
     for (std::size_t i = 0; i < components; ++i) {
         const auto& intervals = record->component_intervals[i];
@@ -724,13 +694,16 @@ ReferenceCalorics reference_calorics(
     std::vector<NeutralReferenceReactionDiagnostic> diagnostics;
     try {
         resolved = central_reference_reactions(*compiled.model, problem, temperature, pressure, diagnostics,
-            false, &compiled.reference_diagnostics, heat_capacity ? 2 : 1);
+            pressure_slope, &compiled.reference_diagnostics, heat_capacity ? 2 : 1);
     } catch (const std::invalid_argument& error) {
         return refuse(SolvedStateActionStatus::ReferenceUnavailable, error.what());
     }
-    // Delta_r h_rho = RT^2 (ln K_rho)' and Delta_r cp_rho = 2RT (ln K_rho)' + RT^2 (ln K_rho)''.
+    // Delta_r h_rho = RT^2 (ln K_rho)' and Delta_r cp_rho = 2RT (ln K_rho)' + RT^2 (ln K_rho)''; a
+    // system-pressure reference adds P d(Delta_r h_rho)/dP = P RT^2 d2C/dTdP (ln K_src is pressure
+    // free), solved in J/mol like h and divided by P afterwards.
     const std::size_t rows = problem.reactions.size();
     Eigen::VectorXd delta_h(static_cast<Eigen::Index>(rows)), delta_cp(static_cast<Eigen::Index>(rows));
+    Eigen::VectorXd delta_hp = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(rows));
     for (std::size_t row = 0; row < rows; ++row) {
         const auto& reaction = problem.reactions[row];
         std::array<double, 2> slope{};
@@ -739,10 +712,12 @@ ReferenceCalorics reference_calorics(
                 [row](const auto& item) { return item.reaction_index == row; });
             const auto& first = diagnostic->terminal_contraction_temperature_derivative;
             const auto& second = diagnostic->terminal_contraction_temperature_second_derivative;
-            if (!first || (heat_capacity && !second))
+            const auto& mixed = diagnostic->terminal_contraction_temperature_pressure_derivative;
+            if (!first || (heat_capacity && !second) || (pressure_slope && !mixed))
                 return refuse(SolvedStateActionStatus::ReferenceUnavailable, "reference_unavailable: reaction "
-                    + reaction_name(reaction, row) + " temperature derivative of order "
-                    + (first ? "2" : "1") + " is unavailable");
+                    + reaction_name(reaction, row) + " temperature derivative "
+                    + (!first ? "d/dT" : pressure_slope && !mixed ? "d2/dTdP" : "d2/dT2") + " is unavailable");
+            if (pressure_slope) delta_hp(static_cast<Eigen::Index>(row)) = pressure * rt * temperature * *mixed;
             slope = {*first, second.value_or(0.0)};
             if (reaction.correlation.has_value()) {
                 const auto source = evaluate_reaction_properties(*reaction.correlation, temperature);
@@ -750,7 +725,7 @@ ReferenceCalorics reference_calorics(
                 slope[1] += source.second_derivative;
             }
         } else {
-            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' - 2(ln K)' R)/(RT).
+            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' + 2(ln K)' R)/(RT).
             const auto targets = reaction_target_series(temperature, {reaction}, 2);
             slope[0] = -(targets[1][0] - targets[0][0] / temperature) / rt;
             slope[1] = -(targets[2][0] + 2.0 * gas * slope[0]) / rt;
@@ -775,9 +750,9 @@ ReferenceCalorics reference_calorics(
                 > std::sqrt(std::numeric_limits<double>::epsilon()) * derived_charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
                       "reference_unavailable: calorics of record-less species are undetermined beyond the charge gauge");
-    for (auto* values : {&enthalpy, &capacity}) {
-        if (values == &capacity && !heat_capacity) break;
-        const auto& delta = values == &enthalpy ? delta_h : delta_cp;
+    for (auto* values : {&enthalpy, &capacity, &enthalpy_p}) {
+        if ((values == &capacity && !heat_capacity) || (values == &enthalpy_p && !pressure_slope)) continue;
+        const auto& delta = values == &enthalpy ? delta_h : values == &capacity ? delta_cp : delta_hp;
         Eigen::VectorXd right = delta, scale = delta.cwiseAbs();
         for (std::size_t row = 0; row < rows; ++row)
             for (std::size_t i = 0; i < components; ++i) {
@@ -799,6 +774,7 @@ ReferenceCalorics reference_calorics(
     for (std::size_t i = 0; i < components; ++i) {
         result.enthalpy.push_back(enthalpy[i] + rt);
         if (heat_capacity) result.heat_capacity.push_back(capacity[i] + gas);
+        if (pressure_slope) result.enthalpy_pressure.push_back(enthalpy_p[i] / pressure);
     }
     return result;
 }
@@ -1553,7 +1529,7 @@ RowSeries CompiledSystem::row_series(
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
     if (!reference_diagnostics.empty()
-        && (((temperature_jets || parameter_jets) && order > 1) || (order > 2 && pressure_jets))) {
+        && ((parameter_jets && order > 1) || (order > 2 && (pressure_jets || temperature_jets)))) {
         throw std::invalid_argument(
             "reference_unavailable: row series pressure/T/parameter order is unsupported");
     }

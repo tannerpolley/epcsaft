@@ -35,9 +35,10 @@ def _record(*species: list[IdealInterval]) -> ThermochemistryRecord:
 A_RECORD = [IdealInterval(200.0, 400.0, True, True, IdealCorrelation(IdealPolynomial(CP_A, 300.0, 0.0, 0.0), 1.0e5))]
 
 
-def _problem(temperature: float, reference_pressure: float | None, feed: dict[str, float] = FEED) -> Problem:
+def _problem(temperature: float, reference_pressure: float | None, feed: dict[str, float] = FEED,
+             pressure: float = P0) -> Problem:
     return Problem(
-        T=temperature, P=P0, feed=Amounts(feed), phases=[Phase("L", kind="liquid")],
+        T=temperature, P=pressure, feed=Amounts(feed), phases=[Phase("L", kind="liquid")],
         neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
                                            standard_molality_mol_per_kg=1.0),
         reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=LAW, reference=ReactionReference(
@@ -135,6 +136,32 @@ def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence:
              claim="extensive enthalpy action equals the re-solved slope")
 
 
+@pytest.mark.parametrize("reference_pressure", [None, 5.0e6])
+def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, reference_pressure: float | None) -> None:
+    """d(nH)/dP equals centred pressure re-solves (O(step^2) shown). A system-pressure row moves the
+    completed species' h with P through d(Delta_r h_rho)/dP = RT^2 d2C/dTdP; without it the action
+    misses the pure-liquid v - T dv/dT of the reference."""
+    model = _model(A_RECORD, [])
+
+    def extensive(pressure: float, *direction: Direction) -> float:
+        problem = _problem(T0, reference_pressure, pressure=pressure)
+        result = solve_equilibrium(model, problem)
+        assert result.success, result.message
+        h, n = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
+            [H, AMOUNT], list(direction) or [Direction(0.0, 0.0, [0.0, 0.0], [])])).results
+        assert h.status == n.status == Status.Available, h.diagnostic_message
+        hv, nv, dh, dn = (math.nan if v is None else v for v in (h.value, n.value, h.action, n.action))
+        return hv * nv if not direction else nv * dh + hv * dn
+
+    action = extensive(P0, Direction(0.0, 1.0, [0.0, 0.0], []))
+    coarse, fine = ((extensive(P0 + s) - extensive(P0 - s)) / (2 * s) for s in (4.0e5, 2.0e5))
+    assert abs(fine - action) <= abs(coarse - action) / 2  # O(step^2) toward the action
+    same(evidence, f"reference-calorics/{'system' if reference_pressure is None else 'fixed'}/d(nH)/P/resolve",
+         action, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+         inputs={"T_K": T0, "P_Pa": P0, "P_ref_Pa": reference_pressure, "steps": [4.0e5, 2.0e5]},
+         basis="Identity", method="richardson-centered-resolve", claim="referenced enthalpy pressure action equals re-solves")
+
+
 def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> None:
     model = _model(A_RECORD, [])
     problem = _problem(T0, None)
@@ -143,9 +170,9 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
     residual = SolvedStateObservable(Kind.PhaseProperty, 0, 0, Property.ResidualEnthalpy)
     thermal, pressure = solved_state_first_actions(compiled, result, [H, CP, residual], [
         Direction(1.0, 0.0, [0.0, 0.0], []), Direction(0.0, 1.0e5, [0.0, 0.0], [])])
-    assert thermal.results[0].status == Status.Available
-    assert thermal.results[1].status == Status.ReferenceUnavailable and thermal.results[1].value is not None
-    assert pressure.results[0].status == Status.ReferenceUnavailable and pressure.results[0].value is not None
+    assert thermal.results[0].status == pressure.results[0].status == Status.Available
+    for refused in (thermal.results[1], pressure.results[1]):  # cp along T or P needs d3C/dT3 or d3C/dT2dP
+        assert refused.status == Status.ReferenceUnavailable and refused.value is not None and refused.action is None
     assert pressure.results[2].status == Status.Available and pressure.results[2].action is not None
     twice = Direction(0.0, 0.0, [1.0, 0.0], [])
     second = solved_state_actions(compiled, result, SolvedStateActionRequest([H], [twice, twice])).results[0]

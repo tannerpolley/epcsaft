@@ -205,6 +205,8 @@ struct NeutralReferenceReactionDiagnostic final {
     // times its last ladder change is within the same criterion.
     std::optional<double> terminal_contraction_temperature_second_derivative;
     std::optional<double> observed_temperature_second_derivative_change;
+    // d2C/dTdP, only with temperature and pressure jets; admitted like the first slope at scales T, P.
+    std::optional<double> terminal_contraction_temperature_pressure_derivative;
     // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
     // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
