@@ -135,7 +135,7 @@ $$
 - Section: Contribution intermediates / Association
 - Status: Source equation
 - Source: [Gross2002], cross-association rule; [Chapman1990], association strength
-- Description: Site-pair association strength using explicit source-resolved cross records. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
+- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); `d^3`-regressed volumes are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
 $$

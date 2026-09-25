@@ -272,7 +272,15 @@ Defining relation: [EqID: `association_strength`](../equations.md#association_st
 
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
-Gross2001 hard-sphere contact function. Every admitted site pair is an explicit
+Gross2001 hard-sphere contact function. Chapman1990 Eq. 18 carries `d^3`; the
+strength here carries `sigma_ij^3`, the PC-SAFT convention written explicitly by
+Nasrifar and Tafazzol 2010 (DOI `10.1021/ie901181n`, Eq. 34). A parameter set
+regressed with `d_ij^3` is a different model: its volume must be converted in the
+packet, and no constant conversion is exact because `(d/sigma)^3` depends on
+temperature. The MEA nine-species packet from version 5 converts the Fakouri
+Baygi 2015 (DOI `10.1016/j.cherd.2014.07.017`, Eq. 4) MEA 2B volume this way;
+the [conversion analysis](../../../analyses/2026-mea-association-diameter/README.md)
+owns the evidence. Every admitted site pair is an explicit
 topology edge whose source is either a direct coefficient record or one of two
 named closed-registry rules. For unlike components `i` and `j`, both rules
 resolve

@@ -221,6 +221,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "5",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/5",
+      "packet_fingerprint": "76315ac4e4961782d089c3c4504fb49667e120b9e31d46fe2a8e99837b8e0a45",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "zuber-2014-electrolyte-permittivity",
       "packet_version": "1",
       "packet_path": "data/packets/zuber-2014-electrolyte-permittivity/1",
