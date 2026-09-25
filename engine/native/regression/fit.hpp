@@ -75,6 +75,7 @@ struct FitResult final {
     std::size_t residual_evaluations = 0;
     std::size_t jacobian_evaluations = 0;
     std::size_t trial_failures = 0;
+    std::vector<double> iteration_seconds, iteration_costs;  // per Ceres iteration, 0 = the start
     // 0.5 sum(w r^2), accumulated in row order; on a failed evaluation both are exactly zero, never a
     // partial or infinite sum, and only status and usable say whether a zero is a cost.
     double initial_cost = 0.0;

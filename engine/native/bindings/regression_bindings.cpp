@@ -15,7 +15,8 @@ void register_regression(py::module_& module) {
         .value("EquilibriumPressure", ObservationKind::EquilibriumPressure)
         .value("EquilibriumTemperature", ObservationKind::EquilibriumTemperature)
         .value("PhaseMoleFraction", ObservationKind::PhaseMoleFraction)
-        .value("PhaseFraction", ObservationKind::PhaseFraction);
+        .value("PhaseFraction", ObservationKind::PhaseFraction)
+        .value("PartialPressure", ObservationKind::PartialPressure);
     py::enum_<ResidualForm>(module, "ResidualForm")
         .value("Difference", ResidualForm::Difference)
         .value("LogRatio", ResidualForm::LogRatio);
@@ -53,6 +54,10 @@ void register_regression(py::module_& module) {
         .def_readonly("branch", &Prediction::branch)
         .def_readonly("stable_root_count", &Prediction::stable_root_count)
         .def_readonly("requested_tolerance_met", &Prediction::requested_tolerance_met);
+    py::class_<PredictionGradient>(module, "PredictionGradient")
+        .def_readonly("value", &PredictionGradient::value)
+        .def_readonly("status", &PredictionGradient::status)
+        .def_readonly("message", &PredictionGradient::message);
     py::class_<Coordinate>(module, "Coordinate")
         .def(py::init<>())
         .def_readwrite("family", &Coordinate::family)
@@ -78,7 +83,8 @@ void register_regression(py::module_& module) {
         .def_readonly("observation", &TrialFailure::observation)
         .def_readonly("optimizer", &TrialFailure::optimizer)
         .def_readonly("status", &TrialFailure::status)
-        .def_readonly("message", &TrialFailure::message);
+        .def_readonly("message", &TrialFailure::message)
+        .def_readonly("jacobian", &TrialFailure::jacobian);
     py::class_<FitCovariance>(module, "FitCovariance")
         .def_readonly("status", &FitCovariance::status)
         .def_readonly("assumption", &FitCovariance::assumption)
@@ -105,6 +111,8 @@ void register_regression(py::module_& module) {
         .def_readonly("residual_evaluations", &FitResult::residual_evaluations)
         .def_readonly("jacobian_evaluations", &FitResult::jacobian_evaluations)
         .def_readonly("trial_failures", &FitResult::trial_failures)
+        .def_readonly("iteration_seconds", &FitResult::iteration_seconds)
+        .def_readonly("iteration_costs", &FitResult::iteration_costs)
         .def_readonly("initial_cost", &FitResult::initial_cost)
         .def_readonly("final_cost", &FitResult::final_cost)
         .def_readonly("covariance", &FitResult::covariance);
@@ -112,6 +120,11 @@ void register_regression(py::module_& module) {
         core::Scope scope("predict");
         validate(observation, model);
         return predict(model, observation);
+    }, py::arg("model"), py::arg("observation"));
+    module.def("differentiate", [](const HelmholtzModel& model, const Observation& observation) {
+        core::Scope scope("differentiate");
+        validate(observation, model);
+        return differentiate(model, observation, predict(model, observation));
     }, py::arg("model"), py::arg("observation"));
     module.def("fit", [](const Parameters& parameters, std::optional<ThermochemistryRecord> thermochemistry,
                          std::vector<Coordinate> coordinates, std::vector<Observation> observations,

@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <utility>
 #include <vector>
 
 namespace epcsaft::regression {
@@ -34,6 +35,8 @@ struct CoordinateSet final {
     // theta per physical row from u.
     std::vector<double> physical(const std::vector<double>& optimizer) const;
     bool within_bounds(const std::vector<double>& optimizer) const;
+    // Optimizer-space bounds (lower, upper): (bound - origin) / scale.
+    std::pair<std::vector<double>, std::vector<double>> optimizer_bounds() const;
     // A copy of `parameters` with every slot (both mirrored entries of a pair) rewritten.
     Parameters apply(Parameters parameters, const std::vector<double>& optimizer) const;
 };

@@ -199,19 +199,6 @@ CoordinateSet seven_families() {
     return set;
 }
 
-const std::vector<double>& family_of(const Parameters& p, ParameterFamily family) {
-    switch (family) {
-    case ParameterFamily::SegmentCount: return p.segment_count;
-    case ParameterFamily::SigmaConstant: return p.sigma_constant;
-    case ParameterFamily::DispersionEnergyOverK: return p.dispersion_energy_over_k;
-    case ParameterFamily::Kij: return p.k_ij;
-    case ParameterFamily::Lij: return p.l_ij;
-    case ParameterFamily::AssociationEnergyOverK: return p.association_energy_over_k;
-    case ParameterFamily::AssociationVolume: return p.association_volume;
-    }
-    throw std::logic_error("family");
-}
-
 void check_f2() {
     const auto parameters = properties_support::associating_binary();
     const auto set = seven_families();
@@ -221,7 +208,7 @@ void check_f2() {
     const auto active = set.active_parameters();
     CHECK(physical.size() == 7 && active.size() == 7);
     for (std::size_t r = 0; r < 7; ++r) {
-        const double truth_value = family_of(parameters, active[r].family)[active[r].indices.front()];
+        const double truth_value = detail::family_values(parameters, active[r].family)[active[r].indices.front()];
         const double ulp = 2.0 * EPS * std::max(std::abs(truth_value), std::abs(set.coordinates[r].origin));
         CHECK(agree("r1-f2/roundtrip/" + std::to_string(r), "theta", "native", physical[r], truth_value, ulp, 0.0,
                     fields({field("origin", set.coordinates[r].origin), field("scale", set.coordinates[r].scale),
@@ -230,8 +217,8 @@ void check_f2() {
     const auto applied = set.apply(parameters, start);
     bool identical = true;
     for (const auto& item : active) {
-        const auto& lhs = family_of(applied, item.family);
-        const auto& rhs = family_of(parameters, item.family);
+        const auto& lhs = detail::family_values(applied, item.family);
+        const auto& rhs = detail::family_values(parameters, item.family);
         identical = identical && lhs == rhs;
     }
     CHECK(truth("r1-f2/apply_identity", "applying the start reproduces every family array bit for bit", identical, "", "r1-f2"));
@@ -729,12 +716,15 @@ CoordinateSet binary_coordinates() {
     CoordinateSet set;
     set.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 130.0, 170.0},
                        {ParameterFamily::Kij, {{1, 2}}, 0.0, 0.1, -0.2, 0.2},
-                       {ParameterFamily::SegmentCount, {{1}}, 1.6, 0.1, 1.0, 2.5}};
+                       {ParameterFamily::SegmentCount, {{1}}, 1.6, 0.1, 1.0, 2.5},
+                       {ParameterFamily::KijReciprocalTemperatureSlope, {{1, 2}}, 0.0, 10.0, -100.0, 100.0}};
     return set;
 }
 
 void check_j1() {
-    const auto parameters = properties_support::neutral_binary();
+    // k_ij(T) = k_ij + b (1/T - 1/T_ref) with b = 0 at T_ref = 200 K: the model is unchanged, dk/db is not.
+    auto parameters = properties_support::neutral_binary();
+    parameters.k_ij_reference_temperature_k[1] = parameters.k_ij_reference_temperature_k[2] = 200.0;
     const auto set = binary_coordinates();
     validate(set, parameters);
     const HelmholtzModel model(parameters, set.active_parameters());
@@ -750,6 +740,7 @@ void check_j1() {
         {"bubble_pressure", solved(ObservationKind::EquilibriumPressure, bubble)},
         {"bubble_temperature", solved(ObservationKind::EquilibriumTemperature, free_t)},
         {"vapor_methane", solved(ObservationKind::PhaseMoleFraction, bubble, 1, {0})},
+        {"methane_partial_pressure", solved(ObservationKind::PartialPressure, bubble, 1, {0})},
         {"phase_fraction", solved(ObservationKind::PhaseFraction, tie.problem, 0)},
         {"liquid_mass_density", solved(ObservationKind::PhaseDensity, bubble, 0, {}, true)},
         {"density", density(180.0, 2.0 * P_bubble, {0.5, 0.5}, DensityBranch::Liquid, true)},
@@ -763,8 +754,8 @@ void check_j1() {
         const auto prediction = predict(model, item.observation, start);
         CHECK(prediction.status == ObservationStatus::Available);
         const auto gradient = differentiate(model, item.observation, prediction);
-        CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 3);
-        for (std::size_t c = 0; c < 3; ++c) {
+        CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 4);
+        for (std::size_t c = 0; c < 4; ++c) {
             const auto value = [&](double shift) {
                 auto u = u0;
                 u[c] += shift;
@@ -1007,7 +998,7 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:13"}, check_f9_f10, "R1"},
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
-        {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:40"}, check_j1, "R2"},
+        {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:60"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
     });

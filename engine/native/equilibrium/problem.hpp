@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
 enum class PhaseKind { Liquid, Vapor };
@@ -191,6 +192,9 @@ struct PhasePoint final {
     std::vector<PackingTerms> packing;
     std::vector<HelmholtzDerivatives> derivative;
     StandardTerm standard;
+    // A referenced problem's standard term with jets along every active parameter, built on the
+    // first parameter-driven row series at this point and reused by every later direction.
+    mutable std::optional<StandardTerm> parameter_standard;
 };
 
 // Taylor series of one phase along a path: point[k] is the k-th coefficient of the phase as
@@ -350,6 +354,9 @@ EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
+// The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
+EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
+                                 core::Scope* outer = nullptr);
 
 // ---- Solved-state derivative actions (E5): native records, no public promise.
 

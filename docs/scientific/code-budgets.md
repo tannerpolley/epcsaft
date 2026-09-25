@@ -77,6 +77,27 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-24, Bindings hard ceiling 1700 → 1708, Python 2300 → 2313 and aggregate
+  18145 → 18353 (#152, owner-approved 2026-09-24 in two steps: +187 as first
+  measured, then +21 from review-required correctness fixes). Requirement: MEA's
+  reactive refit through `epcsaft.regression.fit` with exact derivatives, no
+  slower than its scipy forward-difference refit and reaching its objective.
+  Measured net growth against 34d06cd2: the bounded fit (active set held in a box
+  chart, a Jacobian cache at accepted points, per-iteration reporting;
+  Regression +123 with the coordinate bounds owner), without which refit C
+  stalled at 123.38 against scipy's 121.36; the speciated start of a cold
+  reactive boundary with its fallbacks (Equilibrium +67 with the reference-jet
+  reuse and the compiled solve), which removed four cold failures and the
+  3–21 s cold tail; the partial-pressure observation and batched first actions;
+  the public surface (Bindings +14: partial_pressure, the slope family,
+  `differentiate`, iteration reporting; Python +19 with the stubs); the
+  `FIT_ACTIVE_BOUND_DISTANCE` policy (Core +7); offset by one family→storage map
+  replacing duplicated switches (Properties −22). Alternatives rejected:
+  Ceres' own bounds (projected line search: 45 Jacobian evaluations on six steps;
+  per-coordinate clamp: stalled), snapping onto bounds (four review rounds of
+  defects), dropping the reporting item (owner kept it). Other layers stay under
+  their hard ceilings; no thermodynamic method or tolerance changes.
+
 - 2026-09-23, Contributions hard ceiling 1500 → 1612, Properties 4145 → 4150 and
   aggregate hard ceiling 17760 → 17903 (#28). The owner pre-approved at most +250 runtime lines for an
   optional Gross–Vrabec dipole–dipole term (ADR 0011) and reserved quadrupole and

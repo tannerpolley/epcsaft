@@ -36,14 +36,21 @@ public:
           starts_(request.observations.size()) {}
 
     bool evaluate(const std::vector<double>& optimizer, bool jacobian, Evaluation& out) {
+        // The last Jacobian evaluation serves every later request at the same point unchanged.
+        if (jacobian && cached_ && cached_->first == optimizer) {
+            out = cached_->second;
+            return true;
+        }
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         const std::size_t n = request_.observations.size(), width = active_.size();
         try {
-            return evaluate_rows(optimizer, jacobian, out, n, width);
+            if (!evaluate_rows(optimizer, jacobian, out, n, width)) return false;
         } catch (const std::exception& error) {  // the model or an owner refused the trial by name
             return fail(n, optimizer, ObservationStatus::InadmissibleTrial, error.what(), jacobian);
         }
+        if (jacobian) cached_.emplace(optimizer, out);
+        return true;
     }
 
 private:
@@ -94,6 +101,7 @@ private:
     FitResult& result_;
     std::vector<ActiveParameter> active_;
     std::vector<std::optional<equilibrium::EquilibriumResult>> starts_;
+    std::optional<std::pair<std::vector<double>, Evaluation>> cached_;
     std::size_t trials_ = 0;
 };
 
@@ -127,6 +135,69 @@ void chain(const FitRequest& request, const std::vector<std::size_t>& tie, std::
     for (std::size_t r = 0; r < tie.size(); ++r)
         out[tie[r]] += slope * gradient[r] * coordinates[tie[r]].scale;
 }
+
+// The optimizer's chart of the box, in place of Ceres' bounds: held coordinates are fixed; a step leaving
+// the box is shortened along its own direction to the first bound it meets (clamping one component keeps
+// the rest of a step computed as if that bound could be crossed), clamping coordinates already on it. As
+// the iteration callback it ends a round when an accepted step puts a free coordinate on a new bound.
+class BoxChart final : public ceres::Manifold, public ceres::IterationCallback {
+public:
+    BoxChart(const std::vector<double>& u, const std::vector<double>& lower, const std::vector<double>& upper,
+             const std::vector<int>& held) : u_(u), lower_(lower), upper_(upper) {
+        for (int c = 0; c < int(lower.size()); ++c)
+            if (std::find(held.begin(), held.end(), c) == held.end()) free_.push_back(c);
+        for (const int c : free_) at_bound_.push_back(side(u[c], c));
+    }
+    int side(double value, int c) const { return value == lower_[c] ? -1 : value == upper_[c] ? 1 : 0; }  // Plus writes bounds exactly
+    ceres::CallbackReturnType operator()(const ceres::IterationSummary& summary) override {
+        bool contact = false;
+        for (std::size_t k = 0; summary.iteration > 0 && summary.step_is_successful && k < free_.size(); ++k) {
+            contact = contact || (side(u_[free_[k]], free_[k]) != 0 && side(u_[free_[k]], free_[k]) != at_bound_[k]);
+            at_bound_[k] = side(u_[free_[k]], free_[k]);
+        }
+        return contact ? ceres::SOLVER_TERMINATE_SUCCESSFULLY : ceres::SOLVER_CONTINUE;
+    }
+    int AmbientSize() const override { return static_cast<int>(lower_.size()); }
+    int TangentSize() const override { return static_cast<int>(free_.size()); }
+    bool Plus(const double* x, const double* delta, double* out) const override {
+        double alpha = 1.0;
+        std::size_t limit = free_.size();
+        for (std::size_t k = 0; k < free_.size(); ++k) {
+            const int c = free_[k];
+            const double bound = delta[k] < 0.0 ? lower_[c] : upper_[c];
+            if (std::abs(bound - x[c]) >= policy::FIT_ACTIVE_BOUND_DISTANCE.value
+                && (x[c] + delta[k] - bound) * delta[k] > 0.0 && (bound - x[c]) / delta[k] < alpha) {
+                alpha = (bound - x[c]) / delta[k];
+                limit = k;
+            }
+        }
+        std::copy(x, x + lower_.size(), out);
+        for (std::size_t k = 0; k < free_.size(); ++k)
+            out[free_[k]] = std::clamp(x[free_[k]] + alpha * delta[k], lower_[free_[k]], upper_[free_[k]]);
+        if (limit < free_.size()) out[free_[limit]] = delta[limit] < 0.0 ? lower_[free_[limit]] : upper_[free_[limit]];
+        return true;
+    }
+    bool PlusJacobian(const double*, double* jacobian) const override {
+        std::fill(jacobian, jacobian + lower_.size() * free_.size(), 0.0);
+        for (std::size_t k = 0; k < free_.size(); ++k) jacobian[free_[k] * free_.size() + k] = 1.0;
+        return true;
+    }
+    bool Minus(const double* y, const double* x, double* out) const override {
+        for (std::size_t k = 0; k < free_.size(); ++k) out[k] = y[free_[k]] - x[free_[k]];
+        return true;
+    }
+    bool MinusJacobian(const double*, double* jacobian) const override {
+        std::fill(jacobian, jacobian + lower_.size() * free_.size(), 0.0);
+        for (std::size_t k = 0; k < free_.size(); ++k) jacobian[k * lower_.size() + free_[k]] = 1.0;
+        return true;
+    }
+
+private:
+    const std::vector<double>& u_;
+    std::vector<double> lower_, upper_;
+    std::vector<int> free_;
+    std::vector<int> at_bound_;
+};
 
 class Cost final : public ceres::CostFunction {
 public:
@@ -195,13 +266,11 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n) {
     const double floor = policy::FIT_RANK_RECIPROCAL_CONDITION.value * (singular.size() > 0 ? singular(0) : 0.0);
     cov.rank = static_cast<std::size_t>(std::count_if(cov.singular_values.begin(), cov.singular_values.end(),
         [&](double value) { return value > floor && value > 0.0; }));
-    // A bound is active in optimizer space, against the exact values handed to the optimizer.
-    for (std::size_t c = 0; c < set.coordinates.size(); ++c) {
-        const auto& coordinate = set.coordinates[c];
-        const double u = result.optimizer[c];
-        if (u <= (coordinate.lower - coordinate.origin) / coordinate.scale
-            || u >= (coordinate.upper - coordinate.origin) / coordinate.scale) cov.active_bounds.push_back(c);
-    }
+    // A bound is active in optimizer space, within the fit's own active distance of the values it bounds.
+    const auto [lower, upper] = set.optimizer_bounds();
+    for (std::size_t c = 0; c < set.coordinates.size(); ++c)
+        if (std::min(result.optimizer[c] - lower[c], upper[c] - result.optimizer[c]) < policy::FIT_ACTIVE_BOUND_DISTANCE.value)
+            cov.active_bounds.push_back(c);
     // The variance factor counts only rows that enter the objective (w > 0).
     double weighted_sum = 0.0;
     std::size_t weighted_rows = 0;
@@ -277,15 +346,7 @@ FitResult fit(const FitRequest& request) {
     Cost cost(request, evaluator, sqrt_weights);
     ceres::Problem::Options problem_options;
     problem_options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-    ceres::Problem problem(problem_options);
-    problem.AddResidualBlock(&cost, nullptr, optimizer.data());
-    for (std::size_t c = 0; c < width; ++c) {
-        const auto& coordinate = set.coordinates[c];
-        if (std::isfinite(coordinate.lower))
-            problem.SetParameterLowerBound(optimizer.data(), static_cast<int>(c), (coordinate.lower - coordinate.origin) / coordinate.scale);
-        if (std::isfinite(coordinate.upper))
-            problem.SetParameterUpperBound(optimizer.data(), static_cast<int>(c), (coordinate.upper - coordinate.origin) / coordinate.scale);
-    }
+    const auto [lower, upper] = set.optimizer_bounds();
     ceres::Solver::Options options;
     options.minimizer_type = ceres::TRUST_REGION;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
@@ -298,16 +359,62 @@ FitResult fit(const FitRequest& request) {
     options.function_tolerance = controls.function_tolerance > 0.0 ? controls.function_tolerance : policy::FIT_FUNCTION_TOLERANCE.value;
     options.gradient_tolerance = controls.gradient_tolerance > 0.0 ? controls.gradient_tolerance : policy::FIT_GRADIENT_TOLERANCE.value;
     options.parameter_tolerance = controls.parameter_tolerance > 0.0 ? controls.parameter_tolerance : policy::FIT_PARAMETER_TOLERANCE.value;
-    options.max_num_iterations = controls.maximum_iterations;
-    options.max_solver_time_in_seconds = controls.maximum_elapsed_time_seconds;
+    options.update_state_every_iteration = true;
+    // Bounds as an active set (a projected step alone stalls against a bound it wants to cross): a
+    // coordinate on a bound (within FIT_ACTIVE_BOUND_DISTANCE) whose objective gradient points out of the
+    // box is held where it is for a round. A round ends when Ceres converges or an accepted step puts a
+    // free coordinate on a bound (any other stop ends the fit); the set is rebuilt there from the cached
+    // Jacobian, g = J^T r through the same evaluation, checks and failure records as a Ceres trial.
+    std::vector<double> residuals(n), jacobian(n * width), gradient;
+    const auto gradient_at = [&](const std::vector<double>& point, std::vector<double>& out) {
+        const double* parameters[] = {point.data()};
+        double* blocks[] = {jacobian.data()};
+        if (!cost.Evaluate(parameters, residuals.data(), blocks)) return false;
+        out.assign(width, 0.0);
+        for (std::size_t i = 0; i < n; ++i)
+            for (std::size_t c = 0; c < width; ++c) out[c] += jacobian[i * width + c] * residuals[i];
+        return true;
+    };
     ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
-    result.termination = termination_name(summary.termination_type);
-    result.iterations = summary.iterations.size();
-    result.message = summary.message;
-    result.status = summary.termination_type == ceres::CONVERGENCE ? "converged"
-        : summary.termination_type == ceres::NO_CONVERGENCE || summary.termination_type == ceres::USER_SUCCESS
-        ? "limit_reached" : "failed";
+    std::vector<int> held;
+    int remaining = controls.maximum_iterations;
+    double seconds = controls.maximum_elapsed_time_seconds;
+    bool settled = false, all_held = false, exhausted = false;
+    for (bool first = true;; first = false) {
+        if (!gradient_at(optimizer, gradient)) break;
+        std::vector<int> next;
+        for (std::size_t c = 0; c < width; ++c)
+            if ((optimizer[c] - lower[c] < policy::FIT_ACTIVE_BOUND_DISTANCE.value && gradient[c] > 0.0)
+                || (upper[c] - optimizer[c] < policy::FIT_ACTIVE_BOUND_DISTANCE.value && gradient[c] < 0.0))
+                next.push_back(static_cast<int>(c));
+        // Converged with an unchanged set, or every coordinate held: a KKT point of the bounded problem.
+        all_held = next.size() == width;
+        settled = (!first && summary.termination_type == ceres::CONVERGENCE && next == held) || all_held;
+        exhausted = !settled && (remaining <= 0 || seconds <= 0.0);
+        if (settled || exhausted) break;
+        held = next;
+        ceres::Problem problem(problem_options);
+        problem.AddResidualBlock(&cost, nullptr, optimizer.data());
+        auto* box = new BoxChart(optimizer, lower, upper, held);  // owned by the problem, outlives the solve
+        problem.SetManifold(optimizer.data(), box);
+        options.callbacks = {box};
+        options.max_num_iterations = remaining;
+        options.max_solver_time_in_seconds = seconds;
+        ceres::Solve(options, &problem, &summary);
+        for (std::size_t k = first ? 0 : 1; k < summary.iterations.size(); ++k) {
+            result.iteration_seconds.push_back(summary.iterations[k].iteration_time_in_seconds);
+            result.iteration_costs.push_back(summary.iterations[k].cost);
+        }
+        remaining -= static_cast<int>(summary.iterations.size()) - 1;
+        seconds -= summary.total_time_in_seconds;
+        if (summary.termination_type != ceres::CONVERGENCE && summary.termination_type != ceres::USER_SUCCESS) break;
+    }
+    result.termination = settled ? "convergence" : exhausted ? "no_convergence" : termination_name(summary.termination_type);
+    result.iterations = result.iteration_costs.size();
+    result.message = all_held ? "every coordinate is held at an active bound"
+        : exhausted ? (remaining <= 0 ? "iteration limit reached" : "time limit reached") : summary.message;
+    result.status = settled ? "converged" : summary.termination_type == ceres::FAILURE
+        || summary.termination_type == ceres::USER_FAILURE ? "failed" : "limit_reached";
 
     result.optimizer = optimizer;
     Evaluation final;
