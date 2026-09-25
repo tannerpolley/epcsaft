@@ -148,6 +148,39 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
          claim="large-feed reduced curvature has the analytic trace-amount scale")
 
 
+def test_trace_inventory_below_the_composition_box(evidence: Any) -> None:
+    """#172: identical ethanes, 1 mol inert s0 and s1 <=> s2 (K(350 K) = 3) fed as 1e-9 mol s1, so
+    x_s2 = 1e-9 K / ((1 + 1e-9)(1 + K)) and dx_s2/dT = x_s2 (1 - p) l1 exactly. The uniform 1e-8 box
+    demanded 2e-8 mol of s1 + s2, twenty times the inventory, and the subproblem was infeasible (wheel
+    b1367b32); the inventory-scaled box admits the analytic state, which the s1 + s2 moiety row resolves
+    to rounding."""
+    inventory = 1e-9
+    model = Mixture(parameters((ETHANE,) * 3, [("k_ij", pair, 0.0) for pair in ((0, 1), (0, 2), (1, 2))]))
+    temperature, k = 350.0, 3.0
+    a = math.log(k) - 1200 / temperature - 0.4 * math.log(temperature / 300) - 0.002 * temperature
+    law = ReactionLogPolynomial(a, 1200, 0.4, 0.002, 300, 250, 450, EOS_STANDARD_STATE_ID)
+    problem = Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=2e5, row_tolerance=1e-10,
+                      feed=Amounts({"s0": 1.0, "s1": inventory, "s2": 0.0}),
+                      reactions=[Reaction({"s1": -1.0, "s2": 1.0}, correlation=law)])
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    assert result.reduced_hessian_minimum > 0.0
+    p = k / (1 + k)
+    x_s2 = inventory / (1 + inventory) * p
+    inputs = {"inventory_mol": inventory, "K": k, "T_K": temperature, "P_Pa": 2e5,
+              "classified_residual": result.convergence.residual, "iterations": result.iterations}
+    same(evidence, "trace-inventory/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-6,
+         unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
+         claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
+    item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
+    assert item.status == SolvedStateActionStatus.Available, item.status
+    l1 = -1200 / temperature**2 + 0.4 / temperature + 0.002
+    same(evidence, "trace-inventory/A1", item.action, x_s2 * (1 - p) * l1, atol=0.0, rtol=5e-6,
+         unit="K^-1", inputs=inputs, basis="Identity", method="logistic-analytic",
+         claim="the temperature action of the trace-inventory species matches the logistic chain")
+
+
 @pytest.mark.parametrize("total", [1.0, 10.0])
 def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float) -> None:
     """Khudaida Figure 2 point 1: nonzero electrochemical offset, two stable liquid phases.
@@ -284,12 +317,17 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
 
 @pytest.mark.parametrize("k_ij, temperature", [(0.2, 200.0), (0.5, 150.0)])
 def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature: float) -> None:
-    """#159: identical-ethane A <=> B (K = 1) stays at the symmetric stationary point x = 1/2, where a large
+    """#159: identical-ethane A <=> B (K = 1) started at the symmetric stationary point x = 1/2, where a large
     k_ij makes the reaction direction a Gibbs maximum. Its equilibrated minimum (-0.052 and -0.65) lies
-    ten orders outside the 5e-15 rounding band: rejected as not positive definite, never indeterminate."""
+    ten orders outside the 5e-15 rounding band: rejected as not positive definite, never indeterminate.
+    Rounding may carry the stronger maximum (0.5, 150 K) to one of its two symmetric minima near a pure
+    isomer (x_B = 6.2e-6 on the #172 moiety basis); a success must be that certified minimum, never x = 1/2."""
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), k_ij)]))
     result = solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=temperature, P=5e6,
                                               feed=Amounts({"s0": 0.5, "s1": 0.5}),
                                               reactions=[Reaction({"s0": -1.0, "s1": 1.0}, equilibrium_constant=1.0)]))
-    assert not result.success and "is not positive definite" in result.message
+    if result.success:
+        assert k_ij == 0.5 and min(result.mole_fractions) < 1e-4 and result.reduced_hessian_minimum > 0.0
+        return
+    assert "is not positive definite" in result.message
     assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1

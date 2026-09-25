@@ -208,16 +208,24 @@ inline constexpr Tolerance REFERENCE_HEAT_CAPACITY_TOLERANCE{"REFERENCE_HEAT_CAP
 //
 // Pereira, Jackson, Galindo and Adjiman, Comput. Chem. Eng. 36 (2012) 99-118.
 
-// Lower box of the ln(x_i) coordinate inside the Ipopt subproblem. Its barrier is the step
-// regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
-// so without the barrier the line search takes steps of order 1e4 in ln x and lands in
-// another basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is
-// not the domain: the Newton polish carries a trace solution below it, down to
-// STABILITY_COMPOSITION_FLOOR (#87, 2026-09-21).
+// Lower box of the ln(x_i) coordinate inside the Ipopt subproblem, lowered for a trace species
+// to EQUILIBRIUM_BOX_INVENTORY_FRACTION u_i/N_feed (ALG-TERMINATION, #172). Its barrier is the
+// step regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
+// so without the barrier the line search takes steps of order 1e4 in ln x and lands in another
+// basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is not the
+// domain: the Newton polish carries a trace solution below it, down to STABILITY_COMPOSITION_FLOOR.
 inline constexpr Tolerance EQUILIBRIUM_COMPOSITION_BOX{"EQUILIBRIUM_COMPOSITION_BOX",
     1.0e-8,
     Category::AlgorithmTolerance,
     "Pereira 2012 inner-problem composition bound; a regularising barrier, not a solution domain or accuracy bound",
+};
+// Largest fraction of a species' attainable inventory u_i the box may hold in the phases: the
+// box is min(BOX, this u_i/N_feed), unchanged wherever the uniform box displaces less. One
+// decade below the 10 % at which the retained trace-Li probe still polished strictly (#172).
+inline constexpr Tolerance EQUILIBRIUM_BOX_INVENTORY_FRACTION{"EQUILIBRIUM_BOX_INVENTORY_FRACTION",
+    1.0e-2,
+    Category::AlgorithmTolerance,
+    "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound",
 };
 // Structural-absence cutoff for a composition coordinate: continuation admission, solved-
 // state differentiability and the Newton polish treat x_i at or below it as a vanished
@@ -400,7 +408,8 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
     &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
-    &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &STABILITY_COMPOSITION_FLOOR,
+    &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
+    &STABILITY_COMPOSITION_FLOOR,
     &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,

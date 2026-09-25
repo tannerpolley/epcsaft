@@ -4,6 +4,7 @@
 #include "equilibrium_support.hpp"
 #include "recording_support.hpp"
 #include "surface/parameter_builder.hpp"
+#include <Eigen/Dense>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -11,6 +12,21 @@
 #include <stdexcept>
 #include <string>
 namespace {
+// Two balance bases span the same row space when stacking them adds no rank (any basis, not only orthonormal).
+bool same_subspace(const std::vector<std::vector<double>>& left, const std::vector<std::vector<double>>& right, double tolerance) {
+    if (left.empty() || right.empty()) return left.empty() && right.empty();
+    const auto rank = [&](std::size_t rows, std::size_t skip) {
+        Eigen::MatrixXd matrix(static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(left.front().size()));
+        for (std::size_t row = 0; row < rows; ++row)
+            for (std::size_t column = 0; column < left.front().size(); ++column)
+                matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column))
+                    = (row + skip < left.size() ? left[row + skip] : right[row + skip - left.size()])[column];
+        Eigen::FullPivLU<Eigen::MatrixXd> lu(matrix);
+        return static_cast<std::size_t>(lu.setThreshold(tolerance).rank());
+    };
+    return left.size() == right.size() && rank(left.size(), 0) == left.size() && rank(right.size(), left.size()) == left.size()
+        && rank(2 * left.size(), 0) == left.size();
+}
 
 const char* phase_set_name(equilibrium_support::PhaseSet value) {
     switch (value) {
@@ -320,7 +336,7 @@ void check_c5() {
             "absolute", 0.0, 0.0, basis_affinities[index] == mixed_affinities[index],
             "c5-affinity", point.c_str(), "A", "T,reaction", "A_{basis}=A_{mixed}", "reaction");
     }
-    const bool equal_subspace = epcsaft::equilibrium::same_subspace(
+    const bool equal_subspace = same_subspace(
         basis_coordinates, mixed_coordinates, 1.0e-12);
     const bool equal_affinities = basis_affinities == mixed_affinities;
     recording_support::compare(
@@ -835,7 +851,7 @@ void check_e2_reaction() {
         left.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && right.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && left.removed_species == std::vector<std::size_t>{2} && right.removed_species == std::vector<std::size_t>{2}
-            && left.rank == 2 && right.rank == 2 && epcsaft::equilibrium::same_subspace(left.B, right.B, 1.0e-12)
+            && left.rank == 2 && right.rank == 2 && same_subspace(left.B, right.B, 1.0e-12)
             && same_rows, inputs));
     auto dependent = forward;
     dependent.reactions.push_back({"twice", {-2.0, 2.0, 0.0}, 4.0, std::nullopt});
@@ -923,7 +939,7 @@ void check_e2_reaction() {
             && permuted_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
             && same_topology
             && charged_compiled.charge_row_count == permuted_compiled.charge_row_count
-            && epcsaft::equilibrium::same_subspace(charged_compiled.B, mapped_basis, 1.0e-12)
+            && same_subspace(charged_compiled.B, mapped_basis, 1.0e-12)
             && rejection(salt, charge_feed).find("feed carries net z") != std::string::npos
             && rejection(salt, charge_reaction).find("violates z") != std::string::npos,
         recording_support::fields({recording_support::field("feed", charged.feed.values),

@@ -169,15 +169,32 @@ std::vector<std::vector<double>> balance_basis(
         validate_basis_shape(result, components);
         return result;
     }
-    const auto svd = matrix.jacobiSvd(Eigen::ComputeFullV);
+    // Reduce the SVD null space to echelon form: each row is one conserved moiety with a unit
+    // pivot, so a trace moiety (Li+ + LiA) is not mixed into rows of major species, whose
+    // rounding would swamp its balance and actions (#172). Pivots are the independent species
+    // taking part in the most reactions (shared H+ or carrier; ties by index), leaving each
+    // reaction's peripheral species off the pivots; this is structural, not feed dependent.
+    // Coefficients below sqrt(eps) are rounding of the rational stoichiometry and set to zero.
     const Eigen::Index rows = static_cast<Eigen::Index>(components) - rank;
+    const Eigen::MatrixXd space = matrix.jacobiSvd(Eigen::ComputeFullV).matrixV().rightCols(rows).transpose();
+    std::vector<Eigen::Index> order(components), pivots;
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](Eigen::Index a, Eigen::Index b) {
+        return (matrix.col(a).array() != 0.0).count() > (matrix.col(b).array() != 0.0).count();
+    });
+    for (const Eigen::Index species : order) {
+        pivots.push_back(species);
+        if (numerical_rank(space(Eigen::all, pivots)) < static_cast<Eigen::Index>(pivots.size())) pivots.pop_back();
+    }
+    const Eigen::MatrixXd echelon = space(Eigen::all, pivots).partialPivLu().solve(space);
     std::vector<std::vector<double>> result(
         static_cast<std::size_t>(rows), std::vector<double>(components, 0.0)
     );
     for (Eigen::Index row = 0; row < rows; ++row) {
         for (std::size_t column = 0; column < components; ++column) {
+            const double value = echelon(row, static_cast<Eigen::Index>(column));
             result[static_cast<std::size_t>(row)][column] =
-                svd.matrixV()(static_cast<Eigen::Index>(column), rank + row);
+                std::abs(value) > std::sqrt(std::numeric_limits<double>::epsilon()) ? value : 0.0;
         }
     }
     validate_basis_shape(result, components);
@@ -397,36 +414,6 @@ std::vector<double> reaction_affinities(
 bool all_numeric(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(),
                        [](double value) { return std::isfinite(value); });
-}
-
-// Largest component of v outside the row space of an orthonormal basis: max_i |(B^T B v - v)_i|.
-static double projection_error(const std::vector<std::vector<double>>& basis, const std::vector<double>& v) {
-    const auto coordinates = matvec(basis, v);
-    double result = 0.0;
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        double value = -v[i];
-        for (std::size_t row = 0; row < basis.size(); ++row) value += basis[row][i] * coordinates[row];
-        result = std::max(result, std::abs(value));
-    }
-    return result;
-}
-
-bool same_subspace(
-    const std::vector<std::vector<double>>& left,
-    const std::vector<std::vector<double>>& right,
-    double tolerance
-) {
-    if (!(std::isfinite(tolerance) && tolerance >= 0.0)) return false;
-    if (left.empty() || right.empty()) return left.empty() && right.empty();
-    if (left.front().size() != right.front().size()) return false;
-    if (left.size() != right.size()) return false;
-    for (const auto& row : left) {
-        if (projection_error(right, row) > tolerance) return false;
-    }
-    for (const auto& row : right) {
-        if (projection_error(left, row) > tolerance) return false;
-    }
-    return true;
 }
 
 }  // namespace epcsaft::equilibrium
