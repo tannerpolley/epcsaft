@@ -937,7 +937,8 @@ EquilibriumResult run_driver(
     if (compiled.pinned_count == 0 && !(curvature.equilibrated > curvature.band)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
         const bool singular = curvature.equilibrated >= -curvature.band;
-        if (singular) result.convergence.stop = core::Stop::singular;
+        if (singular || std::isnan(curvature.equilibrated))
+            result.convergence.stop = singular ? core::Stop::singular : core::Stop::nonfinite;
         result.success = false;
         result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
             + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)

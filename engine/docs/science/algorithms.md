@@ -457,7 +457,8 @@ own rounding: in the packet-3 MEA liquid with CO2 at `x ≈ 1e-15` it is about
 so its computed sign is noise. Let `H = H_g + H_c` be the objective and
 multiplier-weighted constraint curvatures, whose composition diagonals cancel at
 stationarity, `S = |H_g| + |H_c|` their split magnitude and
-`D = diag(S)^{-1/2}` (1 where `S_ii = 0`). The substitution `z = D y` maps the
+`D = diag(S)^{-1/2}` (1 where `S_ii = 0`, which includes every free phase-amount
+coordinate, so `kappa(A D)` and the band depend on the amount unit). The substitution `z = D y` maps the
 tangent space `A z = 0` onto `A D y = 0`, so the reduced Hessians of `H` and
 `D H D` are congruent and have the same inertia (Sylvester's law);
 equilibration changes the conditioning only. A first-order rounding model
@@ -480,12 +481,15 @@ the physical log-chart curvature (`N x_B` for a trace isomer). Its sign carries
 information only above its own rounding. The band is a first-order estimate,
 not a rigorous bound. It covers rounding of the assembled Hessian and nullspace,
 but not cancellation inside the objective curvature sum or the returned point's
-own solve error. Near a genuinely degenerate state the solve error dominates.
-Take two identical ethane pseudo-species with an isomerisation at 200 K and
-5 MPa, at the `k_ij` where the symmetric state's curvature vanishes: a
-pressure-row residual of `1.3e-12` moves the equilibrated minimum by about
-`1e-13` against a band of `5e-15`. There the decision follows the returned
-point, not the exact equilibrium. Diagnostic
+own solve error. That error generally exceeds `tau`: at a row residual near
+`1e-12` the equilibrated minimum moves by order `1e-13`. It decides the outcome
+only when `|lambda_min(D H D)|` is below it, which happens near a genuinely
+degenerate state. Take two identical ethane pseudo-species with an isomerisation
+at 200 K and 5 MPa, at the `k_ij` where the symmetric state's curvature vanishes.
+Adjacent `k_ij` values give equilibrated minima of about `+5e-14` (row residual
+`1.3e-12`) and `-9e-14` (row residual `9e-16`) against a band of `5e-15`. There
+the decision follows the returned point, not the exact equilibrium, and the typed
+indeterminate outcome is reached only when the solve error is at rounding level. Diagnostic
 residual summaries reuse the certified row values. For a no-site EOS Hessian,
 each unit-direction `Forward(1)`/`Reverse(2)` sweep supplies a Hessian column;
 the first sweep's even entries supply the gradient, including active-parameter

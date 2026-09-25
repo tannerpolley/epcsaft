@@ -267,7 +267,7 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
                                                (109766.9773907787, 0.3259285401314349)])
 def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: float, loading: float) -> None:
     """#159: packet-3 MEA liquid at 318.15 K with the absorber's fixed density-basis ln K and CO2 near 1e-15.
-    The raw reduced-Hessian minimum (-2.9e-13 and -2.6e-16) lies under its rounding n eps ||S|| = 8e-11, and
+    The raw reduced-Hessian minimum (-2.9e-13 and -1e-16 to -3e-16) lies under its rounding n eps ||S|| = 8e-11, and
     wheels 684b213a, 4105e2a4 and main 99e333cd all rejected both states on its sign. The equilibrated inertia
     (minimum 1.4e-3 against a band below 1e-13, analyses/2026-stability-noise-band) certifies them on every solve."""
     model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
