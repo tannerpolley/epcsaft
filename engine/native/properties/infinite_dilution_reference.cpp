@@ -382,7 +382,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         // second slope is sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
         const auto admit = [](const std::array<std::optional<double>, 3>& ladder, double scale, double tolerance,
                               std::optional<double>* observed = nullptr) -> std::optional<double> {
-            if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+            if (!ladder[0] || !ladder[1] || !ladder[2] || !std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) return std::nullopt;
             const double change = scale * std::max(std::abs(*ladder[2] - *ladder[1]), std::abs(*ladder[1] - *ladder[0]));
             if (observed != nullptr) *observed = change;
             return change <= tolerance ? ladder[2] : std::nullopt;

@@ -587,7 +587,16 @@ For an E3 energy action with exactly two equal normalized directions, use the
 sparse Taylor paths in EqID: `repeated_direction_energy_third` instead of linear
 polarization. This avoids subtraction of a singular pure-composition third
 derivative from a regular mixed volume response at dilute ionic references.
-All-identical triples, nonrepeated triples and E4 keep their established routes.
+All-identical triples, other nonrepeated triples and E4 keep their established routes,
+except the reference mixed slope below: its nonrepeated triple $D^3\psi[\nu,e_V,w]$
+contains the dilute-ionic reaction direction, where the linear-polarization route
+cancels catastrophically (aqueous NaCl ladder at $10^{-10},10^{-12},10^{-14}$ mol/kg:
+3e-11, 6e-12, 2.5e-5 for $\partial^2C/\partial T\partial P$). It is evaluated by
+balanced polarization of two repeated-direction actions,
+$D^3\psi[\nu,ae_V\pm w,ae_V\pm w]$, whose difference is $4a\,D^3\psi[\nu,e_V,w]$
+with $\nu$ inserted once, and $a=\max(V/T,|V_T|)$ sizes $ae_V$ to $w$ on the E3
+scales (EqID: `standard_state_transfer_temperature_pressure_derivative`; the same
+ladder then converges to 3.4895e-12 at all three points).
 Pressure closure composes the full implicit density chain through the requested
 order; a first density tangent alone is insufficient at orders two and three.
 The pressure root search precedes this resolved-state action work.

@@ -317,7 +317,7 @@ StandardTerm standard_term(
                 const std::optional<double> slope = slope_of(diagnostic);
                 if (!slope) throw std::invalid_argument("reference_unavailable: reaction "
                     + reaction_name(problem.reactions[row], row) + " " + name
-                    + " is unavailable (terminal change exceeds tolerance)");
+                    + " is unavailable (not admitted or not evaluated)");
                 const auto& source = problem.reactions[row].correlation;
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
                 values[row] = -*slope - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
@@ -725,7 +725,7 @@ ReferenceCalorics reference_calorics(
                 slope[1] += source.second_derivative;
             }
         } else {
-            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' - 2(ln K)' R)/(RT).
+            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' + 2(ln K)' R)/(RT).
             const auto targets = reaction_target_series(temperature, {reaction}, 2);
             slope[0] = -(targets[1][0] - targets[0][0] / temperature) / rt;
             slope[1] = -(targets[2][0] + 2.0 * gas * slope[0]) / rt;
