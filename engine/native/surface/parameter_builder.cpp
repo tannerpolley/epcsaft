@@ -349,6 +349,7 @@ Parameters build_parameters(const ParameterDocument& document) {
                 result.association_volume[t * sites + s] = entry.magnitude * factor;
             }
         } else if (entry.field == "association_combining_rule") {
+            if (entry.identity != "arithmetic-energy-geometric-volume" && entry.identity != "wolbach-sandler") reject("unknown association rule " + entry.identity);
             require_index(entry, 6, "combining rule index");
             for (const auto index : entry.index) if (index >= sites) reject("site index out of range for " + where(entry));
             rules.push_back({entry.identity, {entry.index[0], entry.index[1], entry.index[2], entry.index[3], entry.index[4], entry.index[5]}});
@@ -478,8 +479,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         const double energy = 0.5 * (result.association_energy_over_k[self1] + result.association_energy_over_k[self2]);
         const double volume = std::sqrt(result.association_volume[self1] * result.association_volume[self2]);
         const auto reverse = rule.index[1] * sites + rule.index[0];
-        result.association_active[output] = 1;
-        result.association_active[reverse] = 1;
+        result.association_active[output] = result.association_active[reverse] = rule.identity == "wolbach-sandler" ? 2 : 1;
         result.association_energy_over_k[output] = energy;
         result.association_energy_over_k[reverse] = energy;
         result.association_volume[output] = volume;

@@ -135,7 +135,7 @@ $$
 - Section: Contribution intermediates / Association
 - Status: Source equation
 - Source: [Gross2002], cross-association rule; [Chapman1990], association strength
-- Description: Site-pair association strength using explicit source-resolved cross records.
+- Description: Site-pair association strength using explicit source-resolved cross records. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
 $$

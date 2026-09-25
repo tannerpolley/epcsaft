@@ -67,6 +67,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "figiel-2025-reference-electrolytes",
+      "packet_version": "4",
+      "packet_path": "data/packets/figiel-2025-reference-electrolytes/4",
+      "packet_fingerprint": "690fe5a1bc1f74c04dfb308b8f9a6e9ae7744662c442f03f3422fe0ecd5d3ca8",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "figiel-2025-validation-parameters",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-validation-parameters/2",
@@ -92,6 +99,13 @@
       "packet_version": "3",
       "packet_path": "data/packets/figiel-yu-held-2025/3",
       "packet_fingerprint": "9d7aba59c7cdb83bcdef07f8bcb96e8a0ed20ba8c952291fd5dae3dece69aa7d",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "figiel-yu-held-2025",
+      "packet_version": "4",
+      "packet_path": "data/packets/figiel-yu-held-2025/4",
+      "packet_fingerprint": "d376ddc75bb67b5560652eae94c852723b8fbab00826e91a397ccd8e2e2e52c5",
       "materialization": "byte-for-byte"
     },
     {
@@ -179,6 +193,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+      "packet_version": "7",
+      "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+      "packet_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "mea-co2-h2o-nine-species-estimation",
       "packet_version": "2",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/2",
@@ -190,6 +211,13 @@
       "packet_version": "3",
       "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/3",
       "packet_fingerprint": "056288b6967b4d7c8421183cb9e1f7d2db61bac6cf91d8b56be914ca628e442f",
+      "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "mea-co2-h2o-nine-species-estimation",
+      "packet_version": "4",
+      "packet_path": "data/packets/mea-co2-h2o-nine-species-estimation/4",
+      "packet_fingerprint": "1e6281f51531ec956c82056da4923d030e0deaf29789f592e195fcb39c2d6ff3",
       "materialization": "byte-for-byte"
     },
     {

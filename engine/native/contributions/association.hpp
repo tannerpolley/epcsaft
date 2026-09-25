@@ -66,7 +66,10 @@ std::vector<Scalar> association_delta_values(
                     / (one_minus_eta * one_minus_eta)
                 + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
                     / (one_minus_eta * one_minus_eta * one_minus_eta);
-            const Scalar size_ij = Scalar(0.5) * (sigma[i] + sigma[j])
+            // Wolbach--Sandler pairs (active == 2): the Gross2002 Eq. 3 size
+            // factor times sigma_ij^3 is the geometric-mean diameter cubed.
+            const Scalar size_ij = (parameters.association_active[pair] == 2
+                    ? scalar_sqrt(sigma[i] * sigma[j]) : Scalar(0.5) * (sigma[i] + sigma[j]))
                 * (Scalar(1.0) - parameters.l_ij[i * components + j]);
             // EqID: association_strength
             delta[pair] = contact

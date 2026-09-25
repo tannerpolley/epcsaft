@@ -1,4 +1,5 @@
 import copy
+import csv
 import hashlib
 import json
 import math
@@ -56,7 +57,7 @@ SYMMETRIC_STATE_CRITERION = {
 
 
 def test_relabelling_and_state_identities(evidence: Any) -> None:
-    packet = parameters_json("mea-co2-h2o-nine-species-estimation", 3)
+    packet = parameters_json("mea-co2-h2o-nine-species-estimation", 4)
     order = _MEA_ORDER
     reverse = tuple(reversed(order))
     x = (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)
@@ -505,9 +506,57 @@ def test_declared_model_preserves_association_equations(evidence: Any) -> None:
         Parameters.from_mapping(malformed, components=components)
 
 
+def test_wolbach_sandler_rule_matches_source_cross_volumes() -> None:
+    """Gross2002 Eq. 3 with water sigma(T) from Khudaida Table 5.
+
+    At 293.15 K the reference is Khudaida bundle 2, whose cross volumes independent
+    historical code evaluated once from the same equation. At 353.15 K the
+    reference volumes follow the water sigma correlation, so a size factor frozen
+    at one temperature fails. Residual entropy falsifies the temperature chain.
+    """
+    rule: dict[str, Any] = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
+    bundle = REPOSITORY_ROOT / "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/association.csv"
+    stored = {(r["component_id_a"], r["site_id_a"], r["component_id_b"], r["site_id_b"], r["family"]): float(r["value"])
+              for r in csv.DictReader(bundle.open())}
+    pure = {c: (stored[(c, "a", c, "b", "association_energy_over_k")], stored[(c, "a", c, "b", "association_volume")])
+            for c in ("water", "ethanol", "isobutanol")}
+    sigma = {"ethanol": 3.1771, "isobutanol": 3.5561}
+
+    def explicit(temperature: float | None) -> dict[str, Any]:
+        mapping = copy.deepcopy(rule)
+        t = 293.15 if temperature is None else temperature
+        sigma["water"] = 2.7927 + 10.11 * math.exp(-0.01775 * t) - 1.417 * math.exp(-0.01146 * t)
+        for edge in mapping["topology"]["edges"]:
+            if edge["source"]["kind"] != "combining-rule":
+                continue
+            (i, s_i), (j, s_j) = ((edge[e]["component_id"], edge[e]["site_id"]) for e in ("endpoint_a", "endpoint_b"))
+            key = next(k for k in ((i, s_i, j, s_j), (j, s_j, i, s_i)) if (*k, "association_volume") in stored)
+            factor = (math.sqrt(sigma[i] * sigma[j]) / (0.5 * (sigma[i] + sigma[j]))) ** 3
+            volume = stored[(*key, "association_volume")] if temperature is None else math.sqrt(pure[i][1] * pure[j][1]) * factor
+            tag = f"association/{i}/{s_i}/{j}/{s_j}"
+            edge["energy_over_k"] = {"identity": f"{tag}/energy_over_k", "value": {"magnitude": 0.5 * (pure[i][0] + pure[j][0]), "unit": "kelvin"}}
+            edge["volume"] = {"identity": f"{tag}/volume", "value": {"magnitude": volume, "unit": "dimensionless"}}
+            edge["source"] = {"kind": "explicit", "provenance": edge["source"]["provenance"]}
+        return mapping
+
+    composition = (0.01, 0.25, 0.25, 0.01, 0.48)
+    for temperature, reference in ((293.15, explicit(None)), (353.15, explicit(353.15))):
+        model = Mixture(Parameters.from_mapping(rule))
+        state = model.state(temperature, rho=1.5e4, x=composition)
+        frozen = Mixture(Parameters.from_mapping(reference)).state(temperature, rho=1.5e4, x=composition)
+        for field in ("pressure", "association", "residual_helmholtz"):
+            close(getattr(state, field), getattr(frozen, field), 1e-12)
+        for left, right in zip(state.residual_chemical_potential_over_rt, frozen.residual_chemical_potential_over_rt):
+            close(left, right, 1e-12)
+        step = 1e-3
+        helmholtz = [8.314462618 * t * model.state(t, rho=1.5e4, x=composition).residual_helmholtz
+                     for t in (temperature - step, temperature + step)]
+        close(state.residual_entropy, -(helmholtz[1] - helmholtz[0]) / (2 * step), 1e-7)
+
+
 def test_association_topology_is_order_independent_and_typed() -> None:
     mapping = json.loads(
-        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 6).read_text()
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text()
     )
     reversed_mapping = copy.deepcopy(mapping)
     reversed_mapping["topology"]["edges"].reverse()

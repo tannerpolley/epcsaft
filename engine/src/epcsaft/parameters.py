@@ -349,8 +349,6 @@ class Parameters:
                 entries.append(_entry(energy.get("identity"), "association_energy_over_k", edge_index, energy["value"], "association edge"))
                 entries.append(_entry(volume.get("identity"), "association_volume", edge_index, volume["value"], "association edge"))
             elif kind == "combining-rule":
-                if source.get("rule_id") != "arithmetic-energy-geometric-volume":
-                    raise _core.ParameterError(f"unknown association rule {source.get('rule_id')}")
                 inputs = _mapping(source.get("inputs"), "combining rule inputs")
                 energy_inputs = inputs.get("energy_over_k")
                 volume_inputs = inputs.get("volume")
