@@ -4,12 +4,16 @@
 #include "core/trace.hpp"
 #include "equilibrium/stoichiometry.hpp"
 
+#include <Eigen/Dense>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <utility>
 
 namespace epcsaft::equilibrium {
 
@@ -27,18 +31,6 @@ bool supports_split_seed(const CompiledSystem& compiled) {
 }
 
 namespace {
-
-std::vector<std::size_t> offsets(const CompiledSystem& compiled) {
-    std::vector<std::size_t> result;
-    std::size_t offset = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        result.push_back(offset);
-        offset += phase.support.size();
-        if (phase.amount.kind == AmountKind::Free) ++offset;
-        ++offset;
-    }
-    return result;
-}
 
 void seed_composition(const CompiledSystem& compiled, std::size_t phase,
                       const std::vector<double>& composition,
@@ -217,12 +209,113 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
     }
 }
 
+// Ideal-solution chemical equilibrium with frozen c_j: minimize sum_j n_j (c_j + ln n_j/n) subject to B n = b
+// by the Gordon-McBride element-potential Newton iteration and step control (NASA RP-1311, 1994, eqs
+// 2.24-2.26, 3.1-3.3), the box separating major from trace species; the trace limit applies only to a
+// species growing faster than the total.
+bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vector<double>& b,
+                      const std::vector<double>& c, std::vector<double>& n) {
+    const std::size_t r = B.size(), m = c.size();
+    const double trace = -std::log(policy::EQUILIBRIUM_COMPOSITION_BOX.value);
+    std::vector<double> ln_n(m), g(m);
+    for (std::size_t j = 0; j < m; ++j) ln_n[j] = std::log(n[j]);
+    double ln_total = std::log(std::accumulate(n.begin(), n.end(), 0.0));
+    for (int iteration = 0; iteration < 100; ++iteration) {
+        Eigen::MatrixXd A = Eigen::MatrixXd::Zero(r + 1, r + 1);
+        Eigen::VectorXd rhs = Eigen::VectorXd::Zero(r + 1);
+        rhs(r) = std::exp(ln_total);
+        A(r, r) = -rhs(r);
+        for (std::size_t k = 0; k < r; ++k) rhs(k) = b[k];
+        for (std::size_t j = 0; j < m; ++j) {
+            n[j] = std::exp(ln_n[j]);
+            g[j] = c[j] + ln_n[j] - ln_total;
+            for (std::size_t k = 0; k <= r; ++k) {
+                const double a = k < r ? B[k][j] : 1.0;
+                for (std::size_t i = 0; i < r; ++i) A(k, i) += a * B[i][j] * n[j];
+                A(k, r) += a * n[j];
+                rhs(k) += a * n[j] * (g[j] - 1.0);
+            }
+        }
+        const Eigen::VectorXd x = A.fullPivLu().solve(rhs);
+        double change = std::abs(x(r)), major = 5.0 * change, control = 1.0;
+        for (std::size_t j = 0; j < m; ++j) {
+            double step = x(r) - g[j];
+            for (std::size_t i = 0; i < r; ++i) step += B[i][j] * x(i);
+            change = std::max(change, std::abs(step));
+            if (ln_n[j] - ln_total > -trace) major = std::max(major, std::abs(step));
+            else if (step > std::max(0.0, x(r)))
+                control = std::min(control, (ln_total - ln_n[j] - 0.5 * trace) / (step - x(r)));
+            g[j] = step;
+        }
+        if (!std::isfinite(change)) return false;
+        if (change <= policy::EQUILIBRIUM_START_SPECIATION_STEP.value) return true;
+        control = std::max(0.0, std::min(control, 2.0 / std::max(major, 2.0)));
+        for (std::size_t j = 0; j < m; ++j) ln_n[j] += control * g[j];
+        ln_total += control * x(r);
+    }
+    return false;
+}
+
+// A reacting declaration of one free phase starts from the ideal-solution speciation of the feed balances,
+// with the residual, volume and standard terms of its chemical rows frozen at the seeded composition and
+// refreshed over sweeps (#154, #157): an unspeciated start leaves the log chart's trace
+// species without restoring force and the optimizer cycles. Zero guesses enter at the optimizer box; a
+// failed sweep keeps the last speciation.
+// Returns the speciated amount and the last sweep's density root, which seeds the start's packing.
+std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSystem& compiled, std::vector<double>& point,
+                                                               std::vector<double> composition, core::Scope& scope) {
+    const auto& phase = compiled.problem.phases.front();
+    const std::size_t m = phase.support.size();
+    const double t = seed_temperature(compiled), p = seed_pressure(compiled);
+    std::vector<std::vector<double>> B(compiled.rank, std::vector<double>(m));
+    for (std::size_t k = 0; k < compiled.rank; ++k)
+        for (std::size_t j = 0; j < m; ++j) B[k][j] = compiled.B[k][phase.support[j]];
+    for (const std::size_t i : phase.support) composition[i] = std::max(composition[i], policy::EQUILIBRIUM_COMPOSITION_BOX.value);
+    std::vector<double> n(m), speciated, trial = point;
+    for (std::size_t j = 0; j < m; ++j) n[j] = compiled.feed_total * composition[phase.support[j]];
+    std::optional<double> density, speciated_density;
+    try {
+        const auto root = [&](std::optional<double> anchor) {
+            return solve_density(*compiled.model, t, p, composition,
+                phase.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid, anchor).molar_density;
+        };
+        for (int sweep = 0; sweep < 2; ++sweep) {
+            const double total = std::accumulate(composition.begin(), composition.end(), 0.0);
+            for (double& value : composition) value /= total;
+            try {  // continue the previous sweep's root; a speciation jump beyond its window solves it anew
+                density = root(density);
+            } catch (const std::exception&) {
+                if (!density) throw;
+                density = root(std::nullopt);
+            }
+            for (std::size_t j = 0; j < m; ++j) trial[j] = std::log(composition[phase.support[j]]);
+            trial[m] = compiled.feed_total;
+            trial[m + 1] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
+            std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
+            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true)).values;
+            std::vector<double> c(m);
+            for (std::size_t j = 0; j < m; ++j) c[j] = rows[j] - trial[j];  // chemical rows lead, in support order
+            if (!ideal_speciation(B, compiled.balance, c, n)) break;
+            speciated = n;
+            speciated_density = density;
+            for (std::size_t j = 0; j < m; ++j) composition[phase.support[j]] = n[j];
+        }
+    } catch (const std::exception&) {
+    }
+    if (speciated.empty()) return std::nullopt;
+    n = speciated;
+    const double total = std::accumulate(n.begin(), n.end(), 0.0);
+    for (std::size_t j = 0; j < m; ++j) point[j] = std::log(n[j] / total);
+    scope.probe("speciated_amount", total);
+    return std::make_pair(total, *speciated_density);
+}
+
 }  // namespace
 
-std::vector<double> boundary_start(const CompiledSystem& compiled) {
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate) {
     core::Scope scope("boundary_start");
     std::vector<double> point = compiled.generic_point();
-    const auto phase_offsets = offsets(compiled);
+    const auto phase_offsets = compiled.phase_offsets();
     std::optional<double> vapor_fraction;
     const auto compositions = start_compositions(compiled, scope, vapor_fraction);
     std::size_t free_phases = 0;
@@ -231,12 +324,16 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
     }
     double feed_total = 0.0;
     for (const double value : compiled.n_feed) feed_total += value;
-    const double free_amount = compiled.n_feed.empty() ? 1.0
+    std::optional<double> speciated_density;
+    double free_amount = compiled.n_feed.empty() ? 1.0
         : feed_total / static_cast<double>(std::max<std::size_t>(1, free_phases));
     scope.probe("free_phases", static_cast<double>(free_phases));
     scope.probe("feed_total", feed_total);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
         seed_composition(compiled, phase, compositions[phase], point, phase_offsets[phase]);
+    if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
+        if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
+            std::tie(free_amount, speciated_density) = *speciated;
     const double p = fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
@@ -261,6 +358,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled) {
             }
             point[cursor] = std::log(packing);
             scope.probe("packing_guess", packing, static_cast<std::uint32_t>(phase));
+            continue;
+        }
+        if (speciated_density.has_value()) {  // the last sweep's root, at nearly the speciated composition
+            point[cursor] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *speciated_density);
             continue;
         }
         const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor
@@ -439,7 +540,7 @@ struct PhaseSignature final {
 };
 
 std::vector<PhaseSignature> signatures(const CompiledSystem& compiled, const std::vector<double>& y) {
-    const auto phase_offsets = offsets(compiled);
+    const auto phase_offsets = compiled.phase_offsets();
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<PhaseSignature> result;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {

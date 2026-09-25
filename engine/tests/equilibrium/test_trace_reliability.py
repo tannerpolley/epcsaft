@@ -1,5 +1,7 @@
 """#87/#90 trace-state reliability: the analytic trace solution below the former composition box
-and the intensive accuracy of trace rows after the amount-weighted optimizer stop."""
+and the intensive accuracy of trace rows after the amount-weighted optimizer stop; #154/#157 cold
+reacting-liquid starts that recover a manufactured speciation with trace water ions."""
+import json
 import math
 from typing import Any
 
@@ -206,3 +208,55 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
          result.multipliers[compiled.rank], atol=1e-12, rtol=0.0, unit="1", inputs=inputs,
          basis="Identity", method="public-state-chemical-potential",
          claim="the row electrochemical offset matches the charged species chemical potentials")
+
+
+_MEA = ("carbon-dioxide", "monoethanolamine", "water", "protonated-monoethanolamine", "carbamate-anion",
+        "bicarbonate-anion", "carbonate-anion", "hydronium-cation", "hydroxide-anion")
+_MEA_REACTIONS = (  # R1-R5: water, CO2 and bicarbonate dissociation, carbamate hydrolysis, MEAH+ dissociation
+    {"water": -2.0, "hydronium-cation": 1.0, "hydroxide-anion": 1.0},
+    {"carbon-dioxide": -1.0, "water": -2.0, "bicarbonate-anion": 1.0, "hydronium-cation": 1.0},
+    {"water": -1.0, "bicarbonate-anion": -1.0, "carbonate-anion": 1.0, "hydronium-cation": 1.0},
+    {"monoethanolamine": 1.0, "water": -1.0, "carbamate-anion": -1.0, "bicarbonate-anion": 1.0},
+    {"protonated-monoethanolamine": -1.0, "water": -1.0, "monoethanolamine": 1.0, "hydronium-cation": 1.0})
+_MEA_FEED = [1e-05, 1e-05, 8e-05, 1e-05, 0.00011, 1e-05]  # ion amounts [mol] after CO2, MEA, water
+
+
+@pytest.mark.parametrize("label, temperature, carbon_dioxide, guess, speciation", [
+    ("bottinger-046", 313.15, 0.34290000000000004,
+     [0.00012044382032884565, 0.03820530851007986, 0.88492326364512, 0.03838499164509782, 0.03561505266280674,
+      0.0027319402457567526, 1.899928767640581e-05, 1.0976016899728266e-11, 1.7215753829197593e-10],
+     [1.1167290436645361e-06, 0.037675712115251, 0.8817275121233354, 0.04210421915583975, 0.032438812298105475,
+      0.0024383205817141316, 0.0036127794353711146, 7.803077515596226e-11, 1.5274833087670273e-06]),
+    ("matin-016", 293.15, 0.4549,
+     [0.00033720310764111846, 0.01727031113072209, 0.8809380252760517, 0.05074929564786032, 0.04416142155735913,
+      0.006499612403774798, 4.4130824078475495e-05, 6.971446826142033e-12, 4.5540883406069727e-11],
+     [2.0195659951573153e-06, 0.015800147213209173, 0.8689944151250493, 0.06414532316923494, 0.03227317187141063,
+      0.00569706237942454, 0.013087228408673619, 8.297500114780182e-11, 6.321840276008174e-07]),
+])
+def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
+    evidence: Any, label: str, temperature: float, carbon_dioxide: float, guess: list[float], speciation: list[float]
+) -> None:
+    """#154/#157: a cold one-liquid MEA solve from the application's unspeciated guess reaches the speciation.
+    The speciation is exact by construction: each density-basis ln K_r = sum_i nu_ri (ln(x_i rho) + mu_i^res/RT)
+    at x (packet 3 EOS with the applications' Born runtime defaults), and x carries the feed's balances. The
+    684b213a start, which seeded the guess directly, exhausted the 200-iteration budget on both states."""
+    mapping = json.loads(parameters_json("mea-co2-h2o-nine-species-estimation", 3).read_text())
+    for family in mapping["model_families"]:
+        if family["kind"] == "electrolyte":
+            family.update(c_shell=1.0, c_dielectric=1.0)
+    model = Mixture(Parameters.from_mapping(mapping, components=_MEA))
+    state = model.state(temperature, P=101325.0, x=speciation, phase="liquid")
+    ln_k = [sum(nu.get(species, 0.0) * (math.log(x * state.molar_density) + mu)
+                for species, x, mu in zip(_MEA, speciation, state.residual_chemical_potential_over_rt))
+            for nu in _MEA_REACTIONS]
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, temperature, 250.0, 450.0,
+                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
+    problem = Problem(phases=[Phase("L", kind="liquid", composition_guess=guess)], T=temperature, P=101325.0,
+                      feed=Amounts(dict(zip(_MEA, [carbon_dioxide, 0.99998, 7.910947365207347, *_MEA_FEED]))),
+                      reactions=reactions)
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    for species, value, reference in zip(_MEA, result.mole_fractions, speciation):
+        same(evidence, f"cold-start/{label}/{species}", value, reference, atol=0.0, rtol=1e-8, unit="1",
+             inputs={"T_K": temperature, "P_Pa": 101325.0, "iterations": result.iterations}, basis="Identity",
+             method="manufactured-speciation", claim="a cold reacting-liquid solve recovers the manufactured speciation")

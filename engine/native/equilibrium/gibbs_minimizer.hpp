@@ -31,7 +31,8 @@ struct NlpShape final {
     Ipopt::Index hessian_entries = 0;
 };
 
-std::vector<double> boundary_start(const CompiledSystem& compiled);
+// `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true);
 bool supports_split_seed(const CompiledSystem& compiled);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase

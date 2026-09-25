@@ -319,6 +319,15 @@ inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     "classified residual among the optimizer start and accepted steps",
 };
 
+// A reacting one-phase start is the ideal-solution speciation of its feed with frozen nonideal terms
+// (ALG-EQUILIBRIUM, #154/#157); its element-potential Newton iteration stops when every log-amount step,
+// trace species included, is below this. The frozen terms bound the start's accuracy, not this value.
+inline constexpr Tolerance EQUILIBRIUM_START_SPECIATION_STEP{"EQUILIBRIUM_START_SPECIATION_STEP",
+    1.0e-6,
+    Category::AlgorithmTolerance,
+    "largest log-amount Newton step at which the ideal start speciation stops; a start, not an accuracy bound",
+};
+
 inline constexpr Tolerance EQUILIBRIUM_MAX_ITERATIONS{"EQUILIBRIUM_MAX_ITERATIONS",
     200.0,
     Category::AlgorithmTolerance,
@@ -395,7 +404,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
-    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
+    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
     &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 }  // namespace epcsaft::policy

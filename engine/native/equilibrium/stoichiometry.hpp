@@ -66,36 +66,9 @@ void validate_reaction_set(
 
 std::string reaction_name(const ReactionSpec& reaction, std::size_t index);
 
-std::vector<double> balance_residual(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& amounts,
-    const std::vector<double>& target
-);
-
-std::vector<double> transpose_matvec(
-    const std::vector<std::vector<double>>& matrix,
-    const std::vector<double>& vector
-);
-
-std::vector<double> project_to_balance(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& composition
-);
-
-std::vector<double> reconstruct_from_balance(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& coordinates
-);
-
 bool all_finite(const std::vector<double>& values);
 
-double projection_error(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& composition
-);
-
-double maximum_abs(const std::vector<double>& values);
-
+// True when both orthonormal bases span the same row space within the tolerance.
 bool same_subspace(
     const std::vector<std::vector<double>>& left,
     const std::vector<std::vector<double>>& right,

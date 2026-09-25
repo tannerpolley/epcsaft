@@ -258,6 +258,8 @@ struct CompiledSystem final {
     double classified_residual_norm(const std::vector<double>& point) const;
     PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     std::vector<double> generic_point() const;
+    // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
+    std::vector<std::size_t> phase_offsets() const;
     std::vector<double> jacobian(const std::vector<double>& point) const;
     std::vector<double> jacobian_at(const PhasePoint& prepared) const;
     std::vector<double> lever_jacobian(const std::vector<double>& point) const;
