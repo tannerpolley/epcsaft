@@ -79,15 +79,26 @@ problem builds its standard-state parameter jets once for all directions, since
 they enter the rows only through $\sum_a (\partial s/\partial\theta_a)(\theta_a-\theta_{a,c})$. The optimizer
 Jacobian is $\sqrt{w}\,(\mathrm{d}r/\mathrm{d}y)\,(\partial y/\partial\theta)\,S\,\mathrm{diag}(s)$
 with $\mathrm{d}r/\mathrm{d}y = 1/s$ or $1/y$. The bounded fit is a
-Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$
-without Ceres' projected line search (whose every trial would re-solve and
-differentiate all states). Bounds form an active set: a coordinate on a bound
-whose objective gradient $J^\top r$ points out of the box is held fixed for a
-round, since a clamped step computed as if it could cross is rejected until the
-trust region collapses; a round ends when Ceres stops or an accepted step lands
-a free coordinate on a bound, the set is rebuilt from that point's Jacobian, and
-the fit converges only when a converged round leaves the set unchanged (a KKT
-point); iterations and time are shared by the rounds; a
+Levenberg--Marquardt trust region (Ceres, dense QR, one thread) over $u$ in a
+chart of the box instead of Ceres' bounds (whose projected line search would
+re-solve and differentiate all states at every trial and whose per-coordinate
+clamp spoils a step computed as if a bound could be crossed): a step leaving the
+box is shortened along its direction to the first bound (the trust-region ratio
+keeps the full step's predicted decrease, so it is conservative). Bounds form an
+active set in optimizer space, against the physical bounds mapped by the affine
+transform (rounding is monotone, so a physical value inside its bounds is inside
+these): a coordinate within the named `FIT_ACTIVE_BOUND_DISTANCE` of a bound
+whose objective gradient $J^\top r$ points out of the box is on it and is held
+where it is for a round, never moved onto the bound; a free coordinate on a
+bound it moves toward is clamped instead of shortening the step. A round ends
+when Ceres converges or an accepted step puts a free coordinate exactly on a
+bound it was not on at the previous accepted point, and any other Ceres stop
+ends the fit; the set is rebuilt from that point's Jacobian, and the
+fit converges when a converged round leaves the set unchanged or every
+coordinate is held (a KKT point to that distance). A bound within the same
+distance is active for the covariance, and physical values are clamped to their
+bounds against the affine map's rounding. Iterations
+and time are shared by the rounds; a
 trial in which any observation or action is unavailable is rejected with its
 typed cause and observation index retained, never zeroed. Warm starts are taken
 only from a trial in which every observation succeeded and are retried cold on

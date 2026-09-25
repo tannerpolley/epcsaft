@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
 enum class PhaseKind { Liquid, Vapor };
@@ -353,8 +354,9 @@ EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
-// The same solve of an already compiled problem (the model it was compiled against must outlive it).
-EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt);
+// The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
+EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
+                                 core::Scope* outer = nullptr);
 
 // ---- Solved-state derivative actions (E5): native records, no public promise.
 

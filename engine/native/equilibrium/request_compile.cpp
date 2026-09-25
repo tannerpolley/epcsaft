@@ -1551,10 +1551,9 @@ RowSeries CompiledSystem::row_series(
         throw std::invalid_argument(
             "reference_unavailable: row series pressure/T/parameter order is unsupported");
     }
-    // The prepared term already carries the pressure jets of a free-pressure problem. Parameter jets
-    // enter the rows only through sum_a ds/dtheta_a (theta_a - theta_a,center), so jets along every
-    // active parameter serve every direction exactly. If any slope is refused, each direction
-    // resolves its own, leaving sibling directions intact.
+    // The prepared term carries a free-pressure problem's pressure jets. Parameter jets enter the rows only via
+    // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
+    // exactly. If any slope is refused, each direction resolves its own, leaving sibling directions intact.
     const bool reuse = !reference_diagnostics.empty() && !temperature_jets && (!pressure_jets || problem.pressure.free);
     if (reuse && parameter_jets && !prepared.parameter_standard) {
         try {

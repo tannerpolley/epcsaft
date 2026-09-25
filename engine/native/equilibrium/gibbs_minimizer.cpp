@@ -1001,31 +1001,31 @@ EquilibriumResult run_driver(
     return result;
 }
 
-bool incipient(const PhaseSpec& phase) {
+bool zero_amount(const PhaseSpec& phase) {
     return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
 }
 
-// A cold reactive boundary at fixed T and free P: the finite phases alone, in reaction equilibrium at
-// the pressure seed, are the solution's finite phases up to their pressure dependence. Their compositions
-// replace the caller's guesses before the ordinary boundary start, and an unguessed incipient phase starts
-// from the first finite phase on its support (#152); none if any of it fails.
+// A cold reactive boundary at fixed T and free P: the phases present (nonzero amount) alone, in reaction
+// equilibrium at the pressure seed, are the solution's present phases up to their pressure dependence. Their
+// compositions replace the caller's guesses before the ordinary boundary start, and an unguessed zero-amount
+// phase starts from the first present phase on its support (#152); none if any of it fails.
 std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled) {
     const auto& problem = compiled.problem;
-    EquilibriumProblem finite = problem;
-    finite.phases.erase(std::remove_if(finite.phases.begin(), finite.phases.end(), incipient), finite.phases.end());
-    if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || finite.phases.empty()
-        || finite.phases.size() == problem.phases.size()) return std::nullopt;
-    finite.pressure = FreeValue::fixed(problem.pressure.seed_or(1.0e5));
+    EquilibriumProblem present = problem;
+    present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(), zero_amount), present.phases.end());
+    if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
+        || present.phases.size() == problem.phases.size()) return std::nullopt;
+    present.pressure = FreeValue::fixed(problem.pressure.seed_or(1.0e5));
     try {
-        const auto solved = solve_equilibrium(*compiled.model, finite);
+        const auto solved = solve_equilibrium(*compiled.model, present);
         if (!solved.success) return std::nullopt;
         const std::size_t components = compiled.model->parameters().component_count();
         CompiledSystem seeded = compiled;
         std::size_t index = 0;
         for (auto& phase : seeded.problem.phases) {
             const bool guessed = phase.composition_guess.size() == phase.support.size();
-            if (incipient(phase) && guessed) continue;
-            const std::size_t source = incipient(phase) ? 0 : index++;
+            if (zero_amount(phase) && guessed) continue;
+            const std::size_t source = zero_amount(phase) ? 0 : index++;
             phase.composition_guess.clear();
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
@@ -1082,16 +1082,16 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
     return result;
 }
 
-EquilibriumResult solve_equilibrium(
-    const HelmholtzModel& model,
-    const EquilibriumProblem& request,
-    const std::optional<EquilibriumResult>& start
-) {
-    return solve_compiled(compile_problem(model, request), start);
+EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
+                                    const std::optional<EquilibriumResult>& start) {
+    core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
+    return solve_compiled(compile_problem(model, request), start, &scope);
 }
 
-EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start) {
-    core::Scope scope("solve_equilibrium");
+EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
+                                 core::Scope* outer) {
+    std::optional<core::Scope> own;
+    auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
     const auto& model = *compiled.model;
     const EquilibriumResult structural = structural_result(compiled, scope);
     if (!compiled.feasible) return structural;
@@ -1107,7 +1107,12 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             initial = use_start ? compiled.generic_point() : boundary_start(compiled);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
-        result = run_driver(model, compiled, std::move(initial), structural, scope);
+        try {
+            result = run_driver(model, compiled, std::move(initial), structural, scope);
+        } catch (const std::exception&) {
+            if (attempt == 0) continue;  // the seeded attempt's exception falls back to the declared start
+            throw;
+        }
         if (!result.success) continue;
         BranchCheck branches;
         try {

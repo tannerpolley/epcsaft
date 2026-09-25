@@ -1,5 +1,6 @@
 #include "regression/coordinates.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -48,19 +49,28 @@ std::vector<double> CoordinateSet::physical(const std::vector<double>& optimizer
     for (std::size_t column = 0; column < coordinates.size(); ++column) {
         const auto& coordinate = coordinates[column];
         result.insert(result.end(), coordinate.slots.size(),
-                      coordinate.origin + coordinate.scale * optimizer[column]);
+                      std::clamp(coordinate.origin + coordinate.scale * optimizer[column], coordinate.lower, coordinate.upper));
     }
     return result;
 }
 
+// Checked in optimizer space against optimizer_bounds, the values the optimizer is handed: rounded
+// (theta - origin) / scale is monotone in theta, so a physical value inside its bounds is inside these.
 bool CoordinateSet::within_bounds(const std::vector<double>& optimizer) const {
     if (optimizer.size() != coordinates.size()) return false;
-    for (std::size_t column = 0; column < coordinates.size(); ++column) {
-        const auto& coordinate = coordinates[column];
-        const double value = coordinate.origin + coordinate.scale * optimizer[column];
-        if (!std::isfinite(value) || value < coordinate.lower || value > coordinate.upper) return false;
-    }
+    const auto [lower, upper] = optimizer_bounds();
+    for (std::size_t column = 0; column < coordinates.size(); ++column)
+        if (!std::isfinite(optimizer[column]) || optimizer[column] < lower[column] || optimizer[column] > upper[column]) return false;
     return true;
+}
+
+std::pair<std::vector<double>, std::vector<double>> CoordinateSet::optimizer_bounds() const {
+    std::vector<double> lower, upper;
+    for (const auto& c : coordinates) {
+        lower.push_back((c.lower - c.origin) / c.scale);
+        upper.push_back((c.upper - c.origin) / c.scale);
+    }
+    return {lower, upper};
 }
 
 Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>& optimizer) const {
@@ -68,7 +78,8 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     for (std::size_t column = 0; column < coordinates.size(); ++column) {
         const auto& coordinate = coordinates[column];
         auto& values = family_values(parameters, coordinate.family);
-        const double value = coordinate.origin + coordinate.scale * optimizer[column];
+        // Clamped: at a bound the affine map can round one ulp past it.
+        const double value = std::clamp(coordinate.origin + coordinate.scale * optimizer[column], coordinate.lower, coordinate.upper);
         for (const auto& slot : coordinate.slots)
             for (const auto index : slot) values.at(index) = value;
     }
