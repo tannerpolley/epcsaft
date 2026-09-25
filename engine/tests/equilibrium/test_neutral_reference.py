@@ -228,9 +228,9 @@ def test_temperature_reference_chain_recovers_identical_species_law(
              rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
              method="identical-species-residual-enthalpy",
              claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
-    twice = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])
-    second = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [twice, twice])).results[0]
-    assert second.status == Status.ReferenceUnavailable and second.action is None
+    thrice = [SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])] * 3
+    third = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, thrice)).results[0]
+    assert third.status == Status.ReferenceUnavailable and third.action is None
 
 
 def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
@@ -279,6 +279,39 @@ def test_ionic_temperature_action_matches_resolved_difference(
              inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "step": step},
              basis="Identity", method="centered-resolve-difference",
              claim="first-order referenced T/P action equals the re-solved composition slope")
+
+
+@pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
+def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
+    evidence: Any, reference_pressure: float | None,
+) -> None:
+    """D2 n_Na[e_T, e] for e = water feed, P and T equals the first action D n_Na[e] differenced
+    along T over re-solves (Richardson, O(step^2) shown). The system-pressure row fails without
+    s_TP (EqID: standard_state_transfer_temperature_pressure_derivative) and T-T without s_TT."""
+    temperature, pressure = 298.15, 1.0e5
+    model = Mixture(aqueous_electrolyte())
+    observable = [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)]
+    thermal = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], [])
+
+    def action(d_t: float, *directions: SolvedStateActionDirection) -> float:
+        problem = _ionic_problem(temperature + d_t, pressure, reference_pressure)
+        result = solve_equilibrium(model, problem)
+        assert result.success, result.message
+        item = solved_state_actions(compile_problem(model, problem), result,
+                                    SolvedStateActionRequest(observable, list(directions))).results[0]
+        assert item.status == Status.Available and item.action is not None, item.diagnostic_message
+        return float(item.action)
+
+    name = f"reference-temperature/ionic/{'system' if reference_pressure is None else 'fixed'}"
+    for label, other in (("feed", SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [])),
+                         ("P", SolvedStateActionDirection(0.0, 1.0e5, [0.0, 0.0, 0.0], [])), ("T", thermal)):
+        exact = action(0.0, thermal, other)
+        coarse, fine = ((action(h, other) - action(-h, other)) / (2 * h) for h in (0.2, 0.1))
+        assert abs(fine - exact) <= abs(coarse - exact) / 2  # O(step^2) toward the action
+        same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "steps": [0.2, 0.1]},
+             basis="Identity", method="richardson-differenced-first-action",
+             claim="referenced mixed temperature second action equals the T derivative of the first action")
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])

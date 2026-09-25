@@ -1593,7 +1593,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Third pressure derivatives remain unavailable; the first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Third pressure derivatives remain unavailable; the first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1643,7 +1643,7 @@ $$
 - Status: Exact derivation
 - Source: Second implicit differentiation of the pressure closure at the fixed terminal composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
 - Description: Second temperature derivative at fixed reference pressure of the finite terminal contraction along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The two third-order contractions use the exact repeated-direction E3 route, including implicit association. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
-- Change note: Evaluated only when a heat-capacity value or an enthalpy temperature action is requested. Admitted when R T^2 times the change over the last three ladder points is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K measures 6.0e-4 J/(mol K), with differences contracting x10 per ladder step (the sqrt(m) form). A refusal leaves the value, the first slope and enthalpy available. Mixed temperature-pressure and third temperature derivatives are not implied.
+- Change note: Evaluated only when a heat-capacity value, an enthalpy temperature action or a second-order temperature action is requested; it supplies s_TT = -(d2 ln K_src/dT2 + d2C/dT2) to the chemical rows. Admitted when R T^2 times the change over the last three ladder points is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K measures 6.0e-4 J/(mol K), with differences contracting x10 per ladder step (the sqrt(m) form). A refusal leaves the value, the first slope and enthalpy available. The mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`; third temperature derivatives are not implied.
 
 $$
 \mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad
@@ -1653,6 +1653,23 @@ D^2p[\mathbf{w},\mathbf{w}]=-\frac{2RV_T}{V^2}+\frac{2RTV_T^2}{V^3}
 V_{TT}=-\frac{D^2p[\mathbf{w},\mathbf{w}]}{p_V},\qquad
 \left.\frac{d^2C}{dT^2}\right|_P=D^2C[\mathbf{w},\mathbf{w}]+C_VV_{TT},\qquad
 \Delta c_{p,\rho}=2RT\frac{d\ln K_\rho}{dT}+RT^2\frac{d^2\ln K_\rho}{dT^2}.
+$$
+
+## `standard_state_transfer_temperature_pressure_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Implicit differentiation of C_P = C_V/p_V (`neutral_reaction_reference_pressure_jet`) along the isobaric temperature direction w of `standard_state_transfer_temperature_second_derivative`, at the fixed terminal composition
+- Description: Mixed temperature-pressure derivative of the finite terminal contraction of a system-pressure reference, with psi = Ares/(RT) at N = 1 mol. The two third-order contractions use the exact E3 route, including implicit association. It supplies s_TP = -d2C/dTdP to the chemical rows of second-order actions that move temperature and pressure, and the pressure slope of the EOS-basis reaction enthalpy, d(Delta_r h_rho)/dP = RT^2 d2C/dTdP, to reference species calorics.
+- Change note: Evaluated only with temperature and pressure jets; a fixed-source-pressure reference has zero. Admitted when T P times the change over the last three ladder points is at most 5e-5, the value's ln K criterion at the temperature and pressure scales (the analogue of T for the first slope; lead decision recorded in #147). It is an observed convergence criterion, not a limit-error bound. A refusal leaves values, first actions and fixed-temperature actions available. Third-order and d3C/dT2dP derivatives are not implied.
+
+$$
+\mathbf{w}=\mathbf{e}_T+V_T\mathbf{e}_V,\qquad
+DC_V[\mathbf{w}]=\sum_i\nu_iD^3\psi[\mathbf{e}_{n_i},\mathbf{e}_V,\mathbf{w}]+\Delta\nu\,V_T/V^2,\\
+Dp_V[\mathbf{w}]=R\left(-V^{-2}-\psi_{VV}\right)+\frac{2RTV_T}{V^3}-RT\,D^3\psi[\mathbf{e}_V,\mathbf{e}_V,\mathbf{w}],\\
+\frac{\partial^2C}{\partial T\,\partial P}=\frac{1}{p_V}\left(DC_V[\mathbf{w}]-\frac{C_V\,Dp_V[\mathbf{w}]}{p_V}\right),\qquad
+\frac{\partial^2s_r}{\partial T\,\partial P}=-\frac{\partial^2C_r}{\partial T\,\partial P},\qquad
+\frac{\partial\Delta_rh_\rho}{\partial P}=RT^2\frac{\partial^2C}{\partial T\,\partial P}.
 $$
 
 ## `repeated_direction_energy_third`
@@ -1886,14 +1903,14 @@ $$
 - Status: Exact derivation
 - Source: Gibbs-Helmholtz on the model Gibbs function G = A_EOS + PV + sum_i n_i RT s_i(T,P) of a referenced reactive problem; standard_pressure_density_conversion and standard_state_transfer_temperature_(second_)derivative
 - Description: Species S with a supplied ideal-gas record keep its h and c_p; species D with an empty record list solve the EOS-basis reaction enthalpies and heat capacities on the density basis, minimum norm. Records fix the conserved moieties, so the remaining null space of nu_D must be parallel to the charges z_D: that ionic charge gauge cancels in every electroneutral phase and in every neutral apparent partial property. Total h and frozen-composition c_p add the residual parts (EqID: `total_enthalpy`); the equilibrium heat capacity is the temperature action of h.
-- Change note: A reaction-row residual beyond sqrt(eps) max(1, |Delta_r x| + sum_i |nu_ri x_i|), a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values, h first actions along feed and temperature at fixed pressure, c_p first actions along feed. Pressure-moving caloric actions need d2C/dTdP for system-pressure rows; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
+- Change note: A reaction-row residual beyond sqrt(eps) max(1, |Delta_r x| + sum_i |nu_ri x_i|), a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values, h first actions along feed, temperature and pressure (driven or solved), c_p first actions along feed at fixed pressure. The pressure slope solves the same system with right side P RT^2 d2C/dTdP (EqID: `standard_state_transfer_temperature_pressure_derivative`, zero for fixed-source-pressure rows) and zero for record species, whose ideal-gas h is pressure independent. c_p temperature or pressure actions need d3C/dT3 or d3C/dT2dP; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
 
 $$
 h_{\rho,i}=h_{P,i}-RT,\quad c_{p,\rho,i}=c_{p,P,i}-R\ (i\in S),\qquad
 \Delta_rh_\rho=RT^2\frac{d\ln K_\rho}{dT},\\
 \boldsymbol{\nu}_D\,\mathbf{x}_D=\Delta_r\mathbf{x}-\boldsymbol{\nu}_S\,\mathbf{x}_S\quad(\mathbf{x}=\mathbf{h}_\rho,\ \mathbf{c}_{p,\rho}),\qquad
 \mathcal N(\boldsymbol{\nu}_D)\subseteq\operatorname{span}(\mathbf z_D),\\
-h=\sum_ix_i\left(h_{\rho,i}+RT\right)+h^{res},\qquad c_p=\sum_ix_i\left(c_{p,\rho,i}+R\right)+c_p^{res}.
+h=\sum_ix_i\left(h_{\rho,i}+RT\right)+h^{res},\qquad c_p=\sum_ix_i\left(c_{p,\rho,i}+R\right)+c_p^{res},\qquad \boldsymbol{\nu}_D\,\partial_P\mathbf{h}_{\rho,D}=RT^2\,\partial_T\partial_P C.
 $$
 
 ## `ideal_enthalpy`

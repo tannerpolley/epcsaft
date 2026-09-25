@@ -185,8 +185,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             anchor = trace.state[point].molar_density;
         }
         if (pressure_jets) {
-            const auto& terminal = trace.state.back();
-            const double volume = 1.0 / terminal.molar_density;
+            const double volume = 1.0 / trace.state.back().molar_density;
             const auto derivatives = model.evaluate(
                 temperature, volume, trace.composition.back(), DerivativeOrder::Hessian);
             const std::size_t width = derivatives.gradient.size();
@@ -270,7 +269,9 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     // The same first slope in an active coordinate theta, with p_theta = -RT psi_{V theta}.
     // EqID: standard_state_transfer_temperature_second_derivative
     // d2C/dT2|_P = D2C[w,w] + C_V V_TT along w = e_T + V_T e_V, V_TT = -D2p[w,w]/p_V.
-    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0) -> std::array<std::optional<double>, 2> {
+    // EqID: standard_state_transfer_temperature_pressure_derivative
+    // d2C/dTdP = D(C_V/p_V)[w] = (DC_V[w] - C_V Dp_V[w]/p_V)/p_V at a system-pressure reference.
+    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0) -> std::array<std::optional<double>, 3> {
         const auto& derivatives = trace.thermal_derivatives[point];
         const std::size_t width = derivatives ? derivatives->gradient.size() : 0;
         if (!derivatives || width < 2 + stoichiometry.size() || width <= coordinate
@@ -295,21 +296,39 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         const double volume_t = -pressure_t / pressure_v;
         const double slope = contraction_t + contraction_v * volume_t;
         if (!(pressure_v < 0.0) || !std::isfinite(slope)) return {};
-        if (trace.temperature_order < 2 || coordinate != 0) return {slope, std::nullopt};
+        std::array<std::optional<double>, 3> result{slope};
+        if (coordinate != 0) return result;
         std::vector<double> path(width, 0.0), along_volume(width, 0.0);
         path[0] = 1.0;
         path[1] = volume_t;
         along_volume[1] = 1.0;
-        const auto& composition = trace.composition[ladder];
-        const auto reaction_third = model.residual_energy_action(temperature, volume, composition, {reaction, path, path});
-        const auto volume_third = model.residual_energy_action(temperature, volume, composition, {along_volume, path, path});
-        if (!reaction_third.action || !volume_third.action) return {slope, std::nullopt};
-        const double contraction_ww = *reaction_third.action + delta_nu * volume_t * volume_t / (volume * volume);
-        const double pressure_ww = -2.0 * gas * volume_t / (volume * volume)
-            + 2.0 * rt * volume_t * volume_t / (volume * volume * volume)
-            - gas * (2.0 * (h[width] + volume_t * h[width + 1]) + temperature * *volume_third.action);
-        const double second = contraction_ww - contraction_v * pressure_ww / pressure_v;
-        return {slope, std::isfinite(second) ? std::optional<double>(second) : std::nullopt};
+        // D3psi[u, v, v]: the repeated-direction E3 route keeps the singular pure-ionic reaction
+        // third derivative out of every mixed response at dilute ionic states.
+        const auto third = [&](const std::vector<double>& u, const std::vector<double>& v) {
+            return model.residual_energy_action(temperature, volume, trace.composition[ladder], {u, v, v}).action;
+        };
+        const auto reaction_ww = trace.temperature_order < 2 ? std::nullopt : third(reaction, path);
+        const auto volume_ww = trace.temperature_order < 2 ? std::nullopt : third(along_volume, path);
+        if (reaction_ww && volume_ww) {
+            const double contraction_ww = *reaction_ww + delta_nu * volume_t * volume_t / (volume * volume);
+            const double pressure_ww = -2.0 * gas * volume_t / (volume * volume)
+                + 2.0 * rt * volume_t * volume_t / (volume * volume * volume)
+                - gas * (2.0 * (h[width] + volume_t * h[width + 1]) + temperature * *volume_ww);
+            result[1] = contraction_ww - contraction_v * pressure_ww / pressure_v;
+        }
+        if (!pressure_jets) return result;
+        // D3psi[nu, e_V, w] by balanced polarization in (a e_V +- w), a sizing e_V to w on the E3 scales.
+        const double a = volume * std::max(1.0 / temperature, std::abs(volume_t) / volume);
+        const auto shifted = [&](double step) { auto v = path; v[1] += step; return third(reaction, v); };
+        const auto reaction_plus = shifted(a), reaction_minus = shifted(-a);
+        const auto volume_vw = third(path, along_volume);
+        if (reaction_plus && reaction_minus && volume_vw) {
+            const double contraction_vw = (*reaction_plus - *reaction_minus) / (4.0 * a) + delta_nu * volume_t / (volume * volume);
+            const double pressure_vw = gas * (-1.0 / (volume * volume) - h[width + 1])
+                + 2.0 * rt * volume_t / (volume * volume * volume) - rt * *volume_vw;
+            result[2] = (contraction_vw - contraction_v * pressure_vw / pressure_v) / pressure_v;
+        }
+        return result;
     };
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
@@ -356,33 +375,34 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             return result;
         }
         result.terminal_contraction = contractions.back();
-        const std::array<std::array<std::optional<double>, 2>, 3> slopes = {
+        const std::array<std::array<std::optional<double>, 3>, 3> slopes = {
             temperature_slopes(0), temperature_slopes(1), temperature_slopes(2)};
-        // Order one passes the value's limit check in RT units, T|dD| <= 5e-5; order two is
-        // sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
-        for (std::size_t k = 0; k < 2; ++k) {
-            if (!slopes[0][k] || !slopes[1][k] || !slopes[2][k]) continue;
-            const double change = std::pow(temperature, static_cast<double>(k + 1)) * std::max(
-                std::abs(*slopes[2][k] - *slopes[1][k]), std::abs(*slopes[1][k] - *slopes[0][k]));
-            (k == 0 ? result.observed_temperature_derivative_change
-                    : result.observed_temperature_second_derivative_change) = change;
-            if (k == 0 ? change <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-                       : GAS_CONSTANT_J_PER_MOL_K * change <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value)
-                (k == 0 ? result.terminal_contraction_temperature_derivative
-                        : result.terminal_contraction_temperature_second_derivative) = slopes[2][k];
-        }
-        // A parameter slope passes the value's criterion at the parameter scale max(|theta|, 1).
+        // A slope is admitted when its scaled change over the last three ladder points meets the value's
+        // criterion: T|dD| (first), T P|dD| (mixed) and max(|theta|, 1)|dD| (parameter) at most 5e-5. The
+        // second slope is sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
+        const auto admit = [](const std::array<std::optional<double>, 3>& ladder, double scale, double tolerance,
+                              std::optional<double>* observed = nullptr) -> std::optional<double> {
+            if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+            const double change = scale * std::max(std::abs(*ladder[2] - *ladder[1]), std::abs(*ladder[1] - *ladder[0]));
+            if (observed != nullptr) *observed = change;
+            return change <= tolerance ? ladder[2] : std::nullopt;
+        };
+        const auto order = [&](std::size_t k) { return std::array{slopes[0][k], slopes[1][k], slopes[2][k]}; };
+        const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
+        result.terminal_contraction_temperature_derivative = admit(order(0), temperature, tolerance,
+            &result.observed_temperature_derivative_change);
+        result.terminal_contraction_temperature_second_derivative = admit(order(1), temperature * temperature,
+            policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
+            &result.observed_temperature_second_derivative_change);
+        result.terminal_contraction_temperature_pressure_derivative = admit(order(2), temperature * trace.pressure, tolerance);
         const auto values = model.active_parameter_values();
-        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
-            const auto first = temperature_slopes(0, column + a)[0], middle = temperature_slopes(1, column + a)[0];
-            const auto last = temperature_slopes(2, column + a)[0];
-            auto& admitted = result.terminal_contraction_parameter_derivative.emplace_back();
-            if (first && middle && last && std::max(std::abs(values[a]), 1.0) * std::max(std::abs(*last - *middle),
-                    std::abs(*middle - *first)) <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value) admitted = last;
-        }
+        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a)
+            result.terminal_contraction_parameter_derivative.push_back(admit({temperature_slopes(0, column + a)[0],
+                temperature_slopes(1, column + a)[0], temperature_slopes(2, column + a)[0]}, std::max(std::abs(values[a]), 1.0), tolerance));
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;
             result.terminal_contraction_pressure_second_derivative = 0.0;
+            result.terminal_contraction_temperature_pressure_derivative = 0.0;
         } else if (!pressure_jets) {
             // The reference value and terminal-change gate are available from the
             // ladder alone.  Defer E2/E3 pressure contractions until a pressure

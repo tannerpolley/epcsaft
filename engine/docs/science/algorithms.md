@@ -752,24 +752,30 @@ points and uses EqID: `standard_state_transfer_temperature_derivative`: the
 slope passes the value criterion in RT units, and its target slope
 $s_r'=-d\ln K_{\rho,r}/dT$ follows the value's minimum-norm owner. Temperature
 and mixed T/P actions are therefore available at order one; a refused slope
-leaves the value and sibling directions intact. A requested active EOS-parameter
+leaves the value and sibling directions intact. An order-two temperature
+action adds $s_r''$ (EqID: `standard_state_transfer_temperature_second_derivative`)
+and, when pressure also moves, $\partial^2 s_r/\partial T\partial P$ (EqID:
+`standard_state_transfer_temperature_pressure_derivative`) to the row jet, so
+temperature actions alone or mixed with feed or pressure are available at order two. A requested active EOS-parameter
 direction uses the same three E2 evaluations and EqID:
 `standard_state_transfer_parameter_derivative`: each requested slope passes the
 value criterion at the parameter scale max(|theta|, 1), and
 $\partial s_r/\partial\theta=-dC_r/d\theta$ follows the same owner, so parameter
 and mixed T/P/parameter actions are available at order one. Continuation
-tangents use the same order-one chains. Free temperature, raw lever derivatives, temperature and parameter
-actions above order one, caloric parameter actions, and third-order actions
-involving pressure remain unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
+tangents use the same order-one chains. Free temperature, raw lever derivatives, temperature actions above order two,
+parameter actions above order one, caloric parameter actions, and third-order
+actions involving pressure remain unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
 supplied records anchor their species, record-less species are completed from
 the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
 may remain. A heat-capacity value or enthalpy temperature action requests the
 second slope (EqID: `standard_state_transfer_temperature_second_derivative`),
 admitted when its terminal change is at most 0.01 J/(mol K) in heat-capacity
-units; its refusal leaves enthalpy values and feed actions available. Enthalpy values and first feed/temperature
-actions at fixed pressure and heat-capacity values and first feed actions are
-available; pressure-moving caloric actions, heat-capacity temperature actions,
-caloric orders above one, u, s and c_v remain unavailable, while independently
+units; its refusal leaves enthalpy values and feed actions available. Enthalpy values
+and first feed, temperature and pressure actions (a driven pressure, or the
+solved pressure of a free-pressure cell, through the mixed slope's
+$\partial\Delta_rh_\rho/\partial P$) and heat-capacity values and first feed
+actions at fixed pressure are available; heat-capacity temperature or pressure
+actions, caloric orders above one, u, s and c_v remain unavailable, while independently
 valid residual properties remain usable.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct

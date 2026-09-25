@@ -174,6 +174,7 @@ struct StandardTerm final {
     std::vector<std::vector<double>> derivative;
     std::vector<double> pressure_derivative;
     std::vector<double> pressure_second_derivative;
+    std::vector<double> temperature_pressure_derivative;  // d2(g_i/RT)/dTdP; empty unless requested
     // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
     std::vector<std::vector<double>> parameter_derivative;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
@@ -404,12 +405,12 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
-    std::vector<double> enthalpy, heat_capacity;
+    std::vector<double> enthalpy, heat_capacity, enthalpy_pressure;  // h, cp and dh/dP per species
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::string message;
 };
-ReferenceCalorics reference_calorics(
-    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity);
+ReferenceCalorics reference_calorics(const CompiledSystem& compiled, double temperature, double pressure,
+                                     bool heat_capacity, bool pressure_slope = false);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;
