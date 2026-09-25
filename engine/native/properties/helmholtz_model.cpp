@@ -712,7 +712,7 @@ HelmholtzModel::HelmholtzModel(
                 "site_component");
     }
     for (const int active : parameters_.association_active) {
-        require(active == 0 || active == 1, "association_active");
+        require(active >= 0 && active <= 2, "association_active");
     }
     for (std::size_t pair = 0; pair < site_pairs; ++pair) {
         if (parameters_.association_active[pair] != 0) {

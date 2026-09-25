@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Change every unlike-pair association rule edge from arithmetic-energy-geometric-volume to wolbach-sandler, which applies the Gross-Sadowski 2002 Eq. 3 size factor [sqrt(sigma_i sigma_j)/((sigma_i+sigma_j)/2)]^3 with the state segment diameters. Preserve every other coefficient, unit, site, correlation, source locator and domain. Increment document version."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "2504e634e555d1e28c8ddae7ea53b0fc85e208234be1156820650b2d6e1bd42d"
+
+[[sources]]
+source_id = "predecessor-parameters"
+role = "Immutable predecessor parameter document"
+packet_id = "figiel-2025-reference-electrolytes"
+packet_version = "3"
+packet_member = "parameters/parameters.json"
+sha256 = "4d2429a9922d7cdce0bf90b2d41b2133139b21d3e2a8d143c2091247eeb4072f"

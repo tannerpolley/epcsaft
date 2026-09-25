@@ -155,7 +155,7 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
     physics is consumed unchanged; this fixed state does not qualify the full LLE curve."""
     names = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
     model = Mixture(Parameters.from_json(
-        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 6), components=names))
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=names))
     feed = [0.7295582904360919, 0.013336215598851255, 0.20495308450174893,
             0.02607620473165392, 0.02607620473165392]
     starts = [(0.6416650425482523, [0.9166627632724768, 0.0010121592710021154,
@@ -240,7 +240,7 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
     The speciation is exact by construction: each density-basis ln K_r = sum_i nu_ri (ln(x_i rho) + mu_i^res/RT)
     at x (packet 3 EOS with the applications' Born runtime defaults), and x carries the feed's balances. The
     684b213a start, which seeded the guess directly, exhausted the 200-iteration budget on both states."""
-    mapping = json.loads(parameters_json("mea-co2-h2o-nine-species-estimation", 3).read_text())
+    mapping = json.loads(parameters_json("mea-co2-h2o-nine-species-estimation", 4).read_text())
     for family in mapping["model_families"]:
         if family["kind"] == "electrolyte":
             family.update(c_shell=1.0, c_dielectric=1.0)

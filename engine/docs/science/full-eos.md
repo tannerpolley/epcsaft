@@ -273,14 +273,23 @@ Defining relation: [EqID: `association_strength`](../equations.md#association_st
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
 Gross2001 hard-sphere contact function. Every admitted site pair is an explicit
-topology edge whose source is either a direct coefficient record or the named
-closed-registry rule `arithmetic-energy-geometric-volume`. For unlike
-components `i` and `j`, that rule resolves
+topology edge whose source is either a direct coefficient record or one of two
+named closed-registry rules. For unlike components `i` and `j`, both rules
+resolve
 
 ```text
 epsilon_iA,jB/k_B = [(epsilon_iA,iB/k_B) + (epsilon_jA,jB/k_B)] / 2
 kappa_iA,jB = sqrt(kappa_iA,iB kappa_jA,jB).
 ```
+
+`arithmetic-energy-geometric-volume` uses these values unchanged. `wolbach-sandler`
+is Gross2002 Eqs. 2--3, which multiply the volume by the size factor
+`[sqrt(sigma_i sigma_j) / ((sigma_i + sigma_j)/2)]^3`. Because Delta already
+carries `sigma_ij^3 = [(sigma_i + sigma_j)/2 (1 - l_ij)]^3`, the size factor is
+applied exactly by using `[sqrt(sigma_i sigma_j)(1 - l_ij)]^3` in Delta for
+that edge. The state-evaluated `sigma(T)` keeps the temperature dependence and
+its derivatives, which matter for the water correlation. The size factor is 1
+for like pairs.
 
 Both inputs must be donor--acceptor self-edges for the same two components and
 must contain the output sites. The output must itself connect one donor and one
@@ -290,9 +299,11 @@ recorded derivative chain is `1/2` for each energy input and
 parameter derivatives propagate through the rule without treating its output
 as an independent fit coefficient.
 
-The source-complete bounded Figiel2025 and Khudaida2026 documents explicitly
-name this rule, its pure-component self-edge inputs, and its provenance for
-both admitted cross directions. An omitted unlike-site pair remains inactive,
+The Figiel2025, Figiel–Yu–Held 2025, Khudaida2026 and MEA nine-species packets
+name `wolbach-sandler` from their current versions onward, with its
+pure-component self-edge inputs and its provenance for both admitted cross
+directions. Their earlier versions name `arithmetic-energy-geometric-volume`
+and stay unchanged as immutable records. An omitted unlike-site pair remains inactive,
 not inferred. String schemes, inferred donor/acceptor pairs, implicit combining,
 and default insertion are forbidden.
 

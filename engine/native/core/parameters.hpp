@@ -58,7 +58,7 @@ struct Parameters final {
     // Association sites; pair arrays are row-major over sites
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
-    std::vector<int> association_active;
+    std::vector<int> association_active;  // 0 inactive, 1 active, 2 Wolbach--Sandler rule edge
     std::vector<double> association_energy_over_k;
     std::vector<double> association_volume;
 
