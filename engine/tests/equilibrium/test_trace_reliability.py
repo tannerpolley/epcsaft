@@ -1,5 +1,6 @@
 """#87/#90 trace-state reliability: the analytic trace solution below the former composition box
-and the intensive accuracy of trace rows after the amount-weighted optimizer stop."""
+and the intensive accuracy of trace rows after the amount-weighted optimizer stop; #154/#157 cold
+reacting-liquid starts that recover a manufactured speciation with trace water ions."""
 import json
 import math
 from typing import Any

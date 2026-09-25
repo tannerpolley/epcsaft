@@ -314,18 +314,21 @@ restoration). A caller start skips this seed. If the sub-solve, the seeding, the
 seeded solve or its density-branch admission fails or throws, the caller's own
 start runs unchanged; only the final attempt's diagnostics are returned. A reacting
 declaration of one free-amount phase, including that finite-phase sub-solve, starts
-from the ideal-solution speciation of the feed balances $Bn=b$. Each chemical row's
-residual potential, $-\ln v$ and standard term form $c_j$, frozen at the seeded
-composition (the caller's guess or the feed, absent species raised to
-`EQUILIBRIUM_COMPOSITION_BOX`) and its declared density root at the seed $T$ and $P$.
+from the ideal-solution speciation of the feed balances $Bn=b$ unless a previous
+successful result supplies the start. Each chemical row's residual potential, $-\ln v$
+and standard term form $c_j$, frozen at the seeded composition (the caller's guess or
+the feed, absent species raised to `EQUILIBRIUM_COMPOSITION_BOX`) and its declared
+density root at the seed $T$ and $P$.
 The start minimizes $\sum_j n_j\,(c_j+\ln(n_j/n))$ subject to $Bn=b$ by the
 Gordon–McBride element-potential Newton iteration and step control (NASA RP-1311,
-1994, eqs 2.24–2.26 and 3.1–3.3) until every log-amount step, trace species included,
-is below `EQUILIBRIUM_START_SPECIATION_STEP`; three sweeps refresh $c$ at the new
-composition, and the free amount starts at the speciated total. Each sweep reduced
-the largest log-composition error about tenfold on the MEA liquids, to at most 0.03
-after three. At an equilibrium $x^*$ the frozen terms make $x^*$ its own speciation,
-so a speciated guess is kept. A failed or thrown speciation keeps the seeded start.
+1994, eqs 2.24–2.26 and 3.1–3.3; the trace-species limit applies only to a species
+growing faster than the total) until every log-amount step, trace species included,
+is below `EQUILIBRIUM_START_SPECIATION_STEP`; two sweeps refresh $c$ and the root at
+the new composition (continuing the previous root, solved anew when speciation moves
+it beyond the anchored window), and the free amount starts at the speciated total. At
+an equilibrium $x^*$ the frozen terms make $x^*$ its own speciation, so a speciated
+guess is kept. A failed or thrown sweep keeps the last speciation, or
+the seeded start if none succeeded.
 Without it, an unspeciated start (absent species at $1/|support|$, water ions at a
 caller's zero) leaves under-populated species of the log-composition chart without
 restoring force: their objective gradient scales with $x_i$, the Lagrangian Hessian

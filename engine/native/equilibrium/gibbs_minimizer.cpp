@@ -1064,7 +1064,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(compiled);
+            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !(start && start->success));
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         try {
