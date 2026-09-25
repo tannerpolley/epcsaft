@@ -1056,6 +1056,9 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     const EquilibriumResult structural = structural_result(compiled, scope);
     if (!compiled.feasible) return structural;
     const bool use_start = start.has_value() && usable_start(compiled, *start);
+    // A previous result that start_point copies replaces the start's composition; skip its speciation.
+    const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
+        && valid_previous_phase(*start, 0, model.parameters().component_count());
     auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled);
     EquilibriumResult result;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
@@ -1064,7 +1067,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !(start && start->success));
+            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         try {

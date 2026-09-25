@@ -315,7 +315,7 @@ seeded solve or its density-branch admission fails or throws, the caller's own
 start runs unchanged; only the final attempt's diagnostics are returned. A reacting
 declaration of one free-amount phase, including that finite-phase sub-solve, starts
 from the ideal-solution speciation of the feed balances $Bn=b$ unless a previous
-successful result supplies the start. Each chemical row's residual potential, $-\ln v$
+successful result supplies its composition. Each chemical row's residual potential, $-\ln v$
 and standard term form $c_j$, frozen at the seeded composition (the caller's guess or
 the feed, absent species raised to `EQUILIBRIUM_COMPOSITION_BOX`) and its declared
 density root at the seed $T$ and $P$.
