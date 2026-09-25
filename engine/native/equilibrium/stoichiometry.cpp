@@ -394,80 +394,20 @@ std::vector<double> reaction_affinities(
     return result;
 }
 
-std::vector<double> balance_residual(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& amounts,
-    const std::vector<double>& target
-) {
-    if (basis.size() != amounts.size()) {
-        throw std::invalid_argument("balance amount size");
-    }
-    const auto actual = matvec(basis, amounts);
-    if (actual.size() != target.size()) throw std::invalid_argument("balance target size");
-    std::vector<double> result(actual.size(), 0.0);
-    for (std::size_t i = 0; i < actual.size(); ++i) result[i] = actual[i] - target[i];
-    return result;
-}
-
-std::vector<double> transpose_matvec(
-    const std::vector<std::vector<double>>& matrix,
-    const std::vector<double>& vector
-) {
-    if (matrix.size() != vector.size()) throw std::invalid_argument("matrix height");
-    if (matrix.empty()) return {};
-    const std::size_t width = matrix.front().size();
-    std::vector<double> result(width, 0.0);
-    for (std::size_t row = 0; row < matrix.size(); ++row) {
-        if (matrix[row].size() != width) throw std::invalid_argument("matrix width");
-        for (std::size_t column = 0; column < width; ++column) {
-            result[column] += matrix[row][column] * vector[row];
-        }
-    }
-    return result;
-}
-
-std::vector<double> project_to_balance(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& composition
-) {
-    if (basis.empty()) return {};
-    return matvec(basis, composition);
-}
-
-std::vector<double> reconstruct_from_balance(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& coordinates
-) {
-    if (basis.size() != coordinates.size()) {
-        throw std::invalid_argument("balance coordinate size");
-    }
-    return transpose_matvec(basis, coordinates);
-}
-
 bool all_finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(),
                        [](double value) { return std::isfinite(value); });
 }
 
-double projection_error(
-    const std::vector<std::vector<double>>& basis,
-    const std::vector<double>& composition
-) {
-    const auto coordinates = project_to_balance(basis, composition);
-    const auto reconstruction = reconstruct_from_balance(basis, coordinates);
-    if (reconstruction.size() != composition.size()) {
-        throw std::invalid_argument("basis width");
-    }
+// Largest component of v outside the row space of an orthonormal basis: max_i |(B^T B v - v)_i|.
+static double projection_error(const std::vector<std::vector<double>>& basis, const std::vector<double>& v) {
+    const auto coordinates = matvec(basis, v);
     double result = 0.0;
-    for (std::size_t i = 0; i < composition.size(); ++i) {
-        result = std::max(result, std::abs(reconstruction[i] - composition[i]));
+    for (std::size_t i = 0; i < v.size(); ++i) {
+        double value = -v[i];
+        for (std::size_t row = 0; row < basis.size(); ++row) value += basis[row][i] * coordinates[row];
+        result = std::max(result, std::abs(value));
     }
-    return result;
-}
-
-double maximum_abs(const std::vector<double>& values) {
-    double result = 0.0;
-    for (const double value : values) result = std::max(result, std::abs(value));
     return result;
 }
 

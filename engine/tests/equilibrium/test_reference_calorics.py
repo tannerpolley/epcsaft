@@ -127,7 +127,9 @@ def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence:
     for label, action, step, shift in (("feed", partial, 0.2, (0.0, 1.0)), ("T", heat, 0.05, (1.0, 0.0))):
         coarse, fine = ((extensive(T0 + s * shift[0], s * shift[1]) - extensive(T0 - s * shift[0], -s * shift[1]))
                         / (2 * s) for s in (2 * step, step))
-        assert abs(fine - action) <= abs(coarse - action) / 2  # O(step^2) toward the action
+        # O(step^2) toward the action above re-solve rounding (a few ulps of nH over the step; along the feed
+        # nH is linear here to rounding, so its truncation is below this floor at every step on both starts)
+        assert abs(fine - action) <= max(abs(coarse - action) / 2, 16 * math.ulp(n * h) / step)
         same(evidence, f"reference-calorics/d(nH)/{label}/resolve", action, fine, rtol=1e-6, atol=0.0,
              inputs={**inputs, "step": step}, basis="Identity", method="centered-resolve-difference",
              claim="extensive enthalpy action equals the re-solved slope")

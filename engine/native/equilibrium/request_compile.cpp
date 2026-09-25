@@ -1057,6 +1057,12 @@ std::vector<double> CompiledSystem::generic_point() const {
     return point;
 }
 
+std::vector<std::size_t> CompiledSystem::phase_offsets() const {
+    std::vector<std::size_t> result;
+    for (const auto& item : layouts(*this)) result.push_back(item.x.front());
+    return result;
+}
+
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {

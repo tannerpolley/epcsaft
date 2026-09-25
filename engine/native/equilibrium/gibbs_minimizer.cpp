@@ -20,26 +20,6 @@
 namespace epcsaft::equilibrium {
 namespace {
 
-std::size_t phase_width(const CompiledSystem& compiled) {
-    std::size_t result = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        result += phase.support.size() + 1;
-        if (phase.amount.kind == AmountKind::Free) ++result;
-    }
-    return result;
-}
-
-std::vector<std::size_t> phase_offsets(const CompiledSystem& compiled) {
-    std::vector<std::size_t> result;
-    std::size_t offset = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        result.push_back(offset);
-        offset += phase.support.size() + 1;
-        if (phase.amount.kind == AmountKind::Free) ++offset;
-    }
-    return result;
-}
-
 double maximum_abs(const std::vector<double>& values) {
     double result = 0.0;
     for (const double value : values) {
@@ -248,37 +228,6 @@ std::vector<double> add_multipliers(
 
 bool valid_previous_phase(
     const EquilibriumResult& start, std::size_t phase, std::size_t components
-);
-
-void copy_previous_phase(
-    const CompiledSystem& compiled, const EquilibriumResult& start,
-    std::size_t phase, std::vector<double>& point,
-    const std::vector<std::size_t>& offsets
-);
-
-std::vector<double> start_point(
-    const CompiledSystem& compiled, const EquilibriumResult& start,
-    std::vector<double> point
-) {
-    const std::size_t components = compiled.model->parameters().component_count();
-    if (start.phase_count != compiled.problem.phases.size()) return point;
-    const auto offsets = phase_offsets(compiled);
-    for (std::size_t phase = 0; phase < start.phase_count; ++phase) {
-        if (valid_previous_phase(start, phase, components)) {
-            copy_previous_phase(compiled, start, phase, point, offsets);
-        }
-    }
-    std::size_t intensive = phase_width(compiled);
-    if (compiled.problem.temperature.free && !start.temperature.empty()) point[intensive++] = start.temperature[0];
-    if (compiled.problem.pressure.free && !start.pressure.empty()) point[intensive++] = start.pressure[0];
-    if (compiled.pinned_count != 0 && start.multipliers.size() == compiled.rank + compiled.charge_row_count) {
-        std::copy(start.multipliers.begin(), start.multipliers.end(), point.begin() + compiled.primal_size);
-    }
-    return point;
-}
-
-bool valid_previous_phase(
-    const EquilibriumResult& start, std::size_t phase, std::size_t components
 ) {
     if (!start.success || phase >= start.phase_count
         || start.mole_fractions.size() != start.phase_count * components
@@ -323,6 +272,27 @@ void copy_previous_phase(
     point[cursor] = std::log(compiled.model->packing_fraction_coefficient(
         start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
         composition) * density);
+}
+
+std::vector<double> start_point(
+    const CompiledSystem& compiled, const EquilibriumResult& start,
+    std::vector<double> point
+) {
+    const std::size_t components = compiled.model->parameters().component_count();
+    if (start.phase_count != compiled.problem.phases.size()) return point;
+    const auto offsets = compiled.phase_offsets();
+    for (std::size_t phase = 0; phase < start.phase_count; ++phase) {
+        if (valid_previous_phase(start, phase, components)) {
+            copy_previous_phase(compiled, start, phase, point, offsets);
+        }
+    }
+    std::size_t intensive = compiled.primal_size - compiled.free_intensive_count;
+    if (compiled.problem.temperature.free && !start.temperature.empty()) point[intensive++] = start.temperature[0];
+    if (compiled.problem.pressure.free && !start.pressure.empty()) point[intensive++] = start.pressure[0];
+    if (compiled.pinned_count != 0 && start.multipliers.size() == compiled.rank + compiled.charge_row_count) {
+        std::copy(start.multipliers.begin(), start.multipliers.end(), point.begin() + compiled.primal_size);
+    }
+    return point;
 }
 
 bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start) {
@@ -370,24 +340,16 @@ ResidualSummary summarize_residuals(
     const std::vector<Row>& rows, const std::vector<double>& values
 ) {
     ResidualSummary result;
-    const std::size_t count = std::min(rows.size(), values.size());
-    for (std::size_t index = 0; index < count; ++index) {
-        const double magnitude = std::abs(values[index]);
-        if (!std::isfinite(magnitude)) result.maximum = std::numeric_limits<double>::infinity();
-        else result.maximum = std::max(result.maximum, magnitude);
-        if (rows[index].kind == RowKind::Chemical || rows[index].kind == RowKind::Pressure) {
-            if (!std::isfinite(magnitude)) result.intensive = std::numeric_limits<double>::infinity();
-            else result.intensive = std::max(result.intensive, magnitude);
-        } else if (rows[index].kind == RowKind::Moiety) {
-            if (!std::isfinite(magnitude)) result.balance = std::numeric_limits<double>::infinity();
-            else result.balance = std::max(result.balance, magnitude);
-        } else if (rows[index].kind == RowKind::Normalization) {
-            if (!std::isfinite(magnitude)) result.normalization = std::numeric_limits<double>::infinity();
-            else result.normalization = std::max(result.normalization, magnitude);
-        } else if (rows[index].kind == RowKind::Electro) {
-            if (!std::isfinite(magnitude)) result.charge = std::numeric_limits<double>::infinity();
-            else result.charge = std::max(result.charge, magnitude);
-        }
+    const auto keep = [](double& slot, double value) {  // a nonfinite row stays infinite
+        slot = std::isfinite(value) ? std::max(slot, std::abs(value)) : std::numeric_limits<double>::infinity();
+    };
+    for (std::size_t index = 0; index < std::min(rows.size(), values.size()); ++index) {
+        const RowKind kind = rows[index].kind;
+        keep(result.maximum, values[index]);
+        if (kind == RowKind::Chemical || kind == RowKind::Pressure) keep(result.intensive, values[index]);
+        else if (kind == RowKind::Moiety) keep(result.balance, values[index]);
+        else if (kind == RowKind::Normalization) keep(result.normalization, values[index]);
+        else if (kind == RowKind::Electro) keep(result.charge, values[index]);
     }
     return result;
 }
@@ -435,10 +397,8 @@ bool GibbsMinimizer::get_bounds_info(
     }
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
-    const auto rows = constraint_rows();
     std::fill(g_l, g_l + m, 0.0);
     std::fill(g_u, g_u + m, 0.0);
-    (void)rows;
     return true;
 }
 
@@ -859,11 +819,11 @@ EquilibriumResult run_driver(
     }
     result.message = core::describe(convergence);
     scope.finish(convergence);
-    const auto offsets = phase_offsets(compiled);
+    const auto offsets = compiled.phase_offsets();
     std::vector<std::vector<double>> compositions;
     std::vector<double> amounts;
     std::vector<double> volumes;
-    std::size_t intensive_offset = phase_width(compiled);
+    std::size_t intensive_offset = compiled.primal_size - compiled.free_intensive_count;
     const double candidate_temperature = compiled.problem.temperature.free
         ? full[intensive_offset] : compiled.problem.temperature.value;
     bool topology_ok = true;
@@ -1041,7 +1001,7 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
     TopologyCheck result;
     if (full.size() < compiled.primal_size) return result;
     const std::size_t components = compiled.model->parameters().component_count();
-    const auto offsets = phase_offsets(compiled);
+    const auto offsets = compiled.phase_offsets();
     std::vector<std::vector<double>> compositions;
     std::vector<std::size_t> eta_index;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
