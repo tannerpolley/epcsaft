@@ -1,6 +1,7 @@
 """#87/#90 trace-state reliability: the analytic trace solution below the former composition box
 and the intensive accuracy of trace rows after the amount-weighted optimizer stop; #154/#157 cold
-reacting-liquid starts that recover a manufactured speciation with trace water ions."""
+reacting-liquid starts that recover a manufactured speciation with trace water ions; #159 stability
+decisions that trace curvature below rounding cannot flip."""
 import json
 import math
 from typing import Any
@@ -260,3 +261,35 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
         same(evidence, f"cold-start/{label}/{species}", value, reference, atol=0.0, rtol=1e-8, unit="1",
              inputs={"T_K": temperature, "P_Pa": 101325.0, "iterations": result.iterations}, basis="Identity",
              method="manufactured-speciation", claim="a cold reacting-liquid solve recovers the manufactured speciation")
+
+
+@pytest.mark.parametrize("pressure, loading", [(105159.47802968061, 0.25557798094241313),
+                                               (109766.9773907787, 0.3259285401314349)])
+def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: float, loading: float) -> None:
+    """#159: packet-3 MEA liquid at 318.15 K with the absorber's fixed density-basis ln K and CO2 near 1e-15.
+    The raw reduced-Hessian minimum (-2.9e-13 and -2.6e-16) lies under its rounding n eps ||S|| = 8e-11, and
+    wheels 684b213a, 4105e2a4 and main 99e333cd all rejected both states on its sign. The equilibrated inertia
+    (minimum 1.4e-3 against a band below 1e-13, analyses/2026-stability-noise-band) certifies them on every solve."""
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    ln_k = (-605.348, -587.8, -948.2312, -25.1014, -298.6415)
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
+                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
+    problem = Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=pressure, reactions=reactions,
+                      feed=Amounts({"carbon-dioxide": loading * 9.7292821, "monoethanolamine": 9.7292821,
+                                    "water": 76.9751925}))
+    first, second = solve_equilibrium(model, problem), solve_equilibrium(model, problem)
+    assert first.success and second.success, first.message
+    assert first.mole_fractions == second.mole_fractions and first.mole_fractions[0] < 1e-12
+
+
+@pytest.mark.parametrize("k_ij, temperature", [(0.2, 200.0), (0.5, 150.0)])
+def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature: float) -> None:
+    """#159: identical-ethane A <=> B (K = 1) stays at the symmetric stationary point x = 1/2, where a large
+    k_ij makes the reaction direction a Gibbs maximum. Its equilibrated minimum (-0.052 and -0.65) lies
+    ten orders outside the 5e-15 rounding band: rejected as not positive definite, never indeterminate."""
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), k_ij)]))
+    result = solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=temperature, P=5e6,
+                                              feed=Amounts({"s0": 0.5, "s1": 0.5}),
+                                              reactions=[Reaction({"s0": -1.0, "s1": 1.0}, equilibrium_constant=1.0)]))
+    assert not result.success and "is not positive definite" in result.message
+    assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1

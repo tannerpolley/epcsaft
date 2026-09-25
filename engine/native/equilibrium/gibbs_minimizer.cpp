@@ -1,4 +1,5 @@
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "equilibrium/stoichiometry.hpp"
 
 #include "core/trace.hpp"
 
@@ -37,46 +38,47 @@ double specified_amount(const PhaseSpec& phase, const std::vector<double>& feed)
     return phase.amount.fraction * total;
 }
 
-double reduced_hessian_minimum_at(
+// EqID reduced_hessian_stability on the balance nullspace. `minimum` is the smallest eigenvalue in the solved
+// chart. The decision reads the congruent equilibration D = diag(S)^-1/2, S = |objective| + |weighted constraint|
+// curvature, whose inertia is the same, against the rounding band eps (n ||DSD|| + 2 kappa(AD) ||DHD||)
+// (ALG-EQUILIBRIUM, #159): trace log-chart directions have curvature far below eps ||H||.
+struct Curvature final { double minimum = 0.0, equilibrated = 1.0, band = 0.0; };
+
+Curvature reduced_curvature_at(
     const CompiledSystem& compiled, PhasePoint prepared,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.pinned_count != 0 || prepared.point.empty()) return 0.0;
+    if (compiled.pinned_count != 0 || prepared.point.empty()) return {};
     prepared.point.resize(compiled.primal_size);
-    const auto& point = prepared.point;
-    const auto rows = [&compiled] {
-        std::vector<std::size_t> result;
-        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-            if (compiled.rows[row].kind != RowKind::Chemical
-                && compiled.rows[row].kind != RowKind::Pressure) result.push_back(row);
-        }
-        return result;
-    }();
+    using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    const auto n = static_cast<Eigen::Index>(prepared.point.size());
     const auto jacobian = compiled.jacobian_at(prepared);
-    Eigen::MatrixXd constraints(static_cast<Eigen::Index>(rows.size()),
-                                static_cast<Eigen::Index>(point.size()));
-    for (std::size_t row = 0; row < rows.size(); ++row) {
-        for (std::size_t column = 0; column < point.size(); ++column) {
-            constraints(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                jacobian[rows[row] * point.size() + column];
-        }
+    Eigen::MatrixXd constraints(0, n);
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+        if (compiled.rows[row].kind == RowKind::Chemical || compiled.rows[row].kind == RowKind::Pressure) continue;
+        constraints.conservativeResize(constraints.rows() + 1, n);
+        constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, n);
     }
-    const auto svd = constraints.jacobiSvd(Eigen::ComputeFullV);
-    const Eigen::Index rank = svd.rank();
-    if (rank >= static_cast<Eigen::Index>(point.size())) return 1.0;
-    const Eigen::MatrixXd nullspace = svd.matrixV().rightCols(
-        static_cast<Eigen::Index>(point.size()) - rank);
-    const auto exact = compiled.hessian_at(prepared, multipliers);
-    Eigen::MatrixXd hessian(static_cast<Eigen::Index>(point.size()),
-                            static_cast<Eigen::Index>(point.size()));
-    for (std::size_t row = 0; row < point.size(); ++row)
-        for (std::size_t column = 0; column < point.size(); ++column)
-            hessian(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                exact[row * point.size() + column];
-    const Eigen::MatrixXd reduced = nullspace.transpose() * hessian * nullspace;
-    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(reduced);
-    if (eigen.info() != Eigen::Success || eigen.eigenvalues().size() == 0) return 0.0;
-    return eigen.eigenvalues()(0);
+    const Eigen::MatrixXd objective = Eigen::Map<const Dense>(compiled.hessian_at(prepared, {}).data(), n, n);
+    const Eigen::MatrixXd weighted = Eigen::Map<const Dense>(
+        compiled.constraint_hessian_at(prepared, multipliers).data(), n, n);
+    const Eigen::MatrixXd hessian = objective + weighted;
+    const auto reduce = [n](const Eigen::MatrixXd& h, const Eigen::MatrixXd& a) -> std::pair<double, double> {
+        const auto svd = a.jacobiSvd(Eigen::ComputeFullV);
+        const Eigen::Index rank = svd.rank();
+        if (rank >= n) return {1.0, 1.0};
+        const Eigen::MatrixXd z = svd.matrixV().rightCols(n - rank);
+        const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(z.transpose() * h * z, Eigen::EigenvaluesOnly);
+        return {eigen.info() == Eigen::Success ? eigen.eigenvalues()(0) : std::numeric_limits<double>::quiet_NaN(),
+                rank > 0 ? svd.singularValues()(0) / svd.singularValues()(rank - 1) : 1.0};
+    };
+    const Eigen::MatrixXd magnitude = objective.cwiseAbs() + weighted.cwiseAbs();
+    const Eigen::VectorXd d = magnitude.diagonal().unaryExpr([](double s) { return s > 0.0 ? 1.0 / std::sqrt(s) : 1.0; });
+    const Eigen::MatrixXd scaled = d.asDiagonal() * hessian * d.asDiagonal();
+    const auto [equilibrated, kappa] = reduce(scaled, constraints * d.asDiagonal());
+    const double rounding = static_cast<double>(n) * (d.asDiagonal() * magnitude * d.asDiagonal()).norm();
+    return {reduce(hessian, constraints).first, equilibrated,
+            std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm())};
 }
 
 double largest_difference(
@@ -88,11 +90,6 @@ double largest_difference(
         result = std::max(result, std::abs(left[index] - right[index]));
     }
     return result;
-}
-
-bool numeric_state(const std::vector<double>& values) {
-    return std::all_of(values.begin(), values.end(),
-                       [](double value) { return std::isfinite(value); });
 }
 
 double michelsen_deficit(
@@ -149,7 +146,7 @@ const char* solver_status_name(Ipopt::SolverReturn status) noexcept {
 void require_solution_shape(
     const EquilibriumResult& result, std::size_t phases, std::size_t components
 ) {
-    if (!numeric_state(result.residuals) || result.rows.empty()) {
+    if (!all_numeric(result.residuals) || result.rows.empty()) {
         throw std::runtime_error("equilibrium result has invalid residuals");
     }
     if (result.amounts.size() != phases || result.molar_densities.size() != phases
@@ -933,11 +930,18 @@ EquilibriumResult run_driver(
         result.constraint_multipliers = nlp->constraint_multipliers();
     }
     result.coordinates = full;
-    result.reduced_hessian_minimum = reduced_hessian_minimum_at(
-        compiled, std::move(prepared), result.constraint_multipliers);
-    if (compiled.pinned_count == 0 && result.reduced_hessian_minimum <= 0.0) {
+    const auto curvature = reduced_curvature_at(compiled, std::move(prepared), result.constraint_multipliers);
+    result.reduced_hessian_minimum = curvature.minimum;
+    scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
+    scope.probe("reduced_hessian_band", curvature.band);
+    if (compiled.pinned_count == 0 && !(curvature.equilibrated > curvature.band)) {
+        // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
+        const bool singular = curvature.equilibrated >= -curvature.band;
+        if (singular) result.convergence.stop = core::Stop::singular;
         result.success = false;
-        result.message = "reduced_hessian_stability is not positive definite";
+        result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
+            + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)
+            + ", rounding band " + core::optional_number(curvature.band);
         if (!rejected_preparation.empty()) {
             result.message += "; trial preparation failed: " + rejected_preparation;
         }
@@ -1101,7 +1105,7 @@ EquilibriumResult solve_equilibrium_from_coordinates(
     CompiledSystem compiled = compile_problem(model, request);
     EquilibriumResult result = structural_result(compiled, scope);
     if (!compiled.feasible) return result;
-    if (coordinates.size() != compiled.unknown_count() || !numeric_state(coordinates)) {
+    if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates)) {
         throw std::invalid_argument("continuation coordinates do not match the compiled layout");
     }
     return run_driver(model, compiled, coordinates, std::move(result), scope);

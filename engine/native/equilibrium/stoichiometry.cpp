@@ -230,7 +230,7 @@ std::vector<std::vector<double>> standard_state_series(
     const auto targets = reaction_target_series(temperature, reactions, order);
     if (reactions.empty()) {
         if (supplied.size() != components) throw std::invalid_argument("standard state size");
-        if (!all_finite(supplied)) throw std::invalid_argument("invalid standard state");
+        if (!all_numeric(supplied)) throw std::invalid_argument("invalid standard state");
         result[0] = supplied;
         return result;
     }
@@ -243,7 +243,7 @@ std::vector<std::vector<double>> standard_state_series(
         * std::max(1.0, target.norm());
     if (!supplied.empty()) {
         if (supplied.size() != components) throw std::invalid_argument("standard state size");
-        if (!all_finite(supplied)) throw std::invalid_argument("invalid standard state");
+        if (!all_numeric(supplied)) throw std::invalid_argument("invalid standard state");
         const Eigen::Map<const Eigen::VectorXd> gibbs(supplied.data(),
                                                       static_cast<Eigen::Index>(components));
         if ((matrix * gibbs - target).norm() > criterion) {
@@ -347,7 +347,7 @@ void validate_reaction_set(
         if (reaction.stoichiometry.size() != components) {
             throw std::invalid_argument("stoichiometry size does not match components");
         }
-        if (!all_finite(reaction.stoichiometry)) {
+        if (!all_numeric(reaction.stoichiometry)) {
             throw std::invalid_argument("invalid stoichiometry in reaction " + label);
         }
         const int targets = reaction.equilibrium_constant.has_value()
@@ -394,7 +394,7 @@ std::vector<double> reaction_affinities(
     return result;
 }
 
-bool all_finite(const std::vector<double>& values) {
+bool all_numeric(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(),
                        [](double value) { return std::isfinite(value); });
 }

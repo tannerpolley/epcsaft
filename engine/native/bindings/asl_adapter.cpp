@@ -327,8 +327,6 @@ void require_central(const EquilibriumContext& context, const eq::EquilibriumRes
         || result.mole_fractions.size() != 2 * count || result.amounts.size() != 2
         || !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap))
         throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable);
-    if (!std::isfinite(result.reduced_hessian_minimum) || result.reduced_hessian_minimum <= 0.0)
-        throw EquilibriumFailure(ActionStatus::CentralPropertyUnavailable, observable);
 }
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
