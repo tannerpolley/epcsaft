@@ -795,9 +795,11 @@ the floor below the criterion (Jacobian scaling or equilibration, higher working
 precision, iterative refinement, a better-resolved reference); the check stays
 gated only while that fix is open or after retained evidence shows it
 impossible. The floor is never a hand-picked looser tolerance, and an error
-above it fails. A criterion for a quantity that is a sum of cancelling
-terms (a near-zero multilinear action, a reaction affinity) scales with the sum
-of the term magnitudes, its summation condition, not with the near-zero result.
+above it fails. A criterion for a near-zero multilinear action scales with
+the sum of the magnitudes of its fixed chart-coordinate sub-direction actions
+(temperature, pressure or density, composition), and a reaction affinity's with
+the sum of its stoichiometric terms, not with the near-zero result; no other
+split may set the scale.
 The solve counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
