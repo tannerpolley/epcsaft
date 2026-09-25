@@ -142,6 +142,7 @@ void check_c1() {
                     CHECK((f - k) == 0 || !accepted);
                     CHECK(accepted == structurally_square);
                     CHECK(!(accepted && k == phases) || generic_nullity > 0);
+                    CHECK(!(accepted && k < phases) || generic_nullity == 0);
                 }
             }
         }

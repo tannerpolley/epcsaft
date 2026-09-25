@@ -1041,8 +1041,8 @@ std::vector<double> CompiledSystem::generic_point() const {
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         double total = 0.0;
         for (std::size_t i = 0; i < shape[phase].x.size(); ++i) {
-            const double value = 1.0 + 0.37 * static_cast<double>(i)
-                + 0.11 * static_cast<double>(phase);
+            const double value = 1.0 + 0.37 * static_cast<double>(i) + 0.11 * static_cast<double>(phase)
+                + (phase > 1 ? 0.05 * std::pow(static_cast<double>(i), phase) : 0.0);  // 3+ phases not coplanar
             point[shape[phase].x[i]] = value;
             total += value;
         }
