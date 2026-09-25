@@ -2304,7 +2304,7 @@
             },
             {
               "domain_id": "mea-diagnostic-293-15-to-393-15-k",
-              "locator": "Eq. 4 (p. 791) uses d_ij^3; Table 2 (p. 792) 2B kappa = 0.037470 under that convention. Converted to the Engine sigma_ij^3 convention as the constant kappa minimizing Baygi's Eq. 8 objective against the Table 1 correlations, 303.15-443.15 K, with m, sigma, epsilon fixed: analyses/2026-mea-association-diameter",
+              "locator": "Eq. 4 (p. 791) uses d_ij^3; Table 2 (p. 792) 2B kappa = 0.037470 under that convention. Converted to the Engine sigma_ij^3 convention as the constant kappa that best reproduces Baygi's d^3 model (Eq. 8 form, p_sat and saturated liquid density) over the packet domain 293.15-393.15 K, with m, sigma, epsilon fixed: analyses/2026-mea-association-diameter",
               "source_id": "fakouri-baygi-pahlavanzadeh-2015"
             }
           ]
@@ -2313,7 +2313,7 @@
         "volume": {
           "identity": "association/monoethanolamine/a/monoethanolamine/b/volume",
           "value": {
-            "magnitude": 0.035813,
+            "magnitude": 0.036287,
             "unit": "dimensionless"
           }
         }

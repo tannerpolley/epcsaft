@@ -273,9 +273,8 @@ Defining relation: [EqID: `association_strength`](../equations.md#association_st
 These are source equations from Chapman1990 Eqs. (19) and (18), with explicit
 mixture/site indexing as an implementation convention. `g_ij^hs` is the
 Gross2001 hard-sphere contact function. Chapman1990 Eq. 18 carries `d^3`; the
-strength here carries `sigma_ij^3`, the PC-SAFT convention of the Gross--Sadowski
-and Held-group parameter sets that the Engine reproduces (written explicitly by
-Nasrifar and Tafazzol 2010, DOI `10.1021/ie901181n`, Eq. 34). A parameter set
+strength here carries `sigma_ij^3`, the PC-SAFT convention written explicitly by
+Nasrifar and Tafazzol 2010 (DOI `10.1021/ie901181n`, Eq. 34). A parameter set
 regressed with `d_ij^3` is a different model: its volume must be converted in the
 packet, and no constant conversion is exact because `(d/sigma)^3` depends on
 temperature. The MEA nine-species packet from version 5 converts the Fakouri
