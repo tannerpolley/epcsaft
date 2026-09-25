@@ -448,7 +448,48 @@ sensitivities, lever Jacobians and boundary checks use full preparation, so the
 certified floor and reduced-Hessian certificate keep every coordinate.
 That fresh final preparation also supplies the reduced-Hessian certificate;
 only the coordinate width is reduced to the primal chart, without reevaluating
-the same phase energies separately for its Jacobian and Hessian. Diagnostic
+the same phase energies separately for its Jacobian and Hessian.
+The certificate decides on inertia, not on the raw eigenvalue (#159). In the log
+chart a trace species' direction has curvature of order its amount `n x_i`, so
+on a trace state the smallest eigenvalue of `Z^T H Z` falls below the Hessian's
+own rounding: in the packet-3 MEA liquid with CO2 at `x ≈ 1e-15` it is about
+`1e-13`, while `||H|| ≈ 2.5e3` (the volume coordinate) and `eps ||H|| ≈ 5e-13`,
+so its computed sign is noise. Let `H = H_g + H_c` be the objective and
+multiplier-weighted constraint curvatures, whose composition diagonals cancel at
+stationarity, `S = |H_g| + |H_c|` their split magnitude and
+`D = diag(S)^{-1/2}` (1 where `S_ii = 0`, which includes every free phase-amount
+coordinate, so `kappa(A D)` and the band depend on the amount unit). The substitution `z = D y` maps the
+tangent space `A z = 0` onto `A D y = 0`, so the reduced Hessians of `H` and
+`D H D` are congruent and have the same inertia (Sylvester's law);
+equilibration changes the conditioning only. A first-order rounding model
+bounds each assembled entry by `|dH| <= n eps S`. By Weyl's inequality with an
+orthonormal nullspace basis this moves the smallest equilibrated eigenvalue by
+at most `n eps ||D S D||`. The basis from the singular value decomposition of
+`A D` lies within an angle `eps kappa(A D)` of the exact one, which adds
+`2 eps kappa(A D) ||D H D||`. The band is
+
+$$
+\tau=\varepsilon\left(n\,\lVert DSD\rVert_F+2\,\kappa(AD)\,\lVert DHD\rVert_F\right),
+$$
+
+where Frobenius norms bound the spectral norms from above. `lambda_min(D H D) > tau`
+certifies the strict local minimum, and `< -tau` rejects it ("not positive
+definite"). A value inside `|lambda| <= tau` is the typed `Stop::singular`
+outcome ("is indeterminate"), with no state: at working precision the inertia
+is unresolved. `reduced_hessian_minimum` stays the unscaled smallest eigenvalue,
+the physical log-chart curvature (`N x_B` for a trace isomer). Its sign carries
+information only above its own rounding. The band is a first-order estimate,
+not a rigorous bound. It covers rounding of the assembled Hessian and nullspace,
+but not cancellation inside the objective curvature sum or the returned point's
+own solve error. That error generally exceeds `tau`: at a row residual near
+`1e-12` the equilibrated minimum moves by order `1e-13`. It decides the outcome
+only when `|lambda_min(D H D)|` is below it, which happens near a genuinely
+degenerate state. Take two identical ethane pseudo-species with an isomerisation
+at 200 K and 5 MPa, at the `k_ij` where the symmetric state's curvature vanishes.
+Adjacent `k_ij` values give equilibrated minima of about `+5e-14` (row residual
+`1.3e-12`) and `-9e-14` (row residual `9e-16`) against a band of `5e-15`. There
+the decision follows the returned point, not the exact equilibrium, and the typed
+indeterminate outcome is reached only when the solve error is at rounding level. Diagnostic
 residual summaries reuse the certified row values. For a no-site EOS Hessian,
 each unit-direction `Forward(1)`/`Reverse(2)` sweep supplies a Hessian column;
 the first sweep's even entries supply the gradient, including active-parameter
@@ -798,8 +839,10 @@ impossible. The floor is never a hand-picked looser tolerance, and an error
 above it fails. A criterion for a near-zero multilinear action scales with
 the sum of the magnitudes of its fixed chart-coordinate sub-direction actions
 (temperature, pressure or density, composition), and a reaction affinity's with
-the sum of its stoichiometric terms, not with the near-zero result; no other
-split may set the scale.
+the sum of its stoichiometric terms, and the reduced-Hessian stability band
+with the split of the Lagrangian Hessian into objective and weighted constraint
+curvature (ALG-EQUILIBRIUM), not with the near-zero result; no other split may
+set the scale.
 The solve counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
@@ -822,8 +865,9 @@ is diagnosed and a root-cause fix has been attempted and shown impossible, or
 the state is shown outside the stated physical domain, with evidence.
 Conditioning, precision, solver and reference-resolution failures are defects
 to fix. A typed refusal is a final state only for genuinely singular or
-undefined mathematics, such as zero-support insertion or a Jacobian that stays
-singular after equilibration, and it states why. A state outside the stated
+undefined mathematics, such as zero-support insertion, a Jacobian that stays
+singular after equilibration or a reduced Hessian whose equilibrated minimum
+stays inside its rounding band, and it states why. A state outside the stated
 physical domain (e.g. packing at or above close packing) may also close,
 stating the boundary. A model that still misses data after diagnosis and
 attempted fixes is a physical finding that carries both. No value is ever

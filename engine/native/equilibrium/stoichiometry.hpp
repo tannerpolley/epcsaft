@@ -66,7 +66,7 @@ void validate_reaction_set(
 
 std::string reaction_name(const ReactionSpec& reaction, std::size_t index);
 
-bool all_finite(const std::vector<double>& values);
+bool all_numeric(const std::vector<double>& values);
 
 // True when both orthonormal bases span the same row space within the tolerance.
 bool same_subspace(
