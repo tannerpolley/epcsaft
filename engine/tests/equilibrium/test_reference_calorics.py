@@ -150,7 +150,8 @@ def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, refe
         h, n = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
             [H, AMOUNT], list(direction) or [Direction(0.0, 0.0, [0.0, 0.0], [])])).results
         assert h.status == n.status == Status.Available, h.diagnostic_message
-        return float(h.value * n.value) if not direction else float(n.value * h.action + h.value * n.action)
+        hv, nv, dh, dn = (math.nan if v is None else v for v in (h.value, n.value, h.action, n.action))
+        return hv * nv if not direction else nv * dh + hv * dn
 
     action = extensive(P0, Direction(0.0, 1.0, [0.0, 0.0], []))
     coarse, fine = ((extensive(P0 + s) - extensive(P0 - s)) / (2 * s) for s in (4.0e5, 2.0e5))
@@ -170,8 +171,8 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
     thermal, pressure = solved_state_first_actions(compiled, result, [H, CP, residual], [
         Direction(1.0, 0.0, [0.0, 0.0], []), Direction(0.0, 1.0e5, [0.0, 0.0], [])])
     assert thermal.results[0].status == pressure.results[0].status == Status.Available
-    for item in (thermal.results[1], pressure.results[1]):  # cp along T or P needs d3C/dT3 or d3C/dT2dP
-        assert item.status == Status.ReferenceUnavailable and item.value is not None and item.action is None
+    for refused in (thermal.results[1], pressure.results[1]):  # cp along T or P needs d3C/dT3 or d3C/dT2dP
+        assert refused.status == Status.ReferenceUnavailable and refused.value is not None and refused.action is None
     assert pressure.results[2].status == Status.Available and pressure.results[2].action is not None
     twice = Direction(0.0, 0.0, [1.0, 0.0], [])
     second = solved_state_actions(compiled, result, SolvedStateActionRequest([H], [twice, twice])).results[0]
