@@ -325,7 +325,8 @@ Gordon–McBride element-potential Newton iteration and step control (NASA RP-13
 growing faster than the total) until every log-amount step, trace species included,
 is below `EQUILIBRIUM_START_SPECIATION_STEP`; two sweeps refresh $c$ and the root at
 the new composition (continuing the previous root, solved anew when speciation moves
-it beyond the anchored window), and the free amount starts at the speciated total. At
+it beyond the anchored window); the free amount starts at the speciated total and the
+packing at the last sweep's root. At
 an equilibrium $x^*$ the frozen terms make $x^*$ its own speciation, so a speciated
 guess is kept. A failed or thrown sweep keeps the last speciation, or
 the seeded start if none succeeded.
