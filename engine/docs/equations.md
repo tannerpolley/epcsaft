@@ -170,7 +170,7 @@ W_{Born}=
 \sum_{i\in\mathcal{I}}x_i z_i^2
 \left[
 \frac{1-\epsilon_{r,\mathrm{bulk}}^{-1}}{D_i}
-+c_{\mathrm{dielectric}}\left(1-\epsilon_{r,i}^{-1}\right)
++c_{\mathrm{dielectric}}\left(1-\epsilon_{r,\mathrm{ion}}^{-1}\right)
 \left(\frac{1}{d_i^{Born}}-\frac{1}{D_i}\right)
 \right].
 $$

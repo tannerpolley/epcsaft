@@ -87,7 +87,7 @@ equations:
     status: "Source equation"
     description: "Canonical radial charging sum with an explicit dielectric-saturation coefficient."
     change_note: "The admitted fixed coefficients express the uncorrected, shell-only, and shell-plus-dielectric limits through one equation."
-    math: "W_{Born}=\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\n\\left[\n\\frac{1-\\epsilon_{r,\\mathrm{bulk}}^{-1}}{D_i}\n+c_{\\mathrm{dielectric}}\\left(1-\\epsilon_{r,i}^{-1}\\right)\n\\left(\\frac{1}{d_i^{Born}}-\\frac{1}{D_i}\\right)\n\\right]."
+    math: "W_{Born}=\n\\sum_{i\\in\\mathcal{I}}x_i z_i^2\n\\left[\n\\frac{1-\\epsilon_{r,\\mathrm{bulk}}^{-1}}{D_i}\n+c_{\\mathrm{dielectric}}\\left(1-\\epsilon_{r,\\mathrm{ion}}^{-1}\\right)\n\\left(\\frac{1}{d_i^{Born}}-\\frac{1}{D_i}\\right)\n\\right]."
   - eqid: "born_residual_helmholtz"
     section: "Born solvation relations"
     subsection: ""
