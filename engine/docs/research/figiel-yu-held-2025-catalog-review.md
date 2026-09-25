@@ -5,7 +5,7 @@
 - Figiel, P.; Yu, G.; Held, C. “Predicting Thermodynamic Properties of
   Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term
   within the ePC-SAFT Framework.” *Industrial & Engineering Chemistry
-  Research* **2025**, 64, 9406–9418.
+  Research* **2025**, 64(18), 9406–9418.
 - DOI: `10.1021/acs.iecr.5c00475`
 - Main article PDF SHA-256:
   `a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f`

@@ -272,9 +272,10 @@ reactive extraction chemistry.
 
 ### Figiel2025
 
-Figiel, Yu and Held (2025), *Predicting Thermodynamic Properties of Ions in
-Single Solvents and in Mixed Solvents Using a Modified Born Term within the
-ePC-SAFT Framework*.
+Paul Figiel, Gangqiang Yu and Christoph Held (2025), *Predicting Thermodynamic
+Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified
+Born Term within the ePC-SAFT Framework*, *Industrial & Engineering Chemistry
+Research* 64(18), 9406–9418.
 [DOI](https://doi.org/10.1021/acs.iecr.5c00475),
 [supporting information](https://doi.org/10.1021/acs.iecr.5c00475.s001).
 Zotero parent `YEENX35P`, PDF `WE6I8RN3`, Markdown `2M74BKJG`;
