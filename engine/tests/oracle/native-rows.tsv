@@ -194,14 +194,14 @@ properties_checks P4	pressure/action/11/3	native	0.00838493671056328
 properties_checks P4	pressure/action/12/3	native	6.847212439577496e-06
 properties_checks P4	pressure/action/13/3	native	-4.901323938990716e-05
 properties_checks P4	pressure/action/14/3	native	-4.602503058727056e-05
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.598686248473117e-08
-equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.5890085369901075e-08
-equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.8444562211
-equilibrium_checks S2	reference-calorics/ionic/system/cp	J/(mol K)	64.0179034305638
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.5974067522758556e-08
-equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.686497554512599e-08
-equilibrium_checks S2	reference-calorics/ionic/fixed/h	J/mol	-285505.8412978298
-equilibrium_checks S2	reference-calorics/ionic/fixed/cp	J/(mol K)	64.01790247998478
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T	1/K	-4.598686248473934e-08
+equilibrium_checks S2	reference-temperature/ionic/system/dx_Na/T+P	1/K	-4.589008536990435e-08
+equilibrium_checks S2	reference-calorics/ionic/system/h	J/mol	-285505.8444562208
+equilibrium_checks S2	reference-calorics/ionic/system/cp	J/(mol K)	64.01790343056784
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T	1/K	-4.5974067522761e-08
+equilibrium_checks S2	reference-temperature/ionic/fixed/dx_Na/T+P	1/K	-5.686497554512855e-08
+equilibrium_checks S2	reference-calorics/ionic/fixed/h	J/mol	-285505.8412978299
+equilibrium_checks S2	reference-calorics/ionic/fixed/cp	J/(mol K)	64.01790247998048
 equilibrium_checks E5-1	e5-1/neutral-ternary/temperature/A1	K	0.2
 equilibrium_checks E5-1	e5-1/neutral-ternary/pressure/A1	Pa	2000
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A1	mol	-0.014007181230956362
@@ -311,10 +311,10 @@ equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A3	1	-6.2
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A3	1	-6.934847119164487e-08
 equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107201108253286e-08
 equilibrium_checks E5-3	e5-3/isomerisation/A1	1/K^k	-0.0014784580498866209
-equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.43488052817499e-06
-equilibrium_checks E5-3	e5-3/isomerisation/rescaled/A2	1/K^k	8.434880528174992e-06
-equilibrium_checks E5-3	e5-3/isomerisation/A3	1/K^k	-2.730497465310393e-09
-equilibrium_checks E5-3	e5-3/isomerisation/rescaled/A3	1/K^k	-2.7304974653103935e-09
+equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.434880528174989e-06
+equilibrium_checks E5-3	e5-3/isomerisation/rescaled/A2	1/K^k	8.43488052817499e-06
+equilibrium_checks E5-3	e5-3/isomerisation/A3	1/K^k	-2.7304974653104266e-09
+equilibrium_checks E5-3	e5-3/isomerisation/rescaled/A3	1/K^k	-2.730497465310427e-09
 equilibrium_checks E5-3	e5-3/isomerisation-two-mol/A1	1/K^k	-0.0014784580498866209
 equilibrium_checks E5-3	e5-3/isomerisation-two-mol/A2	1/K^k	8.434880528174989e-06
 equilibrium_checks E5-3	e5-3/isomerisation-two-mol/rescaled/A2	1/K^k	8.43488052817499e-06
@@ -371,20 +371,20 @@ equilibrium_checks E5-8	e5-8/forward-bound/rung12	1	3.722349830468113e-15
 equilibrium_checks E5-8	e5-8/forward-bound/rung13	1	3.722349830468113e-15
 equilibrium_checks E5-8	e5-8/forward-bound/rung14	1	8.673617379884035e-17
 equilibrium_checks E5-8	e5-8/forward-bound/rung15	1	8.673617379884035e-17
-equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	2.020605904817785e-14
-equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	8.673617379884035e-19
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	-1.734723475976807e-18
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	8.34111459643936e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	1.5490602066857689e-16
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.01687413936616057
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.01687413936616068
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038339
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151038339
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.138946317394595e-06
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173953505e-06
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	3.237254045287529e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	-8.057125625048674e-17
+equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	5.995204332975845e-15
+equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	8.881784197001252e-15
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	-4.336808689942018e-19
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	-4.336808689942018e-18
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	1.8469595766527382e-16
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	4.825923630169277e-16
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.01687413936616064
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.016874139366160654
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038534
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151038425
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944933e-06
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173931923e-06
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	7.67348322741352e-18
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	1.317278110999102e-16
 regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000015
 regression_checks R2-J2	r4/recovery/kij	1	-0.01999999999998193
 regression_checks R2-J2	r4/recovery/final_cost	1	6.594889891439993e-27

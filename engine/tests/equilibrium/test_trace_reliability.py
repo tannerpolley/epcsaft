@@ -78,7 +78,7 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
          claim="the returned constraint multipliers make the extensive objective stationary on the constraint rows")
     # Stationarity and curvature at the returned point, with the standard-state gauge made explicit so
     # the identity is independent of the driver's internal gauge: g0 = (0, -RT ln K) with the consistent
-    # scalar K reproduces the same state. The balance multipliers act through the compiled orthonormal
+    # scalar K reproduces the same state. The balance multipliers act through the compiled
     # balance basis, read from the row Jacobian's multiplier columns (-B_ji on a chemical row), so
     # ln(x_i rho) + mu_res_i/RT + g0_i/RT = sum_j lambda_j B_ji for both species from public state quantities.
     explicit = Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=2e5,
@@ -146,6 +146,56 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
          total * k / (1 + k), atol=0.0, rtol=2 * k + 1e-9, unit="1", inputs=inputs,
          basis="Relationship", method="trace-amount-scale",
          claim="large-feed reduced curvature has the analytic trace-amount scale")
+
+
+@pytest.mark.parametrize("inventory", [1e-9, 1e-12])
+def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: float) -> None:
+    """#172: identical ethanes, 1 mol inert s0 and s1 <=> s2 (K(350 K) = 3) fed as `inventory` mol s1, so
+    x_s2 = inventory K / ((1 + inventory)(1 + K)) and dx_s2/dT = x_s2 (1 - p) l1 exactly. The uniform 1e-8 box
+    demanded 2e-8 mol of s1 + s2, far above the inventory, and the subproblem was infeasible (wheel b1367b32).
+    The s1 + s2 moiety row resolves the inventory to rounding; the orthonormal balance basis mixed it into the
+    s0 row and returned the 1e-12 mol state 2.8e-4 relative off."""
+    model = Mixture(parameters((ETHANE,) * 3, [("k_ij", pair, 0.0) for pair in ((0, 1), (0, 2), (1, 2))]))
+    temperature, k = 350.0, 3.0
+    a = math.log(k) - 1200 / temperature - 0.4 * math.log(temperature / 300) - 0.002 * temperature
+    law = ReactionLogPolynomial(a, 1200, 0.4, 0.002, 300, 250, 450, EOS_STANDARD_STATE_ID)
+    problem = Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=2e5, row_tolerance=1e-10,
+                      feed=Amounts({"s0": 1.0, "s1": inventory, "s2": 0.0}),
+                      reactions=[Reaction({"s1": -1.0, "s2": 1.0}, correlation=law)])
+    result = solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    assert result.reduced_hessian_minimum > 0.0
+    p = k / (1 + k)
+    x_s2 = inventory / (1 + inventory) * p
+    inputs = {"inventory_mol": inventory, "K": k, "T_K": temperature, "P_Pa": 2e5,
+              "classified_residual": result.convergence.residual, "iterations": result.iterations}
+    same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-6,
+         unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
+         claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
+    item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
+    assert item.status == SolvedStateActionStatus.Available, item.status
+    l1 = -1200 / temperature**2 + 0.4 / temperature + 0.002
+    same(evidence, f"trace-inventory/{inventory:g}/A1", item.action, x_s2 * (1 - p) * l1, atol=0.0, rtol=5e-6,
+         unit="K^-1", inputs=inputs, basis="Identity", method="logistic-analytic",
+         claim="the temperature action of the trace-inventory species matches the logistic chain")
+
+
+def test_moiety_basis_of_an_oligomerization_network(evidence: Any) -> None:
+    """#172: identical ethanes, 3 s0 <=> s2, s0 + 2 s2 <=> s3, s2 + 2 s3 <=> s4 (K = 2) beside inert s1. The one
+    mass moiety sum M_i n_i (M = 1, 3, 7, 17) and s1 must be conserved. Echelon pivots chosen on the SVD null
+    space admitted a dependent species by rounding, gave 1e14 basis entries and a rank refusal."""
+    model = Mixture(parameters((ETHANE,) * 5, [("k_ij", (i, j), 0.0) for i in range(5) for j in range(i + 1, 5)]))
+    result = solve_equilibrium(model, Problem(
+        phases=[Phase("V", kind="vapor")], T=300.0, P=1e5, feed=Amounts({"s0": 1.0, "s1": 1.0, "s2": 0.0, "s3": 0.0, "s4": 0.0}),
+        reactions=[Reaction({"s0": -3.0, "s2": 1.0}, equilibrium_constant=2.0),
+                   Reaction({"s0": -1.0, "s2": -2.0, "s3": 1.0}, equilibrium_constant=2.0),
+                   Reaction({"s2": -1.0, "s3": -2.0, "s4": 1.0}, equilibrium_constant=2.0)]))
+    assert result.success and result.requested_tolerance_met, result.message
+    n = [result.amounts[0] * x for x in result.mole_fractions]
+    same(evidence, "oligomerization/mass-moiety", sum(m * v for m, v in zip((1, 0, 3, 7, 17), n)), 1.0, atol=0.0, rtol=1e-12,
+         unit="mol", inputs={"K": 2.0, "T_K": 300.0, "P_Pa": 1e5}, basis="Identity", method="moiety-balance",
+         claim="the echelon balance basis conserves the network's mass moiety")
 
 
 @pytest.mark.parametrize("total", [1.0, 10.0])
@@ -284,12 +334,17 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
 
 @pytest.mark.parametrize("k_ij, temperature", [(0.2, 200.0), (0.5, 150.0)])
 def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature: float) -> None:
-    """#159: identical-ethane A <=> B (K = 1) stays at the symmetric stationary point x = 1/2, where a large
+    """#159: identical-ethane A <=> B (K = 1) started at the symmetric stationary point x = 1/2, where a large
     k_ij makes the reaction direction a Gibbs maximum. Its equilibrated minimum (-0.052 and -0.65) lies
-    ten orders outside the 5e-15 rounding band: rejected as not positive definite, never indeterminate."""
+    ten orders outside the 5e-15 rounding band: rejected as not positive definite, never indeterminate.
+    Rounding may carry the stronger maximum (0.5, 150 K) to one of its two symmetric minima near a pure
+    isomer (x_B = 6.2e-6 on the #172 moiety basis); a success must be that certified minimum, never x = 1/2."""
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), k_ij)]))
     result = solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=temperature, P=5e6,
                                               feed=Amounts({"s0": 0.5, "s1": 0.5}),
                                               reactions=[Reaction({"s0": -1.0, "s1": 1.0}, equilibrium_constant=1.0)]))
-    assert not result.success and "is not positive definite" in result.message
+    if result.success:
+        assert k_ij == 0.5 and min(result.mole_fractions) < 1e-4 and result.reduced_hessian_minimum > 0.0
+        return
+    assert "is not positive definite" in result.message
     assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1

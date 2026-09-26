@@ -6,6 +6,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 
+#include <Highs.h>
 #include <IpIpoptApplication.hpp>
 
 #include <Eigen/Dense>
@@ -378,14 +379,39 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
-    const double composition_floor = compiled_.pinned_count != 0 && compiled_.is_square()
-        ? policy::STABILITY_COMPOSITION_FLOOR.value : policy::EQUILIBRIUM_COMPOSITION_BOX.value;
+    // Pinned square cells impose chemical equality and need the full physical support. Other
+    // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
+    // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
+    // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
+    const std::size_t species = compiled_.n_feed.size();
+    std::vector<double> box(species, policy::STABILITY_COMPOSITION_FLOOR.value), upper(species, 0.0);
+    if (compiled_.pinned_count == 0 || !compiled_.is_square()) {
+        Highs lp;
+        lp.setOptionValue("output_flag", false);
+        lp.setOptionValue("threads", 1);
+        for (const auto& phase : compiled_.problem.phases)
+            for (const std::size_t i : phase.support) upper[i] = kHighsInf;
+        lp.addVars(static_cast<HighsInt>(species), std::vector<double>(species, 0.0).data(), upper.data());
+        std::vector<HighsInt> columns(species);
+        std::iota(columns.begin(), columns.end(), 0);
+        for (std::size_t k = 0; k < compiled_.rank; ++k) {
+            const double bound = compiled_.balance[k] / compiled_.feed_total;
+            lp.addRow(bound, bound, static_cast<HighsInt>(species), columns.data(), compiled_.B[k].data());
+        }
+        lp.changeObjectiveSense(ObjSense::kMaximize);
+        for (std::size_t i = 0; i < species; ++i) {  // an unbounded or failed program keeps the box
+            lp.changeColCost(static_cast<HighsInt>(i), 1.0);
+            const bool solved = upper[i] != 0.0 && lp.run() == HighsStatus::kOk
+                && lp.getModelStatus() == HighsModelStatus::kOptimal;
+            box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value, solved
+                ? policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * lp.getObjectiveValue() : 1.0));
+            lp.changeColCost(static_cast<HighsInt>(i), 0.0);
+        }
+    }
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
-        // Pinned square cells impose chemical equality and need the full physical support.
-        // All-free cells retain the optimizer box and recover trace states by polishing.
-        for (std::size_t i = 0; i < phase.support.size(); ++i) {
-            x_l[offset] = std::log(composition_floor);
+        for (const std::size_t i : phase.support) {
+            x_l[offset] = std::log(box[i]);
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;

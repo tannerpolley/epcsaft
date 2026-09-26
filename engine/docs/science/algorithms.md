@@ -274,7 +274,18 @@ a failed anchor must not silently switch to an unrelated cold root.
 
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
-pins and free intensives from data. Check structural
+pins and free intensives from data. The balance basis $B$ spans the left null space
+of the reaction stoichiometry in echelon form (unit pivots, coefficients below
+$\sqrt{\epsilon}$ set to zero), so each row counts one conserved moiety (#172). The pivots
+are the species taking part in the most reactions, ties by declaration index, each accepted
+while the remaining species keep the full reaction rank on the exact stoichiometry: shared species ($\mathrm{H^+}$, a carrier) become pivots and each reaction's
+peripheral species stays off them, so a trace moiety such as $\mathrm{Li^+}+\mathrm{LiA}$
+is one row. The rule is structural, so the basis is the same along a feed path. An
+orthonormal SVD basis, or echelon pivots holding both $\mathrm{Li^+}$ and $\mathrm{LiA}$,
+mixes that moiety into rows of major species, whose rounding then limits its balance and
+makes the action Jacobian ill-conditioned in proportion to $N_{\mathrm{feed}}/u_{\mathrm{Li}}$
+(equilibrated condition 9.6e10 and 1.1e10 against 345 and 276 at 1e-8 and 3e-10 mol/L Li).
+Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
@@ -820,10 +831,47 @@ withheld under rank deficiency or an active bound.
 ## ALG-TERMINATION
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
-is the lower box of the intensive `log(x_i)` coordinate inside the all-free
+$\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the
 optimizer subproblem: its barrier regularises the log chart's trace steps and
-is not a solution domain. Square pinned equation systems use the structural
-cutoff instead, so chemical equalities can reach trace roots below that box.
+is not a solution domain. Species $i$ has the box
+
+$$
+x_i \ge \max\!\left(x_{\mathrm{cut}},\ \min\!\left(\beta,\ \varepsilon\,\frac{u_i}{N_{\mathrm{feed}}}\right)\right),
+\qquad
+u_i = \max\,\{\, n_i : B n = b,\ n \ge 0,\ n_j = 0 \text{ off every support} \,\},
+$$
+
+where $x_{\mathrm{cut}}$ is `STABILITY_COMPOSITION_FLOOR`, $\varepsilon$ is
+`EQUILIBRIUM_BOX_INVENTORY_FRACTION` and $u_i$ is the largest attainable total amount of $i$,
+one HiGHS linear program per species. Rows of $B$ can carry mixed signs (a hydrogen row
+$n_{\mathrm{H^+}}-n_{\mathrm{LiA}}-n_{\mathrm{NaA}}$), so no single row ratio bounds $n_i$; an
+unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution domain whenever
+$\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem
+is infeasible, and just above that the optimum sits on the box beyond the polish's reach
+(#172: 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
+
+*Derivation of $\varepsilon$.* The boxes can hold at most $\sum_p x_{i,\mathrm{box}} n_p \le
+\varepsilon (N/N_{\mathrm{feed}})\, u_i$ of species $i$, a fraction $\varepsilon$ of its attainable
+inventory when the total amount $N$ is near $N_{\mathrm{feed}}$. Averaging the $S$ per-species
+maximizers gives a point interior to every box jointly while $S\varepsilon N < N_{\mathrm{feed}}$
+(fewer than about 100 support species at $\varepsilon$ = 1e-2). The polish must then carry the trace
+composition from the box to the solution. The retained trace-Li probe bounds that reach: with the
+uniform box holding 10 % of the Li inventory (6e-6 mol/L) the polish met the requested
+tolerance, at 20 % it reached only the floor and at 30–60 % it stalled. $\varepsilon$ = 1e-2 sits
+one decade inside the demonstrated 10 %. The minimum keeps $\beta$ wherever the uniform box
+already displaces at most $\varepsilon$ of the inventory ($u_i \ge \beta N_{\mathrm{feed}}/\varepsilon$,
+inventory fraction $\ge$ 1e-6), so the box is unchanged wherever $u_i/N_{\mathrm{feed}} \ge \beta/\varepsilon$;
+below that it is lowered, including states the uniform box already solved (Li at 6e-6 mol/L). Lowering the box of
+every minor species instead ($\varepsilon = \beta$, box $\beta u_i/N_{\mathrm{feed}}$) removed the
+barrier's regularisation for a carrier at inventory fraction 5e-4 (box $\ln x$ from $-18$ to
+$-26$): Lithium's four-step continuation corrector then wandered for 80 iterations and ended
+locally infeasible at a Na-loaded state that the uniform box solves in 9. The cutoff keeps
+the bound finite for an unattainable species ($u_i = 0$). The box does not set accuracy: a
+moiety row $(Bn-b)/N_{\mathrm{feed}}$ resolves an inventory to its achieved residual, at most the
+caller's row tolerance and after the polish near rounding, $\epsilon N_{\mathrm{feed}}$ (trace
+isomers fed at 1e-10, 1e-12 and 1e-14 mol in 1 mol return their amount to 4e-8, 5e-9 and 9e-3
+relative; the orthonormal basis gave 8e-6, 3e-4 and a factor 4). Square pinned equation systems
+use the structural cutoff for every species, so chemical equalities can reach trace roots.
 `STABILITY_COMPOSITION_FLOOR` is the structural-absence
 cutoff for continuation admission, solved-state differentiability and the
 Newton polish, which carries a trace solution below the box down to the cutoff
