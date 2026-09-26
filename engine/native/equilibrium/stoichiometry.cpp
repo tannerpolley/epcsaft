@@ -171,20 +171,24 @@ std::vector<std::vector<double>> balance_basis(
     }
     // Reduce the SVD null space to echelon form: each row is one conserved moiety with a unit
     // pivot, so a trace moiety (Li+ + LiA) is not mixed into rows of major species, whose
-    // rounding would swamp its balance and actions (#172). Pivots are the independent species
-    // taking part in the most reactions (shared H+ or carrier; ties by index), leaving each
-    // reaction's peripheral species off the pivots; this is structural, not feed dependent.
+    // rounding would swamp its balance and actions (#172). Pivots are the species taking part
+    // in the most reactions (shared H+ or carrier; ties by index), leaving each reaction's
+    // peripheral species off the pivots; this is structural, not feed dependent. A candidate
+    // is a pivot when the remaining species still carry the full reaction rank, tested on the
+    // exact stoichiometry: the SVD columns of dependent species differ only by rounding.
     // Coefficients below sqrt(eps) are rounding of the rational stoichiometry and set to zero.
     const Eigen::Index rows = static_cast<Eigen::Index>(components) - rank;
     const Eigen::MatrixXd space = matrix.jacobiSvd(Eigen::ComputeFullV).matrixV().rightCols(rows).transpose();
-    std::vector<Eigen::Index> order(components), pivots;
+    std::vector<Eigen::Index> order(components), pivots, rest(components);
     std::iota(order.begin(), order.end(), 0);
+    std::iota(rest.begin(), rest.end(), 0);
     std::stable_sort(order.begin(), order.end(), [&](Eigen::Index a, Eigen::Index b) {
         return (matrix.col(a).array() != 0.0).count() > (matrix.col(b).array() != 0.0).count();
     });
     for (const Eigen::Index species : order) {
-        pivots.push_back(species);
-        if (numerical_rank(space(Eigen::all, pivots)) < static_cast<Eigen::Index>(pivots.size())) pivots.pop_back();
+        rest.erase(std::find(rest.begin(), rest.end(), species));
+        if (numerical_rank(matrix(Eigen::all, rest)) == rank) pivots.push_back(species);
+        else rest.push_back(species);
     }
     const Eigen::MatrixXd echelon = space(Eigen::all, pivots).partialPivLu().solve(space);
     std::vector<std::vector<double>> result(

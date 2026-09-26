@@ -277,8 +277,8 @@ All admitted specifications use the one equilibrium driver required by the
 pins and free intensives from data. The balance basis $B$ spans the left null space
 of the reaction stoichiometry in echelon form (unit pivots, coefficients below
 $\sqrt{\epsilon}$ set to zero), so each row counts one conserved moiety (#172). The pivots
-are the independent species taking part in the most reactions, ties by declaration
-index: shared species ($\mathrm{H^+}$, a carrier) become pivots and each reaction's
+are the species taking part in the most reactions, ties by declaration index, each accepted
+while the remaining species keep the full reaction rank on the exact stoichiometry: shared species ($\mathrm{H^+}$, a carrier) become pivots and each reaction's
 peripheral species stays off them, so a trace moiety such as $\mathrm{Li^+}+\mathrm{LiA}$
 is one row. The rule is structural, so the basis is the same along a feed path. An
 orthonormal SVD basis, or echelon pivots holding both $\mathrm{Li^+}$ and $\mathrm{LiA}$,
@@ -852,14 +852,16 @@ is infeasible, and just above that the optimum sits on the box beyond the polish
 
 *Derivation of $\varepsilon$.* The boxes can hold at most $\sum_p x_{i,\mathrm{box}} n_p \le
 \varepsilon (N/N_{\mathrm{feed}})\, u_i$ of species $i$, a fraction $\varepsilon$ of its attainable
-inventory when the total amount $N$ is near $N_{\mathrm{feed}}$, so an interior point exists for
-every $u_i > 0$ whenever $\varepsilon N < N_{\mathrm{feed}}$. The polish must then carry the trace
+inventory when the total amount $N$ is near $N_{\mathrm{feed}}$. Averaging the $S$ per-species
+maximizers gives a point interior to every box jointly while $S\varepsilon N < N_{\mathrm{feed}}$
+(fewer than about 100 support species at $\varepsilon$ = 1e-2). The polish must then carry the trace
 composition from the box to the solution. The retained trace-Li probe bounds that reach: with the
 uniform box holding 10 % of the Li inventory (6e-6 mol/L) the polish met the requested
 tolerance, at 20 % it reached only the floor and at 30–60 % it stalled. $\varepsilon$ = 1e-2 sits
 one decade inside the demonstrated 10 %. The minimum keeps $\beta$ wherever the uniform box
 already displaces at most $\varepsilon$ of the inventory ($u_i \ge \beta N_{\mathrm{feed}}/\varepsilon$,
-inventory fraction $\ge$ 1e-6), so every box it set is unchanged. Lowering the box of
+inventory fraction $\ge$ 1e-6), so the box is unchanged wherever $u_i/N_{\mathrm{feed}} \ge \beta/\varepsilon$;
+below that it is lowered, including states the uniform box already solved (Li at 6e-6 mol/L). Lowering the box of
 every minor species instead ($\varepsilon = \beta$, box $\beta u_i/N_{\mathrm{feed}}$) removed the
 barrier's regularisation for a carrier at inventory fraction 5e-4 (box $\ln x$ from $-18$ to
 $-26$): Lithium's four-step continuation corrector then wandered for 80 iterations and ended

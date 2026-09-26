@@ -77,14 +77,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-09-26, aggregate hard ceiling 18353 → 18361 (#172, owner-approved
+- 2026-09-26, aggregate hard ceiling 18353 → 18365 (#172, owner-approved
   2026-09-26 in the #172 decision comment for the measured growth, estimated at
   15–25 lines). Requirement: all-free equilibrium states whose trace-species
   inventory lies below the composition box times a phase amount (Lithium's
   five-stage lean end) were infeasible or stalled, and their actions were refused.
-  Measured net growth against e5687520 is +15: Equilibrium +6 (the per-species
+  Measured net growth against e5687520 is +19: Equilibrium +10 (the per-species
   box from one HiGHS linear program per species on the already linked solver,
-  +26; the moiety echelon balance basis, +17; the unused runtime
+  +26; the moiety echelon balance basis, +21; the unused runtime
   `same_subspace`, which moves into its native test, −37) and Core +9 (the
   `EQUILIBRIUM_BOX_INVENTORY_FRACTION` policy entry). Alternatives: a
   structural-floor box for every cell (removes the barrier's regularisation and
