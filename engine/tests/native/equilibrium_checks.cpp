@@ -3913,7 +3913,7 @@ void check_e5_refusals() {
             const double weight = chart * std::exp2(std::round(std::log2(jacobian.col(static_cast<Eigen::Index>(column[i])).cwiseAbs().maxCoeff())));
             error = std::max(error, std::abs(weight * (item.action.value_or(0.0) - exact[i])));
             shift = std::max(shift, std::abs(weight * (host.results[i].action.value_or(0.0) - item.action.value_or(0.0))));
-            identical = identical && host.results[i].action == item.action;
+            identical = identical && item.action.has_value() && host.results[i].action == item.action;
             norm = std::max(norm, std::abs(weight * exact[i]));
         }
         // The first-order bound excludes the final rounding of each returned double observable.

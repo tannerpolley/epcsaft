@@ -669,7 +669,8 @@ coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
 accumulated in double-double (FMA TwoProduct and TwoSum, the compensated dot
 product Dot2 of Ogita, Rump and Oishi, 2005: as accurate as twice the working
 precision, then rounded), and y_k = C z_k. The defect uses only double arithmetic
-and the correctly rounded `fma`, so no host floating-point state changes it: AMPL's
+and the correctly rounded `fma`, so the x87 precision control cannot change it (it
+assumes round-to-nearest without flush-to-zero, like all double arithmetic): AMPL's
 ASL (`fpinit`, loaded by pynumero and ASL-hosted solvers) sets the x87 precision
 control to 53 bits, which reduced the former `long double` defect to double and
 cost the Lithium capacity-state action three digits (#173). Saving and restoring
