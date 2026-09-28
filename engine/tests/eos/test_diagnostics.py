@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Convergence, Mixture, Parameters, Stop, trace
+from epcsaft import Convergence, Mixture, Parameters, Stop, _core, trace
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -181,10 +181,24 @@ def test_reference_formula_and_solvent_must_be_electroneutral() -> None:
     # 2 Li+ + Cl- has charge +1 per formula; a reference value would be gauge dependent.
     with pytest.raises(ValueError, match="charge neutral"):
         model.reference(298.15, 1e5, solvent_fractions=solvent, ions=ions, stoichiometry=(2, 1))
-    reference.stoichiometry = (2, 1)
     with pytest.raises(ValueError, match="charge neutral"):
-        reference.activity(0.01)
+        _core.electrolyte_activity(model._model, 298.15, 1e5, solvent, reference.ion_indices, (2, 1), 0.01, reference._native)
     # A balanced trace formula cannot neutralize a separately charged solvent.
     with pytest.raises(ValueError, match="reference solvent composition or molar mass"):
         model.reference(298.15, 1e5, solvent_fractions=(0.99, 0.0, 0.0, 0.01),
                         ions=("lithium-cation", "chloride-anion"), stoichiometry=(1, 1))
+
+
+def test_reference_is_an_immutable_snapshot_of_its_inputs() -> None:
+    model = Mixture(Parameters.from_json(
+        parameters_json("figiel-2025-validation-parameters", 3),
+        components=("water", "lithium-cation", "chloride-anion", "sodium-cation")))
+    solvent = [1.0, 0.0, 0.0, 0.0]
+    reference = model.reference(298.15, 1e5, solvent_fractions=solvent, ions=("lithium-cation", "chloride-anion"),
+                                stoichiometry=(1, 1))
+    gamma = reference.activity(0.5).mean_ionic_molality_scale
+    # Mutating T used to evaluate 350 K activities against the 298.15 K native reference fugacities.
+    with pytest.raises(AttributeError):
+        reference.T = 350.0  # type: ignore[misc]
+    solvent[:] = [0.5, 0.0, 0.0, 0.5]
+    assert reference.activity(0.5).mean_ionic_molality_scale == gamma

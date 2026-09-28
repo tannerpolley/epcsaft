@@ -5,9 +5,10 @@ from typing import Any
 import pytest
 
 from epcsaft import (
-    DensityBranch, Mixture, ParameterActionDirection, ParameterError, ParameterFamily, PressureActionDirection, Pure, _core, regression,
+    DensityBranch, Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
+    regression,
 )
-from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, solve_equilibrium
+from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
 
 from ..native_inputs import ETHANE, ROWS, associating_binary, parameters, same
 
@@ -179,3 +180,11 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     unfinished = regression.fit(p, coordinates(p), observations[:5], controls=one)
     assert unfinished.status == "limit_reached" and unfinished.usable and unfinished.covariance.status == "not_converged"
     assert unfinished.covariance.rank == 2 and unfinished.covariance.optimizer == [] and unfinished.covariance.variance_factor is None
+
+
+def test_asl_record_rejects_fitted_parameters_early() -> None:
+    """A fitted model has no parameter document to export (#29): a precise error, not a pybind cast failure."""
+    start = neutral_binary()
+    fitted = Mixture(Parameters(start._native, start.component_ids, start.site_ids))  # as regression.fitted_parameters builds it
+    with pytest.raises(ValueError, match="parameters loaded from a parameter document; fitted parameters have none"):
+        asl_record(fitted, bubble(180.0), None, [], [], [], 0, 0.0)

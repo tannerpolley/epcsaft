@@ -202,7 +202,7 @@ std::vector<double> add_multipliers(
         static_cast<Eigen::Index>(chemical.size()), static_cast<Eigen::Index>(width)
     );
     Eigen::VectorXd rhs(static_cast<Eigen::Index>(chemical.size()));
-    const auto z = species_z(compiled.model->parameters());
+    const auto& z = compiled.model->parameters().charge_number;
     for (std::size_t row = 0; row < chemical.size(); ++row) {
         const auto& item = compiled.rows[chemical[row]];
         const double weight = prepared.amount[item.phase] * prepared.composition[item.phase][item.index]
@@ -698,9 +698,19 @@ EquilibriumResult run_driver(
     application->Options()->SetNumericValue("constr_viol_tol", inner_tolerance);
     application->Options()->SetIntegerValue("max_iter",
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
-    application->Initialize();
-    application->OptimizeTNLP(nlp);
-    result.solver_status = solver_status_name(nlp->status());
+    const Ipopt::ApplicationReturnStatus initialized = application->Initialize();
+    const Ipopt::ApplicationReturnStatus returned =
+        initialized == Ipopt::Solve_Succeeded ? application->OptimizeTNLP(nlp) : initialized;
+    const Ipopt::SolverReturn status = nlp->status();
+    // ALG-TERMINATION's one accepted-outcome rule: only a non-error stop polishes and classifies its rows.
+    // A failed initialization (status stays UNASSIGNED), a fatal return or an error stop publishes no state.
+    const bool non_error = returned > Ipopt::Invalid_Problem_Definition && (status == Ipopt::SUCCESS
+        || status == Ipopt::STOP_AT_ACCEPTABLE_POINT || status == Ipopt::STOP_AT_TINY_STEP
+        || status == Ipopt::FEASIBLE_POINT_FOUND || status == Ipopt::RESTORATION_FAILURE
+        || status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED);
+    result.solver_status = solver_status_name(status);
+    const std::string ipopt_failure = non_error ? "" : "; Ipopt " + std::string(initialized == Ipopt::Solve_Succeeded
+        ? "OptimizeTNLP" : "Initialize") + " returned " + std::to_string(static_cast<int>(returned));
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
@@ -712,10 +722,7 @@ EquilibriumResult run_driver(
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
-    if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
-         || nlp->status() == Ipopt::STOP_AT_TINY_STEP || nlp->status() == Ipopt::MAXITER_EXCEEDED
-         || nlp->status() == Ipopt::CPUTIME_EXCEEDED || nlp->status() == Ipopt::RESTORATION_FAILURE)
-        && compiled.is_square()) {
+    if (non_error && compiled.is_square()) {
         auto at = compiled.prepare(full, true);
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
@@ -777,7 +784,7 @@ EquilibriumResult run_driver(
     } catch (const std::invalid_argument& error) {
         if (std::string(error.what()).rfind("reference_unavailable:", 0) != 0) throw;
         result.success = false;
-        result.message = error.what();
+        result.message = error.what() + ipopt_failure;
         result.convergence.stop = core::Stop::left_domain;
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
         result.iterations = result.convergence.iterations = nlp->iterations();
@@ -818,24 +825,21 @@ EquilibriumResult run_driver(
     }
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
-    result.iterations = nlp->iterations();
-    result.evaluations = nlp->evaluations() + polish_evaluations;
+    result.iterations = convergence.iterations = nlp->iterations();
+    result.evaluations = convergence.evaluations = nlp->evaluations() + polish_evaluations;
     result.hessian_calls = nlp->hessian_calls();
-    convergence.iterations = result.iterations;
-    convergence.evaluations = result.evaluations;
-    switch (nlp->status()) {
+    switch (status) {
     case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
     case Ipopt::DIVERGING_ITERATES: convergence.stop = core::Stop::left_domain; break;
     case Ipopt::ERROR_IN_STEP_COMPUTATION: convergence.stop = core::Stop::singular; break;
     case Ipopt::LOCAL_INFEASIBILITY:
     case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: convergence.stop = core::Stop::infeasible; break;
     default:
-        convergence.stop = core::classify(
-            convergence.residual, *convergence.criterion,
-            convergence.floor, convergence.contraction,
-            (nlp->status() == Ipopt::MAXITER_EXCEEDED ||
-             nlp->status() == Ipopt::CPUTIME_EXCEEDED), convergence.amplification
-        );
+        // A failed initialization or fatal return leaves no optimizer candidate, only the fallback start:
+        // like an unrun structural solve it is infeasible, whatever those rows give.
+        convergence.stop = !non_error ? core::Stop::infeasible : core::classify(convergence.residual,
+            *convergence.criterion, convergence.floor, convergence.contraction,
+            status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED, convergence.amplification);
     }
     if (std::isfinite(convergence.residual)) {
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
@@ -892,8 +896,8 @@ EquilibriumResult run_driver(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
-    const bool solver_ok = nlp->status() == Ipopt::SUCCESS
-        || result.convergence.stop == core::Stop::converged;
+    const bool solver_ok = non_error && (status == Ipopt::SUCCESS
+        || result.convergence.stop == core::Stop::converged);
     const bool accepted = solver_ok
         && (result.convergence.stop == core::Stop::converged
             || result.convergence.stop == core::Stop::converged_to_floor)
@@ -901,9 +905,8 @@ EquilibriumResult run_driver(
     if (!accepted) {
         result.success = false;
         if (!topology_ok) result.message = topology_failure;
-        if (!rejected_preparation.empty()) {
-            result.message += "; trial preparation failed: " + rejected_preparation;
-        }
+        result.message += ipopt_failure;
+        if (!rejected_preparation.empty()) result.message += "; trial preparation failed: " + rejected_preparation;
         clear_state(result);
         return result;
     }

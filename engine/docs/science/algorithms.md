@@ -378,9 +378,14 @@ result or loss of a stricter caller tolerance attained along the path.
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
 unattainable request would otherwise return the optimizer's last iterate. A selected
 point whose classified rows meet the caller criterion is accepted after any
-non-error optimizer stop (success, acceptable point, tiny step, restoration failure
-or budget); invalid-number, diverging, step-computation and infeasibility stops stay
-unavailable, and a floor-limited point also needs optimizer success. No additional step or
+non-error optimizer stop (success, acceptable point, tiny step, square feasible point,
+restoration failure or budget); invalid-number, diverging, step-computation and infeasibility stops stay
+unavailable, and a floor-limited point also needs optimizer success. A failed Ipopt
+initialization, a fatal application return (invalid problem or option, exception,
+memory, internal error) or an unassigned status is not a stop: it leaves no
+candidate to classify, is recorded `infeasible` like an unrun structural solve, and
+the unavailable result names the returned code, even when the fallback start's rows
+meet the criterion (#180). One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A square pinned cell carries chemical and pressure rows as optimizer equality
@@ -954,7 +959,7 @@ owner decisions; historical microbenchmarks are not universal limits.
 `Stop::nonfinite` is unavailable and has precedence over finite convergence and
 floor predicates whenever the residual or an optional diagnostic is non-finite.
 For equilibrium, `success` requires optimizer success or classified rows meeting
-the caller criterion after a non-error stop, finite residuals and declared topology; an unsuccessful result retains `solver_status`, residuals,
+the caller criterion after a non-error stop (never after a failed initialization or fatal return), finite residuals and declared topology; an unsuccessful result retains `solver_status`, residuals,
 the convergence record and failure message while clearing candidate state and
 action arrays, so `has_state()` is the availability predicate. A successful
 result retains the same convergence record alongside its state. The pre-solve

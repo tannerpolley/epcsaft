@@ -410,7 +410,7 @@ std::vector<double> pinned_hessian(
     const std::size_t temperature_index = compiled.primal_size - compiled.free_intensive_count;
     const double temperature = prepared.temperature;
     const auto& standard = prepared.standard;
-    const auto charges = species_z(parameters);
+    const auto& charges = parameters.charge_number;
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         std::vector<double> chemical(components, 0.0);
         double pressure_weight = 0.0;
@@ -546,7 +546,7 @@ CppAD::ADFun<double> record_geometry(
     const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(), theta);
     const auto sigma = segment_sigma(T, tape_parameters);
     const auto diameter = segment_diameter(T, tape_parameters, sigma);
-    const auto charges = species_z(parameters);
+    const auto& charges = parameters.charge_number;
     std::vector<std::optional<std::size_t>> phi(problem.phases.size());
     std::size_t phi_offset = 0;
     for (const auto& row : compiled.rows)
@@ -799,7 +799,7 @@ CompiledSystem compile_problem(
     compiled.n_feed = resolve_feed(model, request.feed);
     compiled.feed_total = feed_total(compiled.n_feed);
     compiled.has_reaction = !request.reactions.empty();
-    const auto z = species_z(model.parameters());
+    const auto& z = model.parameters().charge_number;
     double net_z = 0.0;
     for (std::size_t i = 0; i < components; ++i) net_z += z[i] * compiled.n_feed[i];
     if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
@@ -1089,7 +1089,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     const auto& point = prepared.point;
     const auto& shape = prepared.shape;
     const std::size_t components = model->parameters().component_count();
-    const auto z = species_z(model->parameters());
+    const auto& z = model->parameters().charge_number;
     const auto& x = prepared.composition;
     const auto& amount = prepared.amount;
     const auto& volume = prepared.volume;
@@ -1206,7 +1206,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
     const double P = prepared.pressure;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
     const auto& standard_temperature_derivative = prepared.standard.derivative[1];
-    const auto z = species_z(model->parameters());
+    const auto& z = model->parameters().charge_number;
     std::vector<std::optional<std::size_t>> phi(problem.phases.size());
     std::size_t phi_offset = 0;
     for (const auto& row : rows)
@@ -1672,7 +1672,7 @@ std::vector<double> CompiledSystem::constraint_hessian_at(
                 const double x = prepared.composition[phase][species];
                 double coefficient = 1.0;
                 if (row.kind == RowKind::Electro)
-                    coefficient = species_z(model->parameters())[species];
+                    coefficient = model->parameters().charge_number[species];
                 if (row.kind == RowKind::Moiety)
                     coefficient = B[row.index][species] / feed_total;
                 result[coordinate * n + coordinate] += weight * coefficient * x
