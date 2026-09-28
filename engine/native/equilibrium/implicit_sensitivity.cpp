@@ -17,19 +17,11 @@
 namespace epcsaft::equilibrium {
 namespace {
 
-Eigen::MatrixXd dense_matrix(
-    const std::vector<double>& values, std::size_t rows, std::size_t columns
-) {
+using RowMajor = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+Eigen::MatrixXd dense_matrix(const std::vector<double>& values, std::size_t rows, std::size_t columns) {
     if (values.size() != rows * columns) throw std::invalid_argument("matrix size");
-    Eigen::MatrixXd result(static_cast<Eigen::Index>(rows),
-                           static_cast<Eigen::Index>(columns));
-    for (std::size_t row = 0; row < rows; ++row) {
-        for (std::size_t column = 0; column < columns; ++column) {
-            result(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                values[row * columns + column];
-        }
-    }
-    return result;
+    return Eigen::Map<const RowMajor>(values.data(), static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(columns));
 }
 
 double condition_estimate(const Eigen::MatrixXd& matrix) {
@@ -51,25 +43,15 @@ std::size_t parameter_count(
 void validate_parameter_rows(
     const std::vector<double>& parameter_rows, std::size_t rows
 ) {
-    if (!std::all_of(parameter_rows.begin(), parameter_rows.end(),
-                     [](double value) { return std::isfinite(value); })) {
+    if (!std::all_of(parameter_rows.begin(), parameter_rows.end(), [](double value) { return std::isfinite(value); }))
         throw std::invalid_argument("invalid parameter derivative");
-    }
-    if (!parameter_rows.empty() && (rows == 0 || parameter_rows.size() % rows != 0)) {
+    if (!parameter_rows.empty() && (rows == 0 || parameter_rows.size() % rows != 0))
         throw std::invalid_argument("parameter derivative shape");
-    }
 }
 
 std::vector<double> flatten(const Eigen::MatrixXd& matrix) {
-    std::vector<double> result(
-        static_cast<std::size_t>(matrix.rows() * matrix.cols()), 0.0);
-    for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
-        for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
-            result[static_cast<std::size_t>(row * matrix.cols() + column)] =
-                matrix(row, column);
-        }
-    }
-    return result;
+    const RowMajor rows = matrix;
+    return {rows.data(), rows.data() + rows.size()};
 }
 
 bool valid_point(const std::vector<double>& point) {
@@ -82,6 +64,22 @@ bool valid_point(const std::vector<double>& point) {
 double backward_error(double residual, double jacobian_norm, double solution, double right) {
     const double denominator = jacobian_norm * solution + right;
     return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
+}
+
+// The defect b - A z in double-double: FMA TwoProduct and TwoSum (Ogita-Rump-Oishi Dot2), accurate
+// as if computed in twice the working precision and independent of the host's x87 precision control.
+Eigen::VectorXd defect(const Eigen::MatrixXd& matrix, const Eigen::VectorXd& solution, const Eigen::VectorXd& right) {
+    Eigen::VectorXd result(right.size());
+    for (Eigen::Index row = 0; row < right.size(); ++row) {
+        double sum = right(row), error = 0.0;
+        for (Eigen::Index column = 0; column < solution.size(); ++column) {
+            const double term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
+            error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
+            sum = next;
+        }
+        result(row) = sum + error;
+    }
+    return result;
 }
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() == matrix.cols() && matrix.allFinite(); }
@@ -423,9 +421,9 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         for (std::size_t row = 0; row < n; ++row) right(static_cast<Eigen::Index>(row)) = -center.row(static_cast<Eigen::Index>(row)) * series.rows[k][row];
         if (!right.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         right_norm[k] = right.cwiseAbs().maxCoeff();
-        // Solve R J C z = R b, then refine once with the defect evaluated in extended precision.
+        // Solve R J C z = R b, then refine once with the double-double defect.
         Eigen::VectorXd scaled = center.lu.solve(right);
-        scaled += center.lu.solve((right.cast<long double>() - center.jacobian.cast<long double>() * scaled.cast<long double>()).cast<double>());
+        scaled += center.lu.solve(defect(center.jacobian, scaled, right));
         solution_norm[k] = scaled.cwiseAbs().maxCoeff();
         const Eigen::VectorXd solution = center.column.cwiseProduct(scaled);
         ++diagnostics.linear_solves;

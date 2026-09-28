@@ -6,6 +6,7 @@
 #include "core/physical_constants.hpp"
 #include "recording_support.hpp"
 #include <Eigen/Dense>
+#include <fpu_control.h>
 
 #include <algorithm>
 #include <array>
@@ -3888,13 +3889,21 @@ void check_e5_refusals() {
         const auto bubble_central = epcsaft::equilibrium::solve_equilibrium(bubble_model, bubble.problem);
         const auto batch = actions(bubble, bubble_model, bubble_central, bubble.observables, 1);
         const auto& diagnostics = batch.diagnostics;
+        // An ASL host (#173): AMPL's fpinit sets the x87 precision control to 53 bits (control word
+        // 0x27f), as pynumero's PyomoNLP does in a live campaign. The action must not depend on it.
+        fpu_control_t clean_word, asl_word = 0x27f;
+        _FPU_GETCW(clean_word);
+        _FPU_SETCW(asl_word);
+        const auto host = actions(bubble, bubble_model, bubble_central, bubble.observables, 1);
+        _FPU_SETCW(clean_word);
         const auto n = static_cast<Eigen::Index>(bubble_central.coordinates.size());
         const auto values = epcsaft::equilibrium::compile_problem(bubble_model, bubble.problem).jacobian(bubble_central.coordinates);
         const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), n, n);
         const double raw_condition = jacobian.cwiseAbs().rowwise().sum().maxCoeff() * jacobian.inverse().cwiseAbs().rowwise().sum().maxCoeff();
         const bool certified = diagnostics.condition_estimate.has_value() && diagnostics.maximum_linear_residual.has_value();
         const double bound = certified ? 2.0 * *diagnostics.condition_estimate * *diagnostics.maximum_linear_residual : 0.0;
-        double error = 0.0, norm = 0.0;
+        double error = 0.0, norm = 0.0, shift = 0.0;
+        bool identical = host.results.size() == std::size(exact);
         bool typed = bubble_central.success && certified && bound <= limit && n == 10;  // the chart layout above
         for (std::size_t i = 0; i < std::size(exact); ++i) {
             const auto& item = batch.results[i];
@@ -3903,6 +3912,8 @@ void check_e5_refusals() {
             const double chart = i == 0 || i == 5 ? 1.0 : (i >= 6 ? -1.0 : 1.0) / item.value.value_or(1.0);
             const double weight = chart * std::exp2(std::round(std::log2(jacobian.col(static_cast<Eigen::Index>(column[i])).cwiseAbs().maxCoeff())));
             error = std::max(error, std::abs(weight * (item.action.value_or(0.0) - exact[i])));
+            shift = std::max(shift, std::abs(weight * (host.results[i].action.value_or(0.0) - item.action.value_or(0.0))));
+            identical = identical && item.action.has_value() && host.results[i].action == item.action;
             norm = std::max(norm, std::abs(weight * exact[i]));
         }
         // The first-order bound excludes the final rounding of each returned double observable.
@@ -3920,6 +3931,10 @@ void check_e5_refusals() {
             "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa eta + eps", verdict, "e5-8", id.c_str(), "|C^{-1}dy|/|C^{-1}y|", "E",
             "|C^{-1}dy|/|C^{-1}y|\\leq2\\kappa_\\infty\\eta+\\epsilon", "case");
         all_ok = verdict && all_ok;
+        const auto host_id = "e5-8/asl-host/rung" + std::to_string(rung);
+        all_ok = (record_bool(host_id.c_str(), "e5-8", "the action under the ASL x87 control word 0x27f is the clean-process action exactly",
+            identical, recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("control_word", 0x27f),
+                recording_support::field("shift", shift / norm), recording_support::field("clean_error", error / norm)}))) && all_ok;
     }
     CHECK(all_ok);
 }
