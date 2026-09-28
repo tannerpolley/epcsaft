@@ -666,8 +666,14 @@ G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 owner). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised; each
 coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
-evaluated in `long double` (x87 80-bit on the supported x86-64 build; plain
-double where `long double` is double), and y_k = C z_k. Each solved coefficient is
+accumulated in double-double (FMA TwoProduct and TwoSum, the compensated dot
+product Dot2 of Ogita, Rump and Oishi, 2005: as accurate as twice the working
+precision, then rounded), and y_k = C z_k. The defect uses only double arithmetic
+and the correctly rounded `fma`, so no host floating-point state changes it: AMPL's
+ASL (`fpinit`, loaded by pynumero and ASL-hosted solvers) sets the x87 precision
+control to 53 bits, which reduced the former `long double` defect to double and
+cost the Lithium capacity-state action three digits (#173). Saving and restoring
+the x87 control word instead would be x86- and glibc-specific. Each solved coefficient is
 re-evaluated; its normwise backward error
 eta_k = |R r_k| / (|A| |z_k| + |R b_k|) (infinity norms, Rigal–Gaches) must meet
 `EQUILIBRIUM_ACTION_BACKWARD_ERROR` (`linear_solve_residual`). This certifies
