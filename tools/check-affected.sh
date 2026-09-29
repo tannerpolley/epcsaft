@@ -78,17 +78,18 @@ if grep -q '^engine/' <<<"$paths"; then
 if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # The native preparation above already built the test executables.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
-        # The slow solved-state programs run only for their own layer (owners from ARCHITECTURE.yaml).
+        # The slow solved-state programs run when their layer or any layer below it changes
+        # (owners from ARCHITECTURE.yaml): a property or EOS change moves every solved state.
         owners="$(printf '%s\n' "${changed[@]}" | PYTHONPATH=tools python3 -c '
 import importlib, sys
 m = importlib.import_module("project-map")
 rules = m.declaration()["rules"]
 print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
         slow_tests=()
-        if [[ " $owners " == *" engine.equilibrium "* ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
+        if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
             slow_tests+=(equilibrium boundary)
         fi
-        if [[ " $owners " == *" engine.regression "* ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
+        if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
             slow_tests+=(regression_fit)
         fi
         if ((${#slow_tests[@]})); then
