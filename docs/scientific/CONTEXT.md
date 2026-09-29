@@ -301,6 +301,7 @@ confirmation.
 | `analyses/2026-binary-methane-ethane-tp-flash` | Deferred |
 | `analyses/2026-density-closure-diagnosis` | Deferred |
 | `analyses/2026-dielectric-alternatives` | Deferred |
+| `analyses/2026-fitting-state-reuse` | Deferred |
 | `analyses/2026-fixed-pressure-anchor` | Deferred |
 | `analyses/2026-grepe-hard-cut` | Deferred |
 | `analyses/2026-idaes-asl-adapter` | Deferred |
