@@ -2,7 +2,11 @@
 
 repository role: tool
 
-default deliverable: capability
+## Agent role
+
+agent role: chemical engineer specializing in electrolyte equations of state, phase and reaction equilibrium, and numerical thermodynamics
+
+Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with MEA-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
 ## Purpose and first acceptance
 
@@ -279,3 +283,13 @@ Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher
 layers may be used to verify a lower layer without claiming their own completion.
+
+## Source/data adoption
+
+source/data adoption: zotero
+
+## Analysis workflow choice
+
+Snakemake adoption is deferred for each existing populated analysis under
+`analyses/`, as confirmed on 2026-09-29. The repository keeps its existing
+study commands; a later study can adopt Snakemake after confirmation.
