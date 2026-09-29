@@ -551,19 +551,19 @@ void check_f9_f10() {
                     && weighted.failures[0].status == ObservationStatus::Nonfinite
                     && weighted.failures[0].message == "weighted residual not finite" && weighted.initial_cost == 0.0,
                 summary(weighted), "r1-f10"));
-    // A finite weighted residual whose optimizer Jacobian overflows is recorded by the trial and final recorders.
+    // The coordinate chain can overflow with finite physical gradients and a finite objective;
+    // refusal precedes publication of the initial successful-point cache and warm starts.
     steep.observed = *kept.value - 1.0;
     steep.scale = 1.0e-150;
     request.observations = {steep};
     request.weights.clear();
     request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 1.0e200, 150.0, 260.0}};
     const auto steep_fit = fit(request);
-    const bool trial_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
-        return item.status == ObservationStatus::Nonfinite && item.observation == 0 && item.message == "optimizer Jacobian not finite"; });
-    const bool final_recorded = std::any_of(steep_fit.failures.begin(), steep_fit.failures.end(), [](const TrialFailure& item) {
-        return item.observation == 0 && item.message.find("final optimizer Jacobian not finite") != std::string::npos; });
-    CHECK(truth("r1-f10/jacobian_overflow_typed", "an overflowing optimizer Jacobian is recorded by the trial and final recorders and the fit fails typed",
-                trial_recorded && final_recorded && steep_fit.status == "failed" && !steep_fit.usable, summary(steep_fit), "r1-f10"));
+    CHECK(truth("r1-f10/jacobian_overflow_typed", "an overflowing coordinate chain is refused at its row before publishing the initial trial",
+                steep_fit.status == "initial_evaluation_failed" && !steep_fit.usable && steep_fit.failures.size() == 1
+                    && steep_fit.failures[0].status == ObservationStatus::Nonfinite && steep_fit.failures[0].observation == 0
+                    && steep_fit.failures[0].message == "optimizer Jacobian not finite" && steep_fit.failures[0].jacobian,
+                summary(steep_fit), "r1-f10"));
     // Three finite rows whose squares are representable but whose accumulated objective is not: the
     // failure is typed at the row where the running sum stops being finite, never an infinite cost.
     Observation steep_row = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
@@ -805,6 +805,54 @@ void check_j1() {
                         hand[c], 1.0e-13 * magnitude[c], 1.0e-13, fields({field("weight", request.weights[i]), field("form", i == 0 ? "LogRatio" : "Difference")}),
                         "the optimizer Jacobian is the weighted residual slope times the tied, scaled physical gradient", "r2-j1"));
     }
+    // Interleaved physical states, pooled species, fraction and both density bases keep their own rows.
+    auto declared = tie.problem;
+    for (std::size_t q = 0; q < declared.phases.size(); ++q) {
+        declared.phases[q].composition_guess.assign(tie.start.mole_fractions.begin() + q * 2,
+                                                    tie.start.mole_fractions.begin() + (q + 1) * 2);
+        declared.phases[q].packing_guess = tie.start.packing_fractions[q];
+    }
+    FitRequest grouped;
+    grouped.parameters = parameters;
+    grouped.coordinates.coordinates = {set.coordinates.front()};
+    grouped.observations = {solved(ObservationKind::PhaseFraction, declared, 0),
+        solved(ObservationKind::EquilibriumPressure, bubble_at(190.0)),
+        solved(ObservationKind::PhaseMoleFraction, declared, 0, {0, 1}),
+        solved(ObservationKind::PartialPressure, declared, 1, {0}),
+        solved(ObservationKind::PhaseDensity, declared, 0),
+        solved(ObservationKind::PhaseDensity, declared, 0, {}, true),
+        solved(ObservationKind::EquilibriumPressure, declared),
+        solved(ObservationKind::PhaseFraction, declared, 1)};
+    for (std::size_t i = 0; i < grouped.observations.size(); ++i) {
+        auto& row = grouped.observations[i];
+        row.observed = *predict(model, row).value;
+        if (i % 2 == 0) { row.form = ResidualForm::Difference; row.scale = row.observed; }
+        grouped.weights.push_back(1.0 + i);
+    }
+    grouped.controls.maximum_iterations = 1;
+    grouped.controls.maximum_elapsed_time_seconds = 1.0e-6;
+    const auto batch = fit(grouped);
+    CHECK(batch.usable && batch.predictions.size() == grouped.observations.size());
+    const auto point = grouped.coordinates.start(parameters);
+    for (std::size_t i = 0; i < grouped.observations.size(); ++i) {
+        const auto& row = grouped.observations[i];
+        CHECK(agree("r2-j1/group_value/" + std::to_string(i), "prediction", "native", batch.predictions[i], row.observed,
+                    1.0e-10 * row.observed, 1.0e-10, summary(batch),
+                    "interleaved declarations and independent projections retain the scalar-owner central value", "r2-j1"));
+        const auto value = [&](double shift) {
+            auto u = point;
+            u[0] += shift;
+            const HelmholtzModel rebuilt(grouped.coordinates.apply(parameters, u));
+            return *predict(rebuilt, row).value;
+        };
+        auto rungs = ladder(value, 0.005);
+        rungs.coarse /= grouped.coordinates.coordinates.front().scale;
+        rungs.fine /= grouped.coordinates.coordinates.front().scale;
+        CHECK(ladder_agrees("r2-j1/group_action/" + std::to_string(i), "dy_dtheta", batch.physical_jacobian[i], rungs,
+                            fields({field("value", batch.predictions[i]), field("u_step", 0.005)}),
+                            "shared-state actions agree with independently rebuilt-model central differences", "r2-j1"));
+    }
+
 }
 
 // ---- R2 J2 and R3: manufactured recovery, bounds, failures, weights, rank and covariance.
@@ -871,6 +919,83 @@ void check_j2() {
     CHECK(truth("r2-j2/active_bound", "a bound below the truth ends at the bound with covariance withheld",
                 bounded.usable && bounded.physical[0] == 151.0 && bounded.covariance.status == "active_bound"
                     && bounded.covariance.active_bounds == std::vector<std::size_t>{0}, summary(bounded), "r2-j2"));
+    // The same manufactured targets, starting on the upper epsilon bound with descent initially
+    // inward. Coupling to k_ij turns that gradient outward without a new bound contact (#193).
+    auto bound_start = recovery_request(truth_case, 151.0, -0.1, 151.0);
+    bound_start.controls.maximum_iterations = 12;  // shared work limit; no iteration-count pass criterion
+    const auto initial_epsilon_gradient = [](const FitRequest& start) {
+        const HelmholtzModel model(start.parameters, start.coordinates.active_parameters());
+        double gradient = 0.0;
+        for (std::size_t row = 0; row < start.observations.size(); ++row) {
+            const auto& observation = start.observations[row];
+            const auto prediction = predict(model, observation);
+            const auto action = differentiate(model, observation, prediction);
+            if (!(prediction.value && prediction.residual && action.status == ObservationStatus::Available))
+                throw std::runtime_error("initial epsilon gradient row " + std::to_string(row) + ": prediction "
+                    + observation_status_name(prediction.status) + " " + prediction.message + "; action "
+                    + observation_status_name(action.status) + " " + action.message);
+            gradient += *prediction.residual * residual_slope(observation, *prediction.value)
+                        * action.value[0] * start.coordinates.coordinates[0].scale;
+        }
+        return gradient;
+    };
+    CHECK(initial_epsilon_gradient(bound_start) > 0.0);  // descent from the upper bound is initially inward
+    // Removing epsilon from the fit gives the independent scalar minimization at epsilon = 151 K.
+    auto reduced = bound_start;
+    reduced.coordinates.coordinates.erase(reduced.coordinates.coordinates.begin());
+    const auto reference = fit(reduced);
+    const auto refreshed = fit(bound_start);
+    CHECK(reference.usable && refreshed.usable && refreshed.optimizer.size() == 2);
+    CHECK(agree("r2-j2/bound_start/cost", "cost", "1", refreshed.final_cost, reference.final_cost,
+                1.0e-12, 1.0e-8, summary(refreshed),
+                "the coupled fit reaches the independently reduced bounded minimum within the work limit", "r2-j2"));
+    CHECK(agree("r2-j2/bound_start/kij", "k_ij", "1", refreshed.physical[1], reference.physical[0],
+                1.0e-7, 0.0, summary(refreshed), "the free coordinate agrees with the scalar minimum", "r2-j2"));
+    double projected = 0.0;
+    const auto [lower, upper] = bound_start.coordinates.optimizer_bounds();
+    for (std::size_t c = 0; c < 2; ++c) {
+        double gradient = 0.0;
+        for (std::size_t i = 0; i < refreshed.weighted_residuals.size(); ++i)
+            gradient += refreshed.optimizer_jacobian[i * 2 + c] * refreshed.weighted_residuals[i];
+        CHECK(std::isfinite(gradient));
+        projected = std::max(projected, std::abs(refreshed.optimizer[c]
+            - std::clamp(refreshed.optimizer[c] - gradient, lower[c], upper[c])));
+    }
+    CHECK(truth("r2-j2/bound_start/feasible", "the accepted optimum is feasible with epsilon at its upper bound",
+                bound_start.coordinates.within_bounds(refreshed.optimizer) && refreshed.physical[0] == 151.0,
+                summary(refreshed), "r2-j2"));
+    CHECK(agree("r2-j2/bound_start/projected_gradient", "projected_gradient_max", "1", projected, 0.0,
+                1.0e-6, 0.0, summary(refreshed), "the full weighted gradient satisfies bounded stationarity", "r2-j2"));
+    // Initially held epsilon must be released as k_ij moves and the gradient turns inward.
+    auto interior_truth = truth_case;
+    interior_truth.parameters.dispersion_energy_over_k[0] = 150.0;
+    const HelmholtzModel interior_model(interior_truth.parameters);
+    for (auto& observation : interior_truth.observations) {
+        const auto prediction = predict(interior_model, observation);
+        if (!prediction.value)
+            throw std::runtime_error("interior truth row " + std::to_string(&observation - interior_truth.observations.data())
+                + ": " + observation_status_name(prediction.status) + " " + prediction.message);
+        observation.observed = *prediction.value;
+        // The default cold seed coalesces at the release start (+0.1); these measured two-phase
+        // guesses admit the same T/feed/bounds/parameter start, without a topology-event bypass.
+        if (prediction.solved) {
+            const auto& state = *prediction.solved;
+            for (std::size_t q = 0; q < observation.problem.phases.size(); ++q) {
+                observation.problem.phases[q].composition_guess.assign(state.mole_fractions.begin() + q * 2,
+                                                                        state.mole_fractions.begin() + (q + 1) * 2);
+                observation.problem.phases[q].packing_guess = state.packing_fractions[q];
+            }
+            observation.problem.pressure = FreeValue::variable(state.pressure.front());
+        }
+    }
+    auto inward = recovery_request(interior_truth, 151.0, 0.1, 151.0);
+    CHECK(initial_epsilon_gradient(inward) < 0.0);  // outward descent at the upper bound: initially held
+    const auto released = fit(inward);
+    CHECK(released.usable);
+    CHECK(agree("r2-j2/bound_start/inward", "dispersion_energy_over_k", "K", released.physical[0], 150.0,
+                0.0, 1.0e-6, summary(released), "inward descent releases the held coordinate and recovers the interior truth", "r2-j2"));
+    CHECK(agree("r2-j2/bound_start/inward_cost", "cost", "1", released.final_cost, 0.0,
+                1.0e-14, 0.0, summary(released), "the released interior fit recovers the manufactured targets", "r2-j2"));
     auto failing = recovery_request(truth_case, 148.0, 0.0);
     failing.observations.push_back(density(200.0, 1.0e10, {0.5, 0.5}, DensityBranch::Liquid));
     const auto failed = fit(failing);
@@ -998,8 +1123,8 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:13"}, check_f9_f10, "R1"},
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
-        {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:60"}, check_j1, "R2"},
-        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:9"}, check_j2, "R2"},
+        {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
+        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
     });
 }

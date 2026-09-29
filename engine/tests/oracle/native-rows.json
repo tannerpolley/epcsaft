@@ -55,5 +55,18 @@
   ],
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
-  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
+  "row_updates": [
+    {
+      "source": "regression_checks R2-J2",
+      "comparison_prefix": "r4/",
+      "rows": 28,
+      "recorded_at_revision": "e01767aa78ffceb7d268ed262b4309da2147c51d",
+      "build_fingerprint": "cbf7131d56ef7f26794943986dfd23027d1dac19eb697375da00cbc4bfff58c3",
+      "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
+      "log_sha256": "4eb622bab7fd80c8077d57e94fabea763a025b3f70b8bb3d6a7f9090ae5eebf4",
+      "failed_native_comparisons": [],
+      "reason": "Same-build native fitting operands replace the older wheel rows; assertions and tolerances unchanged. All other rows retain the original recording provenance."
+    }
+  ]
 }

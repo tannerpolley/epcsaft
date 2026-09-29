@@ -128,6 +128,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     std::size_t temperature_order,
     bool parameter_jets
 ) {
+    core::Scope scope("neutral_reference_trace");
     NeutralReferenceTraceResult result;
     try {
         const std::size_t components = model.parameters().component_count();
@@ -561,6 +562,15 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     std::size_t temperature_order,
     bool parameter_jets
 ) {
+    core::Scope scope("reaction_references");
+    if (scope.on()) {
+        scope.probe("reference_inputs", std::vector<double>{temperature, system_pressure, double(pressure_jets),
+            double(temperature_order), double(parameter_jets), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
+        scope.probe("reference_declaration", std::vector<double>{double(declaration.solvent_index.has_value()),
+            double(declaration.solvent_index.value_or(0)), declaration.standard_molality_mol_per_kg});
+        scope.probe("reference_ratios", declaration.solute_molality_ratios);
+        scope.probe("active_parameter_values", model.active_parameter_values());
+    }
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
     struct CachedTrace final {
@@ -606,6 +616,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             return item.pressure == pressure && (!need_jets || item.pressure_jets)
                 && item.temperature_order >= temperature_order && (!parameter_jets || item.parameter_jets);
         });
+        if (scope.on()) scope.probe("reference_row", std::vector<double>{double(row), pressure,
+            double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(need_jets), double(found != cache.end())});
         if (found == cache.end()) {
             CachedTrace item;
             item.pressure = pressure;

@@ -69,13 +69,19 @@ struct PredictionGradient final {
 };
 
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
-void validate(const Observation& observation, const HelmholtzModel& model);
+bool same_state(const Observation& left, const Observation& right);
+void validate(const Observation& observation, const HelmholtzModel& model,
+              const equilibrium::CompiledSystem* prepared = nullptr);
+void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
+);
+std::vector<PredictionGradient> differentiate_group(
+    const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction
 );
 // r = (y - y_obs) / scale, or ln(y / y_obs) for positive y and y_obs; dr/dy = 1/scale or 1/y.
 std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);
