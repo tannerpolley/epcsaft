@@ -280,5 +280,5 @@ build_invariants:
   editable_downstream_dependencies: forbidden
   compatibility_aliases: forbidden
   mutable_wheel_inputs: forbidden
-  third_party_cmake_use: nlopt_subproject_only
+  third_party_cmake_use: ceres_package_lookup_only
   inferred_parameter_defaults: forbidden

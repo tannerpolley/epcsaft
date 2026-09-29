@@ -62,8 +62,8 @@ bash tools/status.sh
 Setup syncs the locked root `.venv`, builds `engine/` through meson-python,
 writes one verified wheel under `build/environment-wheel/`, and installs that
 wheel non-editably. Re-running setup reuses checkout-local Ninja state,
-`ccache`, and the content-addressed machine-local wheel cache when their full
-build fingerprints match.
+`ccache`, and the content-addressed machine-local wheel cache when the wheel
+fingerprint (wheel inputs and toolchain, not native test sources) matches.
 
 Python consumers use the installed package and do not invoke Meson:
 
