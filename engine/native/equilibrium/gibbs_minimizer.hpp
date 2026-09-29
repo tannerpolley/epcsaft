@@ -212,7 +212,6 @@ public:
     bool is_square() const noexcept { return compiled_.is_square(); }
 
 private:
-    std::vector<double> point(Ipopt::Index n, const Ipopt::Number* x) const;
     std::vector<std::size_t> constraint_rows() const;
     // One latest-point phase evaluation per solve; every derived quantity is cached
     // with it and invalidated when the callback point changes.
