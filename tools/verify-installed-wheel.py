@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import csv
+import hashlib
 import json
 import re
 from importlib import import_module, metadata
@@ -49,6 +52,12 @@ def verify(wheel: Path) -> None:
         for member in matches:
             if TRANSIENT_WHEEL_RUNPATH in archive.read(member):
                 raise SystemExit(f"transient build runpath embedded in {member}")
+        (record_name,) = [member for member in members if member.endswith(".dist-info/RECORD")]
+        record = {
+            path: digest
+            for path, digest, _ in csv.reader(archive.read(record_name).decode().splitlines())
+            if digest
+        }
 
     epcsaft_distributions = [
         distribution
@@ -70,6 +79,29 @@ def verify(wheel: Path) -> None:
         raise SystemExit(f"unexpected Engine install source: {installed_from}")
 
     installed_root = Path(distribution.locate_file("")).resolve()
+    # The installed bytes must be the named wheel's bytes, not just its path.
+    for path, digest in record.items():
+        algorithm, expected = digest.split("=", 1)
+        installed = installed_root / path
+        if not installed.is_file():
+            raise SystemExit(f"{installed} is missing; wheel RECORD lists {path}")
+        actual = base64.urlsafe_b64encode(
+            hashlib.new(algorithm, installed.read_bytes()).digest()
+        ).rstrip(b"=").decode()
+        if actual != expected:
+            raise SystemExit(
+                f"{installed} differs from {wheel.name} RECORD: {algorithm}={actual}, "
+                f"expected {digest}"
+            )
+    extra = sorted(
+        str(path.relative_to(installed_root))
+        for path in (installed_root / "epcsaft").rglob("*")
+        if path.is_file()
+        and "__pycache__" not in path.parts
+        and path.relative_to(installed_root).as_posix() not in record
+    )
+    if extra:
+        raise SystemExit(f"installed epcsaft files absent from {wheel.name} RECORD: {extra}")
     installed_asl = Path(distribution.locate_file(ASL_MEMBER)).resolve()
     if not installed_asl.is_file() or installed_root not in installed_asl.parents:
         raise SystemExit(f"ASL library is outside the installed wheel: {installed_asl}")
@@ -85,7 +117,7 @@ def verify(wheel: Path) -> None:
     if missing:
         raise SystemExit(f"current Engine extension lacks {missing}")
 
-    print(f"epcsaft {distribution.version} installed from {wheel}")
+    print(f"epcsaft {distribution.version} installed from {wheel}; {len(record)} RECORD hashes match")
     print("module origins: " + ", ".join(origins))
 
 

@@ -43,9 +43,6 @@ cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
 
-boost_project = subproject('boost_headers')
-boost_headers_dep = boost_project.get_variable('boost_headers_dep')
-
 highs_project = subproject(
   'highs',
   default_options: [
@@ -60,26 +57,6 @@ highs_project = subproject(
 )
 highs_dep = highs_project.get_variable('highs_dep')
 highs_conf_file = highs_project.get_variable('highs_conf_file')
-
-cmake = import('cmake')
-nlopt_options = cmake.subproject_options()
-nlopt_options.add_cmake_defines({
-  'BUILD_SHARED_LIBS': false,
-  'DISABLE_FP_CONTRACT': true,
-  'NLOPT_CXX': true,
-  'NLOPT_FORTRAN': false,
-  'NLOPT_GUILE': false,
-  'NLOPT_JAVA': false,
-  'NLOPT_LUKSAN': false,
-  'NLOPT_MATLAB': false,
-  'NLOPT_OCTAVE': false,
-  'NLOPT_PYTHON': false,
-  'NLOPT_SWIG': false,
-  'NLOPT_TESTS': false,
-})
-nlopt_options.set_install(false)
-nlopt_project = cmake.subproject('nlopt', options: nlopt_options)
-nlopt_dep = nlopt_project.dependency('nlopt')
 
 # One include root. A layer names its neighbours by path ("properties/density.hpp"),
 # which is what makes the include direction checkable.
@@ -127,8 +104,6 @@ epcsaft_native = static_library(
     eigen_dep,
     ceres_dep,
     highs_dep,
-    nlopt_dep,
-    boost_headers_dep,
     cppad_headers_dep,
   ],
   include_directories: native_inc,
@@ -146,8 +121,6 @@ asl_library = shared_library(
     eigen_dep,
     ceres_dep,
     highs_dep,
-    nlopt_dep,
-    boost_headers_dep,
     cppad_headers_dep,
   ],
   include_directories: native_inc,

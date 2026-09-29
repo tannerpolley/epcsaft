@@ -1,6 +1,0 @@
-[wrap-file]
-directory = nlopt-2.11.0
-source_url = https://github.com/stevengj/nlopt/archive/refs/tags/v2.11.0.tar.gz
-source_filename = nlopt-2.11.0.tar.gz
-source_hash = 53e552d83e9294d67db37f0f4a23f15933a9ef698485301a18b98b40004cf0de
-method = cmake

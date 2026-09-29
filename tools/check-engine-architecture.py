@@ -275,7 +275,7 @@ def rule_budget_readers_carry_records() -> list[str]:
 def rule_core_and_trace_boundaries() -> list[str]:
     bad = []
     forbidden = re.compile(
-        r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|nlopt|boost|pybind11)",
+        r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|pybind11)",
         re.IGNORECASE,
     )
     read_back = re.compile(r"(?<![A-Za-z0-9_])(core::)?(Capture\b|active\s*\()")

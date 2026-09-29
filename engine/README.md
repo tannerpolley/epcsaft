@@ -206,10 +206,9 @@ live in `../analyses/`. See `AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
-through pkg-config. Exact archive wraps own Boost 1.88.0, CppAD
-20250000.3, HiGHS 1.15.1, and NLopt 2.11.0. Meson's CMake module translates
-the unmodified NLopt project. CMake remains a third-party translation tool for
-NLopt; the Engine has no CMake build route.
+through pkg-config; Ceres 2.2 through its CMake package metadata. Exact
+archive wraps own CppAD 20250000.3 and HiGHS 1.15.1. CMake only resolves the
+Ceres imported target; the Engine has no CMake build route.
 
 The HiGHS tag archive replaces its same-version source release asset because
 that asset embeds Git metadata. All archive URLs and SHA-256 values are pinned.
