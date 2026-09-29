@@ -154,5 +154,7 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
             assert result.success and result.solver_status == "MAXITER_EXCEEDED" and math.isclose(result.amounts[0], 1.0)
             continue
         assert not result.success and result.amounts == [] and result.mole_fractions == []
+        # The fallback rows meet the criterion: the fatal return alone withholds the state.
+        assert result.requested_tolerance_met is True
         assert result.convergence.stop == _core.Stop.infeasible and result.solver_status == failure
         assert "; Ipopt " + failure in result.message

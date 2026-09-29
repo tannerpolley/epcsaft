@@ -383,8 +383,9 @@ restoration failure or budget); invalid-number, diverging, step-computation and 
 unavailable, and a floor-limited point also needs optimizer success. A failed Ipopt
 initialization, a fatal application return (invalid problem or option, exception,
 memory, internal error) or an unassigned status is not a stop: it leaves no
-candidate to classify and is recorded `infeasible` like an unrun structural solve,
-even when the fallback start's rows meet the criterion (#180). Its `solver_status`
+candidate to classify and is recorded `infeasible` like an unrun structural solve
+(or `left_domain` when the fallback start's reference is unavailable), even when the
+fallback start's rows meet the criterion (#180). Its `solver_status`
 carries both exact Ipopt names, e.g. `UNASSIGNED; Initialize returned Invalid_Option`,
 so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
