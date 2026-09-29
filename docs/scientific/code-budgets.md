@@ -47,8 +47,8 @@ current/old owners and justify only the bounded repair, adaptation or missing
 capability. Verify-only slices begin with zero new runtime. Reuse decisions and
 measured equivalent-work costs, not line count alone, justify replacement.
 
-Regression's target follows the retained small fitting-wrapper and four-node
-observation design. Binding/Python growth assumes replacement of interface
+The parameter regression target follows the retained small fitting-wrapper and
+four-node observation design. Binding/Python growth assumes replacement of interface
 pieces as all applications migrate; there is no compatibility layer allowance.
 The allocation covers the currently documented fluid transfer, including its
 required actions, not solids or unrestricted dense derivative tensors. These
@@ -77,6 +77,24 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-29, Properties hard ceiling 4211 → 4223, parameter regression
+  1200 → 1300 and aggregate 18365 → 18556 (#129/#193, explicitly owner-approved for the
+  measured candidate). Requirement: exact request-local equilibrium-state
+  sharing, residual-to-Jacobian reuse at the same parameter point, and held-set
+  refresh from the accepted full weighted gradient. Preserve every observable,
+  action, residual transform, weight, failure safeguard and numerical tolerance.
+  Measured growth against `11ee6fbe` is +194 runtime lines: Properties +12 for
+  reference-work tracing and parameter regression +182. Consolidation removed ten
+  lines from the first candidate by sharing gradient and membership responsibilities.
+  Alternatives: retaining repeated scalar work loses the measured initial-call
+  saving; removing release, gradient or failed-trial safeguards invalidates the
+  required behavior. No further safe duplicate removal was demonstrated within
+  this slice; this is not proof of a minimum. Wider refactoring needs its own
+  evidence. Floors, soft ceilings, other layer ceilings and scientific scope
+  remain unchanged. The [fitting notebook](../../analyses/2026-fitting-state-reuse/notebook.qmd)
+  retains the numerical comparisons and limits; complete installed-wheel
+  verification remains a separate acceptance condition.
+
 - 2026-09-26, aggregate hard ceiling 18353 → 18365 (#172, owner-approved
   2026-09-26 in the #172 decision comment for the measured growth, estimated at
   15–25 lines). Requirement: all-free equilibrium states whose trace-species
@@ -99,8 +117,8 @@ Budget changes must not silently change scientific scope.
   slower than its scipy forward-difference refit and reaching its objective.
   Measured net growth against 34d06cd2: the bounded fit (active set held in a box
   chart, a Jacobian cache at accepted points, per-iteration reporting;
-  Regression +123 with the coordinate bounds owner), without which refit C
-  stalled at 123.38 against scipy's 121.36; the speciated start of a cold
+  parameter regression +123 with the coordinate bounds owner), without which
+  refit C stalled at 123.38 against scipy's 121.36; the speciated start of a cold
   reactive boundary with its fallbacks (Equilibrium +67 with the reference-jet
   reuse and the compiled solve), which removed four cold failures and the
   3–21 s cold tail; the partial-pressure observation and batched first actions;
