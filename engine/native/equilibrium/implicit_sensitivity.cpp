@@ -539,7 +539,7 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
         // The solved coefficients satisfy the normalisation and charge rows to the linear
         // residual policy; the P4 trust boundary requires them exactly, so the roundoff
         // component along (1, z) is removed before the call.
-        const auto charges = species_z(model.parameters());
+        const auto& charges = model.parameters().charge_number;
         double sum = 0.0, charge = 0.0, zz = 0.0, z1 = 0.0;
         for (std::size_t i = 0; i < components; ++i) {
             sum += result.composition[i]; charge += charges[i] * result.composition[i];
@@ -840,7 +840,7 @@ static SolvedStateActionBatch evaluate_action(
     batch.diagnostics.rank.reset();
     batch.diagnostics.condition_estimate.reset();
     if (gate == SolvedStateActionStatus::Available) {
-        const auto charges = species_z(model.parameters());
+        const auto& charges = model.parameters().charge_number;
         bool support = false, nonzero_z = false;
         for (const std::size_t species : compiled.removed_species)
             for (const auto& control : controls)

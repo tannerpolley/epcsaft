@@ -282,6 +282,9 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     reactions = tuple(
         _reaction_from_mapping(item) for item in _records(mapping.get("reactions", ()), "reactions")
     )
+    topology = mapping.get("topology_declared")
+    if not isinstance(topology, bool | None):
+        raise _core.ParameterError(f"topology_declared must be a bool, got {topology!r}")
     return Problem(
         phases=phases,
         T=_intensive_from_mapping(mapping.get("T"), "T"),
@@ -289,7 +292,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         feed=feed,
         reactions=reactions,
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
-        topology_declared=bool(mapping.get("topology_declared", True)),
+        topology_declared=topology,
         row_tolerance=cast(float | None, mapping.get("row_tolerance")),
         neutral_reference=_neutral_reference_from_mapping(mapping.get("neutral_reference")),
     )
@@ -331,15 +334,16 @@ def _reaction_reference_from_mapping(value: object) -> _core.ReactionReference |
 
 
 def _phase_from_mapping(value: Mapping[str, object]) -> Phase:
-    amount_value = value.get("amount")
-    amount: Free | Pinned | None = None
-    if isinstance(amount_value, Mapping) and amount_value.get("status") == "pinned":
-        amount = Pinned(float(amount_value.get("value", 0.0)))
-    elif isinstance(amount_value, Mapping) and amount_value.get("status") == "free":
-        guess = amount_value.get("guess")
+    amount_value = {"status": "free"} if value.get("amount") is None else value.get("amount")  # omitted: free
+    if not isinstance(amount_value, Mapping):
+        raise _core.ParameterError(f"phase {value.get('name')} amount must be a mapping, got {amount_value!r}")
+    status, guess = amount_value.get("status"), amount_value.get("guess")
+    if status == "pinned" and amount_value.get("value") is not None:
+        amount: Free | Pinned = Pinned(float(amount_value["value"]))
+    elif status == "free":
         amount = Free(None if guess is None else float(guess))
-    elif isinstance(amount_value, Mapping):
-        raise _core.ParameterError(f"unknown amount status {amount_value.get('status')}")
+    else:
+        raise _core.ParameterError(f"pinned amount of phase {value.get('name')} requires a value" if status == "pinned" else f"unknown amount status {status}")
     return Phase(
         str(value.get("name", "")),
         support=cast(Sequence[str] | None, value.get("support")),
@@ -351,14 +355,14 @@ def _phase_from_mapping(value: Mapping[str, object]) -> Phase:
 
 
 def _intensive_from_mapping(value: object, name: str) -> float | Free:
+    if isinstance(value, Mapping) and value.get("free") is True:
+        guess = value.get("guess")
+        return Free(None if guess is None else float(guess))
     if isinstance(value, Mapping):
-        if value.get("free") is True:
-            guess = value.get("guess")
-            return Free(None if guess is None else float(guess))
-        return float(value.get("value", 0.0))
+        value = value.get("value")  # a fixed intensive value is never defaulted
     if isinstance(value, (int, float)):
         return float(value)
-    raise _core.ParameterError(f"missing {name}")
+    raise _core.ParameterError(f"missing {name} value")
 
 
 def _feed_from_mapping(value: object) -> Feed:

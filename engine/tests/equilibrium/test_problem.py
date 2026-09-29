@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 
 import pytest
 
@@ -114,3 +115,46 @@ def test_all_pinned_rank_deficient_declaration_is_not_run() -> None:
     assert result.generic_nullity > 0 and result.unknown_count == result.jacobian_rank + result.generic_nullity
     assert result.residuals == [] and math.isnan(result.convergence.residual)
     assert result.requested_tolerance_met is None
+
+
+def test_malformed_explicit_mapping_fields_are_rejected() -> None:
+    def mapped(**changes: object) -> Problem:
+        return problem_from_mapping({"phases": [{"name": "L", "kind": "liquid"}], "T": 300.0, "P": 1.0e5,
+                                     "feed": {"basis": "amounts", "values": {"methane": 1.0}}, **changes})
+    # Omissions and defaults keep their meaning: a free amount, declared topology, a fixed mapped value.
+    default = mapped()
+    assert isinstance(default.phases, tuple) and isinstance(default.phases[0].amount, Free)
+    assert default.topology_declared is True and mapped(T={"value": 310.0}).T == 310.0
+    # Each malformed field used to become a free phase, a zero amount, T = 0 K or declared topology.
+    for changes, message in (
+        ({"phases": [{"name": "L", "kind": "liquid", "amount": 1.0}]}, "phase L amount must be a mapping"),
+        ({"phases": [{"name": "L", "kind": "liquid", "amount": {"status": "pinned"}}]}, "pinned amount of phase L requires a value"),
+        ({"T": {"free": False}}, "missing T value"),
+        ({"topology_declared": "false"}, "topology_declared must be a bool"),
+    ):
+        with pytest.raises(ParameterError, match=message):
+            mapped(**changes)
+
+
+def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Ipopt reads ipopt.opt from the working directory. An unknown option fails Initialize(); an unavailable
+    # linear solver fails OptimizeTNLP() before any iterate, leaving the fallback start, whose classified
+    # rows (1.50) meet this deliberately loose criterion. A zero iteration budget is an eligible
+    # non-error stop: its polished start meets the rows and still publishes. A fatal return is labelled
+    # infeasible, so solver_status must carry both exact Ipopt names to tell it from physical infeasibility.
+    model = mixture()
+    loose = Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1.0e5,
+                    feed=Amounts({"methane": 0.5, "ethane": 0.5}), row_tolerance=2.0)
+    monkeypatch.chdir(tmp_path)
+    for option, failure in (("bogus_option 1", "UNASSIGNED; Initialize returned Invalid_Option"),
+                            ("linear_solver ma57", "UNASSIGNED; OptimizeTNLP returned Invalid_Option"), ("max_iter 0", None)):
+        (tmp_path / "ipopt.opt").write_text(option + "\n")
+        result = solve_equilibrium(model, loose)
+        if failure is None:
+            assert result.success and result.solver_status == "MAXITER_EXCEEDED" and math.isclose(result.amounts[0], 1.0)
+            continue
+        assert not result.success and result.amounts == [] and result.mole_fractions == []
+        # The fallback rows meet the criterion: the fatal return alone withholds the state.
+        assert result.requested_tolerance_met is True
+        assert result.convergence.stop == _core.Stop.infeasible and result.solver_status == failure
+        assert "; Ipopt " + failure in result.message

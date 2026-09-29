@@ -491,7 +491,7 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
     CHECK(result.convergence.residual == compiled.classified_residual_norm(result.coordinates));
     const std::size_t components = model.parameters().component_count();
     const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * result.temperature.front();
-    const auto charges = epcsaft::equilibrium::species_z(model.parameters());
+    const auto& charges = model.parameters().charge_number;
     for (std::size_t phase = 0; phase < result.phase_count; ++phase) {
         const auto first = result.mole_fractions.begin()
             + static_cast<std::ptrdiff_t>(phase * components);

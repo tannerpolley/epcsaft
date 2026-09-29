@@ -144,6 +144,19 @@ const char* solver_status_name(Ipopt::SolverReturn status) noexcept {
     return "UNKNOWN";
 }
 
+// The fatal Ipopt application returns (IpReturnCodes_inc.h) by name; any other code by value.
+std::string application_return_name(Ipopt::ApplicationReturnStatus code) {
+    switch (code) {
+    case Ipopt::Invalid_Problem_Definition: return "Invalid_Problem_Definition";
+    case Ipopt::Invalid_Option: return "Invalid_Option";
+    case Ipopt::Unrecoverable_Exception: return "Unrecoverable_Exception";
+    case Ipopt::NonIpopt_Exception_Thrown: return "NonIpopt_Exception_Thrown";
+    case Ipopt::Insufficient_Memory: return "Insufficient_Memory";
+    case Ipopt::Internal_Error: return "Internal_Error";
+    default: return std::to_string(static_cast<int>(code));
+    }
+}
+
 void require_solution_shape(
     const EquilibriumResult& result, std::size_t phases, std::size_t components
 ) {
@@ -202,7 +215,7 @@ std::vector<double> add_multipliers(
         static_cast<Eigen::Index>(chemical.size()), static_cast<Eigen::Index>(width)
     );
     Eigen::VectorXd rhs(static_cast<Eigen::Index>(chemical.size()));
-    const auto z = species_z(compiled.model->parameters());
+    const auto& z = compiled.model->parameters().charge_number;
     for (std::size_t row = 0; row < chemical.size(); ++row) {
         const auto& item = compiled.rows[chemical[row]];
         const double weight = prepared.amount[item.phase] * prepared.composition[item.phase][item.index]
@@ -443,10 +456,6 @@ bool GibbsMinimizer::get_starting_point(
     return true;
 }
 
-std::vector<double> GibbsMinimizer::point(Ipopt::Index n, const Ipopt::Number* x) const {
-    return std::vector<double>(x, x + n);
-}
-
 std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
     std::vector<std::size_t> result;
     for (std::size_t row = 0; row < compiled_.rows.size(); ++row) {
@@ -460,7 +469,7 @@ std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
 }
 
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
-    std::vector<double> candidate = point(n, x);
+    std::vector<double> candidate(x, x + n);
     if (!prepared_.has_value() || prepared_->point != candidate) {
         try {
             prepared_ = compiled_.prepare(candidate, true);
@@ -494,9 +503,8 @@ const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Numb
 }
 
 bool GibbsMinimizer::eval_f(
-    Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number& value
+    Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number& value
 ) {
-    (void)new_x;
     ++evaluations_;
     try {
         value = compiled_.pinned_count == 0 ? rows_at(n, x).objective : 0.0;
@@ -507,9 +515,8 @@ bool GibbsMinimizer::eval_f(
 }
 
 bool GibbsMinimizer::eval_grad_f(
-    Ipopt::Index n, const Ipopt::Number* x, bool new_x, Ipopt::Number* grad_f
+    Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number* grad_f
 ) {
-    (void)new_x;
     try {
         const auto& point = prepared(n, x);
         if (!gradient_.has_value()) {
@@ -524,10 +531,9 @@ bool GibbsMinimizer::eval_grad_f(
 }
 
 bool GibbsMinimizer::eval_g(
-    Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/,
     Ipopt::Index m, Ipopt::Number* g
 ) {
-    (void)new_x;
     try {
         const auto& values = rows_at(n, x).values;
         const auto rows = constraint_rows();
@@ -539,11 +545,10 @@ bool GibbsMinimizer::eval_g(
 }
 
 bool GibbsMinimizer::eval_jac_g(
-    Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/,
     Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
-    (void)new_x;
     const auto rows = constraint_rows();
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -574,12 +579,11 @@ bool GibbsMinimizer::eval_jac_g(
 }
 
 bool GibbsMinimizer::eval_h(
-    Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/,
     Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda,
-    bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow,
+    bool /*new_lambda*/, Ipopt::Index nele_hess, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
-    (void)new_x; (void)new_lambda;
     ++hessian_calls_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -622,13 +626,12 @@ bool GibbsMinimizer::eval_h(
 }
 
 bool GibbsMinimizer::intermediate_callback(
-    Ipopt::AlgorithmMode mode, Ipopt::Index iter, Ipopt::Number obj_value,
+    Ipopt::AlgorithmMode /*mode*/, Ipopt::Index iter, Ipopt::Number /*obj_value*/,
     Ipopt::Number inf_pr, Ipopt::Number inf_du, Ipopt::Number mu,
     Ipopt::Number d_norm, Ipopt::Number regularization_size,
     Ipopt::Number alpha_du, Ipopt::Number alpha_pr, Ipopt::Index ls_trials,
-    const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
+    const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
 ) {
-    (void)mode; (void)obj_value; (void)ip_data; (void)ip_cq;
     iterations_ = static_cast<std::size_t>(iter);
     regularization_size_ = regularization_size;
     if (scope_ != nullptr) scope_->probe("ipopt_iteration",
@@ -640,13 +643,11 @@ bool GibbsMinimizer::intermediate_callback(
 
 void GibbsMinimizer::finalize_solution(
     Ipopt::SolverReturn status, Ipopt::Index n, const Ipopt::Number* x,
-    const Ipopt::Number* z_L, const Ipopt::Number* z_U, Ipopt::Index m,
-    const Ipopt::Number* g, const Ipopt::Number* lambda,
-    Ipopt::Number objective,
-    const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
+    const Ipopt::Number* /*z_L*/, const Ipopt::Number* /*z_U*/, Ipopt::Index m,
+    const Ipopt::Number* /*g*/, const Ipopt::Number* lambda,
+    Ipopt::Number /*objective*/,
+    const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
 ) {
-    (void)z_L; (void)z_U; (void)g;
-    (void)objective; (void)ip_data; (void)ip_cq;
     status_ = status;
     solution_.assign(x, x + n);
     constraint_multipliers_.assign(lambda, lambda + m);
@@ -698,9 +699,22 @@ EquilibriumResult run_driver(
     application->Options()->SetNumericValue("constr_viol_tol", inner_tolerance);
     application->Options()->SetIntegerValue("max_iter",
         static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
-    application->Initialize();
-    application->OptimizeTNLP(nlp);
-    result.solver_status = solver_status_name(nlp->status());
+    const Ipopt::ApplicationReturnStatus initialized = application->Initialize();
+    const Ipopt::ApplicationReturnStatus returned =
+        initialized == Ipopt::Solve_Succeeded ? application->OptimizeTNLP(nlp) : initialized;
+    const Ipopt::SolverReturn status = nlp->status();
+    // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
+    const bool fatal = initialized != Ipopt::Solve_Succeeded
+        || (returned <= Ipopt::Invalid_Problem_Definition && returned != Ipopt::Invalid_Number_Detected);
+    // The one accepted-outcome rule: only a non-error stop polishes, classifies its rows and publishes.
+    const bool non_error = !fatal && (status == Ipopt::SUCCESS
+        || status == Ipopt::STOP_AT_ACCEPTABLE_POINT || status == Ipopt::STOP_AT_TINY_STEP
+        || status == Ipopt::FEASIBLE_POINT_FOUND || status == Ipopt::RESTORATION_FAILURE
+        || status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED);
+    result.solver_status = solver_status_name(status);  // both exact names tell a solver failure from infeasibility
+    if (fatal) result.solver_status += (initialized != Ipopt::Solve_Succeeded ? "; Initialize returned "
+        : "; OptimizeTNLP returned ") + application_return_name(returned);
+    const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
@@ -712,10 +726,7 @@ EquilibriumResult run_driver(
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
-    if ((nlp->status() == Ipopt::SUCCESS || nlp->status() == Ipopt::STOP_AT_ACCEPTABLE_POINT
-         || nlp->status() == Ipopt::STOP_AT_TINY_STEP || nlp->status() == Ipopt::MAXITER_EXCEEDED
-         || nlp->status() == Ipopt::CPUTIME_EXCEEDED || nlp->status() == Ipopt::RESTORATION_FAILURE)
-        && compiled.is_square()) {
+    if (non_error && compiled.is_square()) {
         auto at = compiled.prepare(full, true);
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
@@ -777,7 +788,7 @@ EquilibriumResult run_driver(
     } catch (const std::invalid_argument& error) {
         if (std::string(error.what()).rfind("reference_unavailable:", 0) != 0) throw;
         result.success = false;
-        result.message = error.what();
+        result.message = error.what() + ipopt_failure;
         result.convergence.stop = core::Stop::left_domain;
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
         result.iterations = result.convergence.iterations = nlp->iterations();
@@ -818,24 +829,20 @@ EquilibriumResult run_driver(
     }
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
-    result.iterations = nlp->iterations();
-    result.evaluations = nlp->evaluations() + polish_evaluations;
+    result.iterations = convergence.iterations = nlp->iterations();
+    result.evaluations = convergence.evaluations = nlp->evaluations() + polish_evaluations;
     result.hessian_calls = nlp->hessian_calls();
-    convergence.iterations = result.iterations;
-    convergence.evaluations = result.evaluations;
-    switch (nlp->status()) {
+    switch (status) {
     case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
     case Ipopt::DIVERGING_ITERATES: convergence.stop = core::Stop::left_domain; break;
     case Ipopt::ERROR_IN_STEP_COMPUTATION: convergence.stop = core::Stop::singular; break;
     case Ipopt::LOCAL_INFEASIBILITY:
     case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: convergence.stop = core::Stop::infeasible; break;
     default:
-        convergence.stop = core::classify(
-            convergence.residual, *convergence.criterion,
-            convergence.floor, convergence.contraction,
-            (nlp->status() == Ipopt::MAXITER_EXCEEDED ||
-             nlp->status() == Ipopt::CPUTIME_EXCEEDED), convergence.amplification
-        );
+        // No candidate after a fatal return: infeasible like an unrun structural solve, whatever the start's rows.
+        convergence.stop = !non_error ? core::Stop::infeasible : core::classify(convergence.residual,
+            *convergence.criterion, convergence.floor, convergence.contraction,
+            status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED, convergence.amplification);
     }
     if (std::isfinite(convergence.residual)) {
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
@@ -892,18 +899,13 @@ EquilibriumResult run_driver(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
-    const bool solver_ok = nlp->status() == Ipopt::SUCCESS
-        || result.convergence.stop == core::Stop::converged;
-    const bool accepted = solver_ok
-        && (result.convergence.stop == core::Stop::converged
-            || result.convergence.stop == core::Stop::converged_to_floor)
-        && topology_ok;
+    const bool accepted = non_error && topology_ok && (result.convergence.stop == core::Stop::converged
+        || (result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
     if (!accepted) {
         result.success = false;
         if (!topology_ok) result.message = topology_failure;
-        if (!rejected_preparation.empty()) {
-            result.message += "; trial preparation failed: " + rejected_preparation;
-        }
+        result.message += ipopt_failure;
+        if (!rejected_preparation.empty()) result.message += "; trial preparation failed: " + rejected_preparation;
         clear_state(result);
         return result;
     }

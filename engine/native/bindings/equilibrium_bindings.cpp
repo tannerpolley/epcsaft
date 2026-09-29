@@ -14,11 +14,13 @@ void register_equilibrium(py::module_& module) {
     module.def("equilibrium_asl_record", [](py::object model, py::object problem, py::object continuation,
             std::vector<double> offset, std::vector<std::vector<double>> matrix, std::vector<double> anchor,
             std::size_t identity_component, double minimum_gap) {
+        const py::object document = model.attr("parameters").attr("_document");
+        if (document.is_none())  // fitted parameters carry no source document to export (#29)
+            throw std::invalid_argument("ASL record requires parameters loaded from a parameter document; fitted parameters have none");
         const py::object native_owner = model.attr("_model");
         const auto& native = native_owner.cast<const HelmholtzModel&>();
         if (!native.active_parameters().empty() || native.thermochemistry())
             throw std::invalid_argument("ASL record requires inactive parameters and explicit problem reaction references");
-        const auto document = model.attr("parameters").attr("_document").cast<ParameterDocument>();
         const auto p = problem.attr("_native")(model).cast<EquilibriumProblem>();
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
@@ -28,7 +30,7 @@ void register_equilibrium(py::module_& module) {
         options.minimum_step = continuation.attr("minimum_step").cast<double>();
         options.max_steps = continuation.attr("max_steps").cast<std::size_t>();
         options.max_retries_per_step = continuation.attr("max_retries_per_step").cast<std::size_t>();
-        return asl_record(document, p, options, map);
+        return asl_record(document.cast<ParameterDocument>(), p, options, map);
     }, py::arg("model"), py::arg("problem"), py::arg("continuation"), py::arg("feed_offset"),
        py::arg("feed_matrix"), py::arg("anchor_controls"), py::arg("identity_component"), py::arg("minimum_gap"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;

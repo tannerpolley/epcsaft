@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from . import _core
 from .parameters import Parameters
@@ -100,10 +100,10 @@ class Mixture:
             ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
         except (ValueError, IndexError) as error:
             raise ParameterError(f"unknown ion component in {ions}") from error
-        native = _core.infinite_dilution_reference(
-            self._model, T, P, solvent_fractions, ion_indices, stoichiometry
-        )
-        return Reference(self._model, T, P, solvent_fractions, ion_indices, stoichiometry, native)
+        # The reference keeps its own copies: later caller edits cannot mix states with the native fugacities.
+        fractions, formula = tuple(solvent_fractions), cast(tuple[int, int], tuple(stoichiometry))
+        native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
+        return Reference(self._model, T, P, fractions, ion_indices, formula, native)
 
     def density_actions(
         self,

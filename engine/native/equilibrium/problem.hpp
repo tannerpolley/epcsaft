@@ -114,10 +114,6 @@ struct EquilibriumProblem final {
     }
 };
 
-inline std::vector<int> species_z(const Parameters& parameters) {
-    return parameters.charge_number;
-}
-
 enum class RowKind { Chemical, Pressure, Moiety, Electro, Normalization };
 
 inline const char* row_kind_name(RowKind kind) noexcept {
