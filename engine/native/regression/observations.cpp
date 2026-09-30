@@ -159,9 +159,11 @@ void validate(const Observation& observation, const HelmholtzModel& model,
 
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
-    const std::optional<equilibrium::EquilibriumResult>& start
+    const std::optional<equilibrium::EquilibriumResult>& start,
+    std::optional<equilibrium::CompiledSystem> prepared
 ) {
     Prediction result;
+    result.compiled = std::move(prepared);
     const auto& parameters = model.parameters();
     bool missing_mass = false;
     if (observation.kind == ObservationKind::Density) {
@@ -195,7 +197,7 @@ Prediction predict(
     }
     equilibrium::EquilibriumResult solved;
     try {
-        result.compiled = equilibrium::compile_problem(model, observation.problem);
+        if (!result.compiled) result.compiled = equilibrium::compile_problem(model, observation.problem);
         solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const core::ConvergenceFailure& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;

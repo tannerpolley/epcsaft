@@ -842,6 +842,12 @@ region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
 withheld under rank deficiency or an active bound.
 
+Keep admission's model and compiled state groups for the initial evaluation.
+Reuse them only when the bounded affine map reproduces every active physical
+parameter exactly; otherwise rebuild at the resolved optimizer point. The same
+compiled problem may serve a cold retry at that point. Failed trials still
+publish neither solved starts nor a successful evaluation cache.
+
 ## ALG-TERMINATION
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
