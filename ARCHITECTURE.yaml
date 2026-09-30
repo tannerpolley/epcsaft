@@ -73,7 +73,7 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4211
+    4223
   ],
   "equilibrium": [
     5000,
@@ -83,7 +83,7 @@ code_budgets: {
   "regression": [
     800,
     1000,
-    1200
+    1300
   ],
   "surface": [
     450,
@@ -103,7 +103,7 @@ code_budgets: {
   "total": [
     12300,
     14850,
-    18365
+    18556
   ]
 }
 

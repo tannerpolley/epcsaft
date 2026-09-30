@@ -46,8 +46,29 @@ if [[ "$docs_only" == true ]]; then
     exit 0
 fi
 
+slow_tests=()
+if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
+    # The slow solved-state programs run when their layer or any layer below it changes
+    # (owners from ARCHITECTURE.yaml): a property or EOS change moves every solved state.
+    owners="$(printf '%s\n' "${changed[@]}" | PYTHONPATH=tools python3 -c '
+import importlib, sys
+m = importlib.import_module("project-map")
+rules = m.declaration()["rules"]
+print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
+    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
+        slow_tests+=(equilibrium boundary)
+    fi
+    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
+        slow_tests+=(regression_fit)
+    fi
+fi
+
 if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
-    exec bash tools/check-all.sh
+    bash tools/check-all.sh
+    if ((${#slow_tests[@]})); then
+        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+    fi
+    exit 0
 fi
 
 prepare_native_build=0
@@ -78,6 +99,9 @@ if grep -q '^engine/' <<<"$paths"; then
 if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # The native preparation above already built the test executables.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
+        if ((${#slow_tests[@]})); then
+            EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
     grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)

@@ -1,4 +1,4 @@
-# Regression formulation
+# Parameter regression formulation
 
 Required general fitting mathematics; pure saturation is one observation
 construction. Installed availability is recorded in the
@@ -61,7 +61,7 @@ reference temperature for the $k_{ij}$ slope $b_{ij}$ of EqID:
 absent from the active list is fixed. An optimizer coordinate is affine,
 $\theta = o + s\,u$ with $s>0$, with inclusive bounds in physical units mapped
 by the same transform; one optimizer coordinate may drive several tied slots of
-the same family, a regression-owned linear map $\theta = o + S u$ whose tied
+the same family through the fitting layer's linear map $\theta = o + S u$; tied
 values must agree at the start. The model's active list is the coordinate
 set's physical list in order, so every parameter direction of the shared
 owners is indexed by these rows.
@@ -73,8 +73,8 @@ pressure-chart density action for Density and the solved-state actions of the
 equilibrium driver for every other kind (a linear sum over $S$, the quotient
 rule for $\beta_p$, the product rule for a mass basis and for
 $\mathrm{d}(P\sum_S x) = \mathrm{d}P\sum_S x + P\sum_S\mathrm{d}x$). One
-first-action batch per state carries every active direction at one factorization
-of the solved Jacobian, reusing the problem compiled for the solve; a referenced
+first-action batch per state carries every declared observable and active
+direction at one factorization of the solved Jacobian, reusing the problem compiled for the solve; a referenced
 problem builds its standard-state parameter jets once for all directions, since
 they enter the rows only through $\sum_a (\partial s/\partial\theta_a)(\theta_a-\theta_{a,c})$. The optimizer
 Jacobian is $\sqrt{w}\,(\mathrm{d}r/\mathrm{d}y)\,(\partial y/\partial\theta)\,S\,\mathrm{diag}(s)$
@@ -91,16 +91,33 @@ these): a coordinate within the named `FIT_ACTIVE_BOUND_DISTANCE` of a bound
 whose objective gradient $J^\top r$ points out of the box is on it and is held
 where it is for a round, never moved onto the bound; a free coordinate on a
 bound it moves toward is clamped instead of shortening the step. A round ends
-when Ceres converges or an accepted step puts a free coordinate exactly on a
-bound it was not on at the previous accepted point, and any other Ceres stop
-ends the fit; the set is rebuilt from that point's Jacobian, and the
+when Ceres converges, an accepted step puts a free coordinate exactly on a
+bound it was not on at the previous accepted point, or the held membership
+selected by the full accepted weighted optimizer gradient $J^\top r$ changes,
+including release when a held coordinate's gradient turns inward. Rejected
+trials cannot change the set. The accepted-point Jacobian is reused without
+another thermodynamic solve; a failed gradient stops with its typed cause.
+Any other Ceres stop ends the fit. The set is rebuilt at that point, and the
 fit converges when a converged round leaves the set unchanged or every
-coordinate is held (a KKT point to that distance). A bound within the same
+coordinate is held. Unchanged membership retains Ceres' function, parameter
+and gradient stopping criteria; it does not alone certify a small free
+projected gradient. Every coordinate held satisfies the bound-gradient signs
+to the declared distance. A bound within the same
 distance is active for the covariance, and physical values are clamped to their
 bounds against the affine map's rounding. Iterations
 and time are shared by the rounds; a
 trial in which any observation or action is unavailable is rejected with its
-typed cause and observation index retained, never zeroed. Warm starts are taken
+typed cause and observation index retained, never zeroed. Exact raw equilibrium
+declarations, including feed basis, phase supports and seeds, reaction/reference inputs and row tolerance, share one compiled central
+solve within a fitting evaluation; projection, residual and weight metadata
+remain independent. Density observations remain separate pressure closures.
+The last fully successful optimizer point retains its immutable model and
+central states: a subsequent equilibrium-observation Jacobian request at that
+exact point adds actions without compiling or solving equilibrium again.
+Density differentiation retains its pressure-closure work for each direction
+batch. Weighted objective and optimizer-Jacobian
+finiteness are checked before publishing the trial; failed promotion retains
+only the successful residual trial. Warm starts are taken
 only from a trial in which every observation succeeded and are retried cold on
 failure. The conditional covariance is $(J^\top J)^{-1}$ of the weighted
 optimizer Jacobian, mapped to physical rows by $D = S\,\mathrm{diag}(s)$; it is
@@ -121,7 +138,7 @@ reported row is where the row-order running sum stops being representable. That
 row, or a row whose own weighted residual is not finite, is a typed `nonfinite`
 trial failure at every evaluation, and no infinite or partial sum is reported as
 a cost.
-The result carries a status (converged, limit_reached,
+The result carries a `status` field (converged, limit_reached,
 initial_evaluation_failed, failed) and the solver's own termination message,
 which distinguishes an iteration limit from a time limit; a nonzero count of
 typed trial failures is a diagnostic of rejected trials, not a failed fit.
@@ -132,7 +149,7 @@ visible from its result.
 Fixed-coordinate leaves are valid constants with zero derivative. Observable
 and parameter order, units, bases and chain rules must remain explicit through
 physical and optimizer coordinates. The common state/equilibrium owner supplies
-values and required actions; Regression owns no duplicate EOS or equilibrium.
+values and required actions; the fitting layer owns no duplicate EOS or equilibrium.
 The [action table](../../science/algorithms.md#alg-actions) determines required
 energy order; first residual Jacobians can require third energy derivatives
 when the observed quantity is a heat capacity.

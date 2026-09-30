@@ -2,7 +2,11 @@
 
 repository role: tool
 
-default deliverable: capability
+## Agent role
+
+agent role: chemical engineer specializing in electrolyte equations of state, phase and reaction equilibrium, and numerical thermodynamics
+
+Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with MEA-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
 ## Purpose and first acceptance
 
@@ -279,3 +283,83 @@ Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher
 layers may be used to verify a lower layer without claiming their own completion.
+
+## Source/data adoption
+
+source/data adoption: zotero
+
+## Analysis workflow choice
+
+The owner confirmed deferred Snakemake adoption for these populated analyses
+on 2026-09-29. Existing study commands remain in use; a later adoption needs
+confirmation.
+
+| Analysis | Snakemake adoption |
+|---|---|
+| `analyses/2026-association-native-comparison` | Deferred |
+| `analyses/2026-binary-methane-ethane-bubble-point` | Deferred |
+| `analyses/2026-binary-methane-ethane-tp-flash` | Deferred |
+| `analyses/2026-density-closure-diagnosis` | Deferred |
+| `analyses/2026-dielectric-alternatives` | Deferred |
+| `analyses/2026-fitting-state-reuse` | Deferred |
+| `analyses/2026-fixed-pressure-anchor` | Deferred |
+| `analyses/2026-grepe-hard-cut` | Deferred |
+| `analyses/2026-idaes-asl-adapter` | Deferred |
+| `analyses/2026-initialization-diagnosis` | Deferred |
+| `analyses/2026-khudaida-idaes-settler` | Deferred |
+| `analyses/2026-khudaida-lineage-diagnosis` | Deferred |
+| `analyses/2026-mea-association-diameter` | Deferred |
+| `analyses/2026-mea-grepe-regression` | Deferred |
+| `analyses/2026-mea-parameter-estimation` | Deferred |
+| `analyses/2026-mea-reactive-fit-timing` | Deferred |
+| `analyses/2026-mea-recovered-state-actions` | Deferred |
+| `analyses/2026-neutral-pcsaft-equilibrium-comparison` | Deferred |
+| `analyses/2026-open-source-equilibrium-comparison` | Deferred |
+| `analyses/2026-polar-dipole` | Deferred |
+| `analyses/2026-pure-saturation-regression` | Deferred |
+| `analyses/2026-reacting-mixed-actions` | Deferred |
+| `analyses/2026-reactive-electrolyte-driver` | Deferred |
+| `analyses/2026-reactive-liquid-cold-start` | Deferred |
+| `analyses/2026-shared-derivative-qualification` | Deferred |
+| `analyses/2026-stability-noise-band` | Deferred |
+| `analyses/2026-trace-action-diagnosis` | Deferred |
+| `analyses/2026-wolbach-sandler-requalification` | Deferred |
+| `analyses/phase-stability-cutover` | Deferred |
+| `analyses/reproduction/1989-esteso` | Deferred |
+| `analyses/reproduction/1998-chase` | Deferred |
+| `analyses/reproduction/2001-gross` | Deferred |
+| `analyses/reproduction/2002-gross` | Deferred |
+| `analyses/reproduction/2004-glos` | Deferred |
+| `analyses/reproduction/2005-cameretti` | Deferred |
+| `analyses/reproduction/2008-held` | Deferred |
+| `analyses/reproduction/2010-nasrifar-mdea` | Deferred |
+| `analyses/reproduction/2012-held` | Deferred |
+| `analyses/reproduction/2013-pahlavanzadeh-mdea` | Deferred |
+| `analyses/reproduction/2014-held` | Deferred |
+| `analyses/reproduction/2015-baygi` | Deferred |
+| `analyses/reproduction/2015-may` | Deferred |
+| `analyses/reproduction/2015-uyan` | Deferred |
+| `analyses/reproduction/2018-iapws` | Deferred |
+| `analyses/reproduction/2018-wangler` | Deferred |
+| `analyses/reproduction/2019-bulow` | Deferred |
+| `analyses/reproduction/2019-iapws` | Deferred |
+| `analyses/reproduction/2020-bulow` | Deferred |
+| `analyses/reproduction/2020-cleeton` | Deferred |
+| `analyses/reproduction/2020-haslam` | Deferred |
+| `analyses/reproduction/2021-bulow` | Deferred |
+| `analyses/reproduction/2021-bulow-sour-gas` | Deferred |
+| `analyses/reproduction/2022-ascani` | Deferred |
+| `analyses/reproduction/2023-ascani` | Deferred |
+| `analyses/reproduction/2023-belov` | Deferred |
+| `analyses/reproduction/2023-schick` | Deferred |
+| `analyses/reproduction/2024-hubach` | Deferred |
+| `analyses/reproduction/2024-yu` | Deferred |
+| `analyses/reproduction/2025-figiel` | Deferred |
+| `analyses/reproduction/2025-figiel-engine-crosswalk` | Deferred |
+| `analyses/reproduction/2025-pakravesh` | Deferred |
+| `analyses/reproduction/2025-perdomo` | Deferred |
+| `analyses/reproduction/2025-rezaee` | Deferred |
+| `analyses/reproduction/2026-09-03-stage-05-repair` | Deferred |
+| `analyses/reproduction/2026-eos-literature-handoff` | Deferred |
+| `analyses/reproduction/2026-khudaida` | Deferred |
+| `analyses/reproduction/2026-rezaee` | Deferred |
