@@ -58,7 +58,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             const equilibrium::ReactionSpec* prior = nullptr;
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
             for (const auto& observation : observations) {
-                if (observation.kind == ObservationKind::Density) continue;
+                if (pressure_closed(observation.kind)) continue;
                 const auto& problem = observation.problem;
                 std::size_t matches = 0;
                 for (const auto& reaction : problem.reactions) {

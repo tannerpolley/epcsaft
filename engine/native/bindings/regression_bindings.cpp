@@ -10,6 +10,7 @@ namespace epcsaft::regression {
 
 void register_regression(py::module_& module) {
     py::enum_<ObservationKind>(module, "ObservationKind")
+        .value("IsobaricHeatCapacity", ObservationKind::IsobaricHeatCapacity)
         .value("Density", ObservationKind::Density)
         .value("PhaseDensity", ObservationKind::PhaseDensity)
         .value("EquilibriumPressure", ObservationKind::EquilibriumPressure)
@@ -23,6 +24,7 @@ void register_regression(py::module_& module) {
         .value("LogRatio", ResidualForm::LogRatio);
     py::enum_<ObservationStatus>(module, "ObservationStatus")
         .value("Available", ObservationStatus::Available)
+        .value("ThermochemistryUnavailable", ObservationStatus::ThermochemistryUnavailable)
         .value("DensityUnavailable", ObservationStatus::DensityUnavailable)
         .value("CentralSolveUnavailable", ObservationStatus::CentralSolveUnavailable)
         .value("TopologyEvent", ObservationStatus::TopologyEvent)

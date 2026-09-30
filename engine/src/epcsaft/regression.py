@@ -38,7 +38,7 @@ _KINDS = {
 }
 __all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "coordinate", "density",
-           "differentiate", "fit", "fitted_parameters", "observation", "predict", "reaction_coordinate")
+           "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation", "predict", "reaction_coordinate")
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -103,11 +103,21 @@ def _finish(result: Observation, observed: float, form: str, scale: float | None
 def density(parameters: Parameters, T: float, P: float, x: Mapping[str, float], *, phase: str, observed: float,
             form: str, mass_basis: bool, scale: float | None = None) -> Observation:
     """A pressure-closed single-phase density (mol/m^3, or kg/m^3 with mass_basis) on the declared branch."""
-    unknown = next((name for name in x if name not in parameters.component_ids), None)
-    if unknown is not None:
-        raise ParameterError(f"unknown species {unknown}")
+    return _pressure_closed(parameters, ObservationKind.Density, T, P, x, phase, observed, form, scale, mass_basis)
+
+
+def isobaric_heat_capacity(parameters: Parameters, T: float, P: float, x: Mapping[str, float], *, phase: str,
+                          observed: float, form: str, scale: float | None = None) -> Observation:
+    """Total molar c_p (J/(mol K)) at fixed T, P, x and branch; thermochemistry is a fixed model input."""
+    return _pressure_closed(parameters, ObservationKind.IsobaricHeatCapacity, T, P, x, phase, observed, form, scale, False)
+
+
+def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P: float, x: Mapping[str, float],
+                     phase: str, observed: float, form: str, scale: float | None, mass_basis: bool) -> Observation:
+    for name in x:
+        _index(parameters.component_ids, name, "species")
     result = Observation()
-    result.kind, result.temperature, result.pressure = ObservationKind.Density, T, P
+    result.kind, result.temperature, result.pressure = kind, T, P
     result.composition = [x.get(name, 0.0) for name in parameters.component_ids]
     result.branch = _branch(phase)
     return _finish(result, observed, form, scale, mass_basis)

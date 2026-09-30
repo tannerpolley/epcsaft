@@ -25,6 +25,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Kind | Fixed inputs | Owner and value | Unit |
 |---|---|---|---|
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
+| IsobaricHeatCapacity | $T$, $P$, normalized $\mathbf{x}$, declared branch, fixed thermochemistry record | pressure closure `state_at_pressure`; total molar $c_p$ | J mol$^{-1}$ K$^{-1}$ |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
 | EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
@@ -37,7 +38,10 @@ An unavailable prediction is typed, never a zero residual: a vanished or
 coalesced phase is `topology_event` before any solve status; a rejected or
 state-less solve is `central_solve_unavailable` with its convergence record;
 a missing density root is `density_unavailable` with the thrown cause; a mass
-basis without a recorded ionic molar mass is `missing_molar_mass`.
+basis without a recorded ionic molar mass is `missing_molar_mass`. Missing,
+outside-interval or nonfinite thermochemistry for total $c_p$ is
+`thermochemistry_unavailable`, with the Ideal status name as its cause. Every
+declared component requires its own thermal interval, including zero fractions.
 
 Residual forms: `Difference` $r=(y-y_{obs})/s$ with a positive
 nondimensionalisation scale $s$ in the observation's unit (not an
@@ -88,8 +92,9 @@ fitted. No coefficient Hessians or caloric coefficient actions are claimed.
 ## Prediction Jacobians and fitting (R2, R3)
 
 $\partial y/\partial\theta$ comes from the shared owners only: the Properties
-pressure-chart density action for Density and the solved-state actions of the
-equilibrium driver for every other kind (a linear sum over $S$, the quotient
+pressure-chart density action for Density, the pressure-chart total caloric
+action for IsobaricHeatCapacity (one direction per call), and the solved-state
+actions of the equilibrium driver for the equilibrium kinds (a linear sum over $S$, the quotient
 rule for $\beta_p$ and amount ratios ($d(A/B)=(dA\,B-A\,dB)/B^2$), the product rule for a mass basis and for
 $\mathrm{d}(P\sum_S x) = \mathrm{d}P\sum_S x + P\sum_S\mathrm{d}x$). One
 first-action batch per state carries every declared observable and active
@@ -129,7 +134,7 @@ trial in which any observation or action is unavailable is rejected with its
 typed cause and observation index retained, never zeroed. Exact raw equilibrium
 declarations, including feed basis, phase supports and seeds, reaction/reference inputs and row tolerance, share one compiled central
 solve within a fitting evaluation; projection, residual and weight metadata
-remain independent. Density observations remain separate pressure closures.
+remain independent. Density and heat-capacity observations remain separate pressure closures.
 Validation preparation is reused only at exactly matching resolved EOS values
 and reaction declarations. Scalar K and all correlation coefficients belong
 to that comparison; a changed reaction coordinate invalidates the compiled
@@ -173,8 +178,12 @@ and parameter order, units, bases and chain rules must remain explicit through
 physical and optimizer coordinates. The common state/equilibrium owner supplies
 values and required actions; the fitting layer owns no duplicate EOS or equilibrium.
 The [action table](../../science/algorithms.md#alg-actions) determines required
-energy order; first residual Jacobians can require third energy derivatives
-when the observed quantity is a heat capacity.
+energy order. The total $c_p$ first parameter Jacobian uses third energy
+derivatives, the pressure density lift and implicit site coefficients through
+the existing Properties action (EqID: `fixed_pressure_heat_capacity_parameter_derivative`).
+The ideal-gas record is fixed and is not fitted; errors in it can be absorbed
+into fitted residual parameters. No parameter Hessians or reacting-equilibrium
+heat capacities are claimed.
 
 Fit the declared discrepancy under stated bounds, transforms, starts, loss and
 numerical controls. Retain raw predictions, physical Jacobians, weighted

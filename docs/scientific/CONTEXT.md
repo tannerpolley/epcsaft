@@ -156,7 +156,8 @@ no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
 Declared phase specifications are current work; PH, PS and UV are deferred
 future implementations outside current completion. Caloric properties/actions
-consumed by MEA and the absorber remain current requirements. Initial fitting uses density and phase observations. Public state units
+consumed by MEA and the absorber remain current requirements. Fitting uses density, total molar isobaric heat capacity with fixed
+thermochemistry, and phase observations. Public state units
 follow SI molar conventions; composition actions use explicit zero-sum
 directions. Owning GitHub issues record precise implementation inputs and
 remaining work.
@@ -190,7 +191,8 @@ remaining work.
   order in composition, density, temperature, pressure and active parameters.
   Composition directions are caller-supplied and zero-sum; singular actions do
   not erase valid central values or other available actions.
-- Built-in regression observations initially cover density, saturation/bubble/dew
+- Built-in regression observations cover density, total molar isobaric heat
+  capacity at fixed T/P/composition and branch, saturation/bubble/dew
   pressure or temperature, phase compositions, phase fractions and
   phase-component amount ratios. Fit residual-EOS parameters and named reaction
   constants, retain failed-trial causes, include complete

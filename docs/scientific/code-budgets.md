@@ -77,6 +77,17 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-30, total molar isobaric heat-capacity fitting (#205 O2, owner approved):
+  Regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
+  18790 → 18805, the measured candidate counts. Relative to `d47d0475`,
+  runtime growth is 37 physical lines: Regression 23, Bindings 2 and Python 12.
+  Properties remains 4223; Bindings remains under its 1725 ceiling.
+  The pressure-closed observation shares Density admission and fitting paths,
+  uses the existing Properties caloric action once per parameter column, and
+  keeps fixed ideal-gas thermochemistry. Python reuses its existing species
+  validator. No new thermodynamic owner or parameter adoption is included.
+  Floors, soft ceilings and other hard ceilings are unchanged.
+
 - 2026-09-30, parameter regression hard ceiling 1300 → 1440, bindings 1708 →
   1725, Python 2313 → 2350 and aggregate 18556 → 18790 (#187 O1, explicitly
   approved in the owner's September 30 comment). The candidate measured against
