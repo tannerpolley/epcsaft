@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Replace the 29 Debye-Huckel diameters 0.88 sigma_i by sigma_i as explicitly stated in Held 2008 Section 2; leave the packing diameters, energies, water, topology and pair coefficients unchanged.", "Correct packing-diameter source locators using the backward statement in Held 2014 Eq. (21)."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "8f0313b6ebecb891873866a2181b32f8aeb44a49860487f34aeab8aecfa596f9"
+
+[[sources]]
+source_id = "held-2008-version-3"
+packet_id = "held-cameretti-sadowski-2008"
+packet_version = "3"
+packet_member = "parameters/parameters.json"
+role = "Unchanged coefficients and explicitly corrected DH lengths; source locators in the derived parameter document."
+sha256 = "79259c245dd748121d557ccd5c931306005a0ae01e21f6d9173a6a8de6db892d"
