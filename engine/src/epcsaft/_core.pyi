@@ -725,6 +725,7 @@ class ObservationKind:
     PhaseMoleFraction: ObservationKind
     PhaseFraction: ObservationKind
     PartialPressure: ObservationKind
+    PhaseAmountRatio: ObservationKind
 
 class ResidualForm:
     Difference: ResidualForm
@@ -750,6 +751,8 @@ class Observation:
     problem: EquilibriumProblem
     phase: int
     species: list[int]
+    denominator_phase: int
+    denominator_species: list[int]
     mass_basis: bool
     observed: float
     form: ResidualForm
@@ -771,9 +774,20 @@ class PredictionGradient:
     status: ObservationStatus
     message: str
 
+class ReactionCoefficient:
+    A: ReactionCoefficient
+    B: ReactionCoefficient
+    C: ReactionCoefficient
+    D: ReactionCoefficient
+
+class ReactionCoordinate:
+    name: str
+    coefficient: ReactionCoefficient
+
 class Coordinate:
     family: ParameterFamily
     slots: list[list[int]]
+    reaction: Optional[ReactionCoordinate]
     origin: float
     scale: float
     lower: float

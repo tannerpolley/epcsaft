@@ -147,9 +147,13 @@ limits on global claims remain required. Caller tolerances govern solve
 requests; available candidates that miss them retain warnings and achieved
 residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
-Initial fitting targets residual-EOS parameters only; reaction/reference fitting
-is deferred. Concrete input forms and outstanding qualification are recorded in
-the owning GitHub issues.
+Fitting admits residual-EOS parameters and named source-basis reaction constants
+(scalar ln K or stored a/b/c/d), with exact first derivatives; reference
+declarations stay fixed and referenced free-temperature fitting is unavailable.
+The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-fitting/notebook.qmd)
+retains the manufactured first-derivative and recovery comparisons; it makes
+no application or physical-validation claim. Concrete input forms and
+outstanding qualification are recorded in the owning GitHub issues.
 Declared phase specifications are current work; PH, PS and UV are deferred
 future implementations outside current completion. Caloric properties/actions
 consumed by MEA and the absorber remain current requirements. Initial fitting uses density and phase observations. Public state units
@@ -187,8 +191,9 @@ remaining work.
   Composition directions are caller-supplied and zero-sum; singular actions do
   not erase valid central values or other available actions.
 - Built-in regression observations initially cover density, saturation/bubble/dew
-  pressure or temperature, phase compositions and phase fractions. Fit only
-  residual-EOS parameters initially, retain failed-trial causes, include complete
+  pressure or temperature, phase compositions, phase fractions and
+  phase-component amount ratios. Fit residual-EOS parameters and named reaction
+  constants, retain failed-trial causes, include complete
   implicit prediction Jacobians, distinguish absolute uncertainty from relative
   weights, and condition covariance claims on rank, bounds and stated assumptions.
 

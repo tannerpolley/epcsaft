@@ -1112,6 +1112,344 @@ void check_r3() {
                     && refused.covariance.status == "active_bound", summary(refused), "r3"));
 }
 
+// #187: source-basis reaction constants through the existing solved-state first actions.
+Coordinate reaction_coordinate(const char* name, ReactionCoefficient coefficient = ReactionCoefficient::A,
+                               double scale = 1.0) {
+    Coordinate result;
+    result.reaction = ReactionCoordinate{name, coefficient};
+    result.scale = scale;
+    return result;
+}
+
+Observation amount_ratio(const EquilibriumProblem& problem, std::size_t numerator, std::size_t denominator,
+                         std::vector<std::size_t> species, std::vector<std::size_t> denominator_species) {
+    auto result = solved(ObservationKind::PhaseAmountRatio, problem, numerator, species);
+    result.denominator_phase = denominator;
+    result.denominator_species = std::move(denominator_species);
+    return result;
+}
+
+// A state is used only after the same owner's full-rank, residual and topology gates admit a nonzero action.
+void regular_reaction_state(const HelmholtzModel& model, const Observation& observation, const std::string& id) {
+    const auto prediction = predict(model, observation);
+    CHECK(prediction.status == ObservationStatus::Available);
+    equilibrium::SolvedStateActionDirection direction;
+    direction.feed_amounts_mol.assign(model.parameters().component_count(), 0.0);
+    direction.active_parameters.assign(model.active_parameters().size(), 0.0);
+    direction.reaction_log_constants.assign(observation.problem.reactions.size(), 0.0);
+    direction.reaction_log_constants[0] = 1.0;
+    equilibrium::SolvedStateObservable observable;
+    observable.kind = equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
+    observable.component = observation.problem.phases[0].support_declared ? observation.problem.phases[0].support.front() : 0;
+    const auto batch = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved, {observable}, {direction}).front();
+    const auto& result = batch.results.front();
+    CHECK(truth(id + "/regular", "the central state admits a finite nonzero first reaction action",
+        result.status == equilibrium::SolvedStateActionStatus::Available && result.action && std::abs(*result.action) > 0.0
+        && prediction.solved->topology_event == equilibrium::TopologyEvent::None,
+        fields({field("central_residual", batch.diagnostics.central_residual.value_or(std::numeric_limits<double>::quiet_NaN())),
+                field("dx_dlnK", result.action.value_or(std::numeric_limits<double>::quiet_NaN())),
+                field("condition", batch.diagnostics.condition_estimate.value_or(std::numeric_limits<double>::quiet_NaN()))}), "reaction-fit"));
+}
+
+void reaction_data(FitRequest& request) {
+    const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+    for (auto& row : request.observations) {
+        const auto prediction = predict(model, row);
+        CHECK(prediction.status == ObservationStatus::Available);
+        row.observed = *prediction.value;
+    }
+}
+
+FitResult reaction_columns(const std::string& id, FitRequest request) {
+    reaction_data(request);  // zero residuals keep the returned Jacobian at this exact centre
+    const auto result = fit(request);
+    CHECK(result.usable && result.trial_failures == 0 && result.status == "converged");
+    const auto u0 = request.coordinates.start(request.parameters, request.observations);
+    const auto columns = u0.size();
+    for (std::size_t row = 0; row < request.observations.size(); ++row) {
+        for (std::size_t c = 0; c < columns; ++c) {
+            const auto value = [&](double shift) {
+                auto u = u0;
+                u[c] += shift;
+                auto observations = request.observations;
+                request.coordinates.apply(observations, u);
+                const HelmholtzModel rebuilt(request.coordinates.apply(request.parameters, u));
+                const auto prediction = predict(rebuilt, observations[row]);
+                CHECK(prediction.status == ObservationStatus::Available);
+                return std::log(*prediction.value);
+            };
+            const auto rungs = ladder(value, 0.005);
+            const auto key = id + "/" + std::to_string(row) + "/" + std::to_string(c);
+            const auto inputs = fields({field("fd_signal", std::abs(rungs.fine)), field("u_step", 0.005),
+                                      field("prediction", result.predictions[row])});
+            CHECK(truth(key + "/signal", "the dimensionless finite-difference column has signal at least 1e-2",
+                        std::abs(rungs.fine) >= 1.0e-2, inputs, "reaction-fit"));
+            CHECK(ladder_agrees(key, "dlny_du", result.optimizer_jacobian[row * columns + c], rungs, inputs,
+                               "the exact log-residual column agrees with independently rebuilt central differences", "reaction-fit"));
+        }
+    }
+    return result;
+}
+
+EquilibriumProblem reacting_bubble(const HelmholtzModel& model) {
+    auto problem = bubble_at(180.0);
+    const auto center = equilibrium::solve_equilibrium(model, problem);
+    CHECK(center.success && center.topology_event == equilibrium::TopologyEvent::None);
+    const auto compiled = equilibrium::compile_problem(model, problem);
+    equilibrium::SolvedStateObservable first, second;
+    first.kind = second.kind = equilibrium::SolvedStateObservableKind::PhaseLogActivity;
+    second.component = 1;
+    const auto batch = equilibrium::solved_state_actions(compiled, center,
+        {{first, second}, {{0.0, 0.0, {0.0, 0.0}, {}}}});
+    CHECK(batch.results[0].value && batch.results[1].value);
+    const double L = *batch.results[1].value - *batch.results[0].value;
+    problem.reactions = {{"iso", {-1.0, 1.0}, std::nullopt, std::nullopt,
+        ReactionLogPolynomial{L - 300.0 / 180.0 - 0.5 * std::log(180.0 / 200.0) - 0.001 * 180.0,
+                            300.0, 0.5, 0.001, 200.0, 150.0, 220.0, equilibrium::EOS_STANDARD_STATE_ID}}};
+    const auto reacting = equilibrium::solve_equilibrium(model, problem);
+    CHECK(reacting.success && reacting.topology_event == equilibrium::TopologyEvent::None);
+    CHECK(agree("reaction-a3/pinned_pressure", "P", "Pa", reacting.pressure.front(), center.pressure.front(), 0.0, 1.0e-10,
+                "T=180 K", "the reacting manufactured bubble retains the original state", "reaction-fit"));
+    for (std::size_t i = 0; i < center.mole_fractions.size(); ++i)
+        CHECK(agree("reaction-a3/pinned_x/" + std::to_string(i), "x", "1", reacting.mole_fractions[i], center.mole_fractions[i],
+                    1.0e-10, 0.0, "T=180 K", "the reacting manufactured bubble retains the original compositions", "reaction-fit"));
+    return problem;
+}
+
+EquilibriumProblem referenced_formula(std::optional<double> source_pressure) {
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.feed.values = {1.0, 1.0e-6, 1.0e-6};
+    problem.source_reference = NeutralReferenceDeclaration{0, {0.0, 1.0, 1.0}, 1.0};
+    problem.reactions = {{"H2O=Na++Cl-", {-1.0, 1.0, 1.0}, std::nullopt, std::nullopt,
+        ReactionLogPolynomial{std::log(1.0e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source"},
+        ReactionReference{source_pressure, ReferenceSourceBasis::RawMoleFractionInfiniteDilution}}};
+    return problem;
+}
+
+void check_reaction_derivatives() {
+    FitRequest a1;
+    a1.parameters = equilibrium_support::synthetic_reactive_ternary();
+    auto liquids = equilibrium_support::synthetic_reactive_problem();
+    liquids.standard_gibbs_j_per_mol.clear();
+    a1.observations = {solved(ObservationKind::PhaseMoleFraction, liquids, 0, {2}),
+                       solved(ObservationKind::PhaseFraction, liquids, 0), amount_ratio(liquids, 0, 1, {2}, {2})};
+    a1.coordinates.coordinates = {reaction_coordinate("A+B=C")};
+    regular_reaction_state(HelmholtzModel(a1.parameters), a1.observations[0], "reaction-a1");
+    reaction_columns("reaction-a1/scalar", a1);
+    a1.coordinates.coordinates = {{ParameterFamily::Kij, {{2, 6}}, 0.045, 0.05}, reaction_coordinate("A+B=C"),
+                                 {ParameterFamily::SigmaConstant, {{1}}, 3.0, 0.5}};
+    const auto interleaved = reaction_columns("reaction-a1/joint", a1);
+    const auto& j = interleaved.physical_jacobian;
+    for (std::size_t row = 0; row < a1.observations.size(); ++row) {
+        const double slope = 1.0 / interleaved.predictions[row];
+        for (std::size_t c = 0; c < 3; ++c) {
+            const std::size_t physical = c == 1 ? 2 : c == 2 ? 1 : 0;
+            CHECK(agree("reaction-a1/order/" + std::to_string(row) + "/" + std::to_string(c), "dlny_du", "1",
+                interleaved.optimizer_jacobian[row * 3 + c], slope * j[row * 3 + physical] * a1.coordinates.coordinates[c].scale, 0.0, 1.0e-12, "",
+                "optimizer declaration order and EOS-first physical-row order carry the same derivatives", "reaction-fit"));
+        }
+    }
+    for (const auto source_pressure : {std::optional<double>{}, std::optional<double>{2.0e5}}) {
+        FitRequest a2;
+        a2.parameters = properties_support::aqueous_electrolyte();
+        a2.observations = {solved(ObservationKind::PhaseMoleFraction, referenced_formula(source_pressure), 0, {1})};
+        a2.coordinates.coordinates = {reaction_coordinate("H2O=Na++Cl-"),
+                                     reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::B, 298.15)};
+        const auto direct = predict(HelmholtzModel(a2.parameters), a2.observations.front());
+        regular_reaction_state(HelmholtzModel(a2.parameters), a2.observations.front(), source_pressure ? "reaction-a2/fixed" : "reaction-a2/system");
+        const auto result = reaction_columns(source_pressure ? "reaction-a2/fixed" : "reaction-a2/system", a2);
+        CHECK(agree(source_pressure ? "reaction-a2/fixed_basis" : "reaction-a2/system_basis", "x_Na", "1",
+                    result.predictions[0], *direct.value, 0.0, 1.0e-12, "",
+                    "rewriting the native coefficient retains the declared source reference", "reaction-fit"));
+    }
+    FitRequest a3;
+    a3.parameters = properties_support::neutral_binary();
+    const auto bubble = reacting_bubble(HelmholtzModel(a3.parameters));
+    a3.observations = {solved(ObservationKind::EquilibriumPressure, bubble), solved(ObservationKind::PartialPressure, bubble, 1, {0})};
+    a3.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::B, 180.0),
+        reaction_coordinate("iso", ReactionCoefficient::C), reaction_coordinate("iso", ReactionCoefficient::D, 1.0 / 180.0)};
+    regular_reaction_state(HelmholtzModel(a3.parameters), a3.observations.front(), "reaction-a3");
+    const auto result = reaction_columns("reaction-a3/free_pressure", a3);
+    const double basis[] = {1.0, 1.0 / 180.0, std::log(180.0 / 200.0), 180.0};
+    for (std::size_t row = 0; row < 2; ++row)
+        for (std::size_t c = 1; c < 4; ++c)
+            CHECK(agree("reaction-a3/basis/" + std::to_string(row) + "/" + std::to_string(c), "dy_dtheta", "native",
+                        result.physical_jacobian[row * 4 + c], result.physical_jacobian[row * 4] * basis[c], 0.0, 1.0e-12,
+                        "T=180 K; Tref=200 K", "physical columns obey the source ln K basis vector", "reaction-fit"));
+    auto free_t = bubble;
+    free_t.pressure = FreeValue::fixed(result.predictions.front());
+    free_t.temperature = FreeValue::variable(180.0);
+    const HelmholtzModel model(a3.parameters);
+    const auto j1 = equilibrium::solve_equilibrium(model, bubble);
+    for (std::size_t q = 0; q < free_t.phases.size(); ++q) {
+        free_t.phases[q].composition_guess = {j1.mole_fractions[q * 2], j1.mole_fractions[q * 2 + 1]};
+        free_t.phases[q].packing_guess = j1.packing_fractions[q];
+    }
+    const auto recovered = equilibrium::solve_equilibrium(model, free_t);
+    CHECK(recovered.success && recovered.topology_event == equilibrium::TopologyEvent::None);
+    CHECK(agree("reaction-a4/pinned_temperature", "T", "K", recovered.temperature.front(), 180.0, 0.0, 1.0e-10,
+                "declared J1 compositions and packing fractions", "the free-temperature solve returns the specified J1 state", "reaction-fit"));
+    CHECK(agree("reaction-a4/pinned_pressure", "P", "Pa", recovered.pressure.front(), j1.pressure.front(), 0.0, 1.0e-10,
+                "", "the free-temperature solve retains the J1 pressure", "reaction-fit"));
+    for (std::size_t i = 0; i < j1.mole_fractions.size(); ++i)
+        CHECK(agree("reaction-a4/pinned_x/" + std::to_string(i), "x", "1", recovered.mole_fractions[i], j1.mole_fractions[i],
+                    1.0e-10, 0.0, "", "the free-temperature solve retains the J1 compositions", "reaction-fit"));
+    for (std::size_t q = 0; q < j1.packing_fractions.size(); ++q)
+        CHECK(agree("reaction-a4/pinned_packing/" + std::to_string(q), "eta", "1", recovered.packing_fractions[q], j1.packing_fractions[q],
+                    0.0, 1.0e-10, "", "the free-temperature solve retains the J1 packing fractions", "reaction-fit"));
+    a3.observations = {solved(ObservationKind::EquilibriumTemperature, free_t)};
+    a3.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::D, 1.0 / 180.0)};
+    regular_reaction_state(HelmholtzModel(a3.parameters), a3.observations.front(), "reaction-a4");
+    reaction_columns("reaction-a4/free_temperature", a3);
+}
+
+void recover_reactions(const std::string& id, const FitRequest& request, const std::vector<double>& expected) {
+    const auto result = fit(request);
+    CHECK(truth(id + "/converged", "the manufactured fit converges without failed trials",
+                result.status == "converged" && result.usable && result.trial_failures == 0, summary(result), "reaction-fit"));
+    for (std::size_t row = 0; row < expected.size(); ++row) {
+        const bool b = request.coordinates.coordinates[request.coordinates.tie()[row]].reaction
+            && request.coordinates.coordinates[request.coordinates.tie()[row]].reaction->coefficient == ReactionCoefficient::B;
+        CHECK(agree(id + "/value/" + std::to_string(row), "theta", b ? "K" : "1", result.physical[row], expected[row],
+                    b ? 0.0 : 1.0e-6, b ? 1.0e-6 : 0.0, summary(result), "the known physical coefficient is recovered", "reaction-fit"));
+    }
+    CHECK(agree(id + "/cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result),
+                "the noise-free final objective vanishes", "reaction-fit"));
+    CHECK(truth(id + "/covariance", "the interior fit has full rank and an available conditional covariance",
+                result.covariance.status == "available" && result.covariance.rank == expected.size(), summary(result), "reaction-fit"));
+}
+
+void check_reaction_recovery() {
+    FitRequest b1;
+    b1.parameters = equilibrium_support::synthetic_reactive_ternary();
+    auto problem = equilibrium_support::synthetic_reactive_problem();
+    problem.standard_gibbs_j_per_mol.clear();
+    problem.reactions[0].equilibrium_constant = std::exp(0.1);
+    b1.parameters.k_ij[2] = b1.parameters.k_ij[6] = 0.05;
+    b1.observations = {solved(ObservationKind::PhaseMoleFraction, problem, 0, {2}),
+        solved(ObservationKind::PhaseMoleFraction, problem, 1, {0}), solved(ObservationKind::PhaseFraction, problem, 0),
+        amount_ratio(problem, 0, 1, {2}, {2})};
+    b1.coordinates.coordinates = {{ParameterFamily::Kij, {{2, 6}}, 0.045, 0.1}, reaction_coordinate("A+B=C")};
+    reaction_data(b1);
+    b1.parameters.k_ij[2] = b1.parameters.k_ij[6] = 0.045;
+    for (auto& row : b1.observations) row.problem.reactions[0].equilibrium_constant = 1.0;
+    recover_reactions("reaction-b1", b1, {0.05, 0.1});
+    FitRequest b2;
+    b2.parameters = properties_support::neutral_binary();
+    const auto bubble = reacting_bubble(HelmholtzModel(b2.parameters));
+    const double a_truth = bubble.reactions[0].correlation->a;
+    for (const double T : {170.0, 180.0, 190.0}) {
+        auto cell = bubble;
+        cell.temperature = FreeValue::fixed(T);
+        b2.observations.push_back(solved(ObservationKind::EquilibriumPressure, cell));
+        b2.observations.push_back(solved(ObservationKind::PhaseMoleFraction, cell, 1, {0}));
+    }
+    b2.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::B, 180.0)};
+    reaction_data(b2);
+    for (auto& row : b2.observations) { row.problem.reactions[0].correlation->a += 0.1; row.problem.reactions[0].correlation->b -= 20.0; }
+    recover_reactions("reaction-b2", b2, {a_truth, 300.0});
+    FitRequest b3;
+    b3.parameters = properties_support::neutral_ternary();
+    auto vapor = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
+        equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
+        equilibrium_support::Chemistry::TwoReactions);
+    b3.coordinates.coordinates = {reaction_coordinate("reaction_a"), reaction_coordinate("reaction_b")};
+    for (const auto& feed : {std::vector<double>{0.6, 0.3, 0.1}, std::vector<double>{0.2, 0.3, 0.5}}) {
+        vapor.feed.values = feed;
+        if (!b3.observations.empty()) std::reverse(vapor.reactions.begin(), vapor.reactions.end());
+        for (auto& r : vapor.reactions) r.equilibrium_constant = 1.0;
+        regular_reaction_state(HelmholtzModel(b3.parameters), solved(ObservationKind::PhaseMoleFraction, vapor, 0, {0}), "reaction-b3/feed_" + std::to_string(b3.observations.size() / 2));
+        for (auto& r : vapor.reactions) r.equilibrium_constant = std::exp(r.name == "reaction_a" ? 0.2 : -0.1);
+        b3.observations.push_back(solved(ObservationKind::PhaseMoleFraction, vapor, 0, {0}));
+        b3.observations.push_back(solved(ObservationKind::PhaseMoleFraction, vapor, 0, {2}));
+    }
+    reaction_data(b3);
+    for (auto& row : b3.observations) for (auto& r : row.problem.reactions) r.equilibrium_constant = 1.0;
+    recover_reactions("reaction-b3/name_tying", b3, {0.2, -0.1});
+    // A large affine offset loses the supplied 0.1 ln K during resolution. Validation's
+    // compiled problem is therefore stale even though its EOS active-value key is empty.
+    FitRequest preparation;
+    preparation.parameters = equilibrium_support::synthetic_reactive_ternary();
+    auto source = equilibrium_support::synthetic_reactive_problem();
+    source.standard_gibbs_j_per_mol.clear();
+    preparation.observations = {solved(ObservationKind::PhaseMoleFraction, source, 0, {2})};
+    preparation.coordinates.coordinates = {reaction_coordinate("A+B=C")};
+    preparation.coordinates.coordinates[0].origin = std::ldexp(1.0, 54);
+    reaction_data(preparation);  // data at the independently solved resolved value ln K = 0
+    preparation.observations[0].problem.reactions[0].equilibrium_constant = std::exp(0.1);
+    const auto u = preparation.coordinates.start(preparation.parameters, preparation.observations);
+    const double resolved = preparation.coordinates.physical(u).front();
+    CHECK(resolved == 0.0);
+    const auto supplied = predict(HelmholtzModel(preparation.parameters), preparation.observations[0]);
+    CHECK(supplied.status == ObservationStatus::Available);
+    const double signal = std::abs(std::log(*supplied.value / preparation.observations[0].observed));
+    CHECK(signal >= 1.0e-2);
+    const auto rebuilt = fit(preparation);
+    const auto inputs = fields({field("supplied_lnK", 0.1), field("resolved_lnK", resolved), field("log_prediction_change", signal)});
+    CHECK(agree("reaction-preparation/prediction", "x_C", "1", rebuilt.predictions.front(), preparation.observations[0].observed,
+                0.0, 1.0e-12, inputs, "a changed resolved reaction constant invalidates validation preparation", "reaction-fit"));
+    CHECK(agree("reaction-preparation/initial_cost", "cost", "1", rebuilt.initial_cost, 0.0, 1.0e-14, 0.0, inputs,
+                "initial prediction uses the resolved constant rather than the supplied compiled problem", "reaction-fit"));
+}
+
+void check_reaction_rejections() {
+    FitRequest request;
+    request.parameters = properties_support::neutral_ternary();
+    auto problem = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
+        equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
+        equilibrium_support::Chemistry::TwoReactions);
+    request.coordinates.coordinates = {reaction_coordinate("reaction_a")};
+    request.observations = {solved(ObservationKind::PhaseMoleFraction, problem, 0, {0})};
+    const auto reject = [&](FitRequest candidate, const std::string& cause) {
+        const auto result = fit(candidate);
+        CHECK(truth("reaction-rejection/" + cause, "an overdetermined or fixed reaction input is refused by name",
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
+            && result.message.find("reaction_a") != std::string::npos,
+            fields({field("message", result.message)}), "reaction-fit"));
+    };
+    auto affinity = request;
+    affinity.observations[0].problem.reactions[0].equilibrium_constant.reset();
+    affinity.observations[0].problem.reactions[0].affinity_j_per_mol = 0.0;
+    reject(affinity, "affinity target");
+    auto gibbs = request;
+    gibbs.observations[0].problem.standard_gibbs_j_per_mol = {0.0, 0.0, 0.0};
+    reject(gibbs, "supplied standard Gibbs");
+    auto dependent = request;
+    dependent.observations[0].problem.reactions[1].stoichiometry = problem.reactions[0].stoichiometry;
+    reject(dependent, "dependent reaction");
+    auto fixed = request;
+    ThermochemistryRecord record;
+    record.standard_pressure = 1.0e5;
+    record.component_intervals.assign(3, {{200.0, 400.0, true, true, {IdealPolynomial{{30.0}, 300.0, 0.0, 0.0}, 1.0e5}}});
+    fixed.thermochemistry = record;
+    reject(fixed, "K fixed by thermochemistry");
+    auto free_t = request;
+    free_t.observations[0].problem.reactions[0].reference = ReactionReference{};
+    free_t.observations[0].problem.temperature = FreeValue::variable(300.0);
+    reject(free_t, "referenced reaction at free temperature");
+    // Two named source constants with different declarations are physically different coordinates.
+    auto conflicting = request;
+    conflicting.observations.push_back(request.observations[0]);
+    conflicting.observations[1].problem.reactions[0].equilibrium_constant = std::exp(0.01);
+    reject(conflicting, "tied declarations or starts disagree");
+    auto scalar_b = request;
+    scalar_b.coordinates.coordinates[0].reaction->coefficient = ReactionCoefficient::B;
+    reject(scalar_b, "scalar K admits only A");
+    auto reference = request;
+    reference.parameters = properties_support::aqueous_electrolyte();
+    auto source = referenced_formula(std::nullopt);
+    source.reactions[0].name = "reaction_a";
+    source.reactions[0].reference->source_basis = ReferenceSourceBasis::CommonMolalityInfiniteDilution;
+    reference.observations = {solved(ObservationKind::PhaseMoleFraction, source, 0, {1}),
+                              solved(ObservationKind::PhaseMoleFraction, source, 0, {1})};
+    reference.observations[1].problem.source_reference->standard_molality_mol_per_kg = 2.0;
+    reject(reference, "tied source bases disagree");
+    reference.observations[1].problem.source_reference = source.source_reference;
+    reference.observations[1].problem.reactions[0].correlation->reference_temperature = 300.0;
+    reject(reference, "tied declarations or starts disagree");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -1125,6 +1463,9 @@ int main(int argc, char** argv) {
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
+        {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
+        {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},
+        {{"native.regression.reaction-rejections", "Reaction_constant_admission", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-rejection/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-rejections"}, check_reaction_rejections, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
     });
 }

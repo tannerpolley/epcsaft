@@ -1534,10 +1534,29 @@ $$
 - Status: Bounded empirical relation
 - Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
 - Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
-- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
+- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
 $$
 \ln K=a+\frac{b}{T}+c\ln\frac{T}{T_{ref}}+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
+$$
+
+## `reaction_constant_coordinate_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Chain rule for `reaction_constant_ln_polynomial`, the minimum-norm standard state in `chemical_potential_stationarity`, and `implicit_sensitivity`; issue #187 accepted design
+- Description: A fitted source-basis coefficient changes its density-basis reaction target by the same basis function. The source molality scale and reference contraction have no reaction-coefficient dependence. The minimum-norm image supplies chemical-row derivatives, and the existing defining Jacobian supplies the solved-state derivative.
+- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the basis at the solved temperature, including free temperature for unreferenced reactions. First order only is qualified; referenced free-temperature fitting, coefficient Hessians and caloric coefficient actions are not qualified. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
+
+$$
+\phi_k(T)=\left(1,\frac1T,\ln\frac{T}{T_{ref}},T\right)_k,
+\qquad
+\frac{\partial\ln K_{\rho,r}}{\partial\theta_{r,k}}=\phi_k(T),
+\qquad
+\frac{\partial s_i}{\partial\theta_{r,k}}=-\big(N^+\big)_{ir}\phi_k(T),
+\qquad
+\frac{d\mathbf y}{d\theta_{r,k}}=-\mathbf F_{\mathbf y}^{-1}\mathbf F_{\theta_{r,k}},
+\quad \mathbf F_{\theta_{r,k}}=\text{chemical rows only}.
 $$
 
 ## `reaction_constant_log10_reciprocal`
@@ -1545,8 +1564,8 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
 - Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
-- Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; valid on the declared temperature domain only.
-- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Initial Engine regression excludes reaction parameters; application-owned reaction calibration is distinct.
+- Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; fitting uses the explicitly converted native coefficients; valid on the declared temperature domain only.
+- Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
 $$
 -\log_{10}K=\frac{a}{T}+b+cT,\qquad \ln K=-\ln 10\left(\frac{a}{T}+b+cT\right),\qquad \frac{d\ln K}{dT}=\ln 10\left(\frac{a}{T^2}-c\right)

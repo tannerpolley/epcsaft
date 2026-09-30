@@ -737,6 +737,14 @@ record actual work: the batch first requiring the factorization reports one,
 subsequent reuse zero. Nothing survives the call. The original request's direction
 list still defines one mixed A1–A3 action, not independent directions.
 
+A first-action direction may also supply one constant d(ln K)/dt per declared
+reaction (empty means zero). The chemical-row series adds its minimum-norm
+species image through the same standard-state owner, EqID:
+`reaction_constant_coordinate_derivative`; residual-energy controls keep their
+original width. Supplied standard Gibbs vectors fix K and reject nonzero
+reaction directions. This qualifies first-order state/composition/amount actions
+only; reaction Hessians and caloric coefficient actions are not qualified.
+
 ## ALG-REFERENCE
 
 Use the explicitly declared solvent/reference path and source standard state.
@@ -840,11 +848,25 @@ The implemented fit (R1--R3) uses the built-in observations and affine, tied
 optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
-withheld under rank deficiency or an active bound.
+withheld under rank deficiency or an active bound. Named scalar ln K and stored
+`ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
+coordinates. Every matching observation must declare the same reaction,
+coefficients and source basis. Rebuild each trial with those values, preserving
+reference transfers. Optimizer columns follow declaration order; physical rows
+are EOS slots first, then reaction coordinates. Both direction families use one
+solved-state first-action batch and one defining-Jacobian factorization per state.
+`PhaseAmountRatio` composes component amounts by the quotient rule; any constant
+caller factor belongs in the observed value and, for Difference, in its scale.
+Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants
+fixed by supplied thermochemistry and referenced free-temperature requests are
+rejected by reaction name before fitting.
 
 Keep admission's model and compiled state groups for the initial evaluation.
-Reuse them only when the bounded affine map reproduces every active physical
-parameter exactly; otherwise rebuild at the resolved optimizer point. The same
+Reuse them only when the bounded affine map reproduces every active EOS value
+and the rewritten reaction declarations exactly; otherwise rebuild at the
+resolved optimizer point. The physical-declaration comparison includes the
+scalar K or all stored correlation coefficients, so a reaction-coordinate
+change invalidates admission preparation even when EOS values are unchanged. The same
 compiled problem may serve a cold retry at that point. Failed trials still
 publish neither solved starts nor a successful evaluation cache.
 

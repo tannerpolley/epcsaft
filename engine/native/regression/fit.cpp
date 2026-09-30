@@ -58,6 +58,7 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
 
 struct Trial final {
     std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
+    std::vector<Observation> observations;
     std::vector<Prediction> centers;
     std::vector<double> optimizer;
     Evaluation evaluation;
@@ -86,17 +87,23 @@ public:
         }
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
-        const std::size_t n = request_.observations.size(), width = active_.size();
+        const std::size_t n = request_.observations.size(), width = tie_.size();
         Trial fresh = std::move(prepared_);
         Trial& trial = same_point ? *cached_ : fresh;
         try {
-            // Reuse validation only when the bounded affine map reproduces every active value exactly.
-            if (!same_point && (!trial.model
-                || trial.model->active_parameter_values() != request_.coordinates.physical(optimizer))) {
+            auto observations = request_.observations;
+            request_.coordinates.apply(observations, optimizer);
+            auto physical = request_.coordinates.physical(optimizer);
+            physical.resize(active_.size());
+            // Reuse validation only at exact EOS values and rewritten reaction declarations.
+            if (!same_point && (!trial.model || trial.model->active_parameter_values() != physical
+                || !std::equal(observations.begin(), observations.end(), trial.observations.begin(), trial.observations.end(),
+                    [](const auto& x, const auto& y) { return x.kind == ObservationKind::Density || same_state(x, y); }))) {
                 trial.model = std::make_unique<HelmholtzModel>(request_.coordinates.apply(request_.parameters, optimizer),
                                                               active_, request_.thermochemistry);
                 trial.centers.assign(groups_.size(), Prediction{});
             }
+            trial.observations = std::move(observations);
             if (!evaluate_rows(optimizer, jacobian, out, trial, n, width)) return false;
             out.weighted.resize(n);
             for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
@@ -168,7 +175,7 @@ private:
         std::vector<std::vector<PredictionGradient>> gradients(n);
         std::vector<std::size_t> position(n, 0);
         for (std::size_t i = 0; i < n; ++i) {
-            const auto& observation = request_.observations[i];
+            const auto& observation = trial.observations[i];
             const std::size_t g = groups_[i];
             auto& prediction = trial.centers[g];
             if (!prediction.value) {
@@ -190,10 +197,10 @@ private:
                 scope.probe("anchor", static_cast<double>(g));
                 std::vector<const Observation*> rows;
                 for (std::size_t row = 0; row < n; ++row)
-                    if (groups_[row] == g) rows.push_back(&request_.observations[row]);
+                    if (groups_[row] == g) rows.push_back(&trial.observations[row]);
                 gradients[g] = observation.kind == ObservationKind::Density
                     ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                    : differentiate_group(model, rows, prediction);
+                    : differentiate_group(model, rows, prediction, request_.coordinates);
             }
             const auto& gradient = gradients[g][position[g]++];
             if (gradient.status != ObservationStatus::Available)
@@ -408,10 +415,11 @@ FitResult fit(const FitRequest& request) {
     const auto groups = state_groups(request.observations);
     Trial prepared;
     try {
-        validate(set, request.parameters);
+        validate(set, request.parameters, request.observations, request.thermochemistry);
         prepared.model = std::make_unique<HelmholtzModel>(
             request.parameters, set.active_parameters(), request.thermochemistry);
         const auto& model = *prepared.model;
+        prepared.observations = request.observations;
         require(n > 0, "needs observations");
         core::Scope validation("fit_validation");
         prepared.centers.resize(groups.size());
@@ -439,7 +447,7 @@ FitResult fit(const FitRequest& request) {
     }
     const std::size_t width = set.coordinates.size();
     Evaluator evaluator(request, result, groups, sqrt_weights, std::move(prepared));
-    std::vector<double> optimizer = set.start(request.parameters);
+    std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
     Evaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
         result.status = "initial_evaluation_failed";
