@@ -44,16 +44,33 @@ ion-pairing, reaction-equilibrium, `K_w`, or Born record is admitted.
 
 ## Applicability and validation disposition
 
+Packet version 4 corrects the Debye–Hückel closest-approach length to
+`sigma_i`, as stated on p. 88 after Eq. (2) in Held 2008. Versions 2 and 3
+stored `0.88 sigma_i` for both this length and hard-chain packing. Packing
+remains `0.88 sigma_i`; Held 2014 Eq. (21) explicitly confirms that packing
+convention for the earlier Held 2008 calculations. The 29 ion diameters and
+energies, water parameters, association topology, constant dielectric, and
+dispersion choices retain their values. Versions 1–3 remain historical inputs.
+
+The [divalent chloride diagnosis](../../../analyses/2026-divalent-chloride-activity/README.md)
+retains the source comparison and numerical effect. Version 4 is a correction
+to the printed equation, not an independently established reproduction of
+Held's original calculations or a new fit. Held Table 4 itself reports
+MgCl2 activity ARD 11.08% and AAD 0.19, and CaCl2 ARD 26.11% and AAD 0.80.
+The original Lobo fitting rows and Goldberg–Nuttall evaluated divalent grid
+were unavailable for this diagnosis. No packet version is qualified here to
+0.02 decade over the divalent fit range.
+
 The paper reports a water correlation over 0–100 °C and ion-density fitting and
 mean-ionic-activity comparisons around 20–30 °C, with the reported MIAC values
 at 25 °C. The package’s exact reference domain is 298.15 K and 1 bar; evaluating
 the EOS elsewhere is not a claim that the paper validated that state.
 
 Tables 3–5 are comparison and validation material rather than runtime model
-inputs. Reproducing those results belongs to installed-artifact Validation
+inputs. Reproducing those results belongs to installed-wheel numerical
 evidence, not to the EOS catalog.
 
-## Verification contract
+## Numerical verification
 
 Package tests fix all 29 ion identities, charges, one-segment convention,
 diameters, dispersion energies including printed zeroes, all water–ion and
