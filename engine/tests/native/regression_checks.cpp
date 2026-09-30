@@ -1367,6 +1367,30 @@ void check_reaction_recovery() {
     reaction_data(b3);
     for (auto& row : b3.observations) for (auto& r : row.problem.reactions) r.equilibrium_constant = 1.0;
     recover_reactions("reaction-b3/name_tying", b3, {0.2, -0.1});
+    // A large affine offset loses the supplied 0.1 ln K during resolution. Validation's
+    // compiled problem is therefore stale even though its EOS active-value key is empty.
+    FitRequest preparation;
+    preparation.parameters = equilibrium_support::synthetic_reactive_ternary();
+    auto source = equilibrium_support::synthetic_reactive_problem();
+    source.standard_gibbs_j_per_mol.clear();
+    preparation.observations = {solved(ObservationKind::PhaseMoleFraction, source, 0, {2})};
+    preparation.coordinates.coordinates = {reaction_coordinate("A+B=C")};
+    preparation.coordinates.coordinates[0].origin = std::ldexp(1.0, 54);
+    reaction_data(preparation);  // data at the independently solved resolved value ln K = 0
+    preparation.observations[0].problem.reactions[0].equilibrium_constant = std::exp(0.1);
+    const auto u = preparation.coordinates.start(preparation.parameters, preparation.observations);
+    const double resolved = preparation.coordinates.physical(u).front();
+    CHECK(resolved == 0.0);
+    const auto supplied = predict(HelmholtzModel(preparation.parameters), preparation.observations[0]);
+    CHECK(supplied.status == ObservationStatus::Available);
+    const double signal = std::abs(std::log(*supplied.value / preparation.observations[0].observed));
+    CHECK(signal >= 1.0e-2);
+    const auto rebuilt = fit(preparation);
+    const auto inputs = fields({field("supplied_lnK", 0.1), field("resolved_lnK", resolved), field("log_prediction_change", signal)});
+    CHECK(agree("reaction-preparation/prediction", "x_C", "1", rebuilt.predictions.front(), preparation.observations[0].observed,
+                0.0, 1.0e-12, inputs, "a changed resolved reaction constant invalidates validation preparation", "reaction-fit"));
+    CHECK(agree("reaction-preparation/initial_cost", "cost", "1", rebuilt.initial_cost, 0.0, 1.0e-14, 0.0, inputs,
+                "initial prediction uses the resolved constant rather than the supplied compiled problem", "reaction-fit"));
 }
 
 void check_reaction_rejections() {

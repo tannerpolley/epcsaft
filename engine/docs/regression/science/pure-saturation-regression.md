@@ -130,8 +130,11 @@ typed cause and observation index retained, never zeroed. Exact raw equilibrium
 declarations, including feed basis, phase supports and seeds, reaction/reference inputs and row tolerance, share one compiled central
 solve within a fitting evaluation; projection, residual and weight metadata
 remain independent. Density observations remain separate pressure closures.
-The last fully successful optimizer point retains its immutable model and
-central states: a subsequent equilibrium-observation Jacobian request at that
+Validation preparation is reused only at exactly matching resolved EOS values
+and reaction declarations. Scalar K and all correlation coefficients belong
+to that comparison; a changed reaction coordinate invalidates the compiled
+problem even when EOS values match. The last fully successful optimizer point
+retains its immutable model and central states: a subsequent equilibrium-observation Jacobian request at that
 exact point adds actions without compiling or solving equilibrium again.
 Density differentiation retains its pressure-closure work for each direction
 batch. Weighted objective and optimizer-Jacobian

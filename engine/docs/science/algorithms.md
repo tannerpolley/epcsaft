@@ -861,6 +861,15 @@ Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants
 fixed by supplied thermochemistry and referenced free-temperature requests are
 rejected by reaction name before fitting.
 
+Keep admission's model and compiled state groups for the initial evaluation.
+Reuse them only when the bounded affine map reproduces every active EOS value
+and the rewritten reaction declarations exactly; otherwise rebuild at the
+resolved optimizer point. The physical-declaration comparison includes the
+scalar K or all stored correlation coefficients, so a reaction-coordinate
+change invalidates admission preparation even when EOS values are unchanged. The same
+compiled problem may serve a cold retry at that point. Failed trials still
+publish neither solved starts nor a successful evaluation cache.
+
 ## ALG-TERMINATION
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`

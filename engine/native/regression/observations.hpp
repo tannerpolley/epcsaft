@@ -78,7 +78,8 @@ void validate(const Observation& observation, const HelmholtzModel& model,
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
-    const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt
+    const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
+    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction

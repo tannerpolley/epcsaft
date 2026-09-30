@@ -80,14 +80,17 @@ Budget changes must not silently change scientific scope.
 - 2026-09-30, parameter regression hard ceiling 1300 → 1440, bindings 1708 →
   1725, Python 2313 → 2350 and aggregate 18556 → 18790 (#187 O1, explicitly
   approved in the owner's September 30 comment). The candidate measured against
-  `5c65bcb4` uses parameter regression 1437, bindings 1719, Python 2343,
-  equilibrium 6018 and aggregate 18762 physical runtime lines. Net additions
-  are 206: parameter regression 137, bindings 11, Python 32 and equilibrium 26.
+  `5adf57f8` after integrating #200 uses parameter regression 1440, bindings
+  1719, Python 2343, equilibrium 6018 and aggregate 18765 physical runtime
+  lines. Net additions against that main are 211: parameter regression 142,
+  bindings 11, Python 32 and equilibrium 26.
   The new responsibilities are named source-basis reaction coordinates,
   reaction shifts in the shared solved-state first actions and component-amount
   ratio observations. The minimum-norm mapping, defining-Jacobian factorization,
   affine physical-value map and reaction-declaration equality retain one owner
-  each. A parallel derivative implementation and application calibrations are
+  each. Validation preparation is reused only when its actual EOS values and
+  resolved reaction declarations match exactly; a reaction-coordinate change
+  invalidates the compiled preparation. A parallel derivative implementation and application calibrations are
   excluded. The equilibrium soft-ceiling excess is 18 lines for the reaction
   controls, admission and shared row term. Floors, soft ceilings and all other
   hard ceilings stay fixed. Tests and numerical evidence remain separate from

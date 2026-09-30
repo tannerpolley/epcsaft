@@ -24,25 +24,6 @@ bool finite(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
 }
 
-// The objective the solver accumulates: one half of the running sum of squared weighted residuals
-// in row order. Returns the first row at which the weighted residual, its square or the running sum
-// stops being representable, else none; `cost` holds the objective only when every row is valid.
-// The cause names the row's own residual when that is what overflowed, else the running sum.
-const char* cost_cause(const double* weighted, std::size_t row) {
-    return std::isfinite(weighted[row]) ? "accumulated weighted cost not finite" : "weighted residual not finite";
-}
-
-std::optional<std::size_t> objective(const double* weighted, std::size_t n, double& cost) {
-    double sum = 0.0;
-    cost = 0.0;
-    for (std::size_t i = 0; i < n; ++i) {
-        sum += weighted[i] * weighted[i];
-        if (!std::isfinite(weighted[i]) || !std::isfinite(sum)) return i;
-    }
-    cost = 0.5 * sum;
-    return std::nullopt;
-}
-
 // Chain of one row: optimizer_jacobian[c] = sqrt(w) (dr/dy) sum_{r: tie r = c} dy/dtheta_r scale_c.
 void chain(const FitRequest& request, const std::vector<std::size_t>& tie, std::size_t row,
            double sqrt_weight, double prediction, const double* gradient, double* out) {
@@ -75,13 +56,23 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
     return groups;
 }
 
+struct Trial final {
+    std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
+    std::vector<Observation> observations;
+    std::vector<Prediction> centers;
+    std::vector<double> optimizer;
+    Evaluation evaluation;
+    bool jacobian = false;
+};
+
 // One successful point owns its immutable model and compiled central states through later promotion.
 class Evaluator final {
 public:
     Evaluator(const FitRequest& request, FitResult& result, const std::vector<std::size_t>& groups,
-              const std::vector<double>& sqrt_weights)
+              const std::vector<double>& sqrt_weights, Trial prepared = {})
         : request_(request), result_(result), groups_(groups), sqrt_weights_(sqrt_weights),
-          active_(request.coordinates.active_parameters()), tie_(request.coordinates.tie()), starts_(groups.size()) {}
+          active_(request.coordinates.active_parameters()), tie_(request.coordinates.tie()),
+          starts_(groups.size()), prepared_(std::move(prepared)) {}
 
     bool evaluate(const std::vector<double>& optimizer, bool jacobian, Evaluation& out) {
         core::Scope scope("fit_evaluation");
@@ -97,22 +88,35 @@ public:
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         const std::size_t n = request_.observations.size(), width = tie_.size();
-        Trial fresh;
+        Trial fresh = std::move(prepared_);
         Trial& trial = same_point ? *cached_ : fresh;
         try {
-            if (!same_point) {
-                trial.observations = request_.observations;
-                request_.coordinates.apply(trial.observations, optimizer);
+            auto observations = request_.observations;
+            request_.coordinates.apply(observations, optimizer);
+            auto physical = request_.coordinates.physical(optimizer);
+            physical.resize(active_.size());
+            // Reuse validation only at exact EOS values and rewritten reaction declarations.
+            if (!same_point && (!trial.model || trial.model->active_parameter_values() != physical
+                || !std::equal(observations.begin(), observations.end(), trial.observations.begin(), trial.observations.end(),
+                    [](const auto& x, const auto& y) { return x.kind == ObservationKind::Density || same_state(x, y); }))) {
                 trial.model = std::make_unique<HelmholtzModel>(request_.coordinates.apply(request_.parameters, optimizer),
                                                               active_, request_.thermochemistry);
-                trial.centers.resize(groups_.size());
+                trial.centers.assign(groups_.size(), Prediction{});
             }
+            trial.observations = std::move(observations);
             if (!evaluate_rows(optimizer, jacobian, out, trial, n, width)) return false;
             out.weighted.resize(n);
             for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
-            if (const auto row = objective(out.weighted.data(), n, out.cost))
-                return fail(*row, optimizer, ObservationStatus::Nonfinite,
-                            cost_cause(out.weighted.data(), *row), jacobian);
+            // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
+            double sum = 0.0;
+            for (std::size_t i = 0; i < n; ++i) {
+                const double weighted = out.weighted[i];
+                sum += weighted * weighted;
+                if (!std::isfinite(weighted) || !std::isfinite(sum))
+                    return fail(i, optimizer, ObservationStatus::Nonfinite,
+                        std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite", jacobian);
+            }
+            out.cost = 0.5 * sum;
             const std::size_t columns = request_.coordinates.coordinates.size();
             if (jacobian) out.optimizer_gradient.resize(n * columns);
             for (std::size_t i = 0; jacobian && i < n; ++i) {
@@ -161,15 +165,6 @@ public:
     }
 
 private:
-    struct Trial final {
-        std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
-        std::vector<Observation> observations;
-        std::vector<Prediction> centers;
-        std::vector<double> optimizer;
-        Evaluation evaluation;
-        bool jacobian = false;
-    };
-
     bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, Evaluation& out,
                        Trial& trial, std::size_t n, std::size_t width) {
         const auto& model = *trial.model;
@@ -187,9 +182,9 @@ private:
                 core::Scope scope("fit_group_prediction");
                 scope.probe("anchor", static_cast<double>(g));
                 scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                prediction = predict(model, observation, starts_[g]);
+                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled));
                 if (prediction.status != ObservationStatus::Available && starts_[g])
-                    prediction = predict(model, observation, std::nullopt);
+                    prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled));
             } else if (observation.kind != ObservationKind::Density) project_prediction(model, observation, prediction);
             out.statuses.push_back(prediction.status);
             if (prediction.status != ObservationStatus::Available)
@@ -223,6 +218,7 @@ private:
     std::vector<ActiveParameter> active_;
     std::vector<std::size_t> tie_;
     std::vector<std::optional<equilibrium::EquilibriumResult>> starts_;
+    Trial prepared_;
     std::optional<Trial> cached_;
     std::size_t trials_ = 0;
 };
@@ -417,18 +413,22 @@ FitResult fit(const FitRequest& request) {
     const std::size_t n = request.observations.size();
     std::vector<double> sqrt_weights(n, 1.0);
     const auto groups = state_groups(request.observations);
+    Trial prepared;
     try {
         validate(set, request.parameters, request.observations, request.thermochemistry);
-        const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
+        prepared.model = std::make_unique<HelmholtzModel>(
+            request.parameters, set.active_parameters(), request.thermochemistry);
+        const auto& model = *prepared.model;
+        prepared.observations = request.observations;
         require(n > 0, "needs observations");
         core::Scope validation("fit_validation");
-        std::vector<std::optional<equilibrium::CompiledSystem>> compiled(groups.size());
+        prepared.centers.resize(groups.size());
         for (std::size_t i = 0; i < n; ++i) {
-            auto& prepared = compiled[groups[i]];
+            auto& center = prepared.centers[groups[i]].compiled;
             const auto& observation = request.observations[i];
-            if (!prepared && observation.kind != ObservationKind::Density)
-                prepared = equilibrium::compile_problem(model, observation.problem);
-            validate(observation, model, prepared ? &*prepared : nullptr);
+            if (!center && observation.kind != ObservationKind::Density)
+                center = equilibrium::compile_problem(model, observation.problem);
+            validate(observation, model, center ? &*center : nullptr);
         }
         require(request.weights.empty() || request.weights.size() == n, "weights width");
         for (std::size_t i = 0; i < request.weights.size(); ++i) {
@@ -446,7 +446,7 @@ FitResult fit(const FitRequest& request) {
         return result;
     }
     const std::size_t width = set.coordinates.size();
-    Evaluator evaluator(request, result, groups, sqrt_weights);
+    Evaluator evaluator(request, result, groups, sqrt_weights, std::move(prepared));
     std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
     Evaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
