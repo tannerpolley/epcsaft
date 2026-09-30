@@ -80,7 +80,7 @@ Budget changes must not silently change scientific scope.
 - 2026-09-30, parameter regression hard ceiling 1300 → 1440, bindings 1708 →
   1725, Python 2313 → 2350 and aggregate 18556 → 18790 (#187 O1, explicitly
   approved in the owner's September 30 comment). The candidate measured against
-  `5adf57f8` after integrating #200 uses parameter regression 1440, bindings
+  `fe00aa6a` after integrating #200 uses parameter regression 1440, bindings
   1719, Python 2343, equilibrium 6018 and aggregate 18765 physical runtime
   lines. Net additions against that main are 211: parameter regression 142,
   bindings 11, Python 32 and equilibrium 26.
