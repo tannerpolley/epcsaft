@@ -54,7 +54,7 @@ roadmap state; repository evidence owns scientific qualification. The
 [test-system design](test-system-design.md) defines the one-way result and freshness
 and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)
 records the retired system's bounded checks; it is historical evidence, not a
-current execution contract.
+current execution requirement.
 
 ## Maintaining agreement
 

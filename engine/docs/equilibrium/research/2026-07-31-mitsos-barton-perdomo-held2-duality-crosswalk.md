@@ -1,7 +1,7 @@
 # Mitsos-Barton and Perdomo HELD2 duality crosswalk
 
 Date: 2026-07-31
-Scope: primary-source theorem audit against the current HELD2 evidence contract.
+Scope: primary-source theorem audit against the current HELD2 evidence requirements.
 
 Sources read and visually checked:
 
@@ -117,7 +117,7 @@ refines roots under finite scan and subdivision controls. Its result must not
 be described as exhaustive root enumeration while
 `root_completeness="not_proven"` remains the evidence status.
 
-## 4. Applied contract changes
+## 4. Applied requirement changes
 
 The implementation and specification preserve these independent statements:
 
