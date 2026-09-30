@@ -289,6 +289,15 @@ Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
 distinctness at the returned point; optimizer termination alone is insufficient.
+For an unguessed liquid/vapor start, a sole unlabelled feed-density root cannot
+supply both fugacity estimates: their self-ratio would make every $K_i=1$
+and seed identical phases. In that case only the vapor fugacity estimate uses
+the ideal-gas limit $\ln\phi_i^V=0$ (EqID: `log_fugacity_coefficient`,
+$\mu_i^r\to0$, $Z\to1$). The resulting compositions still receive actual EOS
+density closure on their declared branches; this estimate changes neither
+the equations nor final admission. Two-root estimates and caller-guessed
+compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
+retains the sole dense feed root and the recovered incipient vapor (#204).
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$
