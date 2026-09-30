@@ -103,7 +103,10 @@ std::vector<std::vector<double>> start_compositions(
         temperature, liquid_root.molar_density, compiled.feed_composition);
     if (!vapor.log_fugacity_coefficient || !liquid.log_fugacity_coefficient)
         throw std::runtime_error("boundary start has no fugacity coefficients");
-    const auto& ln_phi_vapor = *vapor.log_fugacity_coefficient;
+    // A sole unlabelled feed root cannot supply both phases' fugacity estimates:
+    // their self-ratio is one. Use the ideal-vapor limit for this start only.
+    const auto ln_phi_vapor = vapor_root.stable_root_count == 1
+        ? std::vector<double>(components, 0.0) : *vapor.log_fugacity_coefficient;
     const auto& ln_phi_liquid = *liquid.log_fugacity_coefficient;
     std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
