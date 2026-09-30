@@ -15,7 +15,7 @@ namespace epcsaft::regression {
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
     Density, IsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction, PartialPressure, PhaseAmountRatio
+    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant
 };
 inline bool pressure_closed(ObservationKind kind) {
     return kind == ObservationKind::Density || kind == ObservationKind::IsobaricHeatCapacity;
@@ -37,6 +37,7 @@ struct Observation final {
     // Equilibrium kinds: the declared problem; `phase` indexes its phases, `species` is a
     // nonempty set inside that phase's support (PhaseMoleFraction and PartialPressure sum the set).
     equilibrium::EquilibriumProblem problem;
+    std::string reaction;  // LogEquilibriumConstant: named source record at problem.temperature.value.
     std::size_t phase = 0;
     std::vector<std::size_t> species;
     std::size_t denominator_phase = 0;

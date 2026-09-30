@@ -79,3 +79,38 @@ def test_two_exchange_constants_match_known_values_and_finite_difference_fit(evi
                         "scipy_cost": external.cost, "engine_residuals": fitted.residuals, "ratios": data},
                 criterion={"rule": "symmetric_close", "atol": 1e-6, "rtol": 0.0})
             assert error <= 1e-6
+
+
+def test_direct_log_constants_recover_coefficients_with_absolute_weights(evidence: Any) -> None:
+    from epcsaft.equilibrium import ReactionLogPolynomial, EOS_STANDARD_STATE_ID
+
+    p = parameters((ETHANE,) * 2, pairs=[("k_ij", (0, 1), 0.0)])
+    rows = []
+    temperatures = (200.0, 250.0, 300.0)
+    weights = (4.0, 9.0, 16.0)
+    for T in temperatures:
+        problem = Problem(T=T, P=5e6, phases=[Phase("liquid", kind="liquid")],
+            feed=Amounts({"s0": 0.5, "s1": 0.5}),
+            reactions=[Reaction({"s0": -1.0, "s1": 1.0}, name="isomerisation",
+                correlation=ReactionLogPolynomial(-1.25, 90.0, 0.0, 0.0, 250.0, 150.0, 350.0, EOS_STANDARD_STATE_ID))])
+        row = regression.observation(p, "pressure", problem, observed=-1.5 + 150.0 / T,
+                                     form="difference", scale=1.0, mass_basis=False)
+        row.kind = regression.ObservationKind.LogEquilibriumConstant
+        row.reaction = "isomerisation"
+        rows.append(row)
+    coordinates = [regression.reaction_coordinate("isomerisation", "a", origin=0.0, scale=1.0),
+                   regression.reaction_coordinate("isomerisation", "b", origin=0.0, scale=250.0)]
+    fitted = regression.fit(p, coordinates, rows, weights=weights)
+    assert fitted.usable and fitted.status == "converged", fitted.message
+    assert fitted.covariance.rank == 2 and fitted.covariance.status == "available"
+    for k, known in enumerate((-1.5, 150.0)):
+        assert abs(fitted.physical[k] - known) <= 1e-6
+        evidence.compare(f"ln-k/python/recovery/{k}", model=fitted.physical[k], reference=known,
+                         unit="native", criterion={"rule": "symmetric_close", "atol": 1e-6, "rtol": 0.0})
+    for i, (T, weight) in enumerate(zip(temperatures, weights)):
+        for k, basis in enumerate((1.0, 250.0 / T)):
+            expected = math.sqrt(weight) * basis
+            actual = fitted.optimizer_jacobian[i * 2 + k]
+            assert abs(actual - expected) <= 1e-12
+            evidence.compare(f"ln-k/python/weighted-column/{i}/{k}", model=actual, reference=expected,
+                             unit="1", criterion={"rule": "symmetric_close", "atol": 1e-12, "rtol": 0.0})

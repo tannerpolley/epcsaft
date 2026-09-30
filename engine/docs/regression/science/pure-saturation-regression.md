@@ -25,6 +25,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Kind | Fixed inputs | Owner and value | Unit |
 |---|---|---|---|
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
+| LogEquilibriumConstant | fixed positive `problem.temperature.value`, named `reaction`, declared source record | `evaluate_reaction_properties` for a/b/c/d, or ln(scalar K); no equilibrium solve | 1 |
 | IsobaricHeatCapacity | $T$, $P$, normalized $\mathbf{x}$, declared branch, fixed thermochemistry record | pressure closure `state_at_pressure`; total molar $c_p$ | J mol$^{-1}$ K$^{-1}$ |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
@@ -57,6 +58,25 @@ factor. Phase volumes are not inferred.
 The two forms are not commensurable by themselves; relative weights
 $w_i\ge 0$ enter the objective as $\sqrt{w_i}\,r_i$ and are declared
 separately from any absolute uncertainty.
+
+A direct source-basis ln K row uses `ObservationKind.LogEquilibriumConstant`,
+`Observation.reaction` for the reaction name and the fixed temperature in its
+problem. Its problem supplies the same reaction/source declarations as the
+other observations; phase, pressure and feed data are not consumed for a direct
+prediction. EqID: `source_log_equilibrium_constant_observation` gives its value,
+exact coefficient columns and zero EOS columns. The same #187 naming, tying and
+fixed-target rejections apply. Use Difference: ln K is already logarithmic.
+For absolute standard uncertainty σ in ln K, choose scale=1 and weight=1/σ².
+
+The existing constructor can map a declared `Problem`; then set the direct kind
+and named reaction before passing the row to `fit`:
+
+```python
+row = regression.observation(parameters, "pressure", problem,
+    observed=ln_k_observed, form="difference", scale=1.0, mass_basis=False)
+row.kind = regression.ObservationKind.LogEquilibriumConstant
+row.reaction = "named_reaction"
+```
 
 ## Parameter coordinates (R1)
 

@@ -192,7 +192,8 @@ remaining work.
   Composition directions are caller-supplied and zero-sum; singular actions do
   not erase valid central values or other available actions.
 - Built-in regression observations cover density, total molar isobaric heat
-  capacity at fixed T/P/composition and branch, saturation/bubble/dew
+  capacity at fixed T/P/composition and branch, direct source-basis ln K
+  at fixed T for a named reaction, saturation/bubble/dew
   pressure or temperature, phase compositions, phase fractions and
   phase-component amount ratios. Fit residual-EOS parameters and named reaction
   constants, retain failed-trial causes, include complete

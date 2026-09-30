@@ -1621,10 +1621,113 @@ void check_reaction_rejections() {
     reject(reference, "tied declarations or starts disagree");
 }
 
+// #211: the source constant is measured directly; no EOS reference transfer enters it.
+Observation log_constant(const EquilibriumProblem& problem, const char* name) {
+    Observation row;
+    row.kind = ObservationKind::LogEquilibriumConstant;
+    row.problem = problem;
+    row.reaction = name;
+    return row;
+}
+
+void check_log_constant() {
+    const auto parameters = properties_support::neutral_ternary();
+    auto problem = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
+        equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
+        equilibrium_support::Chemistry::TwoReactions);
+    problem.reactions[0].equilibrium_constant.reset();
+    problem.reactions[0].correlation = ReactionLogPolynomial{0.4, 80.0, 0.5, 0.001, 300.0, 150.0, 400.0,
+                                                           equilibrium::EOS_STANDARD_STATE_ID};
+    CoordinateSet coordinates{{reaction_coordinate("reaction_a", ReactionCoefficient::B, 300.0),
+        {ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0}, reaction_coordinate("reaction_a"),
+        reaction_coordinate("reaction_b"), reaction_coordinate("reaction_a", ReactionCoefficient::C),
+        reaction_coordinate("reaction_a", ReactionCoefficient::D, 1.0 / 300.0)}};
+    const HelmholtzModel model(parameters, coordinates.active_parameters());
+    for (const double T : {200.0, 250.0, 300.0, 350.0}) {
+        problem.temperature = FreeValue::fixed(T);
+        std::reverse(problem.reactions.begin(), problem.reactions.end());
+        auto row = log_constant(problem, "reaction_a");
+        validate(row, model);
+        const auto prediction = predict(model, row);
+        const double value = 0.4 + 80.0 / T + 0.5 * std::log(T / 300.0) + 0.001 * T;
+        const auto id = "ln-k/" + std::to_string(T);
+        CHECK(prediction.status == ObservationStatus::Available);
+        CHECK(agree(id + "/value", "ln_K_src", "1", *prediction.value, value, 0.0, 0.0,
+                    fields({field("T_K", T), field("Tref_K", 300.0)}), "declared source polynomial", "ln-k"));
+        const auto gradient = differentiate_group(model, {&row}, prediction, coordinates).front();
+        CHECK(gradient.status == ObservationStatus::Available);
+        // Physical rows: EOS, b, a, other reaction a, c, d; optimizer order is interleaved.
+        const std::vector<double> expected{0.0, 1.0 / T, 1.0, 0.0, std::log(T / 300.0), T};
+        for (std::size_t k = 0; k < expected.size(); ++k)
+            CHECK(agree(id + "/column/" + std::to_string(k), "dln_K_src_dtheta", "native",
+                gradient.value[k], expected[k], 0.0, 0.0, fields({field("T_K", T), field("Tref_K", 300.0)}),
+                "exact coefficient basis; EOS and other reaction columns vanish", "ln-k"));
+    }
+    // A referenced source value remains the source value even though its density-basis target differs.
+    auto reference = log_constant(referenced_formula(std::nullopt), "H2O=Na++Cl-");
+    const HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
+    validate(reference, aqueous);
+    CHECK(agree("ln-k/source", "ln_K_src", "1", *predict(aqueous, reference).value, std::log(1.0e-8),
+                0.0, 0.0, "T=298.15 K; raw mole-fraction source", "no EOS reference transfer in direct data", "ln-k"));
+    auto scalar = log_constant(problem, "reaction_b");
+    CHECK(agree("ln-k/scalar", "ln_K_src", "1", *predict(model, scalar).value,
+                std::log(*problem.reactions[1].equilibrium_constant), 0.0, 0.0,
+                "T=350 K", "scalar K is observed as ln K", "ln-k"));
+
+    FitRequest request;
+    request.parameters = properties_support::neutral_binary();
+    const auto bubble = reacting_bubble(HelmholtzModel(request.parameters));
+    const auto law = *bubble.reactions[0].correlation;
+    request.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::B, 180.0)};
+    for (const double T : {170.0, 180.0, 190.0}) {
+        auto cell = bubble;
+        cell.temperature = FreeValue::fixed(T);
+        auto row = log_constant(cell, "iso");
+        row.observed = law.a + law.b / T + law.c * std::log(T / law.reference_temperature) + law.d * T;
+        request.observations.push_back(row);
+    }
+    auto equilibrium = solved(ObservationKind::EquilibriumPressure, bubble);
+    equilibrium.observed = *predict(HelmholtzModel(request.parameters), equilibrium).value;
+    request.observations.push_back(equilibrium);
+    for (auto& row : request.observations) { row.problem.reactions[0].correlation->a += 0.1; row.problem.reactions[0].correlation->b -= 20.0; }
+    recover_reactions("ln-k/recovery", request, {law.a, law.b});
+
+    // Observation admission must reject fixed targets even when only an EOS coordinate is fitted.
+    FitRequest rejected;
+    rejected.parameters = parameters;
+    rejected.coordinates.coordinates = {{ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0}};
+    rejected.observations = {log_constant(problem, "reaction_a")};
+    const auto reject = [&](FitRequest candidate, const std::string& cause) {
+        const auto result = fit(candidate);
+        CHECK(truth("ln-k/rejection/" + cause, "the direct source target is refused by reaction name",
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
+            && result.message.find("reaction_a") != std::string::npos,
+            fields({field("message", result.message)}), "ln-k"));
+    };
+    // At the last reversal reaction_a is first.
+    auto affinity = rejected;
+    affinity.observations[0].problem.reactions[0].correlation.reset();
+    affinity.observations[0].problem.reactions[0].affinity_j_per_mol = 0.0;
+    reject(affinity, "affinity target");
+    auto dependent = rejected;
+    dependent.observations[0].problem.reactions[1].stoichiometry = problem.reactions[0].stoichiometry;
+    reject(dependent, "dependent reaction");
+    auto gibbs = rejected;
+    gibbs.observations[0].problem.standard_gibbs_j_per_mol = {0.0, 0.0, 0.0};
+    reject(gibbs, "supplied standard Gibbs");
+    auto fixed = rejected;
+    ThermochemistryRecord record;
+    record.standard_pressure = 1.0e5;
+    record.component_intervals.assign(3, {{200.0, 400.0, true, true, {IdealPolynomial{{30.0}, 300.0, 0.0, 0.0}, 1.0e5}}});
+    fixed.thermochemistry = record;
+    reject(fixed, "K fixed by thermochemistry");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
         {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:18"}, check_f2, "R1"},
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},

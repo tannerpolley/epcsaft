@@ -115,7 +115,8 @@ bool same_reaction(const equilibrium::ReactionSpec& x, const equilibrium::Reacti
 
 bool same_state(const Observation& left, const Observation& right) {
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
-    if (pressure_closed(left.kind) || pressure_closed(right.kind)) return false;
+    if (pressure_closed(left.kind) || pressure_closed(right.kind)
+        || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant) return false;
     const auto& a = left.problem;
     const auto& b = right.problem;
     const auto intensive = [](const auto& v) { return std::tie(v.free, v.value, v.absent); };
@@ -147,6 +148,11 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
             || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
+    if (observation.kind == ObservationKind::LogEquilibriumConstant) {
+        require(!observation.problem.temperature.free && !observation.problem.temperature.absent && std::isfinite(observation.problem.temperature.value)
+            && observation.problem.temperature.value > 0.0 && observation.form == ResidualForm::Difference, "ln K needs fixed positive T and Difference");
+        return validate(CoordinateSet{{{ParameterFamily::SegmentCount, {}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
+    }
     if (pressure_closed(observation.kind)) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
         require(std::isfinite(observation.pressure) && observation.pressure > 0.0, "pressure");
@@ -221,6 +227,12 @@ Prediction predict(
         finish(result, observation, value);
         return result;
     }
+    if (observation.kind == ObservationKind::LogEquilibriumConstant) {
+        result.unit = "1";
+        for (const auto& r : observation.problem.reactions) if (r.name == observation.reaction)
+            finish(result, observation, r.correlation ? evaluate_reaction_properties(*r.correlation, observation.problem.temperature.value).ln_k : std::log(*r.equilibrium_constant));
+        return result;
+    }
     equilibrium::EquilibriumResult solved;
     try {
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, observation.problem);
@@ -256,7 +268,7 @@ Prediction predict(
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
-    if (pressure_closed(observation.kind)) return;
+    if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant) return;
     const auto& solved = *result.solved;
     bool missing_mass = false;
     result.value.reset();
@@ -297,6 +309,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         if (observation.mass_basis) value *= mean_molar_mass(parameters, fractions, missing_mass);
         break;
     case ObservationKind::IsobaricHeatCapacity:
+    case ObservationKind::LogEquilibriumConstant:
     case ObservationKind::Density:
         break;
     }
@@ -360,7 +373,27 @@ std::vector<PredictionGradient> differentiate_group(
     std::vector<ReactionCoordinate> reactions;
     for (const auto& c : coordinates.coordinates) if (c.reaction) reactions.push_back(*c.reaction);
     const std::size_t width = active_width + reactions.size();
-    const auto& solved = *prediction.solved;
+    const auto& problem = prediction.compiled ? prediction.compiled->problem : observations.front()->problem;
+    // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
+    std::vector<equilibrium::SolvedStateActionDirection> directions(width);
+    for (std::size_t k = 0; k < width; ++k) {
+        directions[k].feed_amounts_mol.assign(components, 0.0);
+        directions[k].active_parameters.assign(active_width, 0.0);
+        if (k < active_width) directions[k].active_parameters[k] = 1.0;
+        else {
+            directions[k].reaction_log_constants.assign(problem.reactions.size(), 0.0);
+            const auto& target = reactions[k - active_width];
+            for (std::size_t j = 0; j < problem.reactions.size(); ++j) {
+                const auto& reaction = problem.reactions[j];
+                if (reaction.name != target.name) continue;
+                const double T = prediction.solved ? prediction.solved->temperature.front() : problem.temperature.value;
+                const double basis[] = {1.0, 1.0 / T,
+                    reaction.correlation ? std::log(T / reaction.correlation->reference_temperature) : 0.0, T};
+                directions[k].reaction_log_constants[j] = basis[static_cast<std::size_t>(target.coefficient)];
+            }
+        }
+    }
+    const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
     std::vector<std::vector<std::size_t>> slots(observations.size());
     std::vector<SolvedStateObservable> observables;
     for (std::size_t row = 0; row < observations.size(); ++row) {
@@ -389,7 +422,7 @@ std::vector<PredictionGradient> differentiate_group(
                 add(observable(Kind::PhaseComponentAmount, observation.denominator_phase, i));
             break;
         case ObservationKind::PhaseFraction:
-            for (std::size_t q = 0; q < solved.phase_count; ++q) add(observable(Kind::PhaseAmount, q));
+            for (std::size_t q = 0; q < solved->phase_count; ++q) add(observable(Kind::PhaseAmount, q));
             break;
         case ObservationKind::PhaseDensity:
             add(observable(Kind::PhaseMolarDensity, phase));
@@ -398,41 +431,28 @@ std::vector<PredictionGradient> differentiate_group(
                     add(observable(Kind::PhaseMoleFraction, phase, i));
             break;
         case ObservationKind::IsobaricHeatCapacity:
+        case ObservationKind::LogEquilibriumConstant:
         case ObservationKind::Density: break;
         }
     }
-    // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
-    std::vector<equilibrium::SolvedStateActionDirection> directions(width);
-    for (std::size_t k = 0; k < width; ++k) {
-        directions[k].feed_amounts_mol.assign(components, 0.0);
-        directions[k].active_parameters.assign(active_width, 0.0);
-        if (k < active_width) directions[k].active_parameters[k] = 1.0;
-        else {
-            directions[k].reaction_log_constants.assign(prediction.compiled->problem.reactions.size(), 0.0);
-            const auto& target = reactions[k - active_width];
-            for (std::size_t j = 0; j < prediction.compiled->problem.reactions.size(); ++j) {
-                const auto& reaction = prediction.compiled->problem.reactions[j];
-                if (reaction.name != target.name) continue;
-                const double T = solved.temperature.front();
-                const double basis[] = {1.0, 1.0 / T,
-                    reaction.correlation ? std::log(T / reaction.correlation->reference_temperature) : 0.0, T};
-                directions[k].reaction_log_constants[j] = basis[static_cast<std::size_t>(target.coefficient)];
-            }
-        }
-    }
-    const auto batches = width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
-        : equilibrium::solved_state_first_actions(*prediction.compiled, solved, observables, directions);
+    const auto batches = !solved || width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
+        : equilibrium::solved_state_first_actions(*prediction.compiled, *solved, observables, directions);
     std::vector<PredictionGradient> gradients(observations.size());
     for (std::size_t row = 0; row < observations.size(); ++row) {
         const auto& observation = *observations[row];
         const auto phase = observation.phase;
-        const double* fractions = solved.mole_fractions.data() + phase * components;
+        const double* fractions = solved ? solved->mole_fractions.data() + phase * components : nullptr;
         bool missing_mass = false;
         const double mass = observation.mass_basis ? mean_molar_mass(parameters, fractions, missing_mass) : 1.0;
         auto& gradient = gradients[row];
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;
         for (std::size_t k = 0; k < width; ++k) {
+            if (observation.kind == ObservationKind::LogEquilibriumConstant) {
+                for (std::size_t j = 0; k >= active_width && j < problem.reactions.size(); ++j)
+                    if (problem.reactions[j].name == observation.reaction) gradient.value[k] = directions[k].reaction_log_constants[j];
+                continue;
+            }
             std::vector<double> action;
             for (const auto j : slots[row]) {
                 const auto& item = batches[k].results[j];
@@ -448,8 +468,8 @@ std::vector<PredictionGradient> differentiate_group(
             double value = 0.0;
             switch (observation.kind) {
             case ObservationKind::PhaseAmountRatio: {
-                const double A = component_amount(solved, phase, observation.species);
-                const double B = component_amount(solved, observation.denominator_phase, observation.denominator_species);
+                const double A = component_amount(*solved, phase, observation.species);
+                const double B = component_amount(*solved, observation.denominator_phase, observation.denominator_species);
                 double dA = 0.0, dB = 0.0;
                 for (std::size_t i = 0; i < action.size(); ++i)
                     (i < observation.species.size() ? dA : dB) += action[i];
@@ -458,21 +478,21 @@ std::vector<PredictionGradient> differentiate_group(
             }
             case ObservationKind::PhaseFraction: {
                 double total = 0.0, total_action = 0.0;
-                for (std::size_t q = 0; q < solved.phase_count; ++q) {
-                    total += solved.amounts[q];
+                for (std::size_t q = 0; q < solved->phase_count; ++q) {
+                    total += solved->amounts[q];
                     total_action += action[q];
                 }
-                value = (action[phase] * total - solved.amounts[phase] * total_action) / (total * total);
+                value = (action[phase] * total - solved->amounts[phase] * total_action) / (total * total);
                 break;
             }
             case ObservationKind::PhaseDensity:
                 value = action[0] * mass;
                 for (std::size_t i = 0; observation.mass_basis && i < components; ++i)
-                    value += solved.molar_densities[phase] * parameters.molar_mass_kg_per_mol[i] * action[1 + i];
+                    value += solved->molar_densities[phase] * parameters.molar_mass_kg_per_mol[i] * action[1 + i];
                 break;
             case ObservationKind::PartialPressure:  // d(P sum y) = dP sum y + P sum dy
                 for (const auto species : observation.species) value += fractions[species] * action.back();
-                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += solved.pressure.front() * action[i];
+                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += solved->pressure.front() * action[i];
                 break;
             default:
                 for (const auto item : action) value += item;
