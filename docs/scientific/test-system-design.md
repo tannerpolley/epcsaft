@@ -6,7 +6,7 @@ The project notebook answers three questions from existing owners:
    ownership, and artifact roles. `tools/project-map.py` resolves only files
    that exist in the checkout and reports unmapped or ambiguous paths.
 2. **What remains?** The
-   [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+   [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
    owns milestone plans, prerequisites and status. The notebook links to it and
    does not copy its mutable state.
 3. **What happened?** Ordinary pytest XML, Meson logs, retained analysis

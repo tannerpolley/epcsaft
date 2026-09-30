@@ -1,9 +1,9 @@
 [Unit]
-Description=ePC-SAFT greenfield live companion
+Description=ePC-SAFT live companion
 
 [Service]
 Type=simple
-WorkingDirectory=~/Workspaces/Engineering/ePC-SAFT-greenfield
+WorkingDirectory=~/Workspaces/Engineering/ePC-SAFT
 Environment=PATH=~/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/local/bin/quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute
 Restart=on-failure

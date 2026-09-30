@@ -1,6 +1,6 @@
 # Modular thermodynamic model specifications
 
-**Status: deferred proposal for work after the current greenfield roadmap.**
+**Status: deferred proposal for work after the current roadmap.**
 Prepared 2026-09-10 against checkout `0ae7806`. This document set preserves the
 scientific discussion and proposes a future direction; it does not admit new
 physics, qualify a model, amend an accepted ADR, or add current milestones.
@@ -70,7 +70,7 @@ The [current implementation plan](../../implementation-plan.md) remains the
 sole current execution and qualification plan. Its dependency order, estimates,
 milestones and generated progress are unchanged. This proposal has a separate
 five-step sequence and no committed effort estimates or completion percentages.
-Revisit it only after current greenfield completion and a fresh source/code
+Revisit it only after current roadmap completion and a fresh source/code
 assessment; explicitly choose the first bounded slice then.
 
 Current equation definitions remain in [Engine equations](../../../../engine/docs/equations.md),

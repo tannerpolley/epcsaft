@@ -4,14 +4,15 @@ Private scientific monorepo for the unified ePC-SAFT engine, canonical data,
 compact numerical evidence, and retained scientific analyses.
 
 The independent repository is
-[tannerpolley/ePC-SAFT-greenfield](https://github.com/tannerpolley/ePC-SAFT-greenfield).
+[tannerpolley/ePC-SAFT](https://github.com/tannerpolley/ePC-SAFT).
 Its `main` baseline preserves the accepted Core history from `cea695f`.
-The original `tannerpolley/ePC-SAFT` repository remains available for historical
-issues and reviews; current development and delivery use this repository.
+The earlier repository is archived as
+[tannerpolley/ePC-SAFT-legacy-2](https://github.com/tannerpolley/ePC-SAFT-legacy-2)
+for its historical issues and reviews.
 
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
 scientific owners and one equilibrium driver. The
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 owns implementation plans, dependencies and delivery status. Each leaf issue
 records its reuse decision, acceptance and evidence links. Repository scientific
 records distinguish required capability from implemented and numerically
@@ -29,14 +30,14 @@ To keep the companion running for this checkout, install the user service and
 enable it:
 
 ```bash
-install -Dm644 tools/systemd/epcsaft-companion-greenfield.service \
-  "$HOME/.config/systemd/user/epcsaft-companion-greenfield.service"
+install -Dm644 tools/systemd/epcsaft-companion.service \
+  "$HOME/.config/systemd/user/epcsaft-companion.service"
 loginctl enable-linger "$USER"  # start the user service at boot without login
 systemctl --user daemon-reload
-systemctl --user enable --now epcsaft-companion-greenfield.service
+systemctl --user enable --now epcsaft-companion.service
 ```
 
-Check it with `systemctl --user status epcsaft-companion-greenfield.service`.
+Check it with `systemctl --user status epcsaft-companion.service`.
 The unit serves from this repository root and restarts after a service failure.
 
 ## Prerequisites

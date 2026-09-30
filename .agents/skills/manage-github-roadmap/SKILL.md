@@ -35,7 +35,7 @@ status back into them.
 
 1. Read the leaf issue body, its parent, native `Blocked by` relationships, and
    linked repository evidence.
-2. Run `python3 tools/reconcile-issue-roadmap.py --repo tannerpolley/ePC-SAFT-greenfield`.
+2. Run `python3 tools/reconcile-issue-roadmap.py --repo tannerpolley/ePC-SAFT`.
 3. Proposed plan creation and maintenance do not authorize implementation. Do
    not implement unless the issue has `work:authorized`, every prerequisite is
    satisfied, and it is not paused or claimed. Readiness is not merge authority.

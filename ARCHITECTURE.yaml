@@ -19,7 +19,7 @@ artifact:
   public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
 
 plan:
-  delivery: https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones
+  delivery: https://github.com/tannerpolley/ePC-SAFT/milestones
   scientific_authority: docs/scientific/CONTEXT.md
   acceptance: engine/tests/oracle
   historical_evidence: docs/scientific/reviews

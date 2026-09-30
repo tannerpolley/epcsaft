@@ -11,7 +11,7 @@ once; their YAML index is generated. Optional HTML/PDF views must render the
 same source. Manuscripts may use LaTeX and analysis notebooks may use Quarto;
 neither becomes a second Engine specification. This is the repository's accepted CSE Markdown layout.
 
-The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 is the sole current gap and completion plan. Issue bodies own design, scope,
 acceptance, reuse and handoff; native relationships own hierarchy and
 prerequisites. The local [roadmap authority note](implementation-plan.md) contains
@@ -27,7 +27,7 @@ ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 The [modular-model proposal](proposals/modular-models/README.md) retains a
 source-linked design and separate five-step roadmap for selecting complete
 thermodynamic formulations with compatible parameters. It is deferred until
-the current greenfield roadmap is complete and adds no current milestones or
+the current roadmap is complete and adds no current milestones or
 accepted physics.
 
 ## Sources

@@ -1,5 +1,5 @@
 # the name by which the project can be referenced within Serena/when chatting with the LLM.
-project_name: epcsaft-greenfield
+project_name: epcsaft
 
 # The language backend to use for this project.
 # If not set, the global setting from serena_config.yml is used.

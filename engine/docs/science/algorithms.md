@@ -4,7 +4,7 @@ Accepted requirements, reconciled against the 2026-09-06 transfer audit.
 These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
 Algorithm IDs below are stable references. Current implementation and required
-numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues).
+numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT/issues).
 No section claims that all required actions currently exist. The implementation
 plan owns current versus deferred scope: PH/PS/UV and phase discovery are future
 work. Reuse current/old numerical owners and independent cases under its
@@ -589,7 +589,7 @@ For the P4 native caloric action surface, each of Ideal, Residual and Total
 in `(T,rho,x;theta)` or `(T,P,x;theta)` on one accepted density branch.
 Composition directions preserve normalization, charge balance and exact support;
 known fixed parameter slots project to zero, while unknown slots are input
-errors. The [accepted P4 design](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/19)
+errors. The [accepted P4 design](https://github.com/tannerpolley/ePC-SAFT/issues/19)
 specifies the qualification cases and numerical limits.
 
 | Caloric family | Value energy order | First action | Second action | Third action |

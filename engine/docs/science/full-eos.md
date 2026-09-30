@@ -4,7 +4,7 @@ This document owns symbols, bases, source applicability and EOS conventions.
 It states required behavior, not installed availability. The canonical
 [equation definitions](../equations.md) are edited once; repeated derivations
 below explain their meaning. [Algorithms](algorithms.md) own numerical methods
-and the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones) owns implementation gaps.
+and the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) owns implementation gaps.
 Correct mathematics is not weakened to match an implementation defect.
 
 ## 1. Sources and evidence classes
@@ -98,7 +98,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 The [equation catalogue](../equations.md) gives each defining relation a stable
 ID and source locator. Its YAML index is generated, not independently edited.
 Current native owners and numerical falsifiers are linked by the
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones). Historical `_native`
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones). Historical `_native`
 paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
