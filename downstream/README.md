@@ -8,7 +8,7 @@ it does not synchronize a main local application checkout.
 
 | Application | GitHub repository | Input and migration contract |
 |---|---|---|
-| MEA-Thermodynamics | [repository](https://github.com/tannerpolley/MEA-Thermodynamics) | `docs/coordination/greenfield-migration.md` |
+| Amine-Thermodynamics | [repository](https://github.com/tannerpolley/Amine-Thermodynamics) | `docs/coordination/greenfield-migration.md` |
 | Lithium_Extraction | [repository](https://github.com/tannerpolley/Lithium_Extraction) | `docs/coordination/greenfield-migration.md` |
 
 The current delivery focuses on these two applications. Absorber work is deferred;
