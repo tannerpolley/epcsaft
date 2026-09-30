@@ -219,6 +219,6 @@ and never enter the wheel.
 
 The [scientific owner map](../docs/scientific/CONTEXT.md) identifies the
 permanent equations and methods. The
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 records implementation gaps, including the absent regression module. Do not infer
 availability from historical usage examples or a registered equation.

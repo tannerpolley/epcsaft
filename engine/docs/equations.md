@@ -5,7 +5,7 @@ Canonical, human-editable equation definitions. Edit each equation here once;
 The index is not an implementation-availability declaration. Symbols, source
 applicability and conventions are in [full-eos.md](science/full-eos.md) and
 [formulation.md](equilibrium/formulation.md); methods and derivative domains
-are in [algorithms.md](science/algorithms.md). The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+are in [algorithms.md](science/algorithms.md). The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 links the current implementation and numerical evidence gaps.
 
 Each definition has one stable heading, the five metadata lines, and one

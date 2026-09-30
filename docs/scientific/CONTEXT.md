@@ -225,7 +225,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
 | Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
-| Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones) |
+| Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
 | Current code owners and required scientific evidence | This context, canonical Engine documents, tests, analyses and dated reviews |
 | Project structure: components, Engine layers, path ownership and artifact roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
@@ -272,7 +272,7 @@ retired by ADR 0006, and dipolar relative permittivity is a distinct input and e
 
 ## Implementation completion order
 
-The [GitHub milestones](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones)
+The [GitHub milestones](https://github.com/tannerpolley/ePC-SAFT/milestones)
 and owning issues define the current completion order, status, scope,
 acceptance, reuse decisions and estimates. Native issue relationships own
 prerequisites; milestone numbering expresses delivery priority, not an additional

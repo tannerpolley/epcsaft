@@ -3,7 +3,7 @@
 Implementation planning is not maintained in this file.
 
 The authoritative roadmap is the repository's
-[GitHub milestones](https://github.com/tannerpolley/ePC-SAFT-greenfield/milestones):
+[GitHub milestones](https://github.com/tannerpolley/ePC-SAFT/milestones):
 
 - issue bodies own design, implementation plan, scope, exclusions, acceptance,
   reuse decisions, estimates, handoffs and remaining work;
