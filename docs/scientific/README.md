@@ -30,6 +30,17 @@ thermodynamic formulations with compatible parameters. It is deferred until
 the current greenfield roadmap is complete and adds no current milestones or
 accepted physics.
 
+## Sources
+
+The Zotero collection **ePC-SAFT-Favorites** (`YR8SNI5D`) is the Engine's reading
+list, mirrored by the Zotero Companion project `epcsaft-equilibrium`. Start with
+`cse-zotero wiki-context epcsaft-equilibrium --query "<terms>" --json` (add
+`--global` when the project view is empty) and read exact passages with
+`cse-zotero wiki-evidence <KEY> --query "<terms>" --json`. Equation text and
+stable IDs stay in [equations.md](../../engine/docs/equations.md); Companion
+`implementation_reference` records point to them. Citation keys used by the
+Engine docs are listed in `engine/docs/latex/cited_keys.txt`.
+
 ## Live companion
 
 The root Quarto project presents the current map, a link to the GitHub roadmap,

@@ -7,7 +7,7 @@ Sources read and visually checked:
 
 - Alexander Mitsos and Paul I. Barton, “A dual extremum principle in
   thermodynamics,” *AIChE Journal* 53(8), 2131-2147 (2007), DOI
-  `10.1002/aic.11209`; local source
+  `10.1002/aic.11230`; local source
   `~/Zotero/storage/LU5Q79R8/Mitsos and Barton - 2007 - A dual extremum principle in thermodynamics.pdf`.
 - Felipe A. Perdomo et al., “Phase stability criteria and fluid-phase
   equilibria in strong-electrolyte systems,” *Computers & Chemical
