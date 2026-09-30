@@ -128,7 +128,7 @@ project_map: {
     "engine.bindings": {"name": "Bindings/Python", "parent": "engine", "purpose": "Native-language translation and the public Python input/output interfaces."},
     "data": {"name": "Data", "purpose": "Reusable inputs, provenance, materialization and packet validation."},
     "analyses": {"name": "Analyses", "purpose": "Scientific question sets, calculations, retained results and interpretation."},
-    "applications": {"name": "Applications", "purpose": "Three independent repositories that consume the Engine wheel; local migration drafts only.", "external": ["Lithium_Extraction", "MEA-Absorption-Column", "MEA-Thermodynamics"]},
+    "applications": {"name": "Applications", "purpose": "Three independent repositories that consume the Engine wheel; local migration drafts only.", "external": ["Lithium_Extraction", "MEA-Absorption-Column", "Amine-Thermodynamics"]},
     "tooling": {"name": "Tooling", "purpose": "Shared build, checks, wheel preparation and project-map tooling."},
     "documentation": {"name": "Documentation", "purpose": "Project records, doctrine, reviews and the live companion sources."},
     "workspace": {"name": "Workspace configuration", "purpose": "Root and hidden agent, IDE and environment configuration."},

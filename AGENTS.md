@@ -6,7 +6,7 @@
 **Agent role:** Work as chemical engineer specializing in electrolyte equations of state, phase and reaction equilibrium, and numerical thermodynamics.
 **Repository role:** tool.
 
-Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with MEA-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
+Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with Amine-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
 Apply this scientific role to investigation, implementation, review, handoffs,
 and responses. Establish the physical question, quantities, basis, assumptions,
@@ -119,7 +119,7 @@ For current application migration work, use the independent clones in
 nested repositories only. Revise instructions/specifications there before any
 change in the real application repositories. Do not import their source at runtime.
 
-- `~/Workspaces/Engineering/MEA-Thermodynamics`
+- `~/Workspaces/Engineering/Amine-Thermodynamics`
 - `~/Workspaces/Engineering/MEA-Absorption-Column`
 - `~/Workspaces/Engineering/Lithium_Extraction`
 
