@@ -6,6 +6,9 @@ compact numerical evidence, and retained scientific analyses.
 The independent repository is
 [tannerpolley/ePC-SAFT](https://github.com/tannerpolley/ePC-SAFT).
 Its `main` baseline preserves the accepted Core history from `cea695f`.
+The earlier repository is archived as
+[tannerpolley/ePC-SAFT-legacy-2](https://github.com/tannerpolley/ePC-SAFT-legacy-2)
+for its historical issues and reviews.
 
 Start with the [project map](docs/scientific/CONTEXT.md) for the purpose,
 scientific owners and one equilibrium driver. The
