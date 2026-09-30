@@ -11,6 +11,7 @@ namespace epcsaft::regression {
 void register_regression(py::module_& module) {
     py::enum_<ObservationKind>(module, "ObservationKind")
         .value("IsobaricHeatCapacity", ObservationKind::IsobaricHeatCapacity)
+        .value("LogEquilibriumConstant", ObservationKind::LogEquilibriumConstant)
         .value("Density", ObservationKind::Density)
         .value("PhaseDensity", ObservationKind::PhaseDensity)
         .value("EquilibriumPressure", ObservationKind::EquilibriumPressure)
@@ -41,6 +42,7 @@ void register_regression(py::module_& module) {
         .def_readwrite("composition", &Observation::composition)
         .def_readwrite("branch", &Observation::branch)
         .def_readwrite("problem", &Observation::problem)
+        .def_readwrite("reaction", &Observation::reaction)
         .def_readwrite("phase", &Observation::phase)
         .def_readwrite("species", &Observation::species)
         .def_readwrite("denominator_phase", &Observation::denominator_phase)

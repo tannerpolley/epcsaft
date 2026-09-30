@@ -1575,6 +1575,23 @@ $$
 \quad \mathbf F_{\theta_{r,k}}=\text{chemical rows only}.
 $$
 
+## `source_log_equilibrium_constant_observation`
+
+- Section: Regression / Reaction observations
+- Status: Exact derivation
+- Source: `reaction_constant_ln_polynomial` (Austgen et al. 1989, ln K(T) correlation); coefficient differentiation and existing Difference residual, issue #211
+- Description: A direct observation is the named reaction's declared source-basis natural-log equilibrium constant at fixed positive temperature. It does not contain the EOS reference contraction or an equilibrium-state derivative.
+- Change note: Fixed source declarations and Tref; a/b/c/d units are 1, K, 1, K⁻¹. Scalar K admits ln K with the a basis only. Reuse named-coordinate tying and rejection of fixed thermochemistry, affinity targets and dependent sets. Only Difference residuals are admitted. An absolute ln K uncertainty σ uses scale=1 and weight=σ⁻²; a chosen nondimensionalization scale requires the corresponding weight transformation. Covariance retains ALG-FIT's local rank/bound/error assumptions.
+
+$$
+y_r(T)=\ln K_{src,r}(T)=a_r+\frac{b_r}{T}+c_r\ln\frac{T}{T_{ref,r}}+d_rT,
+\qquad
+\frac{\partial y_r}{\partial\theta_{s,k}}=\delta_{rs}\left(1,\frac1T,\ln\frac{T}{T_{ref,r}},T\right)_k,
+\qquad
+\frac{\partial y_r}{\partial\theta_{EOS}}=0,
+\qquad r_i=\frac{y_i-y_{obs,i}}{scale_i}.
+$$
+
 ## `reaction_constant_log10_reciprocal`
 
 - Section: Equilibrium / Reaction standard states

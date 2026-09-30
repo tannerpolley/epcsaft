@@ -855,7 +855,7 @@ scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, plus the declared
-equilibrium observations. It uses affine, tied
+equilibrium observations and direct source-basis ln K observations. It uses affine, tied
 optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
@@ -866,6 +866,11 @@ coefficients and source basis. Rebuild each trial with those values, preserving
 reference transfers. Optimizer columns follow declaration order; physical rows
 are EOS slots first, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
+`LogEquilibriumConstant` uses the declared fixed positive temperature and named
+source record directly (EqID: `source_log_equilibrium_constant_observation`).
+It skips equilibrium compilation, reference transfer and solving; its exact
+columns reuse the coefficient basis above, with zero EOS/other-reaction columns.
+It admits Difference residuals only and shares named-coordinate admission.
 `PhaseAmountRatio` composes component amounts by the quotient rule; any constant
 caller factor belongs in the observed value and, for Difference, in its scale.
 Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants

@@ -426,7 +426,7 @@ FitResult fit(const FitRequest& request) {
         for (std::size_t i = 0; i < n; ++i) {
             auto& center = prepared.centers[groups[i]].compiled;
             const auto& observation = request.observations[i];
-            if (!center && !pressure_closed(observation.kind))
+            if (!center && !pressure_closed(observation.kind) && observation.kind != ObservationKind::LogEquilibriumConstant)
                 center = equilibrium::compile_problem(model, observation.problem);
             validate(observation, model, center ? &*center : nullptr);
         }

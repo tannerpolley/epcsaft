@@ -77,6 +77,16 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-09-30, direct source-basis ln K observations (#211, owner approved):
+  Regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
+  18805 → 18830, exactly the measured counts against `95ba231e` (+25 net
+  runtime lines: Regression +21, Bindings +2, Python type declarations +2).
+  Bindings measures 1723 within its unchanged 1725 hard ceiling. The direct
+  value uses the existing reaction-property owner; exact columns reuse the
+  existing reaction-coordinate basis and admission reuses named-coordinate
+  rejection. No equilibrium solve or source-reference transfer is required.
+  Floors, soft ceilings and other hard ceilings remain unchanged.
+
 - 2026-09-30, total molar isobaric heat-capacity fitting (#205 O2, owner approved):
   Regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
   18790 → 18805, the measured candidate counts. Relative to `d47d0475`,

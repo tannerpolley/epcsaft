@@ -718,6 +718,7 @@ def infinite_dilution_reference(model: HelmholtzModel, temperature: float, press
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...
 
 class ObservationKind:
+    LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
     PhaseDensity: ObservationKind
@@ -745,6 +746,7 @@ class ObservationStatus:
     InadmissibleTrial: ObservationStatus
 
 class Observation:
+    reaction: str
     kind: ObservationKind
     temperature: float
     pressure: float
