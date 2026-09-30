@@ -26,6 +26,11 @@ SolvedStateObservable observable(Kind kind, std::size_t phase, std::size_t compo
     return result;
 }
 
+template<class X, class Fields>
+bool optional_equal(const std::optional<X>& x, const std::optional<X>& y, const Fields& fields) {
+    return x.has_value() == y.has_value() && (!x || fields(*x) == fields(*y));
+}
+
 double mean_molar_mass(const Parameters& parameters, const double* composition, bool& missing) {
     double result = 0.0;
     for (std::size_t i = 0; i < parameters.component_count(); ++i) {
@@ -34,6 +39,13 @@ double mean_molar_mass(const Parameters& parameters, const double* composition, 
         result += composition[i] * mass;
     }
     return result;
+}
+
+double component_amount(const equilibrium::EquilibriumResult& state, std::size_t phase,
+                        const std::vector<std::size_t>& species) {
+    double value = 0.0;
+    for (const auto i : species) value += state.amounts[phase] * state.mole_fractions[phase * (state.mole_fractions.size() / state.phase_count) + i];
+    return value;
 }
 
 void finish(Prediction& prediction, const Observation& observation, double value) {
@@ -88,6 +100,18 @@ double residual_slope(const Observation& observation, double value) {
     return observation.form == ResidualForm::Difference ? 1.0 / observation.scale : 1.0 / value;
 }
 
+bool same_reaction(const equilibrium::ReactionSpec& x, const equilibrium::ReactionSpec& y) {
+    const auto correlation = [](const auto& v) {
+        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
+                        v.temperature_max, v.standard_state_id);
+    };
+    const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
+    return std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
+        == std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
+        && optional_equal(x.correlation, y.correlation, correlation)
+        && optional_equal(x.reference, y.reference, reference);
+}
+
 bool same_state(const Observation& left, const Observation& right) {
     // Density stays a singleton; equilibrium projection and residual metadata do not select physics.
     if (left.kind == ObservationKind::Density || right.kind == ObservationKind::Density) return false;
@@ -99,16 +123,8 @@ bool same_state(const Observation& left, const Observation& right) {
         return std::tie(v.name, v.kind, v.support, v.support_declared, v.amount.kind, v.amount.fraction,
                         v.composition_guess, v.packing_guess);
     };
-    const auto correlation = [](const auto& v) {
-        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
-                        v.temperature_max, v.standard_state_id);
-    };
-    const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
     const auto source = [](const auto& v) {
         return std::tie(v.solvent_index, v.solute_molality_ratios, v.standard_molality_mol_per_kg);
-    };
-    const auto optional_equal = [](const auto& x, const auto& y, const auto& fields) {
-        return x.has_value() == y.has_value() && (!x || fields(*x) == fields(*y));
     };
     if (intensive(a.temperature) != intensive(b.temperature) || intensive(a.pressure) != intensive(b.pressure)
         || feed(a.feed) != feed(b.feed) || a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol
@@ -117,14 +133,8 @@ bool same_state(const Observation& left, const Observation& right) {
         || !optional_equal(a.source_reference, b.source_reference, source)) return false;
     for (std::size_t i = 0; i < a.phases.size(); ++i)
         if (phase(a.phases[i]) != phase(b.phases[i])) return false;
-    for (std::size_t i = 0; i < a.reactions.size(); ++i) {
-        const auto& x = a.reactions[i];
-        const auto& y = b.reactions[i];
-        if (std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
-            != std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
-            || !optional_equal(x.correlation, y.correlation, correlation)
-            || !optional_equal(x.reference, y.reference, reference)) return false;
-    }
+    for (std::size_t i = 0; i < a.reactions.size(); ++i)
+        if (!same_reaction(a.reactions[i], b.reactions[i])) return false;
     return true;
 }
 
@@ -146,14 +156,20 @@ void validate(const Observation& observation, const HelmholtzModel& model,
                                 : equilibrium::compile_problem(model, observation.problem);
     const auto& compiled = prepared ? *prepared : *owned;
     require(observation.phase < compiled.problem.phases.size(), "phase index");
-    if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure) return;
-    require(!observation.species.empty(), "species set is empty");
-    const auto& support = compiled.problem.phases[observation.phase].support;
-    std::set<std::size_t> seen;
-    for (const auto species : observation.species) {
-        require(seen.insert(species).second, "species repeated");
-        require(std::find(support.begin(), support.end(), species) != support.end(),
-                "species outside the phase support");
+    if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure
+        && observation.kind != ObservationKind::PhaseAmountRatio) return;
+    for (const auto& [phase, species_set] : {std::pair{observation.phase, observation.species},
+             std::pair{observation.denominator_phase, observation.kind == ObservationKind::PhaseAmountRatio
+                 ? observation.denominator_species : observation.species}}) {
+        require(phase < compiled.problem.phases.size(), "denominator phase index");
+        require(!species_set.empty(), "species set is empty");
+        const auto& support = compiled.problem.phases[phase].support;
+        std::set<std::size_t> seen;
+        for (const auto species : species_set) {
+            require(seen.insert(species).second, "species repeated");
+            require(std::find(support.begin(), support.end(), species) != support.end(), "species outside the phase support");
+        }
+        if (observation.kind != ObservationKind::PhaseAmountRatio) break;
     }
 }
 
@@ -250,6 +266,11 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
         if (observation.kind == ObservationKind::PartialPressure) value *= solved.pressure.front();
         break;
+    case ObservationKind::PhaseAmountRatio:
+        result.unit = "1";
+        value = component_amount(solved, phase, observation.species)
+              / component_amount(solved, observation.denominator_phase, observation.denominator_species);
+        break;
     case ObservationKind::PhaseFraction: {
         result.unit = "1";
         double total = 0.0;
@@ -310,11 +331,14 @@ PredictionGradient differentiate(
 }
 
 std::vector<PredictionGradient> differentiate_group(
-    const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction
+    const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates
 ) {
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
-    const std::size_t width = model.active_parameters().size();
+    const std::size_t active_width = model.active_parameters().size();
+    std::vector<ReactionCoordinate> reactions;
+    for (const auto& c : coordinates.coordinates) if (c.reaction) reactions.push_back(*c.reaction);
+    const std::size_t width = active_width + reactions.size();
     const auto& solved = *prediction.solved;
     std::vector<std::vector<std::size_t>> slots(observations.size());
     std::vector<SolvedStateObservable> observables;
@@ -338,6 +362,11 @@ std::vector<PredictionGradient> differentiate_group(
                 add(observable(Kind::PhaseMoleFraction, phase, species));
             if (observation.kind == ObservationKind::PartialPressure) add(observable(Kind::Pressure, 0));
             break;
+        case ObservationKind::PhaseAmountRatio:
+            for (const auto i : observation.species) add(observable(Kind::PhaseComponentAmount, phase, i));
+            for (const auto i : observation.denominator_species)
+                add(observable(Kind::PhaseComponentAmount, observation.denominator_phase, i));
+            break;
         case ObservationKind::PhaseFraction:
             for (std::size_t q = 0; q < solved.phase_count; ++q) add(observable(Kind::PhaseAmount, q));
             break;
@@ -354,8 +383,20 @@ std::vector<PredictionGradient> differentiate_group(
     std::vector<equilibrium::SolvedStateActionDirection> directions(width);
     for (std::size_t k = 0; k < width; ++k) {
         directions[k].feed_amounts_mol.assign(components, 0.0);
-        directions[k].active_parameters.assign(width, 0.0);
-        directions[k].active_parameters[k] = 1.0;
+        directions[k].active_parameters.assign(active_width, 0.0);
+        if (k < active_width) directions[k].active_parameters[k] = 1.0;
+        else {
+            directions[k].reaction_log_constants.assign(prediction.compiled->problem.reactions.size(), 0.0);
+            const auto& target = reactions[k - active_width];
+            for (std::size_t j = 0; j < prediction.compiled->problem.reactions.size(); ++j) {
+                const auto& reaction = prediction.compiled->problem.reactions[j];
+                if (reaction.name != target.name) continue;
+                const double T = solved.temperature.front();
+                const double basis[] = {1.0, 1.0 / T,
+                    reaction.correlation ? std::log(T / reaction.correlation->reference_temperature) : 0.0, T};
+                directions[k].reaction_log_constants[j] = basis[static_cast<std::size_t>(target.coefficient)];
+            }
+        }
     }
     const auto batches = width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
         : equilibrium::solved_state_first_actions(*prediction.compiled, solved, observables, directions);
@@ -384,6 +425,15 @@ std::vector<PredictionGradient> differentiate_group(
             if (gradient.status != ObservationStatus::Available) break;
             double value = 0.0;
             switch (observation.kind) {
+            case ObservationKind::PhaseAmountRatio: {
+                const double A = component_amount(solved, phase, observation.species);
+                const double B = component_amount(solved, observation.denominator_phase, observation.denominator_species);
+                double dA = 0.0, dB = 0.0;
+                for (std::size_t i = 0; i < action.size(); ++i)
+                    (i < observation.species.size() ? dA : dB) += action[i];
+                value = (dA * B - A * dB) / (B * B);
+                break;
+            }
             case ObservationKind::PhaseFraction: {
                 double total = 0.0, total_action = 0.0;
                 for (std::size_t q = 0; q < solved.phase_count; ++q) {

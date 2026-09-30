@@ -381,6 +381,7 @@ struct SolvedStateActionDirection final {
     double pressure_pa = 0.0;
     std::vector<double> feed_amounts_mol;
     std::vector<double> active_parameters;
+    std::vector<double> reaction_log_constants;  // d(ln K)/dt by reaction; empty means zero
 };
 
 struct SolvedStateActionRequest final {

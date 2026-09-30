@@ -269,6 +269,18 @@ std::vector<ReactionSpec> central_reference_reactions(
     return result;
 }
 
+// The same minimum-norm reaction-to-species map for dimensionless standard-term slopes.
+std::vector<double> species_standard_slopes(double temperature, std::size_t components,
+    std::vector<ReactionSpec> reactions, const std::vector<double>& values) {
+    for (std::size_t row = 0; row < reactions.size(); ++row) {
+        reactions[row].equilibrium_constant.reset();
+        reactions[row].correlation.reset();
+        reactions[row].reference.reset();
+        reactions[row].affinity_j_per_mol = values[row];
+    }
+    return standard_state(temperature, components, reactions, {});
+}
+
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
     bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {}
@@ -322,14 +334,7 @@ StandardTerm standard_term(
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
                 values[row] = -*slope - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
             }
-            auto mapped = reactions;
-            for (std::size_t row = 0; row < mapped.size(); ++row) {
-                mapped[row].equilibrium_constant.reset();
-                mapped[row].correlation.reset();
-                mapped[row].reference.reset();
-                mapped[row].affinity_j_per_mol = values[row];
-            }
-            return standard_state(temperature, components, mapped, {});
+            return species_standard_slopes(temperature, components, reactions, values);
         };
         using Diagnostic = NeutralReferenceReactionDiagnostic;
         const std::vector<double> zero(reactions.size(), 0.0);
@@ -1519,13 +1524,13 @@ RowSeries CompiledSystem::row_series(
     const std::size_t n = prepared.point.size();
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = 2 + components + model->active_parameters().size();
-    if (state.size() != order + 1 || control.size() != width || order > 3)
+    if (state.size() != order + 1 || (control.size() != width && control.size() != width + problem.reactions.size()) || order > 3)
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
     const bool pressure_jets = problem.pressure.free || control[1] != 0.0;
     const bool temperature_jets = control[0] != 0.0;
-    const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.end());
+    const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
     if (!reference_diagnostics.empty()
@@ -1561,7 +1566,7 @@ RowSeries CompiledSystem::row_series(
             const auto values = model->active_parameter_values();
             std::copy(values.begin(), values.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2 + components));
         } else if (k == 1) {
-            std::copy(control.begin(), control.end(), input.begin() + static_cast<std::ptrdiff_t>(n));
+            std::copy_n(control.begin(), width, input.begin() + static_cast<std::ptrdiff_t>(n));
         }
         output[k] = geometry.Forward(k, input);
     }
@@ -1584,6 +1589,15 @@ RowSeries CompiledSystem::row_series(
             series.point.emplace_back(begin, begin + static_cast<std::ptrdiff_t>(width));
             series.amount.push_back(begin[static_cast<std::ptrdiff_t>(width)]);
             series.packing.push_back(begin[static_cast<std::ptrdiff_t>(width + 1)]);
+        }
+    }
+    if (order > 0 && control.size() > width) {
+        std::vector<double> targets(control.begin() + static_cast<std::ptrdiff_t>(width), control.end());
+        if (std::any_of(targets.begin(), targets.end(), [](double v) { return v != 0.0; })) {
+            for (auto& value : targets) value = -value;
+            const auto slope = species_standard_slopes(prepared.temperature, components, problem.reactions, targets);
+            for (std::size_t row = 0; row < rows.size(); ++row)
+                if (rows[row].kind == RowKind::Chemical) result.rows[1][row] += slope[rows[row].index];
         }
     }
     // Residual gradient coefficients: the Hessian action of each coefficient plus the model's

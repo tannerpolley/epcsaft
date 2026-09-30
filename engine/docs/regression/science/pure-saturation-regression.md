@@ -30,6 +30,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
 | PhaseMoleFraction | any declared specification, phase $p$, nonempty species set $S$ within its support | $\sum_{i\in S} x_{p,i}$ | 1 |
 | PhaseFraction | free amounts | $\beta_p = n_p / \sum_q n_q$ over the solved amounts, never the feed total | 1 |
+| PhaseAmountRatio | declared numerator phase/species set $(p,S)$ and denominator $(q,S')$ | $A/B$ with $A=\sum_S n_{p,i}$, $B=\sum_{S'}n_{q,i}$ and $B\ne0$ | 1 |
 | PartialPressure | any declared specification, phase $p$, nonempty species set $S$ within its support | $P\sum_{i\in S} x_{p,i}$ with the solved system pressure; `LogRatio` gives $\ln(p_S/p_{S,obs})$ | Pa |
 
 An unavailable prediction is typed, never a zero residual: a vanished or
@@ -46,13 +47,16 @@ and as $\mathrm{log1p}$ inside the named `LOG_RATIO_NEAR_UNITY` band; a nonposit
 `nonpositive_log_argument` and a residual that overflows is `nonfinite`
 while the independently valid value is retained. A mass basis is defined only
 for the two density kinds and is refused by name elsewhere.
+A constant factor multiplying an amount ratio is folded into its observed value;
+a Difference residual must scale its nondimensionalization scale by that same
+factor. Phase volumes are not inferred.
 The two forms are not commensurable by themselves; relative weights
 $w_i\ge 0$ enter the objective as $\sqrt{w_i}\,r_i$ and are declared
 separately from any absolute uncertainty.
 
 ## Parameter coordinates (R1)
 
-A physical coordinate is exactly the Properties active-parameter coordinate:
+An EOS physical coordinate is exactly the Properties active-parameter coordinate:
 one component slot for $m$, $\sigma$ and $\varepsilon/k$, one reciprocal pair
 for $k_{ij}$ and $l_{ij}$, one site pair or diagonal self-pair for
 $\varepsilon^{AB}/k$ and $\kappa^{AB}$, one reciprocal pair with a positive
@@ -62,16 +66,31 @@ absent from the active list is fixed. An optimizer coordinate is affine,
 $\theta = o + s\,u$ with $s>0$, with inclusive bounds in physical units mapped
 by the same transform; one optimizer coordinate may drive several tied slots of
 the same family through the fitting layer's linear map $\theta = o + S u$; tied
-values must agree at the start. The model's active list is the coordinate
-set's physical list in order, so every parameter direction of the shared
-owners is indexed by these rows.
+values must agree at the start. Physical rows contain all EOS slots in coordinate declaration order, followed by
+one row per reaction coordinate in declaration order. The model's active list
+contains the EOS rows only. Optimizer starts, bounds, columns and covariance
+keep coordinate declaration order; the tie map relates those two orders.
+
+A reaction coordinate is a named scalar ln K (coefficient a) or a stored
+`ReactionLogPolynomial` coefficient a, b, c, d, in units 1, K, 1, K⁻¹. It uses
+the same affine map and inclusive bounds. Name tying requires identical
+stoichiometry, constant representation and starts, correlation coefficients,
+Tref, interval and standard-state identity, and source basis/pressure. Referenced
+matches also share the solvent and common-molality standard; their dilution-path
+ratios may differ. The derivative is EqID:
+`reaction_constant_coordinate_derivative` evaluated at the solved temperature.
+Source/reference declarations are preserved in every trial. Scalar constants
+are rewritten as exp(ln K); correlations keep their native stored coefficients.
+Affinity targets, supplied Gibbs values, dependent reaction sets, thermochemistry-
+fixed unreferenced constants and referenced free-temperature requests cannot be
+fitted. No coefficient Hessians or caloric coefficient actions are claimed.
 
 ## Prediction Jacobians and fitting (R2, R3)
 
 $\partial y/\partial\theta$ comes from the shared owners only: the Properties
 pressure-chart density action for Density and the solved-state actions of the
 equilibrium driver for every other kind (a linear sum over $S$, the quotient
-rule for $\beta_p$, the product rule for a mass basis and for
+rule for $\beta_p$ and amount ratios ($d(A/B)=(dA\,B-A\,dB)/B^2$), the product rule for a mass basis and for
 $\mathrm{d}(P\sum_S x) = \mathrm{d}P\sum_S x + P\sum_S\mathrm{d}x$). One
 first-action batch per state carries every declared observable and active
 direction at one factorization of the solved Jacobian, reusing the problem compiled for the solve; a referenced

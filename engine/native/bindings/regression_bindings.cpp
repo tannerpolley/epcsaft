@@ -16,7 +16,8 @@ void register_regression(py::module_& module) {
         .value("EquilibriumTemperature", ObservationKind::EquilibriumTemperature)
         .value("PhaseMoleFraction", ObservationKind::PhaseMoleFraction)
         .value("PhaseFraction", ObservationKind::PhaseFraction)
-        .value("PartialPressure", ObservationKind::PartialPressure);
+        .value("PartialPressure", ObservationKind::PartialPressure)
+        .value("PhaseAmountRatio", ObservationKind::PhaseAmountRatio);
     py::enum_<ResidualForm>(module, "ResidualForm")
         .value("Difference", ResidualForm::Difference)
         .value("LogRatio", ResidualForm::LogRatio);
@@ -40,6 +41,8 @@ void register_regression(py::module_& module) {
         .def_readwrite("problem", &Observation::problem)
         .def_readwrite("phase", &Observation::phase)
         .def_readwrite("species", &Observation::species)
+        .def_readwrite("denominator_phase", &Observation::denominator_phase)
+        .def_readwrite("denominator_species", &Observation::denominator_species)
         .def_readwrite("mass_basis", &Observation::mass_basis)
         .def_readwrite("observed", &Observation::observed)
         .def_readwrite("form", &Observation::form)
@@ -58,10 +61,18 @@ void register_regression(py::module_& module) {
         .def_readonly("value", &PredictionGradient::value)
         .def_readonly("status", &PredictionGradient::status)
         .def_readonly("message", &PredictionGradient::message);
+    py::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
+        .value("A", ReactionCoefficient::A).value("B", ReactionCoefficient::B)
+        .value("C", ReactionCoefficient::C).value("D", ReactionCoefficient::D);
+    py::class_<ReactionCoordinate>(module, "ReactionCoordinate")
+        .def(py::init<>())
+        .def_readwrite("name", &ReactionCoordinate::name)
+        .def_readwrite("coefficient", &ReactionCoordinate::coefficient);
     py::class_<Coordinate>(module, "Coordinate")
         .def(py::init<>())
         .def_readwrite("family", &Coordinate::family)
         .def_readwrite("slots", &Coordinate::slots)
+        .def_readwrite("reaction", &Coordinate::reaction)
         .def_readwrite("origin", &Coordinate::origin)
         .def_readwrite("scale", &Coordinate::scale)
         .def_readwrite("lower", &Coordinate::lower)

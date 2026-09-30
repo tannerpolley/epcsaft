@@ -34,10 +34,11 @@ _KINDS = {
     "mole_fraction": ObservationKind.PhaseMoleFraction,
     "phase_fraction": ObservationKind.PhaseFraction,
     "partial_pressure": ObservationKind.PartialPressure,
+    "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
 __all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "coordinate", "density",
-           "differentiate", "fit", "fitted_parameters", "observation", "predict")
+           "differentiate", "fit", "fitted_parameters", "observation", "predict", "reaction_coordinate")
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -76,6 +77,19 @@ def coordinate(parameters: Parameters, family: str, *targets: object, origin: fl
     return result
 
 
+def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: float,
+                        bounds: tuple[float, float] | None = None) -> Coordinate:
+    """Fit a/ln K (1), b (K), c (1) or d (1/K), tied on the named source-basis reaction."""
+    if coefficient not in ("a", "b", "c", "d"):
+        raise ParameterError(f"unknown reaction coefficient {coefficient}")
+    target = _core.ReactionCoordinate()
+    target.name, target.coefficient = name, getattr(_core.ReactionCoefficient, coefficient.upper())
+    result = Coordinate()
+    result.reaction, result.origin, result.scale = target, origin, scale
+    result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
+    return result
+
+
 def _finish(result: Observation, observed: float, form: str, scale: float | None, mass_basis: bool) -> Observation:
     if form not in _FORMS:
         raise ParameterError(f"unknown residual form {form}")
@@ -100,10 +114,11 @@ def density(parameters: Parameters, T: float, P: float, x: Mapping[str, float], 
 
 
 def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool,
-                phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None) -> Observation:
+                phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
+                denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
     mole_fraction (summed over `species` in `phase`), partial_pressure (P times that sum, Pa) or
-    phase_fraction (mole basis)."""
+    phase_fraction (mole basis), or amount_ratio (phase-component amounts)."""
     if kind not in _KINDS:
         raise ParameterError(f"unknown observation kind {kind}")
     if isinstance(problem.phases, Discover):
@@ -115,6 +130,9 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]
+    if kind == "amount_ratio":
+        result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
+        result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
     return _finish(result, observed, form, scale, mass_basis)
 
 

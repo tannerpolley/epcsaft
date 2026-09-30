@@ -304,6 +304,14 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             || !std::all_of(direction.active_parameters.begin(), direction.active_parameters.end(),
                             [](double v) { return std::isfinite(v); }))
             throw std::invalid_argument("solved-state action direction");
+        if ((!direction.reaction_log_constants.empty() && direction.reaction_log_constants.size() != problem.reactions.size())
+            || !std::all_of(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
+                            [](double v) { return std::isfinite(v); }))
+            throw std::invalid_argument("solved-state reaction log-constant direction");
+        if (!problem.standard_gibbs_j_per_mol.empty()
+            && std::any_of(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
+                           [](double v) { return v != 0.0; }))
+            throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
         if (problem.temperature.free && direction.temperature_k != 0.0)
             throw std::invalid_argument("free temperature is a solved output, not an external control");
         if (problem.pressure.free && direction.pressure_pa != 0.0)
@@ -668,7 +676,7 @@ static SolvedStateActionBatch evaluate_action(
     const auto& model = *compiled.model;
     const std::size_t components = model.parameters().component_count();
     const std::size_t actives = model.active_parameters().size();
-    const std::size_t width = 2 + components + actives;
+    const std::size_t width = 2 + components + actives + problem.reactions.size();
     const std::size_t order = request.directions.size();
     SolvedStateActionBatch batch;
     batch.diagnostics.equation_count = compiled.rows.size();
@@ -720,6 +728,9 @@ static SolvedStateActionBatch evaluate_action(
         std::vector<double> control = {direction.temperature_k, direction.pressure_pa};
         control.insert(control.end(), direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end());
         control.insert(control.end(), direction.active_parameters.begin(), direction.active_parameters.end());
+        control.resize(width, 0.0);
+        std::copy(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
+                  control.begin() + static_cast<std::ptrdiff_t>(2 + components + actives));
         double largest = 0.0;
         for (std::size_t i = 0; i < width; ++i) largest = std::max(largest, std::abs(control[i]) / scale[i]);
         controls.push_back(std::move(control));

@@ -96,11 +96,13 @@ public:
         }
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
-        const std::size_t n = request_.observations.size(), width = active_.size();
+        const std::size_t n = request_.observations.size(), width = tie_.size();
         Trial fresh;
         Trial& trial = same_point ? *cached_ : fresh;
         try {
             if (!same_point) {
+                trial.observations = request_.observations;
+                request_.coordinates.apply(trial.observations, optimizer);
                 trial.model = std::make_unique<HelmholtzModel>(request_.coordinates.apply(request_.parameters, optimizer),
                                                               active_, request_.thermochemistry);
                 trial.centers.resize(groups_.size());
@@ -161,6 +163,7 @@ public:
 private:
     struct Trial final {
         std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
+        std::vector<Observation> observations;
         std::vector<Prediction> centers;
         std::vector<double> optimizer;
         Evaluation evaluation;
@@ -177,7 +180,7 @@ private:
         std::vector<std::vector<PredictionGradient>> gradients(n);
         std::vector<std::size_t> position(n, 0);
         for (std::size_t i = 0; i < n; ++i) {
-            const auto& observation = request_.observations[i];
+            const auto& observation = trial.observations[i];
             const std::size_t g = groups_[i];
             auto& prediction = trial.centers[g];
             if (!prediction.value) {
@@ -199,10 +202,10 @@ private:
                 scope.probe("anchor", static_cast<double>(g));
                 std::vector<const Observation*> rows;
                 for (std::size_t row = 0; row < n; ++row)
-                    if (groups_[row] == g) rows.push_back(&request_.observations[row]);
+                    if (groups_[row] == g) rows.push_back(&trial.observations[row]);
                 gradients[g] = observation.kind == ObservationKind::Density
                     ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                    : differentiate_group(model, rows, prediction);
+                    : differentiate_group(model, rows, prediction, request_.coordinates);
             }
             const auto& gradient = gradients[g][position[g]++];
             if (gradient.status != ObservationStatus::Available)
@@ -415,7 +418,7 @@ FitResult fit(const FitRequest& request) {
     std::vector<double> sqrt_weights(n, 1.0);
     const auto groups = state_groups(request.observations);
     try {
-        validate(set, request.parameters);
+        validate(set, request.parameters, request.observations, request.thermochemistry);
         const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
         require(n > 0, "needs observations");
         core::Scope validation("fit_validation");
@@ -444,7 +447,7 @@ FitResult fit(const FitRequest& request) {
     }
     const std::size_t width = set.coordinates.size();
     Evaluator evaluator(request, result, groups, sqrt_weights);
-    std::vector<double> optimizer = set.start(request.parameters);
+    std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
     Evaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
         result.status = "initial_evaluation_failed";
