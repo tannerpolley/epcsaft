@@ -892,6 +892,177 @@ std::string summary(const FitResult& result) {
                    field("covariance", result.covariance.status)});
 }
 
+// Held, Cameretti and Sadowski (2008), Table 1 / Eq. (7), packet v3 neutral water subset.
+Parameters water_parameters() {
+    auto p = properties_support::parameters(1);
+    p.segment_count = {1.204659};
+    p.sigma_constant = {2.7927};
+    p.dispersion_energy_over_k = {353.9449};
+    p.molar_mass_kg_per_mol = {0.01801528};
+    p.sigma_term_component = {0, 0};
+    p.sigma_term_amplitude = {10.11, -1.417};
+    p.sigma_term_exponent = {-0.01775, -0.01146};
+    p.site_component = {0, 0};
+    p.site_multiplicity = {1, 1};
+    p.association_active = {0, 1, 1, 0};
+    p.association_energy_over_k = {0.0, 2425.6714, 2425.6714, 0.0};
+    p.association_volume = {0.0, 0.0450989, 0.0450989, 0.0};
+    return p;
+}
+
+ThermochemistryRecord constant_cp(std::size_t components) {
+    ThermochemistryRecord record;
+    record.standard_pressure = 1.0e5;
+    record.component_intervals.assign(components, {{150.0, 500.0, true, true,
+        {IdealPolynomial{{4.0 * GAS_CONSTANT_J_PER_MOL_K}, 300.0, 0.0, 0.0}, 1.0e5}}});
+    return record;
+}
+
+CoordinateSet water_coordinates() {
+    CoordinateSet set;
+    set.coordinates = {
+        {ParameterFamily::SegmentCount, {{0}}, 1.204659, 0.1, 0.8, 2.0},
+        {ParameterFamily::SigmaConstant, {{0}}, 2.7927, 0.05, 2.4, 3.2},
+        {ParameterFamily::DispersionEnergyOverK, {{0}}, 353.9449, 10.0, 200.0, 500.0},
+        {ParameterFamily::AssociationEnergyOverK, {{1, 2}}, 2425.6714, 100.0, 1500.0, 3500.0},
+        {ParameterFamily::AssociationVolume, {{1, 2}}, 0.0450989, 0.005, 0.005, 0.2}};
+    return set;
+}
+
+void check_cp_derivatives() {
+    struct Case { const char* name; Parameters parameters; double T, P; std::vector<double> x;
+                  std::vector<ActiveParameter> active; std::vector<double> steps; };
+    const auto water_active = water_coordinates().active_parameters();
+    const std::vector<Case> cases = {
+        {"a1", properties_support::ethane(), 200.0, 217800.6949469248, {1.0},
+         {{ParameterFamily::SegmentCount, {0}}, {ParameterFamily::SigmaConstant, {0}},
+          {ParameterFamily::DispersionEnergyOverK, {0}}}, {5e-4, 5e-4, 0.05}},
+        {"a2-298", water_parameters(), 298.15, 1e5, {1.0}, water_active, {5e-4, 5e-4, 0.05, 1.0, 1e-5}},
+        {"a2-400", water_parameters(), 400.0, 1e6, {1.0}, water_active, {5e-4, 5e-4, 0.05, 1.0, 1e-5}},
+        {"a3", properties_support::associating_binary(), 313.15, 1e5, {0.25, 0.75},
+         {{ParameterFamily::Kij, {1, 2}}, {ParameterFamily::SegmentCount, {0}},
+          {ParameterFamily::AssociationEnergyOverK, {3, 12}},
+          {ParameterFamily::AssociationVolume, {11, 14}}}, {1e-4, 5e-4, 1.0, 1e-5}}};
+    for (const auto& c : cases) {
+        const auto thermal = constant_cp(c.x.size());
+        const HelmholtzModel model(c.parameters, c.active, thermal);
+        auto item = density(c.T, c.P, c.x, DensityBranch::Liquid);
+        item.kind = ObservationKind::IsobaricHeatCapacity;
+        const auto value = predict(model, item);
+        const auto gradient = differentiate(model, item, value);
+        CHECK(value.status == ObservationStatus::Available && gradient.status == ObservationStatus::Available);
+        const auto state = model.state_at_pressure(c.T, c.P, c.x, item.branch);
+        const std::string id = std::string("cp-a/") + c.name;
+        const auto inputs = fields({field("T_K", c.T), field("P_Pa", c.P), field("x", c.x)});
+        CHECK(agree(id + "/ideal-value", "ideal_cp", "J/(mol K)",
+            *value.value - *state.residual_isobaric_heat_capacity, 4.0 * GAS_CONSTANT_J_PER_MOL_K,
+            1e-12 * std::max(1.0, *value.value), 0.0, inputs,
+            "the total prediction contains the known constant ideal contribution", "cp-a"));
+        double lift_ratio = 0.0;
+        for (std::size_t k = 0; k < c.active.size(); ++k) {
+            const auto& active = c.active[k];
+            const auto closure = [&](double shift) {
+                auto p = c.parameters;
+                for (const auto index : active.indices) detail::family_values(p, active.family)[index] += shift;
+                return *predict(HelmholtzModel(p, {}, thermal), item).value;
+            };
+            const auto rungs = ladder(closure, c.steps[k]);
+            const double richardson = (4.0 * rungs.fine - rungs.coarse) / 3.0;
+            const auto column_inputs = fields({inputs, field("step", c.steps[k]), field("fd_signal", std::abs(rungs.fine)),
+                                               field("richardson", richardson), field("fine_minus_coarse", rungs.fine - rungs.coarse),
+                                               field("richardson_correction", richardson - rungs.fine),
+                                               field("richardson_error", std::abs(gradient.value[k] - richardson))});
+            const auto column = id + "/" + std::to_string(k);
+            // Owner amendment: these two physical sensitivities lie below the native-unit signal floor.
+            const bool weak = k == 2 && (std::string(c.name) == "a2-298" || std::string(c.name) == "a3");
+            if (weak) {
+                CHECK(agree(column + "/fine", "dcp_dtheta", "native", gradient.value[k], rungs.fine,
+                            FIRST_ORDER * std::abs(rungs.fine), 0.0, column_inputs,
+                            "the weak physical action agrees within the stricter relative criterion", "cp-a"));
+                CHECK(agree(column + "/coarse", "dcp_dtheta", "native", gradient.value[k], rungs.coarse,
+                            4.0 * FIRST_ORDER * std::abs(rungs.fine), 0.0, column_inputs,
+                            "the coarse relative rung carries at most four times the criterion", "cp-a"));
+                CHECK(truth(column + "/resolved", "finite-difference refinement resolves the relative criterion",
+                    std::isfinite(rungs.fine) && rungs.fine != 0.0
+                    && std::abs(rungs.fine - rungs.coarse) < FIRST_ORDER * std::abs(rungs.fine)
+                    && std::abs(richardson - rungs.fine) < FIRST_ORDER * std::abs(rungs.fine), column_inputs, "cp-a"));
+            } else {
+                CHECK(ladder_agrees(column, "dcp_dtheta", gradient.value[k], rungs, column_inputs,
+                                   "the fixed-pressure action agrees with rebuilt-model central differences", "cp-a"));
+            }
+            CHECK(agree(column + "/richardson", "dcp_dtheta", "native", gradient.value[k], richardson,
+                        FIRST_ORDER * (weak ? std::abs(richardson) : std::max(1.0, std::abs(richardson))), 0.0, column_inputs,
+                        "the action agrees with Richardson extrapolation", "cp-a"));
+            CHECK(truth(column + "/signal", "the difference carries a nonzero parameter signal",
+                        weak ? std::isfinite(rungs.fine) && rungs.fine != 0.0 : std::abs(rungs.fine) >= 1e-2,
+                        column_inputs, "cp-a"));
+            const ParameterActionDirection parameter{active.family, active.indices, 1.0};
+            const auto pressure = model.pressure_actions(c.T, c.P, c.x, item.branch,
+                {PropertyObservable::TotalIsobaricHeatCapacity, PropertyObservable::ResidualIsobaricHeatCapacity},
+                {{0.0, 0.0, std::vector<double>(c.x.size(), 0.0), {parameter}}});
+            const auto fixed = model.density_actions(c.T, state.molar_density, c.x,
+                {PropertyObservable::TotalIsobaricHeatCapacity},
+                {{0.0, 0.0, std::vector<double>(c.x.size(), 0.0), {parameter}}});
+            CHECK(pressure.results[0].action && pressure.results[1].action && fixed.results[0].action);
+            CHECK(agree(column + "/ideal-action", "dcp_dtheta", "native", *pressure.results[0].action,
+                        *pressure.results[1].action, 0.0, 1e-12, column_inputs,
+                        "fixed ideal thermochemistry carries no parameter action", "cp-a"));
+            lift_ratio = std::max(lift_ratio, std::abs(gradient.value[k] - *fixed.results[0].action)
+                / (FIRST_ORDER * std::max(1.0, std::abs(rungs.fine))));
+        }
+        CHECK(truth(id + "/density-lift", "at least one omitted density lift exceeds 1000 criteria",
+                    lift_ratio > 1e3, fields({inputs, field("lift_criterion_ratio", lift_ratio)}), "cp-a"));
+    }
+    auto item = density(200.0, 217800.6949469248, {1.0}, DensityBranch::Liquid);
+    item.kind = ObservationKind::IsobaricHeatCapacity;
+    const auto missing = predict(HelmholtzModel(properties_support::ethane()), item);
+    CHECK(truth("cp-a/missing", "missing thermochemistry is typed and never a value",
+        missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value && missing.message == "missing_record",
+        field("message", missing.message), "cp-a"));
+    item.pressure = 1e10;
+    const auto absent = predict(HelmholtzModel(properties_support::ethane(), {}, constant_cp(1)), item);
+    CHECK(truth("cp-a/root", "an absent density root retains its typed cause",
+        absent.status == ObservationStatus::DensityUnavailable && !absent.value && !absent.message.empty(),
+        field("message", absent.message), "cp-a"));
+}
+
+void check_cp_recovery() {
+    FitRequest request;
+    request.parameters = water_parameters();
+    request.coordinates = water_coordinates();
+    request.thermochemistry = constant_cp(1);
+    const HelmholtzModel known(request.parameters, {}, request.thermochemistry);
+    for (double T : {300.0, 340.0, 380.0, 420.0}) {
+        auto rho = density(T, 1e6, {1.0}, DensityBranch::Liquid);
+        auto cp = rho;
+        cp.kind = ObservationKind::IsobaricHeatCapacity;
+        auto sat = solved(ObservationKind::EquilibriumPressure, pure_saturation(T, 1e5));
+        for (auto item : {rho, cp, sat}) {
+            const auto prediction = predict(known, item);
+            CHECK(prediction.status == ObservationStatus::Available);
+            item.observed = *prediction.value;
+            request.observations.push_back(item);
+        }
+    }
+    for (const auto& active : request.coordinates.active_parameters())
+        for (const auto index : active.indices)
+            detail::family_values(request.parameters, active.family)[index] *=
+                active.family == ParameterFamily::AssociationVolume ? 1.05 : 1.02;
+    const auto result = fit(request);
+    const auto inputs = fields({summary(result), field("singular_values", result.covariance.singular_values),
+                               field("rank", result.covariance.rank)});
+    CHECK(truth("cp-b/converged", "five-coordinate recovery converges with no trial failures",
+        result.status == "converged" && result.usable && result.trial_failures == 0, inputs, "cp-b"));
+    for (std::size_t k = 0; k < 5; ++k)
+        CHECK(agree("cp-b/value/" + std::to_string(k), "parameter", "native", result.physical[k],
+            request.coordinates.coordinates[k].origin, 0.0, 1e-6, inputs,
+            "the known physical coordinate is recovered", "cp-b"));
+    CHECK(agree("cp-b/cost", "cost", "1", result.final_cost, 0.0, 1e-14, 0.0, inputs,
+                "the manufactured residual cost vanishes", "cp-b"));
+    CHECK(truth("cp-b/rank", "the conditional covariance is available with rank five",
+                result.covariance.status == "available" && result.covariance.rank == 5, inputs, "cp-b"));
+}
+
 void check_j2() {
     const auto truth_case = manufactured();
     const auto result = fit(recovery_request(truth_case, 148.0, 0.0));
@@ -1466,6 +1637,8 @@ int main(int argc, char** argv) {
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},
         {{"native.regression.reaction-rejections", "Reaction_constant_admission", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-rejection/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-rejections"}, check_reaction_rejections, "R2"},
+        {{"native.regression.cp-derivatives", "Isobaric_heat_capacity_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-a/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-derivatives"}, check_cp_derivatives, "R2"},
+        {{"native.regression.cp-recovery", "Isobaric_heat_capacity_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-b/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-recovery"}, check_cp_recovery, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},
     });
 }

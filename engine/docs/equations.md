@@ -803,6 +803,22 @@ $$
 \left.\frac{d\rho_m}{d\theta}\right|_P=-\frac{P_\theta}{P_\rho}.
 $$
 
+## `fixed_pressure_heat_capacity_parameter_derivative`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Composition of `fixed_pressure_total_derivative`, `total_heat_capacity_cp` and `residual_heat_capacity_cp`
+- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
+- Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
+
+$$
+\left.\frac{dc_p}{d\theta}\right|_{T,P,\mathbf{x}}
+=\left.\frac{\partial c_p^{res}}{\partial\theta}\right|_{T,\rho,\mathbf{x}}
+-\left.\frac{\partial c_p^{res}}{\partial\rho}\right|_{T,\theta,\mathbf{x}}
+ \frac{P_\theta}{P_\rho},
+\qquad \frac{dc_p^{id}}{d\theta}=0,\qquad P_\rho>0.
+$$
+
 ## `formula_unit_composition`
 
 - Section: Electrolyte reference states and reported activities

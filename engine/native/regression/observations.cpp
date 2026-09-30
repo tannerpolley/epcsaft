@@ -65,6 +65,7 @@ void finish(Prediction& prediction, const Observation& observation, double value
 const char* observation_status_name(ObservationStatus status) noexcept {
     switch (status) {
     case ObservationStatus::Available: return "available";
+    case ObservationStatus::ThermochemistryUnavailable: return "thermochemistry_unavailable";
     case ObservationStatus::DensityUnavailable: return "density_unavailable";
     case ObservationStatus::CentralSolveUnavailable: return "central_solve_unavailable";
     case ObservationStatus::TopologyEvent: return "topology_event";
@@ -113,8 +114,8 @@ bool same_reaction(const equilibrium::ReactionSpec& x, const equilibrium::Reacti
 }
 
 bool same_state(const Observation& left, const Observation& right) {
-    // Density stays a singleton; equilibrium projection and residual metadata do not select physics.
-    if (left.kind == ObservationKind::Density || right.kind == ObservationKind::Density) return false;
+    // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
+    if (pressure_closed(left.kind) || pressure_closed(right.kind)) return false;
     const auto& a = left.problem;
     const auto& b = right.problem;
     const auto intensive = [](const auto& v) { return std::tie(v.free, v.value, v.absent); };
@@ -146,7 +147,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
             || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
-    if (observation.kind == ObservationKind::Density) {
+    if (pressure_closed(observation.kind)) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
         require(std::isfinite(observation.pressure) && observation.pressure > 0.0, "pressure");
         require(observation.composition.size() == components, "composition");
@@ -182,8 +183,9 @@ Prediction predict(
     result.compiled = std::move(prepared);
     const auto& parameters = model.parameters();
     bool missing_mass = false;
-    if (observation.kind == ObservationKind::Density) {
-        result.unit = observation.mass_basis ? "kg/m^3" : "mol/m^3";
+    if (pressure_closed(observation.kind)) {
+        result.unit = observation.kind == ObservationKind::IsobaricHeatCapacity ? "J/(mol K)"
+            : observation.mass_basis ? "kg/m^3" : "mol/m^3";
         State state;
         try {
             state = model.state_at_pressure(observation.temperature, observation.pressure,
@@ -201,7 +203,15 @@ Prediction predict(
         result.convergence = state.density_convergence;
         result.branch = state.density_branch;
         result.stable_root_count = state.stable_root_count;
-        double value = state.molar_density;
+        if (observation.kind == ObservationKind::IsobaricHeatCapacity && !state.total_isobaric_heat_capacity) {
+            result.status = state.thermochemistry_status == ThermochemistryStatus::Available
+                ? ObservationStatus::Nonfinite : ObservationStatus::ThermochemistryUnavailable;
+            result.message = state.thermochemistry_status == ThermochemistryStatus::MissingRecord ? "missing_record"
+                : state.thermochemistry_status == ThermochemistryStatus::OutsideInterval ? "outside_interval" : "nonfinite";
+            return result;
+        }
+        double value = observation.kind == ObservationKind::IsobaricHeatCapacity
+            ? *state.total_isobaric_heat_capacity : state.molar_density;
         if (observation.mass_basis)
             value *= mean_molar_mass(parameters, observation.composition.data(), missing_mass);
         if (missing_mass) {
@@ -246,6 +256,7 @@ Prediction predict(
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
+    if (pressure_closed(observation.kind)) return;
     const auto& solved = *result.solved;
     bool missing_mass = false;
     result.value.reset();
@@ -285,6 +296,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         value = solved.molar_densities[phase];
         if (observation.mass_basis) value *= mean_molar_mass(parameters, fractions, missing_mass);
         break;
+    case ObservationKind::IsobaricHeatCapacity:
     case ObservationKind::Density:
         break;
     }
@@ -300,7 +312,7 @@ PredictionGradient differentiate(
 ) {
     if (prediction.status != ObservationStatus::Available)
         return {{}, prediction.status, prediction.message};
-    if (observation.kind != ObservationKind::Density)
+    if (!pressure_closed(observation.kind))
         return differentiate_group(model, {&observation}, prediction).front();
     PredictionGradient gradient;
     const auto& active = model.active_parameters();
@@ -317,16 +329,23 @@ PredictionGradient differentiate(
     bool missing_mass = false;
     const double factor = observation.mass_basis
         ? mean_molar_mass(parameters, observation.composition.data(), missing_mass) : 1.0;
-    for (std::size_t first = 0; first < width; first += 3) {
+    const bool caloric = observation.kind == ObservationKind::IsobaricHeatCapacity;
+    const std::size_t count = caloric ? 1 : 3;
+    const std::vector<PropertyObservable> observables = caloric
+        ? std::vector<PropertyObservable>{PropertyObservable::TotalIsobaricHeatCapacity} : std::vector<PropertyObservable>{};
+    for (std::size_t first = 0; first < width; first += count) {
         std::vector<PressureActionDirection> directions;
-        for (std::size_t k = first; k < width && k < first + 3; ++k)
+        for (std::size_t k = first; k < width && k < first + count; ++k)
             directions.push_back({0.0, 0.0, std::vector<double>(components, 0.0),
                                   {{active[k].family, active[k].indices, 1.0}}});
         const auto batch = model.pressure_actions(observation.temperature, observation.pressure,
-            observation.composition, observation.branch, {}, directions);
-        if (batch.density_status != PropertyActionStatus::Available) return unavailable("density action");
+            observation.composition, observation.branch, observables, directions);
+        if (batch.density_status != PropertyActionStatus::Available)
+            return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
+        if (caloric && batch.results[0].status != PropertyActionStatus::Available)
+            return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)
-            gradient.value[first + k] = batch.density_action[k] * factor;
+            gradient.value[first + k] = (caloric ? *batch.results[0].action : batch.density_action[k]) * factor;
     }
     gradient.status = ObservationStatus::Available;
     return gradient;
@@ -378,6 +397,7 @@ std::vector<PredictionGradient> differentiate_group(
                 for (std::size_t i = 0; i < components; ++i)
                     add(observable(Kind::PhaseMoleFraction, phase, i));
             break;
+        case ObservationKind::IsobaricHeatCapacity:
         case ObservationKind::Density: break;
         }
     }

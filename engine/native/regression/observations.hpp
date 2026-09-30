@@ -11,27 +11,30 @@
 namespace epcsaft::regression {
 
 // The built-in observation inventory (#46). Values come from the shared owners only:
-// Density from the Properties pressure closure, every other kind from one declared
+// Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
-    Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
+    Density, IsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio
 };
+inline bool pressure_closed(ObservationKind kind) {
+    return kind == ObservationKind::Density || kind == ObservationKind::IsobaricHeatCapacity;
+}
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
     Available, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
-    NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
+    ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
 };
 const char* observation_status_name(ObservationStatus status) noexcept;
 
 struct Observation final {
     ObservationKind kind = ObservationKind::Density;
-    // Density: T (K), P (Pa), normalized composition and the declared branch.
+    // Density and total c_p: T (K), P (Pa), normalized composition and the declared branch.
     double temperature = 0.0;
     double pressure = 0.0;
     std::vector<double> composition;
     DensityBranch branch = DensityBranch::Unspecified;
-    // Every other kind: the declared problem; `phase` indexes its phases, `species` is a
+    // Equilibrium kinds: the declared problem; `phase` indexes its phases, `species` is a
     // nonempty set inside that phase's support (PhaseMoleFraction and PartialPressure sum the set).
     equilibrium::EquilibriumProblem problem;
     std::size_t phase = 0;
@@ -54,7 +57,7 @@ struct Prediction final {
     std::string message;
     std::optional<double> residual;  // the declared form, unweighted
     std::optional<core::Convergence> convergence;
-    // Density: the branch the closure resolved (Unspecified when one stable root exists) and the count.
+    // Pressure closure: the branch the closure resolved (Unspecified when one stable root exists) and the count.
     std::optional<DensityBranch> branch;
     std::optional<std::size_t> stable_root_count;
     std::optional<bool> requested_tolerance_met;

@@ -98,7 +98,7 @@ public:
             // Reuse validation only at exact EOS values and rewritten reaction declarations.
             if (!same_point && (!trial.model || trial.model->active_parameter_values() != physical
                 || !std::equal(observations.begin(), observations.end(), trial.observations.begin(), trial.observations.end(),
-                    [](const auto& x, const auto& y) { return x.kind == ObservationKind::Density || same_state(x, y); }))) {
+                    [](const auto& x, const auto& y) { return pressure_closed(x.kind) || same_state(x, y); }))) {
                 trial.model = std::make_unique<HelmholtzModel>(request_.coordinates.apply(request_.parameters, optimizer),
                                                               active_, request_.thermochemistry);
                 trial.centers.assign(groups_.size(), Prediction{});
@@ -185,7 +185,7 @@ private:
                 prediction = predict(model, observation, starts_[g], std::move(prediction.compiled));
                 if (prediction.status != ObservationStatus::Available && starts_[g])
                     prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled));
-            } else if (observation.kind != ObservationKind::Density) project_prediction(model, observation, prediction);
+            } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
             out.statuses.push_back(prediction.status);
             if (prediction.status != ObservationStatus::Available)
                 return fail(i, optimizer, prediction.status, prediction.message, jacobian);
@@ -198,7 +198,7 @@ private:
                 std::vector<const Observation*> rows;
                 for (std::size_t row = 0; row < n; ++row)
                     if (groups_[row] == g) rows.push_back(&trial.observations[row]);
-                gradients[g] = observation.kind == ObservationKind::Density
+                gradients[g] = pressure_closed(observation.kind)
                     ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
                     : differentiate_group(model, rows, prediction, request_.coordinates);
             }
@@ -426,7 +426,7 @@ FitResult fit(const FitRequest& request) {
         for (std::size_t i = 0; i < n; ++i) {
             auto& center = prepared.centers[groups[i]].compiled;
             const auto& observation = request.observations[i];
-            if (!center && observation.kind != ObservationKind::Density)
+            if (!center && !pressure_closed(observation.kind))
                 center = equilibrium::compile_problem(model, observation.problem);
             validate(observation, model, center ? &*center : nullptr);
         }

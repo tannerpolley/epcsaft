@@ -853,7 +853,9 @@ residuals and Jacobians consistently, then apply the declared bounded fitting
 method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
-The implemented fit (R1--R3) uses the built-in observations and affine, tied
+The implemented fit (R1--R3) includes pressure-closed density and total molar
+isobaric heat capacity with fixed thermochemistry, plus the declared
+equilibrium observations. It uses affine, tied
 optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
