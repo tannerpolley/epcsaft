@@ -1,0 +1,49 @@
+schema_version = 2
+packet_id = "held-2014-strategy2"
+packet_version = "1"
+title = "Held 2014 strategy 2 chloride parameters at 298.15 K"
+description = "Complete compatible water, Li, Na, K, Mg, Ca and Cl subset of Tables 1-3; no Sr parameters are printed. Water-ion temperature expressions are evaluated only at 298.15 K. Relative permittivity 78.09 is a declared Figiel 2025 supplement."
+license_or_use_basis = "Numeric source transcription and project-authored metadata for private scientific verification; no full article content."
+tolerance_rationale = "Transcription candidate only, not a recommended or qualified divalent fit. Owner qualification is maximum row error 0.02 decade in gamma_pm and positive Phi; results belong to analyses/2026-held-2014-chlorides."
+
+[[sources]]
+source_id = "held-2014"
+citation = "Held, C.; Reschke, T.; Mohammad, S.; Luza, A.; Sadowski, G. ePC-SAFT revised. Chemical Engineering Research and Design 2014, 92, 2884-2897."
+doi = "10.1016/j.cherd.2014.05.017"
+use_basis = "Tables 1-3 strategy 2 and Eqs. (1), (15)-(22); Zotero 3DIW87Q5/TD5T732H; PDF SHA-256 dea9aa05e2ee8eb1c675873fa9d8737943312484874d844f01b45613da261acf."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "numeric water relative permittivity 78.09 used to instantiate the Held 2008 concentration-independent solvent dielectric; main PDF SHA-256 a3c940895c530f72f47f22f8c0f4796b5ad37918a4edd274f85497c6dd81ad1f"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[domains]]
+domain_id = "held-2014-chlorides-298-15-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+description = "Fully dissociated binary chlorides in water at 298.15 K and 1 bar; assessed over 0.001-4.5 mol/kg, with no mixed-salt or broader-temperature qualification."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Water identity and molecular weight."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "49e5dce5503979d157ec0a8251cf89f233d2bc8f190ac9102a4dfd1519f0ab71"
+source_refs = ["held-2014", "figiel-yu-held-2025", "nist-srd-69-water"]
+domain_refs = ["held-2014-chlorides-298-15-k-1-bar", "nist-water-identity"]
+units_basis = "Explicit units in the Parameters document; sigma, DH and packing lengths in angstrom, energies in kelvin, segment counts and kij dimensionless."
