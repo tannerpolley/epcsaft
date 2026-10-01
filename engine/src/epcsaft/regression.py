@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
+from typing import overload
 
 from . import _core
 from ._core import (
+    HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
 )
@@ -16,6 +18,10 @@ from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
     "segment_count": _core.ParameterFamily.SegmentCount,
+    "packing_diameter_angstrom": _core.ParameterFamily.PackingDiameter,
+    "debye_huckel_diameter_angstrom": _core.ParameterFamily.DebyeHuckelDiameter,
+    "born_diameter_angstrom": _core.ParameterFamily.BornDiameter,
+    "ion_suppression_coefficient": _core.ParameterFamily.IonSuppressionCoefficient,
     "sigma_constant": _core.ParameterFamily.SigmaConstant,
     "dispersion_energy_over_k": _core.ParameterFamily.DispersionEnergyOverK,
     "k_ij": _core.ParameterFamily.Kij,
@@ -39,7 +45,8 @@ _KINDS = {
 __all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
-           "predict", "reaction_coordinate")
+           "predict", "reaction_coordinate", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
+           "CheckGroup", "CheckResult", "electrolyte", "hydration_hold", "evaluate_coordinates", "evaluate_checks")
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -170,14 +177,78 @@ def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradien
     return _core.differentiate(model._model, item)
 
 
+@overload
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
         weights: Sequence[float] | None = None, controls: FitControls | None = None,
-        thermochemistry: ThermochemistryRecord | None = None) -> FitResult:
+        thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
+        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None) -> FitResult: ...
+
+
+@overload
+def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
+        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
+        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
+        starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
+        shared_seconds: float | None = None) -> list[FitResult]: ...
+
+
+def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
+        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
+        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
+        starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
+        shared_seconds: float | None = None) -> FitResult | list[FitResult]:
     """Bounded least squares of sqrt(w_i) r_i over the optimizer coordinates (ALG-FIT)."""
     return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
-                     FitControls() if controls is None else controls)
+                     FitControls() if controls is None else controls, list(holds or ()), list(checks or ()),
+                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
     """The fitted native document under the start's component and site names, for a new Mixture or Pure."""
     return Parameters(result.parameters, start.component_ids, start.site_ids)
+
+
+def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mapping[str, float], *,
+                ions: tuple[str, str], stoichiometry: tuple[int, int], molality: float,
+                species: str | None = None, reference: Mapping[str, float] | None = None,
+                observed: float, form: str, scale: float | None = None) -> Observation:
+    """Molality activity, osmotic coefficient, single-ion energy (J/mol), or dimensionless permittivity."""
+    kinds = {"mean_ionic_activity_coefficient": ObservationKind.MeanIonicActivityCoefficient,
+             "osmotic_coefficient": ObservationKind.OsmoticCoefficient, "solvation_gibbs_energy": ObservationKind.SolvationGibbsEnergy,
+             "transfer_gibbs_energy": ObservationKind.TransferGibbsEnergy, "bulk_relative_permittivity": ObservationKind.BulkRelativePermittivity}
+    if kind not in kinds:
+        raise ParameterError(f"unknown electrolyte observation {kind}")
+    result = _pressure_closed(parameters, kinds[kind], T, P, x, "liquid", observed, form, scale, False)
+    result.ion_indices = (_index(parameters.component_ids, ions[0], "ion"), _index(parameters.component_ids, ions[1], "ion"))
+    result.stoichiometry, result.molality = stoichiometry, molality
+    result.species = [] if species is None else [_index(parameters.component_ids, species, "ion")]
+    if reference is not None:
+        for name in reference:
+            _index(parameters.component_ids, name, "reference component")
+        result.reference_composition = [reference.get(name, 0.0) for name in parameters.component_ids]
+    return result
+
+
+def hydration_hold(reference: Observation, *, bracket: tuple[float, float], energy_tolerance: float,
+                   diameter_tolerance: float, maximum_iterations: int) -> HydrationHold:
+    """Declare H = RT ln(phi_i at infinite dilution) - target, with a dependent Born diameter."""
+    result = HydrationHold()
+    result.reference, result.lower, result.upper = reference, *bracket
+    result.energy_tolerance, result.diameter_tolerance, result.maximum_iterations = energy_tolerance, diameter_tolerance, maximum_iterations
+    return result
+
+
+def evaluate_coordinates(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
+                         holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = None) -> EvaluatedCoordinates:
+    """Evaluate the native physical chart and exact D at one declared optimizer point."""
+    chart = CoordinateSet()
+    chart.coordinates = list(coordinates)
+    return _core.evaluate_coordinates(parameters._native, chart, list(optimizer), list(holds), thermochemistry)
+
+
+def evaluate_checks(parameters: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup],
+                    baseline: Parameters | None = None) -> list[CheckResult]:
+    """Native unweighted final metrics on stored parameters, without re-solving holds."""
+    return _core.evaluate_checks(parameters._native, list(observations), list(checks), None if baseline is None else baseline._native)

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -76,6 +77,8 @@ void finish(Prediction& prediction, const Observation& observation, double value
 
 const char* observation_status_name(ObservationStatus status) noexcept {
     switch (status) {
+    case ObservationStatus::NotEvaluated: return "not_evaluated";
+    case ObservationStatus::ReferenceUnavailable: return "reference_unavailable";
     case ObservationStatus::Available: return "available";
     case ObservationStatus::ThermochemistryUnavailable: return "thermochemistry_unavailable";
     case ObservationStatus::DensityUnavailable: return "density_unavailable";
@@ -114,6 +117,13 @@ double residual_slope(const Observation& observation, double value) {
 }
 
 bool same_state(const Observation& left, const Observation& right) {
+    if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
+        return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
+            && (left.kind == ObservationKind::BulkRelativePermittivity) == (right.kind == ObservationKind::BulkRelativePermittivity)
+            && left.temperature == right.temperature && left.pressure == right.pressure && left.branch == right.branch
+            && left.composition == right.composition && left.ion_indices == right.ion_indices
+            && left.stoichiometry == right.stoichiometry && left.molality == right.molality
+            && left.reference_composition == right.reference_composition;
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
@@ -149,6 +159,32 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
             || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
+    if (electrolyte_observation(observation.kind)) {
+        require(std::isfinite(observation.temperature) && observation.temperature > 0.0
+            && std::isfinite(observation.pressure) && observation.pressure > 0.0, "positive finite T/P");
+        require(observation.branch == DensityBranch::Liquid && observation.composition.size() == components, "liquid composition");
+        require(std::isfinite(observation.molality) && observation.molality >= 0.0, "molality");
+        if (observation.kind == ObservationKind::BulkRelativePermittivity) {
+            const auto admit = [&](const auto& x) {
+                require(x.size() == components && std::all_of(x.begin(), x.end(), [](double v) { return std::isfinite(v) && v >= 0.0; })
+                    && std::abs(std::accumulate(x.begin(), x.end(), 0.0) - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value, "permittivity composition");
+            };
+            admit(observation.composition);
+            if (!observation.reference_composition.empty()) admit(observation.reference_composition);
+        } else {
+            (void)formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, 1.0);
+            if (observation.kind == ObservationKind::OsmoticCoefficient)
+                require(observation.molality >= policy::OSMOTIC_MOLALITY_FLOOR.value
+                    && std::count_if(observation.composition.begin(), observation.composition.end(), [](double x) { return x > 0.0; }) == 1, "osmotic domain");
+            if (observation.kind == ObservationKind::SolvationGibbsEnergy || observation.kind == ObservationKind::TransferGibbsEnergy)
+                require(observation.species.size() == 1 && (observation.species[0] == observation.ion_indices[0]
+                    || observation.species[0] == observation.ion_indices[1]), "selected ion");
+            if (observation.kind == ObservationKind::TransferGibbsEnergy)
+                (void)formula_composition(observation.reference_composition, model.parameters(), observation.ion_indices, observation.stoichiometry, 1.0);
+        }
+        require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
+        return;
+    }
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
         require(!observation.problem.temperature.free && !observation.problem.temperature.absent && std::isfinite(observation.problem.temperature.value)
             && observation.problem.temperature.value > 0.0 && observation.form == ResidualForm::Difference, "ln K needs fixed positive T and Difference");
@@ -198,8 +234,41 @@ void validate(const Observation& observation, const HelmholtzModel& model,
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start,
-    std::optional<equilibrium::CompiledSystem> prepared
+    std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references
 ) {
+    if (electrolyte_observation(observation.kind)) {
+        Prediction result;
+        try {
+            if (observation.kind == ObservationKind::BulkRelativePermittivity) {
+                result.state = model.state_at_pressure(observation.temperature, observation.pressure, observation.composition, observation.branch);
+                if (!observation.reference_composition.empty()) result.reference_state = model.state_at_pressure(
+                    observation.temperature, observation.pressure, observation.reference_composition, observation.branch);
+            } else {
+                ReferenceCache local;
+                auto& cache = references ? *references : local;
+                const auto reference = [&](const auto& x) {
+                    auto key = observation;
+                    key.composition = x; key.molality = 0.0; key.reference_composition.clear();
+                    for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
+                    auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x, key.ion_indices, key.stoichiometry);
+                    cache.emplace_back(key, value);
+                    return value;
+                };
+                result.reference = reference(observation.composition);
+                if (observation.kind == ObservationKind::TransferGibbsEnergy) result.second_reference = reference(observation.reference_composition);
+                if (observation.kind == ObservationKind::MeanIonicActivityCoefficient || observation.kind == ObservationKind::OsmoticCoefficient) {
+                    if (observation.molality > 0.0) result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
+                        observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference);
+                }
+            }
+            project_prediction(model, observation, result);
+        } catch (const std::exception& error) {
+            result.status = observation.kind == ObservationKind::BulkRelativePermittivity
+                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable;
+            result.message = error.what();
+        }
+        return result;
+    }
     if (observation.kind == ObservationKind::AdditionEnthalpy) {
         auto item = observation;
         item.kind = ObservationKind::SystemEnthalpy;
@@ -323,6 +392,30 @@ Prediction predict(
 }
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
+    if (electrolyte_observation(observation.kind)) {
+        double value = 0.0;
+        result.unit = "1";
+        switch (observation.kind) {
+        case ObservationKind::BulkRelativePermittivity:
+            value = result.state->bulk_relative_permittivity;
+            if (result.reference_state) value /= result.reference_state->bulk_relative_permittivity;
+            break;
+        case ObservationKind::MeanIonicActivityCoefficient: value = result.activity ? result.activity->mean_ionic_molality_scale : 1.0; break;
+        case ObservationKind::OsmoticCoefficient:
+            if (!result.activity->osmotic_coefficient || !std::holds_alternative<double>(*result.activity->osmotic_coefficient)) {
+                result.status = ObservationStatus::ActionUnavailable; result.message = "osmotic precision floor or missing pure solvent"; return;
+            }
+            value = std::get<double>(*result.activity->osmotic_coefficient); break;
+        default:
+            result.unit = "J/mol";
+            const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
+            value = GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (result.reference->log_fugacity[ion]
+                - (result.second_reference ? result.second_reference->log_fugacity[ion] : 0.0));
+        }
+        result.residual.reset();
+        finish(result, observation, value);
+        return;
+    }
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
     if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant
@@ -403,6 +496,32 @@ PredictionGradient differentiate(
 ) {
     if (prediction.status != ObservationStatus::Available)
         return {{}, prediction.status, prediction.message};
+    if (electrolyte_observation(observation.kind)) {
+        PredictionGradient gradient;
+        const auto width = model.active_parameters().size();
+        for (std::size_t a = 0; a < width; ++a) {
+            double value = 0.0;
+            if (observation.kind == ObservationKind::BulkRelativePermittivity) {
+                value = prediction.state->permittivity_parameter_derivative.at(a);
+                if (prediction.reference_state) {
+                    const auto& ref = *prediction.reference_state;
+                    value = (value - *prediction.value * ref.permittivity_parameter_derivative.at(a)) / ref.bulk_relative_permittivity;
+                }
+            } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient)
+                value = prediction.activity ? prediction.activity->mean_ionic_parameter_derivative.at(a) : 0.0;
+            else if (observation.kind == ObservationKind::OsmoticCoefficient) value = prediction.activity->osmotic_parameter_derivative.at(a);
+            else {
+                const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
+                const auto column = prediction.reference->parameter_derivative.at(a)[ion];
+                const auto ref = prediction.second_reference ? prediction.second_reference->parameter_derivative.at(a)[ion] : std::optional<double>(0.0);
+                value = column && ref ? GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (*column - *ref) : NAN;
+            }
+            if (!std::isfinite(value)) return {{}, ObservationStatus::ActionUnavailable, "electrolyte column: reference admission or pressure slope"};
+            gradient.value.push_back(value);
+        }
+        gradient.status = ObservationStatus::Available;
+        return gradient;
+    }
     if (!pressure_closed(observation.kind))
         return differentiate_group(model, {&observation}, prediction).front();
     PredictionGradient gradient;
@@ -446,6 +565,15 @@ PredictionGradient differentiate(
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates
 ) {
+    if (electrolyte_observation(observations.front()->kind)) {
+        std::vector<PredictionGradient> result;
+        for (const auto* row : observations) {
+            auto projected = prediction;
+            project_prediction(model, *row, projected);
+            result.push_back(differentiate(model, *row, projected));
+        }
+        return result;
+    }
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
     const std::size_t active_width = model.active_parameters().size();

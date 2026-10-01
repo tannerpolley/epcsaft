@@ -77,6 +77,67 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, #219 slice A closeout, measured against `89c1a337` (18,932):
+  **926 gross added, 204 removed, +722 net**, total **19,654**. The owner
+  approved 950 gross / 770 net after the 850/770 intermediate allowance;
+  the design's 610/550 figures were estimates. Counts include comments,
+  blanks and type declarations; tests, documentation and retained numerical
+  tables are separate.
+
+  | Layer | Base | Gross | Removed | Net | Final | Envelope hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 5 | 5 | 0 | 917 | 1000 |
+  | Contributions | 1593 | 22 | 68 | -46 | 1547 | 1612 |
+  | Properties | 4176 | 106 | 8 | +98 | 4274 | 4600 |
+  | Equilibrium | 6095 | 0 | 0 | 0 | 6095 | 7650 |
+  | Parameter regression | 1607 | 533 | 115 | +418 | 2025 | 2200 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1674 | 96 | 4 | +92 | 1766 | 1880 |
+  | Python | 2338 | 164 | 4 | +160 | 2498 | 2620 |
+  | Aggregate | 18932 | 926 | 204 | +722 | 19654 | 22000 |
+
+  The largest underestimate was parameter regression: 533 gross against
+  the design's upper 285. Native check/baseline admission, signed metrics,
+  unavailable members and stored-parameter rebuilding cost more than the
+  roughly 25-line check estimate. The shared selected-row observation
+  evaluator, native manufacturing and multistart/shared-budget operations,
+  positive-objective SVD labels and dependent-chart failures were also larger
+  than estimated. Bindings grew 96 against 55, and Python 164 against 100:
+  these transport the same hold/check/chart/sequence records and preserve
+  distinct result types. Properties, Core and Contributions stayed below
+  their upper estimates. Removed duplicated fit preparation/reporting and
+  unused contribution overrides account for the measured 204 deletions;
+  those deletions do not buy extra gross allowance. Every added operation
+  serves the five observations, exact held chart, final checks or slice-B
+  interfaces. No new EOS physics or optimizer is included.
+
+  **Parameter regression uses 2,025 of 2,200, leaving 175 for slice B**,
+  against D7's estimate of up to 195. The owner [explicitly approved this
+  measurement](https://github.com/tannerpolley/ePC-SAFT/issues/219#issuecomment-5941530617)
+  rather than broader fitter changes. Delivered-review corrections preserve
+  this allowance: checks rebuild only their selected rows and zero-weight
+  reports, while objective rows keep the accepted evaluation; unevaluated rows
+  remain unavailable. Removing unnecessary internal aliases and access
+  specifiers keeps parameter regression at the approved measurement. Slice B must re-estimate
+  against 175 before Build; inability to fit returns for an envelope decision.
+  The native profile driver remains deferred under D8: fixed-coordinate
+  removal, declared starts, shared limits, neighboring starts and per-point
+  failure/check records exceed the 35-line driver allowance in the current
+  owner. SVD and covariance are delivered instead.
+
+  Closeout lowers Core to 917 and Contributions to 1547 (no remaining
+  additions planned there). Other touched hard ceilings retain shared
+  remaining allowances: Properties 326, parameter regression 175, Bindings
+  114, Python 122 and aggregate 2346. These are limits shared by the remaining
+  roadmap work, not exclusive grants or a claim that its older estimates fit.
+  Remaining designs must remeasure against the integrated tree. Soft excess
+  pays for the shared EOS/exact actions, native held-coordinate fitting and
+  named physical declarations; no line packing or displaced calculation was
+  used to meet a ceiling. [Numerical qualification](../../analyses/2026-electrolyte-parameter-gradients/README.md)
+  retains F1-F6, the acceptance-check falsifier and diagnosed misses. This
+  establishes numerical verification at the declared inputs, with no #209
+  parameter adoption or physical validation.
+
 - 2026-10-01, general-engine roadmap envelope (#220, owner approved): the
   owner replaced per-issue amendments for #219, #223, #224 and #225 with one
   envelope. Measured base `4cd1ebfe` (after the #221 consolidation, −168): total

@@ -72,6 +72,10 @@ void register_thermal_inputs(py::module_& module) {
         .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
         .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
     py::enum_<ParameterFamily>(module, "ParameterFamily")
+        .value("BornDiameter", ParameterFamily::BornDiameter)
+        .value("DebyeHuckelDiameter", ParameterFamily::DebyeHuckelDiameter)
+        .value("PackingDiameter", ParameterFamily::PackingDiameter)
+        .value("IonSuppressionCoefficient", ParameterFamily::IonSuppressionCoefficient)
         .value("SegmentCount", ParameterFamily::SegmentCount)
         .value("SigmaConstant", ParameterFamily::SigmaConstant)
         .value("DispersionEnergyOverK", ParameterFamily::DispersionEnergyOverK)
@@ -301,6 +305,8 @@ void register_eos(py::module_& module) {
         .def_readonly("log_fugacity", &epcsaft::InfiniteDilutionReference::log_fugacity)
         .def_readonly("molality", &epcsaft::InfiniteDilutionReference::molality)
         .def_readonly("convergence_error", &epcsaft::InfiniteDilutionReference::convergence_error)
+        .def_readonly("parameter_derivative", &epcsaft::InfiniteDilutionReference::parameter_derivative)
+        .def_readonly("parameter_convergence_error", &epcsaft::InfiniteDilutionReference::parameter_convergence_error)
         .def_readonly("pure_solvent_log_fugacity", &epcsaft::InfiniteDilutionReference::pure_solvent_log_fugacity);
     py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity")
         .def_readonly("single_ion", &epcsaft::ElectrolyteActivity::single_ion)

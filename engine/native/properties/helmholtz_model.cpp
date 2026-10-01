@@ -408,6 +408,9 @@ void validate_parameter_coordinate(
     const bool pair = association || slope || family == ParameterFamily::Kij || family == ParameterFamily::Lij;
     if (!pair) {
         require(indices.size() == 1, "scalar parameter coordinate");
+        if (family == ParameterFamily::BornDiameter || family == ParameterFamily::DebyeHuckelDiameter
+            || family == ParameterFamily::PackingDiameter || family == ParameterFamily::IonSuppressionCoefficient)
+            require(parameters.charge_number[indices.front()] != 0, "electrolyte coordinate needs charged slot");
         return;
     }
     const auto size = association ? parameters.site_count() : parameters.component_count();
@@ -1640,6 +1643,35 @@ State HelmholtzModel::state(
                 result.residual_chemical_potential_over_rt[component] - std::log(z);
         }
     }
+    if (result.log_fugacity_coefficient && std::isfinite(dpressure_drho) && dpressure_drho > 0.0) {
+        const std::size_t columns = active_.size(), width = derivatives.gradient.size();
+        result.log_fugacity_parameter_derivative.resize(mole_fractions.size() * columns);
+        result.density_parameter_derivative.resize(columns);
+        for (std::size_t a = 0; a < columns; ++a) {
+            // EqID: log_fugacity_coefficient_parameter_derivative
+            const std::size_t index = 2 + mole_fractions.size() + a;
+            const double va = -derivatives.hessian[width + index] / (1.0 / (volume * volume) + phi_vv);
+            result.density_parameter_derivative[a] = -molar_density * molar_density * va;
+            for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+                result.log_fugacity_parameter_derivative[i * columns + a] = derivatives.hessian[(2 + i) * width + index]
+                    + (derivatives.hessian[(2 + i) * width + 1] - 1.0 / volume) * va;
+        }
+        if (!active_.empty() && parameters_.permittivity_form.declared()) {
+            std::vector<detail::AD> input{molar_density};
+            const auto values = active_parameter_values();
+            input.insert(input.end(), values.begin(), values.end());
+            CppAD::Independent(input);
+            const auto record = detail::make_tape_parameters(parameters_, active_, {input.begin() + 1, input.end()});
+            const auto eps = bulk_relative_permittivity(detail::AD(temperature), input[0],
+                std::vector<detail::AD>(mole_fractions.begin(), mole_fractions.end()), record);
+            CppAD::ADFun<double> tape(input, std::vector<detail::AD>{eps});
+            std::vector<double> point{molar_density};
+            point.insert(point.end(), values.begin(), values.end());
+            const auto jacobian = tape.Jacobian(point);
+            for (std::size_t a = 0; a < columns; ++a)
+                result.permittivity_parameter_derivative.push_back(jacobian[1 + a] + jacobian[0] * result.density_parameter_derivative[a]);
+        }
+    }
     // EqID: residual_entropy
     result.residual_entropy = GAS_CONSTANT_J_PER_MOL_K * (-derivatives.value - temperature * phi_t);
     // EqID: residual_internal_energy
@@ -1696,6 +1728,12 @@ State HelmholtzModel::state_at_pressure(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
     );
     State result = state(temperature, root.molar_density, mole_fractions);
+    if (result.log_fugacity_coefficient) {
+        // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
+        const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            (*result.log_fugacity_coefficient)[i] = result.residual_chemical_potential_over_rt[i] - log_z;
+    }
     result.density_convergence = root.convergence;
     result.density_branch = root.branch;
     result.stable_root_count = root.stable_root_count;

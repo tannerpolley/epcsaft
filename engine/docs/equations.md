@@ -135,7 +135,7 @@ $$
 - Section: Contribution intermediates / Association
 - Status: Source equation
 - Source: [Gross2002], cross-association rule; [Chapman1990], association strength
-- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); `d^3`-regressed volumes are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
+- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); volumes fitted using `d^3` are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
 $$
@@ -399,7 +399,7 @@ $$
 - Status: Source equation
 - Source: [Bulow2019], finite-size function in Eq.~(2)
 - Description: Exact finite-size DH function and its Taylor series at zero, truncated at degree 24 in the implementation. The polynomial is not the exact function away from the limit.
-- Change note: A recording-point reduced diameter y_ref may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. With the switch at y_ref = 0.2, chi and its first and second Taylor derivatives match 50-digit references to 3e-14, 7e-13 and 1.1e-11 relative on both branches (2026-09-23).
+- Change note: The current reduced diameter y may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. With the switch at y = 0.2, chi and its first and second Taylor derivatives match 50-digit references to 3e-14, 7e-13 and 1.1e-11 relative on both branches (2026-09-23).
 
 $$
 \chi(y)=\frac{3[\ln(1+y)-y+y^2/2]}{y^3}\quad(y>0),\qquad \chi(0)=1,\qquad y=\kappa d_i^{DH},\qquad \chi(y)=\sum_{k=0}^{24}\frac{3(-y)^k}{k+3}+O(y^{25})\quad(y\to0).
@@ -808,7 +808,7 @@ $$
 - Section: Thermodynamic properties
 - Status: Exact derivation
 - Source: Composition of `fixed_pressure_total_derivative`, `total_heat_capacity_cp` and `residual_heat_capacity_cp`
-- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
+- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Parameter regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
 - Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
 
 $$
@@ -1405,7 +1405,7 @@ $$
 - Status: Source equation
 - Source: [HamerWu1972], practical molal osmotic-coefficient definition; common-pressure identity from Eqs.~`log_fugacity_coefficient` and `pressure`
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
-- Change note: Defined only for the admitted single-active-solvent aqueous path; evaluated at common prescribed T/P to avoid unequal terminated pressure logarithms.
+- Change note: Defined only for the admitted single-active-solvent aqueous path; Evaluated at common prescribed T/P; the scalar residual chemical-potential difference uses the extensive Helmholtz Euler identity in extended precision, with Z=P/(RT rho). Exact parameter columns retain the shared fugacity derivative contraction. Subscripts f and p denote the finite solution and pure solvent, a^r is per mole, and the sum excludes the solvent.
 
 $$
 \Phi=
@@ -1415,6 +1415,10 @@ $$
 \ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}
 =\ln x_s+\frac{\mu_s^r-\mu_s^{r,\mathrm{pure}}}{RT}
 +\ln\frac{\rho_m}{\rho_m^{\mathrm{pure}}}.
+\qquad
+\Delta\mu_s^r/(RT)=
+\frac{a_f^r-a_p^r+\frac{P}{RT}(\rho_f^{-1}-\rho_p^{-1})
+-\sum_{i\ne s}x_i[\mu_i^{r,f}/(RT)-\mu_s^{r,p}/(RT)]}{x_s}.
 $$
 
 ## `pressure`
@@ -1583,7 +1587,7 @@ $$
 
 ## `source_log_equilibrium_constant_observation`
 
-- Section: Regression / Reaction observations
+- Section: Parameter regression / Reaction observations
 - Status: Exact derivation
 - Source: `reaction_constant_ln_polynomial` (Austgen et al. 1989, ln K(T) correlation); coefficient differentiation and existing Difference residual, issue #211
 - Description: A direct observation is the named reaction's declared source-basis natural-log equilibrium constant at fixed positive temperature. It does not contain the EOS reference contraction or an equilibrium-state derivative.
@@ -1602,7 +1606,7 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
-- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
+- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source specification (Aroua 1999, Tong 2012)
 - Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; fitting uses the explicitly converted native coefficients; valid on the declared temperature domain only.
 - Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
@@ -1911,7 +1915,7 @@ $$
 
 - Section: Parameter setup
 - Status: Bounded empirical relation
-- Source: Source-resulted component correlation represented by the EOS parameter schema
+- Source: Source-resulted component correlation represented by the EOS parameter fields
 - Description: Evaluate a component segment-size correlation from its constant and exponential terms.
 - Change note: Mirrors the general sparse correlation implemented by segment_sigma.
 
@@ -2074,7 +2078,7 @@ $$
 
 ## `finite_addition_enthalpy`
 
-- Section: Regression / Enthalpy observations
+- Section: Parameter regression / Enthalpy observations
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
@@ -2173,4 +2177,48 @@ $$
 
 $$
 \nabla_y^2\mathcal L_{\mathrm{opt}}=\mathrm{obj\_factor}\,\nabla_y^2 f(y)+\sum_j\Lambda_j^{\mathrm{opt}}\nabla_y^2 g_j(y).
+$$
+
+## `log_fugacity_coefficient_parameter_derivative`
+
+- Section: Properties / Pressure-closed parameter actions
+- Status: Exact derivation
+- Source: Implicit differentiation of `pressure`, `compressibility_factor` and `log_fugacity_coefficient`; extensive residual Helmholtz Hessian including implicit association.
+- Description: First physical-parameter columns at fixed temperature, pressure and component amounts.
+- Change note: Requires positive finite pressure-density slope. Parameters use their native units; the volume is m³ for the declared amounts. Numerical qualification belongs to the electrolyte parameter-gradient analysis.
+
+$$
+V_a=-\frac{\phi_{Va}}{n/V^2+\phi_{VV}},\qquad
+ g_{i,a}=\phi_{ia}+\left(\phi_{iV}-\frac1V\right)V_a,
+\quad \phi=A^r/(RT),\quad g_i=\ln\varphi_i.
+$$
+
+## `electrolyte_activity_parameter_derivative`
+
+- Section: Properties / Electrolyte reference actions
+- Status: Exact derivation
+- Source: `mean_ionic_activity_coefficient`, `molality_activity_conversion`, `practical_osmotic_coefficient` and `log_fugacity_coefficient_parameter_derivative`.
+- Description: Molality-scale mean ionic activity and single-solvent osmotic first columns, with the admitted terminal infinite-dilution reference.
+- Change note: The reference column stays at the returned 1e-12 mol/kg endpoint; a finer witness admits that column without replacing it. The osmotic domain is unchanged; the scalar chemical-potential difference uses the extensive Euler identity at prescribed pressure. Energies multiply the same reference columns by RT in J/mol.
+
+$$
+\frac{\partial\gamma_\pm^{(m)}}{\partial\theta_a}
+=\gamma_\pm^{(m)}\frac{\sum_k\nu_k(g_{k,a}-g^\infty_{k,a})}{\sum_k\nu_k},
+\qquad \frac{\partial\Phi}{\partial\theta_a}
+=-\frac{g_{s,a}-g^\mathrm{pure}_{s,a}}{m M_s\sum_k\nu_k}.
+$$
+
+## `dependent_born_diameter_derivative`
+
+- Section: Parameter regression / Dependent hydration coordinate
+- Status: Exact derivation
+- Source: Implicit-function theorem applied to `infinite_dilution_solvation_energy` and `log_fugacity_coefficient_parameter_derivative`.
+- Description: A Born diameter holds a declared single-ion solvation energy, with exact first columns contracted through the independent affine/tied chart.
+- Change note: Independent scalar holds only; nonzero scaled H_d, a declared bracket and both energy and diameter-correction criteria are required. Final acceptance uses the stored diameter without solving the equality again. Target uncertainty is fixed, not estimated.
+
+$$
+H=RT\ln\varphi_i^\infty-\Delta G_{i,\mathrm{target}}^\infty=0,
+\qquad\frac{d d_i}{d\theta_a}=-\frac{H_a}{H_d},
+\qquad J^\mathrm{opt}_{jc}=\sqrt{w_j}\,\frac{dr_j}{dy_j}\sum_r\frac{\partial y_j}{\partial\theta_r}D_{rc},
+\quad D_{rc}=\frac{d\theta_r}{du_c}.
 $$

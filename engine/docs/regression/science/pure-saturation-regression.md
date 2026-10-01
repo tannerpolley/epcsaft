@@ -196,7 +196,7 @@ to the declared distance. A bound within the same
 distance is active for the covariance, and physical values are clamped to their
 bounds against the affine map's rounding. Iterations
 and time are shared by the rounds; a
-trial in which any observation or action is unavailable is rejected with its
+trial in which any positive-weight objective observation or action is unavailable is rejected with its
 typed cause and observation index retained, never zeroed. Exact raw equilibrium
 declarations, including feed basis, phase supports and seeds, reaction/reference inputs and row tolerance, share one compiled central
 solve within a fitting evaluation; projection, residual and weight metadata
@@ -211,7 +211,7 @@ Density differentiation retains its pressure-closure work for each direction
 batch. Weighted objective and optimizer-Jacobian
 finiteness are checked before publishing the trial; failed promotion retains
 only the successful residual trial. Warm starts are taken
-only from a trial in which every observation succeeded and are retried cold on
+only from a trial in which every positive-weight objective observation succeeded and are retried cold on
 failure. The conditional covariance is $(J^\top J)^{-1}$ of the weighted
 optimizer Jacobian, mapped to physical rows by $D = S\,\mathrm{diag}(s)$; it is
 withheld as `rank_deficient` when a singular value falls below the named
@@ -273,3 +273,57 @@ parameter adoption remains an application decision. Use the retained
 the distinction between measured values, evaluated references and source model
 curves. Historical Ceres callable names and stage line/time budgets are not
 current interfaces or universal acceptance criteria.
+
+
+## Electrolyte observations and dependent Born coordinates
+
+[ALG-FIT](../../science/algorithms.md#alg-fit) owns native execution and exact
+derivatives. Gamma and Phi are dimensionless on the declared formula-unit
+molality basis; solvation and transfer are signed J/mol in the Figiel x-process
+convention. Transfer is reference A to composition B. Permittivity is dimensionless;
+a declared reference composition makes its prediction a ratio, with the exact
+quotient derivative of both pressure-closed states. Liquid branch, solvent
+mass, charge-neutral positive integer stoichiometry and selected-ion membership
+are admitted before fitting. Phi keeps the single-solvent molality floor.
+
+Each request-local reference shares T/P, solvent fractions, ions and stoichiometry.
+Finite states also retain molality or full composition; gamma and Phi share the
+same finite activity evaluation. An unchanged optimizer point retains the model,
+references and finite states through value-to-column promotion. An active-parameter
+change discards them. Values and admitted first columns stay with Properties;
+parameter regression performs projection, residual transforms and the chart.
+
+A hydration hold declares a solvation observation/target, Born bracket, energy
+and diameter tolerances, and iteration limit. Newton uses exact H_d and bisection
+when its step leaves the bracket. Acceptance requires both |H| and the exact
+Newton correction or refined bracket width within the inner tolerances.
+A held slot cannot be independently free or coupled to another held reference.
+The evaluated chart returns physical rows (independent EOS, held Born, then
+reaction rows), D, achieved errors, H_d and raw parameter columns. The fitter
+and `evaluate_coordinates` use this same chart. Raw columns hold other physical
+parameters fixed; the complete optimizer chain includes ties, scales and holds.
+Covariance maps as D C_u D^T and remains conditional on fixed hydration targets.
+
+`CheckGroup` declares row membership, absolute native differences or absolute
+log10 ratios in decades, max/mean limits, baseline floors and report-only use.
+Baseline limits come from a separate fixed parameter declaration. Final checks
+use the stored fitted diameters, preserve failed members, and expose signed
+errors/slopes, magnitudes, argmax, thresholds and baseline metrics. They change
+no least-squares weights or objective. Zero-weight rows are admitted but evaluated
+only finally; a logarithm-domain failure preserves its independently valid value.
+Optional ordered optimizer starts run through the native `fit_sequence` owner,
+with per-fit controls and shared iteration/elapsed limits. Each point reapplies
+the same chart; returned candidates retain their checks and causes. Points not
+started after exhaustion are absent. This is a bounded local sequence, with no
+global-optimum claim.
+
+The native `observations_at` operation constructs manufactured recovery data
+from the same evaluated chart and observation evaluator; signed input offsets
+are native-unit differences or decades. It performs no fit. This is numerical
+verification input generation, not a calibrated parameter dataset.
+
+Singular vectors label independent optimizer and objective-row orders. SVD,
+rank, bounds and projected gradient are local diagnostics. Gamma and Phi are
+related by Gibbs-Duhem, so independent-error covariance is conditional sensitivity,
+not measurement uncertainty or structural identifiability. Profiles and native
+constrained minimax estimation remain outside this slice's delivered capability.

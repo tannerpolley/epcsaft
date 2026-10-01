@@ -55,6 +55,7 @@ def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
     start = neutral_binary(148.0, 0.0)
     result = regression.fit(start, coordinates(start), observations)
     assert result.status == "converged" and result.usable and result.trial_failures == 0
+    assert result.residuals == result.weighted_residuals  # unit weights: one accepted objective evaluation
     same(evidence, "r4/recovery/epsilon", result.physical[0])
     same(evidence, "r4/recovery/kij", result.physical[1])
     same(evidence, "r4/recovery/initial_cost", result.initial_cost)
@@ -165,6 +166,8 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     result = regression.fit(p, coordinates(p), observations)
     assert result.status == "initial_evaluation_failed" and not result.usable and result.predictions == []
     assert [(item.trial, item.observation, item.status) for item in result.failures] == [(1, 5, regression.ObservationStatus.DensityUnavailable)]
+    refused = regression.fit(p, coordinates(p), [observations[0], observations[-1], observations[0]], weights=[0, 1, 1])
+    assert refused.statuses == [regression.ObservationStatus.NotEvaluated, regression.ObservationStatus.DensityUnavailable, regression.ObservationStatus.NotEvaluated]
     single = regression.fit(p, coordinates(p), observations[:1])
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
     # Three finite rows whose accumulated objective overflows: typed at the second row, no infinite cost.
@@ -188,3 +191,147 @@ def test_asl_record_rejects_fitted_parameters_early() -> None:
     fitted = Mixture(Parameters(start._native, start.component_ids, start.site_ids))  # as regression.fitted_parameters builds it
     with pytest.raises(ValueError, match="parameters loaded from a parameter document; fitted parameters have none"):
         asl_record(fitted, bubble(180.0), None, [], [], [], 0, 0.0)
+
+
+def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
+    """#219 compact F2/F5/F6: one salt, an identifiable held chart, final native metrics."""
+    from ..packets import parameters_json
+
+    p = Parameters.from_json(
+        parameters_json("figiel-2025-reference-electrolytes", 4),
+        components=("water", "sodium-cation", "chloride-anion"),
+    )
+    cs = [
+        regression.coordinate(p, "k_ij", pair, origin=0, scale=0.2, bounds=(-1, 1))
+        for pair in (("sodium-cation", "water"), ("sodium-cation", "chloride-anion"))
+    ]
+    cs += [
+        regression.coordinate(
+            p,
+            "ion_suppression_coefficient",
+            "sodium-cation",
+            "chloride-anion",
+            origin=0,
+            scale=2,
+            bounds=(3, 9),
+        )
+    ]
+    energy = regression.electrolyte(
+        p,
+        "solvation_gibbs_energy",
+        298.15,
+        1e5,
+        {"water": 1},
+        ions=("sodium-cation", "chloride-anion"),
+        stoichiometry=(1, 1),
+        molality=0,
+        species="sodium-cation",
+        observed=-381930,
+        form="difference",
+        scale=1,
+    )
+    holds = [
+        regression.hydration_hold(
+            energy,
+            bracket=(1, 8),
+            energy_tolerance=1e-6,
+            diameter_tolerance=1e-10,
+            maximum_iterations=50,
+        )
+    ]
+    truth = [-0.25 / 0.2, 0.9 / 0.2, 6.01 / 2]
+    chart = regression.evaluate_coordinates(p, cs, truth, holds)
+    templates = [
+        regression.electrolyte(
+            p,
+            kind,
+            298.15,
+            1e5,
+            {"water": 1},
+            ions=("sodium-cation", "chloride-anion"),
+            stoichiometry=(1, 1),
+            molality=m,
+            observed=1,
+            form="log_ratio",
+        )
+        for m in (0.1, 1, 4.5)
+        for kind in ("mean_ionic_activity_coefficient", "osmotic_coefficient")
+    ]
+    observations = _core.observations_at(p._native, cs, truth, holds, templates, [0] * 6)
+    controls = regression.FitControls()
+    controls.function_tolerance = 1e-15
+    controls.gradient_tolerance = 1e-14
+    controls.parameter_tolerance = 1e-14
+    result = regression.fit(
+        p,
+        cs,
+        observations,
+        holds=holds,
+        controls=controls,
+        weights=[1 / (0.02 * math.log(10)) ** 2] * 6,
+    )
+    assert result.status == "converged", result.message
+    assert max(abs(v) / math.log(10) for v in result.residuals) <= 1e-10
+    for value, expected in zip(result.optimizer, truth):
+        assert abs(value - expected) <= 1e-6
+    assert abs(result.physical[-1] - chart.physical[-1]) <= 1e-7
+    assert (
+        abs(result.chart.holds[0].energy_error) <= 1e-6
+        and result.chart.holds[0].correction <= 1e-10
+    )
+    stored = Parameters(chart.parameters, p.component_ids, p.site_ids)
+    for ob in templates:
+        ob.form = regression.ResidualForm.Difference
+        ob.scale = 1
+    exact_data = _core.observations_at(stored._native, cs, truth, holds, templates, [0] * 6)
+    exact = regression.fit(stored, cs, exact_data, holds=holds)
+    assert exact.final_cost <= 1e-24
+    for c in range(3):
+        step = 1e-4 * max(abs(truth[c]), 1)
+        plus, minus = list(truth), list(truth)
+        plus[c] += step
+        minus[c] -= step
+        high = regression.evaluate_coordinates(p, cs, plus, holds)
+        low = regression.evaluate_coordinates(p, cs, minus, holds)
+        cd = (high.physical[-1] - low.physical[-1]) / (2 * step)
+        assert abs(chart.map[-3 + c] - cd) <= 2e-5 * max(abs(v) for v in chart.map[-3:]) + 1e-7
+        yp = _core.observations_at(p._native, cs, plus, holds, templates, [0] * 6)
+        ym = _core.observations_at(p._native, cs, minus, holds, templates, [0] * 6)
+        column = exact.optimizer_jacobian[c::3]
+        for i, value in enumerate(column):
+            assert (
+                abs(value - (yp[i].observed - ym[i].observed) / (2 * step))
+                <= 2e-5 * max(abs(v) for v in column) + 1e-7
+            )
+    checks_data = _core.observations_at(
+        stored._native, cs, truth, holds, observations[:2], [0.01, -0.03]
+    )
+    group = regression.CheckGroup()
+    group.name = "known-decades"
+    group.rows = [6, 7]
+    group.metric = regression.CheckMetric.AbsoluteLog10Ratio
+    group.maximum = 0.02
+    group.mean = 0.025
+    final = regression.fit(
+        stored,
+        cs,
+        observations + checks_data,
+        holds=holds,
+        checks=[group],
+        weights=[1] * 6 + [0, 0],
+    )
+    check = final.checks[0]
+    assert final.status == "converged" and final.acceptance == "fail"
+    assert abs(check.maximum - 0.03) <= 1e-10 and abs(check.mean - 0.02) <= 1e-10
+    assert check.argmax == 7 and check.failed_rows == [7]
+    sequence = regression.fit(
+        stored,
+        cs,
+        exact_data,
+        holds=holds,
+        starts=[truth, truth],
+        shared_iterations=20,
+        shared_seconds=20,
+    )
+    assert len(sequence) == 2 and all(candidate.status == "converged" for candidate in sequence)
+    assert all(candidate.final_cost <= 1e-24 for candidate in sequence)

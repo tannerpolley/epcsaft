@@ -1,6 +1,7 @@
 #include "regression/coordinates.hpp"
 #include "regression/observations.hpp"
 #include "equilibrium/stoichiometry.hpp"
+#include "core/trace.hpp"
 
 #include <algorithm>
 #include <array>
@@ -59,7 +60,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
             std::vector<const equilibrium::EquilibriumProblem*> problems;
             for (const auto& observation : observations) {
-                if (pressure_closed(observation.kind)) continue;
+                if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
                 problems.push_back(&observation.problem);
                 if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
             }
@@ -130,6 +131,10 @@ bool CoordinateSet::within_bounds(const std::vector<double>& optimizer) const {
 std::pair<std::vector<double>, std::vector<double>> CoordinateSet::optimizer_bounds() const {
     std::vector<double> lower, upper;
     for (const auto& c : coordinates) {
+        require(std::isfinite(c.scale) && c.scale > 0.0, "scale");
+        require(std::isfinite(c.origin), "origin");
+        require(!std::isnan(c.lower) && !std::isnan(c.upper)
+                && c.lower <= c.upper, "bounds");
         lower.push_back((c.lower - c.origin) / c.scale);
         upper.push_back((c.upper - c.origin) / c.scale);
     }
@@ -171,10 +176,6 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
     require(!set.coordinates.empty(), "set is empty");
     for (const auto& coordinate : set.coordinates) {
         require(coordinate.reaction ? coordinate.slots.empty() : !coordinate.slots.empty(), "slots");
-        require(std::isfinite(coordinate.scale) && coordinate.scale > 0.0, "scale");
-        require(std::isfinite(coordinate.origin), "origin");
-        require(!std::isnan(coordinate.lower) && !std::isnan(coordinate.upper)
-                && coordinate.lower <= coordinate.upper, "bounds");
         if (coordinate.reaction) continue;
         const auto& values = family_values(parameters, coordinate.family);
         for (const auto& slot : coordinate.slots) {
@@ -184,6 +185,89 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
     }
     require(set.within_bounds(set.start(parameters, observations, thermochemistry)), "start outside bounds");
     (void)HelmholtzModel(parameters, set.active_parameters());
+}
+
+EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
+    const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,
+    const std::optional<ThermochemistryRecord>& thermochemistry) {
+    core::Scope scope("evaluate_coordinates");
+    EvaluatedCoordinates out;
+    require(set.within_bounds(optimizer), "evaluated point outside bounds");
+    out.parameters = set.apply(parameters, optimizer);
+    out.physical = set.physical(optimizer);
+    out.active = set.active_parameters();
+    const std::size_t columns = optimizer.size(), independent = out.active.size(), rows = out.physical.size();
+    const std::vector<double> reactions(out.physical.begin() + independent, out.physical.end());
+    out.physical.resize(independent);
+    out.map.assign((rows + holds.size()) * columns, 0.0);
+    const auto tie = set.tie();
+    for (std::size_t r = 0; r < rows; ++r)
+        out.map[(r < independent ? r : r + holds.size()) * columns + tie[r]] = set.coordinates[tie[r]].scale;
+    std::set<std::size_t> held;
+    for (const auto& hold : holds) {
+        require(hold.reference.kind == ObservationKind::SolvationGibbsEnergy
+            && hold.reference.form == ResidualForm::Difference && hold.reference.species.size() == 1, "hydration hold reference");
+        const auto ion = hold.reference.species[0];
+        require(held.insert(ion).second, "duplicate hydration hold");
+        for (const auto& active : out.active)
+            require(active.family != ParameterFamily::BornDiameter
+                || std::find(active.indices.begin(), active.indices.end(), ion) == active.indices.end(), "held diameter is independently active");
+        require(std::isfinite(hold.lower) && std::isfinite(hold.upper) && hold.lower > 0.0 && hold.upper > hold.lower
+            && std::isfinite(hold.energy_tolerance) && hold.energy_tolerance > 0.0
+            && std::isfinite(hold.diameter_tolerance) && hold.diameter_tolerance > 0.0 && hold.maximum_iterations > 0, "hold controls");
+        out.active.push_back({ParameterFamily::BornDiameter, {ion}});
+    }
+    for (std::size_t h = 0; h < holds.size(); ++h) {
+        const auto& hold = holds[h];
+        const auto ion = hold.reference.species[0];
+        for (std::size_t j = 0; j < holds.size(); ++j) if (j != h)
+            require(holds[j].reference.ion_indices[0] != ion && holds[j].reference.ion_indices[1] != ion, "coupled hydration holds");
+        const auto admit = [ion](bool ok, const char* cause) {
+            if (!ok) throw std::invalid_argument("hydration ion " + std::to_string(ion) + ": " + cause);
+        };
+        const std::size_t row = independent + h, active_row = set.active_parameters().size() + h;
+        const auto evaluate = [&](double diameter) {
+            out.parameters.born_diameter_angstrom.at(ion) = diameter;
+            HelmholtzModel model(out.parameters, out.active, thermochemistry);
+            validate(hold.reference, model);
+            const auto prediction = predict(model, hold.reference);
+            const auto gradient = differentiate(model, hold.reference, prediction);
+            admit(prediction.value && gradient.status == ObservationStatus::Available, "hydration reference/action unavailable");
+            return std::pair{*prediction.value - hold.reference.observed, gradient.value};
+        };
+        double lower = hold.lower, upper = hold.upper;
+        auto low = evaluate(lower), high = evaluate(upper);
+        admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), "hydration root outside bracket");
+        double diameter = std::clamp(parameters.born_diameter_angstrom.at(ion), lower, upper);
+        HoldResult result;
+        for (int iteration = 0; iteration < hold.maximum_iterations; ++iteration) {
+            const auto [error, gradient] = evaluate(diameter);
+            const double hd = gradient.at(active_row);
+            admit(std::isfinite(hd) && std::abs(hd) > std::numeric_limits<double>::epsilon()
+                * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter)), "singular hydration derivative");
+            result.energy_error = error; result.correction = std::abs(error / hd);
+            result.uncertainty = std::abs(error / hd); result.derivative = hd;
+            result.parameter_derivative = gradient; result.iterations = iteration + 1;
+            if (std::abs(error) <= hold.energy_tolerance
+                && std::min(result.correction, upper - lower) <= hold.diameter_tolerance) {
+                result.cause = "converged";
+                // EqID: dependent_born_diameter_derivative
+                for (std::size_t c = 0; c < columns; ++c)
+                    for (std::size_t r = 0; r < set.active_parameters().size(); ++r)
+                        out.map[row * columns + c] -= gradient[r] * out.map[r * columns + c] / hd;
+                break;
+            }
+            if (std::signbit(error) == std::signbit(low.first)) { lower = diameter; low.first = error; }
+            else upper = diameter;
+            const double next = diameter - error / hd;
+            diameter = next > lower && next < upper ? next : 0.5 * (lower + upper);
+        }
+        admit(result.cause == "converged", "hydration hold exhausted");
+        out.physical.push_back(out.parameters.born_diameter_angstrom.at(ion));
+        out.holds.push_back(std::move(result));
+    }
+    out.physical.insert(out.physical.end(), reactions.begin(), reactions.end());
+    return out;
 }
 
 }  // namespace epcsaft::regression

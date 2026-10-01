@@ -113,6 +113,14 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
+`BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
+Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
+one dimensionless charged-slot value; a common C ties all declared charged
+slots in the existing affine chart. Their values use `ParameterRecord<Scalar>`
+with the other active families. Charges, masses, formulation choices and Born
+correction/solvation factors remain fixed. No cross-family factor tie is added.
+
+
 Resolve source values into documented native units before constructing active
 coordinates. Native units are dimensionless for segment count, `k_ij`, `l_ij`,
 and association volume; Angstrom for sigma; and Kelvin for dispersion and
@@ -372,7 +380,7 @@ stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
 iteration-budget or time-budget stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
-Jacobian close that gap. Each step must contract the raw row maximum and keep
+Jacobian close that gap. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
@@ -647,7 +655,7 @@ singular or ill-conditioned site equations, excessive implicit residual,
 unavailable density branches and nonfinite completed results. A zero or
 nonfinite leading jet coefficient required for division, including the
 pressure-volume derivative used by `cp`, remains a native `domain_error`; it is
-outside the per-result typed-status contract. Branch and tape-predicate changes
+outside per-result failure reporting. Branch and tape-predicate changes
 are rejected by the finite-difference admission ladder before comparison; the
 local action request has no perturbation size from which to report them as
 runtime statuses.
@@ -761,11 +769,24 @@ heat-capacity coefficient actions are not qualified.
 
 ## ALG-REFERENCE
 
+Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
+density; the returned EOS pressure still records the density-root residual.
+This avoids amplifying the closure residual in parameter differences of nearly
+invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
+Each terminal reference column is admitted independently by the maximum scaled
+two-ion change, max(|theta|,1) times the column difference, at the existing
+reference tolerance. The terminal pair is compared first; a witness checks a
+failed pair without changing the returned terminal column. An unavailable
+column preserves the value, molality and terminal value error. Activity and
+single-ion energy actions combine these columns through EqID:
+`electrolyte_activity_parameter_derivative`.
+
+
 Use the explicitly declared solvent/reference path and source standard state.
 The two-ion formula must contain charged components with zero stoichiometric
 charge; the solvent composition must also be neutral within the composition
 admission tolerance. The shared composition owner enforces this before either
-reference construction or activity evaluation; neither API supplies an ionic gauge.
+reference construction or activity evaluation; neither calculation supplies an ionic gauge.
 Evaluate the retained molality sequence; return the terminal change and
 criterion separately. Unknown validity or failed limiting convergence remains
 unavailable. Differentiate both the source correlation and EOS reference path,
@@ -776,7 +797,11 @@ supply absolute caloric data.
 For the single-solvent osmotic coefficient, reuse the pure-solvent liquid State
 at the same prescribed T/P and EqID: `practical_osmotic_coefficient`. Replace
 the independently terminated log-fugacity subtraction with the residual
-chemical-potential difference and `log1p` density/composition ratios. Keep the
+chemical-potential difference and `log1p` density/composition ratios. Evaluate
+that difference through the extensive Helmholtz Euler identity, using the
+prescribed-pressure compressibility in its volume term; accumulate this scalar
+contraction in extended precision before the 1/s division. The first parameter
+columns remain the exact CppAD fugacity contraction. Keep the
 existing density closure and ionic reference ladder. Below the provisional
 `OSMOTIC_MOLALITY_FLOOR`, return `Stop::converged_to_floor` in the osmotic
 quantity (precision unresolved), retaining ionic results; no admitted
@@ -878,7 +903,13 @@ a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
 
-Use the [regression formulation](../regression/science/pure-saturation-regression.md)
+Fits use exact Engine derivatives and run natively. Python declares specifications
+and data and reads results; finite differences are numerical verification only.
+Ceres remains the primary least-squares owner. Slice B's constrained fitting is
+not implemented by the electrolyte slice-A change.
+
+
+Use the [parameter regression formulation](../regression/science/pure-saturation-regression.md)
 for observation algebra, weights, parameter coordinates and uncertainty.
 Resolve each state once, evaluate its declared observables/actions, transform
 residuals and Jacobians consistently, then apply the declared bounded fitting
@@ -932,6 +963,26 @@ compiled problem may serve a cold retry at that point. Failed trials still
 publish neither solved starts nor a successful evaluation cache.
 The two endpoint problems of an `AdditionEnthalpy` row are retained separately;
 its singleton kind is always rebuilt at a new parameter point.
+
+Electrolyte least squares admits molality-scale gamma, single-solvent Phi,
+single-ion solvation and B-minus-A transfer energy (J/mol), and bulk permittivity
+or a two-state ratio. Reference keys include T/P, solvent composition, ions and
+stoichiometry; finite-state keys additionally include molality or full composition.
+Projection metadata never selects the reference or finite state.
+Dependent Born holds use EqID: `dependent_born_diameter_derivative`, safeguarded
+Newton inside the declared bracket and both declared inner criteria. The same
+point-local D maps all optimizer columns and conditional physical covariance.
+Only positive-weight objective rows enter trial values, actions, rank and
+variance. Zero-weight rows receive admission and final evaluation; their failed
+final residuals retain independently available signed values and objective results.
+Native final checks recompute the stored parameters without resolving a hold,
+report signed row errors and max/mean groups, and use frozen source baselines
+where declared. Objective results retain their accepted warm-start evaluation;
+only zero-weight reports replace their final values. Unevaluated rows remain
+explicitly unavailable. Report-only failures do not change acceptance. A failed check
+is no proof of infeasibility. Singular vectors and the projected weighted
+gradient describe local conditioning; dependent-target uncertainty, profiles,
+parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
 
@@ -1015,9 +1066,9 @@ The solve counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
-a non-success optimizer status with a finite non-converged residual is
+a non-success optimizer termination with a finite non-converged residual is
 unavailable, while a finite criterion-meeting result remains eligible after the
-same bounded polish and physical checks. A non-success status alone never
+same bounded polish and physical checks. A non-success termination alone never
 establishes success; floor-only results from it remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid

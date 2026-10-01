@@ -6,6 +6,10 @@
 #include "equilibrium_support.hpp"
 #include "properties_support.hpp"
 #include "recording_support.hpp"
+#include "surface/parameter_builder.hpp"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 
 #include <algorithm>
 #include <chrono>
@@ -544,11 +548,13 @@ void check_f9_f10() {
     FitRequest request;
     request.parameters = properties_support::ethane();
     request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
-    request.observations = {overflow};
+    request.observations = {overflow, overflow, overflow};
+    request.weights = {0.0, 1.0, 1.0};
     const auto refused = fit(request);
     CHECK(truth("r1-f10/fit_nonfinite_typed", "a nonfinite residual at the start is a typed initial failure with its row",
-                refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 0
-                    && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost),
+                refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 1
+                    && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost)
+                    && refused.statuses == std::vector<ObservationStatus>{ObservationStatus::NotEvaluated, ObservationStatus::Nonfinite, ObservationStatus::NotEvaluated},
                 summary(refused), "r1-f10"));
     // A finite residual whose weighted form overflows is recorded by the initial-evaluation recorder with its row.
     Observation steep = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
@@ -2248,8 +2254,103 @@ void check_addition_enthalpy() {
 
 }  // namespace
 
+// Native rejected holds: a cached point followed by no root, and a Born-free singular relation.
+void check_hydration_failures() {
+    auto parameters = properties_support::aqueous_electrolyte();
+    Observation energy;
+    energy.kind = ObservationKind::SolvationGibbsEnergy; energy.temperature = 298.15; energy.pressure = 1e5;
+    energy.composition = {1, 0, 0}; energy.ion_indices = {1, 2}; energy.stoichiometry = {1, 1};
+    energy.species = {1}; energy.branch = DensityBranch::Liquid; energy.observed = -381930;
+    FitRequest request; request.parameters = parameters;
+    request.coordinates.coordinates = {{ParameterFamily::Kij, {{1, 3}}, 0, .2, -1, 1}};
+    request.observations = {energy}; request.holds = {{energy, 1, 8, 1e-6, 1e-10, 50}};
+    const auto start = request.coordinates.start(parameters);
+    FitResult failures;
+    ObservationEvaluator good(request, failures, {0});
+    ObservationEvaluation values;
+    CHECK(good.evaluate(start, true, values));
+    const auto saved = values.chart.physical;
+    for (const bool singular : {false, true}) {
+        auto bad = request;
+        bad.holds[0].lower = saved.back() - 1e-6;
+        bad.holds[0].upper = saved.back() + 1e-6;
+        if (singular) {
+            bad.parameters.electrolyte_form = ElectrolyteForm::DebyeHuckel; // manufactured H independent of d_Born
+            HelmholtzModel constant(bad.parameters);
+            bad.holds[0].reference.observed = *predict(constant, energy).value;
+        }
+        ObservationEvaluator evaluator(bad, failures, {0});
+        auto rejected = start;
+        if (!singular) { CHECK(evaluator.evaluate(start, true, values)); rejected[0] += 1.0; }
+        const auto admitted = values.chart.physical;
+        const bool accepted = evaluator.evaluate(rejected, true, values);
+        const auto& cause = failures.failures.back().message;
+        CHECK(truth(singular ? "hydration-failure/singular" : "hydration-failure/no-root",
+            "A failed native held-coordinate trial publishes no diameter or Jacobian", !accepted && values.chart.physical.empty()
+            && values.chart.map.empty() && values.gradient.empty() && cause.find(singular ? "singular" : "outside bracket") != std::string::npos,
+            fields({field("target_J_per_mol", number(bad.holds[0].reference.observed)), field("cause", cause), field("optimizer", rejected)}), "issue-219"));
+        CHECK((singular ? good : evaluator).evaluate(start, true, values));
+        CHECK(truth(singular ? "hydration-failure/reuse-singular" : "hydration-failure/reuse-no-root",
+            "A rejected trial preserves the admitted chart", values.chart.physical == admitted,
+            "{}", "issue-219"));
+        CHECK(good.evaluate(start, true, values));
+    }
+}
+
+// Independent bisection uses the Properties value owner, with no chart or cached Newton root.
+int electrolyte_reference_file(const char* filename) {
+    std::ifstream in(filename);
+    epcsaft::ParameterDocument doc;
+    std::size_t n, sites, entries;
+    in >> n >> sites >> entries;
+    doc.component_ids.resize(n); doc.site_component.resize(sites); doc.site_multiplicity.resize(sites);
+    for (auto& id : doc.component_ids) in >> std::quoted(id);
+    for (std::size_t i = 0; i < sites; ++i) in >> doc.site_component[i] >> doc.site_multiplicity[i];
+    in >> std::quoted(doc.base_choice) >> std::quoted(doc.association_choice) >> std::quoted(doc.electrolyte_choice)
+       >> std::quoted(doc.ionic_dispersion_choice) >> std::quoted(doc.permittivity_choice) >> std::quoted(doc.polar_choice);
+    for (std::size_t i = 0; i < entries; ++i) {
+        epcsaft::ParameterEntry entry;
+        std::size_t width;
+        in >> std::quoted(entry.identity) >> std::quoted(entry.field) >> width;
+        entry.index.resize(width);
+        for (auto& index : entry.index) in >> index;
+        in >> entry.magnitude >> std::quoted(entry.unit);
+        doc.entries.push_back(entry);
+    }
+    auto parameters = epcsaft::build_parameters(doc);
+    std::size_t count;
+    in >> count;
+    std::cout << "ion,stored_diameter,independent_diameter,energy_error,bracket_width\n" << std::setprecision(17);
+    for (std::size_t h = 0; h < count; ++h) {
+        std::size_t ion, counter, solvent;
+        double t, p, target;
+        in >> ion >> counter >> solvent >> t >> p >> target;
+        if (!in) throw std::runtime_error("incomplete reference inputs");
+        const double stored = parameters.born_diameter_angstrom.at(ion);
+        std::vector<double> x(n, 0.0); x.at(solvent) = 1.0;
+        const auto energy = [&](double d) {
+            parameters.born_diameter_angstrom[ion] = d;
+            epcsaft::HelmholtzModel model(parameters);
+            return epcsaft::GAS_CONSTANT_J_PER_MOL_K * t
+                * epcsaft::infinite_dilution_reference(model, t, p, x, {ion, counter}, {1, 1}).log_fugacity[0] - target;
+        };
+        double lower = 1.0, upper = 8.0, low = energy(lower), mid = 0.0, error = 0.0;
+        if (std::signbit(low) == std::signbit(energy(upper))) throw std::runtime_error("independent root outside bracket");
+        for (int iteration = 0; iteration < 100; ++iteration) {
+            mid = 0.5 * (lower + upper); error = energy(mid);
+            if (std::abs(error) <= 1e-7 && upper - lower <= 1e-12) break;
+            if (std::signbit(error) == std::signbit(low)) { lower = mid; low = error; } else upper = mid;
+        }
+        std::cout << ion << ',' << stored << ',' << mid << ',' << error << ',' << upper-lower << '\n';
+        parameters.born_diameter_angstrom[ion] = stored;
+    }
+    return 0;
+}
+
 int main(int argc, char** argv) {
+    if (argc == 3 && std::string(argv[1]) == "--electrolyte-reference") return electrolyte_reference_file(argv[2]);
     return recording_support::run(argc, argv, {
+        {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
