@@ -91,15 +91,15 @@ Budget changes must not silently change scientific scope.
   on the three bounded cases; no speedup is claimed. Other layers and all
   planned allowances are unchanged.
 
-- 2026-10-01, #219 slice B Regression amendment (owner approved): slice B
+- 2026-10-01, #219 slice B Parameter regression amendment (owner approved): slice B
   stopped at its budget gate. A counted sketch of the D7 native Ipopt
-  constrained estimation (one Regression TNLP over the slice-A evaluator) gives
-  about +370 Regression lines and +538 net total, against the 175-line
-  allowance left after slice A. The owner chose to build it now: Regression hard
+  constrained estimation (one Parameter regression TNLP over the slice-A evaluator) gives
+  about +370 Parameter regression lines and +538 net total, against the 175-line
+  allowance left after slice A. The owner chose to build it now: Parameter regression hard
   ceiling 2200 → 2480, covering slice B plus #225's planned +80. Other ceilings
   and the 22000 aggregate are unchanged. The roadmap now projects about 22,260
   against 22,000, so the aggregate is revisited with measured counts before #224
-  builds. Slice B's closeout records the measured counts and lowers Regression
+  builds. Slice B's closeout records the measured counts and lowers Parameter regression
   to measured plus the remaining #225 allowance.
 
 - 2026-10-01, #219 slice A closeout, measured against `89c1a337` (18,932):
@@ -167,10 +167,10 @@ Budget changes must not silently change scientific scope.
   owner replaced per-issue amendments for #219, #223, #224 and #225 with one
   envelope. Measured base `4cd1ebfe` (after the #221 consolidation, −168): total
   18932; Core 917, Contributions 1593, Properties 4176, Equilibrium 6095,
-  Regression 1607, Surface 532, Bindings 1674, Python 2338. Projection from the
+  Parameter regression 1607, Surface 532, Bindings 1674, Python 2338. Projection from the
   designs' upper estimates (unmeasured; #225's broadened scope pending): about
   21,600. New hard ceilings: Properties 4258 → 4600, Equilibrium 7000 → 7650,
-  Regression 1619 → 2200, Bindings 1726 → 1880, Python 2374 → 2620 and aggregate
+  Parameter regression 1619 → 2200, Bindings 1726 → 1880, Python 2374 → 2620 and aggregate
   19100 → 22000; Core 1000, Contributions 1612 and Surface 650 unchanged. The
   aggregate is deliberately tighter than the sum of the layers. The #219 D6/D7
   and #225 D4 per-issue requests are superseded. Each build's closeout records
@@ -181,9 +181,9 @@ Budget changes must not silently change scientific scope.
   soft ceilings are unchanged; soft-ceiling reasons are still required.
 
 - 2026-09-30, direct source-basis ln K observations (#211, owner approved):
-  Regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
+  Parameter regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
   18805 → 18830, exactly the measured counts against `95ba231e` (+25 net
-  runtime lines: Regression +21, Bindings +2, Python type declarations +2).
+  runtime lines: Parameter regression +21, Bindings +2, Python type declarations +2).
   Bindings measures 1723 within its unchanged 1725 hard ceiling. The direct
   value uses the existing reaction-property owner; exact columns reuse the
   existing reaction-coordinate basis and admission reuses named-coordinate
@@ -191,9 +191,9 @@ Budget changes must not silently change scientific scope.
   Floors, soft ceilings and other hard ceilings remain unchanged.
 
 - 2026-09-30, total molar isobaric heat-capacity fitting (#205 O2, owner approved):
-  Regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
+  Parameter regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
   18790 → 18805, the measured candidate counts. Relative to `d47d0475`,
-  runtime growth is 37 physical lines: Regression 23, Bindings 2 and Python 12.
+  runtime growth is 37 physical lines: Parameter regression 23, Bindings 2 and Python 12.
   The owner approved 65 gross added runtime lines, with 28 removed (+37 net),
   replacing the design's gross-45 ceiling while retaining all net and layer caps.
   Properties remains 4223; Bindings remains under its 1725 ceiling.
