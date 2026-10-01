@@ -113,18 +113,6 @@ double residual_slope(const Observation& observation, double value) {
     return observation.form == ResidualForm::Difference ? 1.0 / observation.scale : 1.0 / value;
 }
 
-bool same_reaction(const equilibrium::ReactionSpec& x, const equilibrium::ReactionSpec& y) {
-    const auto correlation = [](const auto& v) {
-        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
-                        v.temperature_max, v.standard_state_id);
-    };
-    const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
-    return std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
-        == std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
-        && optional_equal(x.correlation, y.correlation, correlation)
-        && optional_equal(x.reference, y.reference, reference);
-}
-
 bool same_state(const Observation& left, const Observation& right) {
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)

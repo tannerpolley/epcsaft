@@ -79,7 +79,7 @@ struct PredictionGradient final {
 };
 
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
-bool same_reaction(const equilibrium::ReactionSpec& left, const equilibrium::ReactionSpec& right);
+using equilibrium::same_reaction;
 bool same_state(const Observation& left, const Observation& right);
 void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);

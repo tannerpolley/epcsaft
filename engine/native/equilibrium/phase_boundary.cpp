@@ -414,18 +414,6 @@ struct Attempt final {
     std::optional<core::Convergence> convergence;
 };
 
-template <class Value>
-bool same_optional(const std::optional<Value>& left, const std::optional<Value>& right) {
-    return left.has_value() == right.has_value() && (!left.has_value() || *left == *right);
-}
-
-bool same_correlation(const ReactionLogPolynomial& a, const ReactionLogPolynomial& b) {
-    return a.a == b.a && a.b == b.b && a.c == b.c && a.d == b.d
-        && a.reference_temperature == b.reference_temperature
-        && a.temperature_min == b.temperature_min && a.temperature_max == b.temperature_max
-        && a.standard_state_id == b.standard_state_id;
-}
-
 bool same_intensive(const FreeValue& a, const FreeValue& b) {
     if (a.free != b.free) return false;
     return !a.free || (a.absent == b.absent && a.value == b.value);
@@ -452,14 +440,7 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     for (std::size_t r = 0; r < a.reactions.size(); ++r) {
         const auto& x = a.reactions[r];
         const auto& y = b.reactions[r];
-        const bool same_law = x.name == y.name && x.stoichiometry == y.stoichiometry
-            && same_optional(x.equilibrium_constant, y.equilibrium_constant)
-            && same_optional(x.affinity_j_per_mol, y.affinity_j_per_mol)
-            && x.correlation.has_value() == y.correlation.has_value()
-            && (!x.correlation.has_value() || same_correlation(*x.correlation, *y.correlation))
-            && x.reference.has_value() == y.reference.has_value() && (!x.reference || (x.reference->source_basis
-                == y.reference->source_basis && x.reference->reference_pressure_pa == y.reference->reference_pressure_pa));
-        if (!same_law) return "reaction " + reaction_name(x, r) + " differs";
+        if (!same_reaction(x, y)) return "reaction " + reaction_name(x, r) + " differs";
     }
     if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
     if (a.topology_declared != b.topology_declared) return "topology declaration differs";
