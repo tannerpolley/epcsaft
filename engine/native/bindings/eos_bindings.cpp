@@ -18,53 +18,37 @@ void register_thermal_inputs(py::module_& module) {
     using namespace epcsaft;
     module.attr("GAS_CONSTANT_J_PER_MOL_K") = GAS_CONSTANT_J_PER_MOL_K;
     py::class_<IdealPolynomial>(module, "IdealPolynomial")
-        .def(py::init([](std::vector<double> coefficients, double reference_temperature,
-                         double reference_enthalpy, double reference_entropy) {
-            return IdealPolynomial{std::move(coefficients), reference_temperature,
-                                   reference_enthalpy, reference_entropy};
-        }), py::arg("coefficients"), py::arg("reference_temperature"),
+        .def(py::init<std::vector<double>, double, double, double>(), py::arg("coefficients"), py::arg("reference_temperature"),
             py::arg("reference_enthalpy"), py::arg("reference_entropy"))
         .def_readwrite("coefficients", &IdealPolynomial::coefficients)
         .def_readwrite("reference_temperature", &IdealPolynomial::reference_temperature)
         .def_readwrite("reference_enthalpy", &IdealPolynomial::reference_enthalpy)
         .def_readwrite("reference_entropy", &IdealPolynomial::reference_entropy);
     py::class_<IdealShomate>(module, "IdealShomate")
-        .def(py::init([](std::array<double, 8> coefficients, double formation_enthalpy) {
-            return IdealShomate{coefficients, formation_enthalpy};
-        }), py::arg("coefficients"), py::arg("formation_enthalpy"))
+        .def(py::init<std::array<double, 8>, double>(), py::arg("coefficients"), py::arg("formation_enthalpy"))
         .def_readwrite("coefficients", &IdealShomate::coefficients)
         .def_readwrite("formation_enthalpy", &IdealShomate::formation_enthalpy);
     py::class_<IdealNASA7>(module, "IdealNASA7")
-        .def(py::init([](std::array<double, 7> coefficients) { return IdealNASA7{coefficients}; }),
+        .def(py::init<std::array<double, 7>>(),
              py::arg("coefficients"))
         .def_readwrite("coefficients", &IdealNASA7::coefficients);
     py::class_<IdealNASA9>(module, "IdealNASA9")
-        .def(py::init([](std::array<double, 9> coefficients) { return IdealNASA9{coefficients}; }),
+        .def(py::init<std::array<double, 9>>(),
              py::arg("coefficients"))
         .def_readwrite("coefficients", &IdealNASA9::coefficients);
     py::class_<IdealDIPPR107>(module, "IdealDIPPR107")
-        .def(py::init([](std::array<double, 5> coefficients, double reference_temperature,
-                         double reference_enthalpy, double reference_entropy) {
-            return IdealDIPPR107{coefficients, reference_temperature,
-                                 reference_enthalpy, reference_entropy};
-        }), py::arg("coefficients"), py::arg("reference_temperature"),
+        .def(py::init<std::array<double, 5>, double, double, double>(), py::arg("coefficients"), py::arg("reference_temperature"),
             py::arg("reference_enthalpy"), py::arg("reference_entropy"))
         .def_readwrite("coefficients", &IdealDIPPR107::coefficients)
         .def_readwrite("reference_temperature", &IdealDIPPR107::reference_temperature)
         .def_readwrite("reference_enthalpy", &IdealDIPPR107::reference_enthalpy)
         .def_readwrite("reference_entropy", &IdealDIPPR107::reference_entropy);
     py::class_<IdealCorrelation>(module, "IdealCorrelation")
-        .def(py::init([](decltype(IdealCorrelation::form) form, double source_pressure) {
-            return IdealCorrelation{std::move(form), source_pressure};
-        }), py::arg("form"), py::arg("source_pressure"))
+        .def(py::init<decltype(IdealCorrelation::form), double>(), py::arg("form"), py::arg("source_pressure"))
         .def_readwrite("form", &IdealCorrelation::form)
         .def_readwrite("source_pressure", &IdealCorrelation::source_pressure);
     py::class_<IdealInterval>(module, "IdealInterval")
-        .def(py::init([](double lower, double upper, bool lower_inclusive, bool upper_inclusive,
-                         IdealCorrelation correlation) {
-            return IdealInterval{lower, upper, lower_inclusive, upper_inclusive,
-                                 std::move(correlation)};
-        }), py::arg("lower"), py::arg("upper"), py::arg("lower_inclusive"),
+        .def(py::init<double, double, bool, bool, IdealCorrelation>(), py::arg("lower"), py::arg("upper"), py::arg("lower_inclusive"),
             py::arg("upper_inclusive"), py::arg("correlation"))
         .def_readwrite("lower", &IdealInterval::lower)
         .def_readwrite("upper", &IdealInterval::upper)
@@ -72,19 +56,11 @@ void register_thermal_inputs(py::module_& module) {
         .def_readwrite("upper_inclusive", &IdealInterval::upper_inclusive)
         .def_readwrite("correlation", &IdealInterval::correlation);
     py::class_<ThermochemistryRecord>(module, "ThermochemistryRecord")
-        .def(py::init([](double standard_pressure,
-                         std::vector<std::vector<IdealInterval>> component_intervals) {
-            return ThermochemistryRecord{standard_pressure, std::move(component_intervals)};
-        }), py::arg("standard_pressure"), py::arg("component_intervals"))
+        .def(py::init<double, std::vector<std::vector<IdealInterval>>>(), py::arg("standard_pressure"), py::arg("component_intervals"))
         .def_readwrite("standard_pressure", &ThermochemistryRecord::standard_pressure)
         .def_readwrite("component_intervals", &ThermochemistryRecord::component_intervals);
     py::class_<ReactionLogPolynomial>(module, "ReactionLogPolynomial")
-        .def(py::init([](double a, double b, double c, double d, double reference_temperature,
-                         double temperature_min, double temperature_max,
-                         std::string standard_state_id) {
-            return ReactionLogPolynomial{a, b, c, d, reference_temperature, temperature_min,
-                                         temperature_max, std::move(standard_state_id)};
-        }), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
+        .def(py::init<double, double, double, double, double, double, double, std::string>(), py::arg("a"), py::arg("b"), py::arg("c"), py::arg("d"),
             py::arg("reference_temperature"), py::arg("temperature_min"),
             py::arg("temperature_max"), py::arg("standard_state_id"))
         .def_readwrite("a", &ReactionLogPolynomial::a)
@@ -106,9 +82,7 @@ void register_thermal_inputs(py::module_& module) {
         .value("KijReciprocalTemperatureSlope", ParameterFamily::KijReciprocalTemperatureSlope);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     py::class_<ActiveParameter>(module, "ActiveParameter")
-        .def(py::init([](ParameterFamily family, std::vector<std::size_t> indices) {
-            return ActiveParameter{family, std::move(indices)};
-        }), py::arg("family"), py::arg("indices"))
+        .def(py::init<ParameterFamily, std::vector<std::size_t>>(), py::arg("family"), py::arg("indices"))
         .def_readwrite("family", &ActiveParameter::family)
         .def_readwrite("indices", &ActiveParameter::indices);
 }
@@ -185,18 +159,12 @@ void register_eos(py::module_& module) {
         .value("Nonfinite", epcsaft::PropertyActionStatus::Nonfinite);
     // A native family/slot coordinate increment in its ALG-PARAMETERS unit.
     py::class_<epcsaft::ParameterActionDirection>(module, "ParameterActionDirection")
-        .def(py::init([](epcsaft::ParameterFamily family, std::vector<std::size_t> indices, double value) {
-            return epcsaft::ParameterActionDirection{family, std::move(indices), value};
-        }), py::arg("family"), py::arg("indices"), py::arg("value"))
+        .def(py::init<epcsaft::ParameterFamily, std::vector<std::size_t>, double>(), py::arg("family"), py::arg("indices"), py::arg("value"))
         .def_readonly("family", &epcsaft::ParameterActionDirection::family)
         .def_readonly("indices", &epcsaft::ParameterActionDirection::indices)
         .def_readonly("value", &epcsaft::ParameterActionDirection::value);
     py::class_<epcsaft::DensityActionDirection>(module, "DensityActionDirection")
-        .def(py::init([](double temperature, double molar_density, std::vector<double> composition,
-                         std::vector<epcsaft::ParameterActionDirection> parameter) {
-            return epcsaft::DensityActionDirection{
-                temperature, molar_density, std::move(composition), std::move(parameter)};
-        }), py::arg("temperature") = 0.0, py::arg("molar_density") = 0.0,
+        .def(py::init<double, double, std::vector<double>, std::vector<epcsaft::ParameterActionDirection>>(), py::arg("temperature") = 0.0, py::arg("molar_density") = 0.0,
             py::arg("composition") = std::vector<double>{},
             py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
         .def_readonly("temperature", &epcsaft::DensityActionDirection::temperature)
@@ -204,11 +172,7 @@ void register_eos(py::module_& module) {
         .def_readonly("composition", &epcsaft::DensityActionDirection::composition)
         .def_readonly("parameter", &epcsaft::DensityActionDirection::parameter);
     py::class_<epcsaft::PressureActionDirection>(module, "PressureActionDirection")
-        .def(py::init([](double temperature, double pressure, std::vector<double> composition,
-                         std::vector<epcsaft::ParameterActionDirection> parameter) {
-            return epcsaft::PressureActionDirection{
-                temperature, pressure, std::move(composition), std::move(parameter)};
-        }), py::arg("temperature") = 0.0, py::arg("pressure") = 0.0,
+        .def(py::init<double, double, std::vector<double>, std::vector<epcsaft::ParameterActionDirection>>(), py::arg("temperature") = 0.0, py::arg("pressure") = 0.0,
             py::arg("composition") = std::vector<double>{},
             py::arg("parameter") = std::vector<epcsaft::ParameterActionDirection>{})
         .def_readonly("temperature", &epcsaft::PressureActionDirection::temperature)
