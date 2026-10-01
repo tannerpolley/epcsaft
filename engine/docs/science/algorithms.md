@@ -979,8 +979,8 @@ variance. Zero-weight rows receive admission and final evaluation; their failed
 final residuals retain independently available signed values and objective results.
 Native final checks recompute the stored parameters without resolving a hold,
 report signed row errors and max/mean groups, and use frozen source baselines
-where declared. Objective results retain their accepted warm-start evaluation;
-only zero-weight reports replace their final values. Unevaluated rows remain
+where declared. Least-squares objective results retain their accepted warm-start evaluation;
+only zero-weight reports replace their final values. Unevaluated trial rows remain
 explicitly unavailable. Report-only failures do not change acceptance. A failed check
 is no proof of infeasibility. Singular vectors and the projected weighted
 gradient describe local conditioning; dependent-target uncertainty, profiles,
@@ -1018,14 +1018,18 @@ and slacks, and parameter/auxiliary bound distances separately. For scaled
 $c=C/\sigma$, physical-objective multipliers are $q\lambda/\sigma$ and $qz$ for
 bounds. For a regular interior eliminated diameter, reconstruct
 $\nu=-(\partial L_{without\ H}/\partial d)/H_d$ from raw physical columns and
-verify the held and independent full-space stationarity equations. Singular
+report the reconstructed held and independent full-space stationarity equations.
+The held component vanishes by construction; independent multiplier qualification
+uses the manufactured analytic KKT conditions. Singular
 or bracket-boundary holds retain the reduced diagnostics and an explicit
 unavailable full-space cause. Root-error estimates use exact held-row slopes
 and achieved diameter uncertainty/correction; refinement qualification belongs
 to the retained study.
 
 Termination, point/action availability, feasibility, final checks and
-stationarity are distinct. Final checks use the stored fitted diameters,
+stationarity are distinct. Final checks evaluate report-only rows omitted from
+the minimax trial; their raw Jacobian rows carry no evaluated columns.
+Final checks use the stored fitted diameters,
 without resolving holds. A fatal initialization has no candidate; local
 infeasibility proves no global infeasibility. No covariance, unique optimum,
 global certificate or physical validation follows from this local minimax
