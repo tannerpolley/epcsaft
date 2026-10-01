@@ -69,10 +69,11 @@ plan:
 # 19100 -> 22000. Each build's closeout lowers its layers to measured + remaining planned allowance.
 # #219 slice A closeout: Core 917 and Contributions 1547, with zero planned additions
 # there in remaining #219B/#223/#224/#225; the other touched layers retain their shared
-# envelope allowances. Regression 2025 leaves the owner-approved 175 for B, which must re-estimate.
+# envelope allowances. The later #230 amendment supersedes A's 175-line B allowance.
 # 2026-10-01 #219 slice B (owner approved): Regression hard 2200 -> 2480 for the native Ipopt
 # constrained estimation (counted estimate +370) plus #225's planned +80; total 22000 unchanged,
 # revisited with measured counts before #224.
+# #219B closeout: measured Regression 2398 + #225 planned 80 = 2478; other ceilings unchanged.
 code_budgets: {
   "core": [
     700,
@@ -97,7 +98,7 @@ code_budgets: {
   "regression": [
     800,
     1000,
-    2480
+    2478
   ],
   "surface": [
     450,

@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
+#include "equilibrium/ipopt.hpp"
 
 #include "core/trace.hpp"
 
@@ -119,42 +120,6 @@ void clear_state(EquilibriumResult& result) {
     result.multipliers.clear();
     result.constraint_multipliers.clear();
     result.coordinates.clear();
-}
-
-const char* solver_status_name(Ipopt::SolverReturn status) noexcept {
-    switch (status) {
-    case Ipopt::SUCCESS: return "SUCCESS";
-    case Ipopt::MAXITER_EXCEEDED: return "MAXITER_EXCEEDED";
-    case Ipopt::CPUTIME_EXCEEDED: return "CPUTIME_EXCEEDED";
-    case Ipopt::STOP_AT_TINY_STEP: return "STOP_AT_TINY_STEP";
-    case Ipopt::STOP_AT_ACCEPTABLE_POINT: return "STOP_AT_ACCEPTABLE_POINT";
-    case Ipopt::LOCAL_INFEASIBILITY: return "LOCAL_INFEASIBILITY";
-    case Ipopt::USER_REQUESTED_STOP: return "USER_REQUESTED_STOP";
-    case Ipopt::FEASIBLE_POINT_FOUND: return "FEASIBLE_POINT_FOUND";
-    case Ipopt::DIVERGING_ITERATES: return "DIVERGING_ITERATES";
-    case Ipopt::RESTORATION_FAILURE: return "RESTORATION_FAILURE";
-    case Ipopt::ERROR_IN_STEP_COMPUTATION: return "ERROR_IN_STEP_COMPUTATION";
-    case Ipopt::INVALID_NUMBER_DETECTED: return "INVALID_NUMBER_DETECTED";
-    case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: return "TOO_FEW_DEGREES_OF_FREEDOM";
-    case Ipopt::INVALID_OPTION: return "INVALID_OPTION";
-    case Ipopt::OUT_OF_MEMORY: return "OUT_OF_MEMORY";
-    case Ipopt::INTERNAL_ERROR: return "INTERNAL_ERROR";
-    case Ipopt::UNASSIGNED: return "UNASSIGNED";
-    }
-    return "UNKNOWN";
-}
-
-// The fatal Ipopt application returns (IpReturnCodes_inc.h) by name; any other code by value.
-std::string application_return_name(Ipopt::ApplicationReturnStatus code) {
-    switch (code) {
-    case Ipopt::Invalid_Problem_Definition: return "Invalid_Problem_Definition";
-    case Ipopt::Invalid_Option: return "Invalid_Option";
-    case Ipopt::Unrecoverable_Exception: return "Unrecoverable_Exception";
-    case Ipopt::NonIpopt_Exception_Thrown: return "NonIpopt_Exception_Thrown";
-    case Ipopt::Insufficient_Memory: return "Insufficient_Memory";
-    case Ipopt::Internal_Error: return "Internal_Error";
-    default: return std::to_string(static_cast<int>(code));
-    }
 }
 
 void require_solution_shape(
@@ -686,22 +651,8 @@ EquilibriumResult run_driver(
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
         * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
-    Ipopt::SmartPtr<Ipopt::IpoptApplication> application = ::IpoptApplicationFactory();
-    const double objective_scale = 1.0 / compiled.feed_total;
-    application->Options()->SetIntegerValue("print_level", 0);
-    application->Options()->SetStringValue("nlp_scaling_method", "none");
-    application->Options()->SetNumericValue("obj_scaling_factor", objective_scale);
-    application->Options()->SetStringValue("hessian_approximation", "exact");
-    application->Options()->SetNumericValue("tol", inner_tolerance);
-    application->Options()->SetNumericValue("acceptable_tol", inner_tolerance);
-    application->Options()->SetIntegerValue("acceptable_iter", 0);
-    application->Options()->SetNumericValue("dual_inf_tol", inner_tolerance);
-    application->Options()->SetNumericValue("constr_viol_tol", inner_tolerance);
-    application->Options()->SetIntegerValue("max_iter",
-        static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
-    const Ipopt::ApplicationReturnStatus initialized = application->Initialize();
-    const Ipopt::ApplicationReturnStatus returned =
-        initialized == Ipopt::Solve_Succeeded ? application->OptimizeTNLP(nlp) : initialized;
+    const auto [initialized, returned] = run_ipopt(nlp, inner_tolerance,
+        static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value), 0.0, true, 1.0 / compiled.feed_total);
     const Ipopt::SolverReturn status = nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
     const bool fatal = initialized != Ipopt::Solve_Succeeded

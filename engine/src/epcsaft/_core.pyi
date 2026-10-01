@@ -844,7 +844,63 @@ class FitCovariance:
     physical: list[float]
     variance_factor: Optional[float]
 
+class MinimaxRequest:
+    targets: list[int]
+    group_scales: list[float]
+    q: float
+    tolerance: float
+    activity_distance: float
+    margin: float
+    def __init__(self) -> None: ...
+class MinimaxRow:
+    kind: str
+    row: int
+    group: int
+    metric: CheckMetric
+    sign: float
+    threshold: float
+    scale: float
+    auxiliary: int | None
+    members: list[int]
+class MinimaxResult:
+    availability: str
+    application_status: str
+    solver_status: str
+    feasible: bool
+    stationary: bool
+    t: float
+    target_maximum: float
+    gap: float
+    primal: float
+    stationarity: float
+    dual_sign: float
+    complementarity: float
+    point: list[float]
+    lower: list[float]
+    upper: list[float]
+    values: list[float]
+    physical_values: list[float]
+    jacobian: list[float]
+    multipliers: list[float]
+    physical_multipliers: list[float]
+    z_lower: list[float]
+    z_upper: list[float]
+    physical_z_lower: list[float]
+    physical_z_upper: list[float]
+    lower_distances: list[float]
+    upper_distances: list[float]
+    hold_multipliers: list[float]
+    full_stationarity: list[float]
+    root_errors: list[float]
+    slack_groups: list[int]
+    slack_rows: list[int]
+    active_lower: list[int]
+    active_upper: list[int]
+    hold_causes: list[str]
+    rows: list[MinimaxRow]
+    frozen_checks: list[CheckResult]
 class FitResult:
+    minimax: MinimaxResult | None
     chart: EvaluatedCoordinates
     checks: list[CheckResult]
     acceptance: str
@@ -877,7 +933,7 @@ def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord]
         observations: Sequence[Observation], weights: Sequence[float], controls: FitControls, holds: Sequence[HydrationHold] = ...,
         checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
         starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
-        seconds: Optional[float] = None) -> Union[FitResult, list[FitResult]]: ...
+        seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...) -> Union[FitResult, list[FitResult]]: ...
 
 class CheckMetric:
     AbsoluteDifference: CheckMetric
@@ -939,3 +995,17 @@ def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: 
 def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
 
 def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float]) -> list[Observation]: ...
+
+class ObservationEvaluation:
+    predictions: list[float]
+    gradient: list[float]
+    optimizer_gradient: list[float]
+    chart: EvaluatedCoordinates
+    statuses: list[ObservationStatus]
+def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
+    holds: Sequence[HydrationHold], observations: Sequence[Observation]) -> ObservationEvaluation: ...
+def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
+    holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
+    baseline: Parameters | None, minimax: MinimaxRequest) -> FitResult: ...
+def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
+    stoichiometry: tuple[int, int], molality: float) -> list[float]: ...

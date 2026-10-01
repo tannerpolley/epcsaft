@@ -1416,6 +1416,253 @@ EquilibriumProblem referenced_formula(std::optional<double> source_pressure) {
     return problem;
 }
 
+struct AnalyticMinimaxProblem final { FitRequest request; std::vector<CheckResult> frozen; };
+
+HydrationHold analytic_minimax_hold(double upper) {
+    HydrationHold hold;
+    hold.reference.kind = ObservationKind::SolvationGibbsEnergy;
+    hold.reference.temperature = 298.15; hold.reference.pressure = 1.0e5;
+    hold.reference.composition = {1.0}; hold.reference.ion_indices = {0, 1};
+    hold.reference.stoichiometry = {1, 1}; hold.reference.branch = DensityBranch::Liquid;
+    hold.reference.species = {0}; hold.reference.form = ResidualForm::Difference;
+    hold.lower = 0.0; hold.upper = upper;
+    hold.energy_tolerance = 1.0e-6; hold.diameter_tolerance = 1.0e-10; hold.maximum_iterations = 100;
+    return hold;
+}
+
+AnalyticMinimaxProblem analytic_minimax_problem(bool b1, double q, double sigma) {
+    AnalyticMinimaxProblem problem;
+    auto& request = problem.request;
+    request.coordinates.coordinates.push_back({ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, 0.0, b1 ? 2.0 : 3.0});
+    if (b1) request.coordinates.coordinates.push_back({ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0, 0.0, 2.0});
+    request.observations.resize(5);
+    for (auto& row : request.observations) {
+        row.kind = ObservationKind::MeanIonicActivityCoefficient;
+        row.form = ResidualForm::LogRatio; row.observed = 1.0; row.scale = 1.0;
+    }
+    request.weights.assign(5, 1.0);
+    request.holds = {analytic_minimax_hold(b1 ? 4.0 : 6.0)};
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 5.0;
+    request.minimax = MinimaxRequest{};
+    request.minimax->targets = b1 ? std::vector<std::size_t>{0, 1} : std::vector<std::size_t>{0, 1, 2, 3, 4};
+    request.minimax->group_scales = b1 ? std::vector<double>{sigma, sigma} : std::vector<double>{};
+    request.minimax->q = q; request.minimax->tolerance = 1.0e-10;
+    request.minimax->activity_distance = 1.0e-6; request.minimax->margin = 0.1;
+    if (b1) {
+        CheckGroup maximum; maximum.name = "maximum"; maximum.rows = {2};
+        maximum.metric = CheckMetric::AbsoluteLog10Ratio; maximum.maximum = 0.0075;
+        request.checks.push_back(maximum);
+        CheckResult frozen_maximum; frozen_maximum.name = maximum.name; frozen_maximum.unit = "decade";
+        frozen_maximum.status = "pass"; frozen_maximum.rows = maximum.rows;
+        frozen_maximum.maximum_threshold = maximum.maximum; problem.frozen.push_back(frozen_maximum);
+        CheckGroup mean; mean.name = "mean"; mean.rows = {3, 4};
+        mean.metric = CheckMetric::AbsoluteLog10Ratio; mean.mean = 0.0075;
+        request.checks.push_back(mean);
+        CheckResult frozen_mean; frozen_mean.name = mean.name; frozen_mean.unit = "decade";
+        frozen_mean.status = "pass"; frozen_mean.rows = mean.rows;
+        frozen_mean.mean_threshold = mean.mean; problem.frozen.push_back(frozen_mean);
+    }
+    return problem;
+}
+
+ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
+    return [&request](const std::vector<double>& u, bool, ObservationEvaluation& out) {
+        constexpr double a = 0.01;
+        const double ln10 = std::log(10.0);
+        const bool b1 = u.size() == 2;
+        const std::size_t physical = b1 ? 3 : 2, n = request.observations.size();
+        const double x = u[0], z = b1 ? u[1] : 0.0, d = 2.0 * x;
+        out = ObservationEvaluation{};
+        out.predictions.resize(n); out.residuals.resize(n); out.weighted.resize(n);
+        out.statuses.assign(n, ObservationStatus::Available);
+        out.gradient.assign(n * physical, 0.0); out.optimizer_gradient.assign(n * u.size(), 0.0);
+        out.chart.parameters = request.parameters; out.chart.active = request.coordinates.active_parameters();
+        out.chart.active.push_back({ParameterFamily::BornDiameter, {0}});
+        out.chart.physical = b1 ? std::vector<double>{x, z, d} : std::vector<double>{x, d};
+        out.chart.map = b1 ? std::vector<double>{1.0, 0.0, 0.0, 1.0, 2.0, 0.0}
+                           : std::vector<double>{1.0, 2.0};
+        HoldResult hold; hold.derivative = 1.0;
+        hold.parameter_derivative = b1 ? std::vector<double>{-2.0, 0.0, 1.0} : std::vector<double>{-2.0, 1.0};
+        hold.cause = "converged"; hold.iterations = 1; out.chart.holds = {hold};
+        for (std::size_t i = 0; i < n; ++i) {
+            double e = 0.0; std::vector<double> de(physical, 0.0);
+            if (b1 && i == 0) { e = a * (x + z); de = {a, a, 0.0}; }
+            else if (b1 && i == 1) { e = a * (3.0 - d / 2.0 - z); de = {0.0, -a, -a / 2.0}; }
+            else if (b1 && i == 2) { e = a * x; de = {a, 0.0, 0.0}; }
+            else if (b1 && i == 3) { e = a * z; de = {0.0, a, 0.0}; }
+            else if (b1) { e = a * (z + 0.5); de = {0.0, a, 0.0}; }
+            else if (i < 4) { e = a * x; de = {a, 0.0}; }
+            else { e = a * (d / 2.0 - 3.0); de = {0.0, a / 2.0}; }
+            const double y = std::pow(10.0, e), weight = request.weights.empty() ? 1.0 : request.weights[i];
+            out.predictions[i] = y; out.residuals[i] = std::log(y / request.observations[i].observed);
+            out.weighted[i] = std::sqrt(weight) * out.residuals[i]; out.cost += 0.5 * out.weighted[i] * out.weighted[i];
+            for (std::size_t p = 0; p < physical; ++p) {
+                out.gradient[i * physical + p] = ln10 * y * de[p];
+                for (std::size_t c = 0; c < u.size(); ++c)
+                    out.optimizer_gradient[i * u.size() + c] += out.gradient[i * physical + p] * out.chart.map[p * u.size() + c];
+            }
+        }
+        return true;
+    };
+}
+
+void check_minimax_kkt(const std::string& id, const MinimaxResult& m, const std::string& inputs) {
+    CHECK(agree(id + "/primal", "scaled_primal_norm", "1", m.primal, 0.0, 1.0e-8, 0.0,
+        inputs, "scaled primal feasibility is within tolerance", "r2-minimax"));
+    CHECK(agree(id + "/stationarity", "scaled_stationarity_norm", "1", m.stationarity, 0.0, 1.0e-8, 0.0,
+        inputs, "scaled stationarity is within tolerance", "r2-minimax"));
+    CHECK(agree(id + "/dual_sign", "scaled_dual_sign_norm", "1", m.dual_sign, 0.0, 1.0e-8, 0.0,
+        inputs, "scaled dual signs are feasible", "r2-minimax"));
+    CHECK(agree(id + "/complementarity", "scaled_complementarity_norm", "1", m.complementarity, 0.0,
+        1.0e-8, 0.0, inputs, "scaled complementarity is within tolerance", "r2-minimax"));
+}
+
+void check_b1_minimax(const std::string& id, const FitRequest& request, const FitResult& result,
+                      const std::vector<double>& start) {
+    const auto inputs = fields({field("q", request.minimax->q), field("sigma", request.minimax->group_scales[0]),
+        field("start_x", start[0]), field("start_z", start[1]), field("a_per_decade", 0.01)});
+    CHECK(result.minimax.has_value());
+    const auto& m = *result.minimax;
+    CHECK(truth(id + "/available", "the analytic constrained candidate and KKT diagnostics are available",
+        result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax"));
+    const std::vector<double> coordinates = {0.75, 0.5, 1.5}, errors = {0.0125, 0.0175, 0.0075, 0.005, 0.010};
+    for (std::size_t i = 0; i < coordinates.size(); ++i)
+        CHECK(agree(id + "/coordinate/" + std::to_string(i), "physical_coordinate", "1", result.chart.physical[i],
+            coordinates[i], 1.0e-7, 0.0, inputs, "the unique guarded minimax point is recovered", "r2-minimax"));
+    CHECK(agree(id + "/H", "H", "1", result.chart.physical[2] - 2.0 * result.chart.physical[0], 0.0,
+        1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax"));
+    for (std::size_t i = 0; i < errors.size(); ++i)
+        CHECK(agree(id + "/error/" + std::to_string(i), "log10_prediction_ratio", "decade",
+            check_error(CheckMetric::AbsoluteLog10Ratio, request.observations[i], result.predictions[i]).first,
+            errors[i], 1.0e-9, 0.0, inputs, "the analytic observation error is recovered", "r2-minimax"));
+    CHECK(agree(id + "/t", "minimax_t", "decade", m.t, 0.0175, 1.0e-9, 0.0,
+        inputs, "the active target sets the epigraph", "r2-minimax"));
+    CHECK(agree(id + "/target_maximum", "target_maximum", "decade", m.target_maximum, 0.0175, 1.0e-9, 0.0,
+        inputs, "the reported maximum matches the active target", "r2-minimax"));
+    CHECK(agree(id + "/gap", "epigraph_gap", "decade", m.gap, 0.0, 1.0e-9, 0.0,
+        inputs, "the epigraph is tight", "r2-minimax"));
+    CHECK(m.rows.size() == m.physical_values.size() && m.rows.size() == m.physical_multipliers.size());
+    double mu_e2 = 0.0, mu_max = 0.0, mu_e4 = 0.0, mu_e5 = 0.0;
+    for (std::size_t i = 0; i < m.rows.size(); ++i) {
+        const auto& r = m.rows[i]; double value = 0.0, multiplier = 0.0;
+        if (r.kind == "target") {
+            value = r.sign * errors[r.row] - m.t;
+            if (r.row == 1 && r.sign == 1.0) { multiplier = 1.0; mu_e2 = m.physical_multipliers[i]; }
+        } else if (r.kind == "maximum") {
+            value = r.sign * errors[r.row] - 0.0075;
+            if (r.group == 0 && r.sign == 1.0) { multiplier = 1.0; mu_max = m.physical_multipliers[i]; }
+        } else if (r.kind == "link") {
+            const double slack = errors[r.row]; value = r.sign * errors[r.row] - slack;
+            if (r.sign == 1.0) {
+                multiplier = 0.5;
+                if (r.row == 3) mu_e4 = m.physical_multipliers[i]; else mu_e5 = m.physical_multipliers[i];
+                CHECK(r.auxiliary.has_value());
+                CHECK(agree(id + "/slack/" + std::to_string(r.row), "mean_slack", "decade",
+                    m.point.at(*r.auxiliary), slack, 1.0e-9, 0.0, inputs,
+                    "each mean slack equals its absolute row error", "r2-minimax"));
+            }
+        } else { value = 0.0; multiplier = 1.0; }
+        CHECK(agree(id + "/row/" + std::to_string(i), "physical_constraint", "decade", m.physical_values[i],
+            value, 1.0e-9, 0.0, inputs, "the physical target and guard rows match the analytic values", "r2-minimax"));
+        CHECK(agree(id + "/multiplier/" + std::to_string(i), "physical_row_multiplier", "1", m.physical_multipliers[i],
+            multiplier, 1.0e-6, 0.0, inputs, "physical row multipliers match the analytic active set", "r2-minimax"));
+    }
+    for (const double z : m.physical_z_lower)
+        CHECK(agree(id + "/lower_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
+            inputs, "the interior point has no lower-bound multiplier", "r2-minimax"));
+    for (const double z : m.physical_z_upper)
+        CHECK(agree(id + "/upper_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
+            inputs, "the interior point has no upper-bound multiplier", "r2-minimax"));
+    CHECK(agree(id + "/nu", "equality_hold_multiplier", "decade_per_H", m.hold_multipliers.at(0), 0.005,
+        1.0e-6, 0.0, inputs, "the eliminated equality reconstructs nu=a/2", "r2-minimax"));
+    CHECK(m.full_stationarity.size() == 3);
+    for (std::size_t i = 0; i < m.full_stationarity.size(); ++i)
+        CHECK(agree(id + "/full_stationarity/" + std::to_string(i), "full_space_stationarity", "decade_per_coordinate",
+            m.full_stationarity[i], 0.0, 1.0e-8, 0.0, inputs, "full-space stationarity vanishes", "r2-minimax"));
+    CHECK(agree(id + "/stationarity_x", "stationarity_x", "decade_per_x", 0.01 * mu_max - 2.0 * m.hold_multipliers[0],
+        0.0, 1.0e-8, 0.0, inputs, "a*mu_max-2*nu=0", "r2-minimax"));
+    CHECK(agree(id + "/stationarity_z", "stationarity_z", "decade_per_z", -0.01 * mu_e2 + 0.01 * (mu_e4 + mu_e5),
+        0.0, 1.0e-8, 0.0, inputs, "-a*mu_e2+a*(mu_e4+mu_e5)=0", "r2-minimax"));
+    CHECK(agree(id + "/stationarity_d", "stationarity_d", "decade_per_d", -0.01 * mu_e2 / 2.0 + m.hold_multipliers[0],
+        0.0, 1.0e-8, 0.0, inputs, "-a*mu_e2/2+nu=0", "r2-minimax"));
+    CHECK(result.chart.map == std::vector<double>({1.0, 0.0, 0.0, 1.0, 2.0, 0.0}));
+    CHECK(result.chart.holds[0].parameter_derivative == std::vector<double>({-2.0, 0.0, 1.0}));
+    CHECK(agree(id + "/H_d", "H_d", "1", result.chart.holds[0].derivative, 1.0, 0.0, 0.0,
+        inputs, "the analytic hold has H_d=1", "r2-minimax"));
+    CHECK(agree(id + "/hold_residual", "H", "1", result.chart.holds[0].energy_error, 0.0, 1.0e-12, 0.0,
+        inputs, "the analytic equality has zero residual", "r2-minimax"));
+    check_minimax_kkt(id, m, inputs);
+}
+
+void check_d7_minimax() {
+    for (const auto& start : std::vector<std::vector<double>>{{0.25, 0.25}, {1.0, 1.0}}) {
+        const auto problem = analytic_minimax_problem(true, 0.02, 0.02);
+        const auto evaluate = analytic_minimax_evaluator(problem.request);
+        const auto result = solve_minimax(problem.request, start, problem.frozen, evaluate);
+        check_b1_minimax("r2-d7-b1/start-" + number(start[0]), problem.request, result, start);
+    }
+    {
+        const std::vector<double> start = {0.25, 0.25};
+        const auto problem = analytic_minimax_problem(true, 0.01, 0.04);
+        const auto evaluate = analytic_minimax_evaluator(problem.request);
+        const auto result = solve_minimax(problem.request, start, problem.frozen, evaluate);
+        check_b1_minimax("r2-d7-b1/rescaled", problem.request, result, start);
+    }
+    const auto problem = analytic_minimax_problem(false, 0.02, 0.02);
+    const auto evaluate = analytic_minimax_evaluator(problem.request);
+    ObservationEvaluation ls;
+    const std::vector<double> ls_point = {3.0 / 5.0};
+    CHECK(evaluate(ls_point, true, ls));
+    double ls_max = 0.0, ls_gradient = 0.0;
+    for (std::size_t i = 0; i < problem.request.observations.size(); ++i) {
+        const auto [error, slope] = check_error(CheckMetric::AbsoluteLog10Ratio, problem.request.observations[i], ls.predictions[i]);
+        ls_max = std::max(ls_max, std::abs(error));
+        ls_gradient += error * slope * ls.optimizer_gradient[i];
+    }
+    const auto ls_inputs = fields({field("a_per_decade", 0.01), field("equal_LogRatio_weights", 1.0)});
+    CHECK(agree("r2-d7-b2/least_squares_x", "x", "1", ls.chart.physical[0], 0.6, 1.0e-12, 0.0,
+        ls_inputs, "four ax rows and one a(x-3) row have their analytic least-squares minimum", "r2-minimax"));
+    CHECK(agree("r2-d7-b2/least_squares_d", "d", "1", ls.chart.physical[1], 1.2, 1.0e-12, 0.0,
+        ls_inputs, "the least-squares point obeys d=2x", "r2-minimax"));
+    CHECK(agree("r2-d7-b2/least_squares_gradient", "least_squares_gradient", "decade_squared_per_x", ls_gradient, 0.0,
+        1.0e-14, 0.0, ls_inputs, "4x+(x-3)=0 is the equal-weight least-squares condition", "r2-minimax"));
+    CHECK(agree("r2-d7-b2/least_squares_maximum", "maximum_target_error", "decade", ls_max, 0.024, 1.0e-12, 0.0,
+        ls_inputs, "the least-squares maximum is 0.024 decade", "r2-minimax"));
+    CHECK(truth("r2-d7-b2/least_squares_guard", "the least-squares point misses the 0.02 decade maximum guard",
+        ls_max > 0.02, fields({ls_inputs, field("guard_decade", 0.02)}), "r2-minimax"));
+    for (const double x : {0.5, 2.5}) {
+        const std::vector<double> start = {x};
+        const auto result = solve_minimax(problem.request, start, problem.frozen, evaluate);
+        const std::string id = "r2-d7-b2/start-" + number(x);
+        const auto inputs = fields({field("q", problem.request.minimax->q), field("start_x", x), field("a_per_decade", 0.01)});
+        CHECK(result.minimax.has_value());
+        const auto& m = *result.minimax;
+        CHECK(truth(id + "/available", "the analytic minimax candidate and KKT diagnostics are available",
+            result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax"));
+        CHECK(agree(id + "/x", "x", "1", result.chart.physical[0], 1.5, 1.0e-7, 0.0,
+            inputs, "the opposing maximum errors balance at x=1.5", "r2-minimax"));
+        CHECK(agree(id + "/d", "d", "1", result.chart.physical[1], 3.0, 1.0e-7, 0.0,
+            inputs, "the eliminated equality gives d=2x", "r2-minimax"));
+        CHECK(agree(id + "/H", "H", "1", result.chart.physical[1] - 2.0 * result.chart.physical[0], 0.0,
+            1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax"));
+        CHECK(agree(id + "/t", "minimax_t", "decade", m.t, 0.015, 1.0e-9, 0.0,
+            inputs, "the epigraph is the maximum target error", "r2-minimax"));
+        CHECK(agree(id + "/target_maximum", "target_maximum", "decade", m.target_maximum, 0.015, 1.0e-9, 0.0,
+            inputs, "the reported maximum matches the analytic target", "r2-minimax"));
+        CHECK(agree(id + "/gap", "epigraph_gap", "decade", m.gap, 0.0, 1.0e-9, 0.0,
+            inputs, "the epigraph is tight", "r2-minimax"));
+        CHECK(m.rows.size() == m.physical_values.size());
+        for (std::size_t i = 0; i < m.rows.size(); ++i) {
+            const auto& row = m.rows[i];
+            const double e = check_error(row.metric, problem.request.observations[row.row], result.predictions[row.row]).first;
+            CHECK(agree(id + "/row/" + std::to_string(i), "physical_constraint", "decade", m.physical_values[i],
+                row.sign * e - m.t, 1.0e-9, 0.0, inputs,
+                "the physical max rows retain their analytic errors", "r2-minimax"));
+        }
+        check_minimax_kkt(id, m, inputs);
+    }
+}
+
 void check_reaction_derivatives() {
     FitRequest a1;
     a1.parameters = equilibrium_support::synthetic_reactive_ternary();
@@ -2297,6 +2544,65 @@ void check_hydration_failures() {
     }
 }
 
+// B3 selects the actual native electrolyte evaluator and complete nonunit tied chart.
+void check_minimax_consistency() {
+    auto parameters = properties_support::aqueous_electrolyte();
+    Observation energy;
+    energy.kind = ObservationKind::SolvationGibbsEnergy; energy.temperature = 298.15; energy.pressure = 1e5;
+    energy.composition = {1, 0, 0}; energy.ion_indices = {1, 2}; energy.stoichiometry = {1, 1};
+    energy.species = {1}; energy.branch = DensityBranch::Liquid; energy.observed = -381930;
+    FitRequest request; request.parameters = parameters;
+    request.coordinates.coordinates = {{ParameterFamily::Kij, {{1, 3}}, 0, .2, -1, 1},
+        {ParameterFamily::IonSuppressionCoefficient, {{1}, {2}}, 0, .5, 0, 20}};
+    request.holds = {{energy, 1, 8, 1e-6, 1e-10, 50}};
+    auto gamma = energy; gamma.kind = ObservationKind::MeanIonicActivityCoefficient;
+    gamma.species.clear(); gamma.molality = .1; gamma.form = ResidualForm::LogRatio; gamma.observed = 1;
+    auto phi = gamma; phi.kind = ObservationKind::OsmoticCoefficient;
+    auto epsilon = gamma; epsilon.kind = ObservationKind::BulkRelativePermittivity;
+    epsilon.form = ResidualForm::Difference;
+    epsilon.composition = formula_composition({1, 0, 0}, parameters, {1, 2}, {1, 1}, .1);
+    request.observations = {gamma, phi, epsilon, energy};
+    const auto u = request.coordinates.start(parameters);
+    request.observations = observations_at(request, u, {0, 0, .1, 0});
+    request.weights = {1, 1, 0, 0};
+    request.checks = {{"decades", {0, 1}, CheckMetric::AbsoluteLog10Ratio, .02, {}, false, false},
+        {"permittivity", {2}, CheckMetric::AbsoluteDifference, .2, .2, false, false},
+        {"energy", {3}, CheckMetric::AbsoluteDifference, 10, {}, false, false}};
+    request.minimax = MinimaxRequest{{0, 1}, {.02, 1, 1000}, .02, 1e-10, 1e-6, .1};
+    FitResult failures; ObservationEvaluator evaluator(request, failures, {0, 1, 2, 3}); ObservationEvaluation a;
+    CHECK(evaluator.evaluate(u, true, a));
+    const auto b = fit_minimax(request, u);
+    CHECK(b.minimax && b.minimax->availability == "values_only");
+    std::size_t quantity = 0;
+    for (const auto& pair : {std::pair{b.predictions, a.predictions},
+            std::pair{b.physical_jacobian, a.gradient}, std::pair{b.optimizer_jacobian, a.optimizer_gradient}}) {
+        CHECK(pair.first.size() == pair.second.size());
+        const auto columns = quantity == 0 ? 1 : quantity == 1 ? a.chart.physical.size() : u.size();
+        for (std::size_t i = 0; i < pair.first.size(); ++i) {
+            const bool energy_row = request.observations[i / columns].kind == ObservationKind::SolvationGibbsEnergy;
+            const bool diameter_column = quantity == 1 && i % columns == columns - 1;
+            const char* unit = energy_row ? (diameter_column ? "J/(mol Angstrom)" : "J/mol")
+                : (diameter_column ? "1/Angstrom" : "1");
+            const double tolerance = pair.second[i] == 0.0 ? 1e-12 : 1e-12 * std::abs(pair.second[i]);
+            CHECK(agree("minimax-consistency/" + std::to_string(quantity) + "/" + std::to_string(i),
+                quantity == 0 ? "prediction" : quantity == 1 ? "physical_column" : "optimizer_column",
+                unit, pair.first[i], pair.second[i], tolerance, 0.0,
+                "T=298.15 K,P=100000 Pa,m=.1 mol/kg", "B preserves A at the same held point", "r2-minimax"));
+        }
+        ++quantity;
+    }
+    const auto checks = evaluate_checks(request, b.parameters);
+    for (std::size_t g = 0; g < checks.size(); ++g) {
+        CHECK(agree("minimax-consistency/check/" + std::to_string(g), "maximum", checks[g].unit.c_str(),
+            b.checks[g].maximum, checks[g].maximum, checks[g].maximum == 0 ? 1e-12 : 1e-12 * std::abs(checks[g].maximum), 0.0, "same stored diameters",
+            "B final checks use the A check owner", "r2-minimax"));
+        CHECK(agree("minimax-consistency/threshold/" + std::to_string(g), "maximum_threshold", checks[g].unit.c_str(),
+            *b.minimax->frozen_checks[g].maximum_threshold, *checks[g].maximum_threshold,
+            *checks[g].maximum_threshold == 0 ? 1e-12 : 1e-12 * std::abs(*checks[g].maximum_threshold), 0.0,
+            "same explicit thresholds", "B freezes declared unweighted checks", "r2-minimax"));
+    }
+}
+
 // Independent bisection uses the Properties value owner, with no chart or cached Newton root.
 int electrolyte_reference_file(const char* filename) {
     std::ifstream in(filename);
@@ -2362,6 +2668,8 @@ int main(int argc, char** argv) {
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
+        {{"native.regression.r2-minimax-consistency", "Minimax_same_point_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "minimax-consistency/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "minimax-consistency"}, check_minimax_consistency, "R2"},
+        {{"native.regression.r2-d7-minimax-analytic", "Regression_R2_D7_Analytic_Minimax", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-d7-b1/*,r2-d7-b2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-D7", "r2-d7/*"}, check_d7_minimax, "R2"},
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},
         {{"native.regression.reaction-rejections", "Reaction_constant_admission", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-rejection/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-rejections"}, check_reaction_rejections, "R2"},
