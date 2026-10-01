@@ -755,7 +755,9 @@ original width. A direction may also supply d(d ln K/dT)/dt in
 these slopes contribute to referenced enthalpy actions through the same
 minimum-norm species owner; they do not alter the chemical-row derivative.
 Supplied standard Gibbs vectors fix K and reject nonzero reaction directions.
-Reaction Hessians and heat-capacity coefficient actions are not qualified.
+Nonzero reaction directions, including slope-only directions, refuse actions above
+order one while retaining admitted central values. Reaction Hessians and
+heat-capacity coefficient actions are not qualified.
 
 ## ALG-REFERENCE
 

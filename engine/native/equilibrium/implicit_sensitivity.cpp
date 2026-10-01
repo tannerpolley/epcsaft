@@ -726,7 +726,6 @@ static SolvedStateActionBatch evaluate_action(
     auto& center = shared->center;
     batch.diagnostics = shared->diagnostics;
     scope.probe("central_residual", shared->classified_residual);
-    // Controls, their scales and the direction magnitudes.
     std::vector<double> scale(width, 1.0);
     scale[0] = std::max(center.prepared.temperature, 1.0);
     scale[1] = std::max(center.prepared.pressure, 1.0);
@@ -916,6 +915,10 @@ static SolvedStateActionBatch evaluate_action(
         return batch;
     };
     if (gate != SolvedStateActionStatus::Available) return apply_state_gate(gate);
+    if (order > 1 && !zero) for (const auto& direction : request.directions)
+        for (const auto* field : {&direction.reaction_log_constants, &direction.reaction_log_constant_temperature_slopes})
+            if (std::any_of(field->begin(), field->end(), [](double v) { return v != 0.0; }))
+                return apply_state_gate(SolvedStateActionStatus::ReferenceUnavailable, "reaction coordinate actions above order one are outside the delivered scope");
     bool thermal_enthalpy = false, pressure_enthalpy = false;
     const auto& reaction_slopes = request.directions[0].reaction_log_constant_temperature_slopes;
     const bool parameter = parameter_direction(controls[0], components)

@@ -1348,6 +1348,30 @@ void check_s2() {
                 + (source == 0 ? "system" : "fixed") + "/reaction-b/resolve";
             const auto row = action_ladder(id.c_str(), neutral_model, problem, b_direction, 1.0, value_at_shift);
             (void)row;
+            // At Tref, phi_c=0 but phi_c'=1/T: a mixed chemical action cannot be an available zero.
+            auto centered = problem;
+            centered.reactions[0].correlation->reference_temperature = 260.0;
+            const auto center = epcsaft::equilibrium::solve_equilibrium(neutral_model, centered);
+            const auto compiled = epcsaft::equilibrium::compile_problem(neutral_model, centered);
+            epcsaft::equilibrium::SolvedStateObservable fraction;
+            fraction.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
+            fraction.component = 1;
+            const ActionDirection log_k{0.0, 0.0, {0.0, 0.0}, {}, {1.0}, {0.0}};
+            const ActionDirection c{0.0, 0.0, {0.0, 0.0}, {}, {0.0}, {1.0 / 260.0}};
+            const ActionDirection temperature{1.0, 0.0, {0.0, 0.0}, {}, {}, {}};
+            const auto first = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {log_k}});
+            const auto higher = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {temperature, c}});
+            const double omitted = first.results[0].action.value_or(0.0) / 260.0;
+            const bool refused = center.success && first.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                && higher.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+                && higher.results[0].value == first.results[0].value && !higher.results[0].action;
+            recording_support::compare_custom("reference-calorics/parameter/reaction-c-at-Tref/order-refusal",
+                "omitted_mixed_composition_action", "1/K", omitted, 0.0,
+                recording_support::fields({recording_support::field("Tref_K", 260.0), recording_support::field("typed_refusal", refused)}),
+                "Discrimination", "reaction-coordinate-first-order-scope", "a nonzero phi_c' contribution prevents an available zero mixed action",
+                "abs(omitted)>0 && typed_refusal", std::isfinite(omitted) && omitted != 0.0 && refused,
+                "s2-neutral-reference", "reaction-c-at-Tref", "d2x/dTdc", "T,c", "phi_c'=1/T", "case");
+            CHECK(std::isfinite(omitted) && omitted != 0.0 && refused);
         }
 
         // Case I water epsilon/k and reaction b, both system- and fixed-pressure references.
