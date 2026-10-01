@@ -8,11 +8,13 @@
 #include "recording_support.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace {
@@ -38,6 +40,16 @@ bool agree(const std::string& id, const char* quantity, const char* unit, double
         && std::abs(model - reference) <= std::max(atol, rtol * std::max(std::abs(model), std::abs(reference)));
     recording_support::compare(id.c_str(), quantity, unit, model, reference, inputs, "Relationship", "regression",
                                claim, "symmetric_close", atol, rtol, verdict, group, id.c_str());
+    return verdict;
+}
+
+bool reference_scale_agrees(const std::string& id, const char* quantity, const char* unit, double model,
+                            double reference, double atol, double rtol, const std::string& inputs,
+                            const char* claim, const char* group) {
+    const bool verdict = std::isfinite(model) && std::isfinite(reference)
+        && std::abs(model - reference) <= atol + rtol * std::abs(reference);
+    recording_support::compare(id.c_str(), quantity, unit, model, reference, inputs, "Identity", "direct_reference",
+        claim, "reference_scale", atol, rtol, verdict, group, id.c_str());
     return verdict;
 }
 
@@ -1723,10 +1735,522 @@ void check_log_constant() {
     reject(fixed, "K fixed by thermochemistry");
 }
 
+// #210: finite enthalpy increments on a referenced, reaction-completed ethane pair.
+Parameters addition_parameters() {
+    auto result = properties_support::parameters(2);
+    const auto ethane = properties_support::ethane();
+    for (std::size_t i = 0; i < 2; ++i) {
+        result.segment_count[i] = ethane.segment_count[0];
+        result.sigma_constant[i] = ethane.sigma_constant[0];
+        result.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+        result.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+    }
+    return result;
+}
+
+ThermochemistryRecord addition_record() {
+    ThermochemistryRecord result;
+    result.standard_pressure = 1.0e5;
+    result.component_intervals = {
+        {{200.0, 400.0, true, true, {IdealPolynomial{{52.0, 0.12}, 300.0, 0.0, 0.0}, 1.0e5}}},
+        {}};
+    return result;
+}
+
+ReactionLogPolynomial addition_law(double reference_temperature = 300.0) {
+    const double a = std::log(0.3) + 3.0 * std::log(reference_temperature / 300.0);
+    return {a, 200.0, 3.0, -0.004, reference_temperature, 250.0, 350.0, "analytic-source"};
+}
+
+EquilibriumProblem addition_problem(double temperature, double pressure, std::vector<double> feed,
+                                    std::optional<double> reference_pressure = {}, bool free_pressure = false,
+                                    std::optional<double> vapor_fraction = {}) {
+    EquilibriumProblem result;
+    result.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+    if (vapor_fraction) {
+        auto vapor = equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(*vapor_fraction));
+        result.phases.push_back(std::move(vapor));
+    } else if (free_pressure) {
+        result.phases.push_back(equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0)));
+    }
+    result.temperature = FreeValue::fixed(temperature);
+    result.pressure = free_pressure ? FreeValue::variable(pressure) : FreeValue::fixed(pressure);
+    result.feed.kind = equilibrium::FeedKind::Amounts;
+    result.feed.values = std::move(feed);
+    result.source_reference = NeutralReferenceDeclaration{0, {0.0, 1.0}, 1.0};
+    result.reactions = {{"2A=B", {-2.0, 1.0}, std::nullopt, std::nullopt, addition_law(),
+        ReactionReference{reference_pressure, ReferenceSourceBasis::RawMoleFractionInfiniteDilution}}};
+    result.row_tolerance = 1.0e-10;
+    return result;
+}
+
+Observation addition_observation(const EquilibriumProblem& initial, const EquilibriumProblem& final,
+                                 double amount, double feed_temperature = 260.0,
+                                 double feed_pressure = 1.0e5, std::vector<double> feed = {1.0, 0.0}) {
+    Observation result;
+    result.kind = ObservationKind::AdditionEnthalpy;
+    result.problem = initial;
+    result.final_problem = final;
+    result.feed_amount = amount;
+    result.temperature = feed_temperature;
+    result.pressure = feed_pressure;
+    result.composition = std::move(feed);
+    result.branch = DensityBranch::Vapor;
+    result.form = ResidualForm::Difference;
+    result.scale = 1.0;
+    return result;
+}
+
+CoordinateSet addition_coordinates() {
+    CoordinateSet result;
+    result.coordinates = {
+        {ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, -0.2, 0.2},
+        {ParameterFamily::DispersionEnergyOverK, {{0}, {1}}, 191.42, 1.0, 150.0, 250.0},
+        reaction_coordinate("2A=B"),
+        reaction_coordinate("2A=B", ReactionCoefficient::B),
+        reaction_coordinate("2A=B", ReactionCoefficient::C),
+        reaction_coordinate("2A=B", ReactionCoefficient::D)};
+    return result;
+}
+
+struct AdditionEndpoint final {
+    double enthalpy = 0.0;
+    std::vector<double> phase_amount, phase_enthalpy;
+};
+
+AdditionEndpoint endpoint_enthalpy(const HelmholtzModel& model, const EquilibriumProblem& problem,
+                                   const equilibrium::CompiledSystem& compiled,
+                                   const EquilibriumResult& solved_state) {
+    AdditionEndpoint result;
+    result.phase_amount.assign(problem.phases.size(), 0.0);
+    result.phase_enthalpy.assign(problem.phases.size(), 0.0);
+    std::vector<equilibrium::SolvedStateObservable> observables;
+    std::vector<std::size_t> phases;
+    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+        if (problem.phases[phase].is_pinned() && problem.phases[phase].amount.fraction == 0.0) continue;
+        equilibrium::SolvedStateObservable amount, enthalpy;
+        amount.kind = equilibrium::SolvedStateObservableKind::PhaseAmount;
+        amount.phase = phase;
+        enthalpy.kind = equilibrium::SolvedStateObservableKind::PhaseProperty;
+        enthalpy.phase = phase;
+        enthalpy.property = PropertyObservable::TotalEnthalpy;
+        observables.push_back(amount);
+        observables.push_back(enthalpy);
+        phases.push_back(phase);
+    }
+    equilibrium::SolvedStateActionDirection zero;
+    zero.feed_amounts_mol.assign(model.parameters().component_count(), 0.0);
+    zero.active_parameters.assign(model.active_parameters().size(), 0.0);
+    zero.reaction_log_constants.assign(problem.reactions.size(), 0.0);
+    const auto batch = equilibrium::solved_state_actions(compiled, solved_state, {observables, {zero}});
+    CHECK(batch.results.size() == 2 * phases.size());
+    for (std::size_t i = 0; i < phases.size(); ++i) {
+        const auto& amount = batch.results[2 * i];
+        const auto& enthalpy = batch.results[2 * i + 1];
+        CHECK(amount.status == equilibrium::SolvedStateActionStatus::Available && amount.value);
+        CHECK(enthalpy.status == equilibrium::SolvedStateActionStatus::Available && enthalpy.value);
+        result.phase_amount[phases[i]] = *amount.value;
+        result.phase_enthalpy[phases[i]] = *enthalpy.value;
+        result.enthalpy += *amount.value * *enthalpy.value;
+    }
+    return result;
+}
+
+double addition_oracle_phase_enthalpy(const HelmholtzModel& pure, const EquilibriumResult& solved_state,
+                                     const ReactionLogPolynomial& law, std::size_t phase) {
+    const double T = solved_state.temperature.front();
+    const double P_ref = solved_state.pressure.front();
+    const double dt = T - 300.0;
+    const double h_a = 52.0 * dt + 0.06 * dt * dt;
+    const double ell = -law.b / (T * T) + law.c / T + law.d;
+    const double h_b = 2.0 * h_a + GAS_CONSTANT_J_PER_MOL_K * T * T * ell
+        + pure.state_at_pressure(T, P_ref, {1.0}, DensityBranch::Liquid).residual_enthalpy;
+    const double x_a = solved_state.mole_fractions[phase * 2];
+    const double x_b = solved_state.mole_fractions[phase * 2 + 1];
+    const double residual = pure.state(T, solved_state.molar_densities[phase], {1.0}).residual_enthalpy;
+    return x_a * h_a + x_b * h_b + residual;
+}
+
+double addition_oracle_endpoint(const HelmholtzModel& pure, const EquilibriumResult& solved_state,
+                                const ReactionLogPolynomial& law) {
+    double result = 0.0;
+    for (std::size_t phase = 0; phase < solved_state.phase_count; ++phase)
+        result += solved_state.amounts[phase] * addition_oracle_phase_enthalpy(pure, solved_state, law, phase);
+    return result;
+}
+
+double total_b_amount(const EquilibriumResult& solved_state) {
+    double result = 0.0;
+    for (std::size_t phase = 0; phase < solved_state.phase_count; ++phase)
+        result += solved_state.amounts[phase] * solved_state.mole_fractions[phase * 2 + 1];
+    return result;
+}
+
+void addition_timing(const std::string& id, double seconds, std::size_t c_ttheta_e3_count,
+                     const std::string& inputs) {
+    recording_support::observe((id + "/jacobian_seconds").c_str(), "differentiate_group_wall_time", "s", seconds,
+        std::nullopt, inputs, "Observation", "steady_clock", "wall time for one native observation Jacobian",
+        "addition-enthalpy");
+    recording_support::observe((id + "/new_c_ttheta_e3_count").c_str(), "C_Ttheta_E3_contractions", "count",
+        static_cast<double>(c_ttheta_e3_count), std::nullopt, inputs, "Count", "reference_path_polarization",
+        "new C_Ttheta contractions only; excludes pressure and other E3 work", "addition-enthalpy");
+}
+
+struct AdditionVariant final {
+    std::string name;
+    Observation observation;
+    Prediction prediction;
+    std::vector<double> gradient;
+};
+
+AdditionVariant addition_variant(const std::string& name, double amount, std::optional<double> reference_pressure,
+                                 bool free_pressure = false, std::optional<double> vapor_fraction = {},
+                                 bool unequal_temperature = false) {
+    const double pressure = free_pressure ? 1.5e6 : 3.0e6;  // original Case N regularity input
+    auto initial = addition_problem(260.0, pressure, {2.0, 0.2}, reference_pressure, free_pressure, vapor_fraction);
+    auto final = addition_problem(unequal_temperature ? 265.0 : 260.0, pressure, {2.0 + amount, 0.2},
+                                  reference_pressure, free_pressure, vapor_fraction);
+    if (unequal_temperature) {
+        initial.reactions[0].correlation = addition_law(260.0);
+        final.reactions[0].correlation = addition_law(260.0);
+    }
+    auto row = addition_observation(initial, final, amount);
+    return {name, std::move(row), {}, {}};
+}
+
+double addition_coordinate_gradient(const std::vector<double>& gradient, std::size_t column) {
+    return column == 1 ? gradient[1] + gradient[2] : gradient[column < 2 ? column : column + 1];
+}
+
+void check_addition_enthalpy() {
+    const auto parameters = addition_parameters();
+    const auto record = addition_record();
+    const auto coordinates = addition_coordinates();
+    const HelmholtzModel model(parameters, coordinates.active_parameters(), record);
+    const double amount = 0.2;
+    std::vector<AdditionVariant> variants;
+    variants.push_back(addition_variant("fixed_system", amount, {}));
+    variants.push_back(addition_variant("fixed_source", amount, 5.0e6));
+    variants.push_back(addition_variant("free_pressure", amount, {}, true));
+    variants.push_back(addition_variant("two_phase", amount, {}, true, 0.3));
+    variants.push_back(addition_variant("unequal_temperature", amount, {}, false, {}, true));
+
+    const double steps[] = {1.0e-4, 0.05, 5.0e-3, 1.0, 5.0e-3, 2.0e-5};
+    const char* names[] = {"kij", "epsilon_tied", "reaction_a", "reaction_b", "reaction_c", "reaction_d"};
+    for (auto& variant : variants) {
+        auto center = predict(model, variant.observation);
+        CHECK(center.status == ObservationStatus::Available && center.value && center.solved
+            && center.final_solved && center.compiled && center.final_compiled);
+        CHECK(center.solved->success && center.final_solved->success
+            && center.solved->topology_event == equilibrium::TopologyEvent::None
+            && center.final_solved->topology_event == equilibrium::TopologyEvent::None
+            && center.solved->requested_tolerance_met.value_or(false)
+            && center.final_solved->requested_tolerance_met.value_or(false)
+            && center.solved->jacobian_rank == center.solved->unknown_count
+            && center.final_solved->jacobian_rank == center.final_solved->unknown_count);
+        variant.prediction = center;
+        const auto start = coordinates.start(parameters, {variant.observation}, record);
+        const auto t0 = std::chrono::steady_clock::now();
+        const auto exact = differentiate_group(model, {&variant.observation}, center, coordinates).front();
+        const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+        CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 7);
+        variant.gradient = exact.value;
+        const std::size_t eos_parameters = model.active_parameters().size();
+        addition_timing("addition-f3/" + variant.name, seconds,
+            4 * eos_parameters * 3 * variant.observation.problem.reactions.size() * 2,
+            fields({field("variant", variant.name), field("n_add_mol", amount), field("active_parameters", eos_parameters)}));
+
+        for (std::size_t column = 0; column < 6; ++column) {
+            const auto value = [&](double shift) {
+                auto u = start;
+                u[column] += shift;
+                auto changed_observations = std::vector<Observation>{variant.observation};
+                coordinates.apply(changed_observations, u);
+                const HelmholtzModel rebuilt(coordinates.apply(parameters, u), coordinates.active_parameters(), record);
+                const auto rebuilt_prediction = predict(rebuilt, changed_observations.front());
+                if (rebuilt_prediction.status != ObservationStatus::Available || !rebuilt_prediction.value)
+                    throw std::runtime_error("addition-f3 " + variant.name + " " + names[column] + ": "
+                        + observation_status_name(rebuilt_prediction.status) + " " + rebuilt_prediction.message);
+                return *rebuilt_prediction.value;
+            };
+            auto rungs = ladder(value, steps[column]);
+            const double action = addition_coordinate_gradient(exact.value, column);
+            const auto inputs = fields({field("variant", variant.name), field("T_initial_K", 260.0),
+                field("T_final_K", variant.observation.final_problem.temperature.value), field("step", steps[column]),
+                field("gradient", exact.value)});
+            const std::string id = "addition-f3/" + variant.name + "/" + names[column];
+            CHECK(ladder_agrees(id, "d_delta_h_add_dtheta", action, rungs, inputs,
+                "the exact finite-addition gradient agrees with rebuilt-model prediction re-solves", "addition-f3"));
+            if (column == 1 || column == 3) {
+                const double fine_tolerance = FIRST_ORDER * std::max(1.0, std::abs(rungs.fine));
+                double omitted = 0.0;
+                if (column == 1) {
+                    const HelmholtzModel pure(properties_support::ethane(),
+                        {{ParameterFamily::DispersionEnergyOverK, {0}}});
+                    const auto pure_action = [&](double T, double P) {
+                        const PressureActionDirection direction{0.0, 0.0, {0.0},
+                            {{ParameterFamily::DispersionEnergyOverK, {0}, 1.0}}};
+                        const auto batch = pure.pressure_actions(T, P, {1.0}, DensityBranch::Liquid,
+                            {PropertyObservable::ResidualEnthalpy}, {direction});
+                        CHECK(batch.density_status == PropertyActionStatus::Available && batch.results.size() == 1
+                            && batch.results[0].status == PropertyActionStatus::Available && batch.results[0].action);
+                        return *batch.results[0].action;
+                    };
+                    const double P1 = variant.observation.problem.reactions[0].reference->reference_pressure_pa
+                        .value_or(center.solved->pressure.front());
+                    const double P2 = variant.observation.final_problem.reactions[0].reference->reference_pressure_pa
+                        .value_or(center.final_solved->pressure.front());
+                    omitted = (total_b_amount(*center.final_solved) * pure_action(center.final_solved->temperature.front(), P2)
+                        - total_b_amount(*center.solved) * pure_action(center.solved->temperature.front(), P1)) / amount;
+                } else {
+                    omitted = -GAS_CONSTANT_J_PER_MOL_K
+                        * (total_b_amount(*center.final_solved) - total_b_amount(*center.solved)) / amount;
+                }
+                const std::string direct_name = column == 1 ? "C_Ttheta_borne_term" : "reaction_b_endpoint_term";
+                CHECK(truth(id + "/omission_discrimination", "the independently calculated omitted endpoint term exceeds 1e3 times the fine criterion",
+                    std::isfinite(omitted) && std::abs(omitted) > 1.0e3 * fine_tolerance,
+                    fields({field("direct_term", omitted), field("fine_tolerance", fine_tolerance), field("term", direct_name)}),
+                    "addition-f3"));
+            }
+        }
+        if (variant.observation.problem.temperature.value == variant.observation.final_problem.temperature.value) {
+            const double temperature = variant.observation.problem.temperature.value;
+            const double tref = variant.observation.problem.reactions[0].correlation->reference_temperature;
+            const double G = exact.value[3];
+            // g_b = G/T - D/T^2, so recover the source-slope coefficient D from a and b.
+            const double D = temperature * G - temperature * temperature * exact.value[4];
+            CHECK(agree("addition-f3/" + variant.name + "/basis_c", "d_delta_h_add_dc", "J/mol",
+                exact.value[5], G * std::log(temperature / tref) + D / temperature, 0.0, 1.0e-10,
+                fields({field("T_K", temperature), field("Tref_K", tref), field("G", G), field("D", D)}),
+                "the c column follows the source reaction basis identity before coordinate scaling", "addition-f3"));
+            CHECK(agree("addition-f3/" + variant.name + "/basis_d", "d_delta_h_add_dd", "J/mol",
+                exact.value[6], G * temperature + D, 0.0, 1.0e-10,
+                fields({field("T_K", temperature), field("G", G), field("D", D)}),
+                "the d column follows the source reaction basis identity before coordinate scaling", "addition-f3"));
+        } else {
+            const double initial_b = total_b_amount(*center.solved);
+            const double initial_c_term = -GAS_CONSTANT_J_PER_MOL_K * 260.0 * initial_b / amount;
+            CHECK(truth("addition-f3/unequal_temperature/initial_c_term", "c has a nonzero initial-endpoint caloric term at Tref with no state motion",
+                std::isfinite(initial_c_term) && initial_c_term != 0.0,
+                fields({field("phi_c", 0.0), field("phi_c_prime_per_K", 1.0 / 260.0),
+                    field("initial_caloric_term_J_per_mol", initial_c_term), field("initial_n_B_mol", initial_b)}),
+                "addition-f3"));
+        }
+    }
+
+    auto& reference = variants.front();
+    const auto first_h = endpoint_enthalpy(model, reference.observation.problem,
+        *reference.prediction.compiled, *reference.prediction.solved);
+    const auto second_h = endpoint_enthalpy(model, reference.observation.final_problem,
+        *reference.prediction.final_compiled, *reference.prediction.final_solved);
+    auto shifted_record = record;
+    std::get<IdealPolynomial>(shifted_record.component_intervals[0][0].correlation.form).reference_enthalpy = 1.0e4;
+    const HelmholtzModel shifted_model(parameters, coordinates.active_parameters(), shifted_record);
+    const auto shifted_prediction = predict(shifted_model, reference.observation);
+    CHECK(shifted_prediction.status == ObservationStatus::Available && shifted_prediction.value);
+    CHECK(agree("addition-f4/value", "delta_h_add", "J/mol", *shifted_prediction.value, *reference.prediction.value,
+        0.0, 1.0e-9, fields({field("anchor_h_J_per_mol", 1.0e4)}),
+        "a common record enthalpy shift cancels from the finite addition", "addition-f4"));
+    const auto base_gradient = differentiate_group(model, {&reference.observation}, reference.prediction, coordinates).front();
+    const auto shifted_gradient = differentiate_group(shifted_model, {&reference.observation}, shifted_prediction, coordinates).front();
+    CHECK(base_gradient.status == ObservationStatus::Available && shifted_gradient.status == ObservationStatus::Available
+        && base_gradient.value.size() == shifted_gradient.value.size());
+    for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column)
+        CHECK(agree("addition-f4/gradient/" + std::to_string(column), "d_delta_h_add_dtheta", "native",
+            addition_coordinate_gradient(shifted_gradient.value, column),
+            addition_coordinate_gradient(base_gradient.value, column), 0.0, 1.0e-9,
+            fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}),
+            "a common record enthalpy shift preserves every gradient column", "addition-f4"));
+    const double condition = (std::abs(first_h.enthalpy) + std::abs(second_h.enthalpy))
+        / (amount * std::abs(*reference.prediction.value));
+    recording_support::observe("addition-f4/conditioning", "enthalpy_cancellation_condition", "1", condition,
+        std::nullopt, fields({field("H_initial_J", first_h.enthalpy), field("H_final_J", second_h.enthalpy),
+            field("n_add_mol", amount), field("delta_h_add_J_per_mol", *reference.prediction.value)}),
+        "Observation", "endpoint_enthalpy_ratio", "the reference cancellation conditioning ratio", "addition-f4");
+    CHECK(truth("addition-f4/conditioning_limit", "the endpoint enthalpy cancellation ratio is at most 1e4",
+        std::isfinite(condition) && condition <= 1.0e4, field("condition", condition), "addition-f4"));
+
+    for (const double increment : {0.2, 2.0e-3}) {
+        auto initial = addition_problem(260.0, 3.0e6, {2.0, 0.2});
+        auto final = addition_problem(260.0, 3.0e6, {2.0 + increment, 0.2});
+        auto row = addition_observation(initial, final, increment);
+        const auto prediction = predict(model, row);
+        CHECK(prediction.status == ObservationStatus::Available && prediction.value && prediction.solved
+            && prediction.final_solved && prediction.compiled && prediction.final_compiled);
+        equilibrium::SolvedStateObservable activity;
+        activity.kind = equilibrium::SolvedStateObservableKind::PhaseLogActivity;
+        activity.phase = 0;
+        activity.component = 0;
+        equilibrium::SolvedStateActionDirection thermal;
+        thermal.temperature_k = 1.0;
+        thermal.feed_amounts_mol.assign(2, 0.0);
+        thermal.active_parameters.assign(model.active_parameters().size(), 0.0);
+        thermal.reaction_log_constants.assign(1, 0.0);
+        const auto action = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved,
+            {activity}, {thermal}).front();
+        CHECK(action.results.size() == 1 && action.results[0].status == equilibrium::SolvedStateActionStatus::Available
+            && action.results[0].action);
+        const HelmholtzModel pure(properties_support::ethane());
+        const double h_feed = pure.state_at_pressure(260.0, 1.0e5, {1.0}, DensityBranch::Vapor).residual_enthalpy;
+        const double q0 = -GAS_CONSTANT_J_PER_MOL_K * 260.0 * 260.0 * *action.results[0].action
+            - GAS_CONSTANT_J_PER_MOL_K * 260.0 - h_feed;
+        const auto h_initial = endpoint_enthalpy(model, row.problem, *prediction.compiled, *prediction.solved);
+        const auto h_final = endpoint_enthalpy(model, row.final_problem, *prediction.final_compiled, *prediction.final_solved);
+        const double roundoff = 64.0 * EPS * (std::abs(h_initial.enthalpy) + std::abs(h_final.enthalpy)) / increment;
+        CHECK(reference_scale_agrees("addition-f5/" + number(increment), "finite_addition_limit", "J/mol", *prediction.value, q0,
+            roundoff, 1.0e-8, fields({field("n_add_mol", increment), field("D_n", *prediction.value),
+                field("q0", q0), field("H_initial_J", h_initial.enthalpy), field("H_final_J", h_final.enthalpy),
+                field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}),
+            "each finite quotient equals the Gibbs-Helmholtz limit for the linear case", "addition-f5"));
+    }
+
+    FitRequest recovery;
+    auto truth_parameters = parameters;
+    truth_parameters.dispersion_energy_over_k = {191.42, 191.42};
+    const HelmholtzModel truth_model(truth_parameters, {}, record);
+    recovery.parameters = parameters;
+    recovery.parameters.dispersion_energy_over_k = {195.2484, 195.2484};
+    recovery.thermochemistry = record;
+    recovery.coordinates.coordinates = {
+        {ParameterFamily::DispersionEnergyOverK, {{0}, {1}}, 191.42, 10.0, 150.0, 250.0},
+        reaction_coordinate("2A=B", ReactionCoefficient::B, 260.0)};
+    recovery.coordinates.coordinates[1].origin = 200.0;
+    recovery.coordinates.coordinates[1].lower = -2000.0;
+    recovery.coordinates.coordinates[1].upper = 2000.0;
+    for (const double T : {255.0, 260.0, 265.0, 270.0}) {
+        auto initial = addition_problem(T, 3.0e6, {2.0, 0.2});
+        auto final = addition_problem(T, 3.0e6, {2.2, 0.2});
+        auto row = addition_observation(initial, final, 0.2, T);
+        row.scale = 100.0;
+        const auto truth_prediction = predict(truth_model, row);
+        CHECK(truth_prediction.status == ObservationStatus::Available && truth_prediction.value);
+        row.observed = *truth_prediction.value;
+        row.problem.reactions[0].correlation->b = 180.0;
+        row.final_problem.reactions[0].correlation->b = 180.0;
+        recovery.observations.push_back(std::move(row));
+    }
+    const HelmholtzModel start_model(recovery.parameters, recovery.coordinates.active_parameters(), record);
+    for (std::size_t row_index = 0; row_index < recovery.observations.size(); ++row_index) {
+        const auto& row = recovery.observations[row_index];
+        const auto prediction = predict(start_model, row);
+        CHECK(prediction.status == ObservationStatus::Available);
+        const auto begin = std::chrono::steady_clock::now();
+        const auto gradient = differentiate_group(start_model, {&row}, prediction, recovery.coordinates).front();
+        const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - begin).count();
+        CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 3);
+        addition_timing("addition-f6/row_" + std::to_string(row_index), seconds,
+            4 * start_model.active_parameters().size() * 3 * row.problem.reactions.size() * 2,
+            fields({field("T_K", row.temperature), field("active_parameters", start_model.active_parameters().size()),
+                field("jacobian_row", row_index)}));
+    }
+    const auto recovered = fit(recovery);
+    CHECK(truth("addition-f6/converged", "the noise-free known-parameter fit converges without rejected trials",
+        recovered.status == "converged" && recovered.usable && recovered.trial_failures == 0,
+        fields({summary(recovered), field("trial_failures", recovered.trial_failures)}), "addition-f6"));
+    for (std::size_t row = 0; row < recovery.observations.size(); ++row)
+        recording_support::observe(("addition-f6/data/" + std::to_string(row)).c_str(), "delta_h_add", "J/mol",
+            recovered.predictions[row], recovery.observations[row].observed,
+            fields({field("T_K", recovery.observations[row].temperature), field("P_Pa", 3.0e6),
+                field("scale_J_per_mol", recovery.observations[row].scale)}),
+            "Observation", "known_parameter_recovery", "synthetic datum and fitted prediction", "addition-f6");
+    CHECK(recovered.physical.size() == 3);
+    CHECK(agree("addition-f6/epsilon_s0", "epsilon_over_k", "K", recovered.physical[0], 191.42, 0.0, 1.0e-6,
+        summary(recovered), "the tied epsilon coordinate recovers the known value on s0", "addition-f6"));
+    CHECK(agree("addition-f6/epsilon_s1", "epsilon_over_k", "K", recovered.physical[1], 191.42, 0.0, 1.0e-6,
+        summary(recovered), "the tied epsilon coordinate recovers the known value on s1", "addition-f6"));
+    CHECK(agree("addition-f6/reaction_b", "reaction_b", "K", recovered.physical[2], 200.0, 0.0, 1.0e-6,
+        summary(recovered), "the reaction b coordinate recovers the known value", "addition-f6"));
+    CHECK(agree("addition-f6/cost", "cost", "1", recovered.final_cost, 0.0, 1.0e-14, 0.0,
+        summary(recovered), "the noise-free residual cost is at most 1e-14", "addition-f6"));
+    CHECK(truth("addition-f6/covariance", "the fit has an available full-rank covariance",
+        recovered.covariance.status == "available" && recovered.covariance.rank == 2,
+        fields({field("covariance", recovered.covariance.status), field("rank", recovered.covariance.rank),
+            field("singular_values", recovered.covariance.singular_values)}), "addition-f6"));
+
+    auto two_phase = std::find_if(variants.begin(), variants.end(), [](const AdditionVariant& item) {
+        return item.name == "two_phase";
+    });
+    CHECK(two_phase != variants.end());
+    const auto pure = HelmholtzModel(properties_support::ethane());
+    const double oracle_initial = addition_oracle_endpoint(pure, *two_phase->prediction.solved,
+        *two_phase->observation.problem.reactions[0].correlation);
+    const double oracle_final = addition_oracle_endpoint(pure, *two_phase->prediction.final_solved,
+        *two_phase->observation.final_problem.reactions[0].correlation);
+    const auto public_initial = endpoint_enthalpy(model, two_phase->observation.problem,
+        *two_phase->prediction.compiled, *two_phase->prediction.solved);
+    const auto public_final = endpoint_enthalpy(model, two_phase->observation.final_problem,
+        *two_phase->prediction.final_compiled, *two_phase->prediction.final_solved);
+    for (const auto& [label, oracle, public_value] : {
+            std::tuple<const char*, double, double>{"initial", oracle_initial, public_initial.enthalpy},
+            {"final", oracle_final, public_final.enthalpy}}) {
+        CHECK(reference_scale_agrees(std::string("addition-f8/") + label + "/endpoint_enthalpy", "H", "J", public_value, oracle,
+            1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}),
+            "each endpoint total enthalpy agrees with the independent pure-fluid oracle", "addition-f8"));
+    }
+    const auto& solved_initial = *two_phase->prediction.solved;
+    const auto& solved_final = *two_phase->prediction.final_solved;
+    const double hfeed = pure.state_at_pressure(260.0, 1.0e5, {1.0}, DensityBranch::Vapor).residual_enthalpy
+        + 52.0 * (260.0 - 300.0) + 0.06 * (260.0 - 300.0) * (260.0 - 300.0);
+    const double oracle_delta = (oracle_final - oracle_initial) / amount - hfeed;
+    const double value_tolerance = 1.0e-9 * (std::abs(oracle_initial) + std::abs(oracle_final)) / amount + 1.0e-6;
+    CHECK(agree("addition-f8/value", "delta_h_add", "J/mol", *two_phase->prediction.value, oracle_delta,
+        value_tolerance, 0.0, fields({field("H_initial_J", oracle_initial), field("H_final_J", oracle_final),
+            field("h_feed_J_per_mol", hfeed), field("delta_h_add_J_per_mol", *two_phase->prediction.value)}),
+        "the total-system finite addition agrees with the independent endpoint oracle", "addition-f8"));
+    const double h_initial_vapor = addition_oracle_phase_enthalpy(pure, solved_initial,
+        *two_phase->observation.problem.reactions[0].correlation, 1);
+    const double h_final_vapor = addition_oracle_phase_enthalpy(pure, solved_final,
+        *two_phase->observation.final_problem.reactions[0].correlation, 1);
+    const double vapor_contribution = std::abs(solved_final.amounts[1] * h_final_vapor
+        - solved_initial.amounts[1] * h_initial_vapor) / amount;
+    CHECK(truth("addition-f8/vapor_discrimination", "the changed vapor contribution exceeds 1e3 times the value tolerance",
+        std::isfinite(vapor_contribution) && vapor_contribution > 1.0e3 * value_tolerance,
+        fields({field("vapor_contribution_J_per_mol", vapor_contribution), field("delta_h_tolerance_J_per_mol", value_tolerance),
+            field("nV_initial_mol", solved_initial.amounts[1]), field("nV_final_mol", solved_final.amounts[1]),
+            field("hV_initial_J_per_mol", h_initial_vapor), field("hV_final_J_per_mol", h_final_vapor)}), "addition-f8"));
+
+    auto failure = variants.front().observation;
+    failure.temperature = 200.0;
+    failure.pressure = 1.0e10;
+    failure.branch = DensityBranch::Liquid;
+    auto failed_feed = predict(model, failure);
+    CHECK(truth("addition-f7/feed_density", "the declared feed root failure is typed and names feed",
+        failed_feed.status == ObservationStatus::DensityUnavailable && !failed_feed.value
+            && failed_feed.message.find("feed:") != std::string::npos,
+        fields({field("status", observation_status_name(failed_feed.status)), field("message", failed_feed.message)}),
+        "addition-f7"));
+    auto missing_feed = variants.front().observation;
+    missing_feed.composition = {0.0, 1.0};
+    missing_feed.final_problem.feed.values = {2.0, 0.4};
+    const auto missing = predict(model, missing_feed);
+    CHECK(truth("addition-f7/feed_record", "the balanced feed species without an ideal record is typed and names feed",
+        missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value
+            && missing.message.find("feed:") != std::string::npos,
+        fields({field("status", observation_status_name(missing.status)), field("message", missing.message),
+            field("feed_B_mol", 1.0), field("n_add_mol", amount)}), "addition-f7"));
+    ThermochemistryRecord no_records;
+    no_records.standard_pressure = 1.0e5;
+    no_records.component_intervals = {{}, {}};
+    const HelmholtzModel undetermined_model(parameters, coordinates.active_parameters(), no_records);
+    const auto undetermined = predict(undetermined_model, variants.front().observation);
+    CHECK(truth("addition-f7/initial_record", "undetermined endpoint calorics are typed and name initial",
+        undetermined.status == ObservationStatus::ThermochemistryUnavailable && !undetermined.value
+            && undetermined.message.find("initial:") != std::string::npos,
+        fields({field("status", observation_status_name(undetermined.status)), field("message", undetermined.message)}),
+        "addition-f7"));
+    auto mismatch = variants.front().observation;
+    mismatch.final_problem.feed.values[0] += 0.01;
+    const auto mismatch_message = rejection([&] { validate(mismatch, model); });
+    CHECK(truth("addition-f7/material_balance", "a mismatched component balance is rejected by component name",
+        mismatch_message.find("component") != std::string::npos,
+        fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}), "addition-f7"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
         {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:18"}, check_f2, "R1"},

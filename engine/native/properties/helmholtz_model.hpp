@@ -210,6 +210,9 @@ struct NeutralReferenceReactionDiagnostic final {
     // dC/dtheta_a at the reference pressure per active parameter, only when requested; nullopt
     // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
+    std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
+    std::vector<std::array<std::optional<double>, 3>> temperature_parameter_ladder;  // last three C_Ttheta values per active coordinate
+    std::vector<std::optional<double>> observed_temperature_parameter_change;  // T max(1, |theta|) times ladder change
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;

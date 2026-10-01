@@ -304,14 +304,14 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             || !std::all_of(direction.active_parameters.begin(), direction.active_parameters.end(),
                             [](double v) { return std::isfinite(v); }))
             throw std::invalid_argument("solved-state action direction");
-        if ((!direction.reaction_log_constants.empty() && direction.reaction_log_constants.size() != problem.reactions.size())
-            || !std::all_of(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
-                            [](double v) { return std::isfinite(v); }))
-            throw std::invalid_argument("solved-state reaction log-constant direction");
-        if (!problem.standard_gibbs_j_per_mol.empty()
-            && std::any_of(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
-                           [](double v) { return v != 0.0; }))
-            throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
+        for (const auto* field : {&direction.reaction_log_constants, &direction.reaction_log_constant_temperature_slopes}) {
+            if ((!field->empty() && field->size() != problem.reactions.size())
+                || !std::all_of(field->begin(), field->end(), [](double v) { return std::isfinite(v); }))
+                throw std::invalid_argument("solved-state reaction log-constant direction or temperature slope");
+            if (!problem.standard_gibbs_j_per_mol.empty()
+                && std::any_of(field->begin(), field->end(), [](double v) { return v != 0.0; }))
+                throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
+        }
         if (problem.temperature.free && direction.temperature_k != 0.0)
             throw std::invalid_argument("free temperature is a solved output, not an external control");
         if (problem.pressure.free && direction.pressure_pa != 0.0)
@@ -535,7 +535,8 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
                              std::size_t phase, const std::vector<PropertyObservable>& observables,
                              std::size_t order, const std::vector<double>* enthalpy = nullptr,
                              const std::vector<double>* heat_capacity = nullptr,
-                             const std::vector<double>* enthalpy_pressure = nullptr) {
+                             const std::vector<double>* enthalpy_pressure = nullptr,
+                             const ReferenceCalorics* slopes = nullptr, const std::vector<double>* reaction_slopes = nullptr) {
     const auto& item = series.phase[phase];
     const std::size_t components = model.parameters().component_count();
     // Coefficient k as a chart direction; order zero is the zero direction (values only).
@@ -613,6 +614,14 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
                     + (motion != 0.0 ? motion * central_composition[c] * (*heat_capacity)[c] : 0.0)
                     + (pressure_motion != 0.0 ? pressure_motion * central_composition[c] * (*enthalpy_pressure)[c] : 0.0);
             }
+            if (order == 1 && slopes && index % 5 == 0) {
+                for (std::size_t a = 0; a < slopes->enthalpy_parameter.size(); ++a)
+                    for (std::size_t c = 0; c < components; ++c)
+                        action += central_composition[c] * item.point[1][2 + components + a] * slopes->enthalpy_parameter[a].values[c];
+                for (std::size_t r = 0; reaction_slopes && r < reaction_slopes->size(); ++r)
+                    for (std::size_t c = 0; c < components; ++c)
+                        action += central_composition[c] * (*reaction_slopes)[r] * slopes->enthalpy_reaction[r].values[c];
+            }
             if (entry.value) *entry.value += value;
             if (entry.action) *entry.action += action;
         }
@@ -637,7 +646,7 @@ struct ActionCenter final {
     std::vector<std::vector<std::size_t>> property_rows;
     std::vector<std::vector<PropertyObservable>> property_lists;
     SolvedStateActionDiagnostics diagnostics;
-    std::array<std::optional<ReferenceCalorics>, 3> calorics;  // h; h and cp; h and dh/dP
+    std::array<std::optional<ReferenceCalorics>, 4> calorics;  // h; h and cp; h and dh/dP
     SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
     SolvedStateActionStatus matrix_gate = SolvedStateActionStatus::Available;
     double classified_residual = 0.0;
@@ -733,6 +742,8 @@ static SolvedStateActionBatch evaluate_action(
                   control.begin() + static_cast<std::ptrdiff_t>(2 + components + actives));
         double largest = 0.0;
         for (std::size_t i = 0; i < width; ++i) largest = std::max(largest, std::abs(control[i]) / scale[i]);
+        for (const double slope : direction.reaction_log_constant_temperature_slopes)
+            largest = std::max(largest, std::abs(slope) * center.prepared.temperature);
         controls.push_back(std::move(control));
         magnitude.push_back(largest);
     }
@@ -740,11 +751,11 @@ static SolvedStateActionBatch evaluate_action(
         && !compiled.reference_diagnostics.empty();
     // Reference species calorics at the center: h (order-1 T chain), cp (order-2 T chain) and
     // dh/dP (mixed T-P chain) apart, so a missing order refuses only its consumers.
-    enum : std::size_t { ENTHALPY, HEAT_CAPACITY, PRESSURE };
+    enum : std::size_t { ENTHALPY, HEAT_CAPACITY, PRESSURE, PARAMETER };
     const auto calorics = [&](std::size_t kind) -> const ReferenceCalorics& {
         auto& slot = shared->calorics[kind];
         if (!slot) slot = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure,
-                                             kind == HEAT_CAPACITY, kind == PRESSURE);
+                                             kind == HEAT_CAPACITY, kind == PRESSURE, kind == PARAMETER);
         return *slot;
     };
     const auto available = [&](std::size_t kind) {
@@ -906,6 +917,11 @@ static SolvedStateActionBatch evaluate_action(
     };
     if (gate != SolvedStateActionStatus::Available) return apply_state_gate(gate);
     bool thermal_enthalpy = false, pressure_enthalpy = false;
+    const auto& reaction_slopes = request.directions[0].reaction_log_constant_temperature_slopes;
+    const bool parameter = parameter_direction(controls[0], components)
+        || std::any_of(reaction_slopes.begin(), reaction_slopes.end(), [](double v) { return v != 0.0; });
+    const auto* parameter_calorics = reference_problem && wants_enthalpy && parameter && !zero && order == 1
+        ? &calorics(PARAMETER) : nullptr;
     for (auto& item : batch.results) {
         if (!referenced_caloric(item) || item.status != SolvedStateActionStatus::Available || zero) continue;
         const bool cp = static_cast<std::size_t>(item.observable.property) % 5 == 3;
@@ -915,14 +931,28 @@ static SolvedStateActionBatch evaluate_action(
         else if (cp && (thermal || pressure_driven))
             refuse(item, SolvedStateActionStatus::ReferenceUnavailable,
                    "reference heat-capacity T/P actions need a missing reference order (d3C/dT3 or d3C/dT2dP)", false);
-        else if (parameter_direction(controls[0], components))
+        else if (cp && parameter)
             refuse(item, SolvedStateActionStatus::ReferenceUnavailable,
-                   "reference caloric parameter actions need d2C/dTdtheta", false);
+                   "reference heat-capacity parameter actions need d3C/dT2dtheta", false);
         else if (const auto* missing = thermal && !available(HEAT_CAPACITY) ? &calorics(HEAT_CAPACITY)
                      : pressure_driven && !available(PRESSURE) ? &calorics(PRESSURE) : nullptr)
             refuse(item, missing->status, missing->message, false);
-        else { thermal_enthalpy = thermal_enthalpy || thermal; pressure_enthalpy = pressure_enthalpy || pressure_driven; }
+        else {
+            thermal_enthalpy = thermal_enthalpy || thermal; pressure_enthalpy = pressure_enthalpy || pressure_driven;
+            if (!parameter_calorics) continue;
+            if (parameter_calorics->status != SolvedStateActionStatus::Available)
+                refuse(item, parameter_calorics->status, parameter_calorics->message, false);
+            for (const auto* family : {&parameter_calorics->enthalpy_parameter, &parameter_calorics->enthalpy_reaction})
+                for (std::size_t a = 0; a < family->size(); ++a) {
+                    const double motion = family == &parameter_calorics->enthalpy_parameter ? controls[0][2 + components + a]
+                        : a < reaction_slopes.size() ? reaction_slopes[a] : 0.0;
+                    const auto& column = (*family)[a];
+                    if (motion != 0.0 && column.status != SolvedStateActionStatus::Available)
+                        refuse(item, column.status, column.message, false);
+                }
+        }
     }
+    if (parameter_calorics && parameter_calorics->status != SolvedStateActionStatus::Available) parameter_calorics = nullptr;
     const auto* path_enthalpy = wants_enthalpy || wants_heat_capacity ? available(ENTHALPY) : nullptr;
     const auto* path_heat_capacity = thermal_enthalpy || wants_heat_capacity ? available(HEAT_CAPACITY) : nullptr;
     const auto* path_enthalpy_pressure = pressure_enthalpy ? available(PRESSURE) : nullptr;
@@ -943,6 +973,8 @@ static SolvedStateActionBatch evaluate_action(
             weight *= sign;
             for (std::size_t i = 0; i < width; ++i) control[i] += sign * controls[j][i] / magnitude[j];
         }
+        std::vector<double> normalized_slopes = reaction_slopes;
+        if (order == 1) for (double& value : normalized_slopes) value /= magnitude[0];
         core::Scope path_scope("solved_state_action_path");
         const auto path = follow(compiled, center, control, order, batch.diagnostics);
         if (path.status != SolvedStateActionStatus::Available)
@@ -958,7 +990,7 @@ static SolvedStateActionBatch evaluate_action(
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
             if (property_rows[phase].empty()) continue;
             const auto chain = property_chain(model, path.series, maps[phase], phase, property_lists[phase], order,
-                                              path_enthalpy, path_heat_capacity, path_enthalpy_pressure);
+                                              path_enthalpy, path_heat_capacity, path_enthalpy_pressure, parameter_calorics, &normalized_slopes);
             batch.diagnostics.maximum_energy_order = std::max(batch.diagnostics.maximum_energy_order, chain.maximum_energy_order);
             for (std::size_t i = 0; i < property_rows[phase].size(); ++i) {
                 auto& item = batch.results[property_rows[phase][i]];
