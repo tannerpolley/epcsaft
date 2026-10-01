@@ -382,6 +382,7 @@ struct SolvedStateActionDirection final {
     std::vector<double> feed_amounts_mol;
     std::vector<double> active_parameters;
     std::vector<double> reaction_log_constants;  // d(ln K)/dt by reaction; empty means zero
+    std::vector<double> reaction_log_constant_temperature_slopes;  // d(d ln K/dT)/dt, 1/K; empty means zero
 };
 
 struct SolvedStateActionRequest final {
@@ -402,12 +403,18 @@ enum class SolvedStateActionStatus {
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {
+    struct Column final {
+        std::vector<double> values;
+        SolvedStateActionStatus status = SolvedStateActionStatus::Available;
+        std::string message;
+    };
+    std::vector<Column> enthalpy_parameter, enthalpy_reaction;
     std::vector<double> enthalpy, heat_capacity, enthalpy_pressure;  // h, cp and dh/dP per species
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::string message;
 };
 ReferenceCalorics reference_calorics(const CompiledSystem& compiled, double temperature, double pressure,
-                                     bool heat_capacity, bool pressure_slope = false);
+                                     bool heat_capacity, bool pressure_slope = false, bool parameter_slopes = false);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;

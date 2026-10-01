@@ -298,7 +298,30 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         const double slope = contraction_t + contraction_v * volume_t;
         if (!(pressure_v < 0.0) || !std::isfinite(slope)) return {};
         std::array<std::optional<double>, 3> result{slope};
-        if (coordinate != 0) return result;
+        if (coordinate != 0) {
+            if (trace.temperature_order == 0) return result;
+            // EqID: standard_state_transfer_temperature_parameter_derivative
+            const double vt = -(gas * (1.0 / volume - derivatives->gradient[1]) - rt * h[width]) / pressure_v;
+            const double theta_scale = std::max(1.0, std::abs(model.active_parameter_values()[coordinate - 2 - stoichiometry.size()]));
+            const double alpha = std::max(1.0 / theta_scale, std::abs(volume_t) / volume)
+                / std::max(1.0 / temperature, std::abs(vt) / volume);
+            std::vector<double> plus(width, 0.0), minus(width, 0.0), along_volume(width, 0.0);
+            plus[0] = minus[0] = alpha;
+            plus[1] = alpha * vt + volume_t; minus[1] = alpha * vt - volume_t;
+            plus[coordinate] = 1.0; minus[coordinate] = -1.0; along_volume[1] = 1.0;
+            const auto mixed = [&](const auto& q) -> std::optional<double> {
+                const auto a = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, plus, plus}).action;
+                const auto b = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, minus, minus}).action;
+                return a && b ? std::optional<double>((*a - *b) / (4.0 * alpha)) : std::nullopt;
+            };
+            const auto reaction_wu = mixed(reaction), volume_wu = mixed(along_volume);
+            if (reaction_wu && volume_wu) {
+                const double pressure_wu = -gas * (h[width + coordinate] + volume_t * h[width + 1] + volume_t / (volume * volume))
+                    + 2.0 * rt * vt * volume_t / (volume * volume * volume) - rt * *volume_wu;
+                result[1] = *reaction_wu + delta_nu * vt * volume_t / (volume * volume) - contraction_v * pressure_wu / pressure_v;
+            }
+            return result;
+        }
         std::vector<double> path(width, 0.0), along_volume(width, 0.0);
         path[0] = 1.0;
         path[1] = volume_t;
@@ -397,9 +420,18 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             &result.observed_temperature_second_derivative_change);
         result.terminal_contraction_temperature_pressure_derivative = admit(order(2), temperature * trace.pressure, tolerance);
         const auto values = model.active_parameter_values();
-        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a)
-            result.terminal_contraction_parameter_derivative.push_back(admit({temperature_slopes(0, column + a)[0],
-                temperature_slopes(1, column + a)[0], temperature_slopes(2, column + a)[0]}, std::max(std::abs(values[a]), 1.0), tolerance));
+        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
+            const std::array jets{temperature_slopes(0, column + a), temperature_slopes(1, column + a), temperature_slopes(2, column + a)};
+            const double scale = std::max(std::abs(values[a]), 1.0);
+            result.terminal_contraction_parameter_derivative.push_back(admit({jets[0][0], jets[1][0], jets[2][0]}, scale, tolerance));
+            if (trace.temperature_order > 0) {
+                result.temperature_parameter_ladder.push_back({jets[0][1], jets[1][1], jets[2][1]});
+                result.observed_temperature_parameter_change.emplace_back();
+                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(
+                    result.temperature_parameter_ladder.back(), temperature * scale, tolerance,
+                    &result.observed_temperature_parameter_change.back()));
+            }
+        }
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;
             result.terminal_contraction_pressure_second_derivative = 0.0;

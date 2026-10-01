@@ -186,17 +186,58 @@ def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> 
         assert item[1].status == Status.Available and item[1].value is not None
 
 
-def test_reference_parameter_actions_refuse_missing_orders() -> None:
-    """A k_ij direction reaches only order-one non-caloric actions: h would need d2C/dTdtheta."""
-    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]), thermochemistry=_record(A_RECORD, []),
-                    active_parameters=[ActiveParameter(ParameterFamily.Kij, (1, 2))])
+def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> None:
+    """Case N referenced d(nH)/dtheta actions agree with rebuilt-model Richardson ladders."""
+    base = _problem(T0, None)
+    cases = (
+        ("kij", [ActiveParameter(ParameterFamily.Kij, (1, 2))], [1.0], 1.0e-4),
+        ("tied-epsilon", [ActiveParameter(ParameterFamily.DispersionEnergyOverK, (0,)),
+                           ActiveParameter(ParameterFamily.DispersionEnergyOverK, (1,))], [1.0, 1.0], 0.05),
+    )
+
+    def rebuilt(label: str, shift: float, active: list[ActiveParameter]) -> Mixture:
+        if label == "kij":
+            params = parameters((ETHANE, ETHANE), [("k_ij", (0, 1), shift)])
+        else:
+            components = tuple((*ETHANE[:3], ETHANE[3] + shift) for _ in range(2))
+            params = parameters(components, [("k_ij", (0, 1), 0.0)])
+        return Mixture(params, thermochemistry=_record(A_RECORD, []),
+                       active_parameters=active)
+
+    for label, active, parameter_direction, step in cases:
+        model = rebuilt(label, 0.0, active)
+        result = solve_equilibrium(model, base)
+        assert result.success, result.message
+        direction = Direction(0.0, 0.0, [0.0, 0.0], parameter_direction)
+        batch = solved_state_first_actions(compile_problem(model, base), result, [H, AMOUNT], [direction])[0]
+        h, n = batch.results
+        assert all(item.status == Status.Available for item in batch.results)
+        assert h.value is not None and h.action is not None and n.value is not None and n.action is not None
+        action = n.value * h.action + h.value * n.action
+
+        def extensive(shift: float) -> float:
+            values = _values(rebuilt(label, shift, active), base, [H, AMOUNT],
+                             Direction(0.0, 0.0, [0.0, 0.0], [0.0] * len(active)))
+            assert all(item.status == Status.Available and item.value is not None for item in values)
+            return float(values[0].value * values[1].value)
+
+        coarse, fine = ((extensive(step_size) - extensive(-step_size)) / (2.0 * step_size)
+                        for step_size in (2.0 * step, step))
+        richardson = (4.0 * fine - coarse) / 3.0
+        assert abs(fine - action) <= abs(coarse - action) / 2.0
+        same(evidence, f"reference-calorics/enthalpy-parameter/system/{label}/d(nH)/dtheta", action, richardson,
+             rtol=1e-6, atol=0.0,
+             inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step], "coarse": coarse, "fine": fine},
+             basis="Identity", method="richardson-centered-resolve",
+             claim="referenced total enthalpy parameter action equals rebuilt-model re-solves")
+
+    model = rebuilt("kij", 0.0, [ActiveParameter(ParameterFamily.Kij, (1, 2))])
     problem = _problem(T0, None)
     result = solve_equilibrium(model, problem)
     compiled = compile_problem(model, problem)
     fraction = SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)
     k = Direction(0.0, 0.0, [0.0, 0.0], [1.0])
-    caloric, composition = solved_state_actions(compiled, result, SolvedStateActionRequest([H, fraction], [k])).results
-    assert caloric.status == Status.ReferenceUnavailable and caloric.value is not None and caloric.action is None
+    composition = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k])).results[0]
     assert composition.status == Status.Available and composition.action is not None
     second = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k, k])).results[0]
     assert second.status == Status.ReferenceUnavailable and second.value is not None and second.action is None

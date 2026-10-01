@@ -19,7 +19,8 @@ void register_regression(py::module_& module) {
         .value("PhaseMoleFraction", ObservationKind::PhaseMoleFraction)
         .value("PhaseFraction", ObservationKind::PhaseFraction)
         .value("PartialPressure", ObservationKind::PartialPressure)
-        .value("PhaseAmountRatio", ObservationKind::PhaseAmountRatio);
+        .value("PhaseAmountRatio", ObservationKind::PhaseAmountRatio)
+        .value("AdditionEnthalpy", ObservationKind::AdditionEnthalpy);
     py::enum_<ResidualForm>(module, "ResidualForm")
         .value("Difference", ResidualForm::Difference)
         .value("LogRatio", ResidualForm::LogRatio);
@@ -42,6 +43,8 @@ void register_regression(py::module_& module) {
         .def_readwrite("composition", &Observation::composition)
         .def_readwrite("branch", &Observation::branch)
         .def_readwrite("problem", &Observation::problem)
+        .def_readwrite("final_problem", &Observation::final_problem)
+        .def_readwrite("feed_amount", &Observation::feed_amount)
         .def_readwrite("reaction", &Observation::reaction)
         .def_readwrite("phase", &Observation::phase)
         .def_readwrite("species", &Observation::species)

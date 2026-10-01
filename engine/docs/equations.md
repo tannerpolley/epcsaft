@@ -1552,7 +1552,7 @@ $$
 - Status: Bounded empirical relation
 - Source: Austgen, Rochelle, Peng and Chen 1989, Ind. Eng. Chem. Res. 28, 1060, eq for ln K(T); used for the MEA reactions R1–R3
 - Description: Temperature correlation of a reaction equilibrium constant on its declared standard state, with its analytic temperature derivative, which is the van 't Hoff reaction enthalpy on that standard state divided by RT²; valid on the declared temperature domain only.
-- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
+- Change note: $T_{ref}>0$ is explicit. A legacy $c\ln(T/(1\,\mathrm K))$ coefficient is normalized without changing values by replacing $a_{old}$ with $a=a_{old}+c\ln(T_{ref}/(1\,\mathrm K))$. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order for state actions and for referenced finite-addition enthalpy actions at fixed temperature. Heat-capacity coefficient actions, coefficient Hessians and referenced free-temperature fitting are not implied; parameter adoption remains application-owned.
 
 $$
 \ln K=a+\frac{b}{T}+c\ln\frac{T}{T_{ref}}+dT,\qquad \frac{d\ln K}{dT}=-\frac{b}{T^2}+\frac{c}{T}+d,\qquad \Delta_r h^{\circ}=RT^2\frac{d\ln K}{dT}
@@ -1564,12 +1564,16 @@ $$
 - Status: Exact derivation
 - Source: Chain rule for `reaction_constant_ln_polynomial`, the minimum-norm standard state in `chemical_potential_stationarity`, and `implicit_sensitivity`; issue #187 accepted design
 - Description: A fitted source-basis coefficient changes its density-basis reaction target by the same basis function. The source molality scale and reference contraction have no reaction-coefficient dependence. The minimum-norm image supplies chemical-row derivatives, and the existing defining Jacobian supplies the solved-state derivative.
-- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the basis at the solved temperature, including free temperature for unreferenced reactions. First order only is qualified; referenced free-temperature fitting, coefficient Hessians and caloric coefficient actions are not qualified. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
+- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the basis at the solved temperature for state actions; referenced free-temperature fitting remains unavailable. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. Heat-capacity coefficient actions and coefficient Hessians remain unavailable. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
 
 $$
 \phi_k(T)=\left(1,\frac1T,\ln\frac{T}{T_{ref}},T\right)_k,
 \qquad
 \frac{\partial\ln K_{\rho,r}}{\partial\theta_{r,k}}=\phi_k(T),
+\qquad
+\frac{d}{dT}\frac{\partial\ln K_{src,r}}{\partial\theta_{r,k}}=\phi'_k(T)=\left(0,-\frac1{T^2},\frac1T,1\right)_k,
+\qquad
+\frac{\partial\Delta_r h_\rho}{\partial\theta_{r,k}}=RT^2\phi'_k(T)=(0,-R,RT,RT^2)_k,
 \qquad
 \frac{\partial s_i}{\partial\theta_{r,k}}=-\big(N^+\big)_{ir}\phi_k(T),
 \qquad
@@ -1682,13 +1686,39 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and terminal composition of the neutral reaction reference
 - Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the finite terminal reference. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
-- Change note: Order one only. A slope is admitted when max(abs(theta), 1) times its change over the last three ladder points is at most 5e-5. The scale max(abs(theta), 1) is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the admitted slope is the exact derivative of the same terminal contraction the value uses. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. Caloric parameter actions would need d2C/dT dtheta and are not implied.
+- Change note: Order one only. A slope is admitted when max(abs(theta), 1) times its change over the last three ladder points is at most 5e-5. The scale max(abs(theta), 1) is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the admitted slope is the exact derivative of the same terminal contraction the value uses. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions remain unavailable.
 
 $$
 p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
 \left.\frac{dC}{d\theta}\right|_{T,P}=\sum_i\nu_i\psi_{n_i\theta}+C_VV_\theta,\\
 \frac{\partial\ln K_\rho}{\partial\theta}=\left.\frac{dC}{d\theta}\right|_{T,P},\qquad
 \frac{\partial s_r}{\partial\theta}=-\left.\frac{dC_r}{d\theta}\right|_{T,P}.
+$$
+
+## `standard_state_transfer_temperature_parameter_derivative`
+
+- Section: Equilibrium / Reaction standard states
+- Status: Exact derivation
+- Source: Mixed implicit differentiation of the isobaric reference contraction and pressure closure along one active EOS coordinate, at fixed temperature, reference pressure and terminal composition
+- Description: Mixed derivative $\partial^2C/\partial T\partial\theta$ of the finite terminal reference contraction, with $\psi=A^{res}/(RT)$ at $N=1$ mol. It supplies the EOS-coordinate derivative of referenced reaction enthalpy; $C$ is independent of the solved equilibrium state.
+- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The E3 contractions use balanced polarization of repeated directions with $\alpha=\|\mathbf u\|_s/\|\mathbf w\|_s$; the norm uses the E3 owner's scaled directions, including volume. Admit when $T\max(|\theta|,1)$ times the largest change over the last three ladder points is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/\max(|\theta|,1)$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. This route costs four E3 actions per requested parameter per ladder point. Heat-capacity parameter actions require an additional temperature derivative and remain unavailable.
+
+$$
+\mathbf w=\mathbf e_T+V_T\mathbf e_V,\quad
+\mathbf u=\mathbf e_\theta+V_\theta\mathbf e_V,\quad
+V_\theta=-\frac{p_\theta}{p_V},\\
+D^2C[\mathbf w,\mathbf u]=\sum_i\nu_iD^3\psi[\mathbf e_{n_i},\mathbf w,\mathbf u]
++\Delta\nu\frac{V_TV_\theta}{V^2},\\
+D^2p[\mathbf w,\mathbf u]=-R\left(\psi_{V\theta}+V_\theta\psi_{VV}+\frac{V_\theta}{V^2}\right)
++\frac{2RTV_TV_\theta}{V^3}-RTD^3\psi[\mathbf e_V,\mathbf w,\mathbf u],\\
+V_{T\theta}=-\frac{D^2p[\mathbf w,\mathbf u]}{p_V},\quad
+\frac{\partial^2C}{\partial T\,\partial\theta}=D^2C[\mathbf w,\mathbf u]+C_VV_{T\theta},\quad
+\frac{\partial\Delta_rh_\rho}{\partial\theta}=RT^2\frac{\partial^2C}{\partial T\,\partial\theta},\\
+D^3\psi[\mathbf q,\alpha\mathbf w+\mathbf u,\alpha\mathbf w+\mathbf u]
+-D^3\psi[\mathbf q,\alpha\mathbf w-\mathbf u,\alpha\mathbf w-\mathbf u]
+=4\alpha D^3\psi[\mathbf q,\mathbf w,\mathbf u],\quad
+\mathbf q\in\{\boldsymbol\nu,\mathbf e_V\},\quad
+\alpha=\frac{\|\mathbf u\|_s}{\|\mathbf w\|_s}.
 $$
 
 ## `standard_state_transfer_temperature_second_derivative`
@@ -1955,15 +1985,18 @@ $$
 
 - Section: Reference thermochemistry / Declared derivations
 - Status: Exact derivation
-- Source: Gibbs-Helmholtz on the model Gibbs function G = A_EOS + PV + sum_i n_i RT s_i(T,P) of a referenced reactive problem; standard_pressure_density_conversion and standard_state_transfer_temperature_(second_)derivative
+- Source: Gibbs-Helmholtz on the model Gibbs function G = A_EOS + PV + sum_i n_i RT s_i(T,P) of a referenced reactive problem; standard_pressure_density_conversion, standard_state_transfer_temperature_(second_)derivative, standard_state_transfer_temperature_parameter_derivative and reaction_constant_coordinate_derivative
 - Description: Species S with a supplied ideal-gas record keep its h and c_p; species D with an empty record list solve the EOS-basis reaction enthalpies and heat capacities on the density basis, minimum norm. Records fix the conserved moieties, so the remaining null space of nu_D must be parallel to the charges z_D: that ionic charge gauge cancels in every electroneutral phase and in every neutral apparent partial property. Total h and frozen-composition c_p add the residual parts (EqID: `total_enthalpy`); the equilibrium heat capacity is the temperature action of h.
-- Change note: A reaction-row residual beyond sqrt(eps) max(1, |Delta_r x| + sum_i |nu_ri x_i|), a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values, h first actions along feed, temperature and pressure (driven or solved), c_p first actions along feed at fixed pressure. The pressure slope solves the same system with right side P RT^2 d2C/dTdP (EqID: `standard_state_transfer_temperature_pressure_derivative`, zero for fixed-source-pressure rows) and zero for record species, whose ideal-gas h is pressure independent. c_p temperature or pressure actions need d3C/dT3 or d3C/dT2dP; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
+- Change note: A reaction-row residual beyond sqrt(eps) max(1, |Delta_r x| + sum_i |nu_ri x_i|), a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values; h first actions along feed, temperature and pressure (driven or solved); c_p first actions along feed at fixed pressure; and referenced h first actions along EOS and reaction-coefficient directions at fixed temperature. The pressure slope solves the same system with right side P RT^2 d2C/dTdP (EqID: `standard_state_transfer_temperature_pressure_derivative`, zero for fixed-source-pressure rows) and zero for record species, whose ideal-gas h is pressure independent. The EOS-coordinate slope solves with right side RT^2 C_Ttheta (EqID: `standard_state_transfer_temperature_parameter_derivative`), and the reaction coefficient slope uses RT^2 phi'_k(T) (EqID: `reaction_constant_coordinate_derivative`); record-species slopes are zero. Each consumed column keeps its own status and message. c_p parameter or reaction-coefficient actions need d3C/dT2dtheta or the corresponding higher reaction slope and remain unavailable. c_p temperature or pressure actions need d3C/dT3 or d3C/dT2dP; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
 
 $$
 h_{\rho,i}=h_{P,i}-RT,\quad c_{p,\rho,i}=c_{p,P,i}-R\ (i\in S),\qquad
 \Delta_rh_\rho=RT^2\frac{d\ln K_\rho}{dT},\\
 \boldsymbol{\nu}_D\,\mathbf{x}_D=\Delta_r\mathbf{x}-\boldsymbol{\nu}_S\,\mathbf{x}_S\quad(\mathbf{x}=\mathbf{h}_\rho,\ \mathbf{c}_{p,\rho}),\qquad
 \mathcal N(\boldsymbol{\nu}_D)\subseteq\operatorname{span}(\mathbf z_D),\\
+\boldsymbol\nu_D\,\partial_{\theta_a}\mathbf h_{\rho,D}=RT^2\partial_T\partial_{\theta_a}\mathbf C,\qquad
+\boldsymbol\nu_D\,\partial_{\ell_r}\mathbf h_{\rho,D}=RT^2\mathbf e_r,\quad
+\ell_r=\frac{d\ln K_{src,r}}{dT},\\
 h=\sum_ix_i\left(h_{\rho,i}+RT\right)+h^{res},\qquad c_p=\sum_ix_i\left(c_{p,\rho,i}+R\right)+c_p^{res},\qquad \boldsymbol{\nu}_D\,\partial_P\mathbf{h}_{\rho,D}=RT^2\,\partial_T\partial_P C.
 $$
 
@@ -2037,6 +2070,24 @@ $$
 
 $$
 H=\sum_i n_i\,h^{\circ}_i(T)+H^{\mathrm{res}}(T,V,\mathbf{n}),\qquad H^{\mathrm{res}}=A^{\mathrm{res}}-T\left(\frac{\partial A^{\mathrm{res}}}{\partial T}\right)_{V,\mathbf{n}}+PV-nRT
+$$
+
+## `finite_addition_enthalpy`
+
+- Section: Regression / Enthalpy observations
+- Status: Exact derivation
+- Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
+- Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
+- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, but referenced free-temperature endpoints remain unavailable. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure.
+
+$$
+\Delta h_{add}=\frac{H^{(2)}-H^{(1)}}{n_{add}}-h_{feed},\qquad
+H^{(k)}=\sum_{p\notin Z_k}n_p^{(k)}h_p^{(k)},\\
+h_{feed}=h^{id}(T_f,\mathbf y)+h^{res}(T_f,P_f,\mathbf y;\theta),\\
+\frac{d\Delta h_{add}}{d\theta}=\frac{1}{n_{add}}\sum_{k=1}^{2}\sigma_k\sum_{p\notin Z_k}
+\left(\dot n_p^{(k)}h_p^{(k)}+n_p^{(k)}\dot h_p^{(k)}\right)
+-\left.\frac{\partial h^{res}}{\partial\theta}\right|_{T_f,P_f,\mathbf y},\qquad
+\sigma_1=-1,\quad\sigma_2=1.
 $$
 
 ## `total_entropy`

@@ -750,9 +750,14 @@ A first-action direction may also supply one constant d(ln K)/dt per declared
 reaction (empty means zero). The chemical-row series adds its minimum-norm
 species image through the same standard-state owner, EqID:
 `reaction_constant_coordinate_derivative`; residual-energy controls keep their
-original width. Supplied standard Gibbs vectors fix K and reject nonzero
-reaction directions. This qualifies first-order state/composition/amount actions
-only; reaction Hessians and caloric coefficient actions are not qualified.
+original width. A direction may also supply d(d ln K/dT)/dt in
+`reaction_log_constant_temperature_slopes` (1/K; empty means zero). At fixed T,
+these slopes contribute to referenced enthalpy actions through the same
+minimum-norm species owner; they do not alter the chemical-row derivative.
+Supplied standard Gibbs vectors fix K and reject nonzero reaction directions.
+Nonzero reaction directions, including slope-only directions, refuse actions above
+order one while retaining admitted central values. Reaction Hessians and
+heat-capacity coefficient actions are not qualified.
 
 ## ALG-REFERENCE
 
@@ -826,8 +831,9 @@ value criterion at the parameter scale max(|theta|, 1), and
 $\partial s_r/\partial\theta=-dC_r/d\theta$ follows the same owner, so parameter
 and mixed T/P/parameter actions are available at order one. Continuation
 tangents use the same order-one chains. Free temperature, raw lever derivatives, temperature actions above order two,
-parameter actions above order one, caloric parameter actions, and third-order
-actions involving pressure remain unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
+parameter actions above order one, heat-capacity parameter or reaction-coefficient
+actions, and third-order actions involving pressure remain unavailable.
+Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
 supplied records anchor their species, record-less species are completed from
 the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
 may remain. A heat-capacity value or enthalpy temperature action requests the
@@ -840,6 +846,20 @@ $\partial\Delta_rh_\rho/\partial P$) and heat-capacity values and first feed
 actions at fixed pressure are available; heat-capacity temperature or pressure
 actions, caloric orders above one, u, s and c_v remain unavailable, while independently
 valid residual properties remain usable.
+
+For a referenced enthalpy first action at fixed temperature, request only the
+consumed EOS columns of $C_{T\theta}$ (EqID:
+`standard_state_transfer_temperature_parameter_derivative`) and reaction
+coefficient columns of $\phi'_k(T)$ (EqID:
+`reaction_constant_coordinate_derivative`). The EOS mixed derivative uses
+balanced polarization of repeated-direction E3 actions and is admitted when
+$T\max(|\theta|,1)$ times the observed change over the last three reference
+ladder points is at most $5\times10^{-5}$. A missing column refuses only an
+action that consumes it and names its reaction and parameter; central values
+and sibling directions remain available. The reference enthalpy action uses
+the fixed-T endpoint's own solved temperature and reaction-row mapping. It does
+not admit heat-capacity parameter actions or referenced free-temperature
+actions.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit
@@ -866,8 +886,8 @@ method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
-isobaric heat capacity with fixed thermochemistry, plus the declared
-equilibrium observations and direct source-basis ln K observations. It uses affine, tied
+isobaric heat capacity with fixed thermochemistry, finite-addition enthalpy,
+the declared equilibrium observations and direct source-basis ln K observations. It uses affine, tied
 optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
@@ -885,6 +905,19 @@ columns reuse the coefficient basis above, with zero EOS/other-reaction columns.
 It admits Difference residuals only and shares named-coordinate admission.
 `PhaseAmountRatio` composes component amounts by the quotient rule; any constant
 caller factor belongs in the observed value and, for Difference, in its scale.
+`AdditionEnthalpy` uses two declared equilibrium problems and the row's feed
+state; its value and exact first actions follow EqID:
+`finite_addition_enthalpy`. Both endpoint solves remain available through
+residual-to-Jacobian promotion. Each endpoint uses its own solved-state action
+batch and reaction-row mapping; the feed's ideal enthalpy is fixed with
+thermochemistry and its residual enthalpy and EOS-coordinate action use the
+Properties pressure chart. Every phase not pinned at zero contributes amount
+times total enthalpy. The row forms a singleton state group, rebuilds at each
+trial, and uses Difference for negative exothermic values; LogRatio retains
+the existing positive-argument admission. Admission checks the material balance and identical ordered reaction
+and source-reference declarations. Referenced free-temperature endpoints are
+unavailable. Failures retain the `initial:`, `final:` or `feed:` state name
+with the owning solve, density, thermochemistry or action diagnostic.
 Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants
 fixed by supplied thermochemistry and referenced free-temperature requests are
 rejected by reaction name before fitting.
@@ -897,6 +930,8 @@ scalar K or all stored correlation coefficients, so a reaction-coordinate
 change invalidates admission preparation even when EOS values are unchanged. The same
 compiled problem may serve a cold retry at that point. Failed trials still
 publish neither solved starts nor a successful evaluation cache.
+The two endpoint problems of an `AdditionEnthalpy` row are retained separately;
+its singleton kind is always rebuilt at a new parameter point.
 
 ## ALG-TERMINATION
 

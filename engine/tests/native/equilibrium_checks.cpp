@@ -18,6 +18,7 @@
 #include <limits>
 #include <string>
 #include <stdexcept>
+#include <tuple>
 
 namespace {
 
@@ -991,6 +992,438 @@ void check_s2() {
             "isfinite(model) && model <= reference", change <= 1.0e-2,
             "s2-neutral-reference", "temperature-second-limit", "R T^2|dD2|", "T,P,nu",
             "R T^2|dD2|<=0.01 J/(mol K)", "limit");
+    }
+
+    // #210 F1(i): identical ethane keeps the reference species identical, so the
+    // mixed reference slope is the pure-fluid residual enthalpy parameter action.
+    {
+        constexpr double temperature = 260.0, pressure = 3.0e6;
+        const std::vector<epcsaft::ActiveParameter> active = {
+            {epcsaft::ParameterFamily::DispersionEnergyOverK, {0}},
+            {epcsaft::ParameterFamily::DispersionEnergyOverK, {1}}};
+        const epcsaft::HelmholtzModel pair(identical_parameters, active);
+        const epcsaft::HelmholtzModel pure(
+            properties_support::ethane(),
+            {{epcsaft::ParameterFamily::DispersionEnergyOverK, {0}}});
+        const std::vector<epcsaft::ReactionReference> sources = {
+            reference, {5.0e6, reference.source_basis}};
+        for (std::size_t source = 0; source < sources.size(); ++source) {
+            const auto diagnostic = epcsaft::reaction_references(
+                pair, temperature, pressure, identical_declaration, {identical_nu},
+                {sources[source]}, false, std::nullopt, 1, true).front();
+            const double mixed = diagnostic.terminal_contraction_temperature_parameter_derivative.size() != 2
+                ? std::numeric_limits<double>::quiet_NaN()
+                : diagnostic.terminal_contraction_temperature_parameter_derivative[0].value_or(
+                    std::numeric_limits<double>::quiet_NaN())
+                    + diagnostic.terminal_contraction_temperature_parameter_derivative[1].value_or(
+                        std::numeric_limits<double>::quiet_NaN());
+            const double mixed_s0 = diagnostic.terminal_contraction_temperature_parameter_derivative.size() > 0
+                ? diagnostic.terminal_contraction_temperature_parameter_derivative[0].value_or(
+                    std::numeric_limits<double>::quiet_NaN())
+                : std::numeric_limits<double>::quiet_NaN();
+            const double mixed_s1 = diagnostic.terminal_contraction_temperature_parameter_derivative.size() > 1
+                ? diagnostic.terminal_contraction_temperature_parameter_derivative[1].value_or(
+                    std::numeric_limits<double>::quiet_NaN())
+                : std::numeric_limits<double>::quiet_NaN();
+            const double reference_pressure = sources[source].reference_pressure_pa.value_or(pressure);
+            const auto pure_action = pure.pressure_actions(
+                temperature, reference_pressure, {1.0}, epcsaft::DensityBranch::Liquid,
+                {epcsaft::PropertyObservable::ResidualEnthalpy},
+                {{0.0, 0.0, {0.0}, {{epcsaft::ParameterFamily::DispersionEnergyOverK, {0}, 1.0}}}});
+            CHECK(diagnostic.status == epcsaft::NeutralReferenceStatus::Available
+                  && std::isfinite(mixed) && pure_action.results.size() == 1
+                  && pure_action.results[0].status == epcsaft::PropertyActionStatus::Available
+                  && pure_action.results[0].action.has_value());
+            const double scaled_mixed = epcsaft::GAS_CONSTANT_J_PER_MOL_K
+                * temperature * temperature * mixed;
+            const double pure_slope = pure_action.results.empty()
+                ? std::numeric_limits<double>::quiet_NaN()
+                : pure_action.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN());
+            const bool agrees = std::isfinite(scaled_mixed) && std::isfinite(pure_slope)
+                && std::abs(scaled_mixed - pure_slope) <= 1.0e-9 * std::abs(pure_slope);
+            const auto inputs = recording_support::fields({
+                recording_support::field("case", "N"),
+                recording_support::field("source", source == 0 ? "system" : "fixed"),
+                recording_support::field("T_K", temperature),
+                recording_support::field("P_Pa", pressure),
+                recording_support::field("P_ref_Pa", reference_pressure),
+                recording_support::field("epsilon_over_k_K", 191.42),
+                recording_support::field("C_Ttheta_s0", mixed_s0),
+                recording_support::field("C_Ttheta_s1", mixed_s1),
+                recording_support::field("C_Ttheta", mixed),
+                recording_support::field("C_Ttheta_ladder_s0", std::vector<double>{
+                    diagnostic.temperature_parameter_ladder[0][0].value_or(std::nan("")),
+                    diagnostic.temperature_parameter_ladder[0][1].value_or(std::nan("")),
+                    diagnostic.temperature_parameter_ladder[0][2].value_or(std::nan(""))}),
+                recording_support::field("C_Ttheta_ladder_s1", std::vector<double>{
+                    diagnostic.temperature_parameter_ladder[1][0].value_or(std::nan("")),
+                    diagnostic.temperature_parameter_ladder[1][1].value_or(std::nan("")),
+                    diagnostic.temperature_parameter_ladder[1][2].value_or(std::nan(""))}),
+                recording_support::field("observed_C_Ttheta_admitted_change_s0", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[0])),
+                recording_support::field("observed_C_Ttheta_admitted_change_s1", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[1])),
+                recording_support::field("R_T2_C_Ttheta_J_per_mol_K", scaled_mixed),
+                recording_support::field("pure_pressure_action_J_per_mol_K", pure_slope),
+                recording_support::field("observed_C_T_admitted_change",
+                    epcsaft::core::optional_number(diagnostic.observed_temperature_derivative_change)),
+                recording_support::field("observed_terminal_change",
+                    epcsaft::core::optional_number(diagnostic.observed_terminal_change))});
+            const std::string id = std::string("neutral-reference/temperature-parameter/N/")
+                + (source == 0 ? "system" : "fixed") + "/tied-epsilon/pure-identity";
+            recording_support::compare_custom(
+                id.c_str(), "R_T2_C_Ttheta", "J/(mol K)", scaled_mixed, pure_slope, inputs,
+                "Relationship", "identical-species-gibbs-helmholtz",
+                "the reference enthalpy parameter slope equals the pure-fluid pressure-chart action",
+                "abs(model-reference)<=1e-9*abs(reference)", agrees,
+                "s2-neutral-reference", "f1-N", "R T^2 C_{Ttheta}", "T,P,P_ref,epsilon",
+                "R T^2 C_{Ttheta}=d h_res/d epsilon", "source");
+            CHECK(agrees);
+        }
+    }
+
+    // #210 F1(ii): on aqueous NaCl, qualify both mixed-slope directions against
+    // independent centered theta and T differences at h and 2h.
+    {
+        constexpr double temperature = 298.15, pressure = 1.0e5, temperature_step = 1.0e-2;
+        const auto parameters = properties_support::aqueous_electrolyte();
+        const epcsaft::NeutralReferenceDeclaration declaration = ratios({0.0, 1.0, 1.0});
+        const std::vector<double> stoichiometry = {-1.0, 1.0, 1.0};
+        const std::vector<epcsaft::ActiveParameter> active = {
+            {epcsaft::ParameterFamily::DispersionEnergyOverK, {0}},
+            {epcsaft::ParameterFamily::SigmaConstant, {1}}};
+        const epcsaft::HelmholtzModel model(parameters, active);
+        const std::vector<epcsaft::ReactionReference> sources = {
+            reference, {2.0e5, reference.source_basis}};
+        const double steps[] = {0.05, 5.0e-4};
+        const char* names[] = {"water-epsilon", "sodium-sigma"};
+        const char* units[] = {"K", "angstrom"};
+        const auto shifted_parameters = [&](std::size_t coordinate, double shift) {
+            auto shifted = properties_support::aqueous_electrolyte();
+            if (coordinate == 0) shifted.dispersion_energy_over_k[0] += shift;
+            else shifted.sigma_constant[1] += shift;
+            return shifted;
+        };
+        const auto temperature_slope = [&](const epcsaft::HelmholtzModel& current,
+                                           double at_temperature,
+                                           const epcsaft::ReactionReference& source) {
+            const auto diagnostic = epcsaft::reaction_references(
+                current, at_temperature, pressure, declaration, {stoichiometry}, {source},
+                false, std::nullopt, 1, false).front();
+            CHECK(diagnostic.status == epcsaft::NeutralReferenceStatus::Available
+                  && diagnostic.terminal_contraction_temperature_derivative.has_value());
+            return diagnostic.terminal_contraction_temperature_derivative.value_or(
+                std::numeric_limits<double>::quiet_NaN());
+        };
+        const auto parameter_slope = [&](double at_temperature,
+                                         const epcsaft::ReactionReference& source,
+                                         std::size_t coordinate) {
+            const auto diagnostic = epcsaft::reaction_references(
+                model, at_temperature, pressure, declaration, {stoichiometry}, {source},
+                false, std::nullopt, 0, true).front();
+            CHECK(diagnostic.status == epcsaft::NeutralReferenceStatus::Available
+                  && diagnostic.terminal_contraction_parameter_derivative.size() == active.size()
+                  && diagnostic.terminal_contraction_parameter_derivative[coordinate].has_value());
+            return diagnostic.terminal_contraction_parameter_derivative.size() > coordinate
+                ? diagnostic.terminal_contraction_parameter_derivative[coordinate].value_or(
+                    std::numeric_limits<double>::quiet_NaN())
+                : std::numeric_limits<double>::quiet_NaN();
+        };
+        for (std::size_t source = 0; source < sources.size(); ++source) {
+            const auto exact_diagnostic = epcsaft::reaction_references(
+                model, temperature, pressure, declaration, {stoichiometry}, {sources[source]},
+                false, std::nullopt, 1, true).front();
+            CHECK(exact_diagnostic.status == epcsaft::NeutralReferenceStatus::Available
+                  && exact_diagnostic.terminal_contraction_temperature_parameter_derivative.size() == active.size());
+            for (std::size_t coordinate = 0; coordinate < active.size(); ++coordinate) {
+                const double exact = exact_diagnostic.terminal_contraction_temperature_parameter_derivative.size() > coordinate
+                    ? exact_diagnostic.terminal_contraction_temperature_parameter_derivative[coordinate].value_or(
+                        std::numeric_limits<double>::quiet_NaN())
+                    : std::numeric_limits<double>::quiet_NaN();
+                const auto theta_difference = [&](double step) {
+                    const epcsaft::HelmholtzModel plus(shifted_parameters(coordinate, step));
+                    const epcsaft::HelmholtzModel minus(shifted_parameters(coordinate, -step));
+                    return (temperature_slope(plus, temperature, sources[source])
+                        - temperature_slope(minus, temperature, sources[source])) / (2.0 * step);
+                };
+                const auto temperature_difference = [&](double step) {
+                    return (parameter_slope(temperature + step, sources[source], coordinate)
+                        - parameter_slope(temperature - step, sources[source], coordinate)) / (2.0 * step);
+                };
+                const auto inputs = recording_support::fields({
+                    recording_support::field("case", "I"),
+                    recording_support::field("source", source == 0 ? "system" : "fixed"),
+                    recording_support::field("parameter", names[coordinate]),
+                    recording_support::field("parameter_unit", units[coordinate]),
+                    recording_support::field("T_K", temperature),
+                    recording_support::field("P_Pa", pressure),
+                    recording_support::field("P_ref_Pa", sources[source].reference_pressure_pa.value_or(pressure)),
+                    recording_support::field("C_Ttheta_ladder", std::vector<double>{
+                        exact_diagnostic.temperature_parameter_ladder[coordinate][0].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        exact_diagnostic.temperature_parameter_ladder[coordinate][1].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        exact_diagnostic.temperature_parameter_ladder[coordinate][2].value_or(std::numeric_limits<double>::quiet_NaN())}),
+                    recording_support::field("observed_C_Ttheta_admitted_change",
+                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_parameter_change[coordinate])),
+                    recording_support::field("observed_C_T_admitted_change",
+                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change)),
+                    recording_support::field("observed_terminal_change",
+                        epcsaft::core::optional_number(exact_diagnostic.observed_terminal_change))});
+                for (const auto& [route, coarse, fine] : std::array<std::tuple<const char*, double, double>, 2>{
+                         std::tuple{"theta-difference", theta_difference(2.0 * steps[coordinate]),
+                                    theta_difference(steps[coordinate])},
+                         std::tuple{"temperature-difference", temperature_difference(2.0 * temperature_step),
+                                    temperature_difference(temperature_step)}}) {
+                    const double fine_error = std::abs(fine - exact);
+                    const double coarse_error = std::abs(coarse - exact);
+                    const bool agrees = std::isfinite(exact) && std::isfinite(coarse) && std::isfinite(fine)
+                        && std::abs(exact) > 0.0 && fine_error <= 1.0e-6 * std::abs(exact)
+                        && fine_error <= coarse_error / 2.0;
+                    const std::string route_id = std::string("neutral-reference/temperature-parameter/I/")
+                        + (source == 0 ? "system/" : "fixed/") + names[coordinate] + "/" + route;
+                    const auto route_inputs = recording_support::fields({inputs,
+                        recording_support::field("coarse_step", std::string(route) == "theta-difference"
+                            ? 2.0 * steps[coordinate] : 2.0 * temperature_step),
+                        recording_support::field("fine_step", std::string(route) == "theta-difference"
+                            ? steps[coordinate] : temperature_step),
+                        recording_support::field("coarse", coarse), recording_support::field("fine", fine),
+                        recording_support::field("exact_C_Ttheta", exact),
+                        recording_support::field("coarse_error", coarse_error),
+                        recording_support::field("fine_error", fine_error)});
+                    recording_support::compare_custom(
+                        route_id.c_str(), "C_Ttheta", coordinate == 0 ? "K^-2" : "K^-1 angstrom^-1",
+                        fine, exact, route_inputs, "Relationship", "centered-independent-difference",
+                        "the exact mixed reference slope agrees with independent theta and T differences",
+                        "abs(fine-exact)<=1e-6*abs(exact) && abs(fine-exact)<=abs(coarse-exact)/2",
+                        agrees, "s2-neutral-reference", "f1-I", "C_{Ttheta}", "T,P,P_ref,theta,h",
+                        "O(h^2) centered difference converges to C_{Ttheta}", route);
+                    CHECK(agrees);
+                }
+            }
+        }
+    }
+
+    // #210 F2: extensive nH actions against centered re-solves. The omission
+    // diagnostic is the independently assembled direct reference-species term.
+    {
+        using ActionDirection = epcsaft::equilibrium::SolvedStateActionDirection;
+        struct Ladder final { double action, coarse, fine, richardson, direct; };
+        const auto enthalpy = [] {
+            epcsaft::equilibrium::SolvedStateObservable item;
+            item.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseProperty;
+            item.property = epcsaft::PropertyObservable::TotalEnthalpy;
+            return item;
+        }();
+        const auto amount = [] {
+            epcsaft::equilibrium::SolvedStateObservable item;
+            item.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseAmount;
+            return item;
+        }();
+        const auto extensive = [&](const epcsaft::HelmholtzModel& model,
+                                   const epcsaft::equilibrium::EquilibriumProblem& problem) {
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, problem);
+            CHECK(solved.success);
+            if (!solved.success) return std::numeric_limits<double>::quiet_NaN();
+            const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
+            ActionDirection zero;
+            zero.feed_amounts_mol.assign(problem.feed.values.size(), 0.0);
+            zero.active_parameters.assign(model.active_parameters().size(), 0.0);
+            const auto values = epcsaft::equilibrium::solved_state_actions(
+                compiled, solved, {{enthalpy, amount}, {zero}}).results;
+            CHECK(values.size() == 2 && values[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && values[1].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && values[0].value.has_value() && values[1].value.has_value());
+            if (values.size() != 2 || !values[0].value || !values[1].value)
+                return std::numeric_limits<double>::quiet_NaN();
+            return *values[0].value * *values[1].value;
+        };
+        const auto action_ladder = [&](const char* id, const epcsaft::HelmholtzModel& model,
+                                       const epcsaft::equilibrium::EquilibriumProblem& problem,
+                                       const ActionDirection& direction, double step,
+                                       const auto& value_at_shift) {
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, problem);
+            CHECK(solved.success);
+            const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
+            const auto batches = epcsaft::equilibrium::solved_state_first_actions(
+                compiled, solved, {enthalpy, amount}, {direction});
+            CHECK(solved.success && batches.size() == 1 && batches[0].results.size() == 2);
+            const auto& h = batches[0].results[0];
+            const auto& n = batches[0].results[1];
+            CHECK(h.status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && n.status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && h.value.has_value() && h.action.has_value() && n.value.has_value() && n.action.has_value());
+            const double exact = n.value.value_or(std::numeric_limits<double>::quiet_NaN())
+                    * h.action.value_or(std::numeric_limits<double>::quiet_NaN())
+                + h.value.value_or(std::numeric_limits<double>::quiet_NaN())
+                    * n.action.value_or(std::numeric_limits<double>::quiet_NaN());
+            const double coarse = (value_at_shift(2.0 * step) - value_at_shift(-2.0 * step)) / (4.0 * step);
+            const double fine = (value_at_shift(step) - value_at_shift(-step)) / (2.0 * step);
+            const double richardson = (4.0 * fine - coarse) / 3.0;
+            const auto calorics = epcsaft::equilibrium::reference_calorics(
+                compiled, problem.temperature.value, problem.pressure.value, false, false, true);
+            const bool reaction_direction = std::any_of(
+                direction.reaction_log_constant_temperature_slopes.begin(),
+                direction.reaction_log_constant_temperature_slopes.end(), [](double value) { return value != 0.0; });
+            const double factor = reaction_direction
+                ? direction.reaction_log_constant_temperature_slopes.front()
+                : direction.active_parameters.front();
+            const auto& family = reaction_direction ? calorics.enthalpy_reaction : calorics.enthalpy_parameter;
+            CHECK(calorics.status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && !family.empty() && family[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && family[0].values.size() == problem.feed.values.size());
+            double direct = 0.0;
+            if (!family.empty() && family[0].values.size() == solved.mole_fractions.size())
+                for (std::size_t component = 0; component < family[0].values.size(); ++component)
+                    direct += solved.amounts[0] * solved.mole_fractions[component]
+                        * family[0].values[component] * factor;
+            const double tolerance = 1.0e-6 * std::abs(richardson);
+            const bool agrees = std::isfinite(exact) && std::isfinite(coarse) && std::isfinite(fine)
+                && std::isfinite(richardson) && std::isfinite(direct) && tolerance > 0.0
+                && std::abs(richardson - exact) <= tolerance
+                && std::abs(fine - exact) <= std::abs(coarse - exact) / 2.0;
+            const auto inputs = recording_support::fields({
+                recording_support::field("coarse_step", 2.0 * step),
+                recording_support::field("fine_step", step),
+                recording_support::field("coarse", coarse), recording_support::field("fine", fine),
+                recording_support::field("action", exact), recording_support::field("richardson", richardson),
+                recording_support::field("direct_reference_species_term", direct),
+                recording_support::field("criterion", tolerance)});
+            recording_support::compare_custom(
+                id, "d(nH)/dtheta", "J per native parameter unit", richardson, exact, inputs,
+                "Relationship", "richardson-centered-resolve",
+                "the extensive total enthalpy action equals rebuilt-model re-solves",
+                "abs(Richardson-action)<=1e-6*abs(Richardson) && abs(fine-action)<=abs(coarse-action)/2",
+                agrees, "s2-neutral-reference", id, "d(nH)/dtheta", "T,P,theta,h",
+                "(4 fine-coarse)/3=d(nH)/dtheta", "coordinate");
+            CHECK(agrees);
+            return Ladder{exact, coarse, fine, richardson, direct};
+        };
+        const auto discrimination = [&](const std::string& id, const Ladder& row) {
+            const double tolerance = 1.0e-6 * std::abs(row.richardson);
+            const double threshold = 10.0 * tolerance;
+            const bool separated = threshold > 0.0 && std::abs(row.direct) >= threshold;
+            const auto inputs = recording_support::fields({
+                recording_support::field("action", row.action),
+                recording_support::field("richardson", row.richardson),
+                recording_support::field("criterion", tolerance),
+                recording_support::field("omitted_term", row.direct),
+                recording_support::field("omission_over_criterion",
+                    tolerance > 0.0 ? std::abs(row.direct) / tolerance : std::numeric_limits<double>::quiet_NaN())});
+            const std::string comparison = id + "/omission-discrimination";
+            recording_support::compare_custom(
+                comparison.c_str(), "omitted_direct_enthalpy_term", "J per native parameter unit",
+                std::abs(row.direct), threshold,
+                inputs, "Discrimination", "reference-species-parameter-chain",
+                "omitting the direct referenced-species enthalpy slope exceeds ten action tolerances",
+                "abs(omitted_term)>=10*1e-6*abs(Richardson)", separated,
+                "s2-neutral-reference", id.c_str(), "n_sum_x_dh_dtheta", "n,x,theta",
+                "n sum_i x_i dh_i/dtheta", "case");
+            CHECK(separated);
+        };
+
+        // Case N reaction b at the system-pressure reference.
+        epcsaft::ThermochemistryRecord neutral_record;
+        neutral_record.standard_pressure = 1.0e5;
+        neutral_record.component_intervals = {
+            {{200.0, 400.0, true, true,
+              {epcsaft::IdealPolynomial{{52.0, 0.12}, 300.0, 0.0, 0.0}, 1.0e5}}},
+            {}};
+        const epcsaft::HelmholtzModel neutral_model(identical_parameters, {}, neutral_record);
+        const epcsaft::ReactionLogPolynomial neutral_law{
+            std::log(0.3), 200.0, 3.0, -0.004, 300.0, 250.0, 350.0, "analytic-source"};
+        const std::vector<epcsaft::ReactionReference> neutral_sources = {reference};
+        for (std::size_t source = 0; source < neutral_sources.size(); ++source) {
+            auto problem = equilibrium_support::flash(2);
+            problem.temperature = epcsaft::equilibrium::FreeValue::fixed(260.0);
+            problem.pressure = epcsaft::equilibrium::FreeValue::fixed(3.0e6);
+            problem.feed.values = {2.0, 0.2};
+            problem.source_reference = identical_declaration;
+            problem.reactions = {{"2A=B", identical_nu, std::nullopt, std::nullopt,
+                                  neutral_law, neutral_sources[source]}};
+            const ActionDirection b_direction{
+                0.0, 0.0, {0.0, 0.0}, {}, {1.0 / 260.0}, {-1.0 / (260.0 * 260.0)}};
+            const auto value_at_shift = [&](double shift) {
+                auto shifted = problem;
+                shifted.reactions[0].correlation->b += shift;
+                return extensive(neutral_model, shifted);
+            };
+            const std::string id = std::string("reference-calorics/enthalpy-reaction/N/")
+                + (source == 0 ? "system" : "fixed") + "/reaction-b/resolve";
+            const auto row = action_ladder(id.c_str(), neutral_model, problem, b_direction, 1.0, value_at_shift);
+            (void)row;
+            // At Tref, phi_c=0 but phi_c'=1/T: a mixed chemical action cannot be an available zero.
+            auto centered = problem;
+            centered.reactions[0].correlation->reference_temperature = 260.0;
+            const auto center = epcsaft::equilibrium::solve_equilibrium(neutral_model, centered);
+            const auto compiled = epcsaft::equilibrium::compile_problem(neutral_model, centered);
+            epcsaft::equilibrium::SolvedStateObservable fraction;
+            fraction.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
+            fraction.component = 1;
+            const ActionDirection log_k{0.0, 0.0, {0.0, 0.0}, {}, {1.0}, {0.0}};
+            const ActionDirection c{0.0, 0.0, {0.0, 0.0}, {}, {0.0}, {1.0 / 260.0}};
+            const ActionDirection temperature{1.0, 0.0, {0.0, 0.0}, {}, {}, {}};
+            const auto first = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {log_k}});
+            const auto higher = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {temperature, c}});
+            const double omitted = first.results[0].action.value_or(0.0) / 260.0;
+            const bool refused = center.success && first.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                && higher.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+                && higher.results[0].value == first.results[0].value && !higher.results[0].action;
+            recording_support::compare_custom("reference-calorics/parameter/reaction-c-at-Tref/order-refusal",
+                "omitted_mixed_composition_action", "1/K", omitted, 0.0,
+                recording_support::fields({recording_support::field("Tref_K", 260.0), recording_support::field("typed_refusal", refused)}),
+                "Discrimination", "reaction-coordinate-first-order-scope", "a nonzero phi_c' contribution prevents an available zero mixed action",
+                "abs(omitted)>0 && typed_refusal", std::isfinite(omitted) && omitted != 0.0 && refused,
+                "s2-neutral-reference", "reaction-c-at-Tref", "d2x/dTdc", "T,c", "phi_c'=1/T", "case");
+            CHECK(std::isfinite(omitted) && omitted != 0.0 && refused);
+        }
+
+        // Case I water epsilon/k and reaction b, both system- and fixed-pressure references.
+        constexpr double ionic_temperature = 298.15, ionic_pressure = 1.0e5;
+        const auto ionic_parameters = properties_support::aqueous_electrolyte();
+        const std::vector<epcsaft::ActiveParameter> ionic_active = {
+            {epcsaft::ParameterFamily::DispersionEnergyOverK, {0}}};
+        epcsaft::ThermochemistryRecord water_record;
+        water_record.standard_pressure = 1.0e5;
+        water_record.component_intervals = {
+            {{200.0, 500.0, true, true,
+              {epcsaft::IdealPolynomial{{33.59}, 298.15, -241826.0, 188.83}, 1.0e5}}},
+            {}, {}};
+        const epcsaft::HelmholtzModel ionic_model(ionic_parameters, ionic_active, water_record);
+        const std::vector<epcsaft::ReactionReference> ionic_sources = {
+            reference, {2.0e5, reference.source_basis}};
+        for (std::size_t source = 0; source < ionic_sources.size(); ++source) {
+            auto problem = equilibrium_support::flash(3);
+            problem.temperature = epcsaft::equilibrium::FreeValue::fixed(ionic_temperature);
+            problem.pressure = epcsaft::equilibrium::FreeValue::fixed(ionic_pressure);
+            problem.feed.values = {1.0, 1.0e-6, 1.0e-6};
+            problem.source_reference = ratios({0.0, 1.0, 1.0});
+            problem.reactions = {{"H2O=Na++Cl-", {-1.0, 1.0, 1.0}, std::nullopt, std::nullopt,
+                epcsaft::ReactionLogPolynomial{std::log(1.0e-8) + 2000.0 / ionic_temperature, -2000.0, 0.0, 0.0,
+                 ionic_temperature, 250.0, 350.0, "analytic-source"}, ionic_sources[source]}};
+            const ActionDirection epsilon_direction{
+                0.0, 0.0, {0.0, 0.0, 0.0}, {1.0}, {}, {}};
+            const auto epsilon_value = [&](double shift) {
+                auto shifted = ionic_parameters;
+                shifted.dispersion_energy_over_k[0] += shift;
+                const epcsaft::HelmholtzModel changed(shifted, ionic_active, water_record);
+                return extensive(changed, problem);
+            };
+            const std::string epsilon_id = std::string("reference-calorics/enthalpy-parameter/I/")
+                + (source == 0 ? "system" : "fixed") + "/water-epsilon/resolve";
+            const auto epsilon_row = action_ladder(
+                epsilon_id.c_str(), ionic_model, problem, epsilon_direction, 0.05, epsilon_value);
+            discrimination(epsilon_id, epsilon_row);
+
+            const ActionDirection b_direction{
+                0.0, 0.0, {0.0, 0.0, 0.0}, {0.0}, {1.0 / ionic_temperature},
+                {-1.0 / (ionic_temperature * ionic_temperature)}};
+            const auto b_value = [&](double shift) {
+                auto changed = problem;
+                changed.reactions[0].correlation->b += shift;
+                return extensive(ionic_model, changed);
+            };
+            const std::string b_id = std::string("reference-calorics/enthalpy-reaction/I/")
+                + (source == 0 ? "system" : "fixed") + "/reaction-b/resolve";
+            const auto b_row = action_ladder(b_id.c_str(), ionic_model, problem, b_direction, 1.0, b_value);
+            discrimination(b_id, b_row);
+        }
     }
 
 

@@ -662,7 +662,7 @@ void admit_pins(CompiledSystem& compiled) {
 // N_D x_D = Delta_r x - N_S x_S on the density basis for x = h, cp (min-norm), where only
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
 ReferenceCalorics reference_calorics(
-    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity, bool pressure_slope
+    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity, bool pressure_slope, bool parameter_slopes
 ) {
     ReferenceCalorics result;
     const auto refuse = [&](SolvedStateActionStatus status, const std::string& message) {
@@ -699,7 +699,7 @@ ReferenceCalorics reference_calorics(
     std::vector<NeutralReferenceReactionDiagnostic> diagnostics;
     try {
         resolved = central_reference_reactions(*compiled.model, problem, temperature, pressure, diagnostics,
-            pressure_slope, &compiled.reference_diagnostics, heat_capacity ? 2 : 1);
+            pressure_slope, &compiled.reference_diagnostics, heat_capacity ? 2 : 1, parameter_slopes);
     } catch (const std::invalid_argument& error) {
         return refuse(SolvedStateActionStatus::ReferenceUnavailable, error.what());
     }
@@ -755,9 +755,39 @@ ReferenceCalorics reference_calorics(
                 > std::sqrt(std::numeric_limits<double>::epsilon()) * derived_charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
                       "reference_unavailable: calorics of record-less species are undetermined beyond the charge gauge");
-    for (auto* values : {&enthalpy, &capacity, &enthalpy_p}) {
+    std::vector<Eigen::VectorXd> deltas = {delta_h, delta_cp, delta_hp};
+    std::vector<std::vector<double>*> columns = {&enthalpy, &capacity, &enthalpy_p};
+    if (parameter_slopes) {
+        result.enthalpy_parameter.resize(compiled.model->active_parameters().size());
+        result.enthalpy_reaction.resize(rows);
+        for (auto* family : {&result.enthalpy_parameter, &result.enthalpy_reaction})
+            for (std::size_t a = 0; a < family->size(); ++a) {
+                auto& column = (*family)[a];
+                column.values.assign(components, 0.0);
+                Eigen::VectorXd delta = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(rows));
+                for (std::size_t row = 0; row < rows; ++row) {
+                    if (family == &result.enthalpy_reaction) { if (row == a) delta(row) = rt * temperature; continue; }
+                    if (!problem.reactions[row].reference) continue;
+                    const auto diagnostic = std::find_if(diagnostics.begin(), diagnostics.end(),
+                        [row](const auto& item) { return item.reaction_index == row; });
+                    const auto& mixed = diagnostic->terminal_contraction_temperature_parameter_derivative;
+                    if (a < mixed.size() && mixed[a]) delta(row) = rt * temperature * *mixed[a];
+                    else {
+                        column.status = SolvedStateActionStatus::ReferenceUnavailable;
+                        column.message = "reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
+                            + " parameter " + std::to_string(a) + " d2/dTdtheta is unavailable";
+                    }
+                }
+                columns.push_back(&column.values); deltas.push_back(delta);
+            }
+    }
+    for (std::size_t c = 0; c < columns.size(); ++c) {
+        auto* values = columns[c];
+        auto* column = c < 3 ? nullptr : c < 3 + result.enthalpy_parameter.size()
+            ? &result.enthalpy_parameter[c - 3] : &result.enthalpy_reaction[c - 3 - result.enthalpy_parameter.size()];
+        if (column && column->status != SolvedStateActionStatus::Available) continue;
         if ((values == &capacity && !heat_capacity) || (values == &enthalpy_p && !pressure_slope)) continue;
-        const auto& delta = values == &enthalpy ? delta_h : values == &capacity ? delta_cp : delta_hp;
+        const auto& delta = deltas[c];
         Eigen::VectorXd right = delta, scale = delta.cwiseAbs();
         for (std::size_t row = 0; row < rows; ++row)
             for (std::size_t i = 0; i < components; ++i) {
@@ -770,9 +800,13 @@ ReferenceCalorics reference_calorics(
         const Eigen::VectorXd residual = derived.empty() ? right : Eigen::VectorXd(derived_matrix * solution - right);
         for (Eigen::Index row = 0; row < residual.size(); ++row)
             if (!(std::abs(residual(row)) <= std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(row))))
-                return refuse(SolvedStateActionStatus::ReferenceUnavailable,
-                              "reference_unavailable: supplied thermochemistry is inconsistent with reaction "
-                              + reaction_name(problem.reactions[static_cast<std::size_t>(row)], static_cast<std::size_t>(row)));
+            {
+                const auto message = "reference_unavailable: supplied thermochemistry is inconsistent with reaction "
+                    + reaction_name(problem.reactions[static_cast<std::size_t>(row)], static_cast<std::size_t>(row));
+                if (!column) return refuse(SolvedStateActionStatus::ReferenceUnavailable, message);
+                column->status = SolvedStateActionStatus::ReferenceUnavailable;
+                column->message = message + " caloric column " + std::to_string(c - 3);
+            }
         for (std::size_t j = 0; j < derived.size(); ++j) (*values)[derived[j]] = solution(static_cast<Eigen::Index>(j));
     }
     // Back to the ideal-gas pressure basis consumed by the Total definitions.
