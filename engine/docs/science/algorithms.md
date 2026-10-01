@@ -380,7 +380,7 @@ stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
 iteration-budget or time-budget stop, at most
 `EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
-Jacobian close that gap. Each step must contract the raw row maximum and keep
+Jacobian close that gap. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
@@ -655,7 +655,7 @@ singular or ill-conditioned site equations, excessive implicit residual,
 unavailable density branches and nonfinite completed results. A zero or
 nonfinite leading jet coefficient required for division, including the
 pressure-volume derivative used by `cp`, remains a native `domain_error`; it is
-outside the per-result typed-status contract. Branch and tape-predicate changes
+outside per-result failure reporting. Branch and tape-predicate changes
 are rejected by the finite-difference admission ladder before comparison; the
 local action request has no perturbation size from which to report them as
 runtime statuses.
@@ -778,7 +778,7 @@ two-ion change, max(|theta|,1) times the column difference, at the existing
 reference tolerance. The terminal pair is compared first; a witness checks a
 failed pair without changing the returned terminal column. An unavailable
 column preserves the value, molality and terminal value error. Activity and
-single-ion energy actions contract these columns through EqID:
+single-ion energy actions combine these columns through EqID:
 `electrolyte_activity_parameter_derivative`.
 
 
@@ -786,7 +786,7 @@ Use the explicitly declared solvent/reference path and source standard state.
 The two-ion formula must contain charged components with zero stoichiometric
 charge; the solvent composition must also be neutral within the composition
 admission tolerance. The shared composition owner enforces this before either
-reference construction or activity evaluation; neither API supplies an ionic gauge.
+reference construction or activity evaluation; neither calculation supplies an ionic gauge.
 Evaluate the retained molality sequence; return the terminal change and
 criterion separately. Unknown validity or failed limiting convergence remains
 unavailable. Differentiate both the source correlation and EOS reference path,
@@ -909,7 +909,7 @@ Ceres remains the primary least-squares owner. Slice B's constrained fitting is
 not implemented by the electrolyte slice-A change.
 
 
-Use the [regression formulation](../regression/science/pure-saturation-regression.md)
+Use the [parameter regression formulation](../regression/science/pure-saturation-regression.md)
 for observation algebra, weights, parameter coordinates and uncertainty.
 Resolve each state once, evaluate its declared observables/actions, transform
 residuals and Jacobians consistently, then apply the declared bounded fitting
@@ -1066,9 +1066,9 @@ The solve counterpart is `converged_to_floor`.
 Keep the achieved error, criterion, scale, iteration/evaluation budget, native
 solver status and termination reason visible. Only Ipopt `MAXITER_EXCEEDED` and
 `CPUTIME_EXCEEDED` count as equilibrium work-budget exhaustion;
-a non-success optimizer status with a finite non-converged residual is
+a non-success optimizer termination with a finite non-converged residual is
 unavailable, while a finite criterion-meeting result remains eligible after the
-same bounded polish and physical checks. A non-success status alone never
+same bounded polish and physical checks. A non-success termination alone never
 establishes success; floor-only results from it remain unavailable. Recomputed residual and topology criteria apply.
 Distinguish converged, stagnated, exhausted,
 nonfinite, left-domain, singular and infeasible outcomes. Optional traces aid
