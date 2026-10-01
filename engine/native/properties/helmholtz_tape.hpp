@@ -22,48 +22,7 @@ namespace epcsaft::detail {
 
 using AD = CppAD::AD<double>;
 
-struct TapeParameters final {
-    std::vector<AD> segment_count;
-    std::vector<AD> sigma_constant;
-    std::vector<int> sigma_term_component;
-    std::vector<double> sigma_term_amplitude;
-    std::vector<double> sigma_term_exponent;
-    std::vector<AD> dispersion_energy_over_k;
-    std::vector<double> molar_mass_kg_per_mol;
-    std::vector<AD> k_ij;
-    std::vector<AD> k_ij_reciprocal_temperature_slope;
-    std::vector<double> k_ij_reference_temperature_k;
-    std::vector<AD> l_ij;
-    std::vector<int> site_component;
-    std::vector<int> site_multiplicity;
-    std::vector<int> association_active;
-    std::vector<AD> association_energy_over_k;
-    std::vector<AD> association_volume;
-    std::vector<int> charge_number;
-    std::vector<double> packing_diameter_angstrom;
-    std::vector<double> debye_huckel_diameter_angstrom;
-    std::vector<double> born_diameter_angstrom;
-    std::vector<double> solvation_factor;
-    double ionic_region_relative_permittivity;
-    double born_c_shell;
-    double born_c_dielectric;
-    core::Declared<ElectrolyteForm> electrolyte_form;
-    core::Declared<IonicDispersion> ionic_dispersion;
-    core::Declared<PermittivityForm> permittivity_form;
-    std::vector<double> relative_permittivity;
-    std::vector<int> permittivity_term_component;
-    std::vector<double> permittivity_term_coefficient;
-    std::vector<int> permittivity_term_power;
-    std::vector<double> permittivity_reference_temperature_k;
-    std::vector<double> ion_suppression_coefficient;
-    std::vector<double> dielectric_volume_m3_per_mol;
-    std::vector<double> dielectric_temperature_k;
-    std::vector<double> dipole_scaling_debye2;
-    std::vector<double> polarizability_scaling_angstrom3;
-    std::vector<double> correlation_integral_parameter;
-    std::vector<double> dipole_moment_debye;
-    std::vector<double> dipole_count;
-};
+using TapeParameters = ParameterRecord<AD>;
 
 enum class ParameterFamily {
     SegmentCount,
@@ -129,41 +88,7 @@ inline TapeParameters make_tape_parameters(
         const auto item = static_cast<ParameterFamily>(family);
         family_values(result, item) = active_vector(family_values(parameters, item), active, item, coordinates);
     }
-    result.sigma_term_component = parameters.sigma_term_component;
-    result.sigma_term_amplitude = parameters.sigma_term_amplitude;
-    result.sigma_term_exponent = parameters.sigma_term_exponent;
-    result.molar_mass_kg_per_mol = parameters.molar_mass_kg_per_mol;
-    result.k_ij_reference_temperature_k = parameters.k_ij_reference_temperature_k;
-    result.site_component = parameters.site_component;
-    result.site_multiplicity = parameters.site_multiplicity;
-    result.association_active = parameters.association_active;
-    result.charge_number = parameters.charge_number;
-    result.packing_diameter_angstrom = parameters.packing_diameter_angstrom;
-    result.debye_huckel_diameter_angstrom = parameters.debye_huckel_diameter_angstrom;
-    result.born_diameter_angstrom = parameters.born_diameter_angstrom;
-    result.solvation_factor = parameters.solvation_factor;
-    result.ionic_region_relative_permittivity =
-        parameters.ionic_region_relative_permittivity;
-    result.born_c_shell = parameters.born_c_shell;
-    result.born_c_dielectric = parameters.born_c_dielectric;
-    result.electrolyte_form = parameters.electrolyte_form;
-    result.ionic_dispersion = parameters.ionic_dispersion;
-    result.permittivity_form = parameters.permittivity_form;
-    result.relative_permittivity = parameters.relative_permittivity;
-    result.permittivity_term_component = parameters.permittivity_term_component;
-    result.permittivity_term_coefficient = parameters.permittivity_term_coefficient;
-    result.permittivity_term_power = parameters.permittivity_term_power;
-    result.permittivity_reference_temperature_k =
-        parameters.permittivity_reference_temperature_k;
-    result.ion_suppression_coefficient = parameters.ion_suppression_coefficient;
-    result.dielectric_volume_m3_per_mol = parameters.dielectric_volume_m3_per_mol;
-    result.dielectric_temperature_k = parameters.dielectric_temperature_k;
-    result.dipole_scaling_debye2 = parameters.dipole_scaling_debye2;
-    result.polarizability_scaling_angstrom3 =
-        parameters.polarizability_scaling_angstrom3;
-    result.correlation_integral_parameter = parameters.correlation_integral_parameter;
-    result.dipole_moment_debye = parameters.dipole_moment_debye;
-    result.dipole_count = parameters.dipole_count;
+    static_cast<FixedParameters&>(result) = parameters;
     return result;
 }
 

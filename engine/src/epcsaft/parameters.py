@@ -16,6 +16,12 @@ def _mapping(value: object, name: str) -> Mapping[str, object]:
     return value
 
 
+def _array(value: object, name: str) -> Sequence[object]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise _core.ParameterError(f"{name} must be an array")
+    return value
+
+
 def _value(value: object, name: str) -> tuple[float, str]:
     item = _mapping(value, name)
     magnitude = item.get("magnitude")
@@ -77,9 +83,7 @@ class Parameters:
         document = _mapping(mapping, "parameter document")
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1:
             raise _core.ParameterError("unsupported parameter document schema")
-        raw_components = document.get("components")
-        if not isinstance(raw_components, Sequence) or isinstance(raw_components, (str, bytes)):
-            raise _core.ParameterError("components must be an array")
+        raw_components = _array(document.get("components"), "components")
         component_records: dict[str, Mapping[str, object]] = {}
         for index, item in enumerate(raw_components):
             record = _mapping(item, "components")
@@ -125,9 +129,7 @@ class Parameters:
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
                     entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), field, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))
-            coefficients = record.get("coefficients", ())
-            if not isinstance(coefficients, Sequence) or isinstance(coefficients, (str, bytes)):
-                raise _core.ParameterError(f"component/{component_id}/coefficients must be an array")
+            coefficients = _array(record.get("coefficients", ()), f"component/{component_id}/coefficients")
             for item_value in coefficients:
                 item = _mapping(item_value, f"component/{component_id}/coefficients")
                 family_value = item.get("family")
@@ -138,9 +140,7 @@ class Parameters:
                     raise _core.ParameterError(f"component/{component_id}/coefficients has no identity")
                 entries.append(_entry(identity, coefficient_fields[family_value], (positions[component_id],), item["value"], identity))
 
-        raw_correlations = document.get("correlations", ())
-        if not isinstance(raw_correlations, Sequence) or isinstance(raw_correlations, (str, bytes)):
-            raise _core.ParameterError("correlations must be an array")
+        raw_correlations = _array(document.get("correlations", ()), "correlations")
         sigma_term = 0
         permittivity_term = 0
         for correlation_index, item_value in enumerate(raw_correlations):
@@ -168,22 +168,18 @@ class Parameters:
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
             entries.append(_entry(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id)))
             if form == "constant-plus-sum-of-exponentials":
-                terms = item.get("terms", ())
-                if not isinstance(terms, Sequence) or isinstance(terms, (str, bytes)):
-                    raise _core.ParameterError(f"{correlation_id} terms must be an array")
+                terms = _array(item.get("terms", ()), f"{correlation_id} terms")
                 for term in terms:
                     term_map = _mapping(term, cast(str, correlation_id))
-                    amplitude = _mapping(term.get("amplitude"), "sigma amplitude")
-                    exponent = _mapping(term.get("exponent_coefficient"), "sigma exponent")
+                    amplitude = _mapping(term_map.get("amplitude"), "sigma amplitude")
+                    exponent = _mapping(term_map.get("exponent_coefficient"), "sigma exponent")
                     entries.append(_entry(amplitude.get("identity"), "sigma_term_amplitude", (sigma_term, positions[component_id]), amplitude["value"], cast(str, correlation_id)))
                     entries.append(_entry(exponent.get("identity"), "sigma_term_exponent", (sigma_term, positions[component_id]), exponent["value"], cast(str, correlation_id)))
                     sigma_term += 1
             elif form == "constant-plus-polynomial-in-temperature":
                 reference = _mapping(item.get("reference_temperature"), "permittivity reference")
                 entries.append(_entry(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", correlation_position, reference, cast(str, correlation_id)))
-                terms = item.get("terms", ())
-                if not isinstance(terms, Sequence) or isinstance(terms, (str, bytes)):
-                    raise _core.ParameterError(f"{correlation_id} terms must be an array")
+                terms = _array(item.get("terms", ()), f"{correlation_id} terms")
                 for term in terms:
                     term_map = _mapping(term, cast(str, correlation_id))
                     power = term_map.get("power")
@@ -193,9 +189,7 @@ class Parameters:
                     entries.append(_entry(coefficient.get("identity"), "permittivity_term_coefficient", (permittivity_term, positions[component_id], power), coefficient["value"], cast(str, correlation_id)))
                     permittivity_term += 1
 
-        raw_pairs = document.get("pairs", ())
-        if not isinstance(raw_pairs, Sequence) or isinstance(raw_pairs, (str, bytes)):
-            raise _core.ParameterError("pairs must be an array")
+        raw_pairs = _array(document.get("pairs", ()), "pairs")
         pair_fields = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
         for index, pair_value in enumerate(raw_pairs):
             pair = _mapping(pair_value, "pair")
@@ -207,9 +201,7 @@ class Parameters:
                 raise _core.ParameterError(f"pair[{index}].component_id_b must be a non-empty string")
             if a not in positions or b not in positions:
                 continue
-            pair_entries = pair.get("coefficients", ())
-            if not isinstance(pair_entries, Sequence) or isinstance(pair_entries, (str, bytes)):
-                raise _core.ParameterError(f"pair/{a}/{b} coefficients must be an array")
+            pair_entries = _array(pair.get("coefficients", ()), f"pair/{a}/{b} coefficients")
             for item_value in pair_entries:
                 item = _mapping(item_value, f"pair/{a}/{b}")
                 family_value = item.get("family")
@@ -227,9 +219,7 @@ class Parameters:
                     reference = _mapping(item["reference_temperature"], "pair reference temperature")
                     entries.append(_entry(f"{identity}/reference_temperature", "k_ij_reference_temperature", pair_index, reference, identity))
 
-        families = document.get("model_families", ())
-        if not isinstance(families, Sequence) or isinstance(families, (str, bytes)):
-            raise _core.ParameterError("model_families must be an array")
+        families = _array(document.get("model_families", ()), "model_families")
         for item in families:
             kind = _mapping(item, "model_families").get("kind")
             if kind not in ("base", "association", "electrolyte", "permittivity", "polar"):
@@ -245,9 +235,7 @@ class Parameters:
                 if name not in electrolyte_record:
                     raise _core.ParameterError(f"missing electrolyte/{name}")
                 entries.append(_entry(f"model/electrolyte/{name}", field, (), {"magnitude": electrolyte_record[name], "unit": "dimensionless"}, "model/electrolyte"))
-        model_coefficients = document.get("model_coefficients", ())
-        if not isinstance(model_coefficients, Sequence) or isinstance(model_coefficients, (str, bytes)):
-            raise _core.ParameterError("model_coefficients must be an array")
+        model_coefficients = _array(document.get("model_coefficients", ()), "model_coefficients")
         for item_value in model_coefficients:
             item = _mapping(item_value, "model coefficient")
             family_value = item.get("family")
@@ -266,9 +254,7 @@ class Parameters:
         site_ids: list[tuple[str, str]] = []
         site_component: list[int] = []
         site_multiplicity: list[int] = []
-        sites = topology.get("sites", ())
-        if not isinstance(sites, Sequence) or isinstance(sites, (str, bytes)):
-            raise _core.ParameterError("topology.sites must be an array")
+        sites = _array(topology.get("sites", ()), "topology.sites")
         for index, item_value in enumerate(sites):
             item = _mapping(item_value, "topology site")
             component_id = item.get("component_id")
@@ -286,9 +272,8 @@ class Parameters:
             site_component.append(positions[component_id])
             site_multiplicity.append(cast(int, item.get("multiplicity")))
         site_positions = {pair: index for index, pair in enumerate(site_ids)}
-        edges = topology.get("edges", ())
-        if not isinstance(edges, Sequence) or isinstance(edges, (str, bytes)):
-            raise _core.ParameterError("topology.edges must be an array")
+        edges = _array(topology.get("edges", ()), "topology.edges")
+        selected_edges: list[tuple[tuple[int, int], Mapping[str, object], Mapping[str, object]]] = []
         association_identities: dict[str, tuple[str, tuple[int, int]]] = {}
         for index, item_value in enumerate(edges):
             edge = _mapping(item_value, "topology edge")
@@ -311,9 +296,10 @@ class Parameters:
             if first not in site_positions or second not in site_positions:
                 raise _core.ParameterError(f"missing topology site {(first if first not in site_positions else second)[0]}/{(first if first not in site_positions else second)[1]}")
             source = _mapping(edge.get("source"), "topology edge source")
+            edge_index = (site_positions[first], site_positions[second])
+            selected_edges.append((edge_index, edge, source))
             if source.get("kind") != "explicit":
                 continue
-            edge_index = (site_positions[first], site_positions[second])
             energy = _mapping(edge.get("energy_over_k"), "association energy")
             volume = _mapping(edge.get("volume"), "association volume")
             if not isinstance(energy.get("identity"), str) or not isinstance(volume.get("identity"), str):
@@ -332,17 +318,9 @@ class Parameters:
                 raise _core.ParameterError(f"association {family} input has wrong family")
             return [item[1] for item in found]
 
-        for item_value in edges:
-            edge = _mapping(item_value, "topology edge")
-            endpoint_a = _mapping(edge.get("endpoint_a"), "topology endpoint")
-            endpoint_b = _mapping(edge.get("endpoint_b"), "topology endpoint")
-            first = (cast(str, endpoint_a.get("component_id")), cast(str, endpoint_a.get("site_id")))
-            second = (cast(str, endpoint_b.get("component_id")), cast(str, endpoint_b.get("site_id")))
-            if first[0] not in positions or second[0] not in positions:
-                continue
-            source = _mapping(edge.get("source"), "topology edge source")
+        # Emit only after all explicit identities exist, including forward self-edge references.
+        for edge_index, edge, source in selected_edges:
             kind = source.get("kind")
-            edge_index = (site_positions[first], site_positions[second])
             if kind == "explicit":
                 energy = _mapping(edge.get("energy_over_k"), "association energy")
                 volume = _mapping(edge.get("volume"), "association volume")

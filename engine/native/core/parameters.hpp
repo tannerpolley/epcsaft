@@ -39,28 +39,20 @@ enum class IonicDispersion {
     ExcludeSameSign = 2,  // pairs with z_i z_j > 0, the diagonal included, take 0
 };
 
-struct Parameters final {
+struct FixedParameters {
     // Chain and segment geometry
-    std::vector<double> segment_count;
-    std::vector<double> sigma_constant;
     std::vector<int> sigma_term_component;
     std::vector<double> sigma_term_amplitude;
     std::vector<double> sigma_term_exponent;
-    std::vector<double> dispersion_energy_over_k;
     std::vector<double> molar_mass_kg_per_mol;
 
     // Pair corrections, row-major over component pairs
-    std::vector<double> k_ij;
-    std::vector<double> k_ij_reciprocal_temperature_slope;
     std::vector<double> k_ij_reference_temperature_k;
-    std::vector<double> l_ij;
 
     // Association sites; pair arrays are row-major over sites
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;  // 0 inactive, 1 active, 2 Wolbach--Sandler rule edge
-    std::vector<double> association_energy_over_k;
-    std::vector<double> association_volume;
 
     // Electrolyte
     std::vector<int> charge_number;
@@ -92,8 +84,25 @@ struct Parameters final {
     std::vector<double> dipole_moment_debye;
     std::vector<double> dipole_count;
 
+};
+
+// Precisely the eight active families; all electrolyte and topology inputs stay fixed.
+// Scalar is supplied by the consuming layer, so Core has no AD dependency.
+template <class Scalar>
+struct ParameterRecord final : FixedParameters {
+    std::vector<Scalar> segment_count;
+    std::vector<Scalar> sigma_constant;
+    std::vector<Scalar> dispersion_energy_over_k;
+    std::vector<Scalar> k_ij;
+    std::vector<Scalar> k_ij_reciprocal_temperature_slope;
+    std::vector<Scalar> l_ij;
+    std::vector<Scalar> association_energy_over_k;
+    std::vector<Scalar> association_volume;
+
     std::size_t component_count() const { return segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }
 };
+
+using Parameters = ParameterRecord<double>;
 
 }  // namespace epcsaft

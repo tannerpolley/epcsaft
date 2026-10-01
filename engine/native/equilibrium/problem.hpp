@@ -9,6 +9,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -96,6 +97,22 @@ struct ReactionSpec final {
     std::optional<ReactionLogPolynomial> correlation;
     std::optional<ReactionReference> reference;
 };
+
+// Exact declaration equality, shared by fitting admission/grouping and continuation.
+inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
+    const auto correlation = [](const auto& v) {
+        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
+                        v.temperature_max, v.standard_state_id);
+    };
+    const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
+    const auto optional_equal = [](const auto& a, const auto& b, const auto& fields) {
+        return a.has_value() == b.has_value() && (!a || fields(*a) == fields(*b));
+    };
+    return std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
+        == std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
+        && optional_equal(x.correlation, y.correlation, correlation)
+        && optional_equal(x.reference, y.reference, reference);
+}
 
 struct EquilibriumProblem final {
     std::vector<PhaseSpec> phases;
