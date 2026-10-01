@@ -135,7 +135,7 @@ $$
 - Section: Contribution intermediates / Association
 - Status: Source equation
 - Source: [Gross2002], cross-association rule; [Chapman1990], association strength
-- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); `d^3`-regressed volumes are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
+- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); volumes fitted using `d^3` are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
 $$
@@ -808,7 +808,7 @@ $$
 - Section: Thermodynamic properties
 - Status: Exact derivation
 - Source: Composition of `fixed_pressure_total_derivative`, `total_heat_capacity_cp` and `residual_heat_capacity_cp`
-- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
+- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Parameter regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
 - Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
 
 $$
@@ -1587,7 +1587,7 @@ $$
 
 ## `source_log_equilibrium_constant_observation`
 
-- Section: Regression / Reaction observations
+- Section: Parameter regression / Reaction observations
 - Status: Exact derivation
 - Source: `reaction_constant_ln_polynomial` (Austgen et al. 1989, ln K(T) correlation); coefficient differentiation and existing Difference residual, issue #211
 - Description: A direct observation is the named reaction's declared source-basis natural-log equilibrium constant at fixed positive temperature. It does not contain the EOS reference contraction or an equilibrium-state derivative.
@@ -1606,7 +1606,7 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
-- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
+- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source specification (Aroua 1999, Tong 2012)
 - Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; fitting uses the explicitly converted native coefficients; valid on the declared temperature domain only.
 - Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
@@ -1915,7 +1915,7 @@ $$
 
 - Section: Parameter setup
 - Status: Bounded empirical relation
-- Source: Source-resulted component correlation represented by the EOS parameter schema
+- Source: Source-resulted component correlation represented by the EOS parameter fields
 - Description: Evaluate a component segment-size correlation from its constant and exponential terms.
 - Change note: Mirrors the general sparse correlation implemented by segment_sigma.
 
@@ -2078,7 +2078,7 @@ $$
 
 ## `finite_addition_enthalpy`
 
-- Section: Regression / Enthalpy observations
+- Section: Parameter regression / Enthalpy observations
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
