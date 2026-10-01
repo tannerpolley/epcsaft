@@ -768,6 +768,18 @@ including its density closure. Fixed source pressure P0 must not become trial
 pressure. Reference-gauge choices that preserve reaction affinities do not
 supply absolute caloric data.
 
+For the single-solvent osmotic coefficient, reuse the pure-solvent liquid State
+at the same prescribed T/P and EqID: `practical_osmotic_coefficient`. Replace
+the independently terminated log-fugacity subtraction with the residual
+chemical-potential difference and `log1p` density/composition ratios. Keep the
+existing density closure and ionic reference ladder. Below the provisional
+`OSMOTIC_MOLALITY_FLOOR`, return `Stop::converged_to_floor` in the osmotic
+quantity (precision unresolved), retaining ionic results; no admitted
+single-solvent reference still means absence. The scalar remedy is applied
+before this reporting restriction. Qualification in #214 is limited to the
+retained aqueous chloride packets at 298.15 K and 1 bar; neither the floor nor
+the observed trace error is a universal accuracy guarantee.
+
 For an explicitly referenced neutral reaction, use
 `neutral_reaction_reference_transfer`: one pure neutral solvent, positive
 all-solute molality ratios with zero net charge, and one declared source basis

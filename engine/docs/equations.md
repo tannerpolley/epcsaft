@@ -1403,16 +1403,18 @@ $$
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: [HamerWu1972], practical molal osmotic-coefficient definition
+- Source: [HamerWu1972], practical molal osmotic-coefficient definition; common-pressure identity from Eqs.~`log_fugacity_coefficient` and `pressure`
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
-- Change note: Defined only for the admitted single-active-solvent aqueous path.
+- Change note: Defined only for the admitted single-active-solvent aqueous path; evaluated at common prescribed T/P to avoid unequal terminated pressure logarithms.
 
 $$
 \Phi=
 -\frac{\ln a_s}
 {(\nu_++\nu_-)mM_s},
 \qquad
-\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}.
+\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}
+=\ln x_s+\frac{\mu_s^r-\mu_s^{r,\mathrm{pure}}}{RT}
++\ln\frac{\rho_m}{\rho_m^{\mathrm{pure}}}.
 $$
 
 ## `pressure`

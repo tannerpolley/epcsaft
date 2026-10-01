@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from epcsaft import Mixture, Parameters
+from epcsaft import Mixture, Parameters, Stop
 from tests.packets import ORACLE, parameters_json
 
 # Figiel, Yu & Held 2025 SI S2: retained NaBr candidates require AARD < 10%.
@@ -322,3 +322,18 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
         inputs_latex=r"T,\ p,\ \{m_i\}",
     )
     assert actual <= expected
+
+
+def test_trace_osmotic_debye_limit_and_reporting_floor() -> None:
+    # #214, Held packet 3: numerical Debye asymptote, not physical validation.
+    path = REPOSITORY_ROOT / "analyses/2026-divalent-chloride-activity/inputs/held-2008/3/parameters/parameters.json"
+    mixture = Mixture(Parameters.from_json(path, components=["water", "sodium-cation", "chloride-anion"]))
+    reference = mixture.reference(298.15, 100000.0, solvent_fractions=[1, 0, 0],
+                                  ions=("sodium-cation", "chloride-anion"), stoichiometry=(1, 1))
+    phi = reference.activity(1e-8).osmotic_coefficient
+    assert isinstance(phi, float)
+    assert abs(phi - 0.9999606345027382) <= 1e-4
+    for molality in (1e-9, 1e-10, 1e-12):
+        activity = reference.activity(molality)
+        assert activity.osmotic_coefficient == Stop.converged_to_floor
+        assert math.isfinite(activity.mean_ionic_molality_scale)

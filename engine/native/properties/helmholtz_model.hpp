@@ -9,6 +9,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace epcsaft {
@@ -364,6 +365,7 @@ struct InfiniteDilutionReference final {
     double molality = 0.0;
     double convergence_error = 0.0;
     std::optional<double> pure_solvent_log_fugacity;
+    std::optional<State> pure_solvent_state;
 };
 
 struct ElectrolyteActivity final {
@@ -371,7 +373,7 @@ struct ElectrolyteActivity final {
     double mean_ionic_mole_fraction_scale = 0.0;
     double mean_ionic_log_molality_scale = 0.0;
     double mean_ionic_molality_scale = 0.0;
-    std::optional<double> osmotic_coefficient;
+    std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
 };
 
 std::vector<double> formula_composition(
