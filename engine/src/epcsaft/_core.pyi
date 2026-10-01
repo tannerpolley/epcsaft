@@ -728,6 +728,7 @@ class ObservationKind:
     PhaseFraction: ObservationKind
     PartialPressure: ObservationKind
     PhaseAmountRatio: ObservationKind
+    AdditionEnthalpy: ObservationKind
 
 class ResidualForm:
     Difference: ResidualForm
@@ -753,6 +754,8 @@ class Observation:
     composition: list[float]
     branch: DensityBranch
     problem: EquilibriumProblem
+    final_problem: EquilibriumProblem
+    feed_amount: float
     phase: int
     species: list[int]
     denominator_phase: int

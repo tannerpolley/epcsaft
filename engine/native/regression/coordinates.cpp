@@ -57,9 +57,14 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
             const equilibrium::ReactionSpec* prior = nullptr;
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
+            std::vector<const equilibrium::EquilibriumProblem*> problems;
             for (const auto& observation : observations) {
                 if (pressure_closed(observation.kind)) continue;
-                const auto& problem = observation.problem;
+                problems.push_back(&observation.problem);
+                if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
+            }
+            for (const auto* problem_pointer : problems) {
+                const auto& problem = *problem_pointer;
                 std::size_t matches = 0;
                 for (const auto& reaction : problem.reactions) {
                     if (reaction.name != target.name) continue;
@@ -144,11 +149,16 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
 void CoordinateSet::apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const {
     const auto values = physical(optimizer);
     const auto order = tie();
+    std::vector<equilibrium::EquilibriumProblem*> problems;
+    for (auto& observation : observations) {
+        problems.push_back(&observation.problem);
+        if (observation.kind == ObservationKind::AdditionEnthalpy) problems.push_back(&observation.final_problem);
+    }
     for (std::size_t row = 0; row < order.size(); ++row) {
         const auto& target = coordinates[order[row]].reaction;
         if (!target) continue;
-        for (auto& observation : observations)
-            for (auto& reaction : observation.problem.reactions) {
+        for (auto* problem : problems)
+            for (auto& reaction : problem->reactions) {
                 if (reaction.name != target->name) continue;
                 if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
                 else reaction.equilibrium_constant = std::exp(values[row]);

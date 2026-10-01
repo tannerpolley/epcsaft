@@ -148,16 +148,20 @@ requests; available candidates that miss them retain warnings and achieved
 residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
 Fitting admits residual-EOS parameters and named source-basis reaction constants
-(scalar ln K or stored a/b/c/d), with exact first derivatives; reference
-declarations stay fixed and referenced free-temperature fitting is unavailable.
+(scalar ln K or stored a/b/c/d), with exact first derivatives, including
+finite-addition enthalpy actions for referenced endpoints at fixed temperature;
+reference declarations stay fixed, and referenced free-temperature fitting is
+unavailable.
 The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-fitting/notebook.qmd)
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
 Declared phase specifications are current work; PH, PS and UV are deferred
 future implementations outside current completion. Caloric properties/actions
-consumed by MEA and the absorber remain current requirements. Fitting uses density, total molar isobaric heat capacity with fixed
-thermochemistry, and phase observations. Public state units
+consumed by MEA and the absorber remain current requirements. Fitting uses
+density, total molar isobaric heat capacity with fixed thermochemistry,
+finite-addition enthalpy with fixed ideal-gas records and declared reference
+states, and phase observations. Public state units
 follow SI molar conventions; composition actions use explicit zero-sum
 directions. Owning GitHub issues record precise implementation inputs and
 remaining work.
@@ -192,8 +196,9 @@ remaining work.
   Composition directions are caller-supplied and zero-sum; singular actions do
   not erase valid central values or other available actions.
 - Built-in regression observations cover density, total molar isobaric heat
-  capacity at fixed T/P/composition and branch, direct source-basis ln K
-  at fixed T for a named reaction, saturation/bubble/dew
+  capacity at fixed T/P/composition and branch, finite-addition enthalpy between
+  two declared equilibrium states with an explicit feed state, direct
+  source-basis ln K at fixed T for a named reaction, saturation/bubble/dew
   pressure or temperature, phase compositions, phase fractions and
   phase-component amount ratios. Fit residual-EOS parameters and named reaction
   constants, retain failed-trial causes, include complete

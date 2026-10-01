@@ -12,7 +12,7 @@ An observation combines a state/equilibrium specification, an expression, a
 reported value and an explicit discrepancy/uncertainty model. Expressions use
 four node kinds: Leaf (property, coordinate or constant), weighted Sum,
 Product with declared exponents, and Log. This algebra covers partial pressure,
-finite-dose heat, extraction fractions and ratios of selectivities without
+finite-addition enthalpy, extraction fractions and ratios of selectivities without
 application-specific property code. Every operation must respect its domain:
 positive log arguments, nonzero denominators and valid real powers.
 
@@ -27,6 +27,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
 | LogEquilibriumConstant | fixed positive `problem.temperature.value`, named `reaction`, declared source record | `evaluate_reaction_properties` for a/b/c/d, or ln(scalar K); no equilibrium solve | 1 |
 | IsobaricHeatCapacity | $T$, $P$, normalized $\mathbf{x}$, declared branch, fixed thermochemistry record | pressure closure `state_at_pressure`; total molar $c_p$ | J mol$^{-1}$ K$^{-1}$ |
+| AdditionEnthalpy | declared initial and final `Problem`s, positive `feed_amount` $n_{add}$, and feed `temperature`, `pressure`, `composition` $\mathbf y$, and `branch` | Regression; total-system enthalpy increment less feed enthalpy (EqID: `finite_addition_enthalpy`) | J mol$^{-1}$ of total added feed |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
 | EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
@@ -34,6 +35,19 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | PhaseFraction | free amounts | $\beta_p = n_p / \sum_q n_q$ over the solved amounts, never the feed total | 1 |
 | PhaseAmountRatio | declared numerator phase/species set $(p,S)$ and denominator $(q,S')$ | $A/B$ with $A=\sum_S n_{p,i}$, $B=\sum_{S'}n_{q,i}$ and $B\ne0$ | 1 |
 | PartialPressure | any declared specification, phase $p$, nonempty species set $S$ within its support | $P\sum_{i\in S} x_{p,i}$ with the solved system pressure; `LogRatio` gives $\ln(p_S/p_{S,obs})$ | Pa |
+
+`AdditionEnthalpy` evaluates two separately declared endpoints; their
+specifications and temperatures may differ. Both use the same parameters,
+thermochemistry, ordered reactions and source reference. The compiled feed
+amounts must satisfy $\mathbf n^{(2)}_{feed}-\mathbf n^{(1)}_{feed}
+=n_{add}\mathbf y$ componentwise within $10^{-12}\max(1,|n|)$. Each feed species
+needs an ideal-gas record, and the feed shares the endpoints' parameters and
+record. The endpoint value sums $n_p h_p$ over every phase not pinned at zero,
+including a phase with nonzero vapor amount. When both endpoint problems are at
+the same fixed pressure and the feed enters at that pressure, the result is the
+isobaric heat of addition; for free-pressure endpoints it is an enthalpy
+increment, whose calorimetric interpretation depends on the caller's energy
+balance. Referenced free-temperature endpoints are unavailable.
 
 An unavailable prediction is typed, never a zero residual: a vanished or
 coalesced phase is `topology_event` before any solve status; a rejected or
@@ -59,6 +73,12 @@ The two forms are not commensurable by themselves; relative weights
 $w_i\ge 0$ enter the objective as $\sqrt{w_i}\,r_i$ and are declared
 separately from any absolute uncertainty.
 
+`AdditionEnthalpy` uses a signed value, which is negative for exothermic
+addition. Exothermic data use `Difference`; `LogRatio` requires positive
+predicted and observed values. Any other constant reporting basis is folded into the
+observed value and, for `Difference`, its scale; a state-dependent
+per-absorbed-amount basis is unavailable.
+
 A direct source-basis ln K row uses `ObservationKind.LogEquilibriumConstant`,
 `Observation.reaction` for the reaction name and the fixed temperature in its
 problem. Its problem supplies the same reaction/source declarations as the
@@ -67,6 +87,32 @@ prediction. EqID: `source_log_equilibrium_constant_observation` gives its value,
 exact coefficient columns and zero EOS columns. The same #187 naming, tying and
 fixed-target rejections apply. Use Difference: ln K is already logarithmic.
 For absolute standard uncertainty σ in ln K, choose scale=1 and weight=1/σ².
+
+The `AdditionEnthalpy` prediction derivative uses the endpoint actions for
+both extensive enthalpies and phase amounts, then subtracts the feed residual
+enthalpy action at fixed feed state. It consumes `PhaseAmount` and
+`TotalEnthalpy` central values from the solved-state owner rather than
+reassembling phase calorics in Regression. The feed's ideal enthalpy is fixed
+thermochemistry; its EOS-coordinate residual action comes from the Properties
+pressure chart. Build the direction once per endpoint using that endpoint's
+solved temperature and reaction-row mapping, and keep both endpoint solves
+through Jacobian evaluation. Reaction-coefficient enthalpy actions include the
+temperature-slope derivative $\phi'_k(T)$ (EqID:
+`reaction_constant_coordinate_derivative`); EOS-coordinate actions consume
+$C_{T\theta}$ (EqID:
+`standard_state_transfer_temperature_parameter_derivative`). A refused
+column returns `action_unavailable` for that named endpoint and parameter or
+reaction, while other directions and central values remain available.
+
+Admission rejects nonfinite or nonpositive $n_{add}$, an invalid feed state,
+the first component that violates the material balance, or endpoints with
+different ordered reactions or source references. Endpoint solve failures keep
+their `initial:` or `final:` prefix and driver cause. A missing feed density
+root returns `density_unavailable` with its convergence record; a missing,
+out-of-interval or nonfinite feed record returns `thermochemistry_unavailable`
+with the `feed:` prefix. Refused endpoint caloric values retain the endpoint
+prefix and `thermochemistry_unavailable`; unavailable feed actions retain
+`feed:` and `action_unavailable`. No failure becomes a zero residual.
 
 The existing constructor can map a declared `Problem`; then set the direct kind
 and named reaction before passing the row to `fit`:
@@ -107,7 +153,7 @@ Source/reference declarations are preserved in every trial. Scalar constants
 are rewritten as exp(ln K); correlations keep their native stored coefficients.
 Affinity targets, supplied Gibbs values, dependent reaction sets, thermochemistry-
 fixed unreferenced constants and referenced free-temperature requests cannot be
-fitted. No coefficient Hessians or caloric coefficient actions are claimed.
+fitted. No coefficient Hessians or heat-capacity coefficient actions are claimed.
 
 ## Prediction Jacobians and fitting (R2, R3)
 

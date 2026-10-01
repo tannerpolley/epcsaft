@@ -37,8 +37,9 @@ _KINDS = {
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
 __all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
-           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "coordinate", "density",
-           "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation", "predict", "reaction_coordinate")
+           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
+           "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
+           "predict", "reaction_coordinate")
 
 
 def _index(ids: Sequence[object], name: object, what: str) -> int:
@@ -144,6 +145,19 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
     return _finish(result, observed, form, scale, mass_basis)
+
+
+def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, feed: Mapping[str, float], amount: float,
+                      T: float, P: float, *, phase: str, observed: float, form: str,
+                      scale: float | None = None) -> Observation:
+    """Signed total enthalpy increment per mole of added feed, less its enthalpy at (T, P, feed, phase)."""
+    if isinstance(initial.phases, Discover) or isinstance(final.phases, Discover):
+        raise ParameterError("an addition-enthalpy observation needs declared phases at both endpoints")
+    result = _pressure_closed(parameters, ObservationKind.AdditionEnthalpy, T, P, feed, phase,
+                              observed, form, scale, False)
+    result.problem, result.final_problem = initial._native(parameters), final._native(parameters)
+    result.feed_amount = amount
+    return result
 
 
 def predict(model: Mixture | Pure, item: Observation) -> Prediction:
