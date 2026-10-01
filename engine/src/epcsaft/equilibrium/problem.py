@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Protocol, cast
 
 from .. import _core
@@ -14,20 +15,14 @@ class _Model(_Species, Protocol):
     _model: _core.HelmholtzModel
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
-    __slots__ = ("guess",)
-    guess: float | None
-
-    def __init__(self, guess: float | None = None) -> None:
-        self.guess = guess
+    guess: float | None = None
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Pinned:
-    __slots__ = ("value",)
     value: float
-
-    def __init__(self, value: float) -> None:
-        self.value = value
 
 
 class Phase:
@@ -446,14 +441,12 @@ def solved_state_actions(
     return _core.solved_state_actions(compiled, central, request)
 
 
+@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
 class Continuation:
-    __slots__ = ("initial_step", "minimum_step", "max_steps", "max_retries_per_step")
-
-    def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int) -> None:
-        self.initial_step = initial_step
-        self.minimum_step = minimum_step
-        self.max_steps = max_steps
-        self.max_retries_per_step = max_retries_per_step
+    initial_step: float
+    minimum_step: float
+    max_steps: int
+    max_retries_per_step: int
 
 
 def continue_equilibrium(
