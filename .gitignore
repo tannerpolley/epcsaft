@@ -22,3 +22,6 @@
 
 /.quarto/
 **/*.quarto_ipynb
+
+# Engine paper build products (the PDF is rebuilt from docs/scientific/latex/main.tex)
+/docs/scientific/latex/builds/
