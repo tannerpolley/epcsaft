@@ -77,6 +77,23 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, general-engine roadmap envelope (#220, owner approved): the
+  owner replaced per-issue amendments for #219, #223, #224 and #225 with one
+  envelope. Measured base `4cd1ebfe` (after the #221 consolidation, −168): total
+  18932; Core 917, Contributions 1593, Properties 4176, Equilibrium 6095,
+  Regression 1607, Surface 532, Bindings 1674, Python 2338. Projection from the
+  designs' upper estimates (unmeasured; #225's broadened scope pending): about
+  21,600. New hard ceilings: Properties 4258 → 4600, Equilibrium 7000 → 7650,
+  Regression 1619 → 2200, Bindings 1726 → 1880, Python 2374 → 2620 and aggregate
+  19100 → 22000; Core 1000, Contributions 1612 and Surface 650 unchanged. The
+  aggregate is deliberately tighter than the sum of the layers. The #219 D6/D7
+  and #225 D4 per-issue requests are superseded. Each build's closeout records
+  its measured counts and lowers every layer it touched to the measured count
+  plus the allowance still planned for the remaining roadmap issues; this is an
+  explicit recorded amendment at each closeout, not an automatic ratchet. A
+  design or build that cannot fit the envelope returns to the owner. Floors and
+  soft ceilings are unchanged; soft-ceiling reasons are still required.
+
 - 2026-09-30, direct source-basis ln K observations (#211, owner approved):
   Regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
   18805 → 18830, exactly the measured counts against `95ba231e` (+25 net

@@ -63,6 +63,10 @@ plan:
 # bindings 1708 -> 1725, Python 2313 -> 2350, aggregate 18556 -> 18790. Candidate against fe00aa6a
 # including #200: regression 1440, bindings 1719, Python 2343, equilibrium 6018, aggregate 18765 (+211).
 # 2026-09-30 #210 O7: finite-addition enthalpy actions, measured within approved caps.
+# 2026-10-01 #220 roadmap envelope (owner approved): one envelope for #219/#223/#224/#225 replaces
+# per-issue amendments; base 4cd1ebfe measured 18932. Hard: properties 4258 -> 4600, equilibrium
+# 7000 -> 7650, regression 1619 -> 2200, bindings 1726 -> 1880, Python 2374 -> 2620, aggregate
+# 19100 -> 22000. Each build's closeout lowers its layers to measured + remaining planned allowance.
 code_budgets: {
   "core": [
     700,
@@ -77,17 +81,17 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4258
+    4600
   ],
   "equilibrium": [
     5000,
     6000,
-    7000
+    7650
   ],
   "regression": [
     800,
     1000,
-    1619
+    2200
   ],
   "surface": [
     450,
@@ -97,17 +101,17 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1726
+    1880
   ],
   "python": [
     1350,
     1600,
-    2374
+    2620
   ],
   "total": [
     12300,
     14850,
-    19100
+    22000
   ]
 }
 
