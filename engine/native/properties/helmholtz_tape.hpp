@@ -32,6 +32,7 @@ enum class ParameterFamily {
     Lij,
     AssociationEnergyOverK,
     AssociationVolume,
+    BornDiameter, DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient,
     KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
 };
 constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::KijReciprocalTemperatureSlope) + 1;
@@ -40,6 +41,10 @@ constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(Paramete
 template <class ParameterSet>
 auto& family_values(ParameterSet& parameters, ParameterFamily family) {
     switch (family) {
+    case ParameterFamily::PackingDiameter: return parameters.packing_diameter_angstrom;
+    case ParameterFamily::DebyeHuckelDiameter: return parameters.debye_huckel_diameter_angstrom;
+    case ParameterFamily::BornDiameter: return parameters.born_diameter_angstrom;
+    case ParameterFamily::IonSuppressionCoefficient: return parameters.ion_suppression_coefficient;
     case ParameterFamily::SegmentCount: return parameters.segment_count;
     case ParameterFamily::SigmaConstant: return parameters.sigma_constant;
     case ParameterFamily::DispersionEnergyOverK: return parameters.dispersion_energy_over_k;
@@ -155,9 +160,9 @@ struct HelmholtzTape final {
             const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
             const auto electrolyte = electrolyte_contribution(
                 independent[0], density, point[0], reference_density,
-                composition, reference_composition, parameters);
+                composition, reference_composition, tape_parameters);
             const auto born = born_contribution(
-                independent[0], composition, parameters,
+                independent[0], composition, tape_parameters,
                 electrolyte.bulk_relative_permittivity);
             const auto contributions = residual_helmholtz(
                 independent[0], density, composition, tape_parameters, sigma,

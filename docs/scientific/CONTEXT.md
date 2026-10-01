@@ -205,6 +205,25 @@ remaining work.
   implicit prediction Jacobians, distinguish absolute uncertainty from relative
   weights, and condition covariance claims on rank, bounds and stated assumptions.
 
+### Electrolyte fitting quantities
+
+The shared active `ParameterRecord<Scalar>` includes Born, Debye-Huckel and
+packing diameters (Angstrom) and ion suppression (dimensionless charged slots).
+Properties owns the exact pressure-closed fugacity/permittivity columns,
+terminal-reference admission and electrolyte contractions. Parameter regression
+owns five observations, the dependent hydration chart, unweighted final checks
+and local SVD/covariance diagnostics; [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit)
+owns execution doctrine. `HydrationHold` means a single-ion solvation equality
+with a dependent Born diameter. `ObservationEvaluator` means the shared native
+point evaluator with caller-selected rows and exact columns; it leaves constrained
+estimation to slice B without a second thermodynamic or coordinate owner.
+
+The [electrolyte parameter-gradient analysis](../../analyses/2026-electrolyte-parameter-gradients/README.md)
+retains installed-wheel numerical verification at 298.15 K, 1 bar and the
+declared Figiel solvent/salt selections. This is no physical validation,
+#209 refit, packet adoption or mixed-salt qualification. Methanol and ethanol
+are separate solvent selections; the packet has no ethanol-methanol pair.
+
 ## How the setup evolves
 
 1. Identify the physical question, requested observable, domain and existing owner.

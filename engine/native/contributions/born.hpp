@@ -11,14 +11,11 @@
 
 namespace epcsaft {
 
-template <typename Scalar>
+template <typename Scalar, class ParameterSet>
 Scalar born_contribution(
     const Scalar &temperature, const std::vector<Scalar> &mole_fractions,
-    const Parameters &parameters,
-    const Scalar &bulk_relative_permittivity,
-    const std::vector<Scalar> *born_diameter_override = nullptr,
-    const std::vector<Scalar> *solvation_factor_override = nullptr,
-    const Scalar *ionic_region_relative_permittivity_override = nullptr) {
+    const ParameterSet &parameters,
+    const Scalar &bulk_relative_permittivity) {
   if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
     return Scalar(0.0);
   }
@@ -27,9 +24,7 @@ Scalar born_contribution(
   Scalar weighted_solvation = Scalar(0.0);
   for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
     const Scalar solvation_factor =
-        solvation_factor_override == nullptr
-            ? Scalar(parameters.solvation_factor[component])
-            : (*solvation_factor_override)[component];
+        Scalar(parameters.solvation_factor[component]);
     fraction_sum += mole_fractions[component];
     weighted_solvation += mole_fractions[component] * solvation_factor;
   }
@@ -40,9 +35,7 @@ Scalar born_contribution(
   }
   const Scalar mixture_solvation = weighted_solvation / fraction_sum;
   const Scalar ionic_region_relative_permittivity =
-      ionic_region_relative_permittivity_override == nullptr
-          ? Scalar(parameters.ionic_region_relative_permittivity)
-          : *ionic_region_relative_permittivity_override;
+      Scalar(parameters.ionic_region_relative_permittivity);
   Scalar radial_work = Scalar(0.0);
   for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
     const int charge = parameters.charge_number[component];
@@ -50,9 +43,7 @@ Scalar born_contribution(
       continue;
     }
     const Scalar born_diameter =
-        (born_diameter_override == nullptr
-             ? Scalar(parameters.born_diameter_angstrom[component])
-             : (*born_diameter_override)[component]) *
+        parameters.born_diameter_angstrom[component] *
         ANGSTROM_M;
     // EqID: born_outer_shell_diameter
     const Scalar outer_shell_diameter =

@@ -708,6 +708,16 @@ InfiniteDilutionReference infinite_dilution_reference(
     std::array<double, 2> current{};
     double convergence_error = 0.0;
     double terminal_error = 0.0;
+    const std::size_t columns = model.active_parameters().size();
+    std::vector<std::array<double, 2>> previous_columns(columns), current_columns(columns);
+    std::vector<double> column_error(columns, 0.0);
+    const auto values = model.active_parameter_values();
+    const auto read_columns = [&](const State& state, auto& out) {
+        for (std::size_t a = 0; a < columns; ++a)
+            for (std::size_t i = 0; i < 2; ++i)
+                out[a][i] = state.log_fugacity_parameter_derivative.empty() ? NAN
+                    : state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a];
+    };
     bool observed = false;
     for (std::size_t index = 0; index < molalities.size(); ++index) {
         const double molality = molalities[index];
@@ -740,13 +750,21 @@ InfiniteDilutionReference infinite_dilution_reference(
             );
             terminal_error = convergence_error;
         }
+        read_columns(state, current_columns);
+        if (observed) for (std::size_t a = 0; a < columns; ++a)
+            column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
+                std::abs(current_columns[a][0] - previous_columns[a][0]),
+                std::abs(current_columns[a][1] - previous_columns[a][1]));
+        previous_columns = current_columns;
         previous = current;
         observed = true;
         anchor = state.molar_density;
         scope.probe("reference_convergence_error", convergence_error,
                     static_cast<std::uint32_t>(index));
     }
-    if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+    if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+        || std::any_of(column_error.begin(), column_error.end(), [](double e) {
+            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value; })) {
         const auto composition = formula_composition(
             solvent_fractions,
             model.parameters(),
@@ -765,9 +783,16 @@ InfiniteDilutionReference infinite_dilution_reference(
             std::abs((*state.log_fugacity_coefficient)[ion_indices[1]] - current[1])
         );
         scope.probe("reference_witness_error", witness_error);
-        if (witness_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+        if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+            && witness_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
             throw std::runtime_error("reference limit did not converge");
         }
+        std::vector<std::array<double, 2>> witness(columns);
+        read_columns(state, witness);
+        for (std::size_t a = 0; a < columns; ++a)
+            if (!std::isfinite(column_error[a]) || column_error[a] > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+                column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
+                    std::abs(current_columns[a][0] - witness[a][0]), std::abs(current_columns[a][1] - witness[a][1]));
     }
     std::optional<double> pure_solvent;
     std::optional<State> pure_state;
@@ -783,7 +808,12 @@ InfiniteDilutionReference infinite_dilution_reference(
             pure_solvent = (*pure_state->log_fugacity_coefficient)[solvent];
         }
     }
-    return {current, molalities.back(), terminal_error, pure_solvent, std::move(pure_state)};
+    InfiniteDilutionReference result{current, molalities.back(), terminal_error, pure_solvent, std::move(pure_state), {}, column_error};
+    result.parameter_derivative.resize(columns);
+    for (std::size_t a = 0; a < columns; ++a)
+        if (std::isfinite(column_error[a]) && column_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+            result.parameter_derivative[a] = {current_columns[a][0], current_columns[a][1]};
+    return result;
 }
 
 ElectrolyteActivity electrolyte_activity(
@@ -841,12 +871,32 @@ ElectrolyteActivity electrolyte_activity(
                 std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             const auto& pure = *reference.pure_solvent_state;
             const double s = coefficient_sum * molality * solvent_mass;
-            const double log_activity = -std::log1p(s)
-                + (state.residual_chemical_potential_over_rt[solvent]
-                    - pure.residual_chemical_potential_over_rt[solvent])
+            // Extensive Helmholtz Euler identity, with the prescribed pressure in Z.
+            long double chemical_difference = static_cast<long double>(state.residual_helmholtz) - pure.residual_helmholtz;
+            chemical_difference += pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature)
+                * ((static_cast<long double>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<long double>(pure.molar_density)));
+            for (const auto ion : ion_indices) chemical_difference -= composition[ion]
+                * (static_cast<long double>(state.residual_chemical_potential_over_rt[ion]) - pure.residual_chemical_potential_over_rt[solvent]);
+            chemical_difference /= composition[solvent];
+            const double log_activity = -std::log1p(s) + static_cast<double>(chemical_difference)
                 + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
             // EqID: practical_osmotic_coefficient
             result.osmotic_coefficient = -log_activity / s;
+        }
+    }
+    const std::size_t columns = model.active_parameters().size();
+    for (std::size_t a = 0; a < columns; ++a) {
+        // EqID: electrolyte_activity_parameter_derivative
+        const auto& ref = reference.parameter_derivative.at(a);
+        const auto g = [&](std::size_t i) { return state.log_fugacity_parameter_derivative.at(i * columns + a); };
+        result.mean_ionic_parameter_derivative.push_back(ref[0] && ref[1]
+            ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
+                + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
+        if (result.osmotic_coefficient && std::holds_alternative<double>(*result.osmotic_coefficient)) {
+            const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
+            result.osmotic_parameter_derivative.push_back(-(g(solvent)
+                - reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a))
+                / (coefficient_sum * molality * solvent_mass));
         }
     }
     return result;

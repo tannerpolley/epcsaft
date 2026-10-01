@@ -140,6 +140,8 @@ struct State final {
     ThermochemistryStatus thermochemistry_status = ThermochemistryStatus::MissingRecord;
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
+    std::vector<double> log_fugacity_parameter_derivative;  // component x active, fixed T/P/x
+    std::vector<double> density_parameter_derivative, permittivity_parameter_derivative;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
@@ -369,6 +371,8 @@ struct InfiniteDilutionReference final {
     double convergence_error = 0.0;
     std::optional<double> pure_solvent_log_fugacity;
     std::optional<State> pure_solvent_state;
+    std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
+    std::vector<double> parameter_convergence_error;
 };
 
 struct ElectrolyteActivity final {
@@ -377,6 +381,7 @@ struct ElectrolyteActivity final {
     double mean_ionic_log_molality_scale = 0.0;
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
+    std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
 };
 
 std::vector<double> formula_composition(

@@ -165,6 +165,10 @@ class ReactionLogPolynomial:
                  temperature_min: float, temperature_max: float, standard_state_id: str) -> None: ...
 
 class ParameterFamily:
+    BornDiameter: ParameterFamily
+    DebyeHuckelDiameter: ParameterFamily
+    PackingDiameter: ParameterFamily
+    IonSuppressionCoefficient: ParameterFamily
     SegmentCount: ParameterFamily
     SigmaConstant: ParameterFamily
     DispersionEnergyOverK: ParameterFamily
@@ -695,6 +699,8 @@ def solve_equilibrium(
 ) -> EquilibriumResult: ...
 
 class InfiniteDilutionReference:
+    parameter_derivative: list[tuple[Optional[float], Optional[float]]]
+    parameter_convergence_error: list[float]
     log_fugacity: tuple[float, float]
     molality: float
     convergence_error: float
@@ -711,6 +717,11 @@ def infinite_dilution_reference(model: HelmholtzModel, temperature: float, press
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...
 
 class ObservationKind:
+    MeanIonicActivityCoefficient: ObservationKind
+    OsmoticCoefficient: ObservationKind
+    SolvationGibbsEnergy: ObservationKind
+    TransferGibbsEnergy: ObservationKind
+    BulkRelativePermittivity: ObservationKind
     LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
@@ -728,6 +739,7 @@ class ResidualForm:
     LogRatio: ResidualForm
 
 class ObservationStatus:
+    ReferenceUnavailable: ObservationStatus
     ThermochemistryUnavailable: ObservationStatus
     Available: ObservationStatus
     DensityUnavailable: ObservationStatus
@@ -740,6 +752,10 @@ class ObservationStatus:
     InadmissibleTrial: ObservationStatus
 
 class Observation:
+    ion_indices: tuple[int, int]
+    stoichiometry: tuple[int, int]
+    molality: float
+    reference_composition: list[float]
     reaction: str
     kind: ObservationKind
     temperature: float
@@ -814,16 +830,24 @@ class TrialFailure:
     jacobian: bool
 
 class FitCovariance:
+    left_vectors: list[float]
+    right_vectors: list[float]
+    projected_gradient_norm: float
     status: str
     assumption: str
     rank: int
     singular_values: list[float]
+    objective_rows: list[int]
     active_bounds: list[int]
     optimizer: list[float]
     physical: list[float]
     variance_factor: Optional[float]
 
 class FitResult:
+    chart: EvaluatedCoordinates
+    checks: list[CheckResult]
+    acceptance: str
+    optimizer: list[float]
     status: str
     message: str
     usable: bool
@@ -849,4 +873,68 @@ class FitResult:
 def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
 def differentiate(model: HelmholtzModel, observation: Observation) -> PredictionGradient: ...
 def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord], coordinates: Sequence[Coordinate],
-        observations: Sequence[Observation], weights: Sequence[float], controls: FitControls) -> FitResult: ...
+        observations: Sequence[Observation], weights: Sequence[float], controls: FitControls, holds: Sequence[HydrationHold] = ...,
+        checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
+        starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
+        seconds: Optional[float] = None) -> Union[FitResult, list[FitResult]]: ...
+
+class CheckMetric:
+    AbsoluteDifference: CheckMetric
+    AbsoluteLog10Ratio: CheckMetric
+
+class HydrationHold:
+    def __init__(self) -> None: ...
+    reference: Observation
+    lower: float
+    upper: float
+    energy_tolerance: float
+    diameter_tolerance: float
+    maximum_iterations: int
+
+class HoldResult:
+    energy_error: float
+    correction: float
+    uncertainty: float
+    derivative: float
+    parameter_derivative: list[float]
+    iterations: int
+    cause: str
+
+class EvaluatedCoordinates:
+    parameters: Parameters
+    active: list[ActiveParameter]
+    physical: list[float]
+    map: list[float]
+    holds: list[HoldResult]
+
+class CheckGroup:
+    def __init__(self) -> None: ...
+    name: str
+    rows: list[int]
+    metric: CheckMetric
+    maximum: float | None
+    mean: float | None
+    baseline: bool
+    report_only: bool
+
+class CheckResult:
+    name: str
+    unit: str
+    status: str
+    rows: list[int]
+    failed_rows: list[int]
+    errors: list[float]
+    slopes: list[float]
+    maximum: float
+    mean: float
+    argmax: int
+    maximum_threshold: float | None
+    mean_threshold: float | None
+    baseline_maximum: float
+    baseline_mean: float
+    report_only: bool
+
+def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ...) -> EvaluatedCoordinates: ...
+def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
+
+def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float]) -> list[Observation]: ...

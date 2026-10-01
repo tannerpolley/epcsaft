@@ -113,6 +113,14 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
+`BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
+Angstrom values in charged component slots. `IonSuppressionCoefficient` owns
+one dimensionless charged-slot value; a common C ties all declared charged
+slots in the existing affine chart. Their values use `ParameterRecord<Scalar>`
+with the other active families. Charges, masses, formulation choices and Born
+correction/solvation factors remain fixed. No cross-family factor tie is added.
+
+
 Resolve source values into documented native units before constructing active
 coordinates. Native units are dimensionless for segment count, `k_ij`, `l_ij`,
 and association volume; Angstrom for sigma; and Kelvin for dispersion and
@@ -761,6 +769,19 @@ heat-capacity coefficient actions are not qualified.
 
 ## ALG-REFERENCE
 
+Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
+density; the returned EOS pressure still records the density-root residual.
+This avoids amplifying the closure residual in parameter differences of nearly
+invariant reference energies. Pressure-closed columns use EqID: `log_fugacity_coefficient_parameter_derivative`.
+Each terminal reference column is admitted independently by the maximum scaled
+two-ion change, max(|theta|,1) times the column difference, at the existing
+reference tolerance. The terminal pair is compared first; a witness checks a
+failed pair without changing the returned terminal column. An unavailable
+column preserves the value, molality and terminal value error. Activity and
+single-ion energy actions contract these columns through EqID:
+`electrolyte_activity_parameter_derivative`.
+
+
 Use the explicitly declared solvent/reference path and source standard state.
 The two-ion formula must contain charged components with zero stoichiometric
 charge; the solvent composition must also be neutral within the composition
@@ -776,7 +797,11 @@ supply absolute caloric data.
 For the single-solvent osmotic coefficient, reuse the pure-solvent liquid State
 at the same prescribed T/P and EqID: `practical_osmotic_coefficient`. Replace
 the independently terminated log-fugacity subtraction with the residual
-chemical-potential difference and `log1p` density/composition ratios. Keep the
+chemical-potential difference and `log1p` density/composition ratios. Evaluate
+that difference through the extensive Helmholtz Euler identity, using the
+prescribed-pressure compressibility in its volume term; accumulate this scalar
+contraction in extended precision before the 1/s division. The first parameter
+columns remain the exact CppAD fugacity contraction. Keep the
 existing density closure and ionic reference ladder. Below the provisional
 `OSMOTIC_MOLALITY_FLOOR`, return `Stop::converged_to_floor` in the osmotic
 quantity (precision unresolved), retaining ionic results; no admitted
@@ -878,6 +903,12 @@ a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
 
+Fits use exact Engine derivatives and run natively. Python declares specifications
+and data and reads results; finite differences are numerical verification only.
+Ceres remains the primary least-squares owner. Slice B's constrained fitting is
+not implemented by the electrolyte slice-A change.
+
+
 Use the [regression formulation](../regression/science/pure-saturation-regression.md)
 for observation algebra, weights, parameter coordinates and uncertainty.
 Resolve each state once, evaluate its declared observables/actions, transform
@@ -932,6 +963,24 @@ compiled problem may serve a cold retry at that point. Failed trials still
 publish neither solved starts nor a successful evaluation cache.
 The two endpoint problems of an `AdditionEnthalpy` row are retained separately;
 its singleton kind is always rebuilt at a new parameter point.
+
+Electrolyte least squares admits molality-scale gamma, single-solvent Phi,
+single-ion solvation and B-minus-A transfer energy (J/mol), and bulk permittivity
+or a two-state ratio. Reference keys include T/P, solvent composition, ions and
+stoichiometry; finite-state keys additionally include molality or full composition.
+Projection metadata never selects the reference or finite state.
+Dependent Born holds use EqID: `dependent_born_diameter_derivative`, safeguarded
+Newton inside the declared bracket and both declared inner criteria. The same
+point-local D maps all optimizer columns and conditional physical covariance.
+Only positive-weight objective rows enter trial values, actions, rank and
+variance. Zero-weight rows receive admission and final evaluation; their failed
+final residuals retain independently available signed values and objective results.
+Native final checks recompute the stored parameters without resolving a hold,
+report signed row errors and max/mean groups, and use frozen source baselines
+where declared. Report-only failures do not change acceptance. A failed check
+is no proof of infeasibility. Singular vectors and the projected weighted
+gradient describe local conditioning; dependent-target uncertainty, profiles,
+parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
 

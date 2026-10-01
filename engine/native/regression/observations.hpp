@@ -14,15 +14,19 @@ namespace epcsaft::regression {
 // Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
+    MeanIonicActivityCoefficient, OsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
 };
 inline bool pressure_closed(ObservationKind kind) {
     return kind == ObservationKind::Density || kind == ObservationKind::IsobaricHeatCapacity || kind == ObservationKind::FeedEnthalpy;
 }
+inline bool electrolyte_observation(ObservationKind kind) {
+    return kind <= ObservationKind::BulkRelativePermittivity;
+}
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
-    Available, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
+    Available, ReferenceUnavailable, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
     ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
 };
 const char* observation_status_name(ObservationStatus status) noexcept;
@@ -33,6 +37,10 @@ struct Observation final {
     double temperature = 0.0;
     double pressure = 0.0;
     std::vector<double> composition;
+    std::array<std::size_t, 2> ion_indices{};
+    std::array<int, 2> stoichiometry{};
+    double molality = 0.0;
+    std::vector<double> reference_composition;
     DensityBranch branch = DensityBranch::Unspecified;
     // Equilibrium kinds: the declared problem; `phase` indexes its phases, `species` is a
     // nonempty set inside that phase's support (PhaseMoleFraction and PartialPressure sum the set).
@@ -53,7 +61,32 @@ struct Observation final {
     double scale = 1.0;
 };
 
+struct HydrationHold final {
+    Observation reference;  // SolvationGibbsEnergy, target in observed (J/mol)
+    double lower = 0.0, upper = 0.0;
+    double energy_tolerance = 0.0, diameter_tolerance = 0.0;
+    int maximum_iterations = 0;
+};
+struct HoldResult final {
+    double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
+    std::vector<double> parameter_derivative;
+    int iterations = 0;
+    std::string cause;
+};
+struct EvaluatedCoordinates final {
+    Parameters parameters;
+    std::vector<ActiveParameter> active;
+    std::vector<double> physical, map;  // independent physical rows, then held Born rows; row-major D
+    std::vector<HoldResult> holds;
+};
+EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
+    const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,
+    const std::optional<ThermochemistryRecord>& thermochemistry = {});
+
 struct Prediction final {
+    std::optional<InfiniteDilutionReference> reference, second_reference;
+    std::optional<ElectrolyteActivity> activity;
+    std::optional<State> state, reference_state;
     std::optional<double> value;
     std::string unit;
     ObservationStatus status = ObservationStatus::Nonfinite;
@@ -84,10 +117,11 @@ bool same_state(const Observation& left, const Observation& right);
 void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
+using ReferenceCache = std::vector<std::pair<Observation, InfiniteDilutionReference>>;
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
-    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt
+    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction

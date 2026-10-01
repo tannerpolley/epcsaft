@@ -346,6 +346,16 @@ residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
 
+The active record includes charged-slot Debye-Huckel and packing diameters in
+Angstrom and dimensionless ion-suppression coefficients. The scalar-generic
+permittivity and screening owners consume that record directly. Pressure-closed
+permittivity columns include the exact density chain, including the density
+topology, and ratios differentiate both states. Model choices, charges, masses
+and dielectric source correlations stay fixed. Parameter admission and fitting
+execution belong to [ALG-PARAMETERS](algorithms.md#alg-parameters) and
+[ALG-FIT](algorithms.md#alg-fit).
+
+
 The relative-permittivity topology is selected by a complete, source-bearing
 parameter family. It is not a caller option and there is no phase label or
 runtime fallback. Mixed or incomplete topology records fail during model
@@ -544,6 +554,15 @@ relations above on the positive-ionic-strength branch; the lab
 
 ## 7. Canonical Born source reconciliation
 
+Charged-slot Born diameters belong to the same scalar active record; the corrected
+Born owner consumes them directly. Source correction factors and solvent solvation
+factors stay fixed. A declared native hydration hold treats the diameter as a
+dependent coordinate through EqID: `dependent_born_diameter_derivative`; the
+observed target uses the single-ion x-process J/mol convention. The hold is not
+a high-weight residual. Stored-diameter acceptance is separate from the inner
+root solve. No cross-family diameter tie or coupled hold is qualified here.
+
+
 Figiel2025 defines a fitted `d_i^Born` and the shell thickness
 
 ```text
@@ -664,7 +683,11 @@ Eqs. (3.4′), (3.5) define the practical molal osmotic coefficient. The
 canonical definitions are EqID: `infinite_dilution_solvation_energy`,
 EqID: `transfer_free_energy`, EqID: `single_ion_activity_coefficient`,
 EqID: `mean_ionic_activity_coefficient`, EqID: `molality_activity_conversion`
-and EqID: `practical_osmotic_coefficient`.
+and EqID: `practical_osmotic_coefficient`. The scalar solvent difference uses
+the extensive residual Helmholtz Euler identity at prescribed pressure before
+the molality division; its exact parameter derivative uses the shared CppAD
+fugacity columns. This protects dilute cancellation without changing the
+thermodynamic definition or reporting floor.
 
 Declare solvent composition, component order, charges, formula-unit
 stoichiometry, molar masses, concentration basis and reference pressure.

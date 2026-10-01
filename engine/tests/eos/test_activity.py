@@ -337,3 +337,184 @@ def test_trace_osmotic_debye_limit_and_reporting_floor() -> None:
         activity = reference.activity(molality)
         assert activity.osmotic_coefficient == Stop.converged_to_floor
         assert math.isfinite(activity.mean_ionic_molality_scale)
+
+
+def test_electrolyte_exact_columns_and_debye_limit() -> None:
+    """#219: physical columns, zero reference columns and the NaCl Debye limit."""
+    from epcsaft import _core, regression as r
+
+    p = Parameters.from_json(
+        parameters_json("figiel-2025-reference-electrolytes", 4),
+        components=("water", "sodium-cation", "chloride-anion"),
+    )
+    cs = [
+        r.coordinate(p, "k_ij", pair, origin=0, scale=1)
+        for pair in (("sodium-cation", "water"), ("sodium-cation", "chloride-anion"))
+    ]
+    cs += [
+        r.coordinate(
+            p, "ion_suppression_coefficient", "sodium-cation", "chloride-anion", origin=0, scale=1
+        )
+    ]
+    cs += [
+        r.coordinate(p, family, ion, origin=0, scale=1)
+        for family, ion in (
+            ("born_diameter_angstrom", "sodium-cation"),
+            ("debye_huckel_diameter_angstrom", "chloride-anion"),
+            ("packing_diameter_angstrom", "chloride-anion"),
+        )
+    ]
+    chart = r.CoordinateSet()
+    chart.coordinates = cs
+    model = Mixture(p, active_parameters=chart.active())
+    u = [-0.3, 0.8, 7.01, 3.445, 2.42528, 2.42528]
+    observations = [
+        r.electrolyte(
+            p,
+            kind,
+            298.15,
+            1e5,
+            {"water": 1},
+            ions=("sodium-cation", "chloride-anion"),
+            stoichiometry=(1, 1),
+            molality=m,
+            observed=1,
+            form="difference",
+            scale=1,
+        )
+        for m in (0.1, 1, 4.5)
+        for kind in ("mean_ionic_activity_coefficient", "osmotic_coefficient")
+    ]
+    energy = r.electrolyte(
+        p,
+        "solvation_gibbs_energy",
+        298.15,
+        1e5,
+        {"water": 1},
+        ions=("sodium-cation", "chloride-anion"),
+        stoichiometry=(1, 1),
+        molality=0,
+        species="sodium-cation",
+        observed=-381930,
+        form="difference",
+        scale=1,
+    )
+    observations.append(energy)
+    raw = [r.differentiate(model, ob).value for ob in observations]
+    tie = chart.tie()
+    for c in range(len(cs)):
+        exact = [sum(value for value, j in zip(g, tie) if j == c) for g in raw]
+        step = 1e-4 * max(abs(u[c]), 1)
+        plus, minus = list(u), list(u)
+        plus[c] += step
+        minus[c] -= step
+        high = _core.observations_at(p._native, cs, plus, [], observations, [0] * len(observations))
+        low = _core.observations_at(p._native, cs, minus, [], observations, [0] * len(observations))
+        for i, value in enumerate(exact):
+            delta = 298.15 * 8.31446261815324 * 1e-7 if i == len(observations) - 1 else 1e-7
+            cd = (high[i].observed - low[i].observed) / (2 * step)
+            assert abs(value - cd) <= 2e-5 * max(abs(v) for v in exact) + delta
+    assert abs(raw[-1][1] / (298.15 * 8.31446261815324)) <= 1e-9
+    assert (
+        abs(sum(raw[-1][i] for i, j in enumerate(tie) if j == 2) / (298.15 * 8.31446261815324))
+        <= 1e-9
+    )
+    epsilon = r.electrolyte(
+        p,
+        "bulk_relative_permittivity",
+        298.15,
+        1e5,
+        {"water": 0.96, "sodium-cation": 0.02, "chloride-anion": 0.02},
+        ions=("sodium-cation", "chloride-anion"),
+        stoichiometry=(1, 1),
+        molality=0,
+        observed=1,
+        form="difference",
+        scale=1,
+    )
+    prediction = r.predict(model, epsilon)
+    assert prediction.value is not None
+    g = r.differentiate(model, epsilon).value
+    expected = -prediction.value * 0.04 / (1 + 7.01 * 0.04)
+    assert abs(sum(v for v, j in zip(g, tie) if j == 2) - expected) <= 1e-12 * abs(expected)
+    # Limiting columns: same five families as F4(a), with the Na DH diameter.
+    cs[4] = r.coordinate(p, "debye_huckel_diameter_angstrom", "sodium-cation", origin=0, scale=1)
+    chart.coordinates = cs[:5]
+    model = Mixture(p, active_parameters=chart.active())
+    tie = chart.tie()
+    limits = []
+    for m in (1e-5, 1e-6):
+        observations[0].molality = m
+        g = r.differentiate(model, observations[0]).value
+        limits.append([sum(v for v, j in zip(g, tie) if j == c) / m for c in range(5)])
+    for fine, coarse in zip(limits[1], limits[0]):
+        assert abs(fine - coarse) <= 0.01 * abs(coarse)
+
+
+def test_electrolyte_density_columns_and_debye_density_limit() -> None:
+    """#219 F1a density topology and F4(b), from the pressure-closed density owner."""
+    from epcsaft import _core, regression as r
+
+    components = ("water", "sodium-cation", "chloride-anion")
+    selection = REPOSITORY_ROOT / "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json"
+    p = Parameters.from_json(selection, components=components)
+    cs = [r.coordinate(p, "dispersion_energy_over_k", "water", origin=0, scale=1)]
+    chart = r.CoordinateSet()
+    chart.coordinates = cs
+    model = Mixture(p, active_parameters=chart.active())
+    ob = r.electrolyte(p, "bulk_relative_permittivity", 298.15, 1e5,
+        {"water": .96, "sodium-cation": .02, "chloride-anion": .02}, ions=components[1:],
+        stoichiometry=(1, 1), molality=0, observed=1, form="difference", scale=1)
+    column = r.differentiate(model, ob).value[0]
+    step = 353.95*1e-4
+    high = _core.observations_at(p._native, cs, [353.95 + step], [], [ob], [0])[0].observed
+    low = _core.observations_at(p._native, cs, [353.95 - step], [], [ob], [0])[0].observed
+    cd = (high - low) / (2 * step)
+    assert column != 0 and abs(column - cd) <= 1e-6 * abs(cd)
+    p = Parameters.from_json(
+        parameters_json("figiel-2025-reference-electrolytes", 4), components=components
+    )
+    cs = [r.coordinate(p, "dispersion_energy_over_k", "water", origin=0, scale=1)]
+    chart.coordinates = cs
+    model = Mixture(p, active_parameters=chart.active())
+    pure = model.state(298.15, P=1e5, x=(1, 0, 0), phase="liquid")
+    density = r.density(
+        p,
+        298.15,
+        1e5,
+        {"water": 1},
+        phase="liquid",
+        observed=1,
+        form="difference",
+        scale=1,
+        mass_basis=False,
+    )
+    drho = r.differentiate(model, density).value[0]
+    # Debye limiting-law verification, SI constants from core/physical_constants.hpp.
+    e, eps0, kb, na, mw = 1.602176634e-19, 8.8541878128e-12, 1.380649e-23, 6.02214076e23, 0.0180153
+    eps = eps0 * pure.bulk_relative_permittivity
+    a = (
+        e
+        * e
+        / (8 * math.pi * eps * kb * 298.15)
+        * math.sqrt(2 * e * e * na * pure.molar_density * mw / (eps * kb * 298.15))
+    )
+    expected = -0.5 * a * drho / pure.molar_density
+    columns = []
+    for m in (1e-5, 1e-6):
+        gamma = r.electrolyte(
+            p,
+            "mean_ionic_activity_coefficient",
+            298.15,
+            1e5,
+            {"water": 1},
+            ions=components[1:],
+            stoichiometry=(1, 1),
+            molality=m,
+            observed=1,
+            form="difference",
+            scale=1,
+        )
+        columns.append(r.differentiate(model, gamma).value[0] / math.sqrt(m))
+    assert abs(columns[1] - expected) <= 0.01 * abs(expected)
+    assert abs(columns[1] - expected) < abs(columns[0] - expected)
