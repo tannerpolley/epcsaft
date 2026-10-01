@@ -77,6 +77,17 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, #219 slice B Regression amendment (owner approved): slice B
+  stopped at its budget gate. A counted sketch of the D7 native Ipopt
+  constrained estimation (one Regression TNLP over the slice-A evaluator) gives
+  about +370 Regression lines and +538 net total, against the 175-line
+  allowance left after slice A. The owner chose to build it now: Regression hard
+  ceiling 2200 → 2480, covering slice B plus #225's planned +80. Other ceilings
+  and the 22000 aggregate are unchanged. The roadmap now projects about 22,260
+  against 22,000, so the aggregate is revisited with measured counts before #224
+  builds. Slice B's closeout records the measured counts and lowers Regression
+  to measured plus the remaining #225 allowance.
+
 - 2026-10-01, #219 slice A closeout, measured against `89c1a337` (18,932):
   **926 gross added, 204 removed, +722 net**, total **19,654**. The owner
   approved 950 gross / 770 net after the 850/770 intermediate allowance;

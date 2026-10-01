@@ -70,6 +70,9 @@ plan:
 # #219 slice A closeout: Core 917 and Contributions 1547, with zero planned additions
 # there in remaining #219B/#223/#224/#225; the other touched layers retain their shared
 # envelope allowances. Regression 2025 leaves the owner-approved 175 for B, which must re-estimate.
+# 2026-10-01 #219 slice B (owner approved): Regression hard 2200 -> 2480 for the native Ipopt
+# constrained estimation (counted estimate +370) plus #225's planned +80; total 22000 unchanged,
+# revisited with measured counts before #224.
 code_budgets: {
   "core": [
     700,
@@ -94,7 +97,7 @@ code_budgets: {
   "regression": [
     800,
     1000,
-    2200
+    2480
   ],
   "surface": [
     450,
