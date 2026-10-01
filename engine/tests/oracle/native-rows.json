@@ -1,8 +1,8 @@
 {
-  "rows": 468,
-  "recorded_at_revision": "9ddef9bb037e46c0a5e1f29c46497b757e443063",
-  "build_fingerprint": "040bf077f0d61dbc0fe810cc6d2d0e63e8c28fcd2e0efecbb7e55675262b7ca0",
-  "wheel_sha256": "ddf63226de7767c220d189488648ca6659d7786bead4e9f7d296f6462c70cf1e",
+  "rows": 478,
+  "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
+  "build_fingerprint": "b249274f421cf689760cfea4dd6bba53bf6ba33e05bca056aa054298274fa9e5",
+  "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -55,18 +55,5 @@
   ],
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
-  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
-  "row_updates": [
-    {
-      "source": "regression_checks R2-J2",
-      "comparison_prefix": "r4/",
-      "rows": 28,
-      "recorded_at_revision": "e01767aa78ffceb7d268ed262b4309da2147c51d",
-      "build_fingerprint": "cbf7131d56ef7f26794943986dfd23027d1dac19eb697375da00cbc4bfff58c3",
-      "wheel_sha256": "28181e72e429c6e87fc6361082af1a7b21c8747e76bda65a1c30abb4a97402f2",
-      "log_sha256": "4eb622bab7fd80c8077d57e94fabea763a025b3f70b8bb3d6a7f9090ae5eebf4",
-      "failed_native_comparisons": [],
-      "reason": "Same-build native fitting operands replace the older wheel rows; assertions and tolerances unchanged. All other rows retain the original recording provenance."
-    }
-  ]
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
 }
