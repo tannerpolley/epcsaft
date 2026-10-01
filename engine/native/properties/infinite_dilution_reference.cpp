@@ -770,26 +770,20 @@ InfiniteDilutionReference infinite_dilution_reference(
         }
     }
     std::optional<double> pure_solvent;
-    std::size_t solvent_index = solvent_fractions.size();
-    for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
-        if (solvent_fractions[component] == 0.0) continue;
-        if (solvent_index != solvent_fractions.size()) {
-            solvent_index = solvent_fractions.size();
-            break;
-        }
-        solvent_index = component;
-    }
-    if (solvent_index < solvent_fractions.size()) {
+    std::optional<State> pure_state;
+    if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(),
+                     [](double x) { return x > 0.0; }) == 1) {
+        const auto solvent = std::distance(solvent_fractions.begin(),
+            std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
         std::vector<double> pure(solvent_fractions.size(), 0.0);
-        pure[solvent_index] = 1.0;
-        const auto state = model.state_at_pressure(
-            temperature, pressure, pure, DensityBranch::Liquid, std::nullopt
-        );
-        if (state.log_fugacity_coefficient.has_value()) {
-            pure_solvent = (*state.log_fugacity_coefficient)[solvent_index];
+        pure[solvent] = 1.0;
+        pure_state = model.state_at_pressure(
+            temperature, pressure, pure, DensityBranch::Liquid, std::nullopt);
+        if (pure_state->log_fugacity_coefficient.has_value()) {
+            pure_solvent = (*pure_state->log_fugacity_coefficient)[solvent];
         }
     }
-    return {current, molalities.back(), terminal_error, pure_solvent};
+    return {current, molalities.back(), terminal_error, pure_solvent, std::move(pure_state)};
 }
 
 ElectrolyteActivity electrolyte_activity(
@@ -839,23 +833,20 @@ ElectrolyteActivity electrolyte_activity(
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;
     result.mean_ionic_molality_scale = std::exp(mean_log_m);
-    if (reference.pure_solvent_log_fugacity.has_value()) {
-        std::size_t solvent_index = solvent_fractions.size();
-        for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
-            if (solvent_fractions[component] == 0.0) continue;
-            if (solvent_index != solvent_fractions.size()) {
-                solvent_index = solvent_fractions.size();
-                break;
-            }
-            solvent_index = component;
-        }
-        if (solvent_index < solvent_fractions.size()) {
-            const double log_activity = std::log(composition[solvent_index])
-                + (*state.log_fugacity_coefficient)[solvent_index]
-                - *reference.pure_solvent_log_fugacity;
+    if (reference.pure_solvent_state.has_value()) {
+        if (molality < policy::OSMOTIC_MOLALITY_FLOOR.value) {
+            result.osmotic_coefficient = core::Stop::converged_to_floor;
+        } else {
+            const auto solvent = std::distance(solvent_fractions.begin(),
+                std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
+            const auto& pure = *reference.pure_solvent_state;
+            const double s = coefficient_sum * molality * solvent_mass;
+            const double log_activity = -std::log1p(s)
+                + (state.residual_chemical_potential_over_rt[solvent]
+                    - pure.residual_chemical_potential_over_rt[solvent])
+                + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
             // EqID: practical_osmotic_coefficient
-            result.osmotic_coefficient = -log_activity
-                / (coefficient_sum * molality * solvent_mass);
+            result.osmotic_coefficient = -log_activity / s;
         }
     }
     return result;

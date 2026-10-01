@@ -120,7 +120,7 @@ $$
 
 - Section: Contribution intermediates / Association
 - Status: Source equation
-- Source: [Chapman1990], Eq.~(19)
+- Source: [Chapman1990], Eq.~(15)
 - Description: Association site-fraction mass-action equation with explicit multiplicity.
 - Change note: Written in the zero-residual form used by the EOS.
 
@@ -148,7 +148,7 @@ $$
 
 - Section: Born solvation relations
 - Status: Source equation
-- Source: [Figiel2025], shell-thickness definition preceding Eq.~(7), parameterized to include its uncorrected limit
+- Source: [Figiel2025], Eqs.~(8)--(10), parameterized to include its uncorrected limit
 - Description: Ion-specific outer Born shell diameter with one explicit fixed correction coefficient.
 - Change note: The fitted Born diameter, solvation factor, and model-definition coefficient remain distinct inputs.
 
@@ -203,7 +203,7 @@ $$
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: [Pereira2012] Eq. 5; [Gross2001] Eq. (A.33)
+- Source: [Ascani2022] Eqs. 9--10; [Pereira2012] Eqs. 5--7; [Gross2001] Eq. (A.33)
 - Description: Intensive stationarity in phase composition with balance multipliers λ and per-phase charge multipliers φ_p; the same row for a free and a pinned phase.
 - Change note: Written intensively (divided by N_p) so a pinned phase carries the same row; phase equilibrium and reaction affinity follow from it.
 
@@ -254,7 +254,7 @@ $$
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.24)
+- Source: [Gross2001], Eq.~(A.22)
 - Description: Compressibility factor from the residual Helmholtz density derivative.
 - Change note: Uses molar density as the independent density coordinate.
 
@@ -370,7 +370,7 @@ $$
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.7)
+- Source: [Gross2001], Eq.~(A.15)
 - Description: Unlike-pair dispersion energy for an applicable pair.
 - Change note: Keeps k_ij semantically distinct from l_ij and association data. A pair with a declared reference temperature $T_{\mathrm{ref},ij}>0$ takes the record's linear-in-$1/T$ law; its slope $b_{ij}$ (K) is an active-parameter family like $k_{ij}$ (#152).
 
@@ -385,7 +385,7 @@ $$
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.7), with source-resulted l_ij extension
+- Source: [Gross2001], Eq.~(A.14), with source-resulted l_ij extension
 - Description: Unlike-pair segment diameter including the distinct l_ij family.
 - Change note: Makes the current l_ij semantics explicit.
 
@@ -536,7 +536,7 @@ $$
 
 - Section: Contribution intermediates / Dipole-dipole
 - Status: Source equation
-- Source: [GrossVrabec2006], Eq.~(7)
+- Source: [Gross2006], Eq.~(7)
 - Description: Optional third-order Padé dipole-dipole Helmholtz contribution; zero when every dipolar species is absent.
 - Change note: Admitted as an opt-in family by ADR 0011.
 
@@ -548,7 +548,7 @@ $$
 
 - Section: Contribution intermediates / Dipole-dipole
 - Status: Source equation
-- Source: [GrossVrabec2006], Eqs.~(10)--(16) and Table 1
+- Source: [Gross2006], Eqs.~(10)--(16) and Table 1
 - Description: Pair and triplet correlation integrals with chain-length-interpolated coefficients.
 - Change note: The unlike energy in J2 is the geometric mean without k_ij.
 
@@ -563,7 +563,7 @@ $$
 
 - Section: Contribution intermediates / Dipole-dipole
 - Status: Exact derivation
-- Source: [GrossVrabec2006], Eq.~(8) with $q_i=(\epsilon_i/kT)n_{\mu,i}\mu_i^{*2}$
+- Source: [Gross2006], Eq.~(8) with $q_i=(\epsilon_i/kT)n_{\mu,i}\mu_i^{*2}$
 - Description: Second-order dipole-dipole perturbation term.
 - Change note: The reduced moment $q_i=n_{\mu,i}\mu_i^2/(4\pi\varepsilon_0kTm_i\sigma_i^3)$ absorbs $\epsilon_i$.
 
@@ -575,7 +575,7 @@ $$
 
 - Section: Contribution intermediates / Dipole-dipole
 - Status: Exact derivation
-- Source: [GrossVrabec2006], Eq.~(9) with the same $q_i$
+- Source: [Gross2006], Eq.~(9) with the same $q_i$
 - Description: Third-order dipole-dipole perturbation term.
 - Change note: Uses $\sigma_{ij}=(\sigma_i+\sigma_j)/2$ for every pair.
 
@@ -588,7 +588,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eqs.~(A.13)--(A.14)
+- Source: [Gross2001], Eqs.~(A.18)--(A.19)
 - Description: Chain-length interpolation of universal dispersion coefficients.
 - Change note: Mirrors the current A0/A1/A2 and B0/B1/B2 arrays.
 
@@ -607,7 +607,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.15)
+- Source: [Gross2001], Eq.~(A.11)
 - Description: Chain compressibility correction multiplying the second-order term.
 - Change note: Mirrors the current rational expression.
 
@@ -624,7 +624,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.10) mixture sum
+- Source: [Gross2001], Eq.~(A.12)
 - Description: First unlike-pair dispersion mixture moment.
 - Change note: Includes current segment counts and cross diameter.
 
@@ -650,7 +650,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.11)
+- Source: [Gross2001], Eq.~(A.16)
 - Description: First PC-SAFT dispersion integral correlation.
 - Change note: Evaluated through the shared polynomial owner.
 
@@ -662,7 +662,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.12)
+- Source: [Gross2001], Eq.~(A.17)
 - Description: Second PC-SAFT dispersion integral correlation.
 - Change note: Evaluated through the shared polynomial owner.
 
@@ -674,7 +674,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Exact derivation
-- Source: [Gross2001], polynomial form in Eqs.~(A.11)--(A.12)
+- Source: [Gross2001], polynomial form in Eqs.~(A.16)--(A.17)
 - Description: Horner-evaluated sixth-order dispersion polynomial.
 - Change note: Documents the real arithmetic performed by polynomial.
 
@@ -686,7 +686,7 @@ $$
 
 - Section: Contribution intermediates / Dispersion
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.10) mixture sum
+- Source: [Gross2001], Eq.~(A.13)
 - Description: Second unlike-pair dispersion mixture moment.
 - Change note: Includes the squared reduced pair energy.
 
@@ -764,7 +764,7 @@ $$
 
 - Section: Equilibrium
 - Status: Implementation convention
-- Source: [Pereira2012]; Perdomo et al. 2025 (Perdomo2025) Section 3
+- Source: [Perdomo2025] Section 3.1 (elimination of one charged species before Eq. 18; reduced gradient Eq. 22)
 - Description: Electroneutral reduced coordinates for the tangent-plane search: one ion eliminated per charged trial phase.
 - Change note: Candidate reduced chart for charged search; not a current solver-availability claim. Eliminated ion has nonzero charge and reconstructed amounts must be nonnegative.
 
@@ -841,7 +841,7 @@ $$
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.16)
+- Source: [Gross2001], Eq.~(A.4)
 - Description: PC-SAFT hard-chain residual Helmholtz contribution.
 - Change note: Mirrors the site-independent chain term.
 
@@ -854,7 +854,7 @@ $$
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.17)
+- Source: [Gross2001], Eq.~(A.7) at i=j
 - Description: Hard-sphere radial distribution function at segment contact.
 - Change note: Uses the current pure-component contact diameter d_i/2.
 
@@ -869,7 +869,7 @@ $$
 
 - Section: Contribution intermediates / Hard chain
 - Status: Source equation
-- Source: [Gross2001], Eqs.~(A.8)--(A.9)
+- Source: [Gross2001], Eq.~(A.6)
 - Description: Boublik-Mansoori-Carnahan-Starling-Leland hard-sphere Helmholtz term.
 - Change note: Mirrors the current zeta-based expression.
 
@@ -1066,7 +1066,7 @@ $$
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: [Pereira2012] Eq. 3
+- Source: [Pereira2012] Eq. 1 (without reactions) and Eq. 3
 - Description: Conserved-moiety balance over the phases, each weighted by its amount; B is the identity when no reaction is declared.
 - Change note: Rank of B is the number of balance rows.
 
@@ -1178,7 +1178,7 @@ $$
 
 - Section: Parameter setup
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.6)
+- Source: [Gross2001], Eq.~(A.9)
 - Description: Temperature-dependent hard-chain diameter for neutral components.
 - Change note: Reconciled to the current neutral diameter branch.
 
@@ -1403,23 +1403,25 @@ $$
 
 - Section: Electrolyte reference states and reported activities
 - Status: Source equation
-- Source: [HamerWu1972], practical molal osmotic-coefficient definition
+- Source: [HamerWu1972], practical molal osmotic-coefficient definition; common-pressure identity from Eqs.~`log_fugacity_coefficient` and `pressure`
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
-- Change note: Defined only for the admitted single-active-solvent aqueous path.
+- Change note: Defined only for the admitted single-active-solvent aqueous path; evaluated at common prescribed T/P to avoid unequal terminated pressure logarithms.
 
 $$
 \Phi=
 -\frac{\ln a_s}
 {(\nu_++\nu_-)mM_s},
 \qquad
-\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}.
+\ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}
+=\ln x_s+\frac{\mu_s^r-\mu_s^{r,\mathrm{pure}}}{RT}
++\ln\frac{\rho_m}{\rho_m^{\mathrm{pure}}}.
 $$
 
 ## `pressure`
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.24)
+- Source: [Gross2001], Eq.~(A.23)
 - Description: EOS pressure from compressibility factor.
 - Change note: Returns pressure in pascals on the SI molar-density basis.
 
@@ -1464,7 +1466,7 @@ $$
 
 - Section: Equilibrium
 - Status: Source equation
-- Source: [Pereira2012] Eq. 6; [Gross2001] Eq. (A.24)
+- Source: [Pereira2012] Eq. 8; [Gross2001] Eq. (A.23)
 - Description: Stationarity in phase volume: every EOS phase is at the system pressure.
 - Change note: A stationarity row of the same minimization.
 
@@ -1809,7 +1811,7 @@ $$
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.48)
+- Source: [Gross2001], Eq.~(A.46)
 - Description: Residual molar enthalpy.
 - Change note: Includes the residual pressure-volume term Z-1.
 
@@ -1821,7 +1823,7 @@ $$
 
 - Section: Thermodynamic properties
 - Status: Source equation
-- Source: [Gross2001], Eq.~(A.46)
+- Source: [Gross2001], Eq.~(A.48) without the ln Z term (same temperature and density)
 - Description: Residual entropy at the same temperature and density.
 - Change note: Does not silently change to a same-pressure ideal-gas reference.
 
@@ -1832,8 +1834,8 @@ $$
 ## `residual_heat_capacity_cp`
 
 - Section: Thermodynamic properties
-- Status: Source equation
-- Source: [Gross2001], Eq.~(A.50)
+- Status: Exact derivation
+- Source: Temperature and density derivatives of [Gross2001] Eqs.~(A.22) and (A.46)
 - Description: Residual isobaric molar heat capacity on a conditioned mechanical branch.
 - Change note: The final minus one removes the ideal-gas cp-cv contribution.
 
@@ -1846,8 +1848,8 @@ $$
 ## `residual_heat_capacity_cv`
 
 - Section: Thermodynamic properties
-- Status: Source equation
-- Source: [Gross2001], Eq.~(A.49)
+- Status: Exact derivation
+- Source: Temperature derivative of [Gross2001] Eq.~(A.46)
 - Description: Residual isochoric molar heat capacity.
 - Change note: Transforms CppAD first and second temperature partials.
 
@@ -1870,8 +1872,8 @@ $$
 ## `residual_internal_energy`
 
 - Section: Thermodynamic properties
-- Status: Source equation
-- Source: [Gross2001], Eq.~(A.47)
+- Status: Exact derivation
+- Source: Temperature derivative of [Gross2001] Eq.~(A.46) with u=h-Pv
 - Description: Residual molar internal energy.
 - Change note: Uses the CppAD temperature partial at fixed density and composition.
 
@@ -1883,7 +1885,7 @@ $$
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: [Figiel2025], Eq.~(11) solvent basis; [AscaniHeld2021], Eq.~(13)
+- Source: [Figiel2025], Eq.~(12); [AscaniHeld2021], Eq.~(13)
 - Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
 - Change note: Uses component molar masses and includes exactly the neutral components with declared permittivity correlations.
 

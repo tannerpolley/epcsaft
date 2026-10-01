@@ -78,6 +78,8 @@ a full implementation-ready transcription or current Engine support is made.
 
 ### GrossQuadrupole2005
 
+Library citation key: `grossEquationofstateContributionPolar2005`.
+
 Gross (2005), *An equation-of-state contribution for polar components:
 Quadrupolar molecules*.
 [DOI](https://doi.org/10.1002/aic.10502).
@@ -86,6 +88,8 @@ quadrupolar perturbation formulation. The proposal does not select a particular
 quadrupolar implementation or transfer its parameters into current scope.
 
 ### GrossVrabec2006
+
+Library citation key: `Gross2006`.
 
 Gross and Vrabec (2006), *An equation-of-state contribution for polar components:
 Dipolar molecules*.
@@ -98,6 +102,8 @@ dipole input does not make a nonpolar fit automatically transferable. Online
 publication was in 2005; the journal-volume citation is 2006.
 
 ### VrabecGrossDQ
+
+Library citation key: `vrabecVaporliquidEquilibriaSimulation2009`.
 
 Vrabec and Gross, *Vapor-liquid equilibria simulation and an equation of state
 contribution for dipole-quadrupole interactions*.
@@ -118,6 +124,8 @@ self-associate. Locator: induced-association model and mixtures with water or
 alcohols. “No self-association” cannot be used as a blanket mixture-site rule.
 
 ### Esper2023
+
+Library citation key: `esperPCPSAFTParametersPure2023`.
 
 Esper, Bauer, Rehner and Gross (2023), *PCP-SAFT Parameters of Pure Substances
 Using Large Experimental Databases*.
@@ -229,6 +237,8 @@ Figiel's radial ionic-region permittivity.
 
 ### YangParameter2023
 
+Library citation key: `Yang2023`.
+
 Yang et al. (2023), *Systematic evaluation of parameterization approaches for
 the ePPC-SAFT model for aqueous alkali halide solutions. II. Alkali bromides,
 iodides, fluorides, and lithium halides*.
@@ -239,6 +249,8 @@ The roadmap claims no separate numerical reproduction of this paper.
 
 ### YangDielectric2024
 
+Library citation key: `Yang2024`.
+
 Yang, Kontogeorgis and de Hemptinne (2024), *Composition-dependence of relative
 static permittivity in ePPC-SAFT for mixed-solvent alkali halides*.
 [DOI](https://doi.org/10.1016/j.fluid.2024.114103).
@@ -248,6 +260,8 @@ Eqs. (1a), (2a), (2b), as mapped by current EOS §6.2. It is a different paper
 from the ion-pairing source immediately below.
 
 ### YangPair2024
+
+Library citation key: `Yang2024a`.
 
 Yang et al. (2024), *Ion Pairing in ePPC-SAFT for Aqueous and Mixed-Solvent
 Alkali Halide Solutions*.

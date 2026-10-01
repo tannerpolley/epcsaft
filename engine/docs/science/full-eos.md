@@ -12,7 +12,7 @@ Correct mathematics is not weakened to match an implementation defect.
 | ID | Source | Use |
 |---|---|---|
 | Gross2001 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2001, 40, 1244-1260, DOI `10.1021/ie0003887` | PC-SAFT hard-chain, dispersion, pressure, chemical potential, fugacity, and residual properties |
-| GrossVrabec2006 | Gross and Vrabec, *AIChE J.* 2006, 52, 1194-1204, DOI `10.1002/aic.10683` | Optional dipole-dipole term, Eqs. (7)-(16) and Table 1 constants; Table 2 PCP-SAFT parameters (ADR 0011) |
+| Gross2006 | Gross and Vrabec, *AIChE J.* 2006, 52, 1194-1204, DOI `10.1002/aic.10683` | Optional dipole-dipole term, Eqs. (7)-(16) and Table 1 constants; Table 2 PCP-SAFT parameters (ADR 0011) |
 | Gross2002 | Gross and Sadowski, *Ind. Eng. Chem. Res.* 2002, 41, 5510-5515, DOI `10.1021/ie010954d` | Association mixing for associating systems |
 | Chapman1990 | Chapman et al., *Ind. Eng. Chem. Res.* 1990, 29, 1709-1721, DOI `10.1021/ie00104a021` | Wertheim association energy and site-fraction equations |
 | Bulow2019 | Bülow et al., *Fluid Phase Equilibria* 2019, 492, 26-33, DOI `10.1016/j.fluid.2019.03.010` | Debye-Huckel contribution with composition-dependent dielectric treatment |
@@ -223,7 +223,7 @@ definition.
 
 ### 4.1 Optional dipole-dipole term
 
-A model that declares `polar: dipole-dipole` adds the GrossVrabec2006 third-order
+A model that declares `polar: dipole-dipole` adds the Gross2006 third-order
 Padé dipole-dipole contribution to the residual Helmholtz energy. Every component
 supplies `dipole_moment` (debye) and `dipole_count` n_μ; zero marks a nonpolar
 species. With the reduced moment written
