@@ -77,6 +77,20 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, #221 finding 5 preservation stop, measured at `96e9ecde`:
+  **0 added, 0 removed, 0 net runtime lines**, Equilibrium **6095** and
+  aggregate **19654** unchanged. The [lever comparison notebook](../../analyses/2026-lever-row-series-comparison/notebook.qmd)
+  demonstrates that unit-direction row-series assembly changes the admitted
+  ionic packing-diameter column materially, because the old dense chain omits
+  its volume derivative. Two diameter stencil refinements agree with the
+  shared chain at an accepted equilibrium state. Neutral columns also have
+  last-bit differences. The behavior-preservation requirement stopped adoption;
+  no funding recovery is credited and no ceiling is lowered. Equilibrium stays
+  at the owner-approved 7650 pending a correction/amendment and measured build
+  closeout. Complete-matrix timing medians show 1.53–1.91 times the dense cost
+  on the three bounded cases; no speedup is claimed. Other layers and all
+  planned allowances are unchanged.
+
 - 2026-10-01, #219 slice B Regression amendment (owner approved): slice B
   stopped at its budget gate. A counted sketch of the D7 native Ipopt
   constrained estimation (one Regression TNLP over the slice-A evaluator) gives
