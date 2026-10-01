@@ -92,7 +92,7 @@ struct FitResult final {
     std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual
     std::vector<double> physical_jacobian;   // n x R: d(value)/d(theta)
     std::vector<double> optimizer_jacobian;  // n x U: sqrt(w) (dr/dy) (dy/dtheta) D
-    std::vector<ObservationStatus> statuses;  // on a failed fit: the rows evaluated up to the failure only
+    std::vector<ObservationStatus> statuses;  // NotEvaluated for skipped rows or rows after a failed prediction
     std::vector<TrialFailure> failures;
     std::size_t iterations = 0;
     std::size_t residual_evaluations = 0;

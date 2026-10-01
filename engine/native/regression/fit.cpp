@@ -36,8 +36,6 @@ void chain(const FitRequest& request, const std::vector<double>& map, std::size_
         for (std::size_t c = 0; c < columns; ++c) out[c] += slope * gradient[r] * map[r * columns + c];
 }
 
-using Evaluation = ObservationEvaluation;
-
 // Each input row names the first row with the same state; this is the sole membership map.
 std::vector<std::size_t> state_groups(const std::vector<Observation>& observations) {
     std::vector<std::size_t> groups;
@@ -56,7 +54,7 @@ struct Trial final {
     std::vector<Observation> observations;
     std::vector<Prediction> centers;
     std::vector<double> optimizer;
-    Evaluation evaluation;
+    ObservationEvaluation evaluation;
     bool jacobian = false;
     EvaluatedCoordinates chart;
     ReferenceCache references;
@@ -66,13 +64,12 @@ struct Trial final {
 
 // One successful point owns its immutable model and compiled central states through later promotion.
 struct ObservationEvaluator::Impl final {
-public:
     Impl(const FitRequest& request, FitResult& result, const std::vector<std::size_t>& groups,
               const std::vector<double>& sqrt_weights)
         : request_(request), result_(result), groups_(groups), sqrt_weights_(sqrt_weights),
           starts_(groups.size()) {}
 
-    bool evaluate(const std::vector<double>& optimizer, bool jacobian, Evaluation& out) {
+    bool evaluate(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out) {
         core::Scope scope("fit_evaluation");
         scope.probe("optimizer", optimizer);
         scope.probe("jacobian", jacobian ? 1.0 : 0.0);
@@ -83,7 +80,7 @@ public:
             out = cached_->evaluation;
             return true;
         }
-        out = Evaluation{};
+        out = ObservationEvaluation{};
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
@@ -138,7 +135,7 @@ public:
     }
 
     bool gradient_at(const std::vector<double>& point, std::vector<double>& out) {
-        Evaluation trial;
+        ObservationEvaluation trial;
         if (!evaluate(point, true, trial)) return false;
         const std::size_t width = request_.coordinates.coordinates.size();
         const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> j(
@@ -156,13 +153,12 @@ public:
         return false;
     }
 
-private:
-    bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, Evaluation& out,
+    bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
                        Trial& trial, std::size_t n, std::size_t width) {
         const auto& model = *trial.model;
         out.predictions.assign(n, 0.0);
         out.residuals.assign(n, 0.0);
-        out.statuses.assign(n, ObservationStatus::Available);
+        out.statuses.assign(n, ObservationStatus::NotEvaluated);
         if (jacobian) out.gradient.assign(n * width, 0.0);
         std::vector<std::vector<PredictionGradient>> gradients(n);
         std::vector<std::size_t> position(n, 0);
@@ -204,7 +200,6 @@ private:
         return true;
     }
 
-public:
     const FitRequest& request_;
     FitResult& result_;
     const std::vector<std::size_t> groups_;
@@ -221,7 +216,7 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
 }
 bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out) {
     if (!impl_->evaluate(optimizer, columns, out)) return false;
-    if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) {
+    if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
         const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]);
         for (std::size_t c = 0; c < optimizer.size(); ++c) out.optimizer_gradient[i * optimizer.size() + c] /= slope;
     }
@@ -229,8 +224,6 @@ bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool c
 }
 
 namespace {
-using Evaluator = ObservationEvaluator::Impl;
-
 std::vector<int> select_held(const std::vector<double>& point, const std::vector<double>& gradient,
                             const std::vector<double>& lower, const std::vector<double>& upper) {
     std::vector<int> held;
@@ -249,7 +242,7 @@ class BoxChart final : public ceres::Manifold, public ceres::IterationCallback {
 public:
     BoxChart(const std::vector<double>& u, const std::vector<double>& lower, const std::vector<double>& upper,
              const std::vector<int>& held,
-             Evaluator& evaluator)
+             ObservationEvaluator::Impl& evaluator)
         : u_(u), lower_(lower), upper_(upper), held_(held), evaluator_(evaluator) {
         for (int c = 0; c < int(lower.size()); ++c)
             if (std::find(held.begin(), held.end(), c) == held.end()) free_.push_back(c);
@@ -326,12 +319,12 @@ private:
     std::vector<int> free_;
     std::vector<int> at_bound_;
     std::vector<int> held_;
-    Evaluator& evaluator_;
+    ObservationEvaluator::Impl& evaluator_;
 };
 
 class Cost final : public ceres::CostFunction {
 public:
-    Cost(const FitRequest& request, Evaluator& evaluator)
+    Cost(const FitRequest& request, ObservationEvaluator::Impl& evaluator)
         : request_(request), evaluator_(evaluator) {
         set_num_residuals(static_cast<int>(request.observations.size()));
         mutable_parameter_block_sizes()->push_back(static_cast<int>(request.coordinates.coordinates.size()));
@@ -341,7 +334,7 @@ public:
         const std::size_t width = request_.coordinates.coordinates.size();
         const std::vector<double> optimizer(parameters[0], parameters[0] + width);
         const bool jacobian = jacobians != nullptr && jacobians[0] != nullptr;
-        Evaluation trial;
+        ObservationEvaluation trial;
         if (!evaluator_.evaluate(optimizer, jacobian, trial)) return false;
         std::copy(trial.weighted.begin(), trial.weighted.end(), residuals);
         if (jacobian) std::copy(trial.optimizer_gradient.begin(), trial.optimizer_gradient.end(), jacobians[0]);
@@ -350,7 +343,7 @@ public:
 
 private:
     const FitRequest& request_;
-    Evaluator& evaluator_;
+    ObservationEvaluator::Impl& evaluator_;
 };
 
 const char* termination_name(ceres::TerminationType termination) {
@@ -435,15 +428,21 @@ void validate_checks(const FitRequest& request) {
 
 std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final) {
     validate_checks(request);
-    HelmholtzModel model(stored, {}, request.thermochemistry);
+    std::vector<bool> selected(request.observations.size(), false);
+    for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
+    if (final) for (std::size_t i = 0; i < selected.size(); ++i) if (!request.weights.empty() && request.weights[i] == 0.0) selected[i] = true;
     const auto predictions = [&](const HelmholtzModel& owner) {
-        std::vector<Prediction> result;
+        std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
-        for (const auto& row : request.observations) { validate(row, owner); result.push_back(predict(owner, row, {}, {}, &references)); }
+        for (std::size_t i = 0; i < selected.size(); ++i) if (selected[i]) {
+            validate(request.observations[i], owner);
+            result[i] = predict(owner, request.observations[i], {}, {}, &references);
+        }
         return result;
     };
-    const auto candidate = predictions(model);
-    if (final) for (std::size_t i = 0; i < candidate.size(); ++i) {
+    const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
+    // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
+    if (final) for (std::size_t i = 0; i < candidate.size(); ++i) if (!request.weights.empty() && request.weights[i] == 0.0) {
         final->predictions[i] = candidate[i].value.value_or(NAN);
         final->residuals[i] = candidate[i].residual.value_or(NAN);
         final->statuses[i] = candidate[i].status;
@@ -539,13 +538,13 @@ FitResult fit(const FitRequest& request) {
         return result;
     }
     const std::size_t width = set.coordinates.size();
-    Evaluator evaluator(request, result, groups, sqrt_weights);
+    ObservationEvaluator::Impl evaluator(request, result, groups, sqrt_weights);
     std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
-    Evaluation initial;
+    ObservationEvaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
         result.status = "initial_evaluation_failed";
         result.message = result.failures.back().message;
-        result.statuses = std::move(initial.statuses);  // the rows evaluated up to the failure
+        result.statuses = std::move(initial.statuses);
         return result;
     }
     result.initial_cost = initial.cost;
@@ -624,7 +623,7 @@ FitResult fit(const FitRequest& request) {
         || summary.termination_type == ceres::USER_FAILURE ? "failed" : "limit_reached";
 
     result.optimizer = optimizer;
-    Evaluation final;
+    ObservationEvaluation final;
     if (!set.within_bounds(optimizer) || !evaluator.evaluate(optimizer, true, final)) {
         result.status = "failed";
         result.message = "the final point could not be evaluated: " + result.message;

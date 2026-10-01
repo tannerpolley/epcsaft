@@ -548,11 +548,13 @@ void check_f9_f10() {
     FitRequest request;
     request.parameters = properties_support::ethane();
     request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
-    request.observations = {overflow};
+    request.observations = {overflow, overflow, overflow};
+    request.weights = {0.0, 1.0, 1.0};
     const auto refused = fit(request);
     CHECK(truth("r1-f10/fit_nonfinite_typed", "a nonfinite residual at the start is a typed initial failure with its row",
-                refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 0
-                    && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost),
+                refused.status == "initial_evaluation_failed" && refused.failures.size() == 1 && refused.failures[0].observation == 1
+                    && refused.failures[0].status == ObservationStatus::Nonfinite && !refused.usable && std::isfinite(refused.initial_cost)
+                    && refused.statuses == std::vector<ObservationStatus>{ObservationStatus::NotEvaluated, ObservationStatus::Nonfinite, ObservationStatus::NotEvaluated},
                 summary(refused), "r1-f10"));
     // A finite residual whose weighted form overflows is recorded by the initial-evaluation recorder with its row.
     Observation steep = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);

@@ -30,6 +30,7 @@ void register_regression(py::module_& module) {
         .value("Difference", ResidualForm::Difference)
         .value("LogRatio", ResidualForm::LogRatio);
     py::enum_<ObservationStatus>(module, "ObservationStatus")
+        .value("NotEvaluated", ObservationStatus::NotEvaluated)
         .value("ReferenceUnavailable", ObservationStatus::ReferenceUnavailable)
         .value("Available", ObservationStatus::Available)
         .value("ThermochemistryUnavailable", ObservationStatus::ThermochemistryUnavailable)

@@ -77,6 +77,7 @@ void finish(Prediction& prediction, const Observation& observation, double value
 
 const char* observation_status_name(ObservationStatus status) noexcept {
     switch (status) {
+    case ObservationStatus::NotEvaluated: return "not_evaluated";
     case ObservationStatus::ReferenceUnavailable: return "reference_unavailable";
     case ObservationStatus::Available: return "available";
     case ObservationStatus::ThermochemistryUnavailable: return "thermochemistry_unavailable";

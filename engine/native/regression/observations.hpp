@@ -26,7 +26,7 @@ inline bool electrolyte_observation(ObservationKind kind) {
 }
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
-    Available, ReferenceUnavailable, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
+    NotEvaluated, Available, ReferenceUnavailable, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
     ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
 };
 const char* observation_status_name(ObservationStatus status) noexcept;

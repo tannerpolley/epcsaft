@@ -977,7 +977,9 @@ variance. Zero-weight rows receive admission and final evaluation; their failed
 final residuals retain independently available signed values and objective results.
 Native final checks recompute the stored parameters without resolving a hold,
 report signed row errors and max/mean groups, and use frozen source baselines
-where declared. Report-only failures do not change acceptance. A failed check
+where declared. Objective results retain their accepted warm-start evaluation;
+only zero-weight reports replace their final values. Unevaluated rows remain
+explicitly unavailable. Report-only failures do not change acceptance. A failed check
 is no proof of infeasibility. Singular vectors and the projected weighted
 gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.

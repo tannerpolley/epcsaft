@@ -55,6 +55,7 @@ def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
     start = neutral_binary(148.0, 0.0)
     result = regression.fit(start, coordinates(start), observations)
     assert result.status == "converged" and result.usable and result.trial_failures == 0
+    assert result.residuals == result.weighted_residuals  # unit weights: one accepted objective evaluation
     same(evidence, "r4/recovery/epsilon", result.physical[0])
     same(evidence, "r4/recovery/kij", result.physical[1])
     same(evidence, "r4/recovery/initial_cost", result.initial_cost)
@@ -165,6 +166,8 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     result = regression.fit(p, coordinates(p), observations)
     assert result.status == "initial_evaluation_failed" and not result.usable and result.predictions == []
     assert [(item.trial, item.observation, item.status) for item in result.failures] == [(1, 5, regression.ObservationStatus.DensityUnavailable)]
+    refused = regression.fit(p, coordinates(p), [observations[0], observations[-1], observations[0]], weights=[0, 1, 1])
+    assert refused.statuses == [regression.ObservationStatus.NotEvaluated, regression.ObservationStatus.DensityUnavailable, regression.ObservationStatus.NotEvaluated]
     single = regression.fit(p, coordinates(p), observations[:1])
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
     # Three finite rows whose accumulated objective overflows: typed at the second row, no infinite cost.

@@ -739,6 +739,7 @@ class ResidualForm:
     LogRatio: ResidualForm
 
 class ObservationStatus:
+    NotEvaluated: ObservationStatus
     ReferenceUnavailable: ObservationStatus
     ThermochemistryUnavailable: ObservationStatus
     Available: ObservationStatus
