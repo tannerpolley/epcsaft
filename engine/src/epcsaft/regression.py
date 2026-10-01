@@ -8,7 +8,7 @@ from typing import overload
 
 from . import _core
 from ._core import (
-    HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
+    MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
 )
@@ -42,7 +42,7 @@ _KINDS = {
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
-__all__ = ("Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
+__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
@@ -181,7 +181,7 @@ def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradien
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
         weights: Sequence[float] | None = None, controls: FitControls | None = None,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
-        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None) -> FitResult: ...
+        checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None, minimax: MinimaxRequest | None = None) -> FitResult: ...
 
 
 @overload
@@ -190,7 +190,7 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
-        shared_seconds: float | None = None) -> list[FitResult]: ...
+        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> list[FitResult]: ...
 
 
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
@@ -198,11 +198,11 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
-        shared_seconds: float | None = None) -> FitResult | list[FitResult]:
-    """Bounded least squares of sqrt(w_i) r_i over the optimizer coordinates (ALG-FIT)."""
+        shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> FitResult | list[FitResult]:
+    """Native least squares, or declared guarded minimax, over the held chart (ALG-FIT)."""
     return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
                      FitControls() if controls is None else controls, list(holds or ()), list(checks or ()),
-                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds)
+                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
