@@ -255,12 +255,6 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("cause_convergence", &ContinuationResult::cause_convergence)
         .def_readonly("cause_message", &ContinuationResult::cause_message);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
-    py::class_<SensitivityInfo>(module, "SensitivityInfo")
-        .def_readonly("equations", &SensitivityInfo::equations)
-        .def_readonly("parameters", &SensitivityInfo::parameters)
-        .def_readonly("rank", &SensitivityInfo::rank)
-        .def_readonly("condition_estimate", &SensitivityInfo::condition_estimate)
-        .def_readonly("nonsingular", &SensitivityInfo::nonsingular);
     // E5 solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
         .value("Temperature", SolvedStateObservableKind::Temperature)

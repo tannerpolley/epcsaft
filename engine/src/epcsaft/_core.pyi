@@ -694,13 +694,6 @@ def solve_equilibrium(
     start: Optional[EquilibriumResult] = ...,
 ) -> EquilibriumResult: ...
 
-class SensitivityInfo:
-    equations: int
-    parameters: int
-    rank: int
-    condition_estimate: float
-    nonsingular: bool
-
 class InfiniteDilutionReference:
     log_fugacity: tuple[float, float]
     molality: float
