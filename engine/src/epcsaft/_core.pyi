@@ -712,7 +712,7 @@ class ElectrolyteActivity:
     mean_ionic_mole_fraction_scale: float
     mean_ionic_log_molality_scale: float
     mean_ionic_molality_scale: float
-    osmotic_coefficient: Optional[float]
+    osmotic_coefficient: Optional[Union[float, Stop]]
 
 def infinite_dilution_reference(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int]) -> InfiniteDilutionReference: ...
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...

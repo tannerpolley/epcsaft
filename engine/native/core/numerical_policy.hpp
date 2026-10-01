@@ -164,6 +164,13 @@ inline constexpr Tolerance COMPOSITION_SUM_TOLERANCE{"COMPOSITION_SUM_TOLERANCE"
     "absolute defect of a unit sum or charge balance of O(1) terms, about 4500 ulp at 1",
 };
 
+// #214 NaCl scalar at 298.15 K, 1 bar meets 1e-4 in Phi; below floor unresolved, no error bound.
+inline constexpr Tolerance OSMOTIC_MOLALITY_FLOOR{"OSMOTIC_MOLALITY_FLOOR",
+    1.0e-8,
+    Category::AlgorithmTolerance,
+    "owner decision #214: common-pressure scalar cancellation reporting floor, mol/kg",
+};
+
 // Trace molalities (mol/kg) of the infinite-dilution reference ladder. Single-ion ln(phi)
 // approaches its limit as -A z^2 sqrt(I) (Debye-Hueckel), so the terminal pair changes by
 // A (1e-5 - 1e-6): measured 1.063e-5 for NaCl in water at 298.15 K against the predicted
@@ -411,7 +418,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
-    &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
+    &OSMOTIC_MOLALITY_FLOOR, &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
     &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
     &STABILITY_COMPOSITION_FLOOR,
     &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
