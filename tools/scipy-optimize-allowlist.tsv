@@ -1,31 +1,16 @@
 kind	path	line	source	reason	issue
-review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	198	        for steps in range(20):	Damped Newton chart corrector	234
-review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	365	                for step in range(45):	Carbon-residual bisection	234
-review-only	analyses/2026-born-unavailable-states/scripts/newton.py	49	    for step in range(80):	Newton and line-search probe	234
 review-only	analyses/2026-born-unavailable-states/scripts/reproduce.py	363	    while True:	Parameter continuation	234
 review-only	analyses/2026-born-unavailable-states/scripts/starts.py	30	    for extent in args.extents:	Reaction-extent start search	234
-review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	81	    for index in range(65):	Born-coefficient continuation	234
-review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	85	        for step in range(30):	Augmented Newton corrector	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	173	    while finite_state(model, temperature, finite_upper, budget) is not None:	Finite-state density bound doubling	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	179	    for _ in range(100):	Finite-state density bound bisection	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	203	    for _ in range(300):	Pressure-density root bisection	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	264	    for (left_density, left_residual), (right_density, right_residual) in zip(points, points[1:]):	Pressure-density branch bracketing	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	509	    roots, _ = scan_roots(	Local density root search	234
-review-only	analyses/2026-heat-capacity-fitting/scripts/reference.py	103	polynomial = np.polynomial.Polynomial.fit(T - 360, [ideal_cp(t) for t in T], 6).convert()	IAPWS heat-capacity polynomial fit	234
 review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search	234
-scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	13	from scipy.optimize import linprog, least_squares, OptimizeWarning	Chart bounds and residual corrector	234
-scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	51	"            warnings.simplefilter(""ignore"", OptimizeWarning)"	Chart bounds and residual corrector	234
-scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	52	            result = linprog(	Chart bounds and residual corrector	234
-scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	235	        result = least_squares(	Chart bounds and residual corrector	234
+scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	10	from scipy.optimize import linprog, OptimizeWarning	Conserved-inventory fraction bounds	234
+scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	42	"            warnings.simplefilter(""ignore"", OptimizeWarning)"	Conserved-inventory fraction bounds	234
+scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	43	            result = linprog(	Conserved-inventory fraction bounds	234
 scipy	analyses/2026-cold-vapor-branch/scripts/run.py	11	from scipy.optimize import brentq	Pressure and spinodal roots	234
 scipy	analyses/2026-cold-vapor-branch/scripts/run.py	88	                rho = brentq(function, float(left), float(right), xtol=1e-9)	Pressure and spinodal roots	234
-scipy	analyses/2026-mea-association-diameter/scripts/mea_saturation.py	21	from scipy.optimize import minimize_scalar	Association-volume conversion fit	234
-scipy	analyses/2026-mea-association-diameter/scripts/mea_saturation.py	117	"    best = minimize_scalar(conversion_objective, bounds=(0.9 * kappa, kappa), method=""bounded"", options={""xatol"": 1e-8})"	Association-volume conversion fit	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/chloride.py	27	from scipy.optimize import least_squares	Hamer-Wu and Lee chloride refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/chloride.py	120	            fits = [least_squares(objective, [1.0 - start, FIGIEL_CL_BORN] if born else [1.0 - start], x_scale=0.1, diff_step=1e-4, bounds=bounds)	Hamer-Wu and Lee chloride refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/chloride.py	203	    fits = [least_squares(lambda z: lee_residuals(form, cl, unpack(z)[0], rows, water_kg, unpack(z)[1])[0],	Hamer-Wu and Lee chloride refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	30	from scipy.optimize import least_squares	Ionic electrostatics refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	261	    fits = [least_squares(residuals, [*start] + [0.0] * len(groups), x_scale=0.1, diff_step=1e-4)	Ionic electrostatics refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	424	    fits = [least_squares(residuals, [*start] + [0.0] * 4 + [1.0] * bias + [1.0] * water_slope, x_scale=0.1, diff_step=1e-4, bounds=bounds)	Ionic electrostatics refits	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	23	from scipy.optimize import minimize	Tangent-plane distance minimization	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	90	"        result = minimize(objective, np.log(np.asarray(w0)), method=""Nelder-Mead"","	Tangent-plane distance minimization	234
