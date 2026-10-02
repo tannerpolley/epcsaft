@@ -178,7 +178,6 @@ struct PackingTerms final {
     double coefficient = 0.0;
     double temperature_derivative = 0.0;
     std::vector<double> component;
-    std::vector<double> parameter_derivative;
 };
 
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
