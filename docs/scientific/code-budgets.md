@@ -95,7 +95,8 @@ Budget changes must not silently change scientific scope.
   by connected-partition bracket ownership, rather than re-refining and
   replacing them; exact sampled zeros survive early exits. The shared slope
   search reports its active bracket on failure. These corrections add 17 net
-  lines; the measured gross is two lines above the 400-line design estimate.
+  lines; the measured gross is two lines above the design's 400-line gross
+  ceiling.
   The owner-directed sprint pause applies rather than removing these required
   diagnostics or compressing the existing search. Review checks this growth. Bindings and Python transport explicit inputs and results;
   they perform no root, spinodal or domain iteration. Batch 12 retires its
