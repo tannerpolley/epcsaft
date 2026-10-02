@@ -77,6 +77,8 @@ plan:
 # 2026-10-01 #223 (owner approved): Bindings hard 1880 -> 1940 and Python 2620 -> 2700 so the
 # phase-discovery build fits after #219 slice B; aggregate 22000 unchanged; a Bindings/Python
 # consolidation audit follows (#221).
+# #221 finding 5: Equilibrium 6054 + remaining shared roadmap allowance 1521 = 7575;
+# measured -75 from bdde4003, with the ionic packing-diameter lever chain corrected.
 code_budgets: {
   "core": [
     700,
@@ -96,7 +98,7 @@ code_budgets: {
   "equilibrium": [
     5000,
     6000,
-    7650
+    7575
   ],
   "regression": [
     800,

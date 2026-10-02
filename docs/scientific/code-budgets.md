@@ -77,19 +77,29 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-01, #221 finding 5 preservation stop, measured at `96e9ecde`:
-  **0 added, 0 removed, 0 net runtime lines**, Equilibrium **6095** and
-  aggregate **19654** unchanged. The [lever comparison notebook](../../analyses/2026-lever-row-series-comparison/notebook.qmd)
-  demonstrates that unit-direction row-series assembly changes the admitted
-  ionic packing-diameter column materially, because the old dense chain omits
-  its volume derivative. Two diameter stencil refinements agree with the
-  shared chain at an accepted equilibrium state. Neutral columns also have
-  last-bit differences. The behavior-preservation requirement stopped adoption;
-  no funding recovery is credited and no ceiling is lowered. Equilibrium stays
-  at the owner-approved 7650 pending a correction/amendment and measured build
-  closeout. Complete-matrix timing medians show 1.53–1.91 times the dense cost
-  on the three bounded cases; no speedup is claimed. Other layers and all
-  planned allowances are unchanged.
+- 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
+  **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.
+  Equilibrium is **6129 → 6054** and aggregate **20208 → 20133**; every other
+  layer is unchanged. The [lever comparison notebook](../../analyses/2026-lever-row-series-comparison/notebook.qmd)
+  retains the ionic packing-diameter stencil falsifier, other-column and
+  solved-state comparisons, cost measurements and limits. The owner authorized
+  the derivative correction after the initial preservation stop: the shared
+  row-series geometry replaces the dense lever assembly and its unused
+  analytic packing-parameter derivative. Reference refusal, coordinate order,
+  shape, free T/P columns, pinned fractions and feed scaling stay with their
+  existing definitions. The original 1.53–1.91 times per-call cost is accepted
+  by the owner; no speedup is claimed.
+
+  Closeout lowers the Equilibrium hard ceiling **7650 → 7575**, measured 6054
+  plus the **1521-line remaining shared roadmap allowance** from the integrated
+  envelope (7650 minus the 6129-line baseline). This preserves that existing
+  pool for #223/#225/#224; it is no exclusive allocation or claim that their
+  changing estimates fit. Other hard ceilings and the 22000 aggregate remain
+  unchanged, with the owner's measured revisit before #224 still required.
+  The 54-line soft excess retains the shared equilibrium driver, exact row
+  chains, continuation and solved-state actions; no scientific calculation is
+  moved outside its runtime owner to meet the count. Numerical qualification
+  and independent delivered review are separate conditions of this closeout.
 
 - 2026-10-01, Bindings and Python amendment for #223 (owner approved): after
   #219 slice B the measured counts are Bindings 1843 and Python 2568, total
