@@ -456,7 +456,55 @@ class ReactionSpec:
     reference: Optional[ReactionReference]
     def __init__(self) -> None: ...
 
+class StabilityOptions:
+    trials: Optional[list[PhaseSpec]]
+    declaration_budget: Optional[int]
+    trial_budget: Optional[int]
+    standard_uncertainty_over_rt: list[float]
+    def __init__(self) -> None: ...
+
+class StabilityTrial:
+    phase: PhaseSpec
+    seed: str
+    evidence: str
+    message: str
+    optimizer: EquilibriumResult
+    raw_coordinates: list[float]
+    raw_residuals: list[float]
+    composition: list[float]
+    split_coordinates: list[float]
+    basis: list[list[float]]
+    row_transformation: list[list[float]]
+    quantities: dict[str, float]
+    split_checks: list[dict[str, float]]
+    donor: Optional[int]
+    resolved_descent: bool
+
+class StabilityReport:
+    completed: bool
+    message: str
+    trials: list[StabilityTrial]
+    candidate_coordinates: list[float]
+    standard_over_rt: list[float]
+    plane_over_rt: list[float]
+    present_phases: list[dict[str, float]]
+    work: dict[str, float]
+
+class DiscoveryRecord:
+    declaration: EquilibriumProblem
+    candidate: EquilibriumResult
+    rounds: list[StabilityReport]
+    declarations: list[EquilibriumResult]
+    declaration_roles: list[str]
+    declaration_attempt_coordinates: list[list[float]]
+    work: dict[str, float]
+
+
+def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
+                   options: StabilityOptions = ...) -> StabilityReport: ...
+
 class EquilibriumProblem:
+    discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
     temperature: FreeValue
     pressure: FreeValue
@@ -510,6 +558,7 @@ class CompiledSystem:
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
+    discovery: Optional[DiscoveryRecord]
     neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
     success: bool
     message: str

@@ -75,7 +75,7 @@ struct DriverLimits final {
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates, const DriverLimits* limits = nullptr
+    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr
 );
 
 // Declared seeds carry no thermodynamic declarations: all share the one problem.

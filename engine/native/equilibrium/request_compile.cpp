@@ -797,10 +797,10 @@ ReferenceCalorics reference_calorics(
     return result;
 }
 
-CompiledSystem compile_problem(
-    const HelmholtzModel& model, const EquilibriumProblem& request
+static CompiledSystem compile_with_basis(
+    const HelmholtzModel& model, const EquilibriumProblem& request,
+    const std::vector<std::vector<double>>* trial_basis, core::Scope& scope
 ) {
-    core::Scope scope("compile_problem");
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
     }
@@ -835,7 +835,7 @@ CompiledSystem compile_problem(
                                         + " violates z");
         }
     }
-    compiled.B = balance_basis(components, request.reactions);
+    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = request.temperature.seed_or(300.0);
@@ -1026,6 +1026,53 @@ CompiledSystem compile_problem(
     scope.probe("rows", static_cast<double>(compiled.rows.size()));
     scope.probe("rank", static_cast<double>(compiled.rank));
     return compiled;
+}
+
+CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
+    core::Scope scope("compile_problem");
+    return compile_with_basis(model, request, nullptr, scope);
+}
+
+// The reduced trial space is internal: the public no-reaction compiler retains species balances.
+CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, double P,
+    const PhaseSpec& phase, const std::vector<double>& w, const std::vector<double>& c,
+    std::vector<std::vector<double>>& transformation) {
+    core::Scope scope("compile_problem");
+    const auto& support = phase.support;
+    const auto& z = model.parameters().charge_number;
+    const bool has_charge = std::any_of(support.begin(), support.end(), [&](auto i) { return z[i] != 0; });
+    Eigen::MatrixXd physical(has_charge ? 2 : 1, support.size());
+    physical.row(0).setOnes();
+    if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
+    const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+    std::vector<ReactionSpec> directions;
+    if (support.size() > static_cast<std::size_t>(physical.rows())) {
+        for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
+            ReactionSpec direction;
+            direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
+            // Only the basis owner's input validation consumes this zero target.
+            // These directions never enter the trial's reaction declaration.
+            direction.affinity_j_per_mol = 0.0;
+            directions.push_back(std::move(direction));
+        }
+    }
+    const auto reduced = balance_basis(support.size(), directions);
+    std::vector<std::vector<double>> B(reduced.size(), std::vector<double>(w.size(), 0.0));
+    transformation.clear();
+    for (std::size_t k = 0; k < B.size(); ++k) {
+        for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
+        const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+            Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
+        transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+    }
+    EquilibriumProblem request;
+    request.temperature = FreeValue::fixed(T); request.pressure = FreeValue::fixed(P);
+    request.feed.values = w;
+    request.phases = {phase};
+    request.phases[0].amount = AmountSpec::free();
+    request.row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
+    return compile_with_basis(model, request, &B, scope);
 }
 
 std::vector<double> CompiledSystem::generic_point() const {

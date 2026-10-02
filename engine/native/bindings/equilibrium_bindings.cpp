@@ -118,6 +118,12 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol)
         .def_readwrite("correlation", &ReactionSpec::correlation)
         .def_readwrite("reference", &ReactionSpec::reference);
+    py::class_<StabilityOptions>(module, "StabilityOptions")
+        .def(py::init<>())
+        .def_readwrite("trials", &StabilityOptions::trials)
+        .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
+        .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
+        .def_readwrite("standard_uncertainty_over_rt", &StabilityOptions::standard_uncertainty_over_rt);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)
@@ -128,7 +134,8 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("neutral_reference", &EquilibriumProblem::source_reference)
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
         .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
-        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance);
+        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
+        .def_readwrite("discovery", &EquilibriumProblem::discovery);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
         .value("Pressure", RowKind::Pressure)
@@ -174,6 +181,7 @@ void register_equilibrium(py::module_& module) {
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult")
         .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
+        .def_readonly("discovery", &EquilibriumResult::discovery)
         .def_readonly("success", &EquilibriumResult::success)
         .def_readonly("message", &EquilibriumResult::message)
         .def_readonly("solver_status", &EquilibriumResult::solver_status)
@@ -207,6 +215,41 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("topology_event", &EquilibriumResult::topology_event)
         .def_readonly("topology_phase", &EquilibriumResult::topology_phase)
         .def_readonly("topology_pair", &EquilibriumResult::topology_pair);
+    py::class_<StabilityTrial>(module, "StabilityTrial")
+        .def_readonly("phase", &StabilityTrial::phase)
+        .def_readonly("seed", &StabilityTrial::seed)
+        .def_readonly("evidence", &StabilityTrial::evidence)
+        .def_readonly("message", &StabilityTrial::message)
+        .def_readonly("optimizer", &StabilityTrial::optimizer)
+        .def_readonly("raw_coordinates", &StabilityTrial::raw_coordinates)
+        .def_readonly("raw_residuals", &StabilityTrial::raw_residuals)
+        .def_readonly("composition", &StabilityTrial::composition)
+        .def_readonly("split_coordinates", &StabilityTrial::split_coordinates)
+        .def_readonly("basis", &StabilityTrial::basis)
+        .def_readonly("row_transformation", &StabilityTrial::row_transformation)
+        .def_readonly("quantities", &StabilityTrial::quantities)
+        .def_readonly("split_checks", &StabilityTrial::split_checks)
+        .def_readonly("donor", &StabilityTrial::donor)
+        .def_readonly("resolved_descent", &StabilityTrial::resolved_descent);
+    py::class_<StabilityReport>(module, "StabilityReport")
+        .def_readonly("completed", &StabilityReport::completed)
+        .def_readonly("message", &StabilityReport::message)
+        .def_readonly("trials", &StabilityReport::trials)
+        .def_readonly("candidate_coordinates", &StabilityReport::candidate_coordinates)
+        .def_readonly("standard_over_rt", &StabilityReport::standard_over_rt)
+        .def_readonly("plane_over_rt", &StabilityReport::plane_over_rt)
+        .def_readonly("present_phases", &StabilityReport::present_phases)
+        .def_readonly("work", &StabilityReport::work);
+    py::class_<DiscoveryRecord, std::shared_ptr<DiscoveryRecord>>(module, "DiscoveryRecord")
+        .def_readonly("declaration", &DiscoveryRecord::declaration)
+        .def_readonly("candidate", &DiscoveryRecord::candidate)
+        .def_readonly("rounds", &DiscoveryRecord::rounds)
+        .def_readonly("declarations", &DiscoveryRecord::declarations)
+        .def_readonly("declaration_roles", &DiscoveryRecord::declaration_roles)
+        .def_readonly("declaration_attempt_coordinates", &DiscoveryRecord::declaration_attempt_coordinates)
+        .def_readonly("work", &DiscoveryRecord::work);
+    module.def("stability_test", &stability_test, py::arg("compiled"), py::arg("central"),
+        py::arg("options") = StabilityOptions{});
     py::enum_<TopologyEvent>(module, "TopologyEvent")
         .value("None_", TopologyEvent::None)
         .value("PhaseDisappeared", TopologyEvent::PhaseDisappeared)
