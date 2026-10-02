@@ -71,6 +71,8 @@ Correction: the MEA feed basis is about 89.2 mol (CO₂ 2.487 + MEA 9.729 + wate
 
 ## Scope clarification, ordinal 2
 
+Editorial substitution in square brackets names the callable; the reviewer's meaning and numerical quantities are unchanged.
+
 +# Scope advice: should #223 fix the 100 mol declared cold start and reuse?
 
 **Classification: this is a separately scoped limitation of declared-phase conditioning. It is not required within #223.** #223 should record it as a named limit on its intended use. It should not repair the shared driver.
@@ -100,20 +102,20 @@ Correction: the MEA feed basis is about 89.2 mol (CO₂ 2.487 + MEA 9.729 + wate
 
 ## Not a new requirement
 
-The existing `solve_equilibrium(..., start=<returned result>)` warm start may be the reuse route that works at 100 mol. If you already have that evidence, you can bound the claim to it. I am not asking for it.
+The existing `solve_equilibrium(..., start=<returned result>)` warm start may be the reuse [call] that works at 100 mol. If you already have that evidence, you can bound the claim to it. I am not asking for it.
 
 I'll recheck the complete affected lens once you supply the final frozen tree and the margin values.
 
 Lead disposition: the amount-weighting defect is corrected natively and the
 100 mol default discovery margin has been measured. The separate declared
 conditioning finding is routed to [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243),
-without implementation authority. The supplied-result public reuse route
+without implementation authority. The supplied-result public reuse call
 mentioned as a possibility above was already probed and coalesced; no successful
-100 mol reuse route is inferred. The affected-lens recheck follows below.
+100 mol reuse call is inferred. The affected-lens recheck follows below.
 
 ## Final affected-lens recheck, ordinal 3
 
-Read-only reviewer: Claude Opus 5.5, high effort; same task, inspected corrected commit `0f9bbe59b13bedc1b0884908ce7ba55be5194224` against `443d828908f4ad5127ab14384f97635dca30bd30`. The verdict and subsequent attribution correction below are retained verbatim. The correction changes the reviewer's evidence attribution for 100 mol public reuse, not its Supported verdict or numerical limits.
+Read-only reviewer: Claude Opus 5.5, high effort; same task, inspected corrected commit `0f9bbe59b13bedc1b0884908ce7ba55be5194224` against `443d828908f4ad5127ab14384f97635dca30bd30`. The review below preserves the verdict, numerical quantities and attribution correction; editorial substitutions identifying a callable or filename are marked in square brackets. The correction changes the reviewer's evidence attribution for 100 mol public reuse, not its Supported verdict or numerical limits.
 
 # Final affected-lens recheck of #223 at `0f9bbe59` (base `443d8289`)
 
@@ -145,7 +147,7 @@ Read-only reviewer: Claude Opus 5.5, high effort; same task, inspected corrected
 - **Declared work unchanged.** The 4,374 frozen rows (1,841/838/217/1,478) are `identical: true`. The ASL capture, on current library `12f4a434…`, matches all 396 work rows and the numerical rows. Counts are 9 drivers, 66 iterations, 130 evaluations, 75 Hessian calls and 0 trials.
 - **Render.** The notebook source, its included files and the HTML hashes match the render record, and the render ran without executing code.
 - **Budgets.** `diffstat --budgets` gives Equilibrium 6921/7575 and total 21110/22000. Bindings (1886) and Python (2635) are unchanged.
-- **Docs.** Formulation, ALG-STABILITY, the ADR and CONTEXT now state the amount-weighted margin and the bounded reuse claim. #243 is open as the owner of the declared-conditioning question.
+- **Docs.** Formulation, ALG-STABILITY, the ADR and [`CONTEXT.md`] now state the amount-weighted margin and the bounded reuse claim. #243 is open as the owner of the declared-conditioning question.
 
 ## Scope of Supported
 
