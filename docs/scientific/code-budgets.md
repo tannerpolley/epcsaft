@@ -77,6 +77,35 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
+  **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.
+  Equilibrium is **6129 → 6054** and aggregate **20208 → 20133**; every other
+  layer is unchanged. The [lever comparison notebook](../../analyses/2026-lever-row-series-comparison/notebook.qmd)
+  retains the ionic packing-diameter stencil falsifier, other-column and
+  solved-state comparisons, cost measurements and limits. The owner authorized
+  the derivative correction after the initial preservation stop: the shared
+  row-series geometry replaces the dense lever assembly and its unused
+  analytic packing-parameter derivative. Reference refusal, coordinate order,
+  shape, free T/P columns, pinned fractions and feed scaling stay with their
+  existing definitions. The original 1.53–1.91 times per-call cost is accepted
+  by the owner. Separate installed-build measurements under changing shared
+  host load gave 1.92–2.35 times the baseline cost (about 0.1–0.4 ms per call);
+  they do not isolate algorithm cost as closely as the interleaved study.
+  The independent review returned Supported, with no required code correction,
+  and recommends owner acknowledgment of that higher observed range. No
+  speedup is claimed.
+
+  Closeout lowers the Equilibrium hard ceiling **7650 → 7575**, measured 6054
+  plus the **1521-line remaining shared roadmap allowance** from the integrated
+  envelope (7650 minus the 6129-line baseline). This preserves that existing
+  pool for #223/#225/#224; it is no exclusive allocation or claim that their
+  changing estimates fit. Other hard ceilings and the 22000 aggregate remain
+  unchanged, with the owner's measured revisit before #224 still required.
+  The 54-line soft excess retains the shared equilibrium driver, exact row
+  chains, continuation and solved-state actions; no scientific calculation is
+  moved outside its runtime owner to meet the count. Numerical qualification
+  and independent delivered review are separate conditions of this closeout.
+
 - 2026-10-01, Bindings and Python amendment for #223 (owner approved): after
   #219 slice B the measured counts are Bindings 1843 and Python 2568, total
   20208. #223's estimate (Bindings +35–60, Python +40–75) did not fit. New hard
@@ -90,7 +119,7 @@ Budget changes must not silently change scientific scope.
 - 2026-10-01, #219 slice B closeout, measured against `96e9ecde`
   (runtime identical to `1fc771b0`, 19,654): **662 gross added, 108 removed,
   +554 net**, total **20,208**. The owner approved the measured sketch through
-  [#230](https://github.com/tannerpolley/ePC-SAFT/pull/230), raising Regression
+  [#230](https://github.com/tannerpolley/ePC-SAFT/pull/230), raising Parameter regression
   to 2,480 while keeping every other ceiling and the 22,000 aggregate.
   The final candidate is below the approximately +600 net stop condition.
 
@@ -106,7 +135,7 @@ Budget changes must not silently change scientific scope.
   | Python | 2498 | 78 | 8 | +70 | 2568 | 2620 |
   | Aggregate | 19654 | 662 | 108 | +554 | 20208 | 22000 |
 
-  Regression is three net lines above the approximately 370 estimate.
+  Parameter regression is three net lines above the approximately 370 estimate.
   One TNLP assembles target/max pairs and mean-slack links over the existing
   selected-row evaluator and eliminated-hold chart. Shared check arithmetic,
   admission and candidate/check publication replace their inline Ceres
@@ -121,7 +150,7 @@ Budget changes must not silently change scientific scope.
   contains declarations, calls, exports and type stubs only. No thermodynamic
   equation, root owner, optimizer fallback or profiling framework is added.
 
-  Closeout lowers Regression to **2,398 measured + #225's 80 planned = 2,478**.
+  Closeout lowers Parameter regression to **2,398 measured + #225's 80 planned = 2,478**.
   Per the owner instruction, other ceilings and the aggregate remain unchanged.
   Remaining shared hard headroom is Equilibrium 1,521, Bindings 37, Python 52,
   and aggregate 1,792. These are ceilings, not claims that #223, #225 and #224
@@ -131,15 +160,15 @@ Budget changes must not silently change scientific scope.
   [B1-B4 numerical verification](../../analyses/2026-electrolyte-parameter-gradients/notebook.qmd)
   identifies the wheel, operands, tolerances and local-solution limits.
 
-- 2026-10-01, #219 slice B Regression amendment (owner approved): slice B
+- 2026-10-01, #219 slice B Parameter regression amendment (owner approved): slice B
   stopped at its budget gate. A counted sketch of the D7 native Ipopt
-  constrained estimation (one Regression TNLP over the slice-A evaluator) gives
-  about +370 Regression lines and +538 net total, against the 175-line
-  allowance left after slice A. The owner chose to build it now: Regression hard
+  constrained estimation (one Parameter regression TNLP over the slice-A evaluator) gives
+  about +370 Parameter regression lines and +538 net total, against the 175-line
+  allowance left after slice A. The owner chose to build it now: Parameter regression hard
   ceiling 2200 → 2480, covering slice B plus #225's planned +80. Other ceilings
   and the 22000 aggregate are unchanged. The roadmap now projects about 22,260
   against 22,000, so the aggregate is revisited with measured counts before #224
-  builds. Slice B's closeout records the measured counts and lowers Regression
+  builds. Slice B's closeout records the measured counts and lowers Parameter regression
   to measured plus the remaining #225 allowance.
 
 - 2026-10-01, #219 slice A closeout, measured against `89c1a337` (18,932):
@@ -208,10 +237,10 @@ Budget changes must not silently change scientific scope.
   owner replaced per-issue amendments for #219, #223, #224 and #225 with one
   envelope. Measured base `4cd1ebfe` (after the #221 consolidation, −168): total
   18932; Core 917, Contributions 1593, Properties 4176, Equilibrium 6095,
-  Regression 1607, Surface 532, Bindings 1674, Python 2338. Projection from the
+  Parameter regression 1607, Surface 532, Bindings 1674, Python 2338. Projection from the
   designs' upper estimates (unmeasured; #225's broadened scope pending): about
   21,600. New hard ceilings: Properties 4258 → 4600, Equilibrium 7000 → 7650,
-  Regression 1619 → 2200, Bindings 1726 → 1880, Python 2374 → 2620 and aggregate
+  Parameter regression 1619 → 2200, Bindings 1726 → 1880, Python 2374 → 2620 and aggregate
   19100 → 22000; Core 1000, Contributions 1612 and Surface 650 unchanged. The
   aggregate is deliberately tighter than the sum of the layers. The #219 D6/D7
   and #225 D4 per-issue requests are superseded. Each build's closeout records
@@ -222,9 +251,9 @@ Budget changes must not silently change scientific scope.
   soft ceilings are unchanged; soft-ceiling reasons are still required.
 
 - 2026-09-30, direct source-basis ln K observations (#211, owner approved):
-  Regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
+  Parameter regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
   18805 → 18830, exactly the measured counts against `95ba231e` (+25 net
-  runtime lines: Regression +21, Bindings +2, Python type declarations +2).
+  runtime lines: Parameter regression +21, Bindings +2, Python type declarations +2).
   Bindings measures 1723 within its unchanged 1725 hard ceiling. The direct
   value uses the existing reaction-property owner; exact columns reuse the
   existing reaction-coordinate basis and admission reuses named-coordinate
@@ -232,9 +261,9 @@ Budget changes must not silently change scientific scope.
   Floors, soft ceilings and other hard ceilings remain unchanged.
 
 - 2026-09-30, total molar isobaric heat-capacity fitting (#205 O2, owner approved):
-  Regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
+  Parameter regression hard ceiling 1440 → 1463, Python 2350 → 2355 and aggregate
   18790 → 18805, the measured candidate counts. Relative to `d47d0475`,
-  runtime growth is 37 physical lines: Regression 23, Bindings 2 and Python 12.
+  runtime growth is 37 physical lines: Parameter regression 23, Bindings 2 and Python 12.
   The owner approved 65 gross added runtime lines, with 28 removed (+37 net),
   replacing the design's gross-45 ceiling while retaining all net and layer caps.
   Properties remains 4223; Bindings remains under its 1725 ceiling.

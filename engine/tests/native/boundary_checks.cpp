@@ -436,6 +436,43 @@ void check_s9() {
     }
 }
 
+void check_ionic_packing_derivative() {
+    const auto parameters = properties_support::aqueous_electrolyte();
+    epcsaft::HelmholtzModel model(parameters, {{epcsaft::ParameterFamily::PackingDiameter, {1}}});
+    auto problem = equilibrium_support::flash(3);
+    problem.feed.values = {0.98, 0.01, 0.01};
+    const auto central = epcsaft::equilibrium::solve_equilibrium(model, problem);
+    CHECK(central.success);
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
+    const auto columns = compiled.lever_jacobian(central.coordinates);
+    const std::size_t width = 2 + parameters.component_count() + model.active_parameters().size();
+    // The two-step study's largest absolute stencil discrepancy was 1.35e-9 / Angstrom.
+    // A 2e-9 absolute criterion covers that rounding/refinement error, not the missing volume chain.
+    constexpr double tolerance = 2.0e-9;
+    for (const double step : {1.0e-4, 1.0e-5}) {
+        auto higher = parameters, lower = parameters;
+        higher.packing_diameter_angstrom[1] += step;
+        lower.packing_diameter_angstrom[1] -= step;
+        epcsaft::HelmholtzModel up_model(higher), down_model(lower);
+        const auto up = epcsaft::equilibrium::compile_problem(up_model, problem).evaluate(central.coordinates).values;
+        const auto down = epcsaft::equilibrium::compile_problem(down_model, problem).evaluate(central.coordinates).values;
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+            const auto kind = compiled.rows[row].kind;
+            if (kind != epcsaft::equilibrium::RowKind::Chemical && kind != epcsaft::equilibrium::RowKind::Pressure) continue;
+            const double exact = columns[row * width + width - 1];
+            const double centered = (up[row] - down[row]) / (2.0 * step);
+            const bool agrees = std::abs(exact - centered) <= tolerance;
+            const auto id = "ionic-packing-derivative/" + recording_support::number(step) + "/" + std::to_string(row);
+            recording_support::compare(id.c_str(), "lever_jacobian", "1/angstrom", exact, centered,
+                recording_support::fields({recording_support::field("T", 300.0), recording_support::field("P", 1.0e5),
+                    recording_support::field("feed", problem.feed.values), recording_support::field("step", step),
+                    recording_support::field("row", row)}), "Relationship", "centered-parameter-stencil",
+                "ionic packing-diameter column includes the volume chain", "absolute", tolerance, 0.0, agrees);
+            CHECK(agrees);
+        }
+    }
+}
+
 void check_s10() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const auto compiled = epcsaft::equilibrium::compile_problem(
@@ -1037,6 +1074,7 @@ int main(int argc, char** argv) {
         {{"native.boundary.s4", "Boundary_S4", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-ladder/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S4", "temperature-ladder/*:2"}, check_s4},
         {{"native.boundary.s5", "Boundary_S5", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-roundtrip", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S5"}, check_s5},
         {{"native.boundary.s9", "Boundary_S9", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "sensitivity/*,pinned-sensitivity/*,reactive-jacobian/*,reactive-lever/*,parameter-sensitivity/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S9"}, check_s9},
+        {{"native.boundary.ionic-packing-derivative", "Ionic_packing_derivative", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "ionic-packing-derivative/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "packing-derivative", "ionic-packing-derivative/*:8"}, check_ionic_packing_derivative},
         {{"native.boundary.s10", "Boundary_S10", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S10"}, check_s10},
         {{"native.boundary.s14", "Boundary_S14", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pinned-pressure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S14"}, check_s14},
         {{"native.boundary.s15c", "Boundary_S15c", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "coincident-failure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S15c"}, check_s15c},

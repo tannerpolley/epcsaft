@@ -583,6 +583,17 @@ values or a specific failure reason, with rank/conditioning and linear residual
 where relevant. Cache/reuse thermodynamic work for the same resolved state;
 reuse must preserve all coefficient, T, density and implicit-site dependencies.
 
+`CompiledSystem::lever_jacobian` assembles the first row-series coefficients
+along unit T, P, feed-amount and active-parameter directions at one prepared
+center. Its free T/P columns drive the corresponding state coordinate; the
+row-series external control entry is unused for a free intensive. Reference
+lever requests retain their existing refusal. The shared geometry includes
+the ionic packing-diameter volume chain (EqID:
+`packing_coefficient_parameter_derivative`), which the retired dense lever
+assembly omitted. Chemical and pressure parameter columns at fixed packing
+fraction therefore include that volume response. Pinned fractions and feed
+scaling use the same row-series geometry as solved-state actions.
+
 | Requested quantity | Generic energy derivatives required |
 |---|---|
 | pressure, chemical potential, residual h/u values | first |
