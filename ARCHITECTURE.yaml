@@ -79,6 +79,9 @@ plan:
 # consolidation audit follows (#221).
 # #221 finding 5: Equilibrium 6054 + remaining shared roadmap allowance 1521 = 7575;
 # measured -75 from bdde4003, with the ionic packing-diameter lever chain corrected.
+# 2026-10-02 #220 envelope raise (owner approved): aggregate 22000 -> 24000; Properties 4800,
+# Equilibrium 8800, Bindings 2100, Python 2850 (from measured counts plus Ready-design estimates
+# for #237-#240, #225 slices 2-5 and #224); closeouts keep lowering touched layers.
 code_budgets: {
   "core": [
     700,
@@ -93,12 +96,12 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4600
+    4800
   ],
   "equilibrium": [
     5000,
     6000,
-    7575
+    8800
   ],
   "regression": [
     800,
@@ -113,17 +116,17 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1940
+    2100
   ],
   "python": [
     1350,
     1600,
-    2700
+    2850
   ],
   "total": [
     12300,
     14850,
-    22000
+    24000
   ]
 }
 

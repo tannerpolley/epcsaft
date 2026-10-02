@@ -7,8 +7,8 @@ availability and links its required evidence.
 
 `engine/` owns the sole `epcsaft` runtime. Preserve one Python build, one Meson
 graph, one version, one Python-free native archive and one extension. Follow
-`../ARCHITECTURE.yaml` for dependency direction. Native iterative work has no Python
-callbacks; Python maps inputs and results. Do not add compatibility imports,
+`../ARCHITECTURE.yaml` for dependency direction and the root
+[native calculation rule](../AGENTS.md#native-calculation-rule). Do not add compatibility imports,
 alternate package identities, hidden physical defaults or a public C++ ABI
 without an approved scope change and a real external consumer.
 

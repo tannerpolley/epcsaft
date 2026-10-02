@@ -1,9 +1,9 @@
 # Modular thermodynamic model specifications
 
-**Status: deferred proposal for work after the current roadmap.**
-Prepared 2026-09-10 against checkout `0ae7806`. This document set preserves the
-scientific discussion and proposes a future direction; it does not admit new
-physics, qualify a model, amend an accepted ADR, or add current milestones.
+Prepared 2026-09-10 against checkout `0ae7806`. This document set retains
+the source synthesis and compatibility discussion. Execution and completion
+are owned by [issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23)
+and its leaf issues; accepted physics is owned by the ADRs below.
 
 > The tool should let you select a coherent set of contributions, supply
 > parameters fitted for that set, and reuse the same thermodynamic machinery.
@@ -29,7 +29,7 @@ every combination of available contributions is a validated equation of state.
 | [Annotated references](references.md) | Which primary sources and exact locators support the discussion, and where does interpretation begin? |
 
 Read the first three documents for the architecture, the comparison for the
-scientific motivation, and the roadmap for future execution. References use
+scientific motivation, and the owning issues for execution. References use
 stable DOI links and Zotero keys rather than machine-specific PDF paths.
 
 ## One model, several distinct responsibilities
@@ -66,12 +66,8 @@ not uniquely identify a microscopic interaction mechanism.
 
 ## Relationship to current work
 
-The [current implementation plan](../../implementation-plan.md) remains the
-sole current execution and qualification plan. Its dependency order, estimates,
-milestones and generated progress are unchanged. This proposal has a separate
-five-step sequence and no committed effort estimates or completion percentages.
-Revisit it only after current roadmap completion and a fresh source/code
-assessment; explicitly choose the first bounded slice then.
+[Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23) and its
+leaf issues #25–#29 own the implementation plan and qualification gates.
 
 Current equation definitions remain in [Engine equations](../../../../engine/docs/equations.md),
 conventions in [full EOS](../../../../engine/docs/science/full-eos.md), and methods in
@@ -80,10 +76,11 @@ the proposal and source comparison. They are not competing Engine definitions.
 
 [ADR 0003](../../adr/0003-explicit-parameter-inputs.md) already requires explicit
 physics and forbids paper/application names from selecting runtime behavior.
-[ADR 0006](../../adr/0006-retire-residual-polar.md) currently excludes residual
-polar terms while retaining dipolar permittivity. Future optional polar support
-requires a separately reviewed scope decision at roadmap step 4. This proposal
-does not reverse that decision.
+[ADR 0011](../../adr/0011-optional-dipole-dipole-term.md) admits the optional
+Gross–Vrabec dipole–dipole residual term with its own compatible parameters.
+Other residual multipoles remain retired under
+[ADR 0006](../../adr/0006-retire-residual-polar.md). Dipolar permittivity remains
+a distinct input and equation; admission does not qualify arbitrary combinations.
 
 The existing Engine remains one installed wheel with one thermodynamic
 implementation and one equilibrium driver. Applications retain their chemistry,

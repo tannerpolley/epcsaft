@@ -69,8 +69,8 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
-Native dependencies run downward in `ARCHITECTURE.yaml`; Python exposes
-capabilities rather than reproducing the native directory tree.
+Native dependencies run downward in `ARCHITECTURE.yaml`; the root
+[native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
 
 | Layer | Owns | Boundary |
 |---|---|---|
@@ -80,7 +80,7 @@ capabilities rather than reproducing the native directory tree.
 | equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (qualified cases in the retained analysis) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
 | `regression` | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
-| bindings | The Python/native boundary | One extension; native iterative work has no Python callbacks |
+| bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
 
 ### Residual, ideal and state responsibilities
 
