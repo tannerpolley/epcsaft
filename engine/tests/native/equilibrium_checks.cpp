@@ -442,13 +442,18 @@ bool check_weighted_hessian_gradient_ladder(
                         recording_support::field("variables", point.size()),
                         recording_support::field("constraints", multipliers.size()),
                     });
-                    const bool verdict = close_with_tolerance(hessian[index], centered, tolerance);
+                    const bool pressure_entry = compiled.problem.pressure.free
+                        && (row == compiled.primal_size - 1 || column == compiled.primal_size - 1);
+                    const double coordinate_scale = pressure_entry ? compiled.problem.pressure.value : 1.0;
+                    const double absolute = pressure_entry ? 1.0e-12 / coordinate_scale : tolerance;
+                    const double allowance = absolute + tolerance * std::abs(centered);
+                    const bool verdict = std::abs(hessian[index] - centered) <= allowance;
                     recording_support::compare(
                         comparison_id.c_str(), "weighted_lagrangian_hessian", "coordinate",
                         hessian[index], centered, inputs, "Relationship",
                         "weighted_hessian_gradient_finite_difference",
-                        "nabla2_L=d(weighted_gradient)/d(coordinate)", "reference_or_one",
-                        0.0, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
+                        "nabla2_L=d(weighted_gradient)/d(coordinate)", "absolute_plus_relative",
+                        absolute, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
                         "\\nabla^2\\mathcal L", "\\mathbf{z},\\lambda,\\Delta z",
                         "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
                         coordinates.c_str());
@@ -1778,6 +1783,33 @@ void check_c1_multiplier_scale() {
     CHECK(small_result.success && large_result.success);
     if (!small_result.success || !large_result.success) return;
 
+    const bool same_intensives = small_result.temperature == large_result.temperature
+        && small_result.pressure == large_result.pressure;
+    const bool same_amount_shape = small_result.amounts.size() == large_result.amounts.size();
+    if (!same_amount_shape) {
+        CHECK(same_intensives);
+        CHECK(same_amount_shape);
+        return;
+    }
+    for (std::size_t i = 0; i < small_result.amounts.size(); ++i) {
+        const double ratio = large_result.amounts[i] / small_result.amounts[i];
+        recording_support::compare(
+            (std::string("amount-scale/") + std::to_string(i)).c_str(), "phase_amount_ratio", "1",
+            ratio, 10.0,
+            recording_support::fields({recording_support::field("T", small_result.temperature.front()),
+                                       recording_support::field("P", small_result.pressure.front()),
+                                       recording_support::field("feed_small", small.feed.values),
+                                       recording_support::field("feed_large", large.feed.values),
+                                       recording_support::field("phase", i)}),
+            "Relationship", "extensive-scaling", "amounts scale with feed by ten",
+            "strict_absolute", 1.0e-7, 0.0, std::abs(ratio - 10.0) < 1.0e-7,
+        "c1-multiplier-scale", std::to_string(i).c_str(), "n", "T,P,feed,phase",
+        "n_{large}/n_{small}=10", "phase");
+        CHECK(std::abs(ratio - 10.0) < 1.0e-7);
+    }
+    CHECK(same_intensives);
+    CHECK(same_amount_shape);
+
     const auto small_compiled = epcsaft::equilibrium::compile_problem(model, small);
     const auto large_compiled = epcsaft::equilibrium::compile_problem(model, large);
     const auto small_rows = callback_rows(small_compiled);
@@ -2091,43 +2123,6 @@ void check_c1_ideal_caller_chart() {
     }
 }
 
-void check_s8() {
-    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    auto small = equilibrium_support::flash(2);
-    auto large = small;
-    large.feed.values = {5.0, 5.0};
-    const auto first = epcsaft::equilibrium::solve_equilibrium(model, small);
-    const auto second = epcsaft::equilibrium::solve_equilibrium(model, large);
-    CHECK(first.success && second.success);
-    if (!first.success || !second.success) return;
-    const bool same_intensives = first.temperature == second.temperature
-        && first.pressure == second.pressure;
-    const bool same_amount_shape = first.amounts.size() == second.amounts.size();
-    if (!same_amount_shape) {
-        CHECK(same_intensives);
-        CHECK(same_amount_shape);
-        return;
-    }
-    for (std::size_t i = 0; i < first.amounts.size(); ++i) {
-        const double ratio = second.amounts[i] / first.amounts[i];
-        recording_support::compare(
-            (std::string("amount-scale/") + std::to_string(i)).c_str(), "phase_amount_ratio", "1",
-            ratio, 10.0,
-            recording_support::fields({recording_support::field("T", first.temperature.front()),
-                                       recording_support::field("P", first.pressure.front()),
-                                       recording_support::field("feed_small", small.feed.values),
-                                       recording_support::field("feed_large", large.feed.values),
-                                       recording_support::field("phase", i)}),
-            "Relationship", "extensive-scaling", "amounts scale with feed by ten",
-            "strict_absolute", 1.0e-7, 0.0, std::abs(ratio - 10.0) < 1.0e-7,
-        "s8-amount-scale", std::to_string(i).c_str(), "n", "T,P,feed,phase",
-        "n_{large}/n_{small}=10", "phase");
-        CHECK(std::abs(ratio - 10.0) < 1.0e-7);
-    }
-    CHECK(same_intensives);
-    CHECK(same_amount_shape);
-}
-
 void check_s10() {
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto problem = equilibrium_support::flash(3);
@@ -2224,6 +2219,34 @@ void check_s10() {
         expect_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label);
         intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
             compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
+        if (variant == 1) {
+            epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
+            const auto shape = nlp.shape();
+            const auto rows = callback_rows(compiled);
+            std::vector<double> pressure_weights(rows.size(), 0.0);
+            const auto phase_point = compiled.prepare(callback_point);
+            std::size_t selected = 0;
+            while (compiled.rows[rows[selected]].kind != epcsaft::equilibrium::RowKind::Pressure) ++selected;
+            pressure_weights[selected] = 0.7;
+            const std::size_t phase = compiled.rows[rows[selected]].phase;
+            const std::size_t w = phase_point.shape[phase].volume;
+            const std::size_t P = compiled.primal_size - 1;
+            std::vector<double> hessian(static_cast<std::size_t>(shape.hessian_entries));
+            CHECK(nlp.eval_h(shape.variables, callback_point.data(), true, 0.0, shape.constraints,
+                pressure_weights.data(), true, shape.hessian_entries, nullptr, nullptr, hessian.data()));
+            const double reference = pressure_weights[selected] * phase_point.volume[phase]
+                / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * phase_point.temperature) * compiled.problem.pressure.value;
+            const double action = hessian[P * (P + 1) / 2 + w] * compiled.problem.pressure.value;
+            const double allowance = 1.0e-12 + 1.0e-8 * std::abs(reference);
+            const bool agrees = std::abs(action - reference) <= allowance && std::abs(reference) > allowance;
+            recording_support::compare("hessian/pressure-packing-identity", "P_scale_H_Pw", "1",
+                action, reference, recording_support::fields({recording_support::field("V_m3_per_mol", phase_point.volume[phase]),
+                    recording_support::field("T_K", phase_point.temperature), recording_support::field("lambda", 0.7),
+                    recording_support::field("P_scale_Pa", compiled.problem.pressure.value)}),
+                "Relationship", "pressure-row-identity", "H_Pw = lambda V/(RT)",
+                "absolute_plus_relative", 1.0e-12, 1.0e-8, agrees);
+            CHECK(agrees);
+        }
         if (variant == 5) {
             // The pinned ladder criterion (1e-5) is looser than the affine-shortcut defect at this
             // point (~2e-6), so the T,T curvature entry is compared directly at 1e-9 scaled: the
@@ -3400,6 +3423,42 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
     for (const double m : scale) product *= m;
     if (product == 0.0) return result;
     const double limit = std::min(fixture.problem.row_tolerance, epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    // Higher orders: one centered derivative of the preceding action on fresh solves.
+    // First order below still has an independent physical value stencil.
+    if (order > 1) {
+        const auto& d = fixture.directions[order - 1];
+        const double h = multiplier / scale.back();
+        for (const double sign : {-1.0, 1.0}) {
+            auto shifted = fixture;
+            if (!shifted.problem.temperature.free) shifted.problem.temperature.value += sign * h * d.temperature_k;
+            if (!shifted.problem.pressure.free) shifted.problem.pressure.value += sign * h * d.pressure_pa;
+            for (std::size_t i = 0; i < components; ++i) shifted.problem.feed.values[i] += sign * h * d.feed_amounts_mol[i];
+            std::vector<double> delta(fixture.active.size(), 0.0);
+            for (std::size_t a = 0; a < delta.size(); ++a) delta[a] = sign * h * d.active_parameters[a];
+            const auto model = shifted.model(delta);
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, shifted.problem, central);
+            if (!solved.success || !solved.requested_tolerance_met.value_or(false) || solved.convergence.residual > limit) {
+                result.rejected.push_back("preceding-action corner: " + solved.message);
+                for (auto& value : result.value) value.reset();
+                return result;
+            }
+            if (fixture.corner_branch.has_value()) {
+                const auto root = epcsaft::solve_density(model, shifted.problem.temperature.value,
+                    shifted.problem.pressure.value, {1.0}, *fixture.corner_branch, std::nullopt);
+                CHECK(std::abs(std::log(solved.molar_densities[0] / root.molar_density)) <= 1.0e-8);
+            }
+            const auto shifted_compiled = epcsaft::equilibrium::compile_problem(model, shifted.problem);
+            SolvedStateActionRequest request{fixture.observables, {}};
+            request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order - 1));
+            const auto batch = epcsaft::equilibrium::solved_state_actions(shifted_compiled, solved, request);
+            for (std::size_t i = 0; i < result.value.size(); ++i) {
+                if (batch.results[i].status == SolvedStateActionStatus::Available && batch.results[i].action)
+                    *result.value[i] += sign * *batch.results[i].action / (2.0 * h);
+                else result.value[i].reset();
+            }
+        }
+        return result;
+    }
     for (std::size_t corner = 0; corner < (std::size_t(1) << order); ++corner) {
         auto problem = fixture.problem;
         std::vector<double> shift(fixture.active.size(), 0.0);
@@ -3446,6 +3505,40 @@ std::string status_field(const SolvedStateActionBatch& batch, std::size_t index)
     return epcsaft::equilibrium::solved_state_status_name(batch.results[index].status);
 }
 
+// Sum the fixed chart-coordinate sub-actions; a cancelling sum cannot set its own scale.
+std::vector<double> action_term_scale(const Fixture& fixture, const CompiledSystem& compiled,
+                                     const EquilibriumResult& central, std::size_t order) {
+    std::vector<double> result(fixture.observables.size(), 0.0);
+    SolvedStateActionRequest request{fixture.observables, {}};
+    const auto expand = [&](const auto& self, std::size_t j) -> void {
+        if (j == order) {
+            const auto batch = epcsaft::equilibrium::solved_state_actions(compiled, central, request);
+            for (std::size_t i = 0; i < result.size(); ++i) {
+                CHECK(batch.results[i].status == SolvedStateActionStatus::Available && batch.results[i].action);
+                result[i] += std::abs(*batch.results[i].action);
+            }
+            return;
+        }
+        const auto& full = fixture.directions[j];
+        for (int part = 0; part < 4; ++part) {
+            auto d = full;
+            if (part != 0) d.temperature_k = 0.0;
+            if (part != 1) d.pressure_pa = 0.0;
+            if (part != 2) std::fill(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(), 0.0);
+            if (part != 3) {
+                std::fill(d.active_parameters.begin(), d.active_parameters.end(), 0.0);
+                std::fill(d.reaction_log_constants.begin(), d.reaction_log_constants.end(), 0.0);
+            }
+            bool nonzero = d.temperature_k != 0.0 || d.pressure_pa != 0.0;
+            for (const auto* values : {&d.feed_amounts_mol, &d.active_parameters, &d.reaction_log_constants})
+                for (const auto value : *values) nonzero = nonzero || value != 0.0;
+            if (nonzero) { request.directions.push_back(d); self(self, j + 1); request.directions.pop_back(); }
+        }
+    };
+    expand(expand, 0);
+    return result;
+}
+
 // Qualify one fixture through the requested orders; every observable/order/step is retained.
 bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, std::size_t first_order = 1) {
     const auto model = fixture.model();
@@ -3459,6 +3552,7 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
         request.observables = fixture.observables;
         request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order));
         const auto batch = epcsaft::equilibrium::solved_state_actions(compiled, central, request);
+        const auto scales = action_term_scale(fixture, compiled, central, order);
         std::vector<Reference> ladder;
         for (const double multiplier : LADDER[order - 1]) ladder.push_back(reference(fixture, compiled, central, order, multiplier));
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
@@ -3501,7 +3595,7 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             std::optional<double> extrapolated;
             if (complete && noise_bounded) extrapolated = *mid + (*mid - *coarse) / (h1 * h1 / (h2 * h2) - 1.0);
             else if (fine.has_value() && mid.has_value()) extrapolated = *fine + (*fine - *mid) / (h2 * h2 / (h3 * h3) - 1.0);
-            const double criterion = structural ? STRUCTURAL_ZERO : CRITERION[order - 1] * std::max(1.0, std::abs(extrapolated.value_or(0.0)));
+            const double criterion = structural ? STRUCTURAL_ZERO : CRITERION[order - 1] * scales[i];
             const double expected_rate = (h1 * h1 - h2 * h2) / (h2 * h2 - h3 * h3);
             bool refined = complete && (noise_bounded ? std::abs(*coarse - *mid) : std::abs(*fine - *mid)) <= 2.0 * criterion;
             double rate = nan;
@@ -3523,10 +3617,12 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 recording_support::field("rate", rate), recording_support::field("expected_rate", expected_rate),
                 recording_support::field("noise_bounded", noise_bounded ? 1U : 0U),
                 recording_support::field("absolute_floor", !structural && std::abs(extrapolated.value_or(0.0)) <= CRITERION[order - 1] ? 1U : 0U),
-                recording_support::field("best_step_relative_agreement", best_step)});
+                recording_support::field("best_step_relative_agreement", best_step),
+                recording_support::field("term_scale", scales[i]),
+                recording_support::field("allowance", criterion)});
             recording_support::compare(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
                 ladder_inputs, "Relationship", "centered-solve-ladder", "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
-                structural ? "strict_absolute" : "reference_or_one", structural ? STRUCTURAL_ZERO : 0.0, structural ? 0.0 : CRITERION[order - 1],
+                "strict_absolute", criterion, 0.0,
                 verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
             // A ladder certified by step agreement records that agreement, not an uncomputed rate.
             const bool by_rate = std::isfinite(rate);
@@ -4494,7 +4590,6 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
-        {{"native.equilibrium.s8", "Equilibrium_S8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S8"}, check_s8},
         {{"native.equilibrium.c1", "Core_C1_amount_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "CORE1", "c1-amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_amount_scale},
         {{"native.equilibrium.c1-multipliers", "Core_C1_multiplier_scale", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "CORE1", "c1-multiplier-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_multiplier_scale},
         {{"native.equilibrium.c1-ideal-caller", "Contributions_C1_ideal_caller_chart", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "C1", "objective-gradient/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1", "objective-gradient/*:6"}, check_c1_ideal_caller_chart},
