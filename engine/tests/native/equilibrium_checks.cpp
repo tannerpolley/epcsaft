@@ -3589,10 +3589,10 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             const bool affine_pressure = order > 1 && item.observable.kind == Kind::PhasePressure
                 && !fixture.problem.pressure.free;
             const auto free_amounts = std::count_if(fixture.problem.phases.begin(), fixture.problem.phases.end(),
-                [](const auto& phase) { return phase.amount.kind == AmountKind::Free; });
+                [](const auto& phase) { return phase.amount.kind == epcsaft::equilibrium::AmountKind::Free; });
             const bool affine_amount = order > 1 && item.observable.kind == Kind::PhaseAmount
                 && fixture.problem.reactions.empty() && (free_amounts <= 1
-                    || fixture.problem.phases[item.observable.phase].amount.kind == AmountKind::Pinned);
+                    || fixture.problem.phases[item.observable.phase].amount.kind == epcsaft::equilibrium::AmountKind::Pinned);
             const bool affine_ideal = order > 1 && fixture.constant_ideal_cp && item.observable.kind == Kind::PhaseProperty
                 && item.observable.property == PropertyObservable::IdealEnthalpy;
             const bool affine = affine_pressure || affine_amount || affine_ideal;
