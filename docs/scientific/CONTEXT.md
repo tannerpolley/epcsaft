@@ -78,7 +78,7 @@ Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 | Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
 | Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
 | equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local stability checks and solved-state actions (phase discovery deferred) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
-| regression | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
+| `regression` | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
 
@@ -260,10 +260,10 @@ recovery question. Historical stage completion is never current acceptance.
 | EOS symbols, units, conventions and source validity | [full-eos.md](../../engine/docs/science/full-eos.md) |
 | Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
-| Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
+| Parameter regression observation and fit meaning | [parameter regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
-| Current code owners and required scientific evidence | This context, canonical Engine documents, tests, analyses and dated reviews |
-| Project structure: components, Engine layers, path ownership and artifact roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
+| Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
+| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [adr/](adr/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
@@ -287,7 +287,7 @@ an architecture scan nor a successful solve proves model validity.
 | convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
 | numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
 | tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance (algorithms) |
-| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
+| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy ([packet requirements](../../data/docs/packet-contract.md) and root `AGENTS.md`) |
 | typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
 | stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
@@ -295,7 +295,7 @@ an architecture scan nor a successful solve proves model validity.
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
 | capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
 | milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers |
-| artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
+| file role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
 | qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 
 Use bubble, dew, saturation and flash as mathematical specifications or data

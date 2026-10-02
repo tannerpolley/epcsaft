@@ -150,8 +150,8 @@ hard-ceiling excess. Preserve readable code and required science when simplifyin
 
 Use Numerical Verification-Driven Development. Persistent numerical tests must
 falsify claims through values, identities, derivatives, limits or justified
-reference cases. Do not add API-contract, compatibility, snapshot, prose, mock
-or coverage-only tests. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
+reference cases. Do not add tests of interface requirements, compatibility, snapshots,
+prose, mocks or coverage alone. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
 with diagnostics, provenance, failures and claim limits. A refused, unavailable
 or tolerance-gated result is not an end state; `engine/docs/science/algorithms.md`
 (ALG-TERMINATION) owns the fix-before-negative rule. Expensive installed-wheel
