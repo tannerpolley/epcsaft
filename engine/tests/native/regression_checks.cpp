@@ -2216,7 +2216,9 @@ void check_ionic_addition_enthalpy() {
     row.branch = DensityBranch::Liquid;
     CoordinateSet coordinates;
     coordinates.coordinates = {
-        {ParameterFamily::BornDiameter, {{1}}, parameters.born_diameter_angstrom[1], 1.0, 2.0, 5.0},
+        // Solvent segment count changes packing/density, rather than a Born
+        // share that nearly cancels between the ionic infinite-dilution standards.
+        {ParameterFamily::SegmentCount, {{0}}, parameters.segment_count[0], 1.0, 1.0, 1.5},
         reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::B, T)};
     coordinates.coordinates[1].origin = -2000.0;
     coordinates.coordinates[1].lower = -3000.0;
@@ -2226,7 +2228,7 @@ void check_ionic_addition_enthalpy() {
     CHECK(prediction.status == ObservationStatus::Available && prediction.value);
     const auto exact = differentiate_group(model, {&row}, prediction, coordinates).front();
     CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 2);
-    const auto endpoint = [&](const HelmholtzModel& rebuilt, const EquilibriumProblem& problem, double gauge = 0.0) {
+    const auto endpoint = [&](const HelmholtzModel& rebuilt, const EquilibriumProblem& problem, double gauge = 0.0, bool centered = false) {
         const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
         CHECK(solved.success);
         const auto compiled = equilibrium::compile_problem(rebuilt, problem);
@@ -2236,8 +2238,18 @@ void check_ionic_addition_enthalpy() {
         // Accumulate the independently composed oracle in extended precision:
         // the trace ionic increment subtracts ~3e5 J endpoints.
         long double h = state.residual_enthalpy;
-        for (std::size_t i = 0; i < 3; ++i)
-            h += static_cast<long double>(solved.mole_fractions[i]) * (source.enthalpy[i] + gauge * parameters.charge_number[i]);
+        // Subtract the feed enthalpy on the conserved water-equivalent basis
+        // (1, 1/2, 1/2), not total moles: H2O -> Na+ + Cl- changes N.
+        // Then (H'_final-H'_initial)/n_add is exactly the same increment,
+        // without amplifying endpoint amount/normalization rounding by 3e5 J/mol.
+        const double feed_residual = centered
+            ? rebuilt.state_at_pressure(T, P, {1.0, 0.0, 0.0}, DensityBranch::Liquid).residual_enthalpy : 0.0;
+        for (std::size_t i = 0; i < 3; ++i) {
+            const double basis = i == 0 ? 1.0 : 0.5;
+            const long double source_h = source.enthalpy[i] + gauge * parameters.charge_number[i]
+                + (centered ? basis * 241826.0 : 0.0);
+            h += static_cast<long double>(solved.mole_fractions[i]) * (source_h - basis * feed_residual);
+        }
         return solved.amounts[0] * h;
     };
     const auto feed_h = [&](const HelmholtzModel& rebuilt) {
@@ -2249,6 +2261,10 @@ void check_ionic_addition_enthalpy() {
     CHECK(agree("addition-ionic/value", "delta_h_add", "J/mol", *prediction.value, oracle, allowance, 0.0,
         fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}),
         "the ionic observation equals independently rebuilt endpoint and feed enthalpies", "addition-ionic"));
+    const double centered_oracle = (endpoint(model, final, 0.0, true) - endpoint(model, initial, 0.0, true)) / amount;
+    CHECK(agree("addition-ionic/conserved-basis-value", "delta_h_add", "J/mol", centered_oracle, oracle, allowance, 0.0,
+        field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}),
+        "subtracting the feed on the conserved basis preserves the two-endpoint increment", "addition-ionic"));
     const double shifted = (endpoint(model, final, 1.0e6) - endpoint(model, initial, 1.0e6)) / amount - feed_h(model);
     CHECK(agree("addition-ionic/charge-gauge", "delta_h_add", "J/mol", shifted, oracle, allowance, 0.0,
         field("charge_gauge_J_per_mol", 1.0e6), "a charge-neutral increment is invariant to ion enthalpy gauge", "addition-ionic"));
@@ -2269,9 +2285,14 @@ void check_ionic_addition_enthalpy() {
             auto changed = std::vector<Observation>{row};
             coordinates.apply(changed, u);
             const HelmholtzModel rebuilt(coordinates.apply(parameters, u), coordinates.active_parameters(), record);
-            return (endpoint(rebuilt, changed[0].final_problem) - endpoint(rebuilt, changed[0].problem)) / amount - feed_h(rebuilt);
+            return (endpoint(rebuilt, changed[0].final_problem, 0.0, true)
+                - endpoint(rebuilt, changed[0].problem, 0.0, true)) / amount;
         };
-        const double step = column == 0 ? 0.1 : 1.0;
+        // 0.0025 segment-count nodes amplify endpoint/root rounding above
+        // 4e-8; use 0.04/0.02/0.01 and require Richardson resolution below it.
+        // The B optimizer coordinate has scale T=298.15 K; 0.02 means
+        // 5.963/2.9815/1.49075 K, not the unresolved 298/149/74.5 K ladder.
+        const double step = column == 0 ? 0.04 : 0.02;
         const auto rungs = ladder(composed, step);
         const double finer = ladder(composed, step * 0.5).fine;
         const double R1 = (4.0 * rungs.fine - rungs.coarse) / 3.0;

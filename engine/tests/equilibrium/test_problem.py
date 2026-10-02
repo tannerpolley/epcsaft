@@ -7,10 +7,8 @@ from epcsaft import Mixture, ParameterError, Parameters, _core, equilibrium
 from epcsaft.equilibrium import (
     Amounts,
     Free,
-    Molalities,
     Phase,
     Problem,
-    Reaction,
     problem_from_mapping,
     solve_equilibrium,
 )

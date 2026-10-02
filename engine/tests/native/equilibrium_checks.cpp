@@ -3288,6 +3288,7 @@ struct Fixture final {
     std::vector<SolvedStateActionDirection> directions;
     std::vector<SolvedStateObservable> observables;
     bool scaled = true;
+    bool constant_ideal_cp = false; // declared constant-cp thermal reference, h is affine in T
     // Corner branch admission for a pure declared phase (case 6) and an analytic corner
     // reference for selected observables (the A->2B pure-state relation).
     std::optional<epcsaft::DensityBranch> corner_branch;
@@ -3455,6 +3456,9 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
             request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order - 1));
             const auto batch = epcsaft::equilibrium::solved_state_actions(shifted_compiled, solved, request);
             for (std::size_t i = 0; i < result.value.size(); ++i) {
+                // Preserve the stronger independent manufactured-value oracle
+                // where it exists; only its caloric siblings use preceding actions.
+                if (fixture.analytic && fixture.analytic(fixture.observables[i], fixture.problem.temperature.value)) continue;
                 const auto& action = batch.results[i];
                 if (action.status == SolvedStateActionStatus::Available && action.action && result.value[i]) {
                     *result.value[i] += sign * *action.action / (2.0 * h);
@@ -3467,7 +3471,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
                 }
             }
         }
-        return result;
+        if (!fixture.analytic) return result;
     }
     for (std::size_t corner = 0; corner < (std::size_t(1) << order); ++corner) {
         auto problem = fixture.problem;
@@ -3501,6 +3505,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
         }
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
             const auto analytic = fixture.analytic ? fixture.analytic(fixture.observables[i], problem.temperature.value) : std::nullopt;
+            if (order > 1 && !analytic.has_value()) continue;
             const auto value = analytic.has_value() ? analytic : mapped(fixture.observables[i], model, solved);
             if (value.has_value() && result.value[i].has_value()) {
                 *result.value[i] += weight * *value;
@@ -3510,8 +3515,10 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
             else result.value[i].reset();
         }
     }
-    for (auto& value : result.value)
-        if (value.has_value()) *value *= product / std::pow(2.0 * multiplier, static_cast<double>(order));
+    for (std::size_t i = 0; i < result.value.size(); ++i)
+        if (result.value[i] && (order == 1 || (fixture.analytic
+            && fixture.analytic(fixture.observables[i], fixture.problem.temperature.value))))
+            *result.value[i] *= product / std::pow(2.0 * multiplier, static_cast<double>(order));
     return result;
 }
 
@@ -3576,6 +3583,20 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
         for (std::size_t s = 0; s < 3; ++s) ladder.push_back(reference(fixture, compiled, central, order, steps[s]));
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
             const auto& item = batch.results[i];
+            // These are defining affine relations, not small nonzero actions:
+            // p_phase=P, conserved nonreactive phase amounts with at most one
+            // free amount, and the declared constant-cp ideal enthalpy.
+            const bool affine_pressure = order > 1 && item.observable.kind == Kind::PhasePressure
+                && !fixture.problem.pressure.free;
+            const auto free_amounts = std::count_if(fixture.problem.phases.begin(), fixture.problem.phases.end(),
+                [](const auto& phase) { return phase.amount.kind == AmountKind::Free; });
+            const bool affine_amount = order > 1 && item.observable.kind == Kind::PhaseAmount
+                && fixture.problem.reactions.empty() && (free_amounts <= 1
+                    || fixture.problem.phases[item.observable.phase].amount.kind == AmountKind::Pinned);
+            const bool affine_ideal = order > 1 && fixture.constant_ideal_cp && item.observable.kind == Kind::PhaseProperty
+                && item.observable.property == PropertyObservable::IdealEnthalpy;
+            const bool affine = affine_pressure || affine_amount || affine_ideal;
+            if (affine) for (auto& rung : ladder) if (rung.value[i]) { rung.value[i] = 0.0; rung.rounding[i] = 0.0; }
             const auto id = std::string(group) + "/" + fixture.label + "/" + epcsaft::equilibrium::solved_state_observable_id(item.observable)
                 + "/A" + std::to_string(order);
             const auto inputs = recording_support::fields({
@@ -3614,7 +3635,11 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             std::optional<double> extrapolated;
             if (complete && noise_bounded) extrapolated = *mid + (*mid - *coarse) / (h1 * h1 / (h2 * h2) - 1.0);
             else if (fine.has_value() && mid.has_value()) extrapolated = *fine + (*fine - *mid) / (h2 * h2 / (h3 * h3) - 1.0);
-            const double criterion = structural ? STRUCTURAL_ZERO : CRITERION[order - 1] * scales[i];
+            // Pressure is checked in reduced units P/P*, amount on the feed
+            // basis; retain the existing dimensionless structural-zero criterion.
+            const double affine_scale = affine_pressure ? fixture.problem.pressure.value
+                : affine_amount ? compiled.feed_total : 1.0;
+            const double criterion = structural ? STRUCTURAL_ZERO * affine_scale : CRITERION[order - 1] * scales[i];
             const double ratio_coarse = h1 * h1 / (h2 * h2), ratio_fine = h2 * h2 / (h3 * h3);
             double reference_uncertainty = nan;
             if (complete) {
@@ -3659,7 +3684,8 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 recording_support::field("reference_uncertainty", reference_uncertainty),
                 recording_support::field("signal_over_allowance", std::abs(extrapolated.value_or(0.0)) / criterion)});
             recording_support::compare(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
-                ladder_inputs, "Relationship", "centered-solve-ladder", "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
+                ladder_inputs, "Relationship", affine ? "affine-constraint-identity" : "centered-solve-ladder",
+                affine ? "the defining affine relation has zero higher action" : "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
                 "strict_absolute", criterion, 0.0,
                 verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
             // A ladder certified by step agreement records that agreement, not an uncomputed rate.
@@ -4231,6 +4257,7 @@ Fixture two_root_case(PhaseKind kind) {
 Fixture thermal_case(double temperature, bool with_record) {
     Fixture f;
     f.label = "thermal-" + recording_support::number(temperature) + (with_record ? "" : "-no-record");
+    f.constant_ideal_cp = true; // p3_forms()[1] is Shomate cp=30 J/(mol K)
     f.parameters = properties_support::ethane();
     if (with_record) f.record = properties_support::p3_record(properties_support::p3_forms()[1].second);
     f.problem = equilibrium_support::flash(1);
