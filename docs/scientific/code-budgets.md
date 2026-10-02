@@ -78,7 +78,7 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #238 declared equilibrium starts, measured against integrated
-  main `edf7672e`: **374 gross added, 50 removed, +324 net runtime lines**.
+  main `875526d0`: **374 gross added, 50 removed, +324 net runtime lines**.
   Original estimate 150 gross; first draft measured 227. Lead-authorized cap
   rose to 260 gross. The lead
   authorized up to 275 for admission corrections, then the owner paused hard
@@ -93,13 +93,13 @@ Budget changes must not silently change scientific scope.
   |---|---:|---:|---:|---:|---:|---:|
   | Core | 917 | 0 | 0 | 0 | 917 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
-  | Properties | 4509 | 0 | 0 | 0 | 4509 | 4800 |
+  | Properties | 4763 | 0 | 0 | 0 | 4763 | 4800 |
   | Equilibrium | 6921 | 299 | 50 | +249 | 7170 | 8800 |
   | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
   | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
-  | Bindings | 1886 | 31 | 0 | +31 | 1917 | 2100 |
-  | Python | 2635 | 44 | 0 | +44 | 2679 | 2850 |
-  | Aggregate | 21345 | 374 | 50 | +324 | 21669 | 24000 |
+  | Bindings | 1914 | 31 | 0 | +31 | 1945 | 2100 |
+  | Python | 2697 | 44 | 0 | +44 | 2741 | 2850 |
+  | Aggregate | 21689 | 374 | 50 | +324 | 22013 | 24000 |
 
   One compiled problem, existing generic/boundary seeds, the shared packing
   predicate, exact Ipopt driver and density admission remain the owners.
