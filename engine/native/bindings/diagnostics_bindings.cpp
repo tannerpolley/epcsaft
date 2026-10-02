@@ -24,15 +24,12 @@ py::object tolerance_reference(const epcsaft::policy::Tolerance& tolerance) {
 
 void register_diagnostics(py::module_& module) {
     using namespace epcsaft;
-    py::enum_<core::Stop>(module, "Stop")
-        .value("converged", core::Stop::converged)
-        .value("converged_to_floor", core::Stop::converged_to_floor)
-        .value("stalled", core::Stop::stalled)
-        .value("budget_exhausted", core::Stop::budget_exhausted)
-        .value("left_domain", core::Stop::left_domain)
-        .value("singular", core::Stop::singular)
-        .value("infeasible", core::Stop::infeasible)
-        .value("nonfinite", core::Stop::nonfinite);
+    auto stops = py::enum_<core::Stop>(module, "Stop");
+    for (int value = static_cast<int>(core::Stop::converged);
+         value <= static_cast<int>(core::Stop::nonfinite); ++value) {
+        const auto stop = static_cast<core::Stop>(value);
+        stops.value(core::stop_name(stop), stop);
+    }
     py::enum_<policy::Category>(module, "Category")
         .value("ThermodynamicConstraint", policy::Category::ThermodynamicConstraint)
         .value("AlgorithmTolerance", policy::Category::AlgorithmTolerance);
