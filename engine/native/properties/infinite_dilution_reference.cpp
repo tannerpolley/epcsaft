@@ -565,6 +565,54 @@ std::vector<double> formula_composition(
     return composition;
 }
 
+ResidualEnergyAction reference_partial(const HelmholtzModel& model, double temperature,
+    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    std::size_t temperature_order, std::size_t pressure_order,
+    std::optional<std::size_t> parameter, std::optional<double> anchor) {
+    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
+    if (order == 0 || order > 4 || (parameter && *parameter >= model.active_parameters().size()))
+        throw std::invalid_argument("reference partial order or coordinate");
+    ResidualEnergyAction result;
+    const auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
+    const double pressure_scale = state.pressure_density_derivative * state.molar_density;
+    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
+    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
+    double contraction = 0.0;
+    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        PressureActionDirection direction;
+        double weight = 1.0;
+        for (std::size_t j = 0; j < order; ++j) {
+            const double sign = j && (mask & (std::size_t(1) << (j-1))) ? -1.0 : 1.0;
+            weight *= sign;
+            if (j < temperature_order) direction.temperature += sign * temperature;
+            else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
+            else {
+                const auto& active = model.active_parameters()[*parameter];
+                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
+            }
+        }
+        const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
+            composition, stoichiometry, direction, order);
+        result.status = series.status;
+        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
+        result.diagnostics.site_solves += series.diagnostics.site_solves;
+        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
+        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
+        result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
+        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
+        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
+        result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
+        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
+        result.diagnostics.site_rank = series.diagnostics.site_rank;
+        result.diagnostics.site_pivot_ratio = std::max(result.diagnostics.site_pivot_ratio, series.diagnostics.site_pivot_ratio);
+        if (series.status != PropertyActionStatus::Available) return result;
+        contraction += weight * series.contraction[order];
+    }
+    result.action = contraction / (double(std::size_t(1) << (order-1)) * scale);
+    if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
+    return result;
+}
+
 double reaction_reference_log_scale(
     const HelmholtzModel& model,
     const NeutralReferenceDeclaration& declaration,
@@ -592,9 +640,11 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool pressure_jets,
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
-    bool parameter_jets
+    bool parameter_jets,
+    std::size_t reference_order
 ) {
     core::Scope scope("reaction_references");
+    if (reference_order > 4) throw std::invalid_argument("reference derivative order");
     if (scope.on()) {
         scope.probe("reference_inputs", std::vector<double>{temperature, system_pressure, double(pressure_jets),
             double(temperature_order), double(parameter_jets), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
@@ -671,6 +721,51 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             model, temperature, declaration, stoichiometries[row], reference,
             need_jets, *found->result.trace);
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
+        // Additional consumed columns, with independent admission on both terminal changes.
+        const auto& trace = *found->result.trace;
+        const auto values = model.active_parameter_values();
+        for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
+            for (std::size_t d = 2; d <= reference_order; ++d)
+                for (std::size_t b = 0; b <= d-c; ++b) {
+                    const std::size_t a = d-b-c;
+                    if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
+                    for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
+                        NeutralReferenceReactionDiagnostic::Derivative column;
+                        column.temperature_order = a; column.pressure_order = b;
+                        if (c) column.parameter = coordinate;
+                        if (b && reference.reference_pressure_pa) {
+                            column.ladder = {0.0, 0.0, 0.0}; column.value = 0.0;
+                        } else {
+                            for (std::size_t k = 0; k < 3; ++k) {
+                                const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size()-3+k;
+                                try {
+                                    const auto partial = reference_partial(model, temperature, pressure,
+                                        trace.composition[rung], stoichiometries[row], a, b, column.parameter,
+                                        trace.state[rung].molar_density);
+                                    column.ladder[k] = partial.action;
+                                    if (!partial.action) column.message = "reference action status " + std::to_string(int(partial.status));
+                                } catch (const std::exception& error) { column.message = error.what(); }
+                            }
+                            const double scale = GAS_CONSTANT_J_PER_MOL_K * std::pow(temperature, int(a))
+                                * std::pow(pressure, int(b)) * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0);
+                            if (column.ladder[0] && column.ladder[1] && column.ladder[2]) {
+                                bool admitted = true;
+                                for (std::size_t k = 0; k < 2; ++k) {
+                                    column.scaled_changes[k] = scale * std::abs(*column.ladder[k+1]-*column.ladder[k]);
+                                    admitted &= std::isfinite(column.scaled_changes[k])
+                                        && column.scaled_changes[k] <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value;
+                                }
+                                if (admitted) column.value = column.ladder[2];
+                                else column.message = "reference scaled terminal change exceeds heat-capacity tolerance";
+                            }
+                        }
+                        if (!column.value) column.message = "reaction " + std::to_string(row) + " C_"
+                            + std::to_string(a) + std::to_string(b) + (c ? " coordinate " + std::to_string(coordinate) : "")
+                            + ": " + column.message;
+                        diagnostic.derivatives.push_back(std::move(column));
+                    }
+                }
+
     }
     return result;
 }
