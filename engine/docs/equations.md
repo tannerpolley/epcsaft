@@ -1655,7 +1655,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Third pressure derivatives remain unavailable; the first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Higher source-pressure derivatives are supplied by `reference_mixed_temperature_pressure_derivatives` in Properties; downstream use is separately qualified. The first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1772,6 +1772,41 @@ $$
 [t^5]F(p+vt\pm ut^3)=\frac{D^5F[v,v,v,v,v]}{120}
 \pm\frac{D^3F[u,v,v]}{2},\\
 D^3F[u,v,v]=[t^5]\{F(p+vt+ut^3)-F(p+vt-ut^3)\}.
+$$
+
+## `reference_single_insertion_taylor`
+
+- Section: Helmholtz derivatives / Reference derivatives
+- Status: Exact derivation
+- Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure; issue #225, section 3
+- Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
+- Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
+
+$$
+z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{3,4\},\qquad
+[t^k]D\psi(z(t))[u]=\frac12[t^{r+1+k}]
+\{\psi(z(t)+ut^{r+1})-\psi(z(t)-ut^{r+1})\},\quad 0\le k\le r,\\
+D^4\psi[u,v,v,v]=\frac{3!}{2}[t^7]\{\psi(z_0+vt+ut^4)-\psi(z_0+vt-ut^4)\},\\
+D^5\psi[u,v,v,v,v]=\frac{4!}{2}[t^9]\{\psi(z_0+vt+ut^5)-\psi(z_0+vt-ut^5)\},\\
+p(t)=RT(t)\{V(t)^{-1}-D\psi(z(t))[e_V]\},\qquad
+V_k=\frac{[t^k]P_{src}(t)-[t^k]p(z(t))|_{V_k=0}}{p_V(z_0)},\\
+C(t)=-\Delta\nu\ln(V(t)\rho_0)+D\psi(z(t))[\nu],\qquad
+z_{j,n}=0\quad(j>0).
+$$
+
+## `reference_mixed_temperature_pressure_derivatives`
+
+- Section: Properties / Reaction references
+- Status: Exact derivation
+- Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction; issue #225, sections 2–3 and F8/F9
+- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. No repeated parameter derivatives or dilution-composition derivatives are consumed.
+- Change note: Both consecutive changes at 1e-10, 1e-12 and 1e-14 mol/kg must satisfy the existing heat-capacity change criterion. This observed convergence does not bound infinite-dilution bias. Columns are independently unavailable when their own calculation or admission fails. Earlier lower-slope admission remains with its existing owner.
+
+$$
+C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
+C_{ab,\theta}=\partial_T^a\partial_{P_{src}}^b\partial_\theta C,\quad a+b\le3,\\
+E_{abc}=RT^aP_{src}^b\max(|\theta|,1)^c|\delta C_{ab,\theta^c}|\le0.01\ \mathrm{J\,mol^{-1}\,K^{-1}},\quad c\in\{0,1\},\quad a+b+c\ge2,\\
+C_T=\frac{h^{res}+RT}{RT^2},\qquad C_P=-\frac{v}{RT}\quad\text{(identical neutral species, }C=-\Lambda\text{)}.
 $$
 
 ## `reference_limit_terminal_pair`

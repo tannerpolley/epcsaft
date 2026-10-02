@@ -82,6 +82,17 @@ Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
 
+Properties `ReferenceTaylor` means ordinary reference-contraction and volume
+Taylor coefficients along a fixed-composition, pressure-closed base path.
+`reference_partial` supplies raw source-pressure/T/one-coordinate partials;
+`NeutralReferenceReactionDiagnostic::Derivative` holds each consumed C3/C4
+column and both terminal changes. Their meanings and bounded inventory follow
+[the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
+and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
+These standalone Properties derivatives are numerically verified on the stated
+manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
+consumers remain separate #225 work.
+
 ### Residual, ideal and state responsibilities
 
 Contributions owns the ideal-gas Helmholtz formulation and the individual residual

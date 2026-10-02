@@ -699,6 +699,12 @@ establish current public availability. Mixed-solvent MIAC does not imply a
 unique scalar osmotic coefficient. Multi-salt paths require a separately
 specified reference convention.
 
+Properties supplies the bounded higher-order reference columns in EqID:
+`reference_mixed_temperature_pressure_derivatives`, using EqID:
+`reference_single_insertion_taylor`. The [F8/F9 notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
+qualifies the stated finite-terminal derivatives and observed dilution changes.
+It does not extend reacting caloric/action consumers by implication.
+
 The retained four-molality method and its terminal comparison are EqID:
 `reference_molality_sequence` and EqID: `reference_limit_terminal_pair`.
 This finite sequence estimates a limit within its accepted case and tolerance;
