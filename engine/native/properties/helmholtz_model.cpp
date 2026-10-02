@@ -401,7 +401,7 @@ void validate_parameter_coordinate(
     const auto& parameters = model.parameters();
     const auto& values = detail::family_values(parameters, family);
     require(!indices.empty(), "parameter indices");
-    for (const auto index : indices) require(index < values.size(), "parameter index");
+    for (const auto index : indices) require(index < values.second, "parameter index");
     const bool association = family == ParameterFamily::AssociationEnergyOverK
         || family == ParameterFamily::AssociationVolume;
     const bool slope = family == ParameterFamily::KijReciprocalTemperatureSlope;
@@ -1781,7 +1781,7 @@ double HelmholtzModel::molar_density_upper_bound(
 
 std::vector<double> HelmholtzModel::active_parameter_values() const {
     std::vector<double> result;
-    for (const auto& item : active_) result.push_back(detail::family_values(parameters_, item.family)[item.indices.front()]);
+    for (const auto& item : active_) result.push_back(detail::family_values(parameters_, item.family).first[item.indices.front()]);
     return result;
 }
 

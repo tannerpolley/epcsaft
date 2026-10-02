@@ -2,7 +2,6 @@ kind	path	line	source	reason	issue
 review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	198	        for steps in range(20):	Damped Newton chart corrector	234
 review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	365	                for step in range(45):	Carbon-residual bisection	234
 review-only	analyses/2026-born-unavailable-states/scripts/newton.py	49	    for step in range(80):	Newton and line-search probe	234
-review-only	analyses/2026-born-unavailable-states/scripts/reproduce.py	363	    while True:	Parameter continuation	234
 review-only	analyses/2026-born-unavailable-states/scripts/starts.py	30	    for extent in args.extents:	Reaction-extent start search	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	81	    for index in range(65):	Born-coefficient continuation	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	85	        for step in range(30):	Augmented Newton corrector	234

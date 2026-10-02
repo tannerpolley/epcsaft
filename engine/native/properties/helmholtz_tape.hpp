@@ -16,7 +16,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
-#include <span>
+#include <utility>
 #include <vector>
 
 namespace epcsaft::detail {
@@ -39,16 +39,16 @@ enum class ParameterFamily {
 };
 constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::KijReciprocalTemperatureSlope) + 1;
 
-// The one family -> storage map, for Parameters (double) and TapeParameters (AD) alike.
+// The one family -> (pointer, size) storage view, for double and AD alike.
 template <class ParameterSet>
 auto family_values(ParameterSet& parameters, ParameterFamily family, std::size_t size = 0) {
     const auto view = [size](auto& values) {
         if constexpr (!std::is_const_v<ParameterSet>) if (size) values.resize(size);
-        return std::span(values);
+        return std::pair{values.data(), values.size()};
     };
     switch (family) {
-    case ParameterFamily::BornCDielectric: return std::span(&parameters.born_c_dielectric, 1);
-    case ParameterFamily::IonicRegionRelativePermittivity: return std::span(&parameters.ionic_region_relative_permittivity, 1);
+    case ParameterFamily::BornCDielectric: return std::pair{&parameters.born_c_dielectric, std::size_t{1}};
+    case ParameterFamily::IonicRegionRelativePermittivity: return std::pair{&parameters.ionic_region_relative_permittivity, std::size_t{1}};
     case ParameterFamily::PackingDiameter: return view(parameters.packing_diameter_angstrom);
     case ParameterFamily::DebyeHuckelDiameter: return view(parameters.debye_huckel_diameter_angstrom);
     case ParameterFamily::BornDiameter: return view(parameters.born_diameter_angstrom);
@@ -81,11 +81,11 @@ inline TapeParameters make_tape_parameters(
     for (std::size_t family = 0; family < PARAMETER_FAMILY_COUNT; ++family) {
         const auto item = static_cast<ParameterFamily>(family);
         const auto source = family_values(parameters, item);
-        const auto target = family_values(result, item, source.size());
-        std::copy(source.begin(), source.end(), target.begin());
+        const auto target = family_values(result, item, source.second);
+        std::copy_n(source.first, source.second, target.first);
     }
     for (std::size_t i = 0; i < active.size(); ++i)
-        for (const auto index : active[i].indices) family_values(result, active[i].family)[index] = coordinates[i];
+        for (const auto index : active[i].indices) family_values(result, active[i].family).first[index] = coordinates[i];
     static_cast<FixedParameters&>(result) = parameters;
     return result;
 }

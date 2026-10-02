@@ -748,7 +748,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         for (std::size_t i = 0; i < parameter_start.size(); ++i) {
             const auto& coordinate = model.active_parameters()[i];
             for (const auto index : coordinate.indices)
-                detail::family_values(parameters, coordinate.family)[index] = (1.0 - s) * parameter_start[i] + s * request.parameter_targets[i];
+                detail::family_values(parameters, coordinate.family).first[index] = (1.0 - s) * parameter_start[i] + s * request.parameter_targets[i];
         }
         return std::make_unique<HelmholtzModel>(std::move(parameters), model.active_parameters(), model.thermochemistry());
     };
