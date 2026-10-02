@@ -76,6 +76,16 @@ change updates or explicitly revalidates its mathematics, algorithms, code and
 numerical evidence together. Code behavior cannot redefine accepted doctrine;
 unresolved implementation choices remain explicit in the owning GitHub issue.
 
+## Native calculation rule
+
+All ePC-SAFT equation-of-state, equilibrium and parameter regression calculations
+run natively in C++ through the Engine, including fits, optimizers, root finds,
+Newton or corrector loops, continuation and stability searches. Python (the
+Engine package, `analyses/` and Engine tests) only declares inputs and reads
+results. Finite differences are allowed only to verify exact derivatives.
+Process-level IDAES/Pyomo models using Engine derivatives through the ASL adapter
+are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting methods.
+
 ## Execution and collaboration
 
 Complete authorized work and relevant verification without repeated permission.
