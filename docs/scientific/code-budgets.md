@@ -77,6 +77,15 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, roadmap envelope raise (#220, owner approved): with #223 and
+  #225 slice 1 delivered on branches, the measured counts reach about 21,340 total,
+  with Properties 4509, Bindings 1886 and Python 2635. The Ready designs still to
+  build (#237–#240, #225 slices 2–5, #224) project about 23,700. New hard
+  ceilings: aggregate 22000 → 24000, Properties → 4800, Equilibrium → 8800,
+  Bindings → 2100, Python → 2850; the other layers are unchanged. Each build's
+  closeout lowers the layers it touched to measured plus remaining planned
+  allowance; consolidation audits continue.
+
 - 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
   **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.
   Equilibrium is **6129 → 6054** and aggregate **20208 → 20133**; every other
