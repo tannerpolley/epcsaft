@@ -78,7 +78,7 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #237 conserved-inventory bounds closeout, measured against
-  integrated main `8999d6a2`: **199 gross added, 21 removed, +178 net runtime
+  integrated main `9bc6e902`: **199 gross added, 21 removed, +178 net runtime
   physical lines**. Main's runtime is unchanged from `edf7672e`; no ceiling
   is edited under the owner's sprint pause.
 
@@ -110,8 +110,8 @@ Budget changes must not silently change scientific scope.
   and [delivered review](../../analyses/2026-born-unavailable-states/results/inventory-bounds/review.md)
   distinguish inventory ranges from equilibrium/stability and numerical
   verification from physical validation. Separate full executable accounting is
-  334 gross added / 62 removed: the analysis consumer and two numerical/cost
-  readers add 135 and remove 41, outside shipping runtime. Independent review
+  339 gross added / 67 removed: the analysis consumer and two numerical/cost
+  readers add 140 and remove 46, outside shipping runtime. Independent review
   justified those native-call/result readers; they contain no LP or equilibrium
   iteration. This exceeds the sprint's 260-line target when analysis readers are
   included, not a hard gate, and does not change any ceiling.
