@@ -1,0 +1,79 @@
+schema_version = 2
+packet_id = "figiel-2025-chloride-activity-refit"
+packet_version = "1"
+title = "Figiel aqueous chloride stage-1 refit"
+description = "Native exact-derivative stage-1 refit under issue 209 D9. Aqueous LiCl, NaCl and KCl only. Four Na/K water/chloride k_ij and their dependent Born diameters form one feasible point, not determined estimates of this minimax; no parameter confidence intervals. Alcohol rows are report-only and several worsen. No methanol-ethanol pair is adopted."
+license_or_use_basis = "Source-traceable fixed inputs and project-derived refit parameters retained for scientific verification under the source-specific use bases below; no full paper content is included."
+tolerance_rationale = "All 156 aqueous chloride target rows meet 0.02 decade and D6 G1/G2/G5 water guards on stored parameters at 298.15 K and 1 bar. These campaign checks are numerical fitting, not physical validation or parameter confidence intervals."
+
+[[sources]]
+source_id = "figiel-yu-held-2025"
+citation = "Figiel, P.; Yu, G.; Held, C. Predicting Thermodynamic Properties of Ions in Single Solvents and in Mixed Solvents Using a Modified Born Term within the ePC-SAFT Framework. Industrial & Engineering Chemistry Research 2025, 64, 9406-9418."
+doi = "10.1021/acs.iecr.5c00475"
+use_basis = "primary equations and parameters for bounded water, methanol, and ethanol alkali-halide reference states"
+
+[[sources]]
+source_id = "nist-srd-69-water"
+citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
+use_basis = "water identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-methanol"
+citation = "NIST Chemistry WebBook, SRD 69, Methanol, CAS 67-56-1."
+use_basis = "methanol identity and molecular weight"
+
+[[sources]]
+source_id = "nist-srd-69-ethanol"
+citation = "NIST Chemistry WebBook, SRD 69, Ethanol, CAS 64-17-5."
+use_basis = "ethanol identity and molecular weight"
+
+[[domains]]
+domain_id = "figiel-298-k-1-bar"
+kind = "reported-conditions"
+temperature_min = 298.15
+temperature_max = 298.15
+temperature_unit = "kelvin"
+pressure_min = 1
+pressure_max = 1
+pressure_unit = "bar"
+ion_mole_fraction_max = 0.38
+description = "Source-defined reported-conditions domain figiel-298-k-1-bar (temperature 298.15–298.15 kelvin; pressure 1–1 bar); see the cited sources and canonical Parameters document."
+
+[[domains]]
+domain_id = "nist-water-identity"
+kind = "unknown"
+description = "Source-defined domain nist-water-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-methanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-methanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+[[domains]]
+domain_id = "nist-ethanol-identity"
+kind = "unknown"
+description = "Source-defined domain nist-ethanol-identity has no numeric range stated in the origin bundle; retain the cited source limits and do not infer a broader range."
+
+
+[[sources]]
+source_id = "issue-209-stage1-exact-refit"
+citation = "ePC-SAFT issue 209, stage-1 native exact-derivative refit, 2026-10-01"
+use_basis = "Aqueous chlorides, 0.001-4.5 mol/kg water, at 298.15 K and 100000 Pa; all acceptance rows recomputed from stored packet."
+
+[[files]]
+path = "parameters/parameters.json"
+role = "parameters"
+media_type = "application/json"
+sha256 = "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol", "issue-209-stage1-exact-refit"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Explicit coefficient units in the parameter document; hashes and provenance text are non-numeric."
+
+[[files]]
+path = "provenance/source-origin.toml"
+role = "provenance"
+media_type = "application/toml"
+sha256 = "24b422e362fca448c8f6db3b880982580ff69cd0aaafd1b6dd7cbd726fd5e31d"
+source_refs = ["figiel-yu-held-2025", "nist-srd-69-water", "nist-srd-69-methanol", "nist-srd-69-ethanol", "issue-209-stage1-exact-refit"]
+domain_refs = ["figiel-298-k-1-bar", "nist-water-identity", "nist-methanol-identity", "nist-ethanol-identity"]
+units_basis = "Explicit coefficient units in the parameter document; hashes and provenance text are non-numeric."
