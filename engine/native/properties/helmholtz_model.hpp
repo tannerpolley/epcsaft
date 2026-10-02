@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <mutex>
+#include <limits>
 #include <optional>
 #include <string>
 #include <variant>
@@ -160,8 +161,11 @@ struct DensityRoot final {
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
 struct DensityDiagnosticPoint final {
-    double molar_density = 0.0, packing_fraction = 0.0, pressure = 0.0;
-    double pressure_density_derivative = 0.0, lower = 0.0, upper = 0.0, residual = 0.0;
+    double molar_density = 0.0, lower = 0.0, upper = 0.0;
+    double packing_fraction = std::numeric_limits<double>::quiet_NaN();
+    double pressure = std::numeric_limits<double>::quiet_NaN();
+    double pressure_density_derivative = std::numeric_limits<double>::quiet_NaN();
+    double residual = std::numeric_limits<double>::quiet_NaN();
     int mechanical_sign = 0;
     bool linked = false, declared = true;
     std::string cause, stop;

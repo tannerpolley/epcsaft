@@ -415,7 +415,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             while (hi - lo > density_tolerance || std::log(hi / lo) > log_tolerance) {
                 if (value(low) == 0.0 || value(high) == 0.0) break;
                 double rho = lo + 0.5 * (hi - lo);
-                if (!(rho > lo && rho < hi)) { stop = "adjacent_densities"; break; }
+                if (!(rho > lo && rho < hi))
+                    throw std::runtime_error("density diagnostic bracket unresolved at adjacent densities");
                 const auto point = evaluate(rho);
                 if ((value(point) > 0.0) == (value(low) > 0.0)) { lo = rho; low = point; }
                 else { hi = rho; high = point; }
@@ -460,18 +461,18 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         auto crossings = [&](const std::vector<ScanPoint>& cells) {
             std::vector<DensityDiagnosticPoint> roots;
             try {
-            for (std::size_t i = 0; i < cells.size(); ++i) {
-                const auto& node = cells[i];
-                if (node.point.pressure == pressure) {
-                    auto record = row(node.density, node.point, node.density, node.density, false);
-                    record.stop = "exact_numerical_zero";
-                    roots.push_back(record);
+                for (std::size_t i = 0; i < cells.size(); ++i) {
+                    const auto& node = cells[i];
+                    if (node.point.pressure == pressure) {
+                        auto record = row(node.density, node.point, node.density, node.density, false);
+                        record.stop = "exact_numerical_zero";
+                        roots.push_back(record);
+                    }
+                    if (i && node.linked && (cells[i - 1].point.pressure - pressure) * (node.point.pressure - pressure) < 0.0) {
+                        const auto& low = cells[i - 1];
+                        roots.push_back(refine_crossing(low.density, low.point, node.density, node.point, false));
+                    }
                 }
-                if (i && node.linked && (cells[i - 1].point.pressure - pressure) * (node.point.pressure - pressure) < 0.0) {
-                    const auto& low = cells[i - 1];
-                    roots.push_back(refine_crossing(low.density, low.point, node.density, node.point, false));
-                }
-            }
             } catch (const std::runtime_error&) {
                 if (!roots.empty()) result.pressure_roots = std::move(roots);
                 throw;
