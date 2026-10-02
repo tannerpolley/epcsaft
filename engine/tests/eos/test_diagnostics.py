@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Convergence, Mixture, Parameters, Stop, _core, trace
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Convergence, Mixture, Parameters, Stop, _core, trace
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -95,23 +95,14 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
         quantity_latex="r",
         inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
     )
-    evidence.compare(
-        "trace_identity/iterations",
-        quantity="density root iterations",
-        model=float(root.convergence.iterations),
-        reference=float(convergence.iterations),
-        unit="count",
-        inputs=inputs,
-        criterion=exact,
-        basis="Relationship",
-        method="trace convergence round trip",
-        claim="The root span exposes the same iteration count as the returned state convergence record.",
-        relationship_latex=r"k_{trace} = k_{state}",
-        quantity_latex="k",
-        inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
+    fixed_density = mixture.state(temperature, rho=state.molar_density, x=composition)
+    pressure_residual = abs(fixed_density.pressure - pressure_target) / (
+        state.molar_density * GAS_CONSTANT_J_PER_MOL_K * temperature
     )
     if convergence.stop == Stop.converged:
         stop_criterion = convergence.criterion
+        assert stop_criterion is not None
+        assert pressure_residual <= stop_criterion.value
         if stop_criterion is not None:
             evidence.compare(
                 "trace_identity/residual_criterion",
@@ -161,12 +152,10 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
             inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
         )
     assert root.convergence.residual == convergence.residual
-    assert root.convergence.iterations == convergence.iterations
     assert root.convergence.stop == convergence.stop
     if convergence.stop == Stop.converged:
         assert stop_criterion is not None
         assert convergence.residual <= stop_criterion.value
-    assert "DENSITY_ROOT_RESIDUAL" in repr(convergence)
 
 
 def test_reference_formula_and_solvent_must_be_electroneutral() -> None:

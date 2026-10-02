@@ -116,6 +116,36 @@ Budget changes must not silently change scientific scope.
   iteration. This exceeds the sprint's 260-line target when analysis readers are
   included, not a hard gate, and does not change any ceiling.
 
+- 2026-10-02, #239 density-diagnostic closeout against integrated main
+  `8999d6a2`: **402 gross added, 40 removed, +362 net runtime lines**.
+  Core 917, Contributions 1547, Properties 4763, Equilibrium 6921,
+  Parameter regression 2398, Surface 532, Bindings 1922 and Python 2707;
+  aggregate **21707**. Per-layer gross/removed/net: Properties **294/40/+254**,
+  Bindings **36/0/+36**, Python including stubs **72/0/+72**; every other
+  layer **0/0/0**. Properties includes the already merged #225 slice 1.
+  The sprint pause from #248 applies; no numeric ceiling is changed here.
+  The additions report stable and unstable pressure crossings, slope-zero
+  brackets, declared-grid crossings separately from adaptive discoveries,
+  finite-evaluation boundaries and unresolved brackets in the existing
+  density owner. Pressure and slope evaluation, adaptive slope search,
+  packing admission and ordinary positive-slope closure remain shared.
+  The removed density lines are replaced scan/evaluation blocks, not removed
+  physical checks. Delivered-review corrections retain already resolved roots
+  by connected-partition bracket ownership, rather than re-refining and
+  replacing them; exact sampled zeros survive early exits. The shared slope
+  search reports its active bracket on failure. These corrections add 17 net
+  lines; the measured gross is two lines above the design's 400-line gross
+  ceiling.
+  The owner-directed sprint pause applies rather than removing these required
+  diagnostics or compressing the existing search. Review checks this growth. Bindings and Python transport explicit inputs and results;
+  they perform no root, spinodal or domain iteration. Batch 12 retires its
+  Python root/bisection/doubling loops and seven corresponding allowlist rows.
+  Numerical tests and retained before/after tables establish qualification
+  separately from these counts. The independent
+  [delivered review](reviews/issue-239-delivered-review.md) returned Supported
+  after the required partial-result and failure-cause corrections, with no
+  remaining required findings.
+
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still
   counts every layer and prints FAIL rows, but exits successfully while
