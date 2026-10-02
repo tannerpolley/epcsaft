@@ -363,14 +363,14 @@ not a PC-SAFT formulation or a compatibility proof.
 | Retained owner | Use in this proposal |
 |---|---|
 | [Scientific context](../../CONTEXT.md) | Shared ownership, one wheel/driver, explicit inputs, mathematical versus empirical validity. |
-| [Current implementation plan](../../implementation-plan.md) | Current availability and qualification gaps; unchanged by this proposal. |
+| [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23) and its leaf issues | Current availability and qualification gaps; unchanged by this proposal. |
 | [Equations](../../../../engine/docs/equations.md) and [full EOS](../../../../engine/docs/science/full-eos.md) | Canonical equations, units, corrections, source conventions and dielectric forms. |
 | [Algorithms](../../../../engine/docs/science/algorithms.md) | Implicit states, derivative and density requirements. |
 | [Packet contract](../../../../data/docs/packet-contract.md) | Reusable parameter/observation ownership, provenance and immutable records. |
 | [Association study](../../../../analyses/2026-association-native-comparison/notebook.qmd) | Bounded neutral fixed-volume values/first/second-derivative evidence at snapshot `0ae7806`. |
-| [ADR 0003](../../adr/0003-explicit-parameter-inputs.md), [ADR 0006](../../adr/0006-retire-residual-polar.md) | Explicit physics and current residual-polar exclusion. |
+| [ADR 0003](../../adr/0003-explicit-parameter-inputs.md), [ADR 0011](../../adr/0011-optional-dipole-dipole-term.md), [ADR 0006](../../adr/0006-retire-residual-polar.md) | Explicit physics, optional Gross–Vrabec dipole–dipole admission and remaining multipole exclusions. |
 
 The complete-model selectable object, compatibility levels, proposed records,
-implementation mapping and five-step sequence are **design synthesis** from
+implementation mapping are **design synthesis** from
 these sources and the user's intended workflow. They are not recommendations
 quoted from one paper, accepted new equations, or a completed pre-build review.
