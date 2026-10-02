@@ -14,8 +14,6 @@ review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	509	    ro
 review-only	analyses/2026-heat-capacity-fitting/scripts/reference.py	103	polynomial = np.polynomial.Polynomial.fit(T - 360, [ideal_cp(t) for t in T], 6).convert()	IAPWS heat-capacity polynomial fit	234
 review-only	analyses/2026-idaes-asl-adapter/scripts/run.py	1061	    for _ in range(100):	Engine pressure-cap density bisection	234
 review-only	analyses/2026-mea-parameter-estimation/results/analysis/neutral-mea-water/scripts/run.py	304	    for _ in range(12):	MEA-water Gauss-Newton parameter fit	234
-review-only	analyses/2026-polar-dipole/scripts/compare.py	80	    for factor in (1.0, 1.05, 1.1):	Python multistart around native fits	234
-review-only	analyses/2026-pure-saturation-regression/scripts/replay_propane_fit.py	71	    for start in starts:	Python multistart around native fits	234
 review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	13	from scipy.optimize import linprog, least_squares, OptimizeWarning	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	51	"            warnings.simplefilter(""ignore"", OptimizeWarning)"	Chart bounds and residual corrector	234
