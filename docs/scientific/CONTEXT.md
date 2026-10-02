@@ -399,3 +399,12 @@ confirmation.
 | `analyses/reproduction/2026-eos-literature-handoff` | Deferred |
 | `analyses/reproduction/2026-khudaida` | Deferred |
 | `analyses/reproduction/2026-rezaee` | Deferred |
+
+Declared equilibrium starts means caller-supplied initial physical guesses or full
+compiled coordinates for one unchanged thermodynamic problem (ALG-EQUILIBRIUM).
+`EquilibriumStart` carries those guesses; `EquilibriumWorkLimits` bounds attempts,
+optimizer iterations and elapsed seconds; `EquilibriumStartsResult` records ordered
+attempts, residual-bearing results, initialization causes, consumed work and the
+first admitted index. `DriverLimits` passes the remaining work into the existing
+Ipopt driver. These names describe inputs, quantities and operations, not new
+thermodynamic models.

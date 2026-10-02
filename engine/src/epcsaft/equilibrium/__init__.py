@@ -19,9 +19,13 @@ from .problem import (
     dew_point,
     problem_from_mapping,
     solve_equilibrium,
+    solve_equilibrium_starts,
     solved_state_actions,
 )
 
+EquilibriumStart = _core.EquilibriumStart
+EquilibriumWorkLimits = _core.EquilibriumWorkLimits
+EquilibriumStartsResult = _core.EquilibriumStartsResult
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
@@ -50,6 +54,9 @@ __all__ = (
     "Discover",
     "EOS_STANDARD_STATE_ID",
     "EquilibriumResult",
+    "EquilibriumStart",
+    "EquilibriumWorkLimits",
+    "EquilibriumStartsResult",
     "Feed",
     "Free",
     "MassFractions",
@@ -78,6 +85,7 @@ __all__ = (
     "dew_point",
     "problem_from_mapping",
     "solve_equilibrium",
+    "solve_equilibrium_starts",
     "solved_state_actions",
     "solved_state_first_actions",
 )

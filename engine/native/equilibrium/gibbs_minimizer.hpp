@@ -5,6 +5,7 @@
 #include <IpTNLP.hpp>
 
 #include <cstddef>
+#include <chrono>
 #include <optional>
 #include <string>
 #include <utility>
@@ -34,6 +35,10 @@ struct NlpShape final {
 // `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true);
 bool supports_split_seed(const CompiledSystem& compiled);
+inline bool admitted_packing_seed(double eta) {
+    return std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
+        && eta <= policy::PACKING_FRACTION_CEILING.value;
+}
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
@@ -59,13 +64,44 @@ BranchCheck check_density_branches(
     const std::vector<double>& anchors, bool initial, core::Scope& scope
 );
 
+struct DriverLimits final {
+    std::size_t iterations;
+    std::chrono::steady_clock::time_point deadline;
+    mutable std::size_t consumed = 0;
+    bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
+};
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates
+    const std::vector<double>& coordinates, const DriverLimits* limits = nullptr
 );
+
+// Declared seeds carry no thermodynamic declarations: all share the one problem.
+struct EquilibriumStart final {
+    std::vector<double> coordinates, amounts;
+    std::vector<std::vector<double>> compositions;
+    std::vector<std::optional<double>> packing_fractions;
+    std::optional<double> temperature, pressure;
+    std::optional<EquilibriumResult> previous;
+};
+struct EquilibriumWorkLimits final {
+    std::optional<std::size_t> attempts, iterations, attempt_iterations;
+    std::optional<double> seconds, attempt_seconds;
+};
+struct EquilibriumStartsResult final {
+    std::optional<std::size_t> selected;
+    std::vector<std::optional<EquilibriumResult>> results;
+    std::vector<std::string> causes;
+    std::vector<double> attempt_seconds;
+    std::size_t iterations = 0;
+    double seconds = 0.0, overrun_seconds = 0.0;
+    bool budget_exhausted = false;
+};
+EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
+    const EquilibriumProblem& problem, const std::vector<EquilibriumStart>& starts,
+    const EquilibriumWorkLimits& limits);
 
 // ---------------------------------------------------------------- continuation
 
@@ -145,7 +181,7 @@ SensitivityInfo inspect_sensitivity(
 class GibbsMinimizer final : public Ipopt::TNLP {
 public:
     GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
-                   core::Scope* scope = nullptr);
+                   core::Scope* scope = nullptr, const DriverLimits* limits = nullptr);
     bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
@@ -186,6 +222,8 @@ public:
     const std::vector<double>& constraint_multipliers() const noexcept {
         return constraint_multipliers_;
     }
+    const std::optional<PointEvaluation>& last_rows() const noexcept { return rows_; }
+    std::vector<double> last_classified() const { return rows_ && prepared_ ? compiled_.classified_residuals(*prepared_, rows_->values) : std::vector<double>{}; }
     Ipopt::SolverReturn status() const noexcept { return status_; }
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
@@ -237,6 +275,7 @@ private:
     std::size_t hessian_calls_ = 0;
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
+    const DriverLimits* limits_ = nullptr;
 };
 
 }  // namespace epcsaft::equilibrium

@@ -3,7 +3,6 @@ review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	198	   
 review-only	analyses/2026-born-unavailable-states/scripts/global_scan.py	365	                for step in range(45):	Carbon-residual bisection	234
 review-only	analyses/2026-born-unavailable-states/scripts/newton.py	49	    for step in range(80):	Newton and line-search probe	234
 review-only	analyses/2026-born-unavailable-states/scripts/reproduce.py	363	    while True:	Parameter continuation	234
-review-only	analyses/2026-born-unavailable-states/scripts/starts.py	30	    for extent in args.extents:	Reaction-extent start search	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	81	    for index in range(65):	Born-coefficient continuation	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	85	        for step in range(30):	Augmented Newton corrector	234
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	173	    while finite_state(model, temperature, finite_upper, budget) is not None:	Finite-state density bound doubling	234
@@ -15,7 +14,6 @@ review-only	analyses/2026-heat-capacity-fitting/scripts/reference.py	103	polynom
 review-only	analyses/2026-idaes-asl-adapter/scripts/run.py	1061	    for _ in range(100):	Engine pressure-cap density bisection	234
 review-only	analyses/2026-polar-dipole/scripts/compare.py	80	    for factor in (1.0, 1.05, 1.1):	Python multistart around native fits	234
 review-only	analyses/2026-pure-saturation-regression/scripts/replay_propane_fit.py	71	    for start in starts:	Python multistart around native fits	234
-review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	13	from scipy.optimize import linprog, least_squares, OptimizeWarning	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	51	"            warnings.simplefilter(""ignore"", OptimizeWarning)"	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	52	            result = linprog(	Chart bounds and residual corrector	234

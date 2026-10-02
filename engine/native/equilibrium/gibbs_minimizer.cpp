@@ -333,9 +333,9 @@ ResidualSummary summarize_residuals(
 }  // namespace
 
 GibbsMinimizer::GibbsMinimizer(
-    const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope
+    const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope, const DriverLimits* limits
 )
-    : compiled_(compiled), start_(std::move(start)), scope_(scope) {}
+    : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits) {}
 
 bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
@@ -354,6 +354,7 @@ bool GibbsMinimizer::get_bounds_info(
     Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
     Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u
 ) {
+    if (limits_ && limits_->expired()) return false;
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
@@ -378,6 +379,7 @@ bool GibbsMinimizer::get_bounds_info(
         }
         lp.changeObjectiveSense(ObjSense::kMaximize);
         for (std::size_t i = 0; i < species; ++i) {  // an unbounded or failed program keeps the box
+            if (limits_ && limits_->expired()) return false;
             lp.changeColCost(static_cast<HighsInt>(i), 1.0);
             const bool solved = upper[i] != 0.0 && lp.run() == HighsStatus::kOk
                 && lp.getModelStatus() == HighsModelStatus::kOptimal;
@@ -386,6 +388,7 @@ bool GibbsMinimizer::get_bounds_info(
             lp.changeColCost(static_cast<HighsInt>(i), 0.0);
         }
     }
+    if (limits_ && limits_->expired()) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
         for (const std::size_t i : phase.support) {
@@ -434,6 +437,7 @@ std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
 }
 
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
+    if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     std::vector<double> candidate(x, x + n);
     if (!prepared_.has_value() || prepared_->point != candidate) {
         try {
@@ -455,6 +459,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         constraint_hessian_.reset();
         ++work_.prepared_points;
     }
+    if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     return *prepared_;
 }
 
@@ -598,12 +603,13 @@ bool GibbsMinimizer::intermediate_callback(
     const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
 ) {
     iterations_ = static_cast<std::size_t>(iter);
+    if (limits_) limits_->consumed = std::max(limits_->consumed, iterations_);
     regularization_size_ = regularization_size;
     if (scope_ != nullptr) scope_->probe("ipopt_iteration",
         std::vector<double>{inf_pr, inf_du, mu, d_norm, regularization_size,
                             alpha_pr, alpha_du, static_cast<double>(ls_trials)},
         static_cast<std::uint32_t>(iter));
-    return true;
+    return !limits_ || (!limits_->expired() && iterations_ < limits_->iterations);
 }
 
 void GibbsMinimizer::finalize_solution(
@@ -643,22 +649,27 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
-    std::vector<double> initial, EquilibriumResult result, core::Scope& scope
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope, const DriverLimits* limits = nullptr
 ) {
     const double row_tolerance = compiled.problem.row_tolerance;
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
     // A pinned square system has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
         * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
-    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope);
+    const auto expired = [&] { return limits && limits->expired(); };
+    if (expired()) { result.message = "elapsed work budget exhausted before driver"; return result; }
+    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, initial, &scope, limits);
     const auto [initialized, returned] = run_ipopt(nlp, inner_tolerance,
-        static_cast<int>(policy::EQUILIBRIUM_MAX_ITERATIONS.value), 0.0, true, 1.0 / compiled.feed_total);
+        static_cast<int>(limits ? std::min(limits->iterations,
+            static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
+        limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
+        true, 1.0 / compiled.feed_total);
     const Ipopt::SolverReturn status = nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
     const bool fatal = initialized != Ipopt::Solve_Succeeded
         || (returned <= Ipopt::Invalid_Problem_Definition && returned != Ipopt::Invalid_Number_Detected);
     // The one accepted-outcome rule: only a non-error stop polishes, classifies its rows and publishes.
-    const bool non_error = !fatal && (status == Ipopt::SUCCESS
+    const bool non_error = !expired() && !fatal && (status == Ipopt::SUCCESS
         || status == Ipopt::STOP_AT_ACCEPTABLE_POINT || status == Ipopt::STOP_AT_TINY_STEP
         || status == Ipopt::FEASIBLE_POINT_FOUND || status == Ipopt::RESTORATION_FAILURE
         || status == Ipopt::MAXITER_EXCEEDED || status == Ipopt::CPUTIME_EXCEEDED);
@@ -667,7 +678,16 @@ EquilibriumResult run_driver(
         : "; OptimizeTNLP returned ") + application_return_name(returned);
     const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     std::vector<double> point = nlp->solution();
-    if (point.empty()) point = boundary_start(compiled);
+    if (point.empty()) point = initial;
+    if (expired()) {
+        result.iterations = nlp->iterations(); result.evaluations = nlp->evaluations();
+        if (nlp->last_rows()) {
+            result.residuals = nlp->last_rows()->values;
+            result.classified_residuals = nlp->last_classified();
+            result.convergence.residual = maximum_abs(result.residuals);
+        }
+        result.message = "elapsed work budget exhausted after driver"; clear_state(result); return result;
+    }
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows inside the physical composition cutoff.
@@ -677,13 +697,15 @@ EquilibriumResult run_driver(
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
-    if (non_error && compiled.is_square()) {
+    if (non_error && !expired() && compiled.is_square()
+        && (!limits || nlp->iterations() < limits->iterations)) {
         auto at = compiled.prepare(full, true);
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         ++polish_evaluations;
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value); ++step) {
+            if (expired()) break;
             const double defect = maximum_abs(rows_before);
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
             if (!(defect > 0.0) || !std::isfinite(defect)) break;
@@ -697,6 +719,7 @@ EquilibriumResult run_driver(
             // Bounded damping retains raw contraction and the physical cutoff.
             // Best-point selection below protects the returned classified residual.
             for (const double alpha : {1.0, 0.5, 0.25}) {
+                if (expired()) break;
                 std::vector<double> candidate = full;
                 for (Eigen::Index i = 0; i < n; ++i)
                     candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
@@ -850,7 +873,7 @@ EquilibriumResult run_driver(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
-    const bool accepted = non_error && topology_ok && (result.convergence.stop == core::Stop::converged
+    const bool accepted = !expired() && non_error && topology_ok && (result.convergence.stop == core::Stop::converged
         || (result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
     if (!accepted) {
         result.success = false;
@@ -928,6 +951,7 @@ EquilibriumResult run_driver(
         clear_state(result);
         return result;
     }
+    if (expired()) { result.success = false; result.message = "elapsed work budget exhausted"; clear_state(result); return result; }
     result.rows = compiled.rows;
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
@@ -1076,10 +1100,119 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     return result;
 }
 
+EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
+    const EquilibriumProblem& problem, const std::vector<EquilibriumStart>& starts,
+    const EquilibriumWorkLimits& limits) {
+    using Clock = std::chrono::steady_clock;
+    const auto begun = Clock::now();
+    const auto deadline_at = [](Clock::time_point now, const std::optional<double>& seconds) {
+        if (seconds && (!std::isfinite(*seconds) || *seconds < 0.0))
+            throw std::invalid_argument("work seconds must be finite and nonnegative");
+        return seconds ? now + std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(*seconds))
+                       : Clock::time_point::max();
+    };
+    const auto deadline = deadline_at(begun, limits.seconds);
+    deadline_at(begun, limits.attempt_seconds);  // validate even an unattempted set
+    EquilibriumStartsResult out;
+    out.results.resize(starts.size()); out.causes.assign(starts.size(), "unattempted");
+    out.attempt_seconds.resize(starts.size(), 0.0);
+    const auto exhausted = [&] { return Clock::now() >= deadline
+        || (limits.iterations && out.iterations >= *limits.iterations); };
+    if (!exhausted()) {
+        auto compiled = compile_problem(model, problem);
+        core::Scope scope("solve_equilibrium_starts");
+        for (std::size_t i = 0; i < starts.size(); ++i) {
+            if (exhausted() || (limits.attempts && i >= *limits.attempts)) { out.budget_exhausted = true; break; }
+            const auto& seed = starts[i];
+            const auto attempt_begun = Clock::now();
+            DriverLimits work{std::min(limits.attempt_iterations.value_or(static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)),
+                limits.iterations ? *limits.iterations - out.iterations : std::numeric_limits<std::size_t>::max()),
+                std::min(deadline, deadline_at(Clock::now(), limits.attempt_seconds))};
+            if (work.iterations == 0 || work.expired()) { out.causes[i] = "attempt budget exhausted"; continue; }
+            try {
+                auto initial = seed.coordinates;
+                const auto check = [](bool ok) { if (!ok) throw std::invalid_argument("initialization: invalid declared seed"); };
+                check((initial.empty() && !seed.previous) || (seed.compositions.empty() && seed.packing_fractions.empty()
+                    && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())));
+                if (initial.empty()) {
+                    auto seeded = compiled;
+                    if (seed.previous) {
+                        check(seed.previous->phase_count == problem.phases.size() && seed.previous->success);
+                        initial = seed.previous->coordinates;
+                        check(initial.size() == compiled.unknown_count());
+                    }
+                    check(seed.compositions.empty() || seed.compositions.size() == compiled.problem.phases.size());
+                    check(seed.packing_fractions.empty() || seed.packing_fractions.size() == compiled.problem.phases.size());
+                    check(seed.amounts.empty() || seed.amounts.size() == compiled.problem.phases.size());
+                    bool complete = true;
+                    for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
+                        auto& phase = seeded.problem.phases[p];
+                        if (!seed.compositions.empty() && !seed.compositions[p].empty()) phase.composition_guess = seed.compositions[p];
+                        if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
+                        check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
+                        check(!phase.packing_guess || admitted_packing_seed(*phase.packing_guess));
+                        if (seed.previous) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
+                        complete = complete && !phase.composition_guess.empty() && phase.packing_guess.has_value();
+                    }
+                    if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
+                    if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
+                    if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
+                    if (initial.empty()) initial = complete ? seeded.generic_point() : boundary_start(seeded, false);
+                    const auto offsets = compiled.phase_offsets();
+                    for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
+                        const auto& phase = seeded.problem.phases[p];
+                        for (std::size_t j = 0; j < phase.composition_guess.size(); ++j) initial[offsets[p] + j] = std::log(phase.composition_guess[j]);
+                        auto cursor = offsets[p] + phase.support.size();
+                        if (phase.is_free()) { if (!seed.amounts.empty()) initial[cursor] = seed.amounts[p]; ++cursor; }
+                        if (phase.packing_guess) initial[cursor] = std::log(*phase.packing_guess);
+                    }
+                    auto cursor = compiled.primal_size - compiled.free_intensive_count;
+                    if (problem.temperature.free) { if (!seed.previous && (seed.temperature || !problem.temperature.absent)) initial[cursor] = seeded.problem.temperature.value; ++cursor; }
+                    if (!seed.previous && problem.pressure.free && (seed.pressure || !problem.pressure.absent)) initial[cursor] = seeded.problem.pressure.value;
+                }
+                check(initial.size() == compiled.unknown_count() && all_numeric(initial));
+                const auto offsets = compiled.phase_offsets();
+                for (std::size_t p = 0; p < offsets.size(); ++p) {
+                    const auto& phase = compiled.problem.phases[p]; auto cursor = offsets[p];
+                    for (std::size_t j = 0; j < phase.support.size(); ++j) {
+                        const double x = std::exp(initial[cursor++]);
+                        check(x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0);
+                    }
+                    if (phase.is_free()) check(initial[cursor++] >= 0.0);
+                    check(admitted_packing_seed(std::exp(initial[cursor])));
+                }
+                for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j) check(initial[j] > 0.0);
+                auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), structural_result(compiled, scope), scope, &work)
+                                                : structural_result(compiled, scope);
+                if (work.expired()) { result.success = false; result.message += "; elapsed work budget exhausted"; clear_state(result); }
+                if (result.success) {
+                    BranchCheck branch;
+                    try { branch = check_density_branches(model, compiled, result, {}, true, scope); }
+                    catch (const std::exception& error) { branch.message = error.what(); }
+                    if (!branch.accepted || work.expired()) {
+                        result.success = false; result.message = work.expired() ? "elapsed work budget exhausted in admission" : branch.message; clear_state(result);
+                    }
+                }
+                out.causes[i] = result.message; out.results[i] = std::move(result);
+                if (out.results[i]->success) out.selected = i;
+            } catch (const std::exception& error) { out.causes[i] = error.what(); }
+            out.iterations += work.consumed;
+            out.attempt_seconds[i] = std::chrono::duration<double>(Clock::now() - attempt_begun).count();
+            if (out.selected) break;
+        }
+    } else out.budget_exhausted = true;
+    out.budget_exhausted = out.budget_exhausted || (!out.selected && exhausted());
+    out.seconds = std::chrono::duration<double>(Clock::now() - begun).count();
+    out.overrun_seconds = limits.seconds ? std::max(0.0, out.seconds - *limits.seconds) : 0.0;
+    if (limits.attempt_seconds) for (const double t : out.attempt_seconds)
+        out.overrun_seconds = std::max(out.overrun_seconds, t - *limits.attempt_seconds);
+    return out;
+}
+
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& request,
-    const std::vector<double>& coordinates
+    const std::vector<double>& coordinates, const DriverLimits* limits
 ) {
     core::Scope scope("solve_equilibrium");
     CompiledSystem compiled = compile_problem(model, request);
@@ -1088,7 +1221,7 @@ EquilibriumResult solve_equilibrium_from_coordinates(
     if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates)) {
         throw std::invalid_argument("continuation coordinates do not match the compiled layout");
     }
-    return run_driver(model, compiled, coordinates, std::move(result), scope);
+    return run_driver(model, compiled, coordinates, std::move(result), scope, limits);
 }
 
 }  // namespace epcsaft::equilibrium

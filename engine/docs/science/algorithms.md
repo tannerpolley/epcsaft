@@ -365,6 +365,22 @@ is indefinite there, and Ipopt cycled through restoration to the iteration budge
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
+Caller-declared ordered starts share one thermodynamic problem and the same driver.
+A start contains physical composition, packing, amount and free-intensive guesses,
+a previous result, or a complete compiled-coordinate vector. Complete vectors
+skip generated initialization. Physical guesses fill omitted coordinates with
+existing generic/boundary seeds without reactive speciation, then replace every
+supplied coordinate, including reacting packing and the free-pressure seed.
+Invalid initialization is an individual attempt cause. The first available state
+meeting the native row, topology and density-branch checks is selected; subsequent
+starts remain unattempted. No best-residual or Gibbs comparison selects another root.
+Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
+ordered search. Remaining iterations and time enter the shared Ipopt options and
+callbacks; polish and final admission check the same deadline. A bounded inner
+kernel may finish after its deadline: elapsed time and overrun remain visible,
+and a post-deadline state is unavailable. This finite search establishes neither
+uniqueness nor global stability. Ordinary solve initialization retains its rules.
+
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root, an anchored closure establishes local uniqueness, and the corrected density

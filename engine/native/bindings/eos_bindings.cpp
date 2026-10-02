@@ -296,6 +296,7 @@ void register_eos(py::module_& module) {
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("observables"), py::arg("directions"),
              py::arg("anchor_density") = std::nullopt)
+        .def("packing_fraction_coefficient", &HelmholtzModel::packing_fraction_coefficient)
         .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("anchor_density") = std::nullopt)
