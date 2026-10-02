@@ -21,6 +21,7 @@ IdealInterval = _core.IdealInterval
 ThermochemistryRecord = _core.ThermochemistryRecord
 ThermochemistryStatus = _core.ThermochemistryStatus
 DensityBranch = _core.DensityBranch
+DensityDiagnostics = _core.DensityDiagnostics
 ParameterFamily = _core.ParameterFamily
 ActiveParameter = _core.ActiveParameter
 GAS_CONSTANT_J_PER_MOL_K = _core.GAS_CONSTANT_J_PER_MOL_K
@@ -134,6 +135,21 @@ class Mixture:
             anchor.molar_density if anchor else None,
         )
 
+    def density_diagnostics(
+        self, T: float, P: float, *, x: Sequence[float], nodes: Sequence[float],
+        density_tolerance: float, log_tolerance: float,
+        max_evaluations: int, max_seconds: float, adaptive: bool,
+        finite_upper: float, evaluation_order: _core.DerivativeOrder,
+        finite_anchor: float | None = None,
+    ) -> DensityDiagnostics:
+        return self._model.density_diagnostics(
+            T, P, x, nodes, density_tolerance, log_tolerance, max_evaluations,
+            max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
+        )
+
+    def molar_density_upper_bound(self, T: float, *, x: Sequence[float]) -> float:
+        return self._model.molar_density_upper_bound(T, x)
+
     def counters(self) -> _core.SweepCounters:
         return self._model.counters()
 
@@ -217,6 +233,21 @@ class Pure:
         return self._model.pressure_actions(
             T, P, (1.0,), _branch(phase), observables, native, None,
         )
+
+    def density_diagnostics(
+        self, T: float, P: float, *, nodes: Sequence[float],
+        density_tolerance: float, log_tolerance: float,
+        max_evaluations: int, max_seconds: float, adaptive: bool,
+        finite_upper: float, evaluation_order: _core.DerivativeOrder,
+        finite_anchor: float | None = None,
+    ) -> DensityDiagnostics:
+        return self._model.density_diagnostics(
+            T, P, (1.0,), nodes, density_tolerance, log_tolerance, max_evaluations,
+            max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
+        )
+
+    def molar_density_upper_bound(self, T: float) -> float:
+        return self._model.molar_density_upper_bound(T, (1.0,))
 
     def saturation(self, T: float) -> Problem:
         from .equilibrium import Amounts, Free, Phase, Pinned, Problem
