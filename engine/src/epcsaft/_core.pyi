@@ -338,6 +338,39 @@ class State:
     density_branch: DensityBranch
     stable_root_count: Optional[int]
 
+class DensityDiagnosticPoint:
+    molar_density: float
+    packing_fraction: float
+    pressure: float
+    pressure_density_derivative: float
+    lower: float
+    upper: float
+    residual: float
+    mechanical_sign: int
+    linked: bool
+    declared: bool
+    cause: str
+    stop: str
+
+class DensityDiagnosticBracket:
+    lower: float
+    upper: float
+    lower_residual: float
+    upper_residual: float
+
+class DensityDiagnostics:
+    samples: list[DensityDiagnosticPoint]
+    pressure_roots: list[DensityDiagnosticPoint]
+    spinodals: list[DensityDiagnosticPoint]
+    declared_brackets: list[DensityDiagnosticBracket]
+    unresolved: list[DensityDiagnosticPoint]
+    evaluation_order: DerivativeOrder
+    finite_domain: Optional[DensityDiagnosticPoint]
+    geometric_cap: float
+    declared_crossings: int
+    evaluations: int
+    stop: str
+
 class SweepCounters:
     forward: int
     reverse: int
@@ -358,6 +391,12 @@ class HelmholtzModel:
                          directions: Sequence[PressureActionDirection],
                          anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
+    def molar_density_upper_bound(self, temperature: float, composition: Sequence[float]) -> float: ...
+    def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
+                            nodes: Sequence[float], density_tolerance: float, log_tolerance: float,
+                            max_evaluations: int, max_seconds: float, adaptive: bool,
+                            finite_anchor: Optional[float], finite_upper: float,
+                            evaluation_order: DerivativeOrder) -> DensityDiagnostics: ...
     def counters(self) -> SweepCounters: ...
     def reset_counters(self) -> None: ...
 

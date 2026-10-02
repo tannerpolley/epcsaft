@@ -1889,6 +1889,7 @@ double HelmholtzModel::molar_density_upper_bound(
     double temperature,
     const std::vector<double>& mole_fractions
 ) const {
+    core::Scope scope("molar_density_upper_bound");
     const double coefficient = packing_fraction_coefficient(temperature, mole_fractions);
     require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
     return policy::CLOSE_PACKING_FRACTION.value / coefficient;

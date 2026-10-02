@@ -78,8 +78,8 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #240 straight physical-parameter continuation, measured against
-  integrated main `f593e803`: **103 gross runtime lines added, 60 removed, +43 net**.
-  Aggregate is **21,345 → 21,388**, with **2,612** lines below the recorded
+  integrated main `875526d0`: **103 gross runtime lines added, 60 removed, +43 net**.
+  Aggregate is **21,689 → 21,732**, with **2,268** lines below the recorded
   **24,000** envelope. No numeric ceiling changes. The sprint pause below
   applies; counts and duplication remain review subjects.
 
@@ -87,13 +87,13 @@ Budget changes must not silently change scientific scope.
   |---|---:|---:|---:|---:|---:|
   | Core | 917 | 2 | 2 | 0 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 |
-  | Properties | 4509 | 29 | 36 | -7 | 4502 |
+  | Properties | 4763 | 29 | 36 | -7 | 4756 |
   | Equilibrium | 6921 | 38 | 5 | +33 | 6954 |
   | Parameter regression | 2398 | 13 | 13 | 0 | 2398 |
   | Surface | 532 | 0 | 0 | 0 | 532 |
-  | Bindings | 1886 | 5 | 1 | +4 | 1890 |
-  | Python | 2635 | 16 | 3 | +13 | 2648 |
-  | Aggregate | 21345 | 103 | 60 | +43 | 21388 |
+  | Bindings | 1914 | 5 | 1 | +4 | 1918 |
+  | Python | 2697 | 16 | 3 | +13 | 2710 |
+  | Aggregate | 21689 | 103 | 60 | +43 | 21732 |
 
   The existing declared-branch controller retains predictor, corrector, retry,
   topology and anchored-density checks. Trial models use immutable base records
@@ -102,13 +102,43 @@ Budget changes must not silently change scientific scope.
   tape preparation and parameter-fitting callers. Shared coordinate admission
   removes repeated slot validation while checked indexing and tied-value checks
   remain. Python declares global Born coordinates without component targets;
-  native code owns their physical chart and exact map. Above-soft counts retain these exact chains and physical-value
-  transport, not a second solver. Gross growth is below the 270-line task target.
+  native code owns their physical chart and exact map. Above-soft counts retain
+  these exact chains and physical-value transport, not a second solver. Gross growth is below the 270-line task target.
   Tests, analysis input/output readers, derivative verification and retained
   tables are outside runtime counts and contain no displaced iterative method.
   The [numerical qualification](../../analyses/2026-born-unavailable-states/results/native-parameter/summary.md)
   records Born columns, full actions, manufactured exchange, historical-point
   agreement, finite branch limits and unchanged declared-solve work.
+
+- 2026-10-02, #239 density-diagnostic closeout against integrated main
+  `8999d6a2`: **402 gross added, 40 removed, +362 net runtime lines**.
+  Core 917, Contributions 1547, Properties 4763, Equilibrium 6921,
+  Parameter regression 2398, Surface 532, Bindings 1922 and Python 2707;
+  aggregate **21707**. Per-layer gross/removed/net: Properties **294/40/+254**,
+  Bindings **36/0/+36**, Python including stubs **72/0/+72**; every other
+  layer **0/0/0**. Properties includes the already merged #225 slice 1.
+  The sprint pause from #248 applies; no numeric ceiling is changed here.
+  The additions report stable and unstable pressure crossings, slope-zero
+  brackets, declared-grid crossings separately from adaptive discoveries,
+  finite-evaluation boundaries and unresolved brackets in the existing
+  density owner. Pressure and slope evaluation, adaptive slope search,
+  packing admission and ordinary positive-slope closure remain shared.
+  The removed density lines are replaced scan/evaluation blocks, not removed
+  physical checks. Delivered-review corrections retain already resolved roots
+  by connected-partition bracket ownership, rather than re-refining and
+  replacing them; exact sampled zeros survive early exits. The shared slope
+  search reports its active bracket on failure. These corrections add 17 net
+  lines; the measured gross is two lines above the design's 400-line gross
+  ceiling.
+  The owner-directed sprint pause applies rather than removing these required
+  diagnostics or compressing the existing search. Review checks this growth. Bindings and Python transport explicit inputs and results;
+  they perform no root, spinodal or domain iteration. Batch 12 retires its
+  Python root/bisection/doubling loops and seven corresponding allowlist rows.
+  Numerical tests and retained before/after tables establish qualification
+  separately from these counts. The independent
+  [delivered review](reviews/issue-239-delivered-review.md) returned Supported
+  after the required partial-result and failure-cause corrections, with no
+  remaining required findings.
 
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still

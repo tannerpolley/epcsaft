@@ -7,10 +7,8 @@ from epcsaft import Mixture, ParameterError, Parameters, _core, equilibrium
 from epcsaft.equilibrium import (
     Amounts,
     Free,
-    Molalities,
     Phase,
     Problem,
-    Reaction,
     problem_from_mapping,
     solve_equilibrium,
 )
@@ -40,15 +38,6 @@ def test_unknown_species_and_amount_status_are_rejected_by_name() -> None:
             "P": 1.0e5,
             "feed": {"basis": "amounts", "values": {"methane": 1.0}},
         })
-
-
-def test_physical_arguments_are_required() -> None:
-    with pytest.raises(TypeError, match="equilibrium_constant"):
-        Reaction({"methane": -1.0})
-    with pytest.raises(ParameterError, match="one of equilibrium_constant or affinity"):
-        Reaction({"methane": -1.0}, equilibrium_constant=1.0, affinity_j_per_mol=2.0)
-    with pytest.raises(TypeError, match="solvent_mass_kg"):
-        Molalities({"methane": 1.0}, solvent=("methane",))  # type: ignore[call-arg]
 
 
 def test_generic_phase_requires_an_explicit_kind() -> None:

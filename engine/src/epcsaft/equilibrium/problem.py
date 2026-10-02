@@ -442,17 +442,7 @@ def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) 
     return _core.compile_problem(model._model, native)
 
 
-def solved_state_actions(
-    compiled: _core.CompiledSystem,
-    central: _core.EquilibriumResult,
-    request: _core.SolvedStateActionRequest,
-) -> _core.SolvedStateActionBatch:
-    """Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.
-
-    Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments
-    (active width, native units); a free T or P entry must be zero. No solve is repeated.
-    """
-    return _core.solved_state_actions(compiled, central, request)
+solved_state_actions = _core.solved_state_actions
 
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
