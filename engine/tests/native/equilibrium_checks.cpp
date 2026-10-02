@@ -445,14 +445,15 @@ bool check_weighted_hessian_gradient_ladder(
                     const bool pressure_entry = compiled.problem.pressure.free
                         && (row == compiled.primal_size - 1 || column == compiled.primal_size - 1);
                     const double coordinate_scale = pressure_entry ? compiled.problem.pressure.value : 1.0;
-                    const double absolute = pressure_entry ? 1.0e-12 / coordinate_scale : tolerance;
-                    const double allowance = absolute + tolerance * std::abs(centered);
+                    const double absolute = pressure_entry ? 1.0e-12 / coordinate_scale : 0.0;
+                    const double allowance = pressure_entry ? absolute + tolerance * std::abs(centered)
+                        : tolerance * std::max(1.0, std::abs(centered));
                     const bool verdict = std::abs(hessian[index] - centered) <= allowance;
                     recording_support::compare(
                         comparison_id.c_str(), "weighted_lagrangian_hessian", "coordinate",
                         hessian[index], centered, inputs, "Relationship",
                         "weighted_hessian_gradient_finite_difference",
-                        "nabla2_L=d(weighted_gradient)/d(coordinate)", "absolute_plus_relative",
+                        "nabla2_L=d(weighted_gradient)/d(coordinate)", pressure_entry ? "reference_scale" : "reference_or_one",
                         absolute, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
                         "\\nabla^2\\mathcal L", "\\mathbf{z},\\lambda,\\Delta z",
                         "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
@@ -2244,7 +2245,7 @@ void check_s10() {
                     recording_support::field("T_K", phase_point.temperature), recording_support::field("lambda", 0.7),
                     recording_support::field("P_scale_Pa", compiled.problem.pressure.value)}),
                 "Relationship", "pressure-row-identity", "H_Pw = lambda V/(RT)",
-                "absolute_plus_relative", 1.0e-12, 1.0e-8, agrees);
+                "reference_scale", 1.0e-12, 1.0e-8, agrees);
             CHECK(agrees);
         }
         if (variant == 5) {
@@ -3407,6 +3408,7 @@ std::vector<double> active_values(const Fixture& fixture) {
 // Independent reference: a fresh nonlinear solve at every stencil corner, mapped physically.
 struct Reference final {
     std::vector<std::optional<double>> value;   // per observable, absent when a corner was rejected
+    std::vector<double> rounding;              // rounding propagated through the stencil
     std::vector<std::string> rejected;          // corner failure names
 };
 
@@ -3419,6 +3421,7 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
         if (fixture.scaled) scale[j] = magnitude(fixture.directions[j], compiled, values);
     Reference result;
     result.value.assign(fixture.observables.size(), 0.0);
+    result.rounding.assign(fixture.observables.size(), 0.0);
     double product = 1.0;
     for (const double m : scale) product *= m;
     if (product == 0.0) return result;
@@ -3452,9 +3455,16 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
             request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order - 1));
             const auto batch = epcsaft::equilibrium::solved_state_actions(shifted_compiled, solved, request);
             for (std::size_t i = 0; i < result.value.size(); ++i) {
-                if (batch.results[i].status == SolvedStateActionStatus::Available && batch.results[i].action)
-                    *result.value[i] += sign * *batch.results[i].action / (2.0 * h);
-                else result.value[i].reset();
+                const auto& action = batch.results[i];
+                if (action.status == SolvedStateActionStatus::Available && action.action && result.value[i]) {
+                    *result.value[i] += sign * *action.action / (2.0 * h);
+                    result.rounding[i] += 32.0 * std::numeric_limits<double>::epsilon() * std::abs(*action.action) / (2.0 * h);
+                } else {
+                    result.value[i].reset();
+                    if (action.status != SolvedStateActionStatus::Available)
+                        result.rejected.push_back(std::string("preceding action: ") + epcsaft::equilibrium::solved_state_status_name(action.status)
+                            + " " + action.diagnostic_message.value_or("no diagnostic"));
+                }
             }
         }
         return result;
@@ -3492,7 +3502,11 @@ Reference reference(const Fixture& fixture, const CompiledSystem& compiled, cons
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
             const auto analytic = fixture.analytic ? fixture.analytic(fixture.observables[i], problem.temperature.value) : std::nullopt;
             const auto value = analytic.has_value() ? analytic : mapped(fixture.observables[i], model, solved);
-            if (value.has_value() && result.value[i].has_value()) *result.value[i] += weight * *value;
+            if (value.has_value() && result.value[i].has_value()) {
+                *result.value[i] += weight * *value;
+                result.rounding[i] += 32.0 * std::numeric_limits<double>::epsilon() * std::abs(*value)
+                    * product / std::pow(2.0 * multiplier, static_cast<double>(order));
+            }
             else result.value[i].reset();
         }
     }
@@ -3553,8 +3567,13 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
         request.directions.assign(fixture.directions.begin(), fixture.directions.begin() + static_cast<std::ptrdiff_t>(order));
         const auto batch = epcsaft::equilibrium::solved_state_actions(compiled, central, request);
         const auto scales = action_term_scale(fixture, compiled, central, order);
+        // The ionic cp A2 stencil needs larger nodes to resolve its ~1e-7 A3
+        // above fresh-solve rounding, without changing the action criterion.
+        const std::array<double, 3> ionic_third_steps{2.0, 1.0, 0.5};
+        const double* steps = order == 3 && fixture.label.rfind("electrolyte", 0) == 0
+            ? ionic_third_steps.data() : LADDER[order - 1];
         std::vector<Reference> ladder;
-        for (const double multiplier : LADDER[order - 1]) ladder.push_back(reference(fixture, compiled, central, order, multiplier));
+        for (std::size_t s = 0; s < 3; ++s) ladder.push_back(reference(fixture, compiled, central, order, steps[s]));
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
             const auto& item = batch.results[i];
             const auto id = std::string(group) + "/" + fixture.label + "/" + epcsaft::equilibrium::solved_state_observable_id(item.observable)
@@ -3564,7 +3583,7 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 recording_support::field("status", status_field(batch, i)), recording_support::field("unit", item.unit),
                 recording_support::field("value", epcsaft::core::optional_number(item.value)),
                 recording_support::field("scaled", fixture.scaled ? 1U : 0U),
-                recording_support::field("ladder", std::vector<double>(LADDER[order - 1], LADDER[order - 1] + 3)),
+                recording_support::field("ladder", std::vector<double>(steps, steps + 3)),
                 recording_support::field("rank", batch.diagnostics.rank.has_value() ? std::to_string(*batch.diagnostics.rank) : "absent"),
                 recording_support::field("condition", epcsaft::core::optional_number(batch.diagnostics.condition_estimate)),
                 recording_support::field("linear_residual", epcsaft::core::optional_number(batch.diagnostics.maximum_linear_residual)),
@@ -3585,7 +3604,7 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             const auto& coarse = ladder[0].value[i];
             const auto& mid = ladder[1].value[i];
             const auto& fine = ladder[2].value[i];
-            const double h1 = LADDER[order - 1][0], h2 = LADDER[order - 1][1], h3 = LADDER[order - 1][2];
+            const double h1 = steps[0], h2 = steps[1], h3 = steps[2];
             const bool structural = fine.has_value() && mid.has_value() && *fine == 0.0 && *mid == 0.0;
             const bool complete = fine.has_value() && mid.has_value() && coarse.has_value();
             // A finest step whose difference grows again is rounding-bounded (the corner
@@ -3596,6 +3615,23 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
             if (complete && noise_bounded) extrapolated = *mid + (*mid - *coarse) / (h1 * h1 / (h2 * h2) - 1.0);
             else if (fine.has_value() && mid.has_value()) extrapolated = *fine + (*fine - *mid) / (h2 * h2 / (h3 * h3) - 1.0);
             const double criterion = structural ? STRUCTURAL_ZERO : CRITERION[order - 1] * scales[i];
+            const double ratio_coarse = h1 * h1 / (h2 * h2), ratio_fine = h2 * h2 / (h3 * h3);
+            double reference_uncertainty = nan;
+            if (complete) {
+                const double coarser = *mid + (*mid - *coarse) / (ratio_coarse - 1.0);
+                const double finer = *fine + (*fine - *mid) / (ratio_fine - 1.0);
+                reference_uncertainty = noise_bounded
+                    ? std::abs(*coarse - *mid) / (ratio_coarse - 1.0)
+                        + (ratio_coarse * ladder[1].rounding[i] + ladder[0].rounding[i]) / (ratio_coarse - 1.0)
+                    : std::abs(finer - coarser)
+                        + (ratio_fine * ladder[2].rounding[i] + ladder[1].rounding[i]) / (ratio_fine - 1.0);
+                if (structural && *coarse == 0.0) reference_uncertainty = 0.0;
+            }
+            const bool resolved = reference_uncertainty <= criterion;
+            const bool cp_third = fixture.label.rfind("electrolyte", 0) == 0 && order == 3 && item.observable.kind == Kind::PhaseProperty
+                && (item.observable.property == PropertyObservable::ResidualIsobaricHeatCapacity
+                    || item.observable.property == PropertyObservable::TotalIsobaricHeatCapacity);
+            const bool nonzero_signal = !cp_third || std::abs(extrapolated.value_or(0.0)) > criterion;
             const double expected_rate = (h1 * h1 - h2 * h2) / (h2 * h2 - h3 * h3);
             bool refined = complete && (noise_bounded ? std::abs(*coarse - *mid) : std::abs(*fine - *mid)) <= 2.0 * criterion;
             double rate = nan;
@@ -3604,7 +3640,7 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 refined = rate >= 0.5 * expected_rate && rate <= 2.0 * expected_rate;
             }
             const bool verdict = item.status == SolvedStateActionStatus::Available && item.action.has_value() && extrapolated.has_value()
-                && std::abs(action - *extrapolated) <= criterion;
+                && std::abs(action - *extrapolated) <= criterion && resolved && nonzero_signal;
             // The best-step relative agreement is the falsifying strength independent of the
             // absolute floor: a row with |R| <= c would pass a zero action on the criterion alone.
             double best_step = nan;
@@ -3619,7 +3655,9 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 recording_support::field("absolute_floor", !structural && std::abs(extrapolated.value_or(0.0)) <= CRITERION[order - 1] ? 1U : 0U),
                 recording_support::field("best_step_relative_agreement", best_step),
                 recording_support::field("term_scale", scales[i]),
-                recording_support::field("allowance", criterion)});
+                recording_support::field("allowance", criterion),
+                recording_support::field("reference_uncertainty", reference_uncertainty),
+                recording_support::field("signal_over_allowance", std::abs(extrapolated.value_or(0.0)) / criterion)});
             recording_support::compare(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
                 ladder_inputs, "Relationship", "centered-solve-ladder", "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
                 "strict_absolute", criterion, 0.0,

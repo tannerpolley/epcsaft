@@ -3500,6 +3500,12 @@ PropertyActionReference property_action_reference(
         }
     };
     expand(expand, 0);
+    epcsaft::core::Capture capture;
+    const auto central_state = [&] {
+        if constexpr (std::is_same_v<Direction, DensityActionDirection>) return model.state(T, mechanical, x);
+        else return model.state_at_pressure(T, mechanical, x, branch);
+    }();
+    const auto central_signature = p4_take_signature(capture, record, T);
     const auto& last = directions.back();
     const std::vector<Direction> lower(directions.begin(), directions.end() - 1);
     const auto values = [&](double h) {
@@ -3517,12 +3523,20 @@ PropertyActionReference property_action_reference(
             if constexpr (std::is_same_v<Direction, DensityActionDirection>) return shifted.state(t, q, y);
             else return shifted.state_at_pressure(t, q, y, branch);
         }();
+        CHECK(p4_take_signature(capture, record, t) == central_signature);
         for (std::size_t i = 0; i < x.size(); ++i) CHECK((x[i] > 0.0) == (y[i] > 0.0));
         if constexpr (!std::is_same_v<Direction, DensityActionDirection>) {
-            const auto center = model.state_at_pressure(T, mechanical, x, branch);
-            CHECK(state.density_branch == center.density_branch && state.stable_root_count == center.stable_root_count);
+            CHECK(state.density_branch == central_state.density_branch && state.stable_root_count == central_state.stable_root_count);
+            CHECK(std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0);
             CHECK(std::abs(state.pressure - q) / (state.molar_density * GAS_CONSTANT_J_PER_MOL_K * t)
                 <= policy::DENSITY_ROOT_RESIDUAL.value);
+            const auto residuals = p2_association_residuals(t, 1.0 / state.molar_density, y,
+                shifted.parameters(), state.site_fractions);
+            for (const auto residual : residuals) CHECK(std::isfinite(residual) && std::abs(residual) <= 2.0e-13);
+            const auto conditioning = p2_association_conditioning(t, state.molar_density, y,
+                shifted.parameters(), state.site_fractions);
+            CHECK(conditioning.rank == state.site_fractions.size()
+                && conditioning.pivot_ratio > policy::ASSOCIATION_JACOBIAN_CONDITION.value);
         }
         std::vector<double> values;
         if (lower.empty()) for (const auto obs : observables) values.push_back(p4_state_value(state, obs));
@@ -3535,7 +3549,9 @@ PropertyActionReference property_action_reference(
         }
         return values;
     };
-    constexpr double steps[] = {0.01, 0.005, 0.0025};
+    // Higher-action subtraction at 0.0025 is density-root rounding dominated;
+    // these nodes resolve cp/cv without crossing support or thermal pieces.
+    constexpr double steps[] = {0.1, 0.05, 0.025};
     std::vector<std::vector<double>> rungs;
     std::vector<double> rounding;
     for (const double h : steps) {
@@ -3553,7 +3569,12 @@ PropertyActionReference property_action_reference(
         const double refined = (4.0 * rungs[2][i] - rungs[1][i]) / 3.0;
         const double coarser = (4.0 * rungs[1][i] - rungs[0][i]) / 3.0;
         result.value.push_back(refined);
-        result.uncertainty.push_back(std::abs(refined - coarser) + rounding[i]);
+        // Polynomial ideal cp/cv has identically zero higher chart terms.
+        // An exactly constant preceding action subtracts exactly: its nonzero
+        // value must not manufacture a rounding floor for a zero stencil.
+        const bool exact_zero = result.scale[i] == 0.0 && rungs[0][i] == 0.0
+            && rungs[1][i] == 0.0 && rungs[2][i] == 0.0;
+        result.uncertainty.push_back(exact_zero ? 0.0 : std::abs(refined - coarser) + rounding[i]);
     }
     return result;
 }
@@ -3607,15 +3628,18 @@ void electrolyte_parameter_actions() {
                 const auto stencil = [&](double h) {
                     const auto value = [&](double shift) {
                         std::vector<double> delta(active.size(), 0.0);
-                        delta[coordinate] = shift;
+                        delta[coordinate] = order == 3 ? shift : 0.0;
                         const HelmholtzModel rebuilt(p4_shifted_parameters(parameters, active, delta), active);
-                        const auto action = rebuilt.density_actions(T, rho, x, observables, lower).results.front();
+                        const auto action = rebuilt.density_actions(order == 2 ? T + shift : T, rho, x, observables, lower).results.front();
                         CHECK(action.status == PropertyActionStatus::Available && action.action);
                         return *action.action;
                     };
                     return (value(h) - value(-h)) / (2.0 * h);
                 };
-                const double coarse = stencil(0.04), middle = stencil(0.02), fine = stencil(0.01);
+                // A 0.01 suppression step loses the small T/parameter action
+                // to cancellation in the preceding action; resolve it at larger nodes.
+                const double step = coordinate == 3 && order == 3 ? 4.0 : 0.4;
+                const double coarse = stencil(step), middle = stencil(step / 2.0), fine = stencil(step / 4.0);
                 const double rich_coarse = (4.0 * middle - coarse) / 3.0;
                 reference = (4.0 * fine - middle) / 3.0;
                 uncertainty = std::abs(reference - rich_coarse);

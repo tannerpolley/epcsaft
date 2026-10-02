@@ -2216,7 +2216,7 @@ void check_ionic_addition_enthalpy() {
     row.branch = DensityBranch::Liquid;
     CoordinateSet coordinates;
     coordinates.coordinates = {
-        {ParameterFamily::DispersionEnergyOverK, {{0}}, 353.95, 1.0, 300.0, 400.0},
+        {ParameterFamily::BornDiameter, {{1}}, parameters.born_diameter_angstrom[1], 1.0, 2.0, 5.0},
         reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::B, T)};
     coordinates.coordinates[1].origin = -2000.0;
     coordinates.coordinates[1].lower = -3000.0;
@@ -2233,9 +2233,11 @@ void check_ionic_addition_enthalpy() {
         const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false);
         CHECK(source.status == equilibrium::SolvedStateActionStatus::Available && source.enthalpy.size() == 3);
         const auto state = rebuilt.state(T, solved.molar_densities[0], solved.mole_fractions);
-        double h = state.residual_enthalpy;
+        // Accumulate the independently composed oracle in extended precision:
+        // the trace ionic increment subtracts ~3e5 J endpoints.
+        long double h = state.residual_enthalpy;
         for (std::size_t i = 0; i < 3; ++i)
-            h += solved.mole_fractions[i] * (source.enthalpy[i] + gauge * parameters.charge_number[i]);
+            h += static_cast<long double>(solved.mole_fractions[i]) * (source.enthalpy[i] + gauge * parameters.charge_number[i]);
         return solved.amounts[0] * h;
     };
     const auto feed_h = [&](const HelmholtzModel& rebuilt) {
@@ -2269,7 +2271,7 @@ void check_ionic_addition_enthalpy() {
             const HelmholtzModel rebuilt(coordinates.apply(parameters, u), coordinates.active_parameters(), record);
             return (endpoint(rebuilt, changed[0].final_problem) - endpoint(rebuilt, changed[0].problem)) / amount - feed_h(rebuilt);
         };
-        const double step = column == 0 ? 0.05 : 1.0;
+        const double step = column == 0 ? 0.1 : 1.0;
         const auto rungs = ladder(composed, step);
         const double finer = ladder(composed, step * 0.5).fine;
         const double R1 = (4.0 * rungs.fine - rungs.coarse) / 3.0;
