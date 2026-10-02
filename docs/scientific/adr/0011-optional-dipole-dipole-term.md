@@ -33,7 +33,7 @@ polar model is only meaningful together with its own parameters.
   `polarizability_scaling` and `correlation_integral_parameter`. Neither set
   feeds the other equation, and they are never translated into each other.
 - **Where the equation lives.** The Contributions layer owns it, in
-  `dipolar_helmholtz`, using the equations cited in [equations](../../engine/docs/equations.md#dipolar_helmholtz).
+  `dipolar_helmholtz`, using the equations cited in [equations](../../../engine/docs/equations.md#dipolar_helmholtz).
   It shares η, σ_i and ε_i with dispersion on the same tape.
 - **Combining rules.** ε_ij = √(ε_iε_j) without k_ij (source p. 1196). k_ij
   remains a dispersion correction only.
@@ -57,5 +57,5 @@ for composition derivatives above first order along the direction of an absent
 dipolar species.
 
 Numerical evidence and the model/parameter comparison live in
-[analyses/2026-polar-dipole](../../analyses/2026-polar-dipole/README.md) and
+[analyses/2026-polar-dipole](../../../analyses/2026-polar-dipole/README.md) and
 `engine/tests/eos/test_dipolar.py`.

@@ -1,7 +1,10 @@
 # Mitsos-Barton and Perdomo HELD2 duality crosswalk
 
 Date: 2026-07-31
-Scope: primary-source theorem audit against the current HELD2 evidence requirements.
+Scope: primary-source theorem audit against the historical HELD2 controller.
+That controller is retired. Current claim meaning is owned by
+[the equilibrium formulation](../formulation.md) and
+[ALG-EQUILIBRIUM](../../science/algorithms.md#alg-equilibrium).
 
 Sources read and visually checked:
 
@@ -35,11 +38,10 @@ guarantee the global TPD minimum and recommends a deterministic global solver
 as future strengthening.
 
 [Inference] The paper closes a proof-provenance gap but does not upgrade the
-current finite HELD2 controller to a global phase-stability proof. The current
-`globality_certificate="not_guaranteed"` and
-`root_completeness="not_proven"` contracts are required. Step 4, Step 5,
-Step 8, and Step 9 need scope labels that prevent their finite or local
-quantities from being read as Mitsos-Barton theorem-level bounds.
+historical finite HELD2 controller to a global phase-stability proof.
+Its `globality_certificate="not_guaranteed"` and
+`root_completeness="not_proven"` fields bounded the finite and local quantities
+in that controller; they are historical result identities.
 
 ## 1. What Mitsos and Barton prove
 
@@ -86,7 +88,7 @@ guarantee identification of the global minimum. Multiple starts only increase
 reliability. Section 6, PDF pp. 16-17, proposes a reliable deterministic global
 solver as future work.
 
-## 3. Repository consequences
+## 3. Historical controller mapping
 
 [Inference] A finite, independently recertified negative TPD state remains a
 valid one-sided instability witness: finding one feasible state below the feed
@@ -117,19 +119,16 @@ refines roots under finite scan and subdivision controls. Its result must not
 be described as exhaustive root enumeration while
 `root_completeness="not_proven"` remains the evidence status.
 
-## 4. Applied requirement changes
+## Historical result labels
 
-The implementation and specification preserve these independent statements:
+The retired controller distinguished these result meanings:
 
 1. `negative_witness_found`: a recertified feasible negative TPD state exists;
 2. `finite_search_completed_no_negative_witness`: every declared finite search
    completed without such a witness;
-3. `global_stability_proved`: reserved for a future route that satisfies the
+3. `global_stability_proved`: a claim requiring the
    global inner-minimization and dual-equality hypotheses; and
 4. `not_adjudicated`: the required evidence was not completed.
 
-Current HELD2 results never emit item 3. Structured diagnostics identify the
-scope of Step-4 bounds, Step-5 local values, the Step-8 restricted master, and
-the Step-9 finite-candidate gap. These labels change no solver decision or
-numerical tolerance; they prevent a stronger scientific interpretation than
-the primary sources support.
+The historical HELD2 results never emitted item 3. These identities preserve
+interpretation of retained results and confer no current execution authority.

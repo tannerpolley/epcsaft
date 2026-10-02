@@ -30,11 +30,7 @@ not sufficient implementation handoffs:
 - P5 did not state which integrated freshness, route-equivalence, availability
   and equivalent-work checks close Properties.
 
-The implementation plan now contains one concise Resolved/Build/Check/Stop
-handoff for every Properties row and marks P1 planning active. P1 is verify-first
-and begins with zero runtime additions. P2–P4 remain explicitly design-gated;
-P5 remains verify-only. The stale current-queue C3 state was also corrected to
-match its qualified milestone and record.
+Planning and delivery are owned by [P1 issue #14](https://github.com/tannerpolley/ePC-SAFT/issues/14).
 
 The `c_p^r` conditioning question is resolved without a new tolerance: the
 central value is available only for finite positive
@@ -60,21 +56,11 @@ Both final ladder steps satisfy
 ethane fixed-density stress state `(280 K, 3000 mol/m3)`, `D=0.0916154` and the
 finite `c_p^r=181.677 J/(mol K)` is deliberately not a general accuracy claim;
 at `(280 K, 4000 mol/m3)`, `D=-0.0777101` and `c_p^r` is unavailable. These
-probes justify the handoff cases and availability rule only; the worker must
-implement retained comparison rows and run them from the final P1 wheel.
+probes justify the handoff cases and availability rule only.
 
-Disposition: [P1 delivery issue #14](https://github.com/tannerpolley/ePC-SAFT-greenfield/issues/14)
-publishes the identified-revision adoption decision, exact cases, ladders,
-criteria, change budget, commands, evidence and stop rules for a Luna max
-worker. Fresh independent pre-Build review is the remaining Design Ready gate.
-No later Properties implementation is authorized until its own named design
-gate and prerequisites are complete.
-
-## Evidence limits and next action
+## Evidence limits
 
 The historical F1 correction remains valid preserved evidence only for its
 recorded inputs and wheel. This review does not establish current-wheel caloric
 agreement, settle P2–P4 scientific choices, qualify any Properties milestone,
-or authorize Equilibrium work. Next, publish and independently review the P1
-issue from the roadmap handoff; then run its smallest caloric falsifiers before
-changing runtime code.
+or authorize Equilibrium work.
