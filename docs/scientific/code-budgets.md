@@ -88,7 +88,12 @@ Budget changes must not silently change scientific scope.
   analytic packing-parameter derivative. Reference refusal, coordinate order,
   shape, free T/P columns, pinned fractions and feed scaling stay with their
   existing definitions. The original 1.53–1.91 times per-call cost is accepted
-  by the owner; no speedup is claimed.
+  by the owner. Separate installed-build measurements under changing shared
+  host load gave 1.92–2.35 times the baseline cost (about 0.1–0.4 ms per call);
+  they do not isolate algorithm cost as closely as the interleaved study.
+  The independent review returned Supported, with no required code correction,
+  and recommends owner acknowledgment of that higher observed range. No
+  speedup is claimed.
 
   Closeout lowers the Equilibrium hard ceiling **7650 → 7575**, measured 6054
   plus the **1521-line remaining shared roadmap allowance** from the integrated
