@@ -1,21 +1,25 @@
 """Analytic conserved inventories in #237; these bounds do not impose equilibrium."""
 
 import math
+from itertools import combinations
+from typing import Any
 
-from epcsaft import Mixture
+from epcsaft import Mixture, _core
 from epcsaft import equilibrium as eq
 from tests.native_inputs import ETHANE, parameters, same
 
 
-def compiled(feed, reaction, support=None):
-    model = Mixture(parameters((ETHANE,) * len(feed)))
+def compiled(feed: dict[str, float], reaction: dict[str, float], support: list[str] | None = None
+             ) -> tuple[Mixture, _core.CompiledSystem]:
+    model = Mixture(parameters((ETHANE,) * len(feed),
+                    [("k_ij", pair, 0.0) for pair in combinations(range(len(feed)), 2)]))
     problem = eq.Problem(phases=[eq.Phase("L", kind="liquid", support=support)],
                          T=300.0, P=1e5, feed=eq.Amounts(feed),
                          reactions=[eq.Reaction(reaction, equilibrium_constant=1.0)])
     return model, eq.compile_problem(model, problem)
 
 
-def test_amount_fraction_and_feed_scaling(evidence):
+def test_amount_fraction_and_feed_scaling(evidence: Any) -> None:
     # n=(2-z,1-z,z), 0<=z<=1; a fraction floor shrinks this interval.
     for scale in (1.0, 7.0):
         model, c = compiled({"s0": 2*scale, "s1": scale, "s2": 0.0},
@@ -33,12 +37,14 @@ def test_amount_fraction_and_feed_scaling(evidence):
                 assert len(r.amounts_mol) == 3
                 if fraction:
                     assert r.finite_witness[-1] > 0.0
+                    assert r.log_fraction is not None
                     assert abs(r.log_fraction - math.log(value)) <= 1e-8
                 else:
+                    assert r.feed_normalized_amount is not None
                     assert abs(r.feed_normalized_amount - value/(3*scale)) <= 1e-10
 
 
-def test_empty_finite_set_and_limiting_supremum(evidence):
+def test_empty_finite_set_and_limiting_supremum(evidence: Any) -> None:
     for feed in ({"s0": 1.0, "s1": 1.0}, {"s0": 2.0, "s1": 1.0}):
         model, c = compiled(feed, {"s0": 1.0, "s1": 1.0})
         amount = eq.inventory_bounds(c, [0, 1], False, 0.0)
@@ -54,4 +60,3 @@ def test_empty_finite_set_and_limiting_supremum(evidence):
             assert empty.status == "infeasible_inventory" and empty.maximum is None
         else:
             assert empty.maximum == 0.5 and empty.finite_witness[-1] > 0.0
-
