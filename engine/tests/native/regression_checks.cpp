@@ -611,10 +611,10 @@ Ladder ladder(const Value& value, double step) {
 }
 
 bool ladder_agrees(const std::string& id, const char* quantity, double action, const Ladder& rungs, const std::string& inputs,
-                   const char* claim, const char* group) {
+                   const char* claim, const char* group, bool magnitude_scaled = false) {
     // The refined rung meets the criterion; the coarse rung may carry up to the fourfold
     // truncation of a second-order central difference.
-    const double scale = std::max(1.0, std::abs(rungs.fine));
+    const double scale = magnitude_scaled ? std::abs(rungs.fine) : std::max(1.0, std::abs(rungs.fine));
     const bool fine = agree(id + "/fine", quantity, "native", action, rungs.fine, FIRST_ORDER * scale, 0.0, inputs, claim, group);
     const bool coarse = agree(id + "/coarse", quantity, "native", action, rungs.coarse, 4.0 * FIRST_ORDER * scale, 0.0, inputs, claim, group);
     return fine && coarse;
@@ -773,6 +773,25 @@ void check_j1() {
         CHECK(prediction.status == ObservationStatus::Available);
         const auto gradient = differentiate(model, item.observation, prediction);
         CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 4);
+        if (std::string(item.name) == "vapor_methane") {
+            const double factor = 1.0 / 180.0 - 1.0 / 200.0;
+            const double reference = factor * gradient.value[1];
+            const double allowance = 1.0e-12 + 1.0e-8 * std::abs(reference);
+            CHECK(agree("r2-j1/reciprocal-temperature-factor", "dy_db", "1/K",
+                gradient.value[3], reference, allowance, 0.0,
+                fields({field("factor_per_K", factor), field("dy_dkij", gradient.value[1])}),
+                "dy/db = (1/T - 1/Tref) dy/dkij", "r2-j1"));
+            CHECK(std::abs(reference) > allowance);
+            auto at_reference = item.observation;
+            at_reference.problem.temperature = FreeValue::fixed(200.0);
+            const auto prediction_at_reference = predict(model, at_reference);
+            const auto gradient_at_reference = differentiate(model, at_reference, prediction_at_reference);
+            CHECK(prediction_at_reference.status == ObservationStatus::Available
+                && gradient_at_reference.status == ObservationStatus::Available);
+            CHECK(agree("r2-j1/reciprocal-temperature-zero", "dy_db", "1/K",
+                gradient_at_reference.value[3], 0.0, 1.0e-12, 0.0, field("T_K", 200.0),
+                "the reciprocal-temperature slope column is zero at Tref", "r2-j1"));
+        }
         for (std::size_t c = 0; c < 4; ++c) {
             const auto value = [&](double shift) {
                 auto u = u0;
@@ -788,7 +807,7 @@ void check_j1() {
             rungs.fine /= scale;
             CHECK(ladder_agrees(std::string("r2-j1/") + item.name + "/" + std::to_string(c), "dy_dtheta", gradient.value[c], rungs,
                                 fields({field("value", *prediction.value), field("unit", prediction.unit), field("u_step", 0.005)}),
-                                "the exact prediction gradient equals the rebuilt-model central difference", "r2-j1"));
+                                "the exact prediction gradient equals the rebuilt-model central difference", "r2-j1", c == 3));
         }
     }
     // The residual chain: optimizer_jacobian = sqrt(w) (dr/dy) (dy/dtheta) S diag(scale) with a tie and w != 1.
@@ -2175,6 +2194,124 @@ double addition_coordinate_gradient(const std::vector<double>& gradient, std::si
     return column == 1 ? gradient[1] + gradient[2] : gradient[column < 2 ? column : column + 1];
 }
 
+// Case I of #210, composed into the actual two-endpoint fitting observation.
+void check_ionic_addition_enthalpy() {
+    const auto parameters = properties_support::aqueous_electrolyte();
+    ThermochemistryRecord record;
+    record.standard_pressure = 1.0e5;
+    record.component_intervals = {
+        {{200.0, 500.0, true, true, {IdealPolynomial{{33.59}, 298.15, -241826.0, 188.83}, 1.0e5}}}, {}, {}};
+    constexpr double T = 298.15, P = 1.0e5, amount = 0.2;
+    auto initial = equilibrium_support::flash(3);
+    initial.temperature = FreeValue::fixed(T);
+    initial.pressure = FreeValue::fixed(P);
+    initial.feed.values = {1.0, 1.0e-6, 1.0e-6};
+    initial.source_reference = NeutralReferenceDeclaration{0, {0.0, 1.0, 1.0}, 1.0};
+    initial.reactions = {{"H2O=Na++Cl-", {-1.0, 1.0, 1.0}, std::nullopt, std::nullopt,
+        ReactionLogPolynomial{std::log(1.0e-8) + 2000.0 / T, -2000.0, 0.0, 0.0, T, 250.0, 350.0, "analytic-source"},
+        ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution}}};
+    auto final = initial;
+    final.feed.values[0] += amount;
+    auto row = addition_observation(initial, final, amount, T, P, {1.0, 0.0, 0.0});
+    row.branch = DensityBranch::Liquid;
+    CoordinateSet coordinates;
+    coordinates.coordinates = {
+        // Solvent segment count changes packing/density, rather than a Born
+        // share that nearly cancels between the ionic infinite-dilution standards.
+        {ParameterFamily::SegmentCount, {{0}}, parameters.segment_count[0], 1.0, 1.0, 1.5},
+        reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::B, T)};
+    coordinates.coordinates[1].origin = -2000.0;
+    coordinates.coordinates[1].lower = -3000.0;
+    coordinates.coordinates[1].upper = -1000.0;
+    const HelmholtzModel model(parameters, coordinates.active_parameters(), record);
+    const auto prediction = predict(model, row);
+    CHECK(prediction.status == ObservationStatus::Available && prediction.value);
+    const auto exact = differentiate_group(model, {&row}, prediction, coordinates).front();
+    CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 2);
+    const auto endpoint = [&](const HelmholtzModel& rebuilt, const EquilibriumProblem& problem, double gauge = 0.0, bool centered = false) {
+        const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
+        CHECK(solved.success);
+        const auto compiled = equilibrium::compile_problem(rebuilt, problem);
+        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false);
+        CHECK(source.status == equilibrium::SolvedStateActionStatus::Available && source.enthalpy.size() == 3);
+        const auto state = rebuilt.state(T, solved.molar_densities[0], solved.mole_fractions);
+        // Accumulate the independently composed oracle in extended precision:
+        // the trace ionic increment subtracts ~3e5 J endpoints.
+        long double h = state.residual_enthalpy;
+        // Subtract the feed enthalpy on the conserved water-equivalent basis
+        // (1, 1/2, 1/2), not total moles: H2O -> Na+ + Cl- changes N.
+        // Then (H'_final-H'_initial)/n_add is exactly the same increment,
+        // without amplifying endpoint amount/normalization rounding by 3e5 J/mol.
+        const double feed_residual = centered
+            ? rebuilt.state_at_pressure(T, P, {1.0, 0.0, 0.0}, DensityBranch::Liquid).residual_enthalpy : 0.0;
+        for (std::size_t i = 0; i < 3; ++i) {
+            const double basis = i == 0 ? 1.0 : 0.5;
+            const long double source_h = source.enthalpy[i] + gauge * parameters.charge_number[i]
+                + (centered ? basis * 241826.0 : 0.0);
+            h += static_cast<long double>(solved.mole_fractions[i]) * (source_h - basis * feed_residual);
+        }
+        return solved.amounts[0] * h;
+    };
+    const auto feed_h = [&](const HelmholtzModel& rebuilt) {
+        return rebuilt.state_at_pressure(T, P, {1.0, 0.0, 0.0}, DensityBranch::Liquid).residual_enthalpy - 241826.0;
+    };
+    const double H_initial = endpoint(model, initial), H_final = endpoint(model, final);
+    const double oracle = (H_final - H_initial) / amount - feed_h(model);
+    const double allowance = 1.0e-9 * (std::abs(H_initial) + std::abs(H_final)) / amount + 1.0e-6;
+    CHECK(agree("addition-ionic/value", "delta_h_add", "J/mol", *prediction.value, oracle, allowance, 0.0,
+        fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}),
+        "the ionic observation equals independently rebuilt endpoint and feed enthalpies", "addition-ionic"));
+    const double centered_oracle = (endpoint(model, final, 0.0, true) - endpoint(model, initial, 0.0, true)) / amount;
+    CHECK(agree("addition-ionic/conserved-basis-value", "delta_h_add", "J/mol", centered_oracle, oracle, allowance, 0.0,
+        field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}),
+        "subtracting the feed on the conserved basis preserves the two-endpoint increment", "addition-ionic"));
+    const double shifted = (endpoint(model, final, 1.0e6) - endpoint(model, initial, 1.0e6)) / amount - feed_h(model);
+    CHECK(agree("addition-ionic/charge-gauge", "delta_h_add", "J/mol", shifted, oracle, allowance, 0.0,
+        field("charge_gauge_J_per_mol", 1.0e6), "a charge-neutral increment is invariant to ion enthalpy gauge", "addition-ionic"));
+    const auto residual_endpoint = [&](const EquilibriumProblem& problem) {
+        const auto solved = equilibrium::solve_equilibrium(model, problem);
+        CHECK(solved.success);
+        return solved.amounts[0] * model.state(T, solved.molar_densities[0], solved.mole_fractions).residual_enthalpy;
+    };
+    const double reference_share = (H_final - H_initial - residual_endpoint(final) + residual_endpoint(initial)) / amount + 241826.0;
+    CHECK(truth("addition-ionic/reference-signal", "the ionic reference contribution exceeds the subtraction allowance",
+        std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
+            field("allowance_J_per_mol", allowance)}), "addition-ionic"));
+    const auto start = coordinates.start(parameters, {row}, record);
+    for (std::size_t column = 0; column < 2; ++column) {
+        const auto composed = [&](double shift) {
+            auto u = start;
+            u[column] += shift;
+            auto changed = std::vector<Observation>{row};
+            coordinates.apply(changed, u);
+            const HelmholtzModel rebuilt(coordinates.apply(parameters, u), coordinates.active_parameters(), record);
+            return (endpoint(rebuilt, changed[0].final_problem, 0.0, true)
+                - endpoint(rebuilt, changed[0].problem, 0.0, true)) / amount;
+        };
+        // 0.0025 segment-count nodes amplify endpoint/root rounding above
+        // 4e-8; use 0.04/0.02/0.01 and require Richardson resolution below it.
+        // The B optimizer coordinate has scale T=298.15 K; 0.02 means
+        // 5.963/2.9815/1.49075 K, not the unresolved 298/149/74.5 K ladder.
+        const double step = column == 0 ? 0.04 : 0.02;
+        const auto rungs = ladder(composed, step);
+        const double finer = ladder(composed, step * 0.5).fine;
+        const double R1 = (4.0 * rungs.fine - rungs.coarse) / 3.0;
+        const double R2 = (4.0 * finer - rungs.fine) / 3.0;
+        const double scale = coordinates.coordinates[column].scale;
+        const double action = exact.value[column];
+        const double reference = R2 / scale;
+        const double tolerance = 1.0e-6 * std::abs(reference);
+        const double uncertainty = std::abs(R2 - R1) / scale;
+        CHECK(truth("addition-ionic/column-refinement/" + std::to_string(column), "the rebuilt endpoint/feed derivative is resolved below its criterion",
+            uncertainty <= tolerance && std::abs(reference) > tolerance,
+            fields({field("coarse", rungs.coarse / scale), field("middle", rungs.fine / scale), field("fine", finer / scale),
+                field("uncertainty", uncertainty), field("allowance", tolerance)}), "addition-ionic"));
+        CHECK(agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
+            tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
+            "one EOS and one source-law column agree with rebuilt composed endpoint/feed differences", "addition-ionic"));
+    }
+}
+
 void check_addition_enthalpy() {
     const auto parameters = addition_parameters();
     const auto record = addition_record();
@@ -2657,6 +2794,7 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string(argv[1]) == "--electrolyte-reference") return electrolyte_reference_file(argv[2]);
     return recording_support::run(argc, argv, {
         {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
+        {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},

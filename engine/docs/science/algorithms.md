@@ -280,6 +280,36 @@ requested branch only after local uniqueness is established. That window
 does not establish uniqueness outside itself or global branch persistence;
 a failed anchor must not silently switch to an unrelated cold root.
 
+Fixed-composition density diagnostics use caller-declared, strictly increasing
+positive nodes inside the packing admission cap. They reuse the pressure and
+exact pressure-slope evaluator and the bounded adaptive slope search above.
+The declared strict pressure-crossing brackets are recorded before adaptation;
+extra adaptive samples and resolved crossings never change that count.
+Each unavailable node carries its cause and breaks connectivity. Exact node
+zeros have one owner; roots are not merged by approximate density distance.
+
+The diagnostic pressure roots include negative-slope crossings. A spinodal
+solves $P_\rho=0$ on the connected declared isotherm. Sign brackets are bisected
+with caller-declared density/log-width limits and evaluation/time budgets;
+exact numerical zeros are reported separately. Pressure residuals have units
+Pa; spinodal residuals are $P_\rho/(RT)$, dimensionless. Budget exhaustion
+retains resolved rows and the current unresolved bracket. A pressure within
+the existing reduced-residual tolerance of a spinodal is reported as an
+unresolved tangent pressure root. Negative-slope diagnostic roots do not enter
+ordinary stable-branch selection or pressure inverse actions. The inverse
+$d\rho/dP=1/P_\rho$ is singular at a spinodal. Canonical pressure, packing and
+association equations and derivative orders remain unchanged.
+
+An optional finite-domain search declares a known finite anchor, larger search
+cap and `Gradient`, `PressureSlope` or `Hessian` evaluation request. Native
+doubling and bisection retain the last finite/first unavailable densities and
+cause separately from the geometric packing cap. It reports only the first
+finite-to-unavailable transition reached from the anchor; later finite islands
+are not excluded. Reaching the declared search cap without failure means only
+that this interval remained finite. A finite-evaluation boundary is not a
+spinodal or a thermodynamic singularity by definition. These finite scans do
+not establish all roots or physical nonexistence.
+
 ## ALG-EQUILIBRIUM
 
 All admitted specifications use the one equilibrium driver required by the

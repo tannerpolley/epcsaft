@@ -346,6 +346,18 @@ only an optional Gross-Vrabec dipole-dipole residual term; other residual multip
 retired by ADR 0006, and dipolar relative permittivity is a distinct input and equation.
 
 
+`DensityDiagnostics` means a bounded fixed-temperature/composition report of
+pressure crossings, spinodals ($P_\rho=0$), declared connected cells and
+finite-evaluation brackets; [ALG-DENSITY](../../engine/docs/science/algorithms.md#alg-density)
+owns these operations. `DensityDiagnosticPoint` records SI density, packing,
+pressure and slope only for available evaluations; `cause` marks unavailable
+samples. Root brackets carry pressure residual in Pa or spinodal slope divided
+by $RT$. For `finite_domain`, only density bounds, stopping cause and
+availability cause are defined; `evaluation_order` names the consumed request.
+`DensityDiagnosticBracket` retains the original declared-cell bounds and its
+two pressure residuals in Pa. Its count excludes adaptive discoveries. These
+quantities do not assert complete root enumeration or physical validation.
+
 ## Implementation completion order
 
 The [GitHub milestones](https://github.com/tannerpolley/ePC-SAFT/milestones)

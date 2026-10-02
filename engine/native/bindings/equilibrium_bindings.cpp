@@ -254,20 +254,12 @@ void register_equilibrium(py::module_& module) {
         .value("None_", TopologyEvent::None)
         .value("PhaseDisappeared", TopologyEvent::PhaseDisappeared)
         .value("PhasesCoalesced", TopologyEvent::PhasesCoalesced);
-    py::enum_<ContinuationStop>(module, "ContinuationStop")
-        .value("reached_target", ContinuationStop::reached_target)
-        .value("initial_failure", ContinuationStop::initial_failure)
-        .value("invalid_path", ContinuationStop::invalid_path)
-        .value("singular_jacobian", ContinuationStop::singular_jacobian)
-        .value("branch_lost", ContinuationStop::branch_lost)
-        .value("phase_disappeared", ContinuationStop::phase_disappeared)
-        .value("phases_coalesced", ContinuationStop::phases_coalesced)
-        .value("left_domain", ContinuationStop::left_domain)
-        .value("infeasible", ContinuationStop::infeasible)
-        .value("nonfinite", ContinuationStop::nonfinite)
-        .value("stalled", ContinuationStop::stalled)
-        .value("step_too_small", ContinuationStop::step_too_small)
-        .value("budget_exhausted", ContinuationStop::budget_exhausted);
+    auto continuation_stops = py::enum_<ContinuationStop>(module, "ContinuationStop");
+    for (int value = static_cast<int>(ContinuationStop::reached_target);
+         value <= static_cast<int>(ContinuationStop::budget_exhausted); ++value) {
+        const auto stop = static_cast<ContinuationStop>(value);
+        continuation_stops.value(continuation_stop_name(stop), stop);
+    }
     py::class_<ContinuationOptions>(module, "ContinuationOptions")
         .def(py::init<>())
         .def_readwrite("initial_step", &ContinuationOptions::initial_step)
@@ -405,7 +397,10 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("results", &SolvedStateActionBatch::results)
         .def_readonly("diagnostics", &SolvedStateActionBatch::diagnostics);
     module.def("solved_state_actions", &solved_state_actions,
-               py::arg("compiled"), py::arg("central"), py::arg("request"));
+               py::arg("compiled"), py::arg("central"), py::arg("request"),
+               "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"
+               "Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments\n"
+               "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
     module.def("solved_state_first_actions", &solved_state_first_actions);
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
