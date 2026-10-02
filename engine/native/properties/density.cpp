@@ -365,6 +365,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     std::size_t max_evaluations, double max_seconds, bool adaptive,
     std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
 ) const {
+    core::Scope scope("density_diagnostics");
     validate_composition(composition);
     if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(pressure) || pressure <= 0.0
         || !std::isfinite(density_tolerance) || density_tolerance <= 0.0
@@ -385,7 +386,6 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         && evaluation_order != DerivativeOrder::Hessian)
         throw std::invalid_argument("finite-domain evaluation requires Gradient, PressureSlope or Hessian");
     const auto started = std::chrono::steady_clock::now();
-    core::Scope scope("density_diagnostics");
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)

@@ -77,6 +77,26 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, #239 density-diagnostic closeout against integrated main
+  `40e49c5e`: **371 gross added, 26 removed, +345 net runtime lines**.
+  Core 917, Contributions 1547, Properties 4746, Equilibrium 6921,
+  Parameter regression 2398, Surface 532, Bindings 1922 and Python 2707;
+  aggregate **21690**. Per-layer gross/removed/net: Properties **263/26/+237**,
+  Bindings **36/0/+36**, Python including stubs **72/0/+72**; every other
+  layer **0/0/0**. Properties includes the already merged #225 slice 1.
+  The sprint pause from #248 applies; no numeric ceiling is changed here.
+  The additions report stable and unstable pressure crossings, slope-zero
+  brackets, declared-grid crossings separately from adaptive discoveries,
+  finite-evaluation boundaries and unresolved brackets in the existing
+  density owner. Pressure and slope evaluation, adaptive slope search,
+  packing admission and ordinary positive-slope closure remain shared.
+  The removed density lines are replaced scan/evaluation blocks, not removed
+  physical checks. Bindings and Python transport explicit inputs and results;
+  they perform no root, spinodal or domain iteration. Batch 12 retires its
+  Python root/bisection/doubling loops and seven corresponding allowlist rows.
+  Numerical tests, retained before/after tables and independent delivered
+  review establish the stated qualification separately from these counts.
+
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still
   counts every layer and prints FAIL rows, but exits successfully while

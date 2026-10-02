@@ -137,10 +137,10 @@ class Mixture:
 
     def density_diagnostics(
         self, T: float, P: float, *, x: Sequence[float], nodes: Sequence[float],
-        density_tolerance: float = 1e-9, log_tolerance: float = 1e-14,
-        max_evaluations: int = 100000, max_seconds: float = 60.0, adaptive: bool = True,
-        finite_anchor: float | None = None, finite_upper: float = 0.0,
-        evaluation_order: _core.DerivativeOrder = _core.DerivativeOrder.PressureSlope,
+        density_tolerance: float, log_tolerance: float,
+        max_evaluations: int, max_seconds: float, adaptive: bool,
+        finite_upper: float, evaluation_order: _core.DerivativeOrder,
+        finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         return self._model.density_diagnostics(
             T, P, x, nodes, density_tolerance, log_tolerance, max_evaluations,
@@ -236,10 +236,10 @@ class Pure:
 
     def density_diagnostics(
         self, T: float, P: float, *, nodes: Sequence[float],
-        density_tolerance: float = 1e-9, log_tolerance: float = 1e-14,
-        max_evaluations: int = 100000, max_seconds: float = 60.0, adaptive: bool = True,
-        finite_anchor: float | None = None, finite_upper: float = 0.0,
-        evaluation_order: _core.DerivativeOrder = _core.DerivativeOrder.PressureSlope,
+        density_tolerance: float, log_tolerance: float,
+        max_evaluations: int, max_seconds: float, adaptive: bool,
+        finite_upper: float, evaluation_order: _core.DerivativeOrder,
+        finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         return self._model.density_diagnostics(
             T, P, (1.0,), nodes, density_tolerance, log_tolerance, max_evaluations,
