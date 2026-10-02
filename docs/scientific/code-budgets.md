@@ -101,8 +101,11 @@ Budget changes must not silently change scientific scope.
   diagnostics or compressing the existing search. Review checks this growth. Bindings and Python transport explicit inputs and results;
   they perform no root, spinodal or domain iteration. Batch 12 retires its
   Python root/bisection/doubling loops and seven corresponding allowlist rows.
-  Numerical tests, retained before/after tables and independent delivered
-  review establish the stated qualification separately from these counts.
+  Numerical tests and retained before/after tables establish qualification
+  separately from these counts. The independent
+  [delivered review](reviews/issue-239-delivered-review.md) returned Supported
+  after the required partial-result and failure-cause corrections, with no
+  remaining required findings.
 
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still
