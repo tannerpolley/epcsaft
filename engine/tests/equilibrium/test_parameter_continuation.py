@@ -26,6 +26,7 @@ def test_dispersion_path_preserves_exchange_amounts_and_compositions(evidence: A
             same(evidence, f"parameter-path/{index}/amount/{phase}", amount, 1.3, atol=1e-9, rtol=0.0)
         for species, value in enumerate(state.mole_fractions):
             same(evidence, f"parameter-path/{index}/x/{species}", value, expected[species], atol=1e-9, rtol=0.0)
+        same(evidence, f"parameter-path/{index}/rows", max(map(abs, state.residuals)), 0.0, atol=1e-10, rtol=0.0)
         assert max(map(abs, state.classified_residuals)) <= 1e-10
     compiled = eq.compile_problem(model, problem)
     observables = [_core.SolvedStateObservable(_core.SolvedStateObservableKind.PhaseAmount, phase) for phase in (0, 1)]

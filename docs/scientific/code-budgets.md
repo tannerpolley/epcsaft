@@ -77,6 +77,38 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, #240 straight physical-parameter continuation, measured against
+  integrated main `f593e803`: **96 gross runtime lines added, 57 removed, +39 net**.
+  Aggregate is **21,345 → 21,384**, with **2,616** lines below the recorded
+  **24,000** envelope. No numeric ceiling changes. The sprint pause below
+  applies; counts and duplication remain review subjects.
+
+  | Layer | Base | Gross added | Removed | Net | Final |
+  |---|---:|---:|---:|---:|---:|
+  | Core | 917 | 2 | 2 | 0 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 |
+  | Properties | 4509 | 29 | 36 | -7 | 4502 |
+  | Equilibrium | 6921 | 38 | 5 | +33 | 6954 |
+  | Parameter regression | 2398 | 13 | 13 | 0 | 2398 |
+  | Surface | 532 | 0 | 0 | 0 | 532 |
+  | Bindings | 1886 | 5 | 1 | +4 | 1890 |
+  | Python | 2635 | 9 | 0 | +9 | 2644 |
+  | Aggregate | 21345 | 96 | 57 | +39 | 21384 |
+
+  The existing declared-branch controller retains predictor, corrector, retry,
+  topology and anchored-density checks. Trial models use immutable base records
+  and fixed thermochemistry; the existing exact row series supplies the parameter
+  tangent. One pointer/size view replaces the vector-only family map, including
+  tape preparation and parameter-fitting callers. Shared coordinate admission
+  removes repeated slot validation while checked indexing and tied-value checks
+  remain. Above-soft counts retain these exact chains and physical-value
+  transport, not a second solver. Gross growth is below the 270-line task target.
+  Tests, analysis input/output readers, derivative verification and retained
+  tables are outside runtime counts and contain no displaced iterative method.
+  The [numerical qualification](../../analyses/2026-born-unavailable-states/results/native-parameter/summary.md)
+  records Born columns, full actions, manufactured exchange, historical-point
+  agreement, finite branch limits and unchanged declared-solve work.
+
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still
   counts every layer and prints FAIL rows, but exits successfully while

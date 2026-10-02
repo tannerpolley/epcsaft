@@ -102,7 +102,10 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             require(coordinate.slots.front().front() < values.second, "slot index");
             first = values.first[coordinate.slots.front().front()];
             for (const auto& slot : coordinate.slots)
-                for (const auto index : slot) require(index < values.second && values.first[index] == first, "tied values disagree");
+                for (const auto index : slot) {
+                    require(index < values.second, "slot index");
+                    require(values.first[index] == first, "tied values disagree");
+                }
         }
         result.push_back((first - coordinate.origin) / coordinate.scale);
     }
@@ -178,15 +181,8 @@ void CoordinateSet::apply(std::vector<Observation>& observations, const std::vec
 void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations,
               const std::optional<ThermochemistryRecord>& thermochemistry) {
     require(!set.coordinates.empty(), "set is empty");
-    for (const auto& coordinate : set.coordinates) {
+    for (const auto& coordinate : set.coordinates)
         require(coordinate.reaction ? coordinate.slots.empty() : !coordinate.slots.empty(), "slots");
-        if (coordinate.reaction) continue;
-        const auto values = family_values(parameters, coordinate.family);
-        for (const auto& slot : coordinate.slots) {
-            require(!slot.empty(), "slot is empty");
-            for (const auto index : slot) require(index < values.second, "slot index");
-        }
-    }
     require(set.within_bounds(set.start(parameters, observations, thermochemistry)), "start outside bounds");
     (void)HelmholtzModel(parameters, set.active_parameters());
 }

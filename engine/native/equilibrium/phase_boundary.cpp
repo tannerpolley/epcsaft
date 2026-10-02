@@ -772,7 +772,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     if (parameter_path && moves)
         return finish(std::move(result), ContinuationStop::invalid_path, "parameter path must hold intensives and resolved feed fixed");
     if (!moves && (!parameter_path || parameter_start == request.parameter_targets))
-        return finish(std::move(result), ContinuationStop::invalid_path, "no fixed intensive, resolved feed or parameter differs");
+        return finish(std::move(result), ContinuationStop::invalid_path,
+            parameter_path ? "no active parameter differs" : "no fixed intensive or resolved feed differs");
     if (parameter_path) { path.parameter_start = parameter_start; path.parameter_target = request.parameter_targets; }
 
     // Initial admission at q = 0.
