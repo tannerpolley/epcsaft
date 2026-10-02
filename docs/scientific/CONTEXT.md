@@ -77,7 +77,7 @@ capabilities rather than reproducing the native directory tree.
 | core | Common constants, parameter coordinates, numerical policy and diagnostics | Small shared foundations; no phase or application selection |
 | Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
 | Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
-| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local stability checks and solved-state actions (phase discovery deferred) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
+| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (discovery qualification pending) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
 | regression | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; native iterative work has no Python callbacks |
@@ -141,9 +141,16 @@ rather than substitute another equilibrium method.
 Runtime accepts caller-supplied physical inputs and one documented unit system;
 source-parameter validity ranges are the caller's responsibility. Mathematical
 input validity and numerical diagnostics remain Engine responsibilities.
-Current phase counts/types/supports are declared. A phase-stability/discovery
-algorithm is deferred future work; current mechanical/local checks and explicit
-limits on global claims remain required. Caller tolerances govern solve
+Phase counts/types/supports are declared unless the caller explicitly requests
+`Discover()` at fixed T/P. Native tangent-plane testing and phase discovery are
+implemented under [#223](https://github.com/tannerpolley/ePC-SAFT/issues/223),
+pending retained numerical qualification and independent delivered review.
+Only an explicit `stability_test(...)` call tests a declared result, including
+pinned/free-intensive snapshots at solved T/P with frozen actual standards.
+Declared solves, continuation, parameter fitting and ASL incur no implicit trial
+solves. [ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability)
+owns the finite native search through the shared driver. Mechanical/local checks
+and limits on global claims remain required. Caller tolerances govern solve
 requests; available candidates that miss them retain warnings and achieved
 residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
@@ -176,10 +183,21 @@ remaining work.
   are explicit and never silently reinterpret parameter records.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P. Phase fractions and absolute
-  phase amounts are distinct. PH, PS, UV and phase discovery remain future work.
-- Current requests declare phase counts, types and supports. Mechanical and local
-  checks remain available, but no declared-phase result implies global stability
-  or an unperformed search.
+  phase amounts are distinct. PH, PS and UV remain future work; explicit native
+  fixed-T/P discovery is implemented pending numerical qualification.
+- Requests declare phase counts, types and supports or explicitly select fixed-T/P
+  discovery. Discover at initialization, then declare phases for subsequent
+  calculations. Native finite searches admit charge-neutral trials and conserved
+  donor splits with estimated uncertainty; they supply no global certificate.
+  Mechanical and local checks remain available; a declared result implies no
+  unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)
+  records the adopted choices, not numerical support.
+- Ionic Liquid labels and mechanically stable roots do not establish dielectric
+  model applicability. The retained reacting domain diagnosis exposes a
+  mathematical descent whose physical applicability is unqualified; reacting
+  discovery qualification requires a source-qualified phase-domain or model
+  decision. Do not suppress that descent with an invented density cutoff or
+  an optimizer-success filter.
 - Caller tolerances govern solve requests. Return finite candidates with achieved
   residuals and explicit unmet-tolerance warnings; return named absence and
   diagnostics when no finite candidate exists.
@@ -290,6 +308,9 @@ an architecture scan nor a successful solve proves model validity.
 | fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
 | typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
+| tangent-plane distance | Reduced molar energy above the candidate conserved supporting plane on normalized electroneutral composition/volume trials (Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation) |
+| numerically resolved descending split | Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof (equilibrium formulation; #223 adopted D9) |
+| proved instability witness | Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient (equilibrium formulation) |
 | stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
@@ -314,7 +335,7 @@ acceptance, reuse decisions and estimates. Native issue relationships own
 prerequisites; milestone numbering expresses delivery priority, not an additional
 scientific dependency. Do not maintain a competing sequence here.
 Finish and verify each prerequisite's current agreed scope before dependent
-implementation; deferred PH/PS/UV and phase search do not block current work.
+implementation; deferred PH/PS/UV and global certification do not block current work.
 Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher
