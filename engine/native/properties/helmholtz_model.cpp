@@ -1182,6 +1182,121 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     return result;
 }
 
+ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volume,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    const PressureActionDirection& direction, std::size_t order) const {
+    validate_point(temperature, volume, composition);
+    validate_composition(composition);
+    require(order > 0 && order <= 4 && stoichiometry.size() == composition.size()
+        && finite_vector(stoichiometry) && std::isfinite(direction.temperature)
+        && std::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
+    ReferenceTaylor result;
+    std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
+    result.status = support_status(*this, composition, insertion);
+    if (result.status != PropertyActionStatus::Available) return result;
+    const auto central = evaluate(temperature, volume, composition, DerivativeOrder::Hessian);
+    const std::size_t width = central.gradient.size(), components = composition.size();
+    std::vector<double> point{temperature, volume}, motion(width, 0.0);
+    point.insert(point.end(), composition.begin(), composition.end());
+    const auto values = active_parameter_values();
+    point.insert(point.end(), values.begin(), values.end());
+    motion[0] = direction.temperature;
+    for (const auto& parameter : direction.parameter) {
+        require(std::isfinite(parameter.value), "reference parameter direction");
+        const auto found = std::find_if(active_.begin(), active_.end(), [&](const auto& a) {
+            return a.family == parameter.family && a.indices == parameter.indices;
+        });
+        require(found != active_.end(), "reference active parameter");
+        motion[2 + components + std::size_t(found - active_.begin())] += parameter.value;
+    }
+    const double gas = GAS_CONSTANT_J_PER_MOL_K;
+    const double pressure = gas * temperature * (1.0 / volume - central.gradient[1]);
+    const double pv = gas * temperature * (-1.0 / (volume * volume) - central.hessian[width + 1]);
+    result.diagnostics.pressure_density_derivative = -pv * volume * volume;
+    if (!std::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return result; }
+    double norm = std::abs(direction.pressure) / (-pv * volume);
+    for (std::size_t i = 0; i < width; ++i) {
+        const double scale = i == 0 ? temperature : i == 1 ? volume
+            : i < 2 + components ? 1.0 : std::max(1.0, std::abs(point[i]));
+        norm = std::max(norm, std::abs(motion[i]) / scale);
+    }
+    if (norm == 0.0) norm = 1.0;
+    for (double& v : motion) v /= norm;
+    std::lock_guard<std::mutex> lock(mutex_);
+    result.diagnostics.recordings = ensure_tape(point, central.site_fractions,
+        predicate_signature(temperature, 1.0 / volume, composition), {}, 0.0, true) ? 1 : 0;
+    tape_->site_values = central.site_fractions;
+    const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
+        central.site_fractions, composition, result.status, result.diagnostics);
+    if (result.status != PropertyActionStatus::Available) return result;
+    const std::size_t insertion_degree = order + 1, degree = 2 * order + 1;
+    std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
+    path[0] = point; path[1] = motion;
+    // EqID: reference_single_insertion_taylor. Only one insertion reaches degree 2r+1.
+    const auto gradient_series = [&](const std::vector<double>& u, std::size_t last) {
+        std::vector<double> gradient(last + 1, 0.0);
+        for (double sign : {1.0, -1.0}) {
+            auto inserted = path;
+            for (std::size_t i = 0; i < width; ++i) inserted[insertion_degree][i] += sign * u[i];
+            std::vector<std::vector<double>> outputs;
+            tape_->implicit_taylor(inserted, insertion_degree + last, factorization.get(),
+                &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
+                &result.diagnostics.association_residual, &outputs);
+            for (std::size_t k = 0; k <= last; ++k)
+                gradient[k] += 0.5 * sign * outputs[insertion_degree + k][0];
+            ++result.diagnostics.directional_paths;
+        }
+        return gradient;
+    };
+    const auto inverse_log = [&]() {
+        std::pair<std::vector<double>, std::vector<double>> out;
+        auto& [inverse, logarithm] = out;
+        inverse.assign(order + 1, 0.0); logarithm.assign(order + 1, 0.0);
+        inverse[0] = 1.0 / volume; logarithm[0] = std::log(volume);
+        for (std::size_t k = 1; k <= order; ++k) {
+            logarithm[k] = double(k) * path[k][1];
+            for (std::size_t j = 1; j <= k; ++j) inverse[k] -= path[j][1] * inverse[k-j] / volume;
+            for (std::size_t j = 1; j < k; ++j) logarithm[k] -= double(j) * logarithm[j] * path[k-j][1];
+            logarithm[k] /= double(k) * volume;
+        }
+        return out;
+    };
+    std::vector<double> u(width, 0.0); u[1] = volume;
+    result.diagnostics.pressure_factorizations = 1;
+    for (std::size_t k = 1; k <= order; ++k) {
+        const auto g = gradient_series(u, k);
+        const auto inverse = inverse_log().first;
+        const double known = gas * (temperature * (inverse[k] - g[k] / volume)
+            + motion[0] * (inverse[k-1] - g[k-1] / volume));
+        path[k][1] = ((k == 1 ? direction.pressure / norm : 0.0) - known) / pv;
+        ++result.diagnostics.pressure_solves;
+    }
+    const auto g = gradient_series(u, order);
+    const auto [inverse, logarithm] = inverse_log();
+    for (std::size_t k = 1; k <= order; ++k) {
+        const double residual = gas * (temperature * (inverse[k] - g[k] / volume)
+            + motion[0] * (inverse[k-1] - g[k-1] / volume)) - (k == 1 ? direction.pressure / norm : 0.0);
+        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual,
+            std::abs(residual) / std::max(pressure, std::abs(pv * path[k][1])));
+    }
+    u.assign(width, 0.0);
+    std::copy(stoichiometry.begin(), stoichiometry.end(), u.begin() + 2);
+    result.contraction = gradient_series(u, order);
+    const double delta = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
+    result.volume.resize(order + 1);
+    for (std::size_t k = 0; k <= order; ++k) {
+        result.contraction[k] = (result.contraction[k] - delta * logarithm[k]) * std::pow(norm, int(k));
+        result.volume[k] = path[k][1] * std::pow(norm, int(k));
+    }
+    if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value)
+        result.status = PropertyActionStatus::AssociationResidual;
+    else if (!finite_vector(result.contraction) || !finite_vector(result.volume)) result.status = PropertyActionStatus::Nonfinite;
+    counters_.directional_paths += result.diagnostics.directional_paths;
+    counters_.forward += result.diagnostics.forward_sweeps;
+    counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order + 1);
+    return result;
+}
+
 // ponytail: retain two signatures for alternating phases; widen only for measured multi-signature churn.
 bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::vector<double>& sites,
     const detail::PredicateSignature& signature, const std::vector<IdealCorrelation>& correlations,

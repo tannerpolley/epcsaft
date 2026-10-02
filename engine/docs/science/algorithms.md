@@ -985,6 +985,20 @@ heat-capacity coefficient actions are not qualified.
 
 ## ALG-REFERENCE
 
+Properties additionally owns the bounded reference Taylor calculation in EqID:
+`reference_single_insertion_taylor` and the consumed columns in EqID:
+`reference_mixed_temperature_pressure_derivatives`. At each fixed terminal
+composition, close the base volume coefficients through order four with the
+central pressure slope. Insert the reaction amount direction only after that
+closure, at fixed volume. Degree seven supplies third-order reference terms;
+degree nine supplies fourth-order terms. Polarization moves only temperature,
+source pressure and EOS coordinates; it never polarizes the ionic insertion.
+The existing lower-slope calculation and admission are retained. Requested
+higher columns report both consecutive scaled ladder changes and their own
+unavailability cause. These Properties calculations do not extend Equilibrium
+caloric/action availability; that composition is a separate #225 slice.
+
+
 Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
 density; the returned EOS pressure still records the density-root residual.
 This avoids amplifying the closure residual in parameter differences of nearly
