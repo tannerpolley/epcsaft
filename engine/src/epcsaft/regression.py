@@ -17,6 +17,8 @@ from .equilibrium import Discover, Problem
 from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
+    "born_c_dielectric": _core.ParameterFamily.BornCDielectric,
+    "ionic_region_relative_permittivity": _core.ParameterFamily.IonicRegionRelativePermittivity,
     "segment_count": _core.ParameterFamily.SegmentCount,
     "packing_diameter_angstrom": _core.ParameterFamily.PackingDiameter,
     "debye_huckel_diameter_angstrom": _core.ParameterFamily.DebyeHuckelDiameter,

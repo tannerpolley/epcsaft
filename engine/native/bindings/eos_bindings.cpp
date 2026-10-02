@@ -72,6 +72,8 @@ void register_thermal_inputs(py::module_& module) {
         .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
         .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
     py::enum_<ParameterFamily>(module, "ParameterFamily")
+        .value("BornCDielectric", ParameterFamily::BornCDielectric)
+        .value("IonicRegionRelativePermittivity", ParameterFamily::IonicRegionRelativePermittivity)
         .value("BornDiameter", ParameterFamily::BornDiameter)
         .value("DebyeHuckelDiameter", ParameterFamily::DebyeHuckelDiameter)
         .value("PackingDiameter", ParameterFamily::PackingDiameter)

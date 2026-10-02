@@ -165,6 +165,8 @@ class ReactionLogPolynomial:
                  temperature_min: float, temperature_max: float, standard_state_id: str) -> None: ...
 
 class ParameterFamily:
+    BornCDielectric: ParameterFamily
+    IonicRegionRelativePermittivity: ParameterFamily
     BornDiameter: ParameterFamily
     DebyeHuckelDiameter: ParameterFamily
     PackingDiameter: ParameterFamily
@@ -573,6 +575,7 @@ class ContinuationRequest:
     target_problem: EquilibriumProblem
     start_result: Optional[EquilibriumResult]
     options: ContinuationOptions
+    parameter_targets: Sequence[float]
     def __init__(self) -> None: ...
 
 class ContinuationResult:
@@ -580,6 +583,7 @@ class ContinuationResult:
     message: str
     stop: ContinuationStop
     path_values: list[float]
+    parameter_values: list[list[float]]
     states: list[EquilibriumResult]
     reached_path: float
     attempted_path: Optional[float]

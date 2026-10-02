@@ -89,6 +89,7 @@ struct ContinuationRequest final {
     EquilibriumProblem target_problem;
     std::optional<EquilibriumResult> start_result;
     ContinuationOptions options;
+    std::vector<double> parameter_targets;  // Physical endpoints in model.active_parameters() order.
 };
 
 struct ContinuationResult final {
@@ -96,6 +97,7 @@ struct ContinuationResult final {
     std::string message;
     ContinuationStop stop = ContinuationStop::initial_failure;
     std::vector<double> path_values;
+    std::vector<std::vector<double>> parameter_values;
     std::vector<EquilibriumResult> states;
     double reached_path = 0.0;
     std::optional<double> attempted_path;

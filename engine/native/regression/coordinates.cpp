@@ -97,11 +97,12 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             }
             check(prior, "unmatched name");
         } else {
-            const auto& values = family_values(parameters, coordinate.family);
+            const auto values = family_values(parameters, coordinate.family);
             require(!coordinate.slots.empty() && !coordinate.slots.front().empty(), "slots");
-            first = values.at(coordinate.slots.front().front());
+            require(coordinate.slots.front().front() < values.size(), "slot index");
+            first = values[coordinate.slots.front().front()];
             for (const auto& slot : coordinate.slots)
-                for (const auto index : slot) require(values.at(index) == first, "tied values disagree");
+                for (const auto index : slot) require(index < values.size() && values[index] == first, "tied values disagree");
         }
         result.push_back((first - coordinate.origin) / coordinate.scale);
     }
@@ -145,8 +146,11 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     const auto physical_values = physical(optimizer);
     const auto active = active_parameters();
     for (std::size_t row = 0; row < active.size(); ++row) {
-        auto& values = family_values(parameters, active[row].family);
-        for (const auto index : active[row].indices) values.at(index) = physical_values[row];
+        auto values = family_values(parameters, active[row].family);
+        for (const auto index : active[row].indices) {
+            require(index < values.size(), "slot index");
+            values[index] = physical_values[row];
+        }
     }
     return parameters;
 }
@@ -177,7 +181,7 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
     for (const auto& coordinate : set.coordinates) {
         require(coordinate.reaction ? coordinate.slots.empty() : !coordinate.slots.empty(), "slots");
         if (coordinate.reaction) continue;
-        const auto& values = family_values(parameters, coordinate.family);
+        const auto values = family_values(parameters, coordinate.family);
         for (const auto& slot : coordinate.slots) {
             require(!slot.empty(), "slot is empty");
             for (const auto index : slot) require(index < values.size(), "slot index");

@@ -16,6 +16,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#include <span>
 #include <vector>
 
 namespace epcsaft::detail {
@@ -33,26 +34,33 @@ enum class ParameterFamily {
     AssociationEnergyOverK,
     AssociationVolume,
     BornDiameter, DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient,
+    BornCDielectric, IonicRegionRelativePermittivity,
     KijReciprocalTemperatureSlope,  // b_ij in k_ij(T) = k_ij + b_ij (1/T - 1/T_ref,ij), K
 };
 constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::KijReciprocalTemperatureSlope) + 1;
 
 // The one family -> storage map, for Parameters (double) and TapeParameters (AD) alike.
 template <class ParameterSet>
-auto& family_values(ParameterSet& parameters, ParameterFamily family) {
+auto family_values(ParameterSet& parameters, ParameterFamily family, std::size_t size = 0) {
+    const auto view = [size](auto& values) {
+        if constexpr (!std::is_const_v<ParameterSet>) if (size) values.resize(size);
+        return std::span(values);
+    };
     switch (family) {
-    case ParameterFamily::PackingDiameter: return parameters.packing_diameter_angstrom;
-    case ParameterFamily::DebyeHuckelDiameter: return parameters.debye_huckel_diameter_angstrom;
-    case ParameterFamily::BornDiameter: return parameters.born_diameter_angstrom;
-    case ParameterFamily::IonSuppressionCoefficient: return parameters.ion_suppression_coefficient;
-    case ParameterFamily::SegmentCount: return parameters.segment_count;
-    case ParameterFamily::SigmaConstant: return parameters.sigma_constant;
-    case ParameterFamily::DispersionEnergyOverK: return parameters.dispersion_energy_over_k;
-    case ParameterFamily::Kij: return parameters.k_ij;
-    case ParameterFamily::Lij: return parameters.l_ij;
-    case ParameterFamily::AssociationEnergyOverK: return parameters.association_energy_over_k;
-    case ParameterFamily::AssociationVolume: return parameters.association_volume;
-    case ParameterFamily::KijReciprocalTemperatureSlope: return parameters.k_ij_reciprocal_temperature_slope;
+    case ParameterFamily::BornCDielectric: return std::span(&parameters.born_c_dielectric, 1);
+    case ParameterFamily::IonicRegionRelativePermittivity: return std::span(&parameters.ionic_region_relative_permittivity, 1);
+    case ParameterFamily::PackingDiameter: return view(parameters.packing_diameter_angstrom);
+    case ParameterFamily::DebyeHuckelDiameter: return view(parameters.debye_huckel_diameter_angstrom);
+    case ParameterFamily::BornDiameter: return view(parameters.born_diameter_angstrom);
+    case ParameterFamily::IonSuppressionCoefficient: return view(parameters.ion_suppression_coefficient);
+    case ParameterFamily::SegmentCount: return view(parameters.segment_count);
+    case ParameterFamily::SigmaConstant: return view(parameters.sigma_constant);
+    case ParameterFamily::DispersionEnergyOverK: return view(parameters.dispersion_energy_over_k);
+    case ParameterFamily::Kij: return view(parameters.k_ij);
+    case ParameterFamily::Lij: return view(parameters.l_ij);
+    case ParameterFamily::AssociationEnergyOverK: return view(parameters.association_energy_over_k);
+    case ParameterFamily::AssociationVolume: return view(parameters.association_volume);
+    case ParameterFamily::KijReciprocalTemperatureSlope: return view(parameters.k_ij_reciprocal_temperature_slope);
     }
     throw std::invalid_argument("invalid parameter family");
 }
@@ -64,25 +72,6 @@ struct ActiveParameter final {
 
 using PredicateSignature = std::vector<unsigned char>;
 
-inline std::vector<AD> active_vector(
-    const std::vector<double>& values,
-    const std::vector<ActiveParameter>& active,
-    ParameterFamily family,
-    const std::vector<AD>& coordinates
-) {
-    std::vector<AD> result(values.begin(), values.end());
-    for (std::size_t parameter = 0; parameter < active.size(); ++parameter) {
-        const auto& item = active[parameter];
-        if (item.family != family) {
-            continue;
-        }
-        for (const std::size_t index : item.indices) {
-            result[index] = coordinates[parameter];
-        }
-    }
-    return result;
-}
-
 inline TapeParameters make_tape_parameters(
     const Parameters& parameters,
     const std::vector<ActiveParameter>& active,
@@ -91,8 +80,12 @@ inline TapeParameters make_tape_parameters(
     TapeParameters result;
     for (std::size_t family = 0; family < PARAMETER_FAMILY_COUNT; ++family) {
         const auto item = static_cast<ParameterFamily>(family);
-        family_values(result, item) = active_vector(family_values(parameters, item), active, item, coordinates);
+        const auto source = family_values(parameters, item);
+        const auto target = family_values(result, item, source.size());
+        std::copy(source.begin(), source.end(), target.begin());
     }
+    for (std::size_t i = 0; i < active.size(); ++i)
+        for (const auto index : active[i].indices) family_values(result, active[i].family)[index] = coordinates[i];
     static_cast<FixedParameters&>(result) = parameters;
     return result;
 }

@@ -236,12 +236,14 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("start_problem", &ContinuationRequest::start_problem)
         .def_readwrite("target_problem", &ContinuationRequest::target_problem)
         .def_readwrite("start_result", &ContinuationRequest::start_result)
-        .def_readwrite("options", &ContinuationRequest::options);
+        .def_readwrite("options", &ContinuationRequest::options)
+        .def_readwrite("parameter_targets", &ContinuationRequest::parameter_targets);
     py::class_<ContinuationResult>(module, "ContinuationResult")
         .def_readonly("success", &ContinuationResult::success)
         .def_readonly("message", &ContinuationResult::message)
         .def_readonly("stop", &ContinuationResult::stop)
         .def_readonly("path_values", &ContinuationResult::path_values)
+        .def_readonly("parameter_values", &ContinuationResult::parameter_values)
         .def_readonly("states", &ContinuationResult::states)
         .def_readonly("reached_path", &ContinuationResult::reached_path)
         .def_readonly("attempted_path", &ContinuationResult::attempted_path)

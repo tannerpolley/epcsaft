@@ -455,11 +455,14 @@ def continue_equilibrium(
     target: Problem,
     options: Continuation,
     start_result: _core.EquilibriumResult | None = None,
+    *,
+    parameter_targets: Sequence[float] = (),
 ) -> _core.ContinuationResult:
     request = _core.ContinuationRequest()
     request.start_problem = start._native(model)
     request.target_problem = target._native(model)
     request.start_result = start_result
+    request.parameter_targets = parameter_targets
     request.options.initial_step = options.initial_step
     request.options.minimum_step = options.minimum_step
     request.options.max_steps = options.max_steps
