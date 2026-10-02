@@ -65,17 +65,43 @@ implicit stability work in known-topology calculations. Random/Powell search,
 global-bound methods, rigorous error enclosures, free-intensive discovery and
 continuation across phase appearance are not adopted.
 
-The explicit native path is implemented pending numerical qualification and
-independent delivered review. Same-wheel comparisons check integration and
+The explicit native path has retained numerical qualification on the stated
+neutral and admitted density-dependent ionic/reacting cases; independent
+delivered review is pending. Same-wheel comparisons check integration and
 topology; FeOs agreement checks independent implementations. Neither constitutes
 physical validation or universal stability. The owning issue and retained
 analysis hold required evidence and remaining work; this ADR is not a parallel
 implementation plan.
 
-The reacting domain diagnosis is retained in the qualification analysis.
-Existing pressure-root admission does not classify a sole root as a physical
-liquid, and solvent-only permittivity supplies no sourced density exclusion.
-A stricter branch-label search would be a new numerical-domain choice rather
-than proof of electrolyte-model applicability. That restriction and dielectric
-model redesign are not adopted here; the issue's domain addendum owns the
-unresolved scientific decision.
+## Addendum: charged-trial admission by permittivity form
+
+The owner adopted this condition on 2026-10-02 in #223. Charged trial phases in
+testing and discovery require the declared bulk-permittivity form to reach
+$\epsilon_r\to1$ as $\rho_m\to0$. Schreckenberg `DensityTemperature` and Rueben
+`DipolarPerturbation` satisfy the condition by full EOS §6.2 and §6.4;
+`IonSuppression` and `ComponentMixing` are density independent. Their electrolyte
+terms are defined only for condensed phases, so they receive the typed refusal
+"permittivity model has no low-density limit; declare phases" for charged trials.
+
+One native rule in shared trial-support admission serves both explicit entry
+points. It rejects a family containing refused charged supports before trial
+roots/optimizers and before discovery declaration solves. Caller-supplied
+neutral-only families remain available. There is no density cutoff, failed-trial
+filter or dielectric substitution. Existing declared equilibrium, continuation,
+fitting and ASL remain unchanged. The vacuum limit is necessary for this search,
+without establishing physical applicability everywhere it searches.
+
+The reproduced solvent-only descent at 318.15 K, 5918.5286 Pa and
+2.3214665 mol/m³ is preserved in the analysis with its calculated decrease and
+estimated uncertainty; the current search refuses it with the stated reason.
+Case 6's ion-fraction-suppression selection likewise receives a charged-search
+refusal while its declared result remains a no-overhead reference. Reacting
+qualification uses an explicitly identified Engine-owned density-dependent
+selection and manufactured reaction reference, separate from the MEA packet.
+
+Reacting discovery prepares its initial union composition from the existing
+positive charge-neutral base before the unchanged ideal-speciation sweeps.
+The manufactured reference exposed a zero-fed participant whose generic seed
+lost chloride and generated an invalid log coordinate. The bounded correction
+retains every required species without changing declared initialization, trial
+starts, search budgets, standard terms or tolerances.

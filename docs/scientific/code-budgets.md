@@ -77,22 +77,25 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-01, #223 implementation measurement against `443d8289`, with
-  reacting qualification pending a scientific domain decision: **986 gross
-  added, 19 removed, +967 net runtime physical lines**. Equilibrium adds 857,
-  Bindings 43 and Python including stubs 67. Current counts are Core 917,
-  Contributions 1547, Properties 4274, Equilibrium 6911, Parameter regression
-  2398, Surface 532, Bindings 1886 and Python 2635; aggregate 21100. Every
-  existing hard ceiling passes, leaving Equilibrium 664, Bindings 54,
-  Python 65 and aggregate 900 lines. No ceiling changes or Core/Contributions
-  growth are adopted. The soft excess retains one native controller, trial
-  compilation through shared rows, exact derivatives, conservation and
-  uncertainty calculations, retained failures and explicit work diagnostics.
-  Binding and Python additions carry declarations/results rather than search.
-  The [qualification notebook](../../analyses/2026-tpd-phase-discovery/notebook.qmd)
-  separates qualified neutral/ionic evidence from the reproduced reacting
-  domain conflict. This measurement does not close numerical acceptance or
-  independent delivered review; later domain work must be remeasured.
+- 2026-10-02, #223 implementation measurement against `443d8289`, including
+  owner-adopted permittivity-form admission: **994 gross added, 19 removed,
+  +975 net runtime physical lines**. Equilibrium adds 865, Bindings 43 and
+  Python including stubs 67. Current counts are Core 917, Contributions 1547,
+  Properties 4274, Equilibrium 6919, Parameter regression 2398, Surface 532,
+  Bindings 1886 and Python 2635; aggregate 21108. Every existing hard ceiling
+  passes, leaving Equilibrium 656, Bindings 54, Python 65 and aggregate 892
+  lines. No ceiling changes or Core/Contributions growth are adopted. The
+  soft excess retains one native controller, shared trial rows and exact
+  derivatives, conservation and uncertainty calculations, retained failures and
+  explicit work diagnostics. The charged-trial admission change is four native
+  Equilibrium lines, with four further lines preparing the reacting discovery
+  union before existing speciation; zero Binding/Python growth. Transport additions carry
+  declarations/results rather than search. The
+  [qualification notebook](../../analyses/2026-tpd-phase-discovery/notebook.qmd)
+  separates admitted numerical checks from the historical solvent-only descent
+  and current charged-search refusals. Final wheel qualification and all 4,374
+  frozen declared/continuation/fitting/ASL rows pass, with zero implicit trials;
+  independent delivered review remains pending at this measurement.
 
 - 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
   **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.

@@ -4,10 +4,11 @@ This document specifies required phase, reaction and reactive-phase mathematics.
 [Equation definitions](../equations.md) own the displayed relations;
 [algorithms](../science/algorithms.md) own their numerical solution.
 [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) records implementation gaps.
-A proposed or registered equation is not a capability claim. Current completion
-covers declared-phase specifications. The explicit native tangent-plane test
-and fixed-T/P discovery path adopted in #223 are implemented pending numerical
-qualification and independent delivered review. PH/PS/UV remain deferred.
+A proposed or registered equation is not a capability claim. Declared-phase
+specifications and the explicit native tangent-plane test/fixed-T/P discovery
+path adopted in #223 have retained numerical qualification for the stated
+neutral and admitted ionic/reacting cases. Independent delivered review is
+pending; PH/PS/UV remain deferred.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
@@ -265,15 +266,30 @@ Restricted supports and density-label starts limit that set, and positive local
 curvature does not exclude a remote split. [ALG-STABILITY](../science/algorithms.md#alg-stability)
 owns enumeration, conserved addition/removal and separate work budgets.
 
-An ionic trial's Liquid declaration does not establish applicability of its
-electrolyte model. ALG-DENSITY may return a sole stable root without a physical
-phase label; pressure closure and positive mechanical slope supply no universal
-liquid classification. A solvent-only permittivity law can retain Born
-stabilization at low density. Preserve computed descent separately from physical
-applicability; a source-qualified ionic phase domain or qualified dielectric
-model is needed before making that physical claim. An unknown source domain
-supplies no density cutoff, and optimizer failure does not erase feasible
-mathematical descent. See [full-EOS domain rules](../science/full-eos.md#12-domain-and-rejection-rules).
+Charged trial supports are admitted only when the declared bulk-permittivity
+form reaches the vacuum limit, $\epsilon_r\to1$ as $\rho_m\to0$.
+The existing `DensityTemperature` (Schreckenberg) and `DipolarPerturbation`
+(Rueben) forms satisfy this condition by their definitions in
+[full EOS §6.2 and §6.4](../science/full-eos.md#6-bulk-dielectric-and-debye-huckel),
+EqID: `density_correlated_bulk_permittivity` and EqID:
+`dipolar_perturbation_bulk_permittivity`. `IonSuppression` (including
+solvent-only, ion-fraction and ion-specific choices) and `ComponentMixing`
+are density independent and are refused for charged trials. Their electrolyte
+terms are defined for condensed phases; a free-volume trial search cannot infer
+that domain from a Liquid label or mechanical pressure-root admission.
+
+One native support-admission rule reads the model's declared form before any
+trial root or optimizer invocation. A requested family containing a charged
+support under a refused form raises `ParameterError` with
+"permittivity model has no low-density limit; declare phases". The same rule
+runs before discovery declaration solves. Caller-supplied neutral-only supports
+remain admitted on these models. No density cutoff, optimizer-success filter,
+parameter substitution or model change is introduced. Declared solves,
+continuation, fitting and ASL retain their existing domain and calculations.
+The vacuum limit is a necessary admission condition for this search, not
+physical validation or a global stability certificate. The previously evaluated
+solvent-only gas-density descent remains retained numerical evidence and is
+classified as refused under this owner-adopted rule.
 
 The exact global dual infimum (EqID: `helmholtz_lagrangian_dual`, EqID:
 `dual_inner_problem`) can supply a lower bound. A local inner minimizer is an
@@ -284,8 +300,11 @@ relations describe source methods, not a selected current discovery algorithm.
 The adopted finite native controller does not implement those global-bound
 methods. Justified global bounds, replacement at the balance-rank phase limit
 and generalized multi-donor/reactive withdrawal remain separately scoped work.
-Budget exhaustion never means proven stable. Numerical qualification of #223 is
-pending; no Supported result or physical validation follows from this doctrine.
+Budget exhaustion never means proven stable. The [qualification notebook](../../../analyses/2026-tpd-phase-discovery/notebook.qmd)
+retains neutral comparisons, admitted density-dependent ionic/reacting checks,
+density-independent charged-search refusals and unchanged declared work.
+These are numerical verification; physical validation and a global certificate
+do not follow from this doctrine.
 
 ## Sensitivity and validity
 

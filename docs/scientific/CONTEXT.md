@@ -77,7 +77,7 @@ capabilities rather than reproducing the native directory tree.
 | core | Common constants, parameter coordinates, numerical policy and diagnostics | Small shared foundations; no phase or application selection |
 | Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
 | Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
-| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (discovery qualification pending) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
+| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (qualified cases in the retained analysis) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
 | `regression` | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; native iterative work has no Python callbacks |
@@ -144,7 +144,8 @@ input validity and numerical diagnostics remain Engine responsibilities.
 Phase counts/types/supports are declared unless the caller explicitly requests
 `Discover()` at fixed T/P. Native tangent-plane testing and phase discovery are
 implemented under [#223](https://github.com/tannerpolley/ePC-SAFT/issues/223),
-pending retained numerical qualification and independent delivered review.
+with retained numerical qualification on the stated neutral and admitted
+ionic/reacting cases; independent delivered review is pending.
 Only an explicit `stability_test(...)` call tests a declared result, including
 pinned/free-intensive snapshots at solved T/P with frozen actual standards.
 Declared solves, continuation, parameter fitting and ASL incur no implicit trial
@@ -184,7 +185,7 @@ remaining work.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P. Phase fractions and absolute
   phase amounts are distinct. PH, PS and UV remain future work; explicit native
-  fixed-T/P discovery is implemented pending numerical qualification.
+  fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P
   discovery. Discover at initialization, then declare phases for subsequent
   calculations. Native finite searches admit charge-neutral trials and conserved
@@ -192,12 +193,16 @@ remaining work.
   Mechanical and local checks remain available; a declared result implies no
   unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)
   records the adopted choices, not numerical support.
-- Ionic Liquid labels and mechanically stable roots do not establish dielectric
-  model applicability. The retained reacting domain diagnosis exposes a
-  mathematical descent whose physical applicability is unqualified; reacting
-  discovery qualification requires a source-qualified phase-domain or model
-  decision. Do not suppress that descent with an invented density cutoff or
-  an optimizer-success filter.
+- Charged trial supports in explicit testing/discovery require a declared bulk
+  permittivity form with the vacuum limit: Schreckenberg `DensityTemperature`
+  or Rueben `DipolarPerturbation` (full EOS §6.2/§6.4). Density-independent
+  `IonSuppression` and `ComponentMixing` describe condensed-phase electrolyte
+  terms and raise `ParameterError`: "permittivity model has no low-density limit;
+  declare phases". Neutral-only trial families and declared calculations are
+  unchanged. The retained solvent-only gas-density descent is refused under
+  this owner-adopted search rule; its numerical operands remain available.
+  A vacuum limit establishes neither physical validation nor global stability.
+  No density cutoff or optimizer-success filter is introduced.
 - Caller tolerances govern solve requests. Return finite candidates with achieved
   residuals and explicit unmet-tolerance warnings; return named absence and
   diagnostics when no finite candidate exists.

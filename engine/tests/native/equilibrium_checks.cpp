@@ -4624,7 +4624,10 @@ void check_tangent_plane_admission() {
     tpd_compare("witness/uncertain-descent", descent_resolved(-1e-10, -1e-10, 1e-9) ? 1.0 : 0.0, 0.0, 0.0);
     for (double error : {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity()})
         tpd_compare("witness/missing-error/" + recording_support::number(error), descent_resolved(-1e-10, -1e-10, error) ? 1.0 : 0.0, 0.0, 0.0);
-    const auto parameters = properties_support::aqueous_electrolyte();
+    auto parameters = properties_support::aqueous_electrolyte();
+    parameters.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    parameters.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    parameters.dielectric_temperature_k = {1403.0, 0.0, 0.0};
     const epcsaft::HelmholtzModel model(parameters);
     const std::vector<double> raw{0.98, 0.0100000001, 0.0099999999};
     const auto rebuilt = reconstruct_trial_composition(raw, {0, 1, 2}, parameters.charge_number);
@@ -4699,6 +4702,9 @@ void check_tangent_plane_admission() {
     auto bubble = problem;
     bubble.phases = {equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0)), phase};
     bubble.phases[0].support = {0}; bubble.phases[1].name = "L";
+    // Zero vapor and component balances fix these declared input compositions.
+    bubble.phases[0].composition_guess = {1.0};
+    bubble.phases[1].composition_guess = bubble.feed.values;
     bubble.pressure = FreeValue::variable(1e5);
     const auto bubble_state = solve_equilibrium(model, bubble); CHECK(bubble_state.success);
     const auto bubble_system = compile_problem(model, bubble);

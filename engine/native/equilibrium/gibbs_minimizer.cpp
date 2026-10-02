@@ -1232,6 +1232,10 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
         }
         if (positive != negative || (positive && phase.kind == PhaseKind::Vapor))
             throw std::invalid_argument("inadmissible ionic stability support/label");
+        const auto& form = c.model->parameters().permittivity_form;
+        if (positive && !form.is(PermittivityForm::DensityTemperature)
+            && !form.is(PermittivityForm::DipolarPerturbation))
+            throw std::invalid_argument("permittivity model has no low-density limit; declare phases");
         phase.support_declared = true; phase.amount = AmountSpec::free();
         if (std::none_of(admitted.begin(), admitted.end(), [&](const auto& p) {
                 return p.kind == phase.kind && p.support == phase.support; })) admitted.push_back(std::move(phase));
@@ -1704,6 +1708,10 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     EquilibriumProblem declaration = request;
     declaration.discovery.reset(); declaration.topology_declared = true;
     PhaseSpec initial; initial.name = "L1"; initial.support = united; initial.support_declared = true;
+    if (!request.reactions.empty()) {
+        const auto base = reconstruct_trial_composition(std::vector<double>(feed.size(), 1.0), united, z);
+        for (auto i : united) initial.composition_guess.push_back(base[i]);
+    }
     declaration.phases = {initial};
     auto compiled = compile_problem(model, declaration);
     // Admit the requested trial physics before any declaration solve.

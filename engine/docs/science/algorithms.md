@@ -8,8 +8,8 @@ numerical falsifiers are mapped in the owning [GitHub issues](https://github.com
 No section claims that all required actions currently exist. The implementation
 plan owns current versus deferred scope. PH/PS/UV remain future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
-ALG-STABILITY is implemented pending numerical qualification and independent
-delivered review. Reuse accepted numerical owners and independent cases.
+ALG-STABILITY has retained numerical qualification on the stated neutral and
+admitted ionic/reacting cases; independent delivered review is pending. Reuse accepted numerical owners and independent cases.
 Declared-branch continuation and mechanical/local checks remain required.
 
 ## ALG-ADMISSION
@@ -583,9 +583,10 @@ The explicit native tangent-plane test and fixed-T/P discovery adopted in
 No second minimizer, production finite differences or Python search loop is
 admitted. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
 owns physical admission and claim meaning; EqID: `tangent_plane_distance` owns
-the reduced molar objective. This implemented path is pending numerical
-qualification; the [analysis](../../../analyses/2026-tpd-phase-discovery/)
-will retain the prescribed evidence. Method adoption is recorded in
+the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-discovery/)
+retains numerical qualification on the stated neutral and admitted
+density-dependent ionic/reacting cases, explicit density-independent
+charged-search refusals and unchanged declared work. Method adoption is recorded in
 [ADR 0012](../../../docs/scientific/adr/0012-native-tangent-plane-phase-discovery.md).
 
 ### Explicit calls and solved snapshots
@@ -616,13 +617,30 @@ trace. Declared calls retain their existing scopes and perform no trial work.
 
 Let U be fed species plus all reaction participants and U₀ its neutral subset.
 Initial discovery candidates are one free phase on U, Liquid, and also Vapor
-when U is neutral. Use existing ideal-solution speciation starts for reactions;
-record all initial attempts and retain the accepted lower-G candidate.
+when U is neutral. For reactions, first construct the existing positive
+charge-neutral base on U, then run the unchanged ideal-solution speciation
+sweeps. A zero-fed reaction participant remains on the required support; its
+feed fraction is not an admissible log-chart seed. Record all initial attempts
+and retain the accepted lower-G candidate. This preparation belongs only to
+discovery; declared initialization remains unchanged.
 Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
 pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
 Caller support/label entries **replace** defaults and limit the tested domain;
 they do not restrict the initial union candidate. Reject empty caller lists,
 empty supports, species outside U, one-sign ionic supports and ionic Vapor.
+
+Before enumerating starts, one shared native support-admission predicate requires
+`DensityTemperature` or `DipolarPerturbation` whenever a requested support
+contains ions. These are the existing forms with $\epsilon_r\to1$ as
+$\rho_m\to0$ (full EOS §6.2/§6.4). Density-independent `IonSuppression` and
+`ComponentMixing` describe condensed-phase electrolyte terms and raise the typed
+`ParameterError`: "permittivity model has no low-density limit; declare phases".
+Reject the requested family explicitly; do not silently drop charged trials or
+interpret refusal as stability. This predicate is used by the explicit test and
+by discovery before its first declaration solve, and never by declared solves,
+continuation, fitting or ASL. Neutral-only requested families are unaffected.
+Admission reads the form, not a sampled density, fitted coefficient, phase label
+or optimizer termination. It introduces no density cutoff or failed-trial filter.
 
 For every admitted pair enumerate a positive charge-neutral base from equal
 supported weights with ionic group rescaling. A compatible candidate's strictly
