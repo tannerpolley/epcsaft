@@ -339,6 +339,7 @@ GibbsMinimizer::GibbsMinimizer(
 
 std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
     const std::vector<std::size_t>& indices, bool fraction, double floor) {
+    core::Scope scope("inventory_bounds");
     const std::size_t n = c.n_feed.size(), width = n + fraction;
     std::vector<double> lower(width, 0.0), upper(width, 0.0);
     for (const auto& phase : c.problem.phases)
@@ -429,7 +430,6 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
             lp.changeColCost(static_cast<HighsInt>(i), 1.0);
             r.status = run();
             r.termination = lp.modelStatusToString(lp.getModelStatus());
-            lp.changeColCost(static_cast<HighsInt>(i), 0.0);
             r.lp_error = lp.getInfo().max_primal_infeasibility;
             if (r.status == "optimal") {
                 const auto x = lp.getSolution().col_value;
@@ -444,6 +444,7 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
                     if (upper[i] == 0.0) r.status = "structural_zero";
                 }
             }
+            lp.changeColCost(static_cast<HighsInt>(i), 0.0);
         }
         results.push_back(std::move(r));
     }
