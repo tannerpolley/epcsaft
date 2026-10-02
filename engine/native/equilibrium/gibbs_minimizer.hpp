@@ -64,7 +64,7 @@ BranchCheck check_density_branches(
 EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates
+    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr
 );
 
 // ---------------------------------------------------------------- continuation

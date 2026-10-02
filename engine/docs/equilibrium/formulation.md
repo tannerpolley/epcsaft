@@ -4,11 +4,13 @@ This document specifies required phase, reaction and reactive-phase mathematics.
 [Equation definitions](../equations.md) own the displayed relations;
 [algorithms](../science/algorithms.md) own their numerical solution.
 [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) records implementation gaps.
-A proposed or registered equation is not a capability claim. Current completion
-covers declared-phase specifications. PH/PS/UV and a phase-stability/discovery
-algorithm are deferred in the plan; their mathematics below remains reference
-material. Mechanical/local stability checks and truthful global-claim limits
-continue to apply to current results.
+A proposed or registered equation is not a capability claim. Declared-phase
+specifications and the explicit native tangent-plane test/fixed-T/P discovery
+path adopted in #223 have retained numerical qualification for the stated
+neutral and admitted ionic/reacting cases. The independent delivered review
+supports these retained cases and stated limits; PH/PS/UV remain deferred.
+Mechanical/local stability checks and truthful global-claim limits apply to
+both declared and discovered results.
 
 ## Energy, reference states and coordinates
 
@@ -200,12 +202,96 @@ through a critical point).
 
 ## Discovery and global claims
 
-EqID: `tangent_plane_distance` defines stability relative to the candidate
-supporting plane, over every admissible trial composition and volume with
-appropriate charge/conservation coordinates. A feasible negative trial is an
-instability witness. Failure to find one in finite search is inconclusive.
-Sources: Michelsen1982; Pereira2012; Perdomo2025. Reactive systems use conserved
-moiety multipliers in the plane, consistent with the declared reference gauge.
+EqID: `tangent_plane_distance` defines the reduced molar distance from the
+candidate's conserved supporting plane. Sources: Michelsen1982 Part I;
+Pereira2012 Eq. 12; Perdomo2025 §3.3 Eqs. 37–40; Ascani2022 §3.3 Eqs. 33–35.
+The reactive extension follows the homogeneous energy and conserved-moiety
+identities, EqID: `tangent_plane_gibbs_dual_identity`. Temperature is in K,
+pressure in Pa, amounts in mol and molar volume in m³/mol; reduced energies and
+chemical multipliers are in RT units. The plane uses the result's chemical
+balance multipliers, recovered for all-free cells or primal for pinned cells,
+not optimizer constraint multipliers. Freeze actual standard terms, including
+reference transfer and gauge, at the solved T/P snapshot.
+
+Only explicit `Discover()` requests run discovery. Only explicit
+`stability_test(...)` calls test an accepted declared result. Declared solves,
+continuation, parameter fitting and ASL never invoke either implicitly.
+Discover once at initialization, then declare the returned phases for subsequent
+calculations. Explicit testing of pinned/free-intensive results releases pins
+only for diagnosing Gibbs descent at their solved fixed T/P; it says nothing
+about feasibility along the original pinned path. Zero-amount phases cannot
+supply a donor. Discovery with free T/P remains excluded.
+
+The native test compiles a one-free-phase unit-amount trial through the shared
+exact-curvature driver, without reactions or feed-moiety proportions. Its
+internal reduced balance space spans normalization and charge, retaining the
+row transformation (EqID: `tangent_plane_trial_balance`). The stationary trial
+identity uses the multiplier contraction with its transformed right-hand side;
+species ordering need not leave a total-amount row first. The frozen standard
+shift has constant coefficients but retains exact log-chart curvature
+(EqID: `tangent_plane_shift_log_curvature`). A normalized reacting trial is a
+search composition, not necessarily reaction equilibrium: EqID:
+`normalized_trial_reaction_affinity`. The full added declaration restores every
+original reaction, reference input and affinity row.
+
+Raw optimizer points are not physically feasible by construction. Native
+normalization and ionic group rescaling followed by a two-pivot arithmetic
+correction admit a nearby trial (EqID: `electroneutral_trial_reconstruction`).
+Recompute its molar volume from composition and packing and reevaluate shared
+energy. Retain raw residuals, displacement and reconstructed point separately.
+Repair remaining candidate balance/charge defects in supported amount variables,
+then check positivity, support and domain and reevaluate; keep this corrected
+candidate separate from the public result. No failed initialization supplies a
+trial point. Arithmetic reconstruction does not assert exact-real feasibility.
+
+A negative plane value requires a strictly positive donor with the entire trial
+support and finite withdrawal capacity. The actual fixed-molar-volume donor
+slope includes chemical and pressure corrections (EqID:
+`tangent_plane_donor_descent`); present phases obey the full chemical-plus-pressure
+identity (EqID: `present_phase_tangent_plane_identity`). Association derivative
+floors, Euler defect, feasibility correction, supplied standard-term uncertainty
+and arithmetic contribute separately to an estimated slope uncertainty
+(EqID: `tangent_plane_descent_uncertainty`). A resolved negative slope and plane
+value also require a retained finite inventory-conserving split whose computed
+Gibbs decrease exceeds its propagated estimate (EqID: `conserved_finite_phase_split`).
+Optimizer convergence or positive local trial inertia is not necessary for this
+descent evidence.
+
+The adopted claim is **numerically resolved descent with estimated uncertainty**.
+A **proved instability witness** additionally requires justified feasibility
+and total error bounds; current association floors are not such enclosures.
+Missing error terms, near-zero margins and failed reconstruction remain
+indeterminate. A negative trial without an eligible donor remains an unresolved
+plane trial. Completed finite testing reports only **no witness in the recorded
+trial set**, with unresolved trials named; it never certifies global stability.
+Restricted supports and density-label starts limit that set, and positive local
+curvature does not exclude a remote split. [ALG-STABILITY](../science/algorithms.md#alg-stability)
+owns enumeration, conserved addition/removal and separate work budgets.
+
+Charged trial supports are admitted only when the declared bulk-permittivity
+form reaches the vacuum limit, $\epsilon_r\to1$ as $\rho_m\to0$.
+The existing `DensityTemperature` (Schreckenberg) and `DipolarPerturbation`
+(Rueben) forms satisfy this condition by their definitions in
+[full EOS §6.2 and §6.4](../science/full-eos.md#6-bulk-dielectric-and-debye-huckel),
+EqID: `density_correlated_bulk_permittivity` and EqID:
+`dipolar_perturbation_bulk_permittivity`. `IonSuppression` (including
+solvent-only, ion-fraction and ion-specific choices) and `ComponentMixing`
+are density independent and are refused for charged trials. Their electrolyte
+terms are defined for condensed phases; a free-volume trial search cannot infer
+that domain from a Liquid label or mechanical pressure-root admission.
+
+One native support-admission rule reads the model's declared form before any
+trial root or optimizer invocation. A requested family containing a charged
+support under a refused form raises `ParameterError` with
+"permittivity model has no low-density limit; declare phases". The same rule
+runs before discovery declaration solves. Caller-supplied neutral-only supports
+remain admitted on these models. No density cutoff, optimizer-success filter,
+parameter substitution or model change is introduced. Declared solves,
+continuation, fitting and ASL retain their existing domain and calculations.
+The vacuum limit is a necessary admission condition for this search, not
+physical validation or a global stability certificate. The previously evaluated
+solvent-only gas-density descent remains retained numerical evidence and is
+classified as refused under this owner-adopted rule.
 
 The exact global dual infimum (EqID: `helmholtz_lagrangian_dual`, EqID:
 `dual_inner_problem`) can supply a lower bound. A local inner minimizer is an
@@ -213,8 +299,23 @@ upper bound on that infimum; substituting it as a certified lower bound is
 invalid. A finite outer approximation alone does not close the global gap.
 EqID: `outer_approximation_bound` and the historical tunneling/candidate
 relations describe source methods, not a selected current discovery algorithm.
-Search/controller selection and a justified bound are deferred future work in
-GitHub future-work issues, not prerequisites for declared-phase acceptance. Budget exhaustion never means proven stable.
+The adopted finite native controller does not implement those global-bound
+methods. Justified global bounds, replacement at the balance-rank phase limit
+and generalized multi-donor/reactive withdrawal remain separately scoped work.
+Budget exhaustion never means proven stable. The [qualification notebook](../../../analyses/2026-tpd-phase-discovery/notebook.qmd)
+retains neutral comparisons, admitted density-dependent ionic/reacting checks,
+density-independent charged-search refusals and unchanged declared work.
+These are numerical verification; physical validation and a global certificate
+do not follow from this doctrine.
+
+Reuse of discovered declarations is numerically qualified for the retained
+owner-enumerated cases. It is not a guarantee for every amount scale or initial
+point. A 100 mol neutral discovery reproduces the one-mol intensive split and
+extensive Gibbs scaling, while both cold declared solving and supplied-result
+public reuse coalesce and are rejected by the distinct-phase check. This is a
+known declared-driver conditioning limit, not phase nonexistence or failure of
+the discovered-state scaling. [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
+owns investigation; no shared-driver change is selected in #223.
 
 ## Sensitivity and validity
 

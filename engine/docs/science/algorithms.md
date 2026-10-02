@@ -6,10 +6,12 @@ These methods consume the [equation definitions](../equations.md),
 Algorithm IDs below are stable references. Current implementation and required
 numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT/issues).
 No section claims that all required actions currently exist. The implementation
-plan owns current versus deferred scope: PH/PS/UV and phase discovery are future
-work. Reuse current/old numerical owners and independent cases under its
-adoption gate before implementing a method. Declared-branch continuation and
-mechanical/local stability checks remain current requirements.
+plan owns current versus deferred scope. PH/PS/UV remain future work. The
+explicit native fixed-T/P discovery and tangent-plane testing path in
+ALG-STABILITY has retained numerical qualification on the stated neutral and
+admitted ionic/reacting cases, supported by the independent delivered review
+within the retained limits. Reuse accepted numerical owners and independent cases.
+Declared-branch continuation and mechanical/local checks remain required.
 
 ## ALG-ADMISSION
 
@@ -585,6 +587,209 @@ A partial prefix is never target success, a step or budget limit
 is never a topology event, and every attempt is retained by the existing Core
 trace scopes. Reusing only an initial seed is not continuation. The result is
 a declared local branch, not a discovery or global-stability certificate.
+
+## ALG-STABILITY
+
+The explicit native tangent-plane test and fixed-T/P discovery adopted in
+[#223](https://github.com/tannerpolley/ePC-SAFT/issues/223) reuse `CompiledSystem`,
+`run_driver`, density/association owners and exact CppAD value/derivative chains.
+No second minimizer, production finite differences or Python search loop is
+admitted. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
+owns physical admission and claim meaning; EqID: `tangent_plane_distance` owns
+the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-discovery/)
+retains numerical qualification on the stated neutral and admitted
+density-dependent ionic/reacting cases, explicit density-independent
+charged-search refusals and unchanged declared work. Method adoption is recorded in
+[ADR 0012](../../../docs/scientific/adr/0012-native-tangent-plane-phase-discovery.md).
+
+### Explicit calls and solved snapshots
+
+`Discover()` dispatches natively before declared compilation, only at fixed
+positive T/P. A legacy unknown-topology indicator is not permission to search.
+`stability_test(...)` tests an accepted declared result without addition/removal.
+Retain and verify model and complete physical declaration identity. At solved
+T/P freeze actual standards, reference transfers and gauge. All-free chemical
+multipliers are recovered; pinned multipliers are primal. Pinned/free-intensive
+snapshots release amount pins for a fixed-T/P Gibbs-descent diagnosis, not for
+following the original feasibility path. Only positive amounts supply donors.
+Discovery with free intensives remains outside this method.
+
+Declared solves, continuation, parameter fitting and ASL perform zero trial
+solves. They preserve callback arithmetic/order and counted work. Returned
+solved-state actions use the fixed discovered declaration without searching.
+Qualification must compare the retained before/after declared numerical values
+bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
+same compiler, dependencies, inputs, options and thread limits. Report explicit
+discovery/test wall time (median of three same-machine runs), driver roles and
+trial counts separately; no universal wall-time threshold is inferred.
+Explicit native searches own their work capture and pass its trace to the
+counting code. The trace reports work only; no solver decision reads the ambient
+trace. Declared calls retain their existing scopes and perform no trial work.
+
+### Supports, seeds and trial solves
+
+Let U be fed species plus all reaction participants and U₀ its neutral subset.
+Initial discovery candidates are one free phase on U, Liquid, and also Vapor
+when U is neutral. For reactions, first construct the existing positive
+charge-neutral base on U, then run the unchanged ideal-solution speciation
+sweeps. A zero-fed reaction participant remains on the required support; its
+feed fraction is not an admissible log-chart seed. Record all initial attempts
+and retain the accepted lower-G candidate. This preparation belongs only to
+discovery; declared initialization remains unchanged.
+Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
+pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
+Caller support/label entries **replace** defaults and limit the tested domain;
+they do not restrict the initial union candidate. Reject empty caller lists,
+empty supports, species outside U, one-sign ionic supports and ionic Vapor.
+
+Before enumerating starts, one shared native support-admission predicate requires
+`DensityTemperature` or `DipolarPerturbation` whenever a requested support
+contains ions. These are the existing forms with $\epsilon_r\to1$ as
+$\rho_m\to0$ (full EOS §6.2/§6.4). Density-independent `IonSuppression` and
+`ComponentMixing` describe condensed-phase electrolyte terms and raise the typed
+`ParameterError`: "permittivity model has no low-density limit; declare phases".
+Reject the requested family explicitly; do not silently drop charged trials or
+interpret refusal as stability. This predicate is used by the explicit test and
+by discovery before its first declaration solve, and never by declared solves,
+continuation, fitting or ASL. Neutral-only requested families are unaffected.
+Admission reads the form, not a sampled density, fitted coefficient, phase label
+or optimizer termination. It introduces no density cutoff or failed-trial filter.
+
+For every admitted pair enumerate a positive charge-neutral base from equal
+supported weights with ionic group rescaling. A compatible candidate's strictly
+positive reconstructed restriction may supply the near-pure remainder;
+otherwise use the base, including species structurally absent from that candidate.
+For each neutral species on a nonsingleton support make a 0.99 near-pure seed,
+distributing 0.01 over the other supported species using that neutral remainder.
+A singleton neutral seed is exactly one. Ionic seeds run on Liquid only. Neutral
+Vapor also has an ideal-gas seed proportional to exp(π−s), shifted by its maximum
+before exponentiation, without clipping or hidden floors. Include removed-phase
+compositions on identical admitted support/label pairs. Reconstruct every seed
+using EqID: `electroneutral_trial_reconstruction`. Density-owner Liquid/Vapor
+roots supply packing starts; deduplicate identical seed/root pairs within
+`DENSITY_ANCHOR_LOG_WINDOW`. Retain failed roots as unresolved trials.
+
+Run **every enumerated distinct start** through the shared driver. Compile an
+internal one-free-phase unit-amount system with reduced balance rows spanning
+normalization/charge and no reactions (EqID: `tangent_plane_trial_balance`);
+do not pass it through public no-reaction compilation that restores species
+balances. Retain the echelon row transformation and transformed right-hand side.
+Apply the frozen shift through existing standard-term callbacks, preserving
+EqID: `tangent_plane_shift_log_curvature` at arbitrary points. Exact weighted
+curvature, box admission, polish and local inertia remain shared. The normalized
+trial affinity follows EqID: `normalized_trial_reaction_affinity`; the trial is
+not required to satisfy the original zero-affinity rows.
+
+### Reconstruction, uncertainty and finite descent
+
+Retain raw coordinates only from an actual nonfatal finite, domain-valid
+optimizer attempt, including a nonconverged attempt. Failed initialization has
+no optimizer point. Keep raw residuals separate from reconstructed composition,
+displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
+and the largest-entry positive/negative pivot correction follow EqID:
+`electroneutral_trial_reconstruction` with ties by index. Recompute molar volume
+from reconstructed composition and the retained packing coordinate. Reject
+lost positivity/support, invalid T/P, packing or association domain. Record
+actual normalization/charge defects and rounding scales; ionic defects must
+meet the 1e-12 criterion. Never fabricate a species floor to admit a point.
+
+For candidate balance/phase-charge defects solve the local linear equality
+correction in supported **amount** variables using existing native algebra.
+For trials use normalization/charge rows. Reject rank loss or incompatible
+corrections, enforce positive support/domain and reevaluate before descent.
+Keep the nearby corrected candidate separate from the public result. Residuals,
+correction norm and the energy-gradient contraction estimate feasibility error;
+arithmetic equality roundoff remains explicit.
+
+Use the full present-phase chemical/pressure identity (EqID:
+`present_phase_tangent_plane_identity`), not a chemical-residual-only threshold.
+A donor must contain the entire trial support, have positive amount and finite
+positive capacity (EqID: `tangent_plane_donor_descent`). Choose greatest capacity,
+ties by phase index. Compute its actual slope directly from physical gradients,
+recording plane value, chemical correction and pressure row separately.
+Propagate EqID: `tangent_plane_descent_uncertainty` from reevaluated association
+floors and site residual/conditioning, Euler energy-gradient defect, amount/volume
+column scales, feasibility and arithmetic, plus supplied standard uncertainty.
+A maximum native floor can conservatively replace individual column estimates;
+it remains a local estimate. Final-sum rounding alone does not bound the EOS.
+
+Negative plane and slope beyond the complete estimate require a finite split
+(EqID: `conserved_finite_phase_split`). Try half the donor capacity, then at most
+eight halvings. Preserve every component, hence every moiety and phase charge;
+reconstruct arithmetic composition/charge, recompute density/packing and shared
+energy, and verify matching conserved totals before comparing Gibbs energies.
+Retain each failed check and count energy/density evaluations. Admit numerical
+descent only when the finite Gibbs decrease exceeds its propagated estimate.
+Optimizer convergence and positive trial inertia are diagnostics, not descent
+requirements. An inaccessible negative plane remains unresolved; missing error
+terms, near-zero margins or failed finite descent are indeterminate.
+
+The adopted output is **numerically resolved descending split with estimated
+uncertainty**. Calling it a **proved instability witness** requires justified
+bounds on feasibility and every error term, which native association floors do
+not provide. A completed finite search reports only **no witness in the recorded
+trial set**, naming unresolved trials. No global stability conclusion follows.
+Deduplicate physical trials using `PHASE_COINCIDENCE_DISTANCE` as a topology
+resolution, not an energy-error threshold. Never discard actual resolved finite
+descent solely because the trial is close to a present phase.
+
+### Conserved topology changes and work limits
+
+Rank distinct resolved descending trials by actual donor slope, more negative
+first, ties by enumeration. This is deterministic, not a claim of the best
+possible addition start. Seed the full added declaration with the admitted
+finite split; preserve feed, reactions, standards and exact selected support.
+Reuse shared density-branch admission; a unique unlabelled root retains the
+source declaration label without asserting a physical phase theorem. Require
+achieved rows and an uncertainty-qualified lower Gibbs energy before accepting
+an addition; otherwise try the next distinct trial. The acceptance margin sums
+each present phase's molar energy estimate weighted by its amount in mol, so
+the margin and extensive G/RT both have units mol. Retain this computed margin
+with the addition trial; a per-mole estimate alone cannot qualify an extensive
+Gibbs decrease.
+
+The 100 mol feed-rescaling falsifier verifies this native extensive margin;
+rejected cold/public declared reuse at that amount scale remains the separate
+[declared-conditioning limit](../equilibrium/formulation.md#discovery-and-global-claims).
+Do not infer a universal reuse guarantee or physical nonexistence from it.
+
+Only `check_topology` produces removal events. Keep actual nonfatal finite,
+domain-valid attempt coordinates internally before public `clear_state`.
+Coalescence merges both component inventories and extensive volumes into the
+first phase. Disappearance transfers its complete small inventory and volume
+to the first remaining phase whose support contains it, ties by index. No
+recipient means unresolved removal. Normalize merged amounts, reclose recipient
+density on its declared branch, verify packing/association and balances/charges,
+then solve the reduced declaration. Dropping a phase never drops its inventory.
+The public unavailable-state meaning is unchanged.
+
+For r=rank B, simultaneous phases cannot exceed r. The caller declaration-solve
+budget defaults to **2r** and counts every initial invocation, seeded fallback,
+failed addition/retry and reduced removal solve. Trial minimizations are counted
+separately: for pair h with n_h neutral species and m_h removed-phase seeds,
+there are at most **1+n_h+1_(neutral Vapor)+m_h** starts per round, summed over
+admitted pairs before deduplication. Singleton handling can reduce this bound.
+Each distinct start runs once per candidate; no hidden retry is permitted and
+any shared-driver fallback counts. Caller trial-call limits further bound this
+set. There are at most **2r+1 trial rounds**, including final testing; at most
+**2r−I attempted additions** under the default budget, with I initial declaration
+invocations and removals consuming the same remainder. A caller declaration
+budget replaces 2r in that addition bound. Check limits before every driver
+call. Total driver work is declaration plus trial invocations; retain roots,
+reconstruction, finite-split evaluations, iterations/evaluations and Hessian calls.
+Discovery option defaults belong to Equilibrium, not Core policy.
+
+Partial enumeration is search-incomplete. Remaining resolved descent without
+an admitted next declaration, exhausted budgets or descent at the balance-rank
+phase limit makes discovery unsuccessful, retaining its candidate separately
+for diagnosis. Rank-limit replacement and generalized multi-donor/reactive
+withdrawal remain outside this slice. Completed enumeration without resolved
+descent returns the declaration with the finite-search statement and unresolved
+limits. Every failed/refused/indeterminate qualification follows ALG-TERMINATION's
+fix-before-negative requirement; honest failure reporting alone is not completion.
+Neutral qualification precedes ionic/reacting qualification. Same-wheel declared
+comparisons establish integration/topology evidence; refined FeOs neutral
+comparisons establish cross-implementation agreement, not physical validation.
 
 ## ALG-ACTIONS
 
