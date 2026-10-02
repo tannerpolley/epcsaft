@@ -145,7 +145,8 @@ Phase counts/types/supports are declared unless the caller explicitly requests
 `Discover()` at fixed T/P. Native tangent-plane testing and phase discovery are
 implemented under [#223](https://github.com/tannerpolley/ePC-SAFT/issues/223),
 with retained numerical qualification on the stated neutral and admitted
-ionic/reacting cases; independent delivered review is pending.
+ionic/reacting cases; the independent delivered review supports those cases
+and stated limits.
 Only an explicit `stability_test(...)` call tests a declared result, including
 pinned/free-intensive snapshots at solved T/P with frozen actual standards.
 Declared solves, continuation, parameter fitting and ASL incur no implicit trial

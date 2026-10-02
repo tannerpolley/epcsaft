@@ -66,9 +66,9 @@ global-bound methods, rigorous error enclosures, free-intensive discovery and
 continuation across phase appearance are not adopted.
 
 The explicit native path has retained numerical qualification on the stated
-neutral and admitted density-dependent ionic/reacting cases; independent
-delivered review is pending. Same-wheel comparisons check integration and
-topology; FeOs agreement checks independent implementations. Neither constitutes
+neutral and admitted density-dependent ionic/reacting cases; the independent
+delivered review supports those cases and their stated limits. Same-wheel
+comparisons check integration and topology; FeOs agreement checks independent implementations. Neither constitutes
 physical validation or universal stability. The owning issue and retained
 analysis hold required evidence and remaining work; this ADR is not a parallel
 implementation plan.

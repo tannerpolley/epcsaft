@@ -99,7 +99,9 @@ Budget changes must not silently change scientific scope.
   frozen declared/continuation/fitting/ASL rows pass, with zero implicit trials;
   the initial independent delivered review identified the dimensional margin.
   Its native correction passes the 100 mol amount-weighting falsifier and
-  refreshed qualification; the same reviewer's affected-lens recheck is pending.
+  refreshed qualification. The same reviewer's complete affected-lens recheck
+  returned Supported with no required defects for the stated cases and limits
+  ([delivered review](reviews/issue-223-delivered-review.md)).
 
 - 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
   **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.

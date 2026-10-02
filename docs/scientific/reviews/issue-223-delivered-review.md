@@ -109,4 +109,74 @@ Lead disposition: the amount-weighting defect is corrected natively and the
 conditioning finding is routed to [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243),
 without implementation authority. The supplied-result public reuse route
 mentioned as a possibility above was already probed and coalesced; no successful
-100 mol reuse route is inferred. Final affected-lens recheck remains pending.
+100 mol reuse route is inferred. The affected-lens recheck follows below.
+
+## Final affected-lens recheck, ordinal 3
+
+Read-only reviewer: Claude Opus 5.5, high effort; same task, inspected corrected commit `0f9bbe59b13bedc1b0884908ce7ba55be5194224` against `443d828908f4ad5127ab14384f97635dca30bd30`. The verdict and subsequent attribution correction below are retained verbatim. The correction changes the reviewer's evidence attribution for 100 mol public reuse, not its Supported verdict or numerical limits.
+
+# Final affected-lens recheck of #223 at `0f9bbe59` (base `443d8289`)
+
+**Verdict: Supported**, within the scope and limits below. **No required defects remain.** I did not edit, build, install or run anything in the Engine. The tree is clean.
+
+## The required finding is closed
+
+- **The fix is exactly the requested one** (`gibbs_minimizer.cpp:1848–1850`). It sums `best.amounts[p] * energy_estimate(present_phases[p])`, and the two are indexed over the same phases of the same candidate. It also records the value as `addition_gibbs_estimate_over_rt_mol` on the trial being added.
+- **Nothing else in runtime changed** since `798cb535`: no change to the shared declared driver, optimizer, physical parameters, tolerances or trial starts.
+- **The numbers check by hand.**
+  - The per-mole estimate is 5.3088290347162355e-11 + 1.776e-15 + 3.0399e-14 = 5.312046591948305e-11.
+  - At N = 100 mol this gives a margin of 5.312046591948305e-9 mol.
+  - The native value has relative error 0 against the 1e-13 criterion.
+- **The check would have caught the old code.** The old unweighted margin has relative error 0.99 and fails the same criterion.
+- **100 mol discovery scales correctly against 100 × the 1 mol reference:**
+
+| Quantity | Difference | Criterion |
+|---|---:|---:|
+| Composition | 1.67e-15 | 1e-9 |
+| Phase amounts | 2.42e-13 mol | 1e-10 mol |
+| Component inventory | 7.1e-15 mol | 1e-10 mol |
+| Relative G | 6.70e-15 | 1e-10 |
+| Relative density | 2.11e-15 | reported only |
+
+## Evidence I checked
+
+- **Wheel and gates.** The installed wheel SHA is `8470b49a…`. The three gate logs match their recorded hashes; all checks pass and 0 architecture rules fail.
+- **Retained data.** The committed CSV blobs in `qualification-8470b49a` match their recorded hashes.
+- **Declared work unchanged.** The 4,374 frozen rows (1,841/838/217/1,478) are `identical: true`. The ASL capture, on current library `12f4a434…`, matches all 396 work rows and the numerical rows. Counts are 9 drivers, 66 iterations, 130 evaluations, 75 Hessian calls and 0 trials.
+- **Render.** The notebook source, its included files and the HTML hashes match the render record, and the render ran without executing code.
+- **Budgets.** `diffstat --budgets` gives Equilibrium 6921/7575 and total 21110/22000. Bindings (1886) and Python (2635) are unchanged.
+- **Docs.** Formulation, ALG-STABILITY, the ADR and CONTEXT now state the amount-weighted margin and the bounded reuse claim. #243 is open as the owner of the declared-conditioning question.
+
+## Scope of Supported
+
+The capability is:
+- an explicit native tangent-plane `stability_test` on accepted declared results, including pinned and free-intensive snapshots at their solved T/P;
+- explicit fixed-T/P `Discover()` through the one Ipopt driver with exact derivatives.
+
+It is supported for these cases:
+- neutral cases 1–4;
+- the FeOs neutral comparison;
+- the manufactured density-dependent reacting fixed-T/P case and its pinned free-pressure snapshot;
+- both admitted permittivity forms;
+- typed refusals for every density-independent surface choice;
+- case-6 neutral-only families;
+- the 100 mol addition-margin check.
+
+This is numerical verification of the supplied models and recorded trial sets. It is not physical validation and not a global stability certificate. Descent carries an estimated uncertainty, not a proved bound.
+
+## Limits that must stay with the verdict
+
+- **No charged phase addition is qualified.** No admitted case has a charged trial producing a resolved descent and an added ionic phase; the reacting fixture stays one phase.
+- **Case-6 neutral-only discovery finds a higher-G state.** Its G/RT is −8.662995081104183 mol, above the declared ionic split's −8.663320942099162 mol. "No witness" applies only to the restricted trial family.
+- **Reuse is qualified only for the original owner-specified cases.** At 100 mol, cold declared solves and public reuse of the returned declaration coalesce; the warm-start route was tried and also fails. This is a declared-conditioning limit owned by #243. It does not mean the second phase doesn't exist, and there is no guarantee of reuse at every feed scale.
+- **Indeterminate trials are not proofs either way.** The 34 named ones (26 neutral, 4 reacting, 3 permittivity, 1 at 100 mol) are near-zero trivial-root signs.
+- **Refused Discover still does compile work.** It compiles before the permittivity guard, including EOS work the outer trace cannot see. Its zero columns mean no driver callbacks, not no EOS work.
+- **Other limits.**
+  - The FeOs reference keeps FeOs's own negative-TPD stopping relaxation.
+  - The ASL capture is specific to this Linux/glibc build.
+  - No original full public trace exists for a before/after trace comparison.
+  - Rank-limit replacement, generalized withdrawal and free-intensive discovery remain deferred.
+
+**Next stage:** stop for #223. Root records this verdict and updates the notebook text that still says the recheck is pending. Write is not requested.
+
+Correction: I did not inspect the evidence for the 100 mol warm-start reuse failure (`solve_equilibrium(model, returned, found)`). That claim comes from the lead's report and the notebook's description of the ordinal-5 diagnostic, not from my own check. The verdict and limits are unchanged.

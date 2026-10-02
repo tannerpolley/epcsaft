@@ -9,7 +9,8 @@ No section claims that all required actions currently exist. The implementation
 plan owns current versus deferred scope. PH/PS/UV remain future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
-admitted ionic/reacting cases; independent delivered review is pending. Reuse accepted numerical owners and independent cases.
+admitted ionic/reacting cases, supported by the independent delivered review
+within the retained limits. Reuse accepted numerical owners and independent cases.
 Declared-branch continuation and mechanical/local checks remain required.
 
 ## ALG-ADMISSION

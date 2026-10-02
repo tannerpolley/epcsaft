@@ -7,8 +7,8 @@ This document specifies required phase, reaction and reactive-phase mathematics.
 A proposed or registered equation is not a capability claim. Declared-phase
 specifications and the explicit native tangent-plane test/fixed-T/P discovery
 path adopted in #223 have retained numerical qualification for the stated
-neutral and admitted ionic/reacting cases. Independent delivered review is
-pending; PH/PS/UV remain deferred.
+neutral and admitted ionic/reacting cases. The independent delivered review
+supports these retained cases and stated limits; PH/PS/UV remain deferred.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
