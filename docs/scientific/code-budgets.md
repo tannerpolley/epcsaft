@@ -77,6 +77,41 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, #238 declared equilibrium starts, measured against integrated
+  main `edf7672e`: **264 gross added, 18 removed, +246 net runtime lines**.
+  Lead-authorized task cap 260 gross; first draft measured 227. The lead
+  authorized up to 275 for admission corrections, then the owner paused hard
+  ceilings for this sprint (#248); 275 is now a target. The simplification
+  pass separated previous-coordinate reuse from physical seed preparation and
+  reused declaration equality and the caller-tolerance result. The 150 estimate was low because
+  it omitted complete seed admission, remaining-limit propagation through the
+  driver callbacks and polish, and the transported attempt/work records.
+
+  | Layer | Base | Gross | Removed | Net | Final | Shared hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4509 | 0 | 0 | 0 | 4509 | 4800 |
+  | Equilibrium | 6921 | 193 | 18 | +175 | 7096 | 8800 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1886 | 27 | 0 | +27 | 1913 | 2100 |
+  | Python | 2635 | 44 | 0 | +44 | 2679 | 2850 |
+  | Aggregate | 21345 | 264 | 18 | +246 | 21591 | 24000 |
+
+  One compiled problem, existing generic/boundary seeds, the shared packing
+  predicate, exact Ipopt driver and density admission remain the owners.
+  The fitting sequence's remaining-iteration and steady-clock accounting pattern
+  is reused; the common Ipopt option owner applies positive CPU-time limits
+  to exact solves as well as estimation. The driver callback carries the elapsed
+  deadline; no second optimizer or acceptance rule is introduced. The native
+  packing coefficient is transported for the analytic density-closed seed.
+  The soft excess retains these numerical responsibilities and their work
+  diagnostics. The shared #244 envelope and layer ceilings remain unchanged;
+  no exclusive allowance is reserved for this task and no ceiling is edited.
+  Numerical qualification
+  and independent delivered review are separate from this line accounting.
+
 - 2026-10-02, roadmap envelope raise (#220, owner approved): with #223 and
   #225 slice 1 delivered on branches, the measured counts reach about 21,340 total,
   with Properties 4509, Bindings 1886 and Python 2635. The Ready designs still to

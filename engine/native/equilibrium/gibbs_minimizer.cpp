@@ -1132,6 +1132,16 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
         || (limits.iterations && out.iterations >= *limits.iterations); };
     if (!exhausted()) {
         auto compiled = compile_problem(model, problem);
+        for (const auto& seed : starts) if (seed.previous) {
+            const auto& old = *seed.previous;
+            if (!old.declaration || old.model_identity != &model)
+                throw std::invalid_argument("previous start model/parameters or declaration differs");
+            auto difference = declaration_difference(*old.declaration, compiled.problem);
+            if (old.declaration->feed.values != compiled.problem.feed.values) difference = "feed values differ";
+            if (!problem.temperature.free && old.declaration->temperature.value != problem.temperature.value) difference = "fixed temperature differs";
+            if (!problem.pressure.free && old.declaration->pressure.value != problem.pressure.value) difference = "fixed pressure differs";
+            if (!difference.empty()) throw std::invalid_argument("previous start: " + difference);
+        }
         core::Scope scope("solve_equilibrium_starts");
         for (std::size_t i = 0; i < starts.size(); ++i) {
             if (exhausted() || (limits.attempts && i >= *limits.attempts)) { out.budget_exhausted = true; break; }
@@ -1146,13 +1156,9 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 const auto check = [](bool ok) { if (!ok) throw std::invalid_argument("initialization: invalid declared seed"); };
                 check((initial.empty() && !seed.previous) || (seed.compositions.empty() && seed.packing_fractions.empty()
                     && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())));
-                if (initial.empty()) {
+                if (seed.previous) { check(seed.previous->has_state()); initial = seed.previous->coordinates; }
+                else if (initial.empty()) {
                     auto seeded = compiled;
-                    if (seed.previous) {
-                        check(seed.previous->phase_count == problem.phases.size() && seed.previous->success);
-                        initial = seed.previous->coordinates;
-                        check(initial.size() == compiled.unknown_count());
-                    }
                     check(seed.compositions.empty() || seed.compositions.size() == compiled.problem.phases.size());
                     check(seed.packing_fractions.empty() || seed.packing_fractions.size() == compiled.problem.phases.size());
                     check(seed.amounts.empty() || seed.amounts.size() == compiled.problem.phases.size());
@@ -1163,13 +1169,12 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
                         check(!phase.packing_guess || admitted_packing_seed(*phase.packing_guess));
-                        if (seed.previous) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
                         complete = complete && !phase.composition_guess.empty() && phase.packing_guess.has_value();
                     }
                     if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
                     if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
                     if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
-                    if (initial.empty()) initial = complete ? seeded.generic_point() : boundary_start(seeded, false);
+                    initial = complete ? seeded.generic_point() : boundary_start(seeded, false);
                     const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];
@@ -1179,8 +1184,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         if (phase.packing_guess) initial[cursor] = std::log(*phase.packing_guess);
                     }
                     auto cursor = compiled.primal_size - compiled.free_intensive_count;
-                    if (problem.temperature.free) { if (!seed.previous && (seed.temperature || !problem.temperature.absent)) initial[cursor] = seeded.problem.temperature.value; ++cursor; }
-                    if (!seed.previous && problem.pressure.free && (seed.pressure || !problem.pressure.absent)) initial[cursor] = seeded.problem.pressure.value;
+                    if (problem.temperature.free) { if (seed.temperature || !problem.temperature.absent) initial[cursor] = seeded.problem.temperature.value; ++cursor; }
+                    if (problem.pressure.free && (seed.pressure || !problem.pressure.absent)) initial[cursor] = seeded.problem.pressure.value;
                 }
                 check(initial.size() == compiled.unknown_count() && all_numeric(initial));
                 const auto offsets = compiled.phase_offsets();
@@ -1206,7 +1211,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     }
                 }
                 out.causes[i] = result.message; out.results[i] = std::move(result);
-                if (out.results[i]->success) out.selected = i;
+                if (out.results[i]->success && out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
             } catch (const std::exception& error) { out.causes[i] = error.what(); }
             out.iterations += work.consumed;
             out.attempt_seconds[i] = std::chrono::duration<double>(Clock::now() - attempt_begun).count();

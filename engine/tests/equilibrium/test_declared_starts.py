@@ -1,5 +1,8 @@
 """Ordered declared starts: analytic exchange amounts and a shared work quota (#238)."""
+from copy import deepcopy
 from typing import Any
+
+import pytest
 
 from epcsaft import Mixture
 from epcsaft import equilibrium as eq
@@ -40,16 +43,33 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     result = solved.results[1]
     assert result is not None
     for phase, support in enumerate(((0, 2, 4), (1, 3, 5))):
-        error = max(abs(result.amounts[phase] - 1.3),
-                    *(abs(result.mole_fractions[6*phase+i] - x) for i, x in zip(support, exact[phase], strict=True)))
-        assert error <= 1e-9
-        evidence.compare(f"declared-starts/exchange/{phase}", model=error, reference=0., unit="mol or mole fraction",
-                         criterion={"rule": "symmetric_close", "atol": 1e-9})
+        amount_error = abs(result.amounts[phase] - 1.3)
+        fraction_error = max(abs(result.mole_fractions[6*phase+i] - x)
+                             for i, x in zip(support, exact[phase], strict=True))
+        assert amount_error <= 1e-9 and fraction_error <= 1e-9
+        for quantity, value, unit in (("amount", amount_error, "mol"), ("composition", fraction_error, "1")):
+            evidence.compare(f"declared-starts/exchange/{phase}/{quantity}", model=value, reference=0., unit=unit,
+                             criterion={"rule": "symmetric_close", "atol": 1e-9})
     raw = max(abs(r) for r in result.residuals)
     assert raw <= 1e-10
     for a, b, target in ((2, 3, 2.), (4, 5, .5)):
         ratio = result.amounts[1]*result.mole_fractions[6+b] / (result.amounts[0]*result.mole_fractions[a])
         assert abs(ratio-target) <= 1e-8
+        evidence.compare(f"declared-starts/ratio/{a}", model=ratio, reference=target, unit="1",
+                         criterion={"rule": "symmetric_close", "atol": 1e-8})
+    for form in ("coordinates", "previous"):
+        replay = eq.EquilibriumStart()
+        setattr(replay, form, result.coordinates if form == "coordinates" else result)
+        restored = eq.solve_equilibrium_starts(model, problem, [replay], eq.EquilibriumWorkLimits())
+        assert restored.selected == 0 and restored.results[0] is not None
+        assert max(map(abs, restored.results[0].residuals)) <= 1e-10
+    previous = eq.EquilibriumStart()
+    previous.previous = result
+    for field, value in (("P", 4e6), ("T", 201.), ("feed", eq.Amounts({"s0": 2., "s1": 1., "s2": .3, "s4": .3}))):
+        different = deepcopy(problem)
+        setattr(different, field, value)
+        with pytest.raises(ValueError, match="fixed pressure|fixed temperature|feed"):
+            eq.solve_equilibrium_starts(model, different, [positive, previous], eq.EquilibriumWorkLimits())
     only = eq.solve_equilibrium_starts(model, problem, [invalid], eq.EquilibriumWorkLimits())
     assert only.selected is None and only.iterations == 0
     for name in ("iterations", "seconds"):
