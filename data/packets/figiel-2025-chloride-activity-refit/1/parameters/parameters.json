@@ -3,7 +3,7 @@
   "schema_version": 1,
   "document_id": "figiel-2025-chloride-activity-refit",
   "document_version": 1,
-  "purpose": "Aqueous LiCl/NaCl/KCl stage-1 activity refit under issue 209 D9; alcohol mixtures use the source packet /4.",
+  "purpose": "Aqueous LiCl/NaCl/KCl stage-1 activity refit under issue 209 D9. Na/K water/chloride k_ij and dependent Born diameters are one feasible point, not determined minimax estimates. Alcohol mixtures use source packet /4.",
   "sources": [
     {
       "source_id": "figiel-yu-held-2025",

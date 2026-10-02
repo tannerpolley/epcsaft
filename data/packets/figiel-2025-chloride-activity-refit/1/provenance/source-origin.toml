@@ -4,7 +4,7 @@ transformations = ["Refit six alkali-water/chloride k_ij and C by native exact-d
 
 [[records]]
 retained_path = "parameters/parameters.json"
-sha256 = "fc5557260b5df7319e7e5a31af8ce7f286ea18549e11a55b3ce2fbf3b614049b"
+sha256 = "cec1bfc9c833f7196c7bc11d51d21aa8bc224cc388b04f165712acc5c4473626"
 
 [[sources]]
 source_id = "input-0"
@@ -22,7 +22,7 @@ sha256 = "b2f9ac552caa250997b1aa3b99943f9b63be740df54e2d79ef23568df712fcae"
 source_id = "input-2"
 role = "Retained fit input or numerical result"
 retained_path = "analyses/2026-figiel-divalent-chlorides/results/stage1-minimax-fit.json"
-sha256 = "c43c56d49799e2c5cbf3cae50aad4982a19bcb20169193bcef6785bd87a0b2fc"
+sha256 = "f797b308a8671796fba21d92feff8fe9c1a44e1c138b2a5a76412a642113088b"
 
 [[sources]]
 source_id = "input-3"
