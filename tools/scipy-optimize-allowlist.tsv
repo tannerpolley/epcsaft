@@ -29,7 +29,5 @@ scipy	analyses/2026-mea-parameter-estimation/results/analysis/physical-co2-water
 scipy	analyses/2026-mea-parameter-estimation/results/analysis/physical-co2-water/run.py	223	    solved = least_squares(	CO2-water coexistence fit	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	23	from scipy.optimize import minimize	Tangent-plane distance minimization	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	90	"        result = minimize(objective, np.log(np.asarray(w0)), method=""Nelder-Mead"","	Tangent-plane distance minimization	234
-scipy	analyses/reproduction/2018-wangler/figures/figure-10/scripts/generate_data.py	16	from scipy.optimize import least_squares	Osmotic-coefficient interaction fit	234
-scipy	analyses/reproduction/2018-wangler/figures/figure-10/scripts/generate_data.py	349	    fit = least_squares(	Osmotic-coefficient interaction fit	234
 scipy	engine/tests/regression/test_reaction_constants.py	7	from scipy.optimize import least_squares  # type: ignore[import-untyped]	Reaction-constant comparator fit	234
 scipy	engine/tests/regression/test_reaction_constants.py	71	"    external = least_squares(objective, start, jac=""3-point"", diff_step=1e-3, bounds=(-2.0, 2.0),"	Reaction-constant comparator fit	234
