@@ -13,8 +13,6 @@ review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	264	    fo
 review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	509	    roots, _ = scan_roots(	Local density root search	234
 review-only	analyses/2026-heat-capacity-fitting/scripts/reference.py	103	polynomial = np.polynomial.Polynomial.fit(T - 360, [ideal_cp(t) for t in T], 6).convert()	IAPWS heat-capacity polynomial fit	234
 review-only	analyses/2026-idaes-asl-adapter/scripts/run.py	1061	    for _ in range(100):	Engine pressure-cap density bisection	234
-review-only	analyses/2026-polar-dipole/scripts/compare.py	80	    for factor in (1.0, 1.05, 1.1):	Python multistart around native fits	234
-review-only	analyses/2026-pure-saturation-regression/scripts/replay_propane_fit.py	71	    for start in starts:	Python multistart around native fits	234
 review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	12	from scipy.optimize import least_squares	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	202	        result = least_squares(	Chart bounds and residual corrector	234
@@ -30,11 +28,7 @@ scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostati
 scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	30	from scipy.optimize import least_squares	Ionic electrostatics refits	234
 scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	261	    fits = [least_squares(residuals, [*start] + [0.0] * len(groups), x_scale=0.1, diff_step=1e-4)	Ionic electrostatics refits	234
 scipy	analyses/2026-mea-parameter-estimation/results/analysis/ionic-electrostatics/compare.py	424	    fits = [least_squares(residuals, [*start] + [0.0] * 4 + [1.0] * bias + [1.0] * water_slope, x_scale=0.1, diff_step=1e-4, bounds=bounds)	Ionic electrostatics refits	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/physical-co2-water/run.py	22	from scipy.optimize import least_squares	CO2-water coexistence fit	234
-scipy	analyses/2026-mea-parameter-estimation/results/analysis/physical-co2-water/run.py	223	    solved = least_squares(	CO2-water coexistence fit	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	23	from scipy.optimize import minimize	Tangent-plane distance minimization	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	90	"        result = minimize(objective, np.log(np.asarray(w0)), method=""Nelder-Mead"","	Tangent-plane distance minimization	234
-scipy	analyses/reproduction/2018-wangler/figures/figure-10/scripts/generate_data.py	16	from scipy.optimize import least_squares	Osmotic-coefficient interaction fit	234
-scipy	analyses/reproduction/2018-wangler/figures/figure-10/scripts/generate_data.py	349	    fit = least_squares(	Osmotic-coefficient interaction fit	234
 scipy	engine/tests/regression/test_reaction_constants.py	7	from scipy.optimize import least_squares  # type: ignore[import-untyped]	Reaction-constant comparator fit	234
 scipy	engine/tests/regression/test_reaction_constants.py	71	"    external = least_squares(objective, start, jac=""3-point"", diff_step=1e-3, bounds=(-2.0, 2.0),"	Reaction-constant comparator fit	234
