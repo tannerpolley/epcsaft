@@ -112,6 +112,14 @@ Budget changes must not silently change scientific scope.
   Numerical qualification
   and independent delivered review are separate from this line accounting.
 
+- 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
+  enforced until the current sprint ends. `tools/diffstat.py --budgets` still
+  counts every layer and prints FAIL rows, but exits successfully while
+  `HARD_CEILINGS_PAUSED` is set. Each build reports its measured gross and net
+  runtime lines, and its review justifies growth and checks for duplication.
+  After the sprint, a consolidation audit runs and the ceilings are reset
+  from measured counts; then the pause flag is removed.
+
 - 2026-10-02, roadmap envelope raise (#220, owner approved): with #223 and
   #225 slice 1 delivered on branches, the measured counts reach about 21,340 total,
   with Properties 4509, Bindings 1886 and Python 2635. The Ready designs still to
