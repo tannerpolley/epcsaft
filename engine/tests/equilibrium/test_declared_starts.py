@@ -74,20 +74,25 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     partial_result = eq.solve_equilibrium_starts(model, problem, [partial], eq.EquilibriumWorkLimits())
     assert partial_result.selected == 0 and partial_result.results[0] is not None
     assert max(map(abs, partial_result.results[0].residuals)) <= 1e-10
-    pinned = deepcopy(problem)
-    pinned.phases[1].amount = eq.Pinned(.5)
-    for amount in (float("nan"), 0.):
-        conflicting = seed(exact, packing)
-        conflicting.amounts = [1.3, amount]
-        refused = eq.solve_equilibrium_starts(model, pinned, [conflicting], eq.EquilibriumWorkLimits())
-        assert refused.selected is None and refused.results[0] is None and refused.iterations == 0
-        assert "amount for phase organic" in refused.causes[0]
     pure = Mixture(parameters((ETHANE,)))
     bubble = eq.Problem(T=200., P=eq.Free(1e5), feed=eq.Amounts({"s0": 1.}),
                         phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))],
                         row_tolerance=1e-10)
     reference = eq.solve_equilibrium(pure, bubble)
     assert reference.success
+    pinned_seed = eq.EquilibriumStart()
+    pinned_seed.compositions = [[1.], [1.]]
+    pinned_seed.packing_fractions = reference.packing_fractions
+    pinned_seed.pressure = reference.pressure[0]
+    for amount in (float("nan"), 1.):
+        pinned_seed.amounts = [1., amount]
+        refused = eq.solve_equilibrium_starts(pure, bubble, [pinned_seed], eq.EquilibriumWorkLimits())
+        assert refused.selected is None and refused.results[0] is None and refused.iterations == 0
+        assert "amount for phase V" in refused.causes[0]
+    pinned_seed.amounts = [1., 0.]
+    admitted = eq.solve_equilibrium_starts(pure, bubble, [pinned_seed], eq.EquilibriumWorkLimits())
+    assert admitted.selected == 0 and admitted.results[0] is not None
+    assert abs(admitted.results[0].pressure[0]/reference.pressure[0]-1) <= 1e-9
     previous.previous = reference
     bubble.P = eq.Free(2e5)
     reused = eq.solve_equilibrium_starts(pure, bubble, [previous], eq.EquilibriumWorkLimits())
@@ -102,7 +107,8 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         assert stopped.selected is None and stopped.budget_exhausted and stopped.results[0] is None
     limits = eq.EquilibriumWorkLimits()
     limits.iterations = 1
-    stopped = eq.solve_equilibrium_starts(model, problem, [invalid, later, positive], limits)
+    far = seed(([.8, .08, .12], [.8, .12, .08]), [.001, .001])
+    stopped = eq.solve_equilibrium_starts(model, problem, [invalid, far, positive], limits)
     assert stopped.selected is None and stopped.budget_exhausted and stopped.iterations <= 1
     assert stopped.results[1] is not None and stopped.results[2] is None
     unfinished = max(abs(r) for r in stopped.results[1].residuals)
