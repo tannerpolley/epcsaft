@@ -2,8 +2,8 @@
 
 Date: 2026-09-09. Scope: read-only assessment of C1–C4 by the requested
 Fable 5.1 High reviewer, followed by lead inspection of the cited owners and
-callers. All four rows remain Pending. This is not implementation or numerical
-qualification of Core.
+callers. At that snapshot, all four rows were Pending. This is not implementation
+or numerical qualification of Core.
 
 | Row | Finding | Required evidence before qualification |
 |---|---|---|
@@ -12,13 +12,13 @@ qualification of Core.
 | C3 — Diagnostics and availability | `ALG-TERMINATION` requires nonfinite and singular outcomes. `Stop` has no nonfinite state, and `classify` does not reject NaN/nonfinite input before comparing it. General unsuccessful Ipopt statuses enter the same classification route. Density refinement can throw on its iteration limit even after classification reports convergence. | Exercise nonfinite/domain/singular/infeasible outcomes and boundary iterations through their actual producers; retain valid outputs and distinct causes. Existing finite-input classifier checks do not establish these cases. |
 | C4 — Core qualification | The installed diagnostics suite passes, but code budgets and existing finite-input cases are not acceptance of the complete Core contract. | Complete C1–C3 evidence, cost review and independent acceptance before qualifying C4. |
 
-Source anchors: [numerical policy](../../../engine/native/core/numerical_policy.hpp),
-[phase amount use](../../../engine/native/equilibrium/gibbs_minimizer.cpp),
-[active coordinates](../../../engine/native/model/helmholtz_tape.hpp),
-[coordinate validation](../../../engine/native/model/helmholtz_model.cpp),
-[termination doctrine](../../../engine/docs/science/algorithms.md#alg-termination),
-[classifier](../../../engine/native/core/convergence.hpp) and
-[density refinement](../../../engine/native/model/density.cpp).
+Historical source anchors preserved in baseline `8b6835c`: [numerical policy](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/core/numerical_policy.hpp),
+[phase amount use](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/equilibrium/gibbs_minimizer.cpp),
+[active coordinates](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/model/helmholtz_tape.hpp),
+[coordinate validation](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/model/helmholtz_model.cpp),
+[termination doctrine](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/docs/science/algorithms.md#alg-termination),
+[classifier](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/core/convergence.hpp) and
+[density refinement](https://github.com/tannerpolley/ePC-SAFT/blob/8b6835c58a85773059dadb7d1e089e0d7ec07380/engine/native/model/density.cpp).
 
 The review also checked a suspected gap in `packing_terms`: the omitted ionic
 sigma/dispersion derivatives are consistent with the separate ionic packing
@@ -26,9 +26,7 @@ diameter. It is not a defect established by this review. The existing D3
 readiness case already checks rejection of a tightening derived tolerance;
 removing its duplicate Planned declaration does not qualify C1.
 
-The smallest next scientific slice is C1: establish policy units, source meaning,
-consumers and falsifiers, then correct demonstrated defects under that slice.
-C3 follows with diagnostic producer and termination evidence; C2 requires its
-coordinate/scaling qualification. No constants, tolerances, algorithms or Core
+Current plans and prerequisites belong to the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones).
+No constants, tolerances, algorithms or Core
 runtime files were changed by this review. The existing F5 disagreement remains
 Failed and is not resolved by infrastructure acceptance.
