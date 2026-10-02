@@ -78,8 +78,8 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #240 straight physical-parameter continuation, measured against
-  integrated main `f593e803`: **96 gross runtime lines added, 57 removed, +39 net**.
-  Aggregate is **21,345 → 21,384**, with **2,616** lines below the recorded
+  integrated main `f593e803`: **103 gross runtime lines added, 60 removed, +43 net**.
+  Aggregate is **21,345 → 21,388**, with **2,612** lines below the recorded
   **24,000** envelope. No numeric ceiling changes. The sprint pause below
   applies; counts and duplication remain review subjects.
 
@@ -92,8 +92,8 @@ Budget changes must not silently change scientific scope.
   | Parameter regression | 2398 | 13 | 13 | 0 | 2398 |
   | Surface | 532 | 0 | 0 | 0 | 532 |
   | Bindings | 1886 | 5 | 1 | +4 | 1890 |
-  | Python | 2635 | 9 | 0 | +9 | 2644 |
-  | Aggregate | 21345 | 96 | 57 | +39 | 21384 |
+  | Python | 2635 | 16 | 3 | +13 | 2648 |
+  | Aggregate | 21345 | 103 | 60 | +43 | 21388 |
 
   The existing declared-branch controller retains predictor, corrector, retry,
   topology and anchored-density checks. Trial models use immutable base records
@@ -101,7 +101,8 @@ Budget changes must not silently change scientific scope.
   tangent. One pointer/size view replaces the vector-only family map, including
   tape preparation and parameter-fitting callers. Shared coordinate admission
   removes repeated slot validation while checked indexing and tied-value checks
-  remain. Above-soft counts retain these exact chains and physical-value
+  remain. Python declares global Born coordinates without component targets;
+  native code owns their physical chart and exact map. Above-soft counts retain these exact chains and physical-value
   transport, not a second solver. Gross growth is below the 270-line task target.
   Tests, analysis input/output readers, derivative verification and retained
   tables are outside runtime counts and contain no displaced iterative method.

@@ -4760,11 +4760,12 @@ void born_parameter_columns() {
         const std::array<double, 3> actual = {state.born, derivatives.gradient[2 + x.size()], derivatives.gradient[3 + x.size()]};
         for (std::size_t column = 0; column < actual.size(); ++column) {
             const auto id = std::to_string(case_index + 1) + "/" + std::to_string(c) + "/" + std::to_string(epsilon) + "/" + std::to_string(column);
-            recording_support::compare_custom(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
+            const double atol = reference[column] == 0.0 ? 1e-12 : 0.0;
+            const bool ok = std::abs(actual[column] - reference[column]) <= atol + 1e-12 * std::abs(reference[column]);
+            CHECK(recording_support::compare(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
                 actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
-                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "relative",
-                close(actual[column], reference[column], 1e-12), "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column");
-            CHECK(close(actual[column], reference[column], 1e-12));
+                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
+                atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column"));
         }
     }
 }

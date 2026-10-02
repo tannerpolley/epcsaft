@@ -74,14 +74,18 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
 def coordinate(parameters: Parameters, family: str, *targets: object, origin: float, scale: float,
                bounds: tuple[float, float] | None = None) -> Coordinate:
     """One optimizer coordinate u, theta = origin + scale u in the family's native unit (1, angstrom, K),
-    driving every tied target: component ids, (a, b) component pairs, or ((component, site), ...) site pairs."""
+    driving every tied target: component ids, (a, b) component pairs, or ((component, site), ...) site pairs.
+    Global Born scalars have no component targets."""
     if family not in _FAMILIES:
         raise ParameterError(f"unknown parameter family {family}")
-    if not targets:
+    scalar = family in ("born_c_dielectric", "ionic_region_relative_permittivity")
+    if scalar and targets:
+        raise ParameterError(f"{family} is global and takes no component targets")
+    if not targets and not scalar:
         raise ParameterError("a coordinate needs at least one target")
     result = Coordinate()
     result.family = _FAMILIES[family]
-    result.slots = [_slot(parameters, family, target) for target in targets]
+    result.slots = [[0]] if scalar else [_slot(parameters, family, target) for target in targets]
     result.origin, result.scale = origin, scale
     result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
     return result
