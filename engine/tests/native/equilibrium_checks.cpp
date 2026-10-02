@@ -3577,8 +3577,12 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
         // The ionic cp A2 stencil needs larger nodes to resolve its ~1e-7 A3
         // above fresh-solve rounding, without changing the action criterion.
         const std::array<double, 3> ionic_third_steps{2.0, 1.0, 0.5};
+        // Normalized pinned/reactive directions need half-sized A3 nodes:
+        // their coarse Richardson truncation exceeds c despite fine agreement.
+        const std::array<double, 3> scaled_third_steps{0.05, 0.015, 0.005};
         const double* steps = order == 3 && fixture.label.rfind("electrolyte", 0) == 0
-            ? ionic_third_steps.data() : LADDER[order - 1];
+            ? ionic_third_steps.data() : order == 3 && fixture.scaled
+                ? scaled_third_steps.data() : LADDER[order - 1];
         std::vector<Reference> ladder;
         for (std::size_t s = 0; s < 3; ++s) ladder.push_back(reference(fixture, compiled, central, order, steps[s]));
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
@@ -3590,9 +3594,13 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 && !fixture.problem.pressure.free;
             const auto free_amounts = std::count_if(fixture.problem.phases.begin(), fixture.problem.phases.end(),
                 [](const auto& phase) { return phase.amount.kind == epcsaft::equilibrium::AmountKind::Free; });
-            const bool affine_amount = order > 1 && item.observable.kind == Kind::PhaseAmount
-                && fixture.problem.reactions.empty() && (free_amounts <= 1
-                    || fixture.problem.phases[item.observable.phase].amount.kind == epcsaft::equilibrium::AmountKind::Pinned);
+            const auto occupied_phases = std::count_if(fixture.problem.phases.begin(), fixture.problem.phases.end(),
+                [](const auto& phase) { return phase.amount.kind == epcsaft::equilibrium::AmountKind::Free
+                    || phase.amount.fraction > 0.0; });
+            const bool affine_amount = order > 1 && fixture.problem.reactions.empty()
+                && ((item.observable.kind == Kind::PhaseAmount && (free_amounts <= 1
+                        || fixture.problem.phases[item.observable.phase].amount.kind == epcsaft::equilibrium::AmountKind::Pinned))
+                    || (item.observable.kind == Kind::PhaseComponentAmount && occupied_phases == 1));
             const bool affine_ideal = order > 1 && fixture.constant_ideal_cp && item.observable.kind == Kind::PhaseProperty
                 && item.observable.property == PropertyObservable::IdealEnthalpy;
             const bool affine = affine_pressure || affine_amount || affine_ideal;
@@ -3683,10 +3691,10 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
                 recording_support::field("allowance", criterion),
                 recording_support::field("reference_uncertainty", reference_uncertainty),
                 recording_support::field("signal_over_allowance", std::abs(extrapolated.value_or(0.0)) / criterion)});
-            recording_support::compare(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
+            recording_support::compare_custom(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
                 ladder_inputs, "Relationship", affine ? "affine-constraint-identity" : "centered-solve-ladder",
                 affine ? "the defining affine relation has zero higher action" : "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
-                "strict_absolute", criterion, 0.0,
+                "|action-reference|<=allowance && reference_uncertainty<=allowance && resolved_signal",
                 verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
             // A ladder certified by step agreement records that agreement, not an uncomputed rate.
             const bool by_rate = std::isfinite(rate);
