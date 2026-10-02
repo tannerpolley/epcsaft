@@ -74,6 +74,9 @@ plan:
 # constrained estimation (counted estimate +370) plus #225's planned +80; total 22000 unchanged,
 # revisited with measured counts before #224.
 # #219B closeout: measured Regression 2398 + #225 planned 80 = 2478; other ceilings unchanged.
+# 2026-10-01 #223 (owner approved): Bindings hard 1880 -> 1940 and Python 2620 -> 2700 so the
+# phase-discovery build fits after #219 slice B; aggregate 22000 unchanged; a Bindings/Python
+# consolidation audit follows (#221).
 code_budgets: {
   "core": [
     700,
@@ -108,12 +111,12 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1880
+    1940
   ],
   "python": [
     1350,
     1600,
-    2620
+    2700
   ],
   "total": [
     12300,
