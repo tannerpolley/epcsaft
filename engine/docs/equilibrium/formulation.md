@@ -103,6 +103,19 @@ nonreactive declaration compiles square by count but its retained balance and
 normalization rows are dependent, Σ_i balance_i = Σ_p v_p normalization_p, so it
 reports generic rank loss and no nonlinear solve is run.
 
+The conserved-inventory bound call admits no additional charge, energy or chemical
+conditions. On the union of compiled supports it maximizes species amount under
+$Bn=b$, $n\ge0$, with structural zero outside that union. Amount results are in
+mol; their separate feed-normalized value is $u_i/N_{\mathrm{feed}}$.
+When reactions change total moles this value differs from a mole-fraction maximum.
+For an explicit supported fraction floor $f\ge0$, $S f\le1$, fraction bounds use
+$y=n/N$, $\tau=N_{\mathrm{feed}}/N$: $By=(b/N_{\mathrm{feed}})\tau$,
+$\sum y_i=1$, $y_i\ge f$ on support, $y_i=0$ outside, $\tau\ge0$.
+These are aggregate inventory fractions. They bound an individual liquid fraction
+only for a sole finite liquid with a zero-amount vapor, as in the #237 Born cases.
+They establish neither thermodynamic equilibrium nor stability, and no derivative
+of the potentially nonsmooth maximum is supplied.
+
 Ordinary reaction targets are a constant affinity, a scalar K, or the P3
 correlation ln K(T) on the EOS density basis, activity (ρ x_i / 1 mol m⁻³)
 exp(μ_i^res / RT). A correlation on another basis requires the explicit neutral

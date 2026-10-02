@@ -22,6 +22,9 @@ from .problem import (
     solved_state_actions,
 )
 
+inventory_bounds = _core.inventory_bounds
+InventoryBound = _core.InventoryBound
+
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
@@ -43,6 +46,8 @@ asl_record = _core.equilibrium_asl_record
 
 __all__ = (
     "Amounts",
+    "inventory_bounds",
+    "InventoryBound",
     "asl_record",
     "Continuation",
     "ContinuationResult",

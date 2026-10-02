@@ -1412,8 +1412,35 @@ void check_reference_mapping() {
 }  // namespace s2
 
 }  // namespace
+namespace {
+void check_inventory_support() {
+    epcsaft::equilibrium::CompiledSystem c;
+    c.n_feed = {2.0, 1.0, 0.0};
+    c.feed_total = 3.0;
+    c.B = {{1.0, 0.0, 1.0}, {0.0, 1.0, 1.0}};
+    c.balance = {2.0, 1.0};
+    c.rank = 2;
+    epcsaft::equilibrium::PhaseSpec phase;
+    phase.support = {0};
+    c.problem.phases = {phase};
+    for (const bool fraction : {false, true}) {
+        const auto r = epcsaft::equilibrium::inventory_bounds(c, {0}, fraction, 0.0)[0];
+        CHECK(r.status == "infeasible_inventory" && !r.maximum);
+    }
+    c.problem.phases[0].support = {0, 1};
+    for (const bool fraction : {false, true}) {
+        const auto r = epcsaft::equilibrium::inventory_bounds(c, {2}, fraction, 0.0)[0];
+        CHECK(r.status == "structural_zero" && r.maximum && *r.maximum == 0.0 && !r.log_fraction);
+        recording_support::compare(("inventory/structural/" + std::to_string(fraction)).c_str(),
+            "maximum", "1", *r.maximum, 0.0, "{}", "Identity", "structural-zero",
+            "a species absent from every support has zero attainable inventory", "absolute", 0.0, 0.0, true,
+            "inventory", "structural", "maximum", "support", "n_2=0", "zero");
+    }
+}
+}
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.specification.inventory", "Conserved_inventory_support", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "Inventory", "inventory/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "Inventory"}, check_inventory_support},
         {{"native.specification.c1", "Specification_C1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "structural/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C1", "structural/*:480"}, check_c1},
         {{"native.specification.c2", "Specification_C2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "named-rejection,topology-rejection", "engine/tests/native/specification_checks.cpp", "specification_checks", "C2"}, check_c2},
         {{"native.specification.c3", "Specification_C3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian-shape", "engine/tests/native/specification_checks.cpp", "specification_checks", "C3"}, check_c3},
