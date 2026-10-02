@@ -42,3 +42,27 @@ def test_density_crossings_and_finite_domain() -> None:
     assert len(partial.unresolved) == 1
     assert partial.unresolved[0].lower <= expected[0] <= partial.unresolved[0].upper
     assert partial.evaluations == 4
+    for budget in (650, 780):
+        retained = model.density_diagnostics(
+            T, P, nodes=nodes, density_tolerance=1e-9, log_tolerance=1e-14,
+            max_evaluations=budget, max_seconds=10.0, adaptive=True,
+            finite_upper=0.0, evaluation_order=_core.DerivativeOrder.PressureSlope,
+        )
+        assert len(retained.pressure_roots) == 3
+        assert all(abs(root.molar_density - reference) <= 1e-9
+                   for root, reference in zip(retained.pressure_roots, expected))
+    exact = model.density_diagnostics(
+        T, model.state(T, rho=100.0).pressure, nodes=(50.0, 100.0, 200.0, 300.0),
+        density_tolerance=1e-9, log_tolerance=1e-14, max_evaluations=3, max_seconds=10.0,
+        adaptive=True, finite_upper=0.0, evaluation_order=_core.DerivativeOrder.PressureSlope,
+    )
+    assert [root.molar_density for root in exact.pressure_roots] == [100.0]
+    slope_search = model.density_diagnostics(
+        308.8, 1e7, nodes=(5000.0, 5500.0, 6000.0, 7000.0, 8000.0),
+        density_tolerance=1e-9, log_tolerance=1e-14, max_evaluations=5, max_seconds=10.0,
+        adaptive=True, finite_upper=0.0, evaluation_order=_core.DerivativeOrder.PressureSlope,
+    )
+    assert len(slope_search.unresolved) == 1
+    bracket = slope_search.unresolved[0]
+    assert abs(bracket.lower - 5500.0) <= 1e-9 and abs(bracket.upper - 7000.0) <= 1e-9
+    assert bracket.cause == "density diagnostic budget exhausted"

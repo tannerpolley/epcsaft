@@ -196,7 +196,8 @@ void search_slope(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& composition, std::vector<ScanPoint>& points,
     core::Scope& scope, std::size_t& evaluations,
-    const std::function<PressurePoint(double)>& evaluate = {}
+    const std::function<PressurePoint(double)>& evaluate = {},
+    const std::function<void(double, double, const std::string&)>& unresolved = {}
 ) {
     std::size_t lowest = 0;
     for (std::size_t i = 1; i + 1 < points.size(); ++i) {
@@ -210,32 +211,37 @@ void search_slope(
         double slope_a = points[lowest - 1].point.slope, slope_b = points[lowest + 1].point.slope;
         // A positive lower bound for the interpolating quadratic stops this model-based search.
         // It is not a bound on unsampled EOS curvature, even near criticality in log density.
-        for (std::size_t searched = 0;; ++searched) {
-            if (!(b - a > std::numeric_limits<double>::epsilon() * (1.0 + std::abs(x))))
-                throw std::runtime_error("density slope search bracket collapsed before resolution");
-            const double curvature = 2.0 * (slope_a / ((a - x) * (a - b)) + slope_x / ((x - a) * (x - b))
-                                            + slope_b / ((b - a) * (b - x)));
-            if (slope_x - 0.5 * std::max(curvature, 0.0) * (b - a) * (b - a) > 0.0) break;
-            if (searched == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value))
-                throw std::runtime_error("density slope minimum unresolved within the search budget");
-            const double u = x - a > b - x ? x - GOLDEN_SECTION * (x - a) : x + GOLDEN_SECTION * (b - x);
-            const ScanPoint trial{std::exp(u), evaluate ? evaluate(std::exp(u)) : at_density(model, temperature, pressure, composition,
-                std::exp(u), evaluations, DerivativeOrder::PressureSlope), true};
-            scope.probe("density_slope_search", {trial.density, trial.point.residual, trial.point.slope});
-            if (trial.point.slope < 0.0) {
-                points.insert(std::upper_bound(points.begin(), points.end(), trial,
-                    [](const ScanPoint& l, const ScanPoint& r) { return l.density < r.density; }), trial);
-                break;
+        try {
+            for (std::size_t searched = 0;; ++searched) {
+                if (!(b - a > std::numeric_limits<double>::epsilon() * (1.0 + std::abs(x))))
+                    throw std::runtime_error("density slope search bracket collapsed before resolution");
+                const double curvature = 2.0 * (slope_a / ((a - x) * (a - b)) + slope_x / ((x - a) * (x - b))
+                                                + slope_b / ((b - a) * (b - x)));
+                if (slope_x - 0.5 * std::max(curvature, 0.0) * (b - a) * (b - a) > 0.0) break;
+                if (searched == static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value))
+                    throw std::runtime_error("density slope minimum unresolved within the search budget");
+                const double u = x - a > b - x ? x - GOLDEN_SECTION * (x - a) : x + GOLDEN_SECTION * (b - x);
+                const ScanPoint trial{std::exp(u), evaluate ? evaluate(std::exp(u)) : at_density(model, temperature, pressure, composition,
+                    std::exp(u), evaluations, DerivativeOrder::PressureSlope), true};
+                scope.probe("density_slope_search", {trial.density, trial.point.residual, trial.point.slope});
+                if (trial.point.slope < 0.0) {
+                    points.insert(std::upper_bound(points.begin(), points.end(), trial,
+                        [](const ScanPoint& l, const ScanPoint& r) { return l.density < r.density; }), trial);
+                    break;
+                }
+                if (trial.point.slope < slope_x) {
+                    (u < x ? slope_b : slope_a) = slope_x;
+                    (u < x ? b : a) = x;
+                    x = u;
+                    slope_x = trial.point.slope;
+                } else {
+                    (u < x ? slope_a : slope_b) = trial.point.slope;
+                    (u < x ? a : b) = u;
+                }
             }
-            if (trial.point.slope < slope_x) {
-                (u < x ? slope_b : slope_a) = slope_x;
-                (u < x ? b : a) = x;
-                x = u;
-                slope_x = trial.point.slope;
-            } else {
-                (u < x ? slope_a : slope_b) = trial.point.slope;
-                (u < x ? a : b) = u;
-            }
+        } catch (const std::runtime_error& error) {
+            if (unresolved) unresolved(std::exp(a), std::exp(b), error.what());
+            throw;
         }
     }
 }
@@ -443,6 +449,15 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 auto sample = row(rho, point, rho, rho, false);
                 sample.linked = linked;
                 result.samples.push_back(sample);
+                if (point.pressure == pressure) {
+                    sample.stop = "exact_numerical_zero";
+                    result.pressure_roots.push_back(sample);
+                }
+                if (point.slope == 0.0) {
+                    auto fold = row(rho, point, rho, rho, true);
+                    fold.stop = "exact_numerical_zero";
+                    result.spinodals.push_back(fold);
+                }
                 if (linked && (points.back().point.pressure - pressure) * (point.pressure - pressure) < 0.0)
                     result.declared_brackets.push_back({points.back().density, rho,
                         points.back().point.pressure - pressure, point.pressure - pressure});
@@ -459,27 +474,27 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             }
         }
         auto crossings = [&](const std::vector<ScanPoint>& cells) {
-            std::vector<DensityDiagnosticPoint> roots;
-            try {
-                for (std::size_t i = 0; i < cells.size(); ++i) {
-                    const auto& node = cells[i];
-                    if (node.point.pressure == pressure) {
-                        auto record = row(node.density, node.point, node.density, node.density, false);
-                        record.stop = "exact_numerical_zero";
-                        roots.push_back(record);
-                    }
-                    if (i && node.linked && (cells[i - 1].point.pressure - pressure) * (node.point.pressure - pressure) < 0.0) {
-                        const auto& low = cells[i - 1];
-                        roots.push_back(refine_crossing(low.density, low.point, node.density, node.point, false));
-                    }
+            for (std::size_t i = 0; i < cells.size(); ++i) {
+                const auto& node = cells[i];
+                if (node.point.pressure == pressure && std::none_of(result.pressure_roots.begin(),
+                    result.pressure_roots.end(), [&](const auto& root) { return root.molar_density == node.density; })) {
+                    auto record = row(node.density, node.point, node.density, node.density, false);
+                    record.stop = "exact_numerical_zero";
+                    result.pressure_roots.push_back(record);
                 }
-            } catch (const std::runtime_error&) {
-                if (!roots.empty()) result.pressure_roots = std::move(roots);
-                throw;
+                if (i && node.linked && (cells[i - 1].point.pressure - pressure) * (node.point.pressure - pressure) < 0.0) {
+                    const auto& low = cells[i - 1];
+                    // A retained sign bracket or exact numerical zero owns its crossing;
+                    // enclosure in this connected partition avoids re-refinement, not distance merging.
+                    const bool owned = std::any_of(result.pressure_roots.begin(), result.pressure_roots.end(), [&](const auto& root) {
+                        return (root.lower >= low.density && root.upper <= node.density)
+                            || (root.stop == "exact_numerical_zero" && root.molar_density > low.density && root.molar_density < node.density);
+                    });
+                    if (!owned) result.pressure_roots.push_back(refine_crossing(low.density, low.point, node.density, node.point, false));
+                }
             }
-            return roots;
         };
-        result.pressure_roots = crossings(points);
+        crossings(points);
         if (adaptive) {
             search_slope(*this, temperature, pressure, composition, points, scope, result.evaluations,
                          [&](double rho) {
@@ -489,16 +504,16 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 sample.linked = true;
                 result.samples.push_back(sample);
                 return point;
+            }, [&](double lo, double hi, const std::string& cause) {
+                DensityDiagnosticPoint bracket;
+                bracket.lower = lo; bracket.upper = hi;
+                bracket.stop = "unresolved_slope_search"; bracket.cause = cause;
+                result.unresolved.push_back(bracket);
             });
         }
         std::vector<ScanPoint> partitions;
         for (std::size_t i = 0; i < points.size(); ++i) {
             const auto& node = points[i];
-            if (node.point.slope == 0.0) {
-                auto record = row(node.density, node.point, node.density, node.density, true);
-                record.stop = "exact_numerical_zero";
-                result.spinodals.push_back(record);
-            }
             if (i && node.linked && points[i - 1].point.slope * node.point.slope < 0.0) {
                 const auto& low = points[i - 1];
                 const auto fold = refine_crossing(low.density, low.point, node.density, node.point, true);
@@ -507,7 +522,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             }
             partitions.push_back(node);
         }
-        if (adaptive) result.pressure_roots = crossings(partitions);
+        if (adaptive) crossings(partitions);
         result.stop = result.pressure_roots.empty() ? "no_sampled_crossing" : "resolved_crossings";
         for (const auto& fold : result.spinodals)
             if (std::abs(fold.pressure - pressure) <= policy::DENSITY_ROOT_RESIDUAL.value
@@ -546,6 +561,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         result.stop = error.what();
         if (result.finite_domain) result.finite_domain->stop = "unresolved_bracket";
     }
+    for (auto* roots : {&result.pressure_roots, &result.spinodals})
+        std::sort(roots->begin(), roots->end(), [](const auto& a, const auto& b) { return a.molar_density < b.molar_density; });
     return result;
 }
 
