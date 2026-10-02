@@ -21,3 +21,6 @@ data/packets/**/parameters/parameters.json                      -diff linguist-g
 
 # Keep line endings sane and let git detect text properly.
 * text=auto
+
+# Retained numerical CSV hashes include their original line endings.
+analyses/2026-tpd-phase-discovery/results/**/*.csv -text
