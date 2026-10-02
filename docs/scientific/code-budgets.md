@@ -77,6 +77,45 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, #237 conserved-inventory bounds closeout, measured against
+  integrated main `8999d6a2`: **199 gross added, 21 removed, +178 net runtime
+  physical lines**. Main's runtime is unchanged from `edf7672e`; no ceiling
+  is edited under the owner's sprint pause.
+
+  | Layer | Base | Gross | Removed | Net | Final |
+  |---|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 |
+  | Properties | 4509 | 0 | 0 | 0 | 4509 |
+  | Equilibrium | 6921 | 150 | 21 | +129 | 7050 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 |
+  | Surface | 532 | 0 | 0 | 0 | 532 |
+  | Bindings | 1886 | 21 | 0 | +21 | 1907 |
+  | Python | 2635 | 28 | 0 | +28 | 2663 |
+  | Aggregate | 21345 | 199 | 21 | +178 | 21523 |
+
+  The shared HiGHS owner replaces the embedded optimizer-box program, preserving
+  its amount objectives and fallback. Added Equilibrium lines provide the exact
+  fraction transformation, finite-feasibility witness, signed-inventory and
+  empty-set distinctions, reconstruction in mol, and LP diagnostics. Delivered
+  review exposed a lost tiny inventory coefficient and unnecessary off-support
+  objectives; internal fraction-column scaling and support-union requests correct
+  those gaps without a second LP or new tolerance. Bindings
+  and Python transport those results without calculations. No additional LP is
+  run by an ordinary solve. Tests and bounded analysis readers are counted
+  separately, not hidden runtime. The soft excess serves these two inventory
+  quantities and their failure meanings; no EOS equation, equilibrium driver,
+  maximum derivative or second bound implementation is added. The
+  [retained comparisons](../../analyses/2026-born-unavailable-states/results/inventory-bounds/comparison.csv)
+  and [delivered review](../../analyses/2026-born-unavailable-states/results/inventory-bounds/review.md)
+  distinguish inventory ranges from equilibrium/stability and numerical
+  verification from physical validation. Separate full executable accounting is
+  334 gross added / 62 removed: the analysis consumer and two numerical/cost
+  readers add 135 and remove 41, outside shipping runtime. Independent review
+  justified those native-call/result readers; they contain no LP or equilibrium
+  iteration. This exceeds the sprint's 260-line target when analysis readers are
+  included, not a hard gate, and does not change any ceiling.
+
 - 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
   enforced until the current sprint ends. `tools/diffstat.py --budgets` still
   counts every layer and prints FAIL rows, but exits successfully while

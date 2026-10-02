@@ -1292,23 +1292,32 @@ is infeasible, and just above that the optimum sits on the box beyond the polish
 with the optimizer box. The amount program uses $n/N_{\mathrm{feed}}$ and returns
 its maximum in mol plus the separate dimensionless feed-normalized amount.
 Fraction mode uses the exact transformed equations in the equilibrium formulation.
+Its internal LP variable is $q=s\tau$, where $s$ is the smallest positive
+$|b_k/N_{\mathrm{feed}}|$ capped at one (one when all balances vanish). This
+column scaling preserves tiny nonzero inventory coefficients that HiGHS would
+otherwise drop; returned witnesses and residuals use the original $\tau$ chart.
+LP assembly errors or nonfinite reconstruction remain numerical failures.
 It first maximizes $\tau$ to establish a finite floored inventory: a positive
 feasible point, or a feasible point plus a positive-$\tau$ unbounded ray, supplies
 `finite_witness`. A valid optimal $\tau=0$ means that finite set is empty.
 Unresolved positivity or residuals above `EQUILIBRIUM_ROW_RESIDUAL` yield an
 unavailable numerical result, with the LP cause retained. The species objective
 is then restored; an optimum at $\tau=0$ is a limiting supremum only when finite
-feasibility was established. `witness` holds $n/N_{\mathrm{feed}}$ in amount mode
+feasibility was established. `limiting` describes that maximizing witness; it
+alone does not exclude a different finite maximizer (for example, $b=0$).
+`witness` holds $n/N_{\mathrm{feed}}$ in amount mode
 or $(y,\tau)$ in fraction mode. `amounts_mol` reconstructs the maximizing finite
 point and is absent for a limiting supremum. Logarithms are available only for
 positive fraction maxima. Balance, normalization and lower-bound residuals are
 dimensionless. The finite witness has its own residual and termination cause;
-`lp_error` retains HiGHS' reported primal infeasibility for the species program.
+`lp_error` retains HiGHS' reported primal infeasibility for the species program,
+or for finite-feasibility termination when no species program ran.
 Optimal, structural zero, infeasible inventory, unbounded amount, exhausted work
 and numerical failure remain distinct. An unavailable maximum never becomes an
 optimizer-box value. Structural-zero results carry zero without a logarithm.
-The optimizer still keeps $\beta$ on failed/unbounded amount programs and
-structural zeros, preserving the prior box formula and trace-inventory checks.
+The optimizer still keeps $\beta$ on failed/unbounded amount programs,
+preserving the prior box formula and trace-inventory checks. It requests only
+the compiled support union, so species outside every support add no LP run.
 
 *Derivation of $\varepsilon$.* The boxes can hold at most $\sum_p x_{i,\mathrm{box}} n_p \le
 \varepsilon (N/N_{\mathrm{feed}})\, u_i$ of species $i$, a fraction $\varepsilon$ of its attainable

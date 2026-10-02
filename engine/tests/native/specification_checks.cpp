@@ -1432,7 +1432,7 @@ void check_inventory_support() {
         const auto r = epcsaft::equilibrium::inventory_bounds(c, {2}, fraction, 0.0)[0];
         CHECK(r.status == "structural_zero" && r.maximum && *r.maximum == 0.0 && !r.log_fraction);
         recording_support::compare(("inventory/structural/" + std::to_string(fraction)).c_str(),
-            "maximum", "1", *r.maximum, 0.0, "{}", "Identity", "structural-zero",
+            "maximum", fraction ? "1" : "mol", *r.maximum, 0.0, "{}", "Identity", "structural-zero",
             "a species absent from every support has zero attainable inventory", "absolute", 0.0, 0.0, true,
             "inventory", "structural", "maximum", "support", "n_2=0", "zero");
     }

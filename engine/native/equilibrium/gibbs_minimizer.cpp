@@ -354,23 +354,29 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
     Highs lp;
     lp.setOptionValue("output_flag", false);
     lp.setOptionValue("threads", 1);
-    lp.addVars(static_cast<HighsInt>(width), lower.data(), upper.data());
+    bool assembled = lp.addVars(static_cast<HighsInt>(width), lower.data(), upper.data()) != HighsStatus::kError;
+    // Solve in q=tau_scale*tau: a tiny nonzero inventory must not be dropped by HiGHS.
+    double tau_scale = 1.0;
+    if (fraction) for (const double value : c.balance)
+        if (value != 0.0) tau_scale = std::min(tau_scale, std::abs(value / c.feed_total));
     std::vector<HighsInt> columns(width);
     std::iota(columns.begin(), columns.end(), 0);
     for (std::size_t k = 0; k < c.rank; ++k) {
         auto row = c.B[k];
         const double rhs = c.balance[k] / c.feed_total;
-        if (fraction) row.push_back(-rhs);
-        lp.addRow(fraction ? 0.0 : rhs, fraction ? 0.0 : rhs,
-            static_cast<HighsInt>(width), columns.data(), row.data());
+        if (fraction) row.push_back(-rhs / tau_scale);
+        assembled = lp.addRow(fraction ? 0.0 : rhs, fraction ? 0.0 : rhs,
+            static_cast<HighsInt>(width), columns.data(), row.data()) != HighsStatus::kError && assembled;
     }
     if (fraction) {
         std::vector<double> row(width, 1.0);
         row[n] = 0.0;
-        lp.addRow(1.0, 1.0, static_cast<HighsInt>(width), columns.data(), row.data());
+        assembled = lp.addRow(1.0, 1.0, static_cast<HighsInt>(width), columns.data(), row.data())
+            != HighsStatus::kError && assembled;
     }
     lp.changeObjectiveSense(ObjSense::kMaximize);
     const auto run = [&]() {
+        if (!assembled) return std::string("numerical_failure");
         const auto outcome = lp.run();
         const auto status = lp.getModelStatus();
         if (outcome == HighsStatus::kError) return std::string("numerical_failure");
@@ -383,6 +389,8 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
     };
     const auto diagnose = [&](InventoryBound& r, const std::vector<double>& x) {
         r.witness = x;
+        if (x.size() != width || !std::all_of(x.begin(), x.end(), [](double v) { return std::isfinite(v); }))
+            return false;
         r.balance_residual = r.normalization_residual = r.lower_bound_residual = 0.0;
         for (std::size_t k = 0; k < c.rank; ++k) {
             const double value = std::inner_product(c.B[k].begin(), c.B[k].end(), x.begin(), 0.0);
@@ -401,6 +409,7 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
     if (fraction) {
         lp.changeColCost(static_cast<HighsInt>(n), 1.0);
         feasibility = run();
+        finite.lp_error = lp.getInfo().max_primal_infeasibility;
         feasibility_cause = lp.modelStatusToString(lp.getModelStatus());
         if (feasibility == "optimal" || feasibility == "unbounded_amount") {
             auto x = lp.getSolution().col_value;
@@ -410,6 +419,7 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
                 lp.getPrimalRay(has_ray, ray.data());
                 if (has_ray && ray[n] > 0.0) for (std::size_t j = 0; j < width; ++j) x[j] += ray[j];
             }
+            x[n] /= tau_scale;
             const bool valid = diagnose(finite, x);
             feasibility = !valid ? "numerical_failure" : x[n] > 0.0 ? "optimal"
                 : feasibility == "optimal" ? "infeasible_inventory" : "numerical_failure";
@@ -433,7 +443,8 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
             r.termination = lp.modelStatusToString(lp.getModelStatus());
             r.lp_error = lp.getInfo().max_primal_infeasibility;
             if (r.status == "optimal") {
-                const auto x = lp.getSolution().col_value;
+                auto x = lp.getSolution().col_value;
+                if (fraction) x[n] /= tau_scale;
                 if (!diagnose(r, x)) r.status = "numerical_failure";
                 else {
                     r.maximum = x[i] * (fraction ? 1.0 : c.feed_total);
@@ -479,8 +490,11 @@ bool GibbsMinimizer::get_bounds_info(
     const std::size_t species = compiled_.n_feed.size();
     std::vector<double> box(species, policy::STABILITY_COMPOSITION_FLOOR.value);
     if (compiled_.pinned_count == 0 || !compiled_.is_square()) {
-        std::vector<std::size_t> indices(species);
-        std::iota(indices.begin(), indices.end(), 0);
+        std::vector<std::size_t> indices;
+        for (const auto& phase : compiled_.problem.phases)
+            indices.insert(indices.end(), phase.support.begin(), phase.support.end());
+        std::sort(indices.begin(), indices.end());
+        indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
         for (const auto& bound : inventory_bounds(compiled_, indices, false, 0.0))
             box[bound.species] = std::max(box[bound.species], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
                 bound.status == "optimal" ? policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value
