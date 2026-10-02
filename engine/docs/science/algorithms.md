@@ -380,8 +380,15 @@ Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
 ordered search. Remaining iterations and time enter the shared Ipopt options and
 callbacks; polish and final admission check the same deadline. A bounded inner
 kernel may finish after its deadline: elapsed time and overrun remain visible,
-and a post-deadline state is unavailable. This finite search establishes neither
-uniqueness nor global stability. Ordinary solve initialization retains its rules.
+and a post-deadline state is unavailable. Elapsed exhaustion is a controller cause,
+not a relabelled numerical stop: the common classifier retains its
+nonfinite/converged/floor/budget priority and the native optimizer termination.
+Measured rows that already meet the criterion can therefore remain numerically
+converged with success false and no published state after deadline rejection.
+This finite search establishes neither uniqueness nor global stability. Ordinary
+solve initialization retains its rules. The retained [declared-start falsifiers
+and default-solve cost](../../../analyses/2026-tpd-phase-discovery/results/issue238-cost/README.md)
+qualify the bounded inputs stated there.
 
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
