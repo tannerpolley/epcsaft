@@ -111,6 +111,12 @@ struct PropertyActionBatch final {
 struct ResidualEnergyAction final {
     std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
 };
+// Ordinary Taylor coefficients along a fixed-composition pressure-closed path.
+struct ReferenceTaylor final {
+    std::vector<double> contraction, volume;
+    PropertyActionStatus status = PropertyActionStatus::Nonfinite;
+    PropertyActionDiagnostics diagnostics;
+};
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -246,6 +252,15 @@ struct NeutralReferenceReactionDiagnostic final {
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
+    struct Derivative final {
+        std::size_t temperature_order = 0, pressure_order = 0;
+        std::optional<std::size_t> parameter;
+        std::array<std::optional<double>, 3> ladder;
+        std::array<double, 2> scaled_changes{};
+        std::optional<double> value;
+        std::string message;
+    };
+    std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
 };
 
 class HelmholtzModel final {
@@ -265,6 +280,9 @@ public:
     // Mixed contraction of the extensive residual Helmholtz scalar with three or four
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3 or E4.
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
+    ReferenceTaylor reference_taylor(double temperature, double volume,
+        const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+        const PressureActionDirection& direction, std::size_t order) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -381,6 +399,12 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
+// Fixed terminal composition, raw source-pressure partial; no ladder reselection.
+ResidualEnergyAction reference_partial(const HelmholtzModel&, double temperature,
+    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    std::size_t temperature_order, std::size_t pressure_order,
+    std::optional<std::size_t> parameter = std::nullopt, std::optional<double> anchor = std::nullopt);
+
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the
 // Python surface exposes only the established singular diagnostic/result path.
@@ -394,7 +418,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool pressure_jets = true,
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
-    bool parameter_jets = false  // dC/dtheta for every active parameter
+    bool parameter_jets = false,  // dC/dtheta for every active parameter
+    std::size_t reference_order = 0  // consumed C3/C4 and one-theta columns; 0 preserves lower work
 );
 
 struct InfiniteDilutionReference final {
