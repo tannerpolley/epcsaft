@@ -6,11 +6,6 @@ review-only	analyses/2026-born-unavailable-states/scripts/reproduce.py	363	    w
 review-only	analyses/2026-born-unavailable-states/scripts/starts.py	30	    for extent in args.extents:	Reaction-extent start search	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	81	    for index in range(65):	Born-coefficient continuation	234
 review-only	analyses/2026-born-unavailable-states/scripts/turning_point.py	85	        for step in range(30):	Augmented Newton corrector	234
-review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	173	    while finite_state(model, temperature, finite_upper, budget) is not None:	Finite-state density bound doubling	234
-review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	179	    for _ in range(100):	Finite-state density bound bisection	234
-review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	203	    for _ in range(300):	Pressure-density root bisection	234
-review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	264	    for (left_density, left_residual), (right_density, right_residual) in zip(points, points[1:]):	Pressure-density branch bracketing	234
-review-only	analyses/2026-density-closure-diagnosis/scripts/replay.py	509	    roots, _ = scan_roots(	Local density root search	234
 review-only	analyses/2026-heat-capacity-fitting/scripts/reference.py	103	polynomial = np.polynomial.Polynomial.fit(T - 360, [ideal_cp(t) for t in T], 6).convert()	IAPWS heat-capacity polynomial fit	234
 review-only	analyses/2026-idaes-asl-adapter/scripts/run.py	1061	    for _ in range(100):	Engine pressure-cap density bisection	234
 review-only	analyses/2026-polar-dipole/scripts/compare.py	80	    for factor in (1.0, 1.05, 1.1):	Python multistart around native fits	234
@@ -20,8 +15,6 @@ scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	13	from scipy
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	51	"            warnings.simplefilter(""ignore"", OptimizeWarning)"	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	52	            result = linprog(	Chart bounds and residual corrector	234
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	235	        result = least_squares(	Chart bounds and residual corrector	234
-scipy	analyses/2026-cold-vapor-branch/scripts/run.py	11	from scipy.optimize import brentq	Pressure and spinodal roots	234
-scipy	analyses/2026-cold-vapor-branch/scripts/run.py	88	                rho = brentq(function, float(left), float(right), xtol=1e-9)	Pressure and spinodal roots	234
 scipy	analyses/2026-dielectric-alternatives/scripts/run.py	23	from scipy.optimize import minimize_scalar	Water-ion interaction fit	234
 scipy	analyses/2026-dielectric-alternatives/scripts/run.py	105	"        best = minimize_scalar(lambda k: sum(e * e for e in residuals(k)), bounds=(-0.8, 0.4), method=""bounded"","	Water-ion interaction fit	234
 scipy	analyses/2026-mea-association-diameter/scripts/mea_saturation.py	21	from scipy.optimize import minimize_scalar	Association-volume conversion fit	234

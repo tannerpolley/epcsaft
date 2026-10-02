@@ -158,6 +158,28 @@ struct DensityRoot final {
     core::Convergence convergence;
 };
 
+// Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
+struct DensityDiagnosticPoint final {
+    double molar_density = 0.0, packing_fraction = 0.0, pressure = 0.0;
+    double pressure_density_derivative = 0.0, lower = 0.0, upper = 0.0, residual = 0.0;
+    int mechanical_sign = 0;
+    bool linked = false, declared = true;
+    std::string cause, stop;
+};
+struct DensityDiagnosticBracket final {
+    double lower = 0.0, upper = 0.0, lower_residual = 0.0, upper_residual = 0.0;
+};
+struct DensityDiagnostics final {
+    std::vector<DensityDiagnosticPoint> samples, pressure_roots, spinodals;
+    std::vector<DensityDiagnosticBracket> declared_brackets;
+    std::vector<DensityDiagnosticPoint> unresolved;
+    std::optional<DensityDiagnosticPoint> finite_domain;
+    DerivativeOrder evaluation_order = DerivativeOrder::PressureSlope;
+    double geometric_cap = 0.0;
+    std::size_t declared_crossings = 0, evaluations = 0;
+    std::string stop;
+};
+
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit
 // full-width solute molality-ratio vector.  Mixed-solvent declarations are
 // intentionally outside this first native consumer contract.
@@ -280,6 +302,12 @@ public:
     double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions
+    ) const;
+    DensityDiagnostics density_diagnostics(
+        double temperature, double pressure, const std::vector<double>& composition,
+        const std::vector<double>& nodes, double density_tolerance, double log_tolerance,
+        std::size_t max_evaluations, double max_seconds, bool adaptive,
+        std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
     ) const;
     SweepCounters counters() const;
     void reset_counters() const;
