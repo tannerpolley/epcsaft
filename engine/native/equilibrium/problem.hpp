@@ -8,6 +8,8 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <map>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -114,6 +116,15 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
         && optional_equal(x.reference, y.reference, reference);
 }
 
+// Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
+struct StabilityOptions final {
+    std::optional<std::vector<PhaseSpec>> trials;
+    std::optional<std::size_t> declaration_budget;
+    std::optional<std::size_t> trial_budget;
+    std::vector<double> standard_uncertainty_over_rt;
+};
+struct DiscoveryRecord;
+
 struct EquilibriumProblem final {
     std::vector<PhaseSpec> phases;
     FreeValue temperature;
@@ -123,6 +134,7 @@ struct EquilibriumProblem final {
     std::vector<double> standard_gibbs_j_per_mol;
     std::optional<NeutralReferenceDeclaration> source_reference;
     bool topology_declared = true;
+    std::optional<StabilityOptions> discovery;
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
 
@@ -330,6 +342,9 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
 enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
 
 struct EquilibriumResult final {
+    const HelmholtzModel* model_identity = nullptr;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    std::shared_ptr<DiscoveryRecord> discovery;
     bool success = false;
     std::string message;
     std::string solver_status;
@@ -379,6 +394,45 @@ struct EquilibriumResult final {
         return result;
     }
 };
+
+struct StabilityTrial final {
+    PhaseSpec phase;
+    std::string seed, evidence, message;
+    EquilibriumResult optimizer;
+    std::vector<double> raw_coordinates, raw_residuals, composition, split_coordinates;
+    std::vector<std::vector<double>> basis, row_transformation;
+    // Quantities carry units in their names; errors are local estimates, never enclosures.
+    std::map<std::string, double> quantities;
+    std::vector<std::map<std::string, double>> split_checks;
+    std::optional<std::size_t> donor;
+    bool resolved_descent = false;
+};
+struct StabilityReport final {
+    bool completed = false;
+    std::string message;
+    std::vector<StabilityTrial> trials;
+    std::vector<double> candidate_coordinates, standard_over_rt, plane_over_rt;
+    std::vector<std::map<std::string, double>> present_phases;
+    std::map<std::string, double> work;
+};
+struct DiscoveryRecord final {
+    EquilibriumProblem declaration;
+    EquilibriumResult candidate;
+    std::vector<StabilityReport> rounds;
+    std::vector<EquilibriumResult> declarations;
+    std::vector<std::string> declaration_roles;
+    std::vector<std::vector<double>> declaration_attempt_coordinates;
+    std::map<std::string, double> work;
+};
+CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, const PhaseSpec&,
+    const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
+double present_phase_residual_distance(double, double);
+bool descent_resolved(double, double, double);
+std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&);
+std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
+    const std::vector<double>&, std::map<std::string, double>* = nullptr);
+StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
+EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
 EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,

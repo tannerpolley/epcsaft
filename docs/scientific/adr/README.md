@@ -10,6 +10,7 @@ Current accepted decisions use one sequence. Read the
 - [0009: general platform and one equilibrium driver](0009-general-platform-one-driver.md)
 - [0010: GitHub issue roadmap authority](0010-github-issue-roadmap-authority.md)
 - [0011: optional dipole-dipole term](0011-optional-dipole-dipole-term.md)
+- [0012: native tangent-plane testing and phase discovery](0012-native-tangent-plane-phase-discovery.md)
 
 Record a decision when real alternatives materially affect scientific or
 computational work and the equations/code alone do not explain the choice.
