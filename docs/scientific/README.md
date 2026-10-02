@@ -14,8 +14,8 @@ neither becomes a second Engine specification. This is the repository's accepted
 The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 is the sole current gap and completion plan. Issue bodies own design, scope,
 acceptance, reuse and handoff; native relationships own hierarchy and
-prerequisites. The local [roadmap authority note](implementation-plan.md) contains
-no editable status. [Dated reviews](reviews/transfer-audit-2026-09-06.md) retain
+prerequisites. [ADR 0010](adr/0010-github-issue-roadmap-authority.md) records that authority.
+[Dated reviews](reviews/transfer-audit-2026-09-06.md) retain
 numerical evidence and inspected limitations; they do not issue current
 instructions. Keep a record only while it supports a scientific result,
 derivation, accepted decision or diagnosis. Update current scientific owners in
@@ -25,10 +25,12 @@ place and remove duplicate progress summaries; Git preserves edit history.
 ceiling; their single numeric owner is `ARCHITECTURE.yaml`.
 
 The [modular-model proposal](proposals/modular-models/README.md) retains a
-source-linked design and separate five-step roadmap for selecting complete
-thermodynamic formulations with compatible parameters. It is deferred until
-the current roadmap is complete and adds no current milestones or
-accepted physics.
+source-linked design for selecting complete thermodynamic formulations with
+compatible parameters. [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23)
+and its leaves own execution and completion.
+[ADR 0011](adr/0011-optional-dipole-dipole-term.md) owns the optional
+Gross–Vrabec dipole–dipole admission; remaining multipoles stay retired under
+[ADR 0006](adr/0006-retire-residual-polar.md).
 
 ## Sources
 
@@ -52,9 +54,9 @@ presentation reader only reads current owners and completed records; it never
 builds, collects, tests, calculates, or mirrors issue status. GitHub issues own
 roadmap state; repository evidence owns scientific qualification. The
 [test-system design](test-system-design.md) defines the one-way result and freshness
-and discovery behavior. Its [implementation acceptance](reviews/test-system-acceptance-2026-09-09.md)
-records the retired system's bounded checks; it is historical evidence, not a
-current execution requirement.
+and discovery behavior. Its [notebook-cutover record](reviews/notebook-cutover-2026-09-09.md)
+retains the bounded presentation checks and numerical-evidence preservation
+observations; these do not establish current numerical agreement.
 
 ## Maintaining agreement
 
