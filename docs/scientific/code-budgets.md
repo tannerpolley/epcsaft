@@ -77,6 +77,16 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-01, Bindings and Python amendment for #223 (owner approved): after
+  #219 slice B the measured counts are Bindings 1843 and Python 2568, total
+  20208. #223's estimate (Bindings +35–60, Python +40–75) did not fit. New hard
+  ceilings: Bindings 1880 → 1940 and Python 2620 → 2700. The aggregate stays
+  22000; the roadmap projects about 22,950, which is decided with measured
+  counts before #224. A second consolidation audit aimed at Bindings and Python
+  (far above their 650 and 1600 soft ceilings) follows under #221. Pre-envelope
+  hard-ceiling changes without amendment entries are listed in the #221
+  reconstruction comment (5942662477).
+
 - 2026-10-01, #219 slice B closeout, measured against `96e9ecde`
   (runtime identical to `1fc771b0`, 19,654): **662 gross added, 108 removed,
   +554 net**, total **20,208**. The owner approved the measured sketch through
