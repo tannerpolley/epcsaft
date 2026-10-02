@@ -430,7 +430,8 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     validate_checks(request);
     std::vector<bool> selected(request.observations.size(), false);
     for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
-    if (final) for (std::size_t i = 0; i < selected.size(); ++i) if (!request.weights.empty() && request.weights[i] == 0.0) selected[i] = true;
+    if (final) for (std::size_t i = 0; i < selected.size(); ++i)
+        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) selected[i] = true;
     const auto predictions = [&](const HelmholtzModel& owner) {
         std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
@@ -442,7 +443,8 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     };
     const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
-    if (final) for (std::size_t i = 0; i < candidate.size(); ++i) if (!request.weights.empty() && request.weights[i] == 0.0) {
+    if (final) for (std::size_t i = 0; i < candidate.size(); ++i)
+        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) {
         final->predictions[i] = candidate[i].value.value_or(NAN);
         final->residuals[i] = candidate[i].residual.value_or(NAN);
         final->statuses[i] = candidate[i].status;
@@ -453,25 +455,19 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
         CheckResult out;
         out.name = group.name; out.rows = group.rows; out.report_only = group.report_only;
         out.status = "pass"; out.argmax = group.rows.front(); out.maximum_threshold = group.maximum; out.mean_threshold = group.mean;
-        const auto error = [&](const auto& row, const Prediction& value) -> double {
-            if (!value.value) return NAN;
-            return group.metric == CheckMetric::AbsoluteDifference ? *value.value - row.observed
-                : (*value.value > 0.0 && row.observed > 0.0 ? std::log10(*value.value / row.observed) : NAN);
-        };
         double baseline_sum = 0.0, baseline_max = 0.0;
         for (const auto i : group.rows) {
             const auto& row = request.observations[i];
             const auto unit = group.metric == CheckMetric::AbsoluteLog10Ratio ? "decade" : candidate[i].unit;
             out.unit = unit;
-            const double e = error(row, candidate[i]);
+            const double e = check_error(group.metric, row, candidate[i].value.value_or(NAN)).first;
             out.errors.push_back(e);
-            out.slopes.push_back(std::isfinite(e) ? (group.metric == CheckMetric::AbsoluteDifference ? 1.0
-                : 1.0 / (std::log(10.0) * *candidate[i].value)) : NAN);
+            out.slopes.push_back(check_error(group.metric, row, candidate[i].value.value_or(NAN)).second);
             if (!candidate[i].residual || !std::isfinite(e)) { out.status = "unavailable"; out.failed_rows.push_back(i); }
             if (std::abs(e) > out.maximum) { out.maximum = std::abs(e); out.argmax = i; }
             out.mean += std::abs(e);
             if (group.baseline) {
-                const double b = error(row, baseline[i]);
+                const double b = check_error(group.metric, row, baseline[i].value.value_or(NAN)).first;
                 if (!baseline[i].residual || !std::isfinite(b)) { out.status = "unavailable"; out.failed_rows.push_back(i); }
                 baseline_max = std::max(baseline_max, std::abs(b)); baseline_sum += std::abs(b);
             }
@@ -509,30 +505,65 @@ std::vector<Observation> observations_at(const FitRequest& request, const std::v
     return observations;
 }
 
+std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction) {
+    if (!std::isfinite(prediction)) return {NAN, NAN};
+    if (metric == CheckMetric::AbsoluteDifference) return {prediction - row.observed, 1.0};
+    if (!(prediction > 0.0 && row.observed > 0.0)) return {NAN, NAN};
+    return {std::log10(prediction / row.observed), 1.0 / (std::log(10.0) * prediction)};
+}
+void publish_candidate(FitResult& result, ObservationEvaluation final, const std::vector<double>& point) {
+    result.optimizer = point;
+    result.chart = std::move(final.chart);
+    result.physical = result.chart.physical;
+    result.parameters = result.chart.parameters;
+    result.predictions = std::move(final.predictions);
+    result.residuals = std::move(final.residuals);
+    result.statuses = std::move(final.statuses);
+    result.physical_jacobian = std::move(final.gradient);
+    result.weighted_residuals = std::move(final.weighted);
+    result.optimizer_jacobian = std::move(final.optimizer_gradient);
+    result.final_cost = final.cost;
+}
+void finish_checks(FitResult& result, const FitRequest& request) {
+    auto check_request = request;
+    request.coordinates.apply(check_request.observations, result.optimizer);
+    result.checks = evaluate_checks(check_request, result.parameters, &result);
+    result.acceptance = "pass";
+    for (const auto& check : result.checks)
+        if (!check.report_only && check.status != "pass" && result.acceptance != "unavailable") result.acceptance = check.status;
+}
+
+void validate_fit_request(const FitRequest& request) {
+    const auto& set = request.coordinates;
+    const auto n = request.observations.size();
+    validate_checks(request);
+    validate(set, request.parameters, request.observations, request.thermochemistry);
+    const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
+    require(n > 0, "needs observations");
+    core::Scope validation("fit_validation");
+    for (const auto& observation : request.observations) validate(observation, model);
+    require(request.weights.empty() || request.weights.size() == n, "weights width");
+    for (std::size_t i = 0; i < request.weights.size(); ++i) {
+        require(std::isfinite(request.weights[i]) && request.weights[i] >= 0.0, "weight");
+    }
+    const auto& controls = request.controls;
+    require(std::isfinite(controls.function_tolerance) && controls.function_tolerance >= 0.0
+        && std::isfinite(controls.gradient_tolerance) && controls.gradient_tolerance >= 0.0
+        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0
+        && controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
+        && controls.maximum_elapsed_time_seconds > 0.0, "controls");
+}
+
 FitResult fit(const FitRequest& request) {
+    if (request.minimax) return fit_minimax(request);
     FitResult result;
     const auto& set = request.coordinates;
     const std::size_t n = request.observations.size();
     std::vector<double> sqrt_weights(n, 1.0);
     const auto groups = state_groups(request.observations);
     try {
-        validate_checks(request);
-        validate(set, request.parameters, request.observations, request.thermochemistry);
-        const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry);
-        require(n > 0, "needs observations");
-        core::Scope validation("fit_validation");
-        for (const auto& observation : request.observations) validate(observation, model);
-        require(request.weights.empty() || request.weights.size() == n, "weights width");
-        for (std::size_t i = 0; i < request.weights.size(); ++i) {
-            require(std::isfinite(request.weights[i]) && request.weights[i] >= 0.0, "weight");
-            sqrt_weights[i] = std::sqrt(request.weights[i]);
-        }
-        const auto& controls = request.controls;
-        require(std::isfinite(controls.function_tolerance) && controls.function_tolerance >= 0.0
-                && std::isfinite(controls.gradient_tolerance) && controls.gradient_tolerance >= 0.0
-                && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0
-                && controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
-                && controls.maximum_elapsed_time_seconds > 0.0, "controls");
+        validate_fit_request(request);
+        for (std::size_t i = 0; i < request.weights.size(); ++i) sqrt_weights[i] = std::sqrt(request.weights[i]);
     } catch (const std::invalid_argument& error) {
         result.message = error.what();
         return result;
@@ -630,24 +661,11 @@ FitResult fit(const FitRequest& request) {
         result.statuses = std::move(final.statuses);
         return result;
     }
-    result.chart = std::move(final.chart);
-    result.physical = result.chart.physical;
-    result.parameters = result.chart.parameters;
-    result.predictions = final.predictions;
-    result.residuals = final.residuals;
-    result.statuses = final.statuses;
-    result.physical_jacobian = final.gradient;
-    result.weighted_residuals = final.weighted;
-    result.optimizer_jacobian = final.optimizer_gradient;
-    result.final_cost = final.cost;
+    publish_candidate(result, std::move(final), optimizer);
     result.usable = result.status != "failed" && finite(result.physical);
     if (result.usable) {
         covariance(result, request, n);
-        auto check_request = request;
-        set.apply(check_request.observations, optimizer);
-        result.checks = evaluate_checks(check_request, result.parameters, &result);
-        result.acceptance = "pass";
-        for (const auto& check : result.checks) if (!check.report_only && check.status != "pass" && result.acceptance != "unavailable") result.acceptance = check.status;
+        finish_checks(result, request);
         for (std::size_t c = 0; c < width; ++c)
             result.covariance.projected_gradient_norm = std::max(result.covariance.projected_gradient_norm,
                 std::abs(optimizer[c] - std::clamp(optimizer[c] - gradient[c], lower[c], upper[c])));

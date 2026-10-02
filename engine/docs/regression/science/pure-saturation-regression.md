@@ -327,3 +327,63 @@ rank, bounds and projected gradient are local diagnostics. Gamma and Phi are
 related by Gibbs-Duhem, so independent-error covariance is conditional sensitivity,
 not measurement uncertainty or structural identifiability. Profiles and native
 constrained minimax estimation remain outside this slice's delivered capability.
+
+## Native constrained estimation
+
+An explicit `MinimaxRequest` declares target rows, objective scale $q$, one
+positive scale per check group, positive scaled tolerance, bound-activity
+distance and starting margin. The existing fit controls declare iteration
+and elapsed limits; the existing native ordered sequence owns shared budgets.
+Python transports declarations and reads results. [ALG-FIT](../../science/algorithms.md#alg-fit)
+owns the method and numerical lifecycle; the EOS/reference and eliminated-hold
+equations remain unchanged.
+
+For targets, $e_i=\log_{10}(y_i/y_{obs,i})$ in decades, with positive arguments.
+For guards, $e_j$ is either that unweighted decade error or $y_j-y_{obs,j}$ in
+the observation's native unit. Frozen source-baseline rules and floors retain
+the existing check meaning. The physical nonlinear program is
+
+$$
+\min t,\quad t\geq0,\quad \pm e_i-t\leq0,\quad
+\pm e_j-B_g^{max}\leq0,
+$$
+
+with a separate $s_{gj}\geq0$ per mean-group member,
+
+$$
+\pm e_j-s_{gj}\leq0,\qquad
+\frac{1}{n_g}\sum_j s_{gj}-B_g^{mean}\leq0.
+$$
+
+The optimizer objective is $t/q$, and each inequality is divided by its
+positive declared scale $\sigma$. The target scale is $q$. Errors/slacks retain
+decades, J/mol or dimensionless units in the returned point; optimizer
+coordinates retain the existing affine convention. Exact first error columns
+are $(dy/du)/(\ln(10)y)$ for decades and $dy/du$ for differences. Ceres weights
+and residual scales do not enter these constraints. Report-only failures leave
+the constrained feasible set unchanged; unavailable enforced members cannot
+pass by omission. Final checks use $|e|$, not loose optimizer slacks.
+
+For scaled $c\leq0$ and $l\leq v\leq h$, the diagnostic Lagrangian is
+$L=t/q+\lambda^Tc+z_L^T(l-v)+z_U^T(v-h)$, with nonnegative multipliers.
+`MinimaxResult` retains the positive-part feasibility norm, infinity norm of
+$\nabla F+J_c^T\lambda-z_L+z_U$, negative-part multiplier norm and infinity norm
+of complementary products. Auxiliary bound distances are divided by their
+error scale; independent distances use $u$. Physical row multipliers are
+$q\lambda/\sigma$, physical bound multipliers are $qz$; their units follow the
+physical objective in decades per constraint/variable unit. Constraint labels
+retain every target/max/link pair and mean aggregate, with original row/group
+indices. Slack labels retain group and member indices.
+
+Eliminated holds have no Ipopt equality multiplier. A regular interior hold
+permits reconstructed $\nu=-L_d/H_d$ and held/full independent stationarity;
+independent tied coordinates retain their affine scales in that comparison.
+Bracket-boundary or singular holds retain their cause without a full-space
+certificate. Missing final points, exact actions or multipliers make the
+associated diagnostics unavailable. `FitResult` retains the common candidate,
+failures, chart and checks. Its minimax optimizer Jacobian contains raw value
+columns; weighted residuals and least-squares costs/covariance are unavailable.
+`evaluate_minimax` returns point values/columns/checks only, with no solver or
+KKT conclusion. Same-point root refinement tests numerical error, not physical
+uncertainty. Manufactured minimax/equality examples and Engine synthetic rows
+establish numerical verification only.

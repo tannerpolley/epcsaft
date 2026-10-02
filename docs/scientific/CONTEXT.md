@@ -215,8 +215,12 @@ owns five observations, the dependent hydration chart, unweighted final checks
 and local SVD/covariance diagnostics; [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit)
 owns execution doctrine. `HydrationHold` means a single-ion solvation equality
 with a dependent Born diameter. `ObservationEvaluator` means the shared native
-point evaluator with caller-selected rows and exact columns; it leaves constrained
-estimation to slice B without a second thermodynamic or coordinate owner.
+point evaluator with caller-selected rows and exact columns. `MinimaxRequest`
+means a scaled epigraph estimation problem with declared max/mean guards;
+`MinimaxResult` means its local point, feasibility, multipliers and KKT diagnostics.
+`MinimaxRow` labels a target/max/slack-link/mean inequality in the units defined
+by [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit). These use the same
+thermodynamic, coordinate, check and candidate owners as least squares.
 
 The [electrolyte parameter-gradient analysis](../../analyses/2026-electrolyte-parameter-gradients/README.md)
 retains installed-wheel numerical verification at 298.15 K, 1 bar and the

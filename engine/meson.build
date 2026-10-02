@@ -87,6 +87,7 @@ regression_sources = files(
   'native/regression/coordinates.cpp',
   'native/regression/observations.cpp',
   'native/regression/fit.cpp',
+  'native/regression/minimax.cpp',
 )
 
 epcsaft_native = static_library(

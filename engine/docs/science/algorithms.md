@@ -905,8 +905,10 @@ a reason to alter a coefficient or anchor.
 
 Fits use exact Engine derivatives and run natively. Python declares specifications
 and data and reads results; finite differences are numerical verification only.
-Ceres remains the primary least-squares owner. Slice B's constrained fitting is
-not implemented by the electrolyte slice-A change.
+Ceres remains the primary least-squares owner. An explicit `MinimaxRequest`
+selects native constrained estimation; a failed least-squares check never selects
+it automatically. The same native sequence owns declared starts and shared
+iteration/elapsed budgets for both methods.
 
 
 Use the [parameter regression formulation](../regression/science/pure-saturation-regression.md)
@@ -977,12 +979,62 @@ variance. Zero-weight rows receive admission and final evaluation; their failed
 final residuals retain independently available signed values and objective results.
 Native final checks recompute the stored parameters without resolving a hold,
 report signed row errors and max/mean groups, and use frozen source baselines
-where declared. Objective results retain their accepted warm-start evaluation;
-only zero-weight reports replace their final values. Unevaluated rows remain
+where declared. Least-squares objective results retain their accepted warm-start evaluation;
+only zero-weight reports replace their final values. Unevaluated trial rows remain
 explicitly unavailable. Report-only failures do not change acceptance. A failed check
 is no proof of infeasibility. Singular vectors and the projected weighted
 gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.
+
+### Guarded minimax
+
+The constrained path minimizes $F=t/q$, with $t\geq0$ in decades and declared
+positive $q$. Targets use unweighted $e=\log_{10}(y/y_{obs})$ and paired rows
+$e-t\leq0$, $-e-t\leq0$. An enforced maximum uses the same pair with its frozen
+threshold. Each mean-group member has its own nonnegative slack in the error's
+unit, paired $e-s\leq0$, $-e-s\leq0$ rows, and one group-mean row. Overlapping
+groups retain distinct slacks. Final means use the actual absolute errors.
+Report-only rows do not enter trial evaluation; enforced rows enter regardless
+of Ceres weights. Baseline thresholds use the separate stored source parameters
+and the existing check owner, without solving a hydration hold.
+
+One parameter-fitting TNLP consumes `ObservationEvaluator` values and exact raw
+and complete held-chart columns. The same check error/slope producer assembles
+both estimators' reports. Every inequality is divided by its declared positive
+scale; zero thresholds remain zero. The complete map includes all tied affine
+scales and eliminated Born rows. The epigraph and slack columns are analytic.
+Only exact first actions are supplied; Ipopt uses limited-memory BFGS, with no
+finite-difference derivative checker or parameter Hessian claim. Equilibrium
+retains exact Lagrangian curvature. The common checked Ipopt option/lifecycle
+owner preserves equilibrium's `Initialize()` and uses `Initialize("")` for
+estimation, excluding file overrides. Required positive scaled tolerance,
+iteration/CPU limits and a steady-clock elapsed callback bound each estimate.
+`acceptable_iter=0` and `bound_relax_factor=0` preserve the declared limits.
+
+At the finalized point, recompute constraint/bound feasibility, stationarity,
+dual signs and complementarity from exact columns and its own multipliers.
+Return scaled and physical inequalities, row labels/scales, physical epigraph
+and slacks, and parameter/auxiliary bound distances separately. For scaled
+$c=C/\sigma$, physical-objective multipliers are $q\lambda/\sigma$ and $qz$ for
+bounds. For a regular interior eliminated diameter, reconstruct
+$\nu=-(\partial L_{without\ H}/\partial d)/H_d$ from raw physical columns and
+report the reconstructed held and independent full-space stationarity equations.
+The held component vanishes by construction; independent multiplier qualification
+uses the manufactured analytic KKT conditions. Singular
+or bracket-boundary holds retain the reduced diagnostics and an explicit
+unavailable full-space cause. Root-error estimates use exact held-row slopes
+and achieved diameter uncertainty/correction; refinement qualification belongs
+to the retained study.
+
+Termination, point/action availability, feasibility, final checks and
+stationarity are distinct. Final checks evaluate report-only rows omitted from
+the minimax trial; their raw Jacobian rows carry no evaluated columns.
+Final checks use the stored fitted diameters,
+without resolving holds. A fatal initialization has no candidate; local
+infeasibility proves no global infeasibility. No covariance, unique optimum,
+global certificate or physical validation follows from this local minimax
+estimate. `evaluate_minimax` evaluates the same compiled rows at a declared
+point without optimizing or publishing a stationarity certificate.
 
 ## ALG-TERMINATION
 

@@ -4,11 +4,17 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <numeric>
 
 namespace py = pybind11;
 namespace epcsaft::regression {
 
 void register_regression(py::module_& module) {
+    module.def("formula_composition", [](const std::vector<double>& solvent, const Parameters& parameters,
+        const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry, double molality) {
+        core::Scope scope("formula_composition");
+        return formula_composition(solvent, parameters, ions, stoichiometry, molality);
+    });
     py::enum_<ObservationKind>(module, "ObservationKind")
         .value("MeanIonicActivityCoefficient", ObservationKind::MeanIonicActivityCoefficient)
         .value("OsmoticCoefficient", ObservationKind::OsmoticCoefficient)
@@ -176,7 +182,55 @@ void register_regression(py::module_& module) {
         .def_readonly("optimizer", &FitCovariance::optimizer)
         .def_readonly("physical", &FitCovariance::physical)
         .def_readonly("variance_factor", &FitCovariance::variance_factor);
+    py::class_<MinimaxRequest>(module, "MinimaxRequest").def(py::init<>())
+        .def_readwrite("targets", &MinimaxRequest::targets).def_readwrite("group_scales", &MinimaxRequest::group_scales)
+        .def_readwrite("q", &MinimaxRequest::q).def_readwrite("tolerance", &MinimaxRequest::tolerance)
+        .def_readwrite("activity_distance", &MinimaxRequest::activity_distance).def_readwrite("margin", &MinimaxRequest::margin);
+    py::class_<MinimaxRow>(module, "MinimaxRow")
+        .def_readonly("kind", &MinimaxRow::kind).def_readonly("row", &MinimaxRow::row)
+        .def_readonly("group", &MinimaxRow::group).def_readonly("metric", &MinimaxRow::metric)
+        .def_readonly("sign", &MinimaxRow::sign).def_readonly("threshold", &MinimaxRow::threshold)
+        .def_readonly("scale", &MinimaxRow::scale).def_readonly("auxiliary", &MinimaxRow::auxiliary)
+        .def_readonly("members", &MinimaxRow::members);
+    py::class_<MinimaxResult>(module, "MinimaxResult")
+        .def_readonly("availability", &MinimaxResult::availability)
+        .def_readonly("application_status", &MinimaxResult::application_status)
+        .def_readonly("solver_status", &MinimaxResult::solver_status)
+        .def_readonly("feasible", &MinimaxResult::feasible)
+        .def_readonly("stationary", &MinimaxResult::stationary)
+        .def_readonly("t", &MinimaxResult::t)
+        .def_readonly("target_maximum", &MinimaxResult::target_maximum)
+        .def_readonly("gap", &MinimaxResult::gap)
+        .def_readonly("primal", &MinimaxResult::primal)
+        .def_readonly("stationarity", &MinimaxResult::stationarity)
+        .def_readonly("dual_sign", &MinimaxResult::dual_sign)
+        .def_readonly("complementarity", &MinimaxResult::complementarity)
+        .def_readonly("point", &MinimaxResult::point)
+        .def_readonly("lower", &MinimaxResult::lower)
+        .def_readonly("upper", &MinimaxResult::upper)
+        .def_readonly("values", &MinimaxResult::values)
+        .def_readonly("physical_values", &MinimaxResult::physical_values)
+        .def_readonly("jacobian", &MinimaxResult::jacobian)
+        .def_readonly("multipliers", &MinimaxResult::multipliers)
+        .def_readonly("physical_multipliers", &MinimaxResult::physical_multipliers)
+        .def_readonly("z_lower", &MinimaxResult::z_lower)
+        .def_readonly("z_upper", &MinimaxResult::z_upper)
+        .def_readonly("physical_z_lower", &MinimaxResult::physical_z_lower)
+        .def_readonly("physical_z_upper", &MinimaxResult::physical_z_upper)
+        .def_readonly("lower_distances", &MinimaxResult::lower_distances)
+        .def_readonly("upper_distances", &MinimaxResult::upper_distances)
+        .def_readonly("hold_multipliers", &MinimaxResult::hold_multipliers)
+        .def_readonly("full_stationarity", &MinimaxResult::full_stationarity)
+        .def_readonly("root_errors", &MinimaxResult::root_errors)
+        .def_readonly("slack_groups", &MinimaxResult::slack_groups)
+        .def_readonly("slack_rows", &MinimaxResult::slack_rows)
+        .def_readonly("active_lower", &MinimaxResult::active_lower)
+        .def_readonly("active_upper", &MinimaxResult::active_upper)
+        .def_readonly("hold_causes", &MinimaxResult::hold_causes)
+        .def_readonly("rows", &MinimaxResult::rows)
+        .def_readonly("frozen_checks", &MinimaxResult::frozen_checks);
     py::class_<FitResult>(module, "FitResult")
+        .def_readonly("minimax", &FitResult::minimax)
         .def_readonly("status", &FitResult::status)
         .def_readonly("chart", &FitResult::chart)
         .def_readonly("checks", &FitResult::checks)
@@ -216,20 +270,43 @@ void register_regression(py::module_& module) {
                          std::vector<Coordinate> coordinates, std::vector<Observation> observations,
                          std::vector<double> weights, const FitControls& controls, std::vector<HydrationHold> holds,
                          std::vector<CheckGroup> checks, std::optional<Parameters> baseline, bool singular_vectors,
-                         const std::optional<std::vector<std::vector<double>>>& starts, std::optional<int> iterations, std::optional<double> seconds) -> py::object {
+                         const std::optional<std::vector<std::vector<double>>>& starts, std::optional<int> iterations, std::optional<double> seconds, std::optional<MinimaxRequest> minimax) -> py::object {
         core::Scope scope("fit");
         FitRequest request{parameters, std::move(thermochemistry), {std::move(coordinates)}, std::move(observations),
-                    std::move(weights), controls, std::move(holds), std::move(checks), std::move(baseline), singular_vectors};
+                    std::move(weights), controls, std::move(holds), std::move(checks), std::move(baseline), singular_vectors, std::move(minimax)};
         return starts ? py::cast(fit_sequence(request, *starts, iterations.value_or(controls.maximum_iterations), seconds.value_or(controls.maximum_elapsed_time_seconds))) : py::cast(fit(request));
     }, py::arg("parameters"), py::arg("thermochemistry"), py::arg("coordinates"), py::arg("observations"),
        py::arg("weights"), py::arg("controls"), py::arg("holds") = std::vector<HydrationHold>{},
        py::arg("checks") = std::vector<CheckGroup>{}, py::arg("baseline") = std::nullopt, py::arg("singular_vectors") = false,
-       py::arg("starts") = std::nullopt, py::arg("iterations") = std::nullopt, py::arg("seconds") = std::nullopt);
+       py::arg("starts") = std::nullopt, py::arg("iterations") = std::nullopt, py::arg("seconds") = std::nullopt, py::arg("minimax") = std::nullopt);
     module.def("observations_at", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations, const std::vector<double>& errors) {
         FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
         request.holds = std::move(holds); request.observations = std::move(observations);
         return observations_at(request, optimizer, errors);
+    });
+    py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
+        .def_readonly("predictions", &ObservationEvaluation::predictions).def_readonly("gradient", &ObservationEvaluation::gradient)
+        .def_readonly("optimizer_gradient", &ObservationEvaluation::optimizer_gradient).def_readonly("chart", &ObservationEvaluation::chart)
+        .def_readonly("statuses", &ObservationEvaluation::statuses);
+    module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
+        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations) {
+        core::Scope scope("evaluate_observations");
+        FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
+        request.holds = std::move(holds); request.observations = std::move(observations);
+        std::vector<std::size_t> rows(request.observations.size()); std::iota(rows.begin(), rows.end(), 0);
+        FitResult failures; ObservationEvaluator evaluator(request, failures, rows); ObservationEvaluation out;
+        if (!evaluator.evaluate(optimizer, true, out)) throw std::invalid_argument(failures.failures.back().message);
+        return out;
+    });
+    module.def("evaluate_minimax", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
+        const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
+        std::vector<CheckGroup> checks, std::optional<Parameters> baseline, const MinimaxRequest& minimax) {
+        core::Scope scope("evaluate_minimax");
+        FitRequest request; request.parameters = parameters; request.coordinates.coordinates = std::move(coordinates);
+        request.holds = std::move(holds); request.observations = std::move(observations); request.checks = std::move(checks);
+        request.baseline = std::move(baseline); request.minimax = minimax;
+        return fit_minimax(request, optimizer);
     });
     module.def("evaluate_coordinates", &evaluate_coordinates, py::arg("parameters"), py::arg("set"), py::arg("optimizer"),
         py::arg("holds"), py::arg("thermochemistry") = std::nullopt);

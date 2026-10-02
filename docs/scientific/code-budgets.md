@@ -91,6 +91,60 @@ Budget changes must not silently change scientific scope.
   on the three bounded cases; no speedup is claimed. Other layers and all
   planned allowances are unchanged.
 
+- 2026-10-01, Bindings and Python amendment for #223 (owner approved): after
+  #219 slice B the measured counts are Bindings 1843 and Python 2568, total
+  20208. #223's estimate (Bindings +35–60, Python +40–75) did not fit. New hard
+  ceilings: Bindings 1880 → 1940 and Python 2620 → 2700. The aggregate stays
+  22000; the roadmap projects about 22,950, which is decided with measured
+  counts before #224. A second consolidation audit aimed at Bindings and Python
+  (far above their 650 and 1600 soft ceilings) follows under #221. Pre-envelope
+  hard-ceiling changes without amendment entries are listed in the #221
+  reconstruction comment (5942662477).
+
+- 2026-10-01, #219 slice B closeout, measured against `96e9ecde`
+  (runtime identical to `1fc771b0`, 19,654): **662 gross added, 108 removed,
+  +554 net**, total **20,208**. The owner approved the measured sketch through
+  [#230](https://github.com/tannerpolley/ePC-SAFT/pull/230), raising Parameter regression
+  to 2,480 while keeping every other ceiling and the 22,000 aggregate.
+  The final candidate is below the approximately +600 net stop condition.
+
+  | Layer | Base | Gross | Removed | Net | Final | Closeout hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4274 | 0 | 0 | 0 | 4274 | 4600 |
+  | Equilibrium | 6095 | 86 | 52 | +34 | 6129 | 7650 |
+  | Parameter regression | 2025 | 418 | 45 | +373 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1766 | 80 | 3 | +77 | 1843 | 1880 |
+  | Python | 2498 | 78 | 8 | +70 | 2568 | 2620 |
+  | Aggregate | 19654 | 662 | 108 | +554 | 20208 | 22000 |
+
+  Parameter regression is three net lines above the approximately 370 estimate.
+  One TNLP assembles target/max pairs and mean-slack links over the existing
+  selected-row evaluator and eliminated-hold chart. Shared check arithmetic,
+  admission and candidate/check publication replace their inline Ceres
+  producers. The existing native sequence retains starts and shared budgets.
+  Equilibrium's +34 is one line above the estimate: its common checked Ipopt
+  lifecycle/options and exact return names replace the old option/name blocks;
+  equilibrium retains exact curvature and file initialization. Bindings +77
+  exceeds the +55 estimate because labelled constraints, frozen checks,
+  physical multipliers, root-error reporting, and the same native one-point
+  observation/constraint evaluation are all transported. The formula-composition
+  binding reuses the existing molality owner. Python +70 stays below +80 and
+  contains declarations, calls, exports and type stubs only. No thermodynamic
+  equation, root owner, optimizer fallback or profiling framework is added.
+
+  Closeout lowers Parameter regression to **2,398 measured + #225's 80 planned = 2,478**.
+  Per the owner instruction, other ceilings and the aggregate remain unchanged.
+  Remaining shared hard headroom is Equilibrium 1,521, Bindings 37, Python 52,
+  and aggregate 1,792. These are ceilings, not claims that #223, #225 and #224
+  fit; those leaves remain and must remeasure their own designs. Their scope or
+  allowance is not silently changed by this closeout. Soft excess pays for the
+  exact held-chart estimators, row-specific constraints and numerical reporting.
+  [B1-B4 numerical verification](../../analyses/2026-electrolyte-parameter-gradients/notebook.qmd)
+  identifies the wheel, operands, tolerances and local-solution limits.
+
 - 2026-10-01, #219 slice B Parameter regression amendment (owner approved): slice B
   stopped at its budget gate. A counted sketch of the D7 native Ipopt
   constrained estimation (one Parameter regression TNLP over the slice-A evaluator) gives
@@ -143,8 +197,9 @@ Budget changes must not silently change scientific scope.
   this allowance: checks rebuild only their selected rows and zero-weight
   reports, while objective rows keep the accepted evaluation; unevaluated rows
   remain unavailable. Removing unnecessary internal aliases and access
-  specifiers keeps parameter regression at the approved measurement. Slice B must re-estimate
-  against 175 before Build; inability to fit returns for an envelope decision.
+  specifiers keeps parameter regression at the approved measurement. That handoff required
+  B to re-estimate before Build; its subsequent amendment below supersedes the
+  175-line limit.
   The native profile driver remains deferred under D8: fixed-coordinate
   removal, declared starts, shared limits, neighboring starts and per-point
   failure/check records exceed the 35-line driver allowance in the current
