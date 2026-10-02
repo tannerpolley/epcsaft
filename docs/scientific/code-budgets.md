@@ -78,34 +78,39 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #238 declared equilibrium starts, measured against integrated
-  main `edf7672e`: **264 gross added, 18 removed, +246 net runtime lines**.
-  Lead-authorized task cap 260 gross; first draft measured 227. The lead
+  main `edf7672e`: **374 gross added, 50 removed, +324 net runtime lines**.
+  Original estimate 150 gross; first draft measured 227. Lead-authorized cap
+  rose to 260 gross. The lead
   authorized up to 275 for admission corrections, then the owner paused hard
-  ceilings for this sprint (#248); 275 is now a target. The simplification
-  pass separated previous-coordinate reuse from physical seed preparation and
-  reused declaration equality and the caller-tolerance result. The 150 estimate was low because
-  it omitted complete seed admission, remaining-limit propagation through the
-  driver callbacks and polish, and the transported attempt/work records.
+  ceilings for this sprint (#248); 275 is now a target. Growth beyond that target
+  supplies omitted partial/pinned seed admission, deadlines between initializer
+  and admission kernels, and measured rows/work across every failure boundary.
+  Previous-coordinate reuse, declaration comparison, the caller-tolerance result,
+  and the existing bounded polish remain shared; optimizer iterations and polish
+  evaluations are distinct work quantities.
 
   | Layer | Base | Gross | Removed | Net | Final | Shared hard |
   |---|---:|---:|---:|---:|---:|---:|
   | Core | 917 | 0 | 0 | 0 | 917 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
   | Properties | 4509 | 0 | 0 | 0 | 4509 | 4800 |
-  | Equilibrium | 6921 | 193 | 18 | +175 | 7096 | 8800 |
+  | Equilibrium | 6921 | 299 | 50 | +249 | 7170 | 8800 |
   | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
   | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
-  | Bindings | 1886 | 27 | 0 | +27 | 1913 | 2100 |
+  | Bindings | 1886 | 31 | 0 | +31 | 1917 | 2100 |
   | Python | 2635 | 44 | 0 | +44 | 2679 | 2850 |
-  | Aggregate | 21345 | 264 | 18 | +246 | 21591 | 24000 |
+  | Aggregate | 21345 | 374 | 50 | +324 | 21669 | 24000 |
 
   One compiled problem, existing generic/boundary seeds, the shared packing
   predicate, exact Ipopt driver and density admission remain the owners.
   The fitting sequence's remaining-iteration and steady-clock accounting pattern
   is reused; the common Ipopt option owner applies positive CPU-time limits
   to exact solves as well as estimation. The driver callback carries the elapsed
-  deadline; no second optimizer or acceptance rule is introduced. The native
-  packing coefficient is transported for the analytic density-closed seed.
+  deadline; no second optimizer or acceptance rule is introduced. Deadline
+  rejection clears state availability, but the common residual classifier keeps
+  its nonfinite/converged/floor/budget priority. Controller causes and measured
+  overruns record elapsed exhaustion separately from native termination. The
+  native packing coefficient is transported for the analytic density-closed seed.
   The soft excess retains these numerical responsibilities and their work
   diagnostics. The shared #244 envelope and layer ceilings remain unchanged;
   no exclusive allowance is reserved for this task and no ceiling is edited.

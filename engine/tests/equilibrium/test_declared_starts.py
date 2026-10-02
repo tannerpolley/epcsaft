@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture
+from epcsaft import Mixture, Pure
 from epcsaft import equilibrium as eq
 from ..native_inputs import ETHANE, parameters
 
@@ -65,16 +65,16 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         assert max(map(abs, restored.results[0].residuals)) <= 1e-10
     previous = eq.EquilibriumStart()
     previous.previous = result
-    for field, value in (("P", 4e6), ("T", 201.), ("feed", eq.Amounts({"s0": 2., "s1": 1., "s2": .3, "s4": .3}))):
+    for field, changed_value in (("P", 4e6), ("T", 201.), ("feed", eq.Amounts({"s0": 2., "s1": 1., "s2": .3, "s4": .3}))):
         different = deepcopy(problem)
-        setattr(different, field, value)
+        setattr(different, field, changed_value)
         with pytest.raises(ValueError, match="fixed pressure|fixed temperature|feed"):
             eq.solve_equilibrium_starts(model, different, [positive, previous], eq.EquilibriumWorkLimits())
     partial = seed(exact, [packing[0], None])
     partial_result = eq.solve_equilibrium_starts(model, problem, [partial], eq.EquilibriumWorkLimits())
     assert partial_result.selected == 0 and partial_result.results[0] is not None
     assert max(map(abs, partial_result.results[0].residuals)) <= 1e-10
-    pure = Mixture(parameters((ETHANE,)))
+    pure = Pure(parameters((ETHANE,)))
     bubble = eq.Problem(T=200., P=eq.Free(1e5), feed=eq.Amounts({"s0": 1.}),
                         phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))],
                         row_tolerance=1e-10)
@@ -82,7 +82,7 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     assert reference.success
     pinned_seed = eq.EquilibriumStart()
     pinned_seed.compositions = [[1.], [1.]]
-    pinned_seed.packing_fractions = reference.packing_fractions
+    pinned_seed.packing_fractions = [*reference.packing_fractions]
     pinned_seed.pressure = reference.pressure[0]
     for amount in (float("nan"), 1.):
         pinned_seed.amounts = [1., amount]

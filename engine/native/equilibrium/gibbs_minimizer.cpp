@@ -627,6 +627,24 @@ void GibbsMinimizer::finalize_solution(
 
 namespace {
 
+void row_criterion(core::Convergence& record, double tolerance) {
+    if (tolerance == policy::EQUILIBRIUM_ROW_RESIDUAL.value) record.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+    else {
+        record.criterion_owner = std::make_shared<const policy::Tolerance>(policy::Tolerance{
+            "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL", tolerance,
+            policy::Category::AlgorithmTolerance, "caller-supplied equilibrium row tolerance"});
+        record.criterion = record.criterion_owner.get();
+    }
+}
+
+void reject_elapsed(EquilibriumResult& result, core::Scope& scope) {
+    auto& record = result.convergence;
+    if (!record.criterion) row_criterion(record, result.declaration->row_tolerance);
+    record.stop = core::classify(record.residual, *record.criterion, record.floor,
+                                record.contraction, true, record.amplification);
+    result.success = false; clear_state(result); scope.finish(record);
+}
+
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
     result.model_identity = compiled.model;
@@ -662,8 +680,8 @@ EquilibriumResult run_driver(
         * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
-        result.convergence.stop = core::Stop::budget_exhausted;
-        result.convergence.residual = std::numeric_limits<double>::quiet_NaN(); return result; }
+        result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        reject_elapsed(result, scope); return result; }
     std::optional<EquilibriumResult> limit_audit;
     if (limits && !audit) audit = &limit_audit.emplace(result);
     auto fallback = limits ? initial : std::vector<double>{};
@@ -708,9 +726,8 @@ EquilibriumResult run_driver(
     if (audit) audit->solver_status = result.solver_status;
     const auto limited_result = [&] {
         auto failed = *audit;
-        failed.convergence.stop = core::Stop::budget_exhausted;
-        failed.message = "elapsed work budget exhausted"; clear_state(failed);
-        scope.finish(failed.convergence); return failed;
+        failed.message = "elapsed work budget exhausted";
+        reject_elapsed(failed, scope); return failed;
     };
     if (expired()) return limited_result();
     std::vector<double> point = nlp->solution();
@@ -827,15 +844,7 @@ EquilibriumResult run_driver(
     core::Convergence& convergence = result.convergence;
     convergence = {};
     convergence.residual = maximum_abs(result.classified_residuals);
-    if (row_tolerance == policy::EQUILIBRIUM_ROW_RESIDUAL.value) {
-        convergence.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
-    } else {
-        // The caller-valued criterion lives with the record so copies outlive the request.
-        convergence.criterion_owner = std::make_shared<const policy::Tolerance>(policy::Tolerance{
-            "EQUILIBRIUM_REQUESTED_ROW_RESIDUAL", row_tolerance,
-            policy::Category::AlgorithmTolerance, "caller-supplied equilibrium row tolerance"});
-        convergence.criterion = convergence.criterion_owner.get();
-    }
+    row_criterion(convergence, row_tolerance);
     if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
     result.iterations = convergence.iterations = nlp->iterations();
@@ -987,8 +996,8 @@ EquilibriumResult run_driver(
         clear_state(result);
         return result;
     }
-    if (expired()) { result.success = false; result.convergence.stop = core::Stop::budget_exhausted;
-        result.message = "elapsed work budget exhausted"; clear_state(result); scope.finish(result.convergence); return result; }
+    if (expired()) { result.message = "elapsed work budget exhausted";
+        reject_elapsed(result, scope); return result; }
     result.rows = compiled.rows;
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
@@ -1141,6 +1150,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
 EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     const EquilibriumProblem& problem, const std::vector<EquilibriumStart>& starts,
     const EquilibriumWorkLimits& limits) {
+    core::Scope scope("solve_equilibrium_starts");
     using Clock = std::chrono::steady_clock;
     const auto begun = Clock::now();
     const auto deadline_at = [](Clock::time_point now, const std::optional<double>& seconds) {
@@ -1169,7 +1179,6 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             if (!problem.pressure.free && old.declaration->pressure.value != problem.pressure.value) difference = "fixed pressure differs";
             if (!difference.empty()) throw std::invalid_argument("previous start: " + difference);
         }
-        core::Scope controller_scope("solve_equilibrium_starts");
         for (std::size_t i = 0; i < starts.size(); ++i) {
             if (exhausted() || (limits.attempts && i >= *limits.attempts)) { out.budget_exhausted = true; break; }
             core::Scope scope("equilibrium_start_attempt");
@@ -1184,7 +1193,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             try {
                 auto initial = seed.coordinates;
                 const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
-                    if (!ok) throw std::invalid_argument("initialization: " + field);
+                    if (!ok) throw std::invalid_argument(field);
                 };
                 check((initial.empty() && !seed.previous) || (seed.compositions.empty() && seed.packing_fractions.empty()
                     && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())));
@@ -1207,7 +1216,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                               "packing for phase " + phase.name + " is outside the admitted range");
                         if (!seed.amounts.empty() && (!std::isfinite(seed.amounts[p]) || seed.amounts[p] < 0.0
                             || (phase.is_pinned() && seed.amounts[p] != specified_amount(phase, compiled.n_feed))))
-                            throw std::invalid_argument("initialization: amount for phase " + phase.name + " is nonfinite, negative or conflicts with its pin");
+                            throw std::invalid_argument("amount for phase " + phase.name + " is nonfinite, negative or conflicts with its pin");
                         complete = complete && phase.packing_guess.has_value();
                     }
                     if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
@@ -1242,24 +1251,27 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
                 auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
                                                 : *audit;
-                if (work.expired()) { result.success = false; result.convergence.stop = core::Stop::budget_exhausted;
-                    result.message += "; elapsed work budget exhausted"; clear_state(result); }
+                if (work.expired()) { result.message += "; elapsed work budget exhausted";
+                    reject_elapsed(result, scope); }
                 if (result.success) {
                     BranchCheck branch;
                     try { branch = check_density_branches(model, compiled, result, {}, true, scope, &work); }
                     catch (const std::exception& error) { branch.message = error.what(); }
                     if (!branch.accepted || work.expired()) {
                         result.success = false;
-                        if (work.expired()) result.convergence.stop = core::Stop::budget_exhausted;
-                        result.message = work.expired() ? "elapsed work budget exhausted in admission" : branch.message; clear_state(result);
+                        result.message = work.expired() ? "elapsed work budget exhausted in admission" : branch.message;
+                        if (work.expired()) reject_elapsed(result, scope); else clear_state(result);
                     }
                 }
                 scope.finish(result.convergence);
                 out.causes[i] = result.message; out.results[i] = std::move(result);
                 if (out.results[i]->success && out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
             } catch (const std::exception& error) {
-                out.causes[i] = error.what();
-                if (audit) { audit->message = "driver/post-driver: " + out.causes[i]; clear_state(*audit); out.results[i] = std::move(audit); }
+                out.causes[i] = std::string(audit ? "driver/post-driver: " : "initialization: ") + error.what();
+                if (work.expired()) out.causes[i] += "; elapsed deadline exhausted";
+                if (audit) { audit->message = out.causes[i];
+                    if (work.expired()) reject_elapsed(*audit, scope); else clear_state(*audit);
+                    out.results[i] = std::move(audit); }
             }
             out.iterations += work.consumed;
             out.attempt_seconds[i] = std::chrono::duration<double>(Clock::now() - attempt_begun).count();
