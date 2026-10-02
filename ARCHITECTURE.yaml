@@ -74,6 +74,14 @@ plan:
 # constrained estimation (counted estimate +370) plus #225's planned +80; total 22000 unchanged,
 # revisited with measured counts before #224.
 # #219B closeout: measured Regression 2398 + #225 planned 80 = 2478; other ceilings unchanged.
+# 2026-10-01 #223 (owner approved): Bindings hard 1880 -> 1940 and Python 2620 -> 2700 so the
+# phase-discovery build fits after #219 slice B; aggregate 22000 unchanged; a Bindings/Python
+# consolidation audit follows (#221).
+# #221 finding 5: Equilibrium 6054 + remaining shared roadmap allowance 1521 = 7575;
+# measured -75 from bdde4003, with the ionic packing-diameter lever chain corrected.
+# 2026-10-02 #220 envelope raise (owner approved): aggregate 22000 -> 24000; Properties 4800,
+# Equilibrium 8800, Bindings 2100, Python 2850 (from measured counts plus Ready-design estimates
+# for #237-#240, #225 slices 2-5 and #224); closeouts keep lowering touched layers.
 code_budgets: {
   "core": [
     700,
@@ -88,12 +96,12 @@ code_budgets: {
   "properties": [
     2400,
     2900,
-    4600
+    4800
   ],
   "equilibrium": [
     5000,
     6000,
-    7650
+    8800
   ],
   "regression": [
     800,
@@ -108,17 +116,17 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1880
+    2100
   ],
   "python": [
     1350,
     1600,
-    2620
+    2850
   ],
   "total": [
     12300,
     14850,
-    22000
+    24000
   ]
 }
 
@@ -223,7 +231,7 @@ native:
     core: policy, the declared-choice and convergence contracts, the trace
     contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
     properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
-    equilibrium: one equilibrium driver, shared rows and branch continuation; discovery is deferred
+    equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes

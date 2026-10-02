@@ -35,7 +35,7 @@ re-enumerated before publication, and affected checks route Engine data and
 subproject dependency changes through numerical tests.
 
 Historical F1/F5 records remain separate and outdated. No scientific milestone
-was qualified; bounded C1 design is the next queue item.
+was qualified.
 
 The final reader review verified all 1,343 native comparison rows across 30 case IDs,
 including `density-monotonic/0` under `native.contributions.p2`, and Python
@@ -51,6 +51,5 @@ defect. The watch check does not prove every filesystem event or reboot, and the
 `execve` trace covers one inspected render. The notebook remains read-only: it
 does not collect, execute, retry, rebuild, or re-certify tests.
 
-[Quarto-native view hard-cutover completion cells](../implementation-plan.md#test-system-preparation)
-link this dated evidence to tooling completion. No scientific milestone is
-qualified by this record.
+Current delivery state belongs to the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones).
+No scientific milestone is qualified by this record.

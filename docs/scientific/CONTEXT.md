@@ -69,18 +69,29 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
-Native dependencies run downward in `ARCHITECTURE.yaml`; Python exposes
-capabilities rather than reproducing the native directory tree.
+Native dependencies run downward in `ARCHITECTURE.yaml`; the root
+[native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
 
 | Layer | Owns | Boundary |
 |---|---|---|
 | core | Common constants, parameter coordinates, numerical policy and diagnostics | Small shared foundations; no phase or application selection |
 | Contributions | Ideal-gas Helmholtz formulation and individual residual contributions, including association and electrolyte terms | Own thermal correlations and ideal mixing as physical inputs; preserve all derivative dependencies |
 | Properties | Ideal, Residual and Total quantities derived from Contributions; state evaluation, density closure and reference conversions | One native calculation; governing definitions determine assembly and derivative chains |
-| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local stability checks and solved-state actions (phase discovery deferred) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
-| regression | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
+| equilibrium | Specification compilation, shared rows, one equilibrium driver, continuation, local checks, explicit tangent-plane testing/discovery and solved-state actions (qualified cases in the retained analysis) | All equilibrium specifications use the same driver; no independent bubble, dew, reactive or paper-specific solvers |
+| `regression` | Observation composition, weighted fitting and fit diagnostics | Consumes model/equilibrium values and actions; does not implement them again |
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
-| bindings | The Python/native boundary | One extension; native iterative work has no Python callbacks |
+| bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
+
+Properties `ReferenceTaylor` means ordinary reference-contraction and volume
+Taylor coefficients along a fixed-composition, pressure-closed base path.
+`reference_partial` supplies raw source-pressure/T/one-coordinate partials;
+`NeutralReferenceReactionDiagnostic::Derivative` holds each consumed C3/C4
+column and both terminal changes. Their meanings and bounded inventory follow
+[the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
+and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
+These standalone Properties derivatives are numerically verified on the stated
+manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
+consumers remain separate #225 work.
 
 ### Residual, ideal and state responsibilities
 
@@ -141,9 +152,18 @@ rather than substitute another equilibrium method.
 Runtime accepts caller-supplied physical inputs and one documented unit system;
 source-parameter validity ranges are the caller's responsibility. Mathematical
 input validity and numerical diagnostics remain Engine responsibilities.
-Current phase counts/types/supports are declared. A phase-stability/discovery
-algorithm is deferred future work; current mechanical/local checks and explicit
-limits on global claims remain required. Caller tolerances govern solve
+Phase counts/types/supports are declared unless the caller explicitly requests
+`Discover()` at fixed T/P. Native tangent-plane testing and phase discovery are
+implemented under [#223](https://github.com/tannerpolley/ePC-SAFT/issues/223),
+with retained numerical qualification on the stated neutral and admitted
+ionic/reacting cases; the independent delivered review supports those cases
+and stated limits.
+Only an explicit `stability_test(...)` call tests a declared result, including
+pinned/free-intensive snapshots at solved T/P with frozen actual standards.
+Declared solves, continuation, parameter fitting and ASL incur no implicit trial
+solves. [ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability)
+owns the finite native search through the shared driver. Mechanical/local checks
+and limits on global claims remain required. Caller tolerances govern solve
 requests; available candidates that miss them retain warnings and achieved
 residuals. The required state/property derivative target is directional actions
 through third order on admitted smooth branches, with correct implicit chains.
@@ -176,10 +196,27 @@ remaining work.
   are explicit and never silently reinterpret parameter records.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P. Phase fractions and absolute
-  phase amounts are distinct. PH, PS, UV and phase discovery remain future work.
-- Current requests declare phase counts, types and supports. Mechanical and local
-  checks remain available, but no declared-phase result implies global stability
-  or an unperformed search.
+  phase amounts are distinct. PH, PS and UV remain future work; explicit native
+  fixed-T/P discovery has retained numerical qualification on the stated cases.
+- Requests declare phase counts, types and supports or explicitly select fixed-T/P
+  discovery. Discover at initialization, then reuse its declared topology where
+  that reuse is qualified. The retained 100 mol neutral case has an admitted
+  discovery but rejected declared reuse; [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
+  owns that conditioning limit. Native finite searches admit charge-neutral trials and conserved
+  donor splits with estimated uncertainty; they supply no global certificate.
+  Mechanical and local checks remain available; a declared result implies no
+  unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)
+  records the adopted choices, not numerical support.
+- Charged trial supports in explicit testing/discovery require a declared bulk
+  permittivity form with the vacuum limit: Schreckenberg `DensityTemperature`
+  or Rueben `DipolarPerturbation` (full EOS §6.2/§6.4). Density-independent
+  `IonSuppression` and `ComponentMixing` describe condensed-phase electrolyte
+  terms and raise `ParameterError`: "permittivity model has no low-density limit;
+  declare phases". Neutral-only trial families and declared calculations are
+  unchanged. The retained solvent-only gas-density descent is refused under
+  this owner-adopted search rule; its numerical operands remain available.
+  A vacuum limit establishes neither physical validation nor global stability.
+  No density cutoff or optimizer-success filter is introduced.
 - Caller tolerances govern solve requests. Return finite candidates with achieved
   residuals and explicit unmet-tolerance warnings; return named absence and
   diagnostics when no finite candidate exists.
@@ -260,10 +297,10 @@ recovery question. Historical stage completion is never current acceptance.
 | EOS symbols, units, conventions and source validity | [full-eos.md](../../engine/docs/science/full-eos.md) |
 | Equilibrium formulation and specification admission | [formulation.md](../../engine/docs/equilibrium/formulation.md) |
 | Algorithms, derivative orders, initialization, termination and failures | [algorithms.md](../../engine/docs/science/algorithms.md) |
-| Regression observation and fit meaning | [regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
+| Parameter regression observation and fit meaning | [parameter regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
-| Current code owners and required scientific evidence | This context, canonical Engine documents, tests, analyses and dated reviews |
-| Project structure: components, Engine layers, path ownership and artifact roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
+| Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
+| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [adr/](adr/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
@@ -287,15 +324,18 @@ an architecture scan nor a successful solve proves model validity.
 | convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
 | numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
 | tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance (algorithms) |
-| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy (packet contract and root AGENTS) |
+| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy ([packet requirements](../../data/docs/packet-contract.md) and root `AGENTS.md`) |
 | typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
 | claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
+| tangent-plane distance | Reduced molar energy above the candidate conserved supporting plane on normalized electroneutral composition/volume trials (Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation) |
+| numerically resolved descending split | Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof (equilibrium formulation; #223 adopted D9) |
+| proved instability witness | Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient (equilibrium formulation) |
 | stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
 | component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
 | layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
 | capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
 | milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers |
-| artifact role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
+| file role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
 | qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
 
 Use bubble, dew, saturation and flash as mathematical specifications or data
@@ -314,7 +354,7 @@ acceptance, reuse decisions and estimates. Native issue relationships own
 prerequisites; milestone numbering expresses delivery priority, not an additional
 scientific dependency. Do not maintain a competing sequence here.
 Finish and verify each prerequisite's current agreed scope before dependent
-implementation; deferred PH/PS/UV and phase search do not block current work.
+implementation; deferred PH/PS/UV and global certification do not block current work.
 Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher

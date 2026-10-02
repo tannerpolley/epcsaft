@@ -83,7 +83,6 @@ PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
     }
     PackingTerms result;
     result.component.resize(composition.size());
-    result.parameter_derivative.resize(model.active_parameters().size());
     const double scale = (PI / 6.0) * NUMBER_DENSITY_PER_ANGSTROM3;
     for (std::size_t i = 0; i < composition.size(); ++i) {
         double diameter_t = 0.0;
@@ -99,26 +98,6 @@ PackingTerms packing_terms(const HelmholtzModel& model, double temperature,
         result.coefficient += result.component[i];
         result.temperature_derivative += scale * composition[i]
             * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i] * diameter_t;
-    }
-    for (std::size_t parameter = 0; parameter < model.active_parameters().size(); ++parameter) {
-        const auto& item = model.active_parameters()[parameter];
-        for (const std::size_t i : item.indices) {
-            if (item.family == ParameterFamily::SegmentCount) {
-                result.parameter_derivative[parameter] +=
-                    scale * composition[i] * diameter[i] * diameter[i] * diameter[i];
-            } else if (item.family == ParameterFamily::SigmaConstant
-                       && parameters.charge_number[i] == 0) {
-                result.parameter_derivative[parameter] += scale * composition[i]
-                    * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i]
-                    * diameter[i] / sigma[i];
-            } else if (item.family == ParameterFamily::DispersionEnergyOverK
-                       && parameters.charge_number[i] == 0) {
-                result.parameter_derivative[parameter] += scale * composition[i]
-                    * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i]
-                    * sigma[i] * 0.36 / temperature * std::exp(
-                        -3.0 * parameters.dispersion_energy_over_k[i] / temperature);
-            }
-        }
     }
     return result;
 }
@@ -818,10 +797,10 @@ ReferenceCalorics reference_calorics(
     return result;
 }
 
-CompiledSystem compile_problem(
-    const HelmholtzModel& model, const EquilibriumProblem& request
+static CompiledSystem compile_with_basis(
+    const HelmholtzModel& model, const EquilibriumProblem& request,
+    const std::vector<std::vector<double>>* trial_basis, core::Scope& scope
 ) {
-    core::Scope scope("compile_problem");
     if (!request.topology_declared) {
         throw std::invalid_argument("phase count unknown; declare phases");
     }
@@ -856,7 +835,7 @@ CompiledSystem compile_problem(
                                         + " violates z");
         }
     }
-    compiled.B = balance_basis(components, request.reactions);
+    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
     const double temperature_guess = request.temperature.seed_or(300.0);
@@ -1047,6 +1026,53 @@ CompiledSystem compile_problem(
     scope.probe("rows", static_cast<double>(compiled.rows.size()));
     scope.probe("rank", static_cast<double>(compiled.rank));
     return compiled;
+}
+
+CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
+    core::Scope scope("compile_problem");
+    return compile_with_basis(model, request, nullptr, scope);
+}
+
+// The reduced trial space is internal: the public no-reaction compiler retains species balances.
+CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, double P,
+    const PhaseSpec& phase, const std::vector<double>& w, const std::vector<double>& c,
+    std::vector<std::vector<double>>& transformation) {
+    core::Scope scope("compile_problem");
+    const auto& support = phase.support;
+    const auto& z = model.parameters().charge_number;
+    const bool has_charge = std::any_of(support.begin(), support.end(), [&](auto i) { return z[i] != 0; });
+    Eigen::MatrixXd physical(has_charge ? 2 : 1, support.size());
+    physical.row(0).setOnes();
+    if (has_charge) for (std::size_t i = 0; i < support.size(); ++i) physical(1, i) = z[support[i]];
+    const Eigen::MatrixXd kernel = physical.fullPivLu().kernel();
+    std::vector<ReactionSpec> directions;
+    if (support.size() > static_cast<std::size_t>(physical.rows())) {
+        for (Eigen::Index j = 0; j < kernel.cols(); ++j) {
+            ReactionSpec direction;
+            direction.stoichiometry.assign(kernel.col(j).data(), kernel.col(j).data() + kernel.rows());
+            // Only the basis owner's input validation consumes this zero target.
+            // These directions never enter the trial's reaction declaration.
+            direction.affinity_j_per_mol = 0.0;
+            directions.push_back(std::move(direction));
+        }
+    }
+    const auto reduced = balance_basis(support.size(), directions);
+    std::vector<std::vector<double>> B(reduced.size(), std::vector<double>(w.size(), 0.0));
+    transformation.clear();
+    for (std::size_t k = 0; k < B.size(); ++k) {
+        for (std::size_t i = 0; i < support.size(); ++i) B[k][support[i]] = reduced[k][i];
+        const Eigen::VectorXd coefficients = physical.transpose().colPivHouseholderQr().solve(
+            Eigen::Map<const Eigen::VectorXd>(reduced[k].data(), reduced[k].size()));
+        transformation.emplace_back(coefficients.data(), coefficients.data() + coefficients.size());
+    }
+    EquilibriumProblem request;
+    request.temperature = FreeValue::fixed(T); request.pressure = FreeValue::fixed(P);
+    request.feed.values = w;
+    request.phases = {phase};
+    request.phases[0].amount = AmountSpec::free();
+    request.row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    for (double coefficient : c) request.standard_gibbs_j_per_mol.push_back(coefficient * GAS_CONSTANT_J_PER_MOL_K * T);
+    return compile_with_basis(model, request, &B, scope);
 }
 
 std::vector<double> CompiledSystem::generic_point() const {
@@ -1336,76 +1362,23 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
         throw std::invalid_argument(
             "reference_unavailable: source reference T/P/parameter lever derivatives are not admitted");
     }
-    const auto prepared = prepare(point);
-    const std::size_t components = model->parameters().component_count();
-    const double T = prepared.temperature;
-    const double P = prepared.pressure;
-    const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
-    const auto& standard_temperature_derivative = prepared.standard.derivative[1];
-    std::size_t levers = 0;
-    std::vector<double> result;
-    std::vector<double> pinned_amount_feed_term(rank, 0.0);
-    for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
-        const auto& composition = prepared.composition[phase];
-        const auto& packing = prepared.packing[phase];
-        const double eta = prepared.eta[phase];
-        const double volume = prepared.volume[phase];
-        const auto& derivative = prepared.derivative[phase];
-        const std::size_t width = derivative.gradient.size();
-        if (result.empty()) {
-            levers = width;
-            result.resize(rows.size() * levers, 0.0);
-        }
-        if (problem.phases[phase].amount.kind == AmountKind::Pinned) {
-            for (std::size_t balance_row = 0; balance_row < rank; ++balance_row) {
-                for (std::size_t species = 0; species < components; ++species) {
-                    pinned_amount_feed_term[balance_row] +=
-                        problem.phases[phase].amount.fraction * B[balance_row][species]
-                        * composition[species] / feed_total;
-                }
-            }
-        }
-        for (std::size_t row = 0; row < rows.size(); ++row) {
-            if (rows[row].phase != phase) continue;
-            if (rows[row].kind == RowKind::Chemical) {
-                const double physical_v = derivative.hessian[
-                    (2 + rows[row].index) * width + 1] - 1.0 / volume;
-                result[levers * row] = derivative.hessian[(2 + rows[row].index) * width]
-                    + physical_v * packing.temperature_derivative / eta
-                    + standard_temperature_derivative[rows[row].index];
-                for (std::size_t active = 2 + components; active < width; ++active) {
-                    const double active_parameter_column = derivative.hessian[
-                        (2 + rows[row].index) * width + active];
-                    // EqID: packing_coefficient_parameter_derivative
-                    const double packing_parameter_term = packing.parameter_derivative[
-                        active - 2 - components] / eta;
-                    result[levers * row + active] = active_parameter_column
-                        + physical_v * packing_parameter_term;
-                }
-            } else if (rows[row].kind == RowKind::Pressure) {
-                const double physical_v = -derivative.gradient[1]
-                    - volume * derivative.hessian[width + 1] - P / rt;
-                result[levers * row] = -volume * derivative.hessian[width]
-                    + P * volume / (GAS_CONSTANT_J_PER_MOL_K * T * T)
-                    + physical_v * packing.temperature_derivative / eta;
-                result[levers * row + 1] = -packing.coefficient / eta / rt;
-                for (std::size_t active = 2 + components; active < width; ++active) {
-                    const double active_parameter_column =
-                        -volume * derivative.hessian[width + active];
-                    const double packing_parameter_term = packing.parameter_derivative[
-                        active - 2 - components] / eta;
-                    result[levers * row + active] = active_parameter_column
-                        + physical_v * packing_parameter_term;
-                }
-            }
-        }
-    }
-    for (std::size_t row = 0; row < rows.size(); ++row) {
-        if (rows[row].kind == RowKind::Moiety) {
-            for (std::size_t species = 0; species < components; ++species)
-                result[levers * row + 2 + species] = -B[rows[row].index][species]
-                    / feed_total + pinned_amount_feed_term[rows[row].index];
-        }
+    auto prepared = prepare(point);
+    prepared.point.resize(std::max(prepared.point.size(), unknown_count()), 0.0);
+    const std::size_t width = 2 + model->parameters().component_count() + model->active_parameters().size();
+    std::vector<double> result(rows.size() * width), control(width);
+    std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(prepared.point.size())};
+    for (std::size_t column = 0; column < width; ++column) {
+        control[column] = 1.0;
+        // The callable retains free T/P columns: drive their state coordinate rather than the ignored control.
+        if (column == 0 && problem.temperature.free)
+            state[1][primal_size - free_intensive_count] = 1.0;
+        if (column == 1 && problem.pressure.free)
+            state[1][primal_size - 1] = 1.0;
+        const auto series = row_series(prepared, state, control, 1);
+        for (std::size_t row = 0; row < rows.size(); ++row)
+            result[row * width + column] = series.rows[1][row];
+        control[column] = 0.0;
+        std::fill(state[1].begin(), state[1].end(), 0.0);
     }
     return result;
 }
