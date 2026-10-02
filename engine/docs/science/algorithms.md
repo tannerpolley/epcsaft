@@ -914,8 +914,8 @@ a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
 
-Fits use exact Engine derivatives and run natively. Python declares specifications
-and data and reads results; finite differences are numerical verification only.
+Fits use exact Engine derivatives under the
+[native calculation rule](../../../AGENTS.md#native-calculation-rule).
 Ceres remains the primary least-squares owner. An explicit `MinimaxRequest`
 selects native constrained estimation; a failed least-squares check never selects
 it automatically. The same native sequence owns declared starts and shared

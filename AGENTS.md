@@ -76,6 +76,16 @@ change updates or explicitly revalidates its mathematics, algorithms, code and
 numerical evidence together. Code behavior cannot redefine accepted doctrine;
 unresolved implementation choices remain explicit in the owning GitHub issue.
 
+## Native calculation rule
+
+All ePC-SAFT equation-of-state, equilibrium and parameter regression calculations
+run natively in C++ through the Engine, including fits, optimizers, root finds,
+Newton or corrector loops, continuation and stability searches. Python (the
+Engine package, `analyses/` and Engine tests) only declares inputs and reads
+results. Finite differences are allowed only to verify exact derivatives.
+Process-level IDAES/Pyomo models using Engine derivatives through the ASL adapter
+are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting methods.
+
 ## Execution and collaboration
 
 Complete authorized work and relevant verification without repeated permission.
@@ -140,8 +150,8 @@ hard-ceiling excess. Preserve readable code and required science when simplifyin
 
 Use Numerical Verification-Driven Development. Persistent numerical tests must
 falsify claims through values, identities, derivatives, limits or justified
-reference cases. Do not add API-contract, compatibility, snapshot, prose, mock
-or coverage-only tests. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
+reference cases. Do not add tests of interface requirements, compatibility, snapshots,
+prose, mocks or coverage alone. Retain homogeneous numerical rows once in CSV/TSV and keep JSON compact,
 with diagnostics, provenance, failures and claim limits. A refused, unavailable
 or tolerance-gated result is not an end state; `engine/docs/science/algorithms.md`
 (ALG-TERMINATION) owns the fix-before-negative rule. Expensive installed-wheel
