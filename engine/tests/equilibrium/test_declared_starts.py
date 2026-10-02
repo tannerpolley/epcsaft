@@ -70,6 +70,29 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         setattr(different, field, value)
         with pytest.raises(ValueError, match="fixed pressure|fixed temperature|feed"):
             eq.solve_equilibrium_starts(model, different, [positive, previous], eq.EquilibriumWorkLimits())
+    partial = seed(exact, [packing[0], None])
+    partial_result = eq.solve_equilibrium_starts(model, problem, [partial], eq.EquilibriumWorkLimits())
+    assert partial_result.selected == 0 and partial_result.results[0] is not None
+    assert max(map(abs, partial_result.results[0].residuals)) <= 1e-10
+    pinned = deepcopy(problem)
+    pinned.phases[1].amount = eq.Pinned(.5)
+    for amount in (float("nan"), 0.):
+        conflicting = seed(exact, packing)
+        conflicting.amounts = [1.3, amount]
+        refused = eq.solve_equilibrium_starts(model, pinned, [conflicting], eq.EquilibriumWorkLimits())
+        assert refused.selected is None and refused.results[0] is None and refused.iterations == 0
+        assert "amount for phase organic" in refused.causes[0]
+    pure = Mixture(parameters((ETHANE,)))
+    bubble = eq.Problem(T=200., P=eq.Free(1e5), feed=eq.Amounts({"s0": 1.}),
+                        phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor", amount=eq.Pinned(0.))],
+                        row_tolerance=1e-10)
+    reference = eq.solve_equilibrium(pure, bubble)
+    assert reference.success
+    previous.previous = reference
+    bubble.P = eq.Free(2e5)
+    reused = eq.solve_equilibrium_starts(pure, bubble, [previous], eq.EquilibriumWorkLimits())
+    assert reused.selected == 0 and reused.results[0] is not None
+    assert abs(reused.results[0].pressure[0]/reference.pressure[0]-1) <= 1e-9
     only = eq.solve_equilibrium_starts(model, problem, [invalid], eq.EquilibriumWorkLimits())
     assert only.selected is None and only.iterations == 0
     for name in ("iterations", "seconds"):

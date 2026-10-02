@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <chrono>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,8 +34,10 @@ struct NlpShape final {
 };
 
 // `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true);
+struct DriverLimits;
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds = true);
 inline bool admitted_packing_seed(double eta) {
     return std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
         && eta <= policy::PACKING_FRACTION_CEILING.value;
@@ -61,7 +64,7 @@ struct BranchCheck final {
 
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
 );
 
 struct DriverLimits final {
@@ -69,6 +72,7 @@ struct DriverLimits final {
     std::chrono::steady_clock::time_point deadline;
     mutable std::size_t consumed = 0;
     bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
+    void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
 };
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.

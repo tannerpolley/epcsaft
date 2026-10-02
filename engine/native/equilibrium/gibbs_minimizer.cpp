@@ -610,7 +610,7 @@ bool GibbsMinimizer::intermediate_callback(
         std::vector<double>{inf_pr, inf_du, mu, d_norm, regularization_size,
                             alpha_pr, alpha_du, static_cast<double>(ls_trials)},
         static_cast<std::uint32_t>(iter));
-    return !limits_ || (!limits_->expired() && iterations_ < limits_->iterations);
+    return !limits_ || !limits_->expired();  // max_iter owns iteration termination
 }
 
 void GibbsMinimizer::finalize_solution(
@@ -661,8 +661,13 @@ EquilibriumResult run_driver(
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
         * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
-    if (expired()) { result.message = "elapsed work budget exhausted before driver"; return result; }
-    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, initial, &scope, limits);
+    if (expired()) { result.message = "elapsed work budget exhausted before driver";
+        result.convergence.stop = core::Stop::budget_exhausted;
+        result.convergence.residual = std::numeric_limits<double>::quiet_NaN(); return result; }
+    std::optional<EquilibriumResult> limit_audit;
+    if (limits && !audit) audit = &limit_audit.emplace(result);
+    auto fallback = limits ? initial : std::vector<double>{};
+    Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(compiled, std::move(initial), &scope, limits);
     const auto [initialized, returned] = run_ipopt(nlp, inner_tolerance,
         static_cast<int>(limits ? std::min(limits->iterations,
             static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
@@ -685,18 +690,24 @@ EquilibriumResult run_driver(
         audit->solver_status = result.solver_status;
         audit->iterations = nlp->iterations(); audit->evaluations = nlp->evaluations();
         audit->hessian_calls = nlp->hessian_calls();
-    }
-    std::vector<double> point = nlp->solution();
-    if (point.empty()) point = initial;
-    if (expired()) {
-        result.iterations = nlp->iterations(); result.evaluations = nlp->evaluations();
+        audit->convergence.iterations = audit->iterations;
+        audit->convergence.evaluations = audit->evaluations;
         if (nlp->last_rows()) {
-            result.residuals = nlp->last_rows()->values;
-            result.classified_residuals = nlp->last_classified();
-            result.convergence.residual = maximum_abs(result.residuals);
+            audit->residuals = nlp->last_rows()->values;
+            audit->classified_residuals = nlp->last_classified();
         }
-        result.message = "elapsed work budget exhausted after driver"; clear_state(result); return result;
+        audit->convergence.residual = audit->classified_residuals.empty()
+            ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
     }
+    const auto limited_result = [&] {
+        auto failed = *audit;
+        failed.convergence.stop = core::Stop::budget_exhausted;
+        failed.message = "elapsed work budget exhausted"; clear_state(failed);
+        scope.finish(failed.convergence); return failed;
+    };
+    if (expired()) return limited_result();
+    std::vector<double> point = nlp->solution();
+    if (point.empty()) point = limits ? std::move(fallback) : boundary_start(compiled);
     std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows inside the physical composition cutoff.
@@ -709,6 +720,7 @@ EquilibriumResult run_driver(
     if (non_error && !expired() && compiled.is_square()
         && (!limits || nlp->iterations() < limits->iterations)) {
         auto at = compiled.prepare(full, true);
+        if (expired()) return limited_result();
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
@@ -719,6 +731,7 @@ EquilibriumResult run_driver(
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
             if (!(defect > 0.0) || !std::isfinite(defect)) break;
             const auto jacobian = compiled.jacobian_at(at);
+            if (expired()) return limited_result();
             const auto n = static_cast<Eigen::Index>(full.size());
             if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) break;
             const Eigen::VectorXd delta = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
@@ -736,6 +749,7 @@ EquilibriumResult run_driver(
                 std::vector<double> rows_after;
                 try {
                     at_candidate = compiled.prepare(candidate, true);
+                    if (expired()) return limited_result();
                     rows_after = compiled.evaluate_at(at_candidate).values;
                     ++polish_evaluations;
                 } catch (const std::exception& error) {
@@ -765,7 +779,8 @@ EquilibriumResult run_driver(
         }
         full = std::move(best);
     }
-    if (audit) audit->evaluations += polish_evaluations;
+    if (audit) audit->convergence.evaluations = audit->evaluations += polish_evaluations;
+    if (expired()) return limited_result();
     PhasePoint prepared;
     try {
         prepared = compiled.prepare(full);
@@ -781,8 +796,10 @@ EquilibriumResult run_driver(
         scope.finish(result.convergence);
         return result;
     }
+    if (expired()) return limited_result();
     if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
     const auto evaluation = compiled.evaluate_at(prepared);
+    if (expired()) return limited_result();
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
@@ -943,6 +960,7 @@ EquilibriumResult run_driver(
         result.constraint_multipliers = nlp->constraint_multipliers();
     }
     result.coordinates = full;
+    if (expired()) return limited_result();
     const auto curvature = reduced_curvature_at(compiled, std::move(prepared), result.constraint_multipliers);
     result.reduced_hessian_minimum = curvature.minimum;
     scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
@@ -1136,24 +1154,29 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             const auto& old = *seed.previous;
             if (!old.declaration || old.model_identity != &model)
                 throw std::invalid_argument("previous start model/parameters or declaration differs");
-            auto difference = declaration_difference(*old.declaration, compiled.problem);
+            auto difference = declaration_difference(*old.declaration, compiled.problem, false);
             if (old.declaration->feed.values != compiled.problem.feed.values) difference = "feed values differ";
             if (!problem.temperature.free && old.declaration->temperature.value != problem.temperature.value) difference = "fixed temperature differs";
             if (!problem.pressure.free && old.declaration->pressure.value != problem.pressure.value) difference = "fixed pressure differs";
             if (!difference.empty()) throw std::invalid_argument("previous start: " + difference);
         }
-        core::Scope scope("solve_equilibrium_starts");
+        core::Scope controller_scope("solve_equilibrium_starts");
         for (std::size_t i = 0; i < starts.size(); ++i) {
             if (exhausted() || (limits.attempts && i >= *limits.attempts)) { out.budget_exhausted = true; break; }
+            core::Scope scope("equilibrium_start_attempt");
+            scope.probe("declared_start_index", static_cast<double>(i));
             const auto& seed = starts[i];
             const auto attempt_begun = Clock::now();
             DriverLimits work{std::min(limits.attempt_iterations.value_or(static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)),
                 limits.iterations ? *limits.iterations - out.iterations : std::numeric_limits<std::size_t>::max()),
                 std::min(deadline, deadline_at(Clock::now(), limits.attempt_seconds))};
             if (work.iterations == 0 || work.expired()) { out.causes[i] = "attempt budget exhausted"; continue; }
+            std::optional<EquilibriumResult> audit;
             try {
                 auto initial = seed.coordinates;
-                const auto check = [](bool ok) { if (!ok) throw std::invalid_argument("initialization: invalid declared seed"); };
+                const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
+                    if (!ok) throw std::invalid_argument("initialization: " + field);
+                };
                 check((initial.empty() && !seed.previous) || (seed.compositions.empty() && seed.packing_fractions.empty()
                     && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())));
                 if (seed.previous) { check(seed.previous->has_state()); initial = seed.previous->coordinates; }
@@ -1168,13 +1191,20 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         if (!seed.compositions.empty() && !seed.compositions[p].empty()) phase.composition_guess = seed.compositions[p];
                         if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
-                        check(!phase.packing_guess || admitted_packing_seed(*phase.packing_guess));
-                        complete = complete && !phase.composition_guess.empty() && phase.packing_guess.has_value();
+                        for (const double x : phase.composition_guess)
+                            check(std::isfinite(x) && x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0,
+                                  "composition for phase " + phase.name + " is outside the admitted range");
+                        check(!phase.packing_guess || admitted_packing_seed(*phase.packing_guess),
+                              "packing for phase " + phase.name + " is outside the admitted range");
+                        if (!seed.amounts.empty() && (!std::isfinite(seed.amounts[p]) || seed.amounts[p] < 0.0
+                            || (phase.is_pinned() && seed.amounts[p] != specified_amount(phase, compiled.n_feed))))
+                            throw std::invalid_argument("initialization: amount for phase " + phase.name + " is nonfinite, negative or conflicts with its pin");
+                        complete = complete && phase.packing_guess.has_value();
                     }
                     if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
                     if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
                     if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
-                    initial = complete ? seeded.generic_point() : boundary_start(seeded, false);
+                    initial = complete ? seeded.generic_point() : boundary_start(seeded, false, &work);
                     const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];
@@ -1199,12 +1229,13 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     check(admitted_packing_seed(std::exp(initial[cursor])));
                 }
                 for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j) check(initial[j] > 0.0);
-                auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), structural_result(compiled, scope), scope, nullptr, nullptr, &work)
-                                                : structural_result(compiled, scope);
+                audit = structural_result(compiled, scope);
+                auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
+                                                : *audit;
                 if (work.expired()) { result.success = false; result.message += "; elapsed work budget exhausted"; clear_state(result); }
                 if (result.success) {
                     BranchCheck branch;
-                    try { branch = check_density_branches(model, compiled, result, {}, true, scope); }
+                    try { branch = check_density_branches(model, compiled, result, {}, true, scope, &work); }
                     catch (const std::exception& error) { branch.message = error.what(); }
                     if (!branch.accepted || work.expired()) {
                         result.success = false; result.message = work.expired() ? "elapsed work budget exhausted in admission" : branch.message; clear_state(result);
@@ -1212,7 +1243,10 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 }
                 out.causes[i] = result.message; out.results[i] = std::move(result);
                 if (out.results[i]->success && out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
-            } catch (const std::exception& error) { out.causes[i] = error.what(); }
+            } catch (const std::exception& error) {
+                out.causes[i] = error.what();
+                if (audit) { audit->message = "driver/post-driver: " + out.causes[i]; clear_state(*audit); out.results[i] = std::move(audit); }
+            }
             out.iterations += work.consumed;
             out.attempt_seconds[i] = std::chrono::duration<double>(Clock::now() - attempt_begun).count();
             if (out.selected) break;
