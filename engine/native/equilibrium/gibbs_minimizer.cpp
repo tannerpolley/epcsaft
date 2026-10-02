@@ -1845,7 +1845,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             if (!result.success || result.convergence.residual > request.row_tolerance) continue;
             double error_estimate = 0.0;
-            for (const auto& q : current.present_phases) error_estimate += energy_estimate(q);
+            for (std::size_t p = 0; p < current.present_phases.size(); ++p)
+                error_estimate += best.amounts[p] * energy_estimate(current.present_phases[p]);
+            trial.quantities["addition_gibbs_estimate_over_rt_mol"] = error_estimate;
             if (!(result.objective < best.objective - error_estimate)) continue;
             best = std::move(result); best_compiled = std::move(system); added = true; break;
         }

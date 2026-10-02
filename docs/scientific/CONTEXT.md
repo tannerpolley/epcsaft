@@ -187,8 +187,10 @@ remaining work.
   phase amounts are distinct. PH, PS and UV remain future work; explicit native
   fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P
-  discovery. Discover at initialization, then declare phases for subsequent
-  calculations. Native finite searches admit charge-neutral trials and conserved
+  discovery. Discover at initialization, then reuse its declared topology where
+  that reuse is qualified. The retained 100 mol neutral case has an admitted
+  discovery but rejected declared reuse; [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
+  owns that conditioning limit. Native finite searches admit charge-neutral trials and conserved
   donor splits with estimated uncertainty; they supply no global certificate.
   Mechanical and local checks remain available; a declared result implies no
   unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)

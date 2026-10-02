@@ -78,24 +78,28 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-02, #223 implementation measurement against `443d8289`, including
-  owner-adopted permittivity-form admission: **994 gross added, 19 removed,
-  +975 net runtime physical lines**. Equilibrium adds 865, Bindings 43 and
+  owner-adopted permittivity-form admission: **996 gross added, 19 removed,
+  +977 net runtime physical lines**. Equilibrium adds 867, Bindings 43 and
   Python including stubs 67. Current counts are Core 917, Contributions 1547,
-  Properties 4274, Equilibrium 6919, Parameter regression 2398, Surface 532,
-  Bindings 1886 and Python 2635; aggregate 21108. Every existing hard ceiling
-  passes, leaving Equilibrium 656, Bindings 54, Python 65 and aggregate 892
+  Properties 4274, Equilibrium 6921, Parameter regression 2398, Surface 532,
+  Bindings 1886 and Python 2635; aggregate 21110. Every existing hard ceiling
+  passes, leaving Equilibrium 654, Bindings 54, Python 65 and aggregate 890
   lines. No ceiling changes or Core/Contributions growth are adopted. The
   soft excess retains one native controller, shared trial rows and exact
   derivatives, conservation and uncertainty calculations, retained failures and
   explicit work diagnostics. The charged-trial admission change is four native
   Equilibrium lines, with four further lines preparing the reacting discovery
-  union before existing speciation; zero Binding/Python growth. Transport additions carry
+  union before existing speciation; two further lines correct the extensive
+  addition uncertainty margin and retain its computed value. Zero Binding/Python
+  growth. Transport additions carry
   declarations/results rather than search. The
   [qualification notebook](../../analyses/2026-tpd-phase-discovery/notebook.qmd)
   separates admitted numerical checks from the historical solvent-only descent
   and current charged-search refusals. Final wheel qualification and all 4,374
   frozen declared/continuation/fitting/ASL rows pass, with zero implicit trials;
-  independent delivered review remains pending at this measurement.
+  the initial independent delivered review identified the dimensional margin.
+  Its native correction passes the 100 mol amount-weighting falsifier and
+  refreshed qualification; the same reviewer's affected-lens recheck is pending.
 
 - 2026-10-01, #221 finding 5 derivative correction, measured against `bdde4003`:
   **17 gross added, 92 removed, -75 net runtime lines**, all in Equilibrium.

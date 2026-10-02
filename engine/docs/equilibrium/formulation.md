@@ -306,6 +306,15 @@ density-independent charged-search refusals and unchanged declared work.
 These are numerical verification; physical validation and a global certificate
 do not follow from this doctrine.
 
+Reuse of discovered declarations is numerically qualified for the retained
+owner-enumerated cases. It is not a guarantee for every amount scale or initial
+point. A 100 mol neutral discovery reproduces the one-mol intensive split and
+extensive Gibbs scaling, while both cold declared solving and supplied-result
+public reuse coalesce and are rejected by the distinct-phase check. This is a
+known declared-driver conditioning limit, not phase nonexistence or failure of
+the discovered-state scaling. [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
+owns investigation; no shared-driver change is selected in #223.
+
 ## Sensitivity and validity
 
 EqID: `implicit_sensitivity` applies on a smooth fixed branch and support with

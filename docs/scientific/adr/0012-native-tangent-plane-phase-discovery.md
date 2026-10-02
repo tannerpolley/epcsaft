@@ -105,3 +105,20 @@ The manufactured reference exposed a zero-fed participant whose generic seed
 lost chloride and generated an invalid log coordinate. The bounded correction
 retains every required species without changing declared initialization, trial
 starts, search budgets, standard terms or tolerances.
+
+The delivered review identified a dimensional defect in the addition acceptance
+margin: present-phase molar energy estimates must be multiplied by phase amounts
+before comparison with extensive G/RT in mol. The corrected controller retains
+that extensive estimate. A 100 mol rescaling of the neutral two-liquid reference
+checks the amount-weighted margin and unchanged intensive equilibrium, using
+the existing tolerances without a new numerical method.
+
+The 100 mol default-discovery margin has relative error zero against the
+amount-weighted reference; the old unweighted expression has relative error
+0.99 and fails the unchanged 1e-13 criterion. The same discovery preserves
+the neutral intensive split and extensive Gibbs scaling. Cold declared and
+supplied-result public reuse at this feed scale coalesce; that diagnosed
+pre-existing conditioning limit is retained and routed to
+[#243](https://github.com/tannerpolley/ePC-SAFT/issues/243). Original qualified
+reuse cases and frozen declared work remain unchanged. No driver equilibration
+is adopted here, and no universal reuse guarantee is claimed.

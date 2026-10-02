@@ -729,7 +729,16 @@ finite split; preserve feed, reactions, standards and exact selected support.
 Reuse shared density-branch admission; a unique unlabelled root retains the
 source declaration label without asserting a physical phase theorem. Require
 achieved rows and an uncertainty-qualified lower Gibbs energy before accepting
-an addition; otherwise try the next distinct trial.
+an addition; otherwise try the next distinct trial. The acceptance margin sums
+each present phase's molar energy estimate weighted by its amount in mol, so
+the margin and extensive G/RT both have units mol. Retain this computed margin
+with the addition trial; a per-mole estimate alone cannot qualify an extensive
+Gibbs decrease.
+
+The 100 mol feed-rescaling falsifier verifies this native extensive margin;
+rejected cold/public declared reuse at that amount scale remains the separate
+[declared-conditioning limit](../equilibrium/formulation.md#discovery-and-global-claims).
+Do not infer a universal reuse guarantee or physical nonexistence from it.
 
 Only `check_topology` produces removal events. Keep actual nonfatal finite,
 domain-valid attempt coordinates internally before public `clear_state`.
