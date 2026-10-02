@@ -23,8 +23,6 @@ scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	52	          
 scipy	analyses/2026-born-unavailable-states/scripts/global_scan.py	235	        result = least_squares(	Chart bounds and residual corrector	234
 scipy	analyses/2026-cold-vapor-branch/scripts/run.py	11	from scipy.optimize import brentq	Pressure and spinodal roots	234
 scipy	analyses/2026-cold-vapor-branch/scripts/run.py	88	                rho = brentq(function, float(left), float(right), xtol=1e-9)	Pressure and spinodal roots	234
-scipy	analyses/2026-dielectric-alternatives/scripts/run.py	23	from scipy.optimize import minimize_scalar	Water-ion interaction fit	234
-scipy	analyses/2026-dielectric-alternatives/scripts/run.py	105	"        best = minimize_scalar(lambda k: sum(e * e for e in residuals(k)), bounds=(-0.8, 0.4), method=""bounded"","	Water-ion interaction fit	234
 scipy	analyses/2026-mea-association-diameter/scripts/mea_saturation.py	21	from scipy.optimize import minimize_scalar	Association-volume conversion fit	234
 scipy	analyses/2026-mea-association-diameter/scripts/mea_saturation.py	117	"    best = minimize_scalar(conversion_objective, bounds=(0.9 * kappa, kappa), method=""bounded"", options={""xatol"": 1e-8})"	Association-volume conversion fit	234
 scipy	analyses/2026-mea-association-diameter/scripts/mea_water.py	13	from scipy.optimize import minimize_scalar	MEA-water interaction fit	234
