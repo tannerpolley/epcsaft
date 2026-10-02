@@ -1963,14 +1963,190 @@ $$
 
 ## `tangent_plane_distance`
 
-- Section: Equilibrium
-- Status: Source equation
-- Source: [Pereira2012] Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
-- Description: Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion.
-- Change note: A negative value is a one-sided instability witness.
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: [Michelsen1982] Part I; [Pereira2012] Eq. 12; [Perdomo2025] §3.3 Eqs. 37–40; [Ascani2022] §3.3 Eqs. 33–35; conserved-plane extension adopted in #223
+- Description: Reduced molar tangent-plane distance at fixed positive T/P, normalized charge-neutral composition w on support S and molar volume v in m³/mol; e is the all-ones vector and z contains charge numbers. The mechanical reduced energy includes residual and ideal-density Helmholtz energy plus Pv/RT; s is the dimensionless density-standard offset and π the chemical balance plane.
+- Change note: Freeze standards including reference transfer and gauge at the solved snapshot. Chemical λ is dimensionless here, unlike dimensional chemical_potential_stationarity. A negative plane value needs feasible donor withdrawal and error qualification; finite search supplies no global certificate.
 
 $$
-\mathrm{TPD}(\boldsymbol x,v)=g(\boldsymbol x,v)-g(\boldsymbol x^{0},v^{0})-\nabla_{\boldsymbol x}g(\boldsymbol x^{0},v^{0})\cdot(\boldsymbol x-\boldsymbol x^{0}).
+\begin{aligned}
+\widetilde g(\mathbf w,v)&=\frac{a_{\mathrm{mech}}(\mathbf w,v)}{RT}+\frac{Pv}{RT},\qquad
+s_i=\frac{g^\circ_{i,\rho}(T,P)}{RT},\qquad \boldsymbol\pi=\mathbf B^{\mathsf T}\boldsymbol\lambda,\\
+t(\mathbf w,v)&=\widetilde g(\mathbf w,v)+\mathbf w^{\mathsf T}(\mathbf s-\boldsymbol\pi),\qquad
+\mathbf e^{\mathsf T}\mathbf w=1,\quad \mathbf z^{\mathsf T}\mathbf w=0,\quad
+w_i>0\ (i\in S),\ w_i=0\ (i\notin S).
+\end{aligned}
+$$
+
+## `tangent_plane_gibbs_dual_identity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Homogeneity of system_gibbs_helmholtz_coordinates and chemical_potential_stationarity; #223 adopted derivation
+- Description: Gibbs-dual identity for an exact feasible all-free fixed-T/P stationary candidate and any charge-neutral split with the same conserved totals b. N_q is mol; extensive reduced energies are on the request feed basis.
+- Change note: Pinned feasibility cells and approximate numerical states do not inherit exact stationary equality. The split identity alone does not construct a feasible withdrawal.
+
+$$
+\frac{G_0}{RT}=\boldsymbol\lambda^{\mathsf T}\mathbf b,\qquad
+\frac{G_{\mathrm{split}}}{RT}-\boldsymbol\lambda^{\mathsf T}\mathbf b
+=\sum_q N_q\,t(\mathbf x_q,v_q),\qquad
+\sum_q N_q\mathbf B\mathbf x_q=\mathbf b.
+$$
+
+## `tangent_plane_trial_balance`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Basis transformation of normalization/electroneutrality and Euler stationarity; #223 adopted derivation
+- Description: Internal unit-amount trial balance basis on S; R contains total-amount and charge rows, omitting charge for neutral support. H is the retained full-rank row transformation; λ_t is conjugate to B_t, not an optimizer multiplier.
+- Change note: No feed-moiety-proportion constraint or reaction is imposed on the trial. The total row need not be first; use λ_t dot b_t in every basis.
+
+$$
+\begin{aligned}
+\mathbf R_S&=\begin{pmatrix}\mathbf e_S^{\mathsf T}\\\mathbf z_S^{\mathsf T}\end{pmatrix},\quad
+\mathbf B_t=\mathbf H\mathbf R_S,\quad
+\mathbf b_t=\mathbf B_t\mathbf w^0=\mathbf H\mathbf R_S\mathbf w^0,\qquad
+\mathbf R_S\mathbf w^0=\begin{pmatrix}1\\0\end{pmatrix}
+\quad\text{(omit charge row and second entry for neutral support)},\\
+N\mathbf B_t\mathbf w&=\mathbf b_t,\quad \mathbf e_S^{\mathsf T}\mathbf w=1
+\ \Longrightarrow\ N=1,\ \mathbf z_S^{\mathsf T}\mathbf w=0,\\
+\frac{\boldsymbol\mu_{\mathrm{mech}}}{RT}+\mathbf s-\boldsymbol\pi
+&=\mathbf B_t^{\mathsf T}\boldsymbol\lambda_t
+=k\mathbf e_S+\varphi_t\mathbf z_S,\qquad
+ t=\boldsymbol\lambda_t^{\mathsf T}\mathbf b_t=k
+\quad\text{at exact feasible stationary density and composition}.
+\end{aligned}
+$$
+
+## `tangent_plane_shift_log_curvature`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Exact log-composition chain rule for the frozen standard shift in system_gibbs_helmholtz_coordinates; #223
+- Description: Shift coefficients c=s−π are fixed, but supported fractions w_i=exp(y_i) and free amount N are coordinates. Curvature of the extensive reduced shift must remain in shared exact callbacks at arbitrary points.
+- Change note: Linear amount-space energy does not imply zero log-chart curvature; direct amount curvature is zero.
+
+$$
+L_c=N\sum_{i\in S}c_i e^{y_i},\qquad
+\partial_{y_i}L_c=N c_iw_i,\quad
+\partial_{y_i y_j}L_c=\delta_{ij}N c_iw_i,\quad
+\partial_{N y_i}L_c=c_iw_i,\quad \partial_{NN}L_c=0.
+$$
+
+## `electroneutral_trial_reconstruction`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Implementation convention
+- Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups, normalize, then correct arithmetic residuals on the largest positive and negative entries (ties by index); structural zeros remain zero.
+- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
+
+$$
+\begin{aligned}
+Q_+&=\sum_{z_i>0}z_i u_i,\quad Q_-=\sum_{z_i<0}|z_i|u_i,\\
+\widehat u_i&=\begin{cases}u_i\sqrt{Q_-/Q_+},&z_i>0,\\u_i\sqrt{Q_+/Q_-},&z_i<0,\\u_i,&z_i=0,\end{cases}
+\qquad w_i=\frac{\widehat u_i}{\sum_{j\in S}\widehat u_j},\\
+\begin{pmatrix}1&1\\z_+&z_-\end{pmatrix}
+\begin{pmatrix}\delta w_+\\\delta w_-\end{pmatrix}
+&=\begin{pmatrix}1-\sum_i w_i\\-\sum_i z_iw_i\end{pmatrix},\qquad
+(w_+,w_-)\leftarrow(w_++\delta w_+,w_-+\delta w_-).
+\end{aligned}
+$$
+
+## `normalized_trial_reaction_affinity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: tangent_plane_trial_balance contracted with charge-conserving Bν=0; #223 adopted derivation
+- Description: Normalized stationary trial affinity for a mole-changing reaction, products positive; μ_mech/RT+s is the total reduced chemical potential. The trial's normalized reaction direction differs from the amount-space reaction vector.
+- Change note: π annihilates ν in amount space, not generally its normalized direction. The added full declaration restores original zero-affinity rows; the search trial need not have zero affinity.
+
+$$
+\mathbf B\boldsymbol\nu=0,\quad \mathbf z^{\mathsf T}\boldsymbol\nu=0
+\ \Longrightarrow\
+\boldsymbol\nu^{\mathsf T}\left(\frac{\boldsymbol\mu_{\mathrm{mech}}}{RT}+\mathbf s\right)
+=k\,\mathbf e^{\mathsf T}\boldsymbol\nu,\qquad
+\mathbf d_w=\boldsymbol\nu-\mathbf w\,\mathbf e^{\mathsf T}\boldsymbol\nu.
+$$
+
+## `present_phase_tangent_plane_identity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Euler homogeneity of phase_helmholtz_amount_volume with chemical and pressure rows; #223 adopted derivation
+- Description: Full present-phase identity on normalized compositions. a_V,p is the SI molar-volume column of residual reduced Helmholtz energy at unit amount; pressure-row error cannot be omitted. μ_mech contains ideal-density and residual chemical potentials without s.
+- Change note: The charge term is retained until charge-neutral admission; approximate chemical equality alone does not force zero TPD.
+
+$$
+\begin{aligned}
+r_{p,i}&=\frac{\mu_{\mathrm{mech},p,i}}{RT}+s_i-\pi_i-z_i\varphi_p,\qquad
+r_{Pp}=v_p\left(\frac{1}{v_p}-a_{V,p}-\frac{P}{RT}\right),\\
+t(\mathbf x_p,v_p)&=\mathbf x_p^{\mathsf T}\mathbf r_p
++\varphi_p\mathbf z^{\mathsf T}\mathbf x_p-r_{Pp}.
+\end{aligned}
+$$
+
+## `tangent_plane_donor_descent`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: First variation of system_gibbs_helmholtz_coordinates along conserved donor withdrawal; #223 adopted derivation
+- Description: Withdraw βw from strictly positive donor p containing S and create βw in the trial, holding donor and trial molar volumes fixed. β and its capacity are mol; d_p is the per-mole slope of extensive G/RT.
+- Change note: Compute the donor slope directly from physical gradients; chemical plane uncertainty cancels. A negative TPD without finite positive donor capacity is an unresolved plane trial.
+
+$$
+\begin{aligned}
+\beta_{\max,p}&=\min_{i\in S}\frac{n_{p,i}}{w_i}>0,\\
+d_p=\left.\frac{d(G_{\mathrm{split}}/RT)}{d\beta}\right|_{0}
+&=\widetilde g(\mathbf w,v_t)+\mathbf s^{\mathsf T}\mathbf w
+-\mathbf w^{\mathsf T}\left(\frac{\boldsymbol\mu_{\mathrm{mech},p}}{RT}+\mathbf s\right)+r_{Pp}\\
+&=t(\mathbf w,v_t)-\mathbf w^{\mathsf T}\mathbf r_p
+-\varphi_p\mathbf z^{\mathsf T}\mathbf w+r_{Pp}.
+\end{aligned}
+$$
+
+## `tangent_plane_descent_uncertainty`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Implementation convention
+- Source: First-order propagation, Euler homogeneity and final-summation rounding; #223 adopted estimated-uncertainty criterion
+- Description: ε_tg estimates trial reduced molar energy error; ε_pμi donor reduced chemical error; ε_pP pressure-row error; ε_f feasibility/representation correction; ε_fp arithmetic. Include supplied standard-term uncertainty separately in the applicable energy/chemical terms. F_n and F_V denote native association derivative-floor estimates in unit-mol amount and SI volume columns.
+- Change note: Report association residual/conditioning and Euler defect at reevaluated points. A maximum floor may replace each column floor with its scale retained. γ_m bounds final summation rounding only, not the EOS evaluator. Local first-order estimates are not certified enclosures.
+
+$$
+\begin{aligned}
+E_d&=\epsilon_{tg}+\sum_i|w_i|\epsilon_{p\mu i}
++\epsilon_{pP}+\epsilon_f+\epsilon_{fp},\\
+\epsilon_{tg,\mathrm{assoc}}&\approx\sum_i|w_i|F_{t,n_i}+|v_t|F_{t,V},\qquad
+\epsilon_{pP,\mathrm{assoc}}\approx|v_p|F_{p,V},\\
+\epsilon_{\mathrm{Euler}}&=\left|a^{\mathrm{res}}-\sum_i w_i a^{\mathrm{res}}_{n_i}-v a^{\mathrm{res}}_V\right|,\qquad
+\epsilon_{\mathrm{sum}}\le\gamma_m\sum_j|\mathrm{term}_j|,\quad
+\gamma_m=\frac{m\varepsilon_{\mathrm{mach}}}{1-m\varepsilon_{\mathrm{mach}}},\\
+t&<0,\quad d_p<-E_d\quad\text{admit numerical slope descent only with all terms available;}
+\quad d_p+E_{\mathrm{bound}}<0\quad\text{requires justified total bounds for proof}.
+\end{aligned}
+$$
+
+## `conserved_finite_phase_split`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Component-conserving donor split of system_gibbs_helmholtz_coordinates; #223 adopted finite-descent check
+- Description: Finite split at fixed donor/trial molar volumes preserves every component and thus moieties and charge. Other phases are unchanged. ΔG/RT and E_Δ are extensive on the request's mol feed basis.
+- Change note: Try β_max/2 and at most eight halvings, reevaluating physical points. Numerical descent requires actual conservation and a Gibbs decrease exceeding its propagated estimate; proof additionally requires justified feasibility and error bounds.
+
+$$
+\begin{aligned}
+\mathbf n'_p&=\mathbf n_p-\beta\mathbf w,\quad
+\mathbf n_t=\beta\mathbf w,\quad N'_p=N_p-\beta,\quad
+\mathbf x'_p=\frac{\mathbf n'_p}{N_p-\beta},\quad 0<\beta<\beta_{\max,p},\\
+V'_p&=(N_p-\beta)v_p,\quad V_t=\beta v_t,\quad
+\mathbf n'_p+\mathbf n_t=\mathbf n_p,\\
+\frac{\Delta G}{RT}&=(N_p-\beta)g(\mathbf x'_p,v_p)+\beta g(\mathbf w,v_t)-N_p g(\mathbf x_p,v_p),
+\quad g=\widetilde g+\mathbf s^{\mathsf T}\mathbf x,\\
+\frac{\Delta G}{RT}&<-E_\Delta\quad\text{for numerically resolved finite descent with estimated uncertainty}.
+\end{aligned}
 $$
 
 ## `thermochemistry_from_reactions`

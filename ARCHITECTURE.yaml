@@ -231,7 +231,7 @@ native:
     core: policy, the declared-choice and convergence contracts, the trace
     contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
     properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
-    equilibrium: one equilibrium driver, shared rows and branch continuation; discovery is deferred
+    equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes
