@@ -376,6 +376,27 @@ void register_equilibrium(py::module_& module) {
                "Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments\n"
                "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
     module.def("solved_state_first_actions", &solved_state_first_actions);
+    py::class_<InventoryBound>(module, "InventoryBound")
+        .def_readonly("species", &InventoryBound::species)
+        .def_readonly("status", &InventoryBound::status)
+        .def_readonly("termination", &InventoryBound::termination)
+        .def_readonly("maximum", &InventoryBound::maximum)
+        .def_readonly("feed_normalized_amount", &InventoryBound::feed_normalized_amount)
+        .def_readonly("log_fraction", &InventoryBound::log_fraction)
+        .def_readonly("balance_residual", &InventoryBound::balance_residual)
+        .def_readonly("normalization_residual", &InventoryBound::normalization_residual)
+        .def_readonly("lower_bound_residual", &InventoryBound::lower_bound_residual)
+        .def_readonly("witness", &InventoryBound::witness)
+        .def_readonly("amounts_mol", &InventoryBound::amounts_mol)
+        .def_readonly("finite_witness", &InventoryBound::finite_witness)
+        .def_readonly("limiting", &InventoryBound::limiting)
+        .def_readonly("supported", &InventoryBound::supported)
+        .def_readonly("floor", &InventoryBound::floor)
+        .def_readonly("lp_error", &InventoryBound::lp_error)
+        .def_readonly("finite_residual", &InventoryBound::finite_residual)
+        .def_readonly("feasibility_termination", &InventoryBound::feasibility_termination);
+    module.def("inventory_bounds", &inventory_bounds, py::arg("compiled"), py::arg("species"),
+        py::arg("fraction"), py::arg("floor"));
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),
