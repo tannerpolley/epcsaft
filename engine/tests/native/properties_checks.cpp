@@ -3274,6 +3274,14 @@ epcsaft::Parameters p4_shifted_parameters(
             apply(result.association_volume); break;
         case epcsaft::ParameterFamily::Kij:
             apply(result.k_ij); break;
+        case epcsaft::ParameterFamily::BornDiameter:
+            apply(result.born_diameter_angstrom); break;
+        case epcsaft::ParameterFamily::DebyeHuckelDiameter:
+            apply(result.debye_huckel_diameter_angstrom); break;
+        case epcsaft::ParameterFamily::PackingDiameter:
+            apply(result.packing_diameter_angstrom); break;
+        case epcsaft::ParameterFamily::IonSuppressionCoefficient:
+            apply(result.ion_suppression_coefficient); break;
         default: throw std::invalid_argument("unsupported P4 reference parameter");
         }
     }
@@ -3442,6 +3450,218 @@ double p4_pressure_reference(
     return result / std::pow(2.0 * step, static_cast<int>(directions.size()));
 }
 
+// Differentiate the preceding action once, instead of subtracting O(h^k) caloric values.
+// ALG-TERMINATION: cancellations scale with the fixed chart-coordinate terms.
+struct PropertyActionReference final {
+    std::vector<double> coarse, middle, fine, value, uncertainty, scale;
+};
+
+template <class Direction>
+PropertyActionReference property_action_reference(
+    const epcsaft::Parameters& parameters, const std::vector<epcsaft::ActiveParameter>& active,
+    const std::optional<epcsaft::ThermochemistryRecord>& record, double T, double mechanical,
+    const std::vector<double>& x, const std::vector<epcsaft::PropertyObservable>& observables,
+    const std::vector<Direction>& directions, epcsaft::DensityBranch branch = epcsaft::DensityBranch::Unspecified
+) {
+    using namespace epcsaft;
+    const HelmholtzModel model(parameters, active, record);
+    const auto batch = [&](const HelmholtzModel& m, double t, double q, const std::vector<double>& y,
+                           const std::vector<Direction>& request) {
+        if constexpr (std::is_same_v<Direction, DensityActionDirection>)
+            return m.density_actions(t, q, y, observables, request);
+        else return m.pressure_actions(t, q, y, branch, observables, request);
+    };
+    PropertyActionReference result;
+    result.scale.assign(observables.size(), 0.0);
+    // Omit only zero sub-directions; retain the entire multilinear coordinate split.
+    std::vector<Direction> terms;
+    const auto expand = [&](const auto& self, std::size_t j) -> void {
+        if (j == directions.size()) {
+            const auto actions = batch(model, T, mechanical, x, terms);
+            for (std::size_t i = 0; i < observables.size(); ++i) {
+                CHECK(actions.results[i].status == PropertyActionStatus::Available && actions.results[i].action);
+                result.scale[i] += std::abs(*actions.results[i].action);
+            }
+            return;
+        }
+        for (int part = 0; part < 4; ++part) {
+            Direction d{};
+            d.composition.assign(x.size(), 0.0);
+            if (part == 0) d.temperature = directions[j].temperature;
+            if (part == 1) {
+                if constexpr (std::is_same_v<Direction, DensityActionDirection>) d.molar_density = directions[j].molar_density;
+                else d.pressure = directions[j].pressure;
+            }
+            if (part == 2) d.composition = directions[j].composition;
+            if (part == 3) d.parameter = directions[j].parameter;
+            bool nonzero = d.temperature != 0.0 || !d.parameter.empty();
+            if constexpr (std::is_same_v<Direction, DensityActionDirection>) nonzero = nonzero || d.molar_density != 0.0;
+            else nonzero = nonzero || d.pressure != 0.0;
+            for (const auto v : d.composition) nonzero = nonzero || v != 0.0;
+            if (nonzero) { terms.push_back(d); self(self, j + 1); terms.pop_back(); }
+        }
+    };
+    expand(expand, 0);
+    epcsaft::core::Capture capture;
+    const auto central_state = [&] {
+        if constexpr (std::is_same_v<Direction, DensityActionDirection>) return model.state(T, mechanical, x);
+        else return model.state_at_pressure(T, mechanical, x, branch);
+    }();
+    const auto central_signature = p4_take_signature(capture, record, T);
+    const auto& last = directions.back();
+    const std::vector<Direction> lower(directions.begin(), directions.end() - 1);
+    const auto values = [&](double h) {
+        std::vector<double> shift(active.size(), 0.0), y = x;
+        for (std::size_t i = 0; i < x.size(); ++i) y[i] += h * last.composition[i];
+        for (const auto& parameter : last.parameter)
+            for (std::size_t a = 0; a < active.size(); ++a)
+                if (parameter.family == active[a].family && parameter.indices == active[a].indices) shift[a] += h * parameter.value;
+        const HelmholtzModel shifted(p4_shifted_parameters(parameters, active, shift), active, record);
+        const double t = T + h * last.temperature;
+        double q = mechanical;
+        if constexpr (std::is_same_v<Direction, DensityActionDirection>) q += h * last.molar_density;
+        else q += h * last.pressure;
+        const auto state = [&] {
+            if constexpr (std::is_same_v<Direction, DensityActionDirection>) return shifted.state(t, q, y);
+            else return shifted.state_at_pressure(t, q, y, branch);
+        }();
+        CHECK(p4_take_signature(capture, record, t) == central_signature);
+        for (std::size_t i = 0; i < x.size(); ++i) CHECK((x[i] > 0.0) == (y[i] > 0.0));
+        if constexpr (!std::is_same_v<Direction, DensityActionDirection>) {
+            CHECK(state.density_branch == central_state.density_branch && state.stable_root_count == central_state.stable_root_count);
+            CHECK(std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0);
+            CHECK(std::abs(state.pressure - q) / (state.molar_density * GAS_CONSTANT_J_PER_MOL_K * t)
+                <= policy::DENSITY_ROOT_RESIDUAL.value);
+            const auto residuals = p2_association_residuals(t, 1.0 / state.molar_density, y,
+                shifted.parameters(), state.site_fractions);
+            for (const auto residual : residuals) CHECK(std::isfinite(residual) && std::abs(residual) <= 2.0e-13);
+            const auto conditioning = p2_association_conditioning(t, state.molar_density, y,
+                shifted.parameters(), state.site_fractions);
+            CHECK(conditioning.rank == state.site_fractions.size()
+                && conditioning.pivot_ratio > policy::ASSOCIATION_JACOBIAN_CONDITION.value);
+        }
+        std::vector<double> values;
+        if (lower.empty()) for (const auto obs : observables) values.push_back(p4_state_value(state, obs));
+        else {
+            const auto actions = batch(shifted, t, q, y, lower);
+            for (const auto& action : actions.results) {
+                CHECK(action.status == PropertyActionStatus::Available && action.action);
+                values.push_back(*action.action);
+            }
+        }
+        return values;
+    };
+    // Higher-action subtraction at 0.0025 is density-root rounding dominated;
+    // these nodes resolve cp/cv without crossing support or thermal pieces.
+    constexpr double steps[] = {0.1, 0.05, 0.025};
+    std::vector<std::vector<double>> rungs;
+    std::vector<double> rounding;
+    for (const double h : steps) {
+        const auto plus = values(h), minus = values(-h);
+        std::vector<double> stencil;
+        rounding.clear();
+        for (std::size_t i = 0; i < observables.size(); ++i) {
+            stencil.push_back((plus[i] - minus[i]) / (2.0 * h));
+            rounding.push_back(32.0 * std::numeric_limits<double>::epsilon() * (std::abs(plus[i]) + std::abs(minus[i])) / (2.0 * h));
+        }
+        rungs.push_back(stencil);
+    }
+    result.coarse = rungs[0]; result.middle = rungs[1]; result.fine = rungs[2];
+    for (std::size_t i = 0; i < observables.size(); ++i) {
+        const double refined = (4.0 * rungs[2][i] - rungs[1][i]) / 3.0;
+        const double coarser = (4.0 * rungs[1][i] - rungs[0][i]) / 3.0;
+        result.value.push_back(refined);
+        // Polynomial ideal cp/cv has identically zero higher chart terms.
+        // An exactly constant preceding action subtracts exactly: its nonzero
+        // value must not manufacture a rounding floor for a zero stencil.
+        const bool exact_zero = result.scale[i] == 0.0 && rungs[0][i] == 0.0
+            && rungs[1][i] == 0.0 && rungs[2][i] == 0.0;
+        result.uncertainty.push_back(exact_zero ? 0.0 : std::abs(refined - coarser) + rounding[i]);
+    }
+    return result;
+}
+
+// EOS sections 6--7: charged-coordinate higher actions on a regular positive-ionic-strength state.
+void electrolyte_parameter_actions() {
+    using namespace epcsaft;
+    auto parameters = properties_support::aqueous_electrolyte();
+    parameters.born_c_shell = parameters.born_c_dielectric = 1.0;
+    const std::vector<ActiveParameter> active = {
+        {ParameterFamily::BornDiameter, {1}}, {ParameterFamily::DebyeHuckelDiameter, {1}},
+        {ParameterFamily::PackingDiameter, {1}}, {ParameterFamily::IonSuppressionCoefficient, {1}}};
+    const std::vector<double> x = {0.98, 0.01, 0.01};
+    constexpr double T = 298.15, rho = 55000.0;
+    const HelmholtzModel model(parameters, active);
+    const auto observables = std::vector<PropertyObservable>{PropertyObservable::ResidualEnthalpy};
+    for (std::size_t coordinate = 0; coordinate < active.size(); ++coordinate) {
+        const DensityActionDirection parameter{0.0, 0.0, {0.0, 0.0, 0.0},
+            {{active[coordinate].family, active[coordinate].indices, 1.0}}};
+        for (std::size_t order = 2; order <= 3; ++order) {
+            std::vector<DensityActionDirection> directions(order, parameter);
+            if (coordinate != 0) directions[1] = {1.0, 0.0, {0.0, 0.0, 0.0}, {}};
+            const auto result = model.density_actions(T, rho, x, observables, directions).results.front();
+            CHECK(result.status == PropertyActionStatus::Available && result.action);
+            const std::string id = "electrolyte-coordinate/" + std::to_string(coordinate) + "/A" + std::to_string(order);
+            double reference, uncertainty = 0.0, allowance;
+            std::string inputs;
+            if (coordinate == 0) {
+                // Independently evaluated corrected radial charging formula, h_B = -K/d_B.
+                const double epsilon_bulk = parameters.relative_permittivity[0]
+                    / (1.0 + x[1] * parameters.ion_suppression_coefficient[1]
+                        + x[2] * parameters.ion_suppression_coefficient[2]);
+                double f_mix = 0.0;
+                for (std::size_t i = 0; i < x.size(); ++i) f_mix += x[i] * parameters.solvation_factor[i];
+                const double shell_ratio = 1.0 + (f_mix - 1.0) / std::abs(parameters.charge_number[1]);
+                const double outer = (1.0 - 1.0 / epsilon_bulk) / shell_ratio;
+                const double inner = (1.0 - 1.0 / parameters.ionic_region_relative_permittivity) * (1.0 - 1.0 / shell_ratio);
+                const double prefactor = GAS_CONSTANT_J_PER_MOL_K * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+                    * x[1] * parameters.charge_number[1] * parameters.charge_number[1]
+                    / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * ANGSTROM_M);
+                const double d = parameters.born_diameter_angstrom[1];
+                const double derivative_factor = order == 2 ? -2.0 / std::pow(d, 3) : 6.0 / std::pow(d, 4);
+                reference = derivative_factor * prefactor * (inner + outer);
+                const double source_scale = std::abs(derivative_factor * prefactor) * (std::abs(inner) + std::abs(outer));
+                allowance = 1.0e-10 * std::abs(reference) + 32.0 * std::numeric_limits<double>::epsilon() * source_scale;
+                inputs = recording_support::fields({recording_support::field("K_J_A_per_mol", prefactor * (inner + outer)),
+                    recording_support::field("d_B_A", d), recording_support::field("source_scale", source_scale)});
+            } else {
+                auto lower = directions;
+                lower.pop_back();
+                const auto stencil = [&](double h) {
+                    const auto value = [&](double shift) {
+                        std::vector<double> delta(active.size(), 0.0);
+                        delta[coordinate] = order == 3 ? shift : 0.0;
+                        const HelmholtzModel rebuilt(p4_shifted_parameters(parameters, active, delta), active);
+                        const auto action = rebuilt.density_actions(order == 2 ? T + shift : T, rho, x, observables, lower).results.front();
+                        CHECK(action.status == PropertyActionStatus::Available && action.action);
+                        return *action.action;
+                    };
+                    return (value(h) - value(-h)) / (2.0 * h);
+                };
+                // A 0.01 suppression step loses the small T/parameter action
+                // to cancellation in the preceding action; resolve it at larger nodes.
+                const double step = coordinate == 3 && order == 3 ? 4.0 : 0.4;
+                const double coarse = stencil(step), middle = stencil(step / 2.0), fine = stencil(step / 4.0);
+                const double rich_coarse = (4.0 * middle - coarse) / 3.0;
+                reference = (4.0 * fine - middle) / 3.0;
+                uncertainty = std::abs(reference - rich_coarse);
+                allowance = (order == 2 ? 5.0e-5 : 5.0e-4) * std::abs(reference);
+                inputs = recording_support::fields({recording_support::field("coarse", coarse),
+                    recording_support::field("middle", middle), recording_support::field("fine", fine),
+                    recording_support::field("reference_uncertainty", uncertainty)});
+            }
+            const bool ok = std::abs(*result.action - reference) <= allowance
+                && uncertainty <= allowance && std::abs(reference) > allowance;
+            recording_support::compare_custom(id.c_str(), "enthalpy_parameter_action", "native", *result.action, reference,
+                recording_support::fields({inputs, recording_support::field("T_K", T), recording_support::field("rho_mol_per_m3", rho),
+                    recording_support::field("x", x), recording_support::field("allowance", allowance)}),
+                "Relationship", coordinate == 0 ? "Born-charging-identity" : "preceding-action-Richardson-stencil",
+                "nonzero second and third actions in charged EOS coordinates", "magnitude_scaled_with_resolved_reference", ok);
+            CHECK(ok);
+        }
+    }
+}
+
 epcsaft::Parameters p4_association_stress(std::size_t sites, double q) {
     constexpr double temperature = 300.0;
     constexpr double density = 1000.0;
@@ -3545,31 +3765,18 @@ void properties_p4() {
         const auto batch = model.density_actions(
             313.15, 42441.09427799721, composition, observables, request);
         CHECK(batch.results.size() == observables.size());
+        const auto reference = property_action_reference(model.parameters(), active, p3_binary_record(),
+            313.15, 42441.09427799721, composition, observables, request);
         for (std::size_t index = 0; index < observables.size(); ++index) {
             const auto& result = batch.results[index];
             const bool available = result.status == epcsaft::PropertyActionStatus::Available
                 && result.value.has_value() && result.action.has_value()
                 && std::isfinite(*result.value) && std::isfinite(*result.action);
-            const std::array<double, 3> fine_steps = {1.0e-3, 3.0e-3, 1.0e-2};
-            const std::array<double, 3> middle_steps = {3.0e-3, 1.0e-2, 3.0e-2};
-            const std::array<double, 3> coarse_steps = {1.0e-2, 3.0e-2, 1.0e-1};
-            std::vector<double> admission;
-            const double fine = p4_reference(
-                model.parameters(), active, p3_binary_record(), 313.15,
-                42441.09427799721, composition, request, observables[index],
-                fine_steps[order - 1], &admission);
-            const double middle = p4_reference(
-                model.parameters(), active, p3_binary_record(), 313.15,
-                42441.09427799721, composition, request, observables[index],
-                middle_steps[order - 1], &admission);
-            const double coarse = p4_reference(
-                model.parameters(), active, p3_binary_record(), 313.15,
-                42441.09427799721, composition, request, observables[index],
-                coarse_steps[order - 1], &admission);
+            const double fine = reference.value[index], middle = reference.middle[index], coarse = reference.coarse[index];
             const double tolerance = std::array<double, 3>{5.0e-6, 5.0e-5, 5.0e-4}[order - 1];
             const bool action_ok = available && std::abs(*result.action - fine)
-                <= tolerance * std::max(1.0, std::abs(fine));
-            const bool refinement_ok = close(fine, middle, 2.0 * tolerance);
+                <= tolerance * reference.scale[index];
+            const bool refinement_ok = reference.uncertainty[index] <= tolerance * reference.scale[index];
             recording_support::compare_custom(
                 (std::string("direct/action/") + std::to_string(index) + "/"
                     + std::to_string(order)).c_str(), "action", "native",
@@ -3581,10 +3788,12 @@ void properties_p4() {
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
                     recording_support::field("reference_coarse", coarse),
-                    recording_support::field("reference_admission_step_support_predicate", admission),
-                    recording_support::field("tolerance", tolerance)}),
+                    recording_support::field("tolerance", tolerance),
+                    recording_support::field("term_scale", reference.scale[index]),
+                    recording_support::field("reference_uncertainty", reference.uncertainty[index]),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}),
                 "Relationship", "central-difference-refinement", "direct action matches independent refinement",
-                "reference_or_one", action_ok, "p4-direct",
+                "tolerance_times_chart_term_scale", action_ok, "p4-direct",
                 (std::string("action/") + std::to_string(index) + "/" + std::to_string(order)).c_str(),
                 "action", "T,rho,x,theta", "available", "observable,order");
             recording_support::compare_custom(
@@ -3596,9 +3805,12 @@ void properties_p4() {
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
                     recording_support::field("reference_coarse", coarse),
-                    recording_support::field("tolerance", tolerance)}),
+                    recording_support::field("tolerance", tolerance),
+                    recording_support::field("term_scale", reference.scale[index]),
+                    recording_support::field("reference_uncertainty", reference.uncertainty[index]),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}),
                 "Relationship", "central-difference-ladder", "direct reference refines",
-                "reference_or_one", refinement_ok, "p4-direct",
+                "tolerance_times_chart_term_scale", refinement_ok, "p4-direct",
                 (std::string("refinement/") + std::to_string(index) + "/" + std::to_string(order)).c_str(),
                 "reference", "T,rho,x,theta,h", "refined", "observable,order");
             CHECK(action_ok && refinement_ok);
@@ -3611,29 +3823,16 @@ void properties_p4() {
         const auto batch = model.pressure_actions(
             313.15, state.pressure, composition, pressure_root.density_branch,
             observables, request);
+        const auto reference = property_action_reference(model.parameters(), active, p3_binary_record(),
+            313.15, state.pressure, composition, observables, request, pressure_root.density_branch);
         for (std::size_t index = 0; index < observables.size(); ++index) {
             const auto& result = batch.results[index];
-            const std::array<double, 3> fine_steps = {1.0e-3, 3.0e-3, 1.0e-2};
-            const std::array<double, 3> middle_steps = {3.0e-3, 1.0e-2, 3.0e-2};
-            const std::array<double, 3> coarse_steps = {1.0e-2, 3.0e-2, 1.0e-1};
-            std::vector<double> admission;
-            const double fine = p4_pressure_reference(
-                model.parameters(), active, p3_binary_record(), 313.15, state.pressure,
-                composition, request, pressure_root.density_branch, observables[index],
-                fine_steps[order - 1], &admission);
-            const double middle = p4_pressure_reference(
-                model.parameters(), active, p3_binary_record(), 313.15, state.pressure,
-                composition, request, pressure_root.density_branch, observables[index],
-                middle_steps[order - 1], &admission);
-            const double coarse = p4_pressure_reference(
-                model.parameters(), active, p3_binary_record(), 313.15, state.pressure,
-                composition, request, pressure_root.density_branch, observables[index],
-                coarse_steps[order - 1], &admission);
+            const double fine = reference.value[index], middle = reference.middle[index], coarse = reference.coarse[index];
             const double tolerance = std::array<double, 3>{5.0e-6, 5.0e-5, 5.0e-4}[order - 1];
             const bool action_ok = result.status == epcsaft::PropertyActionStatus::Available
                 && result.action.has_value() && std::abs(*result.action - fine)
-                    <= tolerance * std::max(1.0, std::abs(fine));
-            const bool refinement_ok = close(fine, middle, 2.0 * tolerance);
+                    <= tolerance * reference.scale[index];
+            const bool refinement_ok = reference.uncertainty[index] <= tolerance * reference.scale[index];
             recording_support::compare_custom(
                 (std::string("pressure/action/") + std::to_string(index) + "/"
                     + std::to_string(order)).c_str(), "action", "native",
@@ -3642,14 +3841,16 @@ void properties_p4() {
                     recording_support::field("order", order), recording_support::field("central",
                         p4_state_value(pressure_root, observables[index])),
                     recording_support::field("energy_order", result.energy_order),
-                    recording_support::field("reference_admission_step_slope_closure_site_pivot_branch_roots", admission),
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
                     recording_support::field("reference_coarse", coarse),
-                    recording_support::field("tolerance", tolerance)}),
+                    recording_support::field("tolerance", tolerance),
+                    recording_support::field("term_scale", reference.scale[index]),
+                    recording_support::field("reference_uncertainty", reference.uncertainty[index]),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}),
                 "Relationship", "central-difference-refinement",
                 "fixed-pressure action matches independent refinement",
-                "reference_or_one", action_ok,
+                "tolerance_times_chart_term_scale", action_ok,
                 "p4-pressure", (std::string("action/") + std::to_string(index) + "/"
                     + std::to_string(order)).c_str(), "action", "T,P,x,theta", "available",
                 "observable,order");
@@ -3661,9 +3862,12 @@ void properties_p4() {
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
                     recording_support::field("reference_coarse", coarse),
-                    recording_support::field("tolerance", tolerance)}),
+                    recording_support::field("tolerance", tolerance),
+                    recording_support::field("term_scale", reference.scale[index]),
+                    recording_support::field("reference_uncertainty", reference.uncertainty[index]),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}),
                 "Relationship", "central-difference-ladder", "pressure reference refines",
-                "reference_or_one", refinement_ok, "p4-pressure",
+                "tolerance_times_chart_term_scale", refinement_ok, "p4-pressure",
                 (std::string("refinement/") + std::to_string(index) + "/"
                     + std::to_string(order)).c_str(), "reference", "T,P,x,theta,h", "refined",
                 "observable,order");
@@ -4481,8 +4685,6 @@ void modular_permittivity_actions() {
         {-0.02, 0.01, 0.01}, {0.01, -0.005, -0.005}, {0.004, -0.002, -0.002}}};
     const std::array<double, 3> density_direction = {200.0, -100.0, 50.0};
     const std::array<double, 3> pressure_direction = {3.0e5, -2.0e5, 1.0e5};  // every stencil P > 0
-    const std::array<double, 3> fine_steps = {1.0e-3, 3.0e-3, 1.0e-2};
-    const std::array<double, 3> middle_steps = {3.0e-3, 1.0e-2, 3.0e-2};
     const std::array<double, 3> tolerances = {5.0e-6, 5.0e-5, 5.0e-4};
     const std::vector<double> x = {0.96, 0.02, 0.02};
     // 2 MPa: at least 1 MPa from the ion-bearing vapor-root fold of every form (scan below).
@@ -4566,22 +4768,20 @@ void modular_permittivity_actions() {
                     ? model.pressure_actions(temperature, pressure, x,
                         epcsaft::DensityBranch::Liquid, observables, pressure_request)
                     : model.density_actions(temperature, rho, x, observables, density_request);
+                const auto action_reference = pressure_chart
+                    ? property_action_reference(parameters, active, std::nullopt, temperature, pressure, x,
+                        observables, pressure_request, epcsaft::DensityBranch::Liquid)
+                    : property_action_reference(parameters, active, std::nullopt, temperature, rho, x,
+                        observables, density_request);
                 for (std::size_t index = 0; index < observables.size(); ++index) {
-                    const auto reference = [&](double step) {
-                        return pressure_chart
-                            ? p4_pressure_reference(parameters, active, std::nullopt, temperature,
-                                pressure, x, pressure_request, epcsaft::DensityBranch::Liquid,
-                                observables[index], step)
-                            : p4_reference(parameters, active, std::nullopt, temperature, rho, x,
-                                density_request, observables[index], step);
-                    };
-                    const double fine = reference(fine_steps[order - 1]);
-                    const double middle = reference(middle_steps[order - 1]);
+                    const double fine = action_reference.value[index];
+                    const double middle = action_reference.middle[index];
+                    const double allowance = tolerances[order - 1] * action_reference.scale[index];
                     const auto& result = batch.results[index];
                     const bool ok = result.status == epcsaft::PropertyActionStatus::Available
                         && result.action.has_value()
-                        && close(*result.action, fine, tolerances[order - 1])
-                        && close(fine, middle, 2.0 * tolerances[order - 1]);
+                        && std::abs(*result.action - fine) <= allowance
+                        && action_reference.uncertainty[index] <= allowance;
                     const std::string point = std::string(name) + (pressure_chart ? "/P/" : "/rho/")
                         + std::to_string(order) + "/" + std::to_string(index);
                     recording_support::compare_custom(("issue26/action/" + point).c_str(),
@@ -4594,10 +4794,13 @@ void modular_permittivity_actions() {
                             recording_support::field("status", static_cast<int>(result.status)),
                             recording_support::field("reference_fine", fine),
                             recording_support::field("reference_middle", middle),
-                            recording_support::field("tolerance", tolerances[order - 1])}),
+                            recording_support::field("tolerance", tolerances[order - 1]),
+                            recording_support::field("term_scale", action_reference.scale[index]),
+                            recording_support::field("reference_uncertainty", action_reference.uncertainty[index]),
+                            recording_support::field("allowance", allowance)}),
                         "Relationship", "central-difference-refinement",
                         "liquid electrolyte action retains every permittivity chain",
-                        "reference_or_one", ok, "issue26-actions", point.c_str(), "action",
+                        "tolerance_times_chart_term_scale", ok, "issue26-actions", point.c_str(), "action",
                         "T,\\rho|P,\\mathbf{x},\\theta", "available", "form,chart,order,observable");
                     CHECK(ok);
                 }
@@ -5044,6 +5247,7 @@ int main(int argc, char** argv) {
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},
         {{"native.properties.issue26", "Modular_permittivity_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/pressure/*,issue26/branch/*,issue26/action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26", "issue26/pressure/*:4,issue26/branch/*:48,issue26/action/*:72"}, modular_permittivity_actions},
+        {{"native.properties.electrolyte-coordinates", "Electrolyte_parameter_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "electrolyte-coordinate/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "ElectrolyteCoordinates"}, electrolyte_parameter_actions},
         {{"native.properties.issue26e", "Energy_action_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/energy/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26E", "issue26/energy/*:15"}, energy_action_ladders},
         {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},
     });
