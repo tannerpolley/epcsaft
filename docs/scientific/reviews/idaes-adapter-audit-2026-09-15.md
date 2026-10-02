@@ -86,13 +86,4 @@ P4 and P5 are inherited as qualified Properties work. Association support in thi
 adapter, mixtures, electrolytes, phase stability, PROMMIS, and downstream application
 qualification remain open.
 
-## Exact next execution order
-
-1. Publish the rebased IDAES branch separately on top of `codex/properties-qualification`;
-   do not merge adapter history into Contributions or Properties.
-2. Keep the ASL bridge in native bindings and the exact pressure-curvature
-   calculation in Properties; Contributions remains unchanged.
-3. Design and qualify the thin public B1/B2 action interface from accepted P4/P5
-   contracts; do not expose analysis-only `_core` objects.
-4. Only then adapt and qualify the real IDAES/PROMMIS consumers in their independent
-   downstream repositories using an identified immutable Engine wheel.
+Delivery and remaining qualification are owned by [issue #10](https://github.com/tannerpolley/ePC-SAFT/issues/10).
