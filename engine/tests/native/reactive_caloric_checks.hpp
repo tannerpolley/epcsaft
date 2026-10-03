@@ -224,8 +224,8 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
         case SolvedStateObservableKind::PhasePressure:value=state.pressure;break;
         case SolvedStateObservableKind::PhaseMoleFraction:value=x[o.component];break;
         case SolvedStateObservableKind::PhaseComponentAmount:value=n*x[o.component];break;
-        case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:value=state.residual_chemical_potential_over_rt[o.component];break;
-        case SolvedStateObservableKind::PhaseLogActivity:value=std::log(x[o.component]*rho)+state.residual_chemical_potential_over_rt[o.component];break;
+        case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:value=require_component_property(state.residual_chemical_potential_over_rt[o.component]);break;
+        case SolvedStateObservableKind::PhaseLogActivity:value=std::log(x[o.component]*rho)+require_component_property(state.residual_chemical_potential_over_rt[o.component]);break;
         case SolvedStateObservableKind::PhaseGibbsMolarVolume:value=sample.phase.v;break;
         case SolvedStateObservableKind::PhaseProperty:{auto k=std::size_t(o.property);value=k<5?sample.phase.ideal[k]:sample.phase.total[k-10];break;}
         }
