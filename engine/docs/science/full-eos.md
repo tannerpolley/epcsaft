@@ -829,11 +829,22 @@ while preserving valid residual properties. These are required semantics;
 concrete class names and installed availability belong to the implementation
 plan and public interface, not this mathematical specification.
 
-At zero ionic strength the DH value has its exact neutral limit. Its leading
-ionic-strength power is 3/2, so arbitrary ionic insertion Hessians need not be
-finite there. Availability must distinguish derivatives within a fixed support
-from insertion directions; temperature/density derivatives on the neutral
-restriction do not establish the full composition Hessian.
+On an ion-free support, Born and DH are identically zero before reciprocal
+permittivity, solvation mixing or screening operations are evaluated. Their
+supported temperature, density, neutral-composition and parameter actions,
+including mixed actions, are exactly zero. Pure CO₂ has no dielectric solvent
+in this model: its zero bulk-permittivity diagnostic supplies no ionic-insertion
+limit. The empty electrostatic sums require no replacement permittivity or floor.
+
+With finite positive limiting solvent permittivity, a dilute ionic path has a
+linear Born leading term and a DH leading term proportional to ionic strength
+to the power 3/2. Born's insertion first derivative is generally nonzero; DH's
+insertion second derivative diverges. Neutral-restriction derivatives therefore
+do not establish unrestricted composition derivatives. Absent charged ordinary
+chemical-potential/fugacity slots and their parameter columns are unavailable
+with `IonicInsertion`; present neutral slots and regular scalar calorics remain
+available. Pressure closure preserves this admission. Full-species insertion
+planes on a zero-inventory face require separate qualification.
 
 Zero amount of an associating species is not permission to add a positive
 composition floor. The unweighted mass-action Jacobian may remain regular

@@ -181,7 +181,7 @@ $$
 - Status: Source equation
 - Source: Born charging work; [Figiel2026Correction], corrected Eq.~(7)
 - Description: Dimensionless residual Helmholtz contribution from the sole Born charging equation.
-- Change note: Shared by fixed and active-coordinate evaluation paths without a formulation selector.
+- Change note: Shared by fixed and active-coordinate evaluation paths. On an ion-free support the empty sum is identically zero before permittivity or solvation operations; this restriction does not supply ionic insertion derivatives.
 
 $$
 a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
@@ -411,7 +411,7 @@ $$
 - Status: Source equation
 - Source: [Bulow2019], Eq.~(2)
 - Description: Finite-size Debye--Huckel residual Helmholtz contribution.
-- Change note: d_i^DH is the separately declared finite-size diameter in metres; equality to packing or Born diameters requires source justification.
+- Change note: d_i^DH is the separately declared finite-size diameter in metres; equality to packing or Born diameters requires source justification. The ion-free support restriction is identically zero before screening operations; the dilute three-halves power does not admit a finite ionic insertion Hessian.
 
 $$
 a^{DH}=-\frac{\kappa e^2}{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}\sum_{i\in\mathcal I}x_i z_i^2\chi(\kappa d_i^{DH}).

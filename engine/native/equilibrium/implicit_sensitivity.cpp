@@ -547,17 +547,20 @@ PropertyChain property_chain(const HelmholtzModel& model, const RowSeries& serie
         for (std::size_t i = 0; i < components; ++i) result.composition.push_back(k == 0 ? 0.0 : map.mole_fraction[i][k]);
         // The solved coefficients satisfy the normalisation and charge rows to the linear
         // residual policy; the P4 trust boundary requires them exactly, so the roundoff
-        // component along (1, z) is removed before the call.
+        // component along (1, z) is removed within the positive support before the call.
         const auto& charges = model.parameters().charge_number;
-        double sum = 0.0, charge = 0.0, zz = 0.0, z1 = 0.0;
+        double sum = 0.0, charge = 0.0, zz = 0.0, z1 = 0.0, c = 0.0;
         for (std::size_t i = 0; i < components; ++i) {
+            if (!(map.mole_fraction[i][0] > 0.0)) continue;
+            c += 1.0;
             sum += result.composition[i]; charge += charges[i] * result.composition[i];
             zz += charges[i] * charges[i]; z1 += charges[i];
         }
-        const double c = static_cast<double>(components), det = c * zz - z1 * z1;
+        const double det = c * zz - z1 * z1;
         const double alpha = det != 0.0 ? (sum * zz - charge * z1) / det : sum / c;
         const double beta = det != 0.0 ? (c * charge - z1 * sum) / det : 0.0;
-        for (std::size_t i = 0; i < components; ++i) result.composition[i] -= alpha + beta * charges[i];
+        for (std::size_t i = 0; i < components; ++i)
+            if (map.mole_fraction[i][0] > 0.0) result.composition[i] -= alpha + beta * charges[i];
         for (std::size_t a = 0; a < model.active_parameters().size(); ++a) {
             const auto& active = model.active_parameters()[a];
             result.parameter.push_back({active.family, active.indices, k == 0 ? 0.0 : item.point[k][2 + components + a]});
@@ -863,9 +866,15 @@ static SolvedStateActionBatch evaluate_action(
     if (gate == SolvedStateActionStatus::Available) {
         const auto& charges = model.parameters().charge_number;
         bool support = false, nonzero_z = false;
+        bool changes_inventory = compiled.inventory_restrictions.empty();
+        for (const auto& control : controls) {
+            const std::vector<double> feed(control.begin() + 2, control.begin() + 2 + compiled.n_feed.size());
+            for (const auto& restriction : compiled.inventory_restrictions)
+                changes_inventory = changes_inventory || !exact_zero_dot(restriction, feed);
+        }
         for (const std::size_t species : compiled.removed_species)
             for (const auto& control : controls)
-                if (control[2 + species] != 0.0) (charges[species] == 0 ? support : nonzero_z) = true;
+                if (changes_inventory && control[2 + species] != 0.0) (charges[species] == 0 ? support : nonzero_z) = true;
         if (nonzero_z) gate = SolvedStateActionStatus::IonicInsertion;
         else if (support) gate = SolvedStateActionStatus::SupportChange;
     }

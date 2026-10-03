@@ -190,7 +190,7 @@ int main() {
     const std::vector<double> x_liquid = {split.mole_fractions[0], split.mole_fractions[1]};
     const State solved = model.state(split.temperature[0], split.molar_densities[0], x_liquid);
     const double fugacity = std::exp(*radial.results[1].value) * R * split.temperature[0] * 1.0;  // a_i R T (1 mol/m^3)
-    const double from_state = x_liquid[1] * std::exp((*solved.log_fugacity_coefficient)[1]) * solved.pressure;
+    const double from_state = x_liquid[1] * std::exp((*solved.log_fugacity_coefficient)[1].value()) * solved.pressure;
     std::printf("  f_b = %.6f Pa (from ln a), %.6f Pa (x phi P of the state), sum x - 1 = %.1e\n", fugacity, from_state, x_liquid[0] + x_liquid[1] - 1.0);
     expect(same(fugacity, from_state), "f_i = a_i R T rho0 equals x_i phi_i P");
 
