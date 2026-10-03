@@ -77,6 +77,22 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-02, #221 post-sprint audit and enforcement restoration, measured
+  at integrated main `a0adb1cd`: Core **917**, Contributions **1547**,
+  Properties **4763**, Equilibrium **7050**, Parameter regression **2398**,
+  Surface **532**, Bindings **1935**, Python **2725**; aggregate **21867**.
+  Every layer and the aggregate fit the approved envelope. The owner retained
+  all existing numeric limits, including Properties **4800** and aggregate
+  **24000**, and removed #248's temporary success override. Both local check
+  commands again reject hard-ceiling excess. Accounting and soft warnings
+  remain unchanged; no runtime source or numerical claim changes.
+  Earlier measurements below apply to their named revisions. Unmerged
+  candidates and remaining work require their own measured budget disposition
+  and scientific qualification; current headroom does not establish that they
+  fit or work. The [#221 audit](https://github.com/tannerpolley/ePC-SAFT/issues/221)
+  retains the delivered, skipped and dropped findings and the historical
+  amendment reconstruction; unmatched historical entries are not new approvals.
+
 - 2026-10-02, #237 conserved-inventory bounds closeout, measured against
   integrated main `9bc6e902`: **199 gross added, 21 removed, +178 net runtime
   physical lines**. Main's runtime is unchanged from `edf7672e`; no ceiling
@@ -146,13 +162,12 @@ Budget changes must not silently change scientific scope.
   after the required partial-result and failure-cause corrections, with no
   remaining required findings.
 
-- 2026-10-02, sprint pause (#220, owner decision): hard ceilings are not
-  enforced until the current sprint ends. `tools/diffstat.py --budgets` still
-  counts every layer and prints FAIL rows, but exits successfully while
-  `HARD_CEILINGS_PAUSED` is set. Each build reports its measured gross and net
-  runtime lines, and its review justifies growth and checks for duplication.
-  After the sprint, a consolidation audit runs and the ceilings are reset
-  from measured counts; then the pause flag is removed.
+- 2026-10-02, historical sprint pause ([#248](https://github.com/tannerpolley/ePC-SAFT/pull/248),
+  owner decision): hard-ceiling failures were report-only during the sprint;
+  complete-tree counts and accounting errors remained active. Each build
+  reported measured gross and net runtime lines and justified growth and
+  duplication. The post-sprint #221 audit above ends this pause with the
+  approved envelope unchanged.
 
 - 2026-10-02, roadmap envelope raise (#220, owner approved): with #223 and
   #225 slice 1 delivered on branches, the measured counts reach about 21,340 total,
@@ -361,6 +376,26 @@ Budget changes must not silently change scientific scope.
   explicit recorded amendment at each closeout, not an automatic ratchet. A
   design or build that cannot fit the envelope returns to the owner. Floors and
   soft ceilings are unchanged; soft-ceiling reasons are still required.
+
+- 2026-09-30, finite-addition enthalpy fitting (#210, owner approved):
+  Properties hard ceiling **4223 → 4258**, Parameter regression **1484 → 1619**,
+  Bindings **1725 → 1726**, Python **2357 → 2374**, aggregate **18830 → 19100**.
+  The [owner's O7 approval](https://github.com/tannerpolley/ePC-SAFT/issues/210#issuecomment-5921624627)
+  required exact measured ceilings within maxima of Properties 4263,
+  Parameter regression 1619, Bindings 1730, Python 2377 and aggregate 19100,
+  with at most 350 gross added runtime lines against `3f5ee19f`.
+  The [merged delivery](https://github.com/tannerpolley/ePC-SAFT/issues/210#issuecomment-5924679337)
+  measured **323 gross added, 53 removed, +270 net**. Equilibrium measured
+  6097 within its unchanged 7000 hard ceiling. Floors, soft ceilings and other
+  hard ceilings were unchanged.
+  The two declared endpoint enthalpies and Engine feed enthalpy share the
+  existing caloric, density and equilibrium owners. Exact first EOS and
+  source-law coefficient actions include the mixed reference derivative
+  and feed derivative; no second caloric calculation is introduced.
+  [Retained numerical evidence](../../analyses/2026-addition-enthalpy-fitting/README.md)
+  supports manufactured cases and stated limits, without physical validation
+  or application parameter adoption. The historical cap does not qualify
+  higher fitting orders or referenced free-temperature endpoints.
 
 - 2026-09-30, direct source-basis ln K observations (#211, owner approved):
   Parameter regression hard ceiling 1463 → 1484, Python 2355 → 2357 and aggregate
