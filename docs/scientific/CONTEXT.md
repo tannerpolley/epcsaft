@@ -92,7 +92,10 @@ and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
 These standalone Properties derivatives and all five lower reference partials
 are numerically verified on the stated manufactured cases. The current-source
 replay and its distinct wheel identity are retained in that notebook; Properties
-reuses the resolved terminal States through one single-insertion Taylor owner. The same notebook retains separate driven-T/P numerical
+reuses the resolved terminal States through one single-insertion Taylor owner.
+The same diagnostic retains actual lower-column evaluation/admission causes
+for chemical rows and caloric completion; the notebook retains the bounded
+corrected-source failure case separately from the admitted-case replay. The same notebook retains separate driven-T/P numerical
 checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
 direction and feed-only A3. Referenced free-intensive combinations and
 apparent-Cp fitting remain separate #225 work; regression's existing fixed-T
