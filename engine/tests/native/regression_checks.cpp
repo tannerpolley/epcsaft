@@ -2796,6 +2796,55 @@ void check_inventory_face() {
             inventory == 0 ? at.removed_species == std::vector<std::size_t>{1, 2} : at.removed_species.empty(),
             declarations() + ";" + field("B_plus_C_mol", inventory), "issue-231"));
     }
+    auto padded = properties_support::parameters(5);
+    const auto ternary = equilibrium_support::synthetic_reactive_ternary();
+    const auto ethane = properties_support::ethane();
+    padded.segment_count = ternary.segment_count; padded.segment_count.resize(5, ethane.segment_count[0]);
+    padded.sigma_constant = ternary.sigma_constant; padded.sigma_constant.resize(5, ethane.sigma_constant[0]);
+    padded.dispersion_energy_over_k = ternary.dispersion_energy_over_k;
+    padded.dispersion_energy_over_k.resize(5, ethane.dispersion_energy_over_k[0]);
+    padded.molar_mass_kg_per_mol = ternary.molar_mass_kg_per_mol;
+    padded.molar_mass_kg_per_mol.resize(5, ethane.molar_mass_kg_per_mol[0]);
+    for (std::size_t i = 0; i < 3; ++i) for (std::size_t j = 0; j < 3; ++j)
+        padded.k_ij[i * 5 + j] = ternary.k_ij[i * 3 + j];
+    padded.site_component = ternary.site_component; padded.site_multiplicity = ternary.site_multiplicity;
+    padded.association_active = ternary.association_active;
+    padded.association_energy_over_k = ternary.association_energy_over_k;
+    padded.association_volume = ternary.association_volume;
+    HelmholtzModel padded_model(padded);
+    auto full_guess = equilibrium_support::synthetic_reactive_problem();
+    full_guess.feed.values.resize(5, 0); full_guess.standard_gibbs_j_per_mol.resize(5, 0);
+    full_guess.reactions[0].stoichiometry.resize(5, 0);
+    full_guess.reactions.push_back({"D=E", {0, 0, 0, -1, 1}, 1.0});
+    auto reduced_guess = full_guess;
+    for (std::size_t q = 0; q < 2; ++q) {
+        full_guess.phases[q].composition_guess.resize(5, 0);
+        reduced_guess.phases[q].support = {0, 1, 2}; reduced_guess.phases[q].support_declared = true;
+    }
+    const auto full_value = equilibrium::solve_equilibrium(padded_model, full_guess);
+    const auto reduced_value = equilibrium::solve_equilibrium(padded_model, reduced_guess);
+    CHECK(full_value.success && reduced_value.success);
+    double scaled_state_error = 0;
+    for (std::size_t i = 0; i < full_value.mole_fractions.size(); ++i)
+        scaled_state_error = std::max(scaled_state_error,
+            std::abs(full_value.mole_fractions[i] - reduced_value.mole_fractions[i])
+                / (1e-12 + 1e-8 * std::max(std::abs(full_value.mole_fractions[i]), std::abs(reduced_value.mole_fractions[i]))));
+    for (std::size_t q = 0; q < full_value.amounts.size(); ++q)
+        scaled_state_error = std::max(scaled_state_error,
+            std::abs(full_value.amounts[q] - reduced_value.amounts[q])
+                / (1e-12 + 1e-8 * std::max(std::abs(full_value.amounts[q]), std::abs(reduced_value.amounts[q]))));
+    CHECK(agree("inventory-face/supplied-guess", "maximum_scaled_physical_state_error", "1", scaled_state_error, 0, 1, 0,
+        fields({field("fixture", "synthetic_reactive_ternary plus two ethane records"),
+            field("T_K", full_guess.temperature.value), field("P_Pa", full_guess.pressure.value), field("feed_mol", full_guess.feed.values),
+            field("A_plus_B_to_C", full_guess.reactions[0].stoichiometry), field("D_to_E", full_guess.reactions[1].stoichiometry),
+            field("K_each", 1), field("full_support", "0,1,2,3,4"), field("reduced_support", "0,1,2"),
+            field("full_L1_guess", full_guess.phases[0].composition_guess), field("full_L2_guess", full_guess.phases[1].composition_guess),
+            field("reduced_L1_guess", reduced_guess.phases[0].composition_guess), field("reduced_L2_guess", reduced_guess.phases[1].composition_guess),
+            field("full_phase_fractions", full_value.mole_fractions), field("reduced_phase_fractions", reduced_value.mole_fractions),
+            field("full_amounts_mol", full_value.amounts), field("reduced_amounts_mol", reduced_value.amounts),
+            field("full_classified_residual", full_value.convergence.residual), field("reduced_classified_residual", reduced_value.convergence.residual),
+            field("full_iterations", full_value.convergence.iterations), field("reduced_iterations", reduced_value.convergence.iterations)}),
+        "restricting a supplied full-support guess preserves explicit-face phase fractions and amounts", "issue-231"));
     problem.feed.values[1] = 0;
     problem.pressure = FreeValue::variable(1e5);
     auto incipient = equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0));

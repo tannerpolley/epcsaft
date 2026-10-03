@@ -919,6 +919,12 @@ static CompiledSystem compile_with_basis(
                         + " needs the discarded conserved potential in chemical stationarity");
                 return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
+        const auto guess_before = std::move(phase.composition_guess);
+        phase.composition_guess.clear();
+        if (guess_before.size() == support_before.size())
+            for (std::size_t i = 0; i < support_before.size(); ++i)
+                if (std::find(phase.support.begin(), phase.support.end(), support_before[i]) != phase.support.end())
+                    phase.composition_guess.push_back(guess_before[i]);
         for (const std::size_t index : support_before) {
             if (std::find(phase.support.begin(), phase.support.end(), index) == phase.support.end()
                 && std::find(compiled.removed_species.begin(), compiled.removed_species.end(), index)

@@ -119,6 +119,8 @@ Full reaction declarations and species reference/caloric completion stay fixed
 before restriction to A. Removed species return literal zero amounts and
 fixed-face actions. Feed directions must preserve vanished conserved inventories;
 individual removed feed slots need not independently vanish.
+Supplied phase composition guesses follow the same support restriction before
+the existing supported-composition normalisation.
 
 A pinned-zero phase retaining a globally forced-absent species lies outside this
 face formulation: its chemical stationarity still needs the discarded conserved
