@@ -206,13 +206,14 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
                      const std::vector<Quantity>& q) {
     CHECK(solved.has_state());
     const std::size_t components=model.parameters().component_count();
+    const double T=solved.temperature[0],P=solved.pressure[0];
     Sample sample;sample.solved=solved;
     std::vector<Local> phases;
     std::vector<State> states;
     for(std::size_t phase=0;phase<compiled.problem.phases.size();++phase) {
         const std::vector<double> x(solved.mole_fractions.begin()+phase*components,
                                    solved.mole_fractions.begin()+(phase+1)*components);
-        const double T=solved.temperature[phase],P=solved.pressure[phase],rho=solved.molar_densities[phase];
+        const double rho=solved.molar_densities[phase];
         const auto branch=compiled.problem.phases[phase].kind==PhaseKind::Vapor?DensityBranch::Vapor:DensityBranch::Liquid;
         phases.push_back(local(model,compiled,T,P,x,rho,branch));
         states.push_back(model.state(T,rho,x));
@@ -224,7 +225,7 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
     CHECK(solved.residual_norm()<=compiled.problem.row_tolerance);
     for(const auto& item:q) {
         const auto& o=item.observable;const auto phase=o.phase;
-        const double T=solved.temperature[phase],P=solved.pressure[phase],n=solved.amounts[phase],rho=solved.molar_densities[phase];
+        const double n=solved.amounts[phase],rho=solved.molar_densities[phase];
         const auto& state=states[phase];const auto& caloric=phases[phase];
         const auto x=solved.mole_fractions.begin()+phase*components;double value=0;
         switch(o.kind) {
