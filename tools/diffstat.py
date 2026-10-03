@@ -217,9 +217,6 @@ def watch(rng: str, code_only: bool) -> int:
         return 0
 
 
-HARD_CEILINGS_PAUSED = True  # owner 2026-10-02: sprint pause; reset ceilings from measured counts after the post-sprint audit
-
-
 def budget_state(count: int, limits: list[int]) -> str:
     if count > limits[2]:
         return "FAIL"
@@ -317,11 +314,7 @@ def main() -> int:
         if args != ["--budgets"]:
             raise ValueError("--budgets is a current-tree check; do not combine with a diff range")
         budget_self_check()
-        failed = code_budgets()
-        if failed and HARD_CEILINGS_PAUSED:
-            print("hard ceilings paused for the 2026-10-02 sprint (owner): FAIL rows are report-only")
-            return 0
-        return failed
+        return code_budgets()
     code_only = "--code" in args
     show_files = "--files" in args
     live = "--watch" in args or "--no-split" in args
