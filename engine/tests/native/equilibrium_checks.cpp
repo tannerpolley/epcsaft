@@ -1420,7 +1420,7 @@ void check_s2() {
                 epcsaft::ReactionLogPolynomial{std::log(1.0e-8) + 2000.0 / ionic_temperature, -2000.0, 0.0, 0.0,
                  ionic_temperature, 250.0, 350.0, "analytic-source"}, ionic_sources[source]}};
             const ActionDirection epsilon_direction{
-                0.0, 0.0, {0.0, 0.0, 0.0}, {1.0}, {}, {}};
+                0.0, 0.0, {0.0, 0.0, 0.0}, {1.0}, {}};
             const auto epsilon_value = [&](double shift) {
                 auto shifted = ionic_parameters;
                 shifted.dispersion_energy_over_k[0] += shift;
