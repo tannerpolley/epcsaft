@@ -95,7 +95,11 @@ replay and its distinct wheel identity are retained in that notebook; Properties
 reuses the resolved terminal States through one single-insertion Taylor owner.
 The same diagnostic retains actual lower-column evaluation/admission causes
 for chemical rows and caloric completion; the notebook retains the bounded
-corrected-source failure case separately from the admitted-case replay. The same notebook retains separate driven-T/P numerical
+corrected-source failure case separately from the admitted-case replay.
+The [current runtime review](../../analyses/2026-reactive-caloric-actions/results/current-source-review.md)
+is Supported at `14c32d1a`, accepted for the bounded integrated reference and
+prescribed-T/P caloric slice, without manuscript promotion. The same notebook
+retains separate driven-T/P numerical
 checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
 direction and feed-only A3. Referenced free-intensive combinations and
 apparent-Cp fitting remain separate #225 work; regression's existing fixed-T
