@@ -808,7 +808,7 @@ void check_e2_support() {
     CHECK(record_rejection("e2-3/explicit-empty", "e2-3-support", model, empty, "empty support in phase L", inputs));
     auto partial = base;
     partial.phases[0].support = {0};
-    CHECK(record_rejection("e2-3/missing-species", "e2-3-support", model, partial, "species 1 has no support", inputs));
+    CHECK(record_rejection("e2-3/missing-species", "e2-3-support", model, partial, "infeasible_inventory", inputs));
     auto duplicate = base;
     duplicate.phases[0].support = {0, 0};
     CHECK(record_rejection("e2-3/duplicate", "e2-3-support", model, duplicate, "duplicate support index", inputs));
@@ -851,7 +851,7 @@ void check_e2_reaction() {
         left.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && right.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && left.removed_species == std::vector<std::size_t>{2} && right.removed_species == std::vector<std::size_t>{2}
-            && left.rank == 2 && right.rank == 2 && same_subspace(left.B, right.B, 1.0e-12)
+            && left.rank == 1 && right.rank == 1 && same_subspace(left.B, right.B, 1.0e-12)
             && same_rows, inputs));
     auto dependent = forward;
     dependent.reactions.push_back({"twice", {-2.0, 2.0, 0.0}, 4.0, std::nullopt});
@@ -1007,7 +1007,7 @@ void check_e2_charge() {
     CHECK(!two_zero_result.success);
     auto one_sign = base;
     one_sign.phases[0].support = {0, 1};
-    CHECK(record_rejection("e2-4/one-sign", "e2-4-charge", model, one_sign, "support z sign in phase L", inputs));
+    CHECK(record_rejection("e2-4/one-sign", "e2-4-charge", model, one_sign, "infeasible_inventory", inputs));
     const auto solved = epcsaft::equilibrium::solve_equilibrium(model, base);
     double charge = 0.0;
     if (solved.success) for (std::size_t i = 0; i < 3; ++i) charge += model.parameters().charge_number[i] * solved.mole_fractions[i];
@@ -1102,8 +1102,8 @@ void same_state(const std::string& id, const epcsaft::State& state, const epcsaf
     CHECK(agrees(id + "/Z", "compressibility_factor", "1", state.compressibility_factor, reference.compressibility_factor, claim, inputs));
     for (std::size_t i = 0; i < 3; ++i) {
         CHECK(agrees(id + "/mu_res/" + std::to_string(i), "residual_chemical_potential_over_rt", "1",
-                    state.residual_chemical_potential_over_rt[i],
-                    reference.residual_chemical_potential_over_rt[order[i]], claim, inputs));
+                    state.residual_chemical_potential_over_rt[i].value(),
+                    reference.residual_chemical_potential_over_rt[order[i]].value(), claim, inputs));
     }
 }
 

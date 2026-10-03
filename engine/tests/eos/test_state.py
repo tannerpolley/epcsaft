@@ -117,13 +117,19 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
             quantity_latex=latex,
             inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
         )
+    euler_terms = []
     for index, component in enumerate(order):
         reverse_index = len(order) - index - 1
+        first_potential = first.residual_chemical_potential_over_rt[index]
+        second_potential = second.residual_chemical_potential_over_rt[reverse_index]
+        assert first_potential is not None and second_potential is not None
+        if x[index] != 0:
+            euler_terms.append(x[index] * first_potential)
         evidence.compare(
             f"state_identity/residual_chemical_potential/{index}",
             quantity="residual chemical potential over RT",
-            model=float(first.residual_chemical_potential_over_rt[index]),
-            reference=float(second.residual_chemical_potential_over_rt[reverse_index]),
+            model=float(first_potential),
+            reference=float(second_potential),
             unit="1",
             inputs={**inputs, "component": component, "relabelled_component": reverse[reverse_index]},
             coordinates={"component_index": index, "relabelled_index": reverse_index},
@@ -138,11 +144,13 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
             inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
         )
         if first_fugacity is not None and second_fugacity is not None:
+            first_coefficient, second_coefficient = first_fugacity[index], second_fugacity[reverse_index]
+            assert first_coefficient is not None and second_coefficient is not None
             evidence.compare(
                 f"state_identity/log_fugacity_coefficient/{index}",
                 quantity="log fugacity coefficient",
-                model=float(first_fugacity[index]),
-                reference=float(second_fugacity[reverse_index]),
+                model=float(first_coefficient),
+                reference=float(second_coefficient),
                 unit="1",
                 inputs={**inputs, "component": component, "relabelled_component": reverse[reverse_index]},
                 coordinates={"component_index": index, "relabelled_index": reverse_index},
@@ -156,7 +164,7 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
                 quantity_latex=r"\ln\phi_i",
                 inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
             )
-    euler_left = sum(a * b for a, b in zip(x, first.residual_chemical_potential_over_rt))
+    euler_left = sum(euler_terms)
     euler_right = first.residual_helmholtz + first.compressibility_factor - 1.0
     evidence.compare(
         "state_identity/euler_identity",
@@ -249,21 +257,29 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     for field in ("pressure", "residual_helmholtz", "compressibility_factor", "bulk_relative_permittivity"):
         close(getattr(first, field), getattr(second, field), 1e-12)
     assert (first.log_fugacity_coefficient is None) == (second.log_fugacity_coefficient is None)
+    euler_terms = []
     for index in range(len(order)):
         reverse_index = len(order) - index - 1
+        first_potential = first.residual_chemical_potential_over_rt[index]
+        second_potential = second.residual_chemical_potential_over_rt[reverse_index]
+        assert first_potential is not None and second_potential is not None
+        if x[index] != 0:
+            euler_terms.append(x[index] * first_potential)
         close(
-            first.residual_chemical_potential_over_rt[index],
-            second.residual_chemical_potential_over_rt[reverse_index],
+            first_potential,
+            second_potential,
             1e-12,
         )
         if first_fugacity is not None and second_fugacity is not None:
+            first_coefficient, second_coefficient = first_fugacity[index], second_fugacity[reverse_index]
+            assert first_coefficient is not None and second_coefficient is not None
             close(
-                first_fugacity[index],
-                second_fugacity[reverse_index],
+                first_coefficient,
+                second_coefficient,
                 1e-12,
             )
     assert math.isclose(
-        sum(a * b for a, b in zip(x, first.residual_chemical_potential_over_rt)),
+        sum(euler_terms),
         first.residual_helmholtz + first.compressibility_factor - 1.0,
         rel_tol=1e-12,
         abs_tol=1e-12,
@@ -331,7 +347,9 @@ def test_neutral_selection_is_the_ion_free_electrolyte_limit() -> None:
         limit = salt.state(298.15, rho=density, x=(1.0, 0.0, 0.0))
         close(pure.pressure, limit.pressure, 1e-12)
         close(pure.residual_enthalpy, limit.residual_enthalpy, 1e-12)
-        close(pure.residual_chemical_potential_over_rt[0], limit.residual_chemical_potential_over_rt[0], 1e-12)
+        pure_potential, limit_potential = pure.residual_chemical_potential_over_rt[0], limit.residual_chemical_potential_over_rt[0]
+        assert pure_potential is not None and limit_potential is not None
+        close(pure_potential, limit_potential, 1e-12)
     liquid = water.state(298.15, P=1e5, phase="liquid")
     close(liquid.molar_density, salt.state(298.15, P=1e5, x=(1.0, 0.0, 0.0), phase="liquid").molar_density, 1e-12)
 
@@ -547,6 +565,7 @@ def test_wolbach_sandler_rule_matches_source_cross_volumes() -> None:
         for field in ("pressure", "association", "residual_helmholtz"):
             close(getattr(state, field), getattr(frozen, field), 1e-12)
         for left, right in zip(state.residual_chemical_potential_over_rt, frozen.residual_chemical_potential_over_rt):
+            assert left is not None and right is not None
             close(left, right, 1e-12)
         step = 1e-3
         helmholtz = [8.314462618 * t * model.state(t, rho=1.5e4, x=composition).residual_helmholtz

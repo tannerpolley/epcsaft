@@ -450,6 +450,13 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
                     r.maximum = x[i] * (fraction ? 1.0 : c.feed_total);
                     if (fraction && x[i] > 0.0) r.log_fraction = std::log(x[i]);
                     if (!fraction) r.feed_normalized_amount = x[i];
+                    if (!fraction && x[i] == 0.0) {
+                        r.conserved_functional.assign(n, 0.0);
+                        const auto& dual = lp.getSolution().row_dual;
+                        for (std::size_t k = 0; k < c.rank; ++k)
+                            for (std::size_t j = 0; j < n; ++j)
+                                r.conserved_functional[j] += dual[k] * c.B[k][j];
+                    }
                     r.limiting = fraction && x[n] == 0.0;
                     if (!r.limiting) for (std::size_t j = 0; j < n; ++j)
                         r.amounts_mol.push_back(x[j] * c.feed_total / (fraction ? x[n] : 1.0));
@@ -490,15 +497,9 @@ bool GibbsMinimizer::get_bounds_info(
     const std::size_t species = compiled_.n_feed.size();
     std::vector<double> box(species, policy::STABILITY_COMPOSITION_FLOOR.value);
     if (compiled_.pinned_count == 0 || !compiled_.is_square()) {
-        std::vector<std::size_t> indices;
-        for (const auto& phase : compiled_.problem.phases)
-            indices.insert(indices.end(), phase.support.begin(), phase.support.end());
-        std::sort(indices.begin(), indices.end());
-        indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
-        for (const auto& bound : inventory_bounds(compiled_, indices, false, 0.0))
-            box[bound.species] = std::max(box[bound.species], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
-                bound.status == "optimal" ? policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value
-                    * *bound.feed_normalized_amount : 1.0));
+        for (std::size_t i = 0; i < species; ++i)
+            box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
+                policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled_.inventory_upper_bounds[i]));
     }
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {

@@ -94,8 +94,9 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
     for species, standard in ((0, 0.0), (1, -math.log(equilibrium_constant))):
         row = next(k for k, item in enumerate(compiled_explicit.rows) if "Chemical" in str(item.kind) and item.index == species)
         basis = [-jacobian[row * n + compiled_explicit.primal_size + j] for j in range(compiled_explicit.rank)]
-        potential = (math.log(gauged.mole_fractions[species] * state.molar_density)
-                     + state.residual_chemical_potential_over_rt[species] + standard)
+        residual_potential = state.residual_chemical_potential_over_rt[species]
+        assert residual_potential is not None
+        potential = math.log(gauged.mole_fractions[species] * state.molar_density) + residual_potential + standard
         same(evidence, f"{label}/stationarity/{species}", sum(m * b for m, b in zip(gauged.multipliers, basis)), potential,
              atol=1e-12, rtol=1e-12, unit="1", inputs={**inputs, "balance_basis": basis}, basis="Identity",
              method="public-state-chemical-potential",
@@ -246,8 +247,12 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
     for p in range(2):
         x = tuple(result.mole_fractions[5 * p:5 * (p + 1)])
         state = model.state(293.15, rho=result.molar_densities[p], x=x)
-        potentials.append([math.log(x[i] * state.molar_density)
-                           + state.residual_chemical_potential_over_rt[i] for i in range(5)])
+        phase_potentials = []
+        for i in range(5):
+            residual_potential = state.residual_chemical_potential_over_rt[i]
+            assert residual_potential is not None
+            phase_potentials.append(math.log(x[i] * state.molar_density) + residual_potential)
+        potentials.append(phase_potentials)
         same(evidence, f"{label}/charge/{p}", x[3] - x[4], 0.0, atol=1e-12, rtol=0.0,
              unit="1", inputs=inputs, basis="Identity", method="public-composition",
              claim="each declared liquid phase is electroneutral")
@@ -297,9 +302,16 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
             family.update(c_shell=1.0, c_dielectric=1.0)
     model = Mixture(Parameters.from_mapping(mapping, components=_MEA))
     state = model.state(temperature, P=101325.0, x=speciation, phase="liquid")
-    ln_k = [sum(nu.get(species, 0.0) * (math.log(x * state.molar_density) + mu)
-                for species, x, mu in zip(_MEA, speciation, state.residual_chemical_potential_over_rt))
-            for nu in _MEA_REACTIONS]
+    ln_k = []
+    for nu in _MEA_REACTIONS:
+        terms = []
+        for species, x, mu in zip(_MEA, speciation, state.residual_chemical_potential_over_rt):
+            coefficient = nu.get(species, 0.0)
+            if coefficient == 0:
+                continue
+            assert mu is not None
+            terms.append(coefficient * (math.log(x * state.molar_density) + mu))
+        ln_k.append(sum(terms))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, temperature, 250.0, 450.0,
                                                                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
     problem = Problem(phases=[Phase("L", kind="liquid", composition_guess=guess)], T=temperature, P=101325.0,

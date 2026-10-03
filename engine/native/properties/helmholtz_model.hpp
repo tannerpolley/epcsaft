@@ -117,6 +117,10 @@ struct ReferenceTaylor final {
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     PropertyActionDiagnostics diagnostics;
 };
+inline double require_component_property(const std::optional<double>& value) {
+    if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
+    return *value;
+}
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -127,8 +131,9 @@ struct State final {
     double residual_helmholtz = 0.0;
     double compressibility_factor = 0.0;
     double pressure = 0.0;
-    std::vector<double> residual_chemical_potential_over_rt;
-    std::optional<std::vector<double>> log_fugacity_coefficient;
+    std::vector<std::optional<double>> residual_chemical_potential_over_rt;
+    std::optional<std::vector<std::optional<double>>> log_fugacity_coefficient;
+    std::vector<PropertyActionStatus> component_property_status;
     double residual_entropy = 0.0;
     double residual_internal_energy = 0.0;
     double residual_enthalpy = 0.0;
@@ -147,7 +152,7 @@ struct State final {
     ThermochemistryStatus thermochemistry_status = ThermochemistryStatus::MissingRecord;
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
-    std::vector<double> log_fugacity_parameter_derivative;  // component x active, fixed T/P/x
+    std::vector<std::optional<double>> log_fugacity_parameter_derivative;  // component x active, fixed T/P/x
     std::vector<double> density_parameter_derivative, permittivity_parameter_derivative;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;

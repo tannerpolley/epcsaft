@@ -311,8 +311,10 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
-    residual_chemical_potential_over_rt: list[float]
-    log_fugacity_coefficient: Optional[list[float]]
+    residual_chemical_potential_over_rt: list[Optional[float]]
+    log_fugacity_coefficient: Optional[list[Optional[float]]]
+    component_property_status: list[PropertyActionStatus]
+    log_fugacity_parameter_derivative: list[Optional[float]]
     residual_entropy: float
     residual_internal_energy: float
     residual_enthalpy: float

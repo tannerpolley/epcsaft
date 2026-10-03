@@ -55,7 +55,9 @@ def test_neutral_reference_recovers_mole_fraction_law(
     # Independent pressure/fugacity identity, not the reference owner's density expression.
     state = model.state(temperature, P=pressure, x=(0.5, 0.5), phase="liquid")
     assert state.log_fugacity_coefficient is not None
-    contraction = -state.log_fugacity_coefficient[0] - math.log(pressure / (R * temperature))
+    solvent_fugacity = state.log_fugacity_coefficient[0]
+    assert solvent_fugacity is not None
+    contraction = -solvent_fugacity - math.log(pressure / (R * temperature))
     same(evidence, name + "/contraction", result.neutral_reference_diagnostics[0].terminal_contraction,
          contraction, rtol=1e-9, atol=1e-10, inputs=inputs, basis="Identity",
          method="fugacity-pressure-identity", claim="Lambda includes the standard-density factor")
@@ -81,13 +83,16 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
         vapor = pure.state(temperature, P=pressure, phase="vapor")
         assert liquid.log_fugacity_coefficient is not None
         assert vapor.log_fugacity_coefficient is not None
-        if liquid.log_fugacity_coefficient[0] > vapor.log_fugacity_coefficient[0]:
+        liquid_fugacity = liquid.log_fugacity_coefficient[0]
+        vapor_fugacity = vapor.log_fugacity_coefficient[0]
+        assert liquid_fugacity is not None and vapor_fugacity is not None
+        if liquid_fugacity > vapor_fugacity:
             lower = pressure
         else:
             upper = pressure
     saturation = (lower + upper) / 2
-    assert liquid.log_fugacity_coefficient is not None and vapor.log_fugacity_coefficient is not None
-    assert abs(liquid.log_fugacity_coefficient[0] - vapor.log_fugacity_coefficient[0]) < 1e-8
+    assert liquid_fugacity is not None and vapor_fugacity is not None
+    assert abs(liquid_fugacity - vapor_fugacity) < 1e-8
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
     expected = 4 * constant / (1 + math.sqrt(1 + 4 * constant)) ** 2
     name = f"reference-bubble/{constant:g}"
@@ -154,7 +159,9 @@ def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any)
     def contraction(pressure: float) -> float:
         coefficient = pure.state(temperature, P=pressure, phase="liquid").log_fugacity_coefficient
         assert coefficient is not None
-        return -coefficient[0] - math.log(pressure / (R * temperature))
+        solvent_fugacity = coefficient[0]
+        assert solvent_fugacity is not None
+        return -solvent_fugacity - math.log(pressure / (R * temperature))
 
     effective = (constants[0], constants[1] * math.exp(contraction(reference_pressure) - contraction(saturation)))
     total = sum(effective)
