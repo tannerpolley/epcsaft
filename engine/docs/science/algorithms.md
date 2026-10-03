@@ -1068,7 +1068,12 @@ The existing lower-slope admission remains unchanged: T times each C_T change,
 max(|theta|,1) times each C_theta change, T max(|theta|,1) times each C_Ttheta
 change, and T P_source times each C_TP change must be at most 5e-5;
 R T^2 times each C_TT change must be at most 0.01 J/(mol K).
-Both consecutive terminal changes are checked. Requested higher columns report both consecutive scaled ladder changes and their own
+Both consecutive terminal changes are checked. The same reference diagnostic
+retains each requested lower column's literal ladder, criterion, evaluation
+failure classification or exception, and admission cause. Chemical rows and
+record-anchored caloric completion consume this cause directly, preserving
+available sibling columns. They do not reconstruct an admission rule from a
+missing value. Requested higher columns report both consecutive scaled ladder changes and their own
 unavailability cause. Equilibrium consumes only the admitted columns for the
 record-anchored completion above; it does not differentiate the reference again.
 

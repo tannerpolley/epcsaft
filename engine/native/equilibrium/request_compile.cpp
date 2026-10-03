@@ -305,16 +305,7 @@ StandardTerm standard_term(
                 const std::size_t row = diagnostic.reaction_index;
                 const std::optional<double> slope = slope_of(diagnostic);
                 if (!slope) {
-                    std::string cause = diagnostic.message;
-                    for (const auto& column : diagnostic.derivatives)
-                        if (column.temperature_order == a && column.pressure_order == b && column.parameter == parameter)
-                            cause = column.message;
-                    if (cause.empty() && parameter && a == 1 && b == 0
-                        && *parameter < diagnostic.observed_temperature_parameter_change.size()
-                        && diagnostic.observed_temperature_parameter_change[*parameter])
-                        cause = "scaled terminal change " + std::to_string(*diagnostic.observed_temperature_parameter_change[*parameter])
-                            + " exceeds " + std::to_string(policy::REFERENCE_CONVERGENCE_TOLERANCE.value);
-                    if (cause.empty()) cause = "requested lower reference column unavailable from the thermal/EOS trace";
+                    const auto cause = diagnostic.derivative_cause(a, b, parameter);
                     throw std::invalid_argument("reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
                         + " C_" + std::to_string(a) + std::to_string(b)
                         + (parameter ? " coordinate " + std::to_string(*parameter) : "") + " (" + name + "): " + cause);
@@ -855,10 +846,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                             column.message = "reference_unavailable: reaction " +
                                 reaction_name(problem.reactions[reference_rows[r]], reference_rows[r]) +
                                 " C_" + std::to_string(missing_a) + std::to_string(b) +
-                                (c ? " parameter " + std::to_string(p) : "") + ": " + diagnostics[r].message;
-                            for (const auto &d : diagnostics[r].derivatives)
-                                if (d.temperature_order == missing_a && d.pressure_order == b && d.parameter == entry.parameter)
-                                    column.message += d.message;
+                                (c ? " parameter " + std::to_string(p) : "") + ": " +
+                                diagnostics[r].derivative_cause(missing_a, b, entry.parameter);
                         } else
                             right(reference_rows[r]) -=
                                 GAS_CONSTANT_J_PER_MOL_K * (temperature * *upper + double(a) * *lower);

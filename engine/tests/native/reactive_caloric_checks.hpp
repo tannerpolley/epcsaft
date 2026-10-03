@@ -912,13 +912,33 @@ inline void isothermal_row_columns() {
         {c.problem.reactions[0].stoichiometry},{*c.problem.reactions[0].reference},false,std::nullopt,1,true);
     CHECK(diagnostics[0].terminal_contraction_parameter_derivative[0]);
     CHECK(!diagnostics[0].terminal_contraction_temperature_parameter_derivative[0]);
+    const auto lower_entry=std::find_if(diagnostics[0].lower_derivatives.begin(),diagnostics[0].lower_derivatives.end(),
+        [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
+    CHECK(lower_entry!=diagnostics[0].lower_derivatives.end());
+    const auto& lower=*lower_entry;
+    CHECK(lower.criterion && diagnostics[0].observed_temperature_parameter_change[0]);
+    CHECK(*diagnostics[0].observed_temperature_parameter_change[0]>*lower.criterion);
+    HelmholtzModel caloric_model(c.parameters,c.active,c.records);
+    const auto caloric_compiled=compile_problem(caloric_model,c.problem);
+    const auto calorics=reference_calorics(caloric_compiled,298.15,1e5,true,true,true,2);
+    const auto consumed_entry=std::find_if(calorics.derivatives.begin(),calorics.derivatives.end(),
+        [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
+    CHECK(consumed_entry!=calorics.derivatives.end());
+    const auto& consumed=*consumed_entry;
+    CHECK(consumed.column.status==SolvedStateActionStatus::ReferenceUnavailable);
     const auto inputs=recording_support::fields({weighted_hessian_context(compiled),
         recording_support::field("dielectric_T_slope_per_K",1e10),
         recording_support::field("born_direction_angstrom",1),recording_support::field("water_feed_direction_mol",1),
         recording_support::field("C_theta",*diagnostics[0].terminal_contraction_parameter_derivative[0]),
-        diagnostics[0].observed_temperature_parameter_change[0]
-            ? recording_support::field("C_Ttheta_scaled_change",*diagnostics[0].observed_temperature_parameter_change[0])
-            : recording_support::field("C_Ttheta_scaled_change","not_recorded")});
+        recording_support::field("C_Ttheta_scaled_change",*diagnostics[0].observed_temperature_parameter_change[0]),
+        recording_support::field("C_Ttheta_criterion",*lower.criterion),
+        recording_support::field("lower_reference_cause",lower.message),
+        recording_support::field("caloric_completion_cause",consumed.column.message)});
+    Quantity theta{"C_theta","1/angstrom",1e-10,{}},change{"C_Ttheta_scaled_change","1",0,{}};
+    CHECK(compare("reference-calorics/dependencies/lower-column/available-theta",theta,
+        *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10));
+    CHECK(compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
+        *diagnostics[0].observed_temperature_parameter_change[0],2.3611832414348226e21,inputs,1e-10));
     const auto shifted_rows=[&](double delta) {
         auto p=c.parameters;auto problem=c.problem;p.born_diameter_angstrom[1]+=delta;problem.feed.values[0]+=delta;
         HelmholtzModel shifted_model(p,c.active);const auto shifted_compiled=compile_problem(shifted_model,problem);

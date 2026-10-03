@@ -276,8 +276,18 @@ struct NeutralReferenceReactionDiagnostic final {
         std::array<double, 2> scaled_changes{};
         std::optional<double> value;
         std::string message;
+        std::optional<PropertyActionStatus> action_status;
+        std::optional<double> criterion;
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
+    std::vector<Derivative> lower_derivatives;
+    std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+        for (const auto* columns : {&lower_derivatives, &derivatives})
+            for (const auto& column : *columns)
+                if (column.temperature_order == a && column.pressure_order == b && column.parameter == p && !column.value)
+                    return column.message;
+        return message;
+    }
 };
 
 class HelmholtzModel final {

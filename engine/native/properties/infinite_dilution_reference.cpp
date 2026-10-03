@@ -298,27 +298,6 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
 ) {
     // EqID: reference_single_insertion_taylor
     // Raw lower T/P/EOS partials reuse each resolved terminal state; admission stays below.
-    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0)
-        -> std::array<std::optional<double>, 3> {
-        if (trace.temperature_order == 0 && !trace.parameter_jets) return {};
-        const auto parameter = coordinate == 0 ? std::optional<std::size_t>{}
-            : std::optional<std::size_t>{coordinate - 2 - stoichiometry.size()};
-        const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-        const auto partial = [&](std::size_t a, std::size_t b) -> std::optional<double> {
-            try {
-                return reference_partial_from_state(model, temperature, trace.composition[rung],
-                    stoichiometry, a, b, parameter, trace.state[rung]).action;
-            } catch (const std::exception&) { return std::nullopt; }
-        };
-        std::array<std::optional<double>, 3> result{partial(parameter ? 0 : 1, 0)};
-        if (parameter) {
-            if (trace.temperature_order > 0) result[1] = partial(1, 0);
-        } else {
-            if (trace.temperature_order > 1) result[1] = partial(2, 0);
-            if (pressure_jets) result[2] = partial(1, 1);
-        }
-        return result;
-    };
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
     try {
@@ -365,37 +344,54 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             return result;
         }
         result.terminal_contraction = contractions.back();
-        const std::array<std::array<std::optional<double>, 3>, 3> slopes = {
-            temperature_slopes(0), temperature_slopes(1), temperature_slopes(2)};
-        // A slope is admitted when its scaled change over the last three ladder points meets the value's
-        // criterion: T|dD| (first), T P|dD| (mixed) and max(|theta|, 1)|dD| (parameter) at most 5e-5. The
-        // second slope is sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
-        const auto admit = [](const std::array<std::optional<double>, 3>& ladder, double scale, double tolerance,
-                              std::optional<double>* observed = nullptr) -> std::optional<double> {
-            if (!ladder[0] || !ladder[1] || !ladder[2] || !std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) return std::nullopt;
-            const double change = scale * std::max(std::abs(*ladder[2] - *ladder[1]), std::abs(*ladder[1] - *ladder[0]));
-            if (observed != nullptr) *observed = change;
-            return change <= tolerance ? ladder[2] : std::nullopt;
+        const auto admit = [&](std::size_t a, std::size_t b, std::optional<std::size_t> parameter,
+                               double scale, double tolerance, std::optional<double>* observed = nullptr) -> std::optional<double> {
+            auto& column = result.lower_derivatives.emplace_back();
+            column.temperature_order = a; column.pressure_order = b; column.parameter = parameter; column.criterion = tolerance;
+            for (std::size_t point = 0; point < 3; ++point) {
+                const auto rung = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
+                try {
+                    const auto partial = reference_partial_from_state(model, temperature, trace.composition[rung],
+                        stoichiometry, a, b, parameter, trace.state[rung]);
+                    column.ladder[point] = partial.action;
+                    if (!partial.action) {
+                        column.action_status = partial.status;
+                        column.message = "reference action status " + std::to_string(int(partial.status));
+                    }
+                } catch (const std::exception& error) { column.message = error.what(); }
+            }
+            const auto& ladder = column.ladder;
+            if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+            if (!std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) {
+                column.message = "nonfinite lower reference ladder"; return std::nullopt;
+            }
+            for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
+            const double change = std::max(column.scaled_changes[0], column.scaled_changes[1]);
+            if (observed) *observed = change;
+            if (change <= tolerance) column.value = ladder[2];
+            else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
+            return column.value;
         };
-        const auto order = [&](std::size_t k) { return std::array{slopes[0][k], slopes[1][k], slopes[2][k]}; };
         const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
-        result.terminal_contraction_temperature_derivative = admit(order(0), temperature, tolerance,
-            &result.observed_temperature_derivative_change);
-        result.terminal_contraction_temperature_second_derivative = admit(order(1), temperature * temperature,
-            policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
-            &result.observed_temperature_second_derivative_change);
-        result.terminal_contraction_temperature_pressure_derivative = admit(order(2), temperature * trace.pressure, tolerance);
+        if (trace.temperature_order > 0 || trace.parameter_jets) {
+            result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt, temperature, tolerance,
+                &result.observed_temperature_derivative_change);
+            if (trace.temperature_order > 1)
+                result.terminal_contraction_temperature_second_derivative = admit(2, 0, std::nullopt, temperature * temperature,
+                    policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
+                    &result.observed_temperature_second_derivative_change);
+            if (pressure_jets)
+                result.terminal_contraction_temperature_pressure_derivative = admit(1, 1, std::nullopt, temperature * trace.pressure, tolerance);
+        }
         const auto values = model.active_parameter_values();
-        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
-            const std::array jets{temperature_slopes(0, column + a), temperature_slopes(1, column + a), temperature_slopes(2, column + a)};
+        for (std::size_t a = 0; trace.parameter_jets && a < values.size(); ++a) {
             const double scale = std::max(std::abs(values[a]), 1.0);
-            result.terminal_contraction_parameter_derivative.push_back(admit({jets[0][0], jets[1][0], jets[2][0]}, scale, tolerance));
+            result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a, scale, tolerance));
             if (trace.temperature_order > 0) {
-                result.temperature_parameter_ladder.push_back({jets[0][1], jets[1][1], jets[2][1]});
                 result.observed_temperature_parameter_change.emplace_back();
-                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(
-                    result.temperature_parameter_ladder.back(), temperature * scale, tolerance,
+                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance,
                     &result.observed_temperature_parameter_change.back()));
+                result.temperature_parameter_ladder.push_back(result.lower_derivatives.back().ladder);
             }
         }
         if (reference.reference_pressure_pa.has_value()) {
