@@ -77,6 +77,11 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+Entries marked **inherited** preserve measurements and rationale from
+[the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31).
+Their historical approval assertions were not independently reverified in
+the #221 records reconciliation; they grant no new authority or qualification.
+
 - 2026-10-02, #221 post-sprint audit and enforcement restoration, measured
   at integrated main `a0adb1cd`: Core **917**, Contributions **1547**,
   Properties **4763**, Equilibrium **7050**, Parameter regression **2398**,
@@ -494,16 +499,66 @@ Budget changes must not silently change scientific scope.
   defects), dropping the reporting item (owner kept it). Other layers stay under
   their hard ceilings; no thermodynamic method or tolerance changes.
 
+- 2026-09-23, #142 EOS-parameter reference actions (**inherited**): the
+  record describes dC/dtheta from the existing dC/dT ladder E2 with one
+  active-value owner. It reports +46 runtime lines: Properties +26 and
+  Equilibrium +20, with 10 inside prior aggregate headroom. The measured
+  aggregate changed 18099 → 18145; hard ceilings changed Properties
+  4185 → 4211 and aggregate 18109 → 18145. The record describes the amendment
+  as owner-approved; that assertion is inherited.
+
+- 2026-09-23, #140 heat-capacity-sized order-2 admission (**inherited**):
+  the record describes a named policy entry within #138's reported +250
+  approval and reports +7 runtime lines, Core +5 and Properties +2.
+  Hard ceilings changed Properties 4183 → 4185 and aggregate 18102 → 18109.
+  The record describes owner direction; that assertion is inherited.
+
+- 2026-09-23, #138 reference calorics (**inherited**): the record describes
+  record-anchored, reaction-completed h/cp and the order-2 reference slope.
+  It reports +199 runtime lines, Properties +33 and Equilibrium +166;
+  hard ceilings changed Properties 4150 → 4183 and aggregate 17903 → 18102.
+  Its stated owner pre-approval of at most +250 is an inherited assertion.
+
 - 2026-09-23, Contributions hard ceiling 1500 → 1612, Properties 4145 → 4150 and
   aggregate hard ceiling 17760 → 17903 (#28). The owner pre-approved at most +250 runtime lines for an
   optional Gross–Vrabec dipole–dipole term (ADR 0011) and reserved quadrupole and
   cross terms for a new approval. The measured cost is +143 lines: Contributions
   +112 (Table 1 constants, the J-integral interpolation and the Padé term), Surface +19
   (explicit `polar` family and unit-checked `dipole_moment`/`dipole_count`
-  admission), Properties +5, Core +4, Bindings +4 (Python and ASL document
+  admission), Properties +5 (the **inherited** record identifies tape wiring),
+  Core +4, Bindings +4 (Python and ASL document
   transport) and Python −1. Each raised ceiling rises by exactly the measured polar count (+112,
   +5 and +143), so headroom that existed before this term, including the #84 use, is
   not consumed.
+
+- 2026-09-23, #84 thermal reference chain (**inherited**): the record
+  reports +58 Properties lines for the first-order temperature slope,
+  using the three-point E2 ladder, observed criterion and typed availability.
+  Properties hard ceiling changed 4100 → 4145; aggregate hard was unchanged.
+  Its stated owner pre-approval of at most +300 is an inherited assertion.
+
+- 2026-09-23, #105 tolerance audit (**inherited**): the record reports
+  that the batched third-contraction callable measured -2.4 % and was
+  not adopted, and that the audit deleted unused policy. Aggregate hard
+  ceiling changed 17790 → 17760.
+
+- 2026-09-23, #87/E4 (**inherited**): the record attributes +30 runtime
+  lines to the forward-error certificate and batched third-contraction
+  callable; aggregate hard ceiling changed 17760 → 17790. Its stated
+  owner approval is an inherited assertion.
+
+- 2026-09-23, #107–#109 integration (**inherited**): the record describes
+  integration of `idaes/main` and tape reuse, changing aggregate hard ceiling
+  17601 → 17760 without a layer-ceiling change. Its stated owner direction
+  is an inherited assertion.
+
+- 2026-09-22, #84 reference admission and transport (**inherited**):
+  the record describes shared charge-neutral reference and activity admission,
+  without an association change, and Properties hard ceiling 3470 → 3490.
+  It also records native neutral reaction references and explicit transport
+  with unchanged aggregate hard ceiling. Its stated owner-approved small
+  increases are inherited assertions; no other numeric transition is supplied
+  by these two comments.
 
 - 2026-09-22, aggregate hard ceiling 17600 → 17601 (#66). The latest merged
   main adds one Python physical line to the 17600-line accepted integration.
