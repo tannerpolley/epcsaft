@@ -308,14 +308,6 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             || !std::all_of(direction.active_parameters.begin(), direction.active_parameters.end(),
                             [](double v) { return std::isfinite(v); }))
             throw std::invalid_argument("solved-state action direction");
-        for (const auto* field : {&direction.reaction_log_constants, &direction.reaction_log_constant_temperature_slopes}) {
-            if ((!field->empty() && field->size() != problem.reactions.size())
-                || !std::all_of(field->begin(), field->end(), [](double v) { return std::isfinite(v); }))
-                throw std::invalid_argument("solved-state reaction log-constant direction or temperature slope");
-            if (!problem.standard_gibbs_j_per_mol.empty()
-                && std::any_of(field->begin(), field->end(), [](double v) { return v != 0.0; }))
-                throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
-        }
         if (!direction.reaction_coefficients.empty() &&
             direction.reaction_coefficients.size() != problem.reactions.size())
             throw std::invalid_argument("reaction coefficient direction shape");
@@ -333,10 +325,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     std::size_t parameter_directions = 0;
     for (const auto &d : request.directions) {
         bool parameter = false;
-        for (const auto *field :
-             {&d.active_parameters, &d.reaction_log_constants, &d.reaction_log_constant_temperature_slopes})
-            for (double v : *field)
-                parameter |= v != 0.0;
+        for (double v : d.active_parameters) parameter |= v != 0.0;
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
                 parameter |= v != 0.0;
@@ -880,7 +869,7 @@ static SolvedStateActionBatch evaluate_action(
     const std::size_t components = model.parameters().component_count();
     const std::size_t actives = model.active_parameters().size();
     const std::size_t source_offset = 2 + components + actives;
-    const std::size_t width = source_offset + 6 * problem.reactions.size();
+    const std::size_t width = source_offset + 4 * problem.reactions.size();
     const std::size_t order = request.directions.size();
     SolvedStateActionBatch batch;
     batch.diagnostics.equation_count = compiled.rows.size();
@@ -926,9 +915,8 @@ static SolvedStateActionBatch evaluate_action(
     scale[1] = std::max(center.prepared.pressure, 1.0);
     for (std::size_t i = 0; i < components; ++i) scale[2 + i] = std::max(std::abs(compiled.n_feed[i]), 1.0);
     for (std::size_t r = 0; r < problem.reactions.size(); ++r) {
-        scale[source_offset + problem.reactions.size() + r] = 1.0 / center.prepared.temperature;
-        scale[source_offset + 2 * problem.reactions.size() + 4 * r + 1] = center.prepared.temperature;
-        scale[source_offset + 2 * problem.reactions.size() + 4 * r + 3] = 1.0 / center.prepared.temperature;
+        scale[source_offset + 4 * r + 1] = center.prepared.temperature;
+        scale[source_offset + 4 * r + 3] = 1.0 / center.prepared.temperature;
     }
     std::vector<std::vector<double>> controls;
     std::vector<double> magnitude;
@@ -937,19 +925,12 @@ static SolvedStateActionBatch evaluate_action(
         control.insert(control.end(), direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end());
         control.insert(control.end(), direction.active_parameters.begin(), direction.active_parameters.end());
         control.resize(width, 0.0);
-        std::copy(direction.reaction_log_constants.begin(), direction.reaction_log_constants.end(),
-                  control.begin() + static_cast<std::ptrdiff_t>(2 + components + actives));
-        std::copy(direction.reaction_log_constant_temperature_slopes.begin(),
-                  direction.reaction_log_constant_temperature_slopes.end(),
-                  control.begin() + static_cast<std::ptrdiff_t>(source_offset + problem.reactions.size()));
         for (std::size_t r = 0; r < direction.reaction_coefficients.size(); ++r)
             std::copy(direction.reaction_coefficients[r].begin(), direction.reaction_coefficients[r].end(),
                       control.begin() +
-                          static_cast<std::ptrdiff_t>(source_offset + 2 * problem.reactions.size() + 4 * r));
+                          static_cast<std::ptrdiff_t>(source_offset + 4 * r));
         double largest = 0.0;
         for (std::size_t i = 0; i < width; ++i) largest = std::max(largest, std::abs(control[i]) / scale[i]);
-        for (const double slope : direction.reaction_log_constant_temperature_slopes)
-            largest = std::max(largest, std::abs(slope) * center.prepared.temperature);
         controls.push_back(std::move(control));
         magnitude.push_back(largest);
     }
@@ -1114,7 +1095,7 @@ static SolvedStateActionBatch evaluate_action(
         gate = shared->matrix_gate;
     }
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
-    const bool thermal =
+    const bool thermal = problem.temperature.free ||
         std::any_of(controls.begin(), controls.end(), [](const auto &c) { return c[0] != 0.0; });
     if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
         gate = SolvedStateActionStatus::MissingThermochemistry;

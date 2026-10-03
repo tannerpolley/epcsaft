@@ -142,9 +142,6 @@ std::vector<ReactionSpec> central_reference_reactions(
     if (!request.source_reference.has_value()) {
         throw std::invalid_argument("reference_unavailable: source reference declaration is missing");
     }
-    if (request.temperature.free) {
-        throw std::invalid_argument("reference_unavailable: free temperature is unsupported");
-    }
     if (!request.standard_gibbs_j_per_mol.empty()) {
         throw std::invalid_argument(
             "reference_unavailable: supplied standard Gibbs conflicts with source reference");
@@ -1267,7 +1264,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
         result.composition.push_back(std::move(values));
     }
     result.standard = standard_term(
-        *this, result.temperature, result.pressure, 2, problem.pressure.free);
+        *this, result.temperature, result.pressure, 2, problem.pressure.free, problem.temperature.free);
     return result;
 }
 
@@ -1658,14 +1655,13 @@ RowSeries CompiledSystem::row_series(
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = 2 + components + model->active_parameters().size();
     if (state.size() != order + 1 ||
-        (control.size() != width && control.size() != width + problem.reactions.size() &&
-         control.size() != width + 6 * problem.reactions.size()) ||
+        (control.size() != width && control.size() != width + 4 * problem.reactions.size()) ||
         order > 3)
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
     const bool pressure_jets = problem.pressure.free || control[1] != 0.0;
-    const bool temperature_jets = control[0] != 0.0;
+    const bool temperature_jets = problem.temperature.free || control[0] != 0.0;
     const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
@@ -1674,18 +1670,19 @@ RowSeries CompiledSystem::row_series(
         throw std::invalid_argument(
             "reference_unavailable: row series pressure/T/parameter order is unsupported");
     }
-    // The prepared term carries a free-pressure problem's pressure jets. Parameter jets enter the rows only via
+    // The prepared term carries the current free-T/P jets. Parameter jets enter the rows only via
     // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
     // exactly. If any slope is refused, each direction resolves its own, leaving sibling directions intact.
-    const bool reuse = !reference_diagnostics.empty() && !temperature_jets && (!pressure_jets || problem.pressure.free);
+    const bool reuse = !reference_diagnostics.empty() && control[0] == 0.0 && control[1] == 0.0;
     const auto parameter_cache_ready = [&] {
         return prepared.parameter_standard.has_value()
-            && !(order > 1 && pressure_jets && prepared.parameter_standard->pressure_parameter_derivative.empty());
+            && !(order > 1 && pressure_jets && prepared.parameter_standard->pressure_parameter_derivative.empty())
+            && !(order > 1 && temperature_jets && prepared.parameter_standard->temperature_parameter_derivative.empty());
     };
     if (reuse && parameter_jets && !parameter_cache_ready()) {
         try {
-            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, order,
-                pressure_jets, false, std::vector<double>(active_control.size(), 1.0));
+            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, 2,
+                pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0));
         } catch (const std::invalid_argument&) {}
     }
     const auto& standard = reference_diagnostics.empty()
@@ -1737,25 +1734,16 @@ RowSeries CompiledSystem::row_series(
         CppAD::Independent(q);
         for (const auto &reaction : problem.reactions) {
             const auto r = std::size_t(&reaction - problem.reactions.data());
-            AD L = control[width + r], LT = 0.0, LTT = 0.0;
-            if (control.size() == width + 6 * problem.reactions.size()) {
-                const auto nr = problem.reactions.size();
-                const double slope = control[width + nr + r];
-                L += slope * (q[0] - prepared.temperature);
-                LT += slope;
-                const auto start = width + 2 * nr + 4 * r;
-                const double aa = control[start], bb = control[start + 1], cc = control[start + 2],
-                             dd = control[start + 3];
-                if (aa != 0.0 || bb != 0.0 || cc != 0.0 || dd != 0.0) {
-                    if (!reaction.correlation && (bb != 0.0 || cc != 0.0 || dd != 0.0))
-                        throw std::invalid_argument("b/c/d action needs a reaction law");
-                    const ReactionLogPolynomial law{aa, bb, cc, dd,
-                        reaction.correlation ? reaction.correlation->reference_temperature : 1.0, 0, 0, {}};
-                    L += reaction_log_value(law, q[0]);
-                    LT += reaction_log_value(law, q[0], 1);
-                    LTT += reaction_log_value(law, q[0], 2);
-                }
-            }
+            const auto start = width + 4 * r;
+            const double aa = control[start], bb = control[start + 1], cc = control[start + 2],
+                         dd = control[start + 3];
+            if (!reaction.correlation && (bb != 0.0 || cc != 0.0 || dd != 0.0))
+                throw std::invalid_argument("b/c/d action needs a reaction law");
+            const ReactionLogPolynomial law{aa, bb, cc, dd,
+                reaction.correlation ? reaction.correlation->reference_temperature : 1.0, 0, 0, {}};
+            const AD L = reaction_log_value(law, q[0]);
+            const AD LT = reaction_log_value(law, q[0], 1);
+            const AD LTT = reaction_log_value(law, q[0], 2);
             functions.push_back(q[1] * L);
             functions.push_back(q[1] * LT);
             functions.push_back(q[1] * LTT);

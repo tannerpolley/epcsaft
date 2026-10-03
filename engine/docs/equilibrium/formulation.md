@@ -169,9 +169,10 @@ positive charge-neutral all-solute dilution path. An explicit source-basis enum
 selects common-molality or raw mole-fraction correlations; a nonempty source ID
 records provenance. EqID: `neutral_reaction_reference_transfer` converts each
 source at its declared fixed or system reference pressure, then the existing
-reaction/SVD owner compiles the density-basis target. At fixed temperature,
-system-pressure references follow each current nonlinear pressure; a fixed
-source pressure has zero derivatives with respect to system pressure.
+reaction/SVD owner compiles the density-basis target. References refresh at
+each current nonlinear temperature, and system-pressure references also
+follow each current pressure. A fixed source pressure retains thermal motion
+and has zero derivatives with respect to system pressure.
 The liquid selector chooses the dense branch when several stable roots exist;
 a unique stable root follows the density owner's unspecified-label semantics.
 Reference qualification must therefore establish the physical solvent state
@@ -188,11 +189,17 @@ mixed with feed or pressure, to order two (EqIDs:
 `standard_state_transfer_temperature_pressure_derivative`). Feed-only
 actions at fixed T/P retain order three. Declared-branch continuation along
 fixed T, fixed P and feed uses the same first-order chains for its tangent.
-Third-order actions involving pressure, temperature actions above order two,
-free temperature, raw lever derivatives and parameter actions above order one remain
-unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`;
-enthalpy first actions also move with pressure, heat-capacity actions only with feed at
-fixed pressure, and other caloric quantities remain unavailable. Ordinary unreferenced reactions
+Third-order actions involving pressure or temperature remain unavailable.
+Raw referenced lever requests retain their existing refusal. Referenced
+one-free-intensive pinned cells use current-point T/P row jets and
+A1/A2 with at most one parameter-bearing direction, including T/P–parameter
+terms. No external direction may drive its solved intensive; simultaneous free
+T/P still lacks the additional constraint for a regular square chart.
+Record-anchored Gibbs h/s/u, frozen c_p/c_v and Gibbs-conjugate volume use the
+shared caloric composition and its consumed reference columns. The retained
+prescribed-T/P evidence and subsequent free-intensive F6 qualification have
+separate source identities and domains.
+Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.
 
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be

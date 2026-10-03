@@ -605,19 +605,11 @@ std::vector<PredictionGradient> differentiate_group(
         directions[k].active_parameters.assign(active_width, 0.0);
         if (k < active_width) directions[k].active_parameters[k] = 1.0;
         else {
-            directions[k].reaction_log_constants.assign(problem.reactions.size(), 0.0);
-            directions[k].reaction_log_constant_temperature_slopes.assign(problem.reactions.size(), 0.0);
+            directions[k].reaction_coefficients.assign(problem.reactions.size(), {});
             const auto& target = reactions[k - active_width];
-            for (std::size_t j = 0; j < problem.reactions.size(); ++j) {
-                const auto& reaction = problem.reactions[j];
-                if (reaction.name != target.name) continue;
-                const double T = prediction.solved ? prediction.solved->temperature.front() : problem.temperature.value;
-                const double basis[] = {1.0, 1.0 / T,
-                    reaction.correlation ? std::log(T / reaction.correlation->reference_temperature) : 0.0, T};
-                directions[k].reaction_log_constants[j] = basis[static_cast<std::size_t>(target.coefficient)];
-                const double slope[] = {0.0, -1.0 / (T * T), 1.0 / T, 1.0};
-                directions[k].reaction_log_constant_temperature_slopes[j] = slope[static_cast<std::size_t>(target.coefficient)];
-            }
+            for (std::size_t j = 0; j < problem.reactions.size(); ++j)
+                if (problem.reactions[j].name == target.name)
+                    directions[k].reaction_coefficients[j][static_cast<std::size_t>(target.coefficient)] = 1.0;
         }
     }
     const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
@@ -682,7 +674,12 @@ std::vector<PredictionGradient> differentiate_group(
         for (std::size_t k = 0; k < width; ++k) {
             if (observation.kind == ObservationKind::LogEquilibriumConstant) {
                 for (std::size_t j = 0; k >= active_width && j < problem.reactions.size(); ++j)
-                    if (problem.reactions[j].name == observation.reaction) gradient.value[k] = directions[k].reaction_log_constants[j];
+                    if (problem.reactions[j].name == observation.reaction) {
+                        const auto& d = directions[k].reaction_coefficients[j];
+                        const auto& law = problem.reactions[j].correlation;
+                        gradient.value[k] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                            law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                    }
                 continue;
             }
             std::vector<double> action;

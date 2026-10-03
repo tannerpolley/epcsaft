@@ -3565,11 +3565,13 @@ std::vector<double> action_term_scale(const Fixture& fixture, const CompiledSyst
             if (part != 2) std::fill(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(), 0.0);
             if (part != 3) {
                 std::fill(d.active_parameters.begin(), d.active_parameters.end(), 0.0);
-                std::fill(d.reaction_log_constants.begin(), d.reaction_log_constants.end(), 0.0);
+                for (auto& coefficients : d.reaction_coefficients) coefficients.fill(0.0);
             }
             bool nonzero = d.temperature_k != 0.0 || d.pressure_pa != 0.0;
-            for (const auto* values : {&d.feed_amounts_mol, &d.active_parameters, &d.reaction_log_constants})
+            for (const auto* values : {&d.feed_amounts_mol, &d.active_parameters})
                 for (const auto value : *values) nonzero = nonzero || value != 0.0;
+            for (const auto& coefficients : d.reaction_coefficients)
+                for (double value : coefficients) nonzero |= value != 0.0;
             if (nonzero) { request.directions.push_back(d); self(self, j + 1); request.directions.pop_back(); }
         }
     };
@@ -4996,6 +4998,14 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-I-sys", "Reactive_caloric_I_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-sys/*,F4/I-sys/*,F5/I-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-sys"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-I-fix", "Reactive_caloric_I_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-fix/*,F4/I-fix/*,F5/I-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-fix"}, [] {reactive_caloric_checks::run(true,true);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-U", "Nonreacting_caloric_P4_reduction", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F3/U/*,F1/U/*,F5/U/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-U"}, reactive_caloric_checks::unreactive, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-sys", "Free_intensive_E_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-sys"}, [] {reactive_caloric_checks::boundary(false,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-fix", "Free_intensive_E_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-fix"}, [] {reactive_caloric_checks::boundary(false,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-sys", "Free_intensive_E_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-sys"}, [] {reactive_caloric_checks::boundary(false,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-fix", "Free_intensive_E_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-fix"}, [] {reactive_caloric_checks::boundary(false,false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-sys", "Free_intensive_N_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-sys"}, [] {reactive_caloric_checks::boundary(true,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-fix", "Free_intensive_N_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-fix"}, [] {reactive_caloric_checks::boundary(true,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "Free_intensive_N_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-sys"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "Free_intensive_N_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-fix"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
         {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},

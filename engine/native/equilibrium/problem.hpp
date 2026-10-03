@@ -481,8 +481,6 @@ struct SolvedStateActionDirection final {
     double pressure_pa = 0.0;
     std::vector<double> feed_amounts_mol;
     std::vector<double> active_parameters;
-    std::vector<double> reaction_log_constants;  // d(ln K)/dt by reaction; empty means zero
-    std::vector<double> reaction_log_constant_temperature_slopes;  // d(d ln K/dT)/dt, 1/K; empty means zero
     std::vector<std::array<double, 4>> reaction_coefficients; // increments of (a,b,c,d), evaluated at T(t)
 };
 

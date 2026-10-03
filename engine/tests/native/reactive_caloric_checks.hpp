@@ -2,6 +2,7 @@
 
 #include <map>
 #include <numeric>
+#include <chrono>
 
 // Issue #225 F1/F3/F4/F5. All oracles below are native value calculations;
 // none calls the solved-state derivative recorder to obtain perturbed values.
@@ -149,11 +150,11 @@ struct Local {
     PropertyActionDiagnostics diagnostics;
 };
 inline Local local(const HelmholtzModel& model,const CompiledSystem& compiled,double T,double P,
-                   const std::vector<double>& x,double anchor) {
+                   const std::vector<double>& x,double anchor,DensityBranch branch=DensityBranch::Liquid) {
     Local result;
-    const auto state=model.state_at_pressure(T,P,x,DensityBranch::Liquid,anchor);
+    const auto state=model.state_at_pressure(T,P,x,branch,anchor);
     result.rho=state.molar_density;
-    const auto raw=model.pressure_actions(T,P,x,DensityBranch::Liquid,
+    const auto raw=model.pressure_actions(T,P,x,branch,
         {PropertyObservable::MolarVolumeTemperatureDerivative,PropertyObservable::MolarVolumePressureDerivative},
         {{0,0,std::vector<double>(x.size(),0),{}}},anchor);
     for(const auto& item:raw.results) CHECK(item.status==PropertyActionStatus::Available&&item.value);
@@ -204,30 +205,42 @@ struct Sample {std::vector<double> values;Local phase;EquilibriumResult solved;}
 inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,const EquilibriumResult& solved,
                      const std::vector<Quantity>& q) {
     CHECK(solved.has_state());
-    const auto& x=solved.mole_fractions;
-    const double T=solved.temperature[0],P=solved.pressure[0],n=solved.amounts[0],rho=solved.molar_densities[0];
-    Sample sample;sample.solved=solved;sample.phase=local(model,compiled,T,P,x,rho);
-    const auto state=model.state(T,rho,x);
-    CHECK(state.pressure_density_derivative>0);
-    CHECK(std::abs(state.pressure-P)<=1e-3+1e-9*P);
-    CHECK(std::abs(sample.phase.rho-rho)<=1e-6+1e-10*rho);
+    const std::size_t components=model.parameters().component_count();
+    Sample sample;sample.solved=solved;
+    std::vector<Local> phases;
+    std::vector<State> states;
+    for(std::size_t phase=0;phase<compiled.problem.phases.size();++phase) {
+        const std::vector<double> x(solved.mole_fractions.begin()+phase*components,
+                                   solved.mole_fractions.begin()+(phase+1)*components);
+        const double T=solved.temperature[phase],P=solved.pressure[phase],rho=solved.molar_densities[phase];
+        const auto branch=compiled.problem.phases[phase].kind==PhaseKind::Vapor?DensityBranch::Vapor:DensityBranch::Liquid;
+        phases.push_back(local(model,compiled,T,P,x,rho,branch));
+        states.push_back(model.state(T,rho,x));
+        CHECK(states.back().pressure_density_derivative>0);
+        CHECK(std::abs(states.back().pressure-P)<=1e-3+1e-9*P);
+        CHECK(std::abs(phases.back().rho-rho)<=1e-6+1e-10*rho);
+    }
+    sample.phase=phases.front();
     CHECK(solved.residual_norm()<=compiled.problem.row_tolerance);
     for(const auto& item:q) {
-        const auto& o=item.observable;double value=0;
+        const auto& o=item.observable;const auto phase=o.phase;
+        const double T=solved.temperature[phase],P=solved.pressure[phase],n=solved.amounts[phase],rho=solved.molar_densities[phase];
+        const auto& state=states[phase];const auto& caloric=phases[phase];
+        const auto x=solved.mole_fractions.begin()+phase*components;double value=0;
         switch(o.kind) {
         case SolvedStateObservableKind::Temperature:value=T;break;
         case SolvedStateObservableKind::Pressure:value=P;break;
         case SolvedStateObservableKind::PhaseAmount:value=n;break;
         case SolvedStateObservableKind::PhaseVolume:value=n/rho;break;
         case SolvedStateObservableKind::PhaseMolarDensity:value=rho;break;
-        case SolvedStateObservableKind::PhasePackingFraction:value=solved.packing_fractions[0];break;
+        case SolvedStateObservableKind::PhasePackingFraction:value=solved.packing_fractions[phase];break;
         case SolvedStateObservableKind::PhasePressure:value=state.pressure;break;
         case SolvedStateObservableKind::PhaseMoleFraction:value=x[o.component];break;
         case SolvedStateObservableKind::PhaseComponentAmount:value=n*x[o.component];break;
         case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:value=require_component_property(state.residual_chemical_potential_over_rt[o.component]);break;
         case SolvedStateObservableKind::PhaseLogActivity:value=std::log(x[o.component]*rho)+require_component_property(state.residual_chemical_potential_over_rt[o.component]);break;
-        case SolvedStateObservableKind::PhaseGibbsMolarVolume:value=sample.phase.v;break;
-        case SolvedStateObservableKind::PhaseProperty:{auto k=std::size_t(o.property);value=k<5?sample.phase.ideal[k]:sample.phase.total[k-10];break;}
+        case SolvedStateObservableKind::PhaseGibbsMolarVolume:value=caloric.v;break;
+        case SolvedStateObservableKind::PhaseProperty:{auto k=std::size_t(o.property);value=k<5?caloric.ideal[k]:caloric.total[k-10];break;}
         }
         if(item.name=="H") value=n*sample.phase.total[0];
         if(item.name=="U_G") value=n*sample.phase.total[1];
@@ -246,7 +259,7 @@ inline std::string context(const Case& c,const EquilibriumResult& solved,const L
             recording_support::field("source_b_K",polynomial.b),recording_support::field("source_c",polynomial.c),
             recording_support::field("source_d_per_K",polynomial.d),recording_support::field("source_Tref_K",polynomial.reference_temperature),
             recording_support::field("source_Tmin_K",polynomial.temperature_min),recording_support::field("source_Tmax_K",polynomial.temperature_max),
-            recording_support::field("source_P_Pa",c.problem.reactions[0].reference->reference_pressure_pa.value_or(c.problem.pressure.value))});
+            recording_support::field("source_P_Pa",c.problem.reactions[0].reference->reference_pressure_pa.value_or(solved.pressure[0]))});
     }
     return recording_support::fields({recording_support::field("case",c.name),law,
         recording_support::field("record_cp_J_per_mol_K",c.ionic?std::vector<double>{33.59}:std::vector<double>{52.0,0.12}),
@@ -335,7 +348,7 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     for(std::size_t r=0;r<problem.reactions.size();++r) {
         auto& law=*problem.reactions[r].correlation;const auto& d=delta.reaction_coefficients[r];
         law.a+=d[0];law.b+=d[1];law.c+=d[2];law.d+=d[3];
-        CHECK(problem.temperature.value>=law.temperature_min&&problem.temperature.value<=law.temperature_max);
+        if(!problem.temperature.free) CHECK(problem.temperature.value>=law.temperature_min&&problem.temperature.value<=law.temperature_max);
     }
     HelmholtzModel model(p,c.active,c.records);
     const auto compiled=compile_problem(model,problem);
@@ -364,12 +377,13 @@ inline Difference difference(const Case& c,const std::vector<NamedDirection>& ds
         out.pressure_residual=std::max(out.pressure_residual,std::abs(sample.phase.diagnostics.pressure_residual));
         out.site_residual=std::max(out.site_residual,std::abs(sample.phase.diagnostics.association_residual));
         out.minimum_v=std::min(out.minimum_v,sample.phase.v);out.maximum_vp=std::max(out.maximum_vp,sample.phase.vp);
-        const auto precise=wide?wide->values(q,ds,factor,mask,sample):ionic->values(q,ds,factor,mask,sample);
-        out.precise_pressure_residual=std::max(out.precise_pressure_residual,ionic?ionic->pressure_residual():wide->pressure_residual());
-        out.precise_pressure_floor=std::max(out.precise_pressure_floor,ionic?ionic->pressure_limit():wide->pressure_limit());
+        const auto precise=wide?wide->values(q,ds,factor,mask,sample):ionic?ionic->values(q,ds,factor,mask,sample)
+            :std::vector<Wide>(sample.values.begin(),sample.values.end());
+        out.precise_pressure_residual=std::max(out.precise_pressure_residual,ionic?ionic->pressure_residual():wide?wide->pressure_residual():0.0);
+        out.precise_pressure_floor=std::max(out.precise_pressure_floor,ionic?ionic->pressure_limit():wide?wide->pressure_limit():0.0);
         for(std::size_t k=0;k<q.size();++k) {sum[k]+=sign*precise[k];out.rounding[k]+=double(CppAD::abs(precise[k]));}
     }
-    const double epsilon=double(CppAD::numeric_limits<Wide>::epsilon());
+    const double epsilon=wide||ionic?double(CppAD::numeric_limits<Wide>::epsilon()):std::numeric_limits<double>::epsilon();
     for(std::size_t k=0;k<q.size();++k) {out.value[k]=sum[k]/denominator;out.rounding[k]*=epsilon/double(denominator);}
     return out;
 }
@@ -400,7 +414,8 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
     const auto exact=actions.get(request);const auto diagnostics=actions.diagnostics;
     const auto sigma=scale(actions,ds,q.size());
     std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic;
-    if(c.ionic) ionic=std::make_unique<WideIonic>(c,center);else wide=std::make_unique<WideNeutral>(c);
+    const bool free_chart=c.problem.temperature.free||c.problem.pressure.free;
+    if(c.ionic) ionic=std::make_unique<WideIonic>(c,center);else if(!free_chart) wide=std::make_unique<WideNeutral>(c);
     auto coarse=difference(c,ds,1.0,q,center.solved,wide.get(),ionic.get());std::vector<bool> done(q.size(),false),pass(q.size(),false);
     for(std::size_t rung=0;rung<6;++rung) {
         const double factor=std::ldexp(1.0,-int(rung+1));const auto fine=difference(c,ds,factor,q,center.solved,wide.get(),ionic.get());
@@ -409,9 +424,9 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             const double target=q[i].atol+1e-6*std::max(std::abs(rich),sigma[i]);
             const bool resolved=refinement<=target/4;
             pass[i]=resolved&&std::isfinite(exact[i])&&std::abs(exact[i]-rich)<=target;
-            const std::string id="F1/"+c.name+"/A"+std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);
+            const std::string id=std::string(free_chart?"F6/":"F1/")+c.name+"/A"+std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);
             const auto row=recording_support::fields({inputs,literal_directions,recording_support::field("directions",label),
-                recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",113),recording_support::field("D_h",double(coarse.value[i])),
+                recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",free_chart?53:113),recording_support::field("D_h",double(coarse.value[i])),
                 recording_support::field("D_h2",double(fine.value[i])),recording_support::field("Richardson",rich),
                 recording_support::field("refinement",refinement),recording_support::field("sigma",sigma[i]),
                 recording_support::field("atol",q[i].atol),recording_support::field("target",target),
@@ -431,7 +446,7 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             if(!resolved&&rung<5) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
                 "Refinement","native-centered-rebuilt-values","Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
             else recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                "Relationship","native-centered-rebuilt-values","Issue 225 F1 values independent of action recorder",
+                "Relationship","native-centered-rebuilt-values","Issue 225 rebuilt values independent of action recorder",
                 "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",pass[i],"reactive-caloric",id.c_str());
             done[i]=resolved;
         }
@@ -958,6 +973,150 @@ inline void isothermal_row_columns() {
         }
     }
 }
+inline Case boundary_input(bool nonidentical,bool free_temperature,bool fixed) {
+    auto c=input(false,fixed);
+    c.name=std::string(nonidentical?"N":"E")+"-bubble-"+(free_temperature?"T":"P")+(fixed?"-fix":"-sys");
+    if(nonidentical) {
+        c.parameters=properties_support::neutral_ternary();
+        c.active={{ParameterFamily::DispersionEnergyOverK,{1}}};
+        c.records.component_intervals.resize(3);
+        c.records.component_intervals[2]=c.records.component_intervals[0];
+        c.problem.feed.values={2,0.2,0.2};
+        c.problem.source_reference->solute_molality_ratios={0,1,1};
+        c.problem.reactions[0].name="A=2B";
+        c.problem.reactions[0].stoichiometry={-1,2,0};
+        c.problem.reactions[0].correlation=ReactionLogPolynomial{std::log(0.3),0,0,0,300,250,350,"analytic-source"};
+    }
+    c.problem.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
+    c.problem.temperature=free_temperature?FreeValue::variable(nonidentical?300:270):FreeValue::fixed(nonidentical?260:265);
+    c.problem.pressure=free_temperature?FreeValue::fixed(nonidentical?2e6:1.952823e6):FreeValue::variable(2e6);
+    return c;
+}
+
+inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,const std::vector<Quantity>& q,
+                          const std::vector<NamedDirection>& basis,const std::string& inputs) {
+    const HelmholtzModel pure(properties_support::ethane());
+    const double P=center.solved.pressure[0];
+    const auto states=[&](double T) {
+        return std::array<State,2>{pure.state_at_pressure(T,P,{1},DensityBranch::Liquid),
+                                   pure.state_at_pressure(T,P,{1},DensityBranch::Vapor)};
+    };
+    const auto fugacity=[&](double T) {
+        const auto s=states(T);
+        CHECK(s[0].molar_density>s[1].molar_density);
+        return require_component_property(s[0].log_fugacity_coefficient->at(0))
+            -require_component_property(s[1].log_fugacity_coefficient->at(0));
+    };
+    double lo=250,hi=280,flo=fugacity(lo),fhi=fugacity(hi);
+    CHECK(flo*fhi<0);
+    for(std::size_t k=0;k<80&&hi-lo>1e-9;++k) {
+        const double mid=(lo+hi)/2,f=fugacity(mid);
+        if(f*flo>0) {lo=mid;flo=f;} else {hi=mid;fhi=f;}
+    }
+    const double T=(lo+hi)/2;const auto s=states(T);
+    CHECK(compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],center.solved.temperature[0],T,
+        recording_support::fields({inputs,recording_support::field("pure_fugacity_residual",fugacity(T)),
+            recording_support::field("pure_T_bracket",std::vector<double>{lo,hi})}),1e-8,"native-pure-fugacity-bisection"));
+    if(c.problem.temperature.free) {
+        const double clapeyron=T*(1/s[1].molar_density-1/s[0].molar_density)
+            /(s[1].residual_enthalpy-s[0].residual_enthalpy);
+        auto quantity=q[index(q,"T")];quantity.name="dT_dP";quantity.unit="K/Pa";quantity.atol/=1e5;
+        CHECK(compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"T")]/1e5,
+            clapeyron,inputs,1e-8,"pure-Properties-Clapeyron"));
+        const auto sigma=scale(actions,{basis[1]},q.size());
+        const auto k=index(q,"T");const double tangent=actions.get({basis[1].value})[k];
+        const bool good=std::abs(tangent)<=q[k].atol+64*std::numeric_limits<double>::epsilon()*sigma[k];
+        recording_support::compare_custom(("F6/"+c.name+"/pure-feed-zero").c_str(),"DT_feed","K",tangent,0,
+            inputs,"Relationship","identical-species","identical ethane saturation is independent of feed",
+            "abs(DT)<=atol+64*epsilon*sigma",good,"reactive-caloric");
+        CHECK(good);
+    } else {
+        const double clapeyron=(s[1].residual_enthalpy-s[0].residual_enthalpy)
+            /(T*(1/s[1].molar_density-1/s[0].molar_density));
+        auto quantity=q[index(q,"P")];quantity.name="dP_dT";quantity.unit="Pa/K";
+        CHECK(compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"P")],
+            clapeyron,inputs,1e-8,"pure-Properties-Clapeyron"));
+    }
+}
+
+inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
+    const auto c=boundary_input(nonidentical,free_temperature,fixed);
+    HelmholtzModel model(c.parameters,c.active,c.records);
+    const auto solve=[&](const EquilibriumProblem& problem,const char* label) {
+        core::Capture capture;const auto start=std::chrono::steady_clock::now();
+        const auto compiled=compile_problem(model,problem);const auto solved=solve_compiled(compiled);
+        const double seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        const auto references=std::count_if(capture.trace().spans.begin(),capture.trace().spans.end(),
+            [](const auto& span){return std::string(span.name)=="reaction_references";});
+        recording_support::observe(("F6/"+c.name+"/"+label+"-work").c_str(),"wall_time","s",seconds,std::nullopt,
+            recording_support::fields({recording_support::field("iterations",solved.iterations),
+                recording_support::field("evaluations",solved.evaluations),recording_support::field("reference_evaluations",references),
+                recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_message",solved.message),
+                recording_support::field("residual",solved.residual_norm()),recording_support::field("T",solved.temperature),
+                recording_support::field("P",solved.pressure),recording_support::field("roots",solved.molar_densities),
+                recording_support::field("seed_T",problem.temperature.seed_or(problem.temperature.value)),
+                recording_support::field("seed_P",problem.pressure.seed_or(problem.pressure.value))}),
+            "Observation","native-one-driver","Equivalent work; no performance ceiling","reactive-caloric");
+        if(!solved.success||!solved.has_state()) throw std::runtime_error(c.name+" "+label+": "+solved.message);
+        return solved;
+    };
+    const auto solved=solve(c.problem,"free-intensive");const auto compiled=compile_problem(model,c.problem);
+    CHECK(solved.topology_event==TopologyEvent::None);
+    CHECK(solved.molar_densities[0]>solved.molar_densities[1]);
+    auto q=quantities(c.parameters.component_count());
+    auto vapor=q;vapor.resize(vapor.size()-4);
+    vapor.erase(vapor.begin(),vapor.begin()+2); // T/P are common controls/outputs.
+    for(auto& quantity:vapor) {quantity.name+="-V";quantity.observable.phase=1;}
+    q.insert(q.end()-4,vapor.begin(),vapor.end());
+    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    Actions actions(compiled,solved,q);
+    auto basis=directions(c);
+    basis.erase(basis.begin()+(free_temperature?0:1));
+    std::vector<std::vector<NamedDirection>> combinations;
+    for(const auto& a:basis) combinations.push_back({a});
+    for(std::size_t i=0;i<basis.size();++i) for(std::size_t j=i;j<basis.size();++j)
+        if(!(basis[i].parameter&&basis[j].parameter)) combinations.push_back({basis[i],basis[j]});
+    const auto combine=[&](std::size_t a,std::size_t b,const char* name) {
+        auto d=basis[a];d.name=name;d.value=add(d.value,basis[b].value);d.step=std::min(d.step,basis[b].step);
+        d.chart.insert(d.chart.end(),basis[b].chart.begin(),basis[b].chart.end());d.parameter|=basis[b].parameter;return d;
+    };
+    const auto controls=combine(0,1,free_temperature?"P+feed":"T+feed");
+    const auto parameters=combine(2,3,"epsilon+coefficient");
+    combinations.push_back({controls});combinations.push_back({parameters});
+    combinations.push_back({controls,controls});combinations.push_back({controls,parameters});
+    auto mixed=combine(0,2,free_temperature?"P+epsilon":"T+epsilon");
+    combinations.push_back({controls,mixed});
+    bool good=true;const auto exact_values=actions.get({});
+    for(std::size_t i=0;i<q.size();++i) good=compare("F6/"+c.name+"/value/"+q[i].name,q[i],exact_values[i],
+        center.values[i],inputs,1e-10,"native-independent-values")&&good;
+    for(const auto& ds:combinations) good=ladder(c,actions,ds,q,center,inputs)&&good;
+    CHECK(good);
+    const auto intensive=index(q,free_temperature?"T":"P");
+    if(nonidentical) {
+        for(const auto& ds:std::vector<std::vector<Direction>>{{basis[1].value},{basis[1].value,basis[2].value},
+                                                              {basis[0].value,basis[2].value}}) {
+            const auto response=actions.get(ds)[intensive];
+            recording_support::compare_custom(("F6/"+c.name+"/nonzero-intensive-"+std::to_string(ds.size())
+                +(ds.front().feed_amounts_mol[0]!=0?"-feed":"-control")).c_str(),"solved-intensive-response",
+                free_temperature?"K":"Pa",response,0,inputs,"Relationship","nonidentical-witness",
+                "N exposes actual feed and mixed parameter motion","finite(response) && response!=0",
+                std::isfinite(response)&&response!=0,"reactive-caloric");
+            CHECK(std::isfinite(response)&&response!=0);
+        }
+    } else pure_boundary(c,actions,center,q,basis,inputs);
+    auto driven=c.problem;driven.temperature=FreeValue::fixed(solved.temperature[0]);
+    driven.pressure=FreeValue::fixed(solved.pressure[0]);driven.phases.resize(1);
+    const auto fixed_center=solve(driven,"fixed-intensive");
+    const auto fixed_compiled=compile_problem(model,driven);
+    const auto liquid_quantities=quantities(c.parameters.component_count());
+    const auto fixed_values=values(model,fixed_compiled,fixed_center,liquid_quantities);
+    for(const auto& name:std::vector<std::string>{"rho","x-0","total-h"}) {
+        const auto k=index(liquid_quantities,name);
+        CHECK(compare("F6/"+c.name+"/fixed-center/"+name,liquid_quantities[k],center.values[index(q,name)],
+            fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart"));
+    }
+}
+
 inline void cheap() {
     dependency_checks();
     volume_partial_values();

@@ -47,7 +47,8 @@ including a phase with nonzero vapor amount. When both endpoint problems are at
 the same fixed pressure and the feed enters at that pressure, the result is the
 isobaric heat of addition; for free-pressure endpoints it is an enthalpy
 increment, whose calorimetric interpretation depends on the caller's energy
-balance. Referenced free-temperature endpoints are unavailable.
+balance. Referenced free-temperature endpoints consume the same native A1
+calorics at each solved temperature, with fixed feed-state actions.
 
 An unavailable prediction is typed, never a zero residual: a vanished or
 coalesced phase is `topology_event` before any solve status; a rejected or
@@ -152,8 +153,9 @@ ratios may differ. The derivative is EqID:
 Source/reference declarations are preserved in every trial. Scalar constants
 are rewritten as exp(ln K); correlations keep their native stored coefficients.
 Affinity targets, supplied Gibbs values, dependent reaction sets, thermochemistry-
-fixed unreferenced constants and referenced free-temperature requests cannot be
-fitted. No coefficient Hessians or heat-capacity coefficient actions are claimed.
+fixed unreferenced constants cannot be fitted. Coefficient motions are evaluated
+by the native law at T(t), including the solved-temperature chain and thermal
+products. No outer coefficient Hessian or apparent-Cp fitting is claimed here.
 
 ## Prediction Jacobians and fitting (R2, R3)
 

@@ -1015,12 +1015,10 @@ record actual work: the batch first requiring the factorization reports one,
 subsequent reuse zero. Nothing survives the call. The original request's direction
 list still defines one mixed A1–A3 action, not independent directions.
 
-Reaction controls may supply a constant d(ln K)/dt, a local
-`reaction_log_constant_temperature_slopes` increment, or explicit affine
-`reaction_coefficients` increments of (a,b,c,d). The native source recorder
-evaluates the coefficient law at T(t), including all consumed thermal product
-terms. A local temperature-slope increment defines a linear local source law;
-it does not replace the nonlinear b/T or logarithmic c coefficient law.
+Reaction controls supply affine `reaction_coefficients` increments of (a,b,c,d).
+A scalar ln K uses its a increment. The native source recorder evaluates the
+coefficient law at T(t), including all consumed thermal product terms; no
+pre-evaluated reaction-log or local temperature-slope direction is retained.
 Chemical rows use the minimum-norm stoichiometric image, EqID:
 `reaction_constant_coordinate_derivative`. Caloric standards use the supplied
 record anchors and the same record-less-species inverse as EqID:
@@ -1031,9 +1029,13 @@ Referenced driven T/P caloric composition uses the anchored Gibbs derivative
 columns through order four, including T/P order through three with one EOS
 coordinate. Values and A1/A2 cover h, s, u_G, frozen c_p/c_v,G and v_G;
 A2 permits a parameter/coefficient increment in at most one direction. Feed-only
-A3 retains constant standards and frozen slopes at driven T/P. Free-intensive
-combinations and apparent-Cp fitting have separate #225 build slices; this
-bounded composition does not qualify them by implication.
+A3 retains constant standards and frozen slopes at driven T/P. Free-intensive A1/A2 uses the same composition with its solved T/P coefficients.
+The prepared standard refreshes at each current T and system-reference P,
+including second row derivatives and requested T/P–parameter columns. The
+existing point-local parameter cache contains both mixed columns consumed by
+its free-intensive chart; driven intensive directions rebuild their selected
+jet. A solved intensive cannot also have an external control. Free-intensive
+F6 qualification and apparent-Cp fitting remain separate #225 evidence gates.
 
 For frozen c_v,G, Properties supplies the mechanical raw v_T and v_P from the
 same pressure-temperature/pressure-volume jets used by its c_p calculation.
@@ -1176,9 +1178,11 @@ System-reference u_G and frozen c_v,G use the same anchored Gibbs volume,
 EqID: `gibbs_conjugate_molar_volume`. Fixed-source system-pressure terms are
 zero and recover mechanical u/c_v. Independently valid state, residual and
 caloric outputs survive a refused Gibbs-volume chart or another missing
-column. Referenced free-temperature cells, the broadened free-intensive mixed
-combinations and apparent-Cp fitting remain separate #225 build slices, not
-qualified by this driven-T/P composition.
+column. Referenced one-free-intensive pinned cells use current-point standards
+and the same bounded A1/A2 chain, retaining solved-intensive motion even if a
+first tangent is zero. The simultaneous-free chart remains unsupported for
+its missing independent constraint. F6 and apparent-Cp fitting qualification
+are not established by the retained driven-T/P evidence.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit
@@ -1242,12 +1246,11 @@ Properties pressure chart. Every phase not pinned at zero contributes amount
 times total enthalpy. The row forms a singleton state group, rebuilds at each
 trial, and uses Difference for negative exothermic values; LogRatio retains
 the existing positive-argument admission. Admission checks the material balance and identical ordered reaction
-and source-reference declarations. Referenced free-temperature endpoints are
-unavailable. Failures retain the `initial:`, `final:` or `feed:` state name
+and source-reference declarations. Referenced free-temperature endpoints use
+the shared native first caloric actions at each solved temperature. Failures retain the `initial:`, `final:` or `feed:` state name
 with the owning solve, density, thermochemistry or action diagnostic.
 Affinity targets, supplied Gibbs vectors, dependent reaction sets, constants
-fixed by supplied thermochemistry and referenced free-temperature requests are
-rejected by reaction name before fitting.
+fixed by supplied thermochemistry are rejected by reaction name before fitting.
 
 Keep admission's model and compiled state groups for the initial evaluation.
 Reuse them only when the bounded affine map reproduces every active EOS value
