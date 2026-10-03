@@ -304,7 +304,8 @@ void register_equilibrium(py::module_& module) {
         .value("PhaseResidualChemicalPotentialOverRt",
                SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt)
         .value("PhaseProperty", SolvedStateObservableKind::PhaseProperty)
-        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity);
+        .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity)
+        .value("PhaseGibbsMolarVolume", SolvedStateObservableKind::PhaseGibbsMolarVolume);
     py::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(py::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), py::arg("kind"), py::arg("phase") = 0, py::arg("component") = 0,
             py::arg("property") = PropertyObservable::IdealEnthalpy)
@@ -313,12 +314,20 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("component", &SolvedStateObservable::component)
         .def_readonly("property", &SolvedStateObservable::property);
     py::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
-        .def(py::init<double, double, std::vector<double>, std::vector<double>>(), py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
-            py::arg("active_parameters"))
+        .def(py::init([](double t, double p, std::vector<double> feed, std::vector<double> theta,
+                         std::vector<std::array<double, 4>> coefficients) {
+                 SolvedStateActionDirection result{t, p, std::move(feed), std::move(theta)};
+                 result.reaction_coefficients = std::move(coefficients);
+                 return result;
+             }),
+             py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
+             py::arg("active_parameters"),
+             py::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{})
         .def_readonly("temperature_k", &SolvedStateActionDirection::temperature_k)
         .def_readonly("pressure_pa", &SolvedStateActionDirection::pressure_pa)
         .def_readonly("feed_amounts_mol", &SolvedStateActionDirection::feed_amounts_mol)
-        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters);
+        .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters)
+        .def_readonly("reaction_coefficients", &SolvedStateActionDirection::reaction_coefficients);
     py::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
         .def(py::init<std::vector<SolvedStateObservable>, std::vector<SolvedStateActionDirection>>(), py::arg("observables"), py::arg("directions"))
         .def_readonly("observables", &SolvedStateActionRequest::observables)

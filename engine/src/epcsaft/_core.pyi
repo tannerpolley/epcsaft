@@ -721,6 +721,7 @@ class SolvedStateObservableKind:
     PhaseResidualChemicalPotentialOverRt: SolvedStateObservableKind
     PhaseProperty: SolvedStateObservableKind
     PhaseLogActivity: SolvedStateObservableKind
+    PhaseGibbsMolarVolume: SolvedStateObservableKind
 
 class SolvedStateObservable:
     kind: SolvedStateObservableKind
@@ -735,8 +736,9 @@ class SolvedStateActionDirection:
     pressure_pa: float
     feed_amounts_mol: list[float]
     active_parameters: list[float]
+    reaction_coefficients: list[list[float]]
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
-                 active_parameters: Sequence[float]) -> None: ...
+                 active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...) -> None: ...
 
 class SolvedStateActionRequest:
     observables: list[SolvedStateObservable]

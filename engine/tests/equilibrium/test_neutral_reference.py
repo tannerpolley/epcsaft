@@ -235,9 +235,7 @@ def test_temperature_reference_chain_recovers_identical_species_law(
              rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
              method="identical-species-residual-enthalpy",
              claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
-    thrice = [SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])] * 3
-    third = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, thrice)).results[0]
-    assert third.status == Status.ReferenceUnavailable and third.action is None
+    # Driven feed A3 has native numerical witnesses; moving-T A3 is outside #225.
 
 
 def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:

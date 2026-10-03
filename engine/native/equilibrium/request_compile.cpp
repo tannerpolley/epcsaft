@@ -134,16 +134,10 @@ bool has_reaction_reference(const EquilibriumProblem& problem) {
 }
 
 std::vector<ReactionSpec> central_reference_reactions(
-    const HelmholtzModel& model,
-    const EquilibriumProblem& request,
-    double temperature,
-    double pressure,
-    std::vector<NeutralReferenceReactionDiagnostic>& diagnostics,
-    bool pressure_jets,
-    const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr,
-    std::size_t temperature_order = 0,
-    bool parameter_jets = false
-) {
+    const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
+    std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, bool pressure_jets,
+    const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure = nullptr,
+    std::size_t temperature_order = 0, bool parameter_jets = false, std::size_t reference_order = 0) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
         throw std::invalid_argument("reference_unavailable: source reference declaration is missing");
@@ -188,8 +182,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     if (fixed_pressure != nullptr && !fixed_pressure->empty() && fixed_pressure->front().solvent_density > 0.0)
         solvent_anchor = fixed_pressure->front().solvent_density;
     const auto reference_results = reaction_references(
-        model, temperature, pressure, *request.source_reference,
-        stoichiometries, references, pressure_jets, solvent_anchor, temperature_order, parameter_jets);
+        model, temperature, pressure, *request.source_reference, stoichiometries, references, pressure_jets,
+        solvent_anchor, temperature_order, parameter_jets, reference_order);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -287,7 +281,9 @@ StandardTerm standard_term(
         if (problem.pressure.free || pressure_jets || temperature_jets || parameter_jets) {
             reactions = central_reference_reactions(
                 *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
-                &compiled.reference_diagnostics, thermal, parameter_jets);
+                &compiled.reference_diagnostics,
+                thermal, parameter_jets,
+                parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0);
             gibbs = standard_state(temperature, components, reactions, {});
         }
         StandardTerm result;
@@ -302,13 +298,27 @@ StandardTerm standard_term(
         // owner as s. A referenced row has s_r = -ln K_rho, so its slope is -(source slope + slope
         // of C); an unadmitted slope of C refuses the direction.
         const auto species_slope = [&](std::vector<double> values, const auto& slope_of, const std::string& name,
-                                       std::size_t source_order) {
+                                       std::size_t source_order, std::size_t a = 0, std::size_t b = 0,
+                                       std::optional<std::size_t> parameter = std::nullopt) {
+            if (source_order) a = source_order;
             for (const auto& diagnostic : diagnostics) {
                 const std::size_t row = diagnostic.reaction_index;
                 const std::optional<double> slope = slope_of(diagnostic);
-                if (!slope) throw std::invalid_argument("reference_unavailable: reaction "
-                    + reaction_name(problem.reactions[row], row) + " " + name
-                    + " is unavailable (not admitted or not evaluated)");
+                if (!slope) {
+                    std::string cause = diagnostic.message;
+                    for (const auto& column : diagnostic.derivatives)
+                        if (column.temperature_order == a && column.pressure_order == b && column.parameter == parameter)
+                            cause = column.message;
+                    if (cause.empty() && parameter && a == 1 && b == 0
+                        && *parameter < diagnostic.observed_temperature_parameter_change.size()
+                        && diagnostic.observed_temperature_parameter_change[*parameter])
+                        cause = "scaled terminal change " + std::to_string(*diagnostic.observed_temperature_parameter_change[*parameter])
+                            + " exceeds " + std::to_string(policy::REFERENCE_CONVERGENCE_TOLERANCE.value);
+                    if (cause.empty()) cause = "requested lower reference column unavailable from the thermal/EOS trace";
+                    throw std::invalid_argument("reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
+                        + " C_" + std::to_string(a) + std::to_string(b)
+                        + (parameter ? " coordinate " + std::to_string(*parameter) : "") + " (" + name + "): " + cause);
+                }
                 const auto& source = problem.reactions[row].correlation;
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
                 values[row] = -*slope - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
@@ -332,21 +342,48 @@ StandardTerm standard_term(
             return d.terminal_contraction_temperature_second_derivative; }, "second temperature derivative", 2);
         // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a
         // (EqID: standard_state_transfer_parameter_derivative).
-        if (parameter_jets) result.parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+        if (parameter_jets) {
+            result.parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+            if (order > 1 && temperature_jets)
+                result.temperature_parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+            if (order > 1 && pressure_jets)
+                result.pressure_parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+        }
         for (std::size_t a = 0; parameter_jets && a < active_control.size(); ++a) {
             if (active_control[a] == 0.0) continue;
             result.parameter_derivative[a] = species_slope(zero, [a](const Diagnostic& d) {
                 return a < d.terminal_contraction_parameter_derivative.size()
-                    ? d.terminal_contraction_parameter_derivative[a] : std::nullopt; }, "parameter derivative", 0);
+                    ? d.terminal_contraction_parameter_derivative[a] : std::nullopt; }, "parameter derivative", 0, 0, 0, a);
+            if (order > 1) {
+                if (temperature_jets) result.temperature_parameter_derivative[a] = species_slope(
+                    zero,
+                    [a](const Diagnostic &d) {
+                        return a < d.terminal_contraction_temperature_parameter_derivative.size()
+                                   ? d.terminal_contraction_temperature_parameter_derivative[a]
+                                   : std::nullopt;
+                    },
+                    "T parameter derivative", 0, 1, 0, a);
+                if (pressure_jets)
+                    result.pressure_parameter_derivative[a] = species_slope(
+                        zero,
+                        [a](const Diagnostic &d) -> std::optional<double> {
+                            for (const auto &column : d.derivatives)
+                                if (column.temperature_order == 0 && column.pressure_order == 1 &&
+                                    column.parameter == a)
+                                    return column.value;
+                            return std::nullopt;
+                        },
+                        "P parameter derivative", 0, 0, 1, a);
+            }
         }
         // EqIDs: neutral_reaction_reference_pressure_jet, standard_state_transfer_temperature_pressure_derivative.
         if (pressure_jets) {
             result.pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_pressure_derivative; }, "pressure derivative", 0);
+                return d.terminal_contraction_pressure_derivative; }, "pressure derivative", 0, 0, 1);
             result.pressure_second_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_pressure_second_derivative; }, "second pressure derivative", 0);
+                return d.terminal_contraction_pressure_second_derivative; }, "second pressure derivative", 0, 0, 2);
             if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_temperature_pressure_derivative; }, "temperature-pressure derivative", 0);
+                return d.terminal_contraction_temperature_pressure_derivative; }, "temperature-pressure derivative", 0, 1, 1);
         }
         return result;
     }
@@ -576,8 +613,14 @@ CppAD::ADFun<double> record_geometry(
                         * delta_P * delta_P;
                 if (!standard.temperature_pressure_derivative.empty())
                     value += standard.temperature_pressure_derivative[species] * delta_T * delta_P;
-                for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a)
-                    value += standard.parameter_derivative[a][species] * (theta[a] - theta_center[a]);
+                for (std::size_t a = 0; a < standard.parameter_derivative.size(); ++a) {
+                    AD slope = standard.parameter_derivative[a][species];
+                    if (!standard.temperature_parameter_derivative.empty())
+                        slope += standard.temperature_parameter_derivative[a][species] * delta_T;
+                    if (!standard.pressure_parameter_derivative.empty())
+                        slope += standard.pressure_parameter_derivative[a][species] * delta_P;
+                    value += slope * (theta[a] - theta_center[a]);
+                }
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
                     value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
                 if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
@@ -640,160 +683,212 @@ void admit_pins(CompiledSystem& compiled) {
 // Supplied ideal-gas records fix h and cp of their species; record-less species solve
 // N_D x_D = Delta_r x - N_S x_S on the density basis for x = h, cp (min-norm), where only
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
-ReferenceCalorics reference_calorics(
-    const CompiledSystem& compiled, double temperature, double pressure, bool heat_capacity, bool pressure_slope, bool parameter_slopes
-) {
+ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
+                                     bool heat_capacity, bool pressure_slope, bool parameter_slopes,
+                                     std::size_t derivative_order) {
+    derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
+    using AD = CppAD::AD<double>;
     ReferenceCalorics result;
-    const auto refuse = [&](SolvedStateActionStatus status, const std::string& message) {
+    const auto &model = *compiled.model;
+    const auto &problem = compiled.problem;
+    const auto &record = model.thermochemistry();
+    const std::size_t components = model.parameters().component_count(), rows = problem.reactions.size();
+    const auto refuse = [&](SolvedStateActionStatus status, const std::string &message) {
         result.status = status;
         result.message = message;
-        result.enthalpy.clear();
-        result.heat_capacity.clear();
-        result.enthalpy_pressure.clear();
         return result;
     };
-    const auto& problem = compiled.problem;
-    const auto& record = compiled.model->thermochemistry();
-    const auto& parameters = compiled.model->parameters();
-    const std::size_t components = parameters.component_count();
-    if (!record.has_value())
-        return refuse(SolvedStateActionStatus::MissingThermochemistry, "reference calorics need a thermochemistry record");
-    const double gas = GAS_CONSTANT_J_PER_MOL_K, rt = gas * temperature;
-    std::vector<double> enthalpy(components, 0.0), capacity(components, 0.0), enthalpy_p(components, 0.0);
+    if (!record)
+        return refuse(SolvedStateActionStatus::MissingThermochemistry,
+                      "reference calorics need record anchors");
     std::vector<std::size_t> derived;
+    std::vector<AD> T = {temperature}, output;
+    std::vector<std::optional<IdealCorrelation>> selected(components);
     for (std::size_t i = 0; i < components; ++i) {
         const auto& intervals = record->component_intervals[i];
-        if (intervals.empty()) { derived.push_back(i); continue; }
-        // ponytail: an owned join endpoint is treated as interior; cp there is the selected branch's value.
+        if (intervals.empty()) {
+            derived.push_back(i);
+            continue;
+        }
         const auto found = std::find_if(intervals.begin(), intervals.end(),
             [&](const IdealInterval& interval) { return ideal_interval_contains(interval, temperature); });
         if (found == intervals.end())
-            return refuse(SolvedStateActionStatus::OutsideInterval,
-                          "thermochemistry of species " + std::to_string(i) + " excludes the temperature");
-        const auto value = evaluate_ideal_correlation(found->correlation, temperature, record->standard_pressure);
-        enthalpy[i] = value.h - rt;
-        capacity[i] = value.cp - gas;
+            return refuse(SolvedStateActionStatus::OutsideInterval, "record excludes temperature");
+        result.thermal_boundary |= temperature == found->lower || temperature == found->upper;
+        selected[i] = found->correlation;
     }
-    std::vector<ReactionSpec> resolved;
-    std::vector<NeutralReferenceReactionDiagnostic> diagnostics;
-    try {
-        resolved = central_reference_reactions(*compiled.model, problem, temperature, pressure, diagnostics,
-            pressure_slope, &compiled.reference_diagnostics, heat_capacity ? 2 : 1, parameter_slopes);
-    } catch (const std::invalid_argument& error) {
-        return refuse(SolvedStateActionStatus::ReferenceUnavailable, error.what());
-    }
-    // Delta_r h_rho = RT^2 (ln K_rho)' and Delta_r cp_rho = 2RT (ln K_rho)' + RT^2 (ln K_rho)''; a
-    // system-pressure reference adds P d(Delta_r h_rho)/dP = P RT^2 d2C/dTdP (ln K_src is pressure
-    // free), solved in J/mol like h and divided by P afterwards.
-    const std::size_t rows = problem.reactions.size();
-    Eigen::VectorXd delta_h(static_cast<Eigen::Index>(rows)), delta_cp(static_cast<Eigen::Index>(rows));
-    Eigen::VectorXd delta_hp = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(rows));
-    for (std::size_t row = 0; row < rows; ++row) {
-        const auto& reaction = problem.reactions[row];
-        std::array<double, 2> slope{};
-        if (reaction.reference.has_value()) {
-            const auto diagnostic = std::find_if(diagnostics.begin(), diagnostics.end(),
-                [row](const auto& item) { return item.reaction_index == row; });
-            const auto& first = diagnostic->terminal_contraction_temperature_derivative;
-            const auto& second = diagnostic->terminal_contraction_temperature_second_derivative;
-            const auto& mixed = diagnostic->terminal_contraction_temperature_pressure_derivative;
-            if (!first || (heat_capacity && !second) || (pressure_slope && !mixed))
-                return refuse(SolvedStateActionStatus::ReferenceUnavailable, "reference_unavailable: reaction "
-                    + reaction_name(reaction, row) + " temperature derivative "
-                    + (!first ? "d/dT" : pressure_slope && !mixed ? "d2/dTdP" : "d2/dT2") + " is unavailable");
-            if (pressure_slope) delta_hp(static_cast<Eigen::Index>(row)) = pressure * rt * temperature * *mixed;
-            slope = {*first, second.value_or(0.0)};
-            if (reaction.correlation.has_value()) {
-                const auto source = evaluate_reaction_properties(*reaction.correlation, temperature);
-                slope[0] += source.derivative;
-                slope[1] += source.second_derivative;
-            }
-        } else {
-            // t = -RT ln K, so (ln K)' = -(t' - t/T)/(RT) and (ln K)'' = -(t'' + 2(ln K)' R)/(RT).
-            const auto targets = reaction_target_series(temperature, {reaction}, 2);
-            slope[0] = -(targets[1][0] - targets[0][0] / temperature) / rt;
-            slope[1] = -(targets[2][0] + 2.0 * gas * slope[0]) / rt;
+    // One exact correlation tape supplies record g_rho and reaction source g through the consumed order.
+    CppAD::Independent(T);
+    const AD rt = GAS_CONSTANT_J_PER_MOL_K * T[0];
+    for (const auto &correlation : selected) {
+        AD g = 0.0;
+        if (correlation) {
+            const auto value = evaluate_ideal_correlation(*correlation, T[0], record->standard_pressure);
+            g = value.h - T[0] * value.s + rt * CppAD::log(rt / record->standard_pressure);
         }
-        delta_h(static_cast<Eigen::Index>(row)) = rt * temperature * slope[0];
-        delta_cp(static_cast<Eigen::Index>(row)) = 2.0 * rt * slope[0] + rt * temperature * slope[1];
+        output.push_back(g);
     }
-    Eigen::MatrixXd derived_matrix(static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(derived.size()));
-    Eigen::VectorXd derived_charge(static_cast<Eigen::Index>(derived.size()));
+    for (const auto &reaction : problem.reactions) {
+        AD g = 0.0;
+        if (reaction.affinity_j_per_mol)
+            g = *reaction.affinity_j_per_mol;
+        else {
+            AD L = reaction.equilibrium_constant ? std::log(*reaction.equilibrium_constant) : 0.0;
+            if (reaction.correlation) {
+                const auto &law = *reaction.correlation;
+                (void)evaluate_reaction_properties(law, temperature);
+                L = reaction_log_value(law, T[0]);
+            }
+            if (reaction.reference &&
+                reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+                L += reaction_reference_log_scale(model, *problem.source_reference, reaction.stoichiometry);
+            g = -rt * L;
+        }
+        output.push_back(g);
+    }
+    CppAD::ADFun<double> sources(T, output);
+    std::vector<std::vector<double>> thermal(derivative_order + 1);
+    double factorial = 1.0;
+    for (std::size_t a = 0; a <= derivative_order; ++a) {
+        thermal[a] = sources.Forward(a, std::vector<double>{a == 0 ? temperature : a == 1 ? 1.0 : 0.0});
+        if (a)
+            factorial *= double(a);
+        for (auto &value : thermal[a])
+            value *= factorial;
+    }
+    Eigen::MatrixXd matrix(rows, derived.size());
+    Eigen::VectorXd charge(derived.size());
     for (std::size_t j = 0; j < derived.size(); ++j) {
-        derived_charge(static_cast<Eigen::Index>(j)) = parameters.charge_number[derived[j]];
-        for (std::size_t row = 0; row < rows; ++row)
-            derived_matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(j))
-                = problem.reactions[row].stoichiometry[derived[j]];
+        charge(j) = model.parameters().charge_number[derived[j]];
+        for (std::size_t r = 0; r < rows; ++r)
+            matrix(r, j) = problem.reactions[r].stoichiometry[derived[j]];
     }
     Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> decomposition;
-    if (!derived.empty()) decomposition.compute(derived_matrix);
-    const auto nullity = derived.empty() ? Eigen::Index(0)
-        : static_cast<Eigen::Index>(derived.size()) - decomposition.rank();
-    if (nullity > 1 || (nullity == 1 && (derived_charge.norm() == 0.0
-            || (derived_matrix * derived_charge).norm()
-                > std::sqrt(std::numeric_limits<double>::epsilon()) * derived_charge.norm())))
+    if (!derived.empty())
+        decomposition.compute(matrix);
+    const auto nullity =
+        derived.empty() ? Eigen::Index(0) : Eigen::Index(derived.size()) - decomposition.rank();
+    if (nullity > 1 ||
+        (nullity == 1 &&
+         (charge.norm() == 0.0 ||
+          (matrix * charge).norm() > std::sqrt(std::numeric_limits<double>::epsilon()) * charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
-                      "reference_unavailable: calorics of record-less species are undetermined beyond the charge gauge");
-    std::vector<Eigen::VectorXd> deltas = {delta_h, delta_cp, delta_hp};
-    std::vector<std::vector<double>*> columns = {&enthalpy, &capacity, &enthalpy_p};
-    if (parameter_slopes) {
-        result.enthalpy_parameter.resize(compiled.model->active_parameters().size());
-        result.enthalpy_reaction.resize(rows);
-        for (auto* family : {&result.enthalpy_parameter, &result.enthalpy_reaction})
-            for (std::size_t a = 0; a < family->size(); ++a) {
-                auto& column = (*family)[a];
-                column.values.assign(components, 0.0);
-                Eigen::VectorXd delta = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(rows));
-                for (std::size_t row = 0; row < rows; ++row) {
-                    if (family == &result.enthalpy_reaction) { if (row == a) delta(row) = rt * temperature; continue; }
-                    if (!problem.reactions[row].reference) continue;
-                    const auto diagnostic = std::find_if(diagnostics.begin(), diagnostics.end(),
-                        [row](const auto& item) { return item.reaction_index == row; });
-                    const auto& mixed = diagnostic->terminal_contraction_temperature_parameter_derivative;
-                    if (a < mixed.size() && mixed[a]) delta(row) = rt * temperature * *mixed[a];
-                    else {
-                        column.status = SolvedStateActionStatus::ReferenceUnavailable;
-                        column.message = "reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
-                            + " parameter " + std::to_string(a) + " d2/dTdtheta is unavailable";
+                      "record-less calorics undetermined beyond charge gauge");
+    result.reaction_map.assign(rows, std::vector<double>(components, 0.0));
+    for (std::size_t r = 0; r < rows; ++r) {
+        Eigen::VectorXd unit = Eigen::VectorXd::Zero(rows);
+        unit(r) = 1.0;
+        if (!derived.empty()) {
+            const Eigen::VectorXd image = decomposition.solve(unit);
+            for (std::size_t j = 0; j < derived.size(); ++j)
+                result.reaction_map[r][derived[j]] = image(j);
+        }
+    }
+    result.reaction_defect.assign(rows, std::vector<double>(rows, 0.0));
+    for (std::size_t r = 0; r < rows; ++r)
+        for (std::size_t s = 0; s < rows; ++s) {
+            result.reaction_defect[r][s] = r == s ? 1.0 : 0.0;
+            for (std::size_t i = 0; i < components; ++i)
+                result.reaction_defect[r][s] -= problem.reactions[r].stoichiometry[i] * result.reaction_map[s][i];
+        }
+    std::vector<std::vector<double>> nu;
+    std::vector<ReactionReference> references;
+    std::vector<std::size_t> reference_rows;
+    for (std::size_t r = 0; r < rows; ++r)
+        if (problem.reactions[r].reference) {
+            nu.push_back(problem.reactions[r].stoichiometry);
+            references.push_back(*problem.reactions[r].reference);
+            reference_rows.push_back(r);
+        }
+    const auto diagnostics =
+        references.empty()
+            ? std::vector<NeutralReferenceReactionDiagnostic>{}
+            : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
+                                  pressure_slope, std::nullopt, std::min(derivative_order, std::size_t(2)),
+                                  parameter_slopes, derivative_order);
+    const auto partial = [](const NeutralReferenceReactionDiagnostic &d, std::size_t a, std::size_t b,
+                            std::optional<std::size_t> p) -> std::optional<double> {
+        if (p && a + b == 0)
+            return d.terminal_contraction_parameter_derivative[*p];
+        if (p && a == 1 && b == 0)
+            return d.terminal_contraction_temperature_parameter_derivative[*p];
+        if (!p && a + b == 0)
+            return d.terminal_contraction;
+        if (!p && a == 1 && b == 0)
+            return d.terminal_contraction_temperature_derivative;
+        if (!p && a == 2 && b == 0)
+            return d.terminal_contraction_temperature_second_derivative;
+        if (!p && a == 0 && b == 1)
+            return d.terminal_contraction_pressure_derivative;
+        if (!p && a == 0 && b == 2)
+            return d.terminal_contraction_pressure_second_derivative;
+        if (!p && a == 1 && b == 1)
+            return d.terminal_contraction_temperature_pressure_derivative;
+        for (const auto &column : d.derivatives)
+            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p)
+                return column.value;
+        return std::nullopt;
+    };
+    for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
+        for (std::size_t a = 0; a + c <= derivative_order; ++a)
+            for (std::size_t b = 0; a + b + c <= derivative_order; ++b) {
+                if (b && !pressure_slope)
+                    continue;
+                for (std::size_t p = 0; p < (c ? model.active_parameters().size() : 1); ++p) {
+                    ReferenceCalorics::Derivative entry{
+                        a, b, c ? std::optional<std::size_t>(p) : std::nullopt, {}};
+                    auto &column = entry.column;
+                    column.values.assign(components, 0.0);
+                    Eigen::VectorXd right(rows), scale(rows);
+                    for (std::size_t i = 0; i < components; ++i)
+                        if (!b && !c)
+                            column.values[i] = thermal[a][i];
+                    for (std::size_t r = 0; r < rows; ++r)
+                        right(r) = !b && !c ? thermal[a][components + r] : 0.0;
+                    for (std::size_t r = 0; r < diagnostics.size(); ++r) {
+                        const auto upper = partial(diagnostics[r], a, b, entry.parameter);
+                        const auto lower = a ? partial(diagnostics[r], a - 1, b, entry.parameter)
+                                             : std::optional<double>(0.0);
+                        if (!upper || !lower) {
+                            column.status = SolvedStateActionStatus::ReferenceUnavailable;
+                            const auto missing_a = !upper ? a : a - 1;
+                            column.message = "reference_unavailable: reaction " +
+                                reaction_name(problem.reactions[reference_rows[r]], reference_rows[r]) +
+                                " C_" + std::to_string(missing_a) + std::to_string(b) +
+                                (c ? " parameter " + std::to_string(p) : "") + ": " + diagnostics[r].message;
+                            for (const auto &d : diagnostics[r].derivatives)
+                                if (d.temperature_order == missing_a && d.pressure_order == b && d.parameter == entry.parameter)
+                                    column.message += d.message;
+                        } else
+                            right(reference_rows[r]) -=
+                                GAS_CONSTANT_J_PER_MOL_K * (temperature * *upper + double(a) * *lower);
                     }
+                    scale = right.cwiseAbs();
+                    for (std::size_t r = 0; r < rows; ++r)
+                        for (std::size_t i = 0; i < components; ++i)
+                            if (selected[i]) {
+                                const double term = problem.reactions[r].stoichiometry[i] * column.values[i];
+                                right(r) -= term;
+                                scale(r) += std::abs(term);
+                            }
+                    if (column.status == SolvedStateActionStatus::Available) {
+                        const Eigen::VectorXd solution =
+                            derived.empty() ? Eigen::VectorXd() : Eigen::VectorXd(decomposition.solve(right));
+                        const Eigen::VectorXd residual =
+                            derived.empty() ? right : Eigen::VectorXd(matrix * solution - right);
+                        for (Eigen::Index r = 0; r < residual.size(); ++r)
+                            if (!(std::abs(residual(r)) <= std::sqrt(std::numeric_limits<double>::epsilon()) *
+                                                               std::max(1.0, scale(r)))) {
+                                column.status = SolvedStateActionStatus::ReferenceUnavailable;
+                                column.message = "supplied records inconsistent with reaction " +
+                                                 reaction_name(problem.reactions[r], r);
+                            }
+                        for (std::size_t j = 0; j < derived.size(); ++j)
+                            column.values[derived[j]] = solution(j);
+                    }
+                    result.gibbs.push_back(std::move(entry));
                 }
-                columns.push_back(&column.values); deltas.push_back(delta);
             }
-    }
-    for (std::size_t c = 0; c < columns.size(); ++c) {
-        auto* values = columns[c];
-        auto* column = c < 3 ? nullptr : c < 3 + result.enthalpy_parameter.size()
-            ? &result.enthalpy_parameter[c - 3] : &result.enthalpy_reaction[c - 3 - result.enthalpy_parameter.size()];
-        if (column && column->status != SolvedStateActionStatus::Available) continue;
-        if ((values == &capacity && !heat_capacity) || (values == &enthalpy_p && !pressure_slope)) continue;
-        const auto& delta = deltas[c];
-        Eigen::VectorXd right = delta, scale = delta.cwiseAbs();
-        for (std::size_t row = 0; row < rows; ++row)
-            for (std::size_t i = 0; i < components; ++i) {
-                if (record->component_intervals[i].empty()) continue;
-                const double term = problem.reactions[row].stoichiometry[i] * (*values)[i];
-                right(static_cast<Eigen::Index>(row)) -= term;
-                scale(static_cast<Eigen::Index>(row)) += std::abs(term);
-            }
-        const Eigen::VectorXd solution = derived.empty() ? Eigen::VectorXd() : Eigen::VectorXd(decomposition.solve(right));
-        const Eigen::VectorXd residual = derived.empty() ? right : Eigen::VectorXd(derived_matrix * solution - right);
-        for (Eigen::Index row = 0; row < residual.size(); ++row)
-            if (!(std::abs(residual(row)) <= std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(row))))
-            {
-                const auto message = "reference_unavailable: supplied thermochemistry is inconsistent with reaction "
-                    + reaction_name(problem.reactions[static_cast<std::size_t>(row)], static_cast<std::size_t>(row));
-                if (!column) return refuse(SolvedStateActionStatus::ReferenceUnavailable, message);
-                column->status = SolvedStateActionStatus::ReferenceUnavailable;
-                column->message = message + " caloric column " + std::to_string(c - 3);
-            }
-        for (std::size_t j = 0; j < derived.size(); ++j) (*values)[derived[j]] = solution(static_cast<Eigen::Index>(j));
-    }
-    // Back to the ideal-gas pressure basis consumed by the Total definitions.
-    for (std::size_t i = 0; i < components; ++i) {
-        result.enthalpy.push_back(enthalpy[i] + rt);
-        if (heat_capacity) result.heat_capacity.push_back(capacity[i] + gas);
-        if (pressure_slope) result.enthalpy_pressure.push_back(enthalpy_p[i] / pressure);
-    }
     return result;
 }
 
@@ -1573,7 +1668,10 @@ RowSeries CompiledSystem::row_series(
     const std::size_t n = prepared.point.size();
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = 2 + components + model->active_parameters().size();
-    if (state.size() != order + 1 || (control.size() != width && control.size() != width + problem.reactions.size()) || order > 3)
+    if (state.size() != order + 1 ||
+        (control.size() != width && control.size() != width + problem.reactions.size() &&
+         control.size() != width + 6 * problem.reactions.size()) ||
+        order > 3)
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
@@ -1582,8 +1680,8 @@ RowSeries CompiledSystem::row_series(
     const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
-    if (!reference_diagnostics.empty()
-        && ((parameter_jets && order > 1) || (order > 2 && (pressure_jets || temperature_jets)))) {
+    if (!reference_diagnostics.empty() &&
+        (order > 2 && (parameter_jets || pressure_jets || temperature_jets))) {
         throw std::invalid_argument(
             "reference_unavailable: row series pressure/T/parameter order is unsupported");
     }
@@ -1591,7 +1689,11 @@ RowSeries CompiledSystem::row_series(
     // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
     // exactly. If any slope is refused, each direction resolves its own, leaving sibling directions intact.
     const bool reuse = !reference_diagnostics.empty() && !temperature_jets && (!pressure_jets || problem.pressure.free);
-    if (reuse && parameter_jets && !prepared.parameter_standard) {
+    const auto parameter_cache_ready = [&] {
+        return prepared.parameter_standard.has_value()
+            && !(order > 1 && pressure_jets && prepared.parameter_standard->pressure_parameter_derivative.empty());
+    };
+    if (reuse && parameter_jets && !parameter_cache_ready()) {
         try {
             prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, order,
                 pressure_jets, false, std::vector<double>(active_control.size(), 1.0));
@@ -1599,7 +1701,7 @@ RowSeries CompiledSystem::row_series(
     }
     const auto& standard = reference_diagnostics.empty()
         ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
-        : !reuse || (parameter_jets && !prepared.parameter_standard)
+        : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
@@ -1640,13 +1742,52 @@ RowSeries CompiledSystem::row_series(
             series.packing.push_back(begin[static_cast<std::ptrdiff_t>(width + 1)]);
         }
     }
-    if (order > 0 && control.size() > width) {
-        std::vector<double> targets(control.begin() + static_cast<std::ptrdiff_t>(width), control.end());
-        if (std::any_of(targets.begin(), targets.end(), [](double v) { return v != 0.0; })) {
-            for (auto& value : targets) value = -value;
-            const auto slope = species_standard_slopes(prepared.temperature, components, problem.reactions, targets);
+    if (order > 0 && control.size() > width && !problem.reactions.empty()) {
+        using AD = CppAD::AD<double>;
+        std::vector<AD> q = {prepared.temperature, 0.0}, functions;
+        CppAD::Independent(q);
+        for (const auto &reaction : problem.reactions) {
+            const auto r = std::size_t(&reaction - problem.reactions.data());
+            AD L = control[width + r], LT = 0.0, LTT = 0.0;
+            if (control.size() == width + 6 * problem.reactions.size()) {
+                const auto nr = problem.reactions.size();
+                const double slope = control[width + nr + r];
+                L += slope * (q[0] - prepared.temperature);
+                LT += slope;
+                const auto start = width + 2 * nr + 4 * r;
+                const double aa = control[start], bb = control[start + 1], cc = control[start + 2],
+                             dd = control[start + 3];
+                if (aa != 0.0 || bb != 0.0 || cc != 0.0 || dd != 0.0) {
+                    if (!reaction.correlation && (bb != 0.0 || cc != 0.0 || dd != 0.0))
+                        throw std::invalid_argument("b/c/d action needs a reaction law");
+                    const ReactionLogPolynomial law{aa, bb, cc, dd,
+                        reaction.correlation ? reaction.correlation->reference_temperature : 1.0, 0, 0, {}};
+                    L += reaction_log_value(law, q[0]);
+                    LT += reaction_log_value(law, q[0], 1);
+                    LTT += reaction_log_value(law, q[0], 2);
+                }
+            }
+            functions.push_back(q[1] * L);
+            functions.push_back(q[1] * LT);
+            functions.push_back(q[1] * LTT);
+        }
+        CppAD::ADFun<double> source(q, functions);
+        for (auto &family : result.reaction_shift)
+            family.assign(problem.reactions.size(), std::vector<double>(order + 1, 0.0));
+        for (std::size_t k = 0; k <= order; ++k) {
+            const auto values =
+                source.Forward(k, std::vector<double>{result.temperature[k], k == 1 ? 1.0 : 0.0});
+            std::vector<double> targets(problem.reactions.size());
+            for (std::size_t r = 0; r < targets.size(); ++r) {
+                for (std::size_t j = 0; j < 3; ++j)
+                    result.reaction_shift[j][r][k] = values[3 * r + j];
+                targets[r] = -values[3 * r];
+            }
+            const auto species =
+                species_standard_slopes(prepared.temperature, components, problem.reactions, targets);
             for (std::size_t row = 0; row < rows.size(); ++row)
-                if (rows[row].kind == RowKind::Chemical) result.rows[1][row] += slope[rows[row].index];
+                if (rows[row].kind == RowKind::Chemical)
+                    result.rows[k][row] += species[rows[row].index];
         }
     }
     // Residual gradient coefficients: the Hessian action of each coefficient plus the model's

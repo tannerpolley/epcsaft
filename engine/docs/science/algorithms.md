@@ -1015,18 +1015,41 @@ record actual work: the batch first requiring the factorization reports one,
 subsequent reuse zero. Nothing survives the call. The original request's direction
 list still defines one mixed A1–A3 action, not independent directions.
 
-A first-action direction may also supply one constant d(ln K)/dt per declared
-reaction (empty means zero). The chemical-row series adds its minimum-norm
-species image through the same standard-state owner, EqID:
-`reaction_constant_coordinate_derivative`; residual-energy controls keep their
-original width. A direction may also supply d(d ln K/dT)/dt in
-`reaction_log_constant_temperature_slopes` (1/K; empty means zero). At fixed T,
-these slopes contribute to referenced enthalpy actions through the same
-minimum-norm species owner; they do not alter the chemical-row derivative.
-Supplied standard Gibbs vectors fix K and reject nonzero reaction directions.
-Nonzero reaction directions, including slope-only directions, refuse actions above
-order one while retaining admitted central values. Reaction Hessians and
-heat-capacity coefficient actions are not qualified.
+Reaction controls may supply a constant d(ln K)/dt, a local
+`reaction_log_constant_temperature_slopes` increment, or explicit affine
+`reaction_coefficients` increments of (a,b,c,d). The native source recorder
+evaluates the coefficient law at T(t), including all consumed thermal product
+terms. A local temperature-slope increment defines a linear local source law;
+it does not replace the nonlinear b/T or logarithmic c coefficient law.
+Chemical rows use the minimum-norm stoichiometric image, EqID:
+`reaction_constant_coordinate_derivative`. Caloric standards use the supplied
+record anchors and the same record-less-species inverse as EqID:
+`reference_species_calorics`. Supplied point Gibbs vectors cannot carry a
+changing source correlation.
+
+Referenced driven T/P caloric composition uses the anchored Gibbs derivative
+columns through order four, including T/P order through three with one EOS
+coordinate. Values and A1/A2 cover h, s, u_G, frozen c_p/c_v,G and v_G;
+A2 permits a parameter/coefficient increment in at most one direction. Feed-only
+A3 retains constant standards and frozen slopes at driven T/P. Free-intensive
+combinations and apparent-Cp fitting have separate #225 build slices; this
+bounded composition does not qualify them by implication.
+
+For frozen c_v,G, Properties supplies the mechanical raw v_T and v_P from the
+same pressure-temperature/pressure-volume jets used by its c_p calculation.
+Equilibrium adds anchored g_TP/g_PP at fixed composition, forms the local
+quotient in EqID: `gibbs_conjugate_molar_volume`, then follows the solved
+composition path. The re-equilibrated total-volume derivative cannot enter
+that quotient. Preserve mechanical volume and Gibbs-conjugate volume as
+separate outputs. The stable Gibbs-volume chart requires finite positive v_G
+and finite negative v_G,P, in addition to the EOS/site gates; independent h/s/u
+and volume quantities retain their own meaning outside that chart.
+
+Actions use a dimensionless path variable and declared physical increments.
+They retain the observable unit. Raw T/P or fitting partials divide by every
+increment; Taylor factorial conversion is separate and applied once. The
+[retained numerical notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
+owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
 
@@ -1038,10 +1061,16 @@ central pressure slope. Insert the reaction amount direction only after that
 closure, at fixed volume. Degree seven supplies third-order reference terms;
 degree nine supplies fourth-order terms. Polarization moves only temperature,
 source pressure and EOS coordinates; it never polarizes the ionic insertion.
-The existing lower-slope calculation and admission are retained. Requested
-higher columns report both consecutive scaled ladder changes and their own
-unavailability cause. These Properties calculations do not extend Equilibrium
-caloric/action availability; that composition is a separate #225 slice.
+The same single-insertion owner supplies raw C_T, C_TT, C_theta,
+C_Ttheta and C_TP at the three literal terminal compositions, reusing each
+resolved liquid State. Each requested column retains independent availability.
+The existing lower-slope admission remains unchanged: T times each C_T change,
+max(|theta|,1) times each C_theta change, T max(|theta|,1) times each C_Ttheta
+change, and T P_source times each C_TP change must be at most 5e-5;
+R T^2 times each C_TT change must be at most 0.01 J/(mol K).
+Both consecutive terminal changes are checked. Requested higher columns report both consecutive scaled ladder changes and their own
+unavailability cause. Equilibrium consumes only the admitted columns for the
+record-anchored completion above; it does not differentiate the reference again.
 
 
 Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
@@ -1112,54 +1141,39 @@ returned diagnostics at the solved pressure. Fixed-source-pressure references
 carry zero system-pressure derivatives; their compile-time values are reused at
 every point of the compiled problem, since model, temperature, declaration and
 source pressure are fixed there.
-The implemented slice admits fixed T/P central solves and feed actions, and
-square pinned free-pressure cells. Pressure/feed actions are supported through
-order two; fixed-T/P feed-only order three remains available. A requested
-temperature direction rebuilds every reference trace with E2 at its last three
-points and uses EqID: `standard_state_transfer_temperature_derivative`: the
-slope passes the value criterion in RT units, and its target slope
-$s_r'=-d\ln K_{\rho,r}/dT$ follows the value's minimum-norm owner. Temperature
-and mixed T/P actions are therefore available at order one; a refused slope
-leaves the value and sibling directions intact. An order-two temperature
-action adds $s_r''$ (EqID: `standard_state_transfer_temperature_second_derivative`)
-and, when pressure also moves, $\partial^2 s_r/\partial T\partial P$ (EqID:
-`standard_state_transfer_temperature_pressure_derivative`) to the row jet, so
-temperature actions alone or mixed with feed or pressure are available at order two. A requested active EOS-parameter
-direction uses the same three E2 evaluations and EqID:
-`standard_state_transfer_parameter_derivative`: each requested slope passes the
-value criterion at the parameter scale max(|theta|, 1), and
-$\partial s_r/\partial\theta=-dC_r/d\theta$ follows the same owner, so parameter
-and mixed T/P/parameter actions are available at order one. Continuation
-tangents use the same order-one chains. Free temperature, raw lever derivatives, temperature actions above order two,
-parameter actions above order one, heat-capacity parameter or reaction-coefficient
-actions, and third-order actions involving pressure remain unavailable.
-Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`:
-supplied records anchor their species, record-less species are completed from
-the EOS-basis reaction enthalpies and heat capacities, and only a charge gauge
-may remain. A heat-capacity value or enthalpy temperature action requests the
-second slope (EqID: `standard_state_transfer_temperature_second_derivative`),
-admitted when its terminal change is at most 0.01 J/(mol K) in heat-capacity
-units; its refusal leaves enthalpy values and feed actions available. Enthalpy values
-and first feed, temperature and pressure actions (a driven pressure, or the
-solved pressure of a free-pressure cell, through the mixed slope's
-$\partial\Delta_rh_\rho/\partial P$) and heat-capacity values and first feed
-actions at fixed pressure are available; heat-capacity temperature or pressure
-actions, caloric orders above one, u, s and c_v remain unavailable, while independently
-valid residual properties remain usable.
+Driven T/P state and record-anchored caloric composition follow ALG-ACTIONS:
+A1/A2 retain every consumed T/P/feed term and one parameter-bearing direction,
+including source coefficients evaluated at the path temperature. Driven feed-only
+A3 keeps the standards and frozen partials constant while composing the full
+amount/composition products. The defining rows retain their minimum-norm
+representative; the caloric Gibbs completion retains the supplied record anchors.
+The two representatives preserve the same affinities but their T/P derivatives
+are not interchangeable (EqID: `reference_species_calorics`).
 
-For a referenced enthalpy first action at fixed temperature, request only the
-consumed EOS columns of $C_{T\theta}$ (EqID:
-`standard_state_transfer_temperature_parameter_derivative`) and reaction
-coefficient columns of $\phi'_k(T)$ (EqID:
-`reaction_constant_coordinate_derivative`). The EOS mixed derivative uses
-balanced polarization of repeated-direction E3 actions and is admitted when
-$T\max(|\theta|,1)$ times the observed change over the last three reference
-ladder points is at most $5\times10^{-5}$. A missing column refuses only an
-action that consumes it and names its reaction and parameter; central values
-and sibling directions remain available. The reference enthalpy action uses
-the fixed-T endpoint's own solved temperature and reaction-row mapping. It does
-not admit heat-capacity parameter actions or referenced free-temperature
-actions.
+The existing value and lower-slope admission remains: first thermal and EOS
+slopes use the value criterion at their physical scales; the second thermal
+slope uses 0.01 J/(mol K); the mixed T/EOS slope retains its declared
+$T\max(|\theta|,1)$ scaled criterion. Higher consumed columns use ALG-REFERENCE's
+three terminal molalities and both scaled consecutive changes. For frozen heat
+capacities, complete both changes through the anchored Gibbs/volume quotient;
+individual column admission is not a bound on an ill-conditioned quotient.
+
+A missing column refuses only the outputs and action directions consuming it,
+with its derivative, reaction, coordinate and original cause retained. Supplied
+records must be consistent with each consumed reaction derivative. A source
+motion must lie in the range of the record-less-species stoichiometric system;
+check the combined direction, not each unit coordinate in isolation. Never
+silently project an incompatible source motion into a least-squares caloric
+standard. Owned interval endpoint values and isothermal actions remain valid;
+only thermal actions crossing that endpoint are refused.
+
+System-reference u_G and frozen c_v,G use the same anchored Gibbs volume,
+EqID: `gibbs_conjugate_molar_volume`. Fixed-source system-pressure terms are
+zero and recover mechanical u/c_v. Independently valid state, residual and
+caloric outputs survive a refused Gibbs-volume chart or another missing
+column. Referenced free-temperature cells, the broadened free-intensive mixed
+combinations and apparent-Cp fitting remain separate #225 build slices, not
+qualified by this driven-T/P composition.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit

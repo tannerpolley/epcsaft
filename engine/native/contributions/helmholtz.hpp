@@ -470,7 +470,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     }
 
     // EqID: association_helmholtz
-    Scalar association = 0.0;
+    Scalar association = Scalar(0.0);
     for (std::size_t site = 0; site < site_fraction.size(); ++site) {
         const std::size_t component =
             static_cast<std::size_t>(parameters.site_component[site]);

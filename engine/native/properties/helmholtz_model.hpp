@@ -56,11 +56,23 @@ struct ParameterActionDirection final {
     double value = 0.0;
 };
 enum class PropertyObservable {
-    IdealEnthalpy, IdealInternalEnergy, IdealEntropy, IdealIsobaricHeatCapacity,
-    IdealIsochoricHeatCapacity, ResidualEnthalpy, ResidualInternalEnergy,
-    ResidualEntropy, ResidualIsobaricHeatCapacity, ResidualIsochoricHeatCapacity,
-    TotalEnthalpy, TotalInternalEnergy, TotalEntropy, TotalIsobaricHeatCapacity,
-    TotalIsochoricHeatCapacity
+    IdealEnthalpy,
+    IdealInternalEnergy,
+    IdealEntropy,
+    IdealIsobaricHeatCapacity,
+    IdealIsochoricHeatCapacity,
+    ResidualEnthalpy,
+    ResidualInternalEnergy,
+    ResidualEntropy,
+    ResidualIsobaricHeatCapacity,
+    ResidualIsochoricHeatCapacity,
+    TotalEnthalpy,
+    TotalInternalEnergy,
+    TotalEntropy,
+    TotalIsobaricHeatCapacity,
+    TotalIsochoricHeatCapacity,
+    MolarVolumeTemperatureDerivative,
+    MolarVolumePressureDerivative
 };
 enum class PropertyActionStatus {
     Available, MissingThermochemistry, OutsideInterval, ThermalBoundary,

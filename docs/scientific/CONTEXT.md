@@ -90,8 +90,11 @@ column and both terminal changes. Their meanings and bounded inventory follow
 [the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
 and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
 These standalone Properties derivatives are numerically verified on the stated
-manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
-consumers remain separate #225 work.
+manufactured cases. The same notebook retains separate driven-T/P numerical
+checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
+direction and feed-only A3. Referenced free-intensive combinations and
+apparent-Cp fitting remain separate #225 work; regression's existing fixed-T
+source controls are still live callers, not silently migrated by this slice.
 
 ### Residual, ideal and state responsibilities
 

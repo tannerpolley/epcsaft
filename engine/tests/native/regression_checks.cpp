@@ -2235,8 +2235,18 @@ void check_ionic_addition_enthalpy() {
         const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
         CHECK(solved.success);
         const auto compiled = equilibrium::compile_problem(rebuilt, problem);
-        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false);
-        CHECK(source.status == equilibrium::SolvedStateActionStatus::Available && source.enthalpy.size() == 3);
+        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false, 1);
+        CHECK(source.status == equilibrium::SolvedStateActionStatus::Available);
+        const auto standard = [&](std::size_t order) -> const std::vector<double>& {
+            const auto found = std::find_if(source.gibbs.begin(), source.gibbs.end(), [&](const auto& column) {
+                return column.temperature_order == order && column.pressure_order == 0 && !column.parameter;
+            });
+            CHECK(found != source.gibbs.end() && found->column.status == equilibrium::SolvedStateActionStatus::Available
+                && found->column.values.size() == 3);
+            return found->column.values;
+        };
+        const auto& g = standard(0);
+        const auto& gT = standard(1);
         const auto state = rebuilt.state(T, solved.molar_densities[0], solved.mole_fractions);
         // Accumulate the independently composed oracle in extended precision:
         // the trace ionic increment subtracts ~3e5 J endpoints.
@@ -2249,7 +2259,9 @@ void check_ionic_addition_enthalpy() {
             ? rebuilt.state_at_pressure(T, P, {1.0, 0.0, 0.0}, DensityBranch::Liquid).residual_enthalpy : 0.0;
         for (std::size_t i = 0; i < 3; ++i) {
             const double basis = i == 0 ? 1.0 : 0.5;
-            const long double source_h = source.enthalpy[i] + gauge * parameters.charge_number[i]
+            // g_rho includes RT ln(RT/P0); its physical standard enthalpy restores RT.
+            const long double source_h = static_cast<long double>(g[i]) - T * static_cast<long double>(gT[i])
+                + GAS_CONSTANT_J_PER_MOL_K * T + gauge * parameters.charge_number[i]
                 + (centered ? basis * 241826.0 : 0.0);
             h += static_cast<long double>(solved.mole_fractions[i]) * (source_h - basis * feed_residual);
         }
