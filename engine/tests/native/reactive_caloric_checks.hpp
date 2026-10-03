@@ -921,9 +921,9 @@ inline void isothermal_row_columns() {
     HelmholtzModel caloric_model(c.parameters,c.active,c.records);
     const auto caloric_compiled=compile_problem(caloric_model,c.problem);
     const auto calorics=reference_calorics(caloric_compiled,298.15,1e5,true,true,true,2);
-    const auto consumed_entry=std::find_if(calorics.derivatives.begin(),calorics.derivatives.end(),
+    const auto consumed_entry=std::find_if(calorics.gibbs.begin(),calorics.gibbs.end(),
         [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
-    CHECK(consumed_entry!=calorics.derivatives.end());
+    CHECK(consumed_entry!=calorics.gibbs.end());
     const auto& consumed=*consumed_entry;
     CHECK(consumed.column.status==SolvedStateActionStatus::ReferenceUnavailable);
     const auto inputs=recording_support::fields({weighted_hessian_context(compiled),
