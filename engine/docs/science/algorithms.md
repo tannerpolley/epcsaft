@@ -1043,9 +1043,12 @@ Equilibrium adds anchored g_TP/g_PP at fixed composition, forms the local
 quotient in EqID: `gibbs_conjugate_molar_volume`, then follows the solved
 composition path. The re-equilibrated total-volume derivative cannot enter
 that quotient. Preserve mechanical volume and Gibbs-conjugate volume as
-separate outputs. The stable Gibbs-volume chart requires finite positive v_G
-and finite negative v_G,P, in addition to the EOS/site gates; independent h/s/u
-and volume quantities retain their own meaning outside that chart.
+separate outputs. The local Gibbs-volume chart requires finite v_G and finite
+nonzero v_G,P, in addition to the EOS/site gates. Record v_G>0 and v_G,P<0
+as stable-chart diagnostics with the quotient sensitivities; their signs do not
+restrict mathematical admission. Nonfinite or zero v_G,P remains PressureSingular;
+independent h/s/u and volume quantities retain their own meaning when that
+inverse is unavailable.
 
 Actions use a dimensionless path variable and declared physical increments.
 They retain the observable unit. Raw T/P or fitting partials divide by every

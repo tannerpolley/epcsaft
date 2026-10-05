@@ -2230,7 +2230,7 @@ $$
 - Status: Exact derivation
 - Source: Frozen-composition Gibbs derivatives and the anchored completion in [issue #225](https://github.com/tannerpolley/ePC-SAFT/issues/225), section 1, D1(a)
 - Description: The volume conjugate to system pressure includes the record-anchored standard pressure derivative. It is distinct from the EOS mechanical volume. Internal energy and frozen heat capacity use that same Gibbs volume.
-- Change note: Frozen raw T/P partials eliminate density and association at fixed composition before following the solved composition path. The qualified stable chart requires finite positive v_G and finite negative v_G,P, with a regular EOS root and site Jacobian. These checks do not establish global reacting stability. Fixed-source-pressure standards have zero system-pressure derivatives and reduce to the mechanical definitions. A zero or unresolved denominator is diagnosed before a negative disposition; it is never replaced by the mechanical volume.
+- Change note: Frozen raw T/P partials eliminate density and association at fixed composition before following the solved composition path. The local volume chart requires finite v_G and finite nonzero v_G,P, with a regular EOS root and site Jacobian. Record v_G>0 and v_G,P<0 as stable-chart diagnostics alongside quotient conditioning; these signs do not restrict mathematical admission or establish global reacting stability. Fixed-source-pressure standards have zero system-pressure derivatives and reduce to the mechanical definitions. A zero or unresolved denominator is diagnosed before a negative disposition; it is never replaced by the mechanical volume.
 
 $$
 v_G=g_P=\rho^{-1}+\sum_i x_i g_{\rho,i,P}^{\circ},\qquad
@@ -2373,7 +2373,7 @@ $$
 - Status: Exact derivation
 - Source: Residual-plus-ideal decomposition at fixed density
 - Description: Molar total isochoric heat capacity combines ideal and residual values at the same state.
-- Change note: For fixed-source-pressure standards this mechanical quantity does not inherit the fixed-pressure mechanical-stability condition. System-pressure references use frozen c_v,G on the stable Gibbs-volume chart in `gibbs_conjugate_molar_volume`; it is not a reacting heat capacity at fixed total volume.
+- Change note: For fixed-source-pressure standards this mechanical quantity does not inherit the fixed-pressure mechanical-stability condition. System-pressure references use frozen c_v,G on the regular local Gibbs-volume chart in `gibbs_conjugate_molar_volume`; it is not a reacting heat capacity at fixed total volume.
 
 $$
 c_v=c_v^{id}+c_v^{res}.

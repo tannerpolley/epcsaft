@@ -201,7 +201,7 @@ inline Local local(const HelmholtzModel& model,const CompiledSystem& compiled,do
     return result;
 }
 
-struct Sample {std::vector<double> values;Local phase;EquilibriumResult solved;};
+struct Sample {std::vector<double> values;Local phase;EquilibriumResult solved;std::vector<Local> phases;};
 inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,const EquilibriumResult& solved,
                      const std::vector<Quantity>& q) {
     CHECK(solved.has_state());
@@ -249,6 +249,7 @@ inline Sample values(const HelmholtzModel& model,const CompiledSystem& compiled,
         if(item.name=="V_G") value=n*sample.phase.v;
         sample.values.push_back(value);
     }
+    sample.phases=std::move(phases);
     return sample;
 }
 
@@ -269,7 +270,7 @@ inline std::string context(const Case& c,const EquilibriumResult& solved,const L
         recording_support::field("record_s_J_per_mol_K",c.ionic?188.83:0.0),
         recording_support::field("T_K",solved.temperature[0]),recording_support::field("P_Pa",solved.pressure[0]),
         recording_support::field("feed_mol",c.problem.feed.values),recording_support::field("x",solved.mole_fractions),
-        recording_support::field("n_mol",solved.amounts[0]),recording_support::field("rho",solved.molar_densities[0]),
+        recording_support::field("n_mol",solved.amounts[0]),recording_support::field("rho",l.rho),
         recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_residual",solved.residual_norm()),
         recording_support::field("iterations",solved.iterations),recording_support::field("evaluations",solved.evaluations),
         recording_support::field("v_G",l.v),recording_support::field("v_G_T_raw",l.vt),recording_support::field("v_G_P_raw",l.vp),
@@ -422,45 +423,73 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
     std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic;
     const bool free_chart=c.problem.temperature.free||c.problem.pressure.free;
     if(c.ionic) ionic=std::make_unique<WideIonic>(c,center);else if(!free_chart) wide=std::make_unique<WideNeutral>(c);
-    auto coarse=difference(c,ds,1.0,q,center.solved,wide.get(),ionic.get());std::vector<bool> done(q.size(),false),pass(q.size(),false);
-    for(std::size_t rung=0;rung<6;++rung) {
-        const double factor=std::ldexp(1.0,-int(rung+1));const auto fine=difference(c,ds,factor,q,center.solved,wide.get(),ionic.get());
-        for(std::size_t i=0;i<q.size();++i) if(!done[i]) {
-            const double rich=double((4*fine.value[i]-coarse.value[i])/3), refinement=double(CppAD::abs(fine.value[i]-coarse.value[i])/3);
-            const double target=q[i].atol+1e-6*std::max(std::abs(rich),sigma[i]);
-            const bool resolved=refinement<=target/4;
-            pass[i]=resolved&&std::isfinite(exact[i])&&std::abs(exact[i]-rich)<=target;
-            const std::string id=std::string(free_chart?"F6/":"F1/")+c.name+"/A"+std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);
-            const auto row=recording_support::fields({inputs,literal_directions,recording_support::field("directions",label),
-                recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",free_chart?53:113),recording_support::field("D_h",double(coarse.value[i])),
-                recording_support::field("D_h2",double(fine.value[i])),recording_support::field("Richardson",rich),
-                recording_support::field("refinement",refinement),recording_support::field("sigma",sigma[i]),
-                recording_support::field("atol",q[i].atol),recording_support::field("target",target),
-                recording_support::field("error",std::abs(exact[i]-rich)),recording_support::field("error_over_target",std::abs(exact[i]-rich)/target),
-                recording_support::field("resolved",resolved),
-                recording_support::field("rounding_over_step",fine.rounding[i]),recording_support::field("oracle_residual",fine.residual),
-                recording_support::field("oracle_pressure_residual",fine.pressure_residual),
-                recording_support::field("oracle_site_residual",fine.site_residual),
-                recording_support::field("wide_pressure_residual_Pa",fine.precise_pressure_residual),
-                recording_support::field("wide_pressure_closure_limit_Pa",fine.precise_pressure_floor),
-                recording_support::field("oracle_minimum_v_G",fine.minimum_v),recording_support::field("oracle_maximum_v_G_P",fine.maximum_vp),
-                recording_support::field("oracle_residual_over_step_product",fine.residual/fine.denominator),
-                recording_support::field("condition_times_residual_over_step_product",diagnostics.condition_estimate.value_or(0)*fine.residual/fine.denominator),
-                recording_support::field("action_condition",diagnostics.condition_estimate.value_or(0)),
-                recording_support::field("linear_residual",diagnostics.maximum_linear_residual.value_or(0)),
-                recording_support::field("central_residual",diagnostics.central_residual.value_or(0))});
-            if(!resolved&&rung<5) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                "Refinement",free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values","Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
-            else recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                "Relationship",free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values",
-                free_chart&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
-                "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",pass[i],"reactive-caloric",id.c_str());
-            done[i]=resolved;
+    std::vector<std::vector<NamedDirection>> orders{ds};
+    if(free_chart&&ds.size()==2&&ds[0].name!=ds[1].name) orders.push_back({ds[1],ds[0]});
+    struct Reference {double rich=0,refinement=0,target=0;std::size_t rung=0;bool resolved=false;std::string row;};
+    std::vector<std::vector<Reference>> references(orders.size(),std::vector<Reference>(q.size()));
+    const auto id_for=[&](std::size_t i,std::size_t rung) {return std::string(free_chart?"F6/":"F1/")+c.name+"/A"
+        +std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);};
+    const char* method=free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values";
+    for(std::size_t order=0;order<orders.size();++order) {
+        auto coarse=difference(c,orders[order],1.0,q,center.solved,wide.get(),ionic.get());
+        for(std::size_t rung=0;rung<6;++rung) {
+            const double factor=std::ldexp(1.0,-int(rung+1));
+            const auto fine=difference(c,orders[order],factor,q,center.solved,wide.get(),ionic.get());
+            for(std::size_t i=0;i<q.size();++i) if(!references[order][i].resolved) {
+                const double rich=double((4*fine.value[i]-coarse.value[i])/3),refinement=double(CppAD::abs(fine.value[i]-coarse.value[i])/3);
+                const double target=q[i].atol+1e-6*std::max(std::abs(rich),sigma[i]);
+                const bool resolved=refinement<=target/4;
+                const auto row=recording_support::fields({inputs,literal_directions,recording_support::field("directions",label),
+                    recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",free_chart?53:113),recording_support::field("D_h",double(coarse.value[i])),
+                    recording_support::field("D_h2",double(fine.value[i])),recording_support::field("Richardson",rich),
+                    recording_support::field("refinement",refinement),recording_support::field("sigma",sigma[i]),
+                    recording_support::field("atol",q[i].atol),recording_support::field("target",target),
+                    recording_support::field("resolved",resolved),
+                    recording_support::field("rounding_over_step",fine.rounding[i]),recording_support::field("oracle_residual",fine.residual),
+                    recording_support::field("oracle_pressure_residual",fine.pressure_residual),
+                    recording_support::field("oracle_site_residual",fine.site_residual),
+                    recording_support::field("wide_pressure_residual_Pa",fine.precise_pressure_residual),
+                    recording_support::field("wide_pressure_closure_limit_Pa",fine.precise_pressure_floor),
+                    recording_support::field("oracle_minimum_v_G",fine.minimum_v),recording_support::field("oracle_maximum_v_G_P",fine.maximum_vp),
+                    recording_support::field("oracle_residual_over_step_product",fine.residual/fine.denominator),
+                    recording_support::field("condition_times_residual_over_step_product",diagnostics.condition_estimate.value_or(0)*fine.residual/fine.denominator),
+                    recording_support::field("action_condition",diagnostics.condition_estimate.value_or(0)),
+                    recording_support::field("linear_residual",diagnostics.maximum_linear_residual.value_or(0)),
+                    recording_support::field("central_residual",diagnostics.central_residual.value_or(0))});
+                references[order][i]={rich,refinement,target,rung,resolved,row};
+                const std::string id=id_for(i,rung)+(orders.size()==2?(order?"/reversed":"/original"):"");
+                if(orders.size()==2) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),rich,std::nullopt,row,
+                    "Refinement",method,"Reference uncertainty before production agreement","reactive-caloric",id.c_str());
+                else if(!resolved&&rung<5) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
+                    "Refinement",method,"Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
+            }
+            if(std::all_of(references[order].begin(),references[order].end(),[](const auto& r){return r.resolved;})) break;
+            coarse=fine;
         }
-        if(std::all_of(done.begin(),done.end(),[](bool b){return b;})) break;
-        coarse=fine;
     }
-    return std::all_of(pass.begin(),pass.end(),[](bool b){return b;});
+    bool pass=true;
+    for(std::size_t i=0;i<q.size();++i) {
+        // Select only by each order's first-resolved refinement, before comparing with production.
+        std::size_t selected=0;
+        if(orders.size()==2&&references[1][i].resolved&&(!references[0][i].resolved||references[1][i].refinement<references[0][i].refinement)) selected=1;
+        const auto& r=references[selected][i];
+        std::vector<double> estimates,richardson;std::vector<int> rungs,resolved;
+        for(const auto& order:references) {estimates.push_back(order[i].refinement);richardson.push_back(order[i].rich);
+            rungs.push_back(int(order[i].rung));resolved.push_back(order[i].resolved);}
+        const bool good=r.resolved&&std::isfinite(exact[i])&&std::isfinite(r.rich)&&std::abs(exact[i]-r.rich)<=r.target;
+        const auto row=recording_support::fields({r.row,recording_support::field("reference_orders",orders.size()==2?"original,reversed":"original"),
+            recording_support::field("reference_refinements",estimates),recording_support::field("reference_Richardson",richardson),
+            recording_support::field("reference_rungs",rungs),recording_support::field("reference_resolved",resolved),
+            recording_support::field("selected_reference_order",r.resolved?(selected?"reversed":"original"):"none"),
+            recording_support::field("reference_selection",r.resolved?"minimum first-resolved refinement with original-order tie break":"no resolved reference"),
+            recording_support::field("error",std::abs(exact[i]-r.rich)),recording_support::field("error_over_target",std::abs(exact[i]-r.rich)/r.target)});
+        const auto id=id_for(i,r.rung);
+        recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],r.rich,row,
+            "Relationship",method,free_chart&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
+            "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric",id.c_str());
+        pass=good&&pass;
+    }
+    return pass;
 }
 
 inline double gibbs_contraction(const ReferenceCalorics& ref,std::size_t component,
@@ -1081,6 +1110,12 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     for(auto& quantity:vapor) {quantity.name+="-V";quantity.observable.phase=1;}
     q.insert(q.end()-4,vapor.begin(),vapor.end());
     const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    for(std::size_t phase=0;phase<center.phases.size();++phase) {
+        const auto& local=center.phases[phase];const auto id="F6/"+c.name+"/volume-chart/"+std::to_string(phase);
+        recording_support::observe(id.c_str(),"v_G","m^3/mol",local.v,std::nullopt,
+            recording_support::fields({context(c,solved,local),recording_support::field("phase",phase)}),
+            "Observation","native-local-chart","Regular volume chart; stable signs and quotient sensitivities recorded","reactive-caloric");
+    }
     Actions actions(compiled,solved,q);
     auto basis=directions(c);
     basis.erase(basis.begin()+(free_temperature?0:1));

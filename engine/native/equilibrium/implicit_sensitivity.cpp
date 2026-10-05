@@ -797,7 +797,7 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
                     result.status[i] = statuses[tslot] != SolvedStateActionStatus::Available
                                            ? statuses[tslot]
                                            : statuses[tslot + 1];
-                else if (!(std::isfinite(vG[0]) && vG[0] > 0.0 && std::isfinite(vGP[0]) && vGP[0] < 0.0))
+                else if (!(std::isfinite(vG[0]) && std::isfinite(vGP[0]) && vGP[0] != 0.0))
                     result.status[i] = SolvedStateActionStatus::PressureSingular;
                 else
                     ideal = combine(
