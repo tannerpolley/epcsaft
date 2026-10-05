@@ -105,8 +105,12 @@ direction and feed-only A3. Referenced free-intensive combinations and
 apparent-Cp fitting remain separate #225 qualification. The subsequent source
 implementation refreshes referenced free-T/P row jets at their current point
 and transports coefficient increments through the native law at T(t), including
-free-T addition endpoints. Its F6 producers are not yet numerically qualified;
-the accepted prescribed-T/P review does not cover this subsequent source.
+free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
+volume with finite nonzero pressure slope, recording stable-chart signs separately.
+The notebook retains seven complete F6 bubble checks, both N-system caloric
+values and nonzero witnesses, and one remaining N-P-fix reference disagreement.
+Complete F6 qualification remains open; the accepted prescribed-T/P review does
+not cover this subsequent source.
 
 ### Residual, ideal and state responsibilities
 
