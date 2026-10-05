@@ -989,8 +989,13 @@ inline Case boundary_input(bool nonidentical,bool free_temperature,bool fixed) {
         c.problem.reactions[0].correlation=ReactionLogPolynomial{std::log(0.3),0,0,0,300,250,350,"analytic-source"};
     }
     c.problem.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
-    c.problem.temperature=free_temperature?FreeValue::variable(nonidentical?300:270):FreeValue::fixed(nonidentical?260:265);
-    c.problem.pressure=free_temperature?FreeValue::fixed(nonidentical?2e6:1.952823e6):FreeValue::variable(2e6);
+    if(nonidentical) {
+        c.problem.phases[0].composition_guess={0.21145628710236675,0.7334775180293439,0.05506619486828941};
+        c.problem.phases[1].composition_guess={0.5275400084331457,0.46022444490546427,0.012235546661389953};
+    }
+    c.problem.temperature=free_temperature?FreeValue::variable(nonidentical?260:270):FreeValue::fixed(nonidentical?260:265);
+    c.problem.pressure=free_temperature?FreeValue::fixed(nonidentical?3.953695785877087e6:1.952823e6)
+        :FreeValue::variable(nonidentical?3.953695785877087e6:2e6);
     return c;
 }
 
