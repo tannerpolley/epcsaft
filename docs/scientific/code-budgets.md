@@ -172,18 +172,23 @@ the #221 records reconciliation; they grant no new authority or qualification.
   species-restriction repair adds 20 lines and removes 7 against `8dc9b725`;
   one replaced line was already part of the declared-start addition. Final
   accounting against active main is **393 gross added, 56 removed, +337 net**.
+  Main `c3100e94` is now integrated, including #265. The integration briefly
+  counted the initial polish preparation twice; removing the duplicate increment
+  restores default-solve work equality without changing any preparation or row
+  calculation. The following table uses `c3100e94` as the active base; the gross,
+  removed and net counts remain 393, 56 and +337.
 
   | Layer | Active main | Gross | Removed | Net | Integrated | Hard |
   |---|---:|---:|---:|---:|---:|---:|
   | Core | 917 | 0 | 0 | 0 | 917 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
   | Properties | 4788 | 0 | 0 | 0 | 4788 | 4800 |
-  | Equilibrium | 7198 | 318 | 56 | +262 | 7460 | 8800 |
+  | Equilibrium | 7205 | 318 | 56 | +262 | 7467 | 8800 |
   | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
   | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
   | Bindings | 1937 | 31 | 0 | +31 | 1968 | 2100 |
   | Python | 2727 | 44 | 0 | +44 | 2771 | 2850 |
-  | Aggregate | 22044 | 393 | 56 | +337 | 22381 | 24000 |
+  | Aggregate | 22051 | 393 | 56 | +337 | 22388 | 24000 |
 
   One compiled problem, existing generic/boundary seeds, the shared packing
   predicate, exact Ipopt driver and density admission remain the owners.
