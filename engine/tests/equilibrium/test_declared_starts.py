@@ -115,3 +115,39 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
     assert unfinished > 1e-10
     evidence.observe("declared-starts/work", raw_rows=raw, limited_raw_rows=unfinished,
                      limited_iterations=stopped.iterations, selected=solved.selected)
+
+
+def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None:
+    model = Mixture(parameters((ETHANE,) * 6,
+        pairs=[("k_ij", (i, j), 0.) for i in range(6) for j in range(i+1, 6)]))
+    problem = eq.Problem(T=200., P=5e6, feed=eq.Amounts({"s0": 1., "s1": 1.}),
+        phases=[eq.Phase("aqueous", kind="liquid", support=("s0", "s2", "s4"), composition_guess=(1., 0., 0.)),
+                eq.Phase("organic", kind="liquid", support=("s1", "s3", "s5"), composition_guess=(1., 0., 0.))],
+        reactions=[eq.Reaction({"s2": -1., "s3": 1.}, equilibrium_constant=2.),
+                   eq.Reaction({"s4": -1., "s5": 1.}, equilibrium_constant=.5)],
+        row_tolerance=1e-10)
+    reference = eq.solve_equilibrium(model, problem)
+    assert reference.success, reference.message
+    start = eq.EquilibriumStart()
+    start.compositions = [[1., 0., 0.], [1., 0., 0.]]
+    start.packing_fractions = list(reference.packing_fractions)
+    start.amounts = [1., 1.]
+    solved = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits())
+    assert solved.selected == 0, solved.causes
+    result = solved.results[0]
+    assert result is not None
+    for phase, solvent in enumerate((0, 1)):
+        amount_error = abs(result.amounts[phase] - 1.)
+        fraction_error = abs(result.mole_fractions[6*phase+solvent] - 1.)
+        assert amount_error <= 1e-9 and fraction_error <= 1e-9
+        assert all(result.mole_fractions[6*phase+i] == 0. for i in (2, 3, 4, 5))
+        evidence.compare(f"declared-starts/zero-exchange/{phase}/amount", model=amount_error,
+                         reference=0., unit="mol", criterion={"rule": "symmetric_close", "atol": 1e-9})
+    raw = max(map(abs, result.residuals))
+    assert raw <= 1e-10
+    evidence.observe("declared-starts/zero-exchange", amounts=result.amounts,
+                     compositions=result.mole_fractions, raw_rows=raw)
+    for invalid_fraction in (-.1, 1.1, float("nan")):
+        start.compositions = [[1., invalid_fraction, 0.], [1., 0., 0.]]
+        refused = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits())
+        assert refused.selected is None and refused.results[0] is None and refused.iterations == 0

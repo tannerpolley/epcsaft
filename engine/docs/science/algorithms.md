@@ -412,7 +412,10 @@ coexistence check. Final residual and stability checks are unchanged.
 Caller-declared ordered starts share one thermodynamic problem and the same driver.
 A start contains physical composition, packing, amount and free-intensive guesses,
 a previous result, or a complete compiled-coordinate vector. Complete vectors
-skip generated initialization. Physical guesses fill omitted coordinates with
+skip generated initialization. Physical composition vectors use the completed
+declared supports: validate their original length and finite fractions in [0,1], then apply the
+same species restriction as compilation before checking surviving coordinates.
+Physical guesses fill omitted coordinates with
 existing generic/boundary seeds without reactive speciation, then replace every
 supplied coordinate, including reacting packing and the free-pressure seed.
 Invalid initialization is an individual attempt cause. The first available state

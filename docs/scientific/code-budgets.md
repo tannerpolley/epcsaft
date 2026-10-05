@@ -165,20 +165,25 @@ the #221 records reconciliation; they grant no new authority or qualification.
   Integration with main `5fe2a70a` on 2026-10-05 preserves #221's restored
   enforcement and unchanged ceilings. The obsolete per-driver inventory LP is
   retired in favor of #231's compiled inventory bounds; elapsed checks remain
-  before and after consuming the cache. Relative to this active main, runtime
-  accounting remains **374 gross added, 50 removed, +324 net**.
+  before and after consuming the cache.
+  The initial integrated candidate measured 374 gross additions, 50 removals
+  and +324 net. The owner approved up to 400 gross runtime additions on
+  2026-10-05 for this issue, with every layer ceiling unchanged. The shared
+  species-restriction repair adds 20 lines and removes 7 against `8dc9b725`;
+  one replaced line was already part of the declared-start addition. Final
+  accounting against active main is **393 gross added, 56 removed, +337 net**.
 
   | Layer | Active main | Gross | Removed | Net | Integrated | Hard |
   |---|---:|---:|---:|---:|---:|---:|
   | Core | 917 | 0 | 0 | 0 | 917 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
   | Properties | 4788 | 0 | 0 | 0 | 4788 | 4800 |
-  | Equilibrium | 7198 | 299 | 50 | +249 | 7447 | 8800 |
+  | Equilibrium | 7198 | 318 | 56 | +262 | 7460 | 8800 |
   | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
   | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
   | Bindings | 1937 | 31 | 0 | +31 | 1968 | 2100 |
   | Python | 2727 | 44 | 0 | +44 | 2771 | 2850 |
-  | Aggregate | 22044 | 374 | 50 | +324 | 22368 | 24000 |
+  | Aggregate | 22044 | 393 | 56 | +337 | 22381 | 24000 |
 
   One compiled problem, existing generic/boundary seeds, the shared packing
   predicate, exact Ipopt driver and density admission remain the owners.
@@ -192,7 +197,8 @@ the #221 records reconciliation; they grant no new authority or qualification.
   native packing coefficient is transported for the analytic density-closed seed.
   The soft excess retains these numerical responsibilities and their work
   diagnostics. The shared #244 envelope and layer ceilings remain unchanged;
-  no exclusive allowance is reserved for this task and no ceiling is edited.
+  the 400-line issue allowance reserves no shared layer capacity, and no
+  architecture ceiling is edited.
   Numerical qualification
   and independent delivered review are separate from this line accounting.
 

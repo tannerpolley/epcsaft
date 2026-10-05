@@ -1320,7 +1320,12 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     bool complete = true;
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         auto& phase = seeded.problem.phases[p];
-                        if (!seed.compositions.empty() && !seed.compositions[p].empty()) phase.composition_guess = seed.compositions[p];
+                        if (!seed.compositions.empty() && !seed.compositions[p].empty()) {
+                            check(seed.compositions[p].size() == compiled.declared_supports[p].size()
+                                  && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }));
+                            phase.composition_guess = seed.compositions[p];
+                            restrict_composition_guess(phase, compiled.declared_supports[p]);
+                        }
                         if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
                         for (const double x : phase.composition_guess)
