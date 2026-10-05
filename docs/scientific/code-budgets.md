@@ -77,9 +77,9 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-02, #240 straight physical-parameter continuation, measured against
-  integrated main `875526d0`: **103 gross runtime lines added, 60 removed, +43 net**.
-  Aggregate is **21,689 → 21,732**, with **2,268** lines below the recorded
+- 2026-10-05, #240 straight physical-parameter continuation, measured against
+  integrated main `5fe2a70a`: **102 gross runtime lines added, 60 removed, +42 net**.
+  Aggregate is **22,044 → 22,086**, with **1,914** lines below the recorded
   **24,000** envelope. No numeric ceiling changes. The sprint pause below
   applies; counts and duplication remain review subjects.
 
@@ -87,13 +87,13 @@ Budget changes must not silently change scientific scope.
   |---|---:|---:|---:|---:|---:|
   | Core | 917 | 2 | 2 | 0 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 |
-  | Properties | 4763 | 29 | 36 | -7 | 4756 |
-  | Equilibrium | 6921 | 38 | 5 | +33 | 6954 |
+  | Properties | 4788 | 28 | 36 | -8 | 4780 |
+  | Equilibrium | 7198 | 38 | 5 | +33 | 7231 |
   | Parameter regression | 2398 | 13 | 13 | 0 | 2398 |
   | Surface | 532 | 0 | 0 | 0 | 532 |
-  | Bindings | 1914 | 5 | 1 | +4 | 1918 |
-  | Python | 2697 | 16 | 3 | +13 | 2710 |
-  | Aggregate | 21689 | 103 | 60 | +43 | 21732 |
+  | Bindings | 1937 | 5 | 1 | +4 | 1941 |
+  | Python | 2727 | 16 | 3 | +13 | 2740 |
+  | Aggregate | 22044 | 102 | 60 | +42 | 22086 |
 
   The existing declared-branch controller retains predictor, corrector, retry,
   topology and anchored-density checks. Trial models use immutable base records
