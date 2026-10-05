@@ -141,6 +141,8 @@ struct FitResult final {
 
 struct ObservationEvaluation final {
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
+    // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight.
+    std::vector<double> residual_optimizer_gradient;
     std::vector<ObservationStatus> statuses;
     double cost = 0.0;
     EvaluatedCoordinates chart;

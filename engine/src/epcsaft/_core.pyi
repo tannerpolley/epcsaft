@@ -915,9 +915,13 @@ class ReactionCoordinate:
     name: str
     coefficient: ReactionCoefficient
 
-class Coordinate:
+class CoordinateTarget:
     family: ParameterFamily
-    slots: list[list[int]]
+    indices: list[int]
+    coefficient: float
+
+class Coordinate:
+    targets: list[CoordinateTarget]
     reaction: Optional[ReactionCoordinate]
     origin: float
     scale: float
@@ -928,6 +932,7 @@ class CoordinateSet:
     coordinates: list[Coordinate]
     def active(self) -> list[ActiveParameter]: ...
     def tie(self) -> list[int]: ...
+    def start(self, parameters: Parameters, observations: list[Observation] = ..., thermochemistry: Optional[ThermochemistryRecord] = ...) -> list[float]: ...
 
 class FitControls:
     function_tolerance: float
@@ -1114,6 +1119,7 @@ class ObservationEvaluation:
     predictions: list[float]
     gradient: list[float]
     optimizer_gradient: list[float]
+    residual_optimizer_gradient: list[float]
     chart: EvaluatedCoordinates
     statuses: list[ObservationStatus]
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],

@@ -215,7 +215,9 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
     impl_ = std::make_shared<Impl>(request, failures, state_groups(request.observations), selection);
 }
 bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out) {
+    out.residual_optimizer_gradient.clear();
     if (!impl_->evaluate(optimizer, columns, out)) return false;
+    if (columns) out.residual_optimizer_gradient = out.optimizer_gradient;
     if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
         const double slope = residual_slope(impl_->request_.observations[i], out.predictions[i]);
         for (std::size_t c = 0; c < optimizer.size(); ++c) out.optimizer_gradient[i * optimizer.size() + c] /= slope;
