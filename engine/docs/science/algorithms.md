@@ -350,6 +350,9 @@ density closure on their declared branches; this estimate changes neither
 the equations nor final admission. Two-root estimates and caller-guessed
 compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
 retains the sole dense feed root and the recovered incipient vapor (#204).
+Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
+weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
+an insertion property. This does not remove species from reactive supports (#265).
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$
@@ -422,9 +425,17 @@ Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
-iteration-budget or time-budget stop, at most
-`EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
-Jacobian close that gap. Each step must reduce the raw row maximum and keep
+iteration-budget or time-budget stop, `EQUILIBRIUM_POLISH_STEPS` Newton steps on
+the unweighted rows with the exact Jacobian close that gap. Further steps continue
+only while the raw row maximum exceeds the caller's row criterion and each step's raw
+contraction ratio (after/before) is strictly below the previous accepted step's,
+under a separate polish cap of `EQUILIBRIUM_MAX_ITERATIONS` steps (#261,
+2026-10-05). In Newton's quadratic region the ratio falls toward zero; a constant or
+rising ratio means the iterate lies outside it, so polishing stops. From a
+box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
+4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
+−1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
+need no further polishing. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
@@ -433,7 +444,7 @@ optimizer start and accepted physical iterates, return the point with the lowest
 classified residual, breaking ties by lower raw residual (#66, 2026-09-22).
 The classified residual may rise at an intermediate step through nonlinear
 curvature; requiring it to decrease at every step can reject a direction that
-resolves trace chemical equilibrium in the existing three-step budget.
+resolves trace chemical equilibrium within the step budget.
 Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
