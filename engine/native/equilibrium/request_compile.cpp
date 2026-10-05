@@ -867,7 +867,6 @@ static CompiledSystem compile_with_basis(
     }
     compiled.feed_composition = normalized_feed(compiled.n_feed);
     compiled.balance = matvec(compiled.B, compiled.n_feed);
-    admit_pins(compiled);
     std::vector<bool> covered(components, false);
     std::vector<bool> participant(components, false);
     for (const auto& item : request.reactions) {
@@ -875,16 +874,57 @@ static CompiledSystem compile_with_basis(
             participant[i] = participant[i] || item.stoichiometry[i] != 0.0;
     }
     for (auto& phase : compiled.problem.phases) {
-        if (phase.support_declared && phase.support.empty()) {
+        if (phase.support_declared && phase.support.empty())
             throw std::invalid_argument("empty support in phase " + phase.name);
-        }
         phase.support = complete_support(components, phase.support);
+    }
+    auto inventory = compiled;
+    if (!trial_basis) {
+        auto& support = inventory.problem.phases.front().support;
+        for (std::size_t i = 0; i < components; ++i)
+            if (participant[i] && std::find(support.begin(), support.end(), i) == support.end()) support.push_back(i);
+    }
+    std::vector<std::size_t> indices;
+    for (const auto& phase : inventory.problem.phases)
+        indices.insert(indices.end(), phase.support.begin(), phase.support.end());
+    std::sort(indices.begin(), indices.end());
+    indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+    const auto bounds = inventory_bounds(inventory, indices, false, 0.0);
+    compiled.inventory_upper_bounds.assign(components, 1.0);
+    std::vector<bool> absent(components, false);
+    const auto certify = [&](std::size_t i, std::vector<double> candidate) {
+        candidate = reconstruct_conserved_functional(std::move(candidate), request.reactions);
+        return !candidate.empty() && candidate[i] > 0.0
+            && std::all_of(candidate.begin(), candidate.end(), [](double value) { return value >= 0.0; })
+            && exact_zero_dot(candidate, compiled.n_feed);
+    };
+    for (const auto& bound : bounds) {
+        if (bound.status == "infeasible_inventory") throw std::invalid_argument("infeasible_inventory: " + bound.termination);
+        if (bound.status == "optimal") compiled.inventory_upper_bounds[bound.species] = *bound.feed_normalized_amount;
+        if (!trial_basis && bound.status == "optimal" && *bound.maximum == 0.0 && !bound.conserved_functional.empty())
+            absent[bound.species] = certify(bound.species, bound.conserved_functional);
+    }
+    if (!trial_basis) for (std::size_t i = 0; i < components; ++i) {
+        for (const auto& row : compiled.B) absent[i] = absent[i] || certify(i, row);
+        if (absent[i]) compiled.removed_species.push_back(i);
+    }
+    for (auto& phase : compiled.problem.phases) {
         phase.support_declared = true;
         const auto support_before = phase.support;
         phase.support.erase(std::remove_if(
             phase.support.begin(), phase.support.end(), [&](std::size_t index) {
-                return compiled.n_feed[index] == 0.0 && !participant[index];
+                if (absent[index] && phase.is_pinned() && phase.amount.fraction == 0.0)
+                    throw std::invalid_argument("zero_inventory_incipient_support: component "
+                        + std::to_string(index) + " in phase " + phase.name
+                        + " needs the discarded conserved potential in chemical stationarity");
+                return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
+        const auto guess_before = std::move(phase.composition_guess);
+        phase.composition_guess.clear();
+        if (guess_before.size() == support_before.size())
+            for (std::size_t i = 0; i < support_before.size(); ++i)
+                if (std::find(phase.support.begin(), phase.support.end(), support_before[i]) != phase.support.end())
+                    phase.composition_guess.push_back(guess_before[i]);
         for (const std::size_t index : support_before) {
             if (std::find(phase.support.begin(), phase.support.end(), index) == phase.support.end()
                 && std::find(compiled.removed_species.begin(), compiled.removed_species.end(), index)
@@ -906,10 +946,12 @@ static CompiledSystem compile_with_basis(
         }
     }
     for (std::size_t i = 0; i < components; ++i) {
-        if (!covered[i] && (compiled.n_feed[i] != 0.0 || participant[i])) {
+        if (!covered[i] && !absent[i] && (compiled.n_feed[i] != 0.0 || participant[i])) {
             throw std::invalid_argument("species " + std::to_string(i) + " has no support");
         }
     }
+    if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
+    admit_pins(compiled);
     compiled.pinned_count = 0;
     for (const auto& phase : compiled.problem.phases) {
         compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;

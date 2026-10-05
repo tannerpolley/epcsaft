@@ -325,6 +325,18 @@ orthonormal SVD basis, or echelon pivots holding both $\mathrm{Li^+}$ and $\math
 mixes that moiety into rows of major species, whose rounding then limits its balance and
 makes the action Jacobian ill-conditioned in proportion to $N_{\mathrm{feed}}/u_{\mathrm{Li}}$
 (equilibrated condition 9.6e10 and 1.1e10 against 345 and 276 at 1e-8 and 3e-10 mol/L Li).
+Before positive charts or rank checks, cache the existing amount bounds on the
+operative supplied basis, including stability trials. For ordinary reacting
+declarations, an apparent LP zero proposes a full-component nonnegative conserved
+functional. Verify its zero feed contraction and every original reaction
+contraction with native error-free dot products. Only a verified certificate
+removes a species; an unresolved apparent zero cannot prove absence. Reduce state
+balances by independent echelon row operations while retaining their full feed
+columns and the discarded inventory restrictions. Full reaction/reference
+completion precedes restriction. Reject a pinned-zero support intersecting the
+certified absent set with `zero_inventory_incipient_support`; trial chemistry
+does not establish a global physical-inventory certificate.
+
 Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
 rows using the required common energy. Recompute achieved residuals and phase
@@ -1007,10 +1019,13 @@ each order with the lower-order curvature terms, [t^2] g = Dg[z_2]
 Precedence is input validation; central solve and classified rows; support,
 chart and topology; finite, rank and linear residual; the selected P4
 dependency; a completed nonfinite value. A zero direction returns an exact zero
-after admission, and a fixed T or P keeps its identity action. `support_change`
-and `ionic_insertion` are unforced: a zero-feed non-participant species leaves
-a rank-deficient balance row, so no admitted central state carries a removed
-species.
+after admission, and a fixed T or P keeps its identity action. Feed directions
+must annihilate the preserved vanished-inventory restrictions. A direction that
+changes them reports `support_change` or `ionic_insertion`, preserving central
+values and independently available directions. Fixed-face EOS and reaction
+columns use the unchanged full reference completion; removed amount/fraction
+actions are literal zero. Continuation recompiles or reports a support event
+when the inventory face changes.
 
 `solved_state_first_actions(compiled, central, observables, directions)` evaluates
 independent A1 requests through the same owner. Within that call only, it shares
@@ -1334,12 +1349,43 @@ $$
 
 where $x_{\mathrm{cut}}$ is `STABILITY_COMPOSITION_FLOOR`, $\varepsilon$ is
 `EQUILIBRIUM_BOX_INVENTORY_FRACTION` and $u_i$ is the largest attainable total amount of $i$,
-one HiGHS linear program per species. Rows of $B$ can carry mixed signs (a hydrogen row
+one HiGHS linear program per species, cached during compilation. Rows of $B$ can carry mixed signs (a hydrogen row
 $n_{\mathrm{H^+}}-n_{\mathrm{LiA}}-n_{\mathrm{NaA}}$), so no single row ratio bounds $n_i$; an
 unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution domain whenever
 $\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem
 is infeasible, and just above that the optimum sits on the box beyond the polish's reach
 (#172: 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
+
+`inventory_bounds(compiled, species, fraction, floor)` shares this HiGHS owner
+with the optimizer box. The amount program uses $n/N_{\mathrm{feed}}$ and returns
+its maximum in mol plus the separate dimensionless feed-normalized amount.
+Fraction mode uses the exact transformed equations in the equilibrium formulation.
+Its internal LP variable is $q=s\tau$, where $s$ is the smallest positive
+$|b_k/N_{\mathrm{feed}}|$ capped at one (one when all balances vanish). This
+column scaling preserves tiny nonzero inventory coefficients that HiGHS would
+otherwise drop; returned witnesses and residuals use the original $\tau$ chart.
+LP assembly errors or nonfinite reconstruction remain numerical failures.
+It first maximizes $\tau$ to establish a finite floored inventory: a positive
+feasible point, or a feasible point plus a positive-$\tau$ unbounded ray, supplies
+`finite_witness`. A valid optimal $\tau=0$ means that finite set is empty.
+Unresolved positivity or residuals above `EQUILIBRIUM_ROW_RESIDUAL` yield an
+unavailable numerical result, with the LP cause retained. The species objective
+is then restored; an optimum at $\tau=0$ is a limiting supremum only when finite
+feasibility was established. `limiting` describes that maximizing witness; it
+alone does not exclude a different finite maximizer (for example, $b=0$).
+`witness` holds $n/N_{\mathrm{feed}}$ in amount mode
+or $(y,\tau)$ in fraction mode. `amounts_mol` reconstructs the maximizing finite
+point and is absent for a limiting supremum. Logarithms are available only for
+positive fraction maxima. Balance, normalization and lower-bound residuals are
+dimensionless. The finite witness has its own residual and termination cause;
+`lp_error` retains HiGHS' reported primal infeasibility for the species program,
+or for finite-feasibility termination when no species program ran.
+Optimal, structural zero, infeasible inventory, unbounded amount, exhausted work
+and numerical failure remain distinct. An unavailable maximum never becomes an
+optimizer-box value. Structural-zero results carry zero without a logarithm.
+The optimizer still keeps $\beta$ on failed/unbounded amount programs,
+preserving the prior box formula and trace-inventory checks. It requests only
+the compiled support union, so species outside every support add no LP run.
 
 *Derivation of $\varepsilon$.* The boxes can hold at most $\sum_p x_{i,\mathrm{box}} n_p \le
 \varepsilon (N/N_{\mathrm{feed}})\, u_i$ of species $i$, a fraction $\varepsilon$ of its attainable
@@ -1356,8 +1402,9 @@ below that it is lowered, including states the uniform box already solved (Li at
 every minor species instead ($\varepsilon = \beta$, box $\beta u_i/N_{\mathrm{feed}}$) removed the
 barrier's regularisation for a carrier at inventory fraction 5e-4 (box $\ln x$ from $-18$ to
 $-26$): Lithium's four-step continuation corrector then wandered for 80 iterations and ended
-locally infeasible at a Na-loaded state that the uniform box solves in 9. The cutoff keeps
-the bound finite for an unattainable species ($u_i = 0$). The box does not set accuracy: a
+locally infeasible at a Na-loaded state that the uniform box solves in 9. A globally
+certified zero-inventory species is removed before box construction; a failed or
+unbounded LP cannot certify absence. The box does not set accuracy: a
 moiety row $(Bn-b)/N_{\mathrm{feed}}$ resolves an inventory to its achieved residual, at most the
 caller's row tolerance and after the polish near rounding, $\epsilon N_{\mathrm{feed}}$ (trace
 isomers fed at 1e-10, 1e-12 and 1e-14 mol in 1 mol return their amount to 4e-8, 5e-9 and 9e-3

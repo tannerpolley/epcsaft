@@ -26,6 +26,9 @@ from .problem import (
 EquilibriumStart = _core.EquilibriumStart
 EquilibriumWorkLimits = _core.EquilibriumWorkLimits
 EquilibriumStartsResult = _core.EquilibriumStartsResult
+inventory_bounds = _core.inventory_bounds
+InventoryBound = _core.InventoryBound
+
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
@@ -49,6 +52,8 @@ StabilityOptions = _core.StabilityOptions
 
 __all__ = (
     "Amounts",
+    "inventory_bounds",
+    "InventoryBound",
     "stability_test",
     "StabilityOptions",
     "asl_record",

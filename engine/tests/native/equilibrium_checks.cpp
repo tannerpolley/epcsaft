@@ -726,7 +726,7 @@ void check_s2() {
     CHECK(terminal.log_fugacity_coefficient.has_value());
     double identity = 0.0;
     for (std::size_t i = 0; i < nu.size(); ++i)
-        identity += nu[i] * ((*terminal.log_fugacity_coefficient)[i]
+        identity += nu[i] * ((*terminal.log_fugacity_coefficient)[i].value()
             + std::log(1.0e5 / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0)));
     recording_support::compare(
         "neutral-reference/lambda-identity", "terminal_contraction", "1",
@@ -2886,7 +2886,7 @@ void check_e2_thermal() {
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     const auto pure = ethane.state_at_pressure(350.0, 2.0e5, {1.0}, epcsaft::DensityBranch::Vapor);
     const double compressibility = 2.0e5 / (pure.molar_density * R * 350.0);
-    const double phi = std::exp(pure.residual_chemical_potential_over_rt[0]) / compressibility;
+    const double phi = std::exp(pure.residual_chemical_potential_over_rt[0].value()) / compressibility;
     const double a = std::exp(p3_pressure.ln_k) * 1.0e5 / (phi * 2.0e5);
     const double y = 2.0 * a / (a + std::sqrt(a * a + 4.0 * a));
     const double total = 1.5 / (2.0 - y);
@@ -2939,7 +2939,7 @@ void check_e2_thermal() {
         const double rt = R * 298.15;
         std::vector<double> gibbs(3);
         for (std::size_t i = 0; i < 3; ++i)
-            gibbs[i] = -rt * (std::log(state.molar_density * x[i]) + state.residual_chemical_potential_over_rt[i]);
+            gibbs[i] = -rt * (std::log(state.molar_density * x[i]) + state.residual_chemical_potential_over_rt[i].value());
         const auto stoichiometry = equilibrium_support::permute_vector(nu, order);
         double contraction = 0.0;
         for (std::size_t i = 0; i < 3; ++i) contraction += stoichiometry[i] * gibbs[i];
@@ -3351,10 +3351,10 @@ std::optional<double> mapped(const SolvedStateObservable& item, const epcsaft::H
     case Kind::PhaseMolarDensity: return result.molar_densities[item.phase];
     case Kind::PhasePackingFraction: return result.packing_fractions[item.phase];
     case Kind::PhasePressure: return state(item.phase).pressure;
-    case Kind::PhaseResidualChemicalPotentialOverRt: return state(item.phase).residual_chemical_potential_over_rt[item.component];
+    case Kind::PhaseResidualChemicalPotentialOverRt: return state(item.phase).residual_chemical_potential_over_rt[item.component].value();
     case Kind::PhaseLogActivity:  // ln(x rho / (1 mol/m^3)) + mu_res/RT through the public State
         return std::log(x(item.phase)[item.component] * result.molar_densities[item.phase])
-            + state(item.phase).residual_chemical_potential_over_rt[item.component];
+            + state(item.phase).residual_chemical_potential_over_rt[item.component].value();
     case Kind::PhaseProperty: {
         const auto s = state(item.phase);
         switch (item.property) {
@@ -4116,7 +4116,7 @@ void check_e5_reactive() {
             if (item.kind != Kind::PhaseMoleFraction && item.kind != Kind::PhaseComponentAmount && item.kind != Kind::PhaseAmount) return std::nullopt;
             const auto pure = ethane->state_at_pressure(T, 2.0e5, {1.0}, epcsaft::DensityBranch::Vapor);
             const double compressibility = 2.0e5 / (pure.molar_density * R * T);
-            const double phi = std::exp(pure.residual_chemical_potential_over_rt[0]) / compressibility;
+            const double phi = std::exp(pure.residual_chemical_potential_over_rt[0].value()) / compressibility;
             const double a = std::exp(epcsaft::evaluate_reaction_properties(pressure_law, T).ln_k) * 1.0e5 / (phi * 2.0e5);
             const double y = 2.0 * a / (a + std::sqrt(a * a + 4.0 * a));
             const double total = 1.5 / (2.0 - y);
@@ -4422,9 +4422,8 @@ void check_e5_refusals() {
     all_ok = (record_bool("e5-8/typed/central-unavailable", "e5-8", "the pre-solve NOT_RUN record is typed central_solve_unavailable",
         !exact_central.success && not_run.results[0].status == SolvedStateActionStatus::CentralSolveUnavailable && !not_run.results[0].value.has_value(),
         recording_support::fields({recording_support::field("solver_status", exact_central.solver_status)}))) && all_ok;
-    // A zero-feed non-participant species leaves a rank-deficient balance row (E2), so no
-    // admitted central state can carry a removed species: support_change and ionic_insertion
-    // are unforced defensive statuses, retained as claim limits rather than physical cases.
+    // Exact inventory faces admit central states; insertion directions change that support,
+    // while a fixed intensive control retains its direct action.
     auto sparse = equilibrium_support::flash(3); sparse.feed.values = {0.5, 0.5, 0.0}; sparse.temperature.value = 180.0; sparse.pressure.value = 2.0e6;
     const auto sparse_compiled = epcsaft::equilibrium::compile_problem(model, sparse);
     const auto sparse_central = epcsaft::equilibrium::solve_equilibrium(model, sparse);
@@ -4432,10 +4431,18 @@ void check_e5_refusals() {
     insertion.observables = {obs(Kind::PhaseAmount, 0), obs(Kind::Temperature)};
     insertion.directions = {direction(0.0, 0.0, {0.0, 0.0, 0.01}, {0.0, 0.0})};
     const auto inserted = epcsaft::equilibrium::solved_state_actions(sparse_compiled, sparse_central, insertion);
-    all_ok = (record_bool("e5-8/typed/removed-species", "e5-8", "a feed with a removed neutral species has no admitted central state (NOT_RUN rank record); E5 types it central_solve_unavailable, so support_change is unforced",
-        !sparse_central.success && sparse_central.solver_status == "NOT_RUN" && !sparse_compiled.removed_species.empty()
-            && inserted.results[0].status == SolvedStateActionStatus::CentralSolveUnavailable && inserted.results[1].status == SolvedStateActionStatus::CentralSolveUnavailable,
+    all_ok = (record_bool("e5-8/typed/removed-species", "e5-8", "the admitted neutral face preserves the amount value while refusing insertion as support_change; fixed temperature remains available with zero action",
+        sparse_central.success && !sparse_compiled.removed_species.empty() && sparse_central.mole_fractions[2] == 0
+            && inserted.results[0].status == SolvedStateActionStatus::SupportChange
+            && inserted.results[0].value.has_value() && !inserted.results[0].action.has_value()
+            && inserted.results[1].status == SolvedStateActionStatus::Available
+            && inserted.results[1].value == 180.0 && inserted.results[1].action == 0.0,
         recording_support::fields({recording_support::field("status", status_field(inserted, 0)), recording_support::field("message", sparse_central.message),
+            recording_support::field("classified_residual_1", sparse_central.convergence.residual), recording_support::field("iterations", sparse_central.iterations),
+            recording_support::field("mole_fractions_1", sparse_central.mole_fractions),
+            recording_support::field("phase_amount_mol", epcsaft::core::optional_number(inserted.results[0].value)),
+            recording_support::field("temperature_K", epcsaft::core::optional_number(inserted.results[1].value)),
+            recording_support::field("temperature_action_K", epcsaft::core::optional_number(inserted.results[1].action)),
             recording_support::field("removed_species", sparse_compiled.removed_species.size())}))) && all_ok;
     epcsaft::HelmholtzModel salt(properties_support::aqueous_electrolyte());
     auto water = equilibrium_support::flash(3); water.feed.values = {1.0, 0.0, 0.0}; water.temperature = FreeValue::fixed(298.15);
@@ -4445,9 +4452,14 @@ void check_e5_refusals() {
     ionic_request.observables = {obs(Kind::PhaseMolarDensity, 0)};
     ionic_request.directions = {direction(0.0, 0.0, {-0.02, 0.01, 0.01})};
     const auto ionic_batch = epcsaft::equilibrium::solved_state_actions(water_compiled, water_central, ionic_request);
-    all_ok = (record_bool("e5-8/typed/removed-ions", "e5-8", "a neutral-limit feed with removed ions has no admitted central state (NOT_RUN rank record); E5 types it central_solve_unavailable, so ionic_insertion is unforced",
-        !water_central.success && water_central.solver_status == "NOT_RUN" && ionic_batch.results[0].status == SolvedStateActionStatus::CentralSolveUnavailable,
-        recording_support::fields({recording_support::field("status", status_field(ionic_batch, 0)), recording_support::field("message", water_central.message)}))) && all_ok;
+    all_ok = (record_bool("e5-8/typed/removed-ions", "e5-8", "the admitted water face preserves the density value while refusing a charged insertion action as ionic_insertion",
+        water_central.success && water_central.mole_fractions[1] == 0 && water_central.mole_fractions[2] == 0
+            && ionic_batch.results[0].status == SolvedStateActionStatus::IonicInsertion
+            && ionic_batch.results[0].value.has_value() && !ionic_batch.results[0].action.has_value(),
+        recording_support::fields({recording_support::field("status", status_field(ionic_batch, 0)), recording_support::field("message", water_central.message),
+            recording_support::field("classified_residual_1", water_central.convergence.residual), recording_support::field("iterations", water_central.iterations),
+            recording_support::field("mole_fractions_1", water_central.mole_fractions),
+            recording_support::field("density_mol_m3", epcsaft::core::optional_number(ionic_batch.results[0].value))}))) && all_ok;
     // The matrix owner on a rank-deficient Jacobian: the exact all-pinned system loses one
     // rank at its generic point; nonfinite and excessive-residual paths remain unexecuted.
     const auto inspected = epcsaft::equilibrium::inspect_sensitivity(exact_compiled, exact_compiled.generic_point(), {});

@@ -319,6 +319,7 @@ an architecture scan nor a successful solve proves model validity.
 |---|---|
 | independent reference case | Analytic identity, measurement, evaluated reference, or source model calculation; source class and uncertainty remain distinct (CSE terminology and transfer audit §7) |
 | support | Species with coordinates in a phase; omitted species have structural zero amount (equilibrium formulation) |
+| inventory face | Nonnegative amount states with species forced absent by an exactly zero globally nonnegative conserved inventory; state balances restrict to surviving coordinates while the full feed map and original reaction/reference completion remain (equilibrium formulation, #231) |
 | admission | Checking declared physical inputs and the requested mathematical domain before evaluation (full EOS §12) |
 | derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
 | convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |

@@ -251,6 +251,8 @@ struct CompiledSystem final {
     std::vector<double> balance;
     std::vector<double> standard_gibbs;
     std::vector<std::vector<double>> B;
+    std::vector<std::vector<double>> inventory_restrictions;
+    std::vector<double> inventory_upper_bounds;
     std::vector<Row> rows;
     std::size_t pinned_count = 0;
     std::size_t free_intensive_count = 0;
@@ -320,6 +322,23 @@ struct CompiledSystem final {
 CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
+
+// Conserved inventory only: maximum is mol in amount mode, dimensionless in fraction mode.
+// witness is n/N_feed, or (y, tau=N_feed/N); finite_witness uses the same chart.
+struct InventoryBound final {
+    std::size_t species = 0;
+    std::string status, termination;
+    std::optional<double> maximum, feed_normalized_amount, log_fraction;
+    double balance_residual = NAN, normalization_residual = NAN, lower_bound_residual = NAN;
+    std::vector<double> witness, amounts_mol, finite_witness;
+    bool limiting = false, supported = false;
+    double floor = 0.0, lp_error = std::numeric_limits<double>::quiet_NaN();
+    double finite_residual = std::numeric_limits<double>::quiet_NaN();
+    std::string feasibility_termination;
+    std::vector<double> conserved_functional;
+};
+std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
+    const std::vector<std::size_t>& species, bool fraction, double floor);
 
 // Candidate-topology outcome of the existing producer loop: the first vanished free phase
 // in declaration order, else the first coincident pair in lexicographic ordinal order.

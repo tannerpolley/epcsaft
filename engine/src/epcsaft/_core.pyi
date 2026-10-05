@@ -311,8 +311,10 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
-    residual_chemical_potential_over_rt: list[float]
-    log_fugacity_coefficient: Optional[list[float]]
+    residual_chemical_potential_over_rt: list[Optional[float]]
+    log_fugacity_coefficient: Optional[list[Optional[float]]]
+    component_property_status: list[PropertyActionStatus]
+    log_fugacity_parameter_derivative: list[Optional[float]]
     residual_entropy: float
     residual_internal_energy: float
     residual_enthalpy: float
@@ -554,6 +556,29 @@ class EquilibriumProblem:
     row_tolerance: float
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
+
+class InventoryBound:
+    species: int
+    status: str
+    termination: str
+    maximum: Optional[float]
+    feed_normalized_amount: Optional[float]
+    log_fraction: Optional[float]
+    balance_residual: float
+    normalization_residual: float
+    lower_bound_residual: float
+    witness: list[float]
+    amounts_mol: list[float]
+    finite_witness: list[float]
+    limiting: bool
+    supported: bool
+    floor: float
+    lp_error: float
+    finite_residual: float
+    feasibility_termination: str
+
+def inventory_bounds(compiled: CompiledSystem, species: Sequence[int], fraction: bool,
+                     floor: float) -> list[InventoryBound]: ...
 
 class RowKind:
     Chemical: RowKind
