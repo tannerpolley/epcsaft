@@ -9,6 +9,8 @@ from typing import Any
 
 import pytest
 
+from epcsaft import _core
+
 from epcsaft import (
     GAS_CONSTANT_J_PER_MOL_K, IdealCorrelation, IdealInterval, IdealPolynomial, IdealShomate, Mixture, Parameters,
     PropertyObservable, ThermochemistryRecord,
@@ -364,6 +366,22 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
         return
     assert "is not positive definite" in result.message
     assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1
+
+
+def test_zero_feed_ions_allow_provisional_flash_start() -> None:
+    """#265: packet-3 neutral feed at loading 1e-3 must reach the equilibrium driver.
+
+    This pins setup of the diagnosed case; it does not assert flash acceptance.
+    """
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450.,
+                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
+    problem = Problem(T=318.15, P=5918.5286, row_tolerance=1e-10, reactions=reactions,
+                      feed=Amounts({"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}),
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", support=_MEA[:3])])
+    with _core.Capture() as capture:
+        result = solve_equilibrium(model, problem)
+    assert result.success or any(event.name == "ipopt_iteration" for event in capture.events), result.message
 
 
 def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:

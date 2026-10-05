@@ -350,6 +350,9 @@ density closure on their declared branches; this estimate changes neither
 the equations nor final admission. Two-root estimates and caller-guessed
 compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
 retains the sole dense feed root and the recovered incipient vapor (#204).
+Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
+weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
+an insertion property. This does not remove species from reactive supports (#265).
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$

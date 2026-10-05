@@ -111,6 +111,7 @@ std::vector<std::vector<double>> start_compositions(
     std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
     for (std::size_t i = 0; i < components; ++i) {
+        if (compiled.feed_composition[i] == 0.0) continue;
         if (std::find(compiled.removed_species.begin(), compiled.removed_species.end(), i)
             != compiled.removed_species.end()) continue;
         const double k = std::exp(require_component_property(ln_phi_liquid[i]) - require_component_property(ln_phi_vapor[i]));
