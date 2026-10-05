@@ -863,7 +863,6 @@ EquilibriumResult run_driver(
         auto rows_before = compiled.evaluate_at(at).values;
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
-        ++polish_evaluations;
         // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
         // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
         double ratio = 1.0;
