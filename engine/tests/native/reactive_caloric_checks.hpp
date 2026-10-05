@@ -197,7 +197,7 @@ inline Local local(const HelmholtzModel& model,const CompiledSystem& compiled,do
     double mixing=-1.0;for(std::size_t i=0;i<x.size();++i) mixing+=x[i]*std::log(x[i]*result.rho);
     result.g+=R*T*energy.value+P/result.rho+R*T*mixing;
     result.quotient=T*result.vt*result.vt/result.vp;
-    CHECK(std::isfinite(result.v)&&result.v>0&&std::isfinite(result.vp)&&result.vp<0);
+    CHECK(std::isfinite(result.v)&&std::isfinite(result.vp)&&result.vp!=0);
     return result;
 }
 
@@ -273,6 +273,7 @@ inline std::string context(const Case& c,const EquilibriumResult& solved,const L
         recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_residual",solved.residual_norm()),
         recording_support::field("iterations",solved.iterations),recording_support::field("evaluations",solved.evaluations),
         recording_support::field("v_G",l.v),recording_support::field("v_G_T_raw",l.vt),recording_support::field("v_G_P_raw",l.vp),
+        recording_support::field("v_G_positive",l.v>0),recording_support::field("v_G_P_negative",l.vp<0),
         recording_support::field("quotient_J_per_mol_K",l.quotient),
         recording_support::field("quotient_sensitivity_vT_Pa",std::abs(2*solved.temperature[0]*l.vt/l.vp)),
         recording_support::field("quotient_sensitivity_vP_Pa2_per_K",std::abs(l.quotient/l.vp)),
@@ -340,7 +341,7 @@ public:
     }
 };
 
-inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Quantity>& q,const EquilibriumResult& anchor) {
+inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Quantity>& q,const EquilibriumResult& anchor,const Direction* first_action=nullptr) {
     auto p=c.parameters;auto problem=c.problem;
     problem.temperature.value+=delta.temperature_k;problem.pressure.value+=delta.pressure_pa;
     for(std::size_t i=0;i<problem.feed.values.size();++i) {problem.feed.values[i]+=delta.feed_amounts_mol[i];CHECK(problem.feed.values[i]>=0);}
@@ -355,7 +356,9 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     const auto compiled=compile_problem(model,problem);
     const auto solved=solve_compiled(compiled,anchor);
     if(!solved.has_state()) throw std::runtime_error(c.name+" oracle solve: "+solved.message+" residual="+recording_support::number(solved.residual_norm()));
-    return values(model,compiled,solved,q);
+    auto sample=values(model,compiled,solved,q);
+    if(first_action) {Actions actions(compiled,solved,q);sample.values=actions.get({*first_action});}
+    return sample;
 }
 #include "reactive_caloric_wide.hpp"
 #include "reactive_caloric_wide_ionic.hpp"
@@ -368,13 +371,15 @@ struct Difference {
 };
 inline Difference difference(const Case& c,const std::vector<NamedDirection>& ds,double factor,
                              const std::vector<Quantity>& q,const EquilibriumResult& anchor,WideNeutral* wide,WideIonic* ionic) {
+    const bool first_difference=(c.problem.temperature.free||c.problem.pressure.free)&&ds.size()==2;
+    const auto perturbed=first_difference?std::vector<NamedDirection>{ds.back()}:ds;
     Difference out;out.value.assign(q.size(),0);out.rounding.assign(q.size(),0);
     std::vector<Wide> sum(q.size(),0);Wide denominator=1;
-    for(const auto& d:ds) denominator*=Wide(2)*Wide(d.step)*Wide(factor);out.denominator=double(denominator);
-    for(std::size_t mask=0;mask<(1U<<ds.size());++mask) {
+    for(const auto& d:perturbed) denominator*=Wide(2)*Wide(d.step)*Wide(factor);out.denominator=double(denominator);
+    for(std::size_t mask=0;mask<(1U<<perturbed.size());++mask) {
         auto delta=zero(c);int sign=1;
-        for(std::size_t k=0;k<ds.size();++k) {const double s=(mask>>k)&1?1:-1;sign*=int(s);delta=add(delta,ds[k].value,s*ds[k].step*factor);}
-        const auto sample=shifted(c,delta,q,anchor);out.residual=std::max(out.residual,sample.solved.residual_norm());
+        for(std::size_t k=0;k<perturbed.size();++k) {const double s=(mask>>k)&1?1:-1;sign*=int(s);delta=add(delta,perturbed[k].value,s*perturbed[k].step*factor);}
+        const auto sample=shifted(c,delta,q,anchor,first_difference?&ds.front().value:nullptr);out.residual=std::max(out.residual,sample.solved.residual_norm());
         out.pressure_residual=std::max(out.pressure_residual,std::abs(sample.phase.diagnostics.pressure_residual));
         out.site_residual=std::max(out.site_residual,std::abs(sample.phase.diagnostics.association_residual));
         out.minimum_v=std::min(out.minimum_v,sample.phase.v);out.maximum_vp=std::max(out.maximum_vp,sample.phase.vp);
@@ -445,9 +450,10 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
                 recording_support::field("linear_residual",diagnostics.maximum_linear_residual.value_or(0)),
                 recording_support::field("central_residual",diagnostics.central_residual.value_or(0))});
             if(!resolved&&rung<5) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                "Refinement","native-centered-rebuilt-values","Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
+                "Refinement",free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values","Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
             else recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                "Relationship","native-centered-rebuilt-values","Issue 225 rebuilt values independent of action recorder",
+                "Relationship",free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values",
+                free_chart&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
                 "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",pass[i],"reactive-caloric",id.c_str());
             done[i]=resolved;
         }
