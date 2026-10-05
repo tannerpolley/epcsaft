@@ -227,7 +227,17 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
             maximum_iterations=50,
         )
     ]
-    truth = [-0.25 / 0.2, 0.9 / 0.2, 6.01 / 2]
+    physical_inputs = [-0.25, 0.9, 6.01]
+    physical_cs = []
+    for coordinate in cs:
+        unit = regression.Coordinate()
+        unit.targets = coordinate.targets
+        unit.origin, unit.scale = 0, 1
+        physical_cs.append(unit)
+    declared = regression.evaluate_coordinates(p, physical_cs, physical_inputs, [])
+    native = regression.CoordinateSet()
+    native.coordinates = cs
+    truth = native.start(declared.parameters)
     chart = regression.evaluate_coordinates(p, cs, truth, holds)
     templates = [
         regression.electrolyte(
