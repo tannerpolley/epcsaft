@@ -1,10 +1,8 @@
 name: Reconcile issue roadmap
 
+# Hourly plus manual only: agents apply the reconciler locally after each change, and
+# per-event triggers queued bursts that cancelled pending runs and reported spurious failures.
 on:
-  issues:
-    types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
-  pull_request:
-    types: [opened, closed, reopened, synchronize]
   workflow_dispatch:
   schedule:
     - cron: "17 * * * *"
