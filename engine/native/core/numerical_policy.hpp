@@ -328,14 +328,14 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
 };
 
 // The optimizer bounds a trace row only by tau N_feed/(N_p x_i) (#87, 2026-09-21).
-// Three exact-Jacobian steps contract raw rows inside the physical cutoff.
+// Three exact-Jacobian steps, more while raw rows exceed the caller criterion (#261), contract them.
 // Return the visited point with lowest classified residual, including the optimizer
 // start; transient classified increases do not discard a useful direction (#66).
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     3.0,
     Category::AlgorithmTolerance,
-    "maximum raw-contracting Newton steps inside the composition cutoff; return the lowest "
-    "classified residual among the optimizer start and accepted steps",
+    "raw-contracting Newton steps in the composition cutoff, more while raw rows exceed the caller "
+    "criterion; return the lowest classified residual among the optimizer start and accepted steps",
 };
 
 // A reacting one-phase start is the ideal-solution speciation of its feed with frozen nonideal terms

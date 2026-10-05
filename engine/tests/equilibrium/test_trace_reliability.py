@@ -4,16 +4,22 @@ reacting-liquid starts that recover a manufactured speciation with trace water i
 decisions that trace curvature below rounding cannot flip."""
 import json
 import math
+from pathlib import Path
 from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters
+from epcsaft import _core
+
+from epcsaft import (
+    GAS_CONSTANT_J_PER_MOL_K, IdealCorrelation, IdealInterval, IdealPolynomial, IdealShomate, Mixture, Parameters,
+    PropertyObservable, ThermochemistryRecord,
+)
 from epcsaft.equilibrium import (
-    Amounts, EOS_STANDARD_STATE_ID, Free, Phase, Problem, Reaction, ReactionLogPolynomial,
-    SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus,
-    SolvedStateObservable, SolvedStateObservableKind as Kind,
-    compile_problem, solve_equilibrium, solved_state_actions,
+    Amounts, EOS_STANDARD_STATE_ID, Free, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial,
+    ReactionReference, ReferenceSourceBasis, SolvedStateActionDirection, SolvedStateActionRequest,
+    SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
+    compile_problem, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
 from tests.native_inputs import ETHANE, parameters, same
 from tests.packets import parameters_json
@@ -360,3 +366,95 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
         return
     assert "is not positive definite" in result.message
     assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1
+
+
+def test_zero_feed_ions_allow_provisional_flash_start() -> None:
+    """#265: packet-3 neutral feed at loading 1e-3 must reach the equilibrium driver.
+
+    This pins setup of the diagnosed case; it does not assert flash acceptance.
+    """
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450.,
+                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
+    problem = Problem(T=318.15, P=5918.5286, row_tolerance=1e-10, reactions=reactions,
+                      feed=Amounts({"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}),
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", support=_MEA[:3])])
+    with _core.Capture() as capture:
+        result = solve_equilibrium(model, problem)
+    assert result.success or any(event.name == "ipopt_iteration" for event in capture.events), result.message
+
+
+def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:
+    """#261: 7 mol MEA/kg water at CO2 loading 1e-5, 353.15 K and 101325 Pa (engine/data/reference/
+    mea-nominally-unloaded, Amine-Thermodynamics #124 record). CO2 (4.9e-13) and H3O+ (1.6e-12) lie far below
+    the optimizer box, so the polish starts at raw rows near 10. The former three-step cap stopped a still
+    quadratic contraction with every ionic stationarity row near -1.8e-9 z_i^2 under a 7.6e-12 classified
+    residual; continuing while raw rows exceed the criterion reaches rounding at the fourth step. The equilibrium heat-capacity action at the polished state
+    matches the centered enthalpy difference of re-solved neighbours."""
+    root = Path(__file__).resolve().parents[2] / "data" / "reference"
+    request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
+    system = request["reaction_system"]
+    mapping = json.loads((root / "mea-nominally-unloaded" / "parameters.json").read_text())
+    for family in mapping["model_families"]:
+        if family["kind"] == "electrolyte":
+            family.update(c_shell=1.0, c_dielectric=1.0)
+    calorics = json.loads((root / "mea-zero-inventory" / "ideal-calorics.json").read_text())
+    p0, components = calorics["reference_pressure_pa"], calorics["components"]
+    intervals: list[list[IdealInterval]] = [[] for _ in _MEA]
+    for name in ("carbon-dioxide", "water"):
+        lower, upper = components[name]["range_k"]
+        intervals[_MEA.index(name)] = [IdealInterval(lower, upper, True, True, IdealCorrelation(
+            IdealShomate(tuple(components[name]["coefficients"]), components[name]["formation_enthalpy_j_per_mol"]), p0))]
+    mea = components["monoethanolamine"]  # Cp(T) re-centred on the h = s = 0 anchor
+    centre = mea["enthalpy_entropy_anchor_k"]
+    shifted = [sum(a * math.comb(j, k) * centre ** (j - k) for j, a in enumerate(mea["coefficients"]) if j >= k)
+               for k in range(4)]
+    lower, upper = mea["range_k"]
+    intervals[1] = [IdealInterval(lower, upper, True, True, IdealCorrelation(IdealPolynomial(shifted, centre, 0.0, 0.0), p0))]
+    model = Mixture(Parameters.from_mapping(mapping), thermochemistry=ThermochemistryRecord(p0, intervals))
+    reactions = []
+    for record in system["engine_reactions"]:
+        law, reference = record["engine_correlation"], record["engine_reference"]
+        reactions.append(Reaction(dict(zip(_MEA, record["stoichiometry"])), name=record["reaction_id"],
+            correlation=ReactionLogPolynomial(*(law[key] for key in (
+                "a", "b", "c", "d", "reference_temperature", "temperature_min", "temperature_max", "standard_state_id"))),
+            reference=ReactionReference(getattr(ReferenceSourceBasis, reference["source_basis"]),
+                                        reference_pressure_pa=reference["reference_pressure_pa"])))
+    # The application's neutral reference: neutral solutes 1, source ion pairs summed, scaled by 1/8.
+    ratios = dict(zip(_MEA[:2] + _MEA[3:], (0.125, 0.125, 0.625, 0.25, 0.125, 0.125, 0.125, 0.125)))
+    guess = request["continuation"]["state"]["phases"][0]["mole_fractions"]
+
+    def solve(temperature: float) -> tuple[Problem, Any]:
+        problem = Problem(phases=[Phase("L", kind="liquid", support=_MEA, composition_guess=guess)], T=temperature,
+                          P=101325.0, feed=Amounts(dict(zip(_MEA, system["feed_amounts_mol"]))), reactions=reactions,
+                          neutral_reference=NeutralReference(solvent="water", solute_molality_ratios=ratios,
+                                                             standard_molality_mol_per_kg=1.0), topology_declared=True)
+        result = solve_equilibrium(model, problem)
+        assert result.success, result.message
+        return problem, result
+
+    def actions(problem: Problem, result: Any, d_t: float) -> list[tuple[Any, Any]]:
+        observables = [SolvedStateObservable(Kind.PhaseProperty, 0, 0, PropertyObservable.TotalEnthalpy),
+                       SolvedStateObservable(Kind.PhaseAmount, 0, 0)]
+        (batch,) = solved_state_first_actions(compile_problem(model, problem), result, observables,
+                                              [SolvedStateActionDirection(d_t, 0.0, [0.0] * len(_MEA), [])])
+        assert all(item.status == SolvedStateActionStatus.Available for item in batch.results)
+        return [(item.value, item.action) for item in batch.results]
+
+    problem, result = solve(353.15)
+    raw = max(abs(value) for value in result.residuals)
+    inputs = {"T_K": 353.15, "P_Pa": 101325.0, "classified_residual": result.convergence.residual,
+              "unscaled_residual_max": raw, "residuals": list(result.residuals)}
+    same(evidence, "mea-unloaded/unscaled-rows", raw, 0.0, atol=1e-9, rtol=0.0, unit="1", inputs=inputs,
+         basis="Identity", method="newton-polish", claim="trace ionic stationarity meets the unscaled 1e-9 gate")
+    mass = math.fsum(n * m for n, m in zip(system["feed_amounts_mol"], system["molar_masses_kg_per_mol"]))
+    (h, dh), (n, dn) = actions(problem, result, 1.0)
+    heat_capacity = (n * dh + h * dn) / mass / 1000.0
+    enthalpy = []
+    for temperature in (353.10, 353.20):  # the enthalpy at re-solved neighbours verifies the exact action
+        neighbour, solved = solve(temperature)
+        (h, _), (n, _) = actions(neighbour, solved, 0.0)
+        enthalpy.append(h * n)
+    same(evidence, "mea-unloaded/equilibrium-cp", heat_capacity, (enthalpy[1] - enthalpy[0]) / 0.1 / mass / 1000.0,
+         atol=0.0, rtol=1e-6, unit="kJ/(kg K)", inputs=inputs, basis="Identity", method="centered-enthalpy-difference",
+         claim="the equilibrium heat-capacity action equals the re-solved enthalpy slope")
