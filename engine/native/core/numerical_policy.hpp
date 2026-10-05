@@ -116,8 +116,8 @@ inline constexpr Tolerance ASSOCIATION_JACOBIAN_RANK{"ASSOCIATION_JACOBIAN_RANK"
 // The pressure row is solved in reduced units where the residual is O(1).
 inline constexpr Tolerance DENSITY_ROOT_RESIDUAL = derived(ASSOCIATION_RESIDUAL, 5.0, "DENSITY_ROOT_RESIDUAL",
     "bracketed Newton on the reduced pressure residual; the tolerance is on "
-    "the reduced residual; the delivered relative pressure error is |r|/z, "
-    "about 1e-8 on a dense liquid root, measured worst 1.7e-8"
+    "the reduced residual; publish the bracket endpoint with smaller |P_calc-P_target|; "
+    "relative pressure error is |r|/Z_target, with Z_target=P_target/(rho R T)"
 );
 
 inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
