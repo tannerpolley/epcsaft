@@ -60,6 +60,24 @@ p_s(\theta_a)=\theta_a\;(s\in S_a),\qquad
 \frac{\partial F}{\partial\theta_a}=\sum_{s\in S_a}\frac{\partial F}{\partial p_s}.
 $$
 
+## `affine_parameter_coordinate_map`
+
+- Section: Parameter regression / Affine coordinates
+- Status: Exact derivation
+- Source: Multivariate chain rule applied to `active_parameter_coordinate_identity`; issue #209 revision 1.
+- Description: A normalized optimizer value v maps to a base value q and proportional physical targets across parameter families. Bounds apply to q. Coefficients carry target-unit/base-unit; reciprocal pairs count once.
+- Change note: Nonzero signed coefficients and positive numerical scales are explicit inputs. Row order is independent EOS targets, dependent Born diameters, then reaction coefficients. Reaction coordinates have no EOS targets. Fixed slots remain outside the target list.
+
+$$
+q_j=o_j+s_jv_j,\qquad \theta_k=c_kq_j,\qquad
+D_{kj}=\frac{\partial\theta_k}{\partial v_j}=c_ks_j,
+\qquad s_j>0,\quad c_k\ne0,
+$$
+$$
+J_{\mathrm{opt}}=\operatorname{diag}\!\left(\sqrt{w}\,\frac{dr}{dy}\right)J_{\mathrm{physical}}D,
+\qquad C_{\mathrm{physical}}=D C_{\mathrm{optimizer}}D^T.
+$$
+
 ## `active_parameter_unit_transformation`
 
 - Section: Native phase coordinates
@@ -2450,12 +2468,20 @@ $$
 - Section: Parameter regression / Dependent hydration coordinate
 - Status: Exact derivation
 - Source: Implicit-function theorem applied to `infinite_dilution_solvation_energy` and `log_fugacity_coefficient_parameter_derivative`.
-- Description: A Born diameter holds a declared single-ion solvation energy, with exact first columns contracted through the independent affine/tied chart.
+- Description: A Born diameter holds a declared single-ion solvation energy, with exact first columns contracted through the independent cross-family affine chart.
 - Change note: Independent scalar holds only; nonzero scaled H_d, a declared bracket and both energy and diameter-correction criteria are required. Final acceptance uses the stored diameter without solving the equality again. Target uncertainty is fixed, not estimated.
 
 $$
 H=RT\ln\varphi_i^\infty-\Delta G_{i,\mathrm{target}}^\infty=0,
 \qquad\frac{d d_i}{d\theta_a}=-\frac{H_a}{H_d},
 \qquad J^\mathrm{opt}_{jc}=\sqrt{w_j}\,\frac{dr_j}{dy_j}\sum_r\frac{\partial y_j}{\partial\theta_r}D_{rc},
-\quad D_{rc}=\frac{d\theta_r}{du_c}.
+\quad D_{rc}=\frac{d\theta_r}{dv_c}.
+$$
+
+For the explicit targets $(\sigma_i,d_{\mathrm{packing},i},d_{\mathrm{DH},i})=(q,0.88q,0.88q)$,
+the implicit-function contraction includes every independent raw column:
+
+$$
+\frac{d d_{\mathrm{Born},i}}{d v_j}
+=-\frac{s_j\left(H_{\sigma_i}+0.88H_{d_{\mathrm{packing},i}}+0.88H_{d_{\mathrm{DH},i}}\right)}{H_{d_{\mathrm{Born},i}}}.
 $$

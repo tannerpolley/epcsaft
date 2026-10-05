@@ -350,6 +350,9 @@ density closure on their declared branches; this estimate changes neither
 the equations nor final admission. Two-root estimates and caller-guessed
 compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
 retains the sole dense feed root and the recovered incipient vapor (#204).
+Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
+weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
+an insertion property. This does not remove species from reactive supports (#265).
 For a neutral, non-associating, nonreactive, full-support two-phase fixed-TP request with both
 amounts free, absent complete caller composition guesses, the existing feed-state
 fugacity estimates define $K_i=\phi_i^L/\phi_i^V$. When finite positive $K_i$
@@ -409,6 +412,32 @@ is indefinite there, and Ipopt cycled through restoration to the iteration budge
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
+Caller-declared ordered starts share one thermodynamic problem and the same driver.
+A start contains physical composition, packing, amount and free-intensive guesses,
+a previous result, or a complete compiled-coordinate vector. Complete vectors
+skip generated initialization. Physical composition vectors use the completed
+declared supports: validate their original length and finite fractions in [0,1], then apply the
+same species restriction as compilation before checking surviving coordinates.
+Physical guesses fill omitted coordinates with
+existing generic/boundary seeds without reactive speciation, then replace every
+supplied coordinate, including reacting packing and the free-pressure seed.
+Invalid initialization is an individual attempt cause. The first available state
+meeting the native row, topology and density-branch checks is selected; subsequent
+starts remain unattempted. No best-residual or Gibbs comparison selects another root.
+Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
+ordered search. Remaining iterations and time enter the shared Ipopt options and
+callbacks; polish and final admission check the same deadline. A bounded inner
+kernel may finish after its deadline: elapsed time and overrun remain visible,
+and a post-deadline state is unavailable. Elapsed exhaustion is a controller cause,
+not a relabelled numerical stop: the common classifier retains its
+nonfinite/converged/floor/budget priority and the native optimizer termination.
+Measured rows that already meet the criterion can therefore remain numerically
+converged with success false and no published state after deadline rejection.
+This finite search establishes neither uniqueness nor global stability. Ordinary
+solve initialization retains its rules. The retained [declared-start falsifiers
+and default-solve cost](../../../analyses/2026-tpd-phase-discovery/results/issue238-cost/README.md)
+qualify the bounded inputs stated there.
+
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root, an anchored closure establishes local uniqueness, and the corrected density
@@ -422,9 +451,17 @@ Retain the native optimizer `solver_status` alongside the convergence stop,
 residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
-iteration-budget or time-budget stop, at most
-`EQUILIBRIUM_POLISH_STEPS` Newton steps on the unweighted rows with the exact
-Jacobian close that gap. Each step must reduce the raw row maximum and keep
+iteration-budget or time-budget stop, `EQUILIBRIUM_POLISH_STEPS` Newton steps on
+the unweighted rows with the exact Jacobian close that gap. Further steps continue
+only while the raw row maximum exceeds the caller's row criterion and each step's raw
+contraction ratio (after/before) is strictly below the previous accepted step's,
+under a separate polish cap of `EQUILIBRIUM_MAX_ITERATIONS` steps (#261,
+2026-10-05). In Newton's quadratic region the ratio falls toward zero; a constant or
+rising ratio means the iterate lies outside it, so polishing stops. From a
+box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
+4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
+−1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
+need no further polishing. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
@@ -433,7 +470,7 @@ optimizer start and accepted physical iterates, return the point with the lowest
 classified residual, breaking ties by lower raw residual (#66, 2026-09-22).
 The classified residual may rise at an intermediate step through nonlinear
 curvature; requiring it to decrease at every step can reject a direction that
-resolves trace chemical equilibrium in the existing three-step budget.
+resolves trace chemical equilibrium within the step budget.
 Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
 Acceptable-point, tiny-step and budget stops use the same polish; a budget stop at an
@@ -588,9 +625,21 @@ its unscaled rows, which are its constraints. Species thermochemistry attached t
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
-Declared-branch continuation follows one straight dimensionless path `q` in
-`[0, 1]` between two problems with identical declarations; only fixed
-intensives and resolved feed amounts move. The controller predicts each step
+Declared-branch continuation follows one straight dimensionless path `s` in
+`[0, 1]` between two problems with identical declarations. Fixed intensives
+and resolved feed amounts may move, or a parameter-only path moves physical
+EOS/Born coefficients as `theta(s) = theta0 + s (theta1 - theta0)` while T/P/feed
+and all declarations remain fixed. `parameter_targets` uses the ordered active
+coordinates of the supplied model; empty targets select the intensive/feed path.
+Both paths use the same controller. Parameter trials rebuild the model from its
+immutable base records and fixed thermochemistry; each compiled problem and
+branch check uses that trial model for its complete lifetime. Accepted
+`parameter_values` retain the physical coefficients. Born `c_dielectric` and
+`ionic_region_relative_permittivity` are active scalars in the shared parameter
+record; the latter must be positive. The tangent includes the full direct,
+packing, association and source-reference parameter chain. A singular tangent
+stops this straight path; it establishes neither a turning point nor absence of
+an endpoint solution. Held-composition charts and arclength are outside this method. The controller predicts each step
 from the implicit tangent (EqID: `implicit_sensitivity`: the first row
 coefficient along the lever at the fixed state, the directional series of
 ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
@@ -601,7 +650,7 @@ rejected left-domain step), and accepts a state only when the driver
 accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
 shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
-its cold declared root at `q = 0` or of the previous accepted density
+its cold declared root at `s = 0` or of the previous accepted density
 afterwards, with a positive corrected pressure slope. Finite step failures
 (left domain, stalled, missing anchored root) halve the step from the last
 accepted coordinates up to the caller's retry allowance and minimum step;
@@ -1221,8 +1270,8 @@ scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, finite-addition enthalpy,
-the declared equilibrium observations and direct source-basis ln K observations. It uses affine, tied
-optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
+the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
+optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
 withheld under rank deficiency or an active bound. Named scalar ln K and stored
@@ -1230,8 +1279,13 @@ withheld under rank deficiency or an active bound. Named scalar ln K and stored
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
 reference transfers. Optimizer columns follow declaration order; physical rows
-are EOS slots first, then reaction coordinates. Both direction families use one
+are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
+The native point reader returns prediction columns in `optimizer_gradient` and
+unit-weight residual columns in `residual_optimizer_gradient`. Difference scale a
+gives dr/dv = (dy/dv)/a; natural-log LogRatio gives dr/dv = (dy/dv)/y.
+The Ceres Jacobian also includes square-root row weights. Minimax consumes
+prediction columns and applies its own native check-error slopes.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact
@@ -1301,7 +1355,7 @@ and the existing check owner, without solving a hydration hold.
 One parameter-fitting TNLP consumes `ObservationEvaluator` values and exact raw
 and complete held-chart columns. The same check error/slope producer assembles
 both estimators' reports. Every inequality is divided by its declared positive
-scale; zero thresholds remain zero. The complete map includes all tied affine
+scale; zero thresholds remain zero. The complete map includes all target coefficients, numerical
 scales and eliminated Born rows. The epigraph and slack columns are analytic.
 Only exact first actions are supplied; Ipopt uses limited-memory BFGS, with no
 finite-difference derivative checker or parameter Hessian claim. Equilibrium

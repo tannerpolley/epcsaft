@@ -10,7 +10,7 @@ from epcsaft import (
 )
 from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
 
-from ..native_inputs import ETHANE, ROWS, associating_binary, parameters, same
+from ..native_inputs import ETHANE, ROWS, aqueous_electrolyte, associating_binary, parameters, same
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -45,8 +45,8 @@ def manufactured() -> tuple[Any, list[Any]]:
 
 
 def coordinates(start: Any) -> list[Any]:
-    return [regression.coordinate(start, "dispersion_energy_over_k", "s0", origin=150.0, scale=10.0, bounds=BOUNDS["dispersion_energy_over_k"]),
-            regression.coordinate(start, "k_ij", ("s0", "s1"), origin=0.0, scale=0.1, bounds=BOUNDS["k_ij"])]
+    return [regression.coordinate(start, [("dispersion_energy_over_k", "s0", 1)], origin=150.0, scale=10.0, bounds=BOUNDS["dispersion_energy_over_k"]),
+            regression.coordinate(start, [("k_ij", ("s0", "s1"), 1)], origin=0.0, scale=0.1, bounds=BOUNDS["k_ij"])]
 
 
 def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
@@ -99,24 +99,33 @@ def test_public_density_actions_match_the_native_rows(evidence: Any) -> None:
         model.density_actions(200.0, 1000.0, observables=(), directions=[_core.DensityActionDirection()])
 
 
+def test_global_born_scalar_chart_values_and_exact_map(evidence: Any) -> None:
+    """Global dimensionless targets follow theta = coefficient*(origin + scale*u)."""
+    p = aqueous_electrolyte(c_shell=1.0)
+    coordinates = [regression.coordinate(p, [("born_c_dielectric", None, 2)], origin=0.25, scale=0.05),
+                   regression.coordinate(p, [("ionic_region_relative_permittivity", None, 2)], origin=4.0, scale=0.5)]
+    chart = regression.evaluate_coordinates(p, coordinates, (1.0, -5.0), ())
+    for i, expected in enumerate((0.6, 3.0)):
+        same(evidence, f"born-global-chart/physical/{i}", chart.physical[i], expected, atol=1e-15, rtol=0.0)
+    for i, expected in enumerate((0.1, 0.0, 0.0, 1.0)):
+        same(evidence, f"born-global-chart/map/{i}", chart.map[i], expected, atol=1e-15, rtol=0.0)
+    reference = regression.evaluate_coordinates(p, coordinates, (5.0, 0.0), ())  # c=1, epsilon=8
+    baseline = regression.evaluate_coordinates(p, coordinates, (-5.0, 0.0), ())  # c=0
+    def born(native: Any) -> float:
+        return Mixture(Parameters(native, p.component_ids, p.site_ids)).state(313.15, rho=45000.0, x=(0.98, 0.01, 0.01)).born
+    # At fixed shell geometry/bulk permittivity, the correction is proportional to c*(1-1/epsilon).
+    base = born(baseline.parameters)
+    same(evidence, "born-global-chart/radial-ratio", (born(chart.parameters) - base) / (born(reference.parameters) - base), 16/35, atol=0.0, rtol=1e-12)
+
+
 def test_name_mapping_and_tie_map() -> None:
     """Names resolve to the owner's slot convention; ties map physical rows to optimizer columns."""
     p = associating_binary()
-    pair = regression.coordinate(p, "k_ij", ("s1", "s0"), origin=0.0, scale=1.0)
-    assert pair.slots == [[1, 2]] and pair.family == ParameterFamily.Kij
-    site = regression.coordinate(p, "association_energy_over_k", (("s0", "site0"), ("s0", "site1")), origin=0.0, scale=1.0)
-    assert site.slots == [[1, 4]]
-    tied = regression.coordinate(p, "sigma_constant", "s0", "s1", origin=2.5, scale=0.1, bounds=(2.0, 4.0))
-    assert tied.slots == [[0], [1]] and (tied.lower, tied.upper) == (2.0, 4.0)
-    a_set = regression.CoordinateSet()
-    a_set.coordinates = [tied, pair]
-    assert a_set.tie() == [0, 0, 1] and [(item.family, item.indices) for item in a_set.active()] == [
-        (ParameterFamily.SigmaConstant, [0]), (ParameterFamily.SigmaConstant, [1]), (ParameterFamily.Kij, [1, 2])]
     with pytest.raises(ParameterError):
         regression.density(p, 300.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=1.0, form="difference", mass_basis=False)
-    for bad in (lambda: regression.coordinate(p, "k_ij", ("s0", "s0"), origin=0.0, scale=1.0),
-                lambda: regression.coordinate(p, "sigma_constant", "s9", origin=0.0, scale=1.0),
-                lambda: regression.coordinate(p, "dielectric", "s0", origin=0.0, scale=1.0),
+    for bad in (lambda: regression.coordinate(p, [("k_ij", ("s0", "s0"), 1)], origin=0.0, scale=1.0),
+                lambda: regression.coordinate(p, [("sigma_constant", "s9", 1)], origin=0.0, scale=1.0),
+                lambda: regression.coordinate(p, [("dielectric", "s0", 1)], origin=0.0, scale=1.0),
                 lambda: regression.observation(p, "pressure", Problem(phases=Discover(), T=300.0, P=1.0e5, feed=Amounts({"s0": 1.0})), observed=1.0, form="log_ratio", mass_basis=False),
                 lambda: regression.observation(p, "mole_fraction", bubble(300.0), observed=1.0, phase="X", form="log_ratio", mass_basis=False),
                 lambda: regression.observation(p, "phase_fraction", bubble(300.0), observed=1.0, form="log_ratio", mass_basis=False),
@@ -174,7 +183,7 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     y = Pure(parameters((ETHANE,))).state(200.0, P=1.0e5, phase="liquid").molar_density
     pe = parameters((ETHANE,))
     steep = [regression.density(pe, 200.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=y - 1.0, form="difference", scale=1.0 / 1.2e154, mass_basis=False) for _ in range(3)]
-    epsilon = [regression.coordinate(pe, "dispersion_energy_over_k", "s0", origin=191.42, scale=10.0, bounds=(150.0, 260.0))]
+    epsilon = [regression.coordinate(pe, [("dispersion_energy_over_k", "s0", 1)], origin=191.42, scale=10.0, bounds=(150.0, 260.0))]
     overflowed = regression.fit(pe, epsilon, steep)
     assert overflowed.status == "initial_evaluation_failed" and not overflowed.usable and overflowed.initial_cost == 0.0
     assert [(f.observation, f.status, f.message) for f in overflowed.failures] == [(1, regression.ObservationStatus.Nonfinite, "accumulated weighted cost not finite")]
@@ -202,15 +211,13 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         components=("water", "sodium-cation", "chloride-anion"),
     )
     cs = [
-        regression.coordinate(p, "k_ij", pair, origin=0, scale=0.2, bounds=(-1, 1))
+        regression.coordinate(p, [("k_ij", pair, 1)], origin=0, scale=0.2, bounds=(-1, 1))
         for pair in (("sodium-cation", "water"), ("sodium-cation", "chloride-anion"))
     ]
     cs += [
         regression.coordinate(
             p,
-            "ion_suppression_coefficient",
-            "sodium-cation",
-            "chloride-anion",
+            [("ion_suppression_coefficient", "sodium-cation", 1), ("ion_suppression_coefficient", "chloride-anion", 1)],
             origin=0,
             scale=2,
             bounds=(3, 9),
@@ -239,7 +246,17 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
             maximum_iterations=50,
         )
     ]
-    truth = [-0.25 / 0.2, 0.9 / 0.2, 6.01 / 2]
+    physical_inputs = [-0.25, 0.9, 6.01]
+    physical_cs = []
+    for coordinate in cs:
+        unit = regression.Coordinate()
+        unit.targets = coordinate.targets
+        unit.origin, unit.scale = 0, 1
+        physical_cs.append(unit)
+    declared = regression.evaluate_coordinates(p, physical_cs, physical_inputs, [])
+    native = regression.CoordinateSet()
+    native.coordinates = cs
+    truth = native.start(declared.parameters)
     chart = regression.evaluate_coordinates(p, cs, truth, holds)
     templates = [
         regression.electrolyte(

@@ -207,18 +207,21 @@ void check_f1() {
 CoordinateSet seven_families() {
     CoordinateSet set;
     set.coordinates = {
-        {ParameterFamily::DispersionEnergyOverK, {{0}}, 221.0, 10.0, 150.0, 260.0},
-        {ParameterFamily::SegmentCount, {{0}}, 1.9489, 0.1, 1.5, 6.0},
-        {ParameterFamily::SigmaConstant, {{0}}, 3.7209, 0.1, 2.0, 4.2},
-        {ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, -1.0, 1.0},
-        {ParameterFamily::Lij, {{1, 2}}, 0.0, 1.0, -1.0, 1.0},
-        {ParameterFamily::AssociationEnergyOverK, {{1, 4}}, 0.0, 1.0, 0.0, 5000.0},
-        {ParameterFamily::AssociationVolume, {{1, 4}}, 0.0, 1.0, 0.0, 1.0},
+        {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 221.0, 10.0, 150.0, 260.0},
+        {{{ParameterFamily::SegmentCount, {0}}}, 1.9489, 0.1, 1.5, 6.0},
+        {{{ParameterFamily::SigmaConstant, {0}}}, 3.7209, 0.1, 2.0, 4.2},
+        {{{ParameterFamily::Kij, {1, 2}}}, 0.0, 1.0, -1.0, 1.0},
+        {{{ParameterFamily::Lij, {1, 2}}}, 0.0, 1.0, -1.0, 1.0},
+        {{{ParameterFamily::AssociationEnergyOverK, {1, 4}}}, 0.0, 1.0, 0.0, 5000.0},
+        {{{ParameterFamily::AssociationVolume, {1, 4}}}, 0.0, 1.0, 0.0, 1.0},
     };
     return set;
 }
 
+void check_affine_start_signed();
+
 void check_f2() {
+    check_affine_start_signed();
     const auto parameters = properties_support::associating_binary();
     const auto set = seven_families();
     validate(set, parameters);
@@ -227,7 +230,7 @@ void check_f2() {
     const auto active = set.active_parameters();
     CHECK(physical.size() == 7 && active.size() == 7);
     for (std::size_t r = 0; r < 7; ++r) {
-        const double truth_value = detail::family_values(parameters, active[r].family)[active[r].indices.front()];
+        const double truth_value = detail::family_values(parameters, active[r].family).first[active[r].indices.front()];
         const double ulp = 2.0 * EPS * std::max(std::abs(truth_value), std::abs(set.coordinates[r].origin));
         CHECK(agree("r1-f2/roundtrip/" + std::to_string(r), "theta", "native", physical[r], truth_value, ulp, 0.0,
                     fields({field("origin", set.coordinates[r].origin), field("scale", set.coordinates[r].scale),
@@ -238,7 +241,7 @@ void check_f2() {
     for (const auto& item : active) {
         const auto& lhs = detail::family_values(applied, item.family);
         const auto& rhs = detail::family_values(parameters, item.family);
-        identical = identical && lhs == rhs;
+        identical = identical && lhs.second == rhs.second && std::equal(lhs.first, lhs.first + lhs.second, rhs.first);
     }
     CHECK(truth("r1-f2/apply_identity", "applying the start reproduces every family array bit for bit", identical, "", "r1-f2"));
     // Bounds map through the same affine transform and are inclusive.
@@ -252,11 +255,11 @@ void check_f2() {
         {"start outside bounds", [](CoordinateSet& s) { s.coordinates[0].lower = 230.0; }},
         {"scale", [](CoordinateSet& s) { s.coordinates[1].scale = 0.0; }},
         {"bounds", [](CoordinateSet& s) { s.coordinates[2].lower = 5.0; }},
-        {"slot index", [](CoordinateSet& s) { s.coordinates[1].slots = {{99}}; }},
-        {"slots", [](CoordinateSet& s) { s.coordinates[1].slots.clear(); }},
+        {"slot index", [](CoordinateSet& s) { s.coordinates[1].targets[0].indices = {99}; }},
+        {"targets", [](CoordinateSet& s) { s.coordinates[1].targets.clear(); }},
         {"set is empty", [](CoordinateSet& s) { s.coordinates.clear(); }},
-        {"diagonal parameter coordinate", [](CoordinateSet& s) { s.coordinates[3].slots = {{0}}; }},
-        {"reciprocal parameter coordinate", [](CoordinateSet& s) { s.coordinates[3].slots = {{1}}; }},
+        {"diagonal parameter coordinate", [](CoordinateSet& s) { s.coordinates[3].targets[0].indices = {0}; }},
+        {"reciprocal parameter coordinate", [](CoordinateSet& s) { s.coordinates[3].targets[0].indices = {1}; }},
     };
     for (const auto& item : rejections) {
         auto broken = set;
@@ -272,8 +275,8 @@ void check_f3_f4() {
     auto parameters = properties_support::associating_binary();
     parameters.sigma_constant = {2.5, 2.5};
     CoordinateSet tied;
-    tied.coordinates = {{ParameterFamily::SigmaConstant, {{0}, {1}}, 2.5, 0.1, 2.0, 4.0},
-                        {ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, -1.0, 1.0}};
+    tied.coordinates = {{{{ParameterFamily::SigmaConstant, {0}}, {ParameterFamily::SigmaConstant, {1}}}, 2.5, 0.1, 2.0, 4.0},
+                        {{{ParameterFamily::Kij, {1, 2}}}, 0.0, 1.0, -1.0, 1.0}};
     validate(tied, parameters);
     const std::vector<std::size_t> tie = tied.tie();
     CHECK(truth("r1-f3/tie_map", "the tie map has one column per physical row: [0, 0, 1]",
@@ -312,7 +315,7 @@ void check_f3_f4() {
     CHECK(agree("r1-f4/fixed_projects_to_zero", "density_action", "mol/m^3 per K", fixed.density_action[0], 0.0, 1.0e-12, 0.0,
                 field("family", "DispersionEnergyOverK fixed"), "a well-formed coordinate absent from the active list projects to zero", "r1-f4"));
     auto outside = tied;
-    outside.coordinates[0].slots = {{0}, {5}};
+    outside.coordinates[0].targets[1].indices = {5};
     const auto slot_message = rejection([&] { validate(outside, parameters); });
     CHECK(truth("r1-f4/out_of_range_rejected", "an out-of-range slot raises by name",
                 slot_message.find("slot index") != std::string::npos, field("message", slot_message), "r1-f4"));
@@ -550,7 +553,7 @@ void check_f9_f10() {
                 fields({field("status", observation_status_name(kept.status)), field("value", kept.value.value_or(-1.0))}), "r1-f10"));
     FitRequest request;
     request.parameters = properties_support::ethane();
-    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 10.0, 150.0, 260.0}};
     request.observations = {overflow, overflow, overflow};
     request.weights = {0.0, 1.0, 1.0};
     const auto refused = fit(request);
@@ -578,7 +581,7 @@ void check_f9_f10() {
     steep.scale = 1.0e-150;
     request.observations = {steep};
     request.weights.clear();
-    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 1.0e200, 150.0, 260.0}};
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 1.0e200, 150.0, 260.0}};
     const auto steep_fit = fit(request);
     CHECK(truth("r1-f10/jacobian_overflow_typed", "an overflowing coordinate chain is refused at its row before publishing the initial trial",
                 steep_fit.status == "initial_evaluation_failed" && !steep_fit.usable && steep_fit.failures.size() == 1
@@ -593,7 +596,7 @@ void check_f9_f10() {
     steep_row.scale = 1.0 / 1.2e154;
     request.observations = {steep_row, steep_row, steep_row};
     request.weights.clear();
-    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 191.42, 10.0, 150.0, 260.0}};
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 10.0, 150.0, 260.0}};
     const auto accumulated = fit(request);
     CHECK(truth("r1-f10/accumulated_cost_typed", "an accumulated objective that overflows is a typed initial failure naming the row where the sum stops being finite",
                 accumulated.status == "initial_evaluation_failed" && !accumulated.usable && accumulated.failures.size() == 1
@@ -621,6 +624,152 @@ bool ladder_agrees(const std::string& id, const char* quantity, double action, c
     const bool fine = agree(id + "/fine", quantity, "native", action, rungs.fine, FIRST_ORDER * scale, 0.0, inputs, claim, group);
     const bool coarse = agree(id + "/coarse", quantity, "native", action, rungs.coarse, 4.0 * FIRST_ORDER * scale, 0.0, inputs, claim, group);
     return fine && coarse;
+}
+
+Parameters coupled_lengths(double q) {
+    auto p = properties_support::aqueous_electrolyte();
+    p.sigma_constant[1] = q;
+    p.packing_diameter_angstrom[1] = p.debye_huckel_diameter_angstrom[1] = 0.88 * q;
+    p.born_diameter_angstrom[1] = 3.5;
+    return p;
+}
+CoordinateSet coupled_coordinate() {
+    return {{{{{ParameterFamily::PackingDiameter, {1}, 0.88}, {ParameterFamily::SigmaConstant, {1}, 1},
+               {ParameterFamily::DebyeHuckelDiameter, {1}, 0.88}}, 3.0, 0.2, 2.4, 4.4}}};
+}
+HydrationHold coupled_hold() {
+    Observation ob;
+    ob.kind = ObservationKind::SolvationGibbsEnergy; ob.temperature = 298.15; ob.pressure = 1e5;
+    ob.composition = {1, 0, 0}; ob.ion_indices = {1, 2}; ob.stoichiometry = {1, 1};
+    ob.species = {1}; ob.branch = DensityBranch::Liquid;
+    ob.observed = *predict(HelmholtzModel(coupled_lengths(3.2)), ob).value;
+    return {ob, 1, 8, 1e-6, 1e-10, 50};
+}
+std::vector<Observation> coupled_observations() {
+    std::vector<Observation> rows;
+    for (const auto kind : {ObservationKind::MeanIonicActivityCoefficient, ObservationKind::OsmoticCoefficient})
+        for (const double m : {0.1, 1.0, 4.5}) {
+            auto ob = coupled_hold().reference;
+            ob.kind = kind; ob.species.clear(); ob.molality = m;
+            ob.form = ResidualForm::LogRatio; ob.observed = 1;
+            rows.push_back(ob);
+        }
+    return rows;
+}
+ObservationEvaluation evaluated_columns(const FitRequest& request, const std::vector<double>& v) {
+    std::vector<std::size_t> rows(request.observations.size()); std::iota(rows.begin(), rows.end(), 0);
+    FitResult failures; ObservationEvaluator evaluator(request, failures, rows); ObservationEvaluation out;
+    CHECK(evaluator.evaluate(v, true, out));
+    return out;
+}
+void affine_difference(const std::string& id, double exact, const std::function<double(double)>& value,
+                       double step, double scale, const char* group) {
+    const auto a = ladder(value, step), b = ladder(value, step / 2);
+    const double reference = scale * (4 * b.fine - b.coarse) / 3;
+    const double uncertainty = scale * std::abs((4 * b.fine - b.coarse - 4 * a.fine + a.coarse) / 3);
+    const double tolerance = 1e-7 + 2e-5 * std::abs(exact);
+    const auto inputs = fields({field("step", step), field("coarse", scale*a.coarse), field("middle", scale*a.fine),
+        field("fine", scale*b.fine), field("uncertainty", uncertainty), field("tolerance", tolerance)});
+    CHECK(agree(id + "/refinement", "Richardson_uncertainty", "per optimizer unit", uncertainty, 0, tolerance/4, 0,
+        inputs, "three native steps resolve the comparison", group));
+    CHECK(agree(id, "optimizer_column", "per optimizer unit", exact, reference, tolerance, 0,
+        inputs, "exact action agrees with explicitly rebuilt physical inputs", group));
+}
+void check_affine_start_signed() {
+    const auto p = coupled_lengths(3.2); const auto cs = coupled_coordinate();
+    const auto v = cs.start(p); const auto mapped = cs.apply(p, v);
+    for (const auto& target : cs.coordinates[0].targets) {
+        const double old = detail::family_values(p,target.family).first[1], value = detail::family_values(mapped,target.family).first[1];
+        CHECK(agree("r1-f2/coupled-roundtrip/" + std::to_string(static_cast<int>(target.family)), "diameter", "angstrom",
+            value, old, 8*EPS*std::max(std::abs(old),std::abs(value)), 0, field("v",v),
+            "coefficient-first inversion preserves all three lengths", "r1-f2"));
+    }
+    auto broken = p; broken.debye_huckel_diameter_angstrom[1] += 1e-8;
+    const auto message = rejection([&] { (void)cs.start(broken); });
+    CHECK(truth("r1-f2/coupled-disagreement", "start rejects a violated proportional equality",
+        message.find("tied values disagree") != std::string::npos, field("message",message), "r1-f2"));
+    FitRequest request; request.parameters = properties_support::neutral_binary();
+    request.parameters.k_ij[1] = request.parameters.k_ij[2] = -0.088;
+    request.coordinates = {{{{{ParameterFamily::Kij, {1,2}, -0.88}}, 0.1, 0.2, -1, 1}}};
+    auto ob = density(200, 1e5, {0.4,0.6}, DensityBranch::Liquid); ob.form = ResidualForm::Difference;
+    request.observations = {ob};
+    const auto exact = evaluated_columns(request,{0}).optimizer_gradient[0];
+    for (const double scale : {1.0, 3.0}) {
+        request.observations[0].scale = scale;
+        const auto columns = evaluated_columns(request,{0});
+        const double residual = columns.residual_optimizer_gradient[0], expected = exact/scale;
+        CHECK(agree("r1-f2/residual-basis/"+std::to_string(scale), "density_residual_action", "per optimizer unit",
+            residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("scale",scale),
+            "native Difference columns retain their declared scale", "r1-f2"));
+    }
+    const auto value = [&](double v) {
+        auto physical = request.parameters; physical.k_ij[1] = physical.k_ij[2] = -0.88*(0.1+0.2*v);
+        return *predict(HelmholtzModel(physical),ob).value;
+    };
+    affine_difference("r1-f2/signed-pair",exact,value,1e-3,1,"r1-f2");
+    CHECK(truth("r1-f2/signed-signal", "signed reciprocal action exceeds its criterion",
+        std::abs(exact)>1e-7+2e-5*std::abs(exact), field("exact",exact),"r1-f2"));
+}
+void check_coupled_columns() {
+    FitRequest request; request.parameters = coupled_lengths(3.2); request.coordinates = coupled_coordinate();
+    request.observations = coupled_observations();
+    const auto hold = coupled_hold();
+    for (const bool held : {false,true}) {
+        request.holds = held ? std::vector<HydrationHold>{hold} : std::vector<HydrationHold>{};
+        const auto exact = evaluated_columns(request,{1});
+        for (std::size_t r = 0; r < 3; ++r)
+            CHECK(agree("affine-columns/map/"+std::to_string(held)+"/"+std::to_string(r), "D", "angstrom per v",
+                exact.chart.map[r], r==1 ? 0.2 : 0.176, 1e-16,0,"","target coefficient and scale enter once","affine-columns"));
+        std::size_t root_row = 0;
+        const auto rebuilt = [&](double shift) {
+            auto physical = coupled_lengths(3.2+shift);
+            if (held) {
+                const CoordinateSet single{{{{{ParameterFamily::SigmaConstant,{1}}},0,1}}};
+                const auto root = evaluate_coordinates(physical,single,{3.2+shift},{hold});
+                CHECK(agree("affine-columns/root/"+std::to_string(root_row++), "hydration_error", "J/mol", root.holds[0].energy_error,
+                    0,1e-6,0,field("q",3.2+shift),"rebuilt reference holds hydration","affine-columns"));
+                physical = root.parameters;
+            }
+            return physical;
+        };
+        for (std::size_t row=0; row<request.observations.size(); ++row) {
+            const auto value = [&](double shift) { return std::log(*predict(HelmholtzModel(rebuilt(shift)),request.observations[row]).value); };
+            affine_difference("affine-columns/"+std::to_string(held)+"/"+std::to_string(row),
+                exact.residual_optimizer_gradient[row],value,1e-3,0.2,"affine-columns");
+            const double residual = exact.residual_optimizer_gradient[row], expected = exact.optimizer_gradient[row]/exact.predictions[row];
+            CHECK(agree("affine-columns/residual-basis/"+std::to_string(held)+"/"+std::to_string(row), "log_ratio_action", "per optimizer unit",
+                residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("prediction",exact.predictions[row]),
+                "native natural-log columns equal prediction columns divided by prediction", "affine-columns"));
+        }
+        if (held) {
+            const auto value = [&](double shift) { return rebuilt(shift).born_diameter_angstrom[1]; };
+            affine_difference("affine-columns/Born",exact.chart.map[3],value,1e-3,0.2,"affine-columns");
+            CHECK(agree("affine-columns/held-energy", "hydration_error", "J/mol",exact.chart.holds[0].energy_error,
+                0,1e-6,0,"","coupled chart holds hydration","affine-columns"));
+        }
+    }
+}
+void check_coupled_recovery() {
+    FitRequest request; request.parameters = coupled_lengths(3.0); request.coordinates = coupled_coordinate();
+    request.holds = {coupled_hold()}; request.observations = coupled_observations();
+    const HelmholtzModel truth_model(coupled_lengths(3.2));
+    for (auto& ob : request.observations) ob.observed = *predict(truth_model,ob).value;
+    request.controls.function_tolerance = 1e-15; request.controls.gradient_tolerance = 1e-14;
+    request.controls.parameter_tolerance = 1e-14;
+    const auto result = fit(request);
+    CHECK(result.usable);
+    CHECK(agree("affine-recovery/sigma", "sigma", "angstrom",result.parameters.sigma_constant[1],3.2,1e-6,0,
+        summary(result),"one scalar recovers the manufactured diameter","affine-recovery"));
+    for (const auto family : {ParameterFamily::PackingDiameter,ParameterFamily::DebyeHuckelDiameter})
+        CHECK(agree("affine-recovery/"+std::to_string(static_cast<int>(family)), "proportional_diameter", "angstrom",
+            detail::family_values(result.parameters,family).first[1],0.88*3.2,0.88e-6,0,"","proportional lengths recover","affine-recovery"));
+    CHECK(agree("affine-recovery/stored-hydration", "energy_error", "J/mol",
+        *predict(HelmholtzModel(result.parameters),request.holds[0].reference).value-request.holds[0].reference.observed,
+        0,1e-6,0,"","stored Born value holds hydration without resolving","affine-recovery"));
+    for (std::size_t row=0;row<request.observations.size();++row)
+        CHECK(agree("affine-recovery/decade/"+std::to_string(row),"log10_ratio","decade",
+            std::log10(*predict(HelmholtzModel(result.parameters),request.observations[row]).value/request.observations[row].observed),
+            0,1e-8,0,"","all six stored predictions recover","affine-recovery"));
 }
 
 void check_d86() {
@@ -735,10 +884,10 @@ double gram_entry(const FitResult& result, std::size_t a, std::size_t b) {
 // ---- R2 J1: prediction gradients against rebuilt-model central differences, then the residual chain.
 CoordinateSet binary_coordinates() {
     CoordinateSet set;
-    set.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 130.0, 170.0},
-                       {ParameterFamily::Kij, {{1, 2}}, 0.0, 0.1, -0.2, 0.2},
-                       {ParameterFamily::SegmentCount, {{1}}, 1.6, 0.1, 1.0, 2.5},
-                       {ParameterFamily::KijReciprocalTemperatureSlope, {{1, 2}}, 0.0, 10.0, -100.0, 100.0}};
+    set.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 130.0, 170.0},
+                       {{{ParameterFamily::Kij, {1, 2}}}, 0.0, 0.1, -0.2, 0.2},
+                       {{{ParameterFamily::SegmentCount, {1}}}, 1.6, 0.1, 1.0, 2.5},
+                       {{{ParameterFamily::KijReciprocalTemperatureSlope, {1, 2}}}, 0.0, 10.0, -100.0, 100.0}};
     return set;
 }
 
@@ -817,8 +966,8 @@ void check_j1() {
     auto tied = parameters;
     tied.sigma_constant = {3.6, 3.6};
     CoordinateSet shared;
-    shared.coordinates = {{ParameterFamily::SigmaConstant, {{0}, {1}}, 3.6, 0.1, 3.0, 4.0},
-                          {ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 130.0, 170.0}};
+    shared.coordinates = {{{{ParameterFamily::SigmaConstant, {0}}, {ParameterFamily::SigmaConstant, {1}}}, 3.6, 0.1, 3.0, 4.0},
+                          {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 130.0, 170.0}};
     FitRequest request;
     request.parameters = tied;
     request.coordinates = shared;
@@ -919,8 +1068,8 @@ FitRequest recovery_request(const Truth& truth_case, double epsilon, double kij,
     request.parameters = properties_support::neutral_binary();
     request.parameters.dispersion_energy_over_k[0] = epsilon;
     request.parameters.k_ij[1] = request.parameters.k_ij[2] = kij;
-    request.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 140.0, upper},
-                                       {ParameterFamily::Kij, {{1, 2}}, 0.0, 0.1, -0.2, 0.2}};
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 140.0, upper},
+                                       {{{ParameterFamily::Kij, {1, 2}}}, 0.0, 0.1, -0.2, 0.2}};
     request.observations = truth_case.observations;
     return request;
 }
@@ -961,11 +1110,11 @@ ThermochemistryRecord constant_cp(std::size_t components) {
 CoordinateSet water_coordinates() {
     CoordinateSet set;
     set.coordinates = {
-        {ParameterFamily::SegmentCount, {{0}}, 1.204659, 0.1, 0.8, 2.0},
-        {ParameterFamily::SigmaConstant, {{0}}, 2.7927, 0.05, 2.4, 3.2},
-        {ParameterFamily::DispersionEnergyOverK, {{0}}, 353.9449, 10.0, 200.0, 500.0},
-        {ParameterFamily::AssociationEnergyOverK, {{1, 2}}, 2425.6714, 100.0, 1500.0, 3500.0},
-        {ParameterFamily::AssociationVolume, {{1, 2}}, 0.0450989, 0.005, 0.005, 0.2}};
+        {{{ParameterFamily::SegmentCount, {0}}}, 1.204659, 0.1, 0.8, 2.0},
+        {{{ParameterFamily::SigmaConstant, {0}}}, 2.7927, 0.05, 2.4, 3.2},
+        {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 353.9449, 10.0, 200.0, 500.0},
+        {{{ParameterFamily::AssociationEnergyOverK, {1, 2}}}, 2425.6714, 100.0, 1500.0, 3500.0},
+        {{{ParameterFamily::AssociationVolume, {1, 2}}}, 0.0450989, 0.005, 0.005, 0.2}};
     return set;
 }
 
@@ -1003,7 +1152,7 @@ void check_cp_derivatives() {
             const auto& active = c.active[k];
             const auto closure = [&](double shift) {
                 auto p = c.parameters;
-                for (const auto index : active.indices) detail::family_values(p, active.family)[index] += shift;
+                for (const auto index : active.indices) detail::family_values(p, active.family).first[index] += shift;
                 return *predict(HelmholtzModel(p, {}, thermal), item).value;
             };
             const auto rungs = ladder(closure, c.steps[k]);
@@ -1086,7 +1235,7 @@ void check_cp_recovery() {
     }
     for (const auto& active : request.coordinates.active_parameters())
         for (const auto index : active.indices)
-            detail::family_values(request.parameters, active.family)[index] *=
+            detail::family_values(request.parameters, active.family).first[index] *=
                 active.family == ParameterFamily::AssociationVolume ? 1.05 : 1.02;
     const auto result = fit(request);
     const auto inputs = fields({summary(result), field("singular_values", result.covariance.singular_values),
@@ -1280,8 +1429,8 @@ void check_r3() {
     // Covariance transformation through a tie and scales, and the variance factor.
     auto shared = recovery_request(truth_case, 148.0, 0.0);
     shared.parameters.sigma_constant = {3.6, 3.6};
-    shared.coordinates.coordinates = {{ParameterFamily::SigmaConstant, {{0}, {1}}, 3.6, 0.1, 3.0, 4.0},
-                                      {ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 130.0, 170.0}};
+    shared.coordinates.coordinates = {{{{ParameterFamily::SigmaConstant, {0}}, {ParameterFamily::SigmaConstant, {1}}}, 3.6, 0.1, 3.0, 4.0},
+                                      {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 130.0, 170.0}};
     const auto tied = fit(shared);  // converged: an unfinished iterate carries no covariance (r2-j2/not_converged)
     CHECK(tied.usable && tied.covariance.status == "available" && tied.covariance.physical.size() == 9);
     const auto& cu = tied.covariance.optimizer;
@@ -1306,8 +1455,8 @@ void check_r3() {
     FitRequest inadmissible;
     inadmissible.parameters = properties_support::neutral_binary();
     inadmissible.parameters.dispersion_energy_over_k[0] = 148.0;
-    inadmissible.coordinates.coordinates = {{ParameterFamily::DispersionEnergyOverK, {{0}}, 150.0, 10.0, 140.0, 170.0},
-                                            {ParameterFamily::SegmentCount, {{0}}, 1.0, 2.0, 0.0, 5.0}};
+    inadmissible.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 140.0, 170.0},
+                                            {{{ParameterFamily::SegmentCount, {0}}}, 1.0, 2.0, 0.0, 5.0}};
     for (std::size_t i = 0; i < 3; ++i) {
         inadmissible.observations.push_back(truth_case.observations[i]);
         inadmissible.observations.back().observed *= 50.0;
@@ -1455,8 +1604,8 @@ HydrationHold analytic_minimax_hold(double upper) {
 AnalyticMinimaxProblem analytic_minimax_problem(bool b1, double q, double sigma) {
     AnalyticMinimaxProblem problem;
     auto& request = problem.request;
-    request.coordinates.coordinates.push_back({ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, 0.0, b1 ? 2.0 : 3.0});
-    if (b1) request.coordinates.coordinates.push_back({ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0, 0.0, 2.0});
+    request.coordinates.coordinates.push_back({{{ParameterFamily::Kij, {1, 2}}}, 0.0, 1.0, 0.0, b1 ? 2.0 : 3.0});
+    if (b1) request.coordinates.coordinates.push_back({{{ParameterFamily::SegmentCount, {0}}}, 0.0, 1.0, 0.0, 2.0});
     request.observations.resize(5);
     for (auto& row : request.observations) {
         row.kind = ObservationKind::MeanIonicActivityCoefficient;
@@ -1695,8 +1844,8 @@ void check_reaction_derivatives() {
     a1.coordinates.coordinates = {reaction_coordinate("A+B=C")};
     regular_reaction_state(HelmholtzModel(a1.parameters), a1.observations[0], "reaction-a1");
     reaction_columns("reaction-a1/scalar", a1);
-    a1.coordinates.coordinates = {{ParameterFamily::Kij, {{2, 6}}, 0.045, 0.05}, reaction_coordinate("A+B=C"),
-                                 {ParameterFamily::SigmaConstant, {{1}}, 3.0, 0.5}};
+    a1.coordinates.coordinates = {{{{ParameterFamily::Kij, {2, 6}}}, 0.045, 0.05}, reaction_coordinate("A+B=C"),
+                                 {{{ParameterFamily::SigmaConstant, {1}}}, 3.0, 0.5}};
     const auto interleaved = reaction_columns("reaction-a1/joint", a1);
     const auto& j = interleaved.physical_jacobian;
     for (std::size_t row = 0; row < a1.observations.size(); ++row) {
@@ -1788,7 +1937,7 @@ void check_reaction_recovery() {
     b1.observations = {solved(ObservationKind::PhaseMoleFraction, problem, 0, {2}),
         solved(ObservationKind::PhaseMoleFraction, problem, 1, {0}), solved(ObservationKind::PhaseFraction, problem, 0),
         amount_ratio(problem, 0, 1, {2}, {2})};
-    b1.coordinates.coordinates = {{ParameterFamily::Kij, {{2, 6}}, 0.045, 0.1}, reaction_coordinate("A+B=C")};
+    b1.coordinates.coordinates = {{{{ParameterFamily::Kij, {2, 6}}}, 0.045, 0.1}, reaction_coordinate("A+B=C")};
     reaction_data(b1);
     b1.parameters.k_ij[2] = b1.parameters.k_ij[6] = 0.045;
     for (auto& row : b1.observations) row.problem.reactions[0].equilibrium_constant = 1.0;
@@ -1922,7 +2071,7 @@ void check_log_constant() {
     problem.reactions[0].correlation = ReactionLogPolynomial{0.4, 80.0, 0.5, 0.001, 300.0, 150.0, 400.0,
                                                            equilibrium::EOS_STANDARD_STATE_ID};
     CoordinateSet coordinates{{reaction_coordinate("reaction_a", ReactionCoefficient::B, 300.0),
-        {ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0}, reaction_coordinate("reaction_a"),
+        {{{ParameterFamily::SegmentCount, {0}}}, 0.0, 1.0}, reaction_coordinate("reaction_a"),
         reaction_coordinate("reaction_b"), reaction_coordinate("reaction_a", ReactionCoefficient::C),
         reaction_coordinate("reaction_a", ReactionCoefficient::D, 1.0 / 300.0)}};
     const HelmholtzModel model(parameters, coordinates.active_parameters());
@@ -1978,7 +2127,7 @@ void check_log_constant() {
     // Observation admission must reject fixed targets even when only an EOS coordinate is fitted.
     FitRequest rejected;
     rejected.parameters = parameters;
-    rejected.coordinates.coordinates = {{ParameterFamily::SegmentCount, {{0}}, 0.0, 1.0}};
+    rejected.coordinates.coordinates = {{{{ParameterFamily::SegmentCount, {0}}}, 0.0, 1.0}};
     rejected.observations = {log_constant(problem, "reaction_a")};
     const auto reject = [&](FitRequest candidate, const std::string& cause) {
         const auto result = fit(candidate);
@@ -2075,8 +2224,8 @@ Observation addition_observation(const EquilibriumProblem& initial, const Equili
 CoordinateSet addition_coordinates() {
     CoordinateSet result;
     result.coordinates = {
-        {ParameterFamily::Kij, {{1, 2}}, 0.0, 1.0, -0.2, 0.2},
-        {ParameterFamily::DispersionEnergyOverK, {{0}, {1}}, 191.42, 1.0, 150.0, 250.0},
+        {{{ParameterFamily::Kij, {1, 2}}}, 0.0, 1.0, -0.2, 0.2},
+        {{{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::DispersionEnergyOverK, {1}}}, 191.42, 1.0, 150.0, 250.0},
         reaction_coordinate("2A=B"),
         reaction_coordinate("2A=B", ReactionCoefficient::B),
         reaction_coordinate("2A=B", ReactionCoefficient::C),
@@ -2216,7 +2365,7 @@ void check_ionic_addition_enthalpy() {
     coordinates.coordinates = {
         // Solvent segment count changes packing/density, rather than a Born
         // share that nearly cancels between the ionic infinite-dilution standards.
-        {ParameterFamily::SegmentCount, {{0}}, parameters.segment_count[0], 1.0, 1.0, 1.5},
+        {{{ParameterFamily::SegmentCount, {0}}}, parameters.segment_count[0], 1.0, 1.0, 1.5},
         reaction_coordinate("H2O=Na++Cl-", ReactionCoefficient::B, T)};
     coordinates.coordinates[1].origin = -2000.0;
     coordinates.coordinates[1].lower = -3000.0;
@@ -2587,7 +2736,7 @@ void check_addition_enthalpy() {
     recovery.parameters.dispersion_energy_over_k = {195.2484, 195.2484};
     recovery.thermochemistry = record;
     recovery.coordinates.coordinates = {
-        {ParameterFamily::DispersionEnergyOverK, {{0}, {1}}, 191.42, 10.0, 150.0, 250.0},
+        {{{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::DispersionEnergyOverK, {1}}}, 191.42, 10.0, 150.0, 250.0},
         reaction_coordinate("2A=B", ReactionCoefficient::B, 260.0)};
     recovery.coordinates.coordinates[1].origin = 200.0;
     recovery.coordinates.coordinates[1].lower = -2000.0;
@@ -2731,7 +2880,7 @@ void check_hydration_failures() {
     energy.composition = {1, 0, 0}; energy.ion_indices = {1, 2}; energy.stoichiometry = {1, 1};
     energy.species = {1}; energy.branch = DensityBranch::Liquid; energy.observed = -381930;
     FitRequest request; request.parameters = parameters;
-    request.coordinates.coordinates = {{ParameterFamily::Kij, {{1, 3}}, 0, .2, -1, 1}};
+    request.coordinates.coordinates = {{{{ParameterFamily::Kij, {1, 3}}}, 0, .2, -1, 1}};
     request.observations = {energy}; request.holds = {{energy, 1, 8, 1e-6, 1e-10, 50}};
     const auto start = request.coordinates.start(parameters);
     FitResult failures;
@@ -2774,8 +2923,8 @@ void check_minimax_consistency() {
     energy.composition = {1, 0, 0}; energy.ion_indices = {1, 2}; energy.stoichiometry = {1, 1};
     energy.species = {1}; energy.branch = DensityBranch::Liquid; energy.observed = -381930;
     FitRequest request; request.parameters = parameters;
-    request.coordinates.coordinates = {{ParameterFamily::Kij, {{1, 3}}, 0, .2, -1, 1},
-        {ParameterFamily::IonSuppressionCoefficient, {{1}, {2}}, 0, .5, 0, 20}};
+    request.coordinates.coordinates = {{{{ParameterFamily::Kij, {1, 3}}}, 0, .2, -1, 1},
+        {{{ParameterFamily::IonSuppressionCoefficient, {1}}, {ParameterFamily::IonSuppressionCoefficient, {2}}}, 0, .5, 0, 20}};
     request.holds = {{energy, 1, 8, 1e-6, 1e-10, 50}};
     auto gamma = energy; gamma.kind = ObservationKind::MeanIonicActivityCoefficient;
     gamma.species.clear(); gamma.molality = .1; gamma.form = ResidualForm::LogRatio; gamma.observed = 1;
@@ -3183,7 +3332,7 @@ int zero_inventory_file(const char* filename) {
         active.push_back({ParameterFamily::Kij, {9 * pair.second + pair.first, 9 * pair.first + pair.second}});
     active.push_back({ParameterFamily::KijReciprocalTemperatureSlope, {21, 29}});
     CoordinateSet coordinates;
-    for (const auto& item : active) coordinates.coordinates.push_back({item.family, {item.indices}, 0, 1});
+    for (const auto& item : active) coordinates.coordinates.push_back({{{item.family, item.indices}}, 0, 1});
     coordinates.coordinates.push_back(reaction_coordinate("R2", ReactionCoefficient::B));
     coordinates.coordinates.push_back(reaction_coordinate("R2", ReactionCoefficient::C));
     const std::array<const char*, 7> coordinate_names{"k_MEACOO_water", "k_MEAH_water", "k_HCO3_water", "k_MEACOO_MEAH",
@@ -3428,13 +3577,15 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.regression.inventory-face", "Conserved_inventory_face", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-231", "inventory-face/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-face"}, check_inventory_face, "addition-enthalpy"},
         {{"native.regression.neutral-electrostatics", "Neutral_electrostatic_restriction", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "issue-231", "neutral-electrostatics/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "neutral-electrostatics"}, check_neutral_electrostatics, "addition-enthalpy"},
+        {{"native.regression.affine-columns", "Affine_parameter_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-columns/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-columns"}, check_coupled_columns, "R2"},
+        {{"native.regression.affine-recovery", "Affine_parameter_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-recovery/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-recovery"}, check_coupled_recovery, "R2"},
         {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.reactive-caloric-F6-addition", "Referenced_free_temperature_addition", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F6/free-T-addition/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "reactive-caloric"},
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
-        {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:18"}, check_f2, "R1"},
+        {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:27"}, check_f2, "R1"},
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},
         {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},

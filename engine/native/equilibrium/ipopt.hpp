@@ -70,12 +70,12 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         admit(options->SetNumericValue(name, tolerance));
     admit(options->SetIntegerValue("acceptable_iter", 0));
     admit(options->SetIntegerValue("max_iter", iterations));
+    if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds));
     if (!exact) {
         admit(options->SetStringValue("limited_memory_update_type", "bfgs"));
         admit(options->SetStringValue("sb", "yes"));
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
-        admit(options->SetNumericValue("max_cpu_time", seconds));
     }
     const auto initialized = exact ? app->Initialize() : app->Initialize("");
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};

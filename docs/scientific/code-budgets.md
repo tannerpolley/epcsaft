@@ -77,6 +77,40 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-05, #240 straight physical-parameter continuation, measured against
+  integrated main `8f5f5685`: **96 gross runtime lines added, 51 removed, +45 net**.
+  Aggregate is **22,436 → 22,481**, with **1,519** lines below the recorded
+  **24,000** envelope. No numeric ceiling changes. The sprint pause below
+  applies; counts and duplication remain review subjects.
+
+  | Layer | Base | Gross added | Removed | Net | Final |
+  |---|---:|---:|---:|---:|---:|
+  | Core | 917 | 2 | 2 | 0 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 |
+  | Properties | 4788 | 28 | 36 | -8 | 4780 |
+  | Equilibrium | 7467 | 38 | 5 | +33 | 7500 |
+  | Parameter regression | 2432 | 9 | 6 | +3 | 2435 |
+  | Surface | 532 | 0 | 0 | 0 | 532 |
+  | Bindings | 1975 | 5 | 1 | +4 | 1979 |
+  | Python | 2778 | 14 | 1 | +13 | 2791 |
+  | Aggregate | 22436 | 96 | 51 | +45 | 22481 |
+
+  The existing declared-branch controller retains predictor, corrector, retry,
+  topology and anchored-density checks. Trial models use immutable base records
+  and fixed thermochemistry; the existing exact row series supplies the parameter
+  tangent. One pointer/size view replaces the vector-only family map, including
+  tape preparation and parameter-fitting callers. Shared coordinate admission
+  validates the model once through the affine start; bounds-checked indexing,
+  finite and proportional tied-value checks remain. Python declares global Born
+  coordinates as affine targets without component names;
+  native code owns their physical chart and exact map. Above-soft counts retain
+  these exact chains and physical-value transport, not a second solver. Gross growth is below the 270-line task target.
+  Tests, analysis input/output readers, derivative verification and retained
+  tables are outside runtime counts and contain no displaced iterative method.
+  The [numerical qualification](../../analyses/2026-born-unavailable-states/results/native-parameter/summary.md)
+  records Born columns, full actions, manufactured exchange, historical-point
+  agreement, finite branch limits and unchanged declared-solve work.
+
 Entries marked **inherited** preserve measurements and rationale from
 [the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31).
 Their historical approval assertions were not independently reverified in
@@ -136,6 +170,76 @@ the #221 records reconciliation; they grant no new authority or qualification.
   justified those native-call/result readers; they contain no LP or equilibrium
   iteration. This exceeds the sprint's 260-line target when analysis readers are
   included, not a hard gate, and does not change any ceiling.
+
+- 2026-10-02, #238 declared equilibrium starts, measured against integrated
+  main `875526d0`: **374 gross added, 50 removed, +324 net runtime lines**.
+  Original estimate 150 gross; first draft measured 227. Lead-authorized cap
+  rose to 260 gross. The lead
+  authorized up to 275 for admission corrections, then the owner paused hard
+  ceilings for that sprint (#248), with 275 retained as a target.
+  The later #221 enforcement restoration applies to current integration. Growth beyond that target
+  supplies omitted partial/pinned seed admission, deadlines between initializer
+  and admission kernels, and measured rows/work across every failure boundary.
+  Previous-coordinate reuse, declaration comparison, the caller-tolerance result,
+  and the existing bounded polish remain shared; optimizer iterations and polish
+  evaluations are distinct work quantities.
+
+  | Layer | Base | Gross | Removed | Net | Final | Shared hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4763 | 0 | 0 | 0 | 4763 | 4800 |
+  | Equilibrium | 6921 | 299 | 50 | +249 | 7170 | 8800 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1914 | 31 | 0 | +31 | 1945 | 2100 |
+  | Python | 2697 | 44 | 0 | +44 | 2741 | 2850 |
+  | Aggregate | 21689 | 374 | 50 | +324 | 22013 | 24000 |
+
+  Integration with main `5fe2a70a` on 2026-10-05 preserves #221's restored
+  enforcement and unchanged ceilings. The obsolete per-driver inventory LP is
+  retired in favor of #231's compiled inventory bounds; elapsed checks remain
+  before and after consuming the cache.
+  The initial integrated candidate measured 374 gross additions, 50 removals
+  and +324 net. The owner approved up to 400 gross runtime additions on
+  2026-10-05 for this issue, with every layer ceiling unchanged. The shared
+  species-restriction repair adds 20 lines and removes 7 against `8dc9b725`;
+  one replaced line was already part of the declared-start addition. Final
+  accounting against active main is **393 gross added, 56 removed, +337 net**.
+  Main `c3100e94` is now integrated, including #265. The integration briefly
+  counted the initial polish preparation twice; removing the duplicate increment
+  restores default-solve work equality without changing any preparation or row
+  calculation. The following table uses `c3100e94` as the active base; the gross,
+  removed and net counts remain 393, 56 and +337.
+
+  | Layer | Active main | Gross | Removed | Net | Integrated | Hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4788 | 0 | 0 | 0 | 4788 | 4800 |
+  | Equilibrium | 7205 | 318 | 56 | +262 | 7467 | 8800 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1937 | 31 | 0 | +31 | 1968 | 2100 |
+  | Python | 2727 | 44 | 0 | +44 | 2771 | 2850 |
+  | Aggregate | 22051 | 393 | 56 | +337 | 22388 | 24000 |
+
+  One compiled problem, existing generic/boundary seeds, the shared packing
+  predicate, exact Ipopt driver and density admission remain the owners.
+  The fitting sequence's remaining-iteration and steady-clock accounting pattern
+  is reused; the common Ipopt option owner applies positive CPU-time limits
+  to exact solves as well as estimation. The driver callback carries the elapsed
+  deadline; no second optimizer or acceptance rule is introduced. Deadline
+  rejection clears state availability, but the common residual classifier keeps
+  its nonfinite/converged/floor/budget priority. Controller causes and measured
+  overruns record elapsed exhaustion separately from native termination. The
+  native packing coefficient is transported for the analytic density-closed seed.
+  The soft excess retains these numerical responsibilities and their work
+  diagnostics. The shared #244 envelope and layer ceilings remain unchanged;
+  the 400-line issue allowance reserves no shared layer capacity, and no
+  architecture ceiling is edited.
+  Numerical qualification
+  and independent delivered review are separate from this line accounting.
 
 - 2026-10-02, #239 density-diagnostic closeout against integrated main
   `8999d6a2`: **402 gross added, 40 removed, +362 net runtime lines**.

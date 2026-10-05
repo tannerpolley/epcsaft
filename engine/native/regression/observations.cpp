@@ -188,7 +188,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
         require(!observation.problem.temperature.free && !observation.problem.temperature.absent && std::isfinite(observation.problem.temperature.value)
             && observation.problem.temperature.value > 0.0 && observation.form == ResidualForm::Difference, "ln K needs fixed positive T and Difference");
-        return validate(CoordinateSet{{{ParameterFamily::SegmentCount, {}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
+        return validate(CoordinateSet{{{{}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
     }
     if (pressure_closed(observation.kind) || observation.kind == ObservationKind::AdditionEnthalpy) {
         require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");

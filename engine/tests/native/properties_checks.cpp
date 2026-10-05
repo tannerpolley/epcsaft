@@ -4934,6 +4934,51 @@ void energy_action_ladders() {
     }
 }
 
+// Copied anchor compositions from 2026-born-unavailable-states/inputs, reordered
+// CO2/MEA/water -> properties_support's water/MEA/CO2. EqIDs own the radial work.
+void born_parameter_columns() {
+    const std::array<std::vector<double>, 2> anchors = {{{0.8863734508600574, 0.07827110880066358, 3.8480681348098447e-08, 0.01818111244399814, 0.015766643324345936, 0.0003959814177106597, 0.0010068230563202352, 1.3460805650294977e-11, 4.841602761876763e-06},
+        {0.8448866085505489, 0.004900981383765356, 0.0002933071241251476, 0.07818889597821514, 0.029096076931579815, 0.03617530531138919, 0.006458693289371563, 2.1372510655078036e-09, 1.2929375400277957e-07}}};
+    for (std::size_t case_index = 0; case_index < anchors.size(); ++case_index)
+    for (const double c : {0.0, 1.0}) for (const double epsilon : {2.0, 8.0}) {
+        auto p = properties_support::nine_species();
+        p.born_c_shell = 1.0; p.born_c_dielectric = c;
+        p.ionic_region_relative_permittivity = epsilon;
+        const auto& x = anchors[case_index];
+        const epcsaft::HelmholtzModel model(p, {{epcsaft::ParameterFamily::BornCDielectric, {0}},
+            {epcsaft::ParameterFamily::IonicRegionRelativePermittivity, {0}}});
+        const double t = 313.15, rho = 45000.0;
+        const auto state = model.state(t, rho, x);
+        const auto derivatives = model.evaluate(t, 1.0 / rho, x, epcsaft::DerivativeOrder::Gradient);
+        double solvation = 0.0, total = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) { solvation += x[i] * p.solvation_factor[i]; total += x[i]; }
+        solvation /= total;
+        double shell_sum = 0.0, correction = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) if (p.charge_number[i]) {
+            const double z = p.charge_number[i], d = p.born_diameter_angstrom[i] * epcsaft::ANGSTROM_M;
+            const double outer = d * (1.0 + (solvation - 1.0) / std::abs(z));
+            shell_sum += x[i] * z * z / outer;
+            correction += x[i] * z * z * (1.0 / d - 1.0 / outer);
+        }
+        const double prefactor = -epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C
+            / (4.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M * epcsaft::BOLTZMANN_J_PER_K * t);
+        const std::array<double, 3> reference = {
+            prefactor * ((1.0 - 1.0 / state.bulk_relative_permittivity) * shell_sum + c * (1.0 - 1.0 / epsilon) * correction),
+            prefactor * (1.0 - 1.0 / epsilon) * correction,
+            prefactor * c * correction / (epsilon * epsilon)};
+        const std::array<double, 3> actual = {state.born, derivatives.gradient[2 + x.size()], derivatives.gradient[3 + x.size()]};
+        for (std::size_t column = 0; column < actual.size(); ++column) {
+            const auto id = std::to_string(case_index + 1) + "/" + std::to_string(c) + "/" + std::to_string(epsilon) + "/" + std::to_string(column);
+            const double atol = reference[column] == 0.0 ? 1e-12 : 0.0;
+            const bool ok = std::abs(actual[column] - reference[column]) <= atol + 1e-12 * std::abs(reference[column]);
+            CHECK(recording_support::compare(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
+                actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
+                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
+                atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column"));
+        }
+    }
+}
+
 namespace {
 using PO = epcsaft::PropertyObservable;
 using PD = epcsaft::PressureActionDirection;
@@ -5307,6 +5352,7 @@ void reference_limits() {
 }
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.properties.born-parameter", "Born_parameter_columns", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "born-parameter/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "BornParameter", "born-parameter/*:24"}, born_parameter_columns},
         {{"native.properties.reference-f8", "Reference_derivative_pure_identities", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F8/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F8", "F8/*:78"}, reference_f8, "F8"},
         {{"native.properties.reference-f9", "Reference_derivative_ionic_differences", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/partial/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F9", "F9/partial/*:264"}, reference_f9, "F9"},
         {{"native.properties.reference-limits", "Reference_derivative_terminal_changes", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/limit/*,F9/completed-change/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "ReferenceLimits"}, reference_limits, "ReferenceLimits"},

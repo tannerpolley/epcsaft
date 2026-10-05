@@ -245,6 +245,8 @@ struct RowSeries final {
     std::size_t maximum_energy_order = 0;
 };
 
+void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>& support);
+
 struct CompiledSystem final {
     const HelmholtzModel* model = nullptr;
     EquilibriumProblem problem;
@@ -255,6 +257,7 @@ struct CompiledSystem final {
     std::vector<std::vector<double>> B;
     std::vector<std::vector<double>> inventory_restrictions;
     std::vector<double> inventory_upper_bounds;
+    std::vector<std::vector<std::size_t>> declared_supports;
     std::vector<Row> rows;
     std::size_t pinned_count = 0;
     std::size_t free_intensive_count = 0;

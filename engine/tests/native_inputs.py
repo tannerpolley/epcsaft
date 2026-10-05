@@ -75,11 +75,11 @@ def parameters(
 ETHANE = (30.07, 1.6069, 3.5206, 191.42)
 
 
-def aqueous_electrolyte(*more: tuple[str, tuple[int, ...], float, str]) -> Parameters:
+def aqueous_electrolyte(*more: tuple[str, tuple[int, ...], float, str], c_shell: float = 0.0) -> Parameters:
     """properties_support::aqueous_electrolyte(): water, Na+ and Cl- with Debye-Huckel and Born terms."""
     extra: list[tuple[str, tuple[int, ...], float, str]] = [*more,
         ("relative_permittivity", (0,), 78.09, "dimensionless"), ("ionic_region_relative_permittivity", (), 8.0, "dimensionless"),
-        ("born_c_shell", (), 0.0, "dimensionless"), ("born_c_dielectric", (), 0.0, "dimensionless"),
+        ("born_c_shell", (), c_shell, "dimensionless"), ("born_c_dielectric", (), 0.0, "dimensionless"),
         ("ion_suppression_coefficient", (), 7.01, "dimensionless"),
         ("sigma_term_amplitude", (0, 0), 10.11, "angstrom"), ("sigma_term_exponent", (0, 0), -0.01775, "1 / kelvin"),
         ("sigma_term_amplitude", (1, 0), -1.417, "angstrom"), ("sigma_term_exponent", (1, 0), -0.01146, "1 / kelvin")]
