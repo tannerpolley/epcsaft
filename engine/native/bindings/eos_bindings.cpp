@@ -72,6 +72,10 @@ void register_thermal_inputs(py::module_& module) {
         .def_readwrite("temperature_max", &ReactionLogPolynomial::temperature_max)
         .def_readwrite("standard_state_id", &ReactionLogPolynomial::standard_state_id);
     py::enum_<ParameterFamily>(module, "ParameterFamily")
+        .value("BornDiameter", ParameterFamily::BornDiameter)
+        .value("DebyeHuckelDiameter", ParameterFamily::DebyeHuckelDiameter)
+        .value("PackingDiameter", ParameterFamily::PackingDiameter)
+        .value("IonSuppressionCoefficient", ParameterFamily::IonSuppressionCoefficient)
         .value("SegmentCount", ParameterFamily::SegmentCount)
         .value("SigmaConstant", ParameterFamily::SigmaConstant)
         .value("DispersionEnergyOverK", ParameterFamily::DispersionEnergyOverK)
@@ -233,7 +237,9 @@ void register_eos(py::module_& module) {
         .def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)
         .def_readonly("pressure", &epcsaft::State::pressure)
         .def_readonly("residual_chemical_potential_over_rt", &epcsaft::State::residual_chemical_potential_over_rt)
+        .def_readonly("component_property_status", &epcsaft::State::component_property_status)
         .def_readonly("log_fugacity_coefficient", &epcsaft::State::log_fugacity_coefficient)
+        .def_readonly("log_fugacity_parameter_derivative", &epcsaft::State::log_fugacity_parameter_derivative)
         .def_readonly("residual_entropy", &epcsaft::State::residual_entropy)
         .def_readonly("residual_internal_energy", &epcsaft::State::residual_internal_energy)
         .def_readonly("residual_enthalpy", &epcsaft::State::residual_enthalpy)
@@ -257,6 +263,36 @@ void register_eos(py::module_& module) {
         .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
         .def_readonly("density_branch", &epcsaft::State::density_branch)
         .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
+    py::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
+        .def_readonly("molar_density", &epcsaft::DensityDiagnosticPoint::molar_density)
+        .def_readonly("packing_fraction", &epcsaft::DensityDiagnosticPoint::packing_fraction)
+        .def_readonly("pressure", &epcsaft::DensityDiagnosticPoint::pressure)
+        .def_readonly("pressure_density_derivative", &epcsaft::DensityDiagnosticPoint::pressure_density_derivative)
+        .def_readonly("lower", &epcsaft::DensityDiagnosticPoint::lower)
+        .def_readonly("upper", &epcsaft::DensityDiagnosticPoint::upper)
+        .def_readonly("residual", &epcsaft::DensityDiagnosticPoint::residual)
+        .def_readonly("mechanical_sign", &epcsaft::DensityDiagnosticPoint::mechanical_sign)
+        .def_readonly("linked", &epcsaft::DensityDiagnosticPoint::linked)
+        .def_readonly("declared", &epcsaft::DensityDiagnosticPoint::declared)
+        .def_readonly("cause", &epcsaft::DensityDiagnosticPoint::cause)
+        .def_readonly("stop", &epcsaft::DensityDiagnosticPoint::stop);
+    py::class_<epcsaft::DensityDiagnosticBracket>(module, "DensityDiagnosticBracket")
+        .def_readonly("lower", &epcsaft::DensityDiagnosticBracket::lower)
+        .def_readonly("upper", &epcsaft::DensityDiagnosticBracket::upper)
+        .def_readonly("lower_residual", &epcsaft::DensityDiagnosticBracket::lower_residual)
+        .def_readonly("upper_residual", &epcsaft::DensityDiagnosticBracket::upper_residual);
+    py::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
+        .def_readonly("samples", &epcsaft::DensityDiagnostics::samples)
+        .def_readonly("pressure_roots", &epcsaft::DensityDiagnostics::pressure_roots)
+        .def_readonly("spinodals", &epcsaft::DensityDiagnostics::spinodals)
+        .def_readonly("declared_brackets", &epcsaft::DensityDiagnostics::declared_brackets)
+        .def_readonly("unresolved", &epcsaft::DensityDiagnostics::unresolved)
+        .def_readonly("evaluation_order", &epcsaft::DensityDiagnostics::evaluation_order)
+        .def_readonly("finite_domain", &epcsaft::DensityDiagnostics::finite_domain)
+        .def_readonly("geometric_cap", &epcsaft::DensityDiagnostics::geometric_cap)
+        .def_readonly("declared_crossings", &epcsaft::DensityDiagnostics::declared_crossings)
+        .def_readonly("evaluations", &epcsaft::DensityDiagnostics::evaluations)
+        .def_readonly("stop", &epcsaft::DensityDiagnostics::stop);
     py::class_<epcsaft::SweepCounters>(module, "SweepCounters")
         .def_readonly("forward", &epcsaft::SweepCounters::forward)
         .def_readonly("reverse", &epcsaft::SweepCounters::reverse)
@@ -295,12 +331,20 @@ void register_eos(py::module_& module) {
         .def("state_at_pressure", &epcsaft::HelmholtzModel::state_at_pressure,
              py::arg("temperature"), py::arg("pressure"), py::arg("mole_fractions"),
              py::arg("branch"), py::arg("anchor_density") = std::nullopt)
+        .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound)
+        .def("density_diagnostics", &epcsaft::HelmholtzModel::density_diagnostics,
+             py::arg("temperature"), py::arg("pressure"), py::arg("composition"), py::arg("nodes"),
+             py::arg("density_tolerance"), py::arg("log_tolerance"), py::arg("max_evaluations"),
+             py::arg("max_seconds"), py::arg("adaptive"), py::arg("finite_anchor"),
+             py::arg("finite_upper"), py::arg("evaluation_order"))
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
     py::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
         .def_readonly("log_fugacity", &epcsaft::InfiniteDilutionReference::log_fugacity)
         .def_readonly("molality", &epcsaft::InfiniteDilutionReference::molality)
         .def_readonly("convergence_error", &epcsaft::InfiniteDilutionReference::convergence_error)
+        .def_readonly("parameter_derivative", &epcsaft::InfiniteDilutionReference::parameter_derivative)
+        .def_readonly("parameter_convergence_error", &epcsaft::InfiniteDilutionReference::parameter_convergence_error)
         .def_readonly("pure_solvent_log_fugacity", &epcsaft::InfiniteDilutionReference::pure_solvent_log_fugacity);
     py::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity")
         .def_readonly("single_ion", &epcsaft::ElectrolyteActivity::single_ion)

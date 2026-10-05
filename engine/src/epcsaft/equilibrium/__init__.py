@@ -22,6 +22,9 @@ from .problem import (
     solved_state_actions,
 )
 
+inventory_bounds = _core.inventory_bounds
+InventoryBound = _core.InventoryBound
+
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
@@ -40,9 +43,15 @@ SolvedStateObservableKind = _core.SolvedStateObservableKind
 EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
 asl_record = _core.equilibrium_asl_record
+stability_test = _core.stability_test
+StabilityOptions = _core.StabilityOptions
 
 __all__ = (
     "Amounts",
+    "inventory_bounds",
+    "InventoryBound",
+    "stability_test",
+    "StabilityOptions",
     "asl_record",
     "Continuation",
     "ContinuationResult",

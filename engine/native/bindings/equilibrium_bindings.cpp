@@ -118,6 +118,12 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("affinity_j_per_mol", &ReactionSpec::affinity_j_per_mol)
         .def_readwrite("correlation", &ReactionSpec::correlation)
         .def_readwrite("reference", &ReactionSpec::reference);
+    py::class_<StabilityOptions>(module, "StabilityOptions")
+        .def(py::init<>())
+        .def_readwrite("trials", &StabilityOptions::trials)
+        .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
+        .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
+        .def_readwrite("standard_uncertainty_over_rt", &StabilityOptions::standard_uncertainty_over_rt);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)
@@ -128,7 +134,8 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("neutral_reference", &EquilibriumProblem::source_reference)
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
         .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
-        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance);
+        .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
+        .def_readwrite("discovery", &EquilibriumProblem::discovery);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
         .value("Pressure", RowKind::Pressure)
@@ -174,6 +181,7 @@ void register_equilibrium(py::module_& module) {
             py::arg("point"), py::arg("constraint_multipliers") = std::vector<double>{});
     py::class_<EquilibriumResult>(module, "EquilibriumResult")
         .def_readonly("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
+        .def_readonly("discovery", &EquilibriumResult::discovery)
         .def_readonly("success", &EquilibriumResult::success)
         .def_readonly("message", &EquilibriumResult::message)
         .def_readonly("solver_status", &EquilibriumResult::solver_status)
@@ -207,24 +215,51 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("topology_event", &EquilibriumResult::topology_event)
         .def_readonly("topology_phase", &EquilibriumResult::topology_phase)
         .def_readonly("topology_pair", &EquilibriumResult::topology_pair);
+    py::class_<StabilityTrial>(module, "StabilityTrial")
+        .def_readonly("phase", &StabilityTrial::phase)
+        .def_readonly("seed", &StabilityTrial::seed)
+        .def_readonly("evidence", &StabilityTrial::evidence)
+        .def_readonly("message", &StabilityTrial::message)
+        .def_readonly("optimizer", &StabilityTrial::optimizer)
+        .def_readonly("raw_coordinates", &StabilityTrial::raw_coordinates)
+        .def_readonly("raw_residuals", &StabilityTrial::raw_residuals)
+        .def_readonly("composition", &StabilityTrial::composition)
+        .def_readonly("split_coordinates", &StabilityTrial::split_coordinates)
+        .def_readonly("basis", &StabilityTrial::basis)
+        .def_readonly("row_transformation", &StabilityTrial::row_transformation)
+        .def_readonly("quantities", &StabilityTrial::quantities)
+        .def_readonly("split_checks", &StabilityTrial::split_checks)
+        .def_readonly("donor", &StabilityTrial::donor)
+        .def_readonly("resolved_descent", &StabilityTrial::resolved_descent);
+    py::class_<StabilityReport>(module, "StabilityReport")
+        .def_readonly("completed", &StabilityReport::completed)
+        .def_readonly("message", &StabilityReport::message)
+        .def_readonly("trials", &StabilityReport::trials)
+        .def_readonly("candidate_coordinates", &StabilityReport::candidate_coordinates)
+        .def_readonly("standard_over_rt", &StabilityReport::standard_over_rt)
+        .def_readonly("plane_over_rt", &StabilityReport::plane_over_rt)
+        .def_readonly("present_phases", &StabilityReport::present_phases)
+        .def_readonly("work", &StabilityReport::work);
+    py::class_<DiscoveryRecord, std::shared_ptr<DiscoveryRecord>>(module, "DiscoveryRecord")
+        .def_readonly("declaration", &DiscoveryRecord::declaration)
+        .def_readonly("candidate", &DiscoveryRecord::candidate)
+        .def_readonly("rounds", &DiscoveryRecord::rounds)
+        .def_readonly("declarations", &DiscoveryRecord::declarations)
+        .def_readonly("declaration_roles", &DiscoveryRecord::declaration_roles)
+        .def_readonly("declaration_attempt_coordinates", &DiscoveryRecord::declaration_attempt_coordinates)
+        .def_readonly("work", &DiscoveryRecord::work);
+    module.def("stability_test", &stability_test, py::arg("compiled"), py::arg("central"),
+        py::arg("options") = StabilityOptions{});
     py::enum_<TopologyEvent>(module, "TopologyEvent")
         .value("None_", TopologyEvent::None)
         .value("PhaseDisappeared", TopologyEvent::PhaseDisappeared)
         .value("PhasesCoalesced", TopologyEvent::PhasesCoalesced);
-    py::enum_<ContinuationStop>(module, "ContinuationStop")
-        .value("reached_target", ContinuationStop::reached_target)
-        .value("initial_failure", ContinuationStop::initial_failure)
-        .value("invalid_path", ContinuationStop::invalid_path)
-        .value("singular_jacobian", ContinuationStop::singular_jacobian)
-        .value("branch_lost", ContinuationStop::branch_lost)
-        .value("phase_disappeared", ContinuationStop::phase_disappeared)
-        .value("phases_coalesced", ContinuationStop::phases_coalesced)
-        .value("left_domain", ContinuationStop::left_domain)
-        .value("infeasible", ContinuationStop::infeasible)
-        .value("nonfinite", ContinuationStop::nonfinite)
-        .value("stalled", ContinuationStop::stalled)
-        .value("step_too_small", ContinuationStop::step_too_small)
-        .value("budget_exhausted", ContinuationStop::budget_exhausted);
+    auto continuation_stops = py::enum_<ContinuationStop>(module, "ContinuationStop");
+    for (int value = static_cast<int>(ContinuationStop::reached_target);
+         value <= static_cast<int>(ContinuationStop::budget_exhausted); ++value) {
+        const auto stop = static_cast<ContinuationStop>(value);
+        continuation_stops.value(continuation_stop_name(stop), stop);
+    }
     py::class_<ContinuationOptions>(module, "ContinuationOptions")
         .def(py::init<>())
         .def_readwrite("initial_step", &ContinuationOptions::initial_step)
@@ -336,8 +371,32 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("results", &SolvedStateActionBatch::results)
         .def_readonly("diagnostics", &SolvedStateActionBatch::diagnostics);
     module.def("solved_state_actions", &solved_state_actions,
-               py::arg("compiled"), py::arg("central"), py::arg("request"));
+               py::arg("compiled"), py::arg("central"), py::arg("request"),
+               "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"
+               "Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments\n"
+               "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
     module.def("solved_state_first_actions", &solved_state_first_actions);
+    py::class_<InventoryBound>(module, "InventoryBound")
+        .def_readonly("species", &InventoryBound::species)
+        .def_readonly("status", &InventoryBound::status)
+        .def_readonly("termination", &InventoryBound::termination)
+        .def_readonly("maximum", &InventoryBound::maximum)
+        .def_readonly("feed_normalized_amount", &InventoryBound::feed_normalized_amount)
+        .def_readonly("log_fraction", &InventoryBound::log_fraction)
+        .def_readonly("balance_residual", &InventoryBound::balance_residual)
+        .def_readonly("normalization_residual", &InventoryBound::normalization_residual)
+        .def_readonly("lower_bound_residual", &InventoryBound::lower_bound_residual)
+        .def_readonly("witness", &InventoryBound::witness)
+        .def_readonly("amounts_mol", &InventoryBound::amounts_mol)
+        .def_readonly("finite_witness", &InventoryBound::finite_witness)
+        .def_readonly("limiting", &InventoryBound::limiting)
+        .def_readonly("supported", &InventoryBound::supported)
+        .def_readonly("floor", &InventoryBound::floor)
+        .def_readonly("lp_error", &InventoryBound::lp_error)
+        .def_readonly("finite_residual", &InventoryBound::finite_residual)
+        .def_readonly("feasibility_termination", &InventoryBound::feasibility_termination);
+    module.def("inventory_bounds", &inventory_bounds, py::arg("compiled"), py::arg("species"),
+        py::arg("fraction"), py::arg("floor"));
     module.def("compile_problem", &compile_problem, py::keep_alive<0, 1>());
     module.def("sensitivity", &sensitivity);
     module.def("solve_equilibrium", &solve_equilibrium, py::arg("model"), py::arg("problem"),

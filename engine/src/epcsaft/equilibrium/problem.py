@@ -54,7 +54,13 @@ class Phase:
 
 
 class Discover:
-    __slots__ = ()
+    __slots__ = ("trials", "declaration_budget", "trial_budget")
+
+    def __init__(self, *, trials: Sequence[Phase] | None = None,
+                 declaration_budget: int | None = None, trial_budget: int | None = None) -> None:
+        self.trials = None if trials is None else tuple(trials)
+        self.declaration_budget = declaration_budget
+        self.trial_budget = trial_budget
 
 
 class Feed:
@@ -229,11 +235,9 @@ class Problem:
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
         if self.row_tolerance is not None:
             native.row_tolerance = self.row_tolerance
-        if isinstance(self.phases, Discover):
-            native.phases = []
-            return native
         native_phases: list[_core.PhaseSpec] = []
-        for phase in self.phases:
+        phases = (() if self.phases.trials is None else self.phases.trials) if isinstance(self.phases, Discover) else self.phases
+        for phase in phases:
             item = _core.PhaseSpec()
             item.name = phase.name
             item.kind = _phase_kind(phase)
@@ -244,7 +248,15 @@ class Problem:
             item.composition_guess = list(phase.composition_guess)
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
-        native.phases = native_phases
+        if isinstance(self.phases, Discover):
+            options = _core.StabilityOptions()
+            options.trials = None if self.phases.trials is None else native_phases
+            options.declaration_budget = self.phases.declaration_budget
+            options.trial_budget = self.phases.trial_budget
+            native.discovery = options
+            native.phases = []
+        else:
+            native.phases = native_phases
         native_reactions: list[_core.ReactionSpec] = []
         for reaction in self.reactions:
             reaction_item = _core.ReactionSpec()
@@ -417,28 +429,20 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
 
 def solve_equilibrium(
     model: _Model,
-    problem: Problem,
+    problem: Problem | _core.EquilibriumProblem,
     start: _core.EquilibriumResult | None = None,
 ) -> _core.EquilibriumResult:
-    return _core.solve_equilibrium(model._model, problem._native(model), start)
+    native = problem._native(model) if isinstance(problem, Problem) else problem
+    return _core.solve_equilibrium(model._model, native, start)
 
 
-def compile_problem(model: _Model, problem: Problem) -> _core.CompiledSystem:
+def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
     """Compile once for solved-state actions; the result keeps the native model alive."""
-    return _core.compile_problem(model._model, problem._native(model))
+    native = problem._native(model) if isinstance(problem, Problem) else problem
+    return _core.compile_problem(model._model, native)
 
 
-def solved_state_actions(
-    compiled: _core.CompiledSystem,
-    central: _core.EquilibriumResult,
-    request: _core.SolvedStateActionRequest,
-) -> _core.SolvedStateActionBatch:
-    """Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.
-
-    Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments
-    (active width, native units); a free T or P entry must be zero. No solve is repeated.
-    """
-    return _core.solved_state_actions(compiled, central, request)
+solved_state_actions = _core.solved_state_actions
 
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)

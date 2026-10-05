@@ -16,9 +16,10 @@
 
 namespace epcsaft {
 
+template <class ParameterSet>
 inline bool dielectric_solvent_component(
     std::size_t component,
-    const Parameters& parameters
+    const ParameterSet& parameters
 ) {
     if (parameters.charge_number[component] != 0) {
         return false;
@@ -37,11 +38,11 @@ inline bool dielectric_solvent_component(
     ) != parameters.permittivity_term_component.end();
 }
 
-template <typename Scalar>
+template <typename Scalar, class ParameterSet>
 // EqID: component_permittivity_temperature_polynomial
 std::vector<Scalar> component_relative_permittivities(
     const Scalar& temperature,
-    const Parameters& parameters
+    const ParameterSet& parameters
 ) {
     std::vector<Scalar> values(
         parameters.relative_permittivity.begin(),
@@ -71,23 +72,14 @@ struct ElectrolyteResult final {
     Scalar debye_huckel;
 };
 
-template <typename Scalar>
+template <typename Scalar, class ParameterSet>
 Scalar bulk_relative_permittivity(
     const Scalar& temperature,
     const Scalar& molar_density,
     const std::vector<Scalar>& mole_fractions,
-    const Parameters& parameters,
-    const std::vector<Scalar>* relative_permittivity_override = nullptr,
-    const std::vector<Scalar>* ion_suppression_override = nullptr
+    const ParameterSet& parameters
 ) {
-    const std::vector<Scalar> correlated_relative_permittivity =
-        relative_permittivity_override == nullptr
-            ? component_relative_permittivities(temperature, parameters)
-            : std::vector<Scalar>{};
-    const std::vector<Scalar>* evaluated_relative_permittivity =
-        relative_permittivity_override == nullptr
-            ? &correlated_relative_permittivity
-            : relative_permittivity_override;
+    const auto evaluated_relative_permittivity = component_relative_permittivities(temperature, parameters);
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
     Scalar solvent_fraction = Scalar(0.0);
@@ -101,9 +93,7 @@ Scalar bulk_relative_permittivity(
     const Scalar number_density_angstrom3 =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     const auto relative_permittivity = [&](std::size_t component) {
-        return evaluated_relative_permittivity == nullptr
-            ? Scalar(parameters.relative_permittivity[component])
-            : (*evaluated_relative_permittivity)[component];
+        return evaluated_relative_permittivity[component];
     };
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Scalar& fraction = mole_fractions[component];
@@ -120,9 +110,7 @@ Scalar bulk_relative_permittivity(
         } else if (charge != 0) {
             ion_dielectric += fraction * relative_permittivity(component);
             ion_suppression += fraction
-                * (ion_suppression_override == nullptr
-                       ? Scalar(parameters.ion_suppression_coefficient[component])
-                       : (*ion_suppression_override)[component]);
+                * parameters.ion_suppression_coefficient[component];
         }
         // EqID: effective_dipolar_density
         effective_dipolar_density += number_density_angstrom3 * fraction
@@ -203,7 +191,7 @@ Scalar finite_size_chi(const Scalar& reduced, bool use_series) {
         / (reduced * reduced * reduced);
 }
 
-template <typename Scalar>
+template <typename Scalar, class ParameterSet>
 ElectrolyteResult<Scalar> electrolyte_contribution(
     const Scalar& temperature,
     const Scalar& molar_density,
@@ -211,9 +199,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     double reference_molar_density,
     const std::vector<Scalar>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
-    const Parameters& parameters,
-    const std::vector<Scalar>* relative_permittivity_override = nullptr,
-    const std::vector<Scalar>* ion_suppression_override = nullptr
+    const ParameterSet& parameters
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -243,9 +229,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
             temperature,
             molar_density,
             mole_fractions,
-            parameters,
-            relative_permittivity_override,
-            ion_suppression_override
+            parameters
         );
         if constexpr (std::is_same_v<Scalar, double>) {
             if (!(neutral_permittivity > 0.0)
@@ -275,9 +259,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         temperature,
         molar_density,
         mole_fractions,
-        parameters,
-        relative_permittivity_override,
-        ion_suppression_override
+        parameters
     );
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!parameters.permittivity_form.is(PermittivityForm::ComponentMixing) &&
@@ -299,35 +281,16 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         / (VACUUM_PERMITTIVITY_F_PER_M * bulk_permittivity
            * BOLTZMANN_J_PER_K * temperature)
     );
-    const double reference_permittivity_for_branch =
-        bulk_relative_permittivity(
-            reference_temperature,
-            reference_molar_density,
-            reference_mole_fractions,
-            parameters
-        );
-    const double reference_kappa_for_branch = std::sqrt(
-        reference_molar_density * AVOGADRO_PER_MOL
-        * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
-        * reference_charge_square_sum
-        / (VACUUM_PERMITTIVITY_F_PER_M * reference_permittivity_for_branch
-            * BOLTZMANN_J_PER_K * reference_temperature)
-    );
     Scalar weighted_chi = Scalar(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const int charge = parameters.charge_number[component];
         if (charge == 0) {
             continue;
         }
-        const double diameter_angstrom =
-            parameters.debye_huckel_diameter_angstrom[component];
-        const Scalar diameter_m = Scalar(ANGSTROM_M * diameter_angstrom);
+        const Scalar diameter_m = ANGSTROM_M * parameters.debye_huckel_diameter_angstrom[component];
         const Scalar reduced = kappa * diameter_m;
-        const Scalar chi = finite_size_chi(
-            reduced,
-            reference_kappa_for_branch * ANGSTROM_M * diameter_angstrom
-                < policy::SCREENING_SERIES_SWITCH.value
-        );
+        const Scalar chi = scalar_select_less(reduced, Scalar(policy::SCREENING_SERIES_SWITCH.value),
+            finite_size_chi(reduced, true), finite_size_chi(reduced, false));
         weighted_chi += mole_fractions[component] * charge * charge * chi;
     }
     // EqID: debye_huckel_helmholtz

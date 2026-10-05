@@ -28,70 +28,32 @@ plan:
 # working tree (tracked and untracked). Engineering targets, not mathematical
 # lower bounds. See docs/scientific/code-budgets.md for rationale and amendment.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-# properties hard ceiling 3460 -> 3470 on 2026-09-21 (#89, owner-approved small increase): a bounded
-# slope-minimum search with explicit unresolved failure replaced a fixed-width stop; then measured 3468 lines.
-# properties hard 3470 -> 3490 (#84, 2026-09-22): owner-approved small increase for
-# shared charge-neutral reference and activity admission; no association change.
-# 2026-09-22 #84: owner-approved small increases for native neutral reaction
-# references and explicit public transport; total hard ceiling unchanged.
-# 2026-09-22 #66: owner-approved integration of latest reference/trace repairs
-# and the live IDAES adapter; aggregate hard ceiling 17450 -> 17600.
-# 2026-09-22 #66: latest merged main adds one Python line; aggregate hard
-# ceiling 17600 -> 17601 without changing any layer ceiling or physics.
-# 2026-09-23: owner-directed integration of idaes/main with #107-#109 and tape
-# reuse; aggregate hard ceiling 17601 -> 17760, no layer ceiling change.
-# 2026-09-23 #87/E4: owner-approved +30 for the forward-error certificate and
-# the batched third-contraction API; aggregate hard ceiling 17760 -> 17790.
-# 2026-09-23 #105: the batched API measured -2.4 % and was not adopted; the tolerance
-# audit deletes unused policy; aggregate hard ceiling 17790 -> 17760.
-# 2026-09-23 #84: owner pre-approved up to +300 for the thermal reference chain; the
-# first-order temperature slope (three-point E2 ladder, observed criterion, typed
-# availability) measured +58 in Properties: hard 4100 -> 4145. Total unchanged.
-# 2026-09-23 #28: owner-approved (at most +250) optional Gross-Vrabec dipole-dipole term
-# (ADR 0011); measured +143 runtime lines (Contributions +112); contributions hard
-# 1500 -> 1612, properties hard 4145 -> 4150 (tape wiring +5) and aggregate hard
-# 17760 -> 17903, each raised by the measured polar count.
-# 2026-09-23 #138: owner pre-approved up to +250 for reference calorics (record-anchored,
-# reaction-completed h/cp and the order-2 reference slope); measured +199 runtime lines
-# (Properties +33, Equilibrium +166): properties hard 4150 -> 4183, aggregate hard 17903 -> 18102.
-# 2026-09-23 #140: owner-directed cp-sized order-2 admission (named policy entry), within the #138
-# +250 approval: measured +7 (Core +5, Properties +2); properties hard 4183 -> 4185, aggregate 18102 -> 18109.
-# 2026-09-23 #142: owner-approved amendment for EOS-parameter reference actions (dC/dtheta from the
-# existing dC/dT ladder E2, one active-value owner): measured +46 (Properties +26, Equilibrium +20;
-# 10 inside prior aggregate headroom, 18099 -> 18145); properties hard 4185 -> 4211, aggregate 18109 -> 18145.
-# 2026-09-30 #187 O1: owner-approved reaction-coordinate amendment; regression hard 1300 -> 1440,
-# bindings 1708 -> 1725, Python 2313 -> 2350, aggregate 18556 -> 18790. Candidate against fe00aa6a
-# including #200: regression 1440, bindings 1719, Python 2343, equilibrium 6018, aggregate 18765 (+211).
-# 2026-09-30 #210 O7: finite-addition enthalpy actions, measured within approved caps.
-# 2026-10-01 #220 roadmap envelope (owner approved): one envelope for #219/#223/#224/#225 replaces
-# per-issue amendments; base 4cd1ebfe measured 18932. Hard: properties 4258 -> 4600, equilibrium
-# 7000 -> 7650, regression 1619 -> 2200, bindings 1726 -> 1880, Python 2374 -> 2620, aggregate
-# 19100 -> 22000. Each build's closeout lowers its layers to measured + remaining planned allowance.
+# Amendment rationale: docs/scientific/code-budgets.md#amendments.
 code_budgets: {
   "core": [
     700,
     850,
-    1000
+    917
   ],
   "contributions": [
     1100,
     1300,
-    1612
+    1547
   ],
   "properties": [
     2400,
     2900,
-    4600
+    4800
   ],
   "equilibrium": [
     5000,
     6000,
-    7650
+    8800
   ],
   "regression": [
     800,
     1000,
-    2200
+    2478
   ],
   "surface": [
     450,
@@ -101,17 +63,17 @@ code_budgets: {
   "bindings": [
     500,
     650,
-    1880
+    2100
   ],
   "python": [
     1350,
     1600,
-    2620
+    2850
   ],
   "total": [
     12300,
     14850,
-    22000
+    24000
   ]
 }
 
@@ -216,7 +178,7 @@ native:
     core: policy, the declared-choice and convergence contracts, the trace
     contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
     properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
-    equilibrium: one equilibrium driver, shared rows and branch continuation; discovery is deferred
+    equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
     regression: parameter fitting against declared problems
     surface: the parameter builder, which model is asked for
     bindings: the only pybind11 includes

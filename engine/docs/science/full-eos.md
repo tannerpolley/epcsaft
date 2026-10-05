@@ -346,6 +346,16 @@ residual, failed convergence, or an ill-conditioned association Jacobian.
 
 ## 6. Bulk dielectric and Debye-Huckel
 
+The active record includes charged-slot Debye-Huckel and packing diameters in
+Angstrom and dimensionless ion-suppression coefficients. The scalar-generic
+permittivity and screening owners consume that record directly. Pressure-closed
+permittivity columns include the exact density chain, including the density
+topology, and ratios differentiate both states. Model choices, charges, masses
+and dielectric source correlations stay fixed. Parameter admission and fitting
+execution belong to [ALG-PARAMETERS](algorithms.md#alg-parameters) and
+[ALG-FIT](algorithms.md#alg-fit).
+
+
 The relative-permittivity topology is selected by a complete, source-bearing
 parameter family. It is not a caller option and there is no phase label or
 runtime fallback. Mixed or incomplete topology records fail during model
@@ -544,6 +554,15 @@ relations above on the positive-ionic-strength branch; the lab
 
 ## 7. Canonical Born source reconciliation
 
+Charged-slot Born diameters belong to the same scalar active record; the corrected
+Born owner consumes them directly. Source correction factors and solvent solvation
+factors stay fixed. A declared native hydration hold treats the diameter as a
+dependent coordinate through EqID: `dependent_born_diameter_derivative`; the
+observed target uses the single-ion x-process J/mol convention. The hold is not
+a high-weight residual. Stored-diameter acceptance is separate from the inner
+root solve. No cross-family diameter tie or coupled hold is qualified here.
+
+
 Figiel2025 defines a fitted `d_i^Born` and the shell thickness
 
 ```text
@@ -664,7 +683,11 @@ Eqs. (3.4′), (3.5) define the practical molal osmotic coefficient. The
 canonical definitions are EqID: `infinite_dilution_solvation_energy`,
 EqID: `transfer_free_energy`, EqID: `single_ion_activity_coefficient`,
 EqID: `mean_ionic_activity_coefficient`, EqID: `molality_activity_conversion`
-and EqID: `practical_osmotic_coefficient`.
+and EqID: `practical_osmotic_coefficient`. The scalar solvent difference uses
+the extensive residual Helmholtz Euler identity at prescribed pressure before
+the molality division; its exact parameter derivative uses the shared CppAD
+fugacity columns. This protects dilute cancellation without changing the
+thermodynamic definition or reporting floor.
 
 Declare solvent composition, component order, charges, formula-unit
 stoichiometry, molar masses, concentration basis and reference pressure.
@@ -675,6 +698,12 @@ is EqID: `neutral_reference_stoichiometric_basis`; its existence does not
 establish current public availability. Mixed-solvent MIAC does not imply a
 unique scalar osmotic coefficient. Multi-salt paths require a separately
 specified reference convention.
+
+Properties supplies the bounded higher-order reference columns in EqID:
+`reference_mixed_temperature_pressure_derivatives`, using EqID:
+`reference_single_insertion_taylor`. The [F8/F9 notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
+qualifies the stated finite-terminal derivatives and observed dilution changes.
+It does not extend reacting caloric/action consumers by implication.
 
 The retained four-molality method and its terminal comparison are EqID:
 `reference_molality_sequence` and EqID: `reference_limit_terminal_pair`.
@@ -800,11 +829,22 @@ while preserving valid residual properties. These are required semantics;
 concrete class names and installed availability belong to the implementation
 plan and public interface, not this mathematical specification.
 
-At zero ionic strength the DH value has its exact neutral limit. Its leading
-ionic-strength power is 3/2, so arbitrary ionic insertion Hessians need not be
-finite there. Availability must distinguish derivatives within a fixed support
-from insertion directions; temperature/density derivatives on the neutral
-restriction do not establish the full composition Hessian.
+On an ion-free support, Born and DH are identically zero before reciprocal
+permittivity, solvation mixing or screening operations are evaluated. Their
+supported temperature, density, neutral-composition and parameter actions,
+including mixed actions, are exactly zero. Pure CO₂ has no dielectric solvent
+in this model: its zero bulk-permittivity diagnostic supplies no ionic-insertion
+limit. The empty electrostatic sums require no replacement permittivity or floor.
+
+With finite positive limiting solvent permittivity, a dilute ionic path has a
+linear Born leading term and a DH leading term proportional to ionic strength
+to the power 3/2. Born's insertion first derivative is generally nonzero; DH's
+insertion second derivative diverges. Neutral-restriction derivatives therefore
+do not establish unrestricted composition derivatives. Absent charged ordinary
+chemical-potential/fugacity slots and their parameter columns are unavailable
+with `IonicInsertion`; present neutral slots and regular scalar calorics remain
+available. Pressure closure preserves this admission. Full-species insertion
+planes on a zero-inventory face require separate qualification.
 
 Zero amount of an associating species is not permission to add a positive
 composition floor. The unweighted mass-action Jacobian may remain regular

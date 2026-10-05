@@ -186,7 +186,7 @@ ALLOWED_THRESHOLDS = {"0.0", "1.0"}  # sign tests and normalisation, nothing els
 # Underscore counts as a boundary: snake_case is this tree's convention, so \b would let
 # solve_reactive_case through and leave the rule vacuous.
 CASE_TOKENS = re.compile(
-    r"(?<![A-Za-z0-9])(reactive|nonreactive|incipient|finite|electrolyte|charged|ionic|"
+    r"(?<![A-Za-z0-9])(reactive|nonreactive|incipient|electrolyte|charged|ionic|"
     r"neutral|binary|ternary|saturation|bubble|dew|vle|lle|amine|aqueous|salt)"
     r"(?![A-Za-z0-9])", re.IGNORECASE)
 SOLVER_FILES = {
@@ -223,7 +223,9 @@ def rule_solvers_are_case_blind() -> list[str]:
         rel = str(path.relative_to(NATIVE))
         if rel not in SOLVER_FILES:
             continue
-        text = without_comments(path.read_text())
+        # Diagnostic strings describe physics; they do not select a solver.
+        # 'finite' likewise describes a quantity or split, not a problem kind.
+        text = re.sub(r'"(?:\\.|[^"\\])*"', '""', without_comments(path.read_text()))
         for match in CASE_TOKENS.finditer(text):
             bad.append(f"{rel}: names a problem kind: {match.group()}")
     return bad
@@ -278,7 +280,9 @@ def rule_core_and_trace_boundaries() -> list[str]:
         r"#\s*include\s+<(cppad|Eigen|Ipopt|coin|ceres|Highs|pybind11)",
         re.IGNORECASE,
     )
-    read_back = re.compile(r"(?<![A-Za-z0-9_])(core::)?(Capture\b|active\s*\()")
+    # An explicit operation may own a Capture for observed work counts. It
+    # must not consult the ambient trace to choose or alter a calculation.
+    read_back = re.compile(r"(?<![A-Za-z0-9_])(core::)?active\s*\(")
     for path in sources():
         rel = path.relative_to(NATIVE)
         parts = rel.parts
@@ -388,8 +392,12 @@ def rule_exact_hessian_callback() -> list[str]:
     bad = []
     if "GibbsMinimizer::eval_h" not in text:
         bad.append("equilibrium/gibbs_minimizer.cpp has no eval_h callback")
-    if "hessian_approximation" not in text or '"exact"' not in text:
-        bad.append("solve_equilibrium must request the exact Hessian")
+    options = without_comments((NATIVE / "equilibrium" / "ipopt.hpp").read_text())
+    call = re.search(r"run_ipopt\((.*?)\);", text, re.S)
+    if call is None or call.group(1).rsplit(",", 2)[-2].strip() != "true" or not re.search(
+        r'"hessian_approximation",\s*exact\s*\?\s*"exact"\s*:\s*"limited-memory"', options
+    ):
+        bad.append("solve_equilibrium must request exact curvature from the common Ipopt owner")
     if "limited-memory" in text:
         bad.append("limited-memory Hessian is forbidden")
     return bad

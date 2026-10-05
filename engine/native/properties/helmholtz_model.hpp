@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <mutex>
+#include <limits>
 #include <optional>
 #include <string>
 #include <variant>
@@ -110,6 +111,16 @@ struct PropertyActionBatch final {
 struct ResidualEnergyAction final {
     std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
 };
+// Ordinary Taylor coefficients along a fixed-composition pressure-closed path.
+struct ReferenceTaylor final {
+    std::vector<double> contraction, volume;
+    PropertyActionStatus status = PropertyActionStatus::Nonfinite;
+    PropertyActionDiagnostics diagnostics;
+};
+inline double require_component_property(const std::optional<double>& value) {
+    if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
+    return *value;
+}
 struct State final {
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -120,8 +131,9 @@ struct State final {
     double residual_helmholtz = 0.0;
     double compressibility_factor = 0.0;
     double pressure = 0.0;
-    std::vector<double> residual_chemical_potential_over_rt;
-    std::optional<std::vector<double>> log_fugacity_coefficient;
+    std::vector<std::optional<double>> residual_chemical_potential_over_rt;
+    std::optional<std::vector<std::optional<double>>> log_fugacity_coefficient;
+    std::vector<PropertyActionStatus> component_property_status;
     double residual_entropy = 0.0;
     double residual_internal_energy = 0.0;
     double residual_enthalpy = 0.0;
@@ -140,6 +152,8 @@ struct State final {
     ThermochemistryStatus thermochemistry_status = ThermochemistryStatus::MissingRecord;
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
+    std::vector<std::optional<double>> log_fugacity_parameter_derivative;  // component x active, fixed T/P/x
+    std::vector<double> density_parameter_derivative, permittivity_parameter_derivative;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
@@ -154,6 +168,31 @@ struct DensityRoot final {
     std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
+};
+
+// Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
+struct DensityDiagnosticPoint final {
+    double molar_density = 0.0, lower = 0.0, upper = 0.0;
+    double packing_fraction = std::numeric_limits<double>::quiet_NaN();
+    double pressure = std::numeric_limits<double>::quiet_NaN();
+    double pressure_density_derivative = std::numeric_limits<double>::quiet_NaN();
+    double residual = std::numeric_limits<double>::quiet_NaN();
+    int mechanical_sign = 0;
+    bool linked = false, declared = true;
+    std::string cause, stop;
+};
+struct DensityDiagnosticBracket final {
+    double lower = 0.0, upper = 0.0, lower_residual = 0.0, upper_residual = 0.0;
+};
+struct DensityDiagnostics final {
+    std::vector<DensityDiagnosticPoint> samples, pressure_roots, spinodals;
+    std::vector<DensityDiagnosticBracket> declared_brackets;
+    std::vector<DensityDiagnosticPoint> unresolved;
+    std::optional<DensityDiagnosticPoint> finite_domain;
+    DerivativeOrder evaluation_order = DerivativeOrder::PressureSlope;
+    double geometric_cap = 0.0;
+    std::size_t declared_crossings = 0, evaluations = 0;
+    std::string stop;
 };
 
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit
@@ -218,6 +257,15 @@ struct NeutralReferenceReactionDiagnostic final {
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
+    struct Derivative final {
+        std::size_t temperature_order = 0, pressure_order = 0;
+        std::optional<std::size_t> parameter;
+        std::array<std::optional<double>, 3> ladder;
+        std::array<double, 2> scaled_changes{};
+        std::optional<double> value;
+        std::string message;
+    };
+    std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
 };
 
 class HelmholtzModel final {
@@ -237,6 +285,9 @@ public:
     // Mixed contraction of the extensive residual Helmholtz scalar with three or four
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3 or E4.
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
+    ReferenceTaylor reference_taylor(double temperature, double volume,
+        const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+        const PressureActionDirection& direction, std::size_t order) const;
     NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -278,6 +329,12 @@ public:
     double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions
+    ) const;
+    DensityDiagnostics density_diagnostics(
+        double temperature, double pressure, const std::vector<double>& composition,
+        const std::vector<double>& nodes, double density_tolerance, double log_tolerance,
+        std::size_t max_evaluations, double max_seconds, bool adaptive,
+        std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
     ) const;
     SweepCounters counters() const;
     void reset_counters() const;
@@ -347,6 +404,12 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
+// Fixed terminal composition, raw source-pressure partial; no ladder reselection.
+ResidualEnergyAction reference_partial(const HelmholtzModel&, double temperature,
+    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    std::size_t temperature_order, std::size_t pressure_order,
+    std::optional<std::size_t> parameter = std::nullopt, std::optional<double> anchor = std::nullopt);
+
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the
 // Python surface exposes only the established singular diagnostic/result path.
@@ -360,7 +423,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool pressure_jets = true,
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
-    bool parameter_jets = false  // dC/dtheta for every active parameter
+    bool parameter_jets = false,  // dC/dtheta for every active parameter
+    std::size_t reference_order = 0  // consumed C3/C4 and one-theta columns; 0 preserves lower work
 );
 
 struct InfiniteDilutionReference final {
@@ -369,6 +433,8 @@ struct InfiniteDilutionReference final {
     double convergence_error = 0.0;
     std::optional<double> pure_solvent_log_fugacity;
     std::optional<State> pure_solvent_state;
+    std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
+    std::vector<double> parameter_convergence_error;
 };
 
 struct ElectrolyteActivity final {
@@ -377,6 +443,7 @@ struct ElectrolyteActivity final {
     double mean_ionic_log_molality_scale = 0.0;
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
+    std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
 };
 
 std::vector<double> formula_composition(

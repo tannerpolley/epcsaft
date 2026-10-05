@@ -165,6 +165,10 @@ class ReactionLogPolynomial:
                  temperature_min: float, temperature_max: float, standard_state_id: str) -> None: ...
 
 class ParameterFamily:
+    BornDiameter: ParameterFamily
+    DebyeHuckelDiameter: ParameterFamily
+    PackingDiameter: ParameterFamily
+    IonSuppressionCoefficient: ParameterFamily
     SegmentCount: ParameterFamily
     SigmaConstant: ParameterFamily
     DispersionEnergyOverK: ParameterFamily
@@ -307,8 +311,10 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
-    residual_chemical_potential_over_rt: list[float]
-    log_fugacity_coefficient: Optional[list[float]]
+    residual_chemical_potential_over_rt: list[Optional[float]]
+    log_fugacity_coefficient: Optional[list[Optional[float]]]
+    component_property_status: list[PropertyActionStatus]
+    log_fugacity_parameter_derivative: list[Optional[float]]
     residual_entropy: float
     residual_internal_energy: float
     residual_enthalpy: float
@@ -332,6 +338,39 @@ class State:
     density_branch: DensityBranch
     stable_root_count: Optional[int]
 
+class DensityDiagnosticPoint:
+    molar_density: float
+    packing_fraction: float
+    pressure: float
+    pressure_density_derivative: float
+    lower: float
+    upper: float
+    residual: float
+    mechanical_sign: int
+    linked: bool
+    declared: bool
+    cause: str
+    stop: str
+
+class DensityDiagnosticBracket:
+    lower: float
+    upper: float
+    lower_residual: float
+    upper_residual: float
+
+class DensityDiagnostics:
+    samples: list[DensityDiagnosticPoint]
+    pressure_roots: list[DensityDiagnosticPoint]
+    spinodals: list[DensityDiagnosticPoint]
+    declared_brackets: list[DensityDiagnosticBracket]
+    unresolved: list[DensityDiagnosticPoint]
+    evaluation_order: DerivativeOrder
+    finite_domain: Optional[DensityDiagnosticPoint]
+    geometric_cap: float
+    declared_crossings: int
+    evaluations: int
+    stop: str
+
 class SweepCounters:
     forward: int
     reverse: int
@@ -352,6 +391,12 @@ class HelmholtzModel:
                          directions: Sequence[PressureActionDirection],
                          anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
+    def molar_density_upper_bound(self, temperature: float, composition: Sequence[float]) -> float: ...
+    def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
+                            nodes: Sequence[float], density_tolerance: float, log_tolerance: float,
+                            max_evaluations: int, max_seconds: float, adaptive: bool,
+                            finite_anchor: Optional[float], finite_upper: float,
+                            evaluation_order: DerivativeOrder) -> DensityDiagnostics: ...
     def counters(self) -> SweepCounters: ...
     def reset_counters(self) -> None: ...
 
@@ -451,7 +496,55 @@ class ReactionSpec:
     reference: Optional[ReactionReference]
     def __init__(self) -> None: ...
 
+class StabilityOptions:
+    trials: Optional[list[PhaseSpec]]
+    declaration_budget: Optional[int]
+    trial_budget: Optional[int]
+    standard_uncertainty_over_rt: list[float]
+    def __init__(self) -> None: ...
+
+class StabilityTrial:
+    phase: PhaseSpec
+    seed: str
+    evidence: str
+    message: str
+    optimizer: EquilibriumResult
+    raw_coordinates: list[float]
+    raw_residuals: list[float]
+    composition: list[float]
+    split_coordinates: list[float]
+    basis: list[list[float]]
+    row_transformation: list[list[float]]
+    quantities: dict[str, float]
+    split_checks: list[dict[str, float]]
+    donor: Optional[int]
+    resolved_descent: bool
+
+class StabilityReport:
+    completed: bool
+    message: str
+    trials: list[StabilityTrial]
+    candidate_coordinates: list[float]
+    standard_over_rt: list[float]
+    plane_over_rt: list[float]
+    present_phases: list[dict[str, float]]
+    work: dict[str, float]
+
+class DiscoveryRecord:
+    declaration: EquilibriumProblem
+    candidate: EquilibriumResult
+    rounds: list[StabilityReport]
+    declarations: list[EquilibriumResult]
+    declaration_roles: list[str]
+    declaration_attempt_coordinates: list[list[float]]
+    work: dict[str, float]
+
+
+def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
+                   options: StabilityOptions = ...) -> StabilityReport: ...
+
 class EquilibriumProblem:
+    discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
     temperature: FreeValue
     pressure: FreeValue
@@ -462,6 +555,29 @@ class EquilibriumProblem:
     row_tolerance: float
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
+
+class InventoryBound:
+    species: int
+    status: str
+    termination: str
+    maximum: Optional[float]
+    feed_normalized_amount: Optional[float]
+    log_fraction: Optional[float]
+    balance_residual: float
+    normalization_residual: float
+    lower_bound_residual: float
+    witness: list[float]
+    amounts_mol: list[float]
+    finite_witness: list[float]
+    limiting: bool
+    supported: bool
+    floor: float
+    lp_error: float
+    finite_residual: float
+    feasibility_termination: str
+
+def inventory_bounds(compiled: CompiledSystem, species: Sequence[int], fraction: bool,
+                     floor: float) -> list[InventoryBound]: ...
 
 class RowKind:
     Chemical: RowKind
@@ -505,6 +621,7 @@ class CompiledSystem:
     def hessian(self, point: Sequence[float], constraint_multipliers: Sequence[float] = ...) -> list[float]: ...
 
 class EquilibriumResult:
+    discovery: Optional[DiscoveryRecord]
     neutral_reference_diagnostics: list[NeutralReferenceReactionDiagnostic]
     success: bool
     message: str
@@ -695,6 +812,8 @@ def solve_equilibrium(
 ) -> EquilibriumResult: ...
 
 class InfiniteDilutionReference:
+    parameter_derivative: list[tuple[Optional[float], Optional[float]]]
+    parameter_convergence_error: list[float]
     log_fugacity: tuple[float, float]
     molality: float
     convergence_error: float
@@ -711,6 +830,11 @@ def infinite_dilution_reference(model: HelmholtzModel, temperature: float, press
 def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity: ...
 
 class ObservationKind:
+    MeanIonicActivityCoefficient: ObservationKind
+    OsmoticCoefficient: ObservationKind
+    SolvationGibbsEnergy: ObservationKind
+    TransferGibbsEnergy: ObservationKind
+    BulkRelativePermittivity: ObservationKind
     LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
@@ -728,6 +852,8 @@ class ResidualForm:
     LogRatio: ResidualForm
 
 class ObservationStatus:
+    NotEvaluated: ObservationStatus
+    ReferenceUnavailable: ObservationStatus
     ThermochemistryUnavailable: ObservationStatus
     Available: ObservationStatus
     DensityUnavailable: ObservationStatus
@@ -740,6 +866,10 @@ class ObservationStatus:
     InadmissibleTrial: ObservationStatus
 
 class Observation:
+    ion_indices: tuple[int, int]
+    stoichiometry: tuple[int, int]
+    molality: float
+    reference_composition: list[float]
     reaction: str
     kind: ObservationKind
     temperature: float
@@ -814,16 +944,80 @@ class TrialFailure:
     jacobian: bool
 
 class FitCovariance:
+    left_vectors: list[float]
+    right_vectors: list[float]
+    projected_gradient_norm: float
     status: str
     assumption: str
     rank: int
     singular_values: list[float]
+    objective_rows: list[int]
     active_bounds: list[int]
     optimizer: list[float]
     physical: list[float]
     variance_factor: Optional[float]
 
+class MinimaxRequest:
+    targets: list[int]
+    group_scales: list[float]
+    q: float
+    tolerance: float
+    activity_distance: float
+    margin: float
+    def __init__(self) -> None: ...
+class MinimaxRow:
+    kind: str
+    row: int
+    group: int
+    metric: CheckMetric
+    sign: float
+    threshold: float
+    scale: float
+    auxiliary: int | None
+    members: list[int]
+class MinimaxResult:
+    availability: str
+    application_status: str
+    solver_status: str
+    feasible: bool
+    stationary: bool
+    t: float
+    target_maximum: float
+    gap: float
+    primal: float
+    stationarity: float
+    dual_sign: float
+    complementarity: float
+    point: list[float]
+    lower: list[float]
+    upper: list[float]
+    values: list[float]
+    physical_values: list[float]
+    jacobian: list[float]
+    multipliers: list[float]
+    physical_multipliers: list[float]
+    z_lower: list[float]
+    z_upper: list[float]
+    physical_z_lower: list[float]
+    physical_z_upper: list[float]
+    lower_distances: list[float]
+    upper_distances: list[float]
+    hold_multipliers: list[float]
+    full_stationarity: list[float]
+    root_errors: list[float]
+    slack_groups: list[int]
+    slack_rows: list[int]
+    active_lower: list[int]
+    active_upper: list[int]
+    hold_causes: list[str]
+    rows: list[MinimaxRow]
+    frozen_checks: list[CheckResult]
 class FitResult:
+    minimax: MinimaxResult | None
+    chart: EvaluatedCoordinates
+    checks: list[CheckResult]
+    acceptance: str
+    optimizer: list[float]
     status: str
     message: str
     usable: bool
@@ -849,4 +1043,82 @@ class FitResult:
 def predict(model: HelmholtzModel, observation: Observation) -> Prediction: ...
 def differentiate(model: HelmholtzModel, observation: Observation) -> PredictionGradient: ...
 def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord], coordinates: Sequence[Coordinate],
-        observations: Sequence[Observation], weights: Sequence[float], controls: FitControls) -> FitResult: ...
+        observations: Sequence[Observation], weights: Sequence[float], controls: FitControls, holds: Sequence[HydrationHold] = ...,
+        checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
+        starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
+        seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...) -> Union[FitResult, list[FitResult]]: ...
+
+class CheckMetric:
+    AbsoluteDifference: CheckMetric
+    AbsoluteLog10Ratio: CheckMetric
+
+class HydrationHold:
+    def __init__(self) -> None: ...
+    reference: Observation
+    lower: float
+    upper: float
+    energy_tolerance: float
+    diameter_tolerance: float
+    maximum_iterations: int
+
+class HoldResult:
+    energy_error: float
+    correction: float
+    uncertainty: float
+    derivative: float
+    parameter_derivative: list[float]
+    iterations: int
+    cause: str
+
+class EvaluatedCoordinates:
+    parameters: Parameters
+    active: list[ActiveParameter]
+    physical: list[float]
+    map: list[float]
+    holds: list[HoldResult]
+
+class CheckGroup:
+    def __init__(self) -> None: ...
+    name: str
+    rows: list[int]
+    metric: CheckMetric
+    maximum: float | None
+    mean: float | None
+    baseline: bool
+    report_only: bool
+
+class CheckResult:
+    name: str
+    unit: str
+    status: str
+    rows: list[int]
+    failed_rows: list[int]
+    errors: list[float]
+    slopes: list[float]
+    maximum: float
+    mean: float
+    argmax: int
+    maximum_threshold: float | None
+    mean_threshold: float | None
+    baseline_maximum: float
+    baseline_mean: float
+    report_only: bool
+
+def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ...) -> EvaluatedCoordinates: ...
+def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
+
+def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float]) -> list[Observation]: ...
+
+class ObservationEvaluation:
+    predictions: list[float]
+    gradient: list[float]
+    optimizer_gradient: list[float]
+    chart: EvaluatedCoordinates
+    statuses: list[ObservationStatus]
+def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
+    holds: Sequence[HydrationHold], observations: Sequence[Observation]) -> ObservationEvaluation: ...
+def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
+    holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
+    baseline: Parameters | None, minimax: MinimaxRequest) -> FitResult: ...
+def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
+    stoichiometry: tuple[int, int], molality: float) -> list[float]: ...

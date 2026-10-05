@@ -56,9 +56,6 @@ struct FixedParameters {
 
     // Electrolyte
     std::vector<int> charge_number;
-    std::vector<double> packing_diameter_angstrom;
-    std::vector<double> debye_huckel_diameter_angstrom;
-    std::vector<double> born_diameter_angstrom;
     std::vector<double> solvation_factor;
     double ionic_region_relative_permittivity = 0.0;
     double born_c_shell = 0.0;
@@ -73,7 +70,6 @@ struct FixedParameters {
     std::vector<double> permittivity_term_coefficient;
     std::vector<int> permittivity_term_power;
     std::vector<double> permittivity_reference_temperature_k;
-    std::vector<double> ion_suppression_coefficient;  // per component, alpha_i
     std::vector<double> dielectric_volume_m3_per_mol;
     std::vector<double> dielectric_temperature_k;
     std::vector<double> dipole_scaling_debye2;
@@ -86,10 +82,14 @@ struct FixedParameters {
 
 };
 
-// Precisely the eight active families; all electrolyte and topology inputs stay fixed.
+// Active parameter families; topology and source conventions remain fixed.
 // Scalar is supplied by the consuming layer, so Core has no AD dependency.
 template <class Scalar>
 struct ParameterRecord final : FixedParameters {
+    std::vector<Scalar> packing_diameter_angstrom;
+    std::vector<Scalar> debye_huckel_diameter_angstrom;
+    std::vector<Scalar> born_diameter_angstrom;
+    std::vector<Scalar> ion_suppression_coefficient;
     std::vector<Scalar> segment_count;
     std::vector<Scalar> sigma_constant;
     std::vector<Scalar> dispersion_energy_over_k;

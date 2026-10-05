@@ -8,6 +8,8 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <map>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -114,6 +116,15 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
         && optional_equal(x.reference, y.reference, reference);
 }
 
+// Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
+struct StabilityOptions final {
+    std::optional<std::vector<PhaseSpec>> trials;
+    std::optional<std::size_t> declaration_budget;
+    std::optional<std::size_t> trial_budget;
+    std::vector<double> standard_uncertainty_over_rt;
+};
+struct DiscoveryRecord;
+
 struct EquilibriumProblem final {
     std::vector<PhaseSpec> phases;
     FreeValue temperature;
@@ -123,6 +134,7 @@ struct EquilibriumProblem final {
     std::vector<double> standard_gibbs_j_per_mol;
     std::optional<NeutralReferenceDeclaration> source_reference;
     bool topology_declared = true;
+    std::optional<StabilityOptions> discovery;
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
 
@@ -178,7 +190,6 @@ struct PackingTerms final {
     double coefficient = 0.0;
     double temperature_derivative = 0.0;
     std::vector<double> component;
-    std::vector<double> parameter_derivative;
 };
 
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
@@ -240,6 +251,8 @@ struct CompiledSystem final {
     std::vector<double> balance;
     std::vector<double> standard_gibbs;
     std::vector<std::vector<double>> B;
+    std::vector<std::vector<double>> inventory_restrictions;
+    std::vector<double> inventory_upper_bounds;
     std::vector<Row> rows;
     std::size_t pinned_count = 0;
     std::size_t free_intensive_count = 0;
@@ -310,11 +323,31 @@ CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
 
+// Conserved inventory only: maximum is mol in amount mode, dimensionless in fraction mode.
+// witness is n/N_feed, or (y, tau=N_feed/N); finite_witness uses the same chart.
+struct InventoryBound final {
+    std::size_t species = 0;
+    std::string status, termination;
+    std::optional<double> maximum, feed_normalized_amount, log_fraction;
+    double balance_residual = NAN, normalization_residual = NAN, lower_bound_residual = NAN;
+    std::vector<double> witness, amounts_mol, finite_witness;
+    bool limiting = false, supported = false;
+    double floor = 0.0, lp_error = std::numeric_limits<double>::quiet_NaN();
+    double finite_residual = std::numeric_limits<double>::quiet_NaN();
+    std::string feasibility_termination;
+    std::vector<double> conserved_functional;
+};
+std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
+    const std::vector<std::size_t>& species, bool fraction, double floor);
+
 // Candidate-topology outcome of the existing producer loop: the first vanished free phase
 // in declaration order, else the first coincident pair in lexicographic ordinal order.
 enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
 
 struct EquilibriumResult final {
+    const HelmholtzModel* model_identity = nullptr;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    std::shared_ptr<DiscoveryRecord> discovery;
     bool success = false;
     std::string message;
     std::string solver_status;
@@ -364,6 +397,45 @@ struct EquilibriumResult final {
         return result;
     }
 };
+
+struct StabilityTrial final {
+    PhaseSpec phase;
+    std::string seed, evidence, message;
+    EquilibriumResult optimizer;
+    std::vector<double> raw_coordinates, raw_residuals, composition, split_coordinates;
+    std::vector<std::vector<double>> basis, row_transformation;
+    // Quantities carry units in their names; errors are local estimates, never enclosures.
+    std::map<std::string, double> quantities;
+    std::vector<std::map<std::string, double>> split_checks;
+    std::optional<std::size_t> donor;
+    bool resolved_descent = false;
+};
+struct StabilityReport final {
+    bool completed = false;
+    std::string message;
+    std::vector<StabilityTrial> trials;
+    std::vector<double> candidate_coordinates, standard_over_rt, plane_over_rt;
+    std::vector<std::map<std::string, double>> present_phases;
+    std::map<std::string, double> work;
+};
+struct DiscoveryRecord final {
+    EquilibriumProblem declaration;
+    EquilibriumResult candidate;
+    std::vector<StabilityReport> rounds;
+    std::vector<EquilibriumResult> declarations;
+    std::vector<std::string> declaration_roles;
+    std::vector<std::vector<double>> declaration_attempt_coordinates;
+    std::map<std::string, double> work;
+};
+CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, const PhaseSpec&,
+    const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
+double present_phase_residual_distance(double, double);
+bool descent_resolved(double, double, double);
+std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&);
+std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,
+    const std::vector<double>&, std::map<std::string, double>* = nullptr);
+StabilityReport stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
+EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
 EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,

@@ -85,6 +85,94 @@ void validate_basis_shape(
 
 }  // namespace
 
+bool exact_zero_dot(const std::vector<double>& left, const std::vector<double>& right) {
+    if (left.size() != right.size()) throw std::invalid_argument("exact dot width");
+    std::vector<double> expansion;
+    const auto add = [&](double value) {
+        std::vector<double> next;
+        for (double term : expansion) {
+            const double sum = value + term, recovered = sum - value;
+            const double error = (value - (sum - recovered)) + (term - recovered);
+            if (error != 0.0) next.push_back(error);
+            value = sum;
+        }
+        if (value != 0.0) next.push_back(value);
+        expansion = std::move(next);
+    };
+    for (std::size_t i = 0; i < left.size(); ++i) {
+        if (left[i] == 0.0 || right[i] == 0.0) continue;
+        const double product = left[i] * right[i];
+        // Decline certification if an error-free product residual could underflow.
+        if (!std::isfinite(product) || std::abs(product) < std::ldexp(std::numeric_limits<double>::min(), 53)) return false;
+        add(std::fma(left[i], right[i], -product));
+        add(product);
+    }
+    return expansion.empty();
+}
+
+std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
+    const std::vector<ReactionSpec>& reactions) {
+    const auto conserved = [&](const auto& row) {
+        return std::all_of(reactions.begin(), reactions.end(),
+            [&](const auto& reaction) { return exact_zero_dot(row, reaction.stoichiometry); });
+    };
+    if (conserved(candidate)) return candidate;
+    double largest = 0.0, scale = std::numeric_limits<double>::infinity();
+    for (double value : candidate) largest = std::max(largest, std::abs(value));
+    // Rounding proposes a rational functional; exact original stoichiometry alone admits it.
+    for (double value : candidate) if (std::abs(value) > std::sqrt(std::numeric_limits<double>::epsilon()) * largest)
+        scale = std::min(scale, std::abs(value));
+    if (!std::isfinite(scale)) return {};
+    for (double& value : candidate) value = std::round(value / scale);
+    return conserved(candidate) ? candidate : std::vector<double>{};
+}
+
+void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active) {
+    std::vector<std::size_t> columns;
+    for (std::size_t i = 0; i < active.size(); ++i) if (active[i]) columns.push_back(i);
+    Eigen::MatrixXd restricted(compiled.B.size(), columns.size());
+    for (std::size_t k = 0; k < compiled.B.size(); ++k)
+        for (std::size_t j = 0; j < columns.size(); ++j) restricted(k, j) = compiled.B[k][columns[j]];
+    const auto rank = static_cast<std::size_t>(numerical_rank(restricted));
+    auto basis = compiled.B;
+    // The shared SVD owner decides rank; full-column pivot operations only realise its L B.
+    for (std::size_t k = 0; k < rank; ++k) {
+        std::size_t pivot = k, column = columns.front();
+        double largest = 0.0;
+        for (std::size_t r = k; r < basis.size(); ++r) for (auto i : columns)
+            if (std::abs(basis[r][i]) > largest) { largest = std::abs(basis[r][i]); pivot = r; column = i; }
+        if (!(largest > 0.0)) throw std::invalid_argument("rank-deficient inventory face");
+        std::swap(basis[pivot], basis[k]);
+        const double divisor = basis[k][column];
+        for (double& value : basis[k]) value /= divisor;
+        for (std::size_t r = 0; r < basis.size(); ++r) if (r != k) {
+            const double factor = basis[r][column];
+            for (std::size_t i = 0; i < active.size(); ++i) basis[r][i] -= factor * basis[k][i];
+            basis[r][column] = 0.0;
+        }
+        columns.erase(std::find(columns.begin(), columns.end(), column));
+    }
+    for (std::size_t k = rank; k < basis.size(); ++k) {
+        auto restriction = reconstruct_conserved_functional(basis[k], compiled.problem.reactions);
+        bool state_zero = !restriction.empty();
+        if (state_zero) for (std::size_t i = 0; i < active.size(); ++i)
+            state_zero = state_zero && (!active[i] || restriction[i] == 0.0);
+        if (restriction.empty() || !exact_zero_dot(restriction, compiled.n_feed)
+            || !state_zero) throw std::invalid_argument("infeasible_inventory: discarded state balance");
+        compiled.inventory_restrictions.push_back(std::move(restriction));
+    }
+    basis.resize(rank);
+    compiled.B = basis;
+    compiled.rank = rank;
+    compiled.balance = matvec(compiled.B, compiled.n_feed);
+    for (auto& row : basis) {
+        std::vector<double> state;
+        for (std::size_t i = 0; i < active.size(); ++i) if (active[i]) state.push_back(row[i]);
+        row = std::move(state);
+    }
+    compiled.conserves_total_moles = conserves_total_moles(basis);
+}
+
 std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& feed) {
     const std::size_t components = model.parameters().component_count();
     if (feed.values.size() != components) {
@@ -421,4 +509,3 @@ bool all_numeric(const std::vector<double>& values) {
 }
 
 }  // namespace epcsaft::equilibrium
-

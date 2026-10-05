@@ -135,7 +135,7 @@ $$
 - Section: Contribution intermediates / Association
 - Status: Source equation
 - Source: [Gross2002], cross-association rule; [Chapman1990], association strength
-- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); `d^3`-regressed volumes are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
+- Description: Site-pair association strength using explicit source-resolved cross records. It carries `sigma_ij^3` where Chapman1990 Eq. 18 carries `d^3` (the PC-SAFT parameter convention); volumes fitted using `d^3` are converted in their packets. For a `wolbach-sandler` rule edge, the Gross2002 Eq. 3 size factor makes `sigma_ij` the geometric mean `sqrt(sigma_i sigma_j)(1-l_ij)`.
 - Change note: Keeps association energy and volume distinct from k_ij and l_ij.
 
 $$
@@ -181,7 +181,7 @@ $$
 - Status: Source equation
 - Source: Born charging work; [Figiel2026Correction], corrected Eq.~(7)
 - Description: Dimensionless residual Helmholtz contribution from the sole Born charging equation.
-- Change note: Shared by fixed and active-coordinate evaluation paths without a formulation selector.
+- Change note: Shared by fixed and active-coordinate evaluation paths. On an ion-free support the empty sum is identically zero before permittivity or solvation operations; this restriction does not supply ionic insertion derivatives.
 
 $$
 a^{Born}=-\frac{e^2}{4\pi\epsilon_0k_BT}\,W_{Born}.
@@ -399,7 +399,7 @@ $$
 - Status: Source equation
 - Source: [Bulow2019], finite-size function in Eq.~(2)
 - Description: Exact finite-size DH function and its Taylor series at zero, truncated at degree 24 in the implementation. The polynomial is not the exact function away from the limit.
-- Change note: A recording-point reduced diameter y_ref may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. With the switch at y_ref = 0.2, chi and its first and second Taylor derivatives match 50-digit references to 3e-14, 7e-13 and 1.1e-11 relative on both branches (2026-09-23).
+- Change note: The current reduced diameter y may select a cancellation-safe implementation, but is an algorithm choice, not a thermodynamic variable. With the switch at y = 0.2, chi and its first and second Taylor derivatives match 50-digit references to 3e-14, 7e-13 and 1.1e-11 relative on both branches (2026-09-23).
 
 $$
 \chi(y)=\frac{3[\ln(1+y)-y+y^2/2]}{y^3}\quad(y>0),\qquad \chi(0)=1,\qquad y=\kappa d_i^{DH},\qquad \chi(y)=\sum_{k=0}^{24}\frac{3(-y)^k}{k+3}+O(y^{25})\quad(y\to0).
@@ -411,7 +411,7 @@ $$
 - Status: Source equation
 - Source: [Bulow2019], Eq.~(2)
 - Description: Finite-size Debye--Huckel residual Helmholtz contribution.
-- Change note: d_i^DH is the separately declared finite-size diameter in metres; equality to packing or Born diameters requires source justification.
+- Change note: d_i^DH is the separately declared finite-size diameter in metres; equality to packing or Born diameters requires source justification. The ion-free support restriction is identically zero before screening operations; the dilute three-halves power does not admit a finite ionic insertion Hessian.
 
 $$
 a^{DH}=-\frac{\kappa e^2}{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}\sum_{i\in\mathcal I}x_i z_i^2\chi(\kappa d_i^{DH}).
@@ -808,7 +808,7 @@ $$
 - Section: Thermodynamic properties
 - Status: Exact derivation
 - Source: Composition of `fixed_pressure_total_derivative`, `total_heat_capacity_cp` and `residual_heat_capacity_cp`
-- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
+- Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Parameter regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
 - Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
 
 $$
@@ -1405,7 +1405,7 @@ $$
 - Status: Source equation
 - Source: [HamerWu1972], practical molal osmotic-coefficient definition; common-pressure identity from Eqs.~`log_fugacity_coefficient` and `pressure`
 - Description: Dimensionless practical molal osmotic coefficient from pure-solvent-referenced solvent activity.
-- Change note: Defined only for the admitted single-active-solvent aqueous path; evaluated at common prescribed T/P to avoid unequal terminated pressure logarithms.
+- Change note: Defined only for the admitted single-active-solvent aqueous path; Evaluated at common prescribed T/P; the scalar residual chemical-potential difference uses the extensive Helmholtz Euler identity in extended precision, with Z=P/(RT rho). Exact parameter columns retain the shared fugacity derivative contraction. Subscripts f and p denote the finite solution and pure solvent, a^r is per mole, and the sum excludes the solvent.
 
 $$
 \Phi=
@@ -1415,6 +1415,10 @@ $$
 \ln a_s=\ln x_s+\ln\phi_s-\ln\phi_s^{\mathrm{pure}}
 =\ln x_s+\frac{\mu_s^r-\mu_s^{r,\mathrm{pure}}}{RT}
 +\ln\frac{\rho_m}{\rho_m^{\mathrm{pure}}}.
+\qquad
+\Delta\mu_s^r/(RT)=
+\frac{a_f^r-a_p^r+\frac{P}{RT}(\rho_f^{-1}-\rho_p^{-1})
+-\sum_{i\ne s}x_i[\mu_i^{r,f}/(RT)-\mu_s^{r,p}/(RT)]}{x_s}.
 $$
 
 ## `pressure`
@@ -1583,7 +1587,7 @@ $$
 
 ## `source_log_equilibrium_constant_observation`
 
-- Section: Regression / Reaction observations
+- Section: Parameter regression / Reaction observations
 - Status: Exact derivation
 - Source: `reaction_constant_ln_polynomial` (Austgen et al. 1989, ln K(T) correlation); coefficient differentiation and existing Difference residual, issue #211
 - Description: A direct observation is the named reaction's declared source-basis natural-log equilibrium constant at fixed positive temperature. It does not contain the EOS reference contraction or an equilibrium-state derivative.
@@ -1602,7 +1606,7 @@ $$
 
 - Section: Equilibrium / Reaction standard states
 - Status: Bounded empirical relation
-- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source contract (Aroua 1999, Tong 2012)
+- Source: The −log10 K = a/T + b + cT form as recorded for MEA reaction R5 in the MEA-Thermodynamics source specification (Aroua 1999, Tong 2012)
 - Description: Temperature correlation of a reaction equilibrium constant in decadic-logarithm form, converted to the natural logarithm, with its analytic temperature derivative; fitting uses the explicitly converted native coefficients; valid on the declared temperature domain only.
 - Change note: Source notation ln(T) means ln(T/(1 K)); coefficients use the numerical Kelvin convention. Standard-state quantities are held fixed in the displayed derivative; temperature-dependent reference conversions contribute separately. Engine fitting admits stored natural-log coefficients through `reaction_constant_coordinate_derivative`, at first order only; parameter adoption remains application-owned.
 
@@ -1651,7 +1655,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Third pressure derivatives remain unavailable; the first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Higher source-pressure derivatives are supplied by `reference_mixed_temperature_pressure_derivatives` in Properties; downstream use is separately qualified. The first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1768,6 +1772,41 @@ $$
 [t^5]F(p+vt\pm ut^3)=\frac{D^5F[v,v,v,v,v]}{120}
 \pm\frac{D^3F[u,v,v]}{2},\\
 D^3F[u,v,v]=[t^5]\{F(p+vt+ut^3)-F(p+vt-ut^3)\}.
+$$
+
+## `reference_single_insertion_taylor`
+
+- Section: Helmholtz derivatives / Reference derivatives
+- Status: Exact derivation
+- Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure; issue #225, section 3
+- Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
+- Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
+
+$$
+z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{3,4\},\qquad
+[t^k]D\psi(z(t))[u]=\frac12[t^{r+1+k}]
+\{\psi(z(t)+ut^{r+1})-\psi(z(t)-ut^{r+1})\},\quad 0\le k\le r,\\
+D^4\psi[u,v,v,v]=\frac{3!}{2}[t^7]\{\psi(z_0+vt+ut^4)-\psi(z_0+vt-ut^4)\},\\
+D^5\psi[u,v,v,v,v]=\frac{4!}{2}[t^9]\{\psi(z_0+vt+ut^5)-\psi(z_0+vt-ut^5)\},\\
+p(t)=RT(t)\{V(t)^{-1}-D\psi(z(t))[e_V]\},\qquad
+V_k=\frac{[t^k]P_{src}(t)-[t^k]p(z(t))|_{V_k=0}}{p_V(z_0)},\\
+C(t)=-\Delta\nu\ln(V(t)\rho_0)+D\psi(z(t))[\nu],\qquad
+z_{j,n}=0\quad(j>0).
+$$
+
+## `reference_mixed_temperature_pressure_derivatives`
+
+- Section: Properties / Reaction references
+- Status: Exact derivation
+- Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction; issue #225, sections 2–3 and F8/F9
+- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. No repeated parameter derivatives or dilution-composition derivatives are consumed.
+- Change note: Both consecutive changes at 1e-10, 1e-12 and 1e-14 mol/kg must satisfy the existing heat-capacity change criterion. This observed convergence does not bound infinite-dilution bias. Columns are independently unavailable when their own calculation or admission fails. Earlier lower-slope admission remains with its existing owner.
+
+$$
+C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
+C_{ab,\theta}=\partial_T^a\partial_{P_{src}}^b\partial_\theta C,\quad a+b\le3,\\
+E_{abc}=RT^aP_{src}^b\max(|\theta|,1)^c|\delta C_{ab,\theta^c}|\le0.01\ \mathrm{J\,mol^{-1}\,K^{-1}},\quad c\in\{0,1\},\quad a+b+c\ge2,\\
+C_T=\frac{h^{res}+RT}{RT^2},\qquad C_P=-\frac{v}{RT}\quad\text{(identical neutral species, }C=-\Lambda\text{)}.
 $$
 
 ## `reference_limit_terminal_pair`
@@ -1911,7 +1950,7 @@ $$
 
 - Section: Parameter setup
 - Status: Bounded empirical relation
-- Source: Source-resulted component correlation represented by the EOS parameter schema
+- Source: Source-resulted component correlation represented by the EOS parameter fields
 - Description: Evaluate a component segment-size correlation from its constant and exponential terms.
 - Change note: Mirrors the general sparse correlation implemented by segment_sigma.
 
@@ -1959,14 +1998,190 @@ $$
 
 ## `tangent_plane_distance`
 
-- Section: Equilibrium
-- Status: Source equation
-- Source: [Pereira2012] Eq. 12; Perdomo et al. 2025 (Perdomo2025) Eq. 40
-- Description: Tangent-plane distance in volume-composition space; nonnegativity for every trial is the stability criterion.
-- Change note: A negative value is a one-sided instability witness.
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: [Michelsen1982] Part I; [Pereira2012] Eq. 12; [Perdomo2025] §3.3 Eqs. 37–40; [Ascani2022] §3.3 Eqs. 33–35; conserved-plane extension adopted in #223
+- Description: Reduced molar tangent-plane distance at fixed positive T/P, normalized charge-neutral composition w on support S and molar volume v in m³/mol; e is the all-ones vector and z contains charge numbers. The mechanical reduced energy includes residual and ideal-density Helmholtz energy plus Pv/RT; s is the dimensionless density-standard offset and π the chemical balance plane.
+- Change note: Freeze standards including reference transfer and gauge at the solved snapshot. Chemical λ is dimensionless here, unlike dimensional chemical_potential_stationarity. A negative plane value needs feasible donor withdrawal and error qualification; finite search supplies no global certificate.
 
 $$
-\mathrm{TPD}(\boldsymbol x,v)=g(\boldsymbol x,v)-g(\boldsymbol x^{0},v^{0})-\nabla_{\boldsymbol x}g(\boldsymbol x^{0},v^{0})\cdot(\boldsymbol x-\boldsymbol x^{0}).
+\begin{aligned}
+\widetilde g(\mathbf w,v)&=\frac{a_{\mathrm{mech}}(\mathbf w,v)}{RT}+\frac{Pv}{RT},\qquad
+s_i=\frac{g^\circ_{i,\rho}(T,P)}{RT},\qquad \boldsymbol\pi=\mathbf B^{\mathsf T}\boldsymbol\lambda,\\
+t(\mathbf w,v)&=\widetilde g(\mathbf w,v)+\mathbf w^{\mathsf T}(\mathbf s-\boldsymbol\pi),\qquad
+\mathbf e^{\mathsf T}\mathbf w=1,\quad \mathbf z^{\mathsf T}\mathbf w=0,\quad
+w_i>0\ (i\in S),\ w_i=0\ (i\notin S).
+\end{aligned}
+$$
+
+## `tangent_plane_gibbs_dual_identity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Homogeneity of system_gibbs_helmholtz_coordinates and chemical_potential_stationarity; #223 adopted derivation
+- Description: Gibbs-dual identity for an exact feasible all-free fixed-T/P stationary candidate and any charge-neutral split with the same conserved totals b. N_q is mol; extensive reduced energies are on the request feed basis.
+- Change note: Pinned feasibility cells and approximate numerical states do not inherit exact stationary equality. The split identity alone does not construct a feasible withdrawal.
+
+$$
+\frac{G_0}{RT}=\boldsymbol\lambda^{\mathsf T}\mathbf b,\qquad
+\frac{G_{\mathrm{split}}}{RT}-\boldsymbol\lambda^{\mathsf T}\mathbf b
+=\sum_q N_q\,t(\mathbf x_q,v_q),\qquad
+\sum_q N_q\mathbf B\mathbf x_q=\mathbf b.
+$$
+
+## `tangent_plane_trial_balance`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Basis transformation of normalization/electroneutrality and Euler stationarity; #223 adopted derivation
+- Description: Internal unit-amount trial balance basis on S; R contains total-amount and charge rows, omitting charge for neutral support. H is the retained full-rank row transformation; λ_t is conjugate to B_t, not an optimizer multiplier.
+- Change note: No feed-moiety-proportion constraint or reaction is imposed on the trial. The total row need not be first; use λ_t dot b_t in every basis.
+
+$$
+\begin{aligned}
+\mathbf R_S&=\begin{pmatrix}\mathbf e_S^{\mathsf T}\\\mathbf z_S^{\mathsf T}\end{pmatrix},\quad
+\mathbf B_t=\mathbf H\mathbf R_S,\quad
+\mathbf b_t=\mathbf B_t\mathbf w^0=\mathbf H\mathbf R_S\mathbf w^0,\qquad
+\mathbf R_S\mathbf w^0=\begin{pmatrix}1\\0\end{pmatrix}
+\quad\text{(omit charge row and second entry for neutral support)},\\
+N\mathbf B_t\mathbf w&=\mathbf b_t,\quad \mathbf e_S^{\mathsf T}\mathbf w=1
+\ \Longrightarrow\ N=1,\ \mathbf z_S^{\mathsf T}\mathbf w=0,\\
+\frac{\boldsymbol\mu_{\mathrm{mech}}}{RT}+\mathbf s-\boldsymbol\pi
+&=\mathbf B_t^{\mathsf T}\boldsymbol\lambda_t
+=k\mathbf e_S+\varphi_t\mathbf z_S,\qquad
+ t=\boldsymbol\lambda_t^{\mathsf T}\mathbf b_t=k
+\quad\text{at exact feasible stationary density and composition}.
+\end{aligned}
+$$
+
+## `tangent_plane_shift_log_curvature`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Exact log-composition chain rule for the frozen standard shift in system_gibbs_helmholtz_coordinates; #223
+- Description: Shift coefficients c=s−π are fixed, but supported fractions w_i=exp(y_i) and free amount N are coordinates. Curvature of the extensive reduced shift must remain in shared exact callbacks at arbitrary points.
+- Change note: Linear amount-space energy does not imply zero log-chart curvature; direct amount curvature is zero.
+
+$$
+L_c=N\sum_{i\in S}c_i e^{y_i},\qquad
+\partial_{y_i}L_c=N c_iw_i,\quad
+\partial_{y_i y_j}L_c=\delta_{ij}N c_iw_i,\quad
+\partial_{N y_i}L_c=c_iw_i,\quad \partial_{NN}L_c=0.
+$$
+
+## `electroneutral_trial_reconstruction`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Implementation convention
+- Source: Normalization and two linear charge/amount equations; #223 adopted numerical admission
+- Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups, normalize, then correct arithmetic residuals on the largest positive and negative entries (ties by index); structural zeros remain zero.
+- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility.
+
+$$
+\begin{aligned}
+Q_+&=\sum_{z_i>0}z_i u_i,\quad Q_-=\sum_{z_i<0}|z_i|u_i,\\
+\widehat u_i&=\begin{cases}u_i\sqrt{Q_-/Q_+},&z_i>0,\\u_i\sqrt{Q_+/Q_-},&z_i<0,\\u_i,&z_i=0,\end{cases}
+\qquad w_i=\frac{\widehat u_i}{\sum_{j\in S}\widehat u_j},\\
+\begin{pmatrix}1&1\\z_+&z_-\end{pmatrix}
+\begin{pmatrix}\delta w_+\\\delta w_-\end{pmatrix}
+&=\begin{pmatrix}1-\sum_i w_i\\-\sum_i z_iw_i\end{pmatrix},\qquad
+(w_+,w_-)\leftarrow(w_++\delta w_+,w_-+\delta w_-).
+\end{aligned}
+$$
+
+## `normalized_trial_reaction_affinity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: tangent_plane_trial_balance contracted with charge-conserving Bν=0; #223 adopted derivation
+- Description: Normalized stationary trial affinity for a mole-changing reaction, products positive; μ_mech/RT+s is the total reduced chemical potential. The trial's normalized reaction direction differs from the amount-space reaction vector.
+- Change note: π annihilates ν in amount space, not generally its normalized direction. The added full declaration restores original zero-affinity rows; the search trial need not have zero affinity.
+
+$$
+\mathbf B\boldsymbol\nu=0,\quad \mathbf z^{\mathsf T}\boldsymbol\nu=0
+\ \Longrightarrow\
+\boldsymbol\nu^{\mathsf T}\left(\frac{\boldsymbol\mu_{\mathrm{mech}}}{RT}+\mathbf s\right)
+=k\,\mathbf e^{\mathsf T}\boldsymbol\nu,\qquad
+\mathbf d_w=\boldsymbol\nu-\mathbf w\,\mathbf e^{\mathsf T}\boldsymbol\nu.
+$$
+
+## `present_phase_tangent_plane_identity`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Euler homogeneity of phase_helmholtz_amount_volume with chemical and pressure rows; #223 adopted derivation
+- Description: Full present-phase identity on normalized compositions. a_V,p is the SI molar-volume column of residual reduced Helmholtz energy at unit amount; pressure-row error cannot be omitted. μ_mech contains ideal-density and residual chemical potentials without s.
+- Change note: The charge term is retained until charge-neutral admission; approximate chemical equality alone does not force zero TPD.
+
+$$
+\begin{aligned}
+r_{p,i}&=\frac{\mu_{\mathrm{mech},p,i}}{RT}+s_i-\pi_i-z_i\varphi_p,\qquad
+r_{Pp}=v_p\left(\frac{1}{v_p}-a_{V,p}-\frac{P}{RT}\right),\\
+t(\mathbf x_p,v_p)&=\mathbf x_p^{\mathsf T}\mathbf r_p
++\varphi_p\mathbf z^{\mathsf T}\mathbf x_p-r_{Pp}.
+\end{aligned}
+$$
+
+## `tangent_plane_donor_descent`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: First variation of system_gibbs_helmholtz_coordinates along conserved donor withdrawal; #223 adopted derivation
+- Description: Withdraw βw from strictly positive donor p containing S and create βw in the trial, holding donor and trial molar volumes fixed. β and its capacity are mol; d_p is the per-mole slope of extensive G/RT.
+- Change note: Compute the donor slope directly from physical gradients; chemical plane uncertainty cancels. A negative TPD without finite positive donor capacity is an unresolved plane trial.
+
+$$
+\begin{aligned}
+\beta_{\max,p}&=\min_{i\in S}\frac{n_{p,i}}{w_i}>0,\\
+d_p=\left.\frac{d(G_{\mathrm{split}}/RT)}{d\beta}\right|_{0}
+&=\widetilde g(\mathbf w,v_t)+\mathbf s^{\mathsf T}\mathbf w
+-\mathbf w^{\mathsf T}\left(\frac{\boldsymbol\mu_{\mathrm{mech},p}}{RT}+\mathbf s\right)+r_{Pp}\\
+&=t(\mathbf w,v_t)-\mathbf w^{\mathsf T}\mathbf r_p
+-\varphi_p\mathbf z^{\mathsf T}\mathbf w+r_{Pp}.
+\end{aligned}
+$$
+
+## `tangent_plane_descent_uncertainty`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Implementation convention
+- Source: First-order propagation, Euler homogeneity and final-summation rounding; #223 adopted estimated-uncertainty criterion
+- Description: ε_tg estimates trial reduced molar energy error; ε_pμi donor reduced chemical error; ε_pP pressure-row error; ε_f feasibility/representation correction; ε_fp arithmetic. Include supplied standard-term uncertainty separately in the applicable energy/chemical terms. F_n and F_V denote native association derivative-floor estimates in unit-mol amount and SI volume columns.
+- Change note: Report association residual/conditioning and Euler defect at reevaluated points. A maximum floor may replace each column floor with its scale retained. γ_m bounds final summation rounding only, not the EOS evaluator. Local first-order estimates are not certified enclosures.
+
+$$
+\begin{aligned}
+E_d&=\epsilon_{tg}+\sum_i|w_i|\epsilon_{p\mu i}
++\epsilon_{pP}+\epsilon_f+\epsilon_{fp},\\
+\epsilon_{tg,\mathrm{assoc}}&\approx\sum_i|w_i|F_{t,n_i}+|v_t|F_{t,V},\qquad
+\epsilon_{pP,\mathrm{assoc}}\approx|v_p|F_{p,V},\\
+\epsilon_{\mathrm{Euler}}&=\left|a^{\mathrm{res}}-\sum_i w_i a^{\mathrm{res}}_{n_i}-v a^{\mathrm{res}}_V\right|,\qquad
+\epsilon_{\mathrm{sum}}\le\gamma_m\sum_j|\mathrm{term}_j|,\quad
+\gamma_m=\frac{m\varepsilon_{\mathrm{mach}}}{1-m\varepsilon_{\mathrm{mach}}},\\
+t&<0,\quad d_p<-E_d\quad\text{admit numerical slope descent only with all terms available;}
+\quad d_p+E_{\mathrm{bound}}<0\quad\text{requires justified total bounds for proof}.
+\end{aligned}
+$$
+
+## `conserved_finite_phase_split`
+
+- Section: Equilibrium / Tangent-plane testing
+- Status: Exact derivation
+- Source: Component-conserving donor split of system_gibbs_helmholtz_coordinates; #223 adopted finite-descent check
+- Description: Finite split at fixed donor/trial molar volumes preserves every component and thus moieties and charge. Other phases are unchanged. ΔG/RT and E_Δ are extensive on the request's mol feed basis.
+- Change note: Try β_max/2 and at most eight halvings, reevaluating physical points. Numerical descent requires actual conservation and a Gibbs decrease exceeding its propagated estimate; proof additionally requires justified feasibility and error bounds.
+
+$$
+\begin{aligned}
+\mathbf n'_p&=\mathbf n_p-\beta\mathbf w,\quad
+\mathbf n_t=\beta\mathbf w,\quad N'_p=N_p-\beta,\quad
+\mathbf x'_p=\frac{\mathbf n'_p}{N_p-\beta},\quad 0<\beta<\beta_{\max,p},\\
+V'_p&=(N_p-\beta)v_p,\quad V_t=\beta v_t,\quad
+\mathbf n'_p+\mathbf n_t=\mathbf n_p,\\
+\frac{\Delta G}{RT}&=(N_p-\beta)g(\mathbf x'_p,v_p)+\beta g(\mathbf w,v_t)-N_p g(\mathbf x_p,v_p),
+\quad g=\widetilde g+\mathbf s^{\mathsf T}\mathbf x,\\
+\frac{\Delta G}{RT}&<-E_\Delta\quad\text{for numerically resolved finite descent with estimated uncertainty}.
+\end{aligned}
 $$
 
 ## `thermochemistry_from_reactions`
@@ -2074,7 +2289,7 @@ $$
 
 ## `finite_addition_enthalpy`
 
-- Section: Regression / Enthalpy observations
+- Section: Parameter regression / Enthalpy observations
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
@@ -2173,4 +2388,48 @@ $$
 
 $$
 \nabla_y^2\mathcal L_{\mathrm{opt}}=\mathrm{obj\_factor}\,\nabla_y^2 f(y)+\sum_j\Lambda_j^{\mathrm{opt}}\nabla_y^2 g_j(y).
+$$
+
+## `log_fugacity_coefficient_parameter_derivative`
+
+- Section: Properties / Pressure-closed parameter actions
+- Status: Exact derivation
+- Source: Implicit differentiation of `pressure`, `compressibility_factor` and `log_fugacity_coefficient`; extensive residual Helmholtz Hessian including implicit association.
+- Description: First physical-parameter columns at fixed temperature, pressure and component amounts.
+- Change note: Requires positive finite pressure-density slope. Parameters use their native units; the volume is m³ for the declared amounts. Numerical qualification belongs to the electrolyte parameter-gradient analysis.
+
+$$
+V_a=-\frac{\phi_{Va}}{n/V^2+\phi_{VV}},\qquad
+ g_{i,a}=\phi_{ia}+\left(\phi_{iV}-\frac1V\right)V_a,
+\quad \phi=A^r/(RT),\quad g_i=\ln\varphi_i.
+$$
+
+## `electrolyte_activity_parameter_derivative`
+
+- Section: Properties / Electrolyte reference actions
+- Status: Exact derivation
+- Source: `mean_ionic_activity_coefficient`, `molality_activity_conversion`, `practical_osmotic_coefficient` and `log_fugacity_coefficient_parameter_derivative`.
+- Description: Molality-scale mean ionic activity and single-solvent osmotic first columns, with the admitted terminal infinite-dilution reference.
+- Change note: The reference column stays at the returned 1e-12 mol/kg endpoint; a finer witness admits that column without replacing it. The osmotic domain is unchanged; the scalar chemical-potential difference uses the extensive Euler identity at prescribed pressure. Energies multiply the same reference columns by RT in J/mol.
+
+$$
+\frac{\partial\gamma_\pm^{(m)}}{\partial\theta_a}
+=\gamma_\pm^{(m)}\frac{\sum_k\nu_k(g_{k,a}-g^\infty_{k,a})}{\sum_k\nu_k},
+\qquad \frac{\partial\Phi}{\partial\theta_a}
+=-\frac{g_{s,a}-g^\mathrm{pure}_{s,a}}{m M_s\sum_k\nu_k}.
+$$
+
+## `dependent_born_diameter_derivative`
+
+- Section: Parameter regression / Dependent hydration coordinate
+- Status: Exact derivation
+- Source: Implicit-function theorem applied to `infinite_dilution_solvation_energy` and `log_fugacity_coefficient_parameter_derivative`.
+- Description: A Born diameter holds a declared single-ion solvation energy, with exact first columns contracted through the independent affine/tied chart.
+- Change note: Independent scalar holds only; nonzero scaled H_d, a declared bracket and both energy and diameter-correction criteria are required. Final acceptance uses the stored diameter without solving the equality again. Target uncertainty is fixed, not estimated.
+
+$$
+H=RT\ln\varphi_i^\infty-\Delta G_{i,\mathrm{target}}^\infty=0,
+\qquad\frac{d d_i}{d\theta_a}=-\frac{H_a}{H_d},
+\qquad J^\mathrm{opt}_{jc}=\sqrt{w_j}\,\frac{dr_j}{dy_j}\sum_r\frac{\partial y_j}{\partial\theta_r}D_{rc},
+\quad D_{rc}=\frac{d\theta_r}{du_c}.
 $$
