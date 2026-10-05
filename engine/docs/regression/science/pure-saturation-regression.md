@@ -140,6 +140,11 @@ apply to the base value q. A reciprocal pair is one physical row. Independent
 EOS rows follow coordinate and target declaration order, followed by held Born
 rows and reaction rows. The active list contains the EOS and held rows only;
 `tie()` gives row-to-column identity, not derivative magnitudes.
+The public point reader's `optimizer_gradient` is dy/dv;
+`residual_optimizer_gradient` is dr/dv at unit row weight. These coincide for
+Difference scale 1; otherwise Difference divides by its declared scale and
+natural-log LogRatio divides by the native prediction. Ceres applies its row
+weights to residual columns; minimax applies native check slopes to prediction columns.
 
 Native `CoordinateSet.start()` divides the first target value by its coefficient
 and inverts the base origin/scale. Every stored target and mirrored entry must

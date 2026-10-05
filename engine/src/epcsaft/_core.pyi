@@ -1118,6 +1118,7 @@ class ObservationEvaluation:
     predictions: list[float]
     gradient: list[float]
     optimizer_gradient: list[float]
+    residual_optimizer_gradient: list[float]
     chart: EvaluatedCoordinates
     statuses: list[ObservationStatus]
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],

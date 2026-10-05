@@ -294,6 +294,7 @@ void register_regression(py::module_& module) {
     py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         .def_readonly("predictions", &ObservationEvaluation::predictions).def_readonly("gradient", &ObservationEvaluation::gradient)
         .def_readonly("optimizer_gradient", &ObservationEvaluation::optimizer_gradient).def_readonly("chart", &ObservationEvaluation::chart)
+        .def_readonly("residual_optimizer_gradient", &ObservationEvaluation::residual_optimizer_gradient)
         .def_readonly("statuses", &ObservationEvaluation::statuses);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations) {

@@ -694,6 +694,14 @@ void check_affine_start_signed() {
     auto ob = density(200, 1e5, {0.4,0.6}, DensityBranch::Liquid); ob.form = ResidualForm::Difference;
     request.observations = {ob};
     const auto exact = evaluated_columns(request,{0}).optimizer_gradient[0];
+    for (const double scale : {1.0, 3.0}) {
+        request.observations[0].scale = scale;
+        const auto columns = evaluated_columns(request,{0});
+        const double residual = columns.residual_optimizer_gradient[0], expected = exact/scale;
+        CHECK(agree("r1-f2/residual-basis/"+std::to_string(scale), "density_residual_action", "per optimizer unit",
+            residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("scale",scale),
+            "native Difference columns retain their declared scale", "r1-f2"));
+    }
     const auto value = [&](double v) {
         auto physical = request.parameters; physical.k_ij[1] = physical.k_ij[2] = -0.88*(0.1+0.2*v);
         return *predict(HelmholtzModel(physical),ob).value;
@@ -727,7 +735,11 @@ void check_coupled_columns() {
         for (std::size_t row=0; row<request.observations.size(); ++row) {
             const auto value = [&](double shift) { return std::log(*predict(HelmholtzModel(rebuilt(shift)),request.observations[row]).value); };
             affine_difference("affine-columns/"+std::to_string(held)+"/"+std::to_string(row),
-                exact.optimizer_gradient[row],value,1e-3,0.2,"affine-columns");
+                exact.residual_optimizer_gradient[row],value,1e-3,0.2,"affine-columns");
+            const double residual = exact.residual_optimizer_gradient[row], expected = exact.optimizer_gradient[row]/exact.predictions[row];
+            CHECK(agree("affine-columns/residual-basis/"+std::to_string(held)+"/"+std::to_string(row), "log_ratio_action", "per optimizer unit",
+                residual,expected,8*EPS*std::max(std::abs(residual),std::abs(expected)),0,field("prediction",exact.predictions[row]),
+                "native natural-log columns equal prediction columns divided by prediction", "affine-columns"));
         }
         if (held) {
             const auto value = [&](double shift) { return rebuilt(shift).born_diameter_angstrom[1]; };
@@ -3490,7 +3502,7 @@ int main(int argc, char** argv) {
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
-        {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:25"}, check_f2, "R1"},
+        {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:27"}, check_f2, "R1"},
         {{"native.regression.r1-f3", "Regression_R1_F3_F4", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f3/*,r1-f4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F3", "r1-f3/*:5,r1-f4/*:3"}, check_f3_f4, "R1"},
         {{"native.regression.r1-f5", "Regression_R1_F5_F6", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f5/*,r1-f6/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F5", "r1-f5/*:5,r1-f6/*:3"}, check_f5_f6, "R1"},
         {{"native.regression.r1-f7", "Regression_R1_F7_F8", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f7/*,r1-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F7", "r1-f7/*:5,r1-f8/*:12"}, check_f7_f8, "R1"},

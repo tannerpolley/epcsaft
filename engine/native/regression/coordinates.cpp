@@ -44,7 +44,8 @@ std::vector<std::size_t> CoordinateSet::tie() const {
 }
 
 std::vector<double> CoordinateSet::start(const Parameters& parameters, const std::vector<Observation>& observations,
-                                         const std::optional<ThermochemistryRecord>& thermochemistry) const {
+    const std::optional<ThermochemistryRecord>& thermochemistry) const {
+    core::Scope scope("coordinate_start");
     (void)optimizer_bounds();
     std::vector<double> result;
     std::set<std::pair<std::string, ReactionCoefficient>> seen;

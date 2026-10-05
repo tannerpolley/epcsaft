@@ -1214,6 +1214,11 @@ coefficients and source basis. Rebuild each trial with those values, preserving
 reference transfers. Optimizer columns follow declaration order; physical rows
 are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
+The native point reader returns prediction columns in `optimizer_gradient` and
+unit-weight residual columns in `residual_optimizer_gradient`. Difference scale a
+gives dr/dv = (dy/dv)/a; natural-log LogRatio gives dr/dv = (dy/dv)/y.
+The Ceres Jacobian also includes square-root row weights. Minimax consumes
+prediction columns and applies its own native check-error slopes.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact
