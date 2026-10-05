@@ -1195,8 +1195,8 @@ scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, finite-addition enthalpy,
-the declared equilibrium observations and direct source-basis ln K observations. It uses affine, tied
-optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
+the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
+optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
 withheld under rank deficiency or an active bound. Named scalar ln K and stored
@@ -1204,7 +1204,7 @@ withheld under rank deficiency or an active bound. Named scalar ln K and stored
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
 reference transfers. Optimizer columns follow declaration order; physical rows
-are EOS slots first, then reaction coordinates. Both direction families use one
+are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
@@ -1276,7 +1276,7 @@ and the existing check owner, without solving a hydration hold.
 One parameter-fitting TNLP consumes `ObservationEvaluator` values and exact raw
 and complete held-chart columns. The same check error/slope producer assembles
 both estimators' reports. Every inequality is divided by its declared positive
-scale; zero thresholds remain zero. The complete map includes all tied affine
+scale; zero thresholds remain zero. The complete map includes all target coefficients, numerical
 scales and eliminated Born rows. The epigraph and slack columns are analytic.
 Only exact first actions are supplied; Ipopt uses limited-memory BFGS, with no
 finite-difference derivative checker or parameter Hessian claim. Equilibrium

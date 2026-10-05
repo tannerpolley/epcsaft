@@ -132,14 +132,24 @@ for $k_{ij}$ and $l_{ij}$, one site pair or diagonal self-pair for
 $\varepsilon^{AB}/k$ and $\kappa^{AB}$, one reciprocal pair with a positive
 reference temperature for the $k_{ij}$ slope $b_{ij}$ of EqID:
 `cross_dispersion_energy`, in native units (1, Å, K). Every slot
-absent from the active list is fixed. An optimizer coordinate is affine,
-$\theta = o + s\,u$ with $s>0$, with inclusive bounds in physical units mapped
-by the same transform; one optimizer coordinate may drive several tied slots of
-the same family through the fitting layer's linear map $\theta = o + S u$; tied
-values must agree at the start. Physical rows contain all EOS slots in coordinate declaration order, followed by
-one row per reaction coordinate in declaration order. The model's active list
-contains the EOS rows only. Optimizer starts, bounds, columns and covariance
-keep coordinate declaration order; the tie map relates those two orders.
+absent from the active list is fixed. EqID: `affine_parameter_coordinate_map`
+owns the optimizer mapping. A `CoordinateTarget` declares a family, component
+or reciprocal-pair indices and a finite nonzero coefficient. One coordinate
+may drive targets across families; its positive scale and inclusive bounds
+apply to the base value q. A reciprocal pair is one physical row. Independent
+EOS rows follow coordinate and target declaration order, followed by held Born
+rows and reaction rows. The active list contains the EOS and held rows only;
+`tie()` gives row-to-column identity, not derivative magnitudes.
+
+Native `CoordinateSet.start()` divides the first target value by its coefficient
+and inverts the base origin/scale. Every stored target and mirrored entry must
+agree with its forward-mapped value within eight machine epsilons times the
+larger magnitude; coefficient-one ties require exact stored equality. Zero
+has zero allowance. Nonfinite values, inconsistent equalities and starts outside
+bounds are rejected without averaging or projection. Bounds are enforced in
+optimizer space. The existing boundary-rounding clamp applies only to q before
+multiplication; exact columns describe admitted points, including feasible
+one-sided boundary actions. Targets have no independent offsets or clipping.
 
 A reaction coordinate is a named scalar ln K (coefficient a) or a stored
 `ReactionLogPolynomial` coefficient a, b, c, d, in units 1, K, 1, K⁻¹. It uses
@@ -301,7 +311,7 @@ A held slot cannot be independently free or coupled to another held reference.
 The evaluated chart returns physical rows (independent EOS, held Born, then
 reaction rows), D, achieved errors, H_d and raw parameter columns. The fitter
 and `evaluate_coordinates` use this same chart. Raw columns hold other physical
-parameters fixed; the complete optimizer chain includes ties, scales and holds.
+parameters fixed; the complete optimizer chain includes target coefficients, scales and holds.
 Covariance maps as D C_u D^T and remains conditional on fixed hydration targets.
 
 `CheckGroup` declares row membership, absolute native differences or absolute

@@ -76,7 +76,7 @@ struct HoldResult final {
 struct EvaluatedCoordinates final {
     Parameters parameters;
     std::vector<ActiveParameter> active;
-    std::vector<double> physical, map;  // independent physical rows, then held Born rows; row-major D
+    std::vector<double> physical, map;  // independent EOS, held Born, then reaction rows; row-major D
     std::vector<HoldResult> holds;
 };
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
