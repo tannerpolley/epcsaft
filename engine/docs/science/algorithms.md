@@ -412,6 +412,32 @@ is indefinite there, and Ipopt cycled through restoration to the iteration budge
 (#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. Final residual and stability checks are unchanged.
+Caller-declared ordered starts share one thermodynamic problem and the same driver.
+A start contains physical composition, packing, amount and free-intensive guesses,
+a previous result, or a complete compiled-coordinate vector. Complete vectors
+skip generated initialization. Physical composition vectors use the completed
+declared supports: validate their original length and finite fractions in [0,1], then apply the
+same species restriction as compilation before checking surviving coordinates.
+Physical guesses fill omitted coordinates with
+existing generic/boundary seeds without reactive speciation, then replace every
+supplied coordinate, including reacting packing and the free-pressure seed.
+Invalid initialization is an individual attempt cause. The first available state
+meeting the native row, topology and density-branch checks is selected; subsequent
+starts remain unattempted. No best-residual or Gibbs comparison selects another root.
+Aggregate attempts, optimizer iterations and steady-clock elapsed time bound the
+ordered search. Remaining iterations and time enter the shared Ipopt options and
+callbacks; polish and final admission check the same deadline. A bounded inner
+kernel may finish after its deadline: elapsed time and overrun remain visible,
+and a post-deadline state is unavailable. Elapsed exhaustion is a controller cause,
+not a relabelled numerical stop: the common classifier retains its
+nonfinite/converged/floor/budget priority and the native optimizer termination.
+Measured rows that already meet the criterion can therefore remain numerically
+converged with success false and no published state after deadline rejection.
+This finite search establishes neither uniqueness nor global stability. Ordinary
+solve initialization retains its rules. The retained [declared-start falsifiers
+and default-solve cost](../../../analyses/2026-tpd-phase-discovery/results/issue238-cost/README.md)
+qualify the bounded inputs stated there.
+
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root, an anchored closure establishes local uniqueness, and the corrected density
@@ -1218,8 +1244,8 @@ scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, finite-addition enthalpy,
-the declared equilibrium observations and direct source-basis ln K observations. It uses affine, tied
-optimizer coordinates of the formulation, a Ceres Levenberg--Marquardt trust
+the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
+optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is
 withheld under rank deficiency or an active bound. Named scalar ln K and stored
@@ -1227,8 +1253,13 @@ withheld under rank deficiency or an active bound. Named scalar ln K and stored
 coordinates. Every matching observation must declare the same reaction,
 coefficients and source basis. Rebuild each trial with those values, preserving
 reference transfers. Optimizer columns follow declaration order; physical rows
-are EOS slots first, then reaction coordinates. Both direction families use one
+are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
+The native point reader returns prediction columns in `optimizer_gradient` and
+unit-weight residual columns in `residual_optimizer_gradient`. Difference scale a
+gives dr/dv = (dy/dv)/a; natural-log LogRatio gives dr/dv = (dy/dv)/y.
+The Ceres Jacobian also includes square-root row weights. Minimax consumes
+prediction columns and applies its own native check-error slopes.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact
@@ -1299,7 +1330,7 @@ and the existing check owner, without solving a hydration hold.
 One parameter-fitting TNLP consumes `ObservationEvaluator` values and exact raw
 and complete held-chart columns. The same check error/slope producer assembles
 both estimators' reports. Every inequality is divided by its declared positive
-scale; zero thresholds remain zero. The complete map includes all tied affine
+scale; zero thresholds remain zero. The complete map includes all target coefficients, numerical
 scales and eliminated Born rows. The epigraph and slack columns are analytic.
 Only exact first actions are supplied; Ipopt uses limited-memory BFGS, with no
 finite-difference derivative checker or parameter Hessian claim. Equilibrium

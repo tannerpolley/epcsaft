@@ -170,6 +170,76 @@ the #221 records reconciliation; they grant no new authority or qualification.
   iteration. This exceeds the sprint's 260-line target when analysis readers are
   included, not a hard gate, and does not change any ceiling.
 
+- 2026-10-02, #238 declared equilibrium starts, measured against integrated
+  main `875526d0`: **374 gross added, 50 removed, +324 net runtime lines**.
+  Original estimate 150 gross; first draft measured 227. Lead-authorized cap
+  rose to 260 gross. The lead
+  authorized up to 275 for admission corrections, then the owner paused hard
+  ceilings for that sprint (#248), with 275 retained as a target.
+  The later #221 enforcement restoration applies to current integration. Growth beyond that target
+  supplies omitted partial/pinned seed admission, deadlines between initializer
+  and admission kernels, and measured rows/work across every failure boundary.
+  Previous-coordinate reuse, declaration comparison, the caller-tolerance result,
+  and the existing bounded polish remain shared; optimizer iterations and polish
+  evaluations are distinct work quantities.
+
+  | Layer | Base | Gross | Removed | Net | Final | Shared hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4763 | 0 | 0 | 0 | 4763 | 4800 |
+  | Equilibrium | 6921 | 299 | 50 | +249 | 7170 | 8800 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1914 | 31 | 0 | +31 | 1945 | 2100 |
+  | Python | 2697 | 44 | 0 | +44 | 2741 | 2850 |
+  | Aggregate | 21689 | 374 | 50 | +324 | 22013 | 24000 |
+
+  Integration with main `5fe2a70a` on 2026-10-05 preserves #221's restored
+  enforcement and unchanged ceilings. The obsolete per-driver inventory LP is
+  retired in favor of #231's compiled inventory bounds; elapsed checks remain
+  before and after consuming the cache.
+  The initial integrated candidate measured 374 gross additions, 50 removals
+  and +324 net. The owner approved up to 400 gross runtime additions on
+  2026-10-05 for this issue, with every layer ceiling unchanged. The shared
+  species-restriction repair adds 20 lines and removes 7 against `8dc9b725`;
+  one replaced line was already part of the declared-start addition. Final
+  accounting against active main is **393 gross added, 56 removed, +337 net**.
+  Main `c3100e94` is now integrated, including #265. The integration briefly
+  counted the initial polish preparation twice; removing the duplicate increment
+  restores default-solve work equality without changing any preparation or row
+  calculation. The following table uses `c3100e94` as the active base; the gross,
+  removed and net counts remain 393, 56 and +337.
+
+  | Layer | Active main | Gross | Removed | Net | Integrated | Hard |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Core | 917 | 0 | 0 | 0 | 917 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 | 1547 |
+  | Properties | 4788 | 0 | 0 | 0 | 4788 | 4800 |
+  | Equilibrium | 7205 | 318 | 56 | +262 | 7467 | 8800 |
+  | Parameter regression | 2398 | 0 | 0 | 0 | 2398 | 2478 |
+  | Surface | 532 | 0 | 0 | 0 | 532 | 650 |
+  | Bindings | 1937 | 31 | 0 | +31 | 1968 | 2100 |
+  | Python | 2727 | 44 | 0 | +44 | 2771 | 2850 |
+  | Aggregate | 22051 | 393 | 56 | +337 | 22388 | 24000 |
+
+  One compiled problem, existing generic/boundary seeds, the shared packing
+  predicate, exact Ipopt driver and density admission remain the owners.
+  The fitting sequence's remaining-iteration and steady-clock accounting pattern
+  is reused; the common Ipopt option owner applies positive CPU-time limits
+  to exact solves as well as estimation. The driver callback carries the elapsed
+  deadline; no second optimizer or acceptance rule is introduced. Deadline
+  rejection clears state availability, but the common residual classifier keeps
+  its nonfinite/converged/floor/budget priority. Controller causes and measured
+  overruns record elapsed exhaustion separately from native termination. The
+  native packing coefficient is transported for the analytic density-closed seed.
+  The soft excess retains these numerical responsibilities and their work
+  diagnostics. The shared #244 envelope and layer ceilings remain unchanged;
+  the 400-line issue allowance reserves no shared layer capacity, and no
+  architecture ceiling is edited.
+  Numerical qualification
+  and independent delivered review are separate from this line accounting.
+
 - 2026-10-02, #239 density-diagnostic closeout against integrated main
   `8999d6a2`: **402 gross added, 40 removed, +362 net runtime lines**.
   Core 917, Contributions 1547, Properties 4763, Equilibrium 6921,

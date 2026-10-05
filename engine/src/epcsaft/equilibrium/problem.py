@@ -518,3 +518,8 @@ __all__ = (
     "solve_equilibrium",
     "solved_state_actions",
 )
+
+
+def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_core.EquilibriumStart],
+                             limits: _core.EquilibriumWorkLimits) -> _core.EquilibriumStartsResult:
+    return _core.solve_equilibrium_starts(model._model, problem._native(model), list(starts), limits)

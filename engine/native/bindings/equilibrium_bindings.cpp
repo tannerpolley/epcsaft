@@ -291,6 +291,32 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("cause_stop", &ContinuationResult::cause_stop)
         .def_readonly("cause_convergence", &ContinuationResult::cause_convergence)
         .def_readonly("cause_message", &ContinuationResult::cause_message);
+    py::class_<EquilibriumStart>(module, "EquilibriumStart")
+        .def(py::init<>())
+        .def_readwrite("coordinates", &EquilibriumStart::coordinates)
+        .def_readwrite("amounts", &EquilibriumStart::amounts)
+        .def_readwrite("compositions", &EquilibriumStart::compositions)
+        .def_readwrite("packing_fractions", &EquilibriumStart::packing_fractions)
+        .def_readwrite("temperature", &EquilibriumStart::temperature)
+        .def_readwrite("pressure", &EquilibriumStart::pressure)
+        .def_readwrite("previous", &EquilibriumStart::previous);
+    py::class_<EquilibriumWorkLimits>(module, "EquilibriumWorkLimits")
+        .def(py::init<>())
+        .def_readwrite("attempts", &EquilibriumWorkLimits::attempts)
+        .def_readwrite("iterations", &EquilibriumWorkLimits::iterations)
+        .def_readwrite("attempt_iterations", &EquilibriumWorkLimits::attempt_iterations)
+        .def_readwrite("seconds", &EquilibriumWorkLimits::seconds)
+        .def_readwrite("attempt_seconds", &EquilibriumWorkLimits::attempt_seconds);
+    py::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult")
+        .def_readonly("selected", &EquilibriumStartsResult::selected)
+        .def_readonly("results", &EquilibriumStartsResult::results)
+        .def_readonly("causes", &EquilibriumStartsResult::causes)
+        .def_readonly("attempt_seconds", &EquilibriumStartsResult::attempt_seconds)
+        .def_readonly("iterations", &EquilibriumStartsResult::iterations)
+        .def_readonly("seconds", &EquilibriumStartsResult::seconds)
+        .def_readonly("overrun_seconds", &EquilibriumStartsResult::overrun_seconds)
+        .def_readonly("budget_exhausted", &EquilibriumStartsResult::budget_exhausted);
+    module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
     // E5 solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")

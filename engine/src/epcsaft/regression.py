@@ -9,7 +9,7 @@ from typing import overload
 from . import _core
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
-    Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
+    CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
@@ -44,7 +44,7 @@ _KINDS = {
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
-__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
+__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy",
            "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
@@ -60,6 +60,10 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
+    if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
+        if target is not None:
+            raise ParameterError(f"{family} is global and takes no component target")
+        return [0]
     if family not in _PAIRS and family not in _SITE_PAIRS:
         return [_index(parameters.component_ids, target, "component")]
     if not isinstance(target, tuple) or len(target) != 2:
@@ -71,21 +75,18 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     return [i * len(ids) + i] if i == j else [i * len(ids) + j, j * len(ids) + i]
 
 
-def coordinate(parameters: Parameters, family: str, *targets: object, origin: float, scale: float,
+def coordinate(parameters: Parameters, targets: Sequence[tuple[str, object, float]], *, origin: float, scale: float,
                bounds: tuple[float, float] | None = None) -> Coordinate:
-    """One optimizer coordinate u, theta = origin + scale u in the family's native unit (1, angstrom, K),
-    driving every tied target: component ids, (a, b) component pairs, or ((component, site), ...) site pairs.
-    Global Born scalars have no component targets."""
-    if family not in _FAMILIES:
-        raise ParameterError(f"unknown parameter family {family}")
-    scalar = family in ("born_c_dielectric", "ionic_region_relative_permittivity")
-    if scalar and targets:
-        raise ParameterError(f"{family} is global and takes no component targets")
-    if not targets and not scalar:
-        raise ParameterError("a coordinate needs at least one target")
+    """Declare (family, component/pair or None for a global scalar, coefficient) targets of q."""
     result = Coordinate()
-    result.family = _FAMILIES[family]
-    result.slots = [[0]] if scalar else [_slot(parameters, family, target) for target in targets]
+    rows = []
+    for family, name, coefficient in targets:
+        if family not in _FAMILIES:
+            raise ParameterError(f"unknown parameter family {family}")
+        target = CoordinateTarget()
+        target.family, target.indices, target.coefficient = _FAMILIES[family], _slot(parameters, family, name), coefficient
+        rows.append(target)
+    result.targets = rows
     result.origin, result.scale = origin, scale
     result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
     return result

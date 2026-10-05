@@ -250,7 +250,10 @@ Properties owns the exact pressure-closed fugacity/permittivity columns,
 terminal-reference admission and electrolyte contractions. Parameter regression
 owns five observations, the dependent hydration chart, unweighted final checks
 and local SVD/covariance diagnostics; [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit)
-owns execution doctrine. `HydrationHold` means a single-ion solvation equality
+owns execution doctrine. `CoordinateTarget` means one physical family and its
+component or reciprocal-pair indices with a proportional coefficient, defined
+by [the affine parameter map](../../engine/docs/equations.md#affine_parameter_coordinate_map).
+`HydrationHold` means a single-ion solvation equality
 with a dependent Born diameter. `ObservationEvaluator` means the shared native
 point evaluator with caller-selected rows and exact columns. `MinimaxRequest`
 means a scaled epigraph estimation problem with declared max/mean guards;
@@ -452,3 +455,12 @@ confirmation.
 | `analyses/reproduction/2026-eos-literature-handoff` | Deferred |
 | `analyses/reproduction/2026-khudaida` | Deferred |
 | `analyses/reproduction/2026-rezaee` | Deferred |
+
+Declared equilibrium starts means caller-supplied initial physical guesses or full
+compiled coordinates for one unchanged thermodynamic problem (ALG-EQUILIBRIUM).
+`EquilibriumStart` carries those guesses; `EquilibriumWorkLimits` bounds attempts,
+optimizer iterations and elapsed seconds; `EquilibriumStartsResult` records ordered
+attempts, residual-bearing results, initialization causes, consumed work and the
+first admitted index. `DriverLimits` passes the remaining work into the existing
+Ipopt driver. These names describe inputs, quantities and operations, not new
+thermodynamic models.

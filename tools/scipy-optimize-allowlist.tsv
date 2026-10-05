@@ -1,5 +1,4 @@
 kind	path	line	source	reason	issue
-review-only	analyses/2026-born-unavailable-states/scripts/starts.py	30	    for extent in args.extents:	Reaction-extent start search	234
-review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search	234
+review-only	analyses/reproduction/2015-uyan/scripts/generate_data.py	580	    for selected_seed in attempted_seeds:	Equilibrium pressure-seed search; reference reconstruction deferred	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	23	from scipy.optimize import minimize	Tangent-plane distance minimization	234
 scipy	analyses/phase-stability-cutover/scripts/current_engine.py	90	"        result = minimize(objective, np.log(np.asarray(w0)), method=""Nelder-Mead"","	Tangent-plane distance minimization	234

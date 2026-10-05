@@ -141,10 +141,14 @@ void register_regression(py::module_& module) {
         .def(py::init<>())
         .def_readwrite("name", &ReactionCoordinate::name)
         .def_readwrite("coefficient", &ReactionCoordinate::coefficient);
+    py::class_<CoordinateTarget>(module, "CoordinateTarget")
+        .def(py::init<>())
+        .def_readwrite("family", &CoordinateTarget::family)
+        .def_readwrite("indices", &CoordinateTarget::indices)
+        .def_readwrite("coefficient", &CoordinateTarget::coefficient);
     py::class_<Coordinate>(module, "Coordinate")
         .def(py::init<>())
-        .def_readwrite("family", &Coordinate::family)
-        .def_readwrite("slots", &Coordinate::slots)
+        .def_readwrite("targets", &Coordinate::targets)
         .def_readwrite("reaction", &Coordinate::reaction)
         .def_readwrite("origin", &Coordinate::origin)
         .def_readwrite("scale", &Coordinate::scale)
@@ -154,7 +158,9 @@ void register_regression(py::module_& module) {
         .def(py::init<>())
         .def_readwrite("coordinates", &CoordinateSet::coordinates)
         .def("active", [](const CoordinateSet& set) { return set.active_parameters(); })
-        .def("tie", [](const CoordinateSet& set) { return set.tie(); });
+        .def("tie", [](const CoordinateSet& set) { return set.tie(); })
+        .def("start", &CoordinateSet::start, py::arg("parameters"), py::arg("observations") = std::vector<Observation>{},
+             py::arg("thermochemistry") = std::optional<ThermochemistryRecord>{});
     py::class_<FitControls>(module, "FitControls")
         .def(py::init<>())
         .def_readwrite("function_tolerance", &FitControls::function_tolerance)
@@ -288,6 +294,7 @@ void register_regression(py::module_& module) {
     py::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         .def_readonly("predictions", &ObservationEvaluation::predictions).def_readonly("gradient", &ObservationEvaluation::gradient)
         .def_readonly("optimizer_gradient", &ObservationEvaluation::optimizer_gradient).def_readonly("chart", &ObservationEvaluation::chart)
+        .def_readonly("residual_optimizer_gradient", &ObservationEvaluation::residual_optimizer_gradient)
         .def_readonly("statuses", &ObservationEvaluation::statuses);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations) {
