@@ -78,8 +78,8 @@ Budget changes must not silently change scientific scope.
 ## Amendments
 
 - 2026-10-05, #240 straight physical-parameter continuation, measured against
-  integrated main `c3100e94`: **102 gross runtime lines added, 60 removed, +42 net**.
-  Aggregate is **22,051 → 22,093**, with **1,907** lines below the recorded
+  integrated main `8f5f5685`: **96 gross runtime lines added, 51 removed, +45 net**.
+  Aggregate is **22,436 → 22,481**, with **1,519** lines below the recorded
   **24,000** envelope. No numeric ceiling changes. The sprint pause below
   applies; counts and duplication remain review subjects.
 
@@ -88,20 +88,21 @@ Budget changes must not silently change scientific scope.
   | Core | 917 | 2 | 2 | 0 | 917 |
   | Contributions | 1547 | 0 | 0 | 0 | 1547 |
   | Properties | 4788 | 28 | 36 | -8 | 4780 |
-  | Equilibrium | 7205 | 38 | 5 | +33 | 7238 |
-  | Parameter regression | 2398 | 13 | 13 | 0 | 2398 |
+  | Equilibrium | 7467 | 38 | 5 | +33 | 7500 |
+  | Parameter regression | 2432 | 9 | 6 | +3 | 2435 |
   | Surface | 532 | 0 | 0 | 0 | 532 |
-  | Bindings | 1937 | 5 | 1 | +4 | 1941 |
-  | Python | 2727 | 16 | 3 | +13 | 2740 |
-  | Aggregate | 22051 | 102 | 60 | +42 | 22093 |
+  | Bindings | 1975 | 5 | 1 | +4 | 1979 |
+  | Python | 2778 | 14 | 1 | +13 | 2791 |
+  | Aggregate | 22436 | 96 | 51 | +45 | 22481 |
 
   The existing declared-branch controller retains predictor, corrector, retry,
   topology and anchored-density checks. Trial models use immutable base records
   and fixed thermochemistry; the existing exact row series supplies the parameter
   tangent. One pointer/size view replaces the vector-only family map, including
   tape preparation and parameter-fitting callers. Shared coordinate admission
-  removes repeated slot validation while checked indexing and tied-value checks
-  remain. Python declares global Born coordinates without component targets;
+  validates the model once through the affine start; bounds-checked indexing,
+  finite and proportional tied-value checks remain. Python declares global Born
+  coordinates as affine targets without component names;
   native code owns their physical chart and exact map. Above-soft counts retain
   these exact chains and physical-value transport, not a second solver. Gross growth is below the 270-line task target.
   Tests, analysis input/output readers, derivative verification and retained
