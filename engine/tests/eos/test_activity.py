@@ -348,16 +348,16 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
         components=("water", "sodium-cation", "chloride-anion"),
     )
     cs = [
-        r.coordinate(p, "k_ij", pair, origin=0, scale=1)
+        r.coordinate(p, [("k_ij", pair, 1)], origin=0, scale=1)
         for pair in (("sodium-cation", "water"), ("sodium-cation", "chloride-anion"))
     ]
     cs += [
         r.coordinate(
-            p, "ion_suppression_coefficient", "sodium-cation", "chloride-anion", origin=0, scale=1
+            p, [("ion_suppression_coefficient", "sodium-cation", 1), ("ion_suppression_coefficient", "chloride-anion", 1)], origin=0, scale=1
         )
     ]
     cs += [
-        r.coordinate(p, family, ion, origin=0, scale=1)
+        r.coordinate(p, [(family, ion, 1)], origin=0, scale=1)
         for family, ion in (
             ("born_diameter_angstrom", "sodium-cation"),
             ("debye_huckel_diameter_angstrom", "chloride-anion"),
@@ -438,7 +438,7 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
     expected = -prediction.value * 0.04 / (1 + 7.01 * 0.04)
     assert abs(sum(v for v, j in zip(g, tie) if j == 2) - expected) <= 1e-12 * abs(expected)
     # Limiting columns: same five families as F4(a), with the Na DH diameter.
-    cs[4] = r.coordinate(p, "debye_huckel_diameter_angstrom", "sodium-cation", origin=0, scale=1)
+    cs[4] = r.coordinate(p, [("debye_huckel_diameter_angstrom", "sodium-cation", 1)], origin=0, scale=1)
     chart.coordinates = cs[:5]
     model = Mixture(p, active_parameters=chart.active())
     tie = chart.tie()
@@ -458,7 +458,7 @@ def test_electrolyte_density_columns_and_debye_density_limit() -> None:
     components = ("water", "sodium-cation", "chloride-anion")
     selection = REPOSITORY_ROOT / "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json"
     p = Parameters.from_json(selection, components=components)
-    cs = [r.coordinate(p, "dispersion_energy_over_k", "water", origin=0, scale=1)]
+    cs = [r.coordinate(p, [("dispersion_energy_over_k", "water", 1)], origin=0, scale=1)]
     chart = r.CoordinateSet()
     chart.coordinates = cs
     model = Mixture(p, active_parameters=chart.active())
@@ -474,7 +474,7 @@ def test_electrolyte_density_columns_and_debye_density_limit() -> None:
     p = Parameters.from_json(
         parameters_json("figiel-2025-reference-electrolytes", 4), components=components
     )
-    cs = [r.coordinate(p, "dispersion_energy_over_k", "water", origin=0, scale=1)]
+    cs = [r.coordinate(p, [("dispersion_energy_over_k", "water", 1)], origin=0, scale=1)]
     chart.coordinates = cs
     model = Mixture(p, active_parameters=chart.active())
     pure = model.state(298.15, P=1e5, x=(1, 0, 0), phase="liquid")

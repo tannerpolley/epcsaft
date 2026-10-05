@@ -877,6 +877,7 @@ static CompiledSystem compile_with_basis(
         if (phase.support_declared && phase.support.empty())
             throw std::invalid_argument("empty support in phase " + phase.name);
         phase.support = complete_support(components, phase.support);
+        compiled.declared_supports.push_back(phase.support);
     }
     auto inventory = compiled;
     if (!trial_basis) {
@@ -919,12 +920,7 @@ static CompiledSystem compile_with_basis(
                         + " needs the discarded conserved potential in chemical stationarity");
                 return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
-        const auto guess_before = std::move(phase.composition_guess);
-        phase.composition_guess.clear();
-        if (guess_before.size() == support_before.size())
-            for (std::size_t i = 0; i < support_before.size(); ++i)
-                if (std::find(phase.support.begin(), phase.support.end(), support_before[i]) != phase.support.end())
-                    phase.composition_guess.push_back(guess_before[i]);
+        restrict_composition_guess(phase, support_before);
         for (const std::size_t index : support_before) {
             if (std::find(phase.support.begin(), phase.support.end(), index) == phase.support.end()
                 && std::find(compiled.removed_species.begin(), compiled.removed_species.end(), index)
@@ -1068,6 +1064,15 @@ static CompiledSystem compile_with_basis(
     scope.probe("rows", static_cast<double>(compiled.rows.size()));
     scope.probe("rank", static_cast<double>(compiled.rank));
     return compiled;
+}
+
+void restrict_composition_guess(PhaseSpec& phase, const std::vector<std::size_t>& support) {
+    const auto guess = std::move(phase.composition_guess);
+    phase.composition_guess.clear();
+    if (guess.size() != support.size()) return;
+    for (std::size_t i = 0; i < support.size(); ++i)
+        if (std::find(phase.support.begin(), phase.support.end(), support[i]) != phase.support.end())
+            phase.composition_guess.push_back(guess[i]);
 }
 
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
