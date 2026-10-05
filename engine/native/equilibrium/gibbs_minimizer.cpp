@@ -806,7 +806,7 @@ EquilibriumResult run_driver(
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         ++polish_evaluations;
-        // Past the step budget only raw rows above the caller criterion continue, within the driver budget.
+        // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap.
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             const double defect = maximum_abs(rows_before);
             if (step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value) && defect <= row_tolerance) break;

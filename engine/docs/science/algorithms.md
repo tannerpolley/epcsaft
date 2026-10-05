@@ -423,13 +423,13 @@ residual, and failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
 iteration-budget or time-budget stop, `EQUILIBRIUM_POLISH_STEPS` Newton steps on
-the unweighted rows with the exact Jacobian close that gap. Further steps, within
-`EQUILIBRIUM_MAX_ITERATIONS`, continue only while the raw row maximum exceeds the
-caller's row criterion (#261, 2026-10-05): from a box-limited start with raw rows
-near 10, the nominally unloaded MEA liquid (CO₂ 4.9e-13, H₃O⁺ 1.6e-12) needs four
-steps, and three left every ionic row near −1.8e-9 z_i² under a 7.6e-12 classified
-residual. Rows already at the criterion stop at three steps because further steps
-only move through rounding. Each step must reduce the raw row maximum and keep
+the unweighted rows with the exact Jacobian close that gap. Further steps continue
+only while the raw row maximum exceeds the caller's row criterion, under a separate
+polish cap of `EQUILIBRIUM_MAX_ITERATIONS` steps (#261, 2026-10-05): from a
+box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
+4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
+−1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
+need no further polishing. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
