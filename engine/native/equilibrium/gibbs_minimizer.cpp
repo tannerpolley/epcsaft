@@ -806,8 +806,13 @@ EquilibriumResult run_driver(
         std::vector<double> best = full;
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         ++polish_evaluations;
-        for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value); ++step) {
+        // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
+        // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
+        double ratio = 1.0;
+        for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             const double defect = maximum_abs(rows_before);
+            const bool extension = step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value);
+            if (extension && defect <= row_tolerance) break;
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
             if (!(defect > 0.0) || !std::isfinite(defect)) break;
             const auto jacobian = compiled.jacobian_at(at);
@@ -841,7 +846,8 @@ EquilibriumResult run_driver(
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
                 scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
-                if (!inside || !(after < defect)) continue;
+                if (!inside || !(after < (extension ? ratio : 1.0) * defect)) continue;
+                ratio = after / defect;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
                 rows_before = std::move(rows_after);
