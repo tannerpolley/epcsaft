@@ -27,7 +27,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
 | LogEquilibriumConstant | fixed positive `problem.temperature.value`, named `reaction`, declared source record | `evaluate_reaction_properties` for a/b/c/d, or ln(scalar K); no equilibrium solve | 1 |
 | IsobaricHeatCapacity | $T$, $P$, normalized $\mathbf{x}$, declared branch, fixed thermochemistry record | pressure closure `state_at_pressure`; total molar $c_p$ | J mol$^{-1}$ K$^{-1}$ |
-| AdditionEnthalpy | declared initial and final `Problem`s, positive `feed_amount` $n_{add}$, and feed `temperature`, `pressure`, `composition` $\mathbf y$, and `branch` | Regression; total-system enthalpy increment less feed enthalpy (EqID: `finite_addition_enthalpy`) | J mol$^{-1}$ of total added feed |
+| AdditionEnthalpy | declared initial and final `Problem`s, positive `feed_amount` $n_{add}$, and feed `temperature`, `pressure`, `composition` $\mathbf y$, and `branch` | Parameter regression; total-system enthalpy increment less feed enthalpy (EqID: `finite_addition_enthalpy`) | J mol$^{-1}$ of total added feed |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
 | EquilibriumTemperature | $P$ fixed, the same phase specification with $T$ free; a cold guess must lie above the answer (a guess below reports a coalesced-phase topology event) | the driver's free temperature | K |
@@ -92,7 +92,7 @@ The `AdditionEnthalpy` prediction derivative uses the endpoint actions for
 both extensive enthalpies and phase amounts, then subtracts the feed residual
 enthalpy action at fixed feed state. It consumes `PhaseAmount` and
 `TotalEnthalpy` central values from the solved-state owner rather than
-reassembling phase calorics in Regression. The feed's ideal enthalpy is fixed
+reassembling phase calorics in parameter regression. The feed's ideal enthalpy is fixed
 thermochemistry; its EOS-coordinate residual action comes from the Properties
 pressure chart. Build the direction once per endpoint using that endpoint's
 solved temperature and reaction-row mapping, and keep both endpoint solves
