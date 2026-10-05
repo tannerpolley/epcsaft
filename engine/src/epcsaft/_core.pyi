@@ -390,6 +390,7 @@ class HelmholtzModel:
                          observables: Sequence[PropertyObservable],
                          directions: Sequence[PressureActionDirection],
                          anchor_density: Optional[float] = None) -> PropertyActionBatch: ...
+    def packing_fraction_coefficient(self, temperature: float, composition: list[float]) -> float: ...
     def state_at_pressure(self, temperature: float, pressure: float, mole_fractions: Sequence[float], branch: DensityBranch, anchor_density: Optional[float] = None) -> State: ...
     def molar_density_upper_bound(self, temperature: float, composition: Sequence[float]) -> float: ...
     def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
@@ -1128,3 +1129,33 @@ def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], 
     baseline: Parameters | None, minimax: MinimaxRequest) -> FitResult: ...
 def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
     stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
+
+class EquilibriumStart:
+    coordinates: list[float]
+    amounts: list[float]
+    compositions: list[list[float]]
+    packing_fractions: list[Optional[float]]
+    temperature: Optional[float]
+    pressure: Optional[float]
+    previous: Optional[EquilibriumResult]
+    def __init__(self) -> None: ...
+
+class EquilibriumWorkLimits:
+    attempts: Optional[int]
+    iterations: Optional[int]
+    attempt_iterations: Optional[int]
+    seconds: Optional[float]
+    attempt_seconds: Optional[float]
+    def __init__(self) -> None: ...
+
+class EquilibriumStartsResult:
+    selected: Optional[int]
+    results: list[Optional[EquilibriumResult]]
+    causes: list[str]
+    attempt_seconds: list[float]
+    iterations: int
+    seconds: float
+    overrun_seconds: float
+    budget_exhausted: bool
+
+def solve_equilibrium_starts(model: HelmholtzModel, problem: EquilibriumProblem, starts: list[EquilibriumStart], limits: EquilibriumWorkLimits) -> EquilibriumStartsResult: ...

@@ -65,7 +65,7 @@ void validate_density_seed(const DensityRoot& root) {
 }
 
 std::vector<std::vector<double>> start_compositions(
-    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction
+    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction, const DriverLimits* limits
 ) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
@@ -80,7 +80,7 @@ std::vector<std::vector<double>> start_compositions(
                 result[phase][spec.support[i]] = spec.composition_guess[i];
         }
     }
-    if (phases == 1) return result;
+    if (limits || phases == 1) return result;  // explicit starts fill missing compositions from the generic feed
     if (guessed) {
         scope.probe("start_rule", 1.0);
         return result;
@@ -318,12 +318,13 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
 
 }  // namespace
 
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate) {
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits) {
     core::Scope scope("boundary_start");
+    if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
     const auto phase_offsets = compiled.phase_offsets();
     std::optional<double> vapor_fraction;
-    const auto compositions = start_compositions(compiled, scope, vapor_fraction);
+    const auto compositions = start_compositions(compiled, scope, vapor_fraction, limits);
     std::size_t free_phases = 0;
     for (const auto& phase : compiled.problem.phases) {
         if (phase.amount.kind == AmountKind::Free) ++free_phases;
@@ -340,9 +341,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = fugacity_pressure_seed(compiled, point, phase_offsets, scope);
+    const double p = limits ? seed_pressure(compiled) : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+        if (limits) limits->check();
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
         if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) {
             point[cursor++] = vapor_fraction.has_value()
@@ -355,11 +357,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             composition[compiled.problem.phases[phase].support[i]] =
                 std::exp(point[phase_offsets[phase] + i]);
         }
-        if (supports_split_seed(compiled) && compiled.problem.phases[phase].packing_guess.has_value()) {
+        if ((limits || supports_split_seed(compiled)) && compiled.problem.phases[phase].packing_guess.has_value()) {
             const double packing = *compiled.problem.phases[phase].packing_guess;
-            if (!(std::isfinite(packing)
-                  && packing >= policy::PACKING_FRACTION_FLOOR.value
-                  && packing <= policy::PACKING_FRACTION_CEILING.value)) {
+            if (!admitted_packing_seed(packing)) {
                 throw std::invalid_argument("packing guess is outside the admitted range");
             }
             point[cursor] = std::log(packing);
@@ -387,6 +387,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             && (!root.stable_root_count.has_value() || *root.stable_root_count < 2)) {
             throw std::runtime_error("boundary seed has no coexisting density roots");
         }
+        if (limits) limits->check();
         validate_density_seed(root);
         scope.probe("phase", static_cast<double>(phase));
         scope.probe("branch_density", root.molar_density,
@@ -417,13 +418,14 @@ struct Attempt final {
     std::optional<core::Convergence> convergence;
 };
 
-bool same_intensive(const FreeValue& a, const FreeValue& b) {
+bool same_intensive(const FreeValue& a, const FreeValue& b, bool same_seeds) {
     if (a.free != b.free) return false;
-    return !a.free || (a.absent == b.absent && a.value == b.value);
+    return !a.free || !same_seeds || (a.absent == b.absent && a.value == b.value);
 }
 
+}  // namespace
 // Every field that is not a path lever must be identical at both endpoints.
-std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds) {
     const auto &u = a.source_reference, &v = b.source_reference;
     if (u.has_value() != v.has_value() || (u && (u->solvent_index != v->solvent_index
         || u->solute_molality_ratios != v->solute_molality_ratios || u->standard_molality_mol_per_kg != v->standard_molality_mol_per_kg)))
@@ -451,11 +453,12 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
         || a.feed.solvent_mass_kg != b.feed.solvent_mass_kg || a.feed.values.size() != b.feed.values.size())
         return "feed basis, solvent set or component count differs";
     if (a.row_tolerance != b.row_tolerance) return "row_tolerance differs";
-    if (!same_intensive(a.temperature, b.temperature)) return "temperature free/fixed declaration differs";
-    if (!same_intensive(a.pressure, b.pressure)) return "pressure free/fixed declaration differs";
+    if (!same_intensive(a.temperature, b.temperature, same_seeds)) return "temperature free/fixed declaration differs";
+    if (!same_intensive(a.pressure, b.pressure, same_seeds)) return "pressure free/fixed declaration differs";
     return "";
 }
 
+namespace {
 std::string layout_difference(const CompiledSystem& a, const CompiledSystem& b) {
     for (std::size_t p = 0; p < a.problem.phases.size(); ++p)
         if (a.problem.phases[p].support != b.problem.phases[p].support)
@@ -584,11 +587,13 @@ std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits
 ) {
     BranchCheck outcome;
+    if (limits) limits->check();
     const PhasePoint prepared = compiled.prepare(result.coordinates);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+        if (limits) limits->check();
         const auto& spec = compiled.problem.phases[phase];
         std::vector<double> x = prepared.composition[phase];
         const double total = std::accumulate(x.begin(), x.end(), 0.0);
@@ -596,14 +601,17 @@ BranchCheck check_density_branches(
         const double corrected = 1.0 / prepared.volume[phase];
         const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
         const auto state = model.state(prepared.temperature, corrected, x);
+        if (limits) limits->check();
         double anchor = anchors.empty() ? 0.0 : anchors[phase];
         DensityRoot root;
         try {
             if (initial) {
                 root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, std::nullopt);
                 anchor = root.molar_density;
+                if (limits) limits->check();
             }
             root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
+            if (limits) limits->check();
         } catch (const std::exception& error) {
             outcome.message = "phase " + spec.name + " has no locally unique anchored root: " + error.what();
             return outcome;
