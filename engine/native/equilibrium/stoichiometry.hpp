@@ -8,6 +8,11 @@
 
 namespace epcsaft::equilibrium {
 
+bool exact_zero_dot(const std::vector<double>& left, const std::vector<double>& right);
+std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
+    const std::vector<ReactionSpec>& reactions);
+void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active);
+
 std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed
 );
@@ -69,4 +74,3 @@ std::string reaction_name(const ReactionSpec& reaction, std::size_t index);
 bool all_numeric(const std::vector<double>& values);
 
 }  // namespace epcsaft::equilibrium
-

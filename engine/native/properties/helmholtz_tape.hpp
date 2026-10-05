@@ -25,6 +25,24 @@ using AD = CppAD::AD<double>;
 
 using TapeParameters = ParameterRecord<AD>;
 
+template <class ParameterSet>
+bool charged_support(const std::vector<double>& composition, const ParameterSet& parameters) {
+    for (std::size_t i = 0; i < composition.size(); ++i)
+        if (composition[i] > 0.0 && parameters.charge_number[i] != 0) return true;
+    return false;
+}
+
+template <typename Scalar, class ParameterSet>
+std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Scalar& temperature,
+    const Scalar& density, double reference_temperature, double reference_density,
+    const std::vector<Scalar>& composition, const std::vector<double>& reference,
+    const ParameterSet& parameters) {
+    const auto electrolyte = electrolyte_contribution(temperature, density, reference_temperature,
+        reference_density, composition, reference, parameters);
+    return {electrolyte, charged_support(reference, parameters)
+        ? born_contribution(temperature, composition, parameters, electrolyte.bulk_relative_permittivity) : Scalar(0)};
+}
+
 enum class ParameterFamily {
     SegmentCount,
     SigmaConstant,
@@ -151,12 +169,9 @@ struct HelmholtzTape final {
                     independent.begin() + static_cast<std::ptrdiff_t>(point_size)));
             const auto sigma = segment_sigma(independent[0], tape_parameters);
             const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
-            const auto electrolyte = electrolyte_contribution(
+            const auto [electrolyte, born] = supported_electrostatics(
                 independent[0], density, point[0], reference_density,
                 composition, reference_composition, tape_parameters);
-            const auto born = born_contribution(
-                independent[0], composition, tape_parameters,
-                electrolyte.bulk_relative_permittivity);
             const auto contributions = residual_helmholtz(
                 independent[0], density, composition, tape_parameters, sigma,
                 diameter, sites, electrolyte.debye_huckel, born);

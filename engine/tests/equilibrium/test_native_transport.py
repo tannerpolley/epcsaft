@@ -60,8 +60,14 @@ def quotients(model: Mixture, result: Any) -> list[float]:
     for phase in range(2):
         x = result.mole_fractions[3 * phase:3 * phase + 3]
         state = model.state(result.temperature[0], rho=result.molar_densities[phase], x=x)
-        values.append(sum(nu * (math.log(x[i] * state.molar_density) + state.residual_chemical_potential_over_rt[i])
-                          for i, nu in enumerate(NU)))
+        terms = []
+        for i, nu in enumerate(NU):
+            if nu == 0:
+                continue
+            potential = state.residual_chemical_potential_over_rt[i]
+            assert potential is not None
+            terms.append(nu * (math.log(x[i] * state.molar_density) + potential))
+        values.append(sum(terms))
     return values
 
 

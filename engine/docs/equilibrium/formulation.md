@@ -99,11 +99,35 @@ A pinned amount is feed-relative, N_p = v_p Σ n_feed with 0 ≤ v_p ≤ 1. When
 declared reaction space conserves total moles, rank([B; e]) = rank(B) with
 e ∝ (1, …, 1), the pins additionally satisfy Σ v_p ≤ 1, and Σ v_p = 1 when every
 phase is pinned; a nonconserving reaction space admits no universal total-mole
-sum rule. Reaction participation is sign independent: a species with nonzero
-stoichiometry is retained in support regardless of orientation. An all-pinned
+sum rule. Reaction participation is sign independent. A participant is removed
+only when a globally nonnegative conserved functional has an exactly zero feed
+inventory and a positive coefficient for that species. Exact native dot products
+verify the functional against every original reaction and feed component; an LP
+objective rounded to zero alone does not establish absence. Positive trace
+inventories retain their species. An all-pinned
 nonreactive declaration compiles square by count but its retained balance and
 normalization rows are dependent, Σ_i balance_i = Σ_p v_p normalization_p, so it
 reports generic rank loss and no nonlinear solve is run.
+
+On a certified face, restrict state coordinates to the surviving species A and
+select independent echelon row operations L from B[:, A]. Keep the full-column
+map L B for balances and feed controls; only state rank and total-mole conservation
+use its restriction to A. Preserve discarded inventory restrictions for action
+admission. The feasible reaction space is ker(B[:, A]), embedded with zero
+amounts outside A, rather than reactions with stoichiometric columns deleted.
+Full reaction declarations and species reference/caloric completion stay fixed
+before restriction to A. Removed species return literal zero amounts and
+fixed-face actions. Feed directions must preserve vanished conserved inventories;
+individual removed feed slots need not independently vanish.
+Supplied phase composition guesses follow the same support restriction before
+the existing supported-composition normalisation.
+
+A pinned-zero phase retaining a globally forced-absent species lies outside this
+face formulation: its chemical stationarity still needs the discarded conserved
+potential. Admission returns `zero_inventory_incipient_support` with the species
+and phase before constructing rows. Incipient phases without that intersection
+retain their intensive support. This boundary does not prevent a finite material
+addition between separately solved endpoints on different supports.
 
 The conserved-inventory bound call admits no additional charge, energy or chemical
 conditions. On the union of compiled supports it maximizes species amount under

@@ -494,7 +494,7 @@ void derivatives_and_limits() {
         double chemical_identity = 0.0;
         for (std::size_t component = 0; component < item.second.size(); ++component) {
             chemical_identity += item.second[component]
-                * state_identity.residual_chemical_potential_over_rt[component];
+                * state_identity.residual_chemical_potential_over_rt[component].value();
         }
         recording_support::compare(
             (std::string("chemical-potential/") + std::to_string(case_index)).c_str(),
@@ -753,10 +753,13 @@ void hessian_fd_and_pressure_slope() {
         {properties_support::nine_species(), {0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0}},
     };
     recording_support::expect_group(
-        recording_support::active_test_id(), "m5-projected", "projected/", 536,
+        recording_support::active_test_id(), "m5-projected", "projected/", 514,
         "projected and subsequent full derivatives against raw implicit elimination", "case,order,row,column");
     for (std::size_t index = 0; index < projected_cases.size(); ++index) {
         const auto& [parameters, amounts] = projected_cases[index];
+        bool charged_support = false;
+        for (std::size_t i = 0; i < amounts.size(); ++i)
+            charged_support = charged_support || (amounts[i] > 0.0 && parameters.charge_number[i] != 0);
         const std::vector<epcsaft::ActiveParameter> active = {
             {epcsaft::ParameterFamily::DispersionEnergyOverK, {0}}};
         epcsaft::HelmholtzModel model(parameters, active);
@@ -772,6 +775,9 @@ void hessian_fd_and_pressure_slope() {
             const std::size_t width = reference.gradient.size();
             std::vector<std::size_t> selected;
             for (std::size_t i = 0; i < width; ++i) {
+                // At no-ion support the charged insertion Hessian is outside the admitted restriction.
+                if (!charged_support && i >= 2 && i < 2 + amounts.size()
+                    && amounts[i - 2] == 0.0 && parameters.charge_number[i - 2] != 0) continue;
                 if (mode == 2 || i == 1 || (i == 0 && mode == 1)
                     || (i >= 2 && i < 2 + amounts.size() && amounts[i - 2] > 0.0)) selected.push_back(i);
             }
@@ -5047,7 +5053,7 @@ void reference_f8() {
                 const unsigned a=degree-b-c;
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?191.42:1);
                 const auto exact=epcsaft::reference_partial(model,T,P,{1},{-1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
-                const double oracle=(c && !a && !b) ? -model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid,state.molar_density).log_fugacity_parameter_derivative[0] : a ? pure_reference_thermal(model,T,P,a,b,c,state.molar_density)
+                const double oracle=(c && !a && !b) ? -model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid,state.molar_density).log_fugacity_parameter_derivative[0].value() : a ? pure_reference_thermal(model,T,P,a,b,c,state.molar_density)
                     : pure_reference_pressure(model,T,P,b,c,state.molar_density);
                 const double x=scale*exact.action.value_or(reference_nan), y=scale*oracle;
                 const double target=1e-7+1e-9*std::abs(y);
@@ -5283,7 +5289,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m2", "Derivatives_and_limits", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P1", "value-state/*,residual-sum/*,gradient-density/*,hessian-symmetry/*,euler/*,internal-energy/*,internal-energy-entropy/*,chemical-potential/*,low-density/*,low-density-z/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M2", "value-state/*:4,residual-sum/*:4,gradient-density/*:4,hessian-symmetry/*:178,euler/*:4,internal-energy/*:4,internal-energy-entropy/*:4,chemical-potential/*:4,low-density/*:4,low-density-z/*:4"}, derivatives_and_limits},
         {{"native.properties.m3", "Finite_difference_gradient", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "gradient/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M3", "gradient/*:5"}, finite_difference_gradient},
         {{"native.properties.m4", "Hessian_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "associating-gradient/*,associating-hessian/*,nine-gradient/*,nine-hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M4", "associating-gradient/*:4,associating-hessian/*:16,nine-gradient/*:12,nine-hessian/*:144"}, hessian_reference},
-        {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*,projected/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4,projected/*:536"}, hessian_fd_and_pressure_slope},
+        {{"native.properties.m5", "Hessian_and_pressure_slope", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "hessian/*,pressure-density-slope/*,volume-second-derivative/*,projected/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M5", "hessian/*:178,pressure-density-slope/*:4,volume-second-derivative/*:4,projected/*:514"}, hessian_fd_and_pressure_slope},
         {{"native.properties.m6", "Same_sign_pair_inert", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "excluded-inert,all-pairs-active", "engine/tests/native/properties_checks.cpp", "properties_checks", "M6", "excluded-inert:1,all-pairs-active:1"}, same_sign_pair_is_inert},
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},

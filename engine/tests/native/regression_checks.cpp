@@ -7,6 +7,8 @@
 #include "properties_support.hpp"
 #include "recording_support.hpp"
 #include "surface/parameter_builder.hpp"
+#include "properties/helmholtz_tape.hpp"
+#include "equilibrium/stoichiometry.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -16,6 +18,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -2740,9 +2743,285 @@ void check_minimax_consistency() {
     }
 }
 
-// Independent bisection uses the Properties value owner, with no chart or cached Newton root.
-int electrolyte_reference_file(const char* filename) {
-    std::ifstream in(filename);
+void check_inventory_face() {
+    CHECK(truth("inventory-face/exact-dot", "error-free conservation arithmetic distinguishes cancellation from a lost positive unit",
+        !equilibrium::exact_zero_dot({1e16, 1, -1e16}, {1, 1, 1})
+        && equilibrium::exact_zero_dot({1e16, 1, -1e16, -1}, {1, 1, 1, 1}),
+        fields({field("nonzero_left", std::vector<double>{1e16, 1, -1e16}), field("nonzero_right", std::vector<double>{1, 1, 1}),
+            field("zero_left", std::vector<double>{1e16, 1, -1e16, -1}), field("zero_right", std::vector<double>{1, 1, 1, 1})}), "issue-231"));
+    HelmholtzModel model(properties_support::neutral_ternary());
+    EquilibriumProblem problem;
+    problem.temperature = FreeValue::fixed(300);
+    problem.pressure = FreeValue::fixed(1e5);
+    problem.feed.kind = equilibrium::FeedKind::Amounts;
+    problem.feed.values = {1, 0, 0};
+    problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+    problem.reactions = {{"A+B=C", {-1, -1, 1}, 1.0}};
+    const auto declarations = [&] {
+        return fields({field("T_K", problem.temperature.value), field("P_Pa", problem.pressure.value),
+            field("feed_mol", problem.feed.values), field("stoichiometry", problem.reactions[0].stoichiometry),
+            field("L_support", problem.phases[0].support_declared ? "A" : "A,B,C")});
+    };
+    const auto compiled = equilibrium::compile_problem(model, problem);
+    const std::vector<double> formal{0, 1, -1};
+    CHECK(compiled.B.size() == 1);
+    CHECK(agree("inventory-face/formal-feed", "d_conserved_A_inventory", "mol",
+        std::inner_product(compiled.B[0].begin(), compiled.B[0].end(), formal.begin(), 0.0), -1, 1e-12, 0,
+        declarations() + ";" + fields({field("delta_feed_mol", formal), field("interpretation", "algebraic balance derivative only")}),
+        "the full reduced feed map retains the A+C inventory derivative", "issue-231"));
+    CHECK(truth("inventory-face/vanished-feed", "the same signed feed direction preserves the vanished B+C inventory",
+        std::all_of(compiled.inventory_restrictions.begin(), compiled.inventory_restrictions.end(),
+            [&](const auto& row) { return equilibrium::exact_zero_dot(row, formal); }),
+        declarations() + ";" + field("delta_feed_mol", formal), "issue-231"));
+    const auto value = equilibrium::solve_equilibrium(model, problem);
+    CHECK(value.success);
+    CHECK(agree("inventory-face/absent-B", "n_B", "mol", value.amounts[0] * value.mole_fractions[1], 0, 0, 0,
+        declarations(), "nonnegative B+C conservation forces both carriers absent", "issue-231"));
+    problem.phases[0].support = {0};
+    problem.phases[0].support_declared = true;
+    CHECK(equilibrium::compile_problem(model, problem).feasible);
+    auto uncovered = problem;
+    uncovered.reactions[0].stoichiometry = {-1, 1, 1};
+    CHECK(truth("inventory-face/uncovered", "support-conditional mixed-sign certificates cannot erase attainable products",
+        rejection([&] { equilibrium::compile_problem(model, uncovered); }).find("has no support") != std::string::npos,
+        fields({field("stoichiometry", uncovered.reactions[0].stoichiometry), field("feed_mol", uncovered.feed.values),
+            field("L_support", "A")}), "issue-231"));
+    problem.phases[0].support.clear();
+    problem.phases[0].support_declared = false;
+    problem.reactions[0].stoichiometry = {0, -1, 1};
+    for (double inventory : {0.0, 1e-10, 1e-12, 1e-14}) {
+        problem.feed.values[1] = inventory;
+        const auto at = equilibrium::compile_problem(model, problem);
+        CHECK(truth("inventory-face/trace/" + number(inventory), "positive conserved inventories remain positive-species charts",
+            inventory == 0 ? at.removed_species == std::vector<std::size_t>{1, 2} : at.removed_species.empty(),
+            declarations() + ";" + field("B_plus_C_mol", inventory), "issue-231"));
+    }
+    auto padded = properties_support::parameters(5);
+    const auto ternary = equilibrium_support::synthetic_reactive_ternary();
+    const auto ethane = properties_support::ethane();
+    padded.segment_count = ternary.segment_count; padded.segment_count.resize(5, ethane.segment_count[0]);
+    padded.sigma_constant = ternary.sigma_constant; padded.sigma_constant.resize(5, ethane.sigma_constant[0]);
+    padded.dispersion_energy_over_k = ternary.dispersion_energy_over_k;
+    padded.dispersion_energy_over_k.resize(5, ethane.dispersion_energy_over_k[0]);
+    padded.molar_mass_kg_per_mol = ternary.molar_mass_kg_per_mol;
+    padded.molar_mass_kg_per_mol.resize(5, ethane.molar_mass_kg_per_mol[0]);
+    for (std::size_t i = 0; i < 3; ++i) for (std::size_t j = 0; j < 3; ++j)
+        padded.k_ij[i * 5 + j] = ternary.k_ij[i * 3 + j];
+    padded.site_component = ternary.site_component; padded.site_multiplicity = ternary.site_multiplicity;
+    padded.association_active = ternary.association_active;
+    padded.association_energy_over_k = ternary.association_energy_over_k;
+    padded.association_volume = ternary.association_volume;
+    HelmholtzModel padded_model(padded);
+    auto full_guess = equilibrium_support::synthetic_reactive_problem();
+    full_guess.feed.values.resize(5, 0); full_guess.standard_gibbs_j_per_mol.resize(5, 0);
+    full_guess.reactions[0].stoichiometry.resize(5, 0);
+    full_guess.reactions.push_back({"D=E", {0, 0, 0, -1, 1}, 1.0});
+    auto reduced_guess = full_guess;
+    for (std::size_t q = 0; q < 2; ++q) {
+        full_guess.phases[q].composition_guess.resize(5, 0);
+        reduced_guess.phases[q].support = {0, 1, 2}; reduced_guess.phases[q].support_declared = true;
+    }
+    const auto full_value = equilibrium::solve_equilibrium(padded_model, full_guess);
+    const auto reduced_value = equilibrium::solve_equilibrium(padded_model, reduced_guess);
+    CHECK(full_value.success && reduced_value.success);
+    double scaled_state_error = 0;
+    for (std::size_t i = 0; i < full_value.mole_fractions.size(); ++i)
+        scaled_state_error = std::max(scaled_state_error,
+            std::abs(full_value.mole_fractions[i] - reduced_value.mole_fractions[i])
+                / (1e-12 + 1e-8 * std::max(std::abs(full_value.mole_fractions[i]), std::abs(reduced_value.mole_fractions[i]))));
+    for (std::size_t q = 0; q < full_value.amounts.size(); ++q)
+        scaled_state_error = std::max(scaled_state_error,
+            std::abs(full_value.amounts[q] - reduced_value.amounts[q])
+                / (1e-12 + 1e-8 * std::max(std::abs(full_value.amounts[q]), std::abs(reduced_value.amounts[q]))));
+    CHECK(agree("inventory-face/supplied-guess", "maximum_scaled_physical_state_error", "1", scaled_state_error, 0, 1, 0,
+        fields({field("fixture", "synthetic_reactive_ternary plus two ethane records"),
+            field("T_K", full_guess.temperature.value), field("P_Pa", full_guess.pressure.value), field("feed_mol", full_guess.feed.values),
+            field("A_plus_B_to_C", full_guess.reactions[0].stoichiometry), field("D_to_E", full_guess.reactions[1].stoichiometry),
+            field("K_each", 1), field("full_support", "0,1,2,3,4"), field("reduced_support", "0,1,2"),
+            field("full_L1_guess", full_guess.phases[0].composition_guess), field("full_L2_guess", full_guess.phases[1].composition_guess),
+            field("reduced_L1_guess", reduced_guess.phases[0].composition_guess), field("reduced_L2_guess", reduced_guess.phases[1].composition_guess),
+            field("full_phase_fractions", full_value.mole_fractions), field("reduced_phase_fractions", reduced_value.mole_fractions),
+            field("full_amounts_mol", full_value.amounts), field("reduced_amounts_mol", reduced_value.amounts),
+            field("full_classified_residual", full_value.convergence.residual), field("reduced_classified_residual", reduced_value.convergence.residual),
+            field("full_iterations", full_value.convergence.iterations), field("reduced_iterations", reduced_value.convergence.iterations)}),
+        "restricting a supplied full-support guess preserves explicit-face phase fractions and amounts", "issue-231"));
+    problem.feed.values[1] = 0;
+    problem.pressure = FreeValue::variable(1e5);
+    auto incipient = equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0));
+    incipient.support = {2}; incipient.support_declared = true;
+    problem.phases.push_back(incipient);
+    const auto cause = rejection([&] { equilibrium::compile_problem(model, problem); });
+    CHECK(truth("inventory-face/incipient", "a forced-absent incipient chemical row is refused before solving",
+        cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find("component 2") != std::string::npos
+        && cause.find("phase V") != std::string::npos && cause.find("chemical stationarity") != std::string::npos,
+        declarations() + ";" + fields({field("V_support", "C"), field("V_amount_fraction", 0.0), field("cause", cause)}), "issue-231"));
+}
+
+void check_neutral_electrostatics() {
+    auto p = properties_support::aqueous_electrolyte();
+    p.born_c_shell = p.born_c_dielectric = 1.0;
+    const std::vector<ActiveParameter> active{{ParameterFamily::BornDiameter, {1}}};
+    HelmholtzModel model(p, active);
+    const auto water_inputs = fields({field("T_K", 298.15), field("P_Pa", 1e5), field("composition", std::vector<double>{1, 0, 0}),
+        field("components", "water,Na+,Cl-"), field("Born_c_shell", 1.0), field("Born_c_dielectric", 1.0)});
+    const auto neutral = model.state_at_pressure(298.15, 1e5, {1, 0, 0}, DensityBranch::Liquid);
+    auto selected = properties_support::parameters(1);
+    selected.segment_count[0] = p.segment_count[0]; selected.sigma_constant[0] = p.sigma_constant[0];
+    selected.dispersion_energy_over_k[0] = p.dispersion_energy_over_k[0]; selected.molar_mass_kg_per_mol[0] = p.molar_mass_kg_per_mol[0];
+    selected.sigma_term_component = p.sigma_term_component; selected.sigma_term_amplitude = p.sigma_term_amplitude;
+    selected.sigma_term_exponent = p.sigma_term_exponent; selected.site_component = p.site_component;
+    selected.site_multiplicity = p.site_multiplicity; selected.association_active = p.association_active;
+    selected.association_energy_over_k = p.association_energy_over_k; selected.association_volume = p.association_volume;
+    const auto control = HelmholtzModel(selected).state_at_pressure(298.15, 1e5, {1}, DensityBranch::Liquid);
+    CHECK(agree("neutral-electrostatics/density", "rho", "mol/m3", neutral.molar_density, control.molar_density,
+        0, 1e-9, water_inputs, "full ionic declaration agrees with neutral selection", "issue-231"));
+    CHECK(reference_scale_agrees("neutral-electrostatics/enthalpy", "h_res", "J/mol", neutral.residual_enthalpy,
+        control.residual_enthalpy, 1e-6, 1e-9, water_inputs, "neutral support retains the same residual calorics", "issue-231"));
+    auto boundary = equilibrium_support::flash(3);
+    boundary.temperature = FreeValue::fixed(298.15); boundary.pressure = FreeValue::variable(1e5);
+    boundary.feed.values = {1, 0, 0};
+    boundary.phases = {equilibrium_support::phase("L", PhaseKind::Liquid),
+        equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0))};
+    for (auto& phase : boundary.phases) { phase.support = {0}; phase.support_declared = true; }
+    auto selected_boundary = boundary; selected_boundary.feed.values = {1};
+    const HelmholtzModel water_model(selected);
+    const auto full_cell = equilibrium::compile_problem(model, boundary);
+    const auto selected_cell = equilibrium::compile_problem(water_model, selected_boundary);
+    const auto seed = full_cell.prepare(equilibrium::boundary_start(full_cell));
+    const auto selected_seed = selected_cell.prepare(equilibrium::boundary_start(selected_cell));
+    const auto seed_inputs = fields({field("T_K", seed.temperature), field("P_declared_seed_Pa", 1e5),
+        field("P_returned_full_Pa", seed.pressure), field("P_returned_selected_Pa", selected_seed.pressure),
+        field("feed_mol", boundary.feed.values), field("L_support", "water"), field("V_support", "water"),
+        field("V_fraction", 0), field("composition_guesses", "empty"), field("fixture", "aqueous_electrolyte versus selected water")});
+    for (const auto pressure : {std::pair{"full", seed.pressure}, std::pair{"selected", selected_seed.pressure}})
+        recording_support::observe((std::string("neutral-electrostatics/cold-seed/pressure/") + pressure.first).c_str(),
+            "P_returned_seed", "Pa", pressure.second, std::nullopt, seed_inputs, "Observation", "boundary_start",
+            "existing full-declaration and pure-selected starts retain their pressure policies", "issue-231");
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        const auto id = "neutral-electrostatics/cold-seed/" + std::to_string(phase);
+        const double density = 1 / seed.volume[phase];
+        const auto selected_state = water_model.state_at_pressure(seed.temperature, seed.pressure, {1},
+            phase == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
+        CHECK(agree(id + "/density", "rho_seed", "mol/m3", density, selected_state.molar_density,
+            0, 1e-9, seed_inputs, "decoded full cold density agrees with selected water at the same T/P/branch", "issue-231"));
+        CHECK(reference_scale_agrees(id + "/enthalpy", "h_res_seed", "J/mol",
+            model.state(seed.temperature, density, seed.composition[phase]).residual_enthalpy,
+            selected_state.residual_enthalpy,
+            1e-6, 1e-9, seed_inputs, "cold seeds retain the same supported residual calorics", "issue-231"));
+        CHECK(agree(id + "/amount", "n_phase_seed", "mol", seed.amount[phase], selected_seed.amount[phase],
+            0, 0, seed_inputs, "cold seed phase amounts retain their declared basis", "issue-231"));
+        CHECK(agree(id + "/water", "x_water_seed", "1", seed.composition[phase][0], selected_seed.composition[phase][0],
+            0, 0, seed_inputs, "supported cold composition agrees with selected water", "issue-231"));
+        for (std::size_t species = 1; species < 3; ++species)
+            CHECK(agree(id + "/absent/" + std::to_string(species), "x_absent_seed", "1", seed.composition[phase][species],
+                0, 0, 0, seed_inputs, "globally removed cold seed entries remain literal zero", "issue-231"));
+    }
+    for (const bool temperature : {true, false}) {
+        const auto full_actions = model.pressure_actions(298.15, 1e5, {1, 0, 0}, DensityBranch::Liquid,
+            {PropertyObservable::ResidualEnthalpy}, {{temperature ? 1.0 : 0.0, temperature ? 0.0 : 1.0, {0, 0, 0}, {}}});
+        const auto neutral_actions = HelmholtzModel(selected).pressure_actions(298.15, 1e5, {1}, DensityBranch::Liquid,
+            {PropertyObservable::ResidualEnthalpy}, {{temperature ? 1.0 : 0.0, temperature ? 0.0 : 1.0, {0}, {}}});
+        CHECK(full_actions.density_status == PropertyActionStatus::Available && neutral_actions.density_status == PropertyActionStatus::Available);
+        CHECK(full_actions.results[0].action && neutral_actions.results[0].action);
+        const auto suffix = temperature ? "/T" : "/P";
+        CHECK(agree(std::string("neutral-electrostatics/density-action") + suffix, temperature ? "d_rho_dT_at_P" : "d_rho_dP_at_T",
+            temperature ? "mol/(m^3 K)" : "mol/(m^3 Pa)",
+            full_actions.density_action[0], neutral_actions.density_action[0], 0, FIRST_ORDER, water_inputs,
+            "supported pressure-closed density actions agree with neutral selection", "issue-231"));
+        CHECK(agree(std::string("neutral-electrostatics/enthalpy-action") + suffix, temperature ? "d_h_res_dT_at_P" : "d_h_res_dP_at_T",
+            temperature ? "J/(mol K)" : "J/(mol Pa)",
+            *full_actions.results[0].action, *neutral_actions.results[0].action, 0, FIRST_ORDER, water_inputs,
+            "supported caloric actions agree with neutral selection", "issue-231"));
+    }
+    const auto no_solvent = model.pressure_actions(298.15, 1e5, {0, .5, .5}, DensityBranch::Liquid, {}, {{0, 0, {0, 0, 0}, {}}});
+    CHECK(truth("neutral-electrostatics/ionic-no-solvent", "positive-ion solvent-free states preserve the existing density failure",
+        no_solvent.density_status != PropertyActionStatus::Available && !no_solvent.density_message.empty(),
+        fields({field("T_K", 298.15), field("P_Pa", 1e5), field("composition", std::vector<double>{0, .5, .5}),
+            field("cause", no_solvent.density_message)}), "issue-231"));
+    CHECK(truth("neutral-electrostatics/charged-slots", "absent charged potentials, fugacities and parameter columns are unavailable",
+        !neutral.residual_chemical_potential_over_rt[1] && !(*neutral.log_fugacity_coefficient)[1]
+        && !neutral.log_fugacity_parameter_derivative[1] && neutral.component_property_status[1] == PropertyActionStatus::IonicInsertion
+        && neutral.residual_chemical_potential_over_rt[0] && (*neutral.log_fugacity_coefficient)[0], water_inputs, "issue-231"));
+    std::array<double, 2> previous{1, 1};
+    for (double salt : {0.0, 1e-4, 1e-6, 1e-8}) {
+        const std::vector<double> x{1 - 2 * salt, salt, salt};
+        const std::vector<double> point{298.15, neutral.molar_density, p.born_diameter_angstrom[1]};
+        std::vector<detail::AD> variables(point.begin(), point.end());
+        CppAD::Independent(variables);
+        const auto record = detail::make_tape_parameters(p, active, {variables[2]});
+        const auto terms = detail::supported_electrostatics(variables[0], variables[1], point[0], point[1],
+            std::vector<detail::AD>(x.begin(), x.end()), x, record);
+        CppAD::ADFun<double> tape(variables, std::vector<detail::AD>{terms.second, terms.first.debye_huckel});
+        const auto values = tape.Forward(0, point), gradient = tape.Jacobian(point);
+        const auto born_hessian = tape.Hessian(point, 0), dh_hessian = tape.Hessian(point, 1);
+        const auto inputs = fields({field("salt_fraction", salt), field("T_K", point[0]), field("rho_mol_m3", point[1]),
+            field("composition", x), field("Na_Born_diameter_Angstrom", point[2]), field("neutral_permittivity", neutral.bulk_relative_permittivity)});
+        if (salt == 0) {
+            bool zero = std::all_of(values.begin(), values.end(), [](double v) { return v == 0; });
+            for (const auto* rows : {&gradient, &born_hessian, &dh_hessian})
+                zero = zero && std::all_of(rows->begin(), rows->end(), [](double v) { return v == 0; });
+            tape.Forward(0, point); tape.Forward(1, std::vector<double>{1, 1, 1}); tape.Forward(2, std::vector<double>{0, 0, 0});
+            const auto third = tape.Forward(3, std::vector<double>{0, 0, 0});
+            zero = zero && third[0] == 0 && third[1] == 0;
+            CHECK(truth("neutral-electrostatics/zero", "Born and DH and admitted mixed restriction actions are finite exact zeros",
+                zero && neutral.born == 0 && neutral.debye_huckel == 0, inputs, "issue-231"));
+            continue;
+        }
+        const double eps = neutral.bulk_relative_permittivity;
+        const double constant = ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+            / (4 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * point[0]);
+        double radial = 0, radial_first = 0;
+        for (std::size_t i : {1u, 2u}) {
+            const double diameter = p.born_diameter_angstrom[i] * ANGSTROM_M;
+            const double outer = diameter * (1 + p.born_c_shell * (p.solvation_factor[0] - 1));
+            const double term = (1 - 1 / eps) / outer + p.born_c_dielectric * (1 - 1 / p.ionic_region_relative_permittivity)
+                * (1 / diameter - 1 / outer);
+            radial += term;
+            if (i == 1) radial_first = term;
+        }
+        const double born = -constant * salt * radial, ion_born = -constant * salt * radial_first;
+        const double screening = std::sqrt(point[1] * AVOGADRO_PER_MOL * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+            / (VACUUM_PERMITTIVITY_F_PER_M * eps * BOLTZMANN_J_PER_K * point[0]));
+        const double dh = -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C * screening * std::pow(2 * salt, 1.5)
+            / (12 * PI * VACUUM_PERMITTIVITY_F_PER_M * eps * BOLTZMANN_J_PER_K * point[0]);
+        for (std::size_t i = 0; i < 2; ++i) {
+            const double leading = i == 0 ? born : dh;
+            const double error = std::abs(values[i] / leading - 1);
+            CHECK(truth("neutral-electrostatics/limit/" + number(salt) + (i == 0 ? "/Born" : "/DH"),
+                "the independent leading coefficient converges with the declared dilute path",
+                error < previous[i] && (salt != 1e-8 || error <= 1e-3),
+                inputs + ";" + fields({field("value", values[i]), field("leading", leading), field("normalized_error", error)}), "issue-231"));
+            previous[i] = error;
+        }
+        if (salt == 1e-8) {
+            const std::array<double, 6> references{-born / point[0], 2 * born / (point[0] * point[0]),
+                -1.5 * dh / point[0], 3.75 * dh / (point[0] * point[0]), dh / (2 * point[1]), -dh / (4 * point[1] * point[1])};
+            const std::array<double, 6> actions{gradient[0], born_hessian[0], gradient[3], dh_hessian[0], gradient[4], dh_hessian[4]};
+            const std::array<const char*, 6> names{"Born/dT", "Born/dT2", "DH/dT", "DH/dT2", "DH/drho", "DH/drho2"};
+            const std::array<const char*, 6> quantities{"d_a_Born_dT", "d2_a_Born_dT2", "d_a_DH_dT", "d2_a_DH_dT2", "d_a_DH_drho", "d2_a_DH_drho2"};
+            const std::array<const char*, 6> units{"1/K", "1/K^2", "1/K", "1/K^2", "m^3/mol", "m^6/mol^2"};
+            for (std::size_t i = 0; i < references.size(); ++i)
+                CHECK(agree(std::string("neutral-electrostatics/coefficient-action/") + names[i], quantities[i], units[i],
+                    actions[i], references[i], 0, 1e-3, inputs, "exact first and second T and density actions approach independent coefficient derivatives", "issue-231"));
+            for (std::size_t order = 1; order <= 2; ++order) {
+                const double reference = order == 1 ? -ion_born / point[2] : 2 * ion_born / (point[2] * point[2]);
+                CHECK(agree("neutral-electrostatics/born-diameter/" + std::to_string(order),
+                    order == 1 ? "d_a_Born_d_dBorn_Na" : "d2_a_Born_d_dBorn_Na2", order == 1 ? "1/Angstrom" : "1/Angstrom^2",
+                    order == 1 ? gradient[2] : born_hessian[8], reference, 0, 1e-3, inputs,
+                    "Born diameter first and second actions approach independent coefficient derivatives", "issue-231"));
+            }
+        }
+        const auto changed = model.state(298.15, neutral.molar_density, x);
+        const auto repeated = model.state_at_pressure(298.15, 1e5, {1, 0, 0}, DensityBranch::Liquid);
+        const auto fresh = HelmholtzModel(p, active).state(298.15, neutral.molar_density, x);
+        CHECK(agree("neutral-electrostatics/support-tape/" + number(salt), "h_res", "J/mol", changed.residual_enthalpy,
+            fresh.residual_enthalpy, 0, 1e-12, inputs, "alternating supports preserve fresh-model calorics", "issue-231"));
+        CHECK(agree("neutral-electrostatics/neutral-tape/" + number(salt), "h_res", "J/mol", repeated.residual_enthalpy,
+            neutral.residual_enthalpy, 0, 1e-12, inputs, "ionic evaluation cannot contaminate the neutral tape", "issue-231"));
+    }
+}
+
+ParameterDocument read_parameter_document(std::istream& in) {
     epcsaft::ParameterDocument doc;
     std::size_t n, sites, entries;
     in >> n >> sites >> entries;
@@ -2760,7 +3039,278 @@ int electrolyte_reference_file(const char* filename) {
         in >> entry.magnitude >> std::quoted(entry.unit);
         doc.entries.push_back(entry);
     }
-    auto parameters = epcsaft::build_parameters(doc);
+    if (!in) throw std::runtime_error("incomplete parameter declarations");
+    return doc;
+}
+
+// Frozen #231 inputs are declared by zero_inventory.py; calculations and comparisons stay native.
+int zero_inventory_file(const char* filename) {
+    std::ifstream in(filename);
+    const auto parameters = build_parameters(read_parameter_document(in));
+    EquilibriumProblem initial;
+    initial.temperature = FreeValue::fixed(313.15);
+    initial.pressure = FreeValue::fixed(1734000.0);
+    initial.feed.kind = equilibrium::FeedKind::Amounts;
+    initial.feed.values = {0.0, 1.0, 7.911062165006594, 0, 0, 0, 0, 0, 0};
+    initial.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+    initial.source_reference = NeutralReferenceDeclaration{2, {.125, .125, 0, .625, .25, .125, .125, .125, .125}, 1.0};
+    initial.row_tolerance = 1e-10;
+    for (std::size_t r = 0; r < 5; ++r) {
+        equilibrium::ReactionSpec reaction;
+        in >> std::quoted(reaction.name);
+        reaction.stoichiometry.resize(9);
+        for (auto& value : reaction.stoichiometry) in >> value;
+        ReactionLogPolynomial law;
+        std::string basis;
+        double pressure;
+        in >> law.a >> law.b >> law.c >> law.d >> law.reference_temperature >> law.temperature_min
+           >> law.temperature_max >> std::quoted(law.standard_state_id) >> std::quoted(basis) >> pressure;
+        reaction.correlation = law;
+        reaction.reference = ReactionReference{pressure == 0 ? std::nullopt : std::optional<double>(pressure),
+            basis == "RawMoleFractionInfiniteDilution" ? ReferenceSourceBasis::RawMoleFractionInfiniteDilution
+                                                     : ReferenceSourceBasis::CommonMolalityInfiniteDilution};
+        initial.reactions.push_back(std::move(reaction));
+    }
+    ThermochemistryRecord record;
+    in >> record.standard_pressure;
+    record.component_intervals.resize(9);
+    for (std::size_t i = 0; i < 3; ++i) {
+        std::size_t count;
+        double lower, upper, formation, centre;
+        in >> count;
+        std::vector<double> coefficients(count);
+        for (auto& value : coefficients) in >> value;
+        in >> lower >> upper >> formation >> centre;
+        IdealCorrelation correlation;
+        correlation.source_pressure = record.standard_pressure;
+        if (centre == 0) {
+            IdealShomate shomate;
+            std::copy(coefficients.begin(), coefficients.end(), shomate.coefficients.begin());
+            shomate.formation_enthalpy = formation;
+            correlation.form = shomate;
+        } else {
+            const auto& c = coefficients;
+            correlation.form = IdealPolynomial{{c[0] + centre * (c[1] + centre * (c[2] + centre * c[3])),
+                c[1] + centre * (2 * c[2] + centre * 3 * c[3]), c[2] + centre * 3 * c[3], c[3]}, centre, 0, 0};
+        }
+        record.component_intervals[i].push_back({lower, upper, true, true, correlation});
+    }
+    if (!in) throw std::runtime_error("incomplete frozen MEA input declarations");
+    std::vector<ActiveParameter> active;
+    for (const auto pair : {std::pair{4u, 2u}, {3u, 2u}, {5u, 2u}, {4u, 3u}})
+        active.push_back({ParameterFamily::Kij, {9 * pair.second + pair.first, 9 * pair.first + pair.second}});
+    active.push_back({ParameterFamily::KijReciprocalTemperatureSlope, {21, 29}});
+    CoordinateSet coordinates;
+    for (const auto& item : active) coordinates.coordinates.push_back({item.family, {item.indices}, 0, 1});
+    coordinates.coordinates.push_back(reaction_coordinate("R2", ReactionCoefficient::B));
+    coordinates.coordinates.push_back(reaction_coordinate("R2", ReactionCoefficient::C));
+    const std::array<const char*, 7> coordinate_names{"k_MEACOO_water", "k_MEAH_water", "k_HCO3_water", "k_MEACOO_MEAH",
+        "inverse_T_k_MEAH_water", "R2_b", "R2_c"};
+    const std::array<const char*, 7> derivative_units{"J/mol", "J/mol", "J/mol", "J/mol", "J/(mol K)", "J/(mol K)", "J/mol"};
+    HelmholtzModel model(parameters, active, record);
+    for (const double alpha : {.11, .45}) {
+        auto final = initial;
+        final.feed.values[0] = alpha;
+        const auto row = addition_observation(initial, final, alpha, 313.15, 1734000, {1, 0, 0, 0, 0, 0, 0, 0, 0});
+        const auto prediction = predict(model, row);
+        if (!prediction.value) throw std::runtime_error("zero-inventory addition: " + prediction.message);
+        const std::string prefix = "zero-inventory/" + std::to_string(alpha);
+        const auto inputs = fields({field("T_K", 313.15), field("P_Pa", 1734000.0), field("alpha_mol", alpha)});
+        const auto compiled = equilibrium::compile_problem(model, initial);
+        const auto solved_initial = equilibrium::solve_equilibrium(model, initial);
+        const auto final_compiled = equilibrium::compile_problem(model, final);
+        const auto solved_final = equilibrium::solve_equilibrium(model, final);
+        CHECK(solved_initial.success && solved_final.success);
+        for (const auto pair : {std::pair{"initial", &solved_initial}, std::pair{"final", &solved_final}}) {
+            double classified = 0, chemical = 0;
+            for (std::size_t k = 0; k < pair.second->rows.size(); ++k) {
+                classified = std::max(classified, std::abs(pair.second->classified_residuals[k]));
+                if (pair.second->rows[k].kind == equilibrium::RowKind::Chemical)
+                    chemical = std::max(chemical, std::abs(pair.second->residuals[k]));
+            }
+            CHECK(agree(prefix + "/" + pair.first + "/classified", "maximum_classified_row", "1", classified, 0,
+                1e-10, 0, inputs, "both endpoint rows meet the unchanged request", "issue-231"));
+            CHECK(agree(prefix + "/" + pair.first + "/stationarity", "maximum_raw_chemical_row", "1", chemical, 0,
+                1e-10, 0, inputs, "both endpoints resolve raw chemical stationarity", "issue-231"));
+        }
+        Eigen::MatrixXd state_balance(compiled.B.size(), 5);
+        const std::array<std::size_t, 5> surviving{1, 2, 3, 7, 8};
+        for (std::size_t k = 0; k < compiled.B.size(); ++k)
+            for (std::size_t j = 0; j < surviving.size(); ++j) state_balance(k, j) = compiled.B[k][surviving[j]];
+        const Eigen::FullPivLU<Eigen::MatrixXd> balance_rank(state_balance);
+        CHECK(truth(prefix + "/nullspace", "the surviving conserved balances have rank three and reaction dimension two",
+            balance_rank.rank() == 3 && balance_rank.dimensionOfKernel() == 2, inputs, "issue-231"));
+        const auto state = model.state(313.15, solved_initial.molar_densities[0], solved_initial.mole_fractions);
+        const auto prepared = compiled.prepare(solved_initial.coordinates);
+        for (std::size_t r : {0u, 4u}) {
+            double affinity = 0;
+            Eigen::VectorXd motion(5);
+            for (std::size_t j = 0; j < surviving.size(); ++j) {
+                const auto i = surviving[j];
+                motion(j) = initial.reactions[r].stoichiometry[i];
+                affinity += motion(j) * (state.residual_chemical_potential_over_rt[i].value()
+                    + std::log(solved_initial.mole_fractions[i] * solved_initial.molar_densities[0]) + prepared.standard.derivative[0][i]);
+            }
+            CHECK(agree(prefix + "/reaction-span/" + std::to_string(r), "conserved_motion_norm", "1",
+                (state_balance * motion).norm(), 0, 1e-12, 0, inputs, "R1 and R5 belong to the conserved face reaction space", "issue-231"));
+            CHECK(agree(prefix + "/affinity/" + std::to_string(r), "reaction_affinity_over_RT", "1", affinity, 0, 1e-10, 0,
+                inputs, "public chemical potentials satisfy R1 and R5 on the five-species face", "issue-231"));
+        }
+        const double h_initial = endpoint_enthalpy(model, initial, compiled, solved_initial).enthalpy;
+        const double h_final = endpoint_enthalpy(model, final, final_compiled, solved_final).enthalpy;
+        auto feed_row = row;
+        feed_row.kind = ObservationKind::FeedEnthalpy;
+        const auto feed = predict(model, feed_row);
+        CHECK(feed.value);
+        CHECK(reference_scale_agrees(prefix + "/feed-h", "h_feed", "J/mol", *feed.value, -393574.4494137983,
+            1e-6, 1e-9, inputs, "the support-restricted feed calorics preserve the frozen CO2 result", "issue-231"));
+        const double direct = (h_final - h_initial) / alpha - *feed.value;
+        const double allowance = 1e-9 * (std::abs(h_initial) + std::abs(h_final)) / alpha + 1e-6;
+        CHECK(agree(prefix + "/enthalpy", "delta_h_add", "J/mol", *prediction.value, direct, allowance, 0,
+            inputs + ";" + fields({field("H_initial_J", h_initial), field("H_final_J", h_final), field("h_feed_J_per_mol", *feed.value)}),
+            "separate public endpoint and feed enthalpies reproduce finite addition", "issue-231"));
+        const double conditioning = (std::abs(h_initial) + std::abs(h_final)) / (alpha * std::abs(direct));
+        CHECK(agree(prefix + "/conditioning", "enthalpy_subtraction_condition", "1", conditioning, 0, 1e4, 0, inputs,
+            "endpoint subtraction conditioning is at most 1e4", "issue-231"));
+        if (alpha == .11) {
+            CHECK(agree(prefix + "/extrapolation", "delta_h_add", "J/mol", *prediction.value,
+                -68169.42621165613, .01, 0, inputs, "exact zero endpoint agrees with the retained neighbouring-state trend", "issue-231"));
+            CHECK(agree(prefix + "/initial-H", "H_initial", "J", h_initial, -2313691.892440736, .001, 0,
+                inputs, "fresh-solvent enthalpy agrees with the retained extrapolation", "issue-231"));
+            const std::vector<std::size_t> order{8, 7, 6, 5, 4, 3, 2, 1, 0};
+            auto permuted = initial;
+            permuted.feed.values = equilibrium_support::permute_vector(initial.feed.values, order);
+            permuted.source_reference->solvent_index = 6;
+            permuted.source_reference->solute_molality_ratios = equilibrium_support::permute_vector(
+                initial.source_reference->solute_molality_ratios, order);
+            for (auto& reaction : permuted.reactions) {
+                reaction.stoichiometry = equilibrium_support::permute_vector(reaction.stoichiometry, order);
+                for (double& value : reaction.stoichiometry) value = -value;
+                auto& law = *reaction.correlation;
+                law.a = -law.a; law.b = -law.b; law.c = -law.c; law.d = -law.d;
+            }
+            std::reverse(permuted.reactions.begin(), permuted.reactions.end());
+            auto thermal = record;
+            thermal.component_intervals = equilibrium_support::permute_vector(record.component_intervals, order);
+            HelmholtzModel permuted_model(equilibrium_support::permute_parameters(parameters, order), {}, thermal);
+            const auto at = equilibrium::solve_equilibrium(permuted_model, permuted);
+            CHECK(at.success);
+            for (std::size_t i = 0; i < 9; ++i)
+                CHECK(reference_scale_agrees(prefix + "/permutation/" + std::to_string(i), "component_amount", "mol",
+                    at.amounts[0] * at.mole_fractions[i], solved_initial.amounts[0] * solved_initial.mole_fractions[order[i]],
+                    1e-12, 1e-8, inputs, "component/declaration permutation and reaction reversal preserve physical amounts", "issue-231"));
+        }
+        const auto original_basis = equilibrium::balance_basis(9, initial.reactions);
+        for (const auto endpoint : {std::tuple{"initial", &initial, &solved_initial}, std::tuple{"final", &final, &solved_final}}) {
+            const auto& [name, problem, solved] = endpoint;
+            double charge = 0.0;
+            std::vector<double> delta(9);
+            for (std::size_t i = 0; i < 9; ++i) {
+                delta[i] = solved->amounts[0] * solved->mole_fractions[i] - problem->feed.values[i];
+                charge += parameters.charge_number[i] * delta[i];
+            }
+            for (std::size_t k = 0; k < original_basis.size(); ++k)
+                CHECK(agree(prefix + "/" + name + "/balance/" + std::to_string(k), "original_inventory_error", "mol",
+                    std::inner_product(original_basis[k].begin(), original_basis[k].end(), delta.begin(), 0.0),
+                    0, 1e-7, 0, inputs, "original full-column conserved inventories close", "issue-231"));
+            CHECK(agree(prefix + "/" + name + "/charge", "charge_error", "mol", charge, 0, 1e-7, 0, inputs,
+                "endpoint electroneutrality cancels the charge gauge", "issue-231"));
+        }
+        equilibrium::SolvedStateActionDirection direction;
+        direction.feed_amounts_mol.assign(9, 0);
+        direction.active_parameters.assign(active.size(), 0);
+        direction.active_parameters[1] = 1;
+        std::vector<equilibrium::SolvedStateObservable> observables;
+        for (const std::size_t i : {0u, 4u, 5u, 6u}) {
+            observables.push_back({equilibrium::SolvedStateObservableKind::PhaseComponentAmount, 0, i});
+            observables.push_back({equilibrium::SolvedStateObservableKind::PhaseMoleFraction, 0, i});
+        }
+        auto carbon_direction = direction;
+        carbon_direction.active_parameters.assign(active.size(), 0);
+        carbon_direction.feed_amounts_mol[0] = 1;
+        const auto face_actions = equilibrium::solved_state_first_actions(compiled, solved_initial, observables, {direction, carbon_direction});
+        for (std::size_t i = 0; i < face_actions[0].results.size(); ++i) {
+            const auto& value = face_actions[0].results[i];
+            CHECK(truth(prefix + "/absent/" + std::to_string(i), "forced absent amounts, fractions and fixed-face actions are exact zeros",
+                value.value && value.action && *value.value == 0 && *value.action == 0, inputs, "issue-231"));
+            const auto& crossing = face_actions[1].results[i];
+            CHECK(truth(prefix + "/crossing/" + std::to_string(i), "carbon insertion refuses only the boundary-crossing action",
+                crossing.value && *crossing.value == 0 && !crossing.action
+                && crossing.status == equilibrium::SolvedStateActionStatus::SupportChange, inputs, "issue-231"));
+        }
+        const auto gradients = differentiate_group(model, {&row}, prediction, coordinates);
+        if (gradients[0].status != ObservationStatus::Available)
+            throw std::runtime_error(prefix + "/gradient: " + observation_status_name(gradients[0].status) + ": " + gradients[0].message);
+        CHECK(gradients[0].value.size() == 7);
+        auto basis_coordinates = coordinates;
+        basis_coordinates.coordinates.push_back(reaction_coordinate("R2", ReactionCoefficient::A));
+        const auto basis_gradient = differentiate_group(model, {&row}, prediction, basis_coordinates).front();
+        CHECK(basis_gradient.value.size() == 8);
+        const double slope_term = 313.15 * basis_gradient.value[7] - 313.15 * 313.15 * basis_gradient.value[5];
+        CHECK(agree(prefix + "/c-at-Tref", "d_delta_h_dc", "J/mol", gradients[0].value[6], slope_term / 313.15,
+            0, 1e-10, inputs, "the zero source-value c basis retains its nonzero caloric slope action", "issue-231"));
+        CHECK(truth(prefix + "/c-omission", "omitting the c-at-Tref slope is resolved beyond the derivative criterion",
+            std::abs(gradients[0].value[6]) > 1e3 * 5e-6 * std::max(1.0, std::abs(gradients[0].value[6])), inputs, "issue-231"));
+        auto initial_h_row = row;
+        initial_h_row.kind = ObservationKind::SystemEnthalpy;
+        auto final_h_row = initial_h_row;
+        final_h_row.problem = final;
+        const auto initial_h_prediction = predict(model, initial_h_row, solved_initial, compiled);
+        const auto final_h_prediction = predict(model, final_h_row, solved_final, final_compiled);
+        const auto initial_h_gradient = differentiate_group(model, {&initial_h_row}, initial_h_prediction, coordinates).front();
+        const auto final_h_gradient = differentiate_group(model, {&final_h_row}, final_h_prediction, coordinates).front();
+        const auto feed_gradient = differentiate(model, feed_row, feed);
+        CHECK(initial_h_gradient.value.size() == 7 && final_h_gradient.value.size() == 7 && feed_gradient.value.size() >= 5);
+        const auto start = coordinates.start(parameters, {row}, record);
+        for (std::size_t column = 0; column < 7; ++column) {
+            const double step = column < 4 || column == 6 ? 1e-4 : 1.0;
+            const auto value = [&](double shift) {
+                auto point = start;
+                point[column] += shift;
+                std::vector<Observation> changed{row};
+                coordinates.apply(changed, point);
+                HelmholtzModel rebuilt(coordinates.apply(parameters, point), {}, record);
+                const auto at = predict(rebuilt, changed[0]);
+                if (!at.value) throw std::runtime_error("zero-inventory derivative node: " + at.message);
+                return *at.value;
+            };
+            const double plus = value(step), minus = value(-step);
+            const double fine = (plus - minus) / (2 * step);
+            const double coarse = (value(2 * step) - value(-2 * step)) / (4 * step);
+            const double error = 5e-6 * std::max(1.0, std::abs(fine));
+            const auto column_inputs = fields({field("alpha_mol", alpha), field("coordinate", coordinate_names[column]),
+                field("derivative_order", 1), field("step", step), field("fine", fine), field("coarse", coarse),
+                field("truncation_estimate", std::abs(fine - coarse) / 3), field("roundoff_estimate", EPS * (std::abs(plus) + std::abs(minus)) / (2 * step)),
+                field("normalized_error", std::abs(gradients[0].value[column] - fine) / error)});
+            CHECK(agree(prefix + "/column/" + coordinate_names[column], "d_delta_h_d_coordinate", derivative_units[column],
+                gradients[0].value[column], fine, error, 0, column_inputs, "exact fitted-coordinate action agrees with native centred re-solves", "issue-231"));
+            CHECK(agree(prefix + "/coarse/" + coordinate_names[column], "d_delta_h_d_coordinate", derivative_units[column],
+                gradients[0].value[column], coarse, 4 * error, 0, column_inputs, "coarse derivative rung retains the unchanged criterion", "issue-231"));
+        }
+        auto shifted_record = record;
+        std::get<IdealShomate>(shifted_record.component_intervals[0][0].correlation.form).formation_enthalpy += 1e4;
+        HelmholtzModel shifted_model(parameters, active, shifted_record);
+        const auto shifted = predict(shifted_model, row);
+        CHECK(shifted.value);
+        CHECK(agree(prefix + "/anchor", "delta_h_add", "J/mol", *shifted.value, *prediction.value, allowance, 0,
+            inputs, "CO2 feed anchor cancels across full caloric completion on unequal supports", "issue-231"));
+        const auto shifted_gradient = differentiate_group(shifted_model, {&row}, shifted, coordinates);
+        for (std::size_t column = 0; column < 7; ++column)
+            CHECK(agree(prefix + "/anchor-column/" + coordinate_names[column], "d_delta_h_d_coordinate", derivative_units[column],
+                shifted_gradient[0].value[column], gradients[0].value[column],
+                1e-9 * ((std::abs(initial_h_gradient.value[column]) + std::abs(final_h_gradient.value[column])) / alpha
+                    + (column < feed_gradient.value.size() ? std::abs(feed_gradient.value[column]) : 0.0)), 0,
+                inputs + ";" + fields({field("coordinate", coordinate_names[column]), field("derivative_order", 1)}),
+                "CO2 anchor cancellation preserves exact first columns", "issue-231"));
+    }
+    return 0;
+}
+
+// Independent bisection uses the Properties value owner, with no chart or cached Newton root.
+int electrolyte_reference_file(const char* filename) {
+    std::ifstream in(filename);
+    auto parameters = epcsaft::build_parameters(read_parameter_document(in));
+    const std::size_t n = parameters.component_count();
     std::size_t count;
     in >> count;
     std::cout << "ion,stored_diameter,independent_diameter,energy_error,bracket_width\n" << std::setprecision(17);
@@ -2791,8 +3341,11 @@ int electrolyte_reference_file(const char* filename) {
 }
 
 int main(int argc, char** argv) {
+    if (argc == 3 && std::string(argv[1]) == "--zero-inventory") return zero_inventory_file(argv[2]);
     if (argc == 3 && std::string(argv[1]) == "--electrolyte-reference") return electrolyte_reference_file(argv[2]);
     return recording_support::run(argc, argv, {
+        {{"native.regression.inventory-face", "Conserved_inventory_face", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-231", "inventory-face/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-face"}, check_inventory_face, "addition-enthalpy"},
+        {{"native.regression.neutral-electrostatics", "Neutral_electrostatic_restriction", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "issue-231", "neutral-electrostatics/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "neutral-electrostatics"}, check_neutral_electrostatics, "addition-enthalpy"},
         {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},

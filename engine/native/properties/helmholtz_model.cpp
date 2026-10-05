@@ -1707,12 +1707,9 @@ State HelmholtzModel::state(
     const auto sites = solve_site_fractions(
         temperature, molar_density, mole_fractions, parameters_, sigma, diameter
     );
-    const auto electro = electrolyte_contribution(
+    const auto [electro, born] = detail::supported_electrostatics(
         temperature, molar_density, temperature, molar_density,
         mole_fractions, mole_fractions, parameters_
-    );
-    const auto born = born_contribution(
-        temperature, mole_fractions, parameters_, electro.bulk_relative_permittivity
     );
     const auto terms = residual_helmholtz(
         temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
@@ -1747,15 +1744,21 @@ State HelmholtzModel::state(
     result.compressibility_factor = z;
     result.pressure = pressure;
     result.residual_chemical_potential_over_rt.resize(mole_fractions.size());
+    result.component_property_status.assign(mole_fractions.size(), PropertyActionStatus::Available);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+        if (!detail::charged_support(mole_fractions, parameters_) && parameters_.charge_number[component] != 0) {
+            result.component_property_status[component] = PropertyActionStatus::IonicInsertion;
+            continue;
+        }
         result.residual_chemical_potential_over_rt[component] =
             derivatives.gradient[2 + component];
     }
     if (z > 0.0 && std::isfinite(z)) {
         result.log_fugacity_coefficient.emplace(mole_fractions.size());
         for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+            if (!result.residual_chemical_potential_over_rt[component]) continue;
             (*result.log_fugacity_coefficient)[component] =
-                result.residual_chemical_potential_over_rt[component] - std::log(z);
+                *result.residual_chemical_potential_over_rt[component] - std::log(z);
         }
     }
     if (result.log_fugacity_coefficient && std::isfinite(dpressure_drho) && dpressure_drho > 0.0) {
@@ -1767,7 +1770,7 @@ State HelmholtzModel::state(
             const std::size_t index = 2 + mole_fractions.size() + a;
             const double va = -derivatives.hessian[width + index] / (1.0 / (volume * volume) + phi_vv);
             result.density_parameter_derivative[a] = -molar_density * molar_density * va;
-            for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            for (std::size_t i = 0; i < mole_fractions.size(); ++i) if (result.residual_chemical_potential_over_rt[i])
                 result.log_fugacity_parameter_derivative[i * columns + a] = derivatives.hessian[(2 + i) * width + index]
                     + (derivatives.hessian[(2 + i) * width + 1] - 1.0 / volume) * va;
         }
@@ -1846,8 +1849,8 @@ State HelmholtzModel::state_at_pressure(
     if (result.log_fugacity_coefficient) {
         // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
         const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));
-        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
-            (*result.log_fugacity_coefficient)[i] = result.residual_chemical_potential_over_rt[i] - log_z;
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) if (result.residual_chemical_potential_over_rt[i])
+            (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
     result.density_convergence = root.convergence;
     result.density_branch = root.branch;

@@ -106,12 +106,14 @@ std::vector<std::vector<double>> start_compositions(
     // A sole unlabelled feed root cannot supply both phases' fugacity estimates:
     // their self-ratio is one. Use the ideal-vapor limit for this start only.
     const auto ln_phi_vapor = vapor_root.stable_root_count == 1
-        ? std::vector<double>(components, 0.0) : *vapor.log_fugacity_coefficient;
+        ? std::vector<std::optional<double>>(components, 0.0) : *vapor.log_fugacity_coefficient;
     const auto& ln_phi_liquid = *liquid.log_fugacity_coefficient;
     std::vector<double> x(components), y(components), k_values(components);
     double x_total = 0.0, y_total = 0.0;
     for (std::size_t i = 0; i < components; ++i) {
-        const double k = std::exp(ln_phi_liquid[i] - ln_phi_vapor[i]);
+        if (std::find(compiled.removed_species.begin(), compiled.removed_species.end(), i)
+            != compiled.removed_species.end()) continue;
+        const double k = std::exp(require_component_property(ln_phi_liquid[i]) - require_component_property(ln_phi_vapor[i]));
         k_values[i] = k;
         scope.probe("k_factor", k, static_cast<std::uint32_t>(i));
         x[i] = compiled.feed_composition[i] / k;
@@ -193,8 +195,8 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
         double sum = 0.0;
         for (std::size_t k = 0; k < support.size(); ++k) {
             const std::size_t i = support[k];
-            y[k] = x[1 - vapor][i] * std::exp((*liquid.log_fugacity_coefficient)[i]
-                                              - (*gas.log_fugacity_coefficient)[i]);
+            y[k] = x[1 - vapor][i] * std::exp(require_component_property((*liquid.log_fugacity_coefficient)[i])
+                                              - require_component_property((*gas.log_fugacity_coefficient)[i]));
             sum += y[k];
         }
         const double stepped = seed * sum;
