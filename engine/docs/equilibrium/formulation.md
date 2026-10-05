@@ -187,7 +187,9 @@ mixed with feed or pressure, to order two (EqIDs:
 `standard_state_transfer_temperature_second_derivative`,
 `standard_state_transfer_temperature_pressure_derivative`). Feed-only
 actions at fixed T/P retain order three. Declared-branch continuation along
-fixed T, fixed P and feed uses the same first-order chains for its tangent.
+fixed T, fixed P and feed, or a straight physical EOS/Born parameter path, uses
+the same first-order chains for its tangent. All other declarations and
+source conventions stay fixed on the parameter path.
 Third-order actions involving pressure, temperature actions above order two,
 free temperature, raw lever derivatives and parameter actions above order one remain
 unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`;

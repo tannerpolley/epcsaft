@@ -100,8 +100,8 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             check(prior, "unmatched name");
         } else {
             const auto& initial = coordinate.targets.front();
-            require(initial.indices.front() < family_values(parameters, initial.family).size(), "slot index");
-            first = family_values(parameters, initial.family)[initial.indices.front()] / initial.coefficient;
+            require(initial.indices.front() < family_values(parameters, initial.family).second, "slot index");
+            first = family_values(parameters, initial.family).first[initial.indices.front()] / initial.coefficient;
             require(std::isfinite(first), "nonfinite base start");
             const bool identity = std::all_of(coordinate.targets.begin(), coordinate.targets.end(),
                 [](const auto& target) { return target.coefficient == 1.0; });
@@ -110,8 +110,8 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                 const double mapped = target.coefficient * first;
                 require(std::isfinite(mapped), "nonfinite mapped start");
                 for (const auto index : target.indices) {
-                    require(index < values.size(), "slot index");
-                    const double stored = values[index];
+                    require(index < values.second, "slot index");
+                    const double stored = values.first[index];
                     const double allowance = identity ? 0.0
                         : 8 * std::numeric_limits<double>::epsilon() * std::max(std::abs(stored), std::abs(mapped));
                     require(std::isfinite(stored) && std::abs(stored - mapped) <= allowance, "tied values disagree");
@@ -174,8 +174,11 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     const auto physical_values = physical(optimizer);
     const auto active = active_parameters();
     for (std::size_t row = 0; row < active.size(); ++row) {
-        auto& values = family_values(parameters, active[row].family);
-        for (const auto index : active[row].indices) values.at(index) = physical_values[row];
+        auto values = family_values(parameters, active[row].family);
+        for (const auto index : active[row].indices) {
+            require(index < values.second, "slot index");
+            values.first[index] = physical_values[row];
+        }
     }
     (void)HelmholtzModel(parameters, active);
     return parameters;

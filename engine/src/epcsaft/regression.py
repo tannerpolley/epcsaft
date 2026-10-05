@@ -17,6 +17,8 @@ from .equilibrium import Discover, Problem
 from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
+    "born_c_dielectric": _core.ParameterFamily.BornCDielectric,
+    "ionic_region_relative_permittivity": _core.ParameterFamily.IonicRegionRelativePermittivity,
     "segment_count": _core.ParameterFamily.SegmentCount,
     "packing_diameter_angstrom": _core.ParameterFamily.PackingDiameter,
     "debye_huckel_diameter_angstrom": _core.ParameterFamily.DebyeHuckelDiameter,
@@ -58,6 +60,10 @@ def _index(ids: Sequence[object], name: object, what: str) -> int:
 
 def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
+    if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
+        if target is not None:
+            raise ParameterError(f"{family} is global and takes no component target")
+        return [0]
     if family not in _PAIRS and family not in _SITE_PAIRS:
         return [_index(parameters.component_ids, target, "component")]
     if not isinstance(target, tuple) or len(target) != 2:
@@ -71,7 +77,7 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
 
 def coordinate(parameters: Parameters, targets: Sequence[tuple[str, object, float]], *, origin: float, scale: float,
                bounds: tuple[float, float] | None = None) -> Coordinate:
-    """Declare targets (family, component or reciprocal pair, coefficient) of one base value q."""
+    """Declare (family, component/pair or None for a global scalar, coefficient) targets of q."""
     result = Coordinate()
     rows = []
     for family, name, coefficient in targets:

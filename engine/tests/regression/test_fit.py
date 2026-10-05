@@ -10,7 +10,7 @@ from epcsaft import (
 )
 from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
 
-from ..native_inputs import ETHANE, ROWS, associating_binary, parameters, same
+from ..native_inputs import ETHANE, ROWS, aqueous_electrolyte, associating_binary, parameters, same
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -97,6 +97,25 @@ def test_public_density_actions_match_the_native_rows(evidence: Any) -> None:
     assert batch.density_message == "" and batch.density_convergence is None
     with pytest.raises(ParameterError):
         model.density_actions(200.0, 1000.0, observables=(), directions=[_core.DensityActionDirection()])
+
+
+def test_global_born_scalar_chart_values_and_exact_map(evidence: Any) -> None:
+    """Global dimensionless targets follow theta = coefficient*(origin + scale*u)."""
+    p = aqueous_electrolyte(c_shell=1.0)
+    coordinates = [regression.coordinate(p, [("born_c_dielectric", None, 2)], origin=0.25, scale=0.05),
+                   regression.coordinate(p, [("ionic_region_relative_permittivity", None, 2)], origin=4.0, scale=0.5)]
+    chart = regression.evaluate_coordinates(p, coordinates, (1.0, -5.0), ())
+    for i, expected in enumerate((0.6, 3.0)):
+        same(evidence, f"born-global-chart/physical/{i}", chart.physical[i], expected, atol=1e-15, rtol=0.0)
+    for i, expected in enumerate((0.1, 0.0, 0.0, 1.0)):
+        same(evidence, f"born-global-chart/map/{i}", chart.map[i], expected, atol=1e-15, rtol=0.0)
+    reference = regression.evaluate_coordinates(p, coordinates, (5.0, 0.0), ())  # c=1, epsilon=8
+    baseline = regression.evaluate_coordinates(p, coordinates, (-5.0, 0.0), ())  # c=0
+    def born(native: Any) -> float:
+        return Mixture(Parameters(native, p.component_ids, p.site_ids)).state(313.15, rho=45000.0, x=(0.98, 0.01, 0.01)).born
+    # At fixed shell geometry/bulk permittivity, the correction is proportional to c*(1-1/epsilon).
+    base = born(baseline.parameters)
+    same(evidence, "born-global-chart/radial-ratio", (born(chart.parameters) - base) / (born(reference.parameters) - base), 16/35, atol=0.0, rtol=1e-12)
 
 
 def test_name_mapping_and_tie_map() -> None:
