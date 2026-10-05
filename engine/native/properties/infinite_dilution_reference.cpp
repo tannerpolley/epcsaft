@@ -370,7 +370,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             const double log_density = std::log(state.molar_density / 1.0);
             double contraction = 0.0;
             for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-                const double chemical = state.residual_chemical_potential_over_rt[component];
+                if (stoichiometry[component] == 0.0) continue;
+                const double chemical = require_component_property(state.residual_chemical_potential_over_rt[component]);
                 if (!std::isfinite(chemical)) {
                     result.status = NeutralReferenceStatus::Nonfinite;
                     result.message = "neutral reference residual chemical potential is nonfinite";
@@ -811,7 +812,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         for (std::size_t a = 0; a < columns; ++a)
             for (std::size_t i = 0; i < 2; ++i)
                 out[a][i] = state.log_fugacity_parameter_derivative.empty() ? NAN
-                    : state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a];
+                    : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
     };
     bool observed = false;
     for (std::size_t index = 0; index < molalities.size(); ++index) {
@@ -830,8 +831,8 @@ InfiniteDilutionReference infinite_dilution_reference(
             throw std::runtime_error("reference fugacity is unavailable");
         }
         current = {
-            (*state.log_fugacity_coefficient)[ion_indices[0]],
-            (*state.log_fugacity_coefficient)[ion_indices[1]],
+            require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]),
+            require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]),
         };
         scope.probe(
             "reference_ladder_point", {molality, current[0], current[1]},
@@ -874,8 +875,8 @@ InfiniteDilutionReference infinite_dilution_reference(
             throw std::runtime_error("reference fugacity is unavailable");
         }
         const double witness_error = std::max(
-            std::abs((*state.log_fugacity_coefficient)[ion_indices[0]] - current[0]),
-            std::abs((*state.log_fugacity_coefficient)[ion_indices[1]] - current[1])
+            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]) - current[0]),
+            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]) - current[1])
         );
         scope.probe("reference_witness_error", witness_error);
         if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
@@ -936,9 +937,9 @@ ElectrolyteActivity electrolyte_activity(
         throw std::runtime_error("reference fugacity is unavailable");
     }
     // EqID: single_ion_activity_coefficient
-    const double first = (*state.log_fugacity_coefficient)[ion_indices[0]]
+    const double first = require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]])
         - reference.log_fugacity[0];
-    const double second = (*state.log_fugacity_coefficient)[ion_indices[1]]
+    const double second = require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]])
         - reference.log_fugacity[1];
     const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
@@ -971,7 +972,7 @@ ElectrolyteActivity electrolyte_activity(
             chemical_difference += pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature)
                 * ((static_cast<long double>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<long double>(pure.molar_density)));
             for (const auto ion : ion_indices) chemical_difference -= composition[ion]
-                * (static_cast<long double>(state.residual_chemical_potential_over_rt[ion]) - pure.residual_chemical_potential_over_rt[solvent]);
+                * (static_cast<long double>(require_component_property(state.residual_chemical_potential_over_rt[ion])) - require_component_property(pure.residual_chemical_potential_over_rt[solvent]));
             chemical_difference /= composition[solvent];
             const double log_activity = -std::log1p(s) + static_cast<double>(chemical_difference)
                 + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
@@ -983,14 +984,14 @@ ElectrolyteActivity electrolyte_activity(
     for (std::size_t a = 0; a < columns; ++a) {
         // EqID: electrolyte_activity_parameter_derivative
         const auto& ref = reference.parameter_derivative.at(a);
-        const auto g = [&](std::size_t i) { return state.log_fugacity_parameter_derivative.at(i * columns + a); };
+        const auto g = [&](std::size_t i) { return require_component_property(state.log_fugacity_parameter_derivative.at(i * columns + a)); };
         result.mean_ionic_parameter_derivative.push_back(ref[0] && ref[1]
             ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
                 + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
         if (result.osmotic_coefficient && std::holds_alternative<double>(*result.osmotic_coefficient)) {
             const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             result.osmotic_parameter_derivative.push_back(-(g(solvent)
-                - reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a))
+                - require_component_property(reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a)))
                 / (coefficient_sum * molality * solvent_mass));
         }
     }

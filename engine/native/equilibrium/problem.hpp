@@ -251,6 +251,8 @@ struct CompiledSystem final {
     std::vector<double> balance;
     std::vector<double> standard_gibbs;
     std::vector<std::vector<double>> B;
+    std::vector<std::vector<double>> inventory_restrictions;
+    std::vector<double> inventory_upper_bounds;
     std::vector<Row> rows;
     std::size_t pinned_count = 0;
     std::size_t free_intensive_count = 0;
@@ -333,6 +335,7 @@ struct InventoryBound final {
     double floor = 0.0, lp_error = std::numeric_limits<double>::quiet_NaN();
     double finite_residual = std::numeric_limits<double>::quiet_NaN();
     std::string feasibility_termination;
+    std::vector<double> conserved_functional;
 };
 std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
     const std::vector<std::size_t>& species, bool fraction, double floor);
