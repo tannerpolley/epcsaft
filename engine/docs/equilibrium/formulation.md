@@ -122,12 +122,29 @@ individual removed feed slots need not independently vanish.
 Supplied phase composition guesses follow the same support restriction before
 the existing supported-composition normalisation.
 
-A pinned-zero phase retaining a globally forced-absent species lies outside this
-face formulation: its chemical stationarity still needs the discarded conserved
-potential. Admission returns `zero_inventory_incipient_support` with the species
-and phase before constructing rows. Incipient phases without that intersection
-retain their intensive support. This boundary does not prevent a finite material
-addition between separately solved endpoints on different supports.
+For a declared liquid/vapor boundary, an incipient phase means the limit of an
+emerging positive phase on the same exact inventory face. For each nonnegative
+certificate w, conservation gives 0 = Σ_p N_p wᵀx_p. Every positive phase therefore
+has wᵀx_p = 0, and the closed composition face contains its incipient limit.
+A zero amount alone does not imply this restriction for an arbitrary intensive
+phase. Restrict both finite and incipient supports before differentiation;
+the continuous energy extension x ln x → 0 is differentiated only along surviving
+coordinates. No chemical row for a removed species survives. A discarded balance
+row vanishes on A, so its potential contributes nothing to surviving stationarity.
+The original reaction/reference completion and ker(B[:, A]) therefore define
+the same constrained energy and stationary variations on this face.
+
+Automatic incipient restriction is admitted only with exactly two phases of
+opposite liquid/vapor kinds, fixed positive T, free P, exactly one `Pinned(0)`
+amount and one free amount, and a nonempty effective incipient support whose
+every species is uncharged. Outside this domain, an intersection with certified
+absence retains `zero_inventory_incipient_support`, naming the species, phase
+and excluded condition. Other empty supports remain refused. The reduced square
+Jacobian must be regular at the solved endpoint; generic rank alone does not
+qualify it. Singular or coalesced endpoints and charged incipient extensions
+are unqualified. This face equivalence neither proves uniqueness nor establishes
+global stability. Incipient supports without certified absence retain their
+existing admission, and finite additions may connect separately solved faces.
 
 The conserved-inventory bound call admits no additional charge, energy or chemical
 conditions. On the union of compiled supports it maximizes species amount under

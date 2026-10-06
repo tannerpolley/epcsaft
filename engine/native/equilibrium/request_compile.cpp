@@ -914,12 +914,28 @@ static CompiledSystem compile_with_basis(
         const auto support_before = phase.support;
         phase.support.erase(std::remove_if(
             phase.support.begin(), phase.support.end(), [&](std::size_t index) {
-                if (absent[index] && phase.is_pinned() && phase.amount.fraction == 0.0)
-                    throw std::invalid_argument("zero_inventory_incipient_support: component "
-                        + std::to_string(index) + " in phase " + phase.name
-                        + " needs the discarded conserved potential in chemical stationarity");
                 return absent[index] || (compiled.n_feed[index] == 0.0 && !participant[index]);
             }), phase.support.end());
+        if (phase.is_pinned() && phase.amount.fraction == 0.0) {
+            const auto removed = std::find_if(support_before.begin(), support_before.end(),
+                [&](std::size_t index) { return absent[index]; });
+            if (removed != support_before.end()) {
+                std::string reason;
+                if (phase.support.empty()) reason = "empty effective support";
+                else if (std::any_of(phase.support.begin(), phase.support.end(),
+                    [&](std::size_t index) { return z[index] != 0; }))
+                    reason = "effective incipient support must contain only uncharged species";
+                else if (request.phases.size() != 2 || request.phases[0].kind == request.phases[1].kind)
+                    reason = "requires exactly two phases of opposite liquid/vapor kinds";
+                else if (request.temperature.free || !request.temperature.is_positive() || !request.pressure.free)
+                    reason = "requires fixed positive T and free P";
+                else if (std::count_if(request.phases.begin(), request.phases.end(),
+                    [](const PhaseSpec& item) { return item.is_free(); }) != 1)
+                    reason = "requires one zero pin and one free amount";
+                if (!reason.empty()) throw std::invalid_argument("zero_inventory_incipient_support: component "
+                    + std::to_string(*removed) + " in phase " + phase.name + ": " + reason);
+            }
+        }
         restrict_composition_guess(phase, support_before);
         for (const std::size_t index : support_before) {
             if (std::find(phase.support.begin(), phase.support.end(), index) == phase.support.end()

@@ -344,9 +344,17 @@ contraction with native error-free dot products. Only a verified certificate
 removes a species; an unresolved apparent zero cannot prove absence. Reduce state
 balances by independent echelon row operations while retaining their full feed
 columns and the discarded inventory restrictions. Full reaction/reference
-completion precedes restriction. Reject a pinned-zero support intersecting the
-certified absent set with `zero_inventory_incipient_support`; trial chemistry
-does not establish a global physical-inventory certificate.
+completion precedes restriction. For a pinned-zero support intersecting the
+certified absent set, evaluate admission on its effective support after removal:
+require a nonempty support of individually uncharged species, exactly two
+opposite liquid/vapor phases, fixed positive T, free P, one zero pin and one
+free amount. Apply the existing support and supplied-guess restriction, retaining
+original declared widths for physical starts. Otherwise keep
+`zero_inventory_incipient_support` with its species, phase and domain reason.
+The formulation's emerging-phase limit on the same exact face owns this domain;
+trial chemistry does not establish a global physical-inventory certificate.
+Numerical qualification checks the reduced Jacobian at the solved endpoint,
+separate mechanical branches and the unchanged raw/classified residual criteria.
 
 Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
@@ -889,6 +897,13 @@ central solve does not imply every action is available. Return per-action
 values or a specific failure reason, with rank/conditioning and linear residual
 where relevant. Cache/reuse thermodynamic work for the same resolved state;
 reuse must preserve all coefficient, T, density and implicit-site dependencies.
+
+The bounded exact-inventory incipient extension in ALG-EQUILIBRIUM changes
+central support admission only. Existing regular fixed-face actions retain
+their support and vanished-inventory restrictions; insertion directions,
+charged insertion properties and derivatives across a support change remain
+outside that qualification. No new boundary enthalpy or derivative order follows
+from an admitted pressure.
 
 `CompiledSystem::lever_jacobian` assembles the first row-series coefficients
 along unit T, P, feed-amount and active-parameter directions at one prepared
