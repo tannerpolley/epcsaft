@@ -648,8 +648,8 @@ that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
 (owner decision 2026-10-06, #243). It computes this factor once from the
 existing objective factor $1/N_{\mathrm{feed}}$; the scaled overall `tol`
 and material-row tolerance retain their values. The parameter-fitting call's
-objective factor is one, so its dual stop retains its value. Acceptable
-termination remains disabled (`acceptable_iter=0`). No starts, bounds,
+objective factor is one, so its dual stop retains its value. Ipopt's
+counter-based acceptable stop remains disabled (`acceptable_iter=0`). No starts, bounds,
 barrier settings, complementarity tolerance or iteration budget change.
 A caller-valued criterion is owned
 by the convergence record so copies into results, traces and exceptions keep
