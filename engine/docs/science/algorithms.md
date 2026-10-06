@@ -770,6 +770,45 @@ Explicit native searches own their work capture and pass its trace to the
 counting code. The trace reports work only; no solver decision reads the ambient
 trace. Declared calls retain their existing scopes and perform no trial work.
 
+### Supplied trial points
+
+`StabilityOptions.evaluate_supplied_trials` defaults to false. When true,
+`stability_test(...)` requires a nonempty explicit `trials` family and keeps
+its entries in caller order, including repetitions of a support/label pair.
+Each full-species `composition_guess` is that entry's only seed. Require exact
+structural zeros outside its support and finite positive supported entries;
+apply EqID: `electroneutral_trial_reconstruction` before the log chart and
+again after preparation. The returned composition is the point passed to
+shared `phase_energy`, with unit trial amount and the frozen candidate plane.
+No driver, composition minimization, descent classification or finite split
+runs. `discover_phases` rejects this option before a declaration solve.
+
+A supplied `packing_guess` provides eta, subject to the unchanged packing
+domain; it is a coordinate replay and need not close pressure or certify a
+branch. Without it, the unchanged density owner selects the Liquid/Vapor root
+at the initially reconstructed seed. Both cases retain the chart's log/exp
+rounding, reconstruct composition and preserve packing when computing molar
+volume. No second root solve or different-root fallback follows reconstruction.
+The existing quantity maps report actual `packing_fraction`,
+`molar_density_mol_m3`, `pressure_row` and `input_reconstruction_l1` (the total
+input-to-evaluated L1 displacement). `reconstruction_l1` still measures only
+the final reconstruction. Raw residuals describe the supplied chart with its
+unsolved generic multipliers. Optimizer-only dual/objective quantities are
+absent. Omitted or false options preserve the ordinary search outputs.
+
+Every available point calls the existing donor arithmetic, including
+nonnegative TPD, and returns after its slope, correction and uncertainty
+estimates. With a positive full-support donor its evidence is `evaluated`;
+without one it is `evaluated_without_positive_donor`, with the cause
+`no_positive_full_support_donor` and absent donor estimates. Packing,
+reconstruction, density and energy failures retain unavailable ordered rows
+and their causes, including `nonpositive/nonfinite trial composition` and
+`stability point outside packing domain`. Family admission below is unchanged,
+even with supplied packing: a refused charged family never becomes per-point
+unavailability. `completed` means the ordered evaluations were exhausted,
+including unavailable rows; a trial budget can leave the sequence incomplete.
+No stability or instability conclusion follows from supplied-point evaluation.
+
 ### Supports, seeds and trial solves
 
 Let U be fed species plus all reaction participants and U₀ its neutral subset.
@@ -799,7 +838,7 @@ continuation, fitting or ASL. Neutral-only requested families are unaffected.
 Admission reads the form, not a sampled density, fitted coefficient, phase label
 or optimizer termination. It introduces no density cutoff or failed-trial filter.
 
-For every admitted pair enumerate a positive charge-neutral base from equal
+For ordinary search, for every admitted pair enumerate a positive charge-neutral base from equal
 supported weights with ionic group rescaling. A compatible candidate's strictly
 positive reconstructed restriction may supply the near-pure remainder;
 otherwise use the base, including species structurally absent from that candidate.
@@ -826,7 +865,7 @@ not required to satisfy the original zero-affinity rows.
 
 ### Reconstruction, uncertainty and finite descent
 
-Retain raw coordinates only from an actual nonfatal finite, domain-valid
+For ordinary search, retain raw coordinates only from an actual nonfatal finite, domain-valid
 optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. Keep raw residuals separate from reconstructed composition,
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
