@@ -1650,7 +1650,7 @@ $$
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
 - Description: Charge-neutral reaction contraction with a declared neutral solvent and optional per-species pure-liquid, pure-vapor or infinite-dilution references. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and native positive-slope pressure roots on the declared branch. Dilute contributions use the same finite terminal estimate; both last changes qualify the final mixed contraction, without bounding infinite-dilution bias. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
+- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and a native positive-slope pressure root on the declared side of the pure isotherm's mechanical loop; above the EOS critical temperature the single root serves either declared branch. Unsuperscripted C_r means C_r^b under the declared map. Dilute contributions use the same finite terminal estimate; both last changes qualify the final mixed contraction, without bounding infinite-dilution bias. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
@@ -1668,8 +1668,8 @@ C_r^b=\sum_i\nu_{ri}L_i^{b_i},\quad \sum_i\nu_{ri}z_i=0,\\
 \ln K_{c,r}+C_r^c=\ln K_{b,r}+C_r^b,\\
 A_r=\left(\sum_{i\ne s}\nu_{ri}\right)\ln(M_s m^\circ),\qquad
 \ln K_{\rho,r}=\begin{cases}
-\ln K_{m,r}+A_r+C_r,&\text{common molality source},\\
-\ln K_{x,r}+C_r,&\text{raw mole-fraction source},
+\ln K_{m,r}+A_r+C_r^b,&\text{common molality source},\\
+\ln K_{x,r}+C_r^b,&\text{raw mole-fraction source},
 \end{cases}\\
 n_s=1/M_s,\quad n_i=m r_i\ (i\ne s),\quad \sum_i z_i r_i=0,\quad
 \mathcal M=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\\

@@ -1355,7 +1355,10 @@ solute infinite-dilution references. Empty and full explicit default maps use
 the original calculation directly, with no pure-state allocation or EOS call.
 The solvent's default liquid selection retains the terminal near-pure state.
 For each effective pure override, resolve one neutral pure-component State per
-source-pressure trace on the declared native liquid or vapor branch. A failed
+source-pressure trace on the declared native liquid or vapor branch. A single
+stable root is admitted only when the pure isotherm's ALG-DENSITY scan finds no
+mechanical loop (above the EOS critical temperature it serves either declared
+branch) or the root lies on the declared side of the loop. A failed or absent
 root retains its species index and native cause. Check both terminal changes
 of the final mixed contraction, rather than first admitting an unused dilute
 contribution. Every consumed derivative masks those pure species out of the

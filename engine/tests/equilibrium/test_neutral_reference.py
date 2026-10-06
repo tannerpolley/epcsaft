@@ -90,6 +90,21 @@ def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) ->
     assert abs(gas_slope - 1.0 / (liquid.molar_density * R * temperature)) > expected / 2.0
 
 
+def test_pure_gas_reference_refuses_compressed_liquid_ethane() -> None:
+    """At 180 K and 3 MPa pure ethane has only its liquid root; a declared vapor must refuse."""
+    from epcsaft.equilibrium import SpeciesReference
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    problem = Problem(T=180.0, P=3.0e6, feed=Amounts({"s0": 2.0, "s1": 0.2}), phases=[Phase("L", kind="liquid")],
+                      neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0},
+                                                         standard_molality_mol_per_kg=1.0,
+                                                         species_reference={"s1": SpeciesReference.PureGas}),
+                      reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
+                          math.log(0.3), 0.0, 0.0, 0.0, 180.0, 170.0, 200.0, "manufactured-compressed-liquid"),
+                          reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))])
+    with pytest.raises(_core.ParameterError, match="pure reference species 1: vapor branch absent"):
+        solve_equilibrium(model, problem)
+
+
 @pytest.mark.parametrize("temperature,pressure", [(260.0, 3e6), (280.0, 5e6)])
 @pytest.mark.parametrize("common", [False, True])
 def test_neutral_reference_recovers_mole_fraction_law(
