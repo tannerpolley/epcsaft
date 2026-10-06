@@ -122,6 +122,7 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
 struct StabilityOptions final {
+    bool evaluate_supplied_trials = false;
     std::optional<std::vector<PhaseSpec>> trials;
     std::optional<std::size_t> declaration_budget;
     std::optional<std::size_t> trial_budget;
@@ -472,7 +473,9 @@ enum class SolvedStateObservableKind {
     // ln a_i = ln(x_i rho / (1 mol/m^3)) + mu_res_i/RT on EOS_STANDARD_STATE_ID; it excludes any
     // standard-state term, and f_i = a_i R T (1 mol/m^3) in Pa.
     PhaseLogActivity,
-    PhaseGibbsMolarVolume
+    PhaseGibbsMolarVolume,
+    SystemEnthalpy,
+    EquilibriumIsobaricHeatCapacity
 };
 
 struct SolvedStateObservable final {

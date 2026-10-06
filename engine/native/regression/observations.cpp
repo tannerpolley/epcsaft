@@ -50,17 +50,6 @@ double component_amount(const equilibrium::EquilibriumResult& state, std::size_t
     return value;
 }
 
-std::vector<SolvedStateObservable> enthalpy_observables(const equilibrium::EquilibriumProblem& problem) {
-    std::vector<SolvedStateObservable> result;
-    for (std::size_t p = 0; p < problem.phases.size(); ++p) {
-        const auto& amount = problem.phases[p].amount;
-        if (amount.kind == equilibrium::AmountKind::Pinned && amount.fraction == 0.0) continue;
-        result.push_back(observable(Kind::PhaseAmount, p));
-        result.push_back({Kind::PhaseProperty, p, 0, PropertyObservable::TotalEnthalpy});
-    }
-    return result;
-}
-
 void finish(Prediction& prediction, const Observation& observation, double value) {
     if (!std::isfinite(value)) {
         prediction.status = ObservationStatus::Nonfinite;
@@ -211,6 +200,12 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             require(std::abs(final.n_feed[i] - compiled.n_feed[i] - observation.feed_amount * observation.composition[i])
                 <= policy::ADDITION_MATERIAL_BALANCE.value * std::max({1.0, std::abs(final.n_feed[i]), std::abs(compiled.n_feed[i])}),
                 ("material balance component " + std::to_string(i)).c_str());
+        return;
+    }
+    if (observation.kind == ObservationKind::EquilibriumIsobaricHeatCapacity) {
+        require(!compiled.problem.temperature.free && !compiled.problem.pressure.free
+                && !compiled.problem.temperature.absent && !compiled.problem.pressure.absent,
+                "apparent Cp requires driven T/P");
         return;
     }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
@@ -428,22 +423,23 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     const double* fractions = solved.mole_fractions.data() + phase * components;
     double value = 0.0;
     switch (observation.kind) {
+    case ObservationKind::EquilibriumIsobaricHeatCapacity:
     case ObservationKind::SystemEnthalpy: {
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
-        const auto entries = equilibrium::solved_state_actions(*result.compiled, solved,
-            {enthalpy_observables(result.compiled->problem), {zero}}).results;
-        for (std::size_t i = 0; i < entries.size(); i += 2) {
-            for (const auto* e : {&entries[i], &entries[i + 1]}) if (!e->value) {
-                result.status = e->status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
-                    || e->status == equilibrium::SolvedStateActionStatus::OutsideInterval
-                    || e->status == equilibrium::SolvedStateActionStatus::ReferenceUnavailable
-                    ? ObservationStatus::ThermochemistryUnavailable : ObservationStatus::ActionUnavailable;
-                result.message = std::string(equilibrium::solved_state_status_name(e->status)) + ": " + e->diagnostic_message.value_or("");
-                return;
-            }
-            value += *entries[i].value * *entries[i + 1].value;
+        const auto kind = observation.kind == ObservationKind::SystemEnthalpy
+            ? Kind::SystemEnthalpy : Kind::EquilibriumIsobaricHeatCapacity;
+        const auto entry = equilibrium::solved_state_actions(*result.compiled, solved,
+            {{observable(kind, 0)}, {zero}}).results.front();
+        if (!entry.value) {
+            result.status = entry.status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
+                || entry.status == equilibrium::SolvedStateActionStatus::OutsideInterval
+                || entry.status == equilibrium::SolvedStateActionStatus::ReferenceUnavailable
+                ? ObservationStatus::ThermochemistryUnavailable : ObservationStatus::ActionUnavailable;
+            result.message = std::string(equilibrium::solved_state_status_name(entry.status)) + ": " + entry.diagnostic_message.value_or("");
+            return;
         }
-        result.unit = "J";
+        value = *entry.value;
+        result.unit = entry.unit;
         break;
     }
     case ObservationKind::EquilibriumPressure:
@@ -627,8 +623,11 @@ std::vector<PredictionGradient> differentiate_group(
             if (found == observables.end()) observables.push_back(item);
         };
         switch (observation.kind) {
+        case ObservationKind::EquilibriumIsobaricHeatCapacity:
+            add(observable(Kind::EquilibriumIsobaricHeatCapacity, 0));
+            break;
         case ObservationKind::SystemEnthalpy:
-            for (const auto& entry : enthalpy_observables(problem)) add(entry);
+            add(observable(Kind::SystemEnthalpy, 0));
             break;
         case ObservationKind::EquilibriumPressure: add(observable(Kind::Pressure, 0)); break;
         case ObservationKind::EquilibriumTemperature: add(observable(Kind::Temperature, 0)); break;
@@ -696,11 +695,6 @@ std::vector<PredictionGradient> differentiate_group(
             if (gradient.status != ObservationStatus::Available) break;
             double value = 0.0;
             switch (observation.kind) {
-            case ObservationKind::SystemEnthalpy:
-                for (std::size_t i = 0; i < action.size(); i += 2)
-                    value += action[i] * *batches[k].results[slots[row][i + 1]].value
-                        + *batches[k].results[slots[row][i]].value * action[i + 1];
-                break;
             case ObservationKind::PhaseAmountRatio: {
                 const double A = component_amount(*solved, phase, observation.species);
                 const double B = component_amount(*solved, observation.denominator_phase, observation.denominator_species);

@@ -4832,6 +4832,106 @@ void check_tangent_plane_curvature() {
     }
 }
 
+// EqID tangent_plane_distance and present_phase_tangent_plane_identity (#300).
+void check_supplied_tangent_plane(const epcsaft::equilibrium::CompiledSystem& c,
+    const epcsaft::equilibrium::EquilibriumResult& central,
+    const epcsaft::equilibrium::StabilityReport& minima, const std::string& id, bool stationary = true) {
+    using namespace epcsaft::equilibrium;
+    const auto& model = *c.model;
+    const auto at = c.prepare(central.coordinates);
+    const double eps = std::numeric_limits<double>::epsilon();
+    for (std::size_t i = 0; i < c.n_feed.size(); ++i) {
+        double plane = 0.0;
+        for (std::size_t k = 0; k < c.rank; ++k) plane += c.B[k][i] * central.multipliers[k];
+        tpd_compare(id + "/chemical-plane/" + std::to_string(i), minima.plane_over_rt[i], plane,
+            32.0 * eps * std::max(1.0, std::abs(plane)));
+    }
+    const auto evaluate = [&](PhaseSpec phase, const std::vector<double>& w, std::optional<double> eta) {
+        phase.composition_guess = w; phase.packing_guess = eta;
+        StabilityOptions options; options.evaluate_supplied_trials = true;
+        options.trials = std::vector<PhaseSpec>{phase};
+        return stability_test(c, central, options);
+    };
+    for (std::size_t i = 0; i < minima.trials.size(); ++i) {
+        const auto& t = minima.trials[i];
+        if (!t.quantities.count("tpd_over_rt")) continue;
+        std::vector<std::vector<double>> transform;
+        const auto trial = compile_stability_trial(model, at.temperature, at.pressure, t.phase,
+            t.composition, minima.standard_over_rt, transform);
+        const auto raw = trial.prepare(t.raw_coordinates, true);
+        const auto replay = evaluate(t.phase, t.composition, raw.eta[0]);
+        CHECK(replay.trials.size() == 1);
+        const auto& e = replay.trials[0]; const auto& q = e.quantities;
+        double p0 = 0.0, p1 = 0.0;
+        for (auto j : t.phase.support) {
+            p0 += t.composition[j] * minima.plane_over_rt[j];
+            p1 += e.composition[j] * replay.plane_over_rt[j];
+        }
+        const double scale = std::max({1.0, std::abs(t.quantities.at("g_over_rt")), std::abs(q.at("g_over_rt")), std::abs(p0), std::abs(p1)});
+        const auto inputs = recording_support::fields({recording_support::field("S", scale),
+            recording_support::field("raw_eta", raw.eta[0]), recording_support::field("evaluated_eta", q.at("packing_fraction")),
+            recording_support::field("input_l1", q.at("input_reconstruction_l1")), recording_support::field("minimum", t.quantities.at("tpd_over_rt"))});
+        tpd_compare(id + "/minimum-replay/" + std::to_string(i), q.at("tpd_over_rt"), t.quantities.at("tpd_over_rt"), 32.0 * eps * scale, inputs);
+        if (t.optimizer.success) tpd_compare(id + "/optimizer-eta/" + std::to_string(i), t.optimizer.packing_fractions[0], raw.eta[0], 32.0 * eps * raw.eta[0], inputs);
+        if (e.composition == t.composition && q.at("packing_fraction") == raw.eta[0])
+            tpd_compare(id + "/same-final-point/" + std::to_string(i), q.at("tpd_over_rt"), t.quantities.at("tpd_over_rt"), 0.0, inputs);
+        CHECK(e.split_checks.empty() && e.split_coordinates.empty() && !e.resolved_descent);
+    }
+    if (!stationary) return;
+    auto corrected = central.coordinates;
+    std::copy(minima.candidate_coordinates.begin(), minima.candidate_coordinates.end(), corrected.begin());
+    const auto nearby = c.prepare(corrected);
+    for (std::size_t p = 0; stationary && p < at.amount.size(); ++p) if (at.amount[p] > 0.0) {
+        for (bool repair : {false, true}) {
+            const auto& point = repair ? nearby : at;
+            const auto evaluated = evaluate(c.problem.phases[p], point.composition[p], point.eta[p]);
+            const auto& t = evaluated.trials[0]; const auto& q = t.quantities;
+            const std::string name = id + (repair ? "/corrected/" : "/public/") + std::to_string(p);
+            const auto inputs = recording_support::fields({recording_support::field("tpd", q.at("tpd_over_rt")),
+                recording_support::field("correction", q.at("donor_correction_over_rt")),
+                recording_support::field("pressure_row", q.at("pressure_row")), recording_support::field("input_l1", q.at("input_reconstruction_l1"))});
+            tpd_compare(name + "/zero", q.at("tpd_over_rt"), 0.0, q.at("descent_error_estimate_over_rt"), inputs);
+            const double v = q.at("volume_m3_per_mol");
+            const auto d = model.evaluate(at.temperature, v, t.composition, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
+            double chemical = 0.0, charge = 0.0, electric = 0.0;
+            std::size_t offset = c.primal_size + c.rank;
+            for (const auto& row : c.rows) if (row.kind == RowKind::Electro) {
+                if (row.phase == p) electric = central.coordinates[offset];
+                ++offset;
+            }
+            for (auto j : t.phase.support) {
+                charge += model.parameters().charge_number[j] * t.composition[j];
+                chemical += t.composition[j] * (std::log(t.composition[j] / v)
+                    + d.gradient[2 + j] + evaluated.standard_over_rt[j] - evaluated.plane_over_rt[j]
+                    - electric * model.parameters().charge_number[j]);
+            }
+            tpd_compare(name + "/full-identity", q.at("tpd_over_rt"), chemical + electric * charge - q.at("pressure_row"), 32.0 * eps * std::max(1.0, std::abs(q.at("g_over_rt"))), inputs);
+        }
+        const auto rooted = evaluate(c.problem.phases[p], at.composition[p], std::nullopt);
+        const auto& t = rooted.trials[0]; const auto& q = t.quantities;
+        const auto root = epcsaft::solve_density(model, at.temperature, at.pressure, t.composition,
+            t.phase.kind == PhaseKind::Liquid ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, std::nullopt);
+        tpd_compare(id + "/root-density/" + std::to_string(p), q.at("molar_density_mol_m3") / root.molar_density, 1.0, 32.0 * eps,
+            recording_support::fields({recording_support::field("composition", t.composition), recording_support::field("density", q.at("molar_density_mol_m3"))}));
+        tpd_compare(id + "/root-pressure/" + std::to_string(p), q.at("pressure_row"), 0.0, 1e-10);
+    }
+    auto phase = c.problem.phases[0]; phase.composition_guess = at.composition[0]; phase.packing_guess = at.eta[0];
+    auto invalid = phase; invalid.composition_guess[invalid.support.back()] = 0.0;
+    StabilityOptions options; options.evaluate_supplied_trials = true; options.trials = std::vector<PhaseSpec>{phase, invalid, phase};
+    const auto ordered = stability_test(c, central, options);
+    CHECK(ordered.trials.size() == 3 && ordered.trials[0].quantities == ordered.trials[2].quantities);
+    CHECK(ordered.trials[1].message.find("nonpositive/nonfinite trial composition") != std::string::npos && ordered.trials[1].quantities.empty());
+    for (const auto& [key, value] : ordered.work) CHECK(key.find("driver") == std::string::npos && key.find("split") == std::string::npos);
+    tpd_compare(id + "/ordered-repeat", ordered.trials[0].quantities.at("tpd_over_rt"), ordered.trials[2].quantities.at("tpd_over_rt"), 0.0);
+    phase.packing_guess = -0.1; options.trials = std::vector<PhaseSpec>{phase};
+    const auto unavailable = stability_test(c, central, options);
+    CHECK(unavailable.trials[0].message.find("stability point outside packing domain") != std::string::npos && unavailable.trials[0].quantities.empty());
+    phase.packing_guess = at.eta[0]; options.trials = std::vector<PhaseSpec>{phase};
+    options.standard_uncertainty_over_rt.assign(c.n_feed.size(), 1e-7);
+    const auto uncertainty = stability_test(c, central, options);
+    tpd_compare(id + "/standard-uncertainty", uncertainty.trials[0].quantities.at("standard_error_estimate_over_rt"), 2e-7, 32.0 * eps * 2e-7);
+}
+
 void check_tangent_plane_admission() {
     using namespace epcsaft::equilibrium;
     tpd_compare("witness/pressure-identity", present_phase_residual_distance(0.0, 1e-10), -1e-10, 0.0);
@@ -4881,6 +4981,7 @@ void check_tangent_plane_admission() {
     const auto candidate = solve_equilibrium(model, problem); CHECK(candidate.success);
     const auto compiled = compile_problem(model, problem);
     const auto report = stability_test(compiled, candidate);
+    check_supplied_tangent_plane(compiled, candidate, report, "supplied/charged");
     CHECK(!report.trials.empty());
     for (std::size_t p = 0; p < report.present_phases.size(); ++p)
         tpd_compare("witness/present-phase/" + std::to_string(p), report.present_phases[p].at("present_identity_defect_over_rt"), 0.0, 1e-10);
@@ -4924,6 +5025,7 @@ void check_tangent_plane_admission() {
     const auto bubble_system = compile_problem(model, bubble);
     StabilityOptions restricted; restricted.trials = std::vector<PhaseSpec>{phase};
     const auto restricted_report = stability_test(bubble_system, bubble_state, restricted);
+    check_supplied_tangent_plane(bubble_system, bubble_state, restricted_report, "supplied/bubble", false);
     CHECK(!restricted_report.trials.empty());
     std::size_t positive_trials = 0;
     for (std::size_t i = 0; i < restricted_report.trials.size(); ++i) {
@@ -4971,6 +5073,7 @@ void check_normalized_reaction_affinity() {
     const auto compiled = compile_problem(model, problem);
     StabilityOptions options; auto phase = problem.phases[0]; phase.support = {0, 1}; options.trials = std::vector<PhaseSpec>{phase};
     const auto report = stability_test(compiled, candidate, options);
+    check_supplied_tangent_plane(compiled, candidate, report, "supplied/reacting");
     std::size_t stationary_trials = 0;
     for (std::size_t i = 0; i < report.trials.size(); ++i) {
         const auto& item = report.trials[i];
@@ -5007,6 +5110,9 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
         {{"native.equilibrium.reference-caloric-identities", "Anchored_Gibbs_caloric_identities", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "reference-calorics/F4/*,reference-calorics/F5/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reference-caloric-identities"}, reactive_caloric_checks::cheap, "S2"},
+        {{"native.equilibrium.reactive-caloric-F2", "Apparent_Cp_quadrature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F2/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F2"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
+        {{"native.equilibrium.reactive-cp-F1", "Apparent_Cp_independent_H", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F1/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-cp-F1"}, [] {for(bool ionic:{false,true}) for(bool fixed:{false,true}) reactive_caloric_checks::cp_f1(ionic,fixed);}, "reactive-cp"},
+        {{"native.equilibrium.reactive-cp-F3", "Apparent_Cp_nonreacting", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F3/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-cp-F3"}, reactive_caloric_checks::cp_f3, "reactive-cp"},
         {{"native.equilibrium.reactive-caloric-E-sys", "Reactive_caloric_E_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-sys/*,F4/E-sys/*,F5/E-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-sys"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-E-fix", "Reactive_caloric_E_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-fix/*,F4/E-fix/*,F5/E-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-fix"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-I-sys", "Reactive_caloric_I_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-sys/*,F4/I-sys/*,F5/I-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-sys"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},

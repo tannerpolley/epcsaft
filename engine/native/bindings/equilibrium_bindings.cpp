@@ -120,6 +120,7 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("reference", &ReactionSpec::reference);
     py::class_<StabilityOptions>(module, "StabilityOptions")
         .def(py::init<>())
+        .def_readwrite("evaluate_supplied_trials", &StabilityOptions::evaluate_supplied_trials)
         .def_readwrite("trials", &StabilityOptions::trials)
         .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
         .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
@@ -333,7 +334,9 @@ void register_equilibrium(py::module_& module) {
                SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt)
         .value("PhaseProperty", SolvedStateObservableKind::PhaseProperty)
         .value("PhaseLogActivity", SolvedStateObservableKind::PhaseLogActivity)
-        .value("PhaseGibbsMolarVolume", SolvedStateObservableKind::PhaseGibbsMolarVolume);
+        .value("PhaseGibbsMolarVolume", SolvedStateObservableKind::PhaseGibbsMolarVolume)
+        .value("SystemEnthalpy", SolvedStateObservableKind::SystemEnthalpy)
+        .value("EquilibriumIsobaricHeatCapacity", SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
     py::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(py::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), py::arg("kind"), py::arg("phase") = 0, py::arg("component") = 0,
             py::arg("property") = PropertyObservable::IdealEnthalpy)

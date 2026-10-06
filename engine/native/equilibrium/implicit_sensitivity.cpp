@@ -11,6 +11,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <numeric>
 #include <stdexcept>
 #include <string>
 
@@ -222,7 +223,9 @@ Series logarithm(const Series& value) {
 }
 
 bool is_phase_kind(SolvedStateObservableKind kind) {
-    return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure;
+    return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure
+        && kind != SolvedStateObservableKind::SystemEnthalpy
+        && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
 }
 
 bool has_component(SolvedStateObservableKind kind) {
@@ -241,6 +244,8 @@ bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable
 
 const char* observable_unit(const SolvedStateObservable& observable) {
     switch (observable.kind) {
+    case SolvedStateObservableKind::SystemEnthalpy: return "J";
+    case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "J/(mol-feed K)";
     case SolvedStateObservableKind::Temperature: return "K";
     case SolvedStateObservableKind::Pressure: case SolvedStateObservableKind::PhasePressure: return "Pa";
     case SolvedStateObservableKind::PhaseAmount: case SolvedStateObservableKind::PhaseComponentAmount: return "mol";
@@ -287,6 +292,10 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("solved-state observable component ordinal");
         if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= 15)
             throw std::invalid_argument("solved-state property observable");
+        if (item.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
+            && (problem.temperature.free || problem.pressure.free || problem.temperature.absent
+                || problem.pressure.absent || request.directions.size() != 1))
+            throw std::invalid_argument("apparent Cp requires driven T/P and first actions only");
         const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
         if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
@@ -505,15 +514,21 @@ PhaseMap phase_map(const RowSeries& series, std::size_t phase, std::size_t compo
     return result;
 }
 
-Series observable_series(const SolvedStateObservable &observable, const RowSeries &series,
-                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics = nullptr);
+Series observable_series(const HelmholtzModel &model, const SolvedStateObservable &observable, const RowSeries &series,
+                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics = nullptr,
+                         SolvedStateActionResult *result = nullptr, SolvedStateActionDiagnostics *diagnostics = nullptr);
+Series system_enthalpy_series(const HelmholtzModel &, const RowSeries &, const std::vector<PhaseMap> &,
+                              const ReferenceCalorics *, SolvedStateActionResult *, SolvedStateActionDiagnostics *);
 
 Series standard_series(const ReferenceCalorics &, const RowSeries &, std::size_t, std::size_t, std::size_t,
                        std::size_t, std::size_t);
 
-Series observable_series(const SolvedStateObservable &observable, const RowSeries &series,
-                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics) {
+Series observable_series(const HelmholtzModel &model, const SolvedStateObservable &observable, const RowSeries &series,
+                         const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics,
+                         SolvedStateActionResult *result, SolvedStateActionDiagnostics *diagnostics) {
     switch (observable.kind) {
+    case SolvedStateObservableKind::SystemEnthalpy:
+        return system_enthalpy_series(model, series, maps, calorics, result, diagnostics);
     case SolvedStateObservableKind::Temperature: return series.temperature;
     case SolvedStateObservableKind::Pressure: return series.pressure;
     case SolvedStateObservableKind::PhaseAmount: return maps[observable.phase].amount;
@@ -549,6 +564,7 @@ Series observable_series(const SolvedStateObservable &observable, const RowSerie
 // D2g[z1,z1]/2; [t^3] g = Dg[z3] + D2g[z1,z2] + D3g[z1,z1,z1]/6 in the (T, rho, x, theta) chart.
 struct PropertyChain final {
     std::vector<std::optional<double>> value, coefficient;
+    std::vector<Series> series;
     std::vector<SolvedStateActionStatus> status;
     std::vector<std::string> message;
     PropertyActionDiagnostics diagnostics;
@@ -675,6 +691,7 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
     result.coefficient.assign(observables.size(), std::nullopt);
     result.status.assign(observables.size(), SolvedStateActionStatus::Available);
     result.message.resize(observables.size());
+    result.series.resize(observables.size());
     std::vector<SolvedStateActionStatus> statuses(requested.size(), SolvedStateActionStatus::Available);
     for (const auto &term : terms) {
         std::vector<DensityActionDirection> directions;
@@ -809,6 +826,7 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
             value = index < 5 ? ideal : combine(value, ideal, 1.0);
         }
         if (result.status[i] == SolvedStateActionStatus::Available) {
+            result.series[i] = value;
             result.value[i] = value[0];
             result.coefficient[i] = order ? value[order] : 0.0;
         }
@@ -820,6 +838,26 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
     return result;
 }
 
+// Extensive enthalpy uses the same complete phase jets and Taylor product as all actions.
+Series system_enthalpy_series(const HelmholtzModel &model, const RowSeries &series,
+                              const std::vector<PhaseMap> &maps, const ReferenceCalorics *calorics,
+                              SolvedStateActionResult *result, SolvedStateActionDiagnostics *diagnostics) {
+    Series enthalpy(series.temperature.size(), 0.0);
+    for (std::size_t phase = 0; phase < maps.size(); ++phase) {
+        const auto &amount = maps[phase].amount;
+        if (std::all_of(amount.begin(), amount.end(), [](double v) { return v == 0.0; })) continue;
+        const auto chain = property_chain(model, series, maps[phase], phase,
+                                          {PropertyObservable::TotalEnthalpy}, enthalpy.size() - 1, calorics);
+        if (result) result->property_diagnostics = chain.diagnostics;
+        if (diagnostics) diagnostics->maximum_energy_order =
+            std::max(diagnostics->maximum_energy_order, chain.maximum_energy_order);
+        if (chain.status[0] != SolvedStateActionStatus::Available)
+            throw CaloricUnavailable(chain.status[0], "phase[" + std::to_string(phase) + "]: " + chain.message[0]);
+        enthalpy = combine(enthalpy, product(amount, chain.series[0]), 1.0);
+    }
+    return enthalpy;
+}
+
 struct ActionCenter final {
     Center center;
     std::vector<SolvedStateActionResult> central_results;
@@ -827,6 +865,7 @@ struct ActionCenter final {
     std::vector<std::vector<PropertyObservable>> property_lists;
     SolvedStateActionDiagnostics diagnostics;
     std::optional<ReferenceCalorics> calorics;
+    std::optional<SolvedStateActionBatch> thermal_enthalpy;
     std::size_t caloric_order = 0;
     bool caloric_parameters = false;
     SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
@@ -842,6 +881,8 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     const std::string phase = "phase[" + std::to_string(observable.phase) + "]";
     const std::string component = "[" + std::to_string(observable.component) + "]";
     switch (observable.kind) {
+    case SolvedStateObservableKind::SystemEnthalpy: return "system.enthalpy";
+    case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "system.isobaric_heat_capacity";
     case SolvedStateObservableKind::Temperature: return "temperature";
     case SolvedStateObservableKind::Pressure: return "pressure";
     case SolvedStateObservableKind::PhaseAmount: return phase + ".amount";
@@ -866,6 +907,69 @@ static SolvedStateActionBatch evaluate_action(
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
+    const bool apparent = std::any_of(request.observables.begin(), request.observables.end(), [](const auto &o) {
+        return o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
+    });
+    if (apparent) {
+        auto enthalpy = request;
+        for (auto &o : enthalpy.observables)
+            if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity)
+                o.kind = SolvedStateObservableKind::SystemEnthalpy;
+        SolvedStateActionDirection thermal{1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
+                                           std::vector<double>(model.active_parameters().size())};
+        const bool new_thermal = !shared || !shared->thermal_enthalpy;
+        if (new_thermal) {
+            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope);
+            if (!shared) {
+                for (std::size_t i = 0; i < first.results.size(); ++i) {
+                    first.results[i].observable = request.observables[i];
+                    first.results[i].unit = observable_unit(request.observables[i]);
+                }
+                return first;
+            }
+            shared->thermal_enthalpy = std::move(first);
+        }
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope);
+        enthalpy.directions.insert(enthalpy.directions.begin(), thermal);
+        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope);
+        const double feed = std::accumulate(compiled.n_feed.begin(), compiled.n_feed.end(), 0.0);
+        const auto &direction = request.directions.front();
+        const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
+        for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
+            if (request.observables[i].kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) continue;
+            auto &item = ordinary.results[i];
+            const auto &first = shared->thermal_enthalpy->results[i];
+            const auto &second = mixed.results[i];
+            item.observable = request.observables[i];
+            item.unit = observable_unit(item.observable);
+            item.value.reset();
+            item.action.reset();
+            item.status = first.status;
+            item.diagnostic_message = first.diagnostic_message;
+            if (first.status != SolvedStateActionStatus::Available || !first.action) continue;
+            item.value = *first.action / (feed * thermal.temperature_k);
+            item.status = second.status;
+            item.diagnostic_message = second.diagnostic_message;
+            item.property_diagnostics = second.property_diagnostics;
+            if (second.status == SolvedStateActionStatus::Available && second.action)
+                item.action = *second.action / (feed * thermal.temperature_k) - *item.value * dfeed / feed;
+            if (!std::isfinite(*item.value) || (item.action && !std::isfinite(*item.action))) {
+                item.status = SolvedStateActionStatus::Nonfinite;
+                item.action.reset();
+            }
+        }
+        auto &diagnostics = ordinary.diagnostics;
+        for (const auto *part : {&mixed, new_thermal ? static_cast<const SolvedStateActionBatch *>(&*shared->thermal_enthalpy) : nullptr}) {
+            if (!part) continue;
+            diagnostics.state_factorizations += part->diagnostics.state_factorizations;
+            diagnostics.linear_solves += part->diagnostics.linear_solves;
+            diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, part->diagnostics.maximum_energy_order);
+            if (part->diagnostics.maximum_linear_residual)
+                diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0),
+                                                               *part->diagnostics.maximum_linear_residual);
+        }
+        return ordinary;
+    }
     const std::size_t components = model.parameters().component_count();
     const std::size_t actives = model.active_parameters().size();
     const std::size_t source_offset = 2 + components + actives;
@@ -939,7 +1043,8 @@ static SolvedStateActionBatch evaluate_action(
     const ReferenceCalorics *calorics = nullptr;
     const bool needs_calorics =
         std::any_of(request.observables.begin(), request.observables.end(), [](const auto &o) {
-            return o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
+            return o.kind == SolvedStateObservableKind::SystemEnthalpy ||
+                   o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
                    (o.kind == SolvedStateObservableKind::PhaseProperty && caloric_property(o.property));
         });
     if (reference_problem && needs_calorics) {
@@ -979,7 +1084,7 @@ static SolvedStateActionBatch evaluate_action(
         for (auto& item : batch.results) {
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
             try {
-                const auto series = observable_series(item.observable, base, base_maps, calorics);
+                const auto series = observable_series(model, item.observable, base, base_maps, calorics, &item, &batch.diagnostics);
                 if (!series.empty() && std::isfinite(series.front())) item.value = series.front();
             } catch (const CaloricUnavailable& error) {
                 refuse(item, error.status, error.what(), true);
@@ -1013,7 +1118,8 @@ static SolvedStateActionBatch evaluate_action(
         }
         if (calorics && calorics->status != SolvedStateActionStatus::Available)
             for (auto &item : batch.results)
-                if (item.observable.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
+                if (item.observable.kind == SolvedStateObservableKind::SystemEnthalpy ||
+                    item.observable.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||
                     (item.observable.kind == SolvedStateObservableKind::PhaseProperty &&
                      caloric_property(item.observable.property)))
                     refuse(item, calorics->status, calorics->message, true);
@@ -1140,7 +1246,7 @@ static SolvedStateActionBatch evaluate_action(
             auto& item = batch.results[i];
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty || !state_dependent(item.observable, problem)) continue;
             try {
-                const auto series = observable_series(item.observable, path.series, maps, calorics);
+                const auto series = observable_series(model, item.observable, path.series, maps, calorics, &item, &batch.diagnostics);
                 accumulated[i] += weight * series[order];
             } catch (const CaloricUnavailable& error) {
                 refuse(item, error.status, error.what(), false);

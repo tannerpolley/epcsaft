@@ -37,6 +37,10 @@ An input-contract checkpoint does not authorize numerical-kernel implementation,
 application adoption or qualification. Update the application specification with
 any separately authorized implementation.
 
+When an Engine slice needs application implementation or evidence, the accountable
+agent may inspect, edit, test and run Git commands in the application repositories
+without moving the task attachment.
+
 All numerical work consumes one explicitly identified, non-editable Engine wheel.
 Record its SHA-256 and retain the inputs and claim limits. Serialize builds and
 installations across lanes; worktree isolation does not isolate the shared wheel.

@@ -1173,4 +1173,5 @@ inline void cheap() {
     const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
     Actions actions(compiled,solved,q);CHECK(identities(c,model,compiled,actions,q,center,context(c,solved,center.phase)));
 }
+#include "reactive_cp_checks.hpp"
 } // namespace reactive_caloric_checks

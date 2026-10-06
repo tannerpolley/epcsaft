@@ -368,7 +368,7 @@ not a PC-SAFT formulation or a compatibility proof.
 | [Algorithms](../../../../engine/docs/science/algorithms.md) | Implicit states, derivative and density requirements. |
 | [Packet contract](../../../../data/docs/packet-contract.md) | Reusable parameter/observation ownership, provenance and immutable records. |
 | [Association study](../../../../analyses/2026-association-native-comparison/notebook.qmd) | Bounded neutral fixed-volume values/first/second-derivative evidence at snapshot `0ae7806`. |
-| [ADR 0003](../../adr/0003-explicit-parameter-inputs.md), [ADR 0011](../../adr/0011-optional-dipole-dipole-term.md), [ADR 0006](../../adr/0006-retire-residual-polar.md) | Explicit physics, optional Gross–Vrabec dipole–dipole admission and remaining multipole exclusions. |
+| [ADR 0003](../../decisions/0003-explicit-parameter-inputs.md), [ADR 0011](../../decisions/0011-optional-dipole-dipole-term.md), [ADR 0006](../../decisions/0006-retire-residual-polar.md) | Explicit physics, optional Gross–Vrabec dipole–dipole admission and remaining multipole exclusions. |
 
 The complete-model selectable object, compatibility levels, proposed records,
 implementation mapping are **design synthesis** from

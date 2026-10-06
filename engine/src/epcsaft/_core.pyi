@@ -503,6 +503,7 @@ class ReactionSpec:
     def __init__(self) -> None: ...
 
 class StabilityOptions:
+    evaluate_supplied_trials: bool
     trials: Optional[list[PhaseSpec]]
     declaration_budget: Optional[int]
     trial_budget: Optional[int]
@@ -730,6 +731,8 @@ class SolvedStateObservableKind:
     PhaseProperty: SolvedStateObservableKind
     PhaseLogActivity: SolvedStateObservableKind
     PhaseGibbsMolarVolume: SolvedStateObservableKind
+    SystemEnthalpy: SolvedStateObservableKind
+    EquilibriumIsobaricHeatCapacity: SolvedStateObservableKind
 
 class SolvedStateObservable:
     kind: SolvedStateObservableKind
@@ -847,6 +850,7 @@ class ObservationKind:
     BulkRelativePermittivity: ObservationKind
     LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
+    EquilibriumIsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
     PhaseDensity: ObservationKind
     EquilibriumPressure: ObservationKind

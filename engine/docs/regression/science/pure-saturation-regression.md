@@ -27,6 +27,7 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | Density | $T$, $P$, normalized $\mathbf{x}$, declared branch | pressure closure `state_at_pressure`; the resolved branch and stable-root count are retained (one stable root is returned as Unspecified) | mol m$^{-3}$ or kg m$^{-3}$ |
 | LogEquilibriumConstant | fixed positive `problem.temperature.value`, named `reaction`, declared source record | `evaluate_reaction_properties` for a/b/c/d, or ln(scalar K); no equilibrium solve | 1 |
 | IsobaricHeatCapacity | $T$, $P$, normalized $\mathbf{x}$, declared branch, fixed thermochemistry record | pressure closure `state_at_pressure`; total molar $c_p$ | J mol$^{-1}$ K$^{-1}$ |
+| EquilibriumIsobaricHeatCapacity | driven $T/P$, declared equilibrium/feed, fixed record thermochemistry and source references | Equilibrium's extensive H thermal A1 divided by the feed sum and thermal increment (EqID: `equilibrium_isobaric_heat_capacity`) | J mol-feed$^{-1}$ K$^{-1}$ |
 | AdditionEnthalpy | declared initial and final `Problem`s, positive `feed_amount` $n_{add}$, and feed `temperature`, `pressure`, `composition` $\mathbf y$, and `branch` | Parameter regression; total-system enthalpy increment less feed enthalpy (EqID: `finite_addition_enthalpy`) | J mol$^{-1}$ of total added feed |
 | PhaseDensity | a declared specification, phase $p$ | the driver's phase molar density | mol m$^{-3}$ or kg m$^{-3}$ |
 | EquilibriumPressure | $T$ fixed, one free and one pinned-zero amount (bubble, dew, pure saturation) | the driver's free pressure | Pa |
@@ -172,7 +173,9 @@ are rewritten as exp(ln K); correlations keep their native stored coefficients.
 Affinity targets, supplied Gibbs values, dependent reaction sets, thermochemistry-
 fixed unreferenced constants cannot be fitted. Coefficient motions are evaluated
 by the native law at T(t), including the solved-temperature chain and thermal
-products. No outer coefficient Hessian or apparent-Cp fitting is claimed here.
+products. Apparent-Cp fitting consumes Equilibrium H A2(T,coordinate), including all four
+phase-product terms. Physical increments are divided out once before affine
+ties, residual slopes and weights. No outer coefficient Hessian is consumed.
 
 ## Prediction Jacobians and fitting (R2, R3)
 
