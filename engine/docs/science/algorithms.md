@@ -636,9 +636,21 @@ its unscaled rows, which are its constraints. Species thermochemistry attached t
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
-Declared-branch continuation follows one straight dimensionless path `q` in
-`[0, 1]` between two problems with identical declarations; only fixed
-intensives and resolved feed amounts move. The controller predicts each step
+Declared-branch continuation follows one straight dimensionless path `s` in
+`[0, 1]` between two problems with identical declarations. Fixed intensives
+and resolved feed amounts may move, or a parameter-only path moves physical
+EOS/Born coefficients as `theta(s) = theta0 + s (theta1 - theta0)` while T/P/feed
+and all declarations remain fixed. `parameter_targets` uses the ordered active
+coordinates of the supplied model; empty targets select the intensive/feed path.
+Both paths use the same controller. Parameter trials rebuild the model from its
+immutable base records and fixed thermochemistry; each compiled problem and
+branch check uses that trial model for its complete lifetime. Accepted
+`parameter_values` retain the physical coefficients. Born `c_dielectric` and
+`ionic_region_relative_permittivity` are active scalars in the shared parameter
+record; the latter must be positive. The tangent includes the full direct,
+packing, association and source-reference parameter chain. A singular tangent
+stops this straight path; it establishes neither a turning point nor absence of
+an endpoint solution. Held-composition charts and arclength are outside this method. The controller predicts each step
 from the implicit tangent (EqID: `implicit_sensitivity`: the first row
 coefficient along the lever at the fixed state, the directional series of
 ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
@@ -649,7 +661,7 @@ rejected left-domain step), and accepts a state only when the driver
 accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
 shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
-its cold declared root at `q = 0` or of the previous accepted density
+its cold declared root at `s = 0` or of the previous accepted density
 afterwards, with a positive corrected pressure slope. Finite step failures
 (left domain, stalled, missing anchored root) halve the step from the last
 accepted coordinates up to the caller's retry allowance and minimum step;

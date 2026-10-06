@@ -133,8 +133,10 @@ $\varepsilon^{AB}/k$ and $\kappa^{AB}$, one reciprocal pair with a positive
 reference temperature for the $k_{ij}$ slope $b_{ij}$ of EqID:
 `cross_dispersion_energy`, in native units (1, Å, K). Every slot
 absent from the active list is fixed. EqID: `affine_parameter_coordinate_map`
-owns the optimizer mapping. A `CoordinateTarget` declares a family, component
-or reciprocal-pair indices and a finite nonzero coefficient. One coordinate
+owns the optimizer mapping. A `CoordinateTarget` declares a family, indices
+and a finite nonzero coefficient. Global dimensionless Born scalars own index
+`[0]`; their Python targets use `(family, None, coefficient)` with no component
+name. Other targets own component or reciprocal-pair indices. One coordinate
 may drive targets across families; its positive scale and inclusive bounds
 apply to the base value q. A reciprocal pair is one physical row. Independent
 EOS rows follow coordinate and target declaration order, followed by held Born
