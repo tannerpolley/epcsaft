@@ -139,6 +139,7 @@ project_map: {
     ["docs/scientific/reviews/", "documentation", "evidence"],
     ["docs/", "documentation", "specification"],
     ["AGENTS.md", "documentation", "specification"],
+    ["CODING_STANDARDS.md", "documentation", "specification"],
     ["CLAUDE.md", "documentation", "specification"],
     ["README.md", "documentation", "specification"],
     ["GLOSSARY.md", "documentation", "specification"],

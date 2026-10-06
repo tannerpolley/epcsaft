@@ -48,23 +48,19 @@ are its first required acceptance uses; application names never select physics.
 This is a private tool that needs fast development: mathematics, thermodynamics
 and numerical evidence come first, software provenance last.
 
-## Start with the current owners
+## Every task
 
 Read the nearest subtree `AGENTS.md`, the current GitHub leaf issue and only the
-equations, algorithms, accepted decisions and evidence it points to.
-`docs/scientific/CONTEXT.md` is the reference map; read the section the task
-needs. Use `.agents/skills/manage-github-roadmap/SKILL.md` for roadmap work; the
-issue body holds current state, and history lives in comments and evidence.
-Separate unresolved scientific choices from specified implementation before
-dependent coding; change only the demonstrated gap.
+equations, algorithms, accepted decisions and evidence it points to;
+`docs/scientific/CONTEXT.md` is the reference map, read by section. Separate
+unresolved scientific choices from specified implementation before dependent
+coding; change only the demonstrated gap.
 
-Activate Serena at the exact checkout root and verify the returned path.
-
-All equilibrium specifications use one driver and shared thermodynamics. Each
+Activate Serena at the exact checkout root and verify the returned path. Each
 checkout has its own `.venv` from `.codex/environments/setup.sh` with one
-installed Engine wheel built from that checkout. A scientific change updates or
-explicitly revalidates its mathematics, algorithms, code and numerical evidence
-together; code behavior cannot redefine accepted doctrine.
+installed non-editable Engine wheel built from that checkout; run builds and
+Engine calculations as `tools/heavy <cmd>`. All equilibrium specifications use
+one driver and shared thermodynamics.
 
 ## Native calculation rule
 
@@ -76,7 +72,7 @@ results. Finite differences are allowed only to verify exact derivatives.
 Process-level IDAES/Pyomo models using Engine derivatives through the ASL adapter
 are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting methods.
 
-## Execution and collaboration
+## Leading a slice
 
 Scope readiness to the slice being built: its equations, consumed inputs and
 falsifying checks come before implementation. Size a slice to deliver within a
@@ -93,53 +89,25 @@ One accountable lead owns each slice; one writer per file. Review is tiered:
   lead verifies them against the finding without another review round.
 
 The lead checks reviewer findings against source and evidence; a build,
-readiness label or reviewer opinion is not numerical acceptance. Update affected
-authoritative docs in the same change.
+readiness label or reviewer opinion is not numerical acceptance. When a
+capability claim changes, rewrite the issue body's current state and update
+repository evidence together.
 
-Keep runtime self-contained: no nested repositories, submodules or sibling-source
-dependencies. Retained scientific evidence applies to its stated inputs, domain
-and inspected snapshot.
+## Where things live
 
-## Official downstream applications
-
-Application migration work uses the independent clones in `downstream/`, the one
-nested-repository exception; `downstream/README.md` owns the lane, Git and wheel
-rules. When an Engine slice needs application implementation or evidence, the
-accountable agent may inspect, edit, test and run Git commands in the
-application repositories without moving the task attachment.
-
-## Budgets and verification
-
-`ARCHITECTURE.yaml:code_budgets` owns the numbers and `docs/scientific/code-budgets.md`
-their meaning. Every authorized build issue states its task line ceiling; the
-lead sets ceilings for tooling-only work.
-
-Use Numerical Verification-Driven Development. Persistent numerical tests must
-falsify claims through values, identities, derivatives, limits or justified
-reference cases, at a tolerance at least as tight as the claim. Retain homogeneous
-numerical rows once in CSV/TSV and keep JSON compact, with diagnostics,
-provenance, failures and claim limits. A refused, unavailable or tolerance-gated
-result is not an end state (ALG-TERMINATION in `engine/docs/science/algorithms.md`).
-
-Run builds and Engine calculations as `tools/heavy <cmd>`, and install the
-checkout's non-editable wheel before Engine numerical tests or application
-acceptance. `README.md` owns the check commands: `tools/check-affected.sh` for
-changed paths and after notebook edits, `tools/check-all.sh` as the full fast gate
-(warm target below sixteen seconds), and `tools/time-key-solves <wheel-A> <wheel-B>`,
-whose work counts are the no-slowdown gate for ionic LLE and the MEA flash.
-Analysis notebooks compute reported numbers from retained data (`analyses/README.md`).
-Expensive installed-wheel replays belong in analyses; slow evidence, analysis
-reproductions, clang-tidy and sanitizers need an explicit owner command. This
-project has no scientific CI/CD.
-
-## Completion
-
-When a capability claim changes, rewrite the issue body's current state and
-update repository evidence together.
-
-## Agent skills
-
-GitHub issue tracker (`docs/agents/issue-tracker.md`), triage labels
-(`docs/agents/triage-labels.md`) and domain docs (`docs/agents/domain.md`).
+- **Roadmap work:** `.agents/skills/manage-github-roadmap/SKILL.md`.
+- **Review standards:** `CODING_STANDARDS.md`.
+- **Checks:** `README.md` owns the commands. `tools/check-all.sh` is the full
+  fast gate (warm target below sixteen seconds), and `tools/time-key-solves`
+  work counts are the no-slowdown gate for ionic LLE and the MEA flash. Slow
+  evidence, analysis reproductions, clang-tidy and sanitizers need an explicit
+  owner command; there is no scientific CI/CD.
+- **Code budgets:** `docs/scientific/code-budgets.md`. Every authorized build
+  issue states its task line ceiling; the lead sets ceilings for tooling-only work.
+- **Application work:** the clones in `downstream/` under `downstream/README.md`.
+  An Engine slice that needs application implementation or evidence may inspect,
+  edit, test and run Git in the application repositories without moving the
+  task attachment.
+- **Agent skills:** `docs/agents/` (issue tracker, triage labels, domain docs).
 
 CSE execution mode: direct.
