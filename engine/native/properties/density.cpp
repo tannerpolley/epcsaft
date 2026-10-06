@@ -73,16 +73,19 @@ DensityRoot publish_root(
     };
 }
 
-// Safeguarded Newton from a cell endpoint inside [lower, upper]; lower_residual carries the
-// sign at the lower end so the bracket keeps shrinking around one crossing. The caller
+// Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.
+// Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
 DensityRoot refine(
     const HelmholtzModel& model, double temperature, double pressure,
-    const std::vector<double>& composition, double lower, double upper, double lower_residual,
-    double density, PressurePoint point, core::Scope& parent_scope, std::size_t& evaluations
+    const std::vector<double>& composition, double lower, PressurePoint low,
+    double upper, PressurePoint high, core::Scope& parent_scope, std::size_t& evaluations
 ) {
     const auto maximum = static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value);
     const double tolerance = policy::DENSITY_ROOT_RESIDUAL.value;
+    const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);
+    double density = from_lower ? lower : upper;
+    PressurePoint point = from_lower ? low : high;
     core::ResidualHistory history;
     history.push(std::abs(point.residual));
     std::size_t iterations = 0;
@@ -109,14 +112,16 @@ DensityRoot refine(
         const PressurePoint next = at_density(model, temperature, pressure, composition, candidate,
                                               evaluations, DerivativeOrder::PressureSlope);
         history.push(std::abs(next.residual));
-        if (lower_residual * next.residual <= 0.0) {
+        if (low.residual * next.residual <= 0.0) {
             upper = candidate;
+            high = next;
         } else {
             lower = candidate;
-            lower_residual = next.residual;
+            low = next;
         }
-        density = candidate;
-        point = next;
+        const bool from_lower = std::abs(low.pressure - pressure) < std::abs(high.pressure - pressure);
+        density = from_lower ? lower : upper;
+        point = from_lower ? low : high;
     }
     const double derivative = residual_derivative(point, density, pressure, temperature);
     parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
@@ -183,9 +188,8 @@ void scan_cell(
     }
     if (low.residual < 0.0 && high.residual > 0.0) {
         scope.probe("density_bracket", {lower, upper, low.residual, high.residual});
-        const bool from_lower = std::abs(low.residual) < std::abs(high.residual);
-        roots.push_back(refine(model, temperature, pressure, composition, lower, upper,
-            low.residual, from_lower ? lower : upper, from_lower ? low : high, scope, evaluations));
+        roots.push_back(refine(model, temperature, pressure, composition, lower, low,
+            upper, high, scope, evaluations));
     }
 }
 
@@ -279,7 +283,7 @@ std::vector<DensityRoot> scan_roots(
         const auto& node = points[i];
         if (node.point.residual == 0.0 && node.point.slope > 0.0)
             roots.push_back(refine(model, temperature, pressure, composition, node.density,
-                node.density, 0.0, node.density, node.point, scope, evaluations));
+                node.point, node.density, node.point, scope, evaluations));
         if (i != 0 && points[i].linked) {
             scan_cell(model, temperature, pressure, composition, points[i - 1].density,
                       points[i - 1].point, points[i].density, points[i].point, scope, evaluations,
@@ -321,20 +325,20 @@ DensityRoot anchor(
         };
         if (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0) {
-            std::size_t local_stable_roots = 0;
-            for (const auto& root : scan_roots(model, temperature, pressure, composition,
-                     std::log(local_lower), std::log(local_upper),
-                     static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
-                     anchor_scope, evaluations)) {
-                if (root.pressure_density_derivative > 0.0) ++local_stable_roots;
-            }
+            auto roots = scan_roots(model, temperature, pressure, composition,
+                std::log(local_lower), std::log(local_upper),
+                static_cast<std::size_t>(policy::DENSITY_ANCHOR_SCAN_INTERVALS.value),
+                anchor_scope, evaluations);
+            roots.erase(std::remove_if(roots.begin(), roots.end(),
+                [](const auto& root) { return !(root.pressure_density_derivative > 0.0); }), roots.end());
             anchor_record.evaluations = evaluations;
-            anchor_record.stop = core::classify(anchor_record.residual, *anchor_record.criterion,
-                anchor_record.floor, anchor_record.contraction, false, anchor_record.amplification);
-            if (local_stable_roots == 1) {
-                const auto result = publish_root(density, point.pressure - pressure, point.slope,
-                                                 iteration + 1, std::nullopt, branch, anchor_record);
-                anchor_scope.finish(anchor_record);
+            if (roots.size() == 1) {
+                auto result = roots.front();
+                result.branch = branch;
+                result.convergence.iterations += iteration + 1;
+                result.convergence.evaluations = evaluations;
+                result.iterations = result.convergence.iterations;
+                anchor_scope.finish(result.convergence);
                 return result;
             }
             anchor_record.stop = core::Stop::infeasible;
