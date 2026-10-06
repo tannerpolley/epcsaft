@@ -360,7 +360,11 @@ is qualified separately. Disabled capture adds no numerical work or clock reads.
 
 Core contains all observation failures, retains a readable prefix and exposes
 sticky `capture.trace.incomplete`; missing evidence never selects numerical
-recovery. Nested native work captures forward detailed records once with remapped
+recovery. Trace-only containers and strings are constructed inside `Scope::observe`
+or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
+contain allocation failure. The source rule in
+`tools/check-engine-architecture.py` checks these payloads during `check-all`.
+Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 
 All admitted specifications use the one equilibrium driver required by the

@@ -262,7 +262,7 @@ public:
         // Ceres evaluates the accepted Jacobian and updates u_ before user callbacks: this is a cache hit.
         if (!evaluator_.gradient_at(u_, gradient)) return ceres::SOLVER_ABORT;
         const auto next = select_held(u_, gradient, lower_, upper_);
-        if (scope.on()) {
+        scope.observe([&] {
             std::vector<double> mask(u_.size(), 0.0), projected(u_.size());
             for (const int c : next) mask[c] = 1.0;
             for (std::size_t c = 0; c < u_.size(); ++c)
@@ -271,7 +271,7 @@ public:
             scope.probe("held", mask, summary.iteration);
             scope.probe("weighted_gradient", gradient, summary.iteration);
             scope.probe("projected_gradient", projected, summary.iteration);
-        }
+        });
         bool contact = false;
         for (std::size_t k = 0; summary.iteration > 0 && summary.step_is_successful && k < free_.size(); ++k) {
             contact = contact || (side(u_[free_[k]], free_[k]) != 0 && side(u_[free_[k]], free_[k]) != at_bound_[k]);
@@ -626,11 +626,11 @@ FitResult fit(const FitRequest& request) {
         held = next;
         core::Scope round_scope("fit_round");
         round_scope.probe("round", round++);
-        if (round_scope.on()) {
+        round_scope.observe([&] {
             std::vector<double> mask(width, 0.0);
             for (const int c : held) mask[c] = 1.0;
             round_scope.probe("held", mask);
-        }
+        });
         ceres::Problem problem(problem_options);
         problem.AddResidualBlock(&cost, nullptr, optimizer.data());
         auto* box = new BoxChart(optimizer, lower, upper, held, evaluator);  // owned by the problem

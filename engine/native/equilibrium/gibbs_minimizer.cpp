@@ -721,7 +721,7 @@ bool GibbsMinimizer::intermediate_callback(
     if (limits_) limits_->consumed = std::max(limits_->consumed, iterations_);
     regularization_size_ = regularization_size;
     if (scope_ != nullptr) scope_->probe("ipopt_iteration",
-        std::vector<double>{inf_pr, inf_du, mu, d_norm, regularization_size,
+        {inf_pr, inf_du, mu, d_norm, regularization_size,
                             alpha_pr, alpha_du, static_cast<double>(ls_trials)},
         static_cast<std::uint32_t>(iter));
     return !limits_ || !limits_->expired();  // max_iter owns iteration termination
