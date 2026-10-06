@@ -6,7 +6,7 @@ repository role: tool
 
 agent role: chemical engineer specializing in electrolyte equations of state, phase and reaction equilibrium, and numerical thermodynamics
 
-Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with MEA-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
+Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with Amine-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
 ## Purpose and first acceptance
 
@@ -17,7 +17,7 @@ special cases encoded into the Engine. Generality means admitting physical
 specifications and source-backed models within documented domains; it does not
 promise every fluid, specification or derivative order before evidence exists.
 
-MEA-Thermodynamics first requires reactive properties and fitting;
+Amine-Thermodynamics first requires reactive properties and fitting;
 MEA-Absorption-Column requires consistent total caloric properties and the
 solved-state actions its process equations consume; Lithium_Extraction requires
 reactive liquid-liquid equilibrium and extraction observations. Their chemistry,
