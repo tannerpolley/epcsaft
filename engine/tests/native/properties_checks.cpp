@@ -5086,6 +5086,42 @@ void reference_f8() {
                 CHECK(ok);
             }
     }
+    auto parameters=properties_support::parameters(2);
+    parameters.segment_count={1.6069,1.6069};parameters.sigma_constant={3.5206,3.5206};
+    parameters.dispersion_energy_over_k={191.42,191.42};parameters.molar_mass_kg_per_mol={0.03007,0.03007};
+    epcsaft::HelmholtzModel pair(parameters,{{PF::DispersionEnergyOverK,{0}},{PF::DispersionEnergyOverK,{1}}});
+    for (double P:{3e6,5e6}) for(double molality:{1e-10,1e-12,1e-14}) {
+        const double solute=molality*0.03007;
+        const std::vector<double> composition{1/(1+solute),solute/(1+solute)};
+        const auto state=pair.state_at_pressure(T,P,composition,epcsaft::DensityBranch::Liquid);
+        for (const auto& column:std::vector<std::array<unsigned,3>>{{1,0,0},{2,0,0},{0,0,1},{1,0,1},{1,1,0}}) {
+            const auto a=column[0],b=column[1],c=column[2];
+            auto exact=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
+            if (c) {
+                const auto other=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,1,state.molar_density);
+                if(exact.action && other.action) *exact.action+=*other.action;else exact.action.reset();
+            }
+            const auto pure=model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid);
+            const double oracle=a?pure_reference_thermal(model,T,P,a,b,c,pure.molar_density)
+                :-pure.log_fugacity_parameter_derivative[0].value();
+            const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?191.42:1);
+            const double value=scale*exact.action.value_or(reference_nan), expected=scale*oracle;
+            const double target=1e-7+1e-9*std::abs(expected);
+            const bool ok=exact.action && std::abs(value-expected)<=target;
+            const std::string id="F8/lower-terminal/"+std::to_string(int(P))+"/"+std::to_string(int(-std::log10(molality)))
+                +"/"+std::to_string(a)+std::to_string(b)+std::to_string(c);
+            recording_support::compare_custom(id.c_str(),"scaled reference partial","J/mol/K",value,expected,
+                recording_support::fields({recording_support::field("T",T),recording_support::field("P_source",P),
+                    recording_support::field("molality",molality),recording_support::field("a",a),recording_support::field("b",b),
+                    recording_support::field("theta",c),recording_support::field("target",target),
+                    recording_support::field("error_over_target",std::abs(value-expected)/target),
+                    recording_support::field("density",state.molar_density),recording_support::field("pressure_root_residual",state.pressure-P),
+                    recording_support::field("site_residual",exact.diagnostics.association_residual)}),
+                "Relationship","pure-P4-identities","lower slopes at fixed E terminal compositions; tied EOS direction",
+                "absolute+relative",ok,"F8-lower");CHECK(ok);
+        }
+    }
+
 }
 }
 
@@ -5093,14 +5129,21 @@ namespace {
 // E2/E3 Hessian-chain oracle at a literal fixed composition. No limiting selection.
 double reference_lower(const epcsaft::HelmholtzModel& m, double T,
     const std::vector<double>& x, unsigned a, unsigned b,
-    const epcsaft::State& s, const epcsaft::HelmholtzDerivatives& e) {
+    const epcsaft::State& s, const epcsaft::HelmholtzDerivatives& e,
+    const std::vector<double>& reaction = {-1,1,1}) {
     const double V=1/s.molar_density, R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     const auto w=e.gradient.size();
-    std::vector<double> nu(w,0), ev(w,0); nu[2]=-1;nu[3]=nu[4]=1;ev[1]=1;
+    std::vector<double> nu(w,0), ev(w,0); ev[1]=1;
+    double delta=0, value=0;
+    for (std::size_t i=0; i<reaction.size(); ++i) {
+        nu[2+i]=reaction[i];delta+=reaction[i];
+        value+=reaction[i]*(std::log(s.molar_density)+s.residual_chemical_potential_over_rt[i].value());
+    }
+    if (a+b==0) return value;
     const double pv=R*T*(-1/(V*V)-e.hessian[w+1]);
     const double pt=R*(1/V-e.gradient[1])-R*T*e.hessian[w];
-    double cv=-1/V;
-    for (std::size_t i=2; i<5; ++i) cv+=nu[i]*e.hessian[i*w+1];
+    double cv=-delta/V;
+    for (std::size_t i=2; i<2+reaction.size(); ++i) cv+=nu[i]*e.hessian[i*w+1];
     std::vector<std::vector<double>> path;
     for (unsigned j=0; j<a+b; ++j) {
         std::vector<double> d(w,0);
@@ -5109,7 +5152,7 @@ double reference_lower(const epcsaft::HelmholtzModel& m, double T,
     }
     if (a+b==1) {
         double val=cv*path[0][1];
-        for (std::size_t i=2; i<5; ++i) val+=nu[i]*e.hessian[i*w]*path[0][0];
+        for (std::size_t i=2; i<2+reaction.size(); ++i) val+=nu[i]*e.hessian[i*w]*path[0][0];
         return val;
     }
     const auto& u=path[0];const auto& v=path[1];
@@ -5126,7 +5169,7 @@ double reference_lower(const epcsaft::HelmholtzModel& m, double T,
     const auto hv=[&](const auto& d){double v=0;for(std::size_t i=0;i<w;++i)v+=e.hessian[w+i]*d[i];return v;};
     const double p2=R*(u[0]*(-v[1]/(V*V)-hv(v))+v[0]*(-u[1]/(V*V)-hv(u)))
         +R*T*(2*u[1]*v[1]/std::pow(V,3)-mixed(ev));
-    return mixed(nu)+u[1]*v[1]/(V*V)-cv*p2/pv;
+    return mixed(nu)+delta*u[1]*v[1]/(V*V)-cv*p2/pv;
 }
 
 void reference_f9() {
@@ -5156,9 +5199,10 @@ void reference_f9() {
             // column at a given shifted model, temperature and pressure.
             using LowerPoint = std::tuple<double, double, double>;
             std::map<LowerPoint, std::pair<epcsaft::State, epcsaft::HelmholtzDerivatives>> lower_states;
-            for(unsigned c=0;c<=1;++c) for(unsigned d=2;d<=4;++d) for(unsigned b=0;b<=d-c;++b) {
+            for(unsigned c=0;c<=1;++c) for(unsigned d=1;d<=4;++d) for(unsigned b=0;b<=d-c;++b) {
                 const unsigned a=d-b-c;
-                if(d==2 && !(c && b))continue;
+                if(d==1 && b)continue;
+                if(d==2 && !(a==2 || (a==1 && b==1) || (a==1 && c==1) || (c && b)))continue;
                 const auto exact=epcsaft::reference_partial(model,T,P,x,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt,*anchor);
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?353.95:1);
@@ -5234,6 +5278,34 @@ void reference_limits() {
             epcsaft::ReferenceSourceBasis::CommonMolalityInfiniteDilution};
         const auto jet=epcsaft::reaction_references(model,T,P,declaration,{{-1,1,1}},{reference},true,std::nullopt,2,true,4)[0];
         CHECK(jet.status==epcsaft::NeutralReferenceStatus::Available);
+        const std::vector<std::array<unsigned,3>> lower_columns{{1,0,0},{2,0,0},{0,0,1},{1,0,1},{1,1,0}};
+        for(const auto& column:lower_columns) {
+            const auto a=column[0],b=column[1],c=column[2];
+            std::array<double,3> values{};
+            unsigned rung=0;
+            for(double molality:{1e-10,1e-12,1e-14}) {
+                const double salt=molality*params.molar_mass_kg_per_mol[0];
+                const std::vector<double> terminal{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
+                values[rung++]=epcsaft::reference_partial(model,T,src,terminal,{-1,1,1},a,b,
+                    c?std::optional<std::size_t>(0):std::nullopt).action.value_or(reference_nan);
+            }
+            const double scale=std::pow(T,int(a))*std::pow(src,int(b))*(c?353.95:1)*(a==2?R:1);
+            const double tolerance=a==2?0.01:5e-5;
+            const auto admitted=a==2?jet.terminal_contraction_temperature_second_derivative
+                :c?(a?jet.terminal_contraction_temperature_parameter_derivative[0]:jet.terminal_contraction_parameter_derivative[0])
+                :b?jet.terminal_contraction_temperature_pressure_derivative:jet.terminal_contraction_temperature_derivative;
+            CHECK(admitted);
+            for(unsigned k=0;k<2;++k) {
+                const double change=scale*std::abs(values[k+1]-values[k]);
+                const std::string id="F9/lower-limit/"+std::to_string(fixed)+"/"+std::to_string(a)+std::to_string(b)+std::to_string(c)+"/"+std::to_string(k);
+                const bool ok=change<=tolerance;
+                recording_support::compare_custom(id.c_str(),"scaled lower reference change",a==2?"J/mol/K":"dimensionless",change,0,
+                    recording_support::fields({recording_support::field("target",tolerance),recording_support::field("source_pressure",src),
+                        recording_support::field("lower_molality",k?1e-12:1e-10),recording_support::field("upper_molality",k?1e-14:1e-12)}),
+                    "Relationship","terminal-ladder","unchanged lower-column admission scales","absolute",ok,"F9-lower-limit");CHECK(ok);
+            }
+            CHECK(std::abs(*admitted-(fixed && b?0:values.back()))<=1e-12*std::max(1.0,std::abs(values.back())));
+        }
         auto doubled=declaration;doubled.solute_molality_ratios={0,2,2};
         const auto jet2=epcsaft::reaction_references(model,T,P,doubled,{{-1,1,1}},{reference},true,std::nullopt,2,true,4)[0];
         CHECK(jet2.status==epcsaft::NeutralReferenceStatus::Available);
@@ -5321,11 +5393,40 @@ void reference_limits() {
     }
 }
 }
+// Frozen N-P-fix vapor center and normalized tangent from the independently
+// differentiated binary128 cv action in f6-a1-extraction/states.tsv.
+void residual_cv_temperature_extraction() {
+    using namespace epcsaft;
+    constexpr double T = 260.0, V = 0.000390185267693186768959;
+    const std::vector<double> x = {0.517913560605011924487,
+        0.4700137196266039874, 0.012072719768384160971};
+    const HelmholtzModel model(properties_support::neutral_ternary(),
+        {{ParameterFamily::DispersionEnergyOverK, {1}}});
+    const DensityActionDirection direction{T, 0.00371339890091887002074 / (V * V),
+        {-0.194749819139095670106, 0.0800169602891089848384,
+         0.114732858849986685268}, {}};
+    const auto batch = model.density_actions(T, 1.0 / V, x,
+        {PropertyObservable::ResidualIsochoricHeatCapacity}, {direction});
+    CHECK(batch.results.front().action);
+    const double action = *batch.results.front().action / T; // restore the 1 K action
+    CHECK(recording_support::compare("residual-cv/temperature-extraction/A1", "residual cv A1", "J/(mol K)",
+        action, 0.04758556315383267,
+        recording_support::fields({recording_support::field("T_K", T),
+            recording_support::field("V_m3_per_mol", V), recording_support::field("x", x),
+            recording_support::field("normalized_delta_T_K", direction.temperature),
+            recording_support::field("normalized_delta_rho_mol_per_m3", direction.molar_density),
+            recording_support::field("normalized_delta_x", direction.composition),
+            recording_support::field("physical_delta_T_K", 1.0)}),
+        "Numerical", "binary128 nested exact T derivatives", "Frozen residual cv first action",
+        "absolute", 1e-12, 0.0, std::abs(action - 0.04758556315383267) <= 1e-12));
+}
+
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.properties.residual-cv-temperature-extraction", "Residual_cv_temperature_extraction", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "P4", "residual-cv/temperature-extraction/A1", "engine/tests/native/properties_checks.cpp", "properties_checks", "ResidualCvTemperature", "residual-cv/temperature-extraction/A1:1"}, residual_cv_temperature_extraction},
         {{"native.properties.born-parameter", "Born_parameter_columns", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "born-parameter/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "BornParameter", "born-parameter/*:24"}, born_parameter_columns},
-        {{"native.properties.reference-f8", "Reference_derivative_pure_identities", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F8/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F8", "F8/*:48"}, reference_f8, "F8"},
-        {{"native.properties.reference-f9", "Reference_derivative_ionic_differences", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/partial/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F9", "F9/partial/*:204"}, reference_f9, "F9"},
+        {{"native.properties.reference-f8", "Reference_derivative_pure_identities", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F8/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F8", "F8/*:78"}, reference_f8, "F8"},
+        {{"native.properties.reference-f9", "Reference_derivative_ionic_differences", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/partial/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F9", "F9/partial/*:264"}, reference_f9, "F9"},
         {{"native.properties.reference-limits", "Reference_derivative_terminal_changes", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/limit/*,F9/completed-change/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "ReferenceLimits"}, reference_limits, "ReferenceLimits"},
         {{"native.properties.p1", "Residual_properties_and_caloric_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P1", "cv-ladder/*,cp-ladder/*,dilute-state/*,dilute-limit/*,conditioning/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P1", "cv-ladder/*:20,cp-ladder/*:20,dilute-state/*:4,dilute-limit/*:5,conditioning/*:4"}, residual_properties_and_caloric_ladders, "P1"},
         {{"native.properties.f1", "Residual_internal_energy_identity_ladder", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "P1", "a_res,pressure,compressibility_factor,residual_entropy,residual_enthalpy,temperature-ladder/*,internal-energy-identity,enthalpy-internal-energy-identity", "engine/tests/native/properties_checks.cpp", "properties_checks", "F1", "a_res:1,pressure:1,compressibility_factor:1,residual_entropy:1,residual_enthalpy:1,temperature-ladder/*:4,internal-energy-identity:1,enthalpy-internal-energy-identity:1"}, residual_internal_energy_identity_ladder, "F1"},

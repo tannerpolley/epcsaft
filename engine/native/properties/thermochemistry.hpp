@@ -91,6 +91,19 @@ struct ReactionLogPolynomial final {
     double reference_temperature = 0.0, temperature_min = 0.0, temperature_max = 0.0;
     std::string standard_state_id;
 };
+// One scalar/AD expression owns the source law and its raw thermal derivatives.
+template <typename Scalar>
+Scalar reaction_log_value(const ReactionLogPolynomial& law, const Scalar& temperature,
+                          std::size_t thermal_order = 0) {
+    if (thermal_order == 0)
+        return law.a + law.b / temperature + law.c * scalar_log(temperature / law.reference_temperature)
+            + law.d * temperature;
+    const Scalar t2 = temperature * temperature;
+    if (thermal_order == 1) return -law.b / t2 + law.c / temperature + law.d;
+    if (thermal_order == 2) return 2.0 * law.b / (t2 * temperature) - law.c / t2;
+    if (thermal_order == 3) return -6.0 * law.b / (t2 * t2) + 2.0 * law.c / (t2 * temperature);
+    throw std::invalid_argument("source thermal derivative order");
+}
 struct ReactionProperties final {
     // derivative, second_derivative, third_derivative are d^k ln K / dT^k.
     double ln_k = 0.0, derivative = 0.0, enthalpy = 0.0;

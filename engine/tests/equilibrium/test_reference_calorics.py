@@ -162,21 +162,11 @@ def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, refe
          basis="Identity", method="richardson-centered-resolve", claim="referenced enthalpy pressure action equals re-solves")
 
 
-def test_reference_calorics_refuse_missing_orders_and_undetermined_species() -> None:
-    model = _model(A_RECORD, [])
+def test_reference_calorics_preserve_residuals_without_consistent_anchors() -> None:
+    # Driven higher caloric actions are falsified natively by F1/F3/F4/F5;
+    # the superseded blanket order-refusal assertions are deliberately retired.
     problem = _problem(T0, None)
-    result = solve_equilibrium(model, problem)
-    compiled = compile_problem(model, problem)
     residual = SolvedStateObservable(Kind.PhaseProperty, 0, 0, Property.ResidualEnthalpy)
-    thermal, pressure = solved_state_first_actions(compiled, result, [H, CP, residual], [
-        Direction(1.0, 0.0, [0.0, 0.0], []), Direction(0.0, 1.0e5, [0.0, 0.0], [])])
-    assert thermal.results[0].status == pressure.results[0].status == Status.Available
-    for refused in (thermal.results[1], pressure.results[1]):  # cp along T or P needs d3C/dT3 or d3C/dT2dP
-        assert refused.status == Status.ReferenceUnavailable and refused.value is not None and refused.action is None
-    assert pressure.results[2].status == Status.Available and pressure.results[2].action is not None
-    twice = Direction(0.0, 0.0, [1.0, 0.0], [])
-    second = solved_state_actions(compiled, result, SolvedStateActionRequest([H], [twice, twice])).results[0]
-    assert second.status == Status.ReferenceUnavailable and second.value is not None
     for record in ((A_RECORD, A_RECORD), ([], [])):  # overdetermined-inconsistent; element gauge undetermined
         other = _model(*record)
         solved = solve_equilibrium(other, problem)
@@ -239,8 +229,6 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
     k = Direction(0.0, 0.0, [0.0, 0.0], [1.0])
     composition = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k])).results[0]
     assert composition.status == Status.Available and composition.action is not None
-    second = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k, k])).results[0]
-    assert second.status == Status.ReferenceUnavailable and second.value is not None and second.action is None
 
 
 def _ionic(temperature: float, reference_pressure: float | None) -> Problem:

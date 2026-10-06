@@ -204,7 +204,8 @@ struct StandardTerm final {
     std::vector<double> pressure_second_derivative;
     std::vector<double> temperature_pressure_derivative;  // d2(g_i/RT)/dTdP; empty unless requested
     // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
-    std::vector<std::vector<double>> parameter_derivative;
+    std::vector<std::vector<double>> parameter_derivative, temperature_parameter_derivative,
+        pressure_parameter_derivative;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 };
 
@@ -242,6 +243,7 @@ struct RowSeries final {
     std::vector<std::vector<double>> rows;
     std::vector<double> temperature, pressure;
     std::vector<PhaseSeries> phase;
+    std::array<std::vector<std::vector<double>>, 3> reaction_shift; // L, L_T, L_TT Taylor coefficients
     PropertyActionStatus energy = PropertyActionStatus::Available;
     PropertyActionDiagnostics energy_diagnostics;
     std::size_t maximum_energy_order = 0;
@@ -456,12 +458,21 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
 // ---- Solved-state derivative actions (E5): native records, no public promise.
 
 enum class SolvedStateObservableKind {
-    Temperature, Pressure, PhaseAmount, PhaseComponentAmount, PhaseMoleFraction, PhaseVolume,
-    PhaseMolarDensity, PhasePackingFraction, PhasePressure, PhaseResidualChemicalPotentialOverRt,
+    Temperature,
+    Pressure,
+    PhaseAmount,
+    PhaseComponentAmount,
+    PhaseMoleFraction,
+    PhaseVolume,
+    PhaseMolarDensity,
+    PhasePackingFraction,
+    PhasePressure,
+    PhaseResidualChemicalPotentialOverRt,
     PhaseProperty,
     // ln a_i = ln(x_i rho / (1 mol/m^3)) + mu_res_i/RT on EOS_STANDARD_STATE_ID; it excludes any
     // standard-state term, and f_i = a_i R T (1 mol/m^3) in Pa.
-    PhaseLogActivity
+    PhaseLogActivity,
+    PhaseGibbsMolarVolume
 };
 
 struct SolvedStateObservable final {
@@ -477,8 +488,7 @@ struct SolvedStateActionDirection final {
     double pressure_pa = 0.0;
     std::vector<double> feed_amounts_mol;
     std::vector<double> active_parameters;
-    std::vector<double> reaction_log_constants;  // d(ln K)/dt by reaction; empty means zero
-    std::vector<double> reaction_log_constant_temperature_slopes;  // d(d ln K/dT)/dt, 1/K; empty means zero
+    std::vector<std::array<double, 4>> reaction_coefficients; // increments of (a,b,c,d), evaluated at T(t)
 };
 
 struct SolvedStateActionRequest final {
@@ -504,13 +514,21 @@ struct ReferenceCalorics final {
         SolvedStateActionStatus status = SolvedStateActionStatus::Available;
         std::string message;
     };
-    std::vector<Column> enthalpy_parameter, enthalpy_reaction;
-    std::vector<double> enthalpy, heat_capacity, enthalpy_pressure;  // h, cp and dh/dP per species
+    struct Derivative final {
+        std::size_t temperature_order = 0, pressure_order = 0;
+        std::optional<std::size_t> parameter;
+        Column column; // raw derivatives of the record-anchored density-standard g, J/mol
+    };
+    std::vector<Derivative> gibbs;
+    std::vector<std::vector<double>> reaction_map; // anchored inverse of nu_D by reaction
+    std::vector<std::vector<double>> reaction_defect; // I - nu_D nu_D^+, admits combined source motions
+    bool thermal_boundary = false;
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::string message;
 };
-ReferenceCalorics reference_calorics(const CompiledSystem& compiled, double temperature, double pressure,
-                                     bool heat_capacity, bool pressure_slope = false, bool parameter_slopes = false);
+ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
+                                     bool heat_capacity, bool pressure_slope = false,
+                                     bool parameter_slopes = false, std::size_t derivative_order = 2);
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;
