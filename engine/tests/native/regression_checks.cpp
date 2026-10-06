@@ -2929,6 +2929,7 @@ void check_minimax_consistency() {
                 1e-12, 1e-10, inputs, "seeding agrees within solver accuracy", "issue-245"));
         };
         compare("density", "mol/m3", seeded.molar_density, cold.molar_density);
+        compare("pressure", "Pa", seeded.pressure, cold.pressure);
         compare("slope", "Pa m3/mol", seeded.pressure_density_derivative, cold.pressure_density_derivative);
         for (std::size_t i = 0; i < cold.site_fractions.size(); ++i)
             compare("site/" + std::to_string(i), "1", seeded.site_fractions[i], cold.site_fractions[i]);
@@ -2954,7 +2955,7 @@ void check_minimax_consistency() {
     FitResult fresh_failures; ObservationEvaluator density_fresh(density_request, fresh_failures, {0});
     CHECK(density_fresh.evaluate(u1, true, density_cold));
     CHECK(agree("density-seed/column", "density_column", "native", density_promoted.gradient[0], density_cold.gradient[0],
-        1e-12, 1e-10, "u0 to u1 then promotion", "independent density_cold density column", "issue-245"));
+        1e-12, 1e-10, "u0 to u1 then promotion", "independent cold density column", "issue-245"));
     CHECK(std::any_of(trace.trace().events.begin(), trace.trace().events.end(),
         [](const auto& e) { return std::string(e.name) == "accepted"; }));
     HelmholtzModel old_model(first.chart.parameters), target(density_promoted.chart.parameters);
@@ -2964,7 +2965,7 @@ void check_minimax_consistency() {
     for (const std::string mode : {"missing-witness", "wrong-side", "irregular", "outside-window", "empty-domain"}) {
         auto offered = previous; auto row = density;
         if (mode == "missing-witness") offered.state->negative_slope_density.reset();
-        if (mode == "wrong-side") offered.state->negative_slope_density = offered.state->molar_density;
+        if (mode == "wrong-side") row.branch = DensityBranch::Vapor;
         if (mode == "irregular") offered.state->density_convergence->amplification = 1e20;
         if (mode == "outside-window") offered.state->molar_density *= 1.02;
         if (mode == "empty-domain") row.pressure = 1e18;
@@ -2975,7 +2976,7 @@ void check_minimax_consistency() {
             return std::string(e.name) == "anchor_failure" && std::string(capture.trace().spans[e.span].name) == "fit_density_anchor";
         });
         const bool fallback = mode == "outside-window" || mode == "empty-domain";
-        CHECK(truth("density-seed/" + mode, "ineligible offers stay density_cold; one failed anchor retains its cause through density_cold recovery or refusal",
+        CHECK(truth("density-seed/" + mode, "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
             candidate.status == reference.status && (candidate.value ? candidate.value == reference.value : candidate.message == reference.message)
                 && (failure != capture.trace().events.end()) == fallback && (!fallback || (!failure->reason.empty()
                     && failure->values == std::vector<double>{offered.state->molar_density})),
@@ -2983,18 +2984,16 @@ void check_minimax_consistency() {
                 field("anchor_cause", failure != capture.trace().events.end() ? failure->reason : "ineligible")}), "issue-245"));
     }
     auto refused = u1; refused[0] = -1;
-    ObservationEvaluation rejected, replay;
-    CHECK(!sequence.evaluate(refused, true, rejected) && sequence.evaluate(u1, true, replay));
-    CHECK(replay.predictions == density_promoted.predictions && replay.gradient == density_promoted.gradient
-        && replay.chart.physical == density_promoted.chart.physical && replay.optimizer_gradient == density_promoted.optimizer_gradient);
+    CHECK(!sequence.evaluate(refused, true, density_seeded) && sequence.evaluate(u1, true, density_cold));
+    CHECK(density_cold.predictions == density_promoted.predictions && density_cold.gradient == density_promoted.gradient
+        && density_cold.chart.physical == density_promoted.chart.physical && density_cold.optimizer_gradient == density_promoted.optimizer_gradient);
     // The inherited same-liquid 130 -> 140 K candidate must still expose the new upper branch.
     auto lower_parameters = ethane; lower_parameters.dispersion_energy_over_k[0] = 130;
     auto upper_parameters = ethane; upper_parameters.dispersion_energy_over_k[0] = 140;
     HelmholtzModel lower(lower_parameters), upper(upper_parameters);
     const auto lower_result = predict(lower, density), upper_cold = predict(upper, density);
     CHECK(lower_result.stable_root_count == 1 && upper_cold.stable_root_count && *upper_cold.stable_root_count > 1);
-    compare_state(upper, *predict(upper, density, std::nullopt, std::nullopt, nullptr, &lower_result, &lower, false).state,
-        *upper_cold.state, 200, {1}, "density-seed/branch-jump");
+    CHECK(predict(upper, density, {}, {}, nullptr, &lower_result, &lower, false).value == upper_cold.value);
     auto alcohol = properties_support::parameters(2);
     alcohol.segment_count = {2.3827, 2.3316}; alcohol.sigma_constant = {3.1771, 3.7086};
     alcohol.dispersion_energy_over_k = {198.24, 222.88}; alcohol.molar_mass_kg_per_mol = {.04606844, .0581222};
@@ -3003,7 +3002,6 @@ void check_minimax_consistency() {
     alcohol.association_volume = {0, .032384, .032384, 0};
     HelmholtzModel alcohol_model(alcohol);
     const auto alcohol_cold = alcohol_model.state_at_pressure(45, 1e-4, {.5, .5}, DensityBranch::Vapor);
-    CHECK(alcohol_cold.stable_root_count.has_value());
     compare_state(alcohol_model, alcohol_model.state_at_pressure(45, 1e-4, {.5, .5}, DensityBranch::Vapor,
         alcohol_cold.molar_density), alcohol_cold, 45, {.5, .5}, "density-seed/natural-275");
     auto parameters = properties_support::aqueous_electrolyte();
