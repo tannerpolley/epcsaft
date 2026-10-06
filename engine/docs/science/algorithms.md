@@ -776,7 +776,7 @@ the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-dis
 retains numerical qualification on the stated neutral and admitted
 density-dependent ionic/reacting cases, explicit density-independent
 charged-search refusals and unchanged declared work. Method adoption is recorded in
-[ADR 0012](../../../docs/scientific/adr/0012-native-tangent-plane-phase-discovery.md).
+[ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md).
 
 ### Explicit calls and solved snapshots
 
