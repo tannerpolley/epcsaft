@@ -905,28 +905,29 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     );
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
-    std::vector<double> declared_choices;
-    if (parameters_.electrolyte_form.declared()) {
-        declared_choices.push_back(0.0);
-        declared_choices.push_back(static_cast<double>(
-            parameters_.electrolyte_form.require("electrolyte_form")
-        ));
-    }
-    if (parameters_.permittivity_form.declared()) {
-        declared_choices.push_back(1.0);
-        declared_choices.push_back(static_cast<double>(
-            parameters_.permittivity_form.require("permittivity_form")
-        ));
-    }
-    scope.probe("declared_choices", declared_choices);
+    scope.observe([&] {
+        std::vector<double> declared_choices;
+        if (parameters_.electrolyte_form.declared()) {
+            declared_choices.push_back(0.0);
+            declared_choices.push_back(static_cast<double>(
+                parameters_.electrolyte_form.require("electrolyte_form")
+            ));
+        }
+        if (parameters_.permittivity_form.declared()) {
+            declared_choices.push_back(1.0);
+            declared_choices.push_back(static_cast<double>(
+                parameters_.permittivity_form.require("permittivity_form")
+            ));
+        }
+        scope.probe("declared_choices", declared_choices);
+    });
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
     for (const double value : active_parameter_values()) point.push_back(value);
     const auto signature = predicate_signature(temperature, density, composition);
-    scope.probe(
-        "predicate_signature",
-        std::vector<double>(signature.begin(), signature.end())
-    );
+    scope.observe([&] {
+        scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
+    });
     if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
     std::vector<double> full_point = point;
     full_point.insert(full_point.end(), sites.begin(), sites.end());
