@@ -22,6 +22,24 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+
+// Infinity-norm forward-error estimate in the scaled physical correction chart.
+// Eigen estimates the 1-norm condition of the transpose, hence the infinity norm of J D.
+double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
+    const std::vector<double>& delta, const std::vector<double>& scale) {
+    const auto n = static_cast<Eigen::Index>(delta.size());
+    const double unavailable = std::numeric_limits<double>::infinity();
+    if (n == 0 || rows.size() != delta.size() || scale.size() != delta.size()
+        || jacobian.size() != delta.size() * delta.size()) return unavailable;
+    const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian.data(), n, n);
+    const Eigen::Map<const Eigen::VectorXd> d(delta.data(), n), r(rows.data(), n), D(scale.data(), n);
+    if (!J.allFinite() || !d.allFinite() || !r.allFinite() || !D.allFinite() || !(D.minCoeff() > 0.0)) return unavailable;
+    const Eigen::MatrixXd scaled = J * D.asDiagonal();
+    const Eigen::FullPivLU<Eigen::MatrixXd> lu(scaled.transpose());
+    const double denominator = lu.rcond() * scaled.cwiseAbs().rowwise().sum().maxCoeff();
+    if (lu.rank() != n || !(denominator > 0.0) || !std::isfinite(denominator)) return unavailable;
+    return d.cwiseQuotient(D).lpNorm<Eigen::Infinity>() + (J * d + r).lpNorm<Eigen::Infinity>() / denominator;
+}
 namespace {
 
 double maximum_abs(const std::vector<double>& values) {
@@ -877,9 +895,37 @@ EquilibriumResult run_driver(
             if (expired()) return limited_result();
             const auto n = static_cast<Eigen::Index>(full.size());
             if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) break;
-            const Eigen::VectorXd delta = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu().solve(
-                    -Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            const auto lu = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu();
+            const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
+            bool positive = true;
+            double feed_relative = 0.0;
+            for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
+                const auto i = static_cast<Eigen::Index>(*at.shape[p].amount);
+                positive = positive && at.amount[p] > 0.0;
+                if (at.amount[p] > 0.0) scale(i) = at.amount[p];
+                feed_relative = std::max(feed_relative, std::abs(delta(i)) / compiled.feed_total);
+            }
+            auto intensive = static_cast<Eigen::Index>(compiled.primal_size - compiled.free_intensive_count);
+            if (compiled.problem.temperature.free) scale(intensive++) = at.temperature;
+            if (compiled.problem.pressure.free) scale(intensive) = at.pressure;
+            Eigen::Index controlling = 0;
+            const double correction = delta.allFinite() ? delta.cwiseQuotient(scale).cwiseAbs().maxCoeff(&controlling)
+                : std::numeric_limits<double>::infinity();
+            double bound = std::numeric_limits<double>::infinity();
+            const bool current_best = full == best;
+            const bool size_admitted = positive && current_best && classified_before <= row_tolerance
+                && correction <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
+            if (size_admitted && lu.rank() == n)
+                bound = polish_forward_bound(jacobian, rows_before, {delta.data(), delta.data() + n},
+                    {scale.data(), scale.data() + n});
+            const bool stop = size_admitted && bound <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
+            scope.probe("polish_correction", {correction, static_cast<double>(controlling), feed_relative, bound,
+                classified_before, current_best ? 1.0 : 0.0, positive ? 1.0 : 0.0,
+                size_admitted ? static_cast<double>(lu.rank()) : -1.0, stop ? 1.0 : 0.0},
+                static_cast<std::uint32_t>(step));
+            if (stop) break;
             bool accepted = false;
             // Bounded damping retains raw contraction and the physical cutoff.
             // Best-point selection below protects the returned classified residual.

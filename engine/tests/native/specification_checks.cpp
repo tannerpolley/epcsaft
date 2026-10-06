@@ -1413,6 +1413,21 @@ void check_reference_mapping() {
 
 }  // namespace
 namespace {
+void check_polish_solve_admission() {
+    // A zero computed correction and tiny backward residual can hide a 1e-6 forward correction.
+    const auto bound = epcsaft::equilibrium::polish_forward_bound;
+    const double ill_conditioned = bound({1.0, 0.0, 0.0, 1e-14}, {0.0, 1e-20}, {0.0, 0.0}, {1.0, 1.0});
+    const double singular = bound({1.0, 0.0, 0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {1.0, 1.0});
+    const double admitted = bound({1.0, 0.0, 0.0, 1.0}, {-1e-14, 0.0}, {1e-14, 0.0}, {1.0, 1.0});
+    recording_support::compare("polish-solve/forward", "forward_correction_bound", "1", ill_conditioned, 1e-6,
+        "{\"J22\":1e-14,\"r2\":1e-20,\"computed_delta\":0}", "Identity", "diagonal-system",
+        "a tiny backward residual does not bound the forward correction", "relative", 0.0, 1e-14,
+        std::abs(ill_conditioned / 1e-6 - 1.0) <= 1e-14, "polish-solve", "diagonal", "forward", "J,r,delta", "J^-1 r", "solve");
+    CHECK(ill_conditioned > epcsaft::policy::EQUILIBRIUM_POLISH_CORRECTION.value);
+    CHECK(std::isinf(singular));
+    CHECK(admitted <= epcsaft::policy::EQUILIBRIUM_POLISH_CORRECTION.value);
+}
+
 void check_inventory_support() {
     epcsaft::equilibrium::CompiledSystem c;
     c.n_feed = {2.0, 1.0, 0.0};
@@ -1440,6 +1455,7 @@ void check_inventory_support() {
 }
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.specification.polish-solve", "Newton_solve_admission", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "ALG-EQUILIBRIUM", "polish-solve/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "Newton-solve"}, check_polish_solve_admission},
         {{"native.specification.inventory", "Conserved_inventory_support", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "Inventory", "inventory/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "Inventory"}, check_inventory_support},
         {{"native.specification.c1", "Specification_C1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "structural/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C1", "structural/*:480"}, check_c1},
         {{"native.specification.c2", "Specification_C2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "named-rejection,topology-rejection", "engine/tests/native/specification_checks.cpp", "specification_checks", "C2"}, check_c2},

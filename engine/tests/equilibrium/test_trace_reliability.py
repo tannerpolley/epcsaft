@@ -179,6 +179,12 @@ def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: flo
     same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-6,
          unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
          claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
+    if inventory == 1e-12:
+        # #272: pin the unchanged-polish trace state; a norm-wide residual band omitted a 1.38% correction.
+        same(evidence, "trace-inventory/polish-masking/x_s2", result.mole_fractions[2],
+             7.500000035072494e-13, atol=0.0, rtol=1e-12, unit="1", inputs=inputs,
+             basis="Numerical", method="unchanged-polish-comparison",
+             claim="the fresh-correction stop preserves the trace state of unchanged polishing")
     item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
         [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
     assert item.status == SolvedStateActionStatus.Available, item.status
