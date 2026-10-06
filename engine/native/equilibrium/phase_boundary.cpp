@@ -24,7 +24,7 @@ bool supports_split_seed(const CompiledSystem& compiled) {
         && compiled.model->parameters().site_component.empty()
         && p.phases[0].kind != p.phases[1].kind
         && !p.temperature.free && !p.pressure.free
-        && !compiled.has_ions && !compiled.has_reaction && compiled.pinned_count == 0
+        && !compiled.has_ions && !compiled.has_reaction && !compiled.feasibility_cell()
         && std::all_of(compiled.feed_composition.begin(), compiled.feed_composition.end(),
             [](double z) { return std::isfinite(z) && z > 0.0; })
         && p.phases[0].support.size() == components && p.phases[1].support.size() == components;
@@ -323,6 +323,55 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
     const auto phase_offsets = compiled.phase_offsets();
+    if (compiled.has_caloric_condition()) {
+        auto seed_problem = compiled.problem;
+        seed_problem.enthalpy_j.reset();
+        seed_problem.entropy_j_per_k.reset();
+        const bool pure = compiled.model->parameters().component_count() == 1 && seed_problem.phases.size() == 2;
+        if (pure) seed_problem.phases[1].amount = AmountSpec::pinned(0.0);
+        else seed_problem.temperature = FreeValue::fixed(seed_temperature(compiled));
+        const auto source = compile_problem(*compiled.model, seed_problem);
+        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits), nullptr, limits);
+        scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
+        if (seed.has_state()) {
+            const auto prepared = source.prepare(seed.coordinates);
+            const auto destination = compiled.prepare(point);
+            std::vector<double> values, capacities;
+            for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
+                const auto state = compiled.model->state(seed.temperature[0], seed.molar_densities[p], prepared.composition[p]);
+                values.push_back(compiled.problem.enthalpy_j ? *state.total_enthalpy : *state.total_entropy);
+                capacities.push_back(*state.total_isobaric_heat_capacity);
+                const auto& a = prepared.shape[p];
+                const auto& b = destination.shape[p];
+                for (std::size_t i = 0; i < a.x.size(); ++i) point[b.x[i]] = seed.coordinates[a.x[i]];
+                point[b.volume] = seed.coordinates[a.volume];
+                point[*b.amount] = prepared.amount[p];
+            }
+            const double target = compiled.problem.enthalpy_j ? *compiled.problem.enthalpy_j : *compiled.problem.entropy_j_per_k;
+            double T = seed.temperature[0];
+            if (pure) {
+                const double split = (target / compiled.feed_total - values[0]) / (values[1] - values[0]);
+                if (!(split > 0.0 && split < 1.0)) throw std::domain_error("caloric target outside declared coexistence interval");
+                point[*destination.shape[0].amount] = compiled.feed_total * (1.0 - split);
+                point[*destination.shape[1].amount] = compiled.feed_total * split;
+            } else {
+                const double value = std::inner_product(values.begin(), values.end(), prepared.amount.begin(), 0.0);
+                const double cp = std::inner_product(capacities.begin(), capacities.end(), prepared.amount.begin(), 0.0);
+                const double next = compiled.problem.enthalpy_j ? T + (target - value) / cp : T * std::exp((target - value) / cp);
+                if (cp > 0.0 && std::isfinite(next) && next > 0.0) {
+                    bool inside = true;
+                    for (const auto& phase : compiled.problem.phases)
+                        for (auto i : phase.support) {
+                            const auto& intervals = compiled.model->thermochemistry()->component_intervals[i];
+                            inside &= std::any_of(intervals.begin(), intervals.end(), [&](const auto& v) { return ideal_interval_contains(v, next); });
+                        }
+                    if (inside) T = next;
+                }
+            }
+            point[compiled.primal_size - 1] = T;
+            return point;
+        }
+    }
     std::optional<double> vapor_fraction;
     const auto compositions = start_compositions(compiled, scope, vapor_fraction, limits);
     std::size_t free_phases = 0;
@@ -430,6 +479,8 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     if (u.has_value() != v.has_value() || (u && (u->solvent_index != v->solvent_index
         || u->solute_molality_ratios != v->solute_molality_ratios || u->standard_molality_mol_per_kg != v->standard_molality_mol_per_kg)))
         return "source reference declaration differs";
+    if (a.enthalpy_j.has_value() != b.enthalpy_j.has_value()
+        || a.entropy_j_per_k.has_value() != b.entropy_j_per_k.has_value()) return "caloric condition kind differs";
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";
     if (a.phases.size() != b.phases.size()) return "phase count differs";
     for (std::size_t p = 0; p < a.phases.size(); ++p) {
@@ -479,7 +530,7 @@ struct Path final {
     EquilibriumProblem base;
     std::vector<double> feed_start, feed_target;
     std::vector<double> parameter_start, parameter_target;
-    double t0 = 0.0, t1 = 0.0, p0 = 0.0, p1 = 0.0;
+    double t0 = 0.0, t1 = 0.0, p0 = 0.0, p1 = 0.0, h1 = 0.0, s1 = 0.0;
 
     EquilibriumProblem at(double q) const {
         EquilibriumProblem problem = base;
@@ -489,6 +540,8 @@ struct Path final {
             problem.feed.values[i] = (1.0 - q) * feed_start[i] + q * feed_target[i];
         if (!problem.temperature.free) problem.temperature = FreeValue::fixed((1.0 - q) * t0 + q * t1);
         if (!problem.pressure.free) problem.pressure = FreeValue::fixed((1.0 - q) * p0 + q * p1);
+        if (base.enthalpy_j) problem.enthalpy_j = (1.0 - q) * *base.enthalpy_j + q * h1;
+        if (base.entropy_j_per_k) problem.entropy_j_per_k = (1.0 - q) * *base.entropy_j_per_k + q * s1;
         return problem;
     }
 
@@ -499,6 +552,9 @@ struct Path final {
         for (std::size_t i = 0; i < feed_start.size(); ++i) result[2 + i] = feed_target[i] - feed_start[i];
         for (std::size_t i = 0; i < parameter_target.size(); ++i)
             result[2 + feed_start.size() + i] = parameter_target[i] - parameter_start[i];
+        result.resize(width + 4 * base.reactions.size() + 2, 0.0);
+        result[result.size() - 2] = base.enthalpy_j ? h1 - *base.enthalpy_j : 0.0;
+        result.back() = base.entropy_j_per_k ? s1 - *base.entropy_j_per_k : 0.0;
         return result;
     }
 };
@@ -777,7 +833,10 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     path.t1 = request.target_problem.temperature.value;
     path.p0 = request.start_problem.pressure.value;
     path.p1 = request.target_problem.pressure.value;
-    const bool moves = path.feed_start != path.feed_target
+    path.h1 = request.target_problem.enthalpy_j.value_or(0.0);
+    path.s1 = request.target_problem.entropy_j_per_k.value_or(0.0);
+    const bool moves = request.start_problem.enthalpy_j != request.target_problem.enthalpy_j
+        || request.start_problem.entropy_j_per_k != request.target_problem.entropy_j_per_k || path.feed_start != path.feed_target
         || (!path.base.temperature.free && path.t0 != path.t1)
         || (!path.base.pressure.free && path.p0 != path.p1);
     if (parameter_path && moves)

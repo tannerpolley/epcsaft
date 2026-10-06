@@ -214,8 +214,8 @@ The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-f
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
-Declared phase specifications are current work; PH, PS and UV are deferred
-future implementations outside current completion. Caloric properties/actions
+Declared neutral PH/PS specifications use extensive caloric balances and exact
+controls/actions in the existing driver; UV remains deferred. Caloric properties/actions
 consumed by MEA and the absorber remain current requirements. Fitting uses
 density, total molar isobaric heat capacity with fixed thermochemistry,
 finite-addition enthalpy with fixed ideal-gas records and declared reference
@@ -234,7 +234,7 @@ remaining work.
   are explicit and never silently reinterpret parameter records.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P. Phase fractions and absolute
-  phase amounts are distinct. PH, PS and UV remain future work; explicit native
+  phase amounts are distinct. Neutral PH/PS uses the same driver; UV remains future work; explicit native
   fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P
   discovery. Discover at initialization, then reuse its declared topology where
@@ -404,7 +404,7 @@ acceptance, reuse decisions and estimates. Native issue relationships own
 prerequisites; milestone numbering expresses delivery priority, not an additional
 scientific dependency. Do not maintain a competing sequence here.
 Finish and verify each prerequisite's current agreed scope before dependent
-implementation; deferred PH/PS/UV and global certification do not block current work.
+implementation; deferred UV and global certification do not block current work.
 Later integration defects reopen the affected earlier issue. Design readiness is
 scoped to the affected slice; the leaf issue owns its gates and execution plan.
 Infrastructure needed to execute checks is a prerequisite. Existing higher

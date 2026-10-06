@@ -560,6 +560,8 @@ class EquilibriumProblem:
     standard_gibbs_j_per_mol: list[float]
     topology_declared: bool
     row_tolerance: float
+    enthalpy_j: float | None
+    entropy_j_per_k: float | None
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
@@ -592,6 +594,8 @@ class RowKind:
     Moiety: RowKind
     Electro: RowKind
     Normalization: RowKind
+    Enthalpy: RowKind
+    Entropy: RowKind
 
 class Row:
     kind: RowKind
@@ -748,8 +752,11 @@ class SolvedStateActionDirection:
     feed_amounts_mol: list[float]
     active_parameters: list[float]
     reaction_coefficients: list[list[float]]
+    enthalpy_j: float
+    entropy_j_per_k: float
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
-                 active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...) -> None: ...
+                 active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...,
+                 enthalpy_j: float = ..., entropy_j_per_k: float = ...) -> None: ...
 
 class SolvedStateActionRequest:
     observables: list[SolvedStateObservable]

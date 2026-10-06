@@ -51,7 +51,7 @@ Curvature reduced_curvature_at(
     const CompiledSystem& compiled, PhasePoint prepared,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.pinned_count != 0 || prepared.point.empty()) return {};
+    if (compiled.feasibility_cell() || prepared.point.empty()) return {};
     prepared.point.resize(compiled.primal_size);
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     const auto n = static_cast<Eigen::Index>(prepared.point.size());
@@ -266,7 +266,7 @@ std::vector<double> start_point(
     std::size_t intensive = compiled.primal_size - compiled.free_intensive_count;
     if (compiled.problem.temperature.free && !start.temperature.empty()) point[intensive++] = start.temperature[0];
     if (compiled.problem.pressure.free && !start.pressure.empty()) point[intensive++] = start.pressure[0];
-    if (compiled.pinned_count != 0 && start.multipliers.size() == compiled.rank + compiled.charge_row_count) {
+    if (compiled.feasibility_cell() && start.multipliers.size() == compiled.rank + compiled.charge_row_count) {
         std::copy(start.multipliers.begin(), start.multipliers.end(), point.begin() + compiled.primal_size);
     }
     return point;
@@ -299,7 +299,7 @@ double active_constraint_residual(
 ) {
     double result = 0.0;
     for (std::size_t row = 0; row < values.size(); ++row) {
-        if (compiled.pinned_count == 0 && compiled.rows[row].kind == RowKind::Chemical) continue;
+        if (!compiled.feasibility_cell() && compiled.rows[row].kind == RowKind::Chemical) continue;
         result = std::max(result, std::abs(values[row]));
     }
     return result;
@@ -325,6 +325,7 @@ ResidualSummary summarize_residuals(
         keep(result.maximum, values[index]);
         if (kind == RowKind::Chemical || kind == RowKind::Pressure) keep(result.intensive, values[index]);
         else if (kind == RowKind::Moiety) keep(result.balance, values[index]);
+        else if (kind == RowKind::Enthalpy || kind == RowKind::Entropy) keep(result.balance, values[index]);
         else if (kind == RowKind::Normalization) keep(result.normalization, values[index]);
         else if (kind == RowKind::Electro) keep(result.charge, values[index]);
     }
@@ -474,7 +475,7 @@ bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style
 ) {
-    n = static_cast<Ipopt::Index>(compiled_.pinned_count == 0
+    n = static_cast<Ipopt::Index>(!compiled_.feasibility_cell()
         ? compiled_.primal_size : compiled_.primal_size + compiled_.rank + compiled_.charge_row_count);
     m = static_cast<Ipopt::Index>(constraint_rows().size());
     nnz_jac_g = n * m;
@@ -497,7 +498,7 @@ bool GibbsMinimizer::get_bounds_info(
     // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
     const std::size_t species = compiled_.n_feed.size();
     std::vector<double> box(species, policy::STABILITY_COMPOSITION_FLOOR.value);
-    if (compiled_.pinned_count == 0 || !compiled_.is_square()) {
+    if (!compiled_.feasibility_cell() || !compiled_.is_square()) {
         if (limits_ && limits_->expired()) return false;
         for (std::size_t i = 0; i < species; ++i)
             box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
@@ -527,7 +528,7 @@ bool GibbsMinimizer::get_starting_point(
     Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda
 ) {
     if (!init_x) return false;
-    const std::vector<double> point = compiled_.pinned_count == 0
+    const std::vector<double> point = !compiled_.feasibility_cell()
         ? std::vector<double>(start_.begin(), start_.begin() + compiled_.primal_size)
         : start_;
     for (Ipopt::Index i = 0; i < n; ++i) x[i] = i < static_cast<Ipopt::Index>(point.size()) ? point[i] : 0.0;
@@ -542,7 +543,7 @@ bool GibbsMinimizer::get_starting_point(
 std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
     std::vector<std::size_t> result;
     for (std::size_t row = 0; row < compiled_.rows.size(); ++row) {
-        if (compiled_.pinned_count != 0
+        if (compiled_.feasibility_cell()
             || (compiled_.rows[row].kind != RowKind::Chemical
                 && compiled_.rows[row].kind != RowKind::Pressure)) {
             result.push_back(row);
@@ -592,7 +593,7 @@ bool GibbsMinimizer::eval_f(
 ) {
     ++evaluations_;
     try {
-        value = compiled_.pinned_count == 0 ? rows_at(n, x).objective : 0.0;
+        value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
         return std::isfinite(value);
     } catch (const std::exception&) {
         return false;
@@ -791,7 +792,7 @@ EquilibriumResult run_driver(
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
     // A pinned square system has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
-        * (compiled.pinned_count != 0 && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
+        * (compiled.feasibility_cell() && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
@@ -846,7 +847,7 @@ EquilibriumResult run_driver(
     if (expired()) return limited_result();
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits ? std::move(fallback) : boundary_start(compiled);
-    std::vector<double> full = compiled.pinned_count == 0 ? add_multipliers(compiled, point) : point;
+    std::vector<double> full = !compiled.feasibility_cell() ? add_multipliers(compiled, point) : point;
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows inside the physical composition cutoff.
     // Curvature may raise classified rows temporarily; return the best classified
@@ -1128,7 +1129,7 @@ EquilibriumResult run_driver(
     // and volume, together with stationarity in the free amount. The raw
     // optimizer values stay a trace probe.
     scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
-    if (compiled.pinned_count == 0) {
+    if (!compiled.feasibility_cell()) {
         result.constraint_multipliers.clear();
         std::size_t electro = 0;
         for (const auto& row : compiled.rows) {
@@ -1146,11 +1147,45 @@ EquilibriumResult run_driver(
     }
     result.coordinates = full;
     if (expired()) return limited_result();
-    const auto curvature = reduced_curvature_at(compiled, std::move(prepared), result.constraint_multipliers);
+    Curvature curvature = reduced_curvature_at(compiled, prepared, result.constraint_multipliers);
+    if (compiled.has_caloric_condition()) {
+        const bool pure = model.parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
+        if (pure) {
+            if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
+                result.success = false;
+                result.message = "caloric coexistence requires an interior distinct split";
+                clear_state(result);
+                return result;
+            }
+            result.message += "; coexistence equality root; fixed-TP Gibbs split is analytically flat";
+        } else {
+            auto diagnostic = compiled.problem;
+            diagnostic.enthalpy_j.reset();
+            diagnostic.entropy_j_per_k.reset();
+            diagnostic.temperature = FreeValue::fixed(temperature);
+            auto tp = compile_problem(model, diagnostic);
+            auto restricted = tp.generic_point();
+            const auto layout = tp.prepare(restricted).shape;
+            for (std::size_t p = 0; p < layout.size(); ++p) {
+                for (std::size_t i = 0; i < layout[p].x.size(); ++i)
+                    restricted[layout[p].x[i]] = full[prepared.shape[p].x[i]];
+                restricted[layout[p].volume] = full[prepared.shape[p].volume];
+                restricted[*layout[p].amount] = amounts[p];
+            }
+            restricted.resize(tp.primal_size);
+            restricted = add_multipliers(tp, restricted);
+            std::vector<double> weights;
+            for (const auto& row : tp.rows) {
+                if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
+                weights.push_back(row.kind == RowKind::Moiety ? -tp.feed_total * restricted[tp.primal_size + row.index] : 0.0);
+            }
+            curvature = reduced_curvature_at(tp, tp.prepare(restricted), weights);
+        }
+    }
     result.reduced_hessian_minimum = curvature.minimum;
     scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
     scope.probe("reduced_hessian_band", curvature.band);
-    if (compiled.pinned_count == 0 && !(curvature.equilibrated > curvature.band)) {
+    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
         const bool singular = curvature.equilibrated >= -curvature.band;
         if (singular || std::isnan(curvature.equilibrated))

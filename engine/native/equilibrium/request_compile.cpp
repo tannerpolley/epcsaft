@@ -398,6 +398,50 @@ StandardTerm standard_term(
     return result;
 }
 
+// PH/PS consumes complete records at every callback temperature.
+void admit_calorics(const CompiledSystem& compiled, double temperature) {
+    if (!compiled.has_caloric_condition()) return;
+    const auto& p = compiled.problem;
+    if (p.enthalpy_j && p.entropy_j_per_k)
+        throw std::invalid_argument("one extensive caloric condition required");
+    if (!p.temperature.free || p.pressure.free || compiled.pinned_count
+        || !p.topology_declared || p.discovery)
+        throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
+    if (compiled.has_ions || p.source_reference || has_reaction_reference(p))
+        throw std::invalid_argument("charged/source-referenced PH/PS unavailable");
+    if (!std::isfinite(p.enthalpy_j ? *p.enthalpy_j : *p.entropy_j_per_k))
+        throw std::invalid_argument("nonfinite caloric target");
+    const auto& record = compiled.model->thermochemistry();
+    if (!record) throw std::invalid_argument("missing thermochemistry for caloric condition");
+    for (const auto& phase : p.phases)
+        for (auto i : phase.support) {
+            const auto& intervals = record->component_intervals[i];
+            if (intervals.empty()) throw std::invalid_argument("missing caloric record: " + std::to_string(i));
+            if (std::none_of(intervals.begin(), intervals.end(), [&](const auto& v) {
+                    return ideal_interval_contains(v, temperature); }))
+                throw std::invalid_argument("caloric record outside interval: " + std::to_string(i));
+        }
+}
+
+template<class Scalar>
+IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::size_t phase,
+    const Scalar& T, const Scalar& volume, const std::vector<Scalar>& x, double center) {
+    const auto& record = *compiled.model->thermochemistry();
+    std::vector<IdealCorrelation> correlations;
+    std::vector<Scalar> fractions;
+    for (auto i : compiled.problem.phases[phase].support) {
+        const auto& intervals = record.component_intervals[i];
+        const auto selected = std::find_if(intervals.begin(), intervals.end(), [&](const auto& v) {
+            return ideal_interval_contains(v, center); });
+        correlations.push_back(selected->correlation);
+        fractions.push_back(x[i]);
+    }
+    return evaluate_ideal_mixture(correlations, record.standard_pressure, T, Scalar(1.0) / volume,
+        fractions, std::vector<bool>(fractions.size(), true));
+}
+
+std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double);
+
 std::vector<double> pinned_hessian(
     const CompiledSystem& compiled, const PhasePoint& prepared,
     const std::vector<double>& multipliers
@@ -523,6 +567,10 @@ std::vector<double> pinned_hessian(
             }
         }
     }
+    if (compiled.has_caloric_condition()) {
+        const auto caloric = caloric_hessian(compiled, prepared, multipliers.back());
+        for (std::size_t i = 0; i < result.size(); ++i) result[i] += caloric[i];
+    }
     return result;
 }
 
@@ -545,12 +593,16 @@ CppAD::ADFun<double> record_geometry(
     for (const double amount : compiled.n_feed) u.push_back(amount);
     const auto theta_center = model.active_parameter_values();
     for (const double value : theta_center) u.push_back(value);
+    if (compiled.has_caloric_condition()) {
+        u.push_back(problem.enthalpy_j.value_or(0.0));
+        u.push_back(problem.entropy_j_per_k.value_or(0.0));
+    }
     CppAD::Independent(u);
     const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
     const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
     AD feed_total = AD(0.0);
     for (std::size_t i = 0; i < components; ++i) feed_total += u[n + 2 + i];
-    const std::vector<AD> theta(u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components), u.end());
+    const std::vector<AD> theta(u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components), u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components + theta_center.size()));
     const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(), theta);
     const auto sigma = segment_sigma(T, tape_parameters);
     const auto diameter = segment_diameter(T, tape_parameters, sigma);
@@ -578,8 +630,19 @@ CppAD::ADFun<double> record_geometry(
         output.insert(output.end(), theta.begin(), theta.end());
         output.push_back(amount);
         output.push_back(eta);
+        if (compiled.has_caloric_condition()) {
+            const bool h = problem.enthalpy_j.has_value();
+            const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0));
+            const auto ideal = caloric_ideal(compiled, phase, T, volume, x, prepared.temperature);
+            row_values.back() += amount * (h ? ideal.enthalpy : ideal.entropy) / denominator;
+            const AD weight = amount * GAS_CONSTANT_J_PER_MOL_K / denominator;
+            output.push_back(h ? AD(0.0) : -weight);
+            output.push_back(h ? -weight * T * T : -weight * T);
+            output.push_back(h ? -weight * T * volume : AD(0.0));
+        }
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
             const auto& item = compiled.rows[row];
+            if (item.kind == RowKind::Enthalpy || item.kind == RowKind::Entropy) continue;
             if (item.kind == RowKind::Moiety) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += amount * compiled.B[item.index][species] * x[species];
@@ -629,8 +692,84 @@ CppAD::ADFun<double> record_geometry(
             row_values[row] -= compiled.B[compiled.rows[row].index][species] * u[n + 2 + species];
         row_values[row] /= AD(compiled.feed_total);
     }
+    if (compiled.has_caloric_condition()) {
+        const bool h = problem.enthalpy_j.has_value();
+        row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
+            / (feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0)));
+    }
     output.insert(output.end(), row_values.begin(), row_values.end());
     return CppAD::ADFun<double>(u, output);
+}
+
+std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhasePoint& prepared, double weight) {
+    const std::size_t n = prepared.point.size();
+    std::vector<double> result(n * n, 0.0);
+    if (weight == 0.0) return result;
+    const std::size_t width = 2 + compiled.n_feed.size() + compiled.model->active_parameters().size();
+    const std::size_t stride = width + 5;
+    auto geometry = record_geometry(compiled, prepared, prepared.standard);
+    using AD = CppAD::AD<double>;
+    std::vector<AD> q(prepared.point.begin(), prepared.point.end());
+    CppAD::Independent(q);
+    std::vector<AD> input = q;
+    input.push_back(prepared.temperature);
+    input.push_back(prepared.pressure);
+    for (auto v : compiled.n_feed) input.push_back(v);
+    for (auto v : compiled.model->active_parameter_values()) input.push_back(v);
+    input.push_back(compiled.problem.enthalpy_j.value_or(0.0));
+    input.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
+    auto active_geometry = geometry.base2ad();
+    const auto mapped = active_geometry.Forward(0, input);
+    AD value = mapped.back();
+    for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
+        const auto& d = prepared.derivative[p];
+        std::vector<double> center = {prepared.temperature, prepared.volume[p]};
+        center.insert(center.end(), prepared.composition[p].begin(), prepared.composition[p].end());
+        const auto theta = compiled.model->active_parameter_values();
+        center.insert(center.end(), theta.begin(), theta.end());
+        std::vector<AD> delta(width);
+        for (std::size_t i = 0; i < width; ++i) delta[i] = mapped[p * stride + i] - center[i];
+        AD energy = d.value, gt = d.gradient[0], gv = d.gradient[1];
+        for (std::size_t i = 0; i < width; ++i) {
+            energy += d.gradient[i] * delta[i];
+            gt += d.hessian[i] * delta[i];
+            gv += d.hessian[width + i] * delta[i];
+            for (std::size_t j = 0; j < width; ++j)
+                energy += 0.5 * d.hessian[i * width + j] * delta[i] * delta[j];
+        }
+        value += mapped[p * stride + width + 2] * energy
+            + mapped[p * stride + width + 3] * gt + mapped[p * stride + width + 4] * gv;
+    }
+    CppAD::ADFun<double> pullback(q, std::vector<AD>{value});
+    result = pullback.Hessian(prepared.point, 0);
+    std::vector<double> center(prepared.point);
+    center.push_back(prepared.temperature);
+    center.push_back(prepared.pressure);
+    center.insert(center.end(), compiled.n_feed.begin(), compiled.n_feed.end());
+    const auto theta = compiled.model->active_parameter_values();
+    center.insert(center.end(), theta.begin(), theta.end());
+    center.push_back(compiled.problem.enthalpy_j.value_or(0.0));
+    center.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
+    const auto values = geometry.Forward(0, center);
+    const auto jac = geometry.Jacobian(center);
+    for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
+        std::vector<double> b(width, 0.0);
+        b[0] = values[p * stride + width + 3];
+        b[1] = values[p * stride + width + 4];
+        std::vector<std::vector<double>> direction(n, std::vector<double>(width));
+        for (std::size_t a = 0; a < n; ++a)
+            for (std::size_t i = 0; i < width; ++i) direction[a][i] = jac[(p * stride + i) * center.size() + a];
+        for (std::size_t a = 0; a < n; ++a)
+            for (std::size_t c = 0; c <= a; ++c) {
+                const auto action = compiled.model->residual_energy_action(prepared.temperature,
+                    prepared.volume[p], prepared.composition[p], {b, direction[a], direction[c]});
+                if (!action.action) throw std::domain_error(std::string("caloric constraint curvature: ") + solved_state_status_name(solved_state_status(action.status)));
+                result[a * n + c] += *action.action;
+                if (a != c) result[c * n + a] += *action.action;
+            }
+    }
+    for (auto& v : result) v *= weight;
+    return result;
 }
 
 // Reaction-aware feed-relative pin admission: individual [0, 1] domain always; the exact
@@ -1043,7 +1182,8 @@ static CompiledSystem compile_with_basis(
         compiled.pinned_count += phase.amount.kind == AmountKind::Pinned;
     }
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
-    if (compiled.free_intensive_count != compiled.pinned_count) {
+    const std::size_t caloric_count = compiled.has_caloric_condition();
+    if (compiled.free_intensive_count != compiled.pinned_count + caloric_count) {
         if (compiled.free_intensive_count < compiled.pinned_count) {
             std::string phase_name;
             for (const auto& phase : compiled.problem.phases) {
@@ -1060,7 +1200,7 @@ static CompiledSystem compile_with_basis(
             "free temperature or pressure requires a pinned phase amount"
         );
     }
-    if (compiled.problem.phases.size() - compiled.pinned_count > compiled.rank) {
+    if (compiled.problem.phases.size() - compiled.pinned_count > compiled.rank + caloric_count) {
         throw std::invalid_argument(
             "phase count exceeds balance rank for phase "
             + compiled.problem.phases.back().name
@@ -1107,11 +1247,16 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({RowKind::Normalization, phase, 0, "phase_normalization"});
         compiled.row_names.emplace_back(row_kind_name(RowKind::Normalization));
     }
+    if (caloric_count) {
+        const auto kind = request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy;
+        compiled.rows.push_back({kind, 0, 0, row_kind_name(kind)});
+        compiled.row_names.emplace_back(row_kind_name(kind));
+    }
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
     compiled.primal_size += compiled.free_intensive_count;
-    compiled.rows_minus_unknowns = static_cast<long>(compiled.pinned_count)
+    compiled.rows_minus_unknowns = static_cast<long>(compiled.pinned_count + caloric_count)
         - static_cast<long>(compiled.free_intensive_count);
     compiled.generic_nullity = 1;
     compiled.feasible = false;
@@ -1253,6 +1398,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
     std::size_t offset = primal_size - free_intensive_count;
     result.temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
+    admit_calorics(*this, result.temperature);
     for (std::size_t phase = 0; phase < result.shape.size(); ++phase) {
         const auto& layout = result.shape[phase];
         std::vector<double> values(components, 0.0);
@@ -1341,6 +1487,8 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
             value = (value - balance[row.index]) / feed_total;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
+        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
+            value = row_series(prepared, {point}, std::vector<double>(2 + components + model->active_parameters().size()), 0).rows[0].back();
         } else {
             for (const std::size_t species : problem.phases[row.phase].support) value += x[row.phase][species];
             value -= 1.0;
@@ -1363,7 +1511,7 @@ std::vector<double> CompiledSystem::classified_residuals(
     const PhasePoint& prepared, const std::vector<double>& values
 ) const {
     std::vector<double> result = values;
-    if (pinned_count != 0 || values.size() != rows.size()) return result;
+    if (feasibility_cell() || values.size() != rows.size()) return result;
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const auto& item = rows[row];
         if (item.kind == RowKind::Chemical) {
@@ -1482,6 +1630,14 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                 at(row_index, shape[row.phase].x[local]) =
                     z[problem.phases[row.phase].support[local]]
                     * compositions[row.phase][problem.phases[row.phase].support[local]];
+        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
+            std::vector<std::vector<double>> state = {point, std::vector<double>(n, 0.0)};
+            const std::vector<double> control(2 + n_feed.size() + model->active_parameters().size(), 0.0);
+            for (std::size_t c = 0; c < n; ++c) {
+                state[1][c] = 1.0;
+                at(row_index, c) = row_series(prepared, state, control, 1).rows[1].back();
+                state[1][c] = 0.0;
+            }
         } else {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
                 at(row_index, shape[row.phase].x[local]) =
@@ -1528,7 +1684,7 @@ std::vector<double> CompiledSystem::objective_gradient_at(const PhasePoint& prep
     core::Scope scope("equilibrium_objective_gradient");
     const auto& point = prepared.point;
     std::vector<double> result(point.size(), 0.0);
-    if (pinned_count != 0) return result;
+    if (feasibility_cell()) return result;
     const std::size_t components = model->parameters().component_count();
     const double T = prepared.temperature;
     const double P = prepared.pressure;
@@ -1580,7 +1736,7 @@ std::vector<double> CompiledSystem::hessian_at(
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
-    if (pinned_count != 0) return constraint_hessian_at(prepared, constraint_multipliers);
+    if (feasibility_cell()) return constraint_hessian_at(prepared, constraint_multipliers);
     const double P = prepared.pressure;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
     const auto& standard_value = prepared.standard.derivative[0];
@@ -1669,7 +1825,8 @@ RowSeries CompiledSystem::row_series(
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = 2 + components + model->active_parameters().size();
     if (state.size() != order + 1 ||
-        (control.size() != width && control.size() != width + 4 * problem.reactions.size()) ||
+        (control.size() != width && control.size() != width + 4 * problem.reactions.size() &&
+         control.size() != width + 4 * problem.reactions.size() + 2) ||
         order > 3)
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
@@ -1705,10 +1862,10 @@ RowSeries CompiledSystem::row_series(
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
-    const std::size_t stride = width + 2;
+    const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
-        std::vector<double> input(n + width, 0.0);
+        std::vector<double> input(n + width + (has_caloric_condition() ? 2 : 0), 0.0);
         std::copy(state[k].begin(), state[k].end(), input.begin());
         if (k == 0) {
             input[n] = prepared.temperature;
@@ -1718,6 +1875,15 @@ RowSeries CompiledSystem::row_series(
             std::copy(values.begin(), values.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2 + components));
         } else if (k == 1) {
             std::copy_n(control.begin(), width, input.begin() + static_cast<std::ptrdiff_t>(n));
+        }
+        if (has_caloric_condition()) {
+            if (k == 0) {
+                input[n + width] = problem.enthalpy_j.value_or(0.0);
+                input[n + width + 1] = problem.entropy_j_per_k.value_or(0.0);
+            } else if (k == 1 && control.size() == width + 4 * problem.reactions.size() + 2) {
+                input[n + width] = control[control.size() - 2];
+                input[n + width + 1] = control.back();
+            }
         }
         output[k] = geometry.Forward(k, input);
     }
@@ -1789,11 +1955,14 @@ RowSeries CompiledSystem::row_series(
         series.gradient.assign(order + 1, std::vector<double>(width, 0.0));
         series.gradient[0] = derivative.gradient;
         std::vector<std::size_t> needed = {1};
+        if (has_caloric_condition()) needed.push_back(0);
         for (const std::size_t species : problem.phases[phase].support) needed.push_back(2 + species);
-        const auto contraction = [&](std::vector<std::vector<double>> directions, std::size_t component) {
-            std::vector<double> unit(width, 0.0);
-            unit[component] = 1.0;
-            directions.push_back(unit);
+        const auto contraction = [&](std::vector<std::vector<double>> directions, std::optional<std::size_t> component) {
+            if (component) {
+                std::vector<double> unit(width, 0.0);
+                unit[*component] = 1.0;
+                directions.push_back(unit);
+            }
             const auto energy = model->residual_energy_action(
                 prepared.temperature, prepared.volume[phase], prepared.composition[phase], directions);
             result.maximum_energy_order = std::max(result.maximum_energy_order, directions.size());
@@ -1824,6 +1993,26 @@ RowSeries CompiledSystem::row_series(
                 }
             }
         }
+        if (has_caloric_condition()) {
+            std::vector<double> energy(order + 1, 0.0);
+            energy[0] = derivative.value;
+            for (std::size_t k = 1; k <= order; ++k)
+                energy[k] = std::inner_product(derivative.gradient.begin(), derivative.gradient.end(), series.point[k].begin(), 0.0);
+            for (std::size_t k = 2; k <= order; ++k)
+                for (std::size_t i = 0; i < width; ++i)
+                    for (std::size_t j = 0; j < width; ++j)
+                        energy[k] += derivative.hessian[i * width + j] * series.point[1][i]
+                            * series.point[k - 1][j] * (k == 2 ? 0.5 : 1.0);
+            if (order == 3)
+                energy[3] += contraction({series.point[1], series.point[1], series.point[1]}, std::nullopt) / 6.0;
+            for (std::size_t k = 0; k <= order; ++k)
+                for (std::size_t j = 0; j <= k; ++j) {
+                    const auto offset = phase * stride + width + 2;
+                    result.rows[k].back() += output[j][offset] * energy[k - j]
+                        + output[j][offset + 1] * series.gradient[k - j][0]
+                        + output[j][offset + 2] * series.gradient[k - j][1];
+                }
+        }
         for (std::size_t k = 0; k <= order; ++k) {
             for (std::size_t row = 0; row < rows.size(); ++row) {
                 if (rows[row].phase != phase) continue;
@@ -1844,7 +2033,7 @@ RowSeries CompiledSystem::row_series(
 std::vector<double> CompiledSystem::constraint_hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
 ) const {
-    if (pinned_count != 0) return pinned_hessian(*this, prepared, constraint_multipliers);
+    if (feasibility_cell()) return pinned_hessian(*this, prepared, constraint_multipliers);
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
