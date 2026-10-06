@@ -77,21 +77,16 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     """Identical EOS species separate source chemistry from the phase-equilibrium oracle."""
     temperature = 180.0
     pure = Pure(parameters((ETHANE,)))
-    lower, upper = 30000.0, 150000.0
-    for _ in range(40):
-        pressure = (lower + upper) / 2
-        liquid = pure.state(temperature, P=pressure, phase="liquid")
-        vapor = pure.state(temperature, P=pressure, phase="vapor")
-        assert liquid.log_fugacity_coefficient is not None
-        assert vapor.log_fugacity_coefficient is not None
-        liquid_fugacity = liquid.log_fugacity_coefficient[0]
-        vapor_fugacity = vapor.log_fugacity_coefficient[0]
-        assert liquid_fugacity is not None and vapor_fugacity is not None
-        if liquid_fugacity > vapor_fugacity:
-            lower = pressure
-        else:
-            upper = pressure
-    saturation = (lower + upper) / 2
+    pure_result = solve_equilibrium(pure, pure.saturation(temperature))
+    assert pure_result.success, pure_result.message
+    assert max(abs(value) for value in pure_result.residuals) < 1e-10
+    saturation = pure_result.pressure[0]
+    liquid = pure.state(temperature, P=saturation, phase="liquid")
+    vapor = pure.state(temperature, P=saturation, phase="vapor")
+    assert liquid.log_fugacity_coefficient is not None
+    assert vapor.log_fugacity_coefficient is not None
+    liquid_fugacity = liquid.log_fugacity_coefficient[0]
+    vapor_fugacity = vapor.log_fugacity_coefficient[0]
     assert liquid_fugacity is not None and vapor_fugacity is not None
     assert abs(liquid_fugacity - vapor_fugacity) < 1e-8
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
@@ -110,13 +105,13 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     assert result.success, result.message
     assert max(abs(value) for value in result.residuals) < 1e-10
     same(evidence, name + "/pressure", result.pressure[0], saturation, rtol=1e-7,
-         method="pure-fugacity-bisection", claim="identical-species reactive bubble has pure-EOS pressure")
+         method="native-pure-saturation", claim="identical-species reactive bubble has pure-EOS pressure")
     same(evidence, name + "/liquid-composition", result.mole_fractions[1], expected,
          rtol=1e-8, atol=0.0, method="2A-to-B-analytic", claim="source mole-fraction law at solved pressure")
     reference = result.neutral_reference_diagnostics[0]
     liquid = pure.state(temperature, P=saturation, phase="liquid")
     same(evidence, name + "/reference-pressure", reference.reference_pressure_pa, saturation,
-         rtol=1e-7, method="pure-fugacity-bisection", claim="diagnostics use final pressure, not the seed")
+         rtol=1e-7, method="native-pure-saturation", claim="diagnostics use final pressure, not the seed")
     same(evidence, name + "/pressure-first", reference.terminal_contraction_pressure_derivative,
          -1.0 / (liquid.molar_density * R * temperature), rtol=1e-8, atol=0.0,
          method="identical-species-chemical-potential", claim="nonideal reference C_P=-V/(RT)")
