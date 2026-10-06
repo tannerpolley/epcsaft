@@ -636,13 +636,22 @@ satisfies it.
 
 The caller supplies one dimensionless row tolerance per solve request; the
 named `EQUILIBRIUM_ROW_RESIDUAL` policy is its only default. That value alone
-classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol`,
-`dual_inf_tol` and `constr_viol_tol` settings are the smaller of the request
+classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
+`constr_viol_tol` settings are the smaller of the request
 and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
 hair when both coincide. A pinned square system (constant objective, followed
 by the exact Newton polish) stops at the criterion itself; the polish, not an
-inner decade, removes the overshoot (owner decision 2026-09-23). A caller-valued criterion is owned
+inner decade, removes the overshoot (owner decision 2026-09-23).
+The shared Ipopt option owner sets the absolute unscaled `dual_inf_tol` to
+that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
+(owner decision 2026-10-06, #243). It computes this factor once from the
+existing objective factor $1/N_{\mathrm{feed}}$; the scaled overall `tol`
+and material-row tolerance retain their values. The parameter-fitting call's
+objective factor is one, so its dual stop retains its value. Acceptable
+termination remains disabled (`acceptable_iter=0`). No starts, bounds,
+barrier settings, complementarity tolerance or iteration budget change.
+A caller-valued criterion is owned
 by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
