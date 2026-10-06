@@ -54,9 +54,12 @@ class WideIonic {
             CHECK(j[7]<0);point[1]-=residual/j[7];
         }
         const auto f=tape.Forward(0,point),j=tape.Jacobian(point);
-        CHECK(CppAD::abs(f[1]-P)<=limit() && point[1]>0 && j[7]<0);
+        // Volume forward error |dv/v|<=2^-100 (#272): it moves the values ~1e-30 relative, far below the
+        // 1e-6 Richardson targets; the pressure limit above is the evaluation noise floor, not an accuracy.
+        const Wide closure=Wide(ldexpq(1,-100))*CppAD::abs(j[7])*point[1];
+        CHECK(CppAD::abs(f[1]-P)<=closure && point[1]>0 && j[7]<0);
         if(CppAD::abs(f[1]-P)>max_pressure_residual) max_pressure_residual=CppAD::abs(f[1]-P);
-        if(limit()>max_pressure_floor) max_pressure_floor=limit();
+        if(closure>max_pressure_floor) max_pressure_floor=closure;
         const auto ah=jets?tape.Hessian(point,0):std::vector<Wide>(36),
             ph=jets?tape.Hessian(point,1):std::vector<Wide>(36),ch=jets?tape.Hessian(point,2):std::vector<Wide>(36);
         const Wide vt=-j[6]/j[7],vp=1/j[7];

@@ -4514,7 +4514,9 @@ void check_e5_refusals() {
     // pressure column grows, so the raw cond_inf(J) grows with E while the equilibrated one must not.
     // The error is measured in the certified norm |C^-1 dy|/|C^-1 y| over the observable pinned-chart
     // coordinates [ln x_L, N_L/N_feed (feed total 1), ln v_L, ln x_V, ln v_V, P]; C holds the
-    // power-of-two inverse column maxima of J. The mu/RT multipliers are not observables.
+    // power-of-two inverse column maxima of J. The mu/RT multipliers are not observables. The computed
+    // J carries its own evaluation error dJ; the exact response z* has backward error eta_J in the computed
+    // system, so the first-order bound is 2 cond_inf (eta + eta_J) (#272).
     const double limit = epcsaft::policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value;
     const std::size_t column[] = {7, 0, 1, 4, 5, 2, 3, 6};  // chart column of each observable below
     for (int rung = 0; rung < 16; ++rung) {
@@ -4548,6 +4550,7 @@ void check_e5_refusals() {
         const bool certified = diagnostics.condition_estimate.has_value() && diagnostics.maximum_linear_residual.has_value();
         const double bound = certified ? 2.0 * *diagnostics.condition_estimate * *diagnostics.maximum_linear_residual : 0.0;
         double error = 0.0, norm = 0.0, shift = 0.0;
+        Eigen::VectorXd z = Eigen::VectorXd::Zero(n);  // z*, chart coordinates
         bool identical = host.results.size() == std::size(exact);
         bool typed = bubble_central.success && certified && bound <= limit && n == 10;  // the chart layout above
         for (std::size_t i = 0; i < std::size(exact); ++i) {
@@ -4557,24 +4560,38 @@ void check_e5_refusals() {
             const double chart = i == 0 || i == 5 ? 1.0 : (i >= 6 ? -1.0 : 1.0) / item.value.value_or(1.0);
             const double weight = chart * std::exp2(std::round(std::log2(jacobian.col(static_cast<Eigen::Index>(column[i])).cwiseAbs().maxCoeff())));
             error = std::max(error, std::abs(weight * (item.action.value_or(0.0) - exact[i])));
+            z(static_cast<Eigen::Index>(column[i])) = chart * exact[i];
             shift = std::max(shift, std::abs(weight * (host.results[i].action.value_or(0.0) - item.action.value_or(0.0))));
             identical = identical && item.action.has_value() && host.results[i].action == item.action;
             norm = std::max(norm, std::abs(weight * exact[i]));
         }
         // The first-order bound excludes the final rounding of each returned double observable.
         const double floor = std::numeric_limits<double>::epsilon();
-        const bool verdict = typed && error <= (bound + floor) * norm;
+        // dJ: the phase rows' composition entries are exactly +-1/2 for identical species. The multiplier
+        // columns of dJ are zero, so z* needs no multiplier entries; eta_J is normed like the error.
+        Eigen::MatrixXd deviation = Eigen::MatrixXd::Zero(n, n);
+        for (Eigen::Index r = 0; r < 6; ++r) for (const Eigen::Index c : {0, 1, 4, 5})
+            if (jacobian(r, c) != 0.0) deviation(r, c) = jacobian(r, c) - std::copysign(0.5, jacobian(r, c));
+        const auto power = [](double v) { return v > 0.0 ? std::exp2(-std::round(std::log2(v))) : 1.0; };
+        const Eigen::VectorXd col = jacobian.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
+        const Eigen::VectorXd row = (jacobian * col.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power);
+        const double eta_jacobian = (row.asDiagonal() * deviation * z).lpNorm<Eigen::Infinity>()
+            / ((row.asDiagonal() * jacobian * col.asDiagonal()).cwiseAbs().rowwise().sum().maxCoeff() * norm
+                + (row.asDiagonal() * jacobian * z).lpNorm<Eigen::Infinity>());
+        const double allowed = bound + 2.0 * diagnostics.condition_estimate.value_or(0.0) * eta_jacobian;
+        const bool verdict = typed && error <= (allowed + floor) * norm;
         const auto id = "e5-8/forward-bound/rung" + std::to_string(rung);
-        recording_support::compare_custom(id.c_str(), "forward_error", "1", error / norm, bound,
+        recording_support::compare_custom(id.c_str(), "forward_error", "1", error / norm, allowed,
             recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("temperature", 0.7 * energy),
                 recording_support::field("pressure", epcsaft::core::optional_number(batch.results[0].value)), recording_support::field("status", status_field(batch, 0)),
                 recording_support::field("raw_condition", raw_condition),
                 recording_support::field("condition", epcsaft::core::optional_number(diagnostics.condition_estimate)),
                 recording_support::field("backward_error", epcsaft::core::optional_number(diagnostics.maximum_linear_residual)),
-                recording_support::field("bound", bound), recording_support::field("limit", limit), recording_support::field("reference_norm", norm)}),
-            "Relationship", "analytic-bubble", "a badly scaled but regular state is admitted and its action agrees with the exact bubble response within 2 cond eta in the equilibrated norm",
-            "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa eta + eps", verdict, "e5-8", id.c_str(), "|C^{-1}dy|/|C^{-1}y|", "E",
-            "|C^{-1}dy|/|C^{-1}y|\\leq2\\kappa_\\infty\\eta+\\epsilon", "case");
+                recording_support::field("jacobian_backward_error", eta_jacobian),
+                recording_support::field("bound", allowed), recording_support::field("limit", limit), recording_support::field("reference_norm", norm)}),
+            "Relationship", "analytic-bubble", "a badly scaled but regular state is admitted and its action agrees with the exact bubble response within 2 cond (eta + eta_J) in the equilibrated norm",
+            "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa (eta + eta_J) + eps", verdict, "e5-8", id.c_str(), "|C^{-1}dy|/|C^{-1}y|", "E",
+            "|C^{-1}dy|/|C^{-1}y|\\leq2\\kappa_\\infty(\\eta+\\eta_J)+\\epsilon", "case");
         all_ok = verdict && all_ok;
         const auto host_id = "e5-8/asl-host/rung" + std::to_string(rung);
         all_ok = (record_bool(host_id.c_str(), "e5-8", "the action under the ASL x87 control word 0x27f is the clean-process action exactly",
