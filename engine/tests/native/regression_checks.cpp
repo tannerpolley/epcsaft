@@ -2870,6 +2870,8 @@ void check_addition_enthalpy() {
         fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}), "addition-f7"));
 }
 
+#include "reactive_cp_regression_checks.hpp"
+
 }  // namespace
 
 // Native rejected holds: a cached point followed by no root, and a Born-free singular relation.
@@ -3842,6 +3844,7 @@ int main(int argc, char** argv) {
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},
         {{"native.regression.reaction-rejections", "Reaction_constant_admission", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-rejection/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-rejections"}, check_reaction_rejections, "R2"},
+        {{"native.regression.reactive-cp", "Reacting_heat_capacity_fit", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F7/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-cp"}, check_reactive_cp, "reactive-cp"},
         {{"native.regression.cp-derivatives", "Isobaric_heat_capacity_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-a/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-derivatives"}, check_cp_derivatives, "R2"},
         {{"native.regression.cp-recovery", "Isobaric_heat_capacity_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-b/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-recovery"}, check_cp_recovery, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},

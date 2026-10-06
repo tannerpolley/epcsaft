@@ -1241,7 +1241,7 @@ including second row derivatives and requested T/P–parameter columns. The
 existing point-local parameter cache contains both mixed columns consumed by
 its free-intensive chart; driven intensive directions rebuild their selected
 jet. A solved intensive cannot also have an external control. Free-intensive
-F6 qualification and apparent-Cp fitting remain separate #225 evidence gates.
+F6 and apparent-Cp qualification are bounded by their separate retained #225 evidence.
 
 For frozen c_v,G, Properties supplies the mechanical raw v_T and v_P from the
 same pressure-temperature/pressure-volume jets used by its c_p calculation.
@@ -1397,8 +1397,7 @@ caloric outputs survive a refused Gibbs-volume chart or another missing
 column. Referenced one-free-intensive pinned cells use current-point standards
 and the same bounded A1/A2 chain, retaining solved-intensive motion even if a
 first tangent is zero. The simultaneous-free chart remains unsupported for
-its missing independent constraint. F6 and apparent-Cp fitting qualification
-are not established by the retained driven-T/P evidence.
+its missing independent constraint. The separate F6 and apparent-Cp numerical comparisons own their qualification.
 
 Reaction activities and $K(T)$ use one declared standard-state identity. Direct
 activities are dimensionless caller inputs; mole-fraction activities use explicit
@@ -1414,6 +1413,16 @@ algebra only. When matching species thermochemistry is supplied, require both
 the van 't Hoff enthalpy relation and heat-capacity/integral consistency; otherwise
 report consistency unavailable. A mismatch is a reference inconsistency, never
 a reason to alter a coefficient or anchor.
+
+Extensive H is assembled by Equilibrium from its complete phase-property jets and
+phase-amount Taylor products. Pinned-zero amount series contribute exactly zero.
+`SystemEnthalpy` and `AdditionEnthalpy` in parameter fitting consume this owner.
+`EquilibriumIsobaricHeatCapacity` uses EqID: `equilibrium_isobaric_heat_capacity`:
+thermal H A1 supplies the value and H A2(T,w) supplies its first action, including
+the feed-normalization derivative. The call shares the prepared center and
+factorization across ordinary, thermal and mixed requests; nothing is reused
+across calls. Driven T/P is required, and higher apparent-Cp actions are refused.
+An unavailable outer action preserves an independently available Cp value.
 
 ## ALG-FIT
 
@@ -1448,7 +1457,8 @@ method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
 The implemented fit (R1--R3) includes pressure-closed density and total molar
-isobaric heat capacity with fixed thermochemistry, finite-addition enthalpy,
+isobaric heat capacity with fixed thermochemistry, driven-T/P apparent equilibrium
+isobaric heat capacity, finite-addition enthalpy,
 the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the

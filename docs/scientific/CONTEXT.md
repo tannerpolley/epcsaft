@@ -69,6 +69,11 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
+The [native conversion evidence](../../analyses/README.md#native-conversion-evidence)
+records the completed mapped conversions and retirements, changed comparison
+claims, and the remaining source-reference and recovered-state calculations.
+An empty SciPy allowlist is a lexical result, not a physical validation claim.
+
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 [native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
 
@@ -117,8 +122,13 @@ independent moved-row evidence and paired work/timing. All shared movements from
 the common native recording have independent comparisons before refresh.
 This is numerical verification on the declared manufactured branches.
 Independent delivered review of the current integration remains with the lead;
-earlier scoped reviews do not establish its acceptance. Apparent-Cp observation,
-fitting, quadrature and recovery qualification remains outside this delivery.
+earlier scoped reviews do not establish its acceptance. The subsequent apparent-Cp
+build uses Equilibrium extensive H jets and its shared action factorization,
+including feed-normalization actions and exact fitting columns. The
+[slice-four numerical record](../../analyses/2026-reactive-caloric-actions/results/slice4/provenance.json)
+and the existing notebook retain independent H-value comparisons, both quadrature
+identities, nonreacting reduction, rebuilt-prediction columns and synthetic recovery.
+Delivered review of this build remains pending; it establishes no physical calorimetry.
 
 ### Residual, ideal and state responsibilities
 
@@ -197,8 +207,9 @@ through third order on admitted smooth branches, with correct implicit chains.
 Fitting admits residual-EOS parameters and named source-basis reaction constants
 (scalar ln K or stored a/b/c/d), with exact first derivatives, including
 finite-addition enthalpy actions for referenced endpoints at fixed temperature;
-reference declarations stay fixed, and referenced free-temperature fitting is
-unavailable.
+reference declarations stay fixed. Referenced free-temperature finite-addition
+endpoints consume the same H owner at each solved temperature; driven-T/P
+apparent isobaric heat-capacity fitting consumes mixed thermal H actions.
 The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-fitting/notebook.qmd)
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and

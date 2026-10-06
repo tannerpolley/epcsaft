@@ -731,6 +731,8 @@ class SolvedStateObservableKind:
     PhaseProperty: SolvedStateObservableKind
     PhaseLogActivity: SolvedStateObservableKind
     PhaseGibbsMolarVolume: SolvedStateObservableKind
+    SystemEnthalpy: SolvedStateObservableKind
+    EquilibriumIsobaricHeatCapacity: SolvedStateObservableKind
 
 class SolvedStateObservable:
     kind: SolvedStateObservableKind
@@ -848,6 +850,7 @@ class ObservationKind:
     BulkRelativePermittivity: ObservationKind
     LogEquilibriumConstant: ObservationKind
     IsobaricHeatCapacity: ObservationKind
+    EquilibriumIsobaricHeatCapacity: ObservationKind
     Density: ObservationKind
     PhaseDensity: ObservationKind
     EquilibriumPressure: ObservationKind
