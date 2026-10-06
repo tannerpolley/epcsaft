@@ -5160,7 +5160,8 @@ void reference_f9() {
                 bool accepted=false;
                 double coarse=scale*(lower(h)-lower(-h))/(2*h);
                 for(unsigned halving=0;halving<=6;++halving) {
-                    const double fine=scale*(lower(h/2)-lower(-h/2))/h;
+                    const double plus=lower(h/2),minus=lower(-h/2);
+                    const double fine=scale*(plus-minus)/h;
                     const double rich=(4*fine-coarse)/3,refine=std::abs(fine-coarse)/3;
                     const double sigma=std::abs(value); // One reference-chart basis monomial.
                     const double target=1e-7+1e-6*std::max(std::abs(rich),sigma);
@@ -5178,7 +5179,7 @@ void reference_f9() {
                         recording_support::field("density",state.molar_density),recording_support::field("pressure_root_residual",state.pressure-P),
                         recording_support::field("pressure_density_slope",state.pressure_density_derivative),
                         recording_support::field("site_pivot_ratio",exact.diagnostics.site_pivot_ratio),
-                        recording_support::field("rounding_over_step",64*std::numeric_limits<double>::epsilon()*scale*(std::abs(lower(h/2))+std::abs(lower(-h/2)))/h),
+                        recording_support::field("rounding_over_step",64*std::numeric_limits<double>::epsilon()*scale*(std::abs(plus)+std::abs(minus))/h),
                         recording_support::field("pressure_series_residual",exact.diagnostics.pressure_residual)});
                     if (!resolved && halving < 6)
                         recording_support::observe(("F9/refinement/"+id.substr(11)+"/"+std::to_string(halving)).c_str(),"scaled reference partial","J/mol/K",

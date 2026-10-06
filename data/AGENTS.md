@@ -1,7 +1,7 @@
 # Data Directory Agent Contract
 
-Read the root contract, `CONTEXT.md`, `docs/packet-contract.md`, and
-`../docs/scientific/CONTEXT.md`.
+Read the root contract, `CONTEXT.md`, `docs/packet-contract.md`, and the
+sections of `../docs/scientific/CONTEXT.md` the task needs.
 
 This directory owns canonical reusable scientific packets: parameters,
 source-derived observations, provenance, units, domains, hashes, and use bases.
