@@ -212,10 +212,13 @@ struct DensityDiagnostics final {
 // A Stage-A neutral reference is a pure, neutral solvent plus one explicit
 // full-width solute molality-ratio vector.  Mixed-solvent declarations are
 // intentionally outside this first native consumer contract.
+enum class SpeciesReference { InfiniteDilution, PureLiquid, PureGas };
+
 struct NeutralReferenceDeclaration final {
     std::optional<std::size_t> solvent_index;
     std::vector<double> solute_molality_ratios;
     double standard_molality_mol_per_kg = 0.0;
+    std::vector<SpeciesReference> species_reference;  // empty retains the existing solvent reference
 };
 
 enum class ReferenceSourceBasis {

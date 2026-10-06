@@ -455,10 +455,16 @@ class FeedSpec:
     solvent_mass_kg: float
     def __init__(self) -> None: ...
 
+class SpeciesReference:
+    InfiniteDilution: SpeciesReference
+    PureLiquid: SpeciesReference
+    PureGas: SpeciesReference
+
 class NeutralReferenceDeclaration:
     solvent_index: Optional[int]
     solute_molality_ratios: list[float]
     standard_molality_mol_per_kg: float
+    species_reference: list[SpeciesReference]
     def __init__(self) -> None: ...
 
 class ReferenceSourceBasis:
