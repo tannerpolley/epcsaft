@@ -316,6 +316,24 @@ Mathematics defines required behavior. Code records actual behavior. Evidence
 supports bounded claims about their agreement and physical adequacy. Neither
 an architecture scan nor a successful solve proves model validity.
 
+## Review rules
+
+Reviewers apply these to every readiness and delivered review:
+
+- **Falsifier tolerance.** A falsifier's tolerance is at least as tight as the
+  claim it protects (a 1e-12 state-preservation claim needs a 1e-12 check, not
+  an existing 1e-6 composition test).
+- **Evaluation point.** Evidence is evaluated at the point the claim concerns:
+  a solved-endpoint claim uses the Jacobian at the solved coordinates, not a
+  generic-point rank; a returned-state claim compares returned states.
+- **Causal claims.** "Caused by" needs an isolating comparison (one variable
+  changed, the other inputs and the wheel identified). Otherwise report the
+  difference and its conditions.
+- **Numbers in prose** come from retained data or are computed inline from it.
+- **Speed.** The owner's no-slowdown rule for ionic LLE and the MEA flash is
+  judged on work counts (iterations, evaluations, Hessians); paired wall time is
+  supporting evidence with its spread.
+
 ## Vocabulary and conventions
 
 | Term | Meaning and source |
