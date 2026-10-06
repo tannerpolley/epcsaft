@@ -144,7 +144,8 @@ is the full fast gate (warm-wheel target below ten seconds);
 `bash tools/run-slice.sh khudaida` runs the canonical phase-equilibrium slice.
 `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts (the no-slowdown gate for
 ionic LLE and the MEA flash) and counterbalanced paired wall times for the key solves.
-Expensive installed-wheel replays belong in analyses. Slow evidence, analysis
+Analysis notebooks compute reported numbers from retained data (`analyses/README.md`); run
+`tools/check-affected.sh` after notebook edits. Expensive installed-wheel replays belong in analyses. Slow evidence, analysis
 reproductions, clang-tidy and sanitizers need an explicit owner command justified
 by the changed claim. This project has no scientific CI/CD.
 
