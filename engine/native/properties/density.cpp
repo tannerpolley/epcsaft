@@ -50,7 +50,7 @@ double residual_derivative(
         / (density * density * GAS_CONSTANT_J_PER_MOL_K * temperature);
 }
 
-bool association_failure(const std::runtime_error& error) {
+bool association_failure(const std::exception& error) {
     const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
     // Who threw, not how it stopped. Enumerating stops silently narrowed this when
     // `classify` gained `stalled`: the scan propagated instead of skipping the point.
@@ -250,6 +250,7 @@ std::vector<DensityRoot> scan_roots(
     std::size_t intervals, core::Scope& scope, std::size_t& evaluations
 ) {
     std::vector<ScanPoint> points;
+    std::string interruptions;
     bool linked = false;
     if (scope.diagnostics_on()) scope.probe("density_scan_input",
         {temperature, pressure, std::exp(log_lower), std::exp(log_upper), static_cast<double>(intervals)});
@@ -259,11 +260,16 @@ std::vector<DensityRoot> scan_roots(
         try {
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
-        } catch (const std::runtime_error& error) {
+        } catch (const std::exception& error) {
             if (scope.diagnostics_on()) scope.probe(association_failure(error)
                 ? "density_scan_skip" : "density_scan_failure",
                 {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
-            if (!association_failure(error)) throw;
+            const bool association = association_failure(error);
+            if (!association && interruptions.empty()) throw;
+            interruptions += "node " + std::to_string(index) + " rho "
+                + core::optional_number(density) + ": " + error.what() + "\n";
+            if (!association)
+                throw std::runtime_error("density scan interrupted by association: " + interruptions);
             linked = false;
             continue;
         }
@@ -274,6 +280,8 @@ std::vector<DensityRoot> scan_roots(
                     points.back().point.slope}, static_cast<std::uint32_t>(index));
         linked = true;
     }
+    if (!interruptions.empty())
+        throw std::runtime_error("density scan interrupted by association: " + interruptions);
     search_slope(model, temperature, pressure, composition, points, scope, evaluations);
     std::vector<DensityRoot> roots;
     for (std::size_t i = 0; i < points.size(); ++i) {
