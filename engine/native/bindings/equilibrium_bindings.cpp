@@ -74,11 +74,16 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("values", &FeedSpec::values)
         .def_readwrite("solvent", &FeedSpec::solvent)
         .def_readwrite("solvent_mass_kg", &FeedSpec::solvent_mass_kg);
+    py::enum_<SpeciesReference>(module, "SpeciesReference")
+        .value("InfiniteDilution", SpeciesReference::InfiniteDilution)
+        .value("PureLiquid", SpeciesReference::PureLiquid)
+        .value("PureGas", SpeciesReference::PureGas);
     py::class_<NeutralReferenceDeclaration>(module, "NeutralReferenceDeclaration")
         .def(py::init<>())
         .def_readwrite("solvent_index", &NeutralReferenceDeclaration::solvent_index)
         .def_readwrite("solute_molality_ratios", &NeutralReferenceDeclaration::solute_molality_ratios)
-        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg);
+        .def_readwrite("standard_molality_mol_per_kg", &NeutralReferenceDeclaration::standard_molality_mol_per_kg)
+        .def_readwrite("species_reference", &NeutralReferenceDeclaration::species_reference);
     py::enum_<ReferenceSourceBasis>(module, "ReferenceSourceBasis")
         .value("CommonMolalityInfiniteDilution", ReferenceSourceBasis::CommonMolalityInfiniteDilution)
         .value("RawMoleFractionInfiniteDilution", ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
