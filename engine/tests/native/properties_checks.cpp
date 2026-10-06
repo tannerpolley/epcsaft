@@ -12,6 +12,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
@@ -5089,11 +5091,10 @@ void reference_f8() {
 
 namespace {
 // E2/E3 Hessian-chain oracle at a literal fixed composition. No limiting selection.
-double reference_lower(const epcsaft::HelmholtzModel& m, double T, double P,
-    const std::vector<double>& x, unsigned a, unsigned b, double anchor) {
-    const auto s=m.state_at_pressure(T,P,x,epcsaft::DensityBranch::Liquid,anchor);
+double reference_lower(const epcsaft::HelmholtzModel& m, double T,
+    const std::vector<double>& x, unsigned a, unsigned b,
+    const epcsaft::State& s, const epcsaft::HelmholtzDerivatives& e) {
     const double V=1/s.molar_density, R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
-    const auto e=m.evaluate(T,V,x,epcsaft::DerivativeOrder::Hessian);
     const auto w=e.gradient.size();
     std::vector<double> nu(w,0), ev(w,0); nu[2]=-1;nu[3]=nu[4]=1;ev[1]=1;
     const double pv=R*T*(-1/(V*V)-e.hessian[w+1]);
@@ -5132,6 +5133,18 @@ void reference_f9() {
     const double T=298.15,R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     auto params=properties_support::aqueous_electrolyte();
     epcsaft::HelmholtzModel model(params,{{PF::DispersionEnergyOverK,{0}}});
+    // Each parameter offset owns one model; T/P shifts use the unchanged model.
+    std::map<double, std::unique_ptr<epcsaft::HelmholtzModel>> shifted_models;
+    const auto shifted_model = [&](double step) -> const epcsaft::HelmholtzModel& {
+        auto& cached = shifted_models[step];
+        if (!cached) {
+            auto p = params;
+            p.dispersion_energy_over_k[0] += step;
+            cached = std::make_unique<epcsaft::HelmholtzModel>(p,
+                std::vector<epcsaft::ActiveParameter>{{PF::DispersionEnergyOverK,{0}}});
+        }
+        return *cached;
+    };
     for(double P:{1e5,2e5}) for(double ratio:{1.0,2.0}) {
         std::optional<double> anchor;
         for(double molality:{1e-10,1e-12,1e-14}) {
@@ -5139,6 +5152,10 @@ void reference_f9() {
             const std::vector<double> x{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
             const auto state=model.state_at_pressure(T,P,x,epcsaft::DensityBranch::Liquid,anchor);
             anchor=state.molar_density;
+            // The lower-column oracle uses the same state and Hessian for every
+            // column at a given shifted model, temperature and pressure.
+            using LowerPoint = std::tuple<double, double, double>;
+            std::map<LowerPoint, std::pair<epcsaft::State, epcsaft::HelmholtzDerivatives>> lower_states;
             for(unsigned c=0;c<=1;++c) for(unsigned d=2;d<=4;++d) for(unsigned b=0;b<=d-c;++b) {
                 const unsigned a=d-b-c;
                 if(d==2 && !(c && b))continue;
@@ -5147,20 +5164,31 @@ void reference_f9() {
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?353.95:1);
                 const double value=scale*exact.action.value_or(reference_nan);
                 const auto lower=[&](double step) {
-                    auto p=params;
                     double t=T,pressure=P;
                     unsigned la=a,lb=b;
-                    if(c)p.dispersion_energy_over_k[0]+=step;
-                    else if(a){t+=step;--la;}else{pressure+=step;--lb;}
-                    epcsaft::HelmholtzModel perturbed(p,{{PF::DispersionEnergyOverK,{0}}});
-                    if(la+lb<=2)return reference_lower(perturbed,t,pressure,x,la,lb,*anchor);
+                    if(!c && a){t+=step;--la;}else if(!c){pressure+=step;--lb;}
+                    const auto& perturbed = c ? shifted_model(step) : model;
+                    if(la+lb<=2) {
+                        const LowerPoint key{c ? step : 0.0, t, pressure};
+                        auto found = lower_states.find(key);
+                        if (found == lower_states.end()) {
+                            const auto state = perturbed.state_at_pressure(t, pressure, x,
+                                epcsaft::DensityBranch::Liquid, *anchor);
+                            auto energy = perturbed.evaluate(t, 1/state.molar_density, x,
+                                epcsaft::DerivativeOrder::Hessian);
+                            found = lower_states.emplace(key, std::make_pair(state, std::move(energy))).first;
+                        }
+                        return reference_lower(perturbed,t,x,la,lb,
+                            found->second.first, found->second.second);
+                    }
                     return epcsaft::reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
                 };
                 double h=c?0.02:a?0.2:2e4;
                 bool accepted=false;
                 double coarse=scale*(lower(h)-lower(-h))/(2*h);
                 for(unsigned halving=0;halving<=6;++halving) {
-                    const double fine=scale*(lower(h/2)-lower(-h/2))/h;
+                    const double plus=lower(h/2),minus=lower(-h/2);
+                    const double fine=scale*(plus-minus)/h;
                     const double rich=(4*fine-coarse)/3,refine=std::abs(fine-coarse)/3;
                     const double sigma=std::abs(value); // One reference-chart basis monomial.
                     const double target=1e-7+1e-6*std::max(std::abs(rich),sigma);
@@ -5178,7 +5206,7 @@ void reference_f9() {
                         recording_support::field("density",state.molar_density),recording_support::field("pressure_root_residual",state.pressure-P),
                         recording_support::field("pressure_density_slope",state.pressure_density_derivative),
                         recording_support::field("site_pivot_ratio",exact.diagnostics.site_pivot_ratio),
-                        recording_support::field("rounding_over_step",64*std::numeric_limits<double>::epsilon()*scale*(std::abs(lower(h/2))+std::abs(lower(-h/2)))/h),
+                        recording_support::field("rounding_over_step",64*std::numeric_limits<double>::epsilon()*scale*(std::abs(plus)+std::abs(minus))/h),
                         recording_support::field("pressure_series_residual",exact.diagnostics.pressure_residual)});
                     if (!resolved && halving < 6)
                         recording_support::observe(("F9/refinement/"+id.substr(11)+"/"+std::to_string(halving)).c_str(),"scaled reference partial","J/mol/K",

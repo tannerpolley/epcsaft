@@ -293,7 +293,7 @@ inline ReferenceTensor reference_tensor(
     for (double amount : amounts) total_double += amount;
     for (double amount : amounts) reference_composition.push_back(amount / total_double);
     const auto electrolyte = epcsaft::electrolyte_contribution(
-        independent[0], density, temperature, total_double / volume,
+        independent[0], density,
         composition, reference_composition, parameters
     );
     const auto born = epcsaft::born_contribution(

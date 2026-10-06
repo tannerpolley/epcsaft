@@ -281,6 +281,9 @@ inline std::vector<double> solve_site_fractions(
     for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
         std::vector<double> next;
         last_pivot.reset();
+        double damping = 0.0;
+        std::optional<std::string> method;
+        const bool detailed = scope.diagnostics_on();
         // Newton on F_a = X_a (1 + rho_N B_a) - 1, with
         // dF_a/dX_b = X_a rho_N x_c(b) n_b delta_ab + kron_ab (1 + rho_N B_a).
         {
@@ -328,9 +331,12 @@ inline std::vector<double> solve_site_fractions(
                     if (in_domain(candidate) && residual_infinity_norm(candidate) < current) {
                         next = std::move(candidate);
                         last_pivot = pivot_ratio;
+                        if (detailed) damping = alpha;
                     }
                 }
-            } catch (const std::exception&) {
+                if (detailed && next.empty()) scope.observe([&] { method.emplace("Newton line search exhausted"); });
+            } catch (const std::exception& error) {
+                if (detailed) scope.observe([&] { method.emplace(error.what()); });
                 // singular or ill-conditioned: fall through to substitution
             }
         }
@@ -360,9 +366,13 @@ inline std::vector<double> solve_site_fractions(
             residual_norm = std::max(residual_norm, magnitude);
         }
         ++evaluations;
+        if (detailed) scope.probe("association_iteration",
+            {residual_norm, damping, last_pivot.value_or(std::numeric_limits<double>::quiet_NaN()),
+             last_pivot ? 1.0 : 0.0}, static_cast<std::uint32_t>(iteration),
+            last_pivot ? "Newton" : method ? method->c_str() : "");
         if (std::isfinite(residual_norm)) {
             history.push(residual_norm);
-            scope.probe("association_residual_norm", residual_norm,
+            if (!detailed) scope.probe("association_residual_norm", residual_norm,
                         static_cast<std::uint32_t>(iteration));
         }
         if (!valid) {
@@ -391,6 +401,7 @@ inline std::vector<double> solve_site_fractions(
                 }
                 scope.finish(*record);
             }
+            if (detailed && record == nullptr) scope.finish(convergence);
             scope.probe("site_fractions", fractions);
             return fractions;
         }
