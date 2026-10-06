@@ -1496,8 +1496,8 @@ void regular_reaction_state(const HelmholtzModel& model, const Observation& obse
     equilibrium::SolvedStateActionDirection direction;
     direction.feed_amounts_mol.assign(model.parameters().component_count(), 0.0);
     direction.active_parameters.assign(model.active_parameters().size(), 0.0);
-    direction.reaction_log_constants.assign(observation.problem.reactions.size(), 0.0);
-    direction.reaction_log_constants[0] = 1.0;
+    direction.reaction_coefficients.assign(observation.problem.reactions.size(), {});
+    direction.reaction_coefficients[0][0] = 1.0;
     equilibrium::SolvedStateObservable observable;
     observable.kind = equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
     observable.component = observation.problem.phases[0].support_declared ? observation.problem.phases[0].support.front() : 0;
@@ -2031,10 +2031,6 @@ void check_reaction_rejections() {
     record.component_intervals.assign(3, {{200.0, 400.0, true, true, {IdealPolynomial{{30.0}, 300.0, 0.0, 0.0}, 1.0e5}}});
     fixed.thermochemistry = record;
     reject(fixed, "K fixed by thermochemistry");
-    auto free_t = request;
-    free_t.observations[0].problem.reactions[0].reference = ReactionReference{};
-    free_t.observations[0].problem.temperature = FreeValue::variable(300.0);
-    reject(free_t, "referenced reaction at free temperature");
     // Two named source constants with different declarations are physically different coordinates.
     auto conflicting = request;
     conflicting.observations.push_back(request.observations[0]);
@@ -2265,7 +2261,6 @@ AdditionEndpoint endpoint_enthalpy(const HelmholtzModel& model, const Equilibriu
     equilibrium::SolvedStateActionDirection zero;
     zero.feed_amounts_mol.assign(model.parameters().component_count(), 0.0);
     zero.active_parameters.assign(model.active_parameters().size(), 0.0);
-    zero.reaction_log_constants.assign(problem.reactions.size(), 0.0);
     const auto batch = equilibrium::solved_state_actions(compiled, solved_state, {observables, {zero}});
     CHECK(batch.results.size() == 2 * phases.size());
     for (std::size_t i = 0; i < phases.size(); ++i) {
@@ -2384,8 +2379,18 @@ void check_ionic_addition_enthalpy() {
         const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
         CHECK(solved.success);
         const auto compiled = equilibrium::compile_problem(rebuilt, problem);
-        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false);
-        CHECK(source.status == equilibrium::SolvedStateActionStatus::Available && source.enthalpy.size() == 3);
+        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false, 1);
+        CHECK(source.status == equilibrium::SolvedStateActionStatus::Available);
+        const auto standard = [&](std::size_t order) -> const std::vector<double>& {
+            const auto found = std::find_if(source.gibbs.begin(), source.gibbs.end(), [&](const auto& column) {
+                return column.temperature_order == order && column.pressure_order == 0 && !column.parameter;
+            });
+            CHECK(found != source.gibbs.end() && found->column.status == equilibrium::SolvedStateActionStatus::Available
+                && found->column.values.size() == 3);
+            return found->column.values;
+        };
+        const auto& g = standard(0);
+        const auto& gT = standard(1);
         const auto state = rebuilt.state(T, solved.molar_densities[0], solved.mole_fractions);
         // Accumulate the independently composed oracle in extended precision:
         // the trace ionic increment subtracts ~3e5 J endpoints.
@@ -2398,7 +2403,9 @@ void check_ionic_addition_enthalpy() {
             ? rebuilt.state_at_pressure(T, P, {1.0, 0.0, 0.0}, DensityBranch::Liquid).residual_enthalpy : 0.0;
         for (std::size_t i = 0; i < 3; ++i) {
             const double basis = i == 0 ? 1.0 : 0.5;
-            const long double source_h = source.enthalpy[i] + gauge * parameters.charge_number[i]
+            // g_rho includes RT ln(RT/P0); its physical standard enthalpy restores RT.
+            const long double source_h = static_cast<long double>(g[i]) - T * static_cast<long double>(gT[i])
+                + GAS_CONSTANT_J_PER_MOL_K * T + gauge * parameters.charge_number[i]
                 + (centered ? basis * 241826.0 : 0.0);
             h += static_cast<long double>(solved.mole_fractions[i]) * (source_h - basis * feed_residual);
         }
@@ -2461,6 +2468,82 @@ void check_ionic_addition_enthalpy() {
         CHECK(agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
             tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
             "one EOS and one source-law column agree with rebuilt composed endpoint/feed differences", "addition-ionic"));
+    }
+}
+
+// Issue #225 F6: the same fitting consumer on two referenced free-T endpoints.
+void check_free_temperature_addition() {
+    const auto parameters=addition_parameters();const auto record=addition_record();
+    const auto all=addition_coordinates();CoordinateSet coordinates;
+    coordinates.coordinates={all.coordinates[1],all.coordinates[3]};
+    const HelmholtzModel model(parameters,coordinates.active_parameters(),record);
+    for(bool fixed:{false,true}) {
+        auto initial=addition_problem(270,1.952823e6,{2,0.2},fixed?std::optional<double>(5e6):std::nullopt);
+        initial.temperature=FreeValue::variable(270);
+        initial.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
+        auto final=initial;final.feed.values={2.01,0.2};
+        const auto observation=addition_observation(initial,final,0.01,300,1.5e6);
+        const auto center=predict(model,observation);
+        if(center.status!=ObservationStatus::Available||!center.value)
+            throw std::runtime_error(std::string("F6/free-T-addition/")+(fixed?"fix: ":"sys: ")+center.message);
+        CHECK(center.solved&&center.final_solved&&center.compiled&&center.final_compiled);
+        const auto exact=differentiate_group(model,{&observation},center,coordinates).front();
+        if(exact.status!=ObservationStatus::Available||exact.value.size()!=3)
+            throw std::runtime_error("F6/free-T-addition action: "+exact.message);
+        const auto start=coordinates.start(parameters,{observation},record);
+        const std::string id=std::string("F6/free-T-addition/")+(fixed?"fix":"sys");
+        const auto inputs=fields({field("n_add_mol",0.01),field("initial_feed",initial.feed.values),
+            field("final_feed",final.feed.values),field("initial_T_K",center.solved->temperature[0]),
+            field("final_T_K",center.final_solved->temperature[0]),field("system_P_Pa",1.952823e6),
+            field("source_P_Pa",fixed?5e6:1.952823e6),field("feed_T_K",300),field("feed_P_Pa",1.5e6),
+            field("initial_roots",center.solved->molar_densities),field("final_roots",center.final_solved->molar_densities),
+            field("initial_residual",center.solved->residual_norm()),field("final_residual",center.final_solved->residual_norm()),
+            field("initial_iterations",center.solved->iterations),field("final_iterations",center.final_solved->iterations)});
+        const auto first=endpoint_enthalpy(model,initial,*center.compiled,*center.solved);
+        const auto second=endpoint_enthalpy(model,final,*center.final_compiled,*center.final_solved);
+        auto feed_record=record;feed_record.component_intervals.resize(1);
+        const HelmholtzModel feed(properties_support::ethane(),{},feed_record);
+        const auto incoming=feed.state_at_pressure(300,1.5e6,{1},DensityBranch::Vapor);
+        CHECK(incoming.total_enthalpy);
+        const double value=(second.enthalpy-first.enthalpy)/0.01-*incoming.total_enthalpy;
+        CHECK(agree(id+"/value","delta_h_add","J/mol",*center.value,value,1e-5,1e-6,inputs,
+            "two solved endpoint extensive enthalpies and declared feed enthalpy compose the increment","reactive-caloric"));
+        for(std::size_t column=0;column<2;++column) {
+            const double action=column==0?exact.value[0]+exact.value[1]:exact.value[2];
+            const double sigma=column==0?std::abs(exact.value[0])+std::abs(exact.value[1]):std::abs(action);
+            const auto value_at=[&](double shift) {
+                auto u=start;u[column]+=shift;std::vector<Observation> rows={observation};
+                coordinates.apply(rows,u);
+                const HelmholtzModel rebuilt(coordinates.apply(parameters,u),coordinates.active_parameters(),record);
+                const auto result=predict(rebuilt,rows.front());
+                if(result.status!=ObservationStatus::Available||!result.value)
+                    throw std::runtime_error(id+" rebuilt: "+result.message);
+                CHECK(result.solved&&result.final_solved&&result.solved->topology_event==equilibrium::TopologyEvent::None
+                    &&result.final_solved->topology_event==equilibrium::TopologyEvent::None);
+                return *result.value;
+            };
+            double step=column==0?0.02:2;
+            const auto difference=[&](double h){return (value_at(h)-value_at(-h))/(2*h);};
+            double coarse=difference(step);bool passed=false;
+            for(std::size_t rung=0;rung<6;++rung) {
+                step/=2;const double fine=difference(step),rich=(4*fine-coarse)/3,refinement=std::abs(fine-coarse)/3;
+                const double target=1e-5+1e-6*std::max(std::abs(rich),sigma);
+                const bool resolved=refinement<=target/4;
+                passed=resolved&&std::isfinite(action)&&std::abs(action-rich)<=target;
+                const auto row=fields({inputs,field("coordinate",column==0?"tied-epsilon":"reaction-b"),
+                    field("step",step),field("D_h",coarse),field("D_h2",fine),field("Richardson",rich),
+                    field("refinement",refinement),field("sigma",sigma),field("target",target),
+                    field("error",std::abs(action-rich)),field("error_over_target",std::abs(action-rich)/target)});
+                const auto comparison=id+"/column-"+std::to_string(column)+"/rung-"+std::to_string(rung);
+                if(!resolved&&rung<5) recording_support::observe(comparison.c_str(),"d_delta_h_add","J/mol",action,rich,row,
+                    "Refinement","native-rebuilt-prediction","Unresolved coarse step; retained and refined","reactive-caloric");
+                else recording_support::compare_custom(comparison.c_str(),"d_delta_h_add","J/mol",action,rich,row,
+                    "Relationship","native-rebuilt-prediction","Free-T endpoints and feed use exact native coefficient motion",
+                    "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",passed,"reactive-caloric");
+                if(resolved) break;coarse=fine;
+            }
+            CHECK(passed);
+        }
     }
 }
 
@@ -2627,7 +2710,6 @@ void check_addition_enthalpy() {
         thermal.temperature_k = 1.0;
         thermal.feed_amounts_mol.assign(2, 0.0);
         thermal.active_parameters.assign(model.active_parameters().size(), 0.0);
-        thermal.reaction_log_constants.assign(1, 0.0);
         const auto action = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved,
             {activity}, {thermal}).front();
         CHECK(action.results.size() == 1 && action.results[0].status == equilibrium::SolvedStateActionStatus::Available
@@ -3653,6 +3735,7 @@ int main(int argc, char** argv) {
         {{"native.regression.affine-recovery", "Affine_parameter_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-recovery/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-recovery"}, check_coupled_recovery, "R2"},
         {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "addition-enthalpy"},
+        {{"native.regression.reactive-caloric-F6-addition", "Referenced_free_temperature_addition", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F6/free-T-addition/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "reactive-caloric"},
         {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},

@@ -76,7 +76,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
                     check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
                     check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
-                    check(!reaction.reference || !problem.temperature.free, "referenced reaction at free temperature");
                     check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
                     check(reaction.reference || !thermochemistry || !reaction_thermochemistry_density(*thermochemistry,
                           reaction.stoichiometry, problem.temperature.value), "K fixed by thermochemistry");

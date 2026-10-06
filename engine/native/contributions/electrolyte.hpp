@@ -204,7 +204,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         has_ion = has_ion || charge != 0;
     }
     if (!has_ion) {
-        return {0.0, Scalar(0.0)};
+        return {Scalar(0.0), Scalar(0.0)};
     }
     double reference_charge_square_sum = 0.0;
     double reference_solvent_mass = 0.0;
@@ -221,7 +221,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     }
     if (reference_charge_square_sum == 0.0) {
         if (reference_solvent_mass == 0.0) {
-            return {0.0, Scalar(0.0)};
+            return {Scalar(0.0), Scalar(0.0)};
         }
         const Scalar neutral_permittivity = bulk_relative_permittivity(
             temperature,

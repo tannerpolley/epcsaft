@@ -192,7 +192,7 @@ std::vector<std::vector<double>> action_coefficients(
         for (std::size_t i = 0; i < parameters; ++i) parameter[i] += direction.parameter[i];
     }
     if (order != 0) {
-        result[1][0] = temperature + static_cast<double>(extra_temperature);
+        result[1][0] = temperature + static_cast<double>(extra_temperature) * point[0];
         result[1][1] = -density / (molar_density * molar_density)
             + static_cast<double>(extra_volume) / molar_density;
         for (std::size_t i = 0; i < components; ++i) result[1][2 + i] = composition[i];
@@ -261,6 +261,8 @@ struct ActionContext final {
         std::size_t extra_volume, std::size_t output
     ) {
         const std::size_t combinations = std::size_t(1) << ids.size();
+        const double temperature_scale = extra_temperature == 0 ? 1.0
+            : extra_temperature == 1 ? point[0] : point[0] * point[0];
         Jet result(combinations, 0.0);
         for (std::size_t target = 0; target < combinations; ++target) {
             std::vector<std::size_t> selected_ids;
@@ -286,8 +288,9 @@ struct ActionContext final {
                 value += sign * path(mask, temperature, volume, labels)[output];
             }
             if (labels == 0) value = path(0, 0, 0, 0)[output];
-            result[target] = extra_volume
-                ? value * std::pow(molar_density, static_cast<int>(extra_volume)) : value;
+            result[target] = (extra_volume
+                ? value * std::pow(molar_density, static_cast<int>(extra_volume)) : value)
+                / temperature_scale;
         }
         return result;
     }
@@ -320,7 +323,7 @@ Jet volume_jet(const ActionContext& context, const std::vector<std::size_t>& ids
 
 struct PropertyJets final {
     std::array<Jet, 5> ideal, residual;
-    Jet pressure;
+    Jet pressure, volume_temperature, volume_pressure;
     double pressure_slope = 0.0;
 };
 
@@ -372,6 +375,9 @@ PropertyJets property_jets(
         const Jet pressure_temperature = jet_scale(jet_add(jet_add(
             inverse_volume, phi_v, -1.0),
             jet_multiply(temperature, phi_tv), -1.0), gas_constant);
+        result.volume_pressure = jet_inverse(pressure_volume);
+        result.volume_temperature =
+            jet_scale(jet_multiply(pressure_temperature, result.volume_pressure), -1.0);
         result.residual[3] = jet_add(result.residual[4], jet_scale(
             jet_multiply(temperature, jet_multiply(jet_multiply(
                 pressure_temperature, pressure_temperature), jet_inverse(pressure_volume))),
@@ -384,8 +390,15 @@ PropertyJets property_jets(
 }
 
 bool is_ideal(PropertyObservable observable) { return static_cast<std::size_t>(observable) < 5; }
-bool is_total(PropertyObservable observable) { return static_cast<std::size_t>(observable) >= 10; }
-std::size_t property_index(PropertyObservable observable) { return static_cast<std::size_t>(observable) % 5; }
+bool is_volume_partial(PropertyObservable observable) {
+    return static_cast<std::size_t>(observable) >= 15;
+}
+bool is_total(PropertyObservable observable) {
+    return static_cast<std::size_t>(observable) >= 10 && !is_volume_partial(observable);
+}
+std::size_t property_index(PropertyObservable observable) {
+    return is_volume_partial(observable) ? 3 : static_cast<std::size_t>(observable) % 5;
+}
 bool is_heat_capacity(PropertyObservable observable) {
     const auto index = property_index(observable);
     return index == 3 || index == 4;
@@ -446,7 +459,7 @@ void validate_action_request(
     const std::vector<DensityActionDirection>& directions
 ) {
     require(directions.size() >= 1 && directions.size() <= 3, "action order");
-    std::vector<bool> seen(15, false);
+    std::vector<bool> seen(17, false);
     for (const auto observable : observables) {
         const auto index = static_cast<std::size_t>(observable);
         require(index < seen.size() && !seen[index], "observables");
@@ -603,6 +616,18 @@ PropertyActionBatch evaluate_actions(
                 item.action = jets.ideal[index].back() + jets.residual[index].back();
         } else if (item.status == PropertyActionStatus::Available) {
             item.action = 0.0;
+        }
+        if (is_volume_partial(observable)) {
+            const auto &volume = observable == PropertyObservable::MolarVolumeTemperatureDerivative
+                                     ? jets.volume_temperature
+                                     : jets.volume_pressure;
+            item.value.reset();
+            item.action.reset();
+            if (!volume.empty()) {
+                item.value = volume.front();
+                if (item.status == PropertyActionStatus::Available)
+                    item.action = zero_action ? 0.0 : volume.back();
+            }
         }
         if (item.value.has_value() && !std::isfinite(*item.value)) {
             item.value.reset();
