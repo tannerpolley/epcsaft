@@ -137,5 +137,5 @@ Prefer extending the existing parameter records and admission owner. Do not
 prebuild a plugin registry, dynamic loading system, parallel catalogs or
 general compatibility theorem engine. A physical-value fingerprint can identify
 normalized inputs while citations remain separate provenance, as required by
-[ADR 0003](../../adr/0003-explicit-parameter-inputs.md). A hash is identity, not
+[ADR 0003](../../decisions/0003-explicit-parameter-inputs.md). A hash is identity, not
 evidence of scientific accuracy.

@@ -141,7 +141,7 @@ project_map: {
     ["AGENTS.md", "documentation", "specification"],
     ["CLAUDE.md", "documentation", "specification"],
     ["README.md", "documentation", "specification"],
-    ["CONTEXT.md", "documentation", "specification"],
+    ["GLOSSARY.md", "documentation", "specification"],
     ["notebook.qmd", "documentation", "tooling"],
     ["map.qmd", "documentation", "tooling"],
     ["results.qmd", "documentation", "tooling"],
