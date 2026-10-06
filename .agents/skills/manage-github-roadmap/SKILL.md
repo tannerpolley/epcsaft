@@ -45,7 +45,10 @@ status back into them.
 ## During work
 
 - Keep the current design, implementation plan, scope, exclusions, acceptance,
-  reuse decision, and remaining work in the issue body.
+  reuse decision, and remaining work in the issue body, as **current state** in
+  about one screen (under 8,000 characters). Superseded rounds, review
+  transcripts and run reports go to comments or retained evidence; the
+  reconciler warns on oversized open bodies.
 - Keep one accountable body editor at a time. Workers may report progress in
   comments without racing to rewrite the accepted plan.
 - Use native parent/sub-issues only for independently executable deliverables.

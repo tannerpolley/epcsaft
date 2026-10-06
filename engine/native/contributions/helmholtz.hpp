@@ -189,8 +189,7 @@ template <typename Scalar, typename ParameterSet>
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>* dispersion_energy_override = nullptr
+    const std::vector<Scalar>& sigma
 ) {
     std::vector<Scalar> diameter(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
@@ -198,9 +197,7 @@ std::vector<Scalar> segment_diameter(
             ? sigma[component] *
                 (Scalar(1.0) - Scalar(0.12) * scalar_exp(
                     Scalar(-3.0)
-                        * (dispersion_energy_override == nullptr
-                               ? Scalar(parameters.dispersion_energy_over_k[component])
-                               : (*dispersion_energy_override)[component])
+                        * Scalar(parameters.dispersion_energy_over_k[component])
                         / temperature
                 ))
             : Scalar(parameters.packing_diameter_angstrom[component]);
@@ -316,8 +313,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Scalar>& diameter,
     const std::vector<Scalar>& site_fraction,
     const Scalar& debye_huckel,
-    const Scalar& born,
-    const std::vector<Scalar>* dispersion_energy_override = nullptr
+    const Scalar& born
 ) {
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
@@ -432,12 +428,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
             const bool same_sign_excluded =
                 parameters.ionic_dispersion.is(IonicDispersion::ExcludeSameSign)
                 && charge_i * charge_j > 0;
-            const Scalar epsilon_i = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[i])
-                : (*dispersion_energy_override)[i];
-            const Scalar epsilon_j = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[j])
-                : (*dispersion_energy_override)[j];
+            const Scalar epsilon_i = Scalar(parameters.dispersion_energy_over_k[i]);
+            const Scalar epsilon_j = Scalar(parameters.dispersion_energy_over_k[j]);
             const Scalar epsilon_ij = same_sign_excluded
                 ? Scalar(0.0)
                 : scalar_sqrt(epsilon_i * epsilon_j) * (Scalar(1.0) - k_ij);
@@ -459,12 +451,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // Optional: an undeclared polar family leaves the dipole arrays empty.
     Scalar dipolar = Scalar(0.0);
     if (!parameters.dipole_moment_debye.empty()) {
-        std::vector<Scalar> epsilon(size);
-        for (std::size_t i = 0; i < size; ++i) {
-            epsilon[i] = dispersion_energy_override == nullptr
-                ? Scalar(parameters.dispersion_energy_over_k[i])
-                : (*dispersion_energy_override)[i];
-        }
+        const std::vector<Scalar> epsilon(
+            parameters.dispersion_energy_over_k.begin(), parameters.dispersion_energy_over_k.end());
         dipolar = dipolar_helmholtz(
             temperature, number_density, zeta[3], mole_fractions, parameters, sigma, epsilon);
     }

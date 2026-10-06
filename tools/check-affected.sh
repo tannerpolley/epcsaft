@@ -26,12 +26,31 @@ if ((${#changed[@]} == 0)); then
     exit 0
 fi
 
+notebooks=()
+for path in "${changed[@]}"; do
+    [[ "$path" == analyses/*/notebook.qmd ]] && notebooks+=("$path")
+done
+((${#notebooks[@]} == 0)) || python3 tools/check-notebook-numbers.py "${notebooks[@]}"
+
 paths="$(printf '%s\n' "${changed[@]}")"
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|CONTEXT.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
     python3 engine/scripts/docs/sync_equation_registry.py --check
 fi
+if grep -Eq '^(analyses/|docs/|engine/|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
+    python3 tools/check-analysis-layout.py
+fi
+
+declarations_affected=false
+if grep -Eq '^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-analysis-declarations\.py|analysis-declarations-excluded\.tsv|tests/test-analysis-checks\.py))' <<<"$paths"; then
+    declarations_affected=true
+fi
+check_declarations() {
+    if [[ "$source_only" == 0 && "$declarations_affected" == true ]]; then
+        .venv/bin/python tools/check-analysis-declarations.py
+    fi
+}
 
 docs_only=true
 while IFS= read -r path; do
@@ -65,6 +84,7 @@ fi
 
 if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
     bash tools/check-all.sh
+    check_declarations
     if ((${#slow_tests[@]})); then
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
@@ -75,10 +95,11 @@ prepare_native_build=0
 if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
     prepare_native_build=1
 fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && { [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; }; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 
+check_declarations
 if [[ "$prepare_native_build" == 1 ]]; then
     build_dir="$(<build/environment-wheel/meson-build-dir)"
     mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
@@ -109,7 +130,6 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/s
 fi
 
 if grep -q '^analyses/' <<<"$paths"; then
-    .venv/bin/python tools/check-analysis-layout.py
     bash -n tools/run-slice.sh
     if [[ "$source_only" == 1 ]]; then
         echo "source-only mode skipped installed-artifact analysis replay"

@@ -145,6 +145,15 @@ energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
 ## ALG-ASSOCIATION
 
+Optional `trace(diagnostics=True)` observes existing mass-action iterations as
+`association_iteration`: residual infinity norm, accepted Newton damping (zero
+for substitution), pivot ratio (NaN for substitution), and Newton selection.
+Its reason retains the Newton cause or `Newton`; terminal convergence remains
+on the span alone. `association_derivative_failure` observes the existing LU
+at derivative admission: site count, rank, largest/smallest absolute pivots and
+pivot ratio, with the singular or ill-conditioned cause. It performs no second
+factorization.
+
 The shared model retains at most two most-recently-used thermodynamic recordings,
 keyed by composition support, electrolyte predicates, selected thermal intervals
 and residual/ideal output availability. Parameters and thermal source data remain
@@ -189,6 +198,14 @@ site tangent in O(sites). The association gradient floor is the maximum over
 the requested columns only, so it bounds exactly the gradient entries computed.
 
 ## ALG-DENSITY
+
+Detailed capture emits `density_scan_input` (T/K, P/Pa, lower/upper density in
+mol/m3, interval count), `density_scan_point` (density, reduced residual,
+pressure slope, linked), and `density_scan_skip` (density, attempted node, zero
+link) with the originating association cause. `density_scan_failure` retains a
+terminating non-association cause. `anchor_failure` retains the offered density
+and original exception; `anchor_cold_retry` also gives the reference rung.
+These records observe the existing scan and retry decisions.
 
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
@@ -323,6 +340,35 @@ not establish all roots or physical nonexistence.
 
 ## ALG-EQUILIBRIUM
 
+Detailed capture emits `polish_direction` (undamped correction infinity norm,
+controlling coordinate, raw/classified defects before, extension, prior accepted
+contraction ratio) and `polish_coordinate` (coordinate, phase, component, value),
+whose reason names its chart quantity and units. `polish_trial` adds raw/classified
+defects after, damping, acceptance, extension, prior ratio, composition admission
+and trial index, retaining the actual rejection or preparation cause. Missing
+trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
+the exit cause. Ordinary capture keeps the existing `polish_step` records.
+
+`solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
+and raw-J two-norm condition estimate after all deadlines, branch admission and
+attempt selection. Failed diagnostic inspection retains its cause and unavailable
+rank/condition. This estimate depends on coordinates and is no error bound or
+stability certificate. Its isolated EOS work is excluded from solve/search work
+counts, but may update model caches/counters and adds uncapped time before return.
+Detailed capture can advance finite deadlines; untimed returned-state identity
+is qualified separately. Disabled capture adds no numerical work or clock reads.
+
+Core contains all observation failures, retains a readable prefix and exposes
+sticky `capture.trace.incomplete`; missing evidence never selects numerical
+recovery. Trace-only containers and strings are constructed inside `Scope::observe`
+or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
+contain allocation failure. The source rule in
+`tools/check-engine-architecture.py` guards the known eager-temporary and
+named-local payload patterns during `check-all`; it is not a complete
+allocation-safety proof.
+Nested native work captures forward detailed records once with remapped
+parents. Python declares capture and reads/serializes completed records only.
+
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
 pins and free intensives from data. The balance basis $B$ spans the left null space
@@ -344,9 +390,17 @@ contraction with native error-free dot products. Only a verified certificate
 removes a species; an unresolved apparent zero cannot prove absence. Reduce state
 balances by independent echelon row operations while retaining their full feed
 columns and the discarded inventory restrictions. Full reaction/reference
-completion precedes restriction. Reject a pinned-zero support intersecting the
-certified absent set with `zero_inventory_incipient_support`; trial chemistry
-does not establish a global physical-inventory certificate.
+completion precedes restriction. For a pinned-zero support intersecting the
+certified absent set, evaluate admission on its effective support after removal:
+require a nonempty support of individually uncharged species, exactly two
+opposite liquid/vapor phases, fixed positive T, free P, one zero pin and one
+free amount. Apply the existing support and supplied-guess restriction, retaining
+original declared widths for physical starts. Otherwise keep
+`zero_inventory_incipient_support` with its species, phase and domain reason.
+The formulation's emerging-phase limit on the same exact face owns this domain;
+trial chemistry does not establish a global physical-inventory certificate.
+Numerical qualification checks the reduced Jacobian at the solved endpoint,
+separate mechanical branches and the unchanged raw/classified residual criteria.
 
 Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
@@ -889,6 +943,13 @@ central solve does not imply every action is available. Return per-action
 values or a specific failure reason, with rank/conditioning and linear residual
 where relevant. Cache/reuse thermodynamic work for the same resolved state;
 reuse must preserve all coefficient, T, density and implicit-site dependencies.
+
+The bounded exact-inventory incipient extension in ALG-EQUILIBRIUM changes
+central support admission only. Existing regular fixed-face actions retain
+their support and vanished-inventory restrictions; insertion directions,
+charged insertion properties and derivatives across a support change remain
+outside that qualification. No new boundary enthalpy or derivative order follows
+from an admitted pressure.
 
 `CompiledSystem::lever_jacobian` assembles the first row-series coefficients
 along unit T, P, feed-amount and active-parameter directions at one prepared

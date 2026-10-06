@@ -53,6 +53,7 @@ class Event:
     span: int
     iteration: int
     values: list[float]
+    reason: str
 
 class Span:
     name: str
@@ -64,8 +65,10 @@ class Trace:
     spans: list[Span]
     events: list[Event]
     current: Optional[int]
+    incomplete: bool
 
 class Capture:
+    def __init__(self, diagnostics: bool = False) -> None: ...
     trace: Optional[Trace]
     spans: list[Span]
     events: list[Event]

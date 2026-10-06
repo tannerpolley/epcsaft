@@ -195,8 +195,6 @@ template <typename Scalar, class ParameterSet>
 ElectrolyteResult<Scalar> electrolyte_contribution(
     const Scalar& temperature,
     const Scalar& molar_density,
-    double reference_temperature,
-    double reference_molar_density,
     const std::vector<Scalar>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
     const ParameterSet& parameters

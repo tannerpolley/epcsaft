@@ -4,11 +4,13 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+/usr/bin/time -f 'readiness: %e s' bash -e -c '
 python3 engine/scripts/docs/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
+'
 
-EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
+/usr/bin/time -f 'wheel-preparation: %e s' env EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
 if ((${#engine_wheels[@]} != 1)); then
@@ -29,17 +31,23 @@ run_check() {
     fi
 }
 
+# One native process overlaps one checking process; numerical libraries stay single-threaded.
+(
+    run_check native-tests env MESON_TESTTHREADS=1 EPCSAFT_NATIVE_BUILD_READY=1 \
+        engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example regression
+    exit "$failed"
+) &
+native_pid=$!
+
 run_check packets .venv/bin/python data/tools/validate_packets.py
 run_check python-tests bash -c \
     'cd "$1/engine" && ../.venv/bin/python -m pytest -q --junitxml=../build/test-results/pytest.xml' \
     _ "$repo_root"
-run_check native-tests env EPCSAFT_NATIVE_BUILD_READY=1 \
-    engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example regression
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
-run_check analysis-layout .venv/bin/python tools/check-analysis-layout.py
 run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
 
+wait "$native_pid" || failed=1
 if ((failed)); then
     exit 1
 fi

@@ -47,11 +47,11 @@ Eigen::MatrixXd reaction_matrix(
         if (reactions[row].stoichiometry.size() != components) {
             throw std::invalid_argument("stoichiometry size does not match components");
         }
-        for (std::size_t column = 0; column < components; ++column) {
-            const double value = reactions[row].stoichiometry[column];
-            if (!std::isfinite(value)) throw std::invalid_argument("invalid stoichiometry");
-            matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) = value;
-        }
+        const auto& values = reactions[row].stoichiometry;
+        if (!std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); }))
+            throw std::invalid_argument("invalid stoichiometry");
+        matrix.row(static_cast<Eigen::Index>(row)) = Eigen::Map<const Eigen::VectorXd>(
+            values.data(), static_cast<Eigen::Index>(components)).transpose();
     }
     return matrix;
 }
@@ -391,10 +391,8 @@ bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
     Eigen::MatrixXd extended(static_cast<Eigen::Index>(basis.size() + 1),
                              static_cast<Eigen::Index>(components));
     for (std::size_t row = 0; row < basis.size(); ++row) {
-        for (std::size_t column = 0; column < components; ++column) {
-            extended(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                basis[row][column];
-        }
+        extended.row(static_cast<Eigen::Index>(row)) = Eigen::Map<const Eigen::VectorXd>(
+            basis[row].data(), static_cast<Eigen::Index>(components)).transpose();
     }
     extended.row(static_cast<Eigen::Index>(basis.size())).setConstant(
         1.0 / std::sqrt(static_cast<double>(components)));
@@ -408,17 +406,13 @@ std::vector<double> matvec(
     std::vector<double> result(matrix.size(), 0.0);
     for (std::size_t row = 0; row < matrix.size(); ++row) {
         if (matrix[row].size() != vector.size()) throw std::invalid_argument("matrix width");
-        for (std::size_t column = 0; column < vector.size(); ++column) {
-            result[row] += matrix[row][column] * vector[column];
-        }
+        result[row] = std::inner_product(matrix[row].begin(), matrix[row].end(), vector.begin(), 0.0);
     }
     return result;
 }
 
 double vector_norm(const std::vector<double>& values) {
-    double total = 0.0;
-    for (const double value : values) total += value;
-    return total;
+    return std::accumulate(values.begin(), values.end(), 0.0);
 }
 
 double feed_total(const std::vector<double>& feed) {

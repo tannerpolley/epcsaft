@@ -2974,6 +2974,111 @@ void check_minimax_consistency() {
     }
 }
 
+void check_inventory_boundary(const HelmholtzModel& model, const EquilibriumProblem& problem,
+                              const EquilibriumResult& result, const std::string& id, double material_limit, bool rank_required = true) {
+    if (!result.success) throw std::runtime_error(result.message);
+    CHECK(result.requested_tolerance_met.value_or(false));
+    const auto compiled = equilibrium::compile_problem(model, problem);
+    const auto point = compiled.prepare(result.coordinates);
+    const auto values = compiled.jacobian(result.coordinates);
+    const Eigen::Index size = static_cast<Eigen::Index>(result.coordinates.size());
+    CHECK(compiled.is_square() && values.size() == static_cast<std::size_t>(size * size));
+    const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), size, size);
+    const Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian);
+    const double condition = svd.singularValues()(0) / svd.singularValues()(size - 1);
+    double raw = 0, classified = 0, normalization = 0, charge = 0, material = 0;
+    std::vector<double> amounts(compiled.n_feed.size(), 0), slopes;
+    bool exact = true;
+    for (const double value : result.residuals) raw = std::max(raw, std::abs(value));
+    for (const double value : result.classified_residuals) classified = std::max(classified, std::abs(value));
+    for (std::size_t p = 0; p < point.composition.size(); ++p) {
+        normalization = std::max(normalization, std::abs(std::accumulate(point.composition[p].begin(), point.composition[p].end(), 0.0) - 1));
+        double phase_charge = 0;
+        for (std::size_t i = 0; i < amounts.size(); ++i) {
+            amounts[i] += result.amounts[p] * point.composition[p][i];
+            phase_charge += result.amounts[p] * point.composition[p][i] * model.parameters().charge_number[i];
+        }
+        charge = std::max(charge, std::abs(phase_charge));
+        for (const auto i : compiled.removed_species) exact = exact && point.composition[p][i] == 0 && result.amounts[p] * point.composition[p][i] == 0;
+        slopes.push_back(model.state(point.temperature, result.molar_densities[p], point.composition[p]).pressure_density_derivative);
+    }
+    for (const auto& row : equilibrium::balance_basis(amounts.size(), problem.reactions)) {
+        double error = 0;
+        for (std::size_t i = 0; i < amounts.size(); ++i) error += row[i] * (amounts[i] - compiled.n_feed[i]);
+        material = std::max(material, std::abs(error));
+    }
+    const auto inputs = fields({field("T_K", point.temperature), field("P_Pa", point.pressure), field("phase_amounts_mol", result.amounts),
+        field("fractions", result.mole_fractions), field("densities_mol_m3", result.molar_densities), field("slopes_Pa_m3_mol", slopes),
+        field("endpoint_rank", jacobian.fullPivLu().rank()), field("endpoint_size", size), field("condition_2", condition), field("balance_rank", compiled.rank)});
+    CHECK(agree(id + "/raw", "maximum_raw_row", "1", raw, 0, 1e-10, 0, inputs, "raw stationarity is resolved", "issue-269"));
+    CHECK(agree(id + "/classified", "maximum_classified_row", "1", classified, 0, 1e-10, 0, inputs, "classified rows meet the request", "issue-269"));
+    CHECK(agree(id + "/material", "original_balance_error", "mol", material, 0, material_limit, 0, inputs, "original conserved inventories are preserved", "issue-269"));
+    CHECK(agree(id + "/charge", "phase_charge_error", "charge-equivalent mol", charge, 0, material_limit, 0, inputs, "phase charge is conserved", "issue-269"));
+    CHECK(agree(id + "/normalization", "normalization_error", "1", normalization, 0, 1e-12, 0, inputs, "phase fractions sum to one", "issue-269"));
+    if (rank_required) CHECK(truth(id + "/endpoint-rank", "the reduced Jacobian at the solved endpoint is full rank",
+        jacobian.fullPivLu().rank() == size && std::isfinite(condition), inputs, "issue-269"));
+    CHECK(truth(id + "/regular", "distinct mechanical branches have finite positive slopes and exact absent zeros",
+        std::isfinite(point.pressure) && point.pressure > 0 && exact
+        && std::isfinite(slopes[0]) && std::isfinite(slopes[1]) && slopes[0] > 0 && slopes[1] > 0
+        && result.molar_densities[0] > result.molar_densities[1], inputs, "issue-269"));
+}
+
+void check_propane_inventory_boundary() {
+    auto parameters = properties_support::parameters(3);
+    parameters.segment_count.assign(3, 2.0020); parameters.sigma_constant.assign(3, 3.6184);
+    parameters.dispersion_energy_over_k.assign(3, 208.11);
+    parameters.molar_mass_kg_per_mol.assign(3, 0.044096);
+    const HelmholtzModel model(parameters);
+    auto problem = pure_saturation(300, 1e6);
+    problem.feed.values = {1, 0, 0}; problem.reactions = {{"D=E", {0, -1, 1}, 1.0}};
+    for (auto& phase : problem.phases) { phase.support = {0, 1, 2}; phase.support_declared = true; phase.composition_guess = {.8, .1, .1}; }
+    for (const bool dew : {false, true}) {
+        problem.phases[0].amount = dew ? AmountSpec::pinned(0) : AmountSpec::free();
+        problem.phases[1].amount = dew ? AmountSpec::free() : AmountSpec::pinned(0);
+        const std::string id = dew ? "incipient/propane-dew" : "incipient/propane-bubble";
+        const auto result = equilibrium::solve_equilibrium(model, problem);
+        check_inventory_boundary(model, problem, result, id, 1e-10);
+        CHECK(truth(id + "/absent-pair", "both manufactured carriers have literal zero composition in both phases",
+            result.mole_fractions[1] == 0 && result.mole_fractions[2] == 0 && result.mole_fractions[4] == 0 && result.mole_fractions[5] == 0,
+            fields({field("fractions", result.mole_fractions)}), "issue-269"));
+        CHECK(agree(id + "/pressure", "boundary_pressure", "Pa", result.pressure[0], 998660.8957398997, .01, 0, "teqp same-model reference", "independent propane coexistence pressure", "issue-269"));
+        for (std::size_t p = 0; p < 2; ++p)
+            CHECK(agree(id + "/density/" + std::to_string(p), "molar_density", "mol/m^3", result.molar_densities[p], p == 0 ? 11100.25123320962 : 482.5121268150332, 0, 1e-7, "teqp same-model reference", "independent mechanical branches", "issue-269"));
+        auto control = problem;
+        for (auto& phase : control.phases) { phase.support = {0}; phase.composition_guess = {1}; }
+        const auto reduced = equilibrium::solve_equilibrium(model, control);
+        equilibrium::EquilibriumStart start; start.compositions = {{.7, .2, .1}, {.6, .1, .3}};
+        const auto started = equilibrium::solve_equilibrium_starts(model, problem, {start}, {});
+        CHECK(started.selected && started.results[*started.selected]);
+        for (const auto& comparison : {std::pair{"explicit", &reduced}, std::pair{"declared-start", &*started.results[*started.selected]}}) {
+            const auto* other = comparison.second;
+            const std::string prefix = id + "/" + comparison.first;
+            check_inventory_boundary(model, problem, *other, prefix, 1e-10);
+            CHECK(reference_scale_agrees(prefix + "/pressure", "boundary_pressure", "Pa", other->pressure[0], result.pressure[0], 1e-4, 1e-8, "same wheel", "full-width guesses and explicit face agree", "issue-269"));
+            for (std::size_t i = 0; i < result.mole_fractions.size(); ++i)
+                CHECK(reference_scale_agrees(prefix + "/fraction/" + std::to_string(i), "mole_fraction", "1", other->mole_fractions[i], result.mole_fractions[i], 1e-12, 1e-8, "same wheel", "supported fractions and literal zeros agree", "issue-269"));
+            for (std::size_t p = 0; p < 2; ++p)
+                CHECK(reference_scale_agrees(prefix + "/amount/" + std::to_string(p), "phase_amount", "mol", other->amounts[p], result.amounts[p], 1e-12, 1e-8, "same wheel", "phase amounts agree", "issue-269"));
+        }
+    }
+    const auto refuse = [&](const HelmholtzModel& m, const EquilibriumProblem& request, const std::string& id, const std::string& reason) {
+        const auto cause = rejection([&] { equilibrium::compile_problem(m, request); });
+        CHECK(truth("incipient/refusal/" + id, "excluded incipient domain returns no fabricated boundary", cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find(reason) != std::string::npos,
+            fields({field("cause", cause)}), "issue-269"));
+    };
+    auto excluded = problem; excluded.phases[1].kind = PhaseKind::Liquid;
+    refuse(model, excluded, "same-kind", "opposite liquid/vapor");
+    excluded = problem; excluded.temperature = FreeValue::variable(300); excluded.pressure = FreeValue::fixed(1e6);
+    refuse(model, excluded, "free-temperature", "fixed positive T and free P");
+    const HelmholtzModel ionic(properties_support::nine_species());
+    excluded = equilibrium_support::boundary(); excluded.feed.values = {1, 0, 0, .01, .01, 0, 0, 0, 0};
+    refuse(ionic, excluded, "charged-incipient", "uncharged species");
+    excluded.phases[1].support = {0, 3}; excluded.phases[1].support_declared = true;
+    const auto cause = rejection([&] { equilibrium::compile_problem(ionic, excluded); });
+    CHECK(truth("incipient/refusal/charge-infeasible", "one charge sign cannot form an electroneutral phase", cause.find("support z sign") != std::string::npos,
+        fields({field("cause", cause)}), "issue-269"));
+}
+
 void check_inventory_face() {
     CHECK(truth("inventory-face/exact-dot", "error-free conservation arithmetic distinguishes cancellation from a lost positive unit",
         !equilibrium::exact_zero_dot({1e16, 1, -1e16}, {1, 1, 1})
@@ -3082,9 +3187,9 @@ void check_inventory_face() {
     incipient.support = {2}; incipient.support_declared = true;
     problem.phases.push_back(incipient);
     const auto cause = rejection([&] { equilibrium::compile_problem(model, problem); });
-    CHECK(truth("inventory-face/incipient", "a forced-absent incipient chemical row is refused before solving",
+    CHECK(truth("inventory-face/incipient", "certified absence leaves the incipient effective support empty and is refused before solving",
         cause.find("zero_inventory_incipient_support") != std::string::npos && cause.find("component 2") != std::string::npos
-        && cause.find("phase V") != std::string::npos && cause.find("chemical stationarity") != std::string::npos,
+        && cause.find("phase V") != std::string::npos && cause.find("empty effective support") != std::string::npos,
         declarations() + ";" + fields({field("V_support", "C"), field("V_amount_fraction", 0.0), field("cause", cause)}), "issue-231"));
 }
 
@@ -3180,7 +3285,7 @@ void check_neutral_electrostatics() {
         std::vector<detail::AD> variables(point.begin(), point.end());
         CppAD::Independent(variables);
         const auto record = detail::make_tape_parameters(p, active, {variables[2]});
-        const auto terms = detail::supported_electrostatics(variables[0], variables[1], point[0], point[1],
+        const auto terms = detail::supported_electrostatics(variables[0], variables[1],
             std::vector<detail::AD>(x.begin(), x.end()), x, record);
         CppAD::ADFun<double> tape(variables, std::vector<detail::AD>{terms.second, terms.first.debye_huckel});
         const auto values = tape.Forward(0, point), gradient = tape.Jacobian(point);
@@ -3339,6 +3444,54 @@ int zero_inventory_file(const char* filename) {
         "inverse_T_k_MEAH_water", "R2_b", "R2_c"};
     const std::array<const char*, 7> derivative_units{"J/mol", "J/mol", "J/mol", "J/mol", "J/(mol K)", "J/(mol K)", "J/mol"};
     HelmholtzModel model(parameters, active, record);
+    auto boundary = initial;
+    boundary.pressure = FreeValue::variable();
+    auto vapor = equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0));
+    vapor.support = {0, 1, 2}; vapor.support_declared = true; boundary.phases.push_back(vapor);
+    const auto bubble = equilibrium::solve_equilibrium(model, boundary);
+    check_inventory_boundary(model, boundary, bubble, "incipient/mea-zero", 1e-7);
+    const auto face = equilibrium::compile_problem(model, boundary);
+    const auto center = face.prepare(bubble.coordinates);
+    CHECK(truth("incipient/mea-zero/balance-rank", "three conserved balances and a fourteen-dimensional endpoint retain the two reaction motions",
+        face.rank == 3 && face.rows.size() == 14 && face.removed_species == std::vector<std::size_t>({0, 4, 5, 6}),
+        fields({field("removed_species", std::vector<double>{0, 4, 5, 6})}), "issue-269"));
+    for (const auto r : {0u, 4u}) {
+        double affinity = 0, motion_error = 0;
+        for (const auto i : face.problem.phases[0].support)
+            affinity += boundary.reactions[r].stoichiometry[i] * (center.derivative[0].gradient[2 + i]
+                + std::log(center.composition[0][i] / center.volume[0]) + center.standard.derivative[0][i]);
+        for (const auto& row : face.B) {
+            double contraction = 0;
+            for (std::size_t i = 0; i < row.size(); ++i) contraction += row[i] * boundary.reactions[r].stoichiometry[i];
+            motion_error = std::max(motion_error, std::abs(contraction));
+        }
+        CHECK(agree("incipient/mea-zero/affinity/" + std::to_string(r), "reaction_affinity_over_RT", "1", affinity, 0, 1e-10, 0, "R1/R5", "surviving reactions meet chemical stationarity", "issue-269"));
+        CHECK(agree("incipient/mea-zero/motion/" + std::to_string(r), "conserved_motion", "mol", motion_error, 0, 1e-12, 0, "R1/R5", "reaction motions preserve the face balances", "issue-269"));
+    }
+    CHECK(truth("incipient/mea-zero/separation", "the downstream pressure guard holds and surviving liquid ions remain positive",
+        1734000 > bubble.pressure[0] * (1 + 1e-7) && bubble.mole_fractions[3] > 0 && bubble.mole_fractions[7] > 0 && bubble.mole_fractions[8] > 0,
+        fields({field("bubble_pressure_Pa", bubble.pressure[0]), field("guard_pressure_Pa", bubble.pressure[0] * (1 + 1e-7)), field("observed_pressure_Pa", 1734000)}), "issue-269"));
+    auto control = boundary; control.phases[1].support = {1, 2};
+    const auto explicit_face = equilibrium::solve_equilibrium(model, control);
+    check_inventory_boundary(model, control, explicit_face, "incipient/mea-control", 1e-7);
+    CHECK(reference_scale_agrees("incipient/mea-zero/control-pressure", "boundary_pressure", "Pa", bubble.pressure[0], explicit_face.pressure[0], 1e-4, 1e-8, "same wheel", "automatic and explicit vapor faces agree", "issue-269"));
+    for (std::size_t i = 0; i < bubble.mole_fractions.size(); ++i)
+        CHECK(reference_scale_agrees("incipient/mea-zero/control-fraction/" + std::to_string(i), "mole_fraction", "1", bubble.mole_fractions[i], explicit_face.mole_fractions[i], 1e-12, 1e-8, "same wheel", "full chemistry fractions agree", "issue-269"));
+    for (std::size_t p = 0; p < 2; ++p)
+        CHECK(reference_scale_agrees("incipient/mea-zero/control-density/" + std::to_string(p), "molar_density", "mol/m^3", bubble.molar_densities[p], explicit_face.molar_densities[p], 1e-12, 1e-8, "same wheel", "mechanical branches agree", "issue-269"));
+    double previous = 1;
+    for (const double alpha : {1e-3, 1e-4, 1e-6, 1e-8}) {
+        auto loaded = boundary; loaded.feed.values[0] = alpha;
+        const auto result = equilibrium::solve_equilibrium(model, loaded);
+        const std::string id = "incipient/mea-continuity/" + number(alpha);
+        check_inventory_boundary(model, loaded, result, id, 1e-7, false);
+        const double discrepancy = std::abs(result.pressure[0] - bubble.pressure[0]) / bubble.pressure[0];
+        CHECK(truth(id + "/positive-inventory", "positive carbon inventory retains species and approaches the exact face beyond numerical noise",
+            equilibrium::compile_problem(model, loaded).removed_species.empty() && result.mole_fractions[9] > 0 && discrepancy <= previous + 1e-8,
+            fields({field("alpha_mol_CO2_per_mol_MEA", alpha), field("relative_pressure_difference", discrepancy), field("vapor_CO2_fraction", result.mole_fractions[9])}), "issue-269"));
+        if (alpha == 1e-8) CHECK(agree(id + "/limit", "relative_pressure_difference", "1", discrepancy, 0, 1e-7, 0, "unchanged positive inventory ladder", "the final diagnostic approaches the face pressure", "issue-269"));
+        previous = discrepancy;
+    }
     for (const double alpha : {.11, .45}) {
         auto final = initial;
         final.feed.values[0] = alpha;
@@ -3575,6 +3728,7 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string(argv[1]) == "--zero-inventory") return zero_inventory_file(argv[2]);
     if (argc == 3 && std::string(argv[1]) == "--electrolyte-reference") return electrolyte_reference_file(argv[2]);
     return recording_support::run(argc, argv, {
+        {{"native.equilibrium.inventory-boundary", "Exact_inventory_bubble_dew", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-269", "incipient/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-boundary"}, check_propane_inventory_boundary},
         {{"native.regression.inventory-face", "Conserved_inventory_face", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-231", "inventory-face/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-face"}, check_inventory_face, "addition-enthalpy"},
         {{"native.regression.neutral-electrostatics", "Neutral_electrostatic_restriction", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "issue-231", "neutral-electrostatics/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "neutral-electrostatics"}, check_neutral_electrostatics, "addition-enthalpy"},
         {{"native.regression.affine-columns", "Affine_parameter_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-columns/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-columns"}, check_coupled_columns, "R2"},
