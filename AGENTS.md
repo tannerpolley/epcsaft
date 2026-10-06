@@ -160,4 +160,18 @@ update repository evidence together. A build, readiness label or reviewer opinio
 is not numerical acceptance. Use explicit `work:*` labels; only
 `tools/reconcile-issue-roadmap.py` writes derived `status:*` labels.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub issues under the repository's roadmap rules. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Matt's five roles, with `ready-for-agent` as `work:authorized`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single context: root `GLOSSARY.md` and `docs/scientific/decisions/`. See `docs/agents/domain.md`.
+
 CSE execution mode: direct.
