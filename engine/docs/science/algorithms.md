@@ -1005,7 +1005,7 @@ a temperature-dependent function to differentiate. Volume labels keep the
 existing central-volume scale and $\rho_0^\ell$ restoration. A zero-label
 extraction retains the central value. This changes arithmetic conditioning,
 while preserving the physical increments and mixed derivatives.
-The merged density/scaling replay at `f242f778` revalidates this convention
+The current-main density/scaling replay at `2428781b` revalidates this convention
 through F6/F1, P4, ionic, Hessian/pressure/volume, F8/F9/Born and the frozen
 binary128 residual-Cv check under unchanged criteria. The
 [retained notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd#integrated-density-closure-and-temperature-scaling)

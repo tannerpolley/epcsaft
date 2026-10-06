@@ -108,19 +108,17 @@ and transports coefficient increments through the native law at T(t), including
 free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
 volume with finite nonzero pressure slope, recording stable-chart signs separately.
 The temperature-scaling correction received Supported delivered re-review at
-`e4342588`. The current merged replay at `f242f778` retains that correction
-and main `19a0c825`'s pressure-closest density publication. It passes all eight
-complete F6 bubble checks, six free-T addition comparisons, all affected F1
-selectors, P4/ionic/Hessian/pressure/volume and F8/F9/Born checks. The N-P-fix
-original-order mixed Cv_G reference satisfies agreement and the quarter-target
-refinement at rung zero. All 371 moved native entries pass their independent
-comparison or discrimination before the 580-entry recording is refreshed.
-Two warmed main-only A/B rounds preserve work and every numerical state field;
-the first ionic slowdown does not reproduce. The notebook retains both rounds,
-reference orders, the binary128 frozen residual-Cv check and exact source/wheel
-identities. This is numerical verification. Independent delivered review of the
-merged source remains separate; the earlier scoped reviews do not establish
-that integration's acceptance. Apparent-Cp F2/F7 qualification remains open.
+`e4342588`. The current-main replay at `2428781b`, integrating `d7739584`, retains
+that correction, the density publication behavior, native duplication removals,
+trace payload construction inside `Scope::observe` and the separate exact-inventory
+incipient extension. The notebook reads its retained native values, action
+comparisons, reference refinements, lower-admission ladder, binary128 pin,
+independent moved-row evidence and paired work/timing. All shared movements from
+the common native recording have independent comparisons before refresh.
+This is numerical verification on the declared manufactured branches.
+Independent delivered review of the current integration remains with the lead;
+earlier scoped reviews do not establish its acceptance. Apparent-Cp observation,
+fitting, quadrature and recovery qualification remains outside this delivery.
 
 ### Residual, ideal and state responsibilities
 
