@@ -324,7 +324,7 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
     0.1,
     Category::AlgorithmTolerance,
     "provisional decade below the caller row criterion for the Ipopt tol, acceptable_tol, "
-    "dual_inf_tol and constr_viol_tol settings; the caller criterion classifies rows",
+    "constr_viol_tol and the objective-normalized dual stop; the caller criterion classifies rows",
 };
 
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
