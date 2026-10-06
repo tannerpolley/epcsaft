@@ -162,8 +162,10 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 try {
                     trace.state[point] = model.state_at_pressure(
                         temperature, pressure, trace.composition[point], DensityBranch::Liquid, anchor);
-                } catch (const std::exception&) {
+                } catch (const std::exception& error) {
                     if (point != 0 || !anchor) throw;
+                    if (scope.diagnostics_on()) scope.probe("anchor_cold_retry",
+                        {*anchor, static_cast<double>(point)}, 0, error.what());
                     trace.state[point] = model.state_at_pressure(
                         temperature, pressure, trace.composition[point], DensityBranch::Liquid, std::nullopt);
                 }
@@ -646,12 +648,12 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     core::Scope scope("reaction_references");
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
     if (scope.on()) {
-        scope.probe("reference_inputs", std::vector<double>{temperature, system_pressure, double(pressure_jets),
+        scope.probe("reference_inputs", {temperature, system_pressure, double(pressure_jets),
             double(temperature_order), double(parameter_jets), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
-        scope.probe("reference_declaration", std::vector<double>{double(declaration.solvent_index.has_value()),
+        scope.probe("reference_declaration", {double(declaration.solvent_index.has_value()),
             double(declaration.solvent_index.value_or(0)), declaration.standard_molality_mol_per_kg});
         scope.probe("reference_ratios", declaration.solute_molality_ratios);
-        scope.probe("active_parameter_values", model.active_parameter_values());
+        scope.observe([&] { scope.probe("active_parameter_values", model.active_parameter_values()); });
     }
     if (stoichiometries.size() != references.size())
         throw std::invalid_argument("neutral reference batch size");
@@ -695,7 +697,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
             return item.pressure == pressure && (!need_jets || item.pressure_jets);
         });
-        if (scope.on()) scope.probe("reference_row", std::vector<double>{double(row), pressure,
+        if (scope.on()) scope.probe("reference_row", {double(row), pressure,
             double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(need_jets), double(found != cache.end())});
         if (found == cache.end()) {
             CachedTrace item;
