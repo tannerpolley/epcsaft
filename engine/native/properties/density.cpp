@@ -58,21 +58,6 @@ bool association_failure(const std::runtime_error& error) {
         && failure->record.criterion == &policy::ASSOCIATION_RESIDUAL;
 }
 
-DensityRoot publish_root(
-    double density, double pressure_residual, double pressure_slope, std::size_t iteration_count,
-    std::optional<std::size_t> stable_count, DensityBranch root_branch,
-    const core::Convergence& record, bool at_iteration_cap = false
-) {
-    if (record.stop == core::Stop::nonfinite
-        || (at_iteration_cap && record.stop != core::Stop::converged)) {
-        throw core::ConvergenceFailure(record);
-    }
-    return {
-        density, pressure_residual, pressure_slope, iteration_count,
-        stable_count, root_branch, record
-    };
-}
-
 // Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.
 // Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
@@ -137,8 +122,12 @@ DensityRoot refine(
                                  record.amplification);
     if (iterations == maximum && record.stop == core::Stop::converged)
         throw std::runtime_error("density root bracket unresolved within the search budget");
-    const auto root = publish_root(density, point.pressure - pressure, point.slope, iterations + 1,
-                                   std::nullopt, DensityBranch::Unspecified, record, iterations == maximum);
+    if (record.stop == core::Stop::nonfinite
+        || (iterations == maximum && record.stop != core::Stop::converged)) {
+        throw core::ConvergenceFailure(record);
+    }
+    const DensityRoot root{density, point.pressure - pressure, point.slope, iterations + 1,
+                           std::nullopt, DensityBranch::Unspecified, record};
     parent_scope.probe("density_root", {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
                        static_cast<std::uint32_t>(iterations));
     return root;

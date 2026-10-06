@@ -6,8 +6,7 @@
 #include <type_traits>
 
 // One dispatch for the transcendentals, so a kernel reads the same whether it is
-// evaluating a double or recording a tape. The tree this replaces defined these
-// three times under three prefixes.
+// evaluating a double or recording a tape.
 
 namespace epcsaft {
 

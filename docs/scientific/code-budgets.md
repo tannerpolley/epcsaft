@@ -77,6 +77,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-06, #283 owner decision: amend Core, Contributions, Properties and aggregate ceilings to leave room for required thermodynamic work; low-risk deletions preserve numerical behavior, and Equilibrium retains its hard ceiling; the lead corrected the aggregate soft ceiling to the layer sum required by the counting rule.
+
 - 2026-10-05, #240 straight physical-parameter continuation, measured against
   integrated main `8f5f5685`: **96 gross runtime lines added, 51 removed, +45 net**.
   Aggregate is **22,436 → 22,481**, with **1,519** lines below the recorded

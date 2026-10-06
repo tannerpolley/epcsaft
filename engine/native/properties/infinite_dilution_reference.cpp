@@ -17,6 +17,13 @@ namespace epcsaft {
 
 namespace {
 
+std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
+    if (!state.log_fugacity_coefficient.has_value())
+        throw std::runtime_error("reference fugacity is unavailable");
+    return {require_component_property((*state.log_fugacity_coefficient)[ions[0]]),
+            require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
+}
+
 constexpr std::array<double, 5> NEUTRAL_REFERENCE_MOLALITIES = {
     policy::REFERENCE_MOLALITY_ONE.value,
     policy::REFERENCE_MOLALITY_TWO.value,
@@ -258,7 +265,6 @@ bool supported_reference_basis(ReferenceSourceBasis basis) {
 NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     const HelmholtzModel& model,
     double temperature,
-    const NeutralReferenceDeclaration& declaration,
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference,
     bool pressure_jets,
@@ -357,13 +363,6 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
     try {
-        validate_neutral_reference_declaration(
-            model.parameters(), declaration, stoichiometry);
-        if (!supported_reference_basis(reference.source_basis)) {
-            result.status = NeutralReferenceStatus::UnsupportedSourceBasis;
-            result.message = "unsupported neutral reference source basis";
-            return result;
-        }
         std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
         for (std::size_t point = 0; point < contractions.size(); ++point) {
             const auto& state = trace.state[point];
@@ -659,8 +658,6 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     struct CachedTrace final {
         double pressure = 0.0;
         bool pressure_jets = false;
-        std::size_t temperature_order = 0;
-        bool parameter_jets = false;
         NeutralReferenceTraceResult result;
     };
     std::vector<CachedTrace> cache;
@@ -696,8 +693,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
         const bool need_jets = pressure_jets && !reference.reference_pressure_pa.has_value();
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
-            return item.pressure == pressure && (!need_jets || item.pressure_jets)
-                && item.temperature_order >= temperature_order && (!parameter_jets || item.parameter_jets);
+            return item.pressure == pressure && (!need_jets || item.pressure_jets);
         });
         if (scope.on()) scope.probe("reference_row", std::vector<double>{double(row), pressure,
             double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(need_jets), double(found != cache.end())});
@@ -705,8 +701,6 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             CachedTrace item;
             item.pressure = pressure;
             item.pressure_jets = need_jets;
-            item.temperature_order = temperature_order;
-            item.parameter_jets = parameter_jets;
             item.result = build_neutral_reference_trace(model, temperature, pressure,
                 declaration, need_jets, solvent_anchor, temperature_order, parameter_jets);
             cache.push_back(std::move(item));
@@ -719,7 +713,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             continue;
         }
         diagnostic = neutral_reference_from_trace(
-            model, temperature, declaration, stoichiometries[row], reference,
+            model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
         // Additional consumed columns, with independent admission on both terminal changes.
@@ -827,13 +821,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         const auto state = model.state_at_pressure(
             temperature, pressure, composition, DensityBranch::Liquid, anchor
         );
-        if (!state.log_fugacity_coefficient.has_value()) {
-            throw std::runtime_error("reference fugacity is unavailable");
-        }
-        current = {
-            require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]),
-            require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]),
-        };
+        current = ion_log_fugacity(state, ion_indices);
         scope.probe(
             "reference_ladder_point", {molality, current[0], current[1]},
             static_cast<std::uint32_t>(index)
@@ -871,12 +859,10 @@ InfiniteDilutionReference infinite_dilution_reference(
         const auto state = model.state_at_pressure(
             temperature, pressure, composition, DensityBranch::Liquid, anchor
         );
-        if (!state.log_fugacity_coefficient.has_value()) {
-            throw std::runtime_error("reference fugacity is unavailable");
-        }
+        const auto witness_log_fugacity = ion_log_fugacity(state, ion_indices);
         const double witness_error = std::max(
-            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]) - current[0]),
-            std::abs(require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]]) - current[1])
+            std::abs(witness_log_fugacity[0] - current[0]),
+            std::abs(witness_log_fugacity[1] - current[1])
         );
         scope.probe("reference_witness_error", witness_error);
         if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
@@ -933,14 +919,10 @@ ElectrolyteActivity electrolyte_activity(
     const auto state = model.state_at_pressure(
         temperature, pressure, composition, DensityBranch::Liquid, std::nullopt
     );
-    if (!state.log_fugacity_coefficient.has_value()) {
-        throw std::runtime_error("reference fugacity is unavailable");
-    }
+    const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient
-    const double first = require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]])
-        - reference.log_fugacity[0];
-    const double second = require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]])
-        - reference.log_fugacity[1];
+    const double first = log_fugacity[0] - reference.log_fugacity[0];
+    const double second = log_fugacity[1] - reference.log_fugacity[1];
     const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
     const double mean_log_x = (
