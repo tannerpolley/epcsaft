@@ -15,8 +15,8 @@ and numerical evidence before changing a calculation. Reuse accepted decisions.
 Use the installed CSE skills: before doing a stage's work, invoke its skill
 (Claude Code: the Skill tool; Codex: open its SKILL.md). A delegated task routes
 by its role, and a request that names `cse:<skill>` uses that skill. Read
-`docs/scientific/README.md` and `docs/scientific/CONTEXT.md` before selecting the
-evidence-justified route.
+`docs/scientific/README.md` and the sections of `docs/scientific/CONTEXT.md`, the
+reference map, that the task needs before selecting the evidence-justified route.
 
 - cse:setup — set up or reconcile the repository's scientific records, roles, and hooks
 - cse:research — find or judge sources, equations, correlations, data, or methods
@@ -33,6 +33,8 @@ evidence-justified route.
 - cse:plot, cse:pgfplots, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents
 - cse:audit — remove software ceremony, duplicated values, or misplaced records
 - delegated roles — review: cse:review; implementation: cse:build; design: cse:design; research: cse:research; diagnosis: cse:diagnose; analysis: cse:analyze; writing: cse:write
+
+For a requested retrospective, invoke `cse:audit` and use its retrospective reference.
 
 Report the engineering result or capability, supporting evidence, meaning,
 and limits before software provenance. Do not invent physical results.
