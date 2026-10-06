@@ -22,6 +22,7 @@ void register_regression(py::module_& module) {
         .value("TransferGibbsEnergy", ObservationKind::TransferGibbsEnergy)
         .value("BulkRelativePermittivity", ObservationKind::BulkRelativePermittivity)
         .value("IsobaricHeatCapacity", ObservationKind::IsobaricHeatCapacity)
+        .value("EquilibriumIsobaricHeatCapacity", ObservationKind::EquilibriumIsobaricHeatCapacity)
         .value("LogEquilibriumConstant", ObservationKind::LogEquilibriumConstant)
         .value("Density", ObservationKind::Density)
         .value("PhaseDensity", ObservationKind::PhaseDensity)

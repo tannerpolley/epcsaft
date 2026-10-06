@@ -36,6 +36,7 @@ _PAIRS = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
 _SITE_PAIRS = {"association_energy_over_k", "association_volume"}
 _FORMS = {"difference": ResidualForm.Difference, "log_ratio": ResidualForm.LogRatio}
 _KINDS = {
+    "equilibrium_isobaric_heat_capacity": ObservationKind.EquilibriumIsobaricHeatCapacity,
     "phase_density": ObservationKind.PhaseDensity,
     "pressure": ObservationKind.EquilibriumPressure,
     "temperature": ObservationKind.EquilibriumTemperature,
@@ -143,14 +144,15 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
     """One solved-state observation of a declared problem: pressure, temperature, phase_density,
     mole_fraction (summed over `species` in `phase`), partial_pressure (P times that sum, Pa) or
-    phase_fraction (mole basis), or amount_ratio (phase-component amounts)."""
+    phase_fraction (mole basis), amount_ratio (phase-component amounts), or
+    equilibrium_isobaric_heat_capacity (J/(mol-feed K), driven T/P)."""
     if kind not in _KINDS:
         raise ParameterError(f"unknown observation kind {kind}")
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
     result.kind = _KINDS[kind]
-    if phase is None and kind not in ("pressure", "temperature"):
+    if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
         raise ParameterError(f"{kind} needs its phase")
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
