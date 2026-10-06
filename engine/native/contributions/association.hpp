@@ -313,7 +313,30 @@ inline std::vector<double> solve_site_fractions(
                 negative_residual[a] =
                     1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
             }
-            try {
+            // Chapman1990 mass action: exact equivalent-partner pair, otherwise row quadratic.
+            if (iteration == 0 && number_density * *std::max_element(bonded.begin(), bonded.end())
+                > 1.0 / policy::ASSOCIATION_JACOBIAN_CONDITION.value) {
+                next.resize(sites);
+                for (std::size_t a = 0; a < sites; ++a) {
+                    const double q = number_density * bonded[a];
+                    double r = q;
+                    bool found = false;
+                    for (std::size_t b = 0; b < sites; ++b) {
+                        if (mole_fractions[parameters.site_component[b]]
+                            * parameters.site_multiplicity[b] * delta[a * sites + b] <= 0.0) continue;
+                        const double partner = number_density * bonded[b];
+                        if (found && r != partner) { r = q; break; }
+                        r = partner;
+                        found = true;
+                    }
+                    const double c = 1.0 + (q - r);
+                    const double d = std::hypot(c, 2.0 * std::sqrt(r));
+                    next[a] = c >= 0.0 ? 2.0 / (c + d) : (d - c) / (2.0 * r);
+                }
+                if (!in_domain(next)) next.clear();
+                else if (detailed) scope.observe([&] { method.emplace("analytic association start"); });
+            }
+            if (next.empty()) try {
                 double pivot_ratio = 0.0;
                 const auto step = solve_linear(jacobian, negative_residual, &pivot_ratio);
                 // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.

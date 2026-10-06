@@ -74,12 +74,12 @@ conventions in [full EOS](../../../../engine/docs/science/full-eos.md), and meth
 [algorithms](../../../../engine/docs/science/algorithms.md). Equations below explain
 the proposal and source comparison. They are not competing Engine definitions.
 
-[ADR 0003](../../adr/0003-explicit-parameter-inputs.md) already requires explicit
+[ADR 0003](../../decisions/0003-explicit-parameter-inputs.md) already requires explicit
 physics and forbids paper/application names from selecting runtime behavior.
-[ADR 0011](../../adr/0011-optional-dipole-dipole-term.md) admits the optional
+[ADR 0011](../../decisions/0011-optional-dipole-dipole-term.md) admits the optional
 Gross–Vrabec dipole–dipole residual term with its own compatible parameters.
 Other residual multipoles remain retired under
-[ADR 0006](../../adr/0006-retire-residual-polar.md). Dipolar permittivity remains
+[ADR 0006](../../decisions/0006-retire-residual-polar.md). Dipolar permittivity remains
 a distinct input and equation; admission does not qualify arbitrary combinations.
 
 The existing Engine remains one installed wheel with one thermodynamic

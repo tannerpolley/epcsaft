@@ -503,6 +503,7 @@ class ReactionSpec:
     def __init__(self) -> None: ...
 
 class StabilityOptions:
+    evaluate_supplied_trials: bool
     trials: Optional[list[PhaseSpec]]
     declaration_budget: Optional[int]
     trial_budget: Optional[int]
