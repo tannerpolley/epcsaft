@@ -251,6 +251,8 @@ std::vector<DensityRoot> scan_roots(
 ) {
     std::vector<ScanPoint> points;
     bool linked = false;
+    if (scope.diagnostics_on()) scope.probe("density_scan_input",
+        {temperature, pressure, std::exp(log_lower), std::exp(log_upper), static_cast<double>(intervals)});
     for (std::size_t index = 0; index <= intervals; ++index) {
         const double density = std::exp(log_lower + static_cast<double>(index) / intervals
                                         * (log_upper - log_lower));
@@ -258,11 +260,17 @@ std::vector<DensityRoot> scan_roots(
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
         } catch (const std::runtime_error& error) {
+            if (scope.diagnostics_on()) scope.probe(association_failure(error)
+                ? "density_scan_skip" : "density_scan_failure",
+                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             if (!association_failure(error)) throw;
             linked = false;
             continue;
         }
-        scope.probe("density_scan_point", {density, points.back().point.residual,
+        if (scope.diagnostics_on()) scope.probe("density_scan_point",
+            {density, points.back().point.residual, points.back().point.slope, linked ? 1.0 : 0.0},
+            static_cast<std::uint32_t>(index));
+        else scope.probe("density_scan_point", {density, points.back().point.residual,
                     points.back().point.slope}, static_cast<std::uint32_t>(index));
         linked = true;
     }
@@ -579,17 +587,22 @@ DensityRoot solve_density(
     std::size_t evaluations = 0;
     DensityRoot result;
     if (anchor_density.has_value()) {
-        if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
-        if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
-            throw std::invalid_argument("invalid density anchor");
+        try {
+            if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
+            if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
+                throw std::invalid_argument("invalid density anchor");
+            }
+            if (!(*anchor_density > lower && *anchor_density < upper)) {
+                core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
+                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
+                throw core::ConvergenceFailure(record);
+            }
+            result = anchor(model, temperature, pressure, mole_fractions, branch, lower, upper,
+                            *anchor_density, evaluations);
+        } catch (const std::exception& error) {
+            if (scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
+            throw;
         }
-        if (!(*anchor_density > lower && *anchor_density < upper)) {
-            core::Convergence record{0.0, &policy::DENSITY_ROOT_RESIDUAL, std::nullopt,
-                std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
-            throw core::ConvergenceFailure(record);
-        }
-        result = anchor(model, temperature, pressure, mole_fractions, branch, lower, upper,
-                        *anchor_density, evaluations);
     } else {
         const auto roots = scan_roots(model, temperature, pressure, mole_fractions,
             std::log(lower), std::log(upper),
