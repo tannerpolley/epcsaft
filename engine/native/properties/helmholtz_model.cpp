@@ -72,8 +72,20 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     }
     Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian);
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
+    auto scope = core::Scope::detailed("association_derivative");
+    const auto failure = [&](const char* reason) {
+        if (!scope) return;
+        scope->observe([&] {
+            const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
+            scope->probe("association_derivative_failure", {static_cast<double>(sites_count),
+                static_cast<double>(factorization.rank()), pivots.maxCoeff(), pivots.minCoeff(),
+                pivots.minCoeff() == 0.0 ? std::numeric_limits<double>::infinity()
+                    : pivots.maxCoeff() / pivots.minCoeff()}, 0, reason);
+        });
+    };
     if (sites_count != 0) {
         if (factorization.rank() < static_cast<Eigen::Index>(sites_count)) {
+            failure("association Jacobian is singular");
             if (status != nullptr) {
                 *status = PropertyActionStatus::AssociationSingular;
                 return factorization;
@@ -84,6 +96,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
         if (!std::isfinite(pivots.maxCoeff())
             || pivots.minCoeff() <= policy::ASSOCIATION_JACOBIAN_CONDITION.value
                 * pivots.maxCoeff()) {
+            failure("association Jacobian is ill-conditioned");
             if (status != nullptr) {
                 *status = PropertyActionStatus::AssociationIllConditioned;
                 return factorization;

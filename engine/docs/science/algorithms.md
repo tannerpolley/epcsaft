@@ -145,6 +145,15 @@ energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
 ## ALG-ASSOCIATION
 
+Optional `trace(diagnostics=True)` observes existing mass-action iterations as
+`association_iteration`: residual infinity norm, accepted Newton damping (zero
+for substitution), pivot ratio (NaN for substitution), and Newton selection.
+Its reason retains the Newton cause or `Newton`; terminal convergence remains
+on the span alone. `association_derivative_failure` observes the existing LU
+at derivative admission: site count, rank, largest/smallest absolute pivots and
+pivot ratio, with the singular or ill-conditioned cause. It performs no second
+factorization.
+
 The shared model retains at most two most-recently-used thermodynamic recordings,
 keyed by composition support, electrolyte predicates, selected thermal intervals
 and residual/ideal output availability. Parameters and thermal source data remain
@@ -189,6 +198,14 @@ site tangent in O(sites). The association gradient floor is the maximum over
 the requested columns only, so it bounds exactly the gradient entries computed.
 
 ## ALG-DENSITY
+
+Detailed capture emits `density_scan_input` (T/K, P/Pa, lower/upper density in
+mol/m3, interval count), `density_scan_point` (density, reduced residual,
+pressure slope, linked), and `density_scan_skip` (density, attempted node, zero
+link) with the originating association cause. `density_scan_failure` retains a
+terminating non-association cause. `anchor_failure` retains the offered density
+and original exception; `anchor_cold_retry` also gives the reference rung.
+These records observe the existing scan and retry decisions.
 
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
@@ -322,6 +339,29 @@ spinodal or a thermodynamic singularity by definition. These finite scans do
 not establish all roots or physical nonexistence.
 
 ## ALG-EQUILIBRIUM
+
+Detailed capture emits `polish_direction` (undamped correction infinity norm,
+controlling coordinate, raw/classified defects before, extension, prior accepted
+contraction ratio) and `polish_coordinate` (coordinate, phase, component, value),
+whose reason names its chart quantity and units. `polish_trial` adds raw/classified
+defects after, damping, acceptance, extension, prior ratio, composition admission
+and trial index, retaining the actual rejection or preparation cause. Missing
+trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
+the exit cause. Ordinary capture keeps the existing `polish_step` records.
+
+`solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
+and raw-J two-norm condition estimate after all deadlines, branch admission and
+attempt selection. Failed diagnostic inspection retains its cause and unavailable
+rank/condition. This estimate depends on coordinates and is no error bound or
+stability certificate. Its isolated EOS work is excluded from solve/search work
+counts, but may update model caches/counters and adds uncapped time before return.
+Detailed capture can advance finite deadlines; untimed returned-state identity
+is qualified separately. Disabled capture adds no numerical work or clock reads.
+
+Core contains all observation failures, retains a readable prefix and exposes
+sticky `capture.trace.incomplete`; missing evidence never selects numerical
+recovery. Nested native work captures forward detailed records once with remapped
+parents. Python declares capture and reads/serializes completed records only.
 
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,

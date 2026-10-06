@@ -13,6 +13,8 @@ namespace {
 struct CaptureWrapper final {
     std::optional<epcsaft::core::Capture> capture;
     std::optional<epcsaft::core::Trace> captured;
+    bool diagnostics = false;
+    explicit CaptureWrapper(bool detail) : diagnostics(detail) {}
 };
 
 py::object tolerance_reference(const epcsaft::policy::Tolerance& tolerance) {
@@ -77,7 +79,8 @@ void register_diagnostics(py::module_& module) {
         .def_readonly("name", &core::Event::name)
         .def_readonly("span", &core::Event::span)
         .def_readonly("iteration", &core::Event::iteration)
-        .def_readonly("values", &core::Event::values);
+        .def_readonly("values", &core::Event::values)
+        .def_readonly("reason", &core::Event::reason);
     py::class_<core::Span>(module, "Span")
         .def_readonly("name", &core::Span::name)
         .def_readonly("parent", &core::Span::parent)
@@ -86,11 +89,13 @@ void register_diagnostics(py::module_& module) {
     py::class_<core::Trace>(module, "Trace")
         .def_readonly("spans", &core::Trace::spans)
         .def_readonly("events", &core::Trace::events)
-        .def_readonly("current", &core::Trace::current);
+        .def_readonly("current", &core::Trace::current)
+        .def_readonly("incomplete", &core::Trace::incomplete);
     py::class_<CaptureWrapper>(module, "Capture")
-        .def(py::init<>())
+        .def(py::init<bool>(),
+             py::arg("diagnostics") = false)
         .def("__enter__", [](CaptureWrapper& wrapper) -> CaptureWrapper& {
-            wrapper.capture.emplace();
+            wrapper.capture.emplace(wrapper.diagnostics);
             wrapper.captured.reset();
             return wrapper;
         }, py::return_value_policy::reference_internal)

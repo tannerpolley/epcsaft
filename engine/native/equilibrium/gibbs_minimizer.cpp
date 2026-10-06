@@ -865,26 +865,63 @@ EquilibriumResult run_driver(
         double best_classified = maximum_abs(compiled.classified_residuals(at, rows_before));
         // Past the step budget only raw rows above the caller criterion continue, under a separate polish cap,
         // and only while the raw contraction ratio keeps falling, as it does in Newton's quadratic region.
+        double best_raw = scope.diagnostics_on() ? maximum_abs(rows_before) : 0.0;
         double ratio = 1.0;
+        const bool detailed = scope.diagnostics_on();
+        std::size_t final_step = 0;
+        bool stopped = false;
+        const auto stop = [&](const char* reason) {
+            if (stopped) return;
+            stopped = true;
+            if (detailed) scope.observe([&] { scope.probe("polish_stop",
+                {maximum_abs(rows_before), maximum_abs(compiled.classified_residuals(at, rows_before)),
+                 static_cast<double>(final_step)}, static_cast<std::uint32_t>(final_step), reason); });
+        };
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
-            if (expired()) break;
+            final_step = step;
+            if (expired()) { stop("elapsed budget"); break; }
             const double defect = maximum_abs(rows_before);
             const bool extension = step >= static_cast<std::size_t>(policy::EQUILIBRIUM_POLISH_STEPS.value);
-            if (extension && defect <= row_tolerance) break;
+            if (extension && defect <= row_tolerance) { stop("raw criterion"); break; }
             const double classified_before = maximum_abs(compiled.classified_residuals(at, rows_before));
-            if (!(defect > 0.0) || !std::isfinite(defect)) break;
+            if (!(defect > 0.0) || !std::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
             const auto jacobian = compiled.jacobian_at(at);
-            if (expired()) return limited_result();
+            if (expired()) { stop("elapsed budget"); return limited_result(); }
             const auto n = static_cast<Eigen::Index>(full.size());
-            if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) break;
+            if (jacobian.size() != full.size() * full.size() || rows_before.size() != full.size()) { stop("Jacobian shape"); break; }
             const Eigen::VectorXd delta = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
                 Eigen::RowMajor>>(jacobian.data(), n, n).fullPivLu().solve(
                     -Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
+            double correction = std::numeric_limits<double>::quiet_NaN(), control = correction;
+            if (detailed) scope.observe([&] {
+                Eigen::Index index = 0;
+                correction = delta.cwiseAbs().maxCoeff(&index); control = static_cast<double>(index);
+                scope.probe("polish_direction", {correction, control, defect, classified_before,
+                    extension ? 1.0 : 0.0, ratio}, step, delta.allFinite() ? "" : "nonfinite direction");
+                double phase = std::numeric_limits<double>::quiet_NaN(), component = phase;
+                const char* quantity = "multiplier in RT units";
+                const auto offsets = compiled.phase_offsets();
+                for (std::size_t p = 0; p < offsets.size(); ++p) {
+                    const auto& spec = compiled.problem.phases[p];
+                    const auto offset = offsets[p], eta = offset + spec.support.size() + (spec.is_free() ? 1 : 0);
+                    if (index < static_cast<Eigen::Index>(offset) || index > static_cast<Eigen::Index>(eta)) continue;
+                    phase = static_cast<double>(p);
+                    if (index < static_cast<Eigen::Index>(offset + spec.support.size())) {
+                        component = static_cast<double>(spec.support[index - offset]); quantity = "log mole fraction";
+                    } else quantity = index == static_cast<Eigen::Index>(eta) ? "log packing fraction" : "phase amount in mol";
+                }
+                auto intensive = compiled.primal_size - compiled.free_intensive_count;
+                if (compiled.problem.temperature.free && index == static_cast<Eigen::Index>(intensive++)) quantity = "T in K";
+                if (compiled.problem.pressure.free && index == static_cast<Eigen::Index>(intensive)) quantity = "P in Pa";
+                scope.probe("polish_coordinate", {control, phase, component, full[index]}, step, quantity);
+            });
             bool accepted = false;
             // Bounded damping retains raw contraction and the physical cutoff.
             // Best-point selection below protects the returned classified residual.
+            std::uint32_t trial = 0;
             for (const double alpha : {1.0, 0.5, 0.25}) {
-                if (expired()) break;
+                const auto trial_index = trial++;
+                if (expired()) { stop("elapsed budget"); break; }
                 std::vector<double> candidate = full;
                 for (Eigen::Index i = 0; i < n; ++i)
                     candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
@@ -894,10 +931,13 @@ EquilibriumResult run_driver(
                     at_candidate = compiled.prepare(candidate, true);
                     ++polish_evaluations;
                     if (audit) audit->convergence.evaluations = ++audit->evaluations;
-                    if (expired()) return limited_result();
+                    if (expired()) { stop("elapsed budget"); return limited_result(); }
                     rows_after = compiled.evaluate_at(at_candidate).values;
                 } catch (const std::exception& error) {
                     rejected_preparation = error.what();
+                    if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
+                        NAN, NAN, alpha, 0.0, extension ? 1.0 : 0.0, ratio, NAN,
+                        static_cast<double>(trial_index)}, step, error.what());
                     continue;
                 }
                 bool inside = true;
@@ -906,9 +946,14 @@ EquilibriumResult run_driver(
                         inside = inside && (x == 0.0 || x >= policy::STABILITY_COMPOSITION_FLOOR.value);
                 const double after = maximum_abs(rows_after);
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
-                scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
+                const bool admit = inside && after < (extension ? ratio : 1.0) * defect;
+                if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
+                    after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,
+                    inside ? 1.0 : 0.0, static_cast<double>(trial_index)}, step,
+                    admit ? "raw_contraction" : !inside ? "composition cutoff" : extension ? "extension ratio" : "raw noncontraction");
+                else scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
-                if (!inside || !(after < (extension ? ratio : 1.0) * defect)) continue;
+                if (!admit) continue;
                 ratio = after / defect;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
@@ -916,12 +961,16 @@ EquilibriumResult run_driver(
                 if (classified_after <= best_classified) {
                     best = full;
                     best_classified = classified_after;
+                    if (detailed) best_raw = after;
                 }
                 accepted = true;
                 break;
             }
-            if (!accepted) break;
+            if (!accepted) { stop("no accepted trial"); break; }
+            if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) stop("iteration cap");
         }
+        if (detailed && best != full) scope.probe("polish_stop", {best_raw, best_classified,
+            static_cast<double>(final_step)}, final_step, "best classified point returned");
         full = std::move(best);
     }
     if (expired()) return limited_result();
@@ -1216,11 +1265,34 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
     return result;
 }
 
+// Observe only frozen returned states; isolated work never enters search accounting.
+static void observe_endpoint(const HelmholtzModel& model, const CompiledSystem* compiled,
+    const EquilibriumResult& result, core::Scope& scope, std::uint32_t attempt = 0) noexcept {
+    if (!scope.diagnostics_on() || !result.has_state()) return;
+    scope.observe([&] {
+        SensitivityInfo info;
+        try {
+            core::Capture isolated(false);
+            info = inspect_sensitivity(compiled ? *compiled : compile_problem(model, *result.declaration), result.coordinates, {});
+        } catch (const std::exception& error) {
+            scope.probe("solved_endpoint_jacobian", {NAN, static_cast<double>(result.coordinates.size()), NAN, NAN}, attempt, error.what());
+            return;
+        }
+        scope.probe("solved_endpoint_jacobian", {static_cast<double>(info.equations),
+            static_cast<double>(result.coordinates.size()), static_cast<double>(info.rank), info.condition_estimate},
+            attempt, "raw defining Jacobian");
+    });
+}
+
 EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
                                     const std::optional<EquilibriumResult>& start) {
     core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
-    if (request.discovery) return discover_phases(model, request);
-    return solve_compiled(compile_problem(model, request), start, &scope);
+    std::optional<CompiledSystem> compiled;
+    if (!request.discovery) compiled = compile_problem(model, request);
+    auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope);
+    if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
+        observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
+    return result;
 }
 
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
@@ -1287,8 +1359,9 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     out.attempt_seconds.resize(starts.size(), 0.0);
     const auto exhausted = [&] { return Clock::now() >= deadline
         || (limits.iterations && out.iterations >= *limits.iterations); };
+    std::optional<CompiledSystem> retained;
     if (!exhausted()) {
-        auto compiled = compile_problem(model, problem);
+        auto& compiled = retained.emplace(compile_problem(model, problem));
         for (const auto& seed : starts) if (seed.previous) {
             const auto& old = *seed.previous;
             if (!old.declaration || old.model_identity != &model)
@@ -1408,6 +1481,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     out.overrun_seconds = limits.seconds ? std::max(0.0, out.seconds - *limits.seconds) : 0.0;
     if (limits.attempt_seconds) for (const double t : out.attempt_seconds)
         out.overrun_seconds = std::max(out.overrun_seconds, t - *limits.attempt_seconds);
+    if (scope.diagnostics_on() && retained) for (std::size_t i = 0; i < out.results.size(); ++i)
+        if (out.results[i]) observe_endpoint(model, &*retained, *out.results[i], scope, i);
     return out;
 }
 
