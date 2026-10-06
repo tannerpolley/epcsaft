@@ -469,7 +469,9 @@ enum class SolvedStateObservableKind {
     // ln a_i = ln(x_i rho / (1 mol/m^3)) + mu_res_i/RT on EOS_STANDARD_STATE_ID; it excludes any
     // standard-state term, and f_i = a_i R T (1 mol/m^3) in Pa.
     PhaseLogActivity,
-    PhaseGibbsMolarVolume
+    PhaseGibbsMolarVolume,
+    SystemEnthalpy,
+    EquilibriumIsobaricHeatCapacity
 };
 
 struct SolvedStateObservable final {

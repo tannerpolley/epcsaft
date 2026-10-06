@@ -2214,6 +2214,24 @@ $$
 \boldsymbol{\nu}\,\mathbf{h}^{\circ}=\Delta_r\mathbf{h}^{\circ},\qquad \mathbf{h}^{\circ}=\boldsymbol{\nu}^{\mathsf T}\left(\boldsymbol{\nu}\boldsymbol{\nu}^{\mathsf T}\right)^{-1}\Delta_r\mathbf{h}^{\circ},\qquad \boldsymbol{\nu}\left(\mathbf{h}^{\circ}+\mathbf{B}^{\mathsf T}\mathbf{c}\right)=\Delta_r\mathbf{h}^{\circ}\ \text{for every }\mathbf{c}
 $$
 
+## `equilibrium_isobaric_heat_capacity`
+
+- Section: Equilibrium / Caloric observables
+- Status: Exact derivation
+- Source: Total extensive enthalpy differentiated along the fixed-pressure equilibrium branch; [issue #225](https://github.com/tannerpolley/ePC-SAFT/issues/225), sections 1 and 5, owner-selected D3
+- Description: Apparent isobaric heat capacity includes phase and reaction relaxation, normalized by the declared positive feed sum. Native actions use physical increments on a dimensionless path parameter; the auxiliary thermal increment is 1 K.
+- Change note: Equilibrium owns the phase-amount/enthalpy Taylor products. Parameter fitting consumes the value and first mixed thermal actions, dividing out physical increments before the affine optimizer map. Driven T/P and a smooth regular branch are required. No second apparent heat-capacity action or physical calorimetry is established.
+
+$$
+H=\sum_p n_p h_p,\qquad N_f=\sum_i n_{f,i},\qquad
+c_{P,eq}=\frac{DH[w_T]}{N_f\delta_T},\qquad \delta_T=1\ \mathrm{K},
+$$
+$$
+Dc_{P,eq}[w]=\frac{D^2H[w_T,w]}{N_f\delta_T}
+-\frac{DH[w_T]DN_f[w]}{N_f^2\delta_T},\qquad
+\partial_k c_{P,eq}=\frac{D^2H[w_T,w_k]}{N_f\delta_T\delta_k}\quad(DN_f[w_k]=0).
+$$
+
 ## `reference_species_calorics`
 
 - Section: Reference thermochemistry / Declared derivations
