@@ -53,6 +53,13 @@
       "materialization": "byte-for-byte"
     },
     {
+      "packet_id": "figiel-2025-chloride-activity-refit",
+      "packet_version": "2",
+      "packet_path": "data/packets/figiel-2025-chloride-activity-refit/2",
+      "packet_fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865",
+      "materialization": "byte-for-byte"
+    },
+    {
       "packet_id": "figiel-2025-reference-electrolytes",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-reference-electrolytes/2",
