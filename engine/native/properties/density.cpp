@@ -295,6 +295,11 @@ std::vector<DensityRoot> scan_roots(
                       roots);
         }
     }
+    const auto witness = std::find_if(points.begin(), points.end(), [](const auto& node) {
+        return std::isfinite(node.point.slope) && node.point.slope < 0.0;
+    });
+    if (witness != points.end())
+        for (auto& root : roots) root.negative_slope_density = witness->density;
     return roots;
 }
 
@@ -575,6 +580,18 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     return result;
 }
 
+bool properties::regular_density(double density, double slope, const std::optional<core::Convergence>& record) {
+    if (!(density > 0.0) || !std::isfinite(density) || !(slope > 0.0) || !std::isfinite(slope)
+        || !record || !record->floor || !record->amplification) return false;
+    const auto& c = *record;
+    return std::isfinite(c.residual) && c.residual <= policy::DENSITY_ROOT_RESIDUAL.value
+        && *c.floor >= 0.0 && std::isfinite(*c.floor)
+        && *c.amplification > 0.0 && std::isfinite(*c.amplification)
+        && (policy::DENSITY_ROOT_RESIDUAL.value + *c.floor) * *c.amplification / density
+            <= policy::DENSITY_ANCHOR_LOG_WINDOW.value / 100.0;
+}
+
+
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
@@ -624,25 +641,17 @@ DensityRoot solve_density(
             return left.molar_density < right.molar_density;
         });
         scope.probe("stable_root_count", static_cast<double>(stable.size()));
-        if (stable.size() == 1) {
-            result = stable.front();
-            result.stable_root_count = 1;
-            result.branch = DensityBranch::Unspecified;
-            if (sibling_root != nullptr) *sibling_root = result;
-        } else {
-            if (branch == DensityBranch::Unspecified) {
-                throw std::runtime_error("density root is ambiguous (stable count "
-                                         + std::to_string(stable.size()) + ")");
-            }
-            result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
-            result.stable_root_count = stable.size();
-            result.branch = branch;
-            if (sibling_root != nullptr) {
-                *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
-                sibling_root->stable_root_count = stable.size();
-                sibling_root->branch = branch == DensityBranch::Vapor
-                    ? DensityBranch::Liquid : DensityBranch::Vapor;
-            }
+        if (stable.size() > 1 && branch == DensityBranch::Unspecified)
+            throw std::runtime_error("density root is ambiguous (stable count "
+                                     + std::to_string(stable.size()) + ")");
+        result = branch == DensityBranch::Vapor ? stable.front() : stable.back();
+        result.stable_root_count = stable.size();
+        result.branch = stable.size() == 1 ? DensityBranch::Unspecified : branch;
+        if (sibling_root != nullptr) {
+            *sibling_root = branch == DensityBranch::Vapor ? stable.back() : stable.front();
+            sibling_root->stable_root_count = stable.size();
+            sibling_root->branch = stable.size() == 1 ? DensityBranch::Unspecified
+                : branch == DensityBranch::Vapor ? DensityBranch::Liquid : DensityBranch::Vapor;
         }
     }
     scope.probe("density_root", result.molar_density);

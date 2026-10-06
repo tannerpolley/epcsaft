@@ -77,6 +77,13 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-06, #245: the owner approved Regression hard ceiling 2478 → 2550.
+  The successful evaluator trial owns density initialization for fitting and
+  minimax; the increase pays for physical-chart admission and transport through
+  the existing Properties anchor path. Properties net growth up to 21 lines
+  was separately approved at d564389c, with hard ceiling 5300 unchanged.
+  Runtime additions remain limited to 270 lines and verification to 180.
+
 - 2026-10-06, #283 owner decision: amend Core, Contributions, Properties and aggregate ceilings to leave room for required thermodynamic work; low-risk deletions preserve numerical behavior, and Equilibrium retains its hard ceiling; the lead corrected the aggregate soft ceiling to the layer sum required by the counting rule.
 
 - 2026-10-05, #240 straight physical-parameter continuation, measured against

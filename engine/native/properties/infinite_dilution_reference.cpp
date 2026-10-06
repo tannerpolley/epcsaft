@@ -17,6 +17,24 @@ namespace epcsaft {
 
 namespace {
 
+// Retry only an externally supplied density; later reference rungs keep their existing failure meaning.
+State close_density(const HelmholtzModel& model, double temperature, double pressure,
+                    const std::vector<double>& composition, std::optional<double> prior_density) {
+    if (prior_density) {
+        core::Scope scope("reference_density_anchor");
+        try {
+            auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, prior_density);
+            if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
+            if (state.density_convergence) scope.finish(*state.density_convergence);
+            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds w/100");
+        } catch (const std::runtime_error& error) {
+            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
+            scope.probe("anchor_failure", {*prior_density}, 0, error.what());
+        }
+    }
+    return model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid);
+}
+
 std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
     if (!state.log_fugacity_coefficient.has_value())
         throw std::runtime_error("reference fugacity is unavailable");
@@ -706,122 +724,80 @@ NeutralReferenceReactionDiagnostic reaction_reference(
 }
 
 InfiniteDilutionReference infinite_dilution_reference(
-    const HelmholtzModel& model,
-    double temperature,
-    double pressure,
-    const std::vector<double>& solvent_fractions,
-    const std::array<std::size_t, 2>& ion_indices,
-    const std::array<int, 2>& stoichiometry
+    const HelmholtzModel& model, double temperature, double pressure,
+    const std::vector<double>& solvent_fractions, const std::array<std::size_t, 2>& ion_indices,
+    const std::array<int, 2>& stoichiometry,
+    std::optional<double> first_rung_density, std::optional<double> pure_solvent_density
 ) {
     core::Scope scope("infinite_dilution_reference");
-    std::array<double, 4> molalities = {
+    const std::array<double, 5> molalities = {
         policy::REFERENCE_MOLALITY_ONE.value,
         policy::REFERENCE_MOLALITY_TWO.value,
         policy::REFERENCE_MOLALITY_THREE.value,
         policy::REFERENCE_MOLALITY_FOUR.value,
+        policy::REFERENCE_CONVERGENCE_WITNESS.value,
     };
+    InfiniteDilutionReference result;
     std::optional<double> anchor;
     std::array<double, 2> previous{};
-    std::array<double, 2> current{};
-    double convergence_error = 0.0;
-    double terminal_error = 0.0;
     const std::size_t columns = model.active_parameters().size();
-    std::vector<std::array<double, 2>> previous_columns(columns), current_columns(columns);
-    std::vector<double> column_error(columns, 0.0);
+    std::vector<std::array<double, 2>> previous_columns(columns);
+    result.parameter_convergence_error.assign(columns, 0.0);
+    result.parameter_derivative.resize(columns);
     const auto values = model.active_parameter_values();
-    const auto read_columns = [&](const State& state, auto& out) {
-        for (std::size_t a = 0; a < columns; ++a)
-            for (std::size_t i = 0; i < 2; ++i)
-                out[a][i] = state.log_fugacity_parameter_derivative.empty() ? NAN
-                    : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
-    };
-    bool observed = false;
     for (std::size_t index = 0; index < molalities.size(); ++index) {
-        const double molality = molalities[index];
-        const auto composition = formula_composition(
-            solvent_fractions,
-            model.parameters(),
-            ion_indices,
-            stoichiometry,
-            molality
-        );
-        const auto state = model.state_at_pressure(
-            temperature, pressure, composition, DensityBranch::Liquid, anchor
-        );
-        current = ion_log_fugacity(state, ion_indices);
-        scope.probe(
-            "reference_ladder_point", {molality, current[0], current[1]},
-            static_cast<std::uint32_t>(index)
-        );
-        if (observed) {
-            // EqID: reference_limit_terminal_pair
-            convergence_error = std::max(
-                std::abs(current[0] - previous[0]),
-                std::abs(current[1] - previous[1])
-            );
-            terminal_error = convergence_error;
+        const bool witness = index + 1 == molalities.size();
+        const auto failed_column = [&](double e) {
+            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
+        };
+        if (witness && !(result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+            || std::any_of(result.parameter_convergence_error.begin(), result.parameter_convergence_error.end(), failed_column))) break;
+        const auto composition = formula_composition(solvent_fractions, model.parameters(),
+            ion_indices, stoichiometry, molalities[index]);
+        auto state = index == 0 ? close_density(model, temperature, pressure, composition, first_rung_density)
+            : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
+        const auto current = ion_log_fugacity(state, ion_indices);
+        // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
+        const double error = std::max(std::abs(current[0] - previous[0]), std::abs(current[1] - previous[1]));
+        if (witness) {
+            scope.probe("reference_witness_error", error);
+            if (result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
+                && error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+                throw std::runtime_error("reference limit did not converge");
+        } else {
+            if (index) result.convergence_error = error;
+            result.log_fugacity = current;
+            result.molality = molalities[index];
+            scope.probe("reference_ladder_point", {molalities[index], current[0], current[1]}, static_cast<std::uint32_t>(index));
         }
-        read_columns(state, current_columns);
-        if (observed) for (std::size_t a = 0; a < columns; ++a)
-            column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
-                std::abs(current_columns[a][0] - previous_columns[a][0]),
-                std::abs(current_columns[a][1] - previous_columns[a][1]));
-        previous_columns = current_columns;
-        previous = current;
-        observed = true;
-        anchor = state.molar_density;
-        scope.probe("reference_convergence_error", convergence_error,
-                    static_cast<std::uint32_t>(index));
-    }
-    if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-        || std::any_of(column_error.begin(), column_error.end(), [](double e) {
-            return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value; })) {
-        const auto composition = formula_composition(
-            solvent_fractions,
-            model.parameters(),
-            ion_indices,
-            stoichiometry,
-            policy::REFERENCE_CONVERGENCE_WITNESS.value
-        );
-        const auto state = model.state_at_pressure(
-            temperature, pressure, composition, DensityBranch::Liquid, anchor
-        );
-        const auto witness_log_fugacity = ion_log_fugacity(state, ion_indices);
-        const double witness_error = std::max(
-            std::abs(witness_log_fugacity[0] - current[0]),
-            std::abs(witness_log_fugacity[1] - current[1])
-        );
-        scope.probe("reference_witness_error", witness_error);
-        if (convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
-            && witness_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
-            throw std::runtime_error("reference limit did not converge");
+        for (std::size_t a = 0; a < columns; ++a) {
+            std::array<double, 2> column;
+            for (std::size_t i = 0; i < 2; ++i) column[i] = state.log_fugacity_parameter_derivative.empty() ? NAN
+                : require_component_property(state.log_fugacity_parameter_derivative[ion_indices[i] * columns + a]);
+            if (index && (!witness || failed_column(result.parameter_convergence_error[a])))
+                result.parameter_convergence_error[a] = std::max(1.0, std::abs(values[a]))
+                    * std::max(std::abs(column[0] - previous_columns[a][0]), std::abs(column[1] - previous_columns[a][1]));
+            if (!witness) previous_columns[a] = column;
         }
-        std::vector<std::array<double, 2>> witness(columns);
-        read_columns(state, witness);
-        for (std::size_t a = 0; a < columns; ++a)
-            if (!std::isfinite(column_error[a]) || column_error[a] > policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-                column_error[a] = std::max(1.0, std::abs(values[a])) * std::max(
-                    std::abs(current_columns[a][0] - witness[a][0]), std::abs(current_columns[a][1] - witness[a][1]));
+        if (!witness) {
+            previous = current;
+            anchor = state.molar_density;
+            scope.probe("reference_convergence_error", result.convergence_error, static_cast<std::uint32_t>(index));
+            if (index == 0) result.first_rung_state = std::move(state);
+        }
     }
-    std::optional<double> pure_solvent;
-    std::optional<State> pure_state;
-    if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(),
-                     [](double x) { return x > 0.0; }) == 1) {
-        const auto solvent = std::distance(solvent_fractions.begin(),
-            std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
+    for (std::size_t a = 0; a < columns; ++a)
+        if (std::isfinite(result.parameter_convergence_error[a])
+            && result.parameter_convergence_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
+            result.parameter_derivative[a] = {previous_columns[a][0], previous_columns[a][1]};
+    if (std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x > 0.0; }) == 1) {
+        const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
         std::vector<double> pure(solvent_fractions.size(), 0.0);
         pure[solvent] = 1.0;
-        pure_state = model.state_at_pressure(
-            temperature, pressure, pure, DensityBranch::Liquid, std::nullopt);
-        if (pure_state->log_fugacity_coefficient.has_value()) {
-            pure_solvent = (*pure_state->log_fugacity_coefficient)[solvent];
-        }
+        result.pure_solvent_state = close_density(model, temperature, pressure, pure, pure_solvent_density);
+        if (result.pure_solvent_state->log_fugacity_coefficient)
+            result.pure_solvent_log_fugacity = (*result.pure_solvent_state->log_fugacity_coefficient)[solvent];
     }
-    InfiniteDilutionReference result{current, molalities.back(), terminal_error, pure_solvent, std::move(pure_state), {}, column_error};
-    result.parameter_derivative.resize(columns);
-    for (std::size_t a = 0; a < columns; ++a)
-        if (std::isfinite(column_error[a]) && column_error[a] <= policy::REFERENCE_CONVERGENCE_TOLERANCE.value)
-            result.parameter_derivative[a] = {current_columns[a][0], current_columns[a][1]};
     return result;
 }
 
@@ -833,7 +809,7 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality,
-    const InfiniteDilutionReference& reference
+    const InfiniteDilutionReference& reference, std::optional<double> finite_density
 ) {
     core::Scope scope("electrolyte_activity");
     const auto composition = formula_composition(
@@ -843,9 +819,9 @@ ElectrolyteActivity electrolyte_activity(
         stoichiometry,
         molality
     );
-    const auto state = model.state_at_pressure(
-        temperature, pressure, composition, DensityBranch::Liquid, std::nullopt
-    );
+    ElectrolyteActivity result;
+    result.state = close_density(model, temperature, pressure, composition, finite_density);
+    const auto& state = result.state;
     const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient
     const double first = log_fugacity[0] - reference.log_fugacity[0];
@@ -863,7 +839,6 @@ ElectrolyteActivity electrolyte_activity(
     // EqID: molality_activity_conversion
     const double mean_log_m = mean_log_x
         - std::log(1.0 + solvent_mass * molality * coefficient_sum);
-    ElectrolyteActivity result;
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;

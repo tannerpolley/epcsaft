@@ -1264,6 +1264,13 @@ owns the tested cases, tolerances, errors and interpretation limits.
 
 ## ALG-REFERENCE
 
+Native fitting may supply separate optional first-rung, pure-solvent and finite
+activity densities. Each external anchor is admitted for regularity before its
+State is consumed. A caught anchor failure is recorded and retried once cold at
+that closure. Later ladder and limiting-witness anchors keep their existing
+failure behavior; no entire reference calculation is retried.
+
+
 Properties additionally owns the bounded reference Taylor calculation in EqID:
 `reference_single_insertion_taylor` and the consumed columns in EqID:
 `reference_mixed_temperature_pressure_derivatives`. At each fixed terminal
@@ -1409,6 +1416,21 @@ report consistency unavailable. A mismatch is a reference inconsistency, never
 a reason to alter a coefficient or anchor.
 
 ## ALG-FIT
+
+Optional fitting densities come only from the previous fully successful native
+evaluator trial. Exact closure identity, the complete 10% physical-chart gate,
+and regularity b <= w/100 admit an offer. Changed parameters additionally need
+a retained negative-slope witness rechecked at the target model, with the whole
+anchor window on the requested branch side. All thermodynamics and columns are
+recomputed. A caught optional-anchor failure is recorded before exactly one cold
+retry; a final cold refusal keeps its complete cause and publishes no trial seed.
+The witness identifies the physical extreme in the admitted single-loop domain;
+agreement with the bounded cold search is a qualification result, not a proof.
+Compare every certified cold result with
+its matched seeded result under the propagated log-density and quantity criteria.
+Qualification uses independent same-point cold replays; the fitting controller
+adds neither a per-trial nor an endpoint-only cold comparison.
+
 
 Fits use exact Engine derivatives under the
 [native calculation rule](../../../AGENTS.md#native-calculation-rule).
