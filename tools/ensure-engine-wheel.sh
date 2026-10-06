@@ -55,8 +55,18 @@ check_native_dependency() {
 check_native_dependency ipopt 3.11.9
 check_native_dependency eigen3 3.4
 
-ceres_probe_dir="$(mktemp -d)"
-trap 'rm -rf -- "$ceres_probe_dir"' EXIT
+# Reuse CMake's compiler detection, but resolve packages afresh each time.
+ceres_probe_key="$({
+    for command in "${cxx_command[0]}" cmake; do
+        sha256sum "$(readlink -f "$(command -v "$command")")"
+    done
+    printf '%s\n' "${cxx_command[*]}" "${CXXFLAGS-}" "${CPPFLAGS-}" "${LDFLAGS-}" \
+        "${CMAKE_PREFIX_PATH-}" "${PKG_CONFIG_PATH-}" "${PKG_CONFIG_LIBDIR-}" "${PKG_CONFIG_SYSROOT_DIR-}"
+} | sha256sum | cut -d ' ' -f 1)"
+ceres_probe_dir="$repo_root/build/ceres-probe/$ceres_probe_key"
+mkdir -p "$ceres_probe_dir"
+exec {ceres_probe_lock_fd}>"$ceres_probe_dir.lock"
+flock "$ceres_probe_lock_fd"
 printf '%s\n' \
     'cmake_minimum_required(VERSION 3.25)' \
     'project(epcsaft_ceres_identity LANGUAGES CXX)' \
@@ -78,7 +88,8 @@ printf '%s\n' \
     '  "links=${ceres_links}\nfeatures=${ceres_features}\n"' \
     '  "configurations=${ceres_configurations}\nlocations=${ceres_locations}\n")' \
     >"$ceres_probe_dir/CMakeLists.txt"
-cmake -S "$ceres_probe_dir" -B "$ceres_probe_dir/build" >/dev/null
+cmake -U '*_DIR' -U '*_INCLUDE*' -U '*_LIBRARY*' \
+    -S "$ceres_probe_dir" -B "$ceres_probe_dir/build" >/dev/null
 ceres_identity="$ceres_probe_dir/build/ceres-identity.txt"
 [[ -f "$ceres_identity" ]] || { echo "Ceres identity probe did not produce metadata" >&2; exit 1; }
 ceres_version="$(sed -n 's/^version=//p' "$ceres_identity")"
@@ -117,18 +128,16 @@ if [[ "$ceres_dev_version" != "$ceres_runtime_version" ]] \
     echo "Ubuntu Ceres development/runtime package identity is inconsistent" >&2
     exit 1
 fi
-dpkg-query -S "$ceres_config_dir/CeresConfig.cmake" | grep -Eq '^libceres-dev(:[^:]+)?:' || {
-    echo "Ceres package metadata is not owned by libceres-dev" >&2
-    exit 1
-}
-dpkg-query -S "$ceres_include_root/ceres/version.h" | grep -Eq '^libceres-dev(:[^:]+)?:' || {
-    echo "Ceres headers are not owned by libceres-dev" >&2
-    exit 1
-}
-dpkg-query -S "$ceres_library" | grep -Eq '^libceres4t64(:[^:]+)?:' || {
-    echo "Ceres imported library is not owned by libceres4t64" >&2
-    exit 1
-}
+ceres_ownership="$(dpkg-query -S "$ceres_config_dir/CeresConfig.cmake" \
+    "$ceres_include_root/ceres/version.h" "$ceres_library")"
+for owned_path in "$ceres_config_dir/CeresConfig.cmake" "$ceres_include_root/ceres/version.h" "$ceres_library"; do
+    owner=libceres-dev
+    [[ "$owned_path" != "$ceres_library" ]] || owner=libceres4t64
+    grep -F ": $owned_path" <<<"$ceres_ownership" | grep -Eq "^$owner(:[^:]+)?:" || {
+        echo "Ceres file is not owned by $owner: $owned_path" >&2
+        exit 1
+    }
+done
 ceres_runtime_links="$(ldd "$ceres_library")"
 if grep -q '=> not found' <<<"$ceres_runtime_links"; then
     echo "Ceres has unresolved runtime libraries" >&2
