@@ -105,14 +105,57 @@ std::vector<double> neutral_reference_composition(
     return composition;
 }
 
+ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+    std::size_t temperature_order, std::size_t pressure_order,
+    std::optional<std::size_t> parameter, const State& state) {
+    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
+    ResidualEnergyAction result;
+    const double pressure_scale = state.pressure_density_derivative * state.molar_density;
+    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
+    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
+    double contraction = 0.0;
+    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        PressureActionDirection direction;
+        double weight = 1.0;
+        for (std::size_t j = 0; j < order; ++j) {
+            const double sign = j && (mask & (std::size_t(1) << (j-1))) ? -1.0 : 1.0;
+            weight *= sign;
+            if (j < temperature_order) direction.temperature += sign * temperature;
+            else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
+            else {
+                const auto& active = model.active_parameters()[*parameter];
+                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
+            }
+        }
+        const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
+            composition, stoichiometry, direction, order);
+        result.status = series.status;
+        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
+        result.diagnostics.site_solves += series.diagnostics.site_solves;
+        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
+        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
+        result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
+        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
+        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
+        result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
+        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
+        result.diagnostics.site_rank = series.diagnostics.site_rank;
+        result.diagnostics.site_pivot_ratio = std::max(result.diagnostics.site_pivot_ratio, series.diagnostics.site_pivot_ratio);
+        if (series.status != PropertyActionStatus::Available) return result;
+        contraction += weight * series.contraction[order];
+    }
+    result.action = contraction / (double(std::size_t(1) << (order-1)) * scale);
+    if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
+    return result;
+}
+
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     double solvent_mass = 0.0;
     std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
     std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
     std::optional<HelmholtzDerivatives> terminal_derivatives;
-    // E2 at the last three ladder points for the temperature/parameter slopes and their limit check.
-    std::array<std::optional<HelmholtzDerivatives>, 3> thermal_derivatives;
     std::size_t temperature_order = 0;
     bool parameter_jets = false;
     double pressure_v = 0.0;
@@ -230,17 +273,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             trace.pressure_v = pressure_v;
             trace.pressure_vv = pressure_vv;
         }
-        // A failed slope evaluation leaves only the slope unavailable, never the value.
-        for (std::size_t point = 0; (temperature_order > 0 || parameter_jets) && point < 3; ++point) {
-            const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-            try {
-                trace.thermal_derivatives[point] = model.evaluate(temperature,
-                    1.0 / trace.state[ladder].molar_density, trace.composition[ladder],
-                    DerivativeOrder::Hessian);
-            } catch (const std::exception&) {
-                trace.thermal_derivatives[point].reset();
-            }
-        }
         result.trace = std::move(trace);
         result.status = NeutralReferenceStatus::Available;
         return result;
@@ -272,96 +304,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     bool pressure_jets,
     const NeutralReferenceTrace& trace
 ) {
-    // EqID: standard_state_transfer_temperature_derivative
-    // dC/dT|_P = sum nu psi_{n T} + C_V V_T, V_T = -p_T/p_V, at fixed ladder composition.
-    // EqID: standard_state_transfer_parameter_derivative
-    // The same first slope in an active coordinate theta, with p_theta = -RT psi_{V theta}.
-    // EqID: standard_state_transfer_temperature_second_derivative
-    // d2C/dT2|_P = D2C[w,w] + C_V V_TT along w = e_T + V_T e_V, V_TT = -D2p[w,w]/p_V.
-    // EqID: standard_state_transfer_temperature_pressure_derivative
-    // d2C/dTdP = D(C_V/p_V)[w] = (DC_V[w] - C_V Dp_V[w]/p_V)/p_V at a system-pressure reference.
-    const auto temperature_slopes = [&](std::size_t point, std::size_t coordinate = 0) -> std::array<std::optional<double>, 3> {
-        const auto& derivatives = trace.thermal_derivatives[point];
-        const std::size_t width = derivatives ? derivatives->gradient.size() : 0;
-        if (!derivatives || width < 2 + stoichiometry.size() || width <= coordinate
-            || derivatives->hessian.size() != width * width) return {};
-        const auto& h = derivatives->hessian;
-        const double gas = GAS_CONSTANT_J_PER_MOL_K;
-        const double rt = gas * temperature;
-        const std::size_t ladder = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-        const double volume = 1.0 / trace.state[ladder].molar_density;
-        const double pressure_t = (coordinate == 0 ? gas * (1.0 / volume - derivatives->gradient[1]) : 0.0)
-            - rt * h[width + coordinate];
-        const double pressure_v = rt * (-1.0 / (volume * volume) - h[width + 1]);
-        double contraction_t = 0.0, contraction_v = 0.0, delta_nu = 0.0;
-        std::vector<double> reaction(width, 0.0);
-        for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
-            contraction_t += stoichiometry[component] * h[(2 + component) * width + coordinate];
-            contraction_v += stoichiometry[component]
-                * (h[(2 + component) * width + 1] - 1.0 / volume);
-            delta_nu += stoichiometry[component];
-            reaction[2 + component] = stoichiometry[component];
-        }
-        const double volume_t = -pressure_t / pressure_v;
-        const double slope = contraction_t + contraction_v * volume_t;
-        if (!(pressure_v < 0.0) || !std::isfinite(slope)) return {};
-        std::array<std::optional<double>, 3> result{slope};
-        if (coordinate != 0) {
-            if (trace.temperature_order == 0) return result;
-            // EqID: standard_state_transfer_temperature_parameter_derivative
-            const double vt = -(gas * (1.0 / volume - derivatives->gradient[1]) - rt * h[width]) / pressure_v;
-            const double theta_scale = std::max(1.0, std::abs(model.active_parameter_values()[coordinate - 2 - stoichiometry.size()]));
-            const double alpha = std::max(1.0 / theta_scale, std::abs(volume_t) / volume)
-                / std::max(1.0 / temperature, std::abs(vt) / volume);
-            std::vector<double> plus(width, 0.0), minus(width, 0.0), along_volume(width, 0.0);
-            plus[0] = minus[0] = alpha;
-            plus[1] = alpha * vt + volume_t; minus[1] = alpha * vt - volume_t;
-            plus[coordinate] = 1.0; minus[coordinate] = -1.0; along_volume[1] = 1.0;
-            const auto mixed = [&](const auto& q) -> std::optional<double> {
-                const auto a = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, plus, plus}).action;
-                const auto b = model.residual_energy_action(temperature, volume, trace.composition[ladder], {q, minus, minus}).action;
-                return a && b ? std::optional<double>((*a - *b) / (4.0 * alpha)) : std::nullopt;
-            };
-            const auto reaction_wu = mixed(reaction), volume_wu = mixed(along_volume);
-            if (reaction_wu && volume_wu) {
-                const double pressure_wu = -gas * (h[width + coordinate] + volume_t * h[width + 1] + volume_t / (volume * volume))
-                    + 2.0 * rt * vt * volume_t / (volume * volume * volume) - rt * *volume_wu;
-                result[1] = *reaction_wu + delta_nu * vt * volume_t / (volume * volume) - contraction_v * pressure_wu / pressure_v;
-            }
-            return result;
-        }
-        std::vector<double> path(width, 0.0), along_volume(width, 0.0);
-        path[0] = 1.0;
-        path[1] = volume_t;
-        along_volume[1] = 1.0;
-        // D3psi[u, v, v]: the repeated-direction E3 route keeps the singular pure-ionic reaction
-        // third derivative out of every mixed response at dilute ionic states.
-        const auto third = [&](const std::vector<double>& u, const std::vector<double>& v) {
-            return model.residual_energy_action(temperature, volume, trace.composition[ladder], {u, v, v}).action;
-        };
-        const auto reaction_ww = trace.temperature_order < 2 ? std::nullopt : third(reaction, path);
-        const auto volume_ww = trace.temperature_order < 2 ? std::nullopt : third(along_volume, path);
-        if (reaction_ww && volume_ww) {
-            const double contraction_ww = *reaction_ww + delta_nu * volume_t * volume_t / (volume * volume);
-            const double pressure_ww = -2.0 * gas * volume_t / (volume * volume)
-                + 2.0 * rt * volume_t * volume_t / (volume * volume * volume)
-                - gas * (2.0 * (h[width] + volume_t * h[width + 1]) + temperature * *volume_ww);
-            result[1] = contraction_ww - contraction_v * pressure_ww / pressure_v;
-        }
-        if (!pressure_jets) return result;
-        // D3psi[nu, e_V, w] by balanced polarization in (a e_V +- w), a sizing e_V to w on the E3 scales.
-        const double a = volume * std::max(1.0 / temperature, std::abs(volume_t) / volume);
-        const auto shifted = [&](double step) { auto v = path; v[1] += step; return third(reaction, v); };
-        const auto reaction_plus = shifted(a), reaction_minus = shifted(-a);
-        const auto volume_vw = third(path, along_volume);
-        if (reaction_plus && reaction_minus && volume_vw) {
-            const double contraction_vw = (*reaction_plus - *reaction_minus) / (4.0 * a) + delta_nu * volume_t / (volume * volume);
-            const double pressure_vw = gas * (-1.0 / (volume * volume) - h[width + 1])
-                + 2.0 * rt * volume_t / (volume * volume * volume) - rt * *volume_vw;
-            result[2] = (contraction_vw - contraction_v * pressure_vw / pressure_v) / pressure_v;
-        }
-        return result;
-    };
+    // EqID: reference_single_insertion_taylor
+    // Raw lower T/P/EOS partials reuse each resolved terminal state; admission stays below.
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
     try {
@@ -401,37 +345,54 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             return result;
         }
         result.terminal_contraction = contractions.back();
-        const std::array<std::array<std::optional<double>, 3>, 3> slopes = {
-            temperature_slopes(0), temperature_slopes(1), temperature_slopes(2)};
-        // A slope is admitted when its scaled change over the last three ladder points meets the value's
-        // criterion: T|dD| (first), T P|dD| (mixed) and max(|theta|, 1)|dD| (parameter) at most 5e-5. The
-        // second slope is sized to the heat capacity it feeds, R T^2 |dD2| <= 0.01 J/(mol K).
-        const auto admit = [](const std::array<std::optional<double>, 3>& ladder, double scale, double tolerance,
-                              std::optional<double>* observed = nullptr) -> std::optional<double> {
-            if (!ladder[0] || !ladder[1] || !ladder[2] || !std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) return std::nullopt;
-            const double change = scale * std::max(std::abs(*ladder[2] - *ladder[1]), std::abs(*ladder[1] - *ladder[0]));
-            if (observed != nullptr) *observed = change;
-            return change <= tolerance ? ladder[2] : std::nullopt;
+        const auto admit = [&](std::size_t a, std::size_t b, std::optional<std::size_t> parameter,
+                               double scale, double tolerance, std::optional<double>* observed = nullptr) -> std::optional<double> {
+            auto& column = result.lower_derivatives.emplace_back();
+            column.temperature_order = a; column.pressure_order = b; column.parameter = parameter; column.criterion = tolerance;
+            for (std::size_t point = 0; point < 3; ++point) {
+                const auto rung = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
+                try {
+                    const auto partial = reference_partial_from_state(model, temperature, trace.composition[rung],
+                        stoichiometry, a, b, parameter, trace.state[rung]);
+                    column.ladder[point] = partial.action;
+                    if (!partial.action) {
+                        column.action_status = partial.status;
+                        column.message = "reference action status " + std::to_string(int(partial.status));
+                    }
+                } catch (const std::exception& error) { column.message = error.what(); }
+            }
+            const auto& ladder = column.ladder;
+            if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+            if (!std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) {
+                column.message = "nonfinite lower reference ladder"; return std::nullopt;
+            }
+            for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
+            const double change = std::max(column.scaled_changes[0], column.scaled_changes[1]);
+            if (observed) *observed = change;
+            if (change <= tolerance) column.value = ladder[2];
+            else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
+            return column.value;
         };
-        const auto order = [&](std::size_t k) { return std::array{slopes[0][k], slopes[1][k], slopes[2][k]}; };
         const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
-        result.terminal_contraction_temperature_derivative = admit(order(0), temperature, tolerance,
-            &result.observed_temperature_derivative_change);
-        result.terminal_contraction_temperature_second_derivative = admit(order(1), temperature * temperature,
-            policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
-            &result.observed_temperature_second_derivative_change);
-        result.terminal_contraction_temperature_pressure_derivative = admit(order(2), temperature * trace.pressure, tolerance);
+        if (trace.temperature_order > 0 || trace.parameter_jets) {
+            result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt, temperature, tolerance,
+                &result.observed_temperature_derivative_change);
+            if (trace.temperature_order > 1)
+                result.terminal_contraction_temperature_second_derivative = admit(2, 0, std::nullopt, temperature * temperature,
+                    policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K,
+                    &result.observed_temperature_second_derivative_change);
+            if (pressure_jets)
+                result.terminal_contraction_temperature_pressure_derivative = admit(1, 1, std::nullopt, temperature * trace.pressure, tolerance);
+        }
         const auto values = model.active_parameter_values();
-        for (std::size_t a = 0, column = 2 + stoichiometry.size(); trace.parameter_jets && a < values.size(); ++a) {
-            const std::array jets{temperature_slopes(0, column + a), temperature_slopes(1, column + a), temperature_slopes(2, column + a)};
+        for (std::size_t a = 0; trace.parameter_jets && a < values.size(); ++a) {
             const double scale = std::max(std::abs(values[a]), 1.0);
-            result.terminal_contraction_parameter_derivative.push_back(admit({jets[0][0], jets[1][0], jets[2][0]}, scale, tolerance));
+            result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a, scale, tolerance));
             if (trace.temperature_order > 0) {
-                result.temperature_parameter_ladder.push_back({jets[0][1], jets[1][1], jets[2][1]});
                 result.observed_temperature_parameter_change.emplace_back();
-                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(
-                    result.temperature_parameter_ladder.back(), temperature * scale, tolerance,
+                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance,
                     &result.observed_temperature_parameter_change.back()));
+                result.temperature_parameter_ladder.push_back(result.lower_derivatives.back().ladder);
             }
         }
         if (reference.reference_pressure_pa.has_value()) {
@@ -574,45 +535,9 @@ ResidualEnergyAction reference_partial(const HelmholtzModel& model, double tempe
     const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
     if (order == 0 || order > 4 || (parameter && *parameter >= model.active_parameters().size()))
         throw std::invalid_argument("reference partial order or coordinate");
-    ResidualEnergyAction result;
     const auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
-    const double pressure_scale = state.pressure_density_derivative * state.molar_density;
-    const double theta_scale = parameter ? std::max(1.0, std::abs(model.active_parameter_values()[*parameter])) : 1.0;
-    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
-    double contraction = 0.0;
-    for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
-        PressureActionDirection direction;
-        double weight = 1.0;
-        for (std::size_t j = 0; j < order; ++j) {
-            const double sign = j && (mask & (std::size_t(1) << (j-1))) ? -1.0 : 1.0;
-            weight *= sign;
-            if (j < temperature_order) direction.temperature += sign * temperature;
-            else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
-            else {
-                const auto& active = model.active_parameters()[*parameter];
-                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
-            }
-        }
-        const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
-            composition, stoichiometry, direction, order);
-        result.status = series.status;
-        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
-        result.diagnostics.site_solves += series.diagnostics.site_solves;
-        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
-        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
-        result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
-        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
-        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
-        result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
-        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
-        result.diagnostics.site_rank = series.diagnostics.site_rank;
-        result.diagnostics.site_pivot_ratio = std::max(result.diagnostics.site_pivot_ratio, series.diagnostics.site_pivot_ratio);
-        if (series.status != PropertyActionStatus::Available) return result;
-        contraction += weight * series.contraction[order];
-    }
-    result.action = contraction / (double(std::size_t(1) << (order-1)) * scale);
-    if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
-    return result;
+    return reference_partial_from_state(model, temperature, composition, stoichiometry,
+        temperature_order, pressure_order, parameter, state);
 }
 
 double reaction_reference_log_scale(

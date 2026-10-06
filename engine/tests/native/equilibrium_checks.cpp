@@ -1,3 +1,5 @@
+#include "quad_base.hpp"
+#include "properties/helmholtz_tape.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
@@ -19,6 +21,8 @@
 #include <string>
 #include <stdexcept>
 #include <tuple>
+#include <map>
+#include <numeric>
 
 namespace {
 
@@ -191,6 +195,8 @@ std::string weighted_hessian_context(
                                  parameters.correlation_integral_parameter),
     });
 }
+
+#include "reactive_caloric_checks.hpp"
 
 // Old normalized correlation ln K = a + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
 // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
@@ -1268,21 +1274,20 @@ void check_s2() {
             const double richardson = (4.0 * fine - coarse) / 3.0;
             const auto calorics = epcsaft::equilibrium::reference_calorics(
                 compiled, problem.temperature.value, problem.pressure.value, false, false, true);
-            const bool reaction_direction = std::any_of(
-                direction.reaction_log_constant_temperature_slopes.begin(),
-                direction.reaction_log_constant_temperature_slopes.end(), [](double value) { return value != 0.0; });
-            const double factor = reaction_direction
-                ? direction.reaction_log_constant_temperature_slopes.front()
-                : direction.active_parameters.front();
-            const auto& family = reaction_direction ? calorics.enthalpy_reaction : calorics.enthalpy_parameter;
-            CHECK(calorics.status == epcsaft::equilibrium::SolvedStateActionStatus::Available
-                  && !family.empty() && family[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
-                  && family[0].values.size() == problem.feed.values.size());
+            CHECK(calorics.status == epcsaft::equilibrium::SolvedStateActionStatus::Available);
             double direct = 0.0;
-            if (!family.empty() && family[0].values.size() == solved.mole_fractions.size())
-                for (std::size_t component = 0; component < family[0].values.size(); ++component)
-                    direct += solved.amounts[0] * solved.mole_fractions[component]
-                        * family[0].values[component] * factor;
+            for (std::size_t component = 0; component < solved.mole_fractions.size(); ++component) {
+                double slope = 0.0;
+                for (std::size_t a = 0; a < direction.active_parameters.size(); ++a)
+                    if (direction.active_parameters[a] != 0.0)
+                        slope += direction.active_parameters[a] * (
+                            reactive_caloric_checks::gibbs_contraction(calorics, component, 0, 0, a) -
+                            problem.temperature.value * reactive_caloric_checks::gibbs_contraction(calorics, component, 1, 0, a));
+                if (!direction.reaction_coefficients.empty())
+                    slope -= epcsaft::GAS_CONSTANT_J_PER_MOL_K * direction.reaction_coefficients.front()[1]
+                        * calorics.reaction_map[0][component];
+                direct += solved.amounts[0] * solved.mole_fractions[component] * slope;
+            }
             const double tolerance = 1.0e-6 * std::abs(richardson);
             const bool agrees = std::isfinite(exact) && std::isfinite(coarse) && std::isfinite(fine)
                 && std::isfinite(richardson) && std::isfinite(direct) && tolerance > 0.0
@@ -1347,8 +1352,9 @@ void check_s2() {
             problem.source_reference = identical_declaration;
             problem.reactions = {{"2A=B", identical_nu, std::nullopt, std::nullopt,
                                   neutral_law, neutral_sources[source]}};
-            const ActionDirection b_direction{
-                0.0, 0.0, {0.0, 0.0}, {}, {1.0 / 260.0}, {-1.0 / (260.0 * 260.0)}};
+            ActionDirection b_direction;
+            b_direction.feed_amounts_mol = {0.0, 0.0};
+            b_direction.reaction_coefficients = {{{0.0, 1.0, 0.0, 0.0}}};
             const auto value_at_shift = [&](double shift) {
                 auto shifted = problem;
                 shifted.reactions[0].correlation->b += shift;
@@ -1366,22 +1372,32 @@ void check_s2() {
             epcsaft::equilibrium::SolvedStateObservable fraction;
             fraction.kind = epcsaft::equilibrium::SolvedStateObservableKind::PhaseMoleFraction;
             fraction.component = 1;
-            const ActionDirection log_k{0.0, 0.0, {0.0, 0.0}, {}, {1.0}, {0.0}};
-            const ActionDirection c{0.0, 0.0, {0.0, 0.0}, {}, {0.0}, {1.0 / 260.0}};
-            const ActionDirection temperature{1.0, 0.0, {0.0, 0.0}, {}, {}, {}};
-            const auto first = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {log_k}});
-            const auto higher = epcsaft::equilibrium::solved_state_actions(compiled, center, {{fraction}, {temperature, c}});
-            const double omitted = first.results[0].action.value_or(0.0) / 260.0;
-            const bool refused = center.success && first.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
-                && higher.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::ReferenceUnavailable
-                && higher.results[0].value == first.results[0].value && !higher.results[0].action;
-            recording_support::compare_custom("reference-calorics/parameter/reaction-c-at-Tref/order-refusal",
-                "omitted_mixed_composition_action", "1/K", omitted, 0.0,
-                recording_support::fields({recording_support::field("Tref_K", 260.0), recording_support::field("typed_refusal", refused)}),
-                "Discrimination", "reaction-coordinate-first-order-scope", "a nonzero phi_c' contribution prevents an available zero mixed action",
-                "abs(omitted)>0 && typed_refusal", std::isfinite(omitted) && omitted != 0.0 && refused,
-                "s2-neutral-reference", "reaction-c-at-Tref", "d2x/dTdc", "T,c", "phi_c'=1/T", "case");
-            CHECK(std::isfinite(omitted) && omitted != 0.0 && refused);
+            ActionDirection c_direction;
+            c_direction.feed_amounts_mol = {0.0, 0.0};
+            c_direction.reaction_coefficients = {{{0.0, 0.0, 1.0, 0.0}}};
+            const ActionDirection temperature{1.0, 0.0, {0.0, 0.0}, {}};
+            const auto higher = epcsaft::equilibrium::solved_state_actions(
+                compiled, center, {{fraction}, {temperature, c_direction}});
+            CHECK(higher.results[0].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
+                  && higher.results[0].action.has_value());
+            const auto x_at = [&](double t, double c) {
+                auto changed = centered;
+                changed.temperature.value += t;
+                changed.reactions[0].correlation->c += c;
+                const auto state = epcsaft::equilibrium::solve_equilibrium(neutral_model, changed, center);
+                CHECK(state.has_state());
+                return state.mole_fractions[1];
+            };
+            const auto difference = [&](double step) {
+                return (x_at(step, step)-x_at(step,-step)-x_at(-step,step)+x_at(-step,-step))/(4*step*step);
+            };
+            const double exact=*higher.results[0].action;
+            const reactive_caloric_checks::Quantity quantity{"d2x_dTdc", "1", 1e-11, fraction};
+            CHECK(reactive_caloric_checks::scalar_ladder(
+                "reference-calorics/parameter/reaction-c-at-Tref/mixed-action", quantity, exact, 0.2,
+                recording_support::fields({recording_support::field("Tref_K",260.0),
+                    recording_support::field("temperature_increment_K",1.0),recording_support::field("coefficient_c_increment",1.0)}),
+                1e-6, difference));
         }
 
         // Case I water epsilon/k and reaction b, both system- and fixed-pressure references.
@@ -1408,7 +1424,7 @@ void check_s2() {
                 epcsaft::ReactionLogPolynomial{std::log(1.0e-8) + 2000.0 / ionic_temperature, -2000.0, 0.0, 0.0,
                  ionic_temperature, 250.0, 350.0, "analytic-source"}, ionic_sources[source]}};
             const ActionDirection epsilon_direction{
-                0.0, 0.0, {0.0, 0.0, 0.0}, {1.0}, {}, {}};
+                0.0, 0.0, {0.0, 0.0, 0.0}, {1.0}, {}};
             const auto epsilon_value = [&](double shift) {
                 auto shifted = ionic_parameters;
                 shifted.dispersion_energy_over_k[0] += shift;
@@ -1421,9 +1437,10 @@ void check_s2() {
                 epsilon_id.c_str(), ionic_model, problem, epsilon_direction, 0.05, epsilon_value);
             discrimination(epsilon_id, epsilon_row);
 
-            const ActionDirection b_direction{
-                0.0, 0.0, {0.0, 0.0, 0.0}, {0.0}, {1.0 / ionic_temperature},
-                {-1.0 / (ionic_temperature * ionic_temperature)}};
+            ActionDirection b_direction;
+            b_direction.feed_amounts_mol = {0.0, 0.0, 0.0};
+            b_direction.active_parameters = {0.0};
+            b_direction.reaction_coefficients = {{{0.0, 1.0, 0.0, 0.0}}};
             const auto b_value = [&](double shift) {
                 auto changed = problem;
                 changed.reactions[0].correlation->b += shift;
@@ -3558,11 +3575,13 @@ std::vector<double> action_term_scale(const Fixture& fixture, const CompiledSyst
             if (part != 2) std::fill(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(), 0.0);
             if (part != 3) {
                 std::fill(d.active_parameters.begin(), d.active_parameters.end(), 0.0);
-                std::fill(d.reaction_log_constants.begin(), d.reaction_log_constants.end(), 0.0);
+                for (auto& coefficients : d.reaction_coefficients) coefficients.fill(0.0);
             }
             bool nonzero = d.temperature_k != 0.0 || d.pressure_pa != 0.0;
-            for (const auto* values : {&d.feed_amounts_mol, &d.active_parameters, &d.reaction_log_constants})
+            for (const auto* values : {&d.feed_amounts_mol, &d.active_parameters})
                 for (const auto value : *values) nonzero = nonzero || value != 0.0;
+            for (const auto& coefficients : d.reaction_coefficients)
+                for (double value : coefficients) nonzero |= value != 0.0;
             if (nonzero) { request.directions.push_back(d); self(self, j + 1); request.directions.pop_back(); }
         }
     };
@@ -4987,6 +5006,20 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.normalized-reaction", "Normalized_reaction_affinity", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_normalized_reaction_affinity},
         {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
         {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
+        {{"native.equilibrium.reference-caloric-identities", "Anchored_Gibbs_caloric_identities", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "reference-calorics/F4/*,reference-calorics/F5/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reference-caloric-identities"}, reactive_caloric_checks::cheap, "S2"},
+        {{"native.equilibrium.reactive-caloric-E-sys", "Reactive_caloric_E_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-sys/*,F4/E-sys/*,F5/E-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-sys"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-E-fix", "Reactive_caloric_E_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-fix/*,F4/E-fix/*,F5/E-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-fix"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-I-sys", "Reactive_caloric_I_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-sys/*,F4/I-sys/*,F5/I-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-sys"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-I-fix", "Reactive_caloric_I_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-fix/*,F4/I-fix/*,F5/I-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-fix"}, [] {reactive_caloric_checks::run(true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-U", "Nonreacting_caloric_P4_reduction", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F3/U/*,F1/U/*,F5/U/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-U"}, reactive_caloric_checks::unreactive, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-sys", "Free_intensive_E_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-sys"}, [] {reactive_caloric_checks::boundary(false,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-fix", "Free_intensive_E_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-fix"}, [] {reactive_caloric_checks::boundary(false,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-sys", "Free_intensive_E_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-sys"}, [] {reactive_caloric_checks::boundary(false,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-fix", "Free_intensive_E_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-fix"}, [] {reactive_caloric_checks::boundary(false,false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-sys", "Free_intensive_N_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-sys"}, [] {reactive_caloric_checks::boundary(true,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-fix", "Free_intensive_N_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-fix"}, [] {reactive_caloric_checks::boundary(true,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "Free_intensive_N_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-sys"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "Free_intensive_N_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-fix"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
         {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
         {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
         {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},

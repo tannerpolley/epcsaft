@@ -1,8 +1,8 @@
 {
-  "rows": 478,
-  "recorded_at_revision": "81cd85825fcf37ead7fc44f5c8084e5156036ab9",
-  "build_fingerprint": "3918686e884f7ace4a3afdd56df8fd4a12ed20d093a027f439c0d245ca4881cd",
-  "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+  "rows": 580,
+  "recorded_at_revision": "2428781bd8f5f9b24c3b5aa6017b74117fcee4fa",
+  "build_fingerprint": "584a9cbca4782315d785893de77096897d6bc9cc2076adead34b3f77972c200e",
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -56,17 +56,11 @@
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
   "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
-  "previous_rows": {
-    "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
-    "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
-    "sha256": "8047c85c47ddb1460e16fb1a6d3e6d39f98dccbb8f4c0737fe03c19ccf429460"
-  },
-  "refresh_dispositions": {
-    "density_explained": 252,
-    "preexisting_staleness": 1,
-    "unchanged_values": 225,
-    "preexisting_row": "r4/recovery/prediction/0",
-    "preexisting_cause": "pre-existing staleness from the cold-report -> accepted-warm publication change (333595888b45892d07292d4198d51768f13e83e6, 4-increment difference)",
-    "evidence": "analyses/2026-competitor-cross-check/results/density-closure-native-value-causal-comparison.csv"
-  }
+  "previous_branch_wheel_sha256": "93c105d2101a73f836b5ee8eeab7119ecf04342b8946bf9eb8ca57df4d41c6c2",
+  "previous_main_recording_wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+  "current_main_wheel_sha256": "ae3d960f3b310d88c83468e361c390392a8b58b6e5dafbead662f42e0e7fd8d3",
+  "pre_scaling_wheel_sha256": "47535cab611b6243509c57bca9c96bb08e49337084afe80bc533ce16768301de",
+  "refresh_cause": "Integrated pressure-closest density endpoint selection/publication and central-temperature auxiliary scaling. Every moved value passes its independent native comparison or discrimination; original criteria are unchanged.",
+  "movement_classification": "analyses/2026-reactive-caloric-actions/results/main-integration/native-row-movements.tsv",
+  "row_requalification": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/provenance.json"
 }

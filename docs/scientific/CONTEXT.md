@@ -89,9 +89,36 @@ Taylor coefficients along a fixed-composition, pressure-closed base path.
 column and both terminal changes. Their meanings and bounded inventory follow
 [the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
 and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
-These standalone Properties derivatives are numerically verified on the stated
-manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
-consumers remain separate #225 work.
+These standalone Properties derivatives and all five lower reference partials
+are numerically verified on the stated manufactured cases. The current-source
+replay and its distinct wheel identity are retained in that notebook; Properties
+reuses the resolved terminal States through one single-insertion Taylor owner.
+The same diagnostic retains actual lower-column evaluation/admission causes
+for chemical rows and caloric completion; the notebook retains the bounded
+corrected-source failure case separately from the admitted-case replay.
+The [current runtime review](../../analyses/2026-reactive-caloric-actions/results/current-source-review.md)
+is Supported at `14c32d1a`, accepted for the bounded integrated reference and
+prescribed-T/P caloric slice, without manuscript promotion. The same notebook
+retains separate driven-T/P numerical
+checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
+direction and feed-only A3. Referenced free-intensive combinations and
+apparent-Cp fitting remain separate #225 qualification. The subsequent source
+implementation refreshes referenced free-T/P row jets at their current point
+and transports coefficient increments through the native law at T(t), including
+free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
+volume with finite nonzero pressure slope, recording stable-chart signs separately.
+The temperature-scaling correction received Supported delivered re-review at
+`e4342588`. The current-main replay at `2428781b`, integrating `d7739584`, retains
+that correction, the density publication behavior, native duplication removals,
+trace payload construction inside `Scope::observe` and the separate exact-inventory
+incipient extension. The notebook reads its retained native values, action
+comparisons, reference refinements, lower-admission ladder, binary128 pin,
+independent moved-row evidence and paired work/timing. All shared movements from
+the common native recording have independent comparisons before refresh.
+This is numerical verification on the declared manufactured branches.
+Independent delivered review of the current integration remains with the lead;
+earlier scoped reviews do not establish its acceptance. Apparent-Cp observation,
+fitting, quadrature and recovery qualification remains outside this delivery.
 
 ### Residual, ideal and state responsibilities
 
