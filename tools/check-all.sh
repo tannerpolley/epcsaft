@@ -37,6 +37,7 @@ run_check native-tests env EPCSAFT_NATIVE_BUILD_READY=1 \
     engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example regression
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
+run_check analysis-declarations .venv/bin/python tools/check-analysis-declarations.py
 run_check analysis-layout .venv/bin/python tools/check-analysis-layout.py
 run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "$wheel"
 

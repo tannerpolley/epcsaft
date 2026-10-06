@@ -26,6 +26,12 @@ if ((${#changed[@]} == 0)); then
     exit 0
 fi
 
+notebooks=()
+for path in "${changed[@]}"; do
+    [[ "$path" == analyses/*/notebook.qmd ]] && notebooks+=("$path")
+done
+((${#notebooks[@]} == 0)) || python3 tools/check-notebook-numbers.py "${notebooks[@]}"
+
 paths="$(printf '%s\n' "${changed[@]}")"
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
