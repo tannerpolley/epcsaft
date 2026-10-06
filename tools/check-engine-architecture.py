@@ -298,6 +298,79 @@ def rule_core_and_trace_boundaries() -> list[str]:
     return bad
 
 
+# Preserve offsets so findings refer to the original source, including comments.
+CPP_NON_CODE = re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', re.S)
+TRACE_CALL = re.compile(r'(?:\.|->)\s*(?:probe|emit)\s*\(')
+PAYLOAD_TYPE = r'std::(?:vector|array|deque|list|map|unordered_map|set|unordered_set|string|basic_string)(?:\s*<[^;{}()]*>)?'
+PAYLOAD_TEMPORARY = re.compile(r"\b" + PAYLOAD_TYPE + r"\s*[({]|\bstd::to_string\s*\(")
+PAYLOAD_DECLARATION = re.compile(
+    rf'\b(?:{PAYLOAD_TYPE}|auto(?=\s+\w+\s*=\s*(?:{PAYLOAD_TYPE}|std::to_string)))\s+([^;]+);'
+)
+
+
+def rule_known_eager_trace_payload_forms() -> list[str]:
+    # Regression guard for observed eager-temporary and named-local patterns, not a complete allocation-safety proof.
+    bad = []
+    returned_payloads = set()
+    for path in sources():
+        for match in re.finditer(rf'\b{PAYLOAD_TYPE}\s+(\w+(?:::\w+)*)\s*\(', without_comments(path.read_text())):
+            returned_payloads.add(match.group(1).split('::')[-1])
+    returned_names = '|'.join(sorted(returned_payloads)) or r'(?!)'
+    returned_call = rf'\b(?:{returned_names})\s*\('
+    temporary = re.compile(PAYLOAD_TEMPORARY.pattern + '|' + returned_call)
+    declaration_pattern = re.compile(PAYLOAD_DECLARATION.pattern.replace('|std::to_string)', '|std::to_string|' + returned_names + ')'))
+    for path in sources():
+        text = CPP_NON_CODE.sub(lambda m: re.sub(r'[^\n]', ' ', m.group()), path.read_text())
+        # Pair statement blocks and calls; initializer braces are harmless here.
+        pairs, stack = {}, []
+        for i, char in enumerate(text):
+            if char in '({':
+                stack.append(i)
+            elif char in ')}' and stack and text[stack[-1]] == ('(' if char == ')' else '{'):
+                pairs[stack.pop()] = i
+        observations = []
+        for match in re.finditer(r'\bobserve\s*\([^;{}]*\[[^\]]*\][^{]*\{', text):
+            start = match.end() - 1
+            if start in pairs:
+                observations.append((start, pairs[start]))
+        calls = [(m.start(), pairs[m.end() - 1]) for m in TRACE_CALL.finditer(text)
+                 if m.end() - 1 in pairs]
+        for start, end in calls:
+            payloads = []
+            observed = any(left < start < right for left, right in observations)
+            if not observed and temporary.search(text[start:end]):
+                payloads.append('container/string temporary')
+            blocks = [(left, right) for left, right in pairs.items()
+                      if text[left] == '{' and left < start < right]
+            for left, right in blocks:
+                block = text[left + 1:right]
+                # Remove emissions before checking whether a local is only a payload.
+                remaining = block
+                for call_start, call_end in reversed(calls):
+                    if left < call_start < call_end < right:
+                        a, b = call_start - left - 1, call_end - left
+                        remaining = remaining[:a] + ' ' * (b - a) + remaining[b:]
+                for declaration in declaration_pattern.finditer(block[:start - left - 1]):
+                    position = left + 1 + declaration.start()
+                    if any(a < position < b for a, b in observations):
+                        continue
+                    if any(a < position < b and a > left for a, b in blocks):
+                        continue
+                    names = re.findall(r'(?:^|,)\s*(\w+)\s*(?=[({=]|$)', declaration.group(1))
+                    for name in names:
+                        if not re.search(rf'\b{name}\b', text[start:end]):
+                            continue
+                        uses = remaining[:declaration.start()] + ' ' * len(declaration.group()) + remaining[declaration.end():]
+                        # Filling the payload is allowed; any other read earns numerical ownership.
+                        uses = re.sub(rf'\b{name}\s*(?:\[[^\]]*\]\s*=|\.(?:push_back|emplace_back|reserve|resize)\s*\()', '', uses)
+                        if not re.search(rf'\b{name}\b', uses):
+                            payloads.append(name)
+            if payloads:
+                line = text.count('\n', 0, start) + 1
+                bad.append(f'{path.relative_to(ROOT)}:{line}: eager trace payload: {", ".join(sorted(set(payloads)))}')
+    return bad
+
+
 def rule_declared_selectors() -> list[str]:
     # Every declared document: Parameters today, Thermochemistry once it exists.
     documents = (("parameters.hpp", "Parameters", True), ("thermochemistry.hpp", "Thermochemistry", False))
@@ -426,6 +499,7 @@ def main() -> int:
         ("policy entries are named, listed and consumed", rule_policy_entries_name_themselves()),
         ("budget readers carry records", rule_budget_readers_carry_records()),
         ("core and trace boundaries", rule_core_and_trace_boundaries()),
+        ("known eager trace-payload forms are absent", rule_known_eager_trace_payload_forms()),
         ("selectors are declared", rule_declared_selectors()),
         ("surface has no physical defaults", rule_surface_defaults()),
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),

@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdio>
 #include <Eigen/Dense>
 #include <limits>
 #include <numeric>
@@ -603,12 +602,6 @@ CppAD::ADFun<double> record_geometry(
     return CppAD::ADFun<double>(u, output);
 }
 
-std::string represented(double value) {
-    char buffer[64];
-    std::snprintf(buffer, sizeof(buffer), "%.17g", value);
-    return buffer;
-}
-
 // Reaction-aware feed-relative pin admission: individual [0, 1] domain always; the exact
 // sum rules only when the declared reaction space conserves total moles.
 void admit_pins(CompiledSystem& compiled) {
@@ -626,11 +619,11 @@ void admit_pins(CompiledSystem& compiled) {
     if (!compiled.conserves_total_moles || pinned == 0) return;
     if (pin_sum > 1.0) {
         throw std::invalid_argument("pinned phase fractions exceed one: S_pin="
-                                    + represented(pin_sum));
+                                    + core::optional_number(pin_sum));
     }
     if (pinned == compiled.problem.phases.size() && pin_sum != 1.0) {
         throw std::invalid_argument("all-pinned phase fractions must sum to one: S_pin="
-                                    + represented(pin_sum));
+                                    + core::optional_number(pin_sum));
     }
 }
 

@@ -274,7 +274,8 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         for m in (0.1, 1, 4.5)
         for kind in ("mean_ionic_activity_coefficient", "osmotic_coefficient")
     ]
-    observations = _core.observations_at(p._native, cs, truth, holds, templates, [0] * 6)
+    # Manufacture values from the chart already evaluated above; its hold is solved.
+    observations = _core.observations_at(chart.parameters, [], [], [], templates, [0] * 6)
     controls = regression.FitControls()
     controls.function_tolerance = 1e-15
     controls.gradient_tolerance = 1e-14
@@ -300,7 +301,7 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     for ob in templates:
         ob.form = regression.ResidualForm.Difference
         ob.scale = 1
-    exact_data = _core.observations_at(stored._native, cs, truth, holds, templates, [0] * 6)
+    exact_data = _core.observations_at(chart.parameters, [], [], [], templates, [0] * 6)
     exact = regression.fit(stored, cs, exact_data, holds=holds)
     assert exact.final_cost <= 1e-24
     for c in range(3):
@@ -312,8 +313,8 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         low = regression.evaluate_coordinates(p, cs, minus, holds)
         cd = (high.physical[-1] - low.physical[-1]) / (2 * step)
         assert abs(chart.map[-3 + c] - cd) <= 2e-5 * max(abs(v) for v in chart.map[-3:]) + 1e-7
-        yp = _core.observations_at(p._native, cs, plus, holds, templates, [0] * 6)
-        ym = _core.observations_at(p._native, cs, minus, holds, templates, [0] * 6)
+        yp = _core.observations_at(high.parameters, [], [], [], templates, [0] * 6)
+        ym = _core.observations_at(low.parameters, [], [], [], templates, [0] * 6)
         column = exact.optimizer_jacobian[c::3]
         for i, value in enumerate(column):
             assert (
@@ -321,7 +322,7 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
                 <= 2e-5 * max(abs(v) for v in column) + 1e-7
             )
     checks_data = _core.observations_at(
-        stored._native, cs, truth, holds, observations[:2], [0.01, -0.03]
+        chart.parameters, [], [], [], observations[:2], [0.01, -0.03]
     )
     group = regression.CheckGroup()
     group.name = "known-decades"
