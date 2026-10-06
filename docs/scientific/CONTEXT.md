@@ -89,9 +89,36 @@ Taylor coefficients along a fixed-composition, pressure-closed base path.
 column and both terminal changes. Their meanings and bounded inventory follow
 [the single-insertion equation](../../engine/docs/equations.md#reference_single_insertion_taylor)
 and [F8/F9 notebook](../../analyses/2026-reactive-caloric-actions/notebook.qmd).
-These standalone Properties derivatives are numerically verified on the stated
-manufactured cases. Runtime Gibbs-volume calorics and their higher solved-state
-consumers remain separate #225 work.
+These standalone Properties derivatives and all five lower reference partials
+are numerically verified on the stated manufactured cases. The current-source
+replay and its distinct wheel identity are retained in that notebook; Properties
+reuses the resolved terminal States through one single-insertion Taylor owner.
+The same diagnostic retains actual lower-column evaluation/admission causes
+for chemical rows and caloric completion; the notebook retains the bounded
+corrected-source failure case separately from the admitted-case replay.
+The [current runtime review](../../analyses/2026-reactive-caloric-actions/results/current-source-review.md)
+is Supported at `14c32d1a`, accepted for the bounded integrated reference and
+prescribed-T/P caloric slice, without manuscript promotion. The same notebook
+retains separate driven-T/P numerical
+checks of anchored Gibbs-volume calorics, A1/A2 with one parameter-bearing
+direction and feed-only A3. Referenced free-intensive combinations and
+apparent-Cp fitting remain separate #225 qualification. The subsequent source
+implementation refreshes referenced free-T/P row jets at their current point
+and transports coefficient increments through the native law at T(t), including
+free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
+volume with finite nonzero pressure slope, recording stable-chart signs separately.
+The temperature-scaling correction received Supported delivered re-review at
+`e4342588`. The current-main replay at `2428781b`, integrating `d7739584`, retains
+that correction, the density publication behavior, native duplication removals,
+trace payload construction inside `Scope::observe` and the separate exact-inventory
+incipient extension. The notebook reads its retained native values, action
+comparisons, reference refinements, lower-admission ladder, binary128 pin,
+independent moved-row evidence and paired work/timing. All shared movements from
+the common native recording have independent comparisons before refresh.
+This is numerical verification on the declared manufactured branches.
+Independent delivered review of the current integration remains with the lead;
+earlier scoped reviews do not establish its acceptance. Apparent-Cp observation,
+fitting, quadrature and recovery qualification remains outside this delivery.
 
 ### Residual, ideal and state responsibilities
 
@@ -205,7 +232,7 @@ remaining work.
   owns that conditioning limit. Native finite searches admit charge-neutral trials and conserved
   donor splits with estimated uncertainty; they supply no global certificate.
   Mechanical and local checks remain available; a declared result implies no
-  unperformed search. [ADR 0012](adr/0012-native-tangent-plane-phase-discovery.md)
+  unperformed search. [ADR 0012](decisions/0012-native-tangent-plane-phase-discovery.md)
   records the adopted choices, not numerical support.
 - Charged trial supports in explicit testing/discovery require a declared bulk
   permittivity form with the vacuum limit: Schreckenberg `DensityTemperature`
@@ -305,7 +332,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
 | Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
-| Accepted decisions | [adr/](adr/README.md), sole sequence |
+| Accepted decisions | [decisions/](decisions/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
 | Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
 | Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
@@ -336,29 +363,7 @@ Reviewers apply these to every readiness and delivered review:
 
 ## Vocabulary and conventions
 
-| Term | Meaning and source |
-|---|---|
-| independent reference case | Analytic identity, measurement, evaluated reference, or source model calculation; source class and uncertainty remain distinct (CSE terminology and transfer audit §7) |
-| support | Species with coordinates in a phase; omitted species have structural zero amount (equilibrium formulation) |
-| inventory face | Nonnegative amount states with species forced absent by an exactly zero globally nonnegative conserved inventory; state balances restrict to surviving coordinates while the full feed map and original reaction/reference completion remain (equilibrium formulation, #231) |
-| admission | Checking declared physical inputs and the requested mathematical domain before evaluation (full EOS §12) |
-| derivative action | A requested directional derivative of a named observable on a stated branch and coordinate chart (algorithms) |
-| convergence record | Achieved residual, comparison criterion, termination reason and available conditioning/error diagnostics (algorithms) |
-| numerical floor | An estimate of attainable accuracy propagated from input/inner-solve error; not automatically a rigorous bound (algorithms) |
-| tolerance gated | A verification check whose error exceeds its criterion but not a numerical floor derived from reported quantities; a recorded diagnosis pending an attempted root-cause fix, never an end state or a hand-picked looser tolerance (algorithms) |
-| fingerprint | A recorded identity of parameter, topology or installed wheel contents; not scientific evidence of accuracy ([packet requirements](../../data/docs/packet-contract.md) and root `AGENTS.md`) |
-| typed failure | An unavailable result with a specific reason, final only for genuinely singular or undefined mathematics or a state outside the stated physical domain, after an attempted root-cause fix; not an invented physical value (algorithms, fix before a negative disposition) |
-| claim boundary | Observable, domain, evidence and uncertainty to which a scientific conclusion applies (CSE scientific method) |
-| tangent-plane distance | Reduced molar energy above the candidate conserved supporting plane on normalized electroneutral composition/volume trials (Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation) |
-| numerically resolved descending split | Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof (equilibrium formulation; #223 adopted D9) |
-| proved instability witness | Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient (equilibrium formulation) |
-| stability certificate | A justified bound or theorem for the stated domain; finite search without a witness is insufficient (equilibrium formulation) |
-| component | A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation (`ARCHITECTURE.yaml` project map) |
-| layer | An architectural responsibility inside a component; Engine layers have enforceable native include rules (`ARCHITECTURE.yaml`) |
-| capability | A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership |
-| milestone | Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers |
-| file role | Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external (`ARCHITECTURE.yaml` project map) |
-| qualification | Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check |
+Project vocabulary: [GLOSSARY.md](../../GLOSSARY.md).
 
 Use bubble, dew, saturation and flash as mathematical specifications or data
 constructors. Shared solvers must not select physics by an application or paper

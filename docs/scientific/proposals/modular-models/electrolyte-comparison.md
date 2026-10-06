@@ -344,7 +344,7 @@ evidence, not a PC-SAFT contribution or proof of SAFT compatibility.
 | Second general Wertheim solver or energy owner | Unnecessary for Yang's topology alone; reuse the existing owner. |
 | Yang sites on unchanged Figiel parameters | Research hybrid requiring reassessment and likely refitting, not an accepted source model. |
 | DH-to-MSA replacement | Not justified by these results alone; no isolated causal comparison. |
-| Polar and NAHS additions | The optional Gross–Vrabec dipole–dipole term is admitted by [ADR 0011](../../adr/0011-optional-dipole-dipole-term.md). Its combination with electrolyte families and any NAHS addition still require separate justification. |
+| Polar and NAHS additions | The optional Gross–Vrabec dipole–dipole term is admitted by [ADR 0011](../../decisions/0011-optional-dipole-dipole-term.md). Its combination with electrolyte families and any NAHS addition still require separate justification. |
 | Bjerrum pairing | Lower-priority candidate requiring domain, screening and derivative reconciliation; not uniformly better in Yang's comparison. |
 | Temperature/density/solvent validation | Required regardless of the eventual physical selection. |
 

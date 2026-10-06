@@ -2,8 +2,11 @@
 
 This is the CSE owner map for the ePC-SAFT monorepo. Start with
 [CONTEXT.md](CONTEXT.md) for mathematical authority, methods, implementation
-and evidence owners. [ADRs](adr/README.md) retain the sole accepted decision
+and evidence owners. [ADRs](decisions/README.md) retain the sole accepted decision
 sequence; [writing](writing/STYLE.md) owns manuscript and notebook style.
+Research documents and dated evidence keep their original source locators and
+historical software names; they inform scientific choices but do not replace the
+current specifications.
 
 Canonical mathematics and algorithms use Markdown with LaTeX display equations
 and plain pseudocode under `engine/docs/`. The equation definitions are edited
@@ -14,7 +17,7 @@ neither becomes a second Engine specification. This is the repository's accepted
 The [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
 is the sole current gap and completion plan. Issue bodies own design, scope,
 acceptance, reuse and handoff; native relationships own hierarchy and
-prerequisites. [ADR 0010](adr/0010-github-issue-roadmap-authority.md) records that authority.
+prerequisites. [ADR 0010](decisions/0010-github-issue-roadmap-authority.md) records that authority.
 [Dated reviews](reviews/transfer-audit-2026-09-06.md) retain
 numerical evidence and inspected limitations; they do not issue current
 instructions. Keep a record only while it supports a scientific result,
@@ -28,9 +31,9 @@ The [modular-model proposal](proposals/modular-models/README.md) retains a
 source-linked design for selecting complete thermodynamic formulations with
 compatible parameters. [Issue #23](https://github.com/tannerpolley/ePC-SAFT/issues/23)
 and its leaves own execution and completion.
-[ADR 0011](adr/0011-optional-dipole-dipole-term.md) owns the optional
+[ADR 0011](decisions/0011-optional-dipole-dipole-term.md) owns the optional
 Gross–Vrabec dipole–dipole admission; remaining multipoles stay retired under
-[ADR 0006](adr/0006-retire-residual-polar.md).
+[ADR 0006](decisions/0006-retire-residual-polar.md).
 
 ## Sources
 

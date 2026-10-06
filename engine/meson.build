@@ -211,7 +211,7 @@ equilibrium_checks = executable(
   'equilibrium_checks',
   'tests/native/equilibrium_checks.cpp',
   cpp_args: native_warnings,
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,

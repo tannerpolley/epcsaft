@@ -220,14 +220,11 @@ double reaction_ln_quotient(
 
 ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial& correlation, double temperature) {
     validate_correlation_temperature(correlation, temperature);
-    const double derivative = -correlation.b / (temperature * temperature)
-        + correlation.c / temperature + correlation.d;
+    const double derivative = reaction_log_value(correlation, temperature, 1);
     const double enthalpy = GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * derivative;
-    const double ln_k = correlation.a + correlation.b / temperature
-        + correlation.c * std::log(temperature / correlation.reference_temperature) + correlation.d * temperature;
-    const double t2 = temperature * temperature, t3 = t2 * temperature, t4 = t3 * temperature;
-    return make_reaction_properties(ln_k, derivative, enthalpy, correlation.standard_state_id,
-        2.0 * correlation.b / t3 - correlation.c / t2, -6.0 * correlation.b / t4 + 2.0 * correlation.c / t3);
+    return make_reaction_properties(reaction_log_value(correlation, temperature), derivative, enthalpy,
+        correlation.standard_state_id, reaction_log_value(correlation, temperature, 2),
+        reaction_log_value(correlation, temperature, 3));
 }
 
 ReactionLogPolynomial normalize_legacy_reaction_correlation(

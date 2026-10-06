@@ -1586,7 +1586,7 @@ $$
 - Status: Exact derivation
 - Source: Chain rule for `reaction_constant_ln_polynomial`, the minimum-norm standard state in `chemical_potential_stationarity`, and `implicit_sensitivity`; issue #187 accepted design
 - Description: A fitted source-basis coefficient changes its density-basis reaction target by the same basis function. The source molality scale and reference contraction have no reaction-coefficient dependence. The minimum-norm image supplies chemical-row derivatives, and the existing defining Jacobian supplies the solved-state derivative.
-- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the basis at the solved temperature for state actions; referenced free-temperature fitting remains unavailable. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. Heat-capacity coefficient actions and coefficient Hessians remain unavailable. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
+- Change note: Coefficients a, b, c, d have units 1, K, 1, K⁻¹, with explicit positive Tref. Scalar ln K admits only a with basis 1. Evaluate the coefficient law at the path temperature T(t) for state actions, including its free-temperature chain. For referenced enthalpy actions at fixed temperature, coefficient directions also change the source temperature slope by $\phi_k'(T)$ and the reaction enthalpy by $RT^2\phi_k'(T)$. The bounded caloric actions consume the same analytic thermal coefficient terms; outer coefficient Hessians remain outside this consumer set. Source/reference declarations and non-fitted coefficients remain fixed. The stoichiometric matrix N has reactions as rows and species as columns.
 
 $$
 \phi_k(T)=\left(1,\frac1T,\ln\frac{T}{T_{ref}},T\right)_k,
@@ -1708,7 +1708,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and terminal composition of the neutral reaction reference
 - Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the finite terminal reference. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
-- Change note: Order one only. A slope is admitted when max(abs(theta), 1) times its change over the last three ladder points is at most 5e-5. The scale max(abs(theta), 1) is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the admitted slope is the exact derivative of the same terminal contraction the value uses. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions remain unavailable.
+- Change note: Order one only. A slope is admitted when max(abs(theta), 1) times its change over the last three ladder points is at most 5e-5. The scale max(abs(theta), 1) is a choice made here as the analogue of T for the temperature slope, not an existing Engine convention, so the check is stricter for parameters with large magnitudes (about 2e-7 per K at epsilon/k = 250 K). It is an observed convergence criterion, not a limit-error bound, and does not affect exactness: the admitted slope is the exact derivative of the same terminal contraction the value uses. A system-pressure row keeps its pressure dependence in `neutral_reaction_reference_pressure_jet`. This first C_theta derivative alone does not imply a caloric parameter action; referenced enthalpy parameter actions additionally require EqID `standard_state_transfer_temperature_parameter_derivative`. Heat-capacity parameter actions consume the additional mixed derivatives in `reference_mixed_temperature_pressure_derivatives`.
 
 $$
 p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
@@ -1723,7 +1723,7 @@ $$
 - Status: Exact derivation
 - Source: Mixed implicit differentiation of the isobaric reference contraction and pressure closure along one active EOS coordinate, at fixed temperature, reference pressure and terminal composition
 - Description: Mixed derivative $\partial^2C/\partial T\partial\theta$ of the finite terminal reference contraction, with $\psi=A^{res}/(RT)$ at $N=1$ mol. It supplies the EOS-coordinate derivative of referenced reaction enthalpy; $C$ is independent of the solved equilibrium state.
-- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The E3 contractions use balanced polarization of repeated directions with $\alpha=\|\mathbf u\|_s/\|\mathbf w\|_s$; the norm uses the E3 owner's scaled directions, including volume. Admit when $T\max(|\theta|,1)$ times the largest change over the last three ladder points is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/\max(|\theta|,1)$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. This route costs four E3 actions per requested parameter per ladder point. Heat-capacity parameter actions require an additional temperature derivative and remain unavailable.
+- Change note: Evaluate only for a consumed referenced-enthalpy parameter column. The shared single-insertion Taylor calculation in `reference_single_insertion_taylor` supplies the raw mixed partial after base pressure closure. Admit when $T\max(|\theta|,1)$ times the largest change over the last three ladder points is at most $5\times10^{-5}$. This bounds the observed change in $RT^2C_{T\theta}$ to $RT\cdot5\times10^{-5}/\max(|\theta|,1)$ J/mol per native unit, not error to infinite dilution; the species solve and finite-addition composition can amplify it. A refusal names the reaction and parameter and leaves central values and sibling directions available. Higher consumed derivatives and caloric composition follow `reference_mixed_temperature_pressure_derivatives` and `reference_species_calorics`.
 
 $$
 \mathbf w=\mathbf e_T+V_T\mathbf e_V,\quad
@@ -1748,7 +1748,7 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Second implicit differentiation of the pressure closure at the fixed terminal composition; for identical species RT^2 dLambda/dT = -(h^res + RT) gives d2Lambda/dT2 = -(c_p^res + R)/(RT^2) + 2(h^res + RT)/(RT^3)
-- Description: Second temperature derivative at fixed reference pressure of the finite terminal contraction along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The two third-order contractions use the exact repeated-direction E3 route, including implicit association. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
+- Description: Second temperature derivative at fixed reference pressure of the finite terminal contraction along w = e_T + V_T e_V, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates this lower partial, including implicit association and pressure closure. It supplies the EOS-basis reaction heat capacity consumed by reference species calorics.
 - Change note: Evaluated only when a heat-capacity value, an enthalpy temperature action or a second-order temperature action is requested; it supplies s_TT = -(d2 ln K_src/dT2 + d2C/dT2) to the chemical rows. Admitted when R T^2 times the change over the last three ladder points is at most 0.01 J/(mol K) (REFERENCE_HEAT_CAPACITY_TOLERANCE, #140): the check is sized to the heat capacity it feeds, about 1e-4 of a solution cp and about 40 times below calorimetric uncertainty, not to the 5e-5 ln K value criterion. It is an observed convergence criterion, not a limit-error bound. Aqueous NaCl at 298.15 K measures 6.0e-4 J/(mol K), with differences contracting x10 per ladder step (the sqrt(m) form). A refusal leaves the value, the first slope and enthalpy available. The same admission serves the order-two chemical-row slope s_TT (lead decision in #147): one owner per slope; the criterion allows about 2e-6 relative change of C_TT and the observed relative change is near 1e-7 (aqueous NaCl: T^2 change 7e-5 against 1.2e-3; C_TT = -6.6e-3). The mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`; third temperature derivatives are not implied.
 
 $$
@@ -1766,7 +1766,7 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Implicit differentiation of C_P = C_V/p_V (`neutral_reaction_reference_pressure_jet`) along the isobaric temperature direction w of `standard_state_transfer_temperature_second_derivative`, at the fixed terminal composition
-- Description: Mixed temperature-pressure derivative of the finite terminal contraction of a system-pressure reference, with psi = Ares/(RT) at N = 1 mol. Three repeated-direction E3 actions (EqID: `repeated_direction_energy_third`, including implicit association) supply the contractions: D3psi[e_V, e_V, w] directly and D3psi[nu, e_V, w] by balanced polarization, D3psi[nu, a e_V + w, a e_V + w] - D3psi[nu, a e_V - w, a e_V - w] = 4a D3psi[nu, e_V, w] with a = max(V/T, |V_T|); the linear-polarization route cancels catastrophically at dilute ions. It supplies s_TP = -d2C/dTdP to the chemical rows of second-order actions that move temperature and pressure, and the pressure slope of the EOS-basis reaction enthalpy, d(Delta_r h_rho)/dP = RT^2 d2C/dTdP, to reference species calorics.
+- Description: Mixed temperature-pressure derivative of the finite terminal contraction of a system-pressure reference, with psi = Ares/(RT) at N = 1 mol. The shared single-insertion Taylor owner evaluates the raw source-pressure partial at the resolved terminal state. It supplies s_TP = -d2C/dTdP to the chemical rows of second-order actions that move temperature and pressure, and the pressure slope of the EOS-basis reaction enthalpy, d(Delta_r h_rho)/dP = RT^2 d2C/dTdP, to reference species calorics.
 - Change note: Evaluated at the three ladder points whenever pressure jets and temperature slopes are both requested; a fixed-source-pressure reference has zero. Admitted when T P times the change over the last three ladder points is at most 5e-5, the value's ln K criterion at the temperature and pressure scales (the analogue of T for the first slope; lead decision recorded in #147). It is an observed convergence criterion, not a limit-error bound. A refusal leaves values, first actions and fixed-temperature actions available. Third-order and d3C/dT2dP derivatives are not implied.
 
 $$
@@ -1797,11 +1797,11 @@ $$
 - Section: Helmholtz derivatives / Reference derivatives
 - Status: Exact derivation
 - Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure; issue #225, section 3
-- Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
+- Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. Orders one and two also supply the lower reference slopes. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
 - Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
 
 $$
-z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{3,4\},\qquad
+z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{1,2,3,4\},\qquad
 [t^k]D\psi(z(t))[u]=\frac12[t^{r+1+k}]
 \{\psi(z(t)+ut^{r+1})-\psi(z(t)-ut^{r+1})\},\quad 0\le k\le r,\\
 D^4\psi[u,v,v,v]=\frac{3!}{2}[t^7]\{\psi(z_0+vt+ut^4)-\psi(z_0+vt-ut^4)\},\\
@@ -2218,19 +2218,45 @@ $$
 
 - Section: Reference thermochemistry / Declared derivations
 - Status: Exact derivation
-- Source: Gibbs-Helmholtz on the model Gibbs function G = A_EOS + PV + sum_i n_i RT s_i(T,P) of a referenced reactive problem; standard_pressure_density_conversion, standard_state_transfer_temperature_(second_)derivative, standard_state_transfer_temperature_parameter_derivative and reaction_constant_coordinate_derivative
-- Description: Species S with a supplied ideal-gas record keep its h and c_p; species D with an empty record list solve the EOS-basis reaction enthalpies and heat capacities on the density basis, minimum norm. Records fix the conserved moieties, so the remaining null space of nu_D must be parallel to the charges z_D: that ionic charge gauge cancels in every electroneutral phase and in every neutral apparent partial property. Total h and frozen-composition c_p add the residual parts (EqID: `total_enthalpy`); the equilibrium heat capacity is the temperature action of h.
-- Change note: A reaction-row residual beyond sqrt(eps) max(1, |Delta_r x| + sum_i |nu_ri x_i|), a null space beyond the charge gauge (an undetermined neutral), a missing slope order or a record excluding T is a typed refusal. Delivered: h and c_p values; h first actions along feed, temperature and pressure (driven or solved); c_p first actions along feed at fixed pressure; and referenced h first actions along EOS and reaction-coefficient directions at fixed temperature. The pressure slope solves the same system with right side P RT^2 d2C/dTdP (EqID: `standard_state_transfer_temperature_pressure_derivative`, zero for fixed-source-pressure rows) and zero for record species, whose ideal-gas h is pressure independent. The EOS-coordinate slope solves with right side RT^2 C_Ttheta (EqID: `standard_state_transfer_temperature_parameter_derivative`), and the reaction coefficient slope uses RT^2 phi'_k(T) (EqID: `reaction_constant_coordinate_derivative`); record-species slopes are zero. Each consumed column keeps its own status and message. c_p parameter or reaction-coefficient actions need d3C/dT2dtheta or the corresponding higher reaction slope and remain unavailable. c_p temperature or pressure actions need d3C/dT3 or d3C/dT2dP; u, s and c_v are not consistent with the reference pressure dependence of s_i; caloric orders above one are not consumed. Ion values are charge-gauge values, physical only in electroneutral combinations; neutral anchor constants shift only conserved moieties.
+- Source: Gibbs-Helmholtz and Gibbs derivatives, using standard_pressure_density_conversion and the owner-selected anchored Gibbs construction in [issue #225](https://github.com/tannerpolley/ePC-SAFT/issues/225), sections 1–3, D1(a)/D2/broadened D5
+- Description: Supplied species records anchor density-standard Gibbs energy, enthalpy and entropy. Record-less species and every consumed derivative are completed through the same stoichiometric system. Its remaining null space must be the charge gauge, which cancels in electroneutral phases and neutral directions. The chemical rows' minimum-norm representative preserves affinities but cannot replace these caloric anchors.
+- Change note: The completion checks consistency with supplied records on the selected smooth interval. Each raw derivative retains its own admission status. The bounded reference inventory is T/P order at most four and T/P order at most three with one EOS-coordinate derivative. Source coefficients are evaluated at the path temperature. Missing anchors, an undetermined neutral combination, or a singular chart cannot be supplied by a gauge. Numerical availability is qualified by the retained notebook, not by this equation definition.
 
 $$
-h_{\rho,i}=h_{P,i}-RT,\quad c_{p,\rho,i}=c_{p,P,i}-R\ (i\in S),\qquad
-\Delta_rh_\rho=RT^2\frac{d\ln K_\rho}{dT},\\
-\boldsymbol{\nu}_D\,\mathbf{x}_D=\Delta_r\mathbf{x}-\boldsymbol{\nu}_S\,\mathbf{x}_S\quad(\mathbf{x}=\mathbf{h}_\rho,\ \mathbf{c}_{p,\rho}),\qquad
-\mathcal N(\boldsymbol{\nu}_D)\subseteq\operatorname{span}(\mathbf z_D),\\
-\boldsymbol\nu_D\,\partial_{\theta_a}\mathbf h_{\rho,D}=RT^2\partial_T\partial_{\theta_a}\mathbf C,\qquad
-\boldsymbol\nu_D\,\partial_{\ell_r}\mathbf h_{\rho,D}=RT^2\mathbf e_r,\quad
-\ell_r=\frac{d\ln K_{src,r}}{dT},\\
-h=\sum_ix_i\left(h_{\rho,i}+RT\right)+h^{res},\qquad c_p=\sum_ix_i\left(c_{p,\rho,i}+R\right)+c_p^{res},\qquad \boldsymbol{\nu}_D\,\partial_P\mathbf{h}_{\rho,D}=RT^2\,\partial_T\partial_P C.
+g_{\rho,i}^{\circ}=h_{P,i}^{\circ}-T s_{P,i}^{\circ}
+ +RT\ln\frac{RT\rho_0}{P_0}\quad(i\in S),\qquad \rho_0=1\ \mathrm{mol/m^3},\\
+\boldsymbol\nu_D\mathbf f_D^{\circ}=\Delta_r\mathbf f_\rho-\boldsymbol\nu_S\mathbf f_S^{\circ},
+\qquad\mathcal N(\boldsymbol\nu_D)\subseteq\operatorname{span}(\mathbf z_D),\\
+L=\ln K_\rho=\ln K_{src}+A+C,\qquad
+\Delta_r g_\rho=-RTL,\quad\Delta_r h_\rho=RT^2L_T,\quad
+\Delta_r s_\rho=R(L+TL_T),\quad\Delta_r c_{p,\rho}=R(2TL_T+T^2L_{TT}),\\
+h=\sum_i x_i(g_{\rho,i}^{\circ}-Tg_{\rho,i,T}^{\circ}+RT)+h^{res},\\
+s=\sum_i x_i\left[-g_{\rho,i,T}^{\circ}+R-R\ln\frac{x_i\rho}{\rho_0}\right]+s_{TV}^{res},
+\qquad c_p=\sum_i x_i(-Tg_{\rho,i,TT}^{\circ}+R)+c_p^{res}.
+$$
+
+For a raw T/P derivative of a reaction reference, all lower product terms remain:
+
+$$
+\partial_T^a\partial_P^b(-RT C)
+=-R\left(TC_{ab}+aC_{a-1,b}\right).
+$$
+
+## `gibbs_conjugate_molar_volume`
+
+- Section: Reference thermochemistry / Declared derivations
+- Status: Exact derivation
+- Source: Frozen-composition Gibbs derivatives and the anchored completion in [issue #225](https://github.com/tannerpolley/ePC-SAFT/issues/225), section 1, D1(a)
+- Description: The volume conjugate to system pressure includes the record-anchored standard pressure derivative. It is distinct from the EOS mechanical volume. Internal energy and frozen heat capacity use that same Gibbs volume.
+- Change note: Frozen raw T/P partials eliminate density and association at fixed composition before following the solved composition path. The local volume chart requires finite v_G and finite nonzero v_G,P, with a regular EOS root and site Jacobian. Record v_G>0 and v_G,P<0 as stable-chart diagnostics alongside quotient conditioning; these signs do not restrict mathematical admission or establish global reacting stability. Fixed-source-pressure standards have zero system-pressure derivatives and reduce to the mechanical definitions. A zero or unresolved denominator is diagnosed before a negative disposition; it is never replaced by the mechanical volume.
+
+$$
+v_G=g_P=\rho^{-1}+\sum_i x_i g_{\rho,i,P}^{\circ},\qquad
+V_G=\sum_p n_p v_{G,p},\qquad u_G=h-Pv_G,\\
+c_{v,G}=\left(\frac{\partial u_G}{\partial T}\right)_{v_G,\mathbf x}
+=c_p+T\frac{v_{G,T}^2}{v_{G,P}},\qquad
+v_{G,T}=\left(\partial_Tv_G\right)_{P,\mathbf x},\quad
+v_{G,P}=\left(\partial_Pv_G\right)_{T,\mathbf x}.
 $$
 
 ## `ideal_enthalpy`
@@ -2311,7 +2337,7 @@ $$
 - Status: Exact derivation
 - Source: Closed-system enthalpy balance for a declared finite feed addition, using EqIDs `total_enthalpy`, `ideal_enthalpy` and `residual_enthalpy`; accepted observation definition in issue #210
 - Description: Signed total-system enthalpy increment per mole of total feed added between two declared equilibrium states, less the ideal-plus-residual feed enthalpy at its declared temperature, pressure, composition and branch. Each phase enthalpy uses EqID `total_enthalpy` on the declared thermochemistry's $P^{\circ}$ basis. Exothermic absorption is negative. A zero-pinned phase contributes zero and is not evaluated.
-- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, but referenced free-temperature endpoints remain unavailable. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure.
+- Change note: Both endpoint problems share parameters, thermochemistry, ordered reactions and source reference. Their feed amounts differ by $n_{add}\mathbf y$ within the admission tolerance. Each endpoint may have its own specification and temperature, with referenced free-temperature endpoints consuming the shared native first caloric actions at their solved temperatures. Every feed species needs an ideal-gas record. The exact first action holds feed state and amount fixed, differentiates both endpoint phase amounts and enthalpies, and subtracts the feed residual action; ideal feed enthalpy is independent of fitted parameters. The observation is an enthalpy increment for free-pressure endpoints; interpreting it as measured heat is an energy-balance choice unless endpoints and feed are isobaric at one pressure.
 
 $$
 \Delta h_{add}=\frac{H^{(2)}-H^{(1)}}{n_{add}}-h_{feed},\qquad
@@ -2341,7 +2367,7 @@ $$
 - Status: Exact derivation
 - Source: Residual-plus-ideal decomposition at fixed $(T,V,\mathbf n)$
 - Description: Molar total internal energy is the ideal value plus the residual EOS value and obeys the full pressure-volume identity.
-- Change note: Unavailable without declared reference thermochemistry.
+- Change note: Unavailable without declared reference thermochemistry. These mechanical definitions apply to fixed-source-pressure standards. System-pressure references use the same record-anchored Gibbs volume in `gibbs_conjugate_molar_volume`.
 
 $$
 u=u^{id}+u^{res}=h-\frac{P}{\rho}.
@@ -2365,7 +2391,7 @@ $$
 - Status: Exact derivation
 - Source: Residual-plus-ideal decomposition at fixed density
 - Description: Molar total isochoric heat capacity combines ideal and residual values at the same state.
-- Change note: It does not inherit the fixed-pressure mechanical-stability condition.
+- Change note: For fixed-source-pressure standards this mechanical quantity does not inherit the fixed-pressure mechanical-stability condition. System-pressure references use frozen c_v,G on the regular local Gibbs-volume chart in `gibbs_conjugate_molar_volume`; it is not a reacting heat capacity at fixed total volume.
 
 $$
 c_v=c_v^{id}+c_v^{res}.

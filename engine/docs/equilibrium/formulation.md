@@ -186,9 +186,10 @@ positive charge-neutral all-solute dilution path. An explicit source-basis enum
 selects common-molality or raw mole-fraction correlations; a nonempty source ID
 records provenance. EqID: `neutral_reaction_reference_transfer` converts each
 source at its declared fixed or system reference pressure, then the existing
-reaction/SVD owner compiles the density-basis target. At fixed temperature,
-system-pressure references follow each current nonlinear pressure; a fixed
-source pressure has zero derivatives with respect to system pressure.
+reaction/SVD owner compiles the density-basis target. References refresh at
+each current nonlinear temperature, and system-pressure references also
+follow each current pressure. A fixed source pressure retains thermal motion
+and has zero derivatives with respect to system pressure.
 The liquid selector chooses the dense branch when several stable roots exist;
 a unique stable root follows the density owner's unspecified-label semantics.
 Reference qualification must therefore establish the physical solvent state
@@ -207,11 +208,17 @@ actions at fixed T/P retain order three. Declared-branch continuation along
 fixed T, fixed P and feed, or a straight physical EOS/Born parameter path, uses
 the same first-order chains for its tangent. All other declarations and
 source conventions stay fixed on the parameter path.
-Third-order actions involving pressure, temperature actions above order two,
-free temperature, raw lever derivatives and parameter actions above order one remain
-unavailable. Ideal/Total enthalpy and heat capacity follow EqID: `reference_species_calorics`;
-enthalpy first actions also move with pressure, heat-capacity actions only with feed at
-fixed pressure, and other caloric quantities remain unavailable. Ordinary unreferenced reactions
+Third-order actions involving pressure or temperature remain unavailable.
+Raw referenced lever requests retain their existing refusal. Referenced
+one-free-intensive pinned cells use current-point T/P row jets and
+A1/A2 with at most one parameter-bearing direction, including T/P–parameter
+terms. No external direction may drive its solved intensive; simultaneous free
+T/P still lacks the additional constraint for a regular square chart.
+Record-anchored Gibbs h/s/u, frozen c_p/c_v and Gibbs-conjugate volume use the
+shared caloric composition and its consumed reference columns. The retained
+prescribed-T/P evidence and subsequent free-intensive F6 qualification have
+separate source identities and domains.
+Ordinary unreferenced reactions
 retain their existing consistency checks and derivative behavior.
 
 Bubble, dew, pure saturation, fixed-fraction and ordinary flash can be
@@ -287,6 +294,30 @@ shift has constant coefficients but retains exact log-chart curvature
 search composition, not necessarily reaction equilibrium: EqID:
 `normalized_trial_reaction_affinity`. The full added declaration restores every
 original reaction, reference input and affinity row.
+
+An explicit `stability_test(...)` with
+`StabilityOptions.evaluate_supplied_trials = true` instead evaluates each
+supplied `composition_guess`, without minimizing composition or creating a
+finite split. Entries, including repetitions and unavailable points, retain
+caller order. It uses the same unit-amount trial, frozen standards, chemical
+plane and EqID: `tangent_plane_distance`. Its point is the supplied
+full-species vector after native reconstruction, log/exp chart preparation and
+final reconstruction; supported entries must be positive and structural zeros
+remain zero. The returned composition is the actual energy-evaluation point.
+The total input displacement and final reconstruction displacement are separate.
+
+A supplied packing coordinate is replayed through the chart and retains its
+pressure defect; without one, the existing Liquid/Vapor density root selects
+packing at the initially reconstructed composition. Reconstruction preserves
+that packing when recomputing molar volume, without a second root solve. The
+returned packing, density and pressure row describe the final point. Packing
+outside the domain or nonpositive supported composition yields an unavailable
+row with its existing cause, never an invented TPD. Charged-family admission
+below applies even when packing is supplied. Donor slope and estimated
+uncertainty remain available when a positive full-support donor exists, but
+optimizer-only values are absent. Exhausting the evaluation sequence, a zero
+or negative TPD, or a donor estimate establishes no stability conclusion.
+[ALG-STABILITY](../science/algorithms.md#alg-stability) owns these operations.
 
 Raw optimizer points are not physically feasible by construction. Native
 normalization and ionic group rescaling followed by a two-pivot arithmetic

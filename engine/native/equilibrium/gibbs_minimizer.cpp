@@ -1635,7 +1635,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
             && !form.is(PermittivityForm::DipolarPerturbation))
             throw std::invalid_argument("permittivity model has no low-density limit; declare phases");
         phase.support_declared = true; phase.amount = AmountSpec::free();
-        if (std::none_of(admitted.begin(), admitted.end(), [&](const auto& p) {
+        if (options.evaluate_supplied_trials || std::none_of(admitted.begin(), admitted.end(), [&](const auto& p) {
                 return p.kind == phase.kind && p.support == phase.support; })) admitted.push_back(std::move(phase));
     }
     return admitted;
@@ -1805,7 +1805,11 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
         }
         if (std::isfinite(beta) && beta > capacity) { capacity = beta; trial.donor = p; }
     }
-    if (!trial.donor) { trial.evidence = "negative_plane_without_positive_donor"; return; }
+    if (!trial.donor) {
+        trial.evidence = options.evaluate_supplied_trials ? "evaluated_without_positive_donor" : "negative_plane_without_positive_donor";
+        if (options.evaluate_supplied_trials) trial.message = "no_positive_full_support_donor";
+        return;
+    }
     const auto p = *trial.donor;
     const auto& donor = candidate.quantities[p];
     double chemical = 0.0, magnitude = std::abs(q.at("g_over_rt"));
@@ -1831,6 +1835,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     q["standard_error_estimate_over_rt"] = standard_error;
     q["feasibility_error_estimate_over_rt"] = candidate.feasibility_estimate;
     q["arithmetic_error_estimate_over_rt"] = arithmetic;
+    if (options.evaluate_supplied_trials) { trial.evidence = "evaluated"; return; }
     trial.evidence = "indeterminate";
     if (!descent_resolved(q.at("tpd_over_rt"), slope, uncertainty)) return;
     const auto& z = c.model->parameters().charge_number;
@@ -1896,6 +1901,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
     const core::Trace& trace) {
     StabilityReport report;
     const auto begin = trace.spans.size();
+    if (options.evaluate_supplied_trials && !options.trials)
+        throw std::invalid_argument("supplied trial evaluation requires explicit trials");
     const auto supports = stability_supports(c, options);
     const auto& z = c.model->parameters().charge_number;
     if (!options.standard_uncertainty_over_rt.empty()
@@ -1908,42 +1915,56 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
     std::vector<double> shift = report.standard_over_rt;
     for (std::size_t i = 0; i < shift.size(); ++i) shift[i] -= report.plane_over_rt[i];
     for (const auto& phase : supports) {
-        std::vector<double> base(z.size(), 0.0), remainder;
-        for (auto i : phase.support) base[i] = 1.0;
-        base = reconstruct_trial_composition(base, phase.support, z);
-        remainder = base;
-        for (std::size_t p = 0; p < at.amount.size(); ++p) {
-            if (std::all_of(phase.support.begin(), phase.support.end(), [&](auto i) { return at.composition[p][i] > 0.0; })) {
-                std::vector<double> restriction(z.size(), 0.0);
-                for (auto i : phase.support) restriction[i] = at.composition[p][i];
-                remainder = reconstruct_trial_composition(std::move(restriction), phase.support, z); break;
+        std::vector<std::pair<std::string, std::vector<double>>> seeds;
+        if (options.evaluate_supplied_trials) seeds.emplace_back("supplied-composition", phase.composition_guess);
+        else {
+            std::vector<double> base(z.size(), 0.0), remainder;
+            for (auto i : phase.support) base[i] = 1.0;
+            base = reconstruct_trial_composition(base, phase.support, z);
+            remainder = base;
+            for (std::size_t p = 0; p < at.amount.size(); ++p) {
+                if (std::all_of(phase.support.begin(), phase.support.end(), [&](auto i) { return at.composition[p][i] > 0.0; })) {
+                    std::vector<double> restriction(z.size(), 0.0);
+                    for (auto i : phase.support) restriction[i] = at.composition[p][i];
+                    remainder = reconstruct_trial_composition(std::move(restriction), phase.support, z); break;
+                }
             }
+            seeds.emplace_back("positive-neutral-base", base);
+            if (phase.support.size() > 1) for (auto j : phase.support) if (z[j] == 0.0) {
+                auto seed = remainder;
+                double sum = 0.0; for (auto i : phase.support) if (i != j) sum += seed[i];
+                for (auto i : phase.support) seed[i] = i == j ? 0.99 : 0.01 * seed[i] / sum;
+                seeds.emplace_back("near-pure-" + std::to_string(j), std::move(seed));
+            }
+            if (phase.kind == PhaseKind::Vapor) {
+                auto seed = base;
+                double maximum = -std::numeric_limits<double>::infinity();
+                for (auto i : phase.support) maximum = std::max(maximum, -shift[i]);
+                for (auto i : phase.support) seed[i] = std::exp(-shift[i] - maximum);
+                seeds.emplace_back("ideal-gas", std::move(seed));
+            }
+            for (const auto& [previous, composition] : removed)
+                if (previous.kind == phase.kind && previous.support == phase.support)
+                    seeds.emplace_back("removed-phase", composition);
         }
-        std::vector<std::pair<std::string, std::vector<double>>> seeds{{"positive-neutral-base", base}};
-        if (phase.support.size() > 1) for (auto j : phase.support) if (z[j] == 0.0) {
-            auto seed = remainder;
-            double sum = 0.0; for (auto i : phase.support) if (i != j) sum += seed[i];
-            for (auto i : phase.support) seed[i] = i == j ? 0.99 : 0.01 * seed[i] / sum;
-            seeds.emplace_back("near-pure-" + std::to_string(j), std::move(seed));
-        }
-        if (phase.kind == PhaseKind::Vapor) {
-            auto seed = base;
-            double maximum = -std::numeric_limits<double>::infinity();
-            for (auto i : phase.support) maximum = std::max(maximum, -shift[i]);
-            for (auto i : phase.support) seed[i] = std::exp(-shift[i] - maximum);
-            seeds.emplace_back("ideal-gas", std::move(seed));
-        }
-        for (const auto& [previous, composition] : removed)
-            if (previous.kind == phase.kind && previous.support == phase.support)
-                seeds.emplace_back("removed-phase", composition);
         std::vector<std::pair<std::vector<double>, double>> rooted;
         for (auto& [seed_name, seed] : seeds) {
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             try {
+                if (options.evaluate_supplied_trials) {
+                    if (seed.size() != z.size()) throw std::invalid_argument("supplied trial composition size");
+                    for (std::size_t i = 0; i < seed.size(); ++i)
+                        if (std::find(phase.support.begin(), phase.support.end(), i) == phase.support.end() && seed[i] != 0.0)
+                            throw std::invalid_argument("supplied trial composition outside support");
+                }
                 seed = reconstruct_trial_composition(std::move(seed), phase.support, z);
                 ++report.work["reconstruction_evaluations"];
-                const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind, report.work);
-                const double eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
+                double eta;
+                if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
+                else {
+                    const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind, report.work);
+                    eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
+                }
                 packing_admission(eta);
                 if (std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
                         return prior.first == seed && std::abs(std::log(prior.second / eta))
@@ -1960,13 +1981,16 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 core::Scope scope("tangent_plane_trial");
                 const auto initial = trial_coordinates(compiled, seed, eta);
                 ++report.work["trial_invocations"];
-                EquilibriumResult audit;
-                try {
-                    trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
-                        scope, &trial.raw_coordinates, &audit);
-                } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
-                count_driver(report.work, trial.optimizer, "trial_driver_invocations");
-                trial.message = trial.optimizer.message;
+                if (options.evaluate_supplied_trials) trial.raw_coordinates = initial;
+                else {
+                    EquilibriumResult audit;
+                    try {
+                        trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
+                            scope, &trial.raw_coordinates, &audit);
+                    } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
+                    count_driver(report.work, trial.optimizer, "trial_driver_invocations");
+                    trial.message = trial.optimizer.message;
+                }
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
                 const auto raw = compiled.prepare(trial.raw_coordinates, true);
                 report.work["energy_evaluations"] += 1.0;
@@ -1986,13 +2010,21 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 q["normalization_residual"] = sum; q["charge_residual"] = charge;
                 q["reconstruction_l1"] = displacement;
                 q["tpd_over_rt"] = q.at("g_over_rt") - plane;
-                double dual = 0.0;
-                for (std::size_t k = 0; k < compiled.rank; ++k)
-                    dual += trial.raw_coordinates[compiled.primal_size + k] * compiled.balance[k];
-                q["trial_dual_over_rt"] = dual; q["trial_identity_defect_over_rt"] = q["tpd_over_rt"] - dual;
-                q["raw_objective_over_rt"] = trial.optimizer.objective;
+                if (options.evaluate_supplied_trials) {
+                    q["packing_fraction"] = raw.eta[0]; q["molar_density_mol_m3"] = 1.0 / volume;
+                    double displacement = 0.0;
+                    for (std::size_t i = 0; i < z.size(); ++i)
+                        displacement += std::abs(trial.composition[i] - phase.composition_guess[i]);
+                    q["input_reconstruction_l1"] = displacement;
+                } else {
+                    double dual = 0.0;
+                    for (std::size_t k = 0; k < compiled.rank; ++k)
+                        dual += trial.raw_coordinates[compiled.primal_size + k] * compiled.balance[k];
+                    q["trial_dual_over_rt"] = dual; q["trial_identity_defect_over_rt"] = q["tpd_over_rt"] - dual;
+                    q["raw_objective_over_rt"] = trial.optimizer.objective;
+                }
                 trial.evidence = "no_resolved_descent";
-                if (q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options);
+                if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options);
             } catch (const std::exception& error) { trial.message += "; " + std::string(error.what()); }
             report.trials.push_back(std::move(trial));
         }
@@ -2004,6 +2036,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
     report.message = descending ? "numerically resolved descending split with estimated uncertainty"
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
+    if (options.evaluate_supplied_trials) report.message = "supplied trial evaluation; unavailable trials " + std::to_string(unresolved);
     if (!options.trials && std::all_of(supports.front().support.begin(), supports.front().support.end(),
         [&](auto j) { return z[j] != 0; })) report.message += "; no neutral species";
     count_stability_work(report.work, trace, begin);
@@ -2090,6 +2123,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         throw std::invalid_argument("discovery requires explicit unknown topology at fixed positive T/P");
     core::Capture capture;
     const auto& options = *request.discovery;
+    if (options.evaluate_supplied_trials) throw std::invalid_argument("supplied trial evaluation is not phase discovery");
     const auto feed = resolve_feed(model, request.feed);
     const auto& z = model.parameters().charge_number;
     std::vector<std::size_t> united;
