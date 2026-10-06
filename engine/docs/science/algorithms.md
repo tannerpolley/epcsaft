@@ -925,6 +925,14 @@ Use the same residual-potential/mass-action tape and a single factorization of
 the accepted unweighted site Jacobian for the batch. Obtain each implicit site
 Taylor coefficient from the defining mass-action coefficient, then reuse each
 directional path and its lower coefficients across all selected properties.
+For partial extraction, auxiliary temperature labels use the fixed central
+scale $T_0$: each label contributes $T_0$ K to the diagonal path. Divide the
+extracted partial with $k$ temperature labels by $T_0^k$ ($k=0,1,2$).
+Hold this divisor constant across the outer-direction coefficients; it is not
+a temperature-dependent function to differentiate. Volume labels keep the
+existing central-volume scale and $\rho_0^\ell$ restoration. A zero-label
+extraction retains the central value. This changes arithmetic conditioning,
+while preserving the physical increments and mixed derivatives.
 For an E3 energy action with exactly two equal normalized directions, use the
 sparse Taylor paths in EqID: `repeated_direction_energy_third` instead of linear
 polarization. This avoids subtraction of a singular pure-composition third

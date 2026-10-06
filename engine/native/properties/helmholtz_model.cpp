@@ -179,7 +179,7 @@ std::vector<std::vector<double>> action_coefficients(
         for (std::size_t i = 0; i < parameters; ++i) parameter[i] += direction.parameter[i];
     }
     if (order != 0) {
-        result[1][0] = temperature + static_cast<double>(extra_temperature);
+        result[1][0] = temperature + static_cast<double>(extra_temperature) * point[0];
         result[1][1] = -density / (molar_density * molar_density)
             + static_cast<double>(extra_volume) / molar_density;
         for (std::size_t i = 0; i < components; ++i) result[1][2 + i] = composition[i];
@@ -248,6 +248,8 @@ struct ActionContext final {
         std::size_t extra_volume, std::size_t output
     ) {
         const std::size_t combinations = std::size_t(1) << ids.size();
+        const double temperature_scale = extra_temperature == 0 ? 1.0
+            : extra_temperature == 1 ? point[0] : point[0] * point[0];
         Jet result(combinations, 0.0);
         for (std::size_t target = 0; target < combinations; ++target) {
             std::vector<std::size_t> selected_ids;
@@ -273,8 +275,9 @@ struct ActionContext final {
                 value += sign * path(mask, temperature, volume, labels)[output];
             }
             if (labels == 0) value = path(0, 0, 0, 0)[output];
-            result[target] = extra_volume
-                ? value * std::pow(molar_density, static_cast<int>(extra_volume)) : value;
+            result[target] = (extra_volume
+                ? value * std::pow(molar_density, static_cast<int>(extra_volume)) : value)
+                / temperature_scale;
         }
         return result;
     }

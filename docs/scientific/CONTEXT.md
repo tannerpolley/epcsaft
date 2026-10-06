@@ -107,10 +107,15 @@ implementation refreshes referenced free-T/P row jets at their current point
 and transports coefficient increments through the native law at T(t), including
 free-T addition endpoints. The subsequent source admits finite Gibbs-conjugate
 volume with finite nonzero pressure slope, recording stable-chart signs separately.
-The notebook retains seven complete F6 bubble checks, both N-system caloric
-values and nonzero witnesses, and one remaining N-P-fix reference disagreement.
-Complete F6 qualification remains open; the accepted prescribed-T/P review does
-not cover this subsequent source.
+The current temperature-scaled replay passes all eight complete F6 bubble
+checks, the six free-T addition comparisons and all affected F1 selectors.
+The N-P-fix original-order mixed Cv_G reference satisfies agreement and the
+quarter-target refinement at rung zero. The notebook retains both reference
+orders, the binary128 frozen residual-Cv previous-failure check, classified
+native-row movements and two warmed speed rounds with identical states/work.
+This is numerical verification; independent delivered review remains separate,
+and the accepted prescribed-T/P review does not cover this subsequent source.
+Apparent-Cp F2/F7 qualification remains open.
 
 ### Residual, ideal and state responsibilities
 

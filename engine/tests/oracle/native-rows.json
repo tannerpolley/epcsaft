@@ -1,8 +1,9 @@
 {
-  "rows": 478,
-  "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
-  "build_fingerprint": "b249274f421cf689760cfea4dd6bba53bf6ba33e05bca056aa054298274fa9e5",
-  "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+  "rows": 580,
+  "recorded_at_revision": "960ad3c0674d7fd5da28fd6683e6f7038e7ce9e9",
+  "revision_meaning": "source base with the qualified temperature-extraction patch below",
+  "build_fingerprint": "5ee8316cca148d835ea433c1e5dd34357017caca626b2e6b2b713611b2b89728",
+  "wheel_sha256": "93c105d2101a73f836b5ee8eeab7119ecf04342b8946bf9eb8ca57df4d41c6c2",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -55,5 +56,10 @@
   ],
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
-  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
+  "previous_wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+  "merged_baseline_wheel_sha256": "47535cab611b6243509c57bca9c96bb08e49337084afe80bc533ce16768301de",
+  "runtime_source_sha256": "5b15068e744ff9210a930f1a27a616e08dd1472ea9552ca16d36ef501b6dd2e4",
+  "refresh_cause": "Central-temperature auxiliary directions and fixed T0^k extraction divisor improve caloric derivative conditioning; the unmodified merged baseline distinguishes inherited row changes. Numerical criteria are unchanged.",
+  "movement_classification": "analyses/2026-reactive-caloric-actions/results/temperature-extraction/native-row-movements.tsv"
 }

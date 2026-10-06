@@ -5350,8 +5350,37 @@ void reference_limits() {
     }
 }
 }
+// Frozen N-P-fix vapor center and normalized tangent from the independently
+// differentiated binary128 cv action in f6-a1-extraction/states.tsv.
+void residual_cv_temperature_extraction() {
+    using namespace epcsaft;
+    constexpr double T = 260.0, V = 0.000390185267693186768959;
+    const std::vector<double> x = {0.517913560605011924487,
+        0.4700137196266039874, 0.012072719768384160971};
+    const HelmholtzModel model(properties_support::neutral_ternary(),
+        {{ParameterFamily::DispersionEnergyOverK, {1}}});
+    const DensityActionDirection direction{T, 0.00371339890091887002074 / (V * V),
+        {-0.194749819139095670106, 0.0800169602891089848384,
+         0.114732858849986685268}, {}};
+    const auto batch = model.density_actions(T, 1.0 / V, x,
+        {PropertyObservable::ResidualIsochoricHeatCapacity}, {direction});
+    CHECK(batch.results.front().action);
+    const double action = *batch.results.front().action / T; // restore the 1 K action
+    CHECK(recording_support::compare("residual-cv/temperature-extraction/A1", "residual cv A1", "J/(mol K)",
+        action, 0.04758556315383267,
+        recording_support::fields({recording_support::field("T_K", T),
+            recording_support::field("V_m3_per_mol", V), recording_support::field("x", x),
+            recording_support::field("normalized_delta_T_K", direction.temperature),
+            recording_support::field("normalized_delta_rho_mol_per_m3", direction.molar_density),
+            recording_support::field("normalized_delta_x", direction.composition),
+            recording_support::field("physical_delta_T_K", 1.0)}),
+        "Numerical", "binary128 nested exact T derivatives", "Frozen residual cv first action",
+        "absolute", 1e-12, 0.0, std::abs(action - 0.04758556315383267) <= 1e-12));
+}
+
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.properties.residual-cv-temperature-extraction", "Residual_cv_temperature_extraction", "Numerical", "Properties", "Automatic_fast", "Numerical", "Residual", "P4", "residual-cv/temperature-extraction/A1", "engine/tests/native/properties_checks.cpp", "properties_checks", "ResidualCvTemperature", "residual-cv/temperature-extraction/A1:1"}, residual_cv_temperature_extraction},
         {{"native.properties.born-parameter", "Born_parameter_columns", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "born-parameter/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "BornParameter", "born-parameter/*:24"}, born_parameter_columns},
         {{"native.properties.reference-f8", "Reference_derivative_pure_identities", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F8/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F8", "F8/*:78"}, reference_f8, "F8"},
         {{"native.properties.reference-f9", "Reference_derivative_ionic_differences", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/partial/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F9", "F9/partial/*:264"}, reference_f9, "F9"},

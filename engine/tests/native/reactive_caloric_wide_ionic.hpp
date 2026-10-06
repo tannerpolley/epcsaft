@@ -17,10 +17,11 @@ class WideIonic {
         const std::vector<double> rx{1-2*y,y,y};
         std::vector<AD> independent{Wide(c.problem.temperature.value),Wide(1.8e-5),Wide(rx[0]),Wide(y),Wide(y),Wide(c.parameters.dispersion_energy_over_k[0])};
         CppAD::Independent(independent);
-        ParameterRecord<AD> p;static_cast<FixedParameters&>(p)=c.parameters;
+        ParameterRecord<AD> p{{}, AD(Wide(0)), AD(Wide(0))};static_cast<FixedParameters&>(p)=c.parameters;
         for(std::size_t family=0;family<detail::PARAMETER_FAMILY_COUNT;++family) {
             const auto f=static_cast<detail::ParameterFamily>(family);const auto& src=detail::family_values(c.parameters,f);
-            detail::family_values(p,f)=std::vector<AD>(src.begin(),src.end());
+            const auto dst=detail::family_values(p,f,src.second);
+            for(std::size_t i=0;i<src.second;++i) dst.first[i]=AD(Wide(src.first[i]));
         }
         p.dispersion_energy_over_k[0]=independent[5];
         const AD N=independent[2]+independent[3]+independent[4],rho=N/independent[1];

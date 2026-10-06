@@ -41,12 +41,13 @@ public:
         using AD=CppAD::AD<Wide>;
         std::vector<AD> independent{Wide(c.problem.temperature.value),Wide(1e-4),Wide(c.parameters.dispersion_energy_over_k[0])};
         CppAD::Independent(independent);
-        ParameterRecord<AD> p;
+        ParameterRecord<AD> p{{}, AD(Wide(0)), AD(Wide(0))};
         static_cast<FixedParameters&>(p)=c.parameters;
         for(std::size_t family=0;family<detail::PARAMETER_FAMILY_COUNT;++family) {
             const auto f=static_cast<detail::ParameterFamily>(family);
             const auto& src=detail::family_values(c.parameters,f);
-            detail::family_values(p,f)=std::vector<AD>(src.begin(),src.end());
+            const auto dst=detail::family_values(p,f,src.second);
+            for(std::size_t i=0;i<src.second;++i) dst.first[i]=AD(Wide(src.first[i]));
         }
         for(auto& e:p.dispersion_energy_over_k) e=independent[2];
         const std::vector<AD> x{AD(1),AD(0)};
