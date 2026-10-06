@@ -35,7 +35,7 @@ done
 paths="$(printf '%s\n' "${changed[@]}")"
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
-if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|CONTEXT.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
+if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
     python3 engine/scripts/docs/sync_equation_registry.py --check
 fi
 if grep -Eq '^(analyses/|docs/|engine/|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
@@ -55,7 +55,7 @@ check_declarations() {
 docs_only=true
 while IFS= read -r path; do
     case "$path" in
-        docs/*|engine/docs/*|AGENTS.md|README.md|CONTEXT.md|engine/README.md|engine/CONTEXT.md|.gitattributes) ;;
+        docs/*|engine/docs/*|AGENTS.md|README.md|engine/README.md|.gitattributes) ;;
         *) docs_only=false ;;
     esac
 done <<<"$paths"
@@ -82,7 +82,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     fi
 fi
 
-if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|CONTEXT.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
     bash tools/check-all.sh
     check_declarations
     if ((${#slow_tests[@]})); then
