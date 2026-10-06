@@ -1,4 +1,5 @@
 """A nonzero reaction mole change falsifies density and molality reference signs."""
+from functools import cache
 import math
 from typing import Any
 
@@ -300,11 +301,17 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
     observable = [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)]
     thermal = SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], [])
 
-    def action(d_t: float, *directions: SolvedStateActionDirection) -> float:
+    @cache
+    def solved(d_t: float) -> tuple[Any, Any]:
         problem = _ionic_problem(temperature + d_t, pressure, reference_pressure)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
-        item = solved_state_actions(compile_problem(model, problem), result,
+        return compile_problem(model, problem), result
+
+    def action(d_t: float, *directions: SolvedStateActionDirection) -> float:
+        compiled, result = solved(d_t)
+        assert result.success, result.message
+        item = solved_state_actions(compiled, result,
                                     SolvedStateActionRequest(observable, list(directions))).results[0]
         assert item.status == Status.Available and item.action is not None, item.diagnostic_message
         return float(item.action)
