@@ -1,8 +1,8 @@
 {
   "rows": 478,
-  "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
-  "build_fingerprint": "b249274f421cf689760cfea4dd6bba53bf6ba33e05bca056aa054298274fa9e5",
-  "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+  "recorded_at_revision": "81cd85825fcf37ead7fc44f5c8084e5156036ab9",
+  "build_fingerprint": "3918686e884f7ace4a3afdd56df8fd4a12ed20d093a027f439c0d245ca4881cd",
+  "wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -55,5 +55,18 @@
   ],
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
-  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
+  "previous_rows": {
+    "recorded_at_revision": "3987652446e0fb0e4e240d52c74b9c71b87a08e8",
+    "wheel_sha256": "286d37c40f46d932f74ab8f5afc0c2a780a5d70bb419b96e7a44270765b57535",
+    "sha256": "8047c85c47ddb1460e16fb1a6d3e6d39f98dccbb8f4c0737fe03c19ccf429460"
+  },
+  "refresh_dispositions": {
+    "density_explained": 252,
+    "preexisting_staleness": 1,
+    "unchanged_values": 225,
+    "preexisting_row": "r4/recovery/prediction/0",
+    "preexisting_cause": "pre-existing staleness from the cold-report -> accepted-warm publication change (333595888b45892d07292d4198d51768f13e83e6, 4-increment difference)",
+    "evidence": "analyses/2026-competitor-cross-check/results/density-closure-native-value-causal-comparison.csv"
+  }
 }
