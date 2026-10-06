@@ -35,6 +35,7 @@ ContinuationStop = _core.ContinuationStop
 ReactionLogPolynomial = _core.ReactionLogPolynomial
 ReactionReference = _core.ReactionReference
 ReferenceSourceBasis = _core.ReferenceSourceBasis
+SpeciesReference = _core.SpeciesReference
 NeutralReferenceStatus = _core.NeutralReferenceStatus
 SolvedStateActionBatch = _core.SolvedStateActionBatch
 SolvedStateActionDiagnostics = _core.SolvedStateActionDiagnostics
@@ -73,6 +74,7 @@ __all__ = (
     "MoleFractions",
     "NeutralReference",
     "NeutralReferenceStatus",
+    "SpeciesReference",
     "Pinned",
     "Phase",
     "Problem",

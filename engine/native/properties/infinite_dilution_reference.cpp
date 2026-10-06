@@ -46,6 +46,18 @@ double validate_neutral_reference_declaration(
         || stoichiometry.size() != components) {
         throw std::invalid_argument("invalid neutral reference declaration");
     }
+    if (!declaration.species_reference.empty()) {
+        if (declaration.species_reference.size() != components)
+            throw std::invalid_argument("species reference size");
+        for (std::size_t i = 0; i < components; ++i) {
+            const auto choice = declaration.species_reference[i];
+            if (choice != SpeciesReference::InfiniteDilution && choice != SpeciesReference::PureLiquid
+                && choice != SpeciesReference::PureGas)
+                throw std::invalid_argument("species reference convention");
+            if (choice != SpeciesReference::InfiniteDilution && parameters.charge_number[i] != 0)
+                throw std::invalid_argument("pure reference species is charged");
+        }
+    }
     const std::size_t solvent = *declaration.solvent_index;
     if (parameters.charge_number[solvent] != 0) {
         throw std::invalid_argument("neutral reference solvent is charged");
@@ -155,6 +167,7 @@ struct NeutralReferenceTrace final {
     double solvent_mass = 0.0;
     std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
     std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
+    std::vector<std::optional<State>> pure_state;
     std::optional<HelmholtzDerivatives> terminal_derivatives;
     std::size_t temperature_order = 0;
     bool parameter_jets = false;
@@ -237,7 +250,32 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             }
             anchor = trace.state[point].molar_density;
         }
-        if (pressure_jets) {
+        std::vector<std::size_t> pure_indices;
+        for (std::size_t i = 0; i < declaration.species_reference.size(); ++i) {
+            const auto choice = declaration.species_reference[i];
+            if (choice != SpeciesReference::InfiniteDilution
+                && !(i == *declaration.solvent_index && choice == SpeciesReference::PureLiquid)) pure_indices.push_back(i);
+        }
+        if (!pure_indices.empty()) {
+            trace.pure_state.resize(components);
+            for (const auto i : pure_indices) {
+                const auto choice = declaration.species_reference[i];
+                std::vector<double> composition(components, 0.0);
+                composition[i] = 1.0;
+                try {
+                    auto state = model.state_at_pressure(temperature, pressure, composition,
+                        choice == SpeciesReference::PureGas ? DensityBranch::Vapor : DensityBranch::Liquid);
+                    if (!(state.pressure_density_derivative > 0.0))
+                        throw std::runtime_error("nonpositive pure-reference pressure slope");
+                    trace.pure_state[i] = std::move(state);
+                } catch (const std::exception& error) {
+                    result.status = NeutralReferenceStatus::DensityUnavailable;
+                    result.message = "pure reference species " + std::to_string(i) + ": " + error.what();
+                    return result;
+                }
+            }
+        }
+        if (pressure_jets && trace.pure_state.empty()) {
             const double volume = 1.0 / trace.state.back().molar_density;
             const auto derivatives = model.evaluate(
                 temperature, volume, trace.composition.back(), DerivativeOrder::Hessian);
@@ -291,6 +329,38 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     }
 }
 
+ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, double temperature,
+    const NeutralReferenceTrace& trace, std::size_t rung, const std::vector<double>& stoichiometry,
+    std::size_t a, std::size_t b, std::optional<std::size_t> parameter) {
+    if (trace.pure_state.empty())
+        return reference_partial_from_state(model, temperature, trace.composition[rung],
+            stoichiometry, a, b, parameter, trace.state[rung]);
+    auto dilute = stoichiometry;
+    for (std::size_t i = 0; i < dilute.size(); ++i)
+        if (trace.pure_state[i]) dilute[i] = 0.0;
+    ResidualEnergyAction result;
+    result.status = PropertyActionStatus::Available;
+    result.action = 0.0;
+    if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0.0; })) {
+        result = reference_partial_from_state(model, temperature, trace.composition[rung],
+            dilute, a, b, parameter, trace.state[rung]);
+        if (!result.action) return result;
+    }
+    for (std::size_t i = 0; i < dilute.size(); ++i) {
+        if (!trace.pure_state[i] || stoichiometry[i] == 0.0) continue;
+        std::vector<double> composition(dilute.size(), 0.0), insertion(dilute.size(), 0.0);
+        composition[i] = 1.0; insertion[i] = stoichiometry[i];
+        const auto partial = reference_partial_from_state(model, temperature, composition,
+            insertion, a, b, parameter, *trace.pure_state[i]);
+        if (!partial.action) return partial;
+        *result.action += *partial.action;
+    }
+    if (!std::isfinite(*result.action)) {
+        result.action.reset(); result.status = PropertyActionStatus::Nonfinite;
+    }
+    return result;
+}
+
 bool supported_reference_basis(ReferenceSourceBasis basis) {
     return basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
         || basis == ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
@@ -316,13 +386,16 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             double contraction = 0.0;
             for (std::size_t component = 0; component < stoichiometry.size(); ++component) {
                 if (stoichiometry[component] == 0.0) continue;
-                const double chemical = require_component_property(state.residual_chemical_potential_over_rt[component]);
+                const auto& source = !trace.pure_state.empty() && trace.pure_state[component]
+                    ? *trace.pure_state[component] : state;
+                const double component_log_density = &source == &state ? log_density : std::log(source.molar_density / 1.0);
+                const double chemical = require_component_property(source.residual_chemical_potential_over_rt[component]);
                 if (!std::isfinite(chemical)) {
                     result.status = NeutralReferenceStatus::Nonfinite;
                     result.message = "neutral reference residual chemical potential is nonfinite";
                     return result;
                 }
-                contraction += stoichiometry[component] * (log_density + chemical);
+                contraction += stoichiometry[component] * (component_log_density + chemical);
             }
             if (!std::isfinite(contraction)) {
                 result.status = NeutralReferenceStatus::Nonfinite;
@@ -352,8 +425,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             for (std::size_t point = 0; point < 3; ++point) {
                 const auto rung = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
                 try {
-                    const auto partial = reference_partial_from_state(model, temperature, trace.composition[rung],
-                        stoichiometry, a, b, parameter, trace.state[rung]);
+                    const auto partial = reference_partial_from_trace(model, temperature, trace, rung,
+                        stoichiometry, a, b, parameter);
                     column.ladder[point] = partial.action;
                     if (!partial.action) {
                         column.action_status = partial.status;
@@ -403,6 +476,16 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             // The reference value and terminal-change gate are available from the
             // ladder alone.  Defer E2/E3 pressure contractions until a pressure
             // direction is actually requested by the equilibrium caller.
+        } else if (!trace.pure_state.empty()) {
+            const auto first = reference_partial_from_trace(model, temperature, trace, 4, stoichiometry, 0, 1, std::nullopt);
+            const auto second = reference_partial_from_trace(model, temperature, trace, 4, stoichiometry, 0, 2, std::nullopt);
+            if (!first.action || !second.action) {
+                result.status = NeutralReferenceStatus::DensityUnavailable;
+                result.message = "mixed reference pressure derivative unavailable";
+                return result;
+            }
+            result.terminal_contraction_pressure_derivative = first.action;
+            result.terminal_contraction_pressure_second_derivative = second.action;
         } else {
             if (!trace.terminal_derivatives.has_value()) {
                 result.status = NeutralReferenceStatus::DensityUnavailable;
@@ -639,6 +722,11 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             diagnostic.message = found->result.message;
             continue;
         }
+        if (!found->result.trace->pure_state.empty() && reference.source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution) {
+            diagnostic.status = NeutralReferenceStatus::UnsupportedSourceBasis;
+            diagnostic.message = "mixed species references require raw mole fractions; common molality is not qualified";
+            continue;
+        }
         diagnostic = neutral_reference_from_trace(
             model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
@@ -661,9 +749,11 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                             for (std::size_t k = 0; k < 3; ++k) {
                                 const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size()-3+k;
                                 try {
-                                    const auto partial = reference_partial(model, temperature, pressure,
-                                        trace.composition[rung], stoichiometries[row], a, b, column.parameter,
-                                        trace.state[rung].molar_density);
+                                    const auto partial = trace.pure_state.empty()
+                                        ? reference_partial(model, temperature, pressure, trace.composition[rung],
+                                            stoichiometries[row], a, b, column.parameter, trace.state[rung].molar_density)
+                                        : reference_partial_from_trace(model, temperature, trace, rung,
+                                            stoichiometries[row], a, b, column.parameter);
                                     column.ladder[k] = partial.action;
                                     if (!partial.action) column.message = "reference action status " + std::to_string(int(partial.status));
                                 } catch (const std::exception& error) { column.message = error.what(); }
