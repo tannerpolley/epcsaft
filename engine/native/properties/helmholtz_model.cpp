@@ -1708,7 +1708,7 @@ State HelmholtzModel::state(
         temperature, molar_density, mole_fractions, parameters_, sigma, diameter
     );
     const auto [electro, born] = detail::supported_electrostatics(
-        temperature, molar_density, temperature, molar_density,
+        temperature, molar_density,
         mole_fractions, mole_fractions, parameters_
     );
     const auto terms = residual_helmholtz(

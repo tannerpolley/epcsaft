@@ -26,13 +26,6 @@ struct EvaluationWork final {
     std::size_t constraint_hessians = 0;
 };
 
-struct NlpShape final {
-    Ipopt::Index variables = 0;
-    Ipopt::Index constraints = 0;
-    Ipopt::Index jacobian_entries = 0;
-    Ipopt::Index hessian_entries = 0;
-};
-
 // `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
 struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
@@ -240,20 +233,6 @@ public:
     const std::optional<std::string>& preparation_error() const noexcept {
         return preparation_error_;
     }
-
-    NlpShape shape() const {
-        const Ipopt::Index variables = static_cast<Ipopt::Index>(
-            compiled_.pinned_count == 0
-                ? compiled_.primal_size
-                : compiled_.primal_size + compiled_.rank + compiled_.charge_row_count);
-        const Ipopt::Index constraints = static_cast<Ipopt::Index>(constraint_rows().size());
-        return {variables, constraints, variables * constraints,
-                variables * (variables + 1) / 2};
-    }
-
-    std::size_t primal_size() const noexcept { return compiled_.primal_size; }
-
-    bool is_square() const noexcept { return compiled_.is_square(); }
 
 private:
     std::vector<std::size_t> constraint_rows() const;

@@ -6,10 +6,7 @@
 
 // The parameter arrays the equations read. Plain data, no validation: the model
 // layer builds and checks one of these once, and the physics layer trusts it.
-//
-// Not in the target layout's six-file list. It is here because every physics
-// header needs the arrays and physics may not include the model layer, so the
-// data has to live at the bottom.
+// Shared parameter data lives in Core because physics may not include the model layer.
 
 namespace epcsaft {
 

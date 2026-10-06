@@ -668,7 +668,7 @@ void inactive_terms_contribute_nothing() {
     CHECK(born == 0.0);
 
     const auto electrolyte = epcsaft::electrolyte_contribution(
-        300.0, 1.2e4, 300.0, 1.2e4, x, {0.4, 0.6}, p
+        300.0, 1.2e4, x, {0.4, 0.6}, p
     );
     recording_support::compare(
         "debye-huckel", "debye_huckel", "1", electrolyte.debye_huckel, 0.0, inputs,
@@ -882,7 +882,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            "dipolar permittivity tends to one", 1.0e-10);
 
     const auto electrolyte = epcsaft::electrolyte_contribution(
-        temperature, density, temperature, density, x, x, p
+        temperature, density, x, x, p
     );
     record("dh-bulk", "epsilon_bulk", "1", electrolyte.bulk_relative_permittivity,
            expected_ion_suppression, inputs(p, density, x, "case:multivalent"),
@@ -925,7 +925,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            * expected_ion_suppression * epcsaft::BOLTZMANN_J_PER_K * temperature);
     for (const double rho : {1.0e-6, 1.0e-8}) {
         const auto dilute = epcsaft::electrolyte_contribution(
-            temperature, rho, temperature, rho, x, x, p
+            temperature, rho, x, x, p
         );
         const double coefficient = dilute.debye_huckel / std::sqrt(rho);
         record((std::string("dh-dilute-") + recording_support::number(rho)).c_str(),
