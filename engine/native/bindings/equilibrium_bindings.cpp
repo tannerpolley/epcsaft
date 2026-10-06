@@ -120,6 +120,7 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("reference", &ReactionSpec::reference);
     py::class_<StabilityOptions>(module, "StabilityOptions")
         .def(py::init<>())
+        .def_readwrite("evaluate_supplied_trials", &StabilityOptions::evaluate_supplied_trials)
         .def_readwrite("trials", &StabilityOptions::trials)
         .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
         .def_readwrite("trial_budget", &StabilityOptions::trial_budget)

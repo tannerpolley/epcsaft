@@ -147,3 +147,32 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
         assert result.requested_tolerance_met is True
         assert result.convergence.stop == _core.Stop.infeasible and result.solver_status == failure
         assert "; Ipopt " + failure in result.message
+
+
+def test_supplied_charged_family_refuses_before_trial_work() -> None:
+    # ALG-STABILITY: density-independent charged admission, including packing replay.
+    species = ("water", "sodium-cation", "chloride-anion")
+    model = Mixture(Parameters.from_json(
+        parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=species,
+    ))
+    declaration = Problem(T=298.15, P=1e5, row_tolerance=1e-10,
+        feed=Amounts(dict(zip(species, (0.98, 0.01, 0.01)))), phases=[Phase("L", kind="liquid")])
+    central = solve_equilibrium(model, declaration)
+    assert central.success
+    compiled = equilibrium.compile_problem(model, declaration)
+    charged = declaration._native(model).phases[0]
+    charged.support = [0, 1, 2]
+    charged.composition_guess = central.mole_fractions
+    charged.packing_guess = central.packing_fractions[0]
+    neutral = _core.PhaseSpec()
+    neutral.support, neutral.composition_guess = [0], [1.0, 0.0, 0.0]
+    neutral.packing_guess = central.packing_fractions[0]
+    options = equilibrium.StabilityOptions()
+    options.evaluate_supplied_trials, options.trials = True, [neutral, charged, neutral]
+    with _core.Capture() as captured:
+        with pytest.raises(ParameterError, match="^permittivity model has no low-density limit; declare phases$"):
+            equilibrium.stability_test(compiled, central, options)
+    assert all(s.name not in ("tangent_plane_trial", "solve_density") for s in captured.spans)
+    assert all(e.name != "hessian_calls" for e in captured.events)
+    options.trials = [neutral]
+    assert "tpd_over_rt" in equilibrium.stability_test(compiled, central, options).trials[0].quantities

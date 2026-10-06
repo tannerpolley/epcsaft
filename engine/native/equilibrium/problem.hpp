@@ -118,6 +118,7 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
 struct StabilityOptions final {
+    bool evaluate_supplied_trials = false;
     std::optional<std::vector<PhaseSpec>> trials;
     std::optional<std::size_t> declaration_budget;
     std::optional<std::size_t> trial_budget;
