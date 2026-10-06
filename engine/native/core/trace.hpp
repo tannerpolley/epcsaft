@@ -33,8 +33,6 @@ struct Trace final {
 
 inline thread_local Trace* active_trace = nullptr;
 
-inline Trace* active() noexcept { return active_trace; }
-
 class Capture final {
 public:
     Capture() : previous_(active_trace) { active_trace = &trace_; }

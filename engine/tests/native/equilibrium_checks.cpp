@@ -320,7 +320,9 @@ void expect_weighted_hessian_gradient_ladder(
     const char* label
 ) {
     epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
-    const auto shape = nlp.shape();
+    Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+    Ipopt::TNLP::IndexStyleEnum index_style;
+    CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
     const auto objective_factors = {0.0, 0.5, 1.0};
     const auto step_factors = {10.0, 3.0, 1.0};
     const std::size_t lower_triangle_count = point.size() * (point.size() + 1) / 2;
@@ -335,7 +337,7 @@ void expect_weighted_hessian_gradient_ladder(
         recording_support::field("matrix", "lower_triangle"),
         recording_support::field("objective_factors", std::vector<double>{0.0, 0.5, 1.0}),
         recording_support::field("step_factors", std::vector<double>{10.0, 3.0, 1.0}),
-        recording_support::field("hessian_entries", static_cast<std::size_t>(shape.hessian_entries)),
+        recording_support::field("hessian_entries", static_cast<std::size_t>(hessian_entries)),
     });
     for (const double objective_factor : objective_factors) {
         for (const double step_factor : step_factors) {
@@ -369,33 +371,35 @@ bool check_weighted_hessian_gradient_ladder(
 ) {
     const auto rows = callback_rows(compiled);
     epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
-    const auto shape = nlp.shape();
-    CHECK(shape.variables >= 0 && shape.constraints >= 0);
-    CHECK(point.size() == static_cast<std::size_t>(shape.variables));
+    Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+    Ipopt::TNLP::IndexStyleEnum index_style;
+    CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
+    CHECK(variables >= 0 && constraints >= 0);
+    CHECK(point.size() == static_cast<std::size_t>(variables));
     CHECK(multipliers.size() == rows.size());
-    CHECK(multipliers.size() == static_cast<std::size_t>(shape.constraints));
-    if (point.size() != static_cast<std::size_t>(shape.variables)
-        || multipliers.size() != static_cast<std::size_t>(shape.constraints)) return false;
+    CHECK(multipliers.size() == static_cast<std::size_t>(constraints));
+    if (point.size() != static_cast<std::size_t>(variables)
+        || multipliers.size() != static_cast<std::size_t>(constraints)) return false;
 
     const auto objective_factors = {0.0, 0.5, 1.0};
     const auto step_factors = {10.0, 3.0, 1.0};
     const auto context = weighted_hessian_context(compiled);
 
-    std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(shape.hessian_entries));
-    std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(shape.hessian_entries));
-    CHECK(nlp.eval_h(shape.variables, point.data(), true, 1.0, shape.constraints,
-                     multipliers.data(), true, shape.hessian_entries,
+    std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(hessian_entries));
+    std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(hessian_entries));
+    CHECK(nlp.eval_h(variables, point.data(), true, 1.0, constraints,
+                     multipliers.data(), true, hessian_entries,
                      hessian_rows.data(), hessian_columns.data(), nullptr));
     bool all_verdicts = true;
     std::array<std::size_t, 3> false_counts{};
     std::size_t objective_index = 0;
     for (const double objective_factor : objective_factors) {
         std::vector<Ipopt::Number> hessian(
-            static_cast<std::size_t>(shape.hessian_entries), 0.0
+            static_cast<std::size_t>(hessian_entries), 0.0
         );
-        CHECK(nlp.eval_h(shape.variables, point.data(), false, objective_factor,
-                         shape.constraints, multipliers.data(), false,
-                         shape.hessian_entries, hessian_rows.data(),
+        CHECK(nlp.eval_h(variables, point.data(), false, objective_factor,
+                         constraints, multipliers.data(), false,
+                         hessian_entries, hessian_rows.data(),
                          hessian_columns.data(), hessian.data()));
         for (const double step_factor : step_factors) {
             for (std::size_t column = 0; column < point.size(); ++column) {
@@ -2222,7 +2226,9 @@ void check_s10() {
             compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
         if (variant == 1) {
             epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
-            const auto shape = nlp.shape();
+            Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+            Ipopt::TNLP::IndexStyleEnum index_style;
+            CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
             const auto rows = callback_rows(compiled);
             std::vector<double> pressure_weights(rows.size(), 0.0);
             const auto phase_point = compiled.prepare(callback_point);
@@ -2232,9 +2238,9 @@ void check_s10() {
             const std::size_t phase = compiled.rows[rows[selected]].phase;
             const std::size_t w = phase_point.shape[phase].volume;
             const std::size_t P = compiled.primal_size - 1;
-            std::vector<double> hessian(static_cast<std::size_t>(shape.hessian_entries));
-            CHECK(nlp.eval_h(shape.variables, callback_point.data(), true, 0.0, shape.constraints,
-                pressure_weights.data(), true, shape.hessian_entries, nullptr, nullptr, hessian.data()));
+            std::vector<double> hessian(static_cast<std::size_t>(hessian_entries));
+            CHECK(nlp.eval_h(variables, callback_point.data(), true, 0.0, constraints,
+                pressure_weights.data(), true, hessian_entries, nullptr, nullptr, hessian.data()));
             const double reference = pressure_weights[selected] * phase_point.volume[phase]
                 / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * phase_point.temperature) * compiled.problem.pressure.value;
             const double action = hessian[P * (P + 1) / 2 + w] * compiled.problem.pressure.value;
@@ -2253,11 +2259,13 @@ void check_s10() {
             // point (~2e-6), so the T,T curvature entry is compared directly at 1e-9 scaled: the
             // falsifier flips if the retired s'' = -2 s'/T shortcut returns.
             epcsaft::equilibrium::GibbsMinimizer nlp(compiled, callback_point);
-            const auto shape = nlp.shape();
+            Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+            Ipopt::TNLP::IndexStyleEnum index_style;
+            CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
             const std::size_t t_index = compiled.primal_size - compiled.free_intensive_count;
-            std::vector<Ipopt::Number> hessian(static_cast<std::size_t>(shape.hessian_entries), 0.0);
-            CHECK(nlp.eval_h(shape.variables, callback_point.data(), true, 0.0, shape.constraints,
-                             weights.data(), true, shape.hessian_entries, nullptr, nullptr, hessian.data()));
+            std::vector<Ipopt::Number> hessian(static_cast<std::size_t>(hessian_entries), 0.0);
+            CHECK(nlp.eval_h(variables, callback_point.data(), true, 0.0, constraints,
+                             weights.data(), true, hessian_entries, nullptr, nullptr, hessian.data()));
             const double h_tt = hessian[t_index * (t_index + 1) / 2 + t_index];
             const double tt_step = centered_step(callback_point[t_index]);
             auto plus = callback_point, minus = callback_point;
@@ -3158,9 +3166,11 @@ void check_e2_reuse() {
             a[compiled.primal_size - compiled.free_intensive_count] = item.problem.temperature.free ? 193.0 : a[compiled.primal_size - compiled.free_intensive_count];
         }
         epcsaft::equilibrium::GibbsMinimizer nlp(compiled, a);
-        const auto shape = nlp.shape();
-        const auto n = shape.variables;
-        const auto m = shape.constraints;
+        Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+        Ipopt::TNLP::IndexStyleEnum index_style;
+        CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
+        const auto n = variables;
+        const auto m = constraints;
         CHECK(static_cast<std::size_t>(n) == a.size());
         std::vector<double> lambda_one(static_cast<std::size_t>(m)), lambda_two(static_cast<std::size_t>(m));
         for (std::size_t row = 0; row < lambda_one.size(); ++row) {
@@ -3169,17 +3179,17 @@ void check_e2_reuse() {
         }
         auto b = a;
         for (double& value : b) value += 1.0e-3;
-        std::vector<Ipopt::Index> rows_index(static_cast<std::size_t>(shape.hessian_entries)), cols_index(static_cast<std::size_t>(shape.hessian_entries));
-        CHECK(nlp.eval_h(n, a.data(), true, 1.0, m, lambda_one.data(), true, shape.hessian_entries, rows_index.data(), cols_index.data(), nullptr));
+        std::vector<Ipopt::Index> rows_index(static_cast<std::size_t>(hessian_entries)), cols_index(static_cast<std::size_t>(hessian_entries));
+        CHECK(nlp.eval_h(n, a.data(), true, 1.0, m, lambda_one.data(), true, hessian_entries, rows_index.data(), cols_index.data(), nullptr));
         const auto callback = [&](const std::vector<double>& point, double objective_factor, const std::vector<double>& lambda) {
             Ipopt::Number f = 0.0;
             std::vector<Ipopt::Number> g(static_cast<std::size_t>(m)), grad(static_cast<std::size_t>(n));
-            std::vector<Ipopt::Number> jac(static_cast<std::size_t>(shape.jacobian_entries)), hess(static_cast<std::size_t>(shape.hessian_entries));
+            std::vector<Ipopt::Number> jac(static_cast<std::size_t>(jacobian_entries)), hess(static_cast<std::size_t>(hessian_entries));
             CHECK(nlp.eval_f(n, point.data(), true, f));
             CHECK(nlp.eval_g(n, point.data(), false, m, g.data()));
             CHECK(nlp.eval_grad_f(n, point.data(), false, grad.data()));
-            CHECK(nlp.eval_jac_g(n, point.data(), false, m, shape.jacobian_entries, nullptr, nullptr, jac.data()));
-            CHECK(nlp.eval_h(n, point.data(), false, objective_factor, m, lambda.data(), true, shape.hessian_entries, nullptr, nullptr, hess.data()));
+            CHECK(nlp.eval_jac_g(n, point.data(), false, m, jacobian_entries, nullptr, nullptr, jac.data()));
+            CHECK(nlp.eval_h(n, point.data(), false, objective_factor, m, lambda.data(), true, hessian_entries, nullptr, nullptr, hess.data()));
             std::vector<double> flat = {f};
             flat.insert(flat.end(), g.begin(), g.end());
             flat.insert(flat.end(), grad.begin(), grad.end());
@@ -4766,16 +4776,18 @@ void check_tangent_plane_curvature() {
     }
     auto point = full; point.resize(shifted.primal_size);
     GibbsMinimizer nlp(shifted, full);
-    const auto shape = nlp.shape();
-    const std::size_t n = point.size(), m = static_cast<std::size_t>(shape.constraints);
+    Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
+    Ipopt::TNLP::IndexStyleEnum index_style;
+    CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
+    const std::size_t n = point.size(), m = static_cast<std::size_t>(constraints);
     std::vector<double> weights(m);
     for (std::size_t i = 0; i < m; ++i) weights[i] = 0.2 * (i + 1);
-    std::vector<double> gradient(n), jac(m * n), h(shape.hessian_entries);
+    std::vector<double> gradient(n), jac(m * n), h(hessian_entries);
     std::vector<Ipopt::Index> hr(h.size()), hc(h.size());
-    CHECK(nlp.eval_grad_f(shape.variables, point.data(), true, gradient.data()));
-    CHECK(nlp.eval_jac_g(shape.variables, point.data(), false, shape.constraints, shape.jacobian_entries, nullptr, nullptr, jac.data()));
-    CHECK(nlp.eval_h(shape.variables, point.data(), false, 0.7, shape.constraints, weights.data(), true, shape.hessian_entries, hr.data(), hc.data(), nullptr));
-    CHECK(nlp.eval_h(shape.variables, point.data(), false, 0.7, shape.constraints, weights.data(), false, shape.hessian_entries, nullptr, nullptr, h.data()));
+    CHECK(nlp.eval_grad_f(variables, point.data(), true, gradient.data()));
+    CHECK(nlp.eval_jac_g(variables, point.data(), false, constraints, jacobian_entries, nullptr, nullptr, jac.data()));
+    CHECK(nlp.eval_h(variables, point.data(), false, 0.7, constraints, weights.data(), true, hessian_entries, hr.data(), hc.data(), nullptr));
+    CHECK(nlp.eval_h(variables, point.data(), false, 0.7, constraints, weights.data(), false, hessian_entries, nullptr, nullptr, h.data()));
     const auto rows = callback_rows(shifted);
     for (double step : {1e-4, 3e-5, 1e-5}) {
         double first_error = 0.0, second_error = 0.0;

@@ -34,11 +34,10 @@ bool charged_support(const std::vector<double>& composition, const ParameterSet&
 
 template <typename Scalar, class ParameterSet>
 std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Scalar& temperature,
-    const Scalar& density, double reference_temperature, double reference_density,
+    const Scalar& density,
     const std::vector<Scalar>& composition, const std::vector<double>& reference,
     const ParameterSet& parameters) {
-    const auto electrolyte = electrolyte_contribution(temperature, density, reference_temperature,
-        reference_density, composition, reference, parameters);
+    const auto electrolyte = electrolyte_contribution(temperature, density, composition, reference, parameters);
     return {electrolyte, charged_support(reference, parameters)
         ? born_contribution(temperature, composition, parameters, electrolyte.bulk_relative_permittivity) : Scalar(0)};
 }
@@ -132,7 +131,6 @@ struct HelmholtzTape final {
         for (std::size_t component = 0; component < components; ++component) {
             total_value += point[2 + component];
         }
-        const double reference_density = total_value / point[1];
         std::vector<double> reference_composition;
         reference_composition.reserve(components);
         for (std::size_t component = 0; component < components; ++component) {
@@ -170,7 +168,7 @@ struct HelmholtzTape final {
             const auto sigma = segment_sigma(independent[0], tape_parameters);
             const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
             const auto [electrolyte, born] = supported_electrostatics(
-                independent[0], density, point[0], reference_density,
+                independent[0], density,
                 composition, reference_composition, tape_parameters);
             const auto contributions = residual_helmholtz(
                 independent[0], density, composition, tape_parameters, sigma,
