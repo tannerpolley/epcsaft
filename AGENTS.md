@@ -44,23 +44,18 @@ Revise its inputs through Setup rather than maintaining a separate copy here.
 <!-- CSE:END PROTOCOL -->
 
 Build a general fluid thermodynamics platform. The three official applications
-are its first required acceptance uses; application names never select physics.
-This is a private tool that needs fast development: mathematics, thermodynamics
-and numerical evidence come first, software provenance last.
+are its first acceptance uses; application names never select physics.
+Mathematics, thermodynamics and numerical evidence come first, software
+provenance last.
 
 ## Every task
 
 Read the nearest subtree `AGENTS.md`, the current GitHub leaf issue and only the
-equations, algorithms, accepted decisions and evidence it points to;
-`docs/scientific/CONTEXT.md` is the reference map, read by section. Separate
-unresolved scientific choices from specified implementation before dependent
-coding; change only the demonstrated gap.
-
-Activate Serena at the exact checkout root and verify the returned path. Each
-checkout has its own `.venv` from `.codex/environments/setup.sh` with one
-installed non-editable Engine wheel built from that checkout; run builds and
-Engine calculations as `tools/heavy <cmd>`. All equilibrium specifications use
-one driver and shared thermodynamics.
+equations, decisions and evidence it points to; change only the demonstrated
+gap. The leaf issue, not `engine/docs/`, says what the installed Engine
+implements. Activate Serena at the exact checkout root. Each checkout has its
+own `.venv` from `.codex/environments/setup.sh` with one non-editable Engine
+wheel; run builds and Engine calculations as `tools/heavy <cmd>`.
 
 ## Native calculation rule
 
@@ -72,42 +67,14 @@ results. Finite differences are allowed only to verify exact derivatives.
 Process-level IDAES/Pyomo models using Engine derivatives through the ASL adapter
 are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting methods.
 
-## Leading a slice
+## Pointers
 
-Scope readiness to the slice being built: its equations, consumed inputs and
-falsifying checks come before implementation. Size a slice to deliver within a
-few rounds; split a growing issue into child issues that merge independently.
-**Merge current main at the start of every build round.**
-
-One accountable lead owns each slice; one writer per file. Review is tiered:
-
-- **Small change** (about 20 runtime lines or fewer, no new equation, criterion
-  or physical claim): one independent review after the build.
-- **Substantive change** (new mathematics, solver or derivative behavior):
-  readiness review before the build and delivered review after it.
-- **Reporting-only fixes** (wording, counts, labels; no numerical change): the
-  lead verifies them against the finding without another review round.
-
-The lead checks reviewer findings against source and evidence; a build,
-readiness label or reviewer opinion is not numerical acceptance. When a
-capability claim changes, rewrite the issue body's current state and update
-repository evidence together.
-
-## Where things live
-
+- **Leading a slice** (readiness, review tiers, merging main, acceptance): `docs/agents/workflow.md`.
 - **Roadmap work:** `.agents/skills/manage-github-roadmap/SKILL.md`.
 - **Review standards:** `CODING_STANDARDS.md`.
-- **Checks:** `README.md` owns the commands. `tools/check-all.sh` is the full
-  fast gate (warm target below sixteen seconds), and `tools/time-key-solves`
-  work counts are the no-slowdown gate for ionic LLE and the MEA flash. Slow
-  evidence, analysis reproductions, clang-tidy and sanitizers need an explicit
-  owner command; there is no scientific CI/CD.
-- **Code budgets:** `docs/scientific/code-budgets.md`. Every authorized build
-  issue states its task line ceiling; the lead sets ceilings for tooling-only work.
-- **Application work:** the clones in `downstream/` under `downstream/README.md`.
-  An Engine slice that needs application implementation or evidence may inspect,
-  edit, test and run Git in the application repositories without moving the
-  task attachment.
-- **Agent skills:** `docs/agents/` (issue tracker, triage labels, domain docs).
+- **Checks and the no-slowdown gate:** `README.md` "Checks".
+- **Code budgets:** `docs/scientific/code-budgets.md`.
+- **Application work:** `downstream/README.md`.
+- **Agent skills:** `docs/agents/`.
 
 CSE execution mode: direct.

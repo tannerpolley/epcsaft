@@ -1,7 +1,7 @@
 # Data Directory Agent Contract
 
-Read the root contract, `docs/packet-contract.md`, and the
-sections of `../docs/scientific/CONTEXT.md` the task needs.
+Read `docs/packet-contract.md` and the sections of `../docs/scientific/CONTEXT.md`
+the task needs.
 
 This directory owns canonical reusable scientific packets: parameters,
 source-derived observations, provenance, units, domains, hashes, and use bases.
@@ -14,5 +14,4 @@ test. Data owns no pytest or unittest suite. An Engine-accountable vertical
 slice may revise a packet and its exact Engine/analysis consumers together,
 but every materialization remains hash-bound and self-contained.
 
-Use the sole root Codex environment and root checks. Preserve historical packet
-provenance and source repository identities. No CI/CD or compatibility paths.
+Preserve historical packet provenance and source repository identities.
