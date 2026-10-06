@@ -295,6 +295,30 @@ search composition, not necessarily reaction equilibrium: EqID:
 `normalized_trial_reaction_affinity`. The full added declaration restores every
 original reaction, reference input and affinity row.
 
+An explicit `stability_test(...)` with
+`StabilityOptions.evaluate_supplied_trials = true` instead evaluates each
+supplied `composition_guess`, without minimizing composition or creating a
+finite split. Entries, including repetitions and unavailable points, retain
+caller order. It uses the same unit-amount trial, frozen standards, chemical
+plane and EqID: `tangent_plane_distance`. Its point is the supplied
+full-species vector after native reconstruction, log/exp chart preparation and
+final reconstruction; supported entries must be positive and structural zeros
+remain zero. The returned composition is the actual energy-evaluation point.
+The total input displacement and final reconstruction displacement are separate.
+
+A supplied packing coordinate is replayed through the chart and retains its
+pressure defect; without one, the existing Liquid/Vapor density root selects
+packing at the initially reconstructed composition. Reconstruction preserves
+that packing when recomputing molar volume, without a second root solve. The
+returned packing, density and pressure row describe the final point. Packing
+outside the domain or nonpositive supported composition yields an unavailable
+row with its existing cause, never an invented TPD. Charged-family admission
+below applies even when packing is supplied. Donor slope and estimated
+uncertainty remain available when a positive full-support donor exists, but
+optimizer-only values are absent. Exhausting the evaluation sequence, a zero
+or negative TPD, or a donor estimate establishes no stability conclusion.
+[ALG-STABILITY](../science/algorithms.md#alg-stability) owns these operations.
+
 Raw optimizer points are not physically feasible by construction. Native
 normalization and ionic group rescaling followed by a two-pivot arithmetic
 correction admit a nearby trial (EqID: `electroneutral_trial_reconstruction`).

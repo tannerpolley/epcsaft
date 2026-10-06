@@ -113,6 +113,12 @@ clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
 its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
 
+Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
+numerical thread when memory allows. The warm `check-all.sh` target is below
+sixteen seconds. `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
+There is no scientific CI/CD.
+
 Run a canonical end-to-end workflow with:
 
 ```bash
