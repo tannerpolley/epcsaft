@@ -2945,6 +2945,7 @@ void check_propane_inventory_boundary() {
     auto parameters = properties_support::parameters(3);
     parameters.segment_count.assign(3, 2.0020); parameters.sigma_constant.assign(3, 3.6184);
     parameters.dispersion_energy_over_k.assign(3, 208.11);
+    parameters.molar_mass_kg_per_mol.assign(3, 0.044096);
     const HelmholtzModel model(parameters);
     auto problem = pure_saturation(300, 1e6);
     problem.feed.values = {1, 0, 0}; problem.reactions = {{"D=E", {0, -1, 1}, 1.0}};
