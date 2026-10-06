@@ -16,6 +16,10 @@ Use Numerical Verification-Driven Development:
 - A persistent test falsifies a claim through a value, identity, derivative,
   limit or justified reference case, at a tolerance at least as tight as the
   claim.
+- A performance or refactoring change shows equivalence within 1e-10 relative,
+  with absolute floors for near-zero quantities (owner, 2026-10-06). Bit-for-bit
+  comparison is reserved for unchanged default paths; a tighter tolerance needs
+  a specific claim that requires it.
 - Internal layouts, solver labels, call sequences and iteration counts are not
   correctness criteria; evaluation counts and timings are performance evidence
   for equivalent accepted work.
