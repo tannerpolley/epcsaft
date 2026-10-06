@@ -1611,8 +1611,8 @@ void properties_p2() {
         recording_support::active_test_id(), "p2-association-action", "association-action/", 3,
         "association implicit linear residual", "direction");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-root-residual", "root-residual/", 2,
-        "density root pressure residual is dimensional", "branch");
+        recording_support::active_test_id(), "p2-root-residual", "root-residual/", 3,
+        "density root pressure residual and dense-liquid closure", "branch");
     recording_support::expect_group(
         recording_support::active_test_id(), "p2-root-convergence", "root-convergence/", 2,
         "density root reduced convergence residual", "branch");
@@ -1878,6 +1878,21 @@ void properties_p2() {
             "H_q,||UX_q+F_q||inf", "T,rho,V,theta", "H_production=H_raw;||UX_q+F_q||inf<=1e-10", "direction");
         CHECK(action_ok);
     }
+
+    const auto dense_state = associating.state_at_pressure(
+        353.15, 1e5, {0.25, 0.75}, epcsaft::DensityBranch::Liquid);
+    const double dense_pressure_closure = std::abs(dense_state.pressure - 1e5) / 1e5;
+    recording_support::compare(
+        "root-residual/associating-dense", "relative_pressure_residual", "1",
+        dense_pressure_closure, 0.0, recording_support::fields({
+            model_inputs(associating.parameters(), 353.15, 1.0 / dense_state.molar_density, {0.25, 0.75}),
+            recording_support::field("P_star", 1e5),
+            recording_support::field("P_published", dense_state.pressure),
+        }), "Relationship", "density-publication",
+        "dense-liquid publication closes the imposed pressure", "absolute", 1e-10, 0.0,
+        dense_pressure_closure <= 1e-10, "p2-root-residual", "associating-dense",
+        "|P(rho)-P_star|/P_star", "T,P,x,liquid", "|P(rho)-P_star|/P_star<=1e-10", "branch");
+    CHECK(dense_pressure_closure <= 1e-10);
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     constexpr double temperature = 200.0;
@@ -5294,7 +5309,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
-        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
+        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:3,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},

@@ -253,12 +253,20 @@ estimate a fold from pressure-residual coincidence. Without such a stable sample
 target indistinguishable from a fold pressure at `DENSITY_ROOT_RESIDUAL` is
 explicitly unresolved,
 including a true tangent root; this is numerical unavailability, not physical
-nonexistence. The root residual tolerance is unchanged. For an approximate
-root, refinement also requires `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
-with a finite, nonzero derivative. Once the residual passes, the next sample is a
-quarter radius past the Newton root toward the far bracket end, so a sign change
-closes the bracket inside the radius in about two evaluations; midpoint
-bisection remains the fallback when that sample leaves the bracket. Thus the represented
+nonexistence. The root residual tolerance is unchanged. Refinement retains both bracket endpoint
+pressure evaluations and chooses the endpoint with smaller `|P_calc - P_target|`
+(the upper endpoint on a tie) as the safeguarded Newton origin and publication
+point. Its own reduced residual, exact derivative, association floor and
+amplification accompany the result. For an approximate root, both
+`|r| <= tolerance` and `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
+apply at that endpoint, with a finite, nonzero derivative. Here
+`r = (P_calc - P_target)/(rho R T)` and
+`Z_target = P_target/(rho R T)`, so relative pressure error is `|r|/Z_target`;
+the reduced-residual tolerance alone does not bound that relative error.
+Once the residual passes, the next sample is a quarter radius past the Newton
+root toward the far bracket end; midpoint bisection remains the fallback when
+that sample leaves the strict bracket. Selecting the better endpoint as origin
+can change the Newton trajectory and evaluation count. Thus the represented
 crossing lies within the returned local-sensitivity radius
 `tolerance |d rho/d r|`; an exact numerical zero is a separate stop. This
 bracket witness is needed because a small residual alone does not make the
@@ -276,7 +284,10 @@ global stability or complete root enumeration is claimed.
 An unspecified request with multiple resolved stable roots is ambiguous.
 A genuine sole root remains unlabelled. An anchored request uses the same
 partition and counting method within its existing local window and keeps the
-requested branch only after local uniqueness is established. That window
+requested branch only after local uniqueness is established. It returns the sole
+stable root already refined by that local scan, with its own convergence record,
+combined anchor/refinement iterations and all density evaluations; it does not
+publish the seed merely because its reduced residual passes. That window
 does not establish uniqueness outside itself or global branch persistence;
 a failed anchor must not silently switch to an unrelated cold root.
 
@@ -333,9 +344,17 @@ contraction with native error-free dot products. Only a verified certificate
 removes a species; an unresolved apparent zero cannot prove absence. Reduce state
 balances by independent echelon row operations while retaining their full feed
 columns and the discarded inventory restrictions. Full reaction/reference
-completion precedes restriction. Reject a pinned-zero support intersecting the
-certified absent set with `zero_inventory_incipient_support`; trial chemistry
-does not establish a global physical-inventory certificate.
+completion precedes restriction. For a pinned-zero support intersecting the
+certified absent set, evaluate admission on its effective support after removal:
+require a nonempty support of individually uncharged species, exactly two
+opposite liquid/vapor phases, fixed positive T, free P, one zero pin and one
+free amount. Apply the existing support and supplied-guess restriction, retaining
+original declared widths for physical starts. Otherwise keep
+`zero_inventory_incipient_support` with its species, phase and domain reason.
+The formulation's emerging-phase limit on the same exact face owns this domain;
+trial chemistry does not establish a global physical-inventory certificate.
+Numerical qualification checks the reduced Jacobian at the solved endpoint,
+separate mechanical branches and the unchanged raw/classified residual criteria.
 
 Check structural
 counts/rank, construct declared feasible starts, then solve the same intensive
@@ -878,6 +897,13 @@ central solve does not imply every action is available. Return per-action
 values or a specific failure reason, with rank/conditioning and linear residual
 where relevant. Cache/reuse thermodynamic work for the same resolved state;
 reuse must preserve all coefficient, T, density and implicit-site dependencies.
+
+The bounded exact-inventory incipient extension in ALG-EQUILIBRIUM changes
+central support admission only. Existing regular fixed-face actions retain
+their support and vanished-inventory restrictions; insertion directions,
+charged insertion properties and derivatives across a support change remain
+outside that qualification. No new boundary enthalpy or derivative order follows
+from an admitted pressure.
 
 `CompiledSystem::lever_jacobian` assembles the first row-series coefficients
 along unit T, P, feed-amount and active-parameter directions at one prepared

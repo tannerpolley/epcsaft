@@ -3580,9 +3580,11 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3, 
         // Normalized pinned/reactive directions need half-sized A3 nodes:
         // their coarse Richardson truncation exceeds c despite fine agreement.
         const std::array<double, 3> scaled_third_steps{0.05, 0.015, 0.005};
-        const double* steps = order == 3 && fixture.label.rfind("electrolyte", 0) == 0
-            ? ionic_third_steps.data() : order == 3 && fixture.scaled
-                ? scaled_third_steps.data() : LADDER[order - 1];
+        // A->2B physical-value A3 needs larger nodes: the original propagated rounding exceeds c.
+        const std::array<double, 3> doubling_third_steps{0.2, 0.06, 0.02};
+        const double* steps = order == 3 && fixture.label == "a-to-2b" ? doubling_third_steps.data()
+            : order == 3 && fixture.label.rfind("electrolyte", 0) == 0 ? ionic_third_steps.data()
+            : order == 3 && fixture.scaled ? scaled_third_steps.data() : LADDER[order - 1];
         std::vector<Reference> ladder;
         for (std::size_t s = 0; s < 3; ++s) ladder.push_back(reference(fixture, compiled, central, order, steps[s]));
         for (std::size_t i = 0; i < fixture.observables.size(); ++i) {
