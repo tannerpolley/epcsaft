@@ -1435,8 +1435,9 @@ recomputed. A caught optional-anchor failure is recorded before exactly one cold
 retry; a final cold refusal keeps its complete cause and publishes no trial seed.
 The witness identifies the physical extreme in the admitted single-loop domain;
 agreement with the bounded cold search is a qualification result, not a proof.
-Compare every certified cold result with
-its matched seeded result under the propagated log-density and quantity criteria.
+Qualification compares matched returned observables, densities, sites and exact
+columns within 1e-10 relative, with an absolute floor of 1e-12 near zero. The
+independent pressure-slope derivative check uses 1e-6 max(1, abs(reference)).
 Qualification uses independent same-point cold replays; the fitting controller
 adds neither a per-trial nor an endpoint-only cold comparison.
 

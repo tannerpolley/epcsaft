@@ -66,7 +66,9 @@ def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
     for k in range(4):
         same(evidence, f"r4/recovery/covariance/{k}", result.covariance.optimizer[k])
         same(evidence, f"r4/recovery/physical_covariance/{k}", result.covariance.physical[k])
-    same(evidence, "r4/recovery/variance_factor", result.covariance.variance_factor)
+    # With cost = sum(w*r*r)/2 <= 1e-20, variance = 2*cost/(n-rank) is at the noise floor.
+    same(evidence, "r4/recovery/variance_factor", result.covariance.variance_factor,
+         reference=ROWS["r4/recovery/variance_factor"], atol=2.0e-20 / (len(observations) - result.covariance.rank))
     for k, value in enumerate(result.optimizer_jacobian):
         same(evidence, f"r4/recovery/optimizer_jacobian/{k}", value)
     assert math.isclose(result.physical[0], 152.0, rel_tol=1.0e-6) and abs(result.physical[1] + 0.02) <= 1.0e-6
