@@ -147,8 +147,8 @@ energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
 Optional `trace(diagnostics=True)` observes existing mass-action iterations as
 `association_iteration`: residual infinity norm, accepted Newton damping (zero
-for substitution), pivot ratio (NaN for substitution), and Newton selection.
-Its reason retains the Newton cause or `Newton`; terminal convergence remains
+for non-Newton updates), pivot ratio (NaN without Newton), and Newton selection.
+Its reason retains the analytic start, Newton cause or `Newton`; terminal convergence remains
 on the span alone. `association_derivative_failure` observes the existing LU
 at derivative admission: site count, rank, largest/smallest absolute pivots and
 pivot ratio, with the singular or ill-conditioned cause. It performs no second
@@ -169,6 +169,22 @@ iteration budget; use Newton's method on the admitted site domain, with
 step control that keeps site fractions in (0,1]. Accept only a finite residual
 meeting the declared criterion. Return nonconvergence, domain escape or a
 singular defining Jacobian explicitly; the last iterate is not success.
+
+For the first update, form $q_a=\sum_b K_{ab}$ at $X=1$, with
+$K_{ab}=\widehat\rho x_{i(b)}\nu_b\Delta_{ab}$. Keep that start when
+$\max q_a\le1/\texttt{ASSOCIATION_JACOBIAN_CONDITION}=10^{13}$.
+Above this scale, let $r_a$ be the common computed $q_b$ of all partners with
+$K_{ab}>0$, if they are exactly equal; otherwise use $r_a=q_a$ (also for an
+empty row). With $c=1+(q_a-r_a)$ and $d=\operatorname{hypot}(c,2\sqrt{r_a})$,
+the initial estimate is $2/(c+d)$ for $c\ge0$ and $(d-c)/(2r_a)$ otherwise.
+This is the positive root of the two-population mass-action reduction;
+it is an estimate for a heterogeneous graph. A finite estimate in $(0,1]$
+replaces the first update and consumes one of the existing fifty iterations.
+An inadmissible estimate is discarded and the original first Newton/substitution
+step runs from $X=1$, without clamping or an extra budget. Later iterations,
+residual criterion and implicit derivative admission are unchanged. Detailed
+capture names the admitted update `analytic association start`. The estimate
+is outside the thermodynamic recording and is never differentiated.
 
 ```text
 solve site mass-action values outside the reusable thermodynamic recording
@@ -206,6 +222,22 @@ link) with the originating association cause. `density_scan_failure` retains a
 terminating non-association cause. `anchor_failure` retains the offered density
 and original exception; `anchor_cold_retry` also gives the reference rung.
 These records observe the existing scan and retry decisions.
+
+At each failed grid node, the shared cold/local scan keeps the attempted ordinal,
+density in mol/m3 at seventeen significant digits, and the entire original cause.
+It continues the declared grid only for a primal `ConvergenceFailure` whose
+criterion is `ASSOCIATION_RESIDUAL`. Any other `std::exception` propagates
+unchanged when no earlier interruption exists; after an interruption it is
+appended and terminates the scan with the combined refusal. An interrupted
+scan throws `density scan interrupted by association` before slope searches,
+cell processing or branch selection. It returns neither density nor stable-root
+count; capture-disabled calls retain every visited failed-node cause in the
+exception. Unvisited nodes after a terminal exception are not claimed evaluated.
+The same rule applies to the local anchor scan. Pressure actions and fitting
+predictions retain the complete cause as density unavailable, and required
+equilibrium initialization fails. Existing optional attempts can discard a
+refused scan without certifying its roots. An uninterrupted finite scan keeps
+its existing search meaning, not exhaustive root enumeration.
 
 Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
