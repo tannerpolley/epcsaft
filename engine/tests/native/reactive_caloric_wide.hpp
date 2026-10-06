@@ -118,7 +118,11 @@ public:
             -Wide(R)*(sys.a+T*sys.at),cvres-T*sys.vt*sys.vt/sys.vp-R,cvres};
         for(std::size_t i=0;i<5;++i) total[i]=ideal[i]+residual[i];
         const std::vector<Wide> pure_x{Wide(1),Wide(0)},eps{epsilon,epsilon};
-        const auto sigma=segment_sigma(T,c.parameters),diameter=segment_diameter(T,c.parameters,sigma,&eps);
+        ParameterRecord<Wide> geometry{{},Wide(0),Wide(0)};
+        static_cast<FixedParameters&>(geometry)=c.parameters;
+        geometry.dispersion_energy_over_k=eps;
+        geometry.packing_diameter_angstrom.assign(c.parameters.packing_diameter_angstrom.begin(),c.parameters.packing_diameter_angstrom.end());
+        const auto sigma=segment_sigma(T,c.parameters),diameter=segment_diameter(T,geometry,sigma);
         const Wide eta=packing_fraction_from_geometry(1/sys.v,pure_x,c.parameters,diameter);
         std::vector<Wide> out;
         for(const auto& item:q) {

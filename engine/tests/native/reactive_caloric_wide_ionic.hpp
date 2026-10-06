@@ -30,7 +30,7 @@ class WideIonic {
         const auto delta=association_delta_values(independent[0],rho,x,p,sigma,diameter,p.association_energy_over_k,p.association_volume);
         const AD site=2/(1+CppAD::sqrt(1+4*rho*NUMBER_DENSITY_PER_ANGSTROM3*x[0]*delta[1]));
         const std::vector<AD> sites{site,site};
-        const auto electro=electrolyte_contribution(independent[0],rho,c.problem.temperature.value,1/1.8e-5,x,rx,p);
+        const auto electro=electrolyte_contribution(independent[0],rho,x,rx,p);
         const auto born=born_contribution(independent[0],x,p,electro.bulk_relative_permittivity);
         const auto terms=residual_helmholtz(independent[0],rho,x,p,sigma,diameter,sites,electro.debye_huckel,born);
         std::vector<AD> dependent{N*(terms.hard_chain+terms.dispersion+terms.association+terms.debye_huckel+terms.born+terms.dipolar)};
@@ -133,7 +133,11 @@ public:
         const std::array<Wide,5> residual{-Wide(R)*T*T*sys.at-rt*sys.v*sys.av,-Wide(R)*T*T*sys.at,-Wide(R)*(sys.a+T*sys.at),cvres-T*sys.vt*sys.vt/sys.vp-R,cvres};
         for(std::size_t i=0;i<5;++i) total[i]=ideal[i]+residual[i];
         const std::vector<Wide> wx{x.begin(),x.end()},eps{epsilon,Wide(c.parameters.dispersion_energy_over_k[1]),Wide(c.parameters.dispersion_energy_over_k[2])};
-        const auto sigma=segment_sigma(T,c.parameters),diameter=segment_diameter(T,c.parameters,sigma,&eps);
+        ParameterRecord<Wide> geometry{{},Wide(0),Wide(0)};
+        static_cast<FixedParameters&>(geometry)=c.parameters;
+        geometry.dispersion_energy_over_k=eps;
+        geometry.packing_diameter_angstrom.assign(c.parameters.packing_diameter_angstrom.begin(),c.parameters.packing_diameter_angstrom.end());
+        const auto sigma=segment_sigma(T,c.parameters),diameter=segment_diameter(T,geometry,sigma);
         const Wide eta=packing_fraction_from_geometry(1/sys.v,wx,c.parameters,diameter);
         std::vector<Wide> out;
         for(const auto& item:q) {
