@@ -912,12 +912,10 @@ EquilibriumResult run_driver(
             const Eigen::VectorXd delta = lu.solve(-Eigen::Map<const Eigen::VectorXd>(rows_before.data(), n));
             Eigen::VectorXd scale = Eigen::VectorXd::Ones(n);
             bool positive = true;
-            double feed_relative = 0.0;
             for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
                 const auto i = static_cast<Eigen::Index>(*at.shape[p].amount);
                 positive = positive && at.amount[p] > 0.0;
                 if (at.amount[p] > 0.0) scale(i) = at.amount[p];
-                feed_relative = std::max(feed_relative, std::abs(delta(i)) / compiled.feed_total);
             }
             auto intensive = static_cast<Eigen::Index>(compiled.primal_size - compiled.free_intensive_count);
             if (compiled.problem.temperature.free) scale(intensive++) = at.temperature;
@@ -926,15 +924,18 @@ EquilibriumResult run_driver(
             const double scaled_correction = delta.allFinite() ? delta.cwiseQuotient(scale).cwiseAbs().maxCoeff(&controlling)
                 : std::numeric_limits<double>::infinity();
             double bound = std::numeric_limits<double>::infinity();
-            const bool current_best = full == best;
-            const bool size_admitted = positive && current_best && classified_before <= row_tolerance
+            const bool size_admitted = positive && full == best && classified_before <= row_tolerance
                 && scaled_correction <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
             if (size_admitted && lu.rank() == n)
                 bound = polish_forward_bound(jacobian, rows_before, {delta.data(), delta.data() + n},
                     {scale.data(), scale.data() + n});
             const bool correction_stop = size_admitted && bound <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
-            if (detailed) scope.observe([&] { scope.probe("polish_correction", {scaled_correction, static_cast<double>(controlling), feed_relative, bound,
-                classified_before, current_best ? 1.0 : 0.0, positive ? 1.0 : 0.0,
+            if (detailed) scope.observe([&] {
+                double feed_relative = 0.0;
+                for (const auto& shape : at.shape) if (shape.amount)
+                    feed_relative = std::max(feed_relative, std::abs(delta(*shape.amount)) / compiled.feed_total);
+                scope.probe("polish_correction", {scaled_correction, static_cast<double>(controlling), feed_relative, bound,
+                classified_before, full == best ? 1.0 : 0.0, positive ? 1.0 : 0.0,
                 size_admitted ? static_cast<double>(lu.rank()) : -1.0, correction_stop ? 1.0 : 0.0},
                 static_cast<std::uint32_t>(step)); });
             double correction = std::numeric_limits<double>::quiet_NaN(), control = correction;

@@ -554,8 +554,12 @@ Here $J\delta=-r$; the matrix norm is the induced infinity norm. Eigen's
 The solve-admission calculation runs only when the correction-size guards
 would permit the shortcut. A nonpositive free phase amount disables it;
 amounts are scaled by their own phase amount, never by feed total.
-The trace retains the controlling chart coordinate, phase- and feed-relative
-amount corrections, the forward estimate and the shortcut decision.
+Detailed `polish_correction` capture records the scaled infinity norm, its
+controlling chart coordinate, maximum feed-relative free-amount correction,
+forward estimate, classified maximum, current-best and positive-amount guards,
+checked Newton rank (−1 when not checked), and shortcut decision. The scaled
+norm includes each free amount relative to its own phase. Payloads are built
+inside `Scope::observe`; `polish_stop` names a successful correction stop.
 This local estimate does not certify total state error or every raw row within
 the caller criterion. Normalizing compositions and converting packing to density
 can amplify a chart correction, the condition number is estimated, and later

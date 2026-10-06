@@ -1420,8 +1420,8 @@ void check_polish_solve_admission() {
     const double singular = bound({1.0, 0.0, 0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {1.0, 1.0});
     const double admitted = bound({1.0, 0.0, 0.0, 1.0}, {-1e-14, 0.0}, {1e-14, 0.0}, {1.0, 1.0});
     recording_support::compare("polish-solve/forward", "forward_correction_bound", "1", ill_conditioned, 1e-6,
-        "{\"J22\":1e-14,\"r2\":1e-20,\"computed_delta\":0}", "Identity", "diagonal-system",
-        "a tiny backward residual does not bound the forward correction", "relative", 0.0, 1e-14,
+        "J22:1e-14;r2:1e-20;computed_delta:0", "Identity", "diagonal-system",
+        "a tiny backward residual does not bound the forward correction", "reference_scale", 0.0, 1e-14,
         std::abs(ill_conditioned / 1e-6 - 1.0) <= 1e-14, "polish-solve", "diagonal", "forward", "J,r,delta", "J^-1 r", "solve");
     CHECK(ill_conditioned > epcsaft::policy::EQUILIBRIUM_POLISH_CORRECTION.value);
     CHECK(std::isinf(singular));
