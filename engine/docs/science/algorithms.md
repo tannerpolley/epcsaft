@@ -363,7 +363,9 @@ sticky `capture.trace.incomplete`; missing evidence never selects numerical
 recovery. Trace-only containers and strings are constructed inside `Scope::observe`
 or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
 contain allocation failure. The source rule in
-`tools/check-engine-architecture.py` checks these payloads during `check-all`.
+`tools/check-engine-architecture.py` guards the known eager-temporary and
+named-local payload patterns during `check-all`; it is not a complete
+allocation-safety proof.
 Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 

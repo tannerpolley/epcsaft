@@ -308,7 +308,8 @@ PAYLOAD_DECLARATION = re.compile(
 )
 
 
-def rule_trace_payloads_inside_observation() -> list[str]:
+def rule_known_eager_trace_payload_forms() -> list[str]:
+    # Regression guard for observed eager-temporary and named-local patterns, not a complete allocation-safety proof.
     bad = []
     returned_payloads = set()
     for path in sources():
@@ -498,7 +499,7 @@ def main() -> int:
         ("policy entries are named, listed and consumed", rule_policy_entries_name_themselves()),
         ("budget readers carry records", rule_budget_readers_carry_records()),
         ("core and trace boundaries", rule_core_and_trace_boundaries()),
-        ("trace payloads are built inside observation", rule_trace_payloads_inside_observation()),
+        ("known eager trace-payload forms are absent", rule_known_eager_trace_payload_forms()),
         ("selectors are declared", rule_declared_selectors()),
         ("surface has no physical defaults", rule_surface_defaults()),
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
