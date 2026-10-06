@@ -253,12 +253,20 @@ estimate a fold from pressure-residual coincidence. Without such a stable sample
 target indistinguishable from a fold pressure at `DENSITY_ROOT_RESIDUAL` is
 explicitly unresolved,
 including a true tangent root; this is numerical unavailability, not physical
-nonexistence. The root residual tolerance is unchanged. For an approximate
-root, refinement also requires `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
-with a finite, nonzero derivative. Once the residual passes, the next sample is a
-quarter radius past the Newton root toward the far bracket end, so a sign change
-closes the bracket inside the radius in about two evaluations; midpoint
-bisection remains the fallback when that sample leaves the bracket. Thus the represented
+nonexistence. The root residual tolerance is unchanged. Refinement retains both bracket endpoint
+pressure evaluations and chooses the endpoint with smaller `|P_calc - P_target|`
+(the upper endpoint on a tie) as the safeguarded Newton origin and publication
+point. Its own reduced residual, exact derivative, association floor and
+amplification accompany the result. For an approximate root, both
+`|r| <= tolerance` and `(rho_upper - rho_lower) |dr/d rho| <= tolerance`
+apply at that endpoint, with a finite, nonzero derivative. Here
+`r = (P_calc - P_target)/(rho R T)` and
+`Z_target = P_target/(rho R T)`, so relative pressure error is `|r|/Z_target`;
+the reduced-residual tolerance alone does not bound that relative error.
+Once the residual passes, the next sample is a quarter radius past the Newton
+root toward the far bracket end; midpoint bisection remains the fallback when
+that sample leaves the strict bracket. Selecting the better endpoint as origin
+can change the Newton trajectory and evaluation count. Thus the represented
 crossing lies within the returned local-sensitivity radius
 `tolerance |d rho/d r|`; an exact numerical zero is a separate stop. This
 bracket witness is needed because a small residual alone does not make the
@@ -276,7 +284,10 @@ global stability or complete root enumeration is claimed.
 An unspecified request with multiple resolved stable roots is ambiguous.
 A genuine sole root remains unlabelled. An anchored request uses the same
 partition and counting method within its existing local window and keeps the
-requested branch only after local uniqueness is established. That window
+requested branch only after local uniqueness is established. It returns the sole
+stable root already refined by that local scan, with its own convergence record,
+combined anchor/refinement iterations and all density evaluations; it does not
+publish the seed merely because its reduced residual passes. That window
 does not establish uniqueness outside itself or global branch persistence;
 a failed anchor must not silently switch to an unrelated cold root.
 
@@ -633,9 +644,21 @@ its unscaled rows, which are its constraints. Species thermochemistry attached t
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
-Declared-branch continuation follows one straight dimensionless path `q` in
-`[0, 1]` between two problems with identical declarations; only fixed
-intensives and resolved feed amounts move. The controller predicts each step
+Declared-branch continuation follows one straight dimensionless path `s` in
+`[0, 1]` between two problems with identical declarations. Fixed intensives
+and resolved feed amounts may move, or a parameter-only path moves physical
+EOS/Born coefficients as `theta(s) = theta0 + s (theta1 - theta0)` while T/P/feed
+and all declarations remain fixed. `parameter_targets` uses the ordered active
+coordinates of the supplied model; empty targets select the intensive/feed path.
+Both paths use the same controller. Parameter trials rebuild the model from its
+immutable base records and fixed thermochemistry; each compiled problem and
+branch check uses that trial model for its complete lifetime. Accepted
+`parameter_values` retain the physical coefficients. Born `c_dielectric` and
+`ionic_region_relative_permittivity` are active scalars in the shared parameter
+record; the latter must be positive. The tangent includes the full direct,
+packing, association and source-reference parameter chain. A singular tangent
+stops this straight path; it establishes neither a turning point nor absence of
+an endpoint solution. Held-composition charts and arclength are outside this method. The controller predicts each step
 from the implicit tangent (EqID: `implicit_sensitivity`: the first row
 coefficient along the lever at the fixed state, the directional series of
 ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
@@ -646,7 +669,7 @@ rejected left-domain step), and accepts a state only when the driver
 accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
 shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
-its cold declared root at `q = 0` or of the previous accepted density
+its cold declared root at `s = 0` or of the previous accepted density
 afterwards, with a positive corrected pressure slope. Finite step failures
 (left domain, stalled, missing anchored root) halve the step from the last
 accepted coordinates up to the caller's retry allowance and minimum step;

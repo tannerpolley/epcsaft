@@ -57,9 +57,7 @@ struct FixedParameters {
     // Electrolyte
     std::vector<int> charge_number;
     std::vector<double> solvation_factor;
-    double ionic_region_relative_permittivity = 0.0;
     double born_c_shell = 0.0;
-    double born_c_dielectric = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;
     core::Declared<IonicDispersion> ionic_dispersion;
 
@@ -86,6 +84,8 @@ struct FixedParameters {
 // Scalar is supplied by the consuming layer, so Core has no AD dependency.
 template <class Scalar>
 struct ParameterRecord final : FixedParameters {
+    Scalar ionic_region_relative_permittivity = 0.0;
+    Scalar born_c_dielectric = 0.0;
     std::vector<Scalar> packing_diameter_angstrom;
     std::vector<Scalar> debye_huckel_diameter_angstrom;
     std::vector<Scalar> born_diameter_angstrom;

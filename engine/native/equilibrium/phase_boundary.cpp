@@ -478,6 +478,7 @@ std::string layout_difference(const CompiledSystem& a, const CompiledSystem& b) 
 struct Path final {
     EquilibriumProblem base;
     std::vector<double> feed_start, feed_target;
+    std::vector<double> parameter_start, parameter_target;
     double t0 = 0.0, t1 = 0.0, p0 = 0.0, p1 = 0.0;
 
     EquilibriumProblem at(double q) const {
@@ -496,6 +497,8 @@ struct Path final {
         result[0] = base.temperature.free ? 0.0 : t1 - t0;
         result[1] = base.pressure.free ? 0.0 : p1 - p0;
         for (std::size_t i = 0; i < feed_start.size(); ++i) result[2 + i] = feed_target[i] - feed_start[i];
+        for (std::size_t i = 0; i < parameter_target.size(); ++i)
+            result[2 + feed_start.size() + i] = parameter_target[i] - parameter_start[i];
         return result;
     }
 };
@@ -745,7 +748,23 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     const std::string declared = declaration_difference(request.start_problem, request.target_problem);
     if (!declared.empty()) return finish(std::move(result), ContinuationStop::invalid_path, declared);
     CompiledSystem start = compile_problem(model, request.start_problem);
-    CompiledSystem target = compile_problem(model, request.target_problem);
+    const bool parameter_path = !request.parameter_targets.empty();
+    const auto parameter_start = model.active_parameter_values();
+    if (parameter_path && (request.parameter_targets.size() != parameter_start.size()
+        || !std::all_of(request.parameter_targets.begin(), request.parameter_targets.end(), [](double v) { return std::isfinite(v); })))
+        return finish(std::move(result), ContinuationStop::invalid_path, "invalid physical parameter endpoints");
+    const auto parameter_model = [&](double s) {
+        if (!parameter_path) return std::unique_ptr<HelmholtzModel>{};
+        auto parameters = model.parameters();
+        for (std::size_t i = 0; i < parameter_start.size(); ++i) {
+            const auto& coordinate = model.active_parameters()[i];
+            for (const auto index : coordinate.indices)
+                detail::family_values(parameters, coordinate.family).first[index] = (1.0 - s) * parameter_start[i] + s * request.parameter_targets[i];
+        }
+        return std::make_unique<HelmholtzModel>(std::move(parameters), model.active_parameters(), model.thermochemistry());
+    };
+    auto target_model = parameter_model(1.0);
+    CompiledSystem target = compile_problem(target_model ? *target_model : model, request.target_problem);
     const std::string layout = layout_difference(start, target);
     if (!layout.empty()) return finish(std::move(result), ContinuationStop::invalid_path, layout);
     if (!start.feasible || !target.feasible)
@@ -761,12 +780,18 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     const bool moves = path.feed_start != path.feed_target
         || (!path.base.temperature.free && path.t0 != path.t1)
         || (!path.base.pressure.free && path.p0 != path.p1);
-    if (!moves) return finish(std::move(result), ContinuationStop::invalid_path, "no fixed intensive or resolved feed differs");
+    if (parameter_path && moves)
+        return finish(std::move(result), ContinuationStop::invalid_path, "parameter path must hold intensives and resolved feed fixed");
+    if (!moves && (!parameter_path || parameter_start == request.parameter_targets))
+        return finish(std::move(result), ContinuationStop::invalid_path,
+            parameter_path ? "no active parameter differs" : "no fixed intensive or resolved feed differs");
+    if (parameter_path) { path.parameter_start = parameter_start; path.parameter_target = request.parameter_targets; }
 
     // Initial admission at q = 0.
     std::vector<double> anchors;
     std::vector<double> y_current;
     CompiledSystem current = start;
+    std::unique_ptr<HelmholtzModel> current_model;
     {
         core::Scope initial("equilibrium_continuation_initial");
         initial.probe("path_value", 0.0);
@@ -782,7 +807,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                 initial.probe(continuation_stop_name(ContinuationStop::invalid_path), 1.0);
                 return finish(std::move(result), ContinuationStop::invalid_path, "supplied start result layout differs");
             }
-            admitted = admit_result(model, start, supplied, anchors, true, initial);
+            admitted = admit_result(model, start, parameter_path
+                ? solve_equilibrium_from_coordinates(model, request.start_problem, supplied.coordinates) : supplied, anchors, true, initial);
         } else {
             admitted = admit_result(model, start,
                 solve_equilibrium_from_coordinates(model, request.start_problem, boundary_start(start)),
@@ -796,6 +822,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             return finish(std::move(result), ContinuationStop::initial_failure, admitted.message);
         }
         result.path_values.push_back(0.0);
+        if (parameter_path) result.parameter_values.push_back(parameter_start);
         result.states.push_back(*admitted.result);
         y_current = admitted.result->coordinates;
         anchors = admitted.result->molar_densities;
@@ -814,7 +841,9 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         attempt_scope.probe("path_value", q_try);
         Attempt attempt;
         const EquilibriumProblem problem = path.at(q_try);
-        CompiledSystem compiled = compile_problem(model, problem);
+        auto trial_model = parameter_model(q_try);
+        const auto& trial = trial_model ? *trial_model : model;
+        CompiledSystem compiled = compile_problem(trial, problem);
         const std::string generated = layout_difference(start, compiled);
         if (!generated.empty()) {
             attempt.stop = ContinuationStop::invalid_path;
@@ -851,7 +880,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                     attempt.stop = ContinuationStop::left_domain;
                     attempt.message = "predicted coordinates leave the admitted domain";
                 } else {
-                    attempt = admit_result(model, compiled, solve_equilibrium_from_coordinates(model, problem, predicted),
+                    attempt = admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted),
                                            anchors, false, attempt_scope);
                     if (attempt.accepted) {
                         if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) {
@@ -879,6 +908,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
             result.path_values.push_back(q);
             y_current = attempt.result->coordinates;
             anchors = attempt.result->molar_densities;
+            if (parameter_path) result.parameter_values.push_back(trial.active_parameter_values());
+            current_model = std::move(trial_model);
             current = std::move(compiled);
             result.reached_path = q;
             result.states.push_back(std::move(*attempt.result));

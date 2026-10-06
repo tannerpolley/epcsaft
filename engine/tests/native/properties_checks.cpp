@@ -1611,8 +1611,8 @@ void properties_p2() {
         recording_support::active_test_id(), "p2-association-action", "association-action/", 3,
         "association implicit linear residual", "direction");
     recording_support::expect_group(
-        recording_support::active_test_id(), "p2-root-residual", "root-residual/", 2,
-        "density root pressure residual is dimensional", "branch");
+        recording_support::active_test_id(), "p2-root-residual", "root-residual/", 3,
+        "density root pressure residual and dense-liquid closure", "branch");
     recording_support::expect_group(
         recording_support::active_test_id(), "p2-root-convergence", "root-convergence/", 2,
         "density root reduced convergence residual", "branch");
@@ -1878,6 +1878,21 @@ void properties_p2() {
             "H_q,||UX_q+F_q||inf", "T,rho,V,theta", "H_production=H_raw;||UX_q+F_q||inf<=1e-10", "direction");
         CHECK(action_ok);
     }
+
+    const auto dense_state = associating.state_at_pressure(
+        353.15, 1e5, {0.25, 0.75}, epcsaft::DensityBranch::Liquid);
+    const double dense_pressure_closure = std::abs(dense_state.pressure - 1e5) / 1e5;
+    recording_support::compare(
+        "root-residual/associating-dense", "relative_pressure_residual", "1",
+        dense_pressure_closure, 0.0, recording_support::fields({
+            model_inputs(associating.parameters(), 353.15, 1.0 / dense_state.molar_density, {0.25, 0.75}),
+            recording_support::field("P_star", 1e5),
+            recording_support::field("P_published", dense_state.pressure),
+        }), "Relationship", "density-publication",
+        "dense-liquid publication closes the imposed pressure", "absolute", 1e-10, 0.0,
+        dense_pressure_closure <= 1e-10, "p2-root-residual", "associating-dense",
+        "|P(rho)-P_star|/P_star", "T,P,x,liquid", "|P(rho)-P_star|/P_star<=1e-10", "branch");
+    CHECK(dense_pressure_closure <= 1e-10);
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     constexpr double temperature = 200.0;
@@ -4934,6 +4949,51 @@ void energy_action_ladders() {
     }
 }
 
+// Copied anchor compositions from 2026-born-unavailable-states/inputs, reordered
+// CO2/MEA/water -> properties_support's water/MEA/CO2. EqIDs own the radial work.
+void born_parameter_columns() {
+    const std::array<std::vector<double>, 2> anchors = {{{0.8863734508600574, 0.07827110880066358, 3.8480681348098447e-08, 0.01818111244399814, 0.015766643324345936, 0.0003959814177106597, 0.0010068230563202352, 1.3460805650294977e-11, 4.841602761876763e-06},
+        {0.8448866085505489, 0.004900981383765356, 0.0002933071241251476, 0.07818889597821514, 0.029096076931579815, 0.03617530531138919, 0.006458693289371563, 2.1372510655078036e-09, 1.2929375400277957e-07}}};
+    for (std::size_t case_index = 0; case_index < anchors.size(); ++case_index)
+    for (const double c : {0.0, 1.0}) for (const double epsilon : {2.0, 8.0}) {
+        auto p = properties_support::nine_species();
+        p.born_c_shell = 1.0; p.born_c_dielectric = c;
+        p.ionic_region_relative_permittivity = epsilon;
+        const auto& x = anchors[case_index];
+        const epcsaft::HelmholtzModel model(p, {{epcsaft::ParameterFamily::BornCDielectric, {0}},
+            {epcsaft::ParameterFamily::IonicRegionRelativePermittivity, {0}}});
+        const double t = 313.15, rho = 45000.0;
+        const auto state = model.state(t, rho, x);
+        const auto derivatives = model.evaluate(t, 1.0 / rho, x, epcsaft::DerivativeOrder::Gradient);
+        double solvation = 0.0, total = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) { solvation += x[i] * p.solvation_factor[i]; total += x[i]; }
+        solvation /= total;
+        double shell_sum = 0.0, correction = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) if (p.charge_number[i]) {
+            const double z = p.charge_number[i], d = p.born_diameter_angstrom[i] * epcsaft::ANGSTROM_M;
+            const double outer = d * (1.0 + (solvation - 1.0) / std::abs(z));
+            shell_sum += x[i] * z * z / outer;
+            correction += x[i] * z * z * (1.0 / d - 1.0 / outer);
+        }
+        const double prefactor = -epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C
+            / (4.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M * epcsaft::BOLTZMANN_J_PER_K * t);
+        const std::array<double, 3> reference = {
+            prefactor * ((1.0 - 1.0 / state.bulk_relative_permittivity) * shell_sum + c * (1.0 - 1.0 / epsilon) * correction),
+            prefactor * (1.0 - 1.0 / epsilon) * correction,
+            prefactor * c * correction / (epsilon * epsilon)};
+        const std::array<double, 3> actual = {state.born, derivatives.gradient[2 + x.size()], derivatives.gradient[3 + x.size()]};
+        for (std::size_t column = 0; column < actual.size(); ++column) {
+            const auto id = std::to_string(case_index + 1) + "/" + std::to_string(c) + "/" + std::to_string(epsilon) + "/" + std::to_string(column);
+            const double atol = reference[column] == 0.0 ? 1e-12 : 0.0;
+            const bool ok = std::abs(actual[column] - reference[column]) <= atol + 1e-12 * std::abs(reference[column]);
+            CHECK(recording_support::compare(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
+                actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
+                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
+                atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column"));
+        }
+    }
+}
+
 namespace {
 using PO = epcsaft::PropertyObservable;
 using PD = epcsaft::PressureActionDirection;
@@ -5235,6 +5295,7 @@ void reference_limits() {
 }
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.properties.born-parameter", "Born_parameter_columns", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "born-parameter/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "BornParameter", "born-parameter/*:24"}, born_parameter_columns},
         {{"native.properties.reference-f8", "Reference_derivative_pure_identities", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F8/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F8", "F8/*:48"}, reference_f8, "F8"},
         {{"native.properties.reference-f9", "Reference_derivative_ionic_differences", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/partial/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "F9", "F9/partial/*:204"}, reference_f9, "F9"},
         {{"native.properties.reference-limits", "Reference_derivative_terminal_changes", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "F9/limit/*,F9/completed-change/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "ReferenceLimits"}, reference_limits, "ReferenceLimits"},
@@ -5248,7 +5309,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m7", "Parameter_derivative_and_helpers", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "parameter-gradient,packing-coefficient,phase-packing", "engine/tests/native/properties_checks.cpp", "properties_checks", "M7", "parameter-gradient:1,packing-coefficient:1,phase-packing:1"}, parameter_derivative_and_helpers},
         {{"native.properties.c2", "Core_C2_parameter_coordinates", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "CORE2", "c2-scalar-value/*,c2-falsifier,c2-association-gradient,c2-scaling", "engine/tests/native/properties_checks.cpp", "properties_checks", "C2", "c2-scalar-value/*:3,c2-falsifier:1,c2-association-gradient:1,c2-scaling:1"}, core_c2_parameter_coordinates},
         {{"native.properties.m8", "Density_and_reference", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "vapor-pressure/*,liquid-pressure/*,density-order/*,vapor-volume/*,liquid-volume/*,supercritical-pressure,supercritical-density,anchored-liquid,anchored-vapor,associating-pressure,nine-packing,reference-finite,activity-finite,reference-error,activity-scale", "engine/tests/native/properties_checks.cpp", "properties_checks", "M8", "vapor-pressure/*:2,liquid-pressure/*:2,density-order/*:2,vapor-volume/*:2,liquid-volume/*:2,supercritical-pressure:1,supercritical-density:1,anchored-liquid:1,anchored-vapor:1,associating-pressure:1,nine-packing:1,reference-finite:1,activity-finite:1,reference-error:1,activity-scale:1"}, density_and_reference},
-        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:2,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
+        {{"native.properties.p2", "Properties_P2_Bounded_Roots_and_Continuation", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "support-residual/*,support-hessian/*,support-floor/*,association-action/*,root-residual/*,root-convergence/*,root-metadata/*,root-coalescing/*,single-metadata/*,density-selection/*,anchor/*,anchor-invalid/*,fixed-pressure/*,loop-vapor/*,loop-liquid/*,loop-ambiguous/*,loop-action/*,fold-resolution/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P2", "support-residual/*:4,support-hessian/*:6,support-floor/*:2,association-action/*:3,root-residual/*:3,root-convergence/*:2,root-metadata/*:2,root-coalescing/*:1,single-metadata/*:1,density-selection/*:1,anchor/*:3,anchor-invalid/*:1,fixed-pressure/*:9,loop-vapor/*:13,loop-liquid/*:13,loop-ambiguous/*:13,loop-action/*:2,fold-resolution/*:1"}, properties_p2, "P2"},
         {{"native.properties.p3", "Properties_P3_Thermochemistry_and_References", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P3", "p3-form-value/*,p3-form-derivative/*,p3-form-derivative-refinement/*,p3-total/*,p3-boundary/*,p3-endpoint/*,p3-mixing/*,p3-availability/*,p3-reference/*,p3-reaction/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P3", "p3-form-value/*:25,p3-form-derivative/*:40,p3-form-derivative-refinement/*:10,p3-total/*:30,p3-boundary/*:6,p3-endpoint/*:50,p3-mixing/*:5,p3-availability/*:5,p3-reference/*:13,p3-reaction/*:35"}, properties_thermochemistry_p3, "P3"},
         {{"native.properties.p4", "Properties_P4_Directional_Actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "direct/*,pressure/*,supplemental/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "P4", "direct/*:90,pressure/*:90,supplemental/*:149"}, properties_p4, "P4"},
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},

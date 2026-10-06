@@ -230,7 +230,7 @@ void check_f2() {
     const auto active = set.active_parameters();
     CHECK(physical.size() == 7 && active.size() == 7);
     for (std::size_t r = 0; r < 7; ++r) {
-        const double truth_value = detail::family_values(parameters, active[r].family)[active[r].indices.front()];
+        const double truth_value = detail::family_values(parameters, active[r].family).first[active[r].indices.front()];
         const double ulp = 2.0 * EPS * std::max(std::abs(truth_value), std::abs(set.coordinates[r].origin));
         CHECK(agree("r1-f2/roundtrip/" + std::to_string(r), "theta", "native", physical[r], truth_value, ulp, 0.0,
                     fields({field("origin", set.coordinates[r].origin), field("scale", set.coordinates[r].scale),
@@ -241,7 +241,7 @@ void check_f2() {
     for (const auto& item : active) {
         const auto& lhs = detail::family_values(applied, item.family);
         const auto& rhs = detail::family_values(parameters, item.family);
-        identical = identical && lhs == rhs;
+        identical = identical && lhs.second == rhs.second && std::equal(lhs.first, lhs.first + lhs.second, rhs.first);
     }
     CHECK(truth("r1-f2/apply_identity", "applying the start reproduces every family array bit for bit", identical, "", "r1-f2"));
     // Bounds map through the same affine transform and are inclusive.
@@ -679,7 +679,7 @@ void check_affine_start_signed() {
     const auto p = coupled_lengths(3.2); const auto cs = coupled_coordinate();
     const auto v = cs.start(p); const auto mapped = cs.apply(p, v);
     for (const auto& target : cs.coordinates[0].targets) {
-        const double old = detail::family_values(p,target.family)[1], value = detail::family_values(mapped,target.family)[1];
+        const double old = detail::family_values(p,target.family).first[1], value = detail::family_values(mapped,target.family).first[1];
         CHECK(agree("r1-f2/coupled-roundtrip/" + std::to_string(static_cast<int>(target.family)), "diameter", "angstrom",
             value, old, 8*EPS*std::max(std::abs(old),std::abs(value)), 0, field("v",v),
             "coefficient-first inversion preserves all three lengths", "r1-f2"));
@@ -762,7 +762,7 @@ void check_coupled_recovery() {
         summary(result),"one scalar recovers the manufactured diameter","affine-recovery"));
     for (const auto family : {ParameterFamily::PackingDiameter,ParameterFamily::DebyeHuckelDiameter})
         CHECK(agree("affine-recovery/"+std::to_string(static_cast<int>(family)), "proportional_diameter", "angstrom",
-            detail::family_values(result.parameters,family)[1],0.88*3.2,0.88e-6,0,"","proportional lengths recover","affine-recovery"));
+            detail::family_values(result.parameters,family).first[1],0.88*3.2,0.88e-6,0,"","proportional lengths recover","affine-recovery"));
     CHECK(agree("affine-recovery/stored-hydration", "energy_error", "J/mol",
         *predict(HelmholtzModel(result.parameters),request.holds[0].reference).value-request.holds[0].reference.observed,
         0,1e-6,0,"","stored Born value holds hydration without resolving","affine-recovery"));
@@ -1152,7 +1152,7 @@ void check_cp_derivatives() {
             const auto& active = c.active[k];
             const auto closure = [&](double shift) {
                 auto p = c.parameters;
-                for (const auto index : active.indices) detail::family_values(p, active.family)[index] += shift;
+                for (const auto index : active.indices) detail::family_values(p, active.family).first[index] += shift;
                 return *predict(HelmholtzModel(p, {}, thermal), item).value;
             };
             const auto rungs = ladder(closure, c.steps[k]);
@@ -1235,7 +1235,7 @@ void check_cp_recovery() {
     }
     for (const auto& active : request.coordinates.active_parameters())
         for (const auto index : active.indices)
-            detail::family_values(request.parameters, active.family)[index] *=
+            detail::family_values(request.parameters, active.family).first[index] *=
                 active.family == ParameterFamily::AssociationVolume ? 1.05 : 1.02;
     const auto result = fit(request);
     const auto inputs = fields({summary(result), field("singular_values", result.covariance.singular_values),

@@ -77,6 +77,40 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-05, #240 straight physical-parameter continuation, measured against
+  integrated main `8f5f5685`: **96 gross runtime lines added, 51 removed, +45 net**.
+  Aggregate is **22,436 → 22,481**, with **1,519** lines below the recorded
+  **24,000** envelope. No numeric ceiling changes. The sprint pause below
+  applies; counts and duplication remain review subjects.
+
+  | Layer | Base | Gross added | Removed | Net | Final |
+  |---|---:|---:|---:|---:|---:|
+  | Core | 917 | 2 | 2 | 0 | 917 |
+  | Contributions | 1547 | 0 | 0 | 0 | 1547 |
+  | Properties | 4788 | 28 | 36 | -8 | 4780 |
+  | Equilibrium | 7467 | 38 | 5 | +33 | 7500 |
+  | Parameter regression | 2432 | 9 | 6 | +3 | 2435 |
+  | Surface | 532 | 0 | 0 | 0 | 532 |
+  | Bindings | 1975 | 5 | 1 | +4 | 1979 |
+  | Python | 2778 | 14 | 1 | +13 | 2791 |
+  | Aggregate | 22436 | 96 | 51 | +45 | 22481 |
+
+  The existing declared-branch controller retains predictor, corrector, retry,
+  topology and anchored-density checks. Trial models use immutable base records
+  and fixed thermochemistry; the existing exact row series supplies the parameter
+  tangent. One pointer/size view replaces the vector-only family map, including
+  tape preparation and parameter-fitting callers. Shared coordinate admission
+  validates the model once through the affine start; bounds-checked indexing,
+  finite and proportional tied-value checks remain. Python declares global Born
+  coordinates as affine targets without component names;
+  native code owns their physical chart and exact map. Above-soft counts retain
+  these exact chains and physical-value transport, not a second solver. Gross growth is below the 270-line task target.
+  Tests, analysis input/output readers, derivative verification and retained
+  tables are outside runtime counts and contain no displaced iterative method.
+  The [numerical qualification](../../analyses/2026-born-unavailable-states/results/native-parameter/summary.md)
+  records Born columns, full actions, manufactured exchange, historical-point
+  agreement, finite branch limits and unchanged declared-solve work.
+
 Entries marked **inherited** preserve measurements and rationale from
 [the `a0adb1cd` architecture comments](https://github.com/tannerpolley/ePC-SAFT/blob/a0adb1cd5ff5f4ee32b3608c78a02c756b06ebd9/ARCHITECTURE.yaml#L31).
 Their historical approval assertions were not independently reverified in
