@@ -345,11 +345,6 @@ public:
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    double phase_packing_fraction(
-        double temperature,
-        const std::vector<double>& amounts,
-        double volume
-    ) const;
     double molar_density_upper_bound(
         double temperature,
         const std::vector<double>& mole_fractions

@@ -66,26 +66,6 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
     const ThermochemistryRecord&, double temperature, double molar_density,
     const std::vector<double>& mole_fractions
 );
-struct DensityStandardState final { double gibbs = 0.0, enthalpy = 0.0, entropy = 0.0; };
-DensityStandardState pressure_to_density_standard(
-    double gibbs, double enthalpy, double entropy, double temperature,
-    double pressure, double density
-);
-
-struct ActivitySet final { std::vector<double> values; std::string standard_state_id; };
-ActivitySet direct_activities(const std::vector<double>&, const std::string& standard_state_id);
-ActivitySet mole_fraction_activities(
-    const std::vector<double>&, const std::vector<double>&, const std::string& standard_state_id
-);
-ActivitySet molarity_activities(
-    const std::vector<double>&, double molar_density, const std::vector<double>&,
-    double standard_concentration_mol_per_m3, const std::string& standard_state_id
-);
-ActivitySet molality_activities(
-    const std::vector<double>&, const std::vector<double>& amounts_mol, double solvent_mass_kg,
-    double standard_molality_mol_per_kg, const std::string& standard_state_id
-);
-
 struct ReactionLogPolynomial final {
     double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
     double reference_temperature = 0.0, temperature_min = 0.0, temperature_max = 0.0;
@@ -118,34 +98,5 @@ std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
     const ThermochemistryRecord&, const std::vector<double>& stoichiometry, double temperature
 );
 
-double reaction_ln_quotient(
-    const std::vector<double>&, const ActivitySet&, const std::vector<int>&,
-    const ReactionLogPolynomial& correlation
-);
 ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial&, double temperature);
-ReactionLogPolynomial normalize_legacy_reaction_correlation(
-    double a_old, double b, double c, double d, double reference_temperature,
-    double temperature_min, double temperature_max, const std::string& standard_state_id
-);
-ReactionLogPolynomial normalize_log10_reciprocal_correlation(
-    double a, double b, double c, double temperature_min, double temperature_max,
-    const std::string& standard_state_id, double reference_temperature
-);
-ReactionProperties reaction_pressure_to_density(
-    const ReactionProperties&, const std::vector<double>& stoichiometry,
-    const std::string& density_standard_state_id, double temperature, double pressure, double density
-);
-// Exact polynomial image of a standard-state change. Per species, old-minus-new standard
-// enthalpy, entropy, heat capacity and heat-capacity slope at T0 give
-// Delta g(T)/(RT) = C0/T + C1 + C2 ln(T/T0) + C3 T, which lands in the same ln K family;
-// zero heat-capacity terms reproduce the constant-enthalpy shift exactly.
-ReactionLogPolynomial reaction_standard_state_shift(
-    const ReactionLogPolynomial&, const std::vector<double>& stoichiometry,
-    const std::vector<double>& delta_enthalpy_j_per_mol,
-    const std::vector<double>& delta_entropy_j_per_mol_k,
-    const std::vector<double>& delta_heat_capacity_j_per_mol_k,
-    const std::vector<double>& delta_heat_capacity_slope_j_per_mol_k2,
-    double reference_temperature, const std::string& new_standard_state_id
-);
-
 }  // namespace epcsaft

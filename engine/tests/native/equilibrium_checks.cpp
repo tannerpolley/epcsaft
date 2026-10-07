@@ -207,9 +207,8 @@ double moderate_isomerisation_a() {
     return std::log(2.0) - (1200.0 / 350.0 + 0.4 * std::log(350.0) + 0.002 * 350.0);
 }
 epcsaft::ReactionLogPolynomial legacy_isomerisation(double sign, double a) {
-    return epcsaft::normalize_legacy_reaction_correlation(
-        sign * a, sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
-        epcsaft::equilibrium::EOS_STANDARD_STATE_ID);
+    return {sign * a + sign * 0.4 * std::log(300.0), sign * 1200.0, sign * 0.4, sign * 0.002, 300.0, 250.0, 450.0,
+        epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
 }
 
 void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compiled,
@@ -2904,17 +2903,14 @@ void check_e2_thermal() {
         pressure_law.a - std::log(R * tref * 1.0 / 1.0e5), pressure_law.b, pressure_law.c - 1.0, 0.0,
         tref, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
     const auto p3_pressure = epcsaft::evaluate_reaction_properties(pressure_law, 350.0);
-    const auto p3_density = epcsaft::reaction_pressure_to_density(
-        p3_pressure, {-1.0, 2.0}, epcsaft::equilibrium::EOS_STANDARD_STATE_ID, 350.0, 1.0e5, 1.0);
-    const auto p3_preconverted = epcsaft::evaluate_reaction_properties(density_law, 350.0);
+    const auto p3_density = epcsaft::evaluate_reaction_properties(density_law, 350.0);
     const double cp_density = R * (2.0 * 350.0 * p3_density.derivative + 350.0 * 350.0 * p3_density.second_derivative);
     const auto p3_inputs = recording_support::fields({recording_support::field("T", 350.0),
         recording_support::field("a_rho", density_law.a), recording_support::field("b_rho", density_law.b),
-        recording_support::field("c_rho", density_law.c), recording_support::field("ln_K_preconverted", p3_preconverted.ln_k)});
+        recording_support::field("c_rho", density_law.c)});
     recording_support::compare("e2-2/a-to-2b/ln_K_rho", "ln_K", "1", p3_density.ln_k, 3.5505788308151547, p3_inputs,
-        "Relationship", "standard-state-conversion", "P3 pressure-to-density conversion reproduces the preconverted correlation",
-        "strict_absolute", 1.0e-12, 0.0, std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12
-            && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12,
+        "Relationship", "standard-state-conversion", "preconverted density-basis correlation",
+        "strict_absolute", 1.0e-12, 0.0, std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12,
         "e2-2-thermal", "ln_K_rho", "\\ln K_\\rho", "T", "\\ln K_\\rho=3.5505788308151547", "case");
     recording_support::compare("e2-2/a-to-2b/dh_rho", "reaction_enthalpy", "J/mol", p3_density.enthalpy, -2410.061916353634, p3_inputs,
         "Relationship", "standard-state-conversion", "density-basis reaction enthalpy", "strict_absolute", 1.0e-9, 0.0,
@@ -2922,7 +2918,7 @@ void check_e2_thermal() {
     recording_support::compare("e2-2/a-to-2b/dcp_rho", "reaction_heat_capacity", "J/(mol K)", cp_density, 1.6855373818467605, p3_inputs,
         "Relationship", "standard-state-conversion", "density-basis reaction heat capacity from P3 derivatives", "strict_absolute", 1.0e-12, 0.0,
         std::abs(cp_density - 1.6855373818467605) <= 1.0e-12, "e2-2-thermal", "dcp_rho", "\\Delta c_{p,\\rho}", "T", "\\Delta c_{p,\\rho}", "case");
-    CHECK(std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12 && std::abs(p3_preconverted.ln_k - p3_density.ln_k) <= 1.0e-12);
+    CHECK(std::abs(p3_density.ln_k - 3.5505788308151547) <= 1.0e-12);
     CHECK(std::abs(p3_density.enthalpy + 2410.061916353634) <= 1.0e-9 && std::abs(cp_density - 1.6855373818467605) <= 1.0e-12);
     epcsaft::HelmholtzModel thermal(identical_ethane_pair(), {}, species_record(30.0, 20.0));
     epcsaft::HelmholtzModel ethane(properties_support::ethane());

@@ -1267,69 +1267,15 @@ namespace s2 {
 constexpr double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
 const std::vector<double> NU = {-1.0, 2.0};  // A -> 2B, products positive, dnu = +1
 const std::array<double, 3> GRID = {280.0, 350.0, 420.0};
-const char* const QUANTITY[5] = {"ln_K", "dh_over_RT", "T_dlnK_dT", "T2_d2lnK_dT2", "T3_d3lnK_dT3"};
-
-// Dimensionless O(1) values, so the absolute floor of the criterion cannot hide a derivative defect.
-std::array<double, 5> scaled(const epcsaft::ReactionProperties& p, double t) {
-    return {p.ln_k, p.enthalpy / (R * t), t * p.derivative, t * t * p.second_derivative,
-            t * t * t * p.third_derivative};
-}
-
-// Largest relative defect over the five quantities; every row is recorded and asserted unless `control`.
-double compare_image(const std::string& id, double t, const epcsaft::ReactionProperties& converted,
-                     const epcsaft::ReactionLogPolynomial& image, const std::string& source, const char* claim,
-                     bool control = false) {
-    const auto value = scaled(converted, t), expected = scaled(epcsaft::evaluate_reaction_properties(image, t), t);
-    const auto inputs = recording_support::fields({source, recording_support::field("T", t),
-        recording_support::field("a_image", image.a), recording_support::field("b_image", image.b),
-        recording_support::field("c_image", image.c), recording_support::field("d_image", image.d)});
-    double worst = 0.0;
-    for (std::size_t k = 0; k < 5; ++k) {
-        worst = std::max(worst, std::abs(value[k] - expected[k]) / std::max(1.0, std::abs(expected[k])));
-        if (control) continue;
-        CHECK(s1::agrees(id + "/" + recording_support::number(t) + "/" + QUANTITY[k], QUANTITY[k], "1",
-                         value[k], expected[k], claim, inputs));
-    }
-    return worst;
-}
 
 void check_reference_mapping() {
     using epcsaft::equilibrium::EOS_STANDARD_STATE_ID;
     const double p0 = 1.0e5, tref = 300.0, dnu = NU[0] + NU[1];
     const epcsaft::ReactionLogPolynomial source{-4.0, 1500.0, 1.2, 0.003, tref, 250.0, 450.0, "manufactured-pressure-basis-P0"};
-    // G1: ideal-gas pressure basis -> EOS density basis (rho0 = 1 mol/m^3) has an exact polynomial image.
+    // The EOS density-basis (rho0 = 1 mol/m^3) image of the pressure-basis source.
     const epcsaft::ReactionLogPolynomial density{source.a - dnu * std::log(R * tref * 1.0 / p0), source.b,
         source.c - dnu, source.d, tref, 250.0, 450.0, EOS_STANDARD_STATE_ID};
-    // G2: old basis b -> new basis c with constant h and s: DH, DS = sum nu (b - c) give a - DS/R, b + DH/R.
-    const std::vector<double> h_old = {1000.0, 3000.0}, s_old = {10.0, 30.0}, h_new = {-500.0, 800.0}, s_new = {4.0, 12.0};
-    double dh = 0.0, ds = 0.0;
-    for (std::size_t i = 0; i < 2; ++i) { dh += NU[i] * (h_old[i] - h_new[i]); ds += NU[i] * (s_old[i] - s_new[i]); }
-    const epcsaft::ReactionLogPolynomial shifted{source.a - ds / R, source.b + dh / R, source.c, source.d,
-        tref, 250.0, 450.0, "manufactured-shifted-basis"};
-    CHECK(std::abs(dnu) >= 1.0 && std::abs(dh) >= 1.0e3);
-    const auto stated = recording_support::fields({recording_support::field("a_source", source.a),
-        recording_support::field("b_source", source.b), recording_support::field("c_source", source.c),
-        recording_support::field("d_source", source.d), recording_support::field("T_ref", tref)});
-    const auto pressure = recording_support::fields({stated, recording_support::field("P0", p0),
-        recording_support::field("rho0", 1.0), recording_support::field("dnu", dnu)});
-    const auto shift = recording_support::fields({stated, recording_support::field("DH", dh), recording_support::field("DS", ds)});
     for (const double t : GRID) {
-        const auto at_t = epcsaft::evaluate_reaction_properties(source, t);
-        compare_image("s2-g1", t, epcsaft::reaction_pressure_to_density(at_t, NU, EOS_STANDARD_STATE_ID, t, p0, 1.0),
-                      density, pressure, "pressure-to-density conversion equals its polynomial image through third order");
-        std::vector<double> dh_i(2), ds_i(2), minus_dh_i(2), minus_ds_i(2);
-        for (std::size_t i = 0; i < 2; ++i) {
-            dh_i[i] = h_old[i] - h_new[i]; ds_i[i] = s_old[i] - s_new[i]; minus_dh_i[i] = -dh_i[i]; minus_ds_i[i] = -ds_i[i];
-        }
-        const std::vector<double> zero(2, 0.0);
-        compare_image("s2-g2", t, epcsaft::evaluate_reaction_properties(epcsaft::reaction_standard_state_shift(
-            source, NU, dh_i, ds_i, zero, zero, t, shifted.standard_state_id), t), shifted, shift,
-            "constant-enthalpy shift equals its polynomial image through third order");
-        const double exchanged = compare_image("s2-g2n", t, epcsaft::evaluate_reaction_properties(epcsaft::reaction_standard_state_shift(
-            source, NU, minus_dh_i, minus_ds_i, zero, zero, t, shifted.standard_state_id), t), shifted, shift, "", true);
-        CHECK(e2::record_bool(("s2-g2n/" + recording_support::number(t)).c_str(), "s2", "exchanged old and new bases miss the image",
-            exchanged > 1.0e-6, recording_support::fields({shift, recording_support::field("T", t), recording_support::field("relative_defect", exchanged)})));
-
         // G3: a correlated target carries the series of -R T ln K(T); a constant K equal to K(T) does not.
         const double ln_k = density.a + density.b / t + density.c * std::log(t / tref) + density.d * t;
         const double l1 = -density.b / (t * t) + density.c / t + density.d;
@@ -1375,38 +1321,6 @@ void check_reference_mapping() {
     };
     CHECK(rejected(3, "meter", "unit meter for sigma_constant"));  // an unlisted unit
     CHECK(rejected(4, "angstrom", "unit angstrom for dispersion_energy_over_k"));  // a listed unit of the wrong dimension
-    // G5 (#84): affine heat-capacity shift. Old-minus-new species standards at T0 = 320 K (not the source Tref, so the ln(Tref/T0) recentring is live) contract with NU
-    // to Delta h0 = 1200 J/mol, Delta s0 = 3 J/(mol K), Delta cp(T) = 20 + 0.1 (T - 320) J/(mol K). The
-    // independent references integrate Delta cp: Delta h = Delta h0 + 20 dT + 0.05 dT^2, Delta s = Delta s0
-    // + (20 - 0.1 T0) ln(T/T0) + 0.1 dT = Delta s0 - 12 ln(T/T0) + 0.1 dT, Delta g = Delta h - T Delta s, and the shift of L = ln K obeys
-    // dL = Delta g/(RT), dL1 = -Delta h/(RT^2), dL2 = 2 Delta h/(RT^3) - Delta cp/(RT^2),
-    // dL3 = -6 Delta h/(RT^4) + 4 Delta cp/(RT^3) - Delta cp1/(RT^2). The constant-enthalpy image must miss dL2.
-    const std::vector<double> cp_dh = {0.0, 600.0}, cp_ds = {0.0, 1.5}, cp_dcp = {0.0, 10.0}, cp_dcp1 = {0.0, 0.05}, zero2(2, 0.0);
-    const auto with_cp = epcsaft::reaction_standard_state_shift(source, NU, cp_dh, cp_ds, cp_dcp, cp_dcp1, 320.0, "manufactured-cp-basis");
-    const auto without_cp = epcsaft::reaction_standard_state_shift(source, NU, cp_dh, cp_ds, zero2, zero2, 320.0, "manufactured-cp-basis");
-    for (const double t : {315.0, 350.0, 360.0}) {
-        const double dt = t - 320.0, dh = 1200.0 + 20.0 * dt + 0.05 * dt * dt, dcp = 20.0 + 0.1 * dt;
-        const double ds = 3.0 - 12.0 * std::log(t / 320.0) + 0.1 * dt, dg = dh - t * ds, rt = R * t;
-        const double expected[5] = {dg / rt, -dh / (rt * t), 2.0 * dh / (rt * t * t) - dcp / (rt * t),
-                                    -6.0 * dh / (rt * t * t * t) + 4.0 * dcp / (rt * t * t) - 0.1 / (rt * t), -dh};
-        const auto base = epcsaft::evaluate_reaction_properties(source, t);
-        const auto full = epcsaft::evaluate_reaction_properties(with_cp, t);
-        const auto flat = epcsaft::evaluate_reaction_properties(without_cp, t);
-        const double actual[5] = {full.ln_k - base.ln_k, full.derivative - base.derivative,
-                                  full.second_derivative - base.second_derivative,
-                                  full.third_derivative - base.third_derivative, full.enthalpy - base.enthalpy};
-        const char* names[5] = {"dL", "dL1", "dL2", "dL3", "dh"};
-        const auto cp_inputs = recording_support::fields({recording_support::field("T", t), recording_support::field("T0", 320.0),
-            recording_support::field("Delta_h0", 1200.0), recording_support::field("Delta_s0", 3.0),
-            recording_support::field("Delta_cp0", 20.0), recording_support::field("Delta_cp1", 0.1)});
-        for (std::size_t k = 0; k < 5; ++k)
-            CHECK(s1::agrees("s2-g5/" + recording_support::number(t) + "/" + names[k], names[k], k == 4 ? "J/mol" : "1",
-                             actual[k], expected[k], "affine heat-capacity shift reproduces the independent Gibbs and enthalpy identities through third order", cp_inputs));
-        const double omitted = std::abs((flat.second_derivative - base.second_derivative) - expected[2]) / std::abs(expected[2]);
-        CHECK(e2::record_bool(("s2-g5n/" + recording_support::number(t)).c_str(), "s2",
-            "the constant-enthalpy image misses the second-derivative identity by Delta cp/(RT^2)", omitted > 1.0e-3,
-            recording_support::fields({cp_inputs, recording_support::field("relative_defect", omitted)})));
-    }
 }
 
 }  // namespace s2
@@ -1472,6 +1386,6 @@ int main(int argc, char** argv) {
         {{"native.specification.e2-charge", "Specification_E2_charge", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-4"}, check_e2_charge},
         {{"native.specification.s1-document", "Specification_S1_document", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f1/*,s1-f2/*,s1-f3/*,s1-f2n/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-document"}, s1::check_document},
         {{"native.specification.s1-feed", "Specification_S1_feed", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f5/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-feed"}, s1::check_feed},
-        {{"native.specification.s2-reference", "Specification_S2_reference", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S2", "s2-g1/*,s2-g2/*,s2-g2n/*,s2-g3/*,s2-g3n/*,s2-g4/*,s2-g5/*,s2-g5n/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S2-reference"}, s2::check_reference_mapping},
+        {{"native.specification.s2-reference", "Specification_S2_reference", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S2", "s2-g3/*,s2-g3n/*,s2-g4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S2-reference"}, s2::check_reference_mapping},
     });
 }

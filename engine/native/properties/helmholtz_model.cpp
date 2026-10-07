@@ -1881,22 +1881,6 @@ double HelmholtzModel::packing_fraction_coefficient(
     return packing_fraction_from_geometry(1.0, mole_fractions, parameters_, diameter);
 }
 
-double HelmholtzModel::phase_packing_fraction(
-    double temperature,
-    const std::vector<double>& amounts,
-    double volume
-) const {
-    validate_point(temperature, volume, amounts);
-    double total = 0.0;
-    for (double amount : amounts) total += amount;
-    std::vector<double> composition;
-    composition.reserve(amounts.size());
-    for (double amount : amounts) composition.push_back(amount / total);
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    return packing_fraction_from_geometry(total / volume, composition, parameters_, diameter);
-}
-
 double HelmholtzModel::molar_density_upper_bound(
     double temperature,
     const std::vector<double>& mole_fractions
