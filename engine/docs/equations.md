@@ -1650,7 +1650,7 @@ $$
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
 - Description: Charge-neutral reaction contraction with a declared neutral solvent and optional per-species pure-liquid, pure-vapor or infinite-dilution references. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and a native positive-slope pressure root on the declared side of the pure isotherm's mechanical loop; a single root on an isotherm whose finite ALG-DENSITY scan finds no loop (in practice above the EOS critical temperature) serves either declared branch. Unsuperscripted C_r means C_r^b under the declared map. Dilute contributions use the same finite terminal estimate; both last changes qualify the final mixed contraction, without bounding infinite-dilution bias. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
+- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and a native positive-slope pressure root on the declared side of the pure isotherm's mechanical loop; a single root on an isotherm whose finite ALG-DENSITY scan finds no loop (in practice above the EOS critical temperature) serves either declared branch. Unsuperscripted C_r means C_r^b under the declared map. Dilute contributions use the same finite terminal estimate; the change into the 1e-14 mol/kg value qualifies the final mixed contraction, without bounding infinite-dilution bias. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
@@ -1830,7 +1830,7 @@ $$
 - Status: Exact derivation
 - Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction; issue #225, sections 2–3 and F8/F9
 - Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. No repeated parameter derivatives or dilution-composition derivatives are consumed.
-- Change note: Both consecutive changes at 1e-10, 1e-12 and 1e-14 mol/kg must satisfy the existing heat-capacity change criterion. This observed convergence does not bound infinite-dilution bias. Columns are independently unavailable when their own calculation or admission fails. Earlier lower-slope admission remains with its existing owner.
+- Change note: The 1e-12 to 1e-14 mol/kg change must satisfy the existing heat-capacity change criterion; both consecutive changes are reported. This observed convergence does not bound infinite-dilution bias. Columns are independently unavailable when their own calculation or admission fails. Earlier lower-slope admission remains with its existing owner.
 
 $$
 C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
@@ -1844,7 +1844,7 @@ $$
 - Section: Electrolyte reference states and reported activities
 - Status: Implementation convention
 - Source: Finite terminal-change diagnostic for the declared reference molality sequence.
-- Description: Maximum observed terminal change in log fugacity between the last two molality points.
+- Description: Change in the returned reference quantity between its last two molality points: for ion references the maximum change in log fugacity shown below, for neutral references the change into the returned contraction or column.
 - Change note: Convergence diagnostic; neither an error bound nor an estimate of actual bias without additional convergence assumptions.
 
 $$

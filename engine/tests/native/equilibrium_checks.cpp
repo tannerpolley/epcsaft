@@ -966,6 +966,16 @@ void check_s2() {
             }
         }
     }
+    // #333: at solvent permittivity 30 the 1e-10 to 1e-12 mol/kg NaCl contraction change
+    // exceeds 5e-5; the change into the returned 1e-14 value admits it, as the ion witness does.
+    {
+        auto parameters = properties_support::aqueous_electrolyte();
+        parameters.relative_permittivity[0] = 30.0;
+        const auto low = epcsaft::reaction_reference(epcsaft::HelmholtzModel(parameters),
+            298.15, 1.0e5, ratios({0.0, 1.0, 1.0}), {-1.0, 1.0, 1.0}, reference);
+        CHECK(low.status == epcsaft::NeutralReferenceStatus::Available && low.terminal_contraction
+              && *low.observed_terminal_change <= 5.0e-5);
+    }
     // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
     // reaction H2O = MEA: d2C/dT2|_P against the centered difference of dC/dT|_P; floor:
     // truncation step^2 |d4C/dT4|/6 and slope roundoff/step, both below 1e-7 relative.
