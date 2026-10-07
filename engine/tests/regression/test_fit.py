@@ -135,6 +135,26 @@ def test_point_reader_takes_the_fit_thermochemistry(evidence: Any) -> None:
     same(evidence, "point-reader/total-cp", read.predictions[0], fitted.predictions[0], atol=0.0, rtol=1e-10, T_K=300.0, P_Pa=1.0e5)
 
 
+def test_addition_enthalpy_composes_its_endpoint_states(evidence: Any) -> None:
+    """A nonreacting addition row equals (N_f h_f - N_i h_i)/n_add - h_feed read from the public states."""
+    p = parameters((ETHANE, (30.07, 1.6069, 3.5206, 220.0)), pairs=[("k_ij", (0, 1), 0.0)])
+    model = Mixture(p, thermochemistry=record(p3_forms()["polynomial"], p3_forms()["polynomial"]))
+    T, P, n = 260.0, 3.0e6, 0.2
+    initial, final = {"s0": 2.0, "s1": 0.2}, {"s0": 2.0 + n, "s1": 0.2}
+    start, end = (Problem(phases=[Phase("L", kind="liquid")], T=T, P=P, feed=Amounts(feed)) for feed in (initial, final))
+    row = regression.addition_enthalpy(p, start, end, {"s0": 1.0}, n, T, 1.0e5, phase="vapor", observed=0.0, form="difference", scale=1.0)
+
+    def enthalpy(feed: dict[str, float], pressure: float, phase: str) -> float:
+        total = sum(feed.values())
+        molar = model.state(T, P=pressure, x=[feed["s0"] / total, feed["s1"] / total], phase=phase).total_enthalpy
+        assert molar is not None
+        return total * molar
+
+    reference = (enthalpy(final, P, "liquid") - enthalpy(initial, P, "liquid")) / n - enthalpy({"s0": 1.0, "s1": 0.0}, 1.0e5, "vapor")
+    same(evidence, "addition-enthalpy/composed", regression.predict(model, row).value, reference, atol=0.0, rtol=1e-10,
+         T_K=T, P_Pa=P, n_add_mol=n)
+
+
 def test_name_mapping_and_tie_map() -> None:
     """Names resolve to the owner's slot convention; ties map physical rows to optimizer columns."""
     p = associating_binary()
