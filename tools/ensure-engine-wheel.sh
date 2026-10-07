@@ -8,13 +8,15 @@ cd "$repo_root"
 # shell selects the same cache key.
 export LC_ALL=C
 
-# nproc --all: plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
-build_jobs="${EPCSAFT_BUILD_JOBS:-$(nproc --all)}"
+# Four jobs: a cold build peaks at 4.2 GiB (#319). The cap is the CPUs this process
+# may use; plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
+build_jobs="${EPCSAFT_BUILD_JOBS:-4}"
 if [[ ! "$build_jobs" =~ ^[1-9][0-9]*$ ]]; then
     echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2
     exit 2
 fi
-((build_jobs <= $(nproc --all))) || build_jobs="$(nproc --all)"
+available_cpus="$(env -u OMP_NUM_THREADS nproc)"
+((build_jobs <= available_cpus)) || build_jobs="$available_cpus"
 
 prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
 if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
@@ -76,7 +78,7 @@ highs_library="$highs_prefix/build/highs/libhighs.a"
 mkdir -p "$(dirname "$highs_prefix")"
 exec {highs_lock_fd}>"$highs_prefix.lock"
 flock "$highs_lock_fd"
-if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" ]]; then
+if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" || ! -f "$highs_library" ]]; then
     rm -rf -- "$highs_prefix"
     meson subprojects download --sourcedir engine highs >/dev/null
     mkdir -p "$highs_prefix/pkgconfig"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Restore or rebuild main's wheel in the main checkout, compare its key-solve work with
 # the previous build/wheels/main-current/, and replace main-current with it (#319).
+# An unchanged wheel is left in place; a first run copies it without a comparison.
 # Run as: tools/heavy tools/refresh-main-wheel
 set -euo pipefail
 cd "$(git -C "$(dirname "${BASH_SOURCE[0]}")" worktree list --porcelain | sed -n '1s/^worktree //p')"
@@ -11,21 +12,33 @@ commit="$(git rev-parse --short=8 HEAD)"
 wheel="$(find build/environment-wheel -maxdepth 1 -name 'epcsaft-*.whl')"
 current=build/wheels/main-current
 previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
-out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
-tools/time-key-solves "${previous:-$wheel}" "$wheel" --pairs 1 --out "$out"
-# The previous wheel stays with the comparison that used it.
-[[ -z "$previous" ]] || mv "$current" "$out/previous-main-current"
+sha="$(sha256sum "$wheel" | cut -d ' ' -f 1)"
+if [[ -n "$previous" && "$(sha256sum "$previous" | cut -d ' ' -f 1)" == "$sha" ]]; then
+    echo "main-current unchanged: main $commit builds the same wheel, sha256 $sha"
+    exit 0
+fi
+out=""
+if [[ -n "$previous" ]]; then
+    out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
+    tools/time-key-solves "$previous" "$wheel" --pairs 1 --out "$out"
+    # The previous wheel stays with the comparison that used it.
+    mv "$current" "$out/previous-main-current"
+fi
 mkdir -p "$current"
 cp "$wheel" "$current/"
-.venv/bin/python - "$out/summary.json" "$commit" >"$current/README" <<'PY'
+.venv/bin/python - "$out" "$commit" "$sha" >"$current/README" <<'PY'
 import json, sys
-summary = json.load(open(sys.argv[1]))
-a, b = summary["wheels"]["A"], summary["wheels"]["B"]
-print(f"Wheel built from main {sys.argv[2]}, sha256 {b['sha256']}.")
+out, commit, sha = sys.argv[1:]
+print(f"Wheel built from main {commit}, sha256 {sha}.")
+if not out:
+    print("No previous main-current wheel; key-solve work not compared.")
+    raise SystemExit
+summary = json.load(open(f"{out}/summary.json"))
+a = summary["wheels"]["A"]
 print(f"Key-solve work (iterations/evaluations/Hessian calls) from time-key-solves --pairs 1 against sha256 {a['sha256']}:")
 for case, row in summary["cases"].items():
     note = "identical" if row["work_identical"] else f"WORK DIFFERENCE from {'/'.join(map(str, row['work_A'].values()))}"
     print(f"- {case}: {'/'.join(map(str, row['work_B'].values()))} ({note}; max relative state difference {row['max_relative_state_difference']:.3g})")
-print(f"Evidence: {sys.argv[1].rsplit('/', 1)[0]}/")
+print(f"Evidence: {out}/")
 PY
 cat "$current/README"

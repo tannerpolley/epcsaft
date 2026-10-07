@@ -100,8 +100,8 @@ installing the wheel; selected Engine checks run setup first.
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence. Parameter-fitting checks join the gate when that capability exists.
-`check-affected.sh` runs the Explicit equilibrium cases (the binary128 reactive
-caloric oracles and the envelope traces) only when their code changes; request them with
+`check-affected.sh` runs the Explicit equilibrium cases (16 binary128 reactive-caloric
+and reactive-cp cases and 2 envelope traces) only when their code changes; request them with
 `tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*'`.
 
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
