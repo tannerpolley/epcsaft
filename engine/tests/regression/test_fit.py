@@ -127,8 +127,7 @@ def test_point_reader_takes_the_fit_thermochemistry(evidence: Any) -> None:
     p, thermal = parameters((ETHANE,)), record(p3_forms()["polynomial"])
     row = regression.isobaric_heat_capacity(p, 300.0, 1.0e5, {"s0": 1.0}, phase="vapor", observed=30.5, form="log_ratio")
     chart = [regression.coordinate(p, [("dispersion_energy_over_k", "s0", 1)], origin=191.42, scale=10.0)]
-    controls = regression.FitControls()
-    controls.maximum_iterations, controls.maximum_elapsed_time_seconds = 2, 60.0
+    controls = regression.FitControls(maximum_iterations=2, maximum_elapsed_time_seconds=60.0)
     fitted = regression.fit(p, chart, [row], thermochemistry=thermal, controls=controls)
     assert fitted.usable
     read = _core.evaluate_observations(p._native, chart, fitted.optimizer, [], [row], thermochemistry=thermal)
@@ -224,8 +223,7 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     overflowed = regression.fit(pe, epsilon, steep, controls=budget())
     assert overflowed.status == "initial_evaluation_failed" and not overflowed.usable and overflowed.initial_cost == 0.0
     assert [(f.observation, f.status, f.message) for f in overflowed.failures] == [(1, regression.ObservationStatus.Nonfinite, "accumulated weighted cost not finite")]
-    one = regression.FitControls()
-    one.maximum_iterations = 1
+    one = regression.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=600.0)
     unfinished = regression.fit(p, coordinates(p), observations[:5], controls=one)
     assert unfinished.status == "limit_reached" and unfinished.usable and unfinished.covariance.status == "not_converged"
     assert unfinished.covariance.rank == 2 and unfinished.covariance.optimizer == [] and unfinished.covariance.variance_factor is None
@@ -313,10 +311,8 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     ]
     # Manufacture values from the chart already evaluated above; its hold is solved.
     observations = _core.observations_at(chart.parameters, [], [], [], templates, [0] * 6)
-    controls = regression.FitControls()
-    controls.function_tolerance = 1e-15
-    controls.gradient_tolerance = 1e-14
-    controls.parameter_tolerance = 1e-14
+    controls = regression.FitControls(maximum_iterations=100, maximum_elapsed_time_seconds=600.0,
+                                      function_tolerance=1e-15, gradient_tolerance=1e-14, parameter_tolerance=1e-14)
     result = regression.fit(
         p,
         cs,

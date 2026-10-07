@@ -26,7 +26,7 @@ roadmap and renders the local project map, ordinary check reports, and retained
 numerical results. Starting or refreshing it never builds the Engine, collects
 tests, or runs a scientific calculation.
 
-To keep the companion running for this checkout, install the user service and
+To keep the companion running for the main checkout (the unit's working directory), install the user service and
 enable it:
 
 ```bash
@@ -38,7 +38,7 @@ systemctl --user enable --now epcsaft-companion.service
 ```
 
 Check it with `systemctl --user status epcsaft-companion.service`.
-The unit serves from this repository root and restarts after a service failure.
+The unit serves from the main checkout root and restarts after a service failure.
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ and `nm`. `ccache` is optional.
 Run commands from the repository root:
 
 ```bash
-bash .codex/environments/setup.sh
+tools/heavy bash .codex/environments/setup.sh
 bash tools/status.sh
 ```
 
@@ -84,13 +84,13 @@ and canonical wheel build and installation guidance.
 Run the affected-area gate during normal development:
 
 ```bash
-bash tools/check-affected.sh [base]
+tools/heavy bash tools/check-affected.sh [base]
 ```
 
 Run the fast installed-wheel gate with:
 
 ```bash
-bash tools/check-all.sh
+tools/heavy bash tools/check-all.sh
 ```
 
 `check-affected.sh` selects checks from the paths changed since `base` (default: the
@@ -100,7 +100,7 @@ installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Parameter-fitting checks join the gate when that capability exists.
+numerical evidence.
 `check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
 and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
 changes; request them with
@@ -113,15 +113,15 @@ CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
 cover the installed wheel and the Python interface, before review.
 
 ```bash
-tools/native-run equilibrium_checks --list
+tools/heavy tools/native-run equilibrium_checks --list
 tools/heavy tools/native-run equilibrium_checks caloric-admission
 ```
 
 Native C++ changes use the explicit owner commands:
 
 ```bash
-bash engine/tools/check-native.sh
-bash engine/tools/check-native-sanitizers.sh
+tools/heavy bash engine/tools/check-native.sh
+tools/heavy bash engine/tools/check-native-sanitizers.sh
 ```
 
 The first command builds the native extension with Clang and runs the full
@@ -129,9 +129,10 @@ clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
 its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
 
+Each checkout has its own `.venv` from setup with one non-editable Engine wheel.
 Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
 numerical thread when memory allows. The warm `check-all.sh` target is below
-sixteen seconds. `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+sixteen seconds. `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
 After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's
 wheel in the main checkout, compares its key-solve work with the previous
@@ -141,7 +142,7 @@ There is no scientific CI/CD.
 Run a canonical end-to-end workflow with:
 
 ```bash
-bash tools/run-slice.sh khudaida
+tools/heavy bash tools/run-slice.sh khudaida
 ```
 
 See `AGENTS.md`, `ARCHITECTURE.yaml`, and

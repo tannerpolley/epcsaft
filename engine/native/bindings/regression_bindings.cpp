@@ -172,8 +172,13 @@ void register_regression(py::module_& module) {
         .def("tie", [](const CoordinateSet& set) { return set.tie(); })
         .def("start", &CoordinateSet::start, py::arg("parameters"), py::arg("observations") = std::vector<Observation>{},
              py::arg("thermochemistry") = std::optional<ThermochemistryRecord>{});
+    // The two budgets are scientific inputs (ALG-FIT); zero tolerances select the policy defaults.
     py::class_<FitControls>(module, "FitControls")
-        .def(py::init<>())
+        .def(py::init([](int maximum_iterations, double maximum_elapsed_time_seconds, double function_tolerance,
+                         double gradient_tolerance, double parameter_tolerance) {
+            return FitControls{function_tolerance, gradient_tolerance, parameter_tolerance, maximum_iterations, maximum_elapsed_time_seconds};
+        }), py::kw_only(), py::arg("maximum_iterations"), py::arg("maximum_elapsed_time_seconds"),
+            py::arg("function_tolerance") = 0.0, py::arg("gradient_tolerance") = 0.0, py::arg("parameter_tolerance") = 0.0)
         .def_readwrite("function_tolerance", &FitControls::function_tolerance)
         .def_readwrite("gradient_tolerance", &FitControls::gradient_tolerance)
         .def_readwrite("parameter_tolerance", &FitControls::parameter_tolerance)

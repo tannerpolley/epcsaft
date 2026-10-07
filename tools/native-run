@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export PATH="$PWD/.venv/bin:$PATH"  # Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
 (($# >= 1 && $# <= 2)) || { echo "usage: tools/native-run <program> [case|--list]" >&2; exit 2; }
-[[ -f build/environment-wheel/meson-build-dir ]] || EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh >&2
+[[ -f build/environment-wheel/build-jobs ]] || EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh >&2
 build_dir="$(<build/environment-wheel/meson-build-dir)"
-.venv/bin/meson compile -C "$build_dir" -j "${EPCSAFT_BUILD_JOBS:-2}" "$1" >&2
+.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "$1" >&2
 exec "$build_dir/$1" "${@:2}"

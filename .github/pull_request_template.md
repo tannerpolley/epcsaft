@@ -5,7 +5,7 @@
 ## Ownership
 
 - Affected repositories:
-- Issue: `Closes #N` only if this PR completes the issue's acceptance, otherwise `Refs #N` (or `None`). After merge, update the issue body's current state and remove `work:review`/`work:claimed`.
+- Issue (`Closes #N` or `Refs #N`, per `.agents/skills/manage-github-roadmap/SKILL.md`, which owns closeout):
 - Scientific or capability impact (`none` or exact ADR/result):
 - Architecture, Data, or analysis owner updated:
 
