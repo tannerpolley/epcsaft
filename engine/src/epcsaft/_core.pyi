@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 EOS_STANDARD_STATE_ID: str
@@ -316,6 +316,7 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
+    # None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
     residual_chemical_potential_over_rt: list[Optional[float]]
     log_fugacity_coefficient: Optional[list[Optional[float]]]
     component_property_status: list[PropertyActionStatus]
@@ -731,7 +732,11 @@ class ContinuationOptions:
     max_retries_per_step: int
     envelope_max_log_step: float
     envelope_straddle: float
+    @overload
     def __init__(self) -> None: ...
+    @overload
+    def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int,
+                 envelope_max_log_step: float = 0.0, envelope_straddle: float = 0.0) -> None: ...
 
 class ContinuationRequest:
     start_problem: EquilibriumProblem
@@ -1138,7 +1143,6 @@ class HoldResult:
     derivative: float
     parameter_derivative: list[float]
     iterations: int
-    cause: str
 
 class EvaluatedCoordinates:
     parameters: Parameters
@@ -1177,7 +1181,8 @@ class CheckResult:
 def evaluate_coordinates(parameters: Parameters, set: CoordinateSet, optimizer: Sequence[float], holds: Sequence[HydrationHold], thermochemistry: ThermochemistryRecord | None = ...) -> EvaluatedCoordinates: ...
 def evaluate_checks(stored: Parameters, observations: Sequence[Observation], checks: Sequence[CheckGroup], baseline: Parameters | None = ...) -> list[CheckResult]: ...
 
-def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float]) -> list[Observation]: ...
+def observations_at(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float], holds: Sequence[HydrationHold], observations: Sequence[Observation], errors: Sequence[float],
+    thermochemistry: Optional[ThermochemistryRecord] = None) -> list[Observation]: ...
 
 class ObservationEvaluation:
     predictions: list[float]
@@ -1187,10 +1192,11 @@ class ObservationEvaluation:
     chart: EvaluatedCoordinates
     statuses: list[ObservationStatus]
 def evaluate_observations(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
-    holds: Sequence[HydrationHold], observations: Sequence[Observation]) -> ObservationEvaluation: ...
+    holds: Sequence[HydrationHold], observations: Sequence[Observation],
+    thermochemistry: Optional[ThermochemistryRecord] = None) -> ObservationEvaluation: ...
 def evaluate_minimax(parameters: Parameters, coordinates: Sequence[Coordinate], optimizer: Sequence[float],
     holds: Sequence[HydrationHold], observations: Sequence[Observation], checks: Sequence[CheckGroup],
-    baseline: Parameters | None, minimax: MinimaxRequest) -> FitResult: ...
+    baseline: Parameters | None, minimax: MinimaxRequest, thermochemistry: Optional[ThermochemistryRecord] = None) -> FitResult: ...
 def formula_composition(solvent_fractions: Sequence[float], parameters: Parameters, ion_indices: tuple[int, int],
     stoichiometry: tuple[int, int], molality: float) -> list[float]: ...
 

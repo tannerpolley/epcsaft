@@ -238,6 +238,7 @@ void register_eos(py::module_& module) {
         .def_readonly("residual_helmholtz", &epcsaft::State::residual_helmholtz)
         .def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)
         .def_readonly("pressure", &epcsaft::State::pressure)
+        // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
         .def_readonly("residual_chemical_potential_over_rt", &epcsaft::State::residual_chemical_potential_over_rt)
         .def_readonly("component_property_status", &epcsaft::State::component_property_status)
         .def_readonly("log_fugacity_coefficient", &epcsaft::State::log_fugacity_coefficient)
@@ -261,8 +262,8 @@ void register_eos(py::module_& module) {
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
         .def_readonly("site_fractions", &epcsaft::State::site_fractions)
         .def_readonly("density_convergence", &epcsaft::State::density_convergence)
-        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
+        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("density_branch", &epcsaft::State::density_branch)
         .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
     py::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")

@@ -476,6 +476,30 @@ def rule_exact_hessian_callback() -> list[str]:
     return bad
 
 
+def rule_stub_matches_extension() -> list[str]:
+    """_core.pyi declares exactly the installed extension's public names and class members."""
+    from epcsaft import _core
+
+    def declared(body: list[ast.stmt]) -> set[str]:
+        names = {node.name for node in body if isinstance(node, (ast.ClassDef, ast.FunctionDef))}
+        names |= {node.target.id for node in body if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)}
+        return {name for name in names if not name.startswith("_")}
+
+    def mismatch(where: str, stub: set[str], native: set[str]) -> list[str]:
+        return [f"{where}: stub only {sorted(stub - native)}, extension only {sorted(native - stub)}"] if stub != native else []
+
+    tree = ast.parse((ROOT / "engine" / "src" / "epcsaft" / "_core.pyi").read_text())
+    findings = mismatch("_core", declared(tree.body), {name for name in dir(_core) if not name.startswith("_")})
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and hasattr(_core, node.name):
+            native = getattr(_core, node.name)
+            # pybind11 enums add the name/value accessors to every class.
+            implicit = {"name", "value"} if hasattr(native, "__members__") else set()
+            members = {name for name in vars(native) if not name.startswith("_")} - implicit
+            findings += mismatch(node.name, declared(node.body), members)
+    return findings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path)
@@ -508,6 +532,7 @@ def main() -> int:
     ]
     if arguments.wheel is not None:
         checks.append(("identified installed wheel", verify_identified_wheel(arguments.wheel)))
+        checks.append(("type stub matches the extension", rule_stub_matches_extension()))
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")

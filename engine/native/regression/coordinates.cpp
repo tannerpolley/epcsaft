@@ -120,7 +120,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
         result.push_back((first - coordinate.origin) / coordinate.scale);
     }
     require(within_bounds(result), "start outside bounds");
-    (void)HelmholtzModel(parameters, active_parameters());
     return result;
 }
 
@@ -207,6 +206,7 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
               const std::optional<ThermochemistryRecord>& thermochemistry) {
     require(!set.coordinates.empty(), "set is empty");
     (void)set.start(parameters, observations, thermochemistry);
+    (void)HelmholtzModel(parameters, set.active_parameters(), thermochemistry);
 }
 
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
@@ -267,17 +267,17 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
         admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), "hydration root outside bracket");
         double diameter = std::clamp(parameters.born_diameter_angstrom.at(ion), lower, upper);
         HoldResult result;
+        bool converged = false;
         for (int iteration = 0; iteration < hold.maximum_iterations; ++iteration) {
             const auto [error, gradient] = evaluate(diameter);
             const double hd = gradient.at(active_row);
             admit(std::isfinite(hd) && std::abs(hd) > std::numeric_limits<double>::epsilon()
                 * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter)), "singular hydration derivative");
             result.energy_error = error; result.correction = std::abs(error / hd);
-            result.uncertainty = std::abs(error / hd); result.derivative = hd;
+            result.uncertainty = std::min(result.correction, upper - lower); result.derivative = hd;
             result.parameter_derivative = gradient; result.iterations = iteration + 1;
-            if (std::abs(error) <= hold.energy_tolerance
-                && std::min(result.correction, upper - lower) <= hold.diameter_tolerance) {
-                result.cause = "converged";
+            converged = std::abs(error) <= hold.energy_tolerance && result.uncertainty <= hold.diameter_tolerance;
+            if (converged) {
                 // EqID: dependent_born_diameter_derivative
                 for (std::size_t c = 0; c < columns; ++c)
                     for (std::size_t r = 0; r < set.active_parameters().size(); ++r)
@@ -289,7 +289,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             const double next = diameter - error / hd;
             diameter = next > lower && next < upper ? next : 0.5 * (lower + upper);
         }
-        admit(result.cause == "converged", "hydration hold exhausted");
+        admit(converged, "hydration hold exhausted");
         out.physical.push_back(out.parameters.born_diameter_angstrom.at(ion));
         out.holds.push_back(std::move(result));
     }

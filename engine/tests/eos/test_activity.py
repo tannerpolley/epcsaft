@@ -359,9 +359,9 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
     cs += [
         r.coordinate(p, [(family, ion, 1)], origin=0, scale=1)
         for family, ion in (
-            ("born_diameter_angstrom", "sodium-cation"),
-            ("debye_huckel_diameter_angstrom", "chloride-anion"),
-            ("packing_diameter_angstrom", "chloride-anion"),
+            ("born_diameter", "sodium-cation"),
+            ("debye_huckel_diameter", "chloride-anion"),
+            ("packing_diameter", "chloride-anion"),
         )
     ]
     chart = r.CoordinateSet()
@@ -438,7 +438,7 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
     expected = -prediction.value * 0.04 / (1 + 7.01 * 0.04)
     assert abs(sum(v for v, j in zip(g, tie) if j == 2) - expected) <= 1e-12 * abs(expected)
     # Limiting columns: same five families as F4(a), with the Na DH diameter.
-    cs[4] = r.coordinate(p, [("debye_huckel_diameter_angstrom", "sodium-cation", 1)], origin=0, scale=1)
+    cs[4] = r.coordinate(p, [("debye_huckel_diameter", "sodium-cation", 1)], origin=0, scale=1)
     chart.coordinates = cs[:5]
     model = Mixture(p, active_parameters=chart.active())
     tie = chart.tie()

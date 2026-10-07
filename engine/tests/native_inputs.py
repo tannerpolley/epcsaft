@@ -75,6 +75,13 @@ def parameters(
 ETHANE = (30.07, 1.6069, 3.5206, 191.42)
 
 
+def budget() -> Any:
+    """The former implicit fit budget, now explicit: 100 iterations and 600 s."""
+    controls = _core.FitControls()
+    controls.maximum_iterations, controls.maximum_elapsed_time_seconds = 100, 600.0
+    return controls
+
+
 def aqueous_electrolyte(*more: tuple[str, tuple[int, ...], float, str], c_shell: float = 0.0) -> Parameters:
     """properties_support::aqueous_electrolyte(): water, Na+ and Cl- with Debye-Huckel and Born terms."""
     extra: list[tuple[str, tuple[int, ...], float, str]] = [*more,
