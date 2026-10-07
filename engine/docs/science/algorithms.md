@@ -1774,8 +1774,8 @@ The held component vanishes by construction; independent multiplier qualificatio
 uses the manufactured analytic KKT conditions. Singular
 or bracket-boundary holds retain the reduced diagnostics and an explicit
 unavailable full-space cause. Root-error estimates use exact held-row slopes
-and achieved diameter uncertainty/correction; refinement qualification belongs
-to the retained study.
+and the achieved diameter uncertainty $\min(|H/H_d|,\ \text{bracket width})$,
+counted once; refinement qualification belongs to the retained study.
 
 Termination, point/action availability, feasibility, final checks and
 stationarity are distinct. Final checks evaluate report-only rows omitted from

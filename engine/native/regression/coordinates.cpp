@@ -273,10 +273,9 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             admit(std::isfinite(hd) && std::abs(hd) > std::numeric_limits<double>::epsilon()
                 * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter)), "singular hydration derivative");
             result.energy_error = error; result.correction = std::abs(error / hd);
-            result.uncertainty = std::abs(error / hd); result.derivative = hd;
+            result.uncertainty = std::min(result.correction, upper - lower); result.derivative = hd;
             result.parameter_derivative = gradient; result.iterations = iteration + 1;
-            if (std::abs(error) <= hold.energy_tolerance
-                && std::min(result.correction, upper - lower) <= hold.diameter_tolerance) {
+            if (std::abs(error) <= hold.energy_tolerance && result.uncertainty <= hold.diameter_tolerance) {
                 result.cause = "converged";
                 // EqID: dependent_born_diameter_derivative
                 for (std::size_t c = 0; c < columns; ++c)

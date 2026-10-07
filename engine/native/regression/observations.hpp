@@ -67,6 +67,8 @@ struct HydrationHold final {
     double energy_tolerance = 0.0, diameter_tolerance = 0.0;
     int maximum_iterations = 0;
 };
+// correction is the last Newton step |H/H_d| (Angstrom); uncertainty bounds the achieved diameter
+// error, min(correction, bracket width), the quantity the diameter criterion accepts.
 struct HoldResult final {
     double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
     std::vector<double> parameter_derivative;

@@ -1663,6 +1663,8 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
             else if (b1 && i == 3) { e = a * z; de = {0.0, a, 0.0}; }
             else if (b1) { e = a * (z + 0.5); de = {0.0, a, 0.0}; }
             else if (i < 4) { e = a * x; de = {a, 0.0}; }
+        // A bracket-limited hold: its achieved uncertainty is below its last Newton correction.
+        hold.correction = 2.0e-3; hold.uncertainty = 1.0e-3;
             else { e = a * (d / 2.0 - 3.0); de = {0.0, a / 2.0}; }
             const double y = std::pow(10.0, e), weight = request.weights.empty() ? 1.0 : request.weights[i];
             out.predictions[i] = y; out.residuals[i] = std::log(y / request.observations[i].observed);
@@ -1746,6 +1748,10 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
             inputs, "the interior point has no upper-bound multiplier", "r2-minimax"));
     CHECK(agree(id + "/nu", "equality_hold_multiplier", "decade_per_H", m.hold_multipliers.at(0), 0.005,
         1.0e-6, 0.0, inputs, "the eliminated equality reconstructs nu=a/2", "r2-minimax"));
+        // Only e2 depends on d (de2/dd = -a/2): its scaled root error is (a/2)/scale times the hold uncertainty.
+        CHECK(agree(id + "/root_error/" + std::to_string(i), "scaled_root_error", "1", m.root_errors.at(i),
+            r.members.empty() && r.row == 1 ? 0.005 / r.scale * 1.0e-3 : 0.0, 0.0, 1.0e-12, inputs,
+            "the root error counts the achieved hold uncertainty once", "r2-minimax"));
     CHECK(m.full_stationarity.size() == 3);
     for (std::size_t i = 0; i < m.full_stationarity.size(); ++i)
         CHECK(agree(id + "/full_stationarity/" + std::to_string(i), "full_space_stationarity", "decade_per_coordinate",
