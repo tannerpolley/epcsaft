@@ -529,7 +529,11 @@ bool GibbsMinimizer::get_bounds_info(
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
-        ++offset;  // ln eta is unbounded; prepare refuses eta outside the fluid domain (#314)
+        if (compiled_.feasibility_cell()) {  // ln eta bounds only here; prepare refuses eta outside them (#314)
+            x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
+            x_u[offset] = std::log(policy::PACKING_FRACTION_CEILING.value);
+        }
+        ++offset;
     }
     offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();

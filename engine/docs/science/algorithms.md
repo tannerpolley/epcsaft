@@ -658,10 +658,14 @@ apply. Ipopt unscales
 final constraint multipliers before the
 TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
-Each phase's ln η is unbounded in the optimizer, and the compiled preparation
-enforces its domain [`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so
-Ipopt cuts back a step that leaves it: the barrier bias of bounds on ln η pushes
-a near-spinodal liquid off its branch (#314).
+The compiled preparation enforces each phase's packing domain
+[`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so Ipopt cuts back a step
+that leaves it. A Gibbs minimization leaves ln η unbounded in the optimizer,
+because the barrier of bounds on ln η pushes a near-spinodal liquid off its
+branch (#314). A constant-objective feasibility cell keeps those bounds: without
+them the methane/ethane envelope's critical-straddle corrector lands on the
+trivial solution. A feasibility solve near a liquid
+spinodal can therefore still show the barrier bias; this is untested.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
