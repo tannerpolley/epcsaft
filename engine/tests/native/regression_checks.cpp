@@ -1263,13 +1263,31 @@ void check_j2() {
     CHECK(agree("r2-j2/final_cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result), "the final cost vanishes", "r2-j2"));
     CHECK(truth("r2-j2/identifiable", "the interior full-rank fit carries a covariance",
                 result.covariance.status == "available" && result.covariance.rank == 2, summary(result), "r2-j2"));
+    // The bounded-stationarity measure max_c |u_c - clamp(u_c - g_c)|, with g = J^T r from the published columns.
+    const auto projected_gradient = [](const FitRequest& request, const FitResult& result) {
+        const auto [lower, upper] = request.coordinates.optimizer_bounds();
+        const std::size_t width = result.optimizer.size();
+        double projected = 0.0;
+        for (std::size_t c = 0; c < width; ++c) {
+            double gradient = 0.0;
+            for (std::size_t i = 0; i < result.weighted_residuals.size(); ++i)
+                gradient += result.optimizer_jacobian[i * width + c] * result.weighted_residuals[i];
+            projected = std::max(projected, std::abs(result.optimizer[c] - std::clamp(result.optimizer[c] - gradient, lower[c], upper[c])));
+        }
+        return projected;
+    };
     auto unfinished = recovery_request(truth_case, 148.0, 0.0);
-    unfinished.controls.maximum_iterations = 1;
+    unfinished.controls.maximum_iterations = 2;
     const auto iterate = fit(unfinished);
     CHECK(truth("r2-j2/not_converged", "an iteration-limited fit keeps its candidate and rank but no covariance",
                 iterate.status == "limit_reached" && iterate.usable && iterate.covariance.status == "not_converged"
                     && iterate.covariance.rank == 2 && iterate.covariance.optimizer.empty() && iterate.covariance.physical.empty()
-                    && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-6, summary(iterate), "r2-j2"));
+                    && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-10, summary(iterate), "r2-j2"));
+    CHECK(truth("r2-j2/not_converged/iterations", "the reported iterations are the two Ceres iterations, not the start",
+                iterate.iterations == 2, summary(iterate), "r2-j2"));
+    CHECK(agree("r2-j2/not_converged/projected_gradient", "projected_gradient_max", "1",
+                iterate.covariance.projected_gradient_norm, projected_gradient(unfinished, iterate), 0.0, 1.0e-10, summary(iterate),
+                "the projected gradient is reported at the returned point", "r2-j2"));
     const auto other = fit(recovery_request(truth_case, 156.0, 0.05));
     CHECK(agree("r2-j2/second_start/epsilon", "dispersion_energy_over_k", "K", other.physical[0], 152.0, 0.0, 1.0e-6, summary(other),
                 "a second start recovers the same parameters", "r2-j2"));
@@ -1311,16 +1329,7 @@ void check_j2() {
                 "the coupled fit reaches the independently reduced bounded minimum within the work limit", "r2-j2"));
     CHECK(agree("r2-j2/bound_start/kij", "k_ij", "1", refreshed.physical[1], reference.physical[0],
                 1.0e-7, 0.0, summary(refreshed), "the free coordinate agrees with the scalar minimum", "r2-j2"));
-    double projected = 0.0;
-    const auto [lower, upper] = bound_start.coordinates.optimizer_bounds();
-    for (std::size_t c = 0; c < 2; ++c) {
-        double gradient = 0.0;
-        for (std::size_t i = 0; i < refreshed.weighted_residuals.size(); ++i)
-            gradient += refreshed.optimizer_jacobian[i * 2 + c] * refreshed.weighted_residuals[i];
-        CHECK(std::isfinite(gradient));
-        projected = std::max(projected, std::abs(refreshed.optimizer[c]
-            - std::clamp(refreshed.optimizer[c] - gradient, lower[c], upper[c])));
-    }
+    const double projected = projected_gradient(bound_start, refreshed);
     CHECK(truth("r2-j2/bound_start/feasible", "the accepted optimum is feasible with epsilon at its upper bound",
                 bound_start.coordinates.within_bounds(refreshed.optimizer) && refreshed.physical[0] == 151.0,
                 summary(refreshed), "r2-j2"));
@@ -1654,7 +1663,9 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
                            : std::vector<double>{1.0, 2.0};
         HoldResult hold; hold.derivative = 1.0;
         hold.parameter_derivative = b1 ? std::vector<double>{-2.0, 0.0, 1.0} : std::vector<double>{-2.0, 1.0};
-        hold.cause = "converged"; hold.iterations = 1; out.chart.holds = {hold};
+        // A bracket-limited hold: its achieved uncertainty is below its last Newton correction.
+        hold.correction = 2.0e-3; hold.uncertainty = 1.0e-3;
+        hold.iterations = 1; out.chart.holds = {hold};
         for (std::size_t i = 0; i < n; ++i) {
             double e = 0.0; std::vector<double> de(physical, 0.0);
             if (b1 && i == 0) { e = a * (x + z); de = {a, a, 0.0}; }
@@ -1737,6 +1748,10 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
             value, 1.0e-9, 0.0, inputs, "the physical target and guard rows match the analytic values", "r2-minimax"));
         CHECK(agree(id + "/multiplier/" + std::to_string(i), "physical_row_multiplier", "1", m.physical_multipliers[i],
             multiplier, 1.0e-6, 0.0, inputs, "physical row multipliers match the analytic active set", "r2-minimax"));
+        // Only e2 depends on d (de2/dd = -a/2): its scaled root error is (a/2)/scale times the hold uncertainty.
+        CHECK(agree(id + "/root_error/" + std::to_string(i), "scaled_root_error", "1", m.root_errors.at(i),
+            r.members.empty() && r.row == 1 ? 0.005 / r.scale * 1.0e-3 : 0.0, 0.0, 1.0e-12, inputs,
+            "the root error counts the achieved hold uncertainty once", "r2-minimax"));
     }
     for (const double z : m.physical_z_lower)
         CHECK(agree(id + "/lower_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
@@ -3094,7 +3109,7 @@ void check_inventory_boundary(const HelmholtzModel& model, const EquilibriumProb
     const auto point = compiled.prepare(result.coordinates);
     const auto values = compiled.jacobian(result.coordinates);
     const Eigen::Index size = static_cast<Eigen::Index>(result.coordinates.size());
-    CHECK(compiled.is_square() && values.size() == static_cast<std::size_t>(size * size));
+    CHECK(values.size() == static_cast<std::size_t>(size * size));
     const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), size, size);
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian);
     const double condition = svd.singularValues()(0) / svd.singularValues()(size - 1);
@@ -3858,7 +3873,7 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:13"}, check_f9_f10, "R1"},
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
-        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
+        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:17"}, check_j2, "R2"},
         {{"native.regression.r2-minimax-consistency", "Minimax_same_point_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "minimax-consistency/*,density-seed/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "minimax-consistency"}, check_minimax_consistency, "R2"},
         {{"native.regression.r2-d7-minimax-analytic", "Regression_R2_D7_Analytic_Minimax", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-d7-b1/*,r2-d7-b2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-D7", "r2-d7/*"}, check_d7_minimax, "R2"},
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},

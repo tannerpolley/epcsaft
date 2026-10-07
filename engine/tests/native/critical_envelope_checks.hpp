@@ -70,7 +70,7 @@ inline void pure_critical() {
     }
 }
 // C3: binary candidates and the first composition action along (0.1, -0.1) against Richardson-refined
-// differences of central critical solves; second order is refused with central values kept; residual and total
+// differences of central critical solves; the second action against differences of first actions; residual and total
 // cp (P_rho > 0 off a pure fluid) equal the HelmholtzModel::state route.
 inline void binary_critical() {
     const HelmholtzModel m(properties_support::neutral_binary(),{},caloric_specification_checks::records());
@@ -99,8 +99,26 @@ inline void binary_critical() {
             }
             compare(id+"/first-action/"+std::to_string(static_cast<int>(kind)),best,0,1,1e-6);
         }
-        const auto second=solved_state_actions(c,r,{{{SolvedStateObservableKind::Temperature}},{d,d}}).results[0];
-        compare(id+"/second-order-refused",second.status==SolvedStateActionStatus::EnergyOrderUnavailable&&second.value?1:0,1,1,1e-10);
+        // A2 along (d, d) against Richardson-refined central differences of A1 at the perturbed critical solves.
+        for(const auto kind:{SolvedStateObservableKind::Temperature,SolvedStateObservableKind::Pressure,SolvedStateObservableKind::PhaseMolarDensity}) {
+            const auto second=solved_state_actions(c,r,{{{kind}},{d,d}}).results[0];
+            if(!second.action)throw std::runtime_error(id+": critical second action: "+std::string(solved_state_status_name(second.status)));
+            double best=INFINITY,previous=0;
+            for(int rung=0;rung<5;++rung) {
+                const double h=std::ldexp(0.02,-rung);double side[2];
+                for(int s:{0,1}) {
+                    auto q=p;q.feed.values={z0+(2*s-1)*h*0.1,1-z0-(2*s-1)*h*0.1};
+                    const auto rr=solve_equilibrium_from_coordinates(m,q,r.coordinates);if(!rr.has_state())throw std::runtime_error(id+": "+rr.message);
+                    const auto a=solved_state_actions(compile_problem(m,q),rr,{{{kind}},{d}}).results[0];
+                    if(!a.action)throw std::runtime_error(id+": shifted first action: "+a.diagnostic_message.value_or(""));
+                    side[s]=*a.action;
+                }
+                const double reference=(side[1]-side[0])/(2*h);
+                if(rung)best=std::min(best,std::abs(*second.action-(4*reference-previous)/3)/std::abs(*second.action));
+                previous=reference;
+            }
+            compare(id+"/second-action/"+std::to_string(static_cast<int>(kind)),best,0,1,1e-6);
+        }
         const auto cp=solved_state_actions(c,r,{{{SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::ResidualIsobaricHeatCapacity},
             {SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::TotalIsobaricHeatCapacity}},{d}}).results;
         const auto state=m.state(r.temperature[0],r.molar_densities[0],{r.mole_fractions[0],r.mole_fractions[1]});

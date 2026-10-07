@@ -237,23 +237,26 @@ inline constexpr Tolerance EQUILIBRIUM_BOX_INVENTORY_FRACTION{"EQUILIBRIUM_BOX_I
 // Lower bound of the inventory-scaled box of all-free cells: it binds only below an attainable
 // inventory of 1e-18 N_feed, under the balance rows' rounding resolution. No root, action,
 // continuation step or seed is cut at it (#266, #322): x_B = K/(1+K) = 1e-24 solves, has exact
-// actions and continues. Square pinned cells are bounded by the smallest normal double instead.
-inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
+// actions and continues. Feasibility cells are bounded by the smallest normal double instead.
+inline constexpr Tolerance EQUILIBRIUM_BOX_FLOOR{"EQUILIBRIUM_BOX_FLOOR",
     1.0e-20,
     Category::AlgorithmTolerance,
     "dimensionless lower bound of the all-free optimizer log-composition box; not a solution domain or accuracy bound",
 };
-inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
+inline constexpr Tolerance PHASE_DISAPPEARANCE_AMOUNT{"PHASE_DISAPPEARANCE_AMOUNT",
     1.0e-8,
     Category::AlgorithmTolerance,
-    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff; not a stability result or accuracy bound",
+    "dimensionless n_phase/feed_total; provisional free-phase disappearance topology cutoff and interior guard of the "
+    "split seed; not a stability result or accuracy bound",
 };
 
 // ------------------------------------------------------------- regression
 
+// Also the conservation test of ALG-STABILITY's amount correction, finite split and phase removal,
+// whose component and moiety errors are divided by max(1 mol, N_feed).
 inline constexpr Tolerance ADDITION_MATERIAL_BALANCE{"ADDITION_MATERIAL_BALANCE", 1.0e-12,
     Category::AlgorithmTolerance, "#210: component feed balance divided by max(1 mol, endpoint feed amounts); "
-    "admission of two declared endpoints, independent of equilibrium stopping error"};
+    "admission of two declared endpoints and of stability inventory conservation, independent of equilibrium stopping error"};
 
 // Ceres trust-region stopping criteria for the bounded least-squares fit (ALG-FIT). The
 // caller's FitControls override them; these are the only defaults and are not accuracy claims.
@@ -424,8 +427,8 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &COMPOSITION_SUM_TOLERANCE, &REFERENCE_MOLALITY_ONE,
     &OSMOTIC_MOLALITY_FLOOR, &REFERENCE_MOLALITY_TWO, &REFERENCE_MOLALITY_THREE, &REFERENCE_MOLALITY_FOUR, &REFERENCE_CONVERGENCE_WITNESS,
     &REFERENCE_CONVERGENCE_TOLERANCE, &REFERENCE_HEAT_CAPACITY_TOLERANCE, &EQUILIBRIUM_COMPOSITION_BOX, &EQUILIBRIUM_BOX_INVENTORY_FRACTION,
-    &STABILITY_COMPOSITION_FLOOR,
-    &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
+    &EQUILIBRIUM_BOX_FLOOR,
+    &PHASE_DISAPPEARANCE_AMOUNT, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
     &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,

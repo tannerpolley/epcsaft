@@ -26,24 +26,6 @@ enum class PhaseKind { Liquid, Vapor };
 enum class AmountKind { Free, Pinned };
 enum class FeedKind { MoleFractions, Amounts, MassFractions, Molalities };
 
-inline const char* phase_kind_name(PhaseKind kind) noexcept {
-    return kind == PhaseKind::Liquid ? "liquid" : "vapor";
-}
-
-inline const char* amount_kind_name(AmountKind kind) noexcept {
-    return kind == AmountKind::Free ? "free" : "pinned";
-}
-
-inline const char* feed_kind_name(FeedKind kind) noexcept {
-    switch (kind) {
-    case FeedKind::MoleFractions: return "mole_fractions";
-    case FeedKind::Amounts: return "amounts";
-    case FeedKind::MassFractions: return "mass_fractions";
-    case FeedKind::Molalities: return "molalities";
-    }
-    return "unknown";
-}
-
 struct AmountSpec final {
     AmountKind kind = AmountKind::Free;
     double fraction = 0.0;
@@ -58,10 +40,6 @@ struct FreeValue final {
     static FreeValue fixed(double value) { return {false, value, false}; }
     static FreeValue variable() { return {true, 0.0, true}; }
     static FreeValue variable(double guess) { return {true, guess, false}; }
-
-    double seed_or(double fallback) const noexcept {
-        return free && absent ? fallback : value;
-    }
 
     bool is_positive() const noexcept {
         return !absent && std::isfinite(value) && value > 0.0;
@@ -192,24 +170,24 @@ struct Row final {
     RowKind kind = RowKind::Chemical;
     std::size_t phase = 0;
     std::size_t index = 0;
-    const char* eqid = "chemical_potential_stationarity";
 };
+
+// max |v_i|, infinite if any entry is nonfinite.
+inline double maximum_abs(const std::vector<double>& values) noexcept {
+    double result = 0.0;
+    for (const double value : values) {
+        const double magnitude = std::abs(value);
+        if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
+        result = std::max(result, magnitude);
+    }
+    return result;
+}
 
 struct PointEvaluation final {
     std::vector<double> values;
     std::vector<double> jacobian;
     double objective = 0.0;
     double floor = 0.0;
-
-    double residual_norm() const noexcept {
-        double result = 0.0;
-        for (const double value : values) {
-            const double magnitude = std::abs(value);
-            if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
-            result = std::max(result, magnitude);
-        }
-        return result;
-    }
 };
 
 struct Layout final {
@@ -303,12 +281,9 @@ struct CompiledSystem final {
     std::size_t rank = 0;
     std::size_t charge_row_count = 0;
     std::size_t primal_size = 0;
-    long rows_minus_unknowns = 0;
     std::size_t generic_nullity = 0;
     bool feasible = false;
-    std::vector<double> F_y;
     std::vector<std::size_t> removed_species;
-    std::vector<std::string> row_names;
     double feed_total = 0.0;
     bool has_ions = false;
     bool has_reaction = false;
@@ -377,7 +352,18 @@ struct CompiledSystem final {
 
     std::size_t mode_offset() const noexcept { return primal_size - free_intensive_count - mode_count; }
 
-    bool is_square() const noexcept { return rows_minus_unknowns == 0; }
+    // Control direction [T, P, n_feed (C), active parameters (A)]; the extended layout appends the
+    // (a, b, c, d) increments of every reaction law and then the H and S targets.
+    std::size_t control_width() const noexcept { return 2 + n_feed.size() + model->active_parameters().size(); }
+    std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + 2; }
+
+    // A free amount is a coordinate seeded at 1 mol; a pinned amount is its fraction of the feed.
+    double phase_amount(const PhaseSpec& phase) const noexcept { return phase.is_free() ? 1.0 : phase.amount.fraction * feed_total; }
+
+    // The declared value, else the default seed of an unseeded free intensive: 300 K and 1e5 Pa.
+    double seed_temperature() const noexcept { return problem.temperature.is_positive() ? problem.temperature.value : 300.0; }
+    double seed_pressure() const noexcept { return problem.pressure.is_positive() ? problem.pressure.value : 1.0e5; }
+
 };
 
 CompiledSystem compile_problem(
@@ -457,15 +443,7 @@ struct EquilibriumResult final {
             && !amounts.empty() && !mole_fractions.empty();
     }
 
-    double residual_norm() const noexcept {
-        double result = 0.0;
-        for (const double value : residuals) {
-            const double magnitude = std::abs(value);
-            if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
-            result = std::max(result, magnitude);
-        }
-        return result;
-    }
+    double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
 
 struct StabilityTrial final {
@@ -516,7 +494,7 @@ EquilibriumResult solve_equilibrium(
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr);
 
-// ---- Solved-state derivative actions (E5): native records, no public promise.
+// ---- Solved-state derivative actions: native records, no public promise.
 
 enum class SolvedStateObservableKind {
     Temperature,
@@ -681,7 +659,7 @@ SolvedStateActionBatch solved_state_actions(
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
-// Independent A1 directions at one accepted center; each response retains its own status.
+// Independent first-order directions at one accepted center; each response retains its own status.
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,

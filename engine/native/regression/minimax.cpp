@@ -214,7 +214,7 @@ public:
                     const auto& hold = evaluation_.chart.holds[h];
                     root_error += std::abs(slope * evaluation_.gradient.at(row.row * physical
                         + request_.coordinates.active_parameters().size() + h) / row.scale)
-                        * (hold.uncertainty + hold.correction);
+                        * hold.uncertainty;
                 }
             }
             out.root_errors.push_back(root_error);

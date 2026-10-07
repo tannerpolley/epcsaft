@@ -522,9 +522,8 @@ void check_s14() {
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     CHECK(compiled.rank == 1 && compiled.generic_nullity == 0);
     CHECK(compiled.charge_row_count == 0);
-    CHECK(compiled.rows_minus_unknowns == 0);
     for (const auto& row : compiled.rows) CHECK(row.kind != epcsaft::equilibrium::RowKind::Electro);
-    for (const auto& row : compiled.rows) std::printf("S14 row %s\n", row.eqid);
+    for (const auto& row : compiled.rows) std::printf("S14 row %s\n", epcsaft::equilibrium::row_kind_name(row.kind));
     const auto vapor_pinned = epcsaft::equilibrium::solve_equilibrium(model, problem);
     CHECK(vapor_pinned.success);
     if (!vapor_pinned.success) return;
