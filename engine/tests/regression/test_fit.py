@@ -10,7 +10,7 @@ from epcsaft import (
 )
 from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
 
-from ..native_inputs import ETHANE, ROWS, aqueous_electrolyte, associating_binary, parameters, same
+from ..native_inputs import ETHANE, ROWS, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -120,6 +120,19 @@ def test_global_born_scalar_chart_values_and_exact_map(evidence: Any) -> None:
     # At fixed shell geometry/bulk permittivity, the correction is proportional to c*(1-1/epsilon).
     base = born(baseline.parameters)
     same(evidence, "born-global-chart/radial-ratio", (born(chart.parameters) - base) / (born(reference.parameters) - base), 16/35, atol=0.0, rtol=1e-12)
+
+
+def test_point_reader_takes_the_fit_thermochemistry(evidence: Any) -> None:
+    """One total c_p row read through evaluate_observations equals its fit prediction at the moved point."""
+    p, thermal = parameters((ETHANE,)), record(p3_forms()["polynomial"])
+    row = regression.isobaric_heat_capacity(p, 300.0, 1.0e5, {"s0": 1.0}, phase="vapor", observed=30.5, form="log_ratio")
+    chart = [regression.coordinate(p, [("dispersion_energy_over_k", "s0", 1)], origin=191.42, scale=10.0)]
+    controls = regression.FitControls()
+    controls.maximum_iterations, controls.maximum_elapsed_time_seconds = 2, 60.0
+    fitted = regression.fit(p, chart, [row], thermochemistry=thermal, controls=controls)
+    assert fitted.usable
+    read = _core.evaluate_observations(p._native, chart, fitted.optimizer, [], [row], thermochemistry=thermal)
+    same(evidence, "point-reader/total-cp", read.predictions[0], fitted.predictions[0], atol=0.0, rtol=1e-10, T_K=300.0, P_Pa=1.0e5)
 
 
 def test_name_mapping_and_tie_map() -> None:
