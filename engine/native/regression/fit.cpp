@@ -664,7 +664,7 @@ FitResult fit(const FitRequest& request) {
         if (summary.termination_type != ceres::CONVERGENCE && summary.termination_type != ceres::USER_SUCCESS) break;
     }
     result.termination = settled ? "convergence" : exhausted ? "no_convergence" : termination_name(summary.termination_type);
-    result.iterations = result.iteration_costs.size();
+    result.iterations = result.iteration_costs.empty() ? 0 : result.iteration_costs.size() - 1;  // entry 0 is the start
     result.message = all_held ? "every coordinate is held at an active bound"
         : exhausted ? (remaining <= 0 ? "iteration limit reached" : "time limit reached") : summary.message;
     result.status = settled ? "converged" : summary.termination_type == ceres::FAILURE
@@ -683,7 +683,9 @@ FitResult fit(const FitRequest& request) {
     if (result.usable) {
         covariance(result, request, n);
         finish_checks(result, request);
-        for (std::size_t c = 0; c < width; ++c)
+        // A limit stop leaves the round-start gradient stale; this is a cache hit on the final evaluation.
+        if (!evaluator.gradient_at(optimizer, gradient)) result.covariance.projected_gradient_norm = NAN;
+        else for (std::size_t c = 0; c < width; ++c)
             result.covariance.projected_gradient_norm = std::max(result.covariance.projected_gradient_norm,
                 std::abs(optimizer[c] - std::clamp(optimizer[c] - gradient[c], lower[c], upper[c])));
     }
