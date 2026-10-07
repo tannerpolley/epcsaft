@@ -261,8 +261,8 @@ void register_eos(py::module_& module) {
         .def_readonly("pressure_density_derivative", &epcsaft::State::pressure_density_derivative)
         .def_readonly("site_fractions", &epcsaft::State::site_fractions)
         .def_readonly("density_convergence", &epcsaft::State::density_convergence)
-        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("thermochemistry_status", &epcsaft::State::thermochemistry_status)
+        // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
         .def_readonly("density_branch", &epcsaft::State::density_branch)
         .def_readonly("stable_root_count", &epcsaft::State::stable_root_count);
     py::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
