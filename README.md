@@ -99,7 +99,7 @@ installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Regression checks join the gate when that capability exists.
+numerical evidence. Parameter regression checks join the gate when that capability exists.
 `check-affected.sh` runs the Explicit binary128 reactive caloric cases only when
 their code changes; request them with
 `tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*'`.
@@ -108,7 +108,7 @@ Develop and debug on native programs alone: `tools/native-run` rebuilds one prog
 in the checkout's Meson build directory and runs it, whole or for one case, without
 building or installing the wheel. New studies can be small C++ drivers that write
 CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
-cover the installed wheel and the Python API, before review.
+cover the installed wheel and the Python interface, before review.
 
 ```bash
 tools/native-run equilibrium_checks --list
