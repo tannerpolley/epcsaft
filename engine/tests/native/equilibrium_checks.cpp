@@ -5082,17 +5082,29 @@ void check_tangent_plane_admission() {
     const auto compiled = compile_problem(model, problem);
     const auto report = stability_test(compiled, candidate);
     check_supplied_tangent_plane(compiled, candidate, report, "supplied/charged");
-    // One declared-state owner (#341): stability now also refuses a compiled system whose row tolerance or
-    // phase name differs from the result's declaration; both left the state and its rows unchanged.
-    for (const auto& [name, changed] : std::vector<std::pair<std::string, EquilibriumProblem>>{
-             {"row-tolerance", [&] { auto p = problem; p.row_tolerance = 1e-9; return p; }()},
-             {"phase-name", [&] { auto p = problem; p.phases[0].name = "L2"; return p; }()}}) {
-        std::string refusal;
-        try { (void)stability_test(compile_problem(model, changed), candidate); }
-        catch (const std::invalid_argument& error) { refusal = error.what(); }
-        tpd_compare("declared-state/" + name, refusal.rfind("stability result/declaration mismatch", 0) == 0 ? 1.0 : 0.0, 1.0, 0.0,
-            recording_support::fields({recording_support::field("refusal", refusal)}));
+    // One declared-state owner (#341): a changed row tolerance and phase name leave the state and its rows
+    // unchanged, so stability admits them and reports the same trials; a changed feed is another state.
+    auto relabeled = problem; relabeled.row_tolerance = 1e-9; relabeled.phases[0].name = "L2";
+    const auto relabeled_report = stability_test(compile_problem(model, relabeled), candidate);
+    double report_difference = relabeled_report.trials.size() == report.trials.size() ? 0.0 : 1.0;
+    const auto widen = [&](const std::vector<double>& x, const std::vector<double>& y) {
+        if (x.size() != y.size()) { report_difference = 1.0; return; }
+        for (std::size_t i = 0; i < x.size(); ++i) report_difference = std::max(report_difference, std::abs(x[i] - y[i]));
+    };
+    widen(relabeled_report.plane_over_rt, report.plane_over_rt);
+    for (std::size_t i = 0; i < std::min(report.trials.size(), relabeled_report.trials.size()); ++i) {
+        widen(relabeled_report.trials[i].composition, report.trials[i].composition);
+        const auto& quantities = relabeled_report.trials[i].quantities;
+        for (const auto& [key, value] : report.trials[i].quantities)
+            if (quantities.count(key)) widen({quantities.at(key)}, {value}); else report_difference = 1.0;
     }
+    tpd_compare("declared-state/relabeled-report", report_difference, 0.0, 0.0);
+    auto other_feed = problem; other_feed.feed.values = {0.97, 0.015, 0.015};
+    std::string refusal;
+    try { (void)stability_test(compile_problem(model, other_feed), candidate); }
+    catch (const std::invalid_argument& error) { refusal = error.what(); }
+    tpd_compare("declared-state/feed-value", refusal == "stability result/declaration mismatch: feed values differ" ? 1.0 : 0.0, 1.0, 0.0,
+        recording_support::fields({recording_support::field("refusal", refusal)}));
     CHECK(!report.trials.empty());
     for (std::size_t p = 0; p < report.present_phases.size(); ++p)
         tpd_compare("witness/present-phase/" + std::to_string(p), report.present_phases[p].at("present_identity_defect_over_rt"), 0.0, 1e-10);

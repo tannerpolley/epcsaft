@@ -479,14 +479,16 @@ struct Attempt final {
     std::optional<core::Convergence> convergence;
 };
 
-bool same_intensive(const FreeValue& a, const FreeValue& b, bool same_seeds) {
+bool same_intensive(const FreeValue& a, const FreeValue& b, bool endpoint) {
     if (a.free != b.free) return false;
-    return !a.free || !same_seeds || (a.absent == b.absent && a.value == b.value);
+    return !a.free || !endpoint || (a.absent == b.absent && a.value == b.value);
 }
 
 }  // namespace
-// Every field that is not a path lever must be identical at both endpoints.
-std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds) {
+// Every field that is not a path lever must be identical at both endpoints. Without `endpoint`, free T/P
+// seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
+// support_declared and topology_declared flags) are not compared.
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
     const auto &u = a.source_reference, &v = b.source_reference;
     if (u.has_value() != v.has_value() || (u && (u->solvent_index != v->solvent_index
         || u->solute_molality_ratios != v->solute_molality_ratios || u->standard_molality_mol_per_kg != v->standard_molality_mol_per_kg)))
@@ -498,8 +500,8 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     for (std::size_t p = 0; p < a.phases.size(); ++p) {
         const auto& x = a.phases[p];
         const auto& y = b.phases[p];
-        if (x.name != y.name || x.kind != y.kind) return "phase " + x.name + " identity differs";
-        if (x.support != y.support || x.support_declared != y.support_declared)
+        if ((endpoint && x.name != y.name) || x.kind != y.kind) return "phase " + x.name + " identity differs";
+        if (x.support != y.support || (endpoint && x.support_declared != y.support_declared))
             return "phase " + x.name + " support differs";
         if (x.amount.kind != y.amount.kind || (x.is_pinned() && x.amount.fraction != y.amount.fraction))
             return "phase " + x.name + " amount declaration differs";
@@ -511,13 +513,13 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
         if (!same_reaction(x, y)) return "reaction " + reaction_name(x, r) + " differs";
     }
     if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
-    if (a.topology_declared != b.topology_declared) return "topology declaration differs";
+    if (endpoint && a.topology_declared != b.topology_declared) return "topology declaration differs";
     if (a.feed.kind != b.feed.kind || a.feed.solvent != b.feed.solvent
         || a.feed.solvent_mass_kg != b.feed.solvent_mass_kg || a.feed.values.size() != b.feed.values.size())
         return "feed basis, solvent set or component count differs";
-    if (a.row_tolerance != b.row_tolerance) return "row_tolerance differs";
-    if (!same_intensive(a.temperature, b.temperature, same_seeds)) return "temperature free/fixed declaration differs";
-    if (!same_intensive(a.pressure, b.pressure, same_seeds)) return "pressure free/fixed declaration differs";
+    if (endpoint && a.row_tolerance != b.row_tolerance) return "row_tolerance differs";
+    if (!same_intensive(a.temperature, b.temperature, endpoint)) return "temperature free/fixed declaration differs";
+    if (!same_intensive(a.pressure, b.pressure, endpoint)) return "pressure free/fixed declaration differs";
     return "";
 }
 
