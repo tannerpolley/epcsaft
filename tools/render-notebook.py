@@ -4,11 +4,9 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 import re
 import runpy
-import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -19,7 +17,6 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "build/notebook-data"
-LEGACY = ROOT / "build/numerical-evidence"
 MAP = runpy.run_path(str(ROOT / "tools/project-map.py"))
 
 
@@ -69,15 +66,6 @@ def source_link(path: str, tracked: set[str], remote: str | None, revision: str)
     return f"[{path}]({remote}/blob/{revision}/{quote(path)})"
 
 
-def load_json(path: Path) -> tuple[Any | None, str | None]:
-    try:
-        return json.loads(path.read_text(encoding="utf-8")), None
-    except FileNotFoundError:
-        return None, "missing"
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        return None, f"unavailable: {error}"
-
-
 def parse_time(value: str | None) -> datetime | None:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00")) if value else None
@@ -96,43 +84,7 @@ def relevant_source_time() -> datetime:
     return datetime.fromtimestamp(timestamp, timezone.utc)
 
 
-def comparison_rows(run: dict[str, Any]) -> tuple[list[dict[str, str]], str | None, Path | None]:
-    relative = run.get("path")
-    if not isinstance(relative, str):
-        return [], "run record path missing", None
-    run_path = (ROOT / relative).resolve()
-    if not run_path.is_relative_to(LEGACY.resolve()) or not run_path.is_file():
-        return [], "run record unavailable", None
-    record, error = load_json(run_path)
-    if error or not isinstance(record, dict):
-        return [], error or "run record is not an object", None
-    csv_path = run_path.with_name("comparisons.csv")
-    if not csv_path.is_file():
-        return [], "no numerical table recorded", None
-    expected = record.get("comparisons_sha256") or run.get("comparisons_sha256")
-    actual = hashlib.sha256(csv_path.read_bytes()).hexdigest()
-    if expected and expected != actual:
-        return [], "comparison table integrity check failed", csv_path
-    try:
-        with csv_path.open(newline="", encoding="utf-8") as stream:
-            rows = list(csv.DictReader(stream))
-    except (OSError, UnicodeError, csv.Error) as error:
-        return [], f"comparison table unavailable: {error}", csv_path
-    return rows, None, csv_path
-
-
-def copy_table(label: str, path: Path | None) -> str | None:
-    if path is None or not path.is_file():
-        return None
-    destination = OUT / f"{label}.csv"
-    if not destination.is_file() or hashlib.sha256(destination.read_bytes()).digest() != hashlib.sha256(path.read_bytes()).digest():
-        temporary = destination.with_suffix(".csv.tmp")
-        shutil.copyfile(path, temporary)
-        temporary.replace(destination)
-    return f"build/notebook-data/{label}.csv"
-
-
-def render_map(latest: list[dict[str, Any]]) -> str:
+def render_map() -> str:
     project = MAP["project_map"]()
     tracked = set(command("git", "ls-files").splitlines())
     remote = repository_url()
@@ -143,15 +95,6 @@ def render_map(latest: list[dict[str, Any]]) -> str:
         if node.get("parent"):
             children.setdefault(node["parent"], []).append(node["id"])
 
-    def checks(node_ids: set[str]) -> list[dict[str, Any]]:
-        slugs = {node_id.split(".")[-1].replace("bindings", "") for node_id in node_ids}
-        result = []
-        for run in latest:
-            parts = str(run.get("test_id", "")).split(".")
-            if len(parts) > 1 and (parts[1] in slugs or ("engine" in node_ids and parts[0] in {"native", "python"})):
-                result.append(run)
-        return result
-
     sections = [
         "The map is derived from `ARCHITECTURE.yaml` and files that exist in this checkout. "
         "Implementation status remains in the linked GitHub issue roadmap. Engine aggregates every descendant layer.",
@@ -160,18 +103,7 @@ def render_map(latest: list[dict[str, Any]]) -> str:
     for node in project["nodes"]:
         if node.get("parent"):
             continue
-        descendant_ids = {node["id"], *children.get(node["id"], [])}
         sections.extend([f"## {node['name']}", "", node["purpose"], ""])
-        owned_checks = checks(descendant_ids)
-        if owned_checks:
-            sections.extend([
-                "### Relevant recorded checks",
-                "",
-                table(("Check", "Execution", "Produced"), [
-                    (run.get("test_id"), run.get("execution"), run.get("finished_at")) for run in owned_checks
-                ]),
-                "",
-            ])
         for role, paths in sorted(node.get("files", {}).items()):
             sections.extend([f"### {role.title()} files", ""])
             sections.extend(f"- {source_link(path, tracked, remote, revision)}" for path in paths)
@@ -313,10 +245,7 @@ def current_comparisons(source_time: datetime) -> tuple[list[tuple[Any, ...]], l
     return rows, csv_paths, errors
 
 
-def render_results() -> tuple[str, list[dict[str, Any]]]:
-    manifest, manifest_error = load_json(LEGACY / "manifest.json")
-    runs = manifest.get("runs", []) if isinstance(manifest, dict) and isinstance(manifest.get("runs"), list) else []
-    latest = [run for run in runs if str(run.get("test_id", "")).startswith(("native.", "python."))]
+def render_results() -> str:
     source_time = relevant_source_time()
     lines = [
         "Execution outcome, production time, source applicability, and scientific qualification are independent. "
@@ -374,78 +303,11 @@ def render_results() -> tuple[str, list[dict[str, Any]]]:
         "",
         table(("Recorded output",), [(source_link(path, tracked, remote, revision),) for path in analysis_outputs]),
         "",
-        "## Last legacy scientific records",
-        "",
-    ])
-    if manifest_error:
-        lines.extend([f"::: {{.callout-warning}}\nLegacy manifest {manifest_error}. Historical values already rendered into an older page remain there until the next successful render.\n:::", ""])
-    if latest:
-        summary = []
-        for run in latest:
-            produced = parse_time(run.get("finished_at"))
-            freshness = "Unverified" if produced and produced >= source_time else "Outdated by modification time"
-            summary.append((run.get("test_id"), run.get("execution"), run.get("finished_at"), freshness, run.get("outcome_reason"), "Not qualified"))
-        lines.extend([table(("Check", "Execution", "Produced", "Source / inputs", "Outcome / reason", "Scientific qualification"), summary), ""])
-    else:
-        lines.extend(["No readable legacy scientific run manifest is available.", ""])
-
-    interrupted: dict[str, Any] | None = None
-    for path in LEGACY.glob("runs/*/run.json"):
-        record, error = load_json(path)
-        if error or not isinstance(record, dict) or record.get("execution") != "Interrupted":
-            continue
-        if interrupted is None or str(record.get("finished_at", "")) > str(interrupted.get("finished_at", "")):
-            interrupted = record
-    lines.extend(["## Incomplete and unavailable evidence", ""])
-    if interrupted:
-        lines.append(table(("Check", "Execution", "Produced", "Reason"), [(
-            interrupted.get("test_id"), "Incomplete (interrupted)", interrupted.get("finished_at"), interrupted.get("outcome_reason")
-        )]))
-    else:
-        lines.append("No interrupted historical run is present. Missing or corrupt inputs are reported above as unavailable.")
-    lines.append("")
-
-    for label, identifiers in (
-        ("F1 retained residual-energy evidence", ("native.properties.f1", "native.model.f1")),
-        ("F5 established curvature disagreement", ("native.equilibrium.f5",)),
-    ):
-        run = next((item for identifier in identifiers for item in reversed(latest) if item.get("test_id") == identifier), None)
-        lines.extend([f"## {label}", ""])
-        if run is None:
-            lines.extend(["Unavailable: no retained run record.", ""])
-            continue
-        comparisons, error, path = comparison_rows(run)
-        download = copy_table("f1-comparisons" if "F1" in label else "f5-comparisons", path)
-        lines.extend([
-            f"- Execution: **{cell(run.get('execution'))}**",
-            f"- Produced: {cell(run.get('finished_at'))}",
-            f"- Outcome detail: {cell(run.get('outcome_reason'))}",
-            "- Applicability: **Outdated** after the notebook cutover changed the recorded input set; values are historical, not a current-code pass.",
-            "- Qualification: **Not qualified**; consult the owning GitHub issue and retained evidence.",
-            f"- Full retained table: [{path.name if path else 'unavailable'}]({download})" if download else f"- Full retained table: unavailable ({cell(error)})",
-            "",
-        ])
-        if error and not comparisons:
-            lines.extend([f"::: {{.callout-warning}}\n{error}\n:::", ""])
-            continue
-        failed = [item for item in comparisons if str(item.get("verdict", "")).lower() in {"false", "0"} or item.get("judgment") == "Criterion failed"]
-        shown = comparisons if "F1" in label else failed
-        lines.extend([
-            table(("Comparison", "Quantity", "Model", "Reference", "Unit", "Judgment", "Inputs"), [
-                (item.get("comparison_id"), item.get("quantity"), item.get("model"), item.get("reference"), item.get("unit"), item.get("judgment"), item.get("inputs"))
-                for item in shown
-            ]) if shown else "No failing comparison row was readable.",
-            "",
-            f"Retained rows: {len(comparisons)}; failing rows shown: {len(failed)}.",
-            "",
-        ])
-    lines.extend([
         "## Freshness limits",
         "",
         f"Relevant Engine source/input modification boundary: `{source_time.isoformat()}`.",
-        "Legacy records retain their own wheel and physical-input provenance. The notebook does not rebuild, collect, execute, retry, or re-certify them.",
     ])
-    return "\n".join(lines), latest
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -483,9 +345,8 @@ def main() -> None:
         print("reader self-test passed")
         return
     OUT.mkdir(parents=True, exist_ok=True)
-    results, latest = render_results()
-    write(OUT / "map.md", render_map(latest))
-    write(OUT / "results.md", results)
+    write(OUT / "map.md", render_map())
+    write(OUT / "results.md", render_results())
 
 
 if __name__ == "__main__":

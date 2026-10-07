@@ -53,9 +53,9 @@ provenance last.
 Read the nearest subtree `AGENTS.md`, the current GitHub leaf issue and only the
 equations, decisions and evidence it points to; change only the demonstrated
 gap. The leaf issue, not `engine/docs/`, says what the installed Engine
-implements. Activate Serena at the exact checkout root. Each checkout has its
-own `.venv` from `.codex/environments/setup.sh` with one non-editable Engine
-wheel; run builds and Engine calculations as `tools/heavy <cmd>`.
+implements. Activate Serena at the exact checkout root. `README.md` "Checks"
+owns the per-checkout `.venv` and the `tools/heavy` rule for builds and Engine
+calculations.
 
 ## Native calculation rule
 

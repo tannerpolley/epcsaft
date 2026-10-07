@@ -6,11 +6,6 @@ cd "$repo_root"
 
 # Select from every change since the base: by default the merge base with origin/main.
 base_ref="${1:-$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null || true)}"
-source_only="${EPCSAFT_CHECK_SOURCE_ONLY:-0}"
-if [[ "$source_only" != 0 && "$source_only" != 1 ]]; then
-    echo "EPCSAFT_CHECK_SOURCE_ONLY must be 0 or 1" >&2
-    exit 2
-fi
 if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
     base_ref="HEAD"
 fi
@@ -50,7 +45,7 @@ if grep -Eq "^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/)|$ana
     declarations_affected=true
 fi
 check_declarations() {
-    if [[ "$source_only" == 0 && "$declarations_affected" == true ]]; then
+    if [[ "$declarations_affected" == true ]]; then
         if grep -Eq "$analysis_checkers" <<<"$paths"; then
             # Runs the full declaration check, then the checkers' known-failure examples.
             .venv/bin/python tools/tests/test-analysis-checks.py
@@ -64,7 +59,7 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
-    if [[ "$source_only" == 0 ]] && grep -q '^tools/render-notebook\.py' <<<"$paths"; then
+    if grep -q '^tools/render-notebook\.py' <<<"$paths"; then
         # The reader self-test reads a native JUnit report; contributions writes one in about a second.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh contributions
         python3 tools/render-notebook.py --self-test
@@ -85,7 +80,7 @@ if [[ "$docs_only" == true ]]; then
 fi
 
 slow_tests=()
-if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
+if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
     # The slow solved-state programs run when their layer or any layer below it changes
     # (owners from ARCHITECTURE.yaml): a property or EOS change moves every solved state.
     owners="$(printf '%s\n' "${changed[@]}" | PYTHONPATH=tools python3 -c '
@@ -114,7 +109,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     fi
 fi
 
-if [[ "$source_only" == 0 ]] && grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
+if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
     bash tools/check-all.sh
     check_declarations
     check_tools
@@ -125,10 +120,10 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|to
 fi
 
 prepare_native_build=0
-if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
+if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
     prepare_native_build=1
 fi
-if [[ "$source_only" == 0 ]] && { [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; }; then
+if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 
@@ -146,11 +141,11 @@ fi
 if grep -q '^engine/' <<<"$paths"; then
     test_paths=()
     grep -Eq '^engine/(native/|src/|tests/|data/|build/subprojects/|meson\.build|pyproject\.toml)' <<<"$paths" && test_paths=(tests)
-    if [[ "$source_only" == 0 ]] && ((${#test_paths[@]})); then
+    if ((${#test_paths[@]})); then
         mkdir -p build/test-results
         (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml=../build/test-results/pytest.xml)
     fi
-if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
+    if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
@@ -163,12 +158,7 @@ fi
 
 check_tools
 
-if grep -q '^analyses/' <<<"$paths"; then
-    bash -n tools/run-slice.sh
-    if [[ "$source_only" == 1 ]]; then
-        echo "source-only mode skipped installed-artifact analysis replay"
-    fi
-fi
+grep -q '^analyses/' <<<"$paths" && bash -n tools/run-slice.sh
 
 if grep -q '^data/' <<<"$paths"; then
     .venv/bin/python data/tools/validate_packets.py

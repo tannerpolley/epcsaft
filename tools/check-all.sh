@@ -33,8 +33,7 @@ run_check() {
 
 # One native process overlaps one checking process; numerical libraries stay single-threaded.
 (
-    run_check native-tests env MESON_TESTTHREADS=1 EPCSAFT_NATIVE_BUILD_READY=1 \
-        engine/tools/run-native-tests.sh contributions properties diagnostics specification surface_example regression
+    run_check native-tests env MESON_TESTTHREADS=1 EPCSAFT_NATIVE_BUILD_READY=1 engine/tools/run-native-tests.sh
     exit "$failed"
 ) &
 native_pid=$!

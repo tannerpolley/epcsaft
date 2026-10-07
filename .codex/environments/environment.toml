@@ -14,17 +14,17 @@ platform = "linux"
 [[actions]]
 name = "Check affected"
 icon = "test"
-command = "bash tools/check-affected.sh"
+command = "tools/heavy bash tools/check-affected.sh"
 platform = "linux"
 
 [[actions]]
 name = "Check all"
 icon = "test"
-command = "bash tools/check-all.sh"
+command = "tools/heavy bash tools/check-all.sh"
 platform = "linux"
 
 [[actions]]
 name = "Khudaida slice"
 icon = "test"
-command = "bash tools/run-slice.sh khudaida"
+command = "tools/heavy bash tools/run-slice.sh khudaida"
 platform = "linux"

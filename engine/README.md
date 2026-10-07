@@ -24,46 +24,19 @@ toolchain and dependency contents. It builds and installs before any test
 starts. The root [`README.md`](../README.md) owns routine, full, native,
 sanitizer, and scientific validation commands.
 
-## Direct Meson development
+## Native development
 
-Run root setup once so the locked Python build tools and native prerequisites
-are available. A direct Meson build is useful for compile diagnostics:
+`tools/native-run <program> [case|--list]` rebuilds one native program in the
+checkout's Meson build directory (configured by setup with the shared HiGHS) and
+runs it without building the wheel. Do not use `meson install`; the wheel is the
+installation boundary.
 
-```bash
-export PATH="$PWD/.venv/bin:$PATH"
-meson setup build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-Source changes need only `meson compile`. Re-read changed build definitions or
-dependency metadata with:
-
-```bash
-meson setup --reconfigure build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-Use a clean configure after changing the compiler or fundamental Meson options:
-
-```bash
-meson setup --wipe build/engine-dev engine
-meson compile -C build/engine-dev
-```
-
-The Meson graph includes native scientific checks. Run installed-wheel Python
-checks through the root commands; expensive native evidence remains explicit. Do not use `meson
-install`; the wheel is the installation boundary.
-
-The supported direct native test route records one coherent outcome through the
-shared recorder and defaults to the fast suites:
-
-```bash
-bash engine/tools/run-native-tests.sh
-```
-
-It runs `contributions`, `properties`, `diagnostics`, `specification` and
-`surface_example`; the equilibrium, boundary, and Properties-floor suites remain
-explicit owner commands.
+`bash engine/tools/run-native-tests.sh` compiles and runs the fast suites
+`contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
+and `regression`; name other tests to run them. `tools/check-affected.sh` selects
+the equilibrium, boundary, Explicit and `association-comparison` tests when their
+code changes (root [`README.md`](../README.md) "Checks"); `properties_floor` runs
+only by name.
 
 ## C++ usage and debugging
 
@@ -80,9 +53,7 @@ of its identities fails, and it links `epcsaft_native`; there is no installed
 SDK or ABI.
 
 ```bash
-meson compile -C build/engine-dev surface_example
-meson test -C build/engine-dev surface_example --print-errorlogs
-build/engine-dev/surface_example            # prints every value with its unit
+tools/heavy tools/native-run surface_example   # prints every value with its unit
 ```
 
 For a debugger, configure an unstripped debug tree once and run the same target:
@@ -202,7 +173,7 @@ wheel build and installation.
 
 The package owns one Meson graph and no installed cross-module SDK. Data
 packet materializations are explicit and hash-bound. Installed-wheel analyses
-live in `../analyses/`. See `AGENTS.md`, `../ARCHITECTURE.yaml`, and
+live in `../analyses/`. See `../AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
 Meson discovers threads natively; Ipopt 3.11.9 or newer and Eigen 3.4 or newer
@@ -220,5 +191,5 @@ and never enter the wheel.
 The [scientific owner map](../docs/scientific/CONTEXT.md) identifies the
 permanent equations and methods. The
 [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
-records implementation gaps, including the absent regression module. Do not infer
+records implementation gaps. Do not infer
 availability from historical usage examples or a registered equation.
