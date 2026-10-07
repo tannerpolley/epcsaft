@@ -99,13 +99,16 @@ installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Regression checks join the gate when that capability exists.
+numerical evidence. Parameter-fitting checks join the gate when that capability exists.
+`check-affected.sh` runs the Explicit equilibrium cases (16 binary128 reactive-caloric
+and reactive-cp cases and 2 envelope traces) only when their code changes; request them with
+`tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*'`.
 
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
 building or installing the wheel. New studies can be small C++ drivers that write
 CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
-cover the installed wheel and the Python API, before review.
+cover the installed wheel and the Python interface, before review.
 
 ```bash
 tools/native-run equilibrium_checks --list
@@ -128,6 +131,9 @@ Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
 numerical thread when memory allows. The warm `check-all.sh` target is below
 sixteen seconds. `tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
+After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's
+wheel in the main checkout, compares its key-solve work with the previous
+`build/wheels/main-current/`, and replaces that directory and its README.
 There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:

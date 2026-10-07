@@ -17,9 +17,9 @@ machine-local content-addressed cache, while Meson keeps incremental Ninja
 state checkout-local. If `ccache` is installed, the native compiler results are
 also reused; it is optional.
 
-Wheel and native-test compilation use one build job per CPU (`nproc`) by
-default. Set `EPCSAFT_BUILD_JOBS` to a positive integer to lower it; values above
-`nproc` are capped. For example, `EPCSAFT_BUILD_JOBS=1 bash tools/check-all.sh`
+Wheel and native-test compilation use four build jobs by default. Set
+`EPCSAFT_BUILD_JOBS` to another positive integer; values above the CPUs available
+to the process are capped. For example, `EPCSAFT_BUILD_JOBS=1 bash tools/check-all.sh`
 uses one job.
 The setting changes build scheduling without changing compiler optimization.
 
