@@ -95,7 +95,18 @@ struct ObservationEvaluator::Impl final {
                 trial.centers.assign(groups_.size(), Prediction{});
             }
             trial.observations = std::move(observations);
-            if (!evaluate_rows(optimizer, jacobian, out, trial, n, width)) return false;
+            const Trial* seed = nullptr;
+            if (!same_point && cached_ && trial.chart.physical.size() == cached_->chart.physical.size()) {
+                bool near = true;
+                for (std::size_t k = 0; k < trial.chart.physical.size(); ++k) {
+                    const double a = trial.chart.physical[k], b = cached_->chart.physical[k];
+                    near &= std::isfinite(a) && std::isfinite(b)
+                        && std::abs(a - b) / std::max({1.0, std::abs(a), std::abs(b)}) <= policy::FIT_DENSITY_PARAMETER_FRACTION.value;
+                }
+                if (near) seed = &*cached_;
+            }
+            scope.probe("density_seed_chart", seed ? 1.0 : 0.0);
+            if (!evaluate_rows(optimizer, jacobian, out, trial, n, width, seed)) return false;
             out.weighted.resize(n);
             for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
             // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
@@ -154,7 +165,7 @@ struct ObservationEvaluator::Impl final {
     }
 
     bool evaluate_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
-                       Trial& trial, std::size_t n, std::size_t width) {
+                       Trial& trial, std::size_t n, std::size_t width, const Trial* seed) {
         const auto& model = *trial.model;
         out.predictions.assign(n, 0.0);
         out.residuals.assign(n, 0.0);
@@ -169,9 +180,13 @@ struct ObservationEvaluator::Impl final {
             auto& prediction = trial.centers[g];
             if (!prediction.value) {
                 core::Scope scope("fit_group_prediction");
+                scope.probe("observation", static_cast<double>(i));
                 scope.probe("anchor", static_cast<double>(g));
                 scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references);
+                // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
+                prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
+                    seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
+                    seed && trial.chart.physical == seed->chart.physical);
                 if (prediction.status != ObservationStatus::Available && starts_[g])
                     prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
             } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);

@@ -1,6 +1,7 @@
 #include "regression/observations.hpp"
 
 #include "core/numerical_policy.hpp"
+#include "core/trace.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -229,31 +230,87 @@ void validate(const Observation& observation, const HelmholtzModel& model,
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start,
-    std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references
+    std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references,
+    const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters
 ) {
+    core::Scope density_scope("fit_density_anchor");
+    const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
+        if (!old || !previous_model || x != old_x || branch == DensityBranch::Unspecified
+            || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
+        if (!same_parameters) {
+            const auto witness = old->negative_slope_density;
+            const double w = policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+            const double lower = observation.pressure / (GAS_CONSTANT_J_PER_MOL_K * observation.temperature)
+                * policy::DENSITY_LOWER_FRACTION.value;
+            const double upper = model.molar_density_upper_bound(observation.temperature, x) * policy::DENSITY_UPPER_FRACTION.value;
+            if (!witness || !std::isfinite(*witness) || !(*witness > lower && *witness < upper)
+                || !(branch == DensityBranch::Liquid ? old->molar_density * std::exp(-w) > *witness
+                                                     : old->molar_density * std::exp(w) < *witness)) return std::nullopt;
+            try {
+                const double slope = model.state(observation.temperature, *witness, x).pressure_density_derivative;
+                density_scope.probe("witness", {*witness, slope});
+                if (!std::isfinite(slope) || !(slope < 0.0)) return std::nullopt;
+            } catch (const std::runtime_error& error) {
+                density_scope.probe("witness_ineligible", {*witness}, 0, error.what());
+                return std::nullopt;
+            }
+        }
+        density_scope.probe("eligible", old->molar_density);
+        return old->molar_density;
+    };
+    const auto accepted = [&](State& state, const State* old, std::optional<double> anchor) {
+        if (!anchor || state.stable_root_count) return;  // An external anchor was retried cold.
+        state.negative_slope_density = old->negative_slope_density;
+        density_scope.probe("accepted", state.molar_density);
+    };
+    const auto close = [&](const auto& x, const State* old) {
+        const auto anchor = prior(old, x, x, observation.branch);
+        auto state = properties::close_density(model, observation.temperature, observation.pressure, x, observation.branch, anchor);
+        accepted(state, old, anchor);
+        return state;
+    };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
         try {
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
-                result.state = model.state_at_pressure(observation.temperature, observation.pressure, observation.composition, observation.branch);
-                if (!observation.reference_composition.empty()) result.reference_state = model.state_at_pressure(
-                    observation.temperature, observation.pressure, observation.reference_composition, observation.branch);
+                result.state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
+                if (!observation.reference_composition.empty()) result.reference_state = close(observation.reference_composition,
+                    previous && previous->reference_state ? &*previous->reference_state : nullptr);
             } else {
                 ReferenceCache local;
                 auto& cache = references ? *references : local;
-                const auto reference = [&](const auto& x) {
+                const auto reference = [&](const auto& x, const InfiniteDilutionReference* old) {
                     auto key = observation;
                     key.composition = x; key.molality = 0.0; key.reference_composition.clear();
                     for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
-                    auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x, key.ion_indices, key.stoichiometry);
+                    const auto first_x = formula_composition(x, model.parameters(), key.ion_indices, key.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value);
+                    const auto old_x = previous_model ? formula_composition(x, previous_model->parameters(), key.ion_indices, key.stoichiometry,
+                        policy::REFERENCE_MOLALITY_ONE.value) : first_x;
+                    const auto first = prior(old ? &old->first_rung_state : nullptr, first_x, old_x, DensityBranch::Liquid);
+                    const auto pure = prior(old && old->pure_solvent_state && *std::max_element(x.begin(), x.end()) == 1.0
+                        ? &*old->pure_solvent_state : nullptr, x, x, DensityBranch::Liquid);
+                    auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x,
+                        key.ion_indices, key.stoichiometry, first, pure);
+                    accepted(value.first_rung_state, old ? &old->first_rung_state : nullptr, first);
+                    if (value.pure_solvent_state) accepted(*value.pure_solvent_state,
+                        old && old->pure_solvent_state ? &*old->pure_solvent_state : nullptr, pure);
                     cache.emplace_back(key, value);
                     return value;
                 };
-                result.reference = reference(observation.composition);
-                if (observation.kind == ObservationKind::TransferGibbsEnergy) result.second_reference = reference(observation.reference_composition);
+                result.reference = reference(observation.composition, previous && previous->reference ? &*previous->reference : nullptr);
+                if (observation.kind == ObservationKind::TransferGibbsEnergy) result.second_reference = reference(observation.reference_composition,
+                    previous && previous->second_reference ? &*previous->second_reference : nullptr);
                 if (observation.kind == ObservationKind::MeanIonicActivityCoefficient || observation.kind == ObservationKind::OsmoticCoefficient) {
-                    if (observation.molality > 0.0) result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
-                        observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference);
+                    if (observation.molality > 0.0) {
+                        const auto x = formula_composition(observation.composition, model.parameters(), observation.ion_indices, observation.stoichiometry, observation.molality);
+                        const auto old_x = previous_model ? formula_composition(observation.composition, previous_model->parameters(),
+                            observation.ion_indices, observation.stoichiometry, observation.molality) : x;
+                        const State* old = previous && previous->activity ? &previous->activity->state : nullptr;
+                        const auto anchor = prior(old, x, old_x, DensityBranch::Liquid);
+                        result.activity = electrolyte_activity(model, observation.temperature, observation.pressure,
+                            observation.composition, observation.ion_indices, observation.stoichiometry, observation.molality, *result.reference, anchor);
+                        accepted(result.activity->state, old, anchor);
+                    }
                 }
             }
             project_prediction(model, observation, result);
@@ -301,8 +358,7 @@ Prediction predict(
             : observation.mass_basis ? "kg/m^3" : "mol/m^3";
         State state;
         try {
-            state = model.state_at_pressure(observation.temperature, observation.pressure,
-                                            observation.composition, observation.branch);
+            state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const core::ConvergenceFailure& failure) {
             result.status = ObservationStatus::DensityUnavailable;
             result.convergence = failure.record;
@@ -346,6 +402,7 @@ Prediction predict(
             return result;
         }
         finish(result, observation, value);
+        result.state = std::move(state);
         return result;
     }
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
@@ -526,7 +583,7 @@ PredictionGradient differentiate(
     const auto components = parameters.component_count();
     const std::size_t width = active.size();
     gradient.value.assign(width, 0.0);
-    const auto unavailable = [&](const char* what) {
+    const auto unavailable = [&](const std::string& what) {
         gradient.value.clear();
         gradient.status = ObservationStatus::ActionUnavailable;
         gradient.message = what;
@@ -545,10 +602,27 @@ PredictionGradient differentiate(
         for (std::size_t k = first; k < width && k < first + count; ++k)
             directions.push_back({0.0, 0.0, std::vector<double>(components, 0.0),
                                   {{active[k].family, active[k].indices, 1.0}}});
-        const auto batch = model.pressure_actions(observation.temperature, observation.pressure,
-            observation.composition, observation.branch, observables, directions);
-        if (batch.density_status != PropertyActionStatus::Available)
-            return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
+        core::Scope scope("fit_density_column");
+        const auto& center = prediction.state;
+        const auto anchor = center && observation.branch != DensityBranch::Unspecified
+            && properties::regular_density(center->molar_density, center->pressure_density_derivative, center->density_convergence)
+            ? std::optional<double>(center->molar_density) : std::nullopt;
+        auto batch = model.pressure_actions(observation.temperature, observation.pressure,
+            observation.composition, observation.branch, observables, directions, anchor);
+        const auto cause = [&] {
+            std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
+            return batch.density_message.empty() ? name : name + ": " + batch.density_message;
+        };
+        if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
+            || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
+            if (batch.density_convergence) scope.finish(*batch.density_convergence);
+            scope.probe("anchor_failure", {*anchor}, 0, batch.density_status == PropertyActionStatus::Available
+                ? "target density regularity unavailable or exceeds w/100" : !batch.density_message.empty() ? batch.density_message.c_str()
+                : equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
+            batch = model.pressure_actions(observation.temperature, observation.pressure,
+                observation.composition, observation.branch, observables, directions);
+        }
+        if (batch.density_status != PropertyActionStatus::Available) return unavailable(cause());
         if (caloric && batch.results[0].status != PropertyActionStatus::Available)
             return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)

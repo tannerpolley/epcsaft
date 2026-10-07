@@ -121,7 +121,9 @@ using ReferenceCache = std::vector<std::pair<Observation, InfiniteDilutionRefere
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
-    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr
+    std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr,
+    const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
+    bool same_parameters = false
 );
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
