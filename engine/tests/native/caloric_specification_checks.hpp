@@ -197,6 +197,64 @@ inline void actions() {
     const auto ps=condition(sat,false,total(pure,sr,false),300);const auto pc=compile_problem(pure,ps);const auto pr=solve_equilibrium(pure,ps);
     compare("PS4/saturation-tangent",action(pc,pr,{sp}),tangent,std::abs(tangent),1e-8);
 }
+// Assembled off-solution Jacobian and weighted-Hessian ladder (F5): centered row and weighted-gradient
+// differences, the alternating weights and each condition row alone, objective factors 0, 0.5 and 1.
+inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const std::vector<double>& scale,const std::string& id) {
+    const std::size_t n=y.size(),m=c.rows.size();
+    std::vector<std::vector<double>> weights(1,std::vector<double>(m));
+    for(std::size_t j=0;j<m;++j)weights[0][j]=(j%2?-1:1)*(0.3+0.07*j);
+    for(std::size_t r=0;r<m;++r)if(c.rows[r].kind>=RowKind::Enthalpy){weights.emplace_back(m,0.);weights.back()[r]=1;}
+    recording_support::observe((id+"/F5/point").c_str(),"callback-coordinates","chart",y[c.primal_size-1],std::nullopt,
+        recording_support::fields({recording_support::field("point",y),recording_support::field("feed_mol",c.problem.feed.values)}),
+        "Observation","off-solution-chart","declared callback coordinates and independent chemical duals","caloric-specification");
+    const auto J=c.jacobian(y);std::vector<std::vector<double>> H;
+    for(const auto& w:weights)H.push_back(c.hessian(y,w));  // feasibility objective is constant for every factor
+    const std::vector<double> objectives{0.,0.5,1.};const std::size_t sets=weights.size()*objectives.size();
+    for(std::size_t column=0;column<n;++column) {
+        std::vector<double> bestJ(m,1e100),previous_change(sets,0),largest(sets,0),noise(sets,0);
+        std::vector<std::vector<double>> bestH(sets,std::vector<double>(n,1e100)),previousH(sets);std::vector<bool> refinement(sets,false);
+        std::vector<std::array<double,2>> atJ(m);std::vector<std::vector<std::array<double,2>>> atH(sets,std::vector<std::array<double,2>>(n));  // exact, reference at the best step
+        for(int rung=0;rung<5;++rung) {
+            const double step=std::ldexp(0.002,-rung)*scale[column];auto plus=y,minus=y;plus[column]+=step;minus[column]-=step;
+            const auto fp=c.evaluate(plus).values,fm=c.evaluate(minus).values;
+            for(std::size_t row=0;row<m;++row) {
+                const double exact=J[row*n+column]*scale[column],ref=(fp[row]-fm[row])/(2*step)*scale[column];
+                const double error=std::abs(exact-ref)/std::max(1.,std::abs(ref));
+                if(error<bestJ[row]){bestJ[row]=error;atJ[row]={exact,ref};}
+            }
+            for(std::size_t k=0;k<sets;++k) {
+                const auto& w=weights[k/objectives.size()];const double objective=objectives[k%objectives.size()];
+                const auto gp=weighted_gradient(c,plus,w,objective),gm=weighted_gradient(c,minus,w,objective);
+                double change=0,floor=0;std::vector<double> refs(n);
+                for(std::size_t row=0;row<n;++row) {
+                    refs[row]=(gp[row]-gm[row])/(2*step);const double factor=scale[row]*scale[column];
+                    const double exact=H[k/objectives.size()][row*n+column]*factor,error=std::abs(exact-refs[row]*factor)/std::max(1.,std::abs(refs[row]*factor));
+                    if(error<bestH[k][row]){bestH[k][row]=error;atH[k][row]={exact,refs[row]*factor};}
+                    if(rung)change=std::max(change,std::abs(refs[row]-previousH[k][row])*factor);
+                    floor=std::max(floor,std::numeric_limits<double>::epsilon()*(std::abs(gp[row])+std::abs(gm[row]))*factor/step);
+                }
+                if(rung) {
+                    largest[k]=std::max(largest[k],change);noise[k]=std::max(noise[k],floor);
+                    const double ratio=change?previous_change[k]/change:0;
+                    if(rung>1&&change>32*floor&&ratio>3.5&&ratio<4.5)refinement[k]=true;
+                    previous_change[k]=change;
+                }
+                previousH[k]=refs;
+            }
+        }
+        const auto entry=[&](const std::array<double,2>& at) {
+            return recording_support::fields({recording_support::field("exact",at[0]),recording_support::field("reference",at[1]),recording_support::field("coordinate_scale",scale[column])});
+        };
+        for(std::size_t row=0;row<m;++row)compare(id+"/F5/J/"+std::to_string(column)+"/"+std::to_string(row),bestJ[row],0,1,1e-6,entry(atJ[row]));
+        for(std::size_t k=0;k<sets;++k) {
+            const std::string label=id+"/F5/H/"+std::to_string(k/objectives.size())+"/"+std::to_string(objectives[k%objectives.size()])+"/"+std::to_string(column);
+            for(std::size_t row=0;row<n;++row)compare(label+"/"+std::to_string(row),bestH[k][row],0,1,1e-5,entry(atH[k][row]));
+            recording_support::observe((label+"/refinement").c_str(),"second-order-refinement","chart",largest[k],noise[k],
+                recording_support::fields({recording_support::field("refined",refinement[k]?1:0)}),"Observation","centered-refinement","truncation before the rounding floor","caloric-specification");
+            CHECK(refinement[k]||largest[k]<=32*noise[k]);
+        }
+    }
+}
 inline void curvature() {
     const HelmholtzModel m(properties_support::neutral_binary(),{},records());
     auto p=binary();const auto reference=solve_equilibrium(m,p);CHECK(reference.has_state());p.feed.values={0.27,0.73};
@@ -207,52 +265,8 @@ inline void curvature() {
         for(const auto& l:prepared.shape)y[l.volume]+=0.01;
         y[prepared.shape[0].x[0]]+=0.02;
         for(std::size_t j=c.primal_size;j<y.size();++j)y[j]=0.11+0.13*j;
-        const std::size_t n=y.size();std::vector<double> scale(n,1);scale[c.primal_size-1]=y[c.primal_size-1];
-        recording_support::observe((std::string(h?"PH":"PS")+"/F5/point").c_str(),"callback-temperature","K",y[c.primal_size-1],std::nullopt,
-            recording_support::fields({recording_support::field("point",y),recording_support::field("P_Pa",q.pressure.value),recording_support::field("feed_mol",q.feed.values)}),
-            "Observation","off-solution-chart","declared callback coordinates and independent chemical duals","caloric-specification");
-        const auto J=c.jacobian(y);
-        for(bool isolated:{false,true}) for(double objective:{0.,0.5,1.}) {
-            std::vector<double> weights(c.rows.size());for(std::size_t j=0;j<weights.size();++j)weights[j]=isolated?(j+1==weights.size()?1:0):(j%2?-1:1)*(0.3+0.07*j);
-            auto H=c.hessian(y,weights); // feasibility objective is constant for every factor
-            for(std::size_t column=0;column<n;++column) {
-                std::vector<double> bestJ(c.rows.size(),1e100),bestH(n,1e100),previousJ,previousH;
-                bool refinement=false; double previous_change=0, largest_change=0, noise=0;
-                for(int rung=0;rung<5;++rung) {
-                    const double step=std::ldexp(0.002,-rung)*scale[column];auto plus=y,minus=y;plus[column]+=step;minus[column]-=step;
-                    const auto ep=c.evaluate(plus),em=c.evaluate(minus);const auto& fp=ep.values;const auto& fm=em.values;
-                    const auto gp=weighted_gradient(c,plus,weights,objective),gm=weighted_gradient(c,minus,weights,objective);
-                    std::vector<double> refsJ(c.rows.size()),refsH(n);
-                    double change=0;
-                    const std::string label=std::string(h?"PH":"PS")+"/F5/"+std::to_string(isolated)+"/"+std::to_string(objective)+"/"+std::to_string(column)+"/"+std::to_string(rung);
-                    for(std::size_t row=0;row<c.rows.size();++row) {
-                        refsJ[row]=(fp[row]-fm[row])/(2*step);const double exact=J[row*n+column]*scale[column],ref=refsJ[row]*scale[column];
-                        bestJ[row]=std::min(bestJ[row],std::abs(exact-ref)/std::max(1.,std::abs(ref)));
-                        recording_support::observe((label+"/J-"+std::to_string(row)).c_str(),"Jacobian","chart",J[row*n+column],refsJ[row],recording_support::fields({recording_support::field("step",step),recording_support::field("scale",scale[column]),recording_support::field("evaluation_floor",std::max(ep.floor,em.floor))}),"Observation","row-difference","assembled Jacobian ladder","caloric-specification");
-                    }
-                    for(std::size_t row=0;row<n;++row) {
-                        refsH[row]=(gp[row]-gm[row])/(2*step);const double factor=scale[row]*scale[column],exact=H[row*n+column]*factor,ref=refsH[row]*factor;
-                        bestH[row]=std::min(bestH[row],std::abs(exact-ref)/std::max(1.,std::abs(ref)));
-                        if(rung)change=std::max(change,std::abs(refsH[row]-previousH[row])*factor);
-                        recording_support::observe((label+"/H-"+std::to_string(row)).c_str(),"Hessian","chart",H[row*n+column],refsH[row],recording_support::fields({recording_support::field("step",step),recording_support::field("scale",factor),recording_support::field("rounding_over_step",std::numeric_limits<double>::epsilon()*(std::abs(gp[row])+std::abs(gm[row]))*factor/step)}),"Observation","weighted-gradient-difference","assembled weighted Hessian ladder","caloric-specification");
-                    }
-                    if(rung) {
-                        largest_change=std::max(largest_change,change);
-                        double floor=0;
-                        for(std::size_t row=0;row<n;++row) floor=std::max(floor,std::numeric_limits<double>::epsilon()*(std::abs(gp[row])+std::abs(gm[row]))*scale[row]*scale[column]/step);
-                        noise=std::max(noise,floor);
-                        const double ratio=change?previous_change/change:0;
-                        if(rung>1&&change>32*floor&&ratio>3.5&&ratio<4.5)refinement=true;
-                        recording_support::observe((label+"/refinement").c_str(),"second-order-refinement","chart",change,previous_change,recording_support::fields({recording_support::field("ratio",ratio),recording_support::field("rounding_over_step",floor)}),"Observation","centered-refinement","truncation before the rounding floor","caloric-specification");
-                        previous_change=change;
-                    }
-                    previousJ=refsJ;previousH=refsH;
-                }
-                for(std::size_t row=0;row<c.rows.size();++row)compare((h?"PH":"PS")+std::string("/F5/J/")+std::to_string(isolated)+"/"+std::to_string(objective)+"/"+std::to_string(column)+"/"+std::to_string(row),bestJ[row],0,1,1e-6);
-                for(std::size_t row=0;row<n;++row)compare((h?"PH":"PS")+std::string("/F5/H/")+std::to_string(isolated)+"/"+std::to_string(objective)+"/"+std::to_string(column)+"/"+std::to_string(row),bestH[row],0,1,1e-5);
-                CHECK(refinement || largest_change<=32*noise);
-            }
-        }
+        std::vector<double> scale(y.size(),1);scale[c.primal_size-1]=y[c.primal_size-1];
+        ladder(c,y,scale,h?"PH":"PS");
     }
 }
 

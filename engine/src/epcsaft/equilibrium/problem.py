@@ -190,7 +190,7 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
 class Problem:
     __slots__ = (
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "critical", "envelope",
     )
     phases: tuple[Phase, ...] | Discover
     T: float | Free
@@ -203,6 +203,8 @@ class Problem:
     neutral_reference: NeutralReference | None
     enthalpy_j: float | None
     entropy_j_per_k: float | None
+    critical: _core.CriticalDeclaration | None
+    envelope: _core.EnvelopeCondition | None
 
     def __init__(
         self,
@@ -218,7 +220,11 @@ class Problem:
         enthalpy_j: float | None = None,
         entropy_j_per_k: float | None = None,
         neutral_reference: NeutralReference | None = None,
+        critical: _core.CriticalDeclaration | None = None,
+        envelope: _core.EnvelopeCondition | None = None,
     ) -> None:
+        self.critical = critical
+        self.envelope = envelope
         self.row_tolerance = row_tolerance
         self.enthalpy_j = enthalpy_j
         self.entropy_j_per_k = entropy_j_per_k
@@ -246,6 +252,8 @@ class Problem:
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
         native.enthalpy_j = self.enthalpy_j
         native.entropy_j_per_k = self.entropy_j_per_k
+        native.critical = self.critical
+        native.envelope = self.envelope
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
@@ -470,6 +478,8 @@ class Continuation:
     minimum_step: float
     max_steps: int
     max_retries_per_step: int
+    envelope_max_log_step: float = 0.0
+    envelope_straddle: float = 0.0
 
 
 def continue_equilibrium(
@@ -490,6 +500,8 @@ def continue_equilibrium(
     request.options.minimum_step = options.minimum_step
     request.options.max_steps = options.max_steps
     request.options.max_retries_per_step = options.max_retries_per_step
+    request.options.envelope_max_log_step = options.envelope_max_log_step
+    request.options.envelope_straddle = options.envelope_straddle
     return _core.continue_equilibrium(model._model, request)
 
 

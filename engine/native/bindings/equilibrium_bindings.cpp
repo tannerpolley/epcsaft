@@ -130,6 +130,19 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("declaration_budget", &StabilityOptions::declaration_budget)
         .def_readwrite("trial_budget", &StabilityOptions::trial_budget)
         .def_readwrite("standard_uncertainty_over_rt", &StabilityOptions::standard_uncertainty_over_rt);
+    py::class_<CriticalDeclaration>(module, "CriticalDeclaration")
+        .def(py::init<>())
+        .def_readwrite("density_guess_mol_per_m3", &CriticalDeclaration::density_guess_mol_per_m3)
+        .def_readwrite("mode_guess", &CriticalDeclaration::mode_guess);
+    py::enum_<EnvelopeCoordinate>(module, "EnvelopeCoordinate")
+        .value("LogTemperature", EnvelopeCoordinate::LogTemperature)
+        .value("LogPressure", EnvelopeCoordinate::LogPressure)
+        .value("LogK", EnvelopeCoordinate::LogK);
+    py::class_<EnvelopeCondition>(module, "EnvelopeCondition")
+        .def(py::init<>())
+        .def_readwrite("kind", &EnvelopeCondition::kind)
+        .def_readwrite("component", &EnvelopeCondition::component)
+        .def_readwrite("target", &EnvelopeCondition::target);
     py::class_<EquilibriumProblem>(module, "EquilibriumProblem")
         .def(py::init<>())
         .def_readwrite("phases", &EquilibriumProblem::phases)
@@ -143,6 +156,8 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
         .def_readwrite("enthalpy_j", &EquilibriumProblem::enthalpy_j)
         .def_readwrite("entropy_j_per_k", &EquilibriumProblem::entropy_j_per_k)
+        .def_readwrite("critical", &EquilibriumProblem::critical)
+        .def_readwrite("envelope", &EquilibriumProblem::envelope)
         .def_readwrite("discovery", &EquilibriumProblem::discovery);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
@@ -151,7 +166,11 @@ void register_equilibrium(py::module_& module) {
         .value("Electro", RowKind::Electro)
         .value("Normalization", RowKind::Normalization)
         .value("Enthalpy", RowKind::Enthalpy)
-        .value("Entropy", RowKind::Entropy);
+        .value("Entropy", RowKind::Entropy)
+        .value("CriticalMode", RowKind::CriticalMode)
+        .value("CriticalNormalization", RowKind::CriticalNormalization)
+        .value("CriticalCubic", RowKind::CriticalCubic)
+        .value("EnvelopeCondition", RowKind::EnvelopeCondition);
     py::class_<Row>(module, "Row")
         .def_readonly("kind", &Row::kind)
         .def_readonly("phase", &Row::phase)
@@ -224,7 +243,16 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("requested_tolerance_met", &EquilibriumResult::requested_tolerance_met)
         .def_readonly("topology_event", &EquilibriumResult::topology_event)
         .def_readonly("topology_phase", &EquilibriumResult::topology_phase)
-        .def_readonly("topology_pair", &EquilibriumResult::topology_pair);
+        .def_readonly("topology_pair", &EquilibriumResult::topology_pair)
+        .def_readonly("critical", &EquilibriumResult::critical);
+    py::class_<CriticalRecord>(module, "CriticalRecord")
+        .def_readonly("eigenvalues", &CriticalRecord::eigenvalues)
+        .def_readonly("mode", &CriticalRecord::mode)
+        .def_readonly("cubic", &CriticalRecord::cubic)
+        .def_readonly("zero_band", &CriticalRecord::zero_band)
+        .def_readonly("condition_estimate", &CriticalRecord::condition_estimate)
+        .def_readonly("backward_error", &CriticalRecord::backward_error)
+        .def_readonly("rank", &CriticalRecord::rank);
     py::class_<StabilityTrial>(module, "StabilityTrial")
         .def_readonly("phase", &StabilityTrial::phase)
         .def_readonly("seed", &StabilityTrial::seed)
@@ -266,7 +294,7 @@ void register_equilibrium(py::module_& module) {
         .value("PhasesCoalesced", TopologyEvent::PhasesCoalesced);
     auto continuation_stops = py::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
-         value <= static_cast<int>(ContinuationStop::budget_exhausted); ++value) {
+         value <= static_cast<int>(ContinuationStop::critical_endpoint); ++value) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }
@@ -275,7 +303,9 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("initial_step", &ContinuationOptions::initial_step)
         .def_readwrite("minimum_step", &ContinuationOptions::minimum_step)
         .def_readwrite("max_steps", &ContinuationOptions::max_steps)
-        .def_readwrite("max_retries_per_step", &ContinuationOptions::max_retries_per_step);
+        .def_readwrite("max_retries_per_step", &ContinuationOptions::max_retries_per_step)
+        .def_readwrite("envelope_max_log_step", &ContinuationOptions::envelope_max_log_step)
+        .def_readwrite("envelope_straddle", &ContinuationOptions::envelope_straddle);
     py::class_<ContinuationRequest>(module, "ContinuationRequest")
         .def(py::init<>())
         .def_readwrite("start_problem", &ContinuationRequest::start_problem)
@@ -300,7 +330,10 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("last_result", &ContinuationResult::last_result)
         .def_readonly("cause_stop", &ContinuationResult::cause_stop)
         .def_readonly("cause_convergence", &ContinuationResult::cause_convergence)
-        .def_readonly("cause_message", &ContinuationResult::cause_message);
+        .def_readonly("cause_message", &ContinuationResult::cause_message)
+        .def_readonly("conditions", &ContinuationResult::conditions)
+        .def_readonly("critical_points", &ContinuationResult::critical_points)
+        .def_readonly("critical_seeds", &ContinuationResult::critical_seeds);
     py::class_<EquilibriumStart>(module, "EquilibriumStart")
         .def(py::init<>())
         .def_readwrite("coordinates", &EquilibriumStart::coordinates)

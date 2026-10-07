@@ -1140,7 +1140,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
-    require(order == 3 || order == 4, "energy action order");
+    require(order >= 3 && order <= 5, "energy action order");
     for (const auto& direction : directions)
         require(direction.size() == width && finite_vector(direction), "direction");
     double total = 0.0; for (double amount : amounts) total += amount;

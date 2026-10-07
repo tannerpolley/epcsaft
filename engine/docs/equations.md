@@ -2539,3 +2539,27 @@ $$
 $$
 r_S=\frac{\sum_p N_p s_p^{tot}-S_{spec}}{N_{feed}R}.
 $$
+
+## `critical_equations`
+
+- Section: Equilibrium critical and envelope conditions
+- Status: Source equation
+- Source: Heidemann and Khalil 1980, AIChE J. 26, 769–779 (doi:10.1002/aic.690260510); Michelsen 1980, Fluid Phase Equilib. 4, 1–10, pp. 7–8, Eqs. 24–26; normalized amount perturbation as in the FeOs "Stability and critical points" documentation; issue #224 slice B
+- Description: Necessary critical conditions of one neutral nonreactive phase on a positive feed z at fixed (T, V), with F = A/(RT), n the phase amounts, unknown mode u, D = diag(sqrt z) and w = D u; T and P are free and the pressure row closes P.
+- Change note: Ideal parts Q_ij = δ_ij/n_i and F_ijk = −δ_ijk/n_i²; residual parts are the extensive residual contractions E2–E5. ∂c/∂u_j = 3 sqrt(z_j) F_nnn[w,w,e_j] and ∂²c/∂u_i∂u_j = 6 sqrt(z_i z_j) F_nnn[w,e_i,e_j]. A solution is a critical-equation candidate: the conditions certify no stability.
+
+$$
+M=DQD,\quad Q=F_{nn},\quad Mu=0,\quad u^{T}u-1=0,\quad c=F_{nnn}[w,w,w]=0.
+$$
+
+## `envelope_local_condition`
+
+- Section: Equilibrium critical and envelope conditions
+- Status: Source equation
+- Source: Michelsen 1980, Fluid Phase Equilib. 4, 1–10, pp. 2–4, Eqs. 9 and 14–18 (selectable specification and local parametrization), adapted to the raw T/P chart; issue #224 slice B
+- Description: One scalar row of an envelope cell (a finite feed phase and an incipient phase pinned at zero amount, T and P free): the selected comparison coordinate minus its target s, with T_unit = 1 K, P_unit = 1 Pa and K_k = x_k^inc/x_k^feed.
+- Change note: ∂row/∂s = −1. The ln T and ln P rows have second derivatives −1/T² and −1/P²; the ln K row is a difference of log-composition coordinates and is affine.
+
+$$
+\ln(T/T_{unit})-s=0,\quad \ln(P/P_{unit})-s=0,\quad \ln x_k^{inc}-\ln x_k^{feed}-s=0.
+$$

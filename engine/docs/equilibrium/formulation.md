@@ -266,7 +266,7 @@ stationarity/affinity and phase-distinctness diagnostics on declared scales. A s
 is not automatically a stable equilibrium. A requested distinct phase set
 that coalesces must report the degeneration explicitly, including a pair whose
 identities swap between consecutive states of a followed branch (passage
-through a critical point).
+through a critical point) other than an envelope's requested ln K straddle.
 
 ## Discovery and global claims
 
@@ -425,5 +425,10 @@ nonsmooth ionic boundary, report the unavailable action and its reason while
 preserving valid central values. Conditioning and residuals qualify each
 linear solve. Do not return an unexplained empty array as a derivative.
 
-Solid phases, kinetics and augmented critical-point equations remain separately
+Neutral nonreactive critical equations (EqID: `critical_equations`) are
+necessary conditions: a solution is a critical-equation candidate with T, P,
+density and composition, not a stability certificate, and its pressure-closed
+quantities that divide by P_rho = 0 are unavailable. Envelope cells (EqID:
+`envelope_local_condition`) trace a feed with a zero-pinned incipient phase
+(ALG-EQUILIBRIUM). Solid phases and kinetics remain separately
 justified extensions; this fluid formulation does not imply their support.
