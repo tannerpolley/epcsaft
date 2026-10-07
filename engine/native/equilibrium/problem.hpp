@@ -494,7 +494,7 @@ EquilibriumResult solve_equilibrium(
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr);
 
-// ---- Solved-state derivative actions (E5): native records, no public promise.
+// ---- Solved-state derivative actions: native records, no public promise.
 
 enum class SolvedStateObservableKind {
     Temperature,
@@ -659,7 +659,7 @@ SolvedStateActionBatch solved_state_actions(
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
-// Independent A1 directions at one accepted center; each response retains its own status.
+// Independent first-order directions at one accepted center; each response retains its own status.
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,

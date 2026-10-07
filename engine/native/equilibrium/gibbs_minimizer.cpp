@@ -498,7 +498,7 @@ bool GibbsMinimizer::get_bounds_info(
     // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
     const std::size_t species = compiled_.n_feed.size();
     const bool feasibility = compiled_.feasibility_cell();
-    std::vector<double> box(species, feasibility ? std::numeric_limits<double>::min() : policy::STABILITY_COMPOSITION_FLOOR.value);
+    std::vector<double> box(species, feasibility ? std::numeric_limits<double>::min() : policy::EQUILIBRIUM_BOX_FLOOR.value);
     if (!feasibility) {
         if (limits_ && limits_->expired()) return false;
         for (std::size_t i = 0; i < species; ++i)
@@ -1325,7 +1325,7 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
         result.log_packing.push_back(full[cursor]);
         compositions.push_back(std::move(composition));
         if (spec.amount.kind == AmountKind::Free
-            && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value
+            && amount / compiled.feed_total <= policy::PHASE_DISAPPEARANCE_AMOUNT.value
             && result.event == TopologyEvent::None) {
             result.event = TopologyEvent::PhaseDisappeared;
             result.phase = phase;

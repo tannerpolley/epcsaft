@@ -133,8 +133,8 @@ std::vector<std::vector<double>> start_compositions(
             }
             const double beta = 0.5 * (lower + upper);
             std::vector<double> trial_x(components), trial_y(components);
-            bool usable = beta > policy::STABILITY_PHASE_AMOUNT_FLOOR.value
-                && 1.0 - beta > policy::STABILITY_PHASE_AMOUNT_FLOOR.value;
+            bool usable = beta > policy::PHASE_DISAPPEARANCE_AMOUNT.value
+                && 1.0 - beta > policy::PHASE_DISAPPEARANCE_AMOUNT.value;
             for (std::size_t i = 0; i < components; ++i) {
                 trial_x[i] = compiled.feed_composition[i] / ((1.0 - beta) + beta * k_values[i]);
                 trial_y[i] = k_values[i] * trial_x[i];
@@ -882,7 +882,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     ContinuationResult result;
     const auto& options = request.options;
     const double window = policy::DENSITY_ANCHOR_LOG_WINDOW.value, straddle_band = options.envelope_straddle;
-    // R1 (issue #224): a pure trace ends within 4 W of coalescence; below about 2 W the window refuses both roots.
+    // A pure trace ends within 4 W of coalescence; below about 2 W the window refuses both roots.
     const double coalescence_gap = 4.0 * window;
     if (!(options.envelope_max_log_step > 0.0) || !(straddle_band > 0.0)
         || !(straddle_band + straddle_band <= options.envelope_max_log_step)  // the straddle jump fits one step
@@ -913,7 +913,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         if (tangent.empty())
             return finish(std::move(result), ContinuationStop::singular_jacobian, "envelope tangent is unavailable at the accepted state");
         auto c = envelope_coordinates(current, at, tangent);
-        // R4: orientation by continuity of the dimensionless (d ln T, d ln P, d ln K)/ds.
+        // Orientation by continuity of the dimensionless (d ln T, d ln P, d ln K)/ds.
         std::vector<double> heading = {c[0][1], c[1][1]};
         for (std::size_t k = 4; k < c.size(); ++k) heading.push_back(c[k][1]);
         if (motion.empty()) motion = heading;
@@ -939,7 +939,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         }
         const double s = active.target, gap = c[2][0] - c[3][0];
         if (pure && std::abs(gap) <= coalescence_gap) {
-            // R1: the first accepted state within 4 W of coalescence ends the saturation trace at the separately
+            // The first accepted state within 4 W of coalescence ends the saturation trace at the separately
             // solved critical candidate seeded there; the last distinct saturation state is retained.
             const std::array<double, 3> seed{c[0][0], c[1][0], 0.5 * (c[2][0] + c[3][0])};
             result.critical_seeds.push_back({seed.begin(), seed.end()});
@@ -948,14 +948,14 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
             result.critical_points.push_back(std::move(candidate));
             return finish(std::move(result), ContinuationStop::critical_endpoint, "last distinct saturation state retained");
         }
-        // R3: a small ln K decreasing in magnitude (s sign < 0) is approached at the same-sign threshold; only the
+        // A small ln K decreasing in magnitude (s sign < 0) is approached at the same-sign threshold; only the
         // straddle to -s crosses zero, and s = 0 is never a target.
         const bool toward_zero = active.kind == EnvelopeCoordinate::LogK && !passed && s * sign < 0.0;
         const bool straddle = toward_zero && std::abs(s) <= straddle_band;
         double s_try = closing ? closing_pressure : -s;
         if (!closing && !straddle) {
             // Predictor inside the anchored density window (0.9 W keeps its curvature from refusing the
-            // anchored root), and for a pure fluid within R1's gap bound.
+            // anchored root), and for a pure fluid within 3/8 of the coalescence gap.
             double delta = std::min(step, 0.9 * window / std::max(std::abs(c[2][1]), std::abs(c[3][1])));
             if (pure) delta = std::min(delta, 0.375 * std::abs(gap / (c[2][1] - c[3][1])));
             s_try = s + sign * delta;
@@ -965,7 +965,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         problem.envelope = active;
         problem.envelope->target = s_try;
         auto expected = anchors;
-        if (straddle) {  // R2: the attempt itself expects the feed on the other density branch
+        if (straddle) {  // the straddle attempt itself expects the feed on the other density branch
             for (auto& phase : problem.phases) phase.kind = phase.kind == PhaseKind::Liquid ? PhaseKind::Vapor : PhaseKind::Liquid;
             std::swap(expected[0], expected[1]);
         }

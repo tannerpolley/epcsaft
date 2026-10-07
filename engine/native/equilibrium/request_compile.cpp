@@ -393,7 +393,7 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
         }
 }
 
-// Critical and envelope cells: one condition, neutral, nonreactive, T and P free (issue #224 B).
+// Critical and envelope cells: one condition, neutral, nonreactive, T and P free.
 void admit_conditions(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!p.critical && !p.envelope) return;

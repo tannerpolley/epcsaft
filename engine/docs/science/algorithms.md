@@ -373,34 +373,6 @@ not establish all roots or physical nonexistence.
 
 ## ALG-EQUILIBRIUM
 
-Detailed capture emits `polish_direction` (undamped correction infinity norm,
-controlling coordinate, raw/classified defects before, extension, prior accepted
-contraction ratio) and `polish_coordinate` (coordinate, phase, component, value),
-whose reason names its chart quantity and units. `polish_trial` adds raw/classified
-defects after, damping, acceptance, extension, prior ratio and trial index, retaining the actual rejection or preparation cause. Missing
-trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
-the exit cause. Ordinary capture keeps the existing `polish_step` records.
-
-`solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
-and raw-J two-norm condition estimate after all deadlines, branch admission and
-attempt selection. Failed diagnostic inspection retains its cause and unavailable
-rank/condition. This estimate depends on coordinates and is no error bound or
-stability certificate. Its isolated EOS work is excluded from solve/search work
-counts, but may update model caches/counters and adds uncapped time before return.
-Detailed capture can advance finite deadlines; untimed returned-state identity
-is qualified separately. Disabled capture adds no numerical work or clock reads.
-
-Core contains all observation failures, retains a readable prefix and exposes
-sticky `capture.trace.incomplete`; missing evidence never selects numerical
-recovery. Trace-only containers and strings are constructed inside `Scope::observe`
-or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
-contain allocation failure. The source rule in
-`tools/check-engine-architecture.py` guards the known eager-temporary and
-named-local payload patterns during `check-all`; it is not a complete
-allocation-safety proof.
-Nested native work captures forward detailed records once with remapped
-parents. Python declares capture and reads/serializes completed records only.
-
 All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
 pins and free intensives from data. The balance basis $B$ spans the left null space
@@ -561,7 +533,7 @@ box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO�
 need no further polishing. Each step must reduce the raw row maximum at a
 positive finite composition of every supported species; exact absence is the
 compiled support (#231). No composition cutoff applies, so the polish reaches
-positive roots below the optimizer box and below `STABILITY_COMPOSITION_FLOOR`
+positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
 (#87, 2026-09-21; #266, 2026-10-07: MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
 Before evaluating a trial, a fresh undamped correction may terminate polishing
 when the current point is the stored best point, its classified maximum is within
@@ -625,17 +597,13 @@ carries both exact Ipopt names, e.g. `UNASSIGNED; Initialize returned Invalid_Op
 so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
-A square feasibility cell carries chemical and pressure rows as optimizer equality
+A feasibility cell carries chemical and pressure rows as optimizer equality
 constraints. Its log-composition lower bound is therefore the representability limit,
 the smallest normal double (#322): the all-free optimizer box or a composition cutoff would exclude valid
 trace roots before a successful optimizer stop can reach polishing (a reactive bubble point
 whose trace root lies at 2.4e-24 stopped `infeasible` under the former 1e-20 bound). That bound
-moves square-cell values at rounding level, with no work change: state values and envelope gaps by at most 2.6e-9
-relative, envelope Hermite seeds by 9.7e-9, and a 6.2e-5 K boundary gap by 1.2e-11 K. Near the e4-d
-mixture critical point the solves are conditioning-limited (condition about 1e8) and move
-more: the last accepted state (265.9 K) by 1.9e-5 in phase distance with an identical
-1.776e-15 residual, and the rejected post-swap trial (266 K) by 19% in sign product and
-step change. Neither bound is demonstrably closer to the root. In all-free cells a warm start below the box
+moves feasibility-cell values at rounding level with no work change, except conditioning-limited
+near-critical solves; the measured moves are retained with #322 (PR #332). In all-free cells a warm start below the box
 is pulled back into it by the optimizer's bound push and re-recovered by the polish.
 The retained MEA 050 case exercises rejection of a full step and acceptance of
 a half step without relaxing the requested tolerance. The returned extensive-objective constraint multipliers are
@@ -704,7 +672,7 @@ classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
 `constr_viol_tol` settings are the smaller of the request
 and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
-hair when both coincide. A square feasibility cell (pinned amount or caloric
+hair when both coincide. A feasibility cell (pinned amount, caloric or critical
 condition: constant objective, followed by the exact Newton polish) stops at the criterion itself; the polish, not an
 inner decade, removes the overshoot (owner decision 2026-09-23).
 The shared Ipopt option owner sets the absolute unscaled `dual_inf_tol` to
@@ -794,6 +762,32 @@ the unscaled rows in `residuals` as diagnostics, and classifies a feasibility ce
 its unscaled rows, which are its constraints. Species thermochemistry attached to a
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
+
+PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
+Its objective is constant; all chemical, pressure, material and caloric rows
+are constraints, with exact optimizer-weighted curvature. Actual pins retain
+their distinct amount meaning. H/S values use E1, Jacobians E2, curvature E3
+and third solved-state actions E4. The analytic geometry differentiates ideal
+calorics, amounts, raw T, packing and moving feed normalization; residual energy
+contractions remain with Properties. The target controls are H [J] and S [J/K],
+with partial rows −1/(N_feed RT) and −1/(N_feed R), including their higher chains.
+A nonzero absent-condition control is invalid; zero is permitted for either kind.
+
+An ordinary fixed-T seed uses the same driver and frozen C_f = Σ N_p cp,p:
+T1 = T0 + (H_spec − H0)/C_f, or T1 = T0 exp((S_spec − S0)/C_f).
+Only finite positive C_f and an admitted T1 change the seed. Pure two-phase
+seeds instead use the pinned-zero saturation cell at P and the caloric lever
+rule; an exterior target requires a caller-declared single phase. An auxiliary
+failure retains its cause and the caller start; there is no outer retry.
+
+Regular PH/PS qualification restricts the returned coordinates to a diagnostic
+fixed-TP Gibbs chart, recovers its physical chemical duals and computes the
+existing reduced inertia without another solve. Pure coexistence instead has
+an interior lever-fixed equality root with distinct positive mechanical slopes,
+pressure/chemical equality and conserved amounts. Its fixed-TP Gibbs split is
+analytically flat: strict curvature and ordinary equilibrium Cp are unavailable.
+Neither qualification establishes global stability. Straight continuation carries
+H/S targets and controls through the same native predictor and corrector.
 
 Declared-branch continuation follows one straight dimensionless path `s` in
 `[0, 1]` between two problems with identical declarations. Fixed intensives
@@ -913,6 +907,36 @@ displacement mode) ends the trace as `critical_endpoint`, with the last
 distinct saturation state retained; it is not closure on another branch.
 Liquid–liquid, reactive, charged, three-phase and disconnected envelopes,
 critical stability and E6 remain outside this method.
+
+### Polish and endpoint trace records
+
+Detailed capture emits `polish_direction` (undamped correction infinity norm,
+controlling coordinate, raw/classified defects before, extension, prior accepted
+contraction ratio) and `polish_coordinate` (coordinate, phase, component, value),
+whose reason names its chart quantity and units. `polish_trial` adds raw/classified
+defects after, damping, acceptance, extension, prior ratio and trial index, retaining the actual rejection or preparation cause. Missing
+trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
+the exit cause. Ordinary capture keeps the existing `polish_step` records.
+
+`solved_endpoint_jacobian` reports defining-row count, solved-chart width, rank
+and raw-J two-norm condition estimate after all deadlines, branch admission and
+attempt selection. Failed diagnostic inspection retains its cause and unavailable
+rank/condition. This estimate depends on coordinates and is no error bound or
+stability certificate. Its isolated EOS work is excluded from solve/search work
+counts, but may update model caches/counters and adds uncapped time before return.
+Detailed capture can advance finite deadlines; untimed returned-state identity
+is qualified separately. Disabled capture adds no numerical work or clock reads.
+
+Core contains all observation failures, retains a readable prefix and exposes
+sticky `capture.trace.incomplete`; missing evidence never selects numerical
+recovery. Trace-only containers and strings are constructed inside `Scope::observe`
+or Core’s initializer-list `probe` overload. A `scope.on()` guard alone does not
+contain allocation failure. The source rule in
+`tools/check-engine-architecture.py` guards the known eager-temporary and
+named-local payload patterns during `check-all`; it is not a complete
+allocation-safety proof.
+Nested native work captures forward detailed records once with remapped
+parents. Python declares capture and reads/serializes completed records only.
 
 ## ALG-STABILITY
 
@@ -1156,32 +1180,6 @@ Neutral qualification precedes ionic/reacting qualification. Same-wheel declared
 comparisons establish integration/topology evidence; refined FeOs neutral
 comparisons establish cross-implementation agreement, not physical validation.
 
-PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
-Its objective is constant; all chemical, pressure, material and caloric rows
-are constraints, with exact optimizer-weighted curvature. Actual pins retain
-their distinct amount meaning. H/S values use E1, Jacobians E2, curvature E3
-and third solved-state actions E4. The analytic geometry differentiates ideal
-calorics, amounts, raw T, packing and moving feed normalization; residual energy
-contractions remain with Properties. The target controls are H [J] and S [J/K],
-with partial rows −1/(N_feed RT) and −1/(N_feed R), including their higher chains.
-A nonzero absent-condition control is invalid; zero is permitted for either kind.
-
-An ordinary fixed-T seed uses the same driver and frozen C_f = Σ N_p cp,p:
-T1 = T0 + (H_spec − H0)/C_f, or T1 = T0 exp((S_spec − S0)/C_f).
-Only finite positive C_f and an admitted T1 change the seed. Pure two-phase
-seeds instead use the pinned-zero saturation cell at P and the caloric lever
-rule; an exterior target requires a caller-declared single phase. An auxiliary
-failure retains its cause and the caller start; there is no outer retry.
-
-Regular PH/PS qualification restricts the returned coordinates to a diagnostic
-fixed-TP Gibbs chart, recovers its physical chemical duals and computes the
-existing reduced inertia without another solve. Pure coexistence instead has
-an interior lever-fixed equality root with distinct positive mechanical slopes,
-pressure/chemical equality and conserved amounts. Its fixed-TP Gibbs split is
-analytically flat: strict curvature and ordinary equilibrium Cp are unavailable.
-Neither qualification establishes global stability. Straight continuation carries
-H/S targets and controls through the same native predictor and corrector.
-
 ## ALG-ACTIONS
 
 An action request identifies observable, independent coordinate order, units,
@@ -1308,7 +1306,7 @@ equilibrium and caloric actions. A limited-memory outer Hessian does not remove
 that need. An exact outer Hessian may require A3. The older ordinary seven-state
 absorber route only needing A1 does not define the new application's requirement.
 
-Solved-state actions (E5) are evaluated by one native owner,
+Solved-state actions are evaluated by one native owner,
 `solved_state_actions(compiled, central, request)`, at an accepted result; the
 owner never re-solves, compiles or mutates. Admission requires the central
 classified residual, the quantity the driver certifies (owner decision
@@ -1802,7 +1800,7 @@ x_i \ge \max\!\left(x_{\mathrm{cut}},\ \min\!\left(\beta,\ \varepsilon\,\frac{u_
 u_i = \max\,\{\, n_i : B n = b,\ n \ge 0,\ n_j = 0 \text{ off every support} \,\},
 $$
 
-where $x_{\mathrm{cut}}$ is `STABILITY_COMPOSITION_FLOOR`, $\varepsilon$ is
+where $x_{\mathrm{cut}}$ is `EQUILIBRIUM_BOX_FLOOR`, $\varepsilon$ is
 `EQUILIBRIUM_BOX_INVENTORY_FRACTION` and $u_i$ is the largest attainable total amount of $i$,
 one HiGHS linear program per species, cached during compilation. Rows of $B$ can carry mixed signs (a hydrogen row
 $n_{\mathrm{H^+}}-n_{\mathrm{LiA}}-n_{\mathrm{NaA}}$), so no single row ratio bounds $n_i$; an
@@ -1863,7 +1861,7 @@ unbounded LP cannot certify absence. The box does not set accuracy: a
 moiety row $(Bn-b)/N_{\mathrm{feed}}$ resolves an inventory to its achieved residual, at most the
 caller's row tolerance and after the polish near rounding, $\epsilon N_{\mathrm{feed}}$ (trace
 isomers fed at 1e-10, 1e-12 and 1e-14 mol in 1 mol return their amount to 4e-8, 5e-9 and 9e-3
-relative; the orthonormal basis gave 8e-6, 3e-4 and a factor 4). Square pinned equation systems
+relative; the orthonormal basis gave 8e-6, 3e-4 and a factor 4). Feasibility cells
 use the smallest normal double for every species, so chemical equalities can reach trace roots.
 $x_{\mathrm{cut}}$ is only the finite lower bound of the all-free box. It binds below an
 attainable inventory of 1e-18 $N_{\mathrm{feed}}$, where trace values are already unresolved
@@ -1880,7 +1878,7 @@ solve's own acceptance. As probed: the single-phase isomer's stability decision 
 $K$ = 1e-199 (minimum curvature 2.1e-203), and the square reactive bubble cell matches its scaled
 $K$ = 1e-12 values to $K$ = 1e-150 but stops `infeasible` at 1e-200 and 1e-250 (undiagnosed). Free-phase
 disappearance compares the dimensionless amount ratio
-`n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
+`n_phase / sum(n_feed)` with the provisional `PHASE_DISAPPEARANCE_AMOUNT`;
 that topology rejection is not a stability or accuracy conclusion. Packing
 admission rejects the equal-sphere face-centred-cubic geometric boundary
 `eta >= CLOSE_PACKING_FRACTION`; this is a conservative PC-SAFT domain

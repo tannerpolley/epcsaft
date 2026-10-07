@@ -175,7 +175,7 @@ std::vector<double> sensitivity(
     return solve_implicit(compiled, prepared, series.rows[1]);
 }
 
-// ------------------------------------------------------------- solved-state actions (E5)
+// ------------------------------------------------------------- solved-state actions
 
 namespace {
 
@@ -341,10 +341,10 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
              problem.pressure.free))
-            throw std::invalid_argument("referenced A3 consumes driven feed-only triples");
+            throw std::invalid_argument("a referenced third-order action admits only feed directions at fixed T and P");
     }
     if (referenced && request.directions.size() == 2 && parameter_directions > 1)
-        throw std::invalid_argument("A2 has two parameter-bearing directions");
+        throw std::invalid_argument("a referenced second-order action admits at most one parameter or reaction-law direction");
     if (central.rows.size() != compiled.rows.size() || central.phase_count != problem.phases.size())
         throw std::invalid_argument("central result does not match the compiled system");
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -1048,7 +1048,7 @@ static SolvedStateActionBatch evaluate_action(
         item.diagnostic_message = std::move(message);
     };
     if (shared->central_results.empty()) {
-        // Central values and property dependencies are identical for every independent A1.
+        // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
         const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
         std::vector<PhaseMap> base_maps;

@@ -4168,7 +4168,7 @@ void check_e5_reactive() {
         all_ok = (qualify(f, "e5-3")) && all_ok;
     }
     {
-        // #322: x_B = K/(1+K) below STABILITY_COMPOSITION_FLOOR (1e-20). Main refused the actions and the
+        // #322: x_B = K/(1+K) below EQUILIBRIUM_BOX_FLOOR (1e-20). Main refused the actions and the
         // declared seeds there, stopped continuation at x_B = 1.0e-20 and left the square bubble cell infeasible.
         const auto model = isomerisation_case(1.0, a).model();
         const auto isomer = [&](double k, double t, double b, double c, double d) {  // K(350 K) = k
