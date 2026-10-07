@@ -2476,12 +2476,19 @@ void check_ionic_addition_enthalpy() {
         const double reference = R2 / scale;
         const double tolerance = 1.0e-6 * std::abs(reference);
         const double uncertainty = std::abs(R2 - R1) / scale;
+        // Endpoint rounding: each composed point carries delta = DBL_EPSILON (|H_i| + |H_f|) / n_add
+        // (7.0e-10 J/mol here; a rounding-only change moved points by 6e-10 to 1.2e-9, and the
+        // conserved-basis value above differs by 2.8e-10). R2 weights c(+-s/4) by 8/(3s) and
+        // c(+-s/2) by 1/(3s), so it carries at most 6 delta / (s scale).
+        const double rounding = 6.0 * std::numeric_limits<double>::epsilon()
+            * (std::abs(H_initial) + std::abs(H_final)) / amount / (step * scale);
         CHECK(truth("addition-ionic/column-refinement/" + std::to_string(column), "the rebuilt endpoint/feed derivative is resolved below its criterion",
             uncertainty <= tolerance && std::abs(reference) > tolerance,
             fields({field("coarse", rungs.coarse / scale), field("middle", rungs.fine / scale), field("fine", finer / scale),
                 field("uncertainty", uncertainty), field("allowance", tolerance)}), "addition-ionic"));
         CHECK(agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
-            tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
+            tolerance + rounding, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty),
+                field("rounding", rounding)}),
             "one EOS and one source-law column agree with rebuilt composed endpoint/feed differences", "addition-ionic"));
     }
 }
