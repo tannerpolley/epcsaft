@@ -2,14 +2,11 @@
 import math
 from typing import Any
 
-import pytest
-
 from epcsaft import Mixture, _core, regression
 from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction, solve_equilibrium
-from ..native_inputs import ETHANE, parameters
+from ..native_inputs import ETHANE, budget, parameters
 
 
-@pytest.mark.slow
 def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) -> None:
     # Six identical neutral ethane pseudo-species. Two fixed-support liquids have
     # separate conserved solvents; A and B exchange independently between them.
@@ -38,7 +35,7 @@ def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) ->
     rows = observations((-0.1, 0.1))
     coordinates = [regression.reaction_coordinate(name, "a", origin=0.0, scale=1.0, bounds=(-2.0, 2.0))
                    for name in ("exchange_a", "exchange_b")]
-    fitted = regression.fit(p, coordinates, rows)
+    fitted = regression.fit(p, coordinates, rows, controls=budget())
     assert fitted.status == "converged" and fitted.usable and fitted.trial_failures == 0, fitted.message
     assert fitted.covariance.status == "available" and fitted.covariance.rank == 2
     assert fitted.final_cost <= 1e-14 and max(abs(r) for r in fitted.residuals) <= 1e-8
@@ -95,7 +92,7 @@ def test_direct_log_constants_recover_coefficients_with_absolute_weights(evidenc
         rows.append(row)
     coordinates = [regression.reaction_coordinate("isomerisation", "a", origin=0.0, scale=1.0),
                    regression.reaction_coordinate("isomerisation", "b", origin=0.0, scale=250.0)]
-    fitted = regression.fit(p, coordinates, rows, weights=weights)
+    fitted = regression.fit(p, coordinates, rows, weights=weights, controls=budget())
     assert fitted.usable and fitted.status == "converged", fitted.message
     assert fitted.covariance.rank == 2 and fitted.covariance.status == "available"
     for k, known in enumerate((-1.5, 150.0)):

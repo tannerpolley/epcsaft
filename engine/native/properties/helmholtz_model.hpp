@@ -74,6 +74,14 @@ enum class PropertyObservable {
     MolarVolumeTemperatureDerivative,
     MolarVolumePressureDerivative
 };
+// The first CALORIC_PROPERTY_COUNT members are three families (ideal 0, residual 1, total 2) of
+// five kinds (enthalpy 0, internal energy 1, entropy 2, Cp 3, Cv 4), in that order.
+inline constexpr std::size_t CALORIC_PROPERTY_COUNT = 15;
+inline std::size_t property_family(PropertyObservable o) noexcept { return static_cast<std::size_t>(o) / 5; }
+inline std::size_t property_kind(PropertyObservable o) noexcept { return static_cast<std::size_t>(o) % 5; }
+inline PropertyObservable property_observable(std::size_t family, std::size_t kind) noexcept {
+    return static_cast<PropertyObservable>(5 * family + kind);
+}
 enum class PropertyActionStatus {
     Available, MissingThermochemistry, OutsideInterval, ThermalBoundary,
     SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
@@ -283,6 +291,22 @@ struct NeutralReferenceReactionDiagnostic final {
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
     std::vector<Derivative> lower_derivatives;
+    // d^(a+b+[p]) C / dT^a dP^b [dtheta_p], nullopt where it was not admitted or not requested.
+    std::optional<double> derivative_value(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+        const auto parameter = [&p](const std::vector<std::optional<double>>& v) {
+            return *p < v.size() ? v[*p] : std::nullopt; };
+        if (p && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
+        if (p && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
+        if (!p && a + b == 0) return terminal_contraction;
+        if (!p && a == 1 && b == 0) return terminal_contraction_temperature_derivative;
+        if (!p && a == 2 && b == 0) return terminal_contraction_temperature_second_derivative;
+        if (!p && a == 0 && b == 1) return terminal_contraction_pressure_derivative;
+        if (!p && a == 0 && b == 2) return terminal_contraction_pressure_second_derivative;
+        if (!p && a == 1 && b == 1) return terminal_contraction_temperature_pressure_derivative;
+        for (const auto& column : derivatives)
+            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p) return column.value;
+        return std::nullopt;
+    }
     std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
         for (const auto* columns : {&lower_derivatives, &derivatives})
             for (const auto& column : *columns)

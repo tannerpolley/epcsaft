@@ -10,7 +10,7 @@
 
 namespace epcsaft::regression {
 
-// The built-in observation inventory (#46). Values come from the shared owners only:
+// The built-in observation inventory. Values come from the shared owners only:
 // Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {
@@ -67,11 +67,12 @@ struct HydrationHold final {
     double energy_tolerance = 0.0, diameter_tolerance = 0.0;
     int maximum_iterations = 0;
 };
+// correction is the last Newton step |H/H_d| (Angstrom); uncertainty bounds the achieved diameter
+// error, min(correction, bracket width), the quantity the diameter criterion accepts.
 struct HoldResult final {
     double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
     std::vector<double> parameter_derivative;
     int iterations = 0;
-    std::string cause;
 };
 struct EvaluatedCoordinates final {
     Parameters parameters;

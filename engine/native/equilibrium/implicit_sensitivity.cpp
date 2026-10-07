@@ -122,21 +122,21 @@ SensitivityInfo inspect_sensitivity(
 
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
+    const PhasePoint& prepared,
     const std::vector<double>& parameter_rows
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
-    const std::size_t dimension = point.size();
-    if (!valid_point(point)) throw std::invalid_argument("invalid sensitivity point");
+    const std::size_t dimension = prepared.point.size();
+    if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     validate_parameter_rows(parameter_rows, rows);
     const std::size_t parameters = parameter_count(parameter_rows, rows);
     if (parameters == 0) return {};
-    const auto jacobian = compiled.jacobian(point);
+    const auto jacobian = compiled.jacobian_at(prepared);
     if (jacobian.size() != rows * dimension || rows != dimension) return {};
-    const auto info = inspect_sensitivity(compiled, point, parameter_rows);
-    if (!info.nonsingular) return {};
     const auto matrix = dense_matrix(jacobian, rows, dimension);
+    const auto lu = matrix.fullPivLu();
+    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension) return {};
     Eigen::MatrixXd right(static_cast<Eigen::Index>(rows),
                           static_cast<Eigen::Index>(parameters));
     for (std::size_t row = 0; row < rows; ++row) {
@@ -145,7 +145,7 @@ std::vector<double> solve_implicit(
                 -parameter_rows[row * parameters + parameter];
         }
     }
-    const Eigen::MatrixXd result = matrix.fullPivLu().solve(right);
+    const Eigen::MatrixXd result = lu.solve(right);
     double error = 0.0;
     for (Eigen::Index j = 0; j < result.cols(); ++j)
         error = std::max(error, backward_error((matrix * result.col(j) - right.col(j)).cwiseAbs().maxCoeff(),
@@ -165,19 +165,17 @@ std::vector<double> sensitivity(
     const std::vector<double>& lever
 ) {
     core::Scope scope("sensitivity");
-    const std::size_t width = 2 + compiled.model->parameters().component_count()
-        + compiled.model->active_parameters().size();
-    if (lever.size() != width && lever.size() != width + 4 * compiled.problem.reactions.size() + 2)
+    if (lever.size() != compiled.control_width() && lever.size() != compiled.extended_control_width())
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
     // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
     // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
     const auto prepared = compiled.prepare(point);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);
-    return solve_implicit(compiled, point, series.rows[1]);
+    return solve_implicit(compiled, prepared, series.rows[1]);
 }
 
-// ------------------------------------------------------------- solved-state actions (E5)
+// ------------------------------------------------------------- solved-state actions
 
 namespace {
 
@@ -254,19 +252,16 @@ const char* observable_unit(const SolvedStateObservable& observable) {
         return "m^3/mol";
     case SolvedStateObservableKind::PhaseMolarDensity: return "mol/m^3";
     case SolvedStateObservableKind::PhaseProperty:
-        return static_cast<std::size_t>(observable.property) % 5 < 2 ? "J/mol" : "J/(mol K)";
+        return property_kind(observable.property) < 2 ? "J/mol" : "J/(mol K)";
     default: return "1";
     }
 }
 
-const char* property_name(PropertyObservable observable) {
-    static const char* const names[] = {
-        "IdealEnthalpy", "IdealInternalEnergy", "IdealEntropy", "IdealIsobaricHeatCapacity",
-        "IdealIsochoricHeatCapacity", "ResidualEnthalpy", "ResidualInternalEnergy", "ResidualEntropy",
-        "ResidualIsobaricHeatCapacity", "ResidualIsochoricHeatCapacity", "TotalEnthalpy",
-        "TotalInternalEnergy", "TotalEntropy", "TotalIsobaricHeatCapacity", "TotalIsochoricHeatCapacity"};
-    const auto index = static_cast<std::size_t>(observable);
-    return index < 15 ? names[index] : "unknown";
+std::string property_name(PropertyObservable observable) {
+    static const char* const family[] = {"Ideal", "Residual", "Total"};
+    static const char* const kind[] = {"Enthalpy", "InternalEnergy", "Entropy", "IsobaricHeatCapacity", "IsochoricHeatCapacity"};
+    if (static_cast<std::size_t>(observable) >= CALORIC_PROPERTY_COUNT) return "unknown";
+    return std::string(family[property_family(observable)]) + kind[property_kind(observable)];
 }
 
 // Every observable except a fixed T or P input depends on the solved state.
@@ -275,8 +270,6 @@ bool state_dependent(const SolvedStateObservable& observable, const EquilibriumP
     if (observable.kind == SolvedStateObservableKind::Pressure) return problem.pressure.free;
     return true;
 }
-
-bool has_source_reference(const EquilibriumProblem &);
 
 void validate_request(const CompiledSystem& compiled, const EquilibriumResult& central,
                       const SolvedStateActionRequest& request) {
@@ -290,7 +283,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("solved-state observable phase ordinal");
         if (has_component(item.kind) && item.component >= components)
             throw std::invalid_argument("solved-state observable component ordinal");
-        if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= 15)
+        if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= CALORIC_PROPERTY_COUNT)
             throw std::invalid_argument("solved-state property observable");
         if (item.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
             && (problem.temperature.free || problem.pressure.free || problem.temperature.absent
@@ -335,6 +328,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         if (problem.pressure.free && direction.pressure_pa != 0.0)
             throw std::invalid_argument("free pressure is a solved output, not an external control");
     }
+    // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
+    const bool referenced = !compiled.reference_diagnostics.empty();
     std::size_t parameter_directions = 0;
     for (const auto &d : request.directions) {
         bool parameter = false;
@@ -343,13 +338,13 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             for (double v : field)
                 parameter |= v != 0.0;
         parameter_directions += std::size_t(parameter);
-        if (has_source_reference(problem) && request.directions.size() == 3 &&
+        if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
              problem.pressure.free))
-            throw std::invalid_argument("referenced A3 consumes driven feed-only triples");
+            throw std::invalid_argument("a referenced third-order action admits only feed directions at fixed T and P");
     }
-    if (has_source_reference(problem) && request.directions.size() == 2 && parameter_directions > 1)
-        throw std::invalid_argument("A2 has two parameter-bearing directions");
+    if (referenced && request.directions.size() == 2 && parameter_directions > 1)
+        throw std::invalid_argument("a referenced second-order action admits at most one parameter or reaction-law direction");
     if (central.rows.size() != compiled.rows.size() || central.phase_count != problem.phases.size())
         throw std::invalid_argument("central result does not match the compiled system");
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -362,44 +357,9 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         throw std::invalid_argument("central coordinates do not match the compiled layout");
 }
 
-// A constant supplied Gibbs vector cannot carry a temperature-dependent reaction target.
-bool thermal_reference_missing(const CompiledSystem& compiled, double temperature) {
-    const auto& problem = compiled.problem;
-    if (problem.standard_gibbs_j_per_mol.empty() || problem.reactions.empty()) return false;
-    const auto targets = reaction_target_series(temperature, problem.reactions, 3);
-    for (std::size_t row = 0; row < problem.reactions.size(); ++row) {
-        const double scale = std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, std::abs(targets[0][row]));
-        double power = 1.0;
-        for (std::size_t k = 1; k <= 3; ++k) {
-            power *= temperature;
-            if (std::abs(targets[k][row]) * power > scale) return true;
-        }
-    }
-    return false;
-}
-
-bool has_source_reference(const EquilibriumProblem& problem) {
-    return problem.source_reference.has_value()
-        || std::any_of(problem.reactions.begin(), problem.reactions.end(),
-            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
-}
-
+// Ideal and total caloric properties carry the standard-state (record) terms; residual ones do not.
 bool caloric_property(PropertyObservable property) {
-    switch (property) {
-    case PropertyObservable::IdealEnthalpy:
-    case PropertyObservable::IdealInternalEnergy:
-    case PropertyObservable::IdealEntropy:
-    case PropertyObservable::IdealIsobaricHeatCapacity:
-    case PropertyObservable::IdealIsochoricHeatCapacity:
-    case PropertyObservable::TotalEnthalpy:
-    case PropertyObservable::TotalInternalEnergy:
-    case PropertyObservable::TotalEntropy:
-    case PropertyObservable::TotalIsobaricHeatCapacity:
-    case PropertyObservable::TotalIsochoricHeatCapacity:
-        return true;
-    default:
-        return false;
-    }
+    return static_cast<std::size_t>(property) < CALORIC_PROPERTY_COUNT && property_family(property) != 1;
 }
 
 struct Center final {
@@ -687,12 +647,12 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
     std::vector<PropertyObservable> requested;
     for (auto observable : observables) {
         if (calorics && caloric_property(observable))
-            observable = static_cast<PropertyObservable>(5 + std::size_t(observable) % 5);
+            observable = property_observable(1, property_kind(observable));
         if (std::find(requested.begin(), requested.end(), observable) == requested.end())
             requested.push_back(observable);
     }
     const bool cv = calorics && std::any_of(observables.begin(), observables.end(), [](auto o) {
-                        return caloric_property(o) && std::size_t(o) % 5 == 4;
+                        return caloric_property(o) && property_kind(o) == 4;
                     });
     if (cv) {
         requested.push_back(PropertyObservable::MolarVolumeTemperatureDerivative);
@@ -755,9 +715,9 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
     const double R = GAS_CONSTANT_J_PER_MOL_K;
     for (std::size_t i = 0; i < observables.size(); ++i) {
         const auto o = observables[i];
-        const auto index = std::size_t(o), kind = index % 5;
+        const auto kind = property_kind(o);
         const bool referenced = calorics && caloric_property(o);
-        const auto residual = referenced ? static_cast<PropertyObservable>(5 + kind) : o;
+        const auto residual = referenced ? property_observable(1, kind) : o;
         const auto slot = std::find(requested.begin(), requested.end(), residual) - requested.begin();
         result.status[i] = statuses[slot];
         Series value = eos[slot];
@@ -836,7 +796,7 @@ PropertyChain property_chain(const HelmholtzModel &model, const RowSeries &serie
                                                             product(product(vt, vt), inverse(vp)), -1.0)),
                         1.0);
             }
-            value = index < 5 ? ideal : combine(value, ideal, 1.0);
+            value = property_family(o) == 0 ? ideal : combine(value, ideal, 1.0);
         }
         if (result.status[i] == SolvedStateActionStatus::Available) {
             result.series[i] = value;
@@ -984,9 +944,8 @@ static SolvedStateActionBatch evaluate_action(
         return ordinary;
     }
     const std::size_t components = model.parameters().component_count();
-    const std::size_t actives = model.active_parameters().size();
-    const std::size_t source_offset = 2 + components + actives;
-    const std::size_t width = source_offset + 4 * problem.reactions.size() + 2;
+    const std::size_t source_offset = compiled.control_width();
+    const std::size_t width = compiled.extended_control_width();
     const std::size_t order = request.directions.size();
     SolvedStateActionBatch batch;
     batch.diagnostics.equation_count = compiled.rows.size();
@@ -1016,9 +975,7 @@ static SolvedStateActionBatch evaluate_action(
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
         const auto evaluation = compiled.evaluate_at(common.center.prepared);
-        for (const double value : compiled.classified_residuals(common.center.prepared, evaluation.values))
-            common.classified_residual = std::isfinite(value)
-                ? std::max(common.classified_residual, std::abs(value)) : std::numeric_limits<double>::infinity();
+        common.classified_residual = maximum_abs(compiled.classified_residuals(common.center.prepared, evaluation.values));
         common.diagnostics.equation_count = compiled.rows.size();
         common.diagnostics.state_dimension = compiled.unknown_count();
         if (std::isfinite(common.classified_residual)) common.diagnostics.central_residual = common.classified_residual;
@@ -1055,8 +1012,7 @@ static SolvedStateActionBatch evaluate_action(
         controls.push_back(std::move(control));
         magnitude.push_back(largest);
     }
-    const bool reference_problem = has_source_reference(problem)
-        && !compiled.reference_diagnostics.empty();
+    const bool reference_problem = !compiled.reference_diagnostics.empty();
     const ReferenceCalorics *calorics = nullptr;
     const bool needs_calorics =
         std::any_of(request.observables.begin(), request.observables.end(), [](const auto &o) {
@@ -1092,7 +1048,7 @@ static SolvedStateActionBatch evaluate_action(
         item.diagnostic_message = std::move(message);
     };
     if (shared->central_results.empty()) {
-        // Central values and property dependencies are identical for every independent A1.
+        // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
         const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
         std::vector<PhaseMap> base_maps;
@@ -1221,10 +1177,12 @@ static SolvedStateActionBatch evaluate_action(
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     const bool thermal = problem.temperature.free ||
         std::any_of(controls.begin(), controls.end(), [](const auto &c) { return c[0] != 0.0; });
-    if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
+    if (gate == SolvedStateActionStatus::Available && !zero && thermal
+        && thermal_reference_missing(center.prepared.temperature, problem.reactions, problem.standard_gibbs_j_per_mol))
         gate = SolvedStateActionStatus::MissingThermochemistry;
-    // Critical actions are first order: orders two and three need E5 and E6 of the critical rows.
-    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 1)
+    // A critical cell's row series reaches Taylor order two (five-direction energy contractions);
+    // a third-order action needs order three of the critical rows, which needs six-direction ones.
+    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 2)
         gate = SolvedStateActionStatus::EnergyOrderUnavailable;
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.

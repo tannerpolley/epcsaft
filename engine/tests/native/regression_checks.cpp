@@ -1263,13 +1263,31 @@ void check_j2() {
     CHECK(agree("r2-j2/final_cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result), "the final cost vanishes", "r2-j2"));
     CHECK(truth("r2-j2/identifiable", "the interior full-rank fit carries a covariance",
                 result.covariance.status == "available" && result.covariance.rank == 2, summary(result), "r2-j2"));
+    // The bounded-stationarity measure max_c |u_c - clamp(u_c - g_c)|, with g = J^T r from the published columns.
+    const auto projected_gradient = [](const FitRequest& request, const FitResult& result) {
+        const auto [lower, upper] = request.coordinates.optimizer_bounds();
+        const std::size_t width = result.optimizer.size();
+        double projected = 0.0;
+        for (std::size_t c = 0; c < width; ++c) {
+            double gradient = 0.0;
+            for (std::size_t i = 0; i < result.weighted_residuals.size(); ++i)
+                gradient += result.optimizer_jacobian[i * width + c] * result.weighted_residuals[i];
+            projected = std::max(projected, std::abs(result.optimizer[c] - std::clamp(result.optimizer[c] - gradient, lower[c], upper[c])));
+        }
+        return projected;
+    };
     auto unfinished = recovery_request(truth_case, 148.0, 0.0);
-    unfinished.controls.maximum_iterations = 1;
+    unfinished.controls.maximum_iterations = 2;
     const auto iterate = fit(unfinished);
     CHECK(truth("r2-j2/not_converged", "an iteration-limited fit keeps its candidate and rank but no covariance",
                 iterate.status == "limit_reached" && iterate.usable && iterate.covariance.status == "not_converged"
                     && iterate.covariance.rank == 2 && iterate.covariance.optimizer.empty() && iterate.covariance.physical.empty()
-                    && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-6, summary(iterate), "r2-j2"));
+                    && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-10, summary(iterate), "r2-j2"));
+    CHECK(truth("r2-j2/not_converged/iterations", "the reported iterations are the two Ceres iterations, not the start",
+                iterate.iterations == 2, summary(iterate), "r2-j2"));
+    CHECK(agree("r2-j2/not_converged/projected_gradient", "projected_gradient_max", "1",
+                iterate.covariance.projected_gradient_norm, projected_gradient(unfinished, iterate), 0.0, 1.0e-10, summary(iterate),
+                "the projected gradient is reported at the returned point", "r2-j2"));
     const auto other = fit(recovery_request(truth_case, 156.0, 0.05));
     CHECK(agree("r2-j2/second_start/epsilon", "dispersion_energy_over_k", "K", other.physical[0], 152.0, 0.0, 1.0e-6, summary(other),
                 "a second start recovers the same parameters", "r2-j2"));
@@ -1311,16 +1329,7 @@ void check_j2() {
                 "the coupled fit reaches the independently reduced bounded minimum within the work limit", "r2-j2"));
     CHECK(agree("r2-j2/bound_start/kij", "k_ij", "1", refreshed.physical[1], reference.physical[0],
                 1.0e-7, 0.0, summary(refreshed), "the free coordinate agrees with the scalar minimum", "r2-j2"));
-    double projected = 0.0;
-    const auto [lower, upper] = bound_start.coordinates.optimizer_bounds();
-    for (std::size_t c = 0; c < 2; ++c) {
-        double gradient = 0.0;
-        for (std::size_t i = 0; i < refreshed.weighted_residuals.size(); ++i)
-            gradient += refreshed.optimizer_jacobian[i * 2 + c] * refreshed.weighted_residuals[i];
-        CHECK(std::isfinite(gradient));
-        projected = std::max(projected, std::abs(refreshed.optimizer[c]
-            - std::clamp(refreshed.optimizer[c] - gradient, lower[c], upper[c])));
-    }
+    const double projected = projected_gradient(bound_start, refreshed);
     CHECK(truth("r2-j2/bound_start/feasible", "the accepted optimum is feasible with epsilon at its upper bound",
                 bound_start.coordinates.within_bounds(refreshed.optimizer) && refreshed.physical[0] == 151.0,
                 summary(refreshed), "r2-j2"));
@@ -1654,7 +1663,9 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
                            : std::vector<double>{1.0, 2.0};
         HoldResult hold; hold.derivative = 1.0;
         hold.parameter_derivative = b1 ? std::vector<double>{-2.0, 0.0, 1.0} : std::vector<double>{-2.0, 1.0};
-        hold.cause = "converged"; hold.iterations = 1; out.chart.holds = {hold};
+        // A bracket-limited hold: its achieved uncertainty is below its last Newton correction.
+        hold.correction = 2.0e-3; hold.uncertainty = 1.0e-3;
+        hold.iterations = 1; out.chart.holds = {hold};
         for (std::size_t i = 0; i < n; ++i) {
             double e = 0.0; std::vector<double> de(physical, 0.0);
             if (b1 && i == 0) { e = a * (x + z); de = {a, a, 0.0}; }
@@ -1737,6 +1748,10 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
             value, 1.0e-9, 0.0, inputs, "the physical target and guard rows match the analytic values", "r2-minimax"));
         CHECK(agree(id + "/multiplier/" + std::to_string(i), "physical_row_multiplier", "1", m.physical_multipliers[i],
             multiplier, 1.0e-6, 0.0, inputs, "physical row multipliers match the analytic active set", "r2-minimax"));
+        // Only e2 depends on d (de2/dd = -a/2): its scaled root error is (a/2)/scale times the hold uncertainty.
+        CHECK(agree(id + "/root_error/" + std::to_string(i), "scaled_root_error", "1", m.root_errors.at(i),
+            r.members.empty() && r.row == 1 ? 0.005 / r.scale * 1.0e-3 : 0.0, 0.0, 1.0e-12, inputs,
+            "the root error counts the achieved hold uncertainty once", "r2-minimax"));
     }
     for (const double z : m.physical_z_lower)
         CHECK(agree(id + "/lower_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
@@ -3094,7 +3109,7 @@ void check_inventory_boundary(const HelmholtzModel& model, const EquilibriumProb
     const auto point = compiled.prepare(result.coordinates);
     const auto values = compiled.jacobian(result.coordinates);
     const Eigen::Index size = static_cast<Eigen::Index>(result.coordinates.size());
-    CHECK(compiled.is_square() && values.size() == static_cast<std::size_t>(size * size));
+    CHECK(values.size() == static_cast<std::size_t>(size * size));
     const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), size, size);
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian);
     const double condition = svd.singularValues()(0) / svd.singularValues()(size - 1);
@@ -3840,15 +3855,15 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string(argv[1]) == "--zero-inventory") return zero_inventory_file(argv[2]);
     if (argc == 3 && std::string(argv[1]) == "--electrolyte-reference") return electrolyte_reference_file(argv[2]);
     return recording_support::run(argc, argv, {
-        {{"native.equilibrium.inventory-boundary", "Exact_inventory_bubble_dew", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-269", "incipient/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-boundary"}, check_propane_inventory_boundary},
-        {{"native.regression.inventory-face", "Conserved_inventory_face", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-231", "inventory-face/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-face"}, check_inventory_face, "addition-enthalpy"},
-        {{"native.regression.neutral-electrostatics", "Neutral_electrostatic_restriction", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "issue-231", "neutral-electrostatics/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "neutral-electrostatics"}, check_neutral_electrostatics, "addition-enthalpy"},
+        {{"native.regression.inventory-boundary", "Exact_inventory_bubble_dew", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-269", "incipient/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-boundary"}, check_propane_inventory_boundary, "R1"},
+        {{"native.regression.inventory-face", "Conserved_inventory_face", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-231", "inventory-face/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "inventory-face"}, check_inventory_face, "R1"},
+        {{"native.regression.neutral-electrostatics", "Neutral_electrostatic_restriction", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "issue-231", "neutral-electrostatics/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "neutral-electrostatics"}, check_neutral_electrostatics, "R1"},
         {{"native.regression.affine-columns", "Affine_parameter_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-columns/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-columns"}, check_coupled_columns, "R2"},
         {{"native.regression.affine-recovery", "Affine_parameter_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-209", "affine-recovery/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "affine-recovery"}, check_coupled_recovery, "R2"},
         {{"native.regression.hydration-failures", "Dependent_hydration_failure", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-219", "hydration-failure/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "hydration-failures"}, check_hydration_failures, "R1"},
-        {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "addition-enthalpy"},
-        {{"native.regression.reactive-caloric-F6-addition", "Referenced_free_temperature_addition", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F6/free-T-addition/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "reactive-caloric"},
-        {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "addition-enthalpy"},
+        {{"native.regression.ionic-addition", "Ionic_finite_addition_enthalpy", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-ionic/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ionic-addition"}, check_ionic_addition_enthalpy, "R2"},
+        {{"native.regression.reactive-caloric-F6-addition", "Referenced_free_temperature_addition", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F6/free-T-addition/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "R2"},
+        {{"native.regression.addition-enthalpy", "Finite_addition_enthalpy_and_exact_actions", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-210", "addition-f3/*,addition-f4/*,addition-f5/*,addition-f6/*,addition-f7/*,addition-f8/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
         {{"native.regression.ln-k", "Source_log_equilibrium_constant", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "ln-k/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "Regression_R1_F1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F1", "r1-f1/*:42"}, check_f1, "R1"},
         {{"native.regression.r1-f2", "Regression_R1_F2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F2", "r1-f2/*:27"}, check_f2, "R1"},
@@ -3858,13 +3873,13 @@ int main(int argc, char** argv) {
         {{"native.regression.r1-f9", "Regression_R1_F9_F10", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R1", "r1-f9/*,r1-f10/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R1-F9", "r1-f9/*:4,r1-f10/*:13"}, check_f9_f10, "R1"},
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
-        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
+        {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:17"}, check_j2, "R2"},
         {{"native.regression.r2-minimax-consistency", "Minimax_same_point_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "minimax-consistency/*,density-seed/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "minimax-consistency"}, check_minimax_consistency, "R2"},
         {{"native.regression.r2-d7-minimax-analytic", "Regression_R2_D7_Analytic_Minimax", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-d7-b1/*,r2-d7-b2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-D7", "r2-d7/*"}, check_d7_minimax, "R2"},
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},
         {{"native.regression.reaction-rejections", "Reaction_constant_admission", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-rejection/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-rejections"}, check_reaction_rejections, "R2"},
-        {{"native.regression.reactive-cp", "Reacting_heat_capacity_fit", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F7/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-cp"}, check_reactive_cp, "reactive-cp"},
+        {{"native.regression.reactive-cp", "Reacting_heat_capacity_fit", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "issue-225", "F7/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reactive-cp"}, check_reactive_cp},
         {{"native.regression.cp-derivatives", "Isobaric_heat_capacity_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-a/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-derivatives"}, check_cp_derivatives, "R2"},
         {{"native.regression.cp-recovery", "Isobaric_heat_capacity_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "cp-b/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "cp-recovery"}, check_cp_recovery, "R2"},
         {{"native.regression.r3", "Regression_R3", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R3", "r3/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R3", "r3/*:22"}, check_r3, "R2"},

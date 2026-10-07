@@ -44,12 +44,13 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
     return result
 
 
-def _choice(families: Sequence[object], kind: str, allowed: set[str], default: str | None = None) -> str:
+def _choice(families: Sequence[object], kind: str, default: str | None = None) -> str:
+    """The declared choice of one family kind; build_parameters owns the admissible choices."""
     choices = [record.get("choice") for record in (_mapping(item, "model_families") for item in families) if record.get("kind") == kind]
     if len(choices) > 1:
         raise _core.ParameterError(f"duplicate model choice {kind}")
     found = choices[0] if choices else default
-    if not isinstance(found, str) or found not in allowed:
+    if not isinstance(found, str):
         raise _core.ParameterError(f"unknown {kind} model choice {found}")
     return found
 
@@ -106,39 +107,28 @@ class Parameters:
         selected_ids = tuple(selected)
         positions = {item: index for index, item in enumerate(selected_ids)}
         entries: list[_core.ParameterEntry] = []
-        component_fields = {
-            "molar_mass": "molar_mass",
-            "charge_number": "charge_number",
-        }
-        coefficient_fields = {
-            "segment_count": "segment_count",
-            "segment_diameter": "sigma_constant",
-            "dispersion_energy_over_k": "dispersion_energy_over_k",
-            "packing_diameter": "packing_diameter",
-            "debye_huckel_diameter": "debye_huckel_diameter",
-            "born_diameter": "born_diameter",
-            "solvation_factor": "solvation_factor",
-            "relative_permittivity": "relative_permittivity",
-            "ion_specific_suppression_coefficient": "ion_suppression_coefficient",
-            **{name: name for name in ("dielectric_volume", "dielectric_temperature", "dipole_scaling", "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count")},
-        }
+        # Document families keep their native field name unless renamed here.
+        renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
+        coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",
+                                "solvation_factor", "relative_permittivity", "dielectric_volume", "dielectric_temperature", "dipole_scaling",
+                                "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count", *renamed}
         for component_id in selected_ids:
             record = component_records[component_id]
             fixed = _mapping(record.get("fixed", {}), f"component/{component_id}/fixed")
-            for family, field in component_fields.items():
+            for family in ("molar_mass", "charge_number"):
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
-                    entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), field, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))
+                    entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))
             coefficients = _array(record.get("coefficients", ()), f"component/{component_id}/coefficients")
             for item_value in coefficients:
                 item = _mapping(item_value, f"component/{component_id}/coefficients")
                 family_value = item.get("family")
-                if not isinstance(family_value, str) or family_value not in coefficient_fields:
+                if not isinstance(family_value, str) or family_value not in coefficient_families:
                     raise _core.ParameterError(f"unknown component family {family_value} for {item.get('identity')}")
                 identity = item.get("identity")
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"component/{component_id}/coefficients has no identity")
-                entries.append(_entry(identity, coefficient_fields[family_value], (positions[component_id],), item["value"], identity))
+                entries.append(_entry(identity, renamed.get(family_value, family_value), (positions[component_id],), item["value"], identity))
 
         raw_correlations = _array(document.get("correlations", ()), "correlations")
         sigma_term = 0
@@ -205,7 +195,7 @@ class Parameters:
             for item_value in pair_entries:
                 item = _mapping(item_value, f"pair/{a}/{b}")
                 family_value = item.get("family")
-                if not isinstance(family_value, str) or family_value == "k_hb_ij" or family_value not in pair_fields:
+                if not isinstance(family_value, str) or family_value not in pair_fields:
                     raise _core.ParameterError(f"unsupported pair coefficient {item.get('identity')}")
                 family = family_value
                 pair_index = (positions[a], positions[b])
@@ -224,11 +214,11 @@ class Parameters:
             kind = _mapping(item, "model_families").get("kind")
             if kind not in ("base", "association", "electrolyte", "permittivity", "polar"):
                 raise _core.ParameterError(f"unknown model family kind {kind}")
-        electrolyte = _choice(families, "electrolyte", {"none", "fully-dissociated-debye-huckel", "born"})
-        permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing", "solvent-density-temperature", "dipolar-perturbation"})
-        base = _choice(families, "base", {"pc-saft"})
-        association = _choice(families, "association", {"none", "general-site"})
-        polar = _choice(families, "polar", {"none", "dipole-dipole"}, "none")  # optional family (ADR 0011)
+        electrolyte = _choice(families, "electrolyte")
+        permittivity = _choice(families, "permittivity")
+        base = _choice(families, "base")
+        association = _choice(families, "association")
+        polar = _choice(families, "polar", "none")  # optional family (ADR 0011)
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
         if electrolyte == "born":
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):

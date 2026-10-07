@@ -1097,8 +1097,8 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
                 recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_message",solved.message),
                 recording_support::field("residual",solved.residual_norm()),recording_support::field("T",solved.temperature),
                 recording_support::field("P",solved.pressure),recording_support::field("roots",solved.molar_densities),
-                recording_support::field("seed_T",problem.temperature.seed_or(problem.temperature.value)),
-                recording_support::field("seed_P",problem.pressure.seed_or(problem.pressure.value))}),
+                recording_support::field("seed_T",problem.temperature.value),
+                recording_support::field("seed_P",problem.pressure.value)}),
             "Observation","native-one-driver","Equivalent work; no performance ceiling","reactive-caloric");
         if(!solved.success||!solved.has_state()) throw std::runtime_error(c.name+" "+label+": "+solved.message);
         return solved;
