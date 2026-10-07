@@ -96,7 +96,7 @@ struct TrialFailure final {
 // (J^T J)^-1 of the weighted optimizer Jacobian, mapped to physical rows by the evaluated D.
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
-    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable
+    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable | minimax_unavailable
     std::string assumption;
     std::size_t rank = 0;
     std::vector<double> singular_values, right_vectors, left_vectors;
@@ -109,10 +109,12 @@ struct FitCovariance final {
 };
 
 struct FitResult final {
-    std::string status = "invalid_setup";  // converged | limit_reached | initial_evaluation_failed | failed
+    // Ceres: converged | limit_reached | initial_evaluation_failed | failed | invalid_setup;
+    // minimax: converged | limit_or_failure | point_evaluated | invalid_setup.
+    std::string status = "invalid_setup";
     std::string termination = "not_run";
     std::string message;
-    bool usable = false;
+    bool usable = false;  // a finite candidate point with values was published; status says how it terminated
     std::vector<double> optimizer;
     std::vector<double> physical;  // one value per physical row of the coordinate set
     Parameters parameters;
