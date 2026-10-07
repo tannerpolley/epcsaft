@@ -176,3 +176,13 @@ def test_supplied_charged_family_refuses_before_trial_work() -> None:
     assert all(e.name != "hessian_calls" for e in captured.events)
     options.trials = [neutral]
     assert "tpd_over_rt" in equilibrium.stability_test(compiled, central, options).trials[0].quantities
+
+
+def test_mid_dome_flash_returns_the_split() -> None:
+    """#314 review: without ln eta bounds this two-phase flash fell to the trivial point."""
+    result = solve_equilibrium(mixture(), Problem(
+        phases=[Phase("V", kind="vapor"), Phase("L", kind="liquid")],
+        T=250.0, P=3.75e6, feed=Amounts({"methane": 0.3, "ethane": 0.7})))
+    assert result.success, result.message
+    vapor, liquid = result.mole_fractions[0], result.mole_fractions[2]  # methane, phase-major
+    assert vapor - liquid > 0.1 and 0.0 < result.amounts[0] < 1.0

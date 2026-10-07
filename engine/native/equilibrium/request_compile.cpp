@@ -1518,6 +1518,8 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
         if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
         result.packing.push_back(packing_terms(*model, result.temperature, values));
         result.eta.push_back(std::exp(point[layout.volume]));
+        if (log_packing_unbounded() && !admitted_packing_fraction(result.eta.back()))
+            throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");
         result.volume.push_back(result.packing.back().coefficient / result.eta.back());
         result.amount.push_back(layout.amount.has_value()
             ? point[*layout.amount] : phase_amount(problem.phases[phase], n_feed));

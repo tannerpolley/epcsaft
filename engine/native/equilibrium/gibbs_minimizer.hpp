@@ -31,10 +31,6 @@ struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds = true);
-inline bool admitted_packing_seed(double eta) {
-    return std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
-        && eta <= policy::PACKING_FRACTION_CEILING.value;
-}
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.

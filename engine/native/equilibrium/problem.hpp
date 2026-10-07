@@ -218,6 +218,12 @@ struct Layout final {
     std::size_t volume = 0;
 };
 
+// The fluid packing domain shared by seeds, prepared points and stability states.
+inline bool admitted_packing_fraction(double eta) {
+    return std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
+        && eta <= policy::PACKING_FRACTION_CEILING.value;
+}
+
 struct PackingTerms final {
     double coefficient = 0.0;
     double temperature_derivative = 0.0;
@@ -361,6 +367,8 @@ struct CompiledSystem final {
     bool feasibility_cell() const noexcept {
         return pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
     }
+    // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
+    bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
 
     // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
     std::size_t condition_count() const noexcept {

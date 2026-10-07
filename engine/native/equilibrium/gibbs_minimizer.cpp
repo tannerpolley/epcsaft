@@ -306,8 +306,7 @@ bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start
         const double packing = compiled.model->packing_fraction_coefficient(
             start.temperature.empty() ? compiled.problem.temperature.value : start.temperature[0],
             composition) * start.molar_densities[phase];
-        if (!(std::isfinite(packing) && packing >= policy::PACKING_FRACTION_FLOOR.value
-              && packing <= policy::PACKING_FRACTION_CEILING.value)) return false;
+        if (!admitted_packing_fraction(packing)) return false;
     }
     return true;
 }
@@ -530,8 +529,11 @@ bool GibbsMinimizer::get_bounds_info(
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
-        x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
-        x_u[offset++] = std::log(policy::PACKING_FRACTION_CEILING.value);
+        if (!compiled_.log_packing_unbounded()) {
+            x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
+            x_u[offset] = std::log(policy::PACKING_FRACTION_CEILING.value);
+        }
+        ++offset;
     }
     offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
@@ -1531,7 +1533,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         for (const double x : phase.composition_guess)
                             check(std::isfinite(x) && x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0,
                                   "composition for phase " + phase.name + " is outside the admitted range");
-                        check(!phase.packing_guess || admitted_packing_seed(*phase.packing_guess),
+                        check(!phase.packing_guess || admitted_packing_fraction(*phase.packing_guess),
                               "packing for phase " + phase.name + " is outside the admitted range");
                         if (!seed.amounts.empty() && (!std::isfinite(seed.amounts[p]) || seed.amounts[p] < 0.0
                             || (phase.is_pinned() && seed.amounts[p] != specified_amount(phase, compiled.n_feed))))
@@ -1563,7 +1565,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         check(x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0);
                     }
                     if (phase.is_free()) check(initial[cursor++] >= 0.0);
-                    check(admitted_packing_seed(std::exp(initial[cursor])));
+                    check(admitted_packing_fraction(std::exp(initial[cursor])));
                 }
                 for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j) check(initial[j] > 0.0);
                 audit = structural_result(compiled, scope);
@@ -1669,8 +1671,7 @@ DensityRoot stability_root(const HelmholtzModel& model, double T, double P,
 }
 
 void packing_admission(double eta) {
-    if (!(std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
-          && eta <= policy::PACKING_FRACTION_CEILING.value))
+    if (!admitted_packing_fraction(eta))
         throw std::invalid_argument("stability point outside packing domain");
 }
 
