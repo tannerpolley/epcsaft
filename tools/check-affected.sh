@@ -75,7 +75,16 @@ m = importlib.import_module("project-map")
 rules = m.declaration()["rules"]
 print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
-        slow_tests+=(equilibrium boundary)
+        slow_tests+=('equilibrium/Automatic*' boundary)
+    fi
+    # The 16 binary128 reactive-caloric and reactive-cp cases (Explicit) run only when
+    # the code they verify changes, or on request: run-native-tests.sh 'equilibrium/Explicit/*'.
+    if grep -Eq '^engine/(native/equilibrium/implicit_sensitivity\.cpp|native/properties/thermochemistry\.|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
+        slow_tests+=('equilibrium/Explicit/reactive-*')
+    fi
+    # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
+    if grep -Eq '^engine/(native/equilibrium/phase_boundary\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
+        slow_tests+=('equilibrium/Explicit/envelope-*')
     fi
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
         slow_tests+=(regression_fit)
@@ -86,7 +95,7 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|README.md|pyproject.toml|u
     bash tools/check-all.sh
     check_declarations
     if ((${#slow_tests[@]})); then
-        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
     exit 0
 fi
@@ -118,10 +127,10 @@ if grep -q '^engine/' <<<"$paths"; then
         (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml=../build/test-results/pytest.xml)
     fi
 if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
-        # The native preparation above already built the test executables.
+        # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
-            EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+            MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)

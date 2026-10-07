@@ -13,6 +13,12 @@ tests=("$@")
 if ((${#tests[@]} == 0)); then
     tests=(contributions properties diagnostics specification surface_example regression)
 fi
+# Test programs are not built by default (#319); compile only the ones the selected tests run.
+mapfile -t programs < <(.venv/bin/meson introspect "$build_dir" --tests | .venv/bin/python -c '
+import fnmatch, json, os, sys
+tests = json.load(sys.stdin)
+print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmatch(t["name"], p) for p in sys.argv[1:])}), sep="\n")' "${tests[@]}")
+.venv/bin/meson compile -C "$build_dir" -j "${EPCSAFT_BUILD_JOBS:-2}" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"
 .venv/bin/meson test -C "$build_dir" "${tests[@]}" --print-errorlogs --no-rebuild --logbase "$logbase"
