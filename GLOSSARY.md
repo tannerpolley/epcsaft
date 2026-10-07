@@ -84,11 +84,11 @@ Source: `ARCHITECTURE.yaml`
 
 **Capability**:
 A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership.
-Source: sourceless
+Source: `ARCHITECTURE.yaml` header (Python is organised by capability) and `python.capabilities`
 
 **Milestone**:
-Bounded work with explicit acceptance requirements, owned by a component and, where applicable, a layer; GitHub uses the established CORE1, C1, P1, … identifiers.
-Source: sourceless
+A numbered GitHub milestone (for example `04 - Equilibrium`) grouping leaf issues with explicit acceptance; its number expresses delivery priority, not a scientific dependency.
+Source: `docs/scientific/CONTEXT.md` "Implementation completion order"; ADR 0010
 
 **File role**:
 Why a file exists: runtime, specification, test, data, evidence, tooling, configuration, generated or external.
@@ -96,4 +96,4 @@ Source: `ARCHITECTURE.yaml` project map
 
 **Qualification**:
 Reviewed evidence supports a scientific capability within stated inputs, domains and limitations; never implied by inventory or a passing check.
-Source: sourceless
+Source: `docs/scientific/CONTEXT.md` "The project map" (leaf issues record unqualified capability) and "Review rules"
