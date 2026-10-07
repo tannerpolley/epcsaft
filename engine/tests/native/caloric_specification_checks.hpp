@@ -213,12 +213,14 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
     for(std::size_t column=0;column<n;++column) {
         std::vector<double> bestJ(m,1e100),previous_change(sets,0),largest(sets,0),noise(sets,0);
         std::vector<std::vector<double>> bestH(sets,std::vector<double>(n,1e100)),previousH(sets);std::vector<bool> refinement(sets,false);
+        std::vector<std::array<double,2>> atJ(m);std::vector<std::vector<std::array<double,2>>> atH(sets,std::vector<std::array<double,2>>(n));  // exact, reference at the best step
         for(int rung=0;rung<5;++rung) {
             const double step=std::ldexp(0.002,-rung)*scale[column];auto plus=y,minus=y;plus[column]+=step;minus[column]-=step;
             const auto fp=c.evaluate(plus).values,fm=c.evaluate(minus).values;
             for(std::size_t row=0;row<m;++row) {
                 const double exact=J[row*n+column]*scale[column],ref=(fp[row]-fm[row])/(2*step)*scale[column];
-                bestJ[row]=std::min(bestJ[row],std::abs(exact-ref)/std::max(1.,std::abs(ref)));
+                const double error=std::abs(exact-ref)/std::max(1.,std::abs(ref));
+                if(error<bestJ[row]){bestJ[row]=error;atJ[row]={exact,ref};}
             }
             for(std::size_t k=0;k<sets;++k) {
                 const auto& w=weights[k/objectives.size()];const double objective=objectives[k%objectives.size()];
@@ -226,7 +228,8 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
                 double change=0,floor=0;std::vector<double> refs(n);
                 for(std::size_t row=0;row<n;++row) {
                     refs[row]=(gp[row]-gm[row])/(2*step);const double factor=scale[row]*scale[column];
-                    bestH[k][row]=std::min(bestH[k][row],std::abs(H[k/objectives.size()][row*n+column]*factor-refs[row]*factor)/std::max(1.,std::abs(refs[row]*factor)));
+                    const double exact=H[k/objectives.size()][row*n+column]*factor,error=std::abs(exact-refs[row]*factor)/std::max(1.,std::abs(refs[row]*factor));
+                    if(error<bestH[k][row]){bestH[k][row]=error;atH[k][row]={exact,refs[row]*factor};}
                     if(rung)change=std::max(change,std::abs(refs[row]-previousH[k][row])*factor);
                     floor=std::max(floor,std::numeric_limits<double>::epsilon()*(std::abs(gp[row])+std::abs(gm[row]))*factor/step);
                 }
@@ -239,10 +242,13 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
                 previousH[k]=refs;
             }
         }
-        for(std::size_t row=0;row<m;++row)compare(id+"/F5/J/"+std::to_string(column)+"/"+std::to_string(row),bestJ[row],0,1,1e-6);
+        const auto entry=[&](const std::array<double,2>& at) {
+            return recording_support::fields({recording_support::field("exact",at[0]),recording_support::field("reference",at[1]),recording_support::field("coordinate_scale",scale[column])});
+        };
+        for(std::size_t row=0;row<m;++row)compare(id+"/F5/J/"+std::to_string(column)+"/"+std::to_string(row),bestJ[row],0,1,1e-6,entry(atJ[row]));
         for(std::size_t k=0;k<sets;++k) {
             const std::string label=id+"/F5/H/"+std::to_string(k/objectives.size())+"/"+std::to_string(objectives[k%objectives.size()])+"/"+std::to_string(column);
-            for(std::size_t row=0;row<n;++row)compare(label+"/"+std::to_string(row),bestH[k][row],0,1,1e-5);
+            for(std::size_t row=0;row<n;++row)compare(label+"/"+std::to_string(row),bestH[k][row],0,1,1e-5,entry(atH[k][row]));
             recording_support::observe((label+"/refinement").c_str(),"second-order-refinement","chart",largest[k],noise[k],
                 recording_support::fields({recording_support::field("refined",refinement[k]?1:0)}),"Observation","centered-refinement","truncation before the rounding floor","caloric-specification");
             CHECK(refinement[k]||largest[k]<=32*noise[k]);

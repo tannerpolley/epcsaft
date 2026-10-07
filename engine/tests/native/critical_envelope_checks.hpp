@@ -70,9 +70,10 @@ inline void pure_critical() {
     }
 }
 // C3: binary candidates and the first composition action along (0.1, -0.1) against Richardson-refined
-// differences of central critical solves; second order is refused with central values kept.
+// differences of central critical solves; second order is refused with central values kept; residual and total
+// cp (P_rho > 0 off a pure fluid) equal the HelmholtzModel::state route.
 inline void binary_critical() {
-    const HelmholtzModel m(properties_support::neutral_binary());
+    const HelmholtzModel m(properties_support::neutral_binary(),{},caloric_specification_checks::records());
     for(const double z0:{0.5,0.27}) {
         const std::string id="C3/"+std::to_string(z0);
         const auto p=critical_cell({z0,1-z0},260,6000);const auto r=solved(m,p,id);const auto c=compile_problem(m,p);
@@ -100,6 +101,12 @@ inline void binary_critical() {
         }
         const auto second=solved_state_actions(c,r,{{{SolvedStateObservableKind::Temperature}},{d,d}}).results[0];
         compare(id+"/second-order-refused",second.status==SolvedStateActionStatus::EnergyOrderUnavailable&&second.value?1:0,1,1,1e-10);
+        const auto cp=solved_state_actions(c,r,{{{SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::ResidualIsobaricHeatCapacity},
+            {SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::TotalIsobaricHeatCapacity}},{d}}).results;
+        const auto state=m.state(r.temperature[0],r.molar_densities[0],{r.mole_fractions[0],r.mole_fractions[1]});
+        compare(id+"/cp-residual",cp[0].value.value_or(NAN),*state.residual_isobaric_heat_capacity,std::abs(*state.residual_isobaric_heat_capacity),1e-10,
+            recording_support::field("P_rho_over_RT",state.pressure_density_derivative/(GAS_CONSTANT_J_PER_MOL_K*r.temperature[0])));
+        compare(id+"/cp-total",cp[1].value.value_or(NAN),*state.total_isobaric_heat_capacity,std::abs(*state.total_isobaric_heat_capacity),1e-10);
     }
 }
 // B-curvature: the shared F5 ladder on critical (nonassociating and associating) and envelope callbacks.
@@ -150,11 +157,10 @@ inline void mixture() {
             "Observation","accepted-state extrema and condition switches","declared envelope branch only","critical-envelope");
     }
     const std::array<double,3> solved{std::log(c3.temperature[0]),std::log(c3.pressure[0]),std::log(c3.molar_densities[0])};
-    for(std::size_t k=0;k<3;++k) {  // successive differences; /15 only if fourth-order convergence appears
+    for(std::size_t k=0;k<3;++k) {  // successive differences only; no convergence order is claimed
         const double d1=std::abs(seeds[1][k]-seeds[0][k]),d2=std::abs(seeds[2][k]-seeds[1][k]),ratio=d1/d2;
         recording_support::observe(("E1/hermite-"+std::to_string(k)).c_str(),"seed-refinement","1",seeds[2][k],solved[k],
-            recording_support::fields({recording_support::field("h_to_h2",d1),recording_support::field("h2_to_h4",d2),recording_support::field("ratio",ratio),
-                recording_support::field("estimate",ratio>12&&ratio<20?d2/15:d2)}),"Observation","bracketing-step refinement","seed need not meet the solved tolerance","critical-envelope");
+            recording_support::fields({recording_support::field("h_to_h2",d1),recording_support::field("h2_to_h4",d2),recording_support::field("ratio",ratio)}),"Observation","bracketing-step refinement","seed need not meet the solved tolerance","critical-envelope");
     }
 }
 // E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint at

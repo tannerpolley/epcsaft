@@ -592,8 +592,7 @@ struct Path final {
 // A predicted free amount below zero is projected onto its bound rather than rejected: the
 // amount bound is the disappearance boundary itself, and only the bound-constrained corrector
 // can report the typed event there (counted in `projected`). A log mole fraction above zero is
-// projected onto zero, where a one-species support sits exactly. Every other coordinate outside
-// its domain is rejected.
+// projected onto its corrector bound zero. Every other coordinate outside its domain is rejected.
 bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::size_t& projected) {
     if (!std::all_of(y.begin(), y.end(), [](double v) { return std::isfinite(v); })) return false;
     std::size_t offset = 0;

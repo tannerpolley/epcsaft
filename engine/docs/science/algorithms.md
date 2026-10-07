@@ -790,8 +790,8 @@ coefficient along the lever at the fixed state, the directional series of
 ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
 full predicted coordinate vector (a predicted free amount below zero is
 projected onto its bound, the disappearance boundary the bound-constrained
-corrector then reports; a log mole fraction above zero, where a one-species
-support sits exactly, is projected onto zero; every other coordinate outside its
+corrector then reports; a log mole fraction above zero is projected onto its
+corrector bound zero; every other coordinate outside its
 domain is a rejected left-domain step), and accepts a state only when the driver
 accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
@@ -830,7 +830,8 @@ declaration, P from the state there and, without a mode seed, the lowest
 eigenvector of M read from the mode rows' u columns.
 
 Admission replaces the positive-slope density-root rule only for a critical
-cell, whose root has P_rho = 0: the augmented Jacobian must have full rank, and
+cell (a pure-fluid root has P_rho = 0; a mixture root generally does not):
+the augmented Jacobian must have full rank, and
 M (again the u-column block) must have one lowest eigenvalue within
 |lambda| <= ||M u||/||u|| + C eps ||M|| at the solved point, above no resolved
 negative one (the second eigenvalue exceeds that band). The record keeps the
@@ -838,8 +839,10 @@ spectrum, mode, cubic value, band, rank, condition estimate and a backward error
 either way. The result is a critical-equation candidate, not a stability
 certificate. Its first solved-state actions use E4; second and third orders,
 which need E5 and E6 of the critical rows, are refused as
-`energy_order_unavailable` with central values kept, and its isobaric heat
-capacities are pressure-closed and unavailable (`pressure_singular`).
+`energy_order_unavailable` with central values kept. A one-species candidate's
+isobaric heat capacities divide by its zero P_rho and are unavailable
+(`pressure_singular`); a mixture candidate's follow the ordinary pressure-slope
+admission.
 
 An envelope (EqID: `envelope_local_condition`) declares a free feed phase and a
 zero-pinned incipient phase on one support, free T and P and one selected

@@ -1126,9 +1126,9 @@ static SolvedStateActionBatch evaluate_action(
                 auto& item = batch.results[property_rows[phase][i]];
                 item.value = chain.value[i];
                 item.property_diagnostics = chain.diagnostics;
-                // A critical-equation candidate has P_rho = 0: its isobaric heat capacities are pressure-closed.
+                // A one-species critical candidate has P_rho = 0: its isobaric heat capacities are pressure-closed.
                 const auto property = item.observable.property;
-                if (problem.critical && (property == PropertyObservable::ResidualIsobaricHeatCapacity
+                if (problem.critical && problem.phases[0].support.size() == 1 && (property == PropertyObservable::ResidualIsobaricHeatCapacity
                                          || property == PropertyObservable::TotalIsobaricHeatCapacity)) {
                     item.status = SolvedStateActionStatus::PressureSingular;
                     item.value.reset();
