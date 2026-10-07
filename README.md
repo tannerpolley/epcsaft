@@ -99,7 +99,7 @@ installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Parameter regression checks join the gate when that capability exists.
+numerical evidence. Parameter-fitting checks join the gate when that capability exists.
 `check-affected.sh` runs the Explicit binary128 reactive caloric cases only when
 their code changes; request them with
 `tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*'`.
