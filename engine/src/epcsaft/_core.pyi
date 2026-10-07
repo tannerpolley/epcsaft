@@ -292,7 +292,6 @@ class PropertyActionDiagnostics:
     recordings: int
     directional_paths: int
     forward_sweeps: int
-    dense_hessian_calls: int
     branch: DensityBranch
     stable_root_count: Optional[int]
 

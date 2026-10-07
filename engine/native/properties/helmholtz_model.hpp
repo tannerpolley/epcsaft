@@ -104,8 +104,7 @@ struct PropertyActionDiagnostics final {
     double pressure_density_derivative = 0.0, pressure_residual = 0.0;
     double stability_determinant = 0.0;
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
-    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0;
-    std::size_t forward_sweeps = 0, dense_hessian_calls = 0;
+    std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
 };
@@ -268,8 +267,6 @@ struct NeutralReferenceReactionDiagnostic final {
     // where max(|theta_a|, 1) times its last ladder change exceeds the value's criterion.
     std::vector<std::optional<double>> terminal_contraction_parameter_derivative;
     std::vector<std::optional<double>> terminal_contraction_temperature_parameter_derivative;  // d2C/dTdtheta
-    std::vector<std::array<std::optional<double>, 3>> temperature_parameter_ladder;  // last three C_Ttheta values per active coordinate
-    std::vector<std::optional<double>> observed_temperature_parameter_change;  // T max(1, |theta|) times ladder change
     double reference_pressure_pa = 0.0;
     double solvent_density = 0.0;  // liquid density of the trace's pure-solvent point
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;

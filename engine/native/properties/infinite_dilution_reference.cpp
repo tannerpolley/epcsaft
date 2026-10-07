@@ -512,12 +512,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         for (std::size_t a = 0; trace.parameter_jets && a < values.size(); ++a) {
             const double scale = std::max(std::abs(values[a]), 1.0);
             result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a, scale, tolerance));
-            if (trace.temperature_order > 0) {
-                result.observed_temperature_parameter_change.emplace_back();
-                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance,
-                    &result.observed_temperature_parameter_change.back()));
-                result.temperature_parameter_ladder.push_back(result.lower_derivatives.back().ladder);
-            }
+            if (trace.temperature_order > 0)
+                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a, temperature * scale, tolerance));
         }
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;

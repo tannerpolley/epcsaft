@@ -645,6 +645,13 @@ void check_s1() {
               epcsaft::equilibrium::solve_equilibrium(salt_model, salt), "salt");
 }
 
+const epcsaft::NeutralReferenceReactionDiagnostic::Derivative& temperature_parameter_column(
+    const epcsaft::NeutralReferenceReactionDiagnostic& diagnostic, std::size_t coordinate) {
+    for (const auto& column : diagnostic.lower_derivatives)
+        if (column.temperature_order == 1 && column.pressure_order == 0 && column.parameter == coordinate) return column;
+    throw std::logic_error("missing C_Ttheta column");
+}
+
 void check_s2() {
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto binary = equilibrium_support::flash(3);
@@ -1078,15 +1085,15 @@ void check_s2() {
                 recording_support::field("C_Ttheta_s1", mixed_s1),
                 recording_support::field("C_Ttheta", mixed),
                 recording_support::field("C_Ttheta_ladder_s0", std::vector<double>{
-                    diagnostic.temperature_parameter_ladder[0][0].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[0][1].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[0][2].value_or(std::nan(""))}),
+                    temperature_parameter_column(diagnostic, 0).ladder[0].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 0).ladder[1].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 0).ladder[2].value_or(std::nan(""))}),
                 recording_support::field("C_Ttheta_ladder_s1", std::vector<double>{
-                    diagnostic.temperature_parameter_ladder[1][0].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[1][1].value_or(std::nan("")),
-                    diagnostic.temperature_parameter_ladder[1][2].value_or(std::nan(""))}),
-                recording_support::field("observed_C_Ttheta_admitted_change_s0", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[0])),
-                recording_support::field("observed_C_Ttheta_admitted_change_s1", epcsaft::core::optional_number(diagnostic.observed_temperature_parameter_change[1])),
+                    temperature_parameter_column(diagnostic, 1).ladder[0].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 1).ladder[1].value_or(std::nan("")),
+                    temperature_parameter_column(diagnostic, 1).ladder[2].value_or(std::nan(""))}),
+                recording_support::field("observed_C_Ttheta_admitted_change_s0", temperature_parameter_column(diagnostic, 0).scaled_changes[1]),
+                recording_support::field("observed_C_Ttheta_admitted_change_s1", temperature_parameter_column(diagnostic, 1).scaled_changes[1]),
                 recording_support::field("R_T2_C_Ttheta_J_per_mol_K", scaled_mixed),
                 recording_support::field("pure_pressure_action_J_per_mol_K", pure_slope),
                 recording_support::field("observed_C_T_admitted_change",
@@ -1183,11 +1190,11 @@ void check_s2() {
                     recording_support::field("P_Pa", pressure),
                     recording_support::field("P_ref_Pa", sources[source].reference_pressure_pa.value_or(pressure)),
                     recording_support::field("C_Ttheta_ladder", std::vector<double>{
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][0].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][1].value_or(std::numeric_limits<double>::quiet_NaN()),
-                        exact_diagnostic.temperature_parameter_ladder[coordinate][2].value_or(std::numeric_limits<double>::quiet_NaN())}),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[0].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[1].value_or(std::numeric_limits<double>::quiet_NaN()),
+                        temperature_parameter_column(exact_diagnostic, coordinate).ladder[2].value_or(std::numeric_limits<double>::quiet_NaN())}),
                     recording_support::field("observed_C_Ttheta_admitted_change",
-                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_parameter_change[coordinate])),
+                        temperature_parameter_column(exact_diagnostic, coordinate).scaled_changes[1]),
                     recording_support::field("observed_C_T_admitted_change",
                         epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change)),
                     recording_support::field("observed_terminal_change",

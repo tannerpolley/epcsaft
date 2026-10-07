@@ -211,7 +211,6 @@ void register_eos(py::module_& module) {
         .def_readonly("recordings", &Diagnostics::recordings)
         .def_readonly("directional_paths", &Diagnostics::directional_paths)
         .def_readonly("forward_sweeps", &Diagnostics::forward_sweeps)
-        .def_readonly("dense_hessian_calls", &Diagnostics::dense_hessian_calls)
         .def_readonly("branch", &Diagnostics::branch)
         .def_readonly("stable_root_count", &Diagnostics::stable_root_count);
     py::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")

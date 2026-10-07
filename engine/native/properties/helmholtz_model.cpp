@@ -1522,7 +1522,6 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     result.diagnostics.thermal_evaluations = ideal_available ? correlations.size() : 0;
     result.diagnostics.directional_paths = context.paths.size();
     result.diagnostics.forward_sweeps = context.forward_sweeps;
-    result.diagnostics.dense_hessian_calls = 0;
     result.diagnostics.site_solves = context.solves;
     result.diagnostics.association_residual = context.coefficient_residual;
     if (association_status == PropertyActionStatus::Available

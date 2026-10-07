@@ -4341,7 +4341,6 @@ void properties_p4() {
         && cold_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && warm_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && full_paths > 0 && single_paths > full_paths
-        && full_one.diagnostics.dense_hessian_calls == 0
         && cold_batch.diagnostics.recordings > 0
         && warm_batch.diagnostics.recordings == 0;
     recording_support::compare_custom(
@@ -4350,12 +4349,10 @@ void properties_p4() {
         recording_support::fields({recording_support::field("full_paths", full_paths),
             recording_support::field("single_sum_paths", single_paths),
             recording_support::field("cold_recordings", cold_batch.diagnostics.recordings),
-            recording_support::field("warm_recordings", warm_batch.diagnostics.recordings),
-            recording_support::field("full_dense_hessian_calls",
-                full_one.diagnostics.dense_hessian_calls)}),
+            recording_support::field("warm_recordings", warm_batch.diagnostics.recordings)}),
         "Structure", "shared-batch-work", "full request shares overlapping primitive work",
         "absolute", work_reuse, "p4-supplemental", "work-reuse", "directional_paths",
-        "full,selected", "paths,recordings,dense_hessian_calls");
+        "full,selected", "paths,recordings");
     const auto state_values_match = [](
         const epcsaft::State& left, const epcsaft::State& right,
         const std::vector<epcsaft::PropertyObservable>& rows, double tolerance) {
@@ -4590,12 +4587,10 @@ void properties_p4() {
         && counter_batch.diagnostics.directional_paths > 0
         && counter_batch.diagnostics.directional_paths <= 93
         && counter_batch.diagnostics.forward_sweeps > 0
-        && counter_batch.diagnostics.dense_hessian_calls == 0
         && pressure_counter_batch.diagnostics.pressure_factorizations == 1
         && pressure_counter_batch.diagnostics.pressure_solves > 0
         && pressure_counter_batch.diagnostics.directional_paths > 0
         && pressure_counter_batch.diagnostics.directional_paths <= 93
-        && pressure_counter_batch.diagnostics.dense_hessian_calls == 0
         && pressure_counter_batch.diagnostics.pressure_density_derivative > 0.0
         && pressure_counter_batch.diagnostics.stable_root_count == pressure_root.stable_root_count
         && pressure_counter_batch.diagnostics.branch == pressure_root.density_branch;
