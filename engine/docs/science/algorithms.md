@@ -6,7 +6,7 @@ These methods consume the [equation definitions](../equations.md),
 Algorithm IDs below are stable references. Current implementation and required
 numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT/issues).
 No section claims that all required actions currently exist. The implementation
-plan owns current versus deferred scope. PH/PS/UV remain future work. The
+plan owns current versus deferred scope. PH/PS uses the neutral caloric specifications below; UV remains future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
 admitted ionic/reacting cases, supported by the independent delivered review
@@ -623,7 +623,7 @@ carries both exact Ipopt names, e.g. `UNASSIGNED; Initialize returned Invalid_Op
 so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
-A square pinned cell carries chemical and pressure rows as optimizer equality
+A square feasibility cell carries chemical and pressure rows as optimizer equality
 constraints. Its log-composition bounds therefore use the
 structural cutoff directly: the all-free optimizer box would exclude valid
 trace roots before a successful optimizer stop can reach polishing. In all-free cells a warm start below the box
@@ -637,7 +637,7 @@ objective and material rows obey joint extensive homogeneity in the phase's
 amount, composition and volume. Together with stationarity in its free amount,
 this gives zero normalization multiplier; the reduced-Hessian certificate uses these values at the returned
 point, and the optimizer's own multipliers remain a trace probe (#87 review,
-2026-09-21). A pinned problem keeps the optimizer's constraint multipliers
+2026-09-21). A feasibility problem keeps the optimizer's constraint multipliers
 over every row; its equality-root qualification does not assert a Gibbs minimum.
 The reconstruction assumes no active
 variable bound at the returned point and residual potentials that depend on
@@ -678,8 +678,8 @@ classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
 `constr_viol_tol` settings are the smaller of the request
 and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
-hair when both coincide. A pinned square system (constant objective, followed
-by the exact Newton polish) stops at the criterion itself; the polish, not an
+hair when both coincide. A square feasibility cell (pinned amount or caloric
+condition: constant objective, followed by the exact Newton polish) stops at the criterion itself; the polish, not an
 inner decade, removes the overshoot (owner decision 2026-09-23).
 The shared Ipopt option owner sets the absolute unscaled `dual_inf_tol` to
 that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
@@ -757,14 +757,14 @@ coordinates. The initial value sweep and the association implicit chain remain
 unchanged; a separate no-site first-order reverse sweep is unnecessary.
 Standard-state terms carry exact value, first and second temperature
 derivatives from the reaction target owner; no affine shortcut is assumed.
-For an unpinned cell the chemical rows are not optimizer constraints: they are
+For an ordinary free-amount cell the chemical rows are not optimizer constraints: they are
 recovered from the objective gradient `N x_i mu_i` through least-squares balance
 multipliers, so their unscaled residual is bounded only by the dual tolerance
 divided by `N x_i` and diverges where a phase or a fraction vanishes. The driver
 therefore classifies the free-amount route by the KKT-scaled stationarity
 residuals `N_p x_i mu_i / N_feed` and `N_p / N_feed` times the pressure row (the
 first-order conditions in the solved chart; owner decision 2026-09-16), keeps
-the unscaled rows in `residuals` as diagnostics, and classifies a pinned cell by
+the unscaled rows in `residuals` as diagnostics, and classifies a feasibility cell by
 its unscaled rows, which are its constraints. Species thermochemistry attached to a
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
@@ -1052,6 +1052,32 @@ fix-before-negative requirement; honest failure reporting alone is not completio
 Neutral qualification precedes ionic/reacting qualification. Same-wheel declared
 comparisons establish integration/topology evidence; refined FeOs neutral
 comparisons establish cross-implementation agreement, not physical validation.
+
+PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
+Its objective is constant; all chemical, pressure, material and caloric rows
+are constraints, with exact optimizer-weighted curvature. Actual pins retain
+their distinct amount meaning. H/S values use E1, Jacobians E2, curvature E3
+and third solved-state actions E4. The analytic geometry differentiates ideal
+calorics, amounts, raw T, packing and moving feed normalization; residual energy
+contractions remain with Properties. The target controls are H [J] and S [J/K],
+with partial rows −1/(N_feed RT) and −1/(N_feed R), including their higher chains.
+A nonzero absent-condition control is invalid; zero is permitted for either kind.
+
+An ordinary fixed-T seed uses the same driver and frozen C_f = Σ N_p cp,p:
+T1 = T0 + (H_spec − H0)/C_f, or T1 = T0 exp((S_spec − S0)/C_f).
+Only finite positive C_f and an admitted T1 change the seed. Pure two-phase
+seeds instead use the pinned-zero saturation cell at P and the caloric lever
+rule; an exterior target requires a caller-declared single phase. An auxiliary
+failure retains its cause and the caller start; there is no outer retry.
+
+Regular PH/PS qualification restricts the returned coordinates to a diagnostic
+fixed-TP Gibbs chart, recovers its physical chemical duals and computes the
+existing reduced inertia without another solve. Pure coexistence instead has
+an interior lever-fixed equality root with distinct positive mechanical slopes,
+pressure/chemical equality and conserved amounts. Its fixed-TP Gibbs split is
+analytically flat: strict curvature and ordinary equilibrium Cp are unavailable.
+Neither qualification establishes global stability. Straight continuation carries
+H/S targets and controls through the same native predictor and corrector.
 
 ## ALG-ACTIONS
 
