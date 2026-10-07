@@ -80,7 +80,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     # The 16 binary128 reactive-caloric and reactive-cp cases (Explicit) run only when
     # the code they verify changes, or on request: run-native-tests.sh 'equilibrium/Explicit/*'.
     if grep -Eq '^engine/(native/equilibrium/implicit_sensitivity\.cpp|native/properties/thermochemistry\.|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
-        slow_tests+=('equilibrium/Explicit/*')
+        slow_tests+=('equilibrium/Explicit/reactive-*')
     fi
     # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
     if grep -Eq '^engine/(native/equilibrium/phase_boundary\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
