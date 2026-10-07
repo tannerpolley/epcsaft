@@ -226,11 +226,13 @@ equilibrium_checks = executable(
   install: false,
   build_by_default: false,
 )
-# One test per case, named from the case table, so the slow group runs in parallel.
+# One test per case, named equilibrium/<execution_policy>/<case> from the case table,
+# so the slow group runs in parallel and check-affected.sh can honor the policy.
 equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').split('{{"native.equilibrium.')
 foreach index : range(1, equilibrium_cases.length())
-  case = equilibrium_cases[index].split('"')[0]
-  test('equilibrium/' + case, equilibrium_checks, args: ['native.equilibrium.' + case], timeout: 600)
+  fields = equilibrium_cases[index].split('"')
+  test('equilibrium/' + fields[8] + '/' + fields[0], equilibrium_checks,
+    args: ['native.equilibrium.' + fields[0]], timeout: 600)
 endforeach
 
 # A Python-free caller of the native interface; it includes no test support header.
