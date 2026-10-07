@@ -1866,13 +1866,15 @@ attainable inventory of 1e-18 $N_{\mathrm{feed}}$, where trace values are alread
 (below about 1e-15 $N_{\mathrm{feed}}$); lowering it changes those values, so it stays. The
 Newton polish carries a trace solution below the box to any positive root (#87,
 2026-09-21; #266, 2026-10-07). No composition cutoff applies to actions, continuation or
-declared seeds (#322): continuation from $K$ = 1e-16 to 9.3e-28 follows $K/(1+K)$ within 4e-14,
+declared seeds (#322): continuation from $K$ = 1e-16 to 9.3e-28 follows $K/(1+K)$ within 4.2e-14,
 19 states below 1e-20. A declared seed needs positive finite compositions; its log
 coordinates have no upper test, since the solver's own majority $\ln x$ returns up to 2.6e-13
 above zero within the normalization residual. Grossly invalid declared log coordinates are
 projected onto the optimizer bounds rather than refused; that this happens before any evaluation
-is inferred, not tested. The lower limits are representability (a positive normal double) and
-the solve's own acceptance: the stability decision is indeterminate at $K \le$ 1e-200. Free-phase
+is inferred, not tested. The lower limits are representability (a positive double) and the
+solve's own acceptance. As probed: the single-phase isomer's stability decision is indeterminate by
+$K$ = 1e-199 (minimum curvature 2.1e-203), and the square reactive bubble cell matches its scaled
+$K$ = 1e-12 values to $K$ = 1e-150 but stops `infeasible` at 1e-200 and 1e-250 (undiagnosed). Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
 that topology rejection is not a stability or accuracy conclusion. Packing
