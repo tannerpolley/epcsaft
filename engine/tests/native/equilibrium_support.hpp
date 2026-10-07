@@ -11,11 +11,48 @@
 #include <cstdio>
 #include <exception>
 #include <string>
+#include <numeric>
+#include <stdexcept>
 #include <vector>
 
 namespace equilibrium_support {
 
 inline int failures = 0;
+
+// Record labels of declaration enums.
+inline const char* phase_kind_name(epcsaft::equilibrium::PhaseKind kind) noexcept {
+    return kind == epcsaft::equilibrium::PhaseKind::Liquid ? "liquid" : "vapor";
+}
+
+inline const char* amount_kind_name(epcsaft::equilibrium::AmountKind kind) noexcept {
+    return kind == epcsaft::equilibrium::AmountKind::Free ? "free" : "pinned";
+}
+
+inline const char* feed_kind_name(epcsaft::equilibrium::FeedKind kind) noexcept {
+    using epcsaft::equilibrium::FeedKind;
+    switch (kind) {
+    case FeedKind::MoleFractions: return "mole_fractions";
+    case FeedKind::Amounts: return "amounts";
+    case FeedKind::MassFractions: return "mass_fractions";
+    case FeedKind::Molalities: return "molalities";
+    }
+    return "unknown";
+}
+
+// nu_r . g for each reaction; zero affinities without a standard state.
+inline std::vector<double> reaction_affinities(
+    const std::vector<epcsaft::equilibrium::ReactionSpec>& reactions, const std::vector<double>& standard_gibbs
+) {
+    std::vector<double> result(reactions.size(), 0.0);
+    if (standard_gibbs.empty()) return result;
+    for (std::size_t r = 0; r < reactions.size(); ++r) {
+        if (reactions[r].stoichiometry.size() != standard_gibbs.size())
+            throw std::invalid_argument("stoichiometry size does not match standard state");
+        result[r] = std::inner_product(reactions[r].stoichiometry.begin(), reactions[r].stoichiometry.end(),
+                                       standard_gibbs.begin(), 0.0);
+    }
+    return result;
+}
 
 inline void fail(const char* file, int line, const char* expression) {
     std::fprintf(stderr, "%s:%d: failed: %s\n", file, line, expression);

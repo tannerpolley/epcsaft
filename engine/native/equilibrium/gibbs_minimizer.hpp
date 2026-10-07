@@ -30,11 +30,17 @@ struct EvaluationWork final {
 struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
-std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds = true);
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
+// The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
+// and fixed T and P. Empty when equal; shared by previous-result starts and stability tests.
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
+// It owns the chart reading: normalized phase compositions, phase amounts and ln eta.
 struct TopologyCheck final {
+    std::vector<std::vector<double>> compositions;
+    std::vector<double> amounts, log_packing;
     TopologyEvent event = TopologyEvent::None;
     std::optional<std::size_t> phase;
     std::optional<std::pair<std::size_t, std::size_t>> pair;
@@ -63,6 +69,16 @@ struct DriverLimits final {
     bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
 };
+// The driver internals the stability search (phase_stability.cpp) shares.
+void clear_state(EquilibriumResult& result);
+double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
+std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point);
+EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
+EquilibriumResult run_driver(
+    const HelmholtzModel& model, const CompiledSystem& compiled,
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr
+);
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(
@@ -154,9 +170,10 @@ ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
+// J dy = -F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
+    const PhasePoint& prepared,
     const std::vector<double>& parameter_rows
 );
 
