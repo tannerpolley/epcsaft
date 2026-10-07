@@ -1,4 +1,4 @@
-"""Thin public fitting exposure (#49): names map to native indices; the native owners do the science."""
+"""Public fitting: names map to native indices; the native owners do the science."""
 
 from __future__ import annotations
 

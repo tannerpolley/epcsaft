@@ -366,7 +366,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("budget_exhausted", &EquilibriumStartsResult::budget_exhausted);
     module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
-    // E5 solved-state actions: the existing native records and owner, transported unchanged.
+    // Solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
         .value("Temperature", SolvedStateObservableKind::Temperature)
         .value("Pressure", SolvedStateObservableKind::Pressure)

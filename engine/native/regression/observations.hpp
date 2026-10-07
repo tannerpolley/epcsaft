@@ -10,7 +10,7 @@
 
 namespace epcsaft::regression {
 
-// The built-in observation inventory (#46). Values come from the shared owners only:
+// The built-in observation inventory. Values come from the shared owners only:
 // Density and total c_p from the Properties pressure closure, other kinds from one declared
 // specification of the single equilibrium driver. PartialPressure is P sum_{i in S} y_i.
 enum class ObservationKind {

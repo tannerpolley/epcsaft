@@ -38,7 +38,7 @@ struct CheckResult final {
     std::optional<double> maximum_threshold, mean_threshold, baseline_maximum, baseline_mean;
     bool report_only = false;
 };
-// D7: physical epigraph/slacks; positive row scales and exact first actions.
+// Guarded minimax: physical epigraph/slacks; positive row scales and exact first actions.
 struct MinimaxRequest final {
     std::vector<std::size_t> targets;
     std::vector<double> group_scales;
