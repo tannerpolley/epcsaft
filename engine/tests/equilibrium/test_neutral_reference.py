@@ -402,8 +402,10 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
                          ("P", SolvedStateActionDirection(0.0, 1.0e5, [0.0, 0.0, 0.0], [])), ("T", thermal)):
         exact = action(0.0, thermal, other)
         coarse, fine = ((action(h, other) - action(-h, other)) / (2 * h) for h in (0.2, 0.1))
-        assert abs(fine - exact) <= abs(coarse - exact) / 2  # O(step^2) toward the action
-        same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
+        # O(step^2) toward the action; the 1e-6 term is the asserted resolution. The near-zero P action
+        # (-3.03e-13) scatters by up to 3.2e-19 for row tolerances 1e-10 to 1e-13, its floating-point floor (#314)
+        assert abs(fine - exact) <= abs(coarse - exact) / 2 + 1e-6 * abs(exact)
+        same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=1e-18,
              inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "steps": [0.2, 0.1]},
              basis="Identity", method="richardson-differenced-first-action",
              claim="referenced mixed temperature second action equals the T derivative of the first action")

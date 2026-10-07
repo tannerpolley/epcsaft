@@ -1,7 +1,8 @@
 """ALG-DENSITY: finite crossings, slope zeros and dilute ethane limits."""
 import math
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Pure, _core
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Pure, _core
+from epcsaft.equilibrium import Amounts, Phase, Problem, solve_equilibrium
 
 from ..native_inputs import ETHANE, parameters
 
@@ -66,3 +67,14 @@ def test_density_crossings_and_finite_domain() -> None:
     bracket = slope_search.unresolved[0]
     assert abs(bracket.lower - 5500.0) <= 1e-9 and abs(bracket.upper - 7000.0) <= 1e-9
     assert bracket.cause == "density diagnostic budget exhausted"
+
+
+def test_declared_liquid_stays_on_its_metastable_root_inside_the_loop() -> None:
+    """#314: an Ipopt barrier on ln eta pushed the stationary liquid start across the spinodal."""
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))  # identical species: pure ethane
+    for P in (4.75e6, 4.6735e6):  # saturation 4.7802 MPa, liquid fold 4.673 MPa at 305 K
+        result = solve_equilibrium(model, Problem(T=305.0, P=P, feed=Amounts({"s0": 1.0, "s1": 1.0}),
+                                                  phases=[Phase("L", kind="liquid")]))
+        assert result.success, result.message
+        root = model.state(305.0, P=P, x=(0.5, 0.5), phase="liquid").molar_density
+        assert math.isclose(result.molar_densities[0], root, rel_tol=1e-10, abs_tol=0.0), (P, root)

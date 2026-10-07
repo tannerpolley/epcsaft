@@ -218,6 +218,12 @@ struct Layout final {
     std::size_t volume = 0;
 };
 
+// The fluid packing domain shared by seeds, prepared points and stability states.
+inline bool admitted_packing_fraction(double eta) {
+    return std::isfinite(eta) && eta >= policy::PACKING_FRACTION_FLOOR.value
+        && eta <= policy::PACKING_FRACTION_CEILING.value;
+}
+
 struct PackingTerms final {
     double coefficient = 0.0;
     double temperature_derivative = 0.0;

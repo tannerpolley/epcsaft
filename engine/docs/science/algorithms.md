@@ -657,6 +657,10 @@ apply. Ipopt unscales
 final constraint multipliers before the
 TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
+Each phase's ln η is unbounded in the optimizer, and the compiled preparation
+enforces its domain [`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so
+Ipopt cuts back a step that leaves it: the barrier bias of bounds on ln η pushes
+a near-spinodal liquid off its branch (#314).
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.

@@ -437,7 +437,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         }
         if ((limits || supports_split_seed(compiled)) && compiled.problem.phases[phase].packing_guess.has_value()) {
             const double packing = *compiled.problem.phases[phase].packing_guess;
-            if (!admitted_packing_seed(packing)) {
+            if (!admitted_packing_fraction(packing)) {
                 throw std::invalid_argument("packing guess is outside the admitted range");
             }
             point[cursor] = std::log(packing);

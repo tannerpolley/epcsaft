@@ -370,7 +370,7 @@ inline constexpr Tolerance PACKING_FRACTION_CEILING{"PACKING_FRACTION_CEILING",
     "fluid-coordinate ceiling below close packing",
 };
 
-// Floor of the log-packing chart, shared by the driver's variable bounds and the
+// Floor of the log-packing chart, shared by the compiled preparation's domain test and the
 // continuation predictor's domain test so both admit the same coordinates.
 inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
     1.0e-12,
