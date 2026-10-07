@@ -157,8 +157,9 @@ def main():
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
     parser.add_argument('wheel_A', type=Path)
     parser.add_argument('wheel_B', type=Path)
-    parser.add_argument('--pairs', type=int, default=7, help='counterbalanced pairs per case (default: 7)')
-    parser.add_argument('--out', type=Path, default=ROOT / 'build/time-key-solves/results', help='new or empty result directory')
+    parser.add_argument('--pairs', type=int, default=1, help='counterbalanced pairs per case; more only for timing claims (default: 1)')
+    parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
+                        help='new or empty result directory (default: timestamped under build/time-key-solves)')
     args = parser.parse_args()
     if args.pairs < 1:
         parser.error('--pairs must be positive')
