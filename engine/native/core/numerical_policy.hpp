@@ -78,7 +78,7 @@ inline constexpr Tolerance SITE_FRACTION_CEILING{"SITE_FRACTION_CEILING",
 inline constexpr Tolerance ASSOCIATION_RESIDUAL{"ASSOCIATION_RESIDUAL",
     2.0e-13,
     Category::AlgorithmTolerance,
-    "carried unchanged; Newton reaches it in 3-8 steps from a warm start",
+    "Newton reaches it in 3-8 steps from a warm start",
 };
 
 inline constexpr Tolerance ASSOCIATION_ACTION_RESIDUAL{"ASSOCIATION_ACTION_RESIDUAL",
@@ -95,8 +95,7 @@ inline constexpr Tolerance ASSOCIATION_BOUNDARY_FRACTION{"ASSOCIATION_BOUNDARY_F
 inline constexpr Tolerance ASSOCIATION_MAX_ITERATIONS{"ASSOCIATION_MAX_ITERATIONS",
     50.0,
     Category::AlgorithmTolerance,
-    "budget; measured 3-8 Newton steps, the substitution solver it replaces "
-    "needed 126-31056",
+    "budget; measured 3-8 Newton steps",
 };
 
 // Below this the Jacobian's smallest pivot no longer separates from its largest
@@ -126,10 +125,9 @@ inline constexpr Tolerance DENSITY_MAX_ITERATIONS{"DENSITY_MAX_ITERATIONS",
     "budget for each root refinement, spinodal bisection and slope-minimum search",
 };
 
-// The coarse sweep that brackets the roots before Newton refines them. The tree
-// this replaces used 360 intervals here and a second 64-interval scan subdivided
-// to depth 8 elsewhere, for a root that a bracket plus Newton finds in single
-// digits. Two scanners became one; this is its only discretisation number.
+// The coarse sweep that brackets the roots before Newton refines them; a bracket
+// plus Newton finds the root in single digits. This is the scan's only
+// discretisation number.
 inline constexpr Tolerance DENSITY_BRACKET_INTERVALS{"DENSITY_BRACKET_INTERVALS",
     40.0,
     Category::AlgorithmTolerance,

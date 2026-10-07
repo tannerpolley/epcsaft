@@ -5,10 +5,9 @@
 // Vacuum permittivity retains the CODATA 2018 central value, with relative
 // standard uncertainty 1.5e-10; updates require replaying affected evidence.
 
-// Category 1: measured or defined physical constants. Every one of them is
-// defined here and nowhere else -- the tree this replaces carried fifteen
-// definitions of the gas constant, and the architecture checker now rejects the
-// sixteenth. Values are the 2019 SI definitions, exact where the SI fixes them.
+// Measured or defined physical constants, each defined here and nowhere else (the
+// architecture checker rejects a second gas constant). Values are the 2019 SI
+// definitions, exact where the SI fixes them.
 
 namespace epcsaft {
 
