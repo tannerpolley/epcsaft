@@ -441,9 +441,9 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             }
             contractions[point] = contraction;
         }
-        result.observed_terminal_change = std::max(
-            std::abs(contractions[4] - contractions[3]),
-            std::abs(contractions[3] - contractions[2]));
+        // EqID: reference_limit_terminal_pair, as the ion witness: admit on the change into the
+        // returned 1e-14 rung; on a sqrt(m) tail its error is one ninth of that change.
+        result.observed_terminal_change = std::abs(contractions[4] - contractions[3]);
         if (!std::isfinite(*result.observed_terminal_change)) {
             result.status = NeutralReferenceStatus::Nonfinite;
             result.message = "neutral reference terminal change is nonfinite";
@@ -477,7 +477,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
                 column.message = "nonfinite lower reference ladder"; return std::nullopt;
             }
             for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
-            const double change = std::max(column.scaled_changes[0], column.scaled_changes[1]);
+            const double change = column.scaled_changes[1];
             if (observed) *observed = change;
             if (change <= tolerance) column.value = ladder[2];
             else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
@@ -798,13 +798,10 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                             const double scale = GAS_CONSTANT_J_PER_MOL_K * std::pow(temperature, int(a))
                                 * std::pow(pressure, int(b)) * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0);
                             if (column.ladder[0] && column.ladder[1] && column.ladder[2]) {
-                                bool admitted = true;
-                                for (std::size_t k = 0; k < 2; ++k) {
+                                for (std::size_t k = 0; k < 2; ++k)
                                     column.scaled_changes[k] = scale * std::abs(*column.ladder[k+1]-*column.ladder[k]);
-                                    admitted &= std::isfinite(column.scaled_changes[k])
-                                        && column.scaled_changes[k] <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value;
-                                }
-                                if (admitted) column.value = column.ladder[2];
+                                if (column.scaled_changes[1] <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value)
+                                    column.value = column.ladder[2];
                                 else column.message = "reference scaled terminal change exceeds heat-capacity tolerance";
                             }
                         }
