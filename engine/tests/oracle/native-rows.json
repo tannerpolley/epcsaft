@@ -1,8 +1,8 @@
 {
   "rows": 580,
-  "recorded_at_revision": "f6b4f654be59dfb0bc4112cbd83421a698b9b1cc",
-  "build_fingerprint": "87bbad0c3d64394b014aa7d32f9e1788010718491286895e88cb7900346ddd81",
-  "wheel_sha256": "5ff14b493ea533d697ae11eec7c28d2d5782e567f26b74641ae8537caea501ae",
+  "recorded_at_revision": "c95e93500977ae106816cbef32fde0ed0815a618",
+  "build_fingerprint": "9b6e51988e124755b25fb3944c93df7eafc25f18448493006970cff776a8d650",
+  "wheel_sha256": "726a6f529d4cd9c624f6ef5e5ce61c7649ee811d8637b2dd68a525697248a0e8",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -57,5 +57,5 @@
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
   "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
   "previous_recording_wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
-  "refresh_cause": "#314: ln eta unbounded in Ipopt moves solved states within the solver tolerance. 287 of 575 rows moved; the 64 moved by more than 1e-10 relative are near-zero identities (|value| <= 1e-6) or S2 high-order frozen and re-solved action rows (at most 6e-8 relative). Every native comparison passes its unchanged criterion."
+  "refresh_cause": "#314: ln eta unbounded in Gibbs minimizations moves solved states within the solver tolerance. 286 of 575 rows moved; of the 64 moved by more than 1e-10 relative, 41 are S2 frozen-state and re-solved action rows (at most 5.9e-8 relative), 21 are near-zero identities (|value| <= 4.2e-11) and 2 are R2-J2 recovery costs near 1e-27. Every native comparison passes its unchanged criterion."
 }
