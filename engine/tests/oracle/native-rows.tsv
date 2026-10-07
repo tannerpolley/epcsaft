@@ -194,17 +194,17 @@ properties_checks P4	pressure/action/11/3	native	0.008384936020687902
 properties_checks P4	pressure/action/12/3	native	6.847209452061066e-06
 properties_checks P4	pressure/action/13/3	native	-4.901334295783635e-05
 properties_checks P4	pressure/action/14/3	native	-4.6024834343521605e-05
-equilibrium_checks S2	reference-calorics/dependencies/anchored-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/independent-residual	J/mol	-12046.282819628605
+equilibrium_checks S2	reference-calorics/dependencies/consistent-cp-record/anchored-h	J/mol	-15300.513581033978
+equilibrium_checks S2	reference-calorics/dependencies/consistent-cp-record/independent-residual	J/mol	-12046.282819628605
 equilibrium_checks S2	reference-calorics/dependencies/consistent-cp	J/mol	106.78272830210005
 equilibrium_checks S2	reference-calorics/dependencies/source-retains-center-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/anchored-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/independent-residual	J/mol	-12046.282819628605
-equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/endpoint-isothermal-action	J/mol	-5.022791103080131
-equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h	J/mol	-15300.513581033978
-equilibrium_checks S2	reference-calorics/dependencies/endpoint-isothermal-action	J/mol	0
+equilibrium_checks S2	reference-calorics/dependencies/inconsistent-cp-record/anchored-h	J/mol	-15300.513581033978
+equilibrium_checks S2	reference-calorics/dependencies/inconsistent-cp-record/independent-residual	J/mol	-12046.282819628605
+equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h/T	J/mol	-15300.513581033978
+equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h/P	J/mol	-15300.513581033978
+equilibrium_checks S2	reference-calorics/dependencies/endpoint-isothermal-action/P	J/mol	-5.022791103080131
+equilibrium_checks S2	reference-calorics/dependencies/endpoint-center-h/water-feed	J/mol	-15300.513581033978
+equilibrium_checks S2	reference-calorics/dependencies/endpoint-isothermal-action/water-feed	J/mol	0
 equilibrium_checks S2	reference-calorics/dependencies/retained-vT	m^3/(mol K)	3.3310758603221836e-07
 equilibrium_checks S2	reference-calorics/dependencies/retained-vP	m^3/(mol Pa)	-6.104832681063581e-13
 equilibrium_checks S2	reference-calorics/dependencies/lower-column/available-theta	1/angstrom	46.619570441218094
