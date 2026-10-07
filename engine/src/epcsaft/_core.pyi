@@ -1143,7 +1143,6 @@ class HoldResult:
     derivative: float
     parameter_derivative: list[float]
     iterations: int
-    cause: str
 
 class EvaluatedCoordinates:
     parameters: Parameters

@@ -73,7 +73,6 @@ struct HoldResult final {
     double energy_error = 0.0, correction = 0.0, uncertainty = 0.0, derivative = 0.0;
     std::vector<double> parameter_derivative;
     int iterations = 0;
-    std::string cause;
 };
 struct EvaluatedCoordinates final {
     Parameters parameters;

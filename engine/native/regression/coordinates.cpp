@@ -267,6 +267,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
         admit(low.first == 0.0 || high.first == 0.0 || std::signbit(low.first) != std::signbit(high.first), "hydration root outside bracket");
         double diameter = std::clamp(parameters.born_diameter_angstrom.at(ion), lower, upper);
         HoldResult result;
+        bool converged = false;
         for (int iteration = 0; iteration < hold.maximum_iterations; ++iteration) {
             const auto [error, gradient] = evaluate(diameter);
             const double hd = gradient.at(active_row);
@@ -275,8 +276,8 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             result.energy_error = error; result.correction = std::abs(error / hd);
             result.uncertainty = std::min(result.correction, upper - lower); result.derivative = hd;
             result.parameter_derivative = gradient; result.iterations = iteration + 1;
-            if (std::abs(error) <= hold.energy_tolerance && result.uncertainty <= hold.diameter_tolerance) {
-                result.cause = "converged";
+            converged = std::abs(error) <= hold.energy_tolerance && result.uncertainty <= hold.diameter_tolerance;
+            if (converged) {
                 // EqID: dependent_born_diameter_derivative
                 for (std::size_t c = 0; c < columns; ++c)
                     for (std::size_t r = 0; r < set.active_parameters().size(); ++r)
@@ -288,7 +289,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             const double next = diameter - error / hd;
             diameter = next > lower && next < upper ? next : 0.5 * (lower + upper);
         }
-        admit(result.cause == "converged", "hydration hold exhausted");
+        admit(converged, "hydration hold exhausted");
         out.physical.push_back(out.parameters.born_diameter_angstrom.at(ion));
         out.holds.push_back(std::move(result));
     }

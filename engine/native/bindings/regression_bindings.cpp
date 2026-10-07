@@ -99,8 +99,7 @@ void register_regression(py::module_& module) {
         .def_readonly("uncertainty", &HoldResult::uncertainty)
         .def_readonly("derivative", &HoldResult::derivative)
         .def_readonly("parameter_derivative", &HoldResult::parameter_derivative)
-        .def_readonly("iterations", &HoldResult::iterations)
-        .def_readonly("cause", &HoldResult::cause);
+        .def_readonly("iterations", &HoldResult::iterations);
     py::class_<EvaluatedCoordinates>(module, "EvaluatedCoordinates")
         .def_readonly("parameters", &EvaluatedCoordinates::parameters)
         .def_readonly("active", &EvaluatedCoordinates::active)

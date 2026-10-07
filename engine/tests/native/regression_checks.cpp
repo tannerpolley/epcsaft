@@ -1665,7 +1665,7 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
         hold.parameter_derivative = b1 ? std::vector<double>{-2.0, 0.0, 1.0} : std::vector<double>{-2.0, 1.0};
         // A bracket-limited hold: its achieved uncertainty is below its last Newton correction.
         hold.correction = 2.0e-3; hold.uncertainty = 1.0e-3;
-        hold.cause = "converged"; hold.iterations = 1; out.chart.holds = {hold};
+        hold.iterations = 1; out.chart.holds = {hold};
         for (std::size_t i = 0; i < n; ++i) {
             double e = 0.0; std::vector<double> de(physical, 0.0);
             if (b1 && i == 0) { e = a * (x + z); de = {a, a, 0.0}; }
