@@ -55,22 +55,8 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
     PropertyActionStatus* status = nullptr
 ) {
     const std::size_t sites_count = sites.size();
-    Eigen::MatrixXd mass_action_jacobian = Eigen::MatrixXd::Zero(
-        static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(sites_count));
-    for (std::size_t a = 0; a < sites_count; ++a) {
-        double bonded = 0.0;
-        for (std::size_t b = 0; b < sites_count; ++b) {
-            const double mass_b = composition[parameters.site_component[b]]
-                * parameters.site_multiplicity[b];
-            const double delta_ab = delta[a * sites_count + b];
-            bonded += mass_b * sites[b] * delta_ab;
-            mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(b)) =
-                sites[a] * number_density * mass_b * delta_ab;
-        }
-        mass_action_jacobian(static_cast<Eigen::Index>(a), static_cast<Eigen::Index>(a)) +=
-            1.0 + number_density * bonded;
-    }
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian);
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization(mass_action_jacobian(composition, parameters, sites,
+        number_density, delta, bonded_densities(composition, parameters, sites, delta)));
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
     auto scope = core::Scope::detailed("association_derivative");
     const auto failure = [&](const char* reason) {
@@ -92,10 +78,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(
             }
             throw std::domain_error("association Jacobian is singular");
         }
-        const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
-        if (!std::isfinite(pivots.maxCoeff())
-            || pivots.minCoeff() <= policy::ASSOCIATION_JACOBIAN_CONDITION.value
-                * pivots.maxCoeff()) {
+        if (!admitted_pivot_ratio(factorization)) {
             failure("association Jacobian is ill-conditioned");
             if (status != nullptr) {
                 *status = PropertyActionStatus::AssociationIllConditioned;
