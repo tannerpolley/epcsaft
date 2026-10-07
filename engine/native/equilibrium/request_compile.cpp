@@ -1067,22 +1067,25 @@ static CompiledSystem compile_with_basis(
     compiled.model = &model;
     compiled.problem = request;
     compiled.n_feed = resolve_feed(model, request.feed);
-    compiled.feed_total = vector_norm(compiled.n_feed);  // resolve_feed admitted a positive finite total
+    compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
     const auto& z = model.parameters().charge_number;
     double net_z = 0.0;
     for (std::size_t i = 0; i < components; ++i) net_z += z[i] * compiled.n_feed[i];
     if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
-        * std::max(1.0, vector_norm(compiled.n_feed))) {
+        * std::max(1.0, compiled.feed_total)) {
         throw std::invalid_argument("feed carries net z");
     }
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");
-        double total = 0.0;
-        for (std::size_t i = 0; i < components; ++i) total += z[i] * nu[i];
-        if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon())
-            * std::max(1.0, vector_norm(nu))) {
+        // The charge defect is judged against the stoichiometric scale ||nu||_1.
+        double total = 0.0, scale = 0.0;
+        for (std::size_t i = 0; i < components; ++i) {
+            total += z[i] * nu[i];
+            scale += std::abs(nu[i]);
+        }
+        if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale)) {
             throw std::invalid_argument("reaction " + reaction_name(request.reactions[row], row)
                                         + " violates z");
         }

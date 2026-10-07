@@ -943,6 +943,16 @@ void check_e2_reaction() {
         recording_support::fields({recording_support::field("feed", charged.feed.values),
             recording_support::field("nu", charged.reactions[0].stoichiometry), recording_support::field("K", 4.0),
             recording_support::field("permutation", std::vector<double>{2, 0, 1})})));
+    // The charge test scales sqrt(eps) by max(1, ||nu||_1): |z.nu| = 3 sqrt(eps) lies above the old signed-sum
+    // scale (sum nu = -3 sqrt(eps), so 1) and below the L1 scale (4 + 3 sqrt(eps)), and is admitted.
+    const double defect = 3.0 * std::sqrt(std::numeric_limits<double>::epsilon());
+    auto near_neutral = charged;
+    near_neutral.reactions[0].stoichiometry = {2.0, -1.0, -1.0 - defect};
+    CHECK(record_bool("e2-2/charge-scale-l1", "e2-2-reaction",
+        "a reaction charge defect within sqrt(eps) of the L1 stoichiometric scale is admitted",
+        rejection(salt, near_neutral).find("violates z") == std::string::npos,
+        recording_support::fields({recording_support::field("nu", near_neutral.reactions[0].stoichiometry),
+            recording_support::field("z_dot_nu", defect)})));
 }
 
 void check_e2_charge() {

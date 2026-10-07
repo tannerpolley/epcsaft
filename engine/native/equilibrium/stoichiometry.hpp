@@ -61,7 +61,7 @@ std::vector<double> matvec(
     const std::vector<double>& vector
 );
 
-double vector_norm(const std::vector<double>& values);
+double sum(const std::vector<double>& values);
 
 std::size_t reaction_rank(
     std::size_t components, const std::vector<ReactionSpec>& reactions

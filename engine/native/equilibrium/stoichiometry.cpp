@@ -16,7 +16,7 @@
 namespace epcsaft::equilibrium {
 namespace {
 
-void require_finite(const std::vector<double>& values, const char* name) {
+void require_nonnegative(const std::vector<double>& values, const char* name) {
     if (values.empty() || !std::all_of(values.begin(), values.end(), [](double value) {
             return std::isfinite(value) && value >= 0.0;
         })) {
@@ -32,7 +32,7 @@ void require_positive(double value, const char* name) {
 
 // A fraction feed is admitted within the composition policy and never renormalized.
 void require_unit_sum(const std::vector<double>& values, const char* name) {
-    if (!(std::abs(vector_norm(values) - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
+    if (!(std::abs(sum(values) - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
         throw std::invalid_argument(std::string(name) + " must sum to one");
     }
 }
@@ -162,7 +162,7 @@ std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& fe
     if (feed.values.size() != components) {
         throw std::invalid_argument("feed size does not match components");
     }
-    require_finite(feed.values, "feed");
+    require_nonnegative(feed.values, "feed");
     std::vector<double> result(components, 0.0);
     if (feed.kind == FeedKind::Amounts) {
         result = feed.values;
@@ -417,7 +417,7 @@ std::vector<double> matvec(
     return result;
 }
 
-double vector_norm(const std::vector<double>& values) {
+double sum(const std::vector<double>& values) {
     return std::accumulate(values.begin(), values.end(), 0.0);
 }
 
