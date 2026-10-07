@@ -4569,6 +4569,7 @@ void check_e5_refusals() {
         const double floor = std::numeric_limits<double>::epsilon();
         // dJ: the phase rows' composition entries are exactly +-1/2 for identical species. The multiplier
         // columns of dJ are zero, so z* needs no multiplier entries; eta_J is normed like the error.
+        // eta_J excuses only rounding-level dJ; a gross composition-derivative defect belongs to the exact-derivative checks.
         Eigen::MatrixXd deviation = Eigen::MatrixXd::Zero(n, n);
         for (Eigen::Index r = 0; r < 6; ++r) for (const Eigen::Index c : {0, 1, 4, 5})
             if (jacobian(r, c) != 0.0) deviation(r, c) = jacobian(r, c) - std::copysign(0.5, jacobian(r, c));
