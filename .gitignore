@@ -22,3 +22,6 @@
 
 /.quarto/
 **/*.quarto_ipynb
+
+# Notebook renders are derived from retained results; render into build/ (#341).
+analyses/**/*.html
