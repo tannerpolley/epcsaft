@@ -768,7 +768,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             model, temperature, stoichiometries[row], reference,
             need_jets, *found->result.trace);
         diagnostic.solvent_density = found->result.trace->state.front().molar_density;
-        // Additional consumed columns, with independent admission on both terminal changes.
+        // Additional consumed columns, each admitted on its change into the returned 1e-14 mol/kg value.
         const auto& trace = *found->result.trace;
         const auto values = model.active_parameter_values();
         for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
