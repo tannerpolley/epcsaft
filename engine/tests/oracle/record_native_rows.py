@@ -6,6 +6,7 @@ Run after `bash .codex/environments/setup.sh`: `.venv/bin/python engine/tests/or
 """
 import json
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -51,6 +52,8 @@ def main() -> None:
                     lines.append(f"{source}\t{name}\t{item['unit']}\t{item['model']!r}")
     if any(item["exit"] != 0 for item in commands):
         raise SystemExit(f"a native check failed; rows not recorded: {commands}")
+    if repeated := [name for name, n in Counter(line.split("\t")[1] for line in lines[1:]).items() if n > 1]:
+        raise SystemExit(f"repeated row ids; rows not recorded: {repeated}")
     (HERE / "native-rows.tsv").write_text("\n".join(lines) + "\n")
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
     (HERE / "native-rows.json").write_text(json.dumps({

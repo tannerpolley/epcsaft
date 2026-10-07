@@ -892,9 +892,10 @@ inline void dependency_checks() {
         auto source = zero_direction;
         source.reaction_coefficients[0][0] = 1.0;
         const auto values = solved_state_actions(complete, state, {outputs, {zero_direction}});
-        check("anchored-h", *values.results[0].value, *baseline.results[0].value, 1e-5);
+        const std::string record = inconsistent_cp ? "inconsistent-cp-record/" : "consistent-cp-record/";
+        check(record + "anchored-h", *values.results[0].value, *baseline.results[0].value, 1e-5);
         CHECK(values.results[2].status == SolvedStateActionStatus::Available);
-        check("independent-residual", *values.results[2].value, *baseline.results[2].value, 1e-5);
+        check(record + "independent-residual", *values.results[2].value, *baseline.results[2].value, 1e-5);
         CHECK(values.results[3].status == SolvedStateActionStatus::Available);
         if (inconsistent_cp) {
             CHECK(values.results[1].status == SolvedStateActionStatus::ReferenceUnavailable && !values.results[1].value);
@@ -921,15 +922,16 @@ inline void dependency_checks() {
     const auto endpoint_state = solve_compiled(endpoint_compiled);
     CHECK(endpoint_state.has_state());
     auto basis = directions(c);
-    for (const auto& d : {basis[0].value, basis[1].value, basis[2].value}) {
+    for (std::size_t k = 0; k < 3; ++k) {
+        const auto& d = basis[k].value;
         const auto action = solved_state_actions(endpoint_compiled, endpoint_state, {outputs, {d}});
-        check("endpoint-center-h", *action.results[0].value, *baseline.results[0].value, 1e-5);
+        check("endpoint-center-h/" + basis[k].name, *action.results[0].value, *baseline.results[0].value, 1e-5);
         const auto interior = solved_state_actions(compiled, solved, {outputs, {d}});
         if (d.temperature_k != 0.0)
             CHECK(action.results[0].status == SolvedStateActionStatus::ThermalBoundary && !action.results[0].action);
         else {
             CHECK(action.results[0].status == SolvedStateActionStatus::Available && action.results[0].action);
-            check("endpoint-isothermal-action", *action.results[0].action, *interior.results[0].action, 1e-5);
+            check("endpoint-isothermal-action/" + basis[k].name, *action.results[0].action, *interior.results[0].action, 1e-5);
         }
         CHECK(action.results[2].status == SolvedStateActionStatus::Available);
     }
