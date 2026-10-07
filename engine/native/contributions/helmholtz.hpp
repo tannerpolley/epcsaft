@@ -61,6 +61,7 @@ Scalar ideal_mechanical_helmholtz(
     return result;
 }
 
+// Gross and Sadowski (2001) Table 1; FeOs carries extra digits (#222).
 inline constexpr std::array<double, 7> A0 = {
     0.9105631445, 0.6361281449, 2.6861347891, -26.547362491,
     97.759208784, -159.59154087, 91.297774084,
