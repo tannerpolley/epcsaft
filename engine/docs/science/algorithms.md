@@ -660,12 +660,17 @@ TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
 The compiled preparation enforces each phase's packing domain
 [`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so Ipopt cuts back a step
-that leaves it. A Gibbs minimization leaves ln η unbounded in the optimizer,
-because the barrier of bounds on ln η pushes a near-spinodal liquid off its
-branch (#314). A constant-objective feasibility cell keeps those bounds: without
-them the methane/ethane envelope's critical-straddle corrector lands on the
-trivial solution. A feasibility solve near a liquid
-spinodal can therefore still show the barrier bias; this is untested.
+that leaves it. A Gibbs minimization of exactly one declared phase leaves ln η
+unbounded in the optimizer, because the barrier of bounds on ln η pushes a
+near-spinodal liquid off its branch (#314); for such a solve the packing domain
+is a hard refusal that names the phase, so a state outside it (for example a
+dilute vapor below the floor) is refused rather than returned. Every multi-phase
+solve and every feasibility cell keeps the ln η bounds: their barrier acts as a
+trust region on liquid density, and without it mid-dome methane/ethane flashes
+fall to the trivial solution or exhaust the iteration budget, and the envelope's
+critical-straddle corrector lands on the trivial solution. Those solves can
+still show the barrier bias near a liquid spinodal; a near-critical declared
+liquid inside a multi-phase declaration is not covered.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.

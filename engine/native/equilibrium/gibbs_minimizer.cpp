@@ -529,7 +529,7 @@ bool GibbsMinimizer::get_bounds_info(
             x_u[offset++] = 0.0;
         }
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
-        if (compiled_.feasibility_cell()) {  // ln eta bounds only here; prepare refuses eta outside them (#314)
+        if (compiled_.feasibility_cell() || compiled_.problem.phases.size() != 1) {  // unbounded only for one minimized phase (#314)
             x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
             x_u[offset] = std::log(policy::PACKING_FRACTION_CEILING.value);
         }

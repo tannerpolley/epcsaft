@@ -371,8 +371,8 @@ inline constexpr Tolerance PACKING_FRACTION_CEILING{"PACKING_FRACTION_CEILING",
 };
 
 // Floor of the log-packing chart, shared by the compiled preparation's domain test, the
-// feasibility cells' variable bounds and the continuation predictor's domain test so all
-// admit the same coordinates.
+// optimizer bounds of multi-phase solves and feasibility cells, and the continuation
+// predictor's domain test so all admit the same coordinates.
 inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
     1.0e-12,
     Category::AlgorithmTolerance,
