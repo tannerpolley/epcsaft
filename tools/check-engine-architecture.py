@@ -2,15 +2,9 @@
 """Structural rules for engine/native and the public Python surface.
 
 C++ is organised by dependency layer because include direction is the only
-structural fact a checker can enforce. Five rules, all cheap, all stdlib:
-
-  1. one static archive and one extension in meson.build
-  2. no Python or pybind11 symbol inside the archive
-  3. every "..." include resolves to the same or a lower layer
-  4. regression/ may not reach phase stability
-  5. no constexpr name defined twice, no category-1 constant outside core/
-
-Rule 2 needs a built archive and reports "skipped" without one.
+structural fact a checker can enforce. Each rule is a cheap stdlib reading named
+in main()'s check table. The Python-free archive rule needs a built archive and
+reports "skipped" without one; the wheel and stub rules run only with --wheel.
 """
 
 from __future__ import annotations
