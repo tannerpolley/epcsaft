@@ -398,6 +398,47 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
     return result;
 }
 
+// EqID: reference_limit_terminal_pair: a column is admitted on its scaled change into the
+// returned 1e-14 mol/kg rung; on a sqrt(m) tail its error is one ninth of that change. Returns
+// the scaled change when the ladder is complete and finite.
+std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivative& column, double scale, double tolerance) {
+    column.criterion = tolerance;
+    const auto& ladder = column.ladder;
+    if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
+    if (!std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) {
+        column.message = "nonfinite reference ladder"; return std::nullopt;
+    }
+    for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
+    const double change = column.scaled_changes[1];
+    if (change <= tolerance) column.value = ladder[2];
+    else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
+    return change;
+}
+
+// Scale is T^a P^b max(1, |theta|). Columns that enter ln K and its first slopes admit at
+// REFERENCE_CONVERGENCE_TOLERANCE; d2C/dT2 and the higher columns (reference order >= 2) enter
+// the reaction heat capacity and its derivatives, so they admit at REFERENCE_HEAT_CAPACITY_TOLERANCE / R.
+NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
+    const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
+    std::optional<std::size_t> parameter, double scale, double tolerance, std::optional<double>* observed = nullptr) {
+    NeutralReferenceReactionDiagnostic::Derivative column;
+    column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
+    for (std::size_t point = 0; point < 3; ++point) {
+        try {
+            const auto partial = reference_partial_from_trace(model, temperature, trace,
+                NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point, stoichiometry, a, b, parameter);
+            column.ladder[point] = partial.action;
+            if (!partial.action) {
+                column.action_status = partial.status;
+                column.message = "reference action status " + std::to_string(int(partial.status));
+            }
+        } catch (const std::exception& error) { column.message = error.what(); }
+    }
+    const auto change = admit_ladder(column, scale, tolerance);
+    if (observed && change) *observed = change;
+    return column;
+}
+
 bool supported_reference_basis(ReferenceSourceBasis basis) {
     return basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
         || basis == ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
@@ -441,47 +482,19 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             }
             contractions[point] = contraction;
         }
-        // EqID: reference_limit_terminal_pair, as the ion witness: admit on the change into the
-        // returned 1e-14 rung; on a sqrt(m) tail its error is one ninth of that change.
-        result.observed_terminal_change = std::abs(contractions[4] - contractions[3]);
-        if (!std::isfinite(*result.observed_terminal_change)) {
-            result.status = NeutralReferenceStatus::Nonfinite;
-            result.message = "neutral reference terminal change is nonfinite";
-            return result;
-        }
-        if (*result.observed_terminal_change > policy::REFERENCE_CONVERGENCE_TOLERANCE.value) {
+        NeutralReferenceReactionDiagnostic::Derivative terminal;
+        terminal.ladder = {contractions[2], contractions[3], contractions[4]};
+        result.observed_terminal_change = admit_ladder(terminal, 1.0, policy::REFERENCE_CONVERGENCE_TOLERANCE.value);
+        if (!terminal.value) {
             result.status = NeutralReferenceStatus::TerminalChangeExceeded;
-            result.message = "neutral reference terminal change exceeds tolerance";
+            result.message = "neutral reference " + terminal.message;
             return result;
         }
-        result.terminal_contraction = contractions.back();
+        result.terminal_contraction = terminal.value;
         const auto admit = [&](std::size_t a, std::size_t b, std::optional<std::size_t> parameter,
-                               double scale, double tolerance, std::optional<double>* observed = nullptr) -> std::optional<double> {
-            auto& column = result.lower_derivatives.emplace_back();
-            column.temperature_order = a; column.pressure_order = b; column.parameter = parameter; column.criterion = tolerance;
-            for (std::size_t point = 0; point < 3; ++point) {
-                const auto rung = NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point;
-                try {
-                    const auto partial = reference_partial_from_trace(model, temperature, trace, rung,
-                        stoichiometry, a, b, parameter);
-                    column.ladder[point] = partial.action;
-                    if (!partial.action) {
-                        column.action_status = partial.status;
-                        column.message = "reference action status " + std::to_string(int(partial.status));
-                    }
-                } catch (const std::exception& error) { column.message = error.what(); }
-            }
-            const auto& ladder = column.ladder;
-            if (!ladder[0] || !ladder[1] || !ladder[2]) return std::nullopt;
-            if (!std::isfinite(*ladder[0] + *ladder[1] + *ladder[2])) {
-                column.message = "nonfinite lower reference ladder"; return std::nullopt;
-            }
-            for (std::size_t k = 0; k < 2; ++k) column.scaled_changes[k] = scale * std::abs(*ladder[k+1] - *ladder[k]);
-            const double change = column.scaled_changes[1];
-            if (observed) *observed = change;
-            if (change <= tolerance) column.value = ladder[2];
-            else column.message = "scaled terminal change " + std::to_string(change) + " exceeds " + std::to_string(tolerance);
-            return column.value;
+                               double scale, double tolerance, std::optional<double>* observed = nullptr) {
+            return result.lower_derivatives.emplace_back(reference_column(model, temperature, trace, stoichiometry,
+                a, b, parameter, scale, tolerance, observed)).value;
         };
         const double tolerance = policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
         if (trace.temperature_order > 0 || trace.parameter_jets) {
@@ -777,30 +790,16 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                     const std::size_t a = d-b-c;
                     if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
                     for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
+                        const auto parameter = c ? std::optional<std::size_t>(coordinate) : std::nullopt;
                         NeutralReferenceReactionDiagnostic::Derivative column;
-                        column.temperature_order = a; column.pressure_order = b;
-                        if (c) column.parameter = coordinate;
                         if (b && reference.reference_pressure_pa) {
+                            column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
                             column.ladder = {0.0, 0.0, 0.0}; column.value = 0.0;
                         } else {
-                            for (std::size_t k = 0; k < 3; ++k) {
-                                const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size()-3+k;
-                                try {
-                                    const auto partial = reference_partial_from_trace(model, temperature, trace, rung,
-                                        stoichiometries[row], a, b, column.parameter);
-                                    column.ladder[k] = partial.action;
-                                    if (!partial.action) column.message = "reference action status " + std::to_string(int(partial.status));
-                                } catch (const std::exception& error) { column.message = error.what(); }
-                            }
-                            const double scale = GAS_CONSTANT_J_PER_MOL_K * std::pow(temperature, int(a))
-                                * std::pow(pressure, int(b)) * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0);
-                            if (column.ladder[0] && column.ladder[1] && column.ladder[2]) {
-                                for (std::size_t k = 0; k < 2; ++k)
-                                    column.scaled_changes[k] = scale * std::abs(*column.ladder[k+1]-*column.ladder[k]);
-                                if (column.scaled_changes[1] <= policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value)
-                                    column.value = column.ladder[2];
-                                else column.message = "reference scaled terminal change exceeds heat-capacity tolerance";
-                            }
+                            column = reference_column(model, temperature, trace, stoichiometries[row], a, b, parameter,
+                                std::pow(temperature, int(a)) * std::pow(pressure, int(b))
+                                    * (c ? std::max(std::abs(values[coordinate]), 1.0) : 1.0),
+                                policy::REFERENCE_HEAT_CAPACITY_TOLERANCE.value / GAS_CONSTANT_J_PER_MOL_K);
                         }
                         if (!column.value) column.message = "reaction " + std::to_string(row) + " C_"
                             + std::to_string(a) + std::to_string(b) + (c ? " coordinate " + std::to_string(coordinate) : "")

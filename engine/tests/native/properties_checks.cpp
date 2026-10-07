@@ -5389,9 +5389,9 @@ void reference_limits() {
             for(unsigned k=0;k<2;++k) {
                 const std::string id="F9/limit/"+std::to_string(fixed)+"/"+std::to_string(column.temperature_order)
                     +std::to_string(column.pressure_order)+std::to_string(column.parameter.has_value())+"/"+std::to_string(k);
-                const bool ok=column.scaled_changes[k]<=0.01;
+                const bool ok=R*column.scaled_changes[k]<=0.01;
                 recording_support::compare_custom(id.c_str(),"scaled consecutive reference change","J/mol/K",
-                    column.scaled_changes[k],0,recording_support::fields({recording_support::field("target",0.01),
+                    R*column.scaled_changes[k],0,recording_support::fields({recording_support::field("target",0.01),
                     recording_support::field("a",double(column.temperature_order)),recording_support::field("b",double(column.pressure_order)),
                     recording_support::field("theta",column.parameter?1:0),recording_support::field("source_pressure",src)}),
                     "Relationship","terminal-ladder","independent consumed-column admission","absolute",ok,"F9-limit");CHECK(ok);
