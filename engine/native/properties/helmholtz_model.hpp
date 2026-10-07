@@ -444,11 +444,11 @@ NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-// Fixed terminal composition, raw source-pressure partial; no ladder reselection.
-ResidualEnergyAction reference_partial(const HelmholtzModel&, double temperature,
-    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
+// Fixed terminal composition and source-pressure state, raw partial; no ladder reselection.
+ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
+    const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter = std::nullopt, std::optional<double> anchor = std::nullopt);
+    std::optional<std::size_t> parameter, const State& state);
 
 // Evaluate multiple reaction references while reusing one validated ladder per
 // resolved source pressure within the call.  This remains a native owner; the

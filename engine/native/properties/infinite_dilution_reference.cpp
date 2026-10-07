@@ -145,6 +145,8 @@ std::vector<double> neutral_reference_composition(
     return composition;
 }
 
+}  // namespace
+
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
@@ -189,6 +191,8 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
     if (!std::isfinite(*result.action)) { result.action.reset(); result.status = PropertyActionStatus::Nonfinite; }
     return result;
 }
+
+namespace {
 
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
@@ -653,18 +657,6 @@ std::vector<double> formula_composition(
     composition[ion_indices[0]] = stoichiometry[0] * molality / total_moles;
     composition[ion_indices[1]] = stoichiometry[1] * molality / total_moles;
     return composition;
-}
-
-ResidualEnergyAction reference_partial(const HelmholtzModel& model, double temperature,
-    double pressure, const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-    std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, std::optional<double> anchor) {
-    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
-    if (order == 0 || order > 4 || (parameter && *parameter >= model.active_parameters().size()))
-        throw std::invalid_argument("reference partial order or coordinate");
-    const auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
-    return reference_partial_from_state(model, temperature, composition, stoichiometry,
-        temperature_order, pressure_order, parameter, state);
 }
 
 double reaction_reference_log_scale(

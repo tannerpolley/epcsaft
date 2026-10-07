@@ -4882,6 +4882,13 @@ using PO = epcsaft::PropertyObservable;
 using PD = epcsaft::PressureActionDirection;
 using PF = epcsaft::ParameterFamily;
 constexpr double reference_nan = std::numeric_limits<double>::quiet_NaN();
+// Source-pressure liquid root at a fixed terminal composition, then the runtime reference partial.
+epcsaft::ResidualEnergyAction anchored_reference_partial(const epcsaft::HelmholtzModel& model, double T, double P,
+    const std::vector<double>& x, const std::vector<double>& nu, std::size_t a, std::size_t b,
+    std::optional<std::size_t> parameter, std::optional<double> anchor = std::nullopt) {
+    return epcsaft::reference_partial_from_state(model, T, x, nu, a, b, parameter,
+        model.state_at_pressure(T, P, x, epcsaft::DensityBranch::Liquid, anchor));
+}
 double factorial(unsigned n) { double v = 1; for (unsigned k=2; k<=n; ++k) v *= k; return v; }
 double binomial(unsigned n, unsigned k) { return factorial(n)/(factorial(k)*factorial(n-k)); }
 
@@ -4950,7 +4957,7 @@ void reference_f8() {
             for (unsigned b=0; b<=degree-c; ++b) {
                 const unsigned a=degree-b-c;
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?191.42:1);
-                const auto exact=epcsaft::reference_partial(model,T,P,{1},{-1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
+                const auto exact=anchored_reference_partial(model,T,P,{1},{-1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
                 const double oracle=(c && !a && !b) ? -model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid,state.molar_density).log_fugacity_parameter_derivative[0].value() : a ? pure_reference_thermal(model,T,P,a,b,c,state.molar_density)
                     : pure_reference_pressure(model,T,P,b,c,state.molar_density);
                 const double x=scale*exact.action.value_or(reference_nan), y=scale*oracle;
@@ -4977,9 +4984,9 @@ void reference_f8() {
         const auto state=pair.state_at_pressure(T,P,composition,epcsaft::DensityBranch::Liquid);
         for (const auto& column:std::vector<std::array<unsigned,3>>{{1,0,0},{2,0,0},{0,0,1},{1,0,1},{1,1,0}}) {
             const auto a=column[0],b=column[1],c=column[2];
-            auto exact=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
+            auto exact=anchored_reference_partial(pair,T,P,composition,{-2,1},a,b,c?std::optional<std::size_t>(0):std::nullopt,state.molar_density);
             if (c) {
-                const auto other=epcsaft::reference_partial(pair,T,P,composition,{-2,1},a,b,1,state.molar_density);
+                const auto other=anchored_reference_partial(pair,T,P,composition,{-2,1},a,b,1,state.molar_density);
                 if(exact.action && other.action) *exact.action+=*other.action;else exact.action.reset();
             }
             const auto pure=model.state_at_pressure(T,P,{1},epcsaft::DensityBranch::Liquid);
@@ -5084,7 +5091,7 @@ void reference_f9() {
                 const unsigned a=d-b-c;
                 if(d==1 && b)continue;
                 if(d==2 && !(a==2 || (a==1 && b==1) || (a==1 && c==1) || (c && b)))continue;
-                const auto exact=epcsaft::reference_partial(model,T,P,x,{-1,1,1},a,b,
+                const auto exact=anchored_reference_partial(model,T,P,x,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt,*anchor);
                 const double scale=R*std::pow(T,int(a))*std::pow(P,int(b))*(c?353.95:1);
                 const double value=scale*exact.action.value_or(reference_nan);
@@ -5106,7 +5113,7 @@ void reference_f9() {
                         return reference_lower(perturbed,t,x,la,lb,
                             found->second.first, found->second.second);
                     }
-                    return epcsaft::reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
+                    return anchored_reference_partial(perturbed,t,pressure,x,{-1,1,1},la,lb,std::nullopt,*anchor).action.value_or(reference_nan);
                 };
                 double h=c?0.02:a?0.2:2e4;
                 bool accepted=false;
@@ -5167,7 +5174,7 @@ void reference_limits() {
             for(double molality:{1e-10,1e-12,1e-14}) {
                 const double salt=molality*params.molar_mass_kg_per_mol[0];
                 const std::vector<double> terminal{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
-                values[rung++]=epcsaft::reference_partial(model,T,src,terminal,{-1,1,1},a,b,
+                values[rung++]=anchored_reference_partial(model,T,src,terminal,{-1,1,1},a,b,
                     c?std::optional<std::size_t>(0):std::nullopt).action.value_or(reference_nan);
             }
             const double scale=std::pow(T,int(a))*std::pow(src,int(b))*(c?353.95:1)*(a==2?R:1);
@@ -5244,7 +5251,7 @@ void reference_limits() {
             const double salt=molality*params.molar_mass_kg_per_mol[0];
             const std::vector<double> base{1/(1+2*salt),salt/(1+2*salt),salt/(1+2*salt)};
             const auto partial=[&](unsigned a,unsigned b) {
-                return *epcsaft::reference_partial(model,T,src,base,{-1,1,1},a,b,std::nullopt).action;
+                return *anchored_reference_partial(model,T,src,base,{-1,1,1},a,b,std::nullopt).action;
             };
             const double ct=partial(1,0),ctt=partial(2,0);
             const double cpref=fixed?0:partial(0,1),ctpref=fixed?0:partial(1,1),cppref=fixed?0:partial(0,2);
