@@ -10,8 +10,8 @@ The project notebook answers three questions from existing owners:
    owns milestone plans, prerequisites and status. The notebook links to it and
    does not copy its mutable state.
 3. **What happened?** Ordinary pytest XML, Meson logs, retained analysis
-   tables, and the pre-cutover numerical manifest own execution outcomes,
-   dates, inputs, values, failures, and build provenance.
+   tables own execution outcomes, dates, inputs, values, failures, and build
+   provenance.
 
 These owners do not depend on the notebook. Tests and checks never import
 notebook code, collect metadata for it, invoke Quarto, or change their verdicts
@@ -25,7 +25,7 @@ criteria, and limitations.
 ```text
 test / check / analysis
         ↓
-ordinary XML, Meson log, JSON, CSV, or retained legacy record
+ordinary XML, Meson log, JSON, or CSV record
         ↓
 tools/render-notebook.py (read-only projection)
         ↓
@@ -33,14 +33,13 @@ Quarto Markdown and HTML
 ```
 
 `tools/render-notebook.py` uses only the Python standard library and the project
-map parser. It validates JSON, confines legacy paths to the legacy
-result root, verifies retained comparison-table SHA-256 values, and reports
-missing, corrupt, partial, or unavailable inputs explicitly. It neither runs
+map parser. It reports missing, corrupt, partial, or unavailable inputs
+explicitly. It neither runs
 nor imports a test suite.
 
 The root Quarto project owns navigation, page rendering, static serving, and
 preview reload. Its declared resources include the project map, ordinary test
-reports, and retained legacy manifest, so Quarto 1.10.18
+reports and preparation provenance, so Quarto 1.10.18
 re-renders when those files change outside the page-source directory. There is
 no custom HTTP endpoint, browser application, poller, reload server, worker,
 scheduler, cache selector, retry loop, or recovery state.
@@ -59,8 +58,6 @@ The notebook keeps these independent:
 Historical values remain rendered and downloadable when outdated. An old pass
 never becomes a current-code pass. A failed or interrupted run remains failed
 or incomplete. Missing and corrupt records are warnings, not empty green rows.
-The retained F1 values and established F5 disagreement stay visible with their
-execution dates, physical inputs, wheel provenance, and applicability limits.
 
 Rendering does not build or install the Engine, execute tests, collect pytest,
 launch native executables, rerun calculations, or continuously certify the
