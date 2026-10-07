@@ -559,9 +559,11 @@ rising ratio means the iterate lies outside it, so polishing stops. From a
 box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
 4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
 −1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
-need no further polishing. Each step must reduce the raw row maximum and keep
-every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
-below the optimizer box when the solution lies there (#87, 2026-09-21).
+need no further polishing. Each step must reduce the raw row maximum at a
+positive finite composition of every supported species; exact absence is the
+compiled support (#231). No composition cutoff applies, so the polish reaches
+positive roots below the optimizer box and below `STABILITY_COMPOSITION_FLOOR`
+(#87, 2026-09-21; #266, 2026-10-07: MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
 Before evaluating a trial, a fresh undamped correction may terminate polishing
 when the current point is the stored best point, its classified maximum is within
 the unchanged caller criterion, and every free phase amount is positive (#272).
@@ -1287,7 +1289,10 @@ owner never re-solves, compiles or mutates. Admission requires the central
 classified residual, the quantity the driver certifies (owner decision
 2026-09-16), at or below `min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL)`; no
 candidate-topology event and every supported composition above
-`STABILITY_COMPOSITION_FLOOR`; a finite square full-rank row Jacobian,
+`STABILITY_COMPOSITION_FLOOR`. The polish returns positive roots below
+`STABILITY_COMPOSITION_FLOOR`; solved-state actions there are refused by the
+cutoff gate with `PhaseBoundaryNotDifferentiable`, which names vanishing, not a
+trace root (follow-up #322). Admission also requires a finite square full-rank row Jacobian,
 factorised once; and, for a thermal direction, a reaction target whose
 temperature dependence is not frozen by a point-only supplied Gibbs vector
 (`missing_thermochemistry`). A mixed action of order k is the half-sign
@@ -1832,11 +1837,13 @@ isomers fed at 1e-10, 1e-12 and 1e-14 mol in 1 mol return their amount to 4e-8, 
 relative; the orthonormal basis gave 8e-6, 3e-4 and a factor 4). Square pinned equation systems
 use the structural cutoff for every species, so chemical equalities can reach trace roots.
 `STABILITY_COMPOSITION_FLOOR` is the structural-absence
-cutoff for continuation admission, solved-state differentiability and the
-Newton polish, which carries a trace solution below the box down to the cutoff
-(#87, 2026-09-21). The delivered falsifier reaches x ≈ 1e-12; continuation
-admission and action availability between 1e-12 and the cutoff are unexercised
-and remain a qualification limit. Free-phase
+cutoff for continuation admission and solved-state differentiability. The
+Newton polish carries a trace solution below the box to any positive root (#87,
+2026-09-21; #266, 2026-10-07). The polish returns positive roots below
+`STABILITY_COMPOSITION_FLOOR`; solved-state actions there are refused by the
+cutoff gate with `PhaseBoundaryNotDifferentiable`, which names vanishing, not a
+trace root (follow-up #322). Continuation admission and action availability
+between 1e-12 and the cutoff are unexercised and remain a qualification limit. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
 that topology rejection is not a stability or accuracy conclusion. Packing
