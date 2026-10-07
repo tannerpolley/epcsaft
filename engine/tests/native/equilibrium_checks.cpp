@@ -257,7 +257,7 @@ std::vector<std::size_t> callback_rows(
 ) {
     std::vector<std::size_t> result;
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-        if (compiled.pinned_count != 0
+        if (compiled.feasibility_cell()
             || (compiled.rows[row].kind != epcsaft::equilibrium::RowKind::Chemical
                 && compiled.rows[row].kind != epcsaft::equilibrium::RowKind::Pressure)) {
             result.push_back(row);
@@ -5101,8 +5101,15 @@ void check_normalized_reaction_affinity() {
 
 }  // namespace
 
+#include "caloric_specification_checks.hpp"
+
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.equilibrium.caloric-admission", "Caloric_specification_admission", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-admission"}, caloric_specification_checks::admission, "caloric-specification"},
+        {{"native.equilibrium.caloric-actions", "Caloric_specification_actions", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-actions"}, caloric_specification_checks::actions, "caloric-specification"},
+        {{"native.equilibrium.caloric-curvature", "Caloric_specification_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-curvature"}, caloric_specification_checks::curvature, "caloric-specification"},
+        {{"native.equilibrium.caloric-roundtrips", "Caloric_specification_roundtrips", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-roundtrips"}, caloric_specification_checks::roundtrips, "caloric-specification"},
+        {{"native.equilibrium.caloric-reactions", "Caloric_reaction_consistency", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-reactions"}, caloric_specification_checks::reactions, "caloric-specification"},
         {{"native.equilibrium.removal", "Phase_removal_inventory", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_phase_removal_inventory},
         {{"native.equilibrium.plane-curvature", "Tangent_plane_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "Tangent_plane_admission", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_admission},

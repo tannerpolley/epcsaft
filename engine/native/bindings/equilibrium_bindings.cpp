@@ -141,13 +141,17 @@ void register_equilibrium(py::module_& module) {
         .def_readwrite("standard_gibbs_j_per_mol", &EquilibriumProblem::standard_gibbs_j_per_mol)
         .def_readwrite("topology_declared", &EquilibriumProblem::topology_declared)
         .def_readwrite("row_tolerance", &EquilibriumProblem::row_tolerance)
+        .def_readwrite("enthalpy_j", &EquilibriumProblem::enthalpy_j)
+        .def_readwrite("entropy_j_per_k", &EquilibriumProblem::entropy_j_per_k)
         .def_readwrite("discovery", &EquilibriumProblem::discovery);
     py::enum_<RowKind>(module, "RowKind")
         .value("Chemical", RowKind::Chemical)
         .value("Pressure", RowKind::Pressure)
         .value("Moiety", RowKind::Moiety)
         .value("Electro", RowKind::Electro)
-        .value("Normalization", RowKind::Normalization);
+        .value("Normalization", RowKind::Normalization)
+        .value("Enthalpy", RowKind::Enthalpy)
+        .value("Entropy", RowKind::Entropy);
     py::class_<Row>(module, "Row")
         .def_readonly("kind", &Row::kind)
         .def_readonly("phase", &Row::phase)
@@ -351,19 +355,24 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("property", &SolvedStateObservable::property);
     py::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
         .def(py::init([](double t, double p, std::vector<double> feed, std::vector<double> theta,
-                         std::vector<std::array<double, 4>> coefficients) {
+                         std::vector<std::array<double, 4>> coefficients, double h, double s) {
                  SolvedStateActionDirection result{t, p, std::move(feed), std::move(theta)};
                  result.reaction_coefficients = std::move(coefficients);
+                 result.enthalpy_j = h;
+                 result.entropy_j_per_k = s;
                  return result;
              }),
              py::arg("temperature_k"), py::arg("pressure_pa"), py::arg("feed_amounts_mol"),
              py::arg("active_parameters"),
-             py::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{})
+             py::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{},
+             py::arg("enthalpy_j") = 0.0, py::arg("entropy_j_per_k") = 0.0)
         .def_readonly("temperature_k", &SolvedStateActionDirection::temperature_k)
         .def_readonly("pressure_pa", &SolvedStateActionDirection::pressure_pa)
         .def_readonly("feed_amounts_mol", &SolvedStateActionDirection::feed_amounts_mol)
         .def_readonly("active_parameters", &SolvedStateActionDirection::active_parameters)
-        .def_readonly("reaction_coefficients", &SolvedStateActionDirection::reaction_coefficients);
+        .def_readonly("reaction_coefficients", &SolvedStateActionDirection::reaction_coefficients)
+        .def_readonly("enthalpy_j", &SolvedStateActionDirection::enthalpy_j)
+        .def_readonly("entropy_j_per_k", &SolvedStateActionDirection::entropy_j_per_k);
     py::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
         .def(py::init<std::vector<SolvedStateObservable>, std::vector<SolvedStateActionDirection>>(), py::arg("observables"), py::arg("directions"))
         .def_readonly("observables", &SolvedStateActionRequest::observables)

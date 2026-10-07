@@ -136,6 +136,8 @@ struct EquilibriumProblem final {
     std::optional<NeutralReferenceDeclaration> source_reference;
     bool topology_declared = true;
     std::optional<StabilityOptions> discovery;
+    std::optional<double> enthalpy_j;
+    std::optional<double> entropy_j_per_k;
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
 
@@ -144,7 +146,7 @@ struct EquilibriumProblem final {
     }
 };
 
-enum class RowKind { Chemical, Pressure, Moiety, Electro, Normalization };
+enum class RowKind { Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy };
 
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
@@ -153,6 +155,8 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::Moiety: return "material_balance";
     case RowKind::Electro: return "phase_electroneutrality";
     case RowKind::Normalization: return "phase_normalization";
+    case RowKind::Enthalpy: return "extensive_enthalpy_specification";
+    case RowKind::Entropy: return "extensive_entropy_specification";
     }
     return "unknown";
 }
@@ -322,6 +326,14 @@ struct CompiledSystem final {
 
     std::size_t constraint_count() const noexcept { return rows.size(); }
 
+    bool has_caloric_condition() const noexcept {
+        return problem.enthalpy_j.has_value() || problem.entropy_j_per_k.has_value();
+    }
+
+    bool feasibility_cell() const noexcept {
+        return pinned_count != 0 || has_caloric_condition();
+    }
+
     bool is_square() const noexcept { return rows_minus_unknowns == 0; }
 };
 
@@ -488,6 +500,8 @@ struct SolvedStateActionDirection final {
     std::vector<double> feed_amounts_mol;
     std::vector<double> active_parameters;
     std::vector<std::array<double, 4>> reaction_coefficients; // increments of (a,b,c,d), evaluated at T(t)
+    double enthalpy_j = 0.0;
+    double entropy_j_per_k = 0.0;
 };
 
 struct SolvedStateActionRequest final {

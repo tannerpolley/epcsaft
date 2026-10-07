@@ -2515,3 +2515,27 @@ $$
 \frac{d d_{\mathrm{Born},i}}{d v_j}
 =-\frac{s_j\left(H_{\sigma_i}+0.88H_{d_{\mathrm{packing},i}}+0.88H_{d_{\mathrm{DH},i}}\right)}{H_{d_{\mathrm{Born},i}}}.
 $$
+
+## `extensive_enthalpy_specification`
+
+- Section: Equilibrium caloric specifications
+- Status: Exact derivation
+- Source: `total_enthalpy`, extensive phase summation and resolved-feed normalization; issue #224 slice A
+- Description: Fixed pressure and one extensive enthalpy target H_spec [J] determine free temperature and phase amounts on declared neutral supports.
+- Change note: Same-density total calorics use the supplied component anchors and standard pressure; the denominator uses the current feed and temperature.
+
+$$
+r_H=\frac{\sum_p N_p h_p^{tot}-H_{spec}}{N_{feed}RT}.
+$$
+
+## `extensive_entropy_specification`
+
+- Section: Equilibrium caloric specifications
+- Status: Exact derivation
+- Source: `total_entropy`, extensive phase summation and resolved-feed normalization; issue #224 slice A
+- Description: Fixed pressure and one extensive entropy target S_spec [J/K] determine free temperature and phase amounts on declared neutral supports.
+- Change note: Same-density ideal and residual entropy share the supplied component anchors and standard pressure; zero pinned amounts contribute zero.
+
+$$
+r_S=\frac{\sum_p N_p s_p^{tot}-S_{spec}}{N_{feed}R}.
+$$

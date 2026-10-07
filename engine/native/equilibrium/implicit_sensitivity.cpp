@@ -167,7 +167,7 @@ std::vector<double> sensitivity(
     core::Scope scope("sensitivity");
     const std::size_t width = 2 + compiled.model->parameters().component_count()
         + compiled.model->active_parameters().size();
-    if (lever.size() != width)
+    if (lever.size() != width && lever.size() != width + 4 * compiled.problem.reactions.size() + 2)
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
     // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
     // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
@@ -326,6 +326,10 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
                     throw std::invalid_argument("nonfinite reaction coefficient direction");
                 else if (v != 0.0 && !problem.standard_gibbs_j_per_mol.empty())
                     throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
+        if (!std::isfinite(direction.enthalpy_j) || !std::isfinite(direction.entropy_j_per_k)
+            || (!problem.enthalpy_j && direction.enthalpy_j != 0.0)
+            || (!problem.entropy_j_per_k && direction.entropy_j_per_k != 0.0))
+            throw std::invalid_argument("caloric control without its active condition or nonfinite");
         if (problem.temperature.free && direction.temperature_k != 0.0)
             throw std::invalid_argument("free temperature is a solved output, not an external control");
         if (problem.pressure.free && direction.pressure_pa != 0.0)
@@ -463,6 +467,15 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         path.status = SolvedStateActionStatus::ReferenceUnavailable;
         path.diagnostic_message = error.what();
         return path;
+    }
+    if (compiled.has_caloric_condition() && std::any_of(path.series.temperature.begin() + 1,
+            path.series.temperature.end(), [](double v) { return v != 0.0; })) {
+        const auto calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, false, false, false, 1);
+        if (calorics.thermal_boundary) {
+            path.status = SolvedStateActionStatus::ThermalBoundary;
+            path.diagnostic_message = "caloric condition derivative crosses an interval endpoint";
+            return path;
+        }
     }
     diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, path.series.maximum_energy_order);
     if (path.series.energy != PropertyActionStatus::Available) { path.status = energy_status(path.series.energy); return path; }
@@ -973,7 +986,7 @@ static SolvedStateActionBatch evaluate_action(
     const std::size_t components = model.parameters().component_count();
     const std::size_t actives = model.active_parameters().size();
     const std::size_t source_offset = 2 + components + actives;
-    const std::size_t width = source_offset + 4 * problem.reactions.size();
+    const std::size_t width = source_offset + 4 * problem.reactions.size() + 2;
     const std::size_t order = request.directions.size();
     SolvedStateActionBatch batch;
     batch.diagnostics.equation_count = compiled.rows.size();
@@ -1022,6 +1035,8 @@ static SolvedStateActionBatch evaluate_action(
         scale[source_offset + 4 * r + 1] = center.prepared.temperature;
         scale[source_offset + 4 * r + 3] = 1.0 / center.prepared.temperature;
     }
+    scale[width - 2] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K * center.prepared.temperature;
+    scale[width - 1] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K;
     std::vector<std::vector<double>> controls;
     std::vector<double> magnitude;
     for (const auto& direction : request.directions) {
@@ -1033,6 +1048,8 @@ static SolvedStateActionBatch evaluate_action(
             std::copy(direction.reaction_coefficients[r].begin(), direction.reaction_coefficients[r].end(),
                       control.begin() +
                           static_cast<std::ptrdiff_t>(source_offset + 4 * r));
+        control[width - 2] = direction.enthalpy_j;
+        control[width - 1] = direction.entropy_j_per_k;
         double largest = 0.0;
         for (std::size_t i = 0; i < width; ++i) largest = std::max(largest, std::abs(control[i]) / scale[i]);
         controls.push_back(std::move(control));

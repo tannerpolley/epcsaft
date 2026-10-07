@@ -8,7 +8,7 @@ A proposed or registered equation is not a capability claim. Declared-phase
 specifications and the explicit native tangent-plane test/fixed-T/P discovery
 path adopted in #223 have retained numerical qualification for the stated
 neutral and admitted ionic/reacting cases. The independent delivered review
-supports these retained cases and stated limits; PH/PS/UV remain deferred.
+supports these retained cases and stated limits; PH/PS use the bounded neutral formulation below; UV remains deferred.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
@@ -74,14 +74,21 @@ phases must satisfy electroneutrality. Support removes coordinates; explicitly
 empty support must not silently mean all species. A support unable to form a
 neutral ionic phase is inadmissible.
 
-For the retained fixed-phase specification with k pinned phase amounts and f
-free intensives, the structural count is rows minus unknowns = k − f. A square
-system requires k = f. The admitted phase-count condition is Π − k ≤ rank B.
-Reject dependent reactions, charged feed, impossible supports, inconsistent
-pins, invalid domains and deficient structural rank with a named reason.
-Counts and a generic-point rank check do not prove existence, uniqueness or
-regularity at the computed solution. Energy specifications add rows/unknowns
-and require their own count derivation; they cannot inherit this rule blindly.
+For k pinned phase amounts, f free intensives and e independent caloric rows,
+rows minus unknowns = k + e − f; a square system requires f = k + e.
+Ordinary specifications retain Π − k ≤ rank B. PH/PS adds one independent
+balance, permitting Π − k ≤ rank B + 1. Generic-point rank does not prove
+existence, uniqueness or regularity at the solution. Reject dependent reactions,
+charged feed, impossible supports, inconsistent pins and invalid domains.
+
+PH/PS declares exactly one extensive H_spec [J] or S_spec [J/K], free T and
+fixed P, free phase amounts and neutral declared supports. EqIDs:
+`extensive_enthalpy_specification`, `extensive_entropy_specification`.
+Every consuming state requires complete component records and interval admission.
+Ordinary density-basis reactions retain Δh = t − Tt′ and Δcp = −Tt″:
+constant affinity t = a has Δh = a, while constant K has Δh = 0.
+Charged calorics and source-referenced free-T reactions are excluded.
+
 
 The resolved feed n_feed is the amount basis of the whole problem, and returned
 phase amounts are on that same basis. An amounts feed is absolute mol and is
@@ -239,7 +246,7 @@ EqID: `reaction_affinity`. The positive-definite reduced Hessian
 regular constraint manifold, not a necessary condition for every local minimum
 or a global certificate.
 
-Pinned amounts and free intensives define a feasibility specification using
+Pinned amounts or an independent caloric row, with free intensives, define a feasibility specification using
 intensive chemical-potential and pressure rows. They are not all the KKT rows
 of the original fixed-T/P minimization. Their algorithm must satisfy the actual
 constraint Jacobian and, when advertised, weighted Hessian requirements in
@@ -253,7 +260,7 @@ pressure rows are retained as diagnostics and are certified only to the
 criterion times N_feed / (N_p x_i), which is unbounded where an amount or a
 fraction vanishes. The amount-stationarity component (phase Gibbs energy equal
 to the balance dual) is not a classified row; it is bounded by the optimizer's
-dual tolerance and checked by the retained Gibbs-dual identities. A pinned specification classifies its unscaled rows, which
+dual tolerance and checked by the retained Gibbs-dual identities. A feasibility specification classifies its unscaled rows, which
 are its constraints. Report achieved balance, charge, normalization, pressure,
 stationarity/affinity and phase-distinctness diagnostics on declared scales. A stationary candidate
 is not automatically a stable equilibrium. A requested distinct phase set

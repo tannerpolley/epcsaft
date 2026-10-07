@@ -190,7 +190,7 @@ def _vector(values: Mapping[str, float], component_ids: tuple[str, ...]) -> list
 class Problem:
     __slots__ = (
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k",
     )
     phases: tuple[Phase, ...] | Discover
     T: float | Free
@@ -201,6 +201,8 @@ class Problem:
     topology_declared: bool
     row_tolerance: float | None
     neutral_reference: NeutralReference | None
+    enthalpy_j: float | None
+    entropy_j_per_k: float | None
 
     def __init__(
         self,
@@ -213,9 +215,13 @@ class Problem:
         standard_gibbs_j_per_mol: Sequence[float] | None = None,
         topology_declared: bool | None = None,
         row_tolerance: float | None = None,
+        enthalpy_j: float | None = None,
+        entropy_j_per_k: float | None = None,
         neutral_reference: NeutralReference | None = None,
     ) -> None:
         self.row_tolerance = row_tolerance
+        self.enthalpy_j = enthalpy_j
+        self.entropy_j_per_k = entropy_j_per_k
         self.neutral_reference = neutral_reference
         phases = () if phases is None else phases
         reactions = () if reactions is None else reactions
@@ -238,6 +244,8 @@ class Problem:
         if self.feed.solvent_mass_kg is not None:
             native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
+        native.enthalpy_j = self.enthalpy_j
+        native.entropy_j_per_k = self.entropy_j_per_k
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
@@ -282,7 +290,7 @@ class Problem:
 def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     allowed = {
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "neutral_reference",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k",
     }
     if set(mapping) - allowed:
         raise _core.ParameterError("unknown Problem key")
@@ -309,6 +317,8 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
         topology_declared=topology,
         row_tolerance=cast(float | None, mapping.get("row_tolerance")),
+        enthalpy_j=cast(float | None, mapping.get("enthalpy_j")),
+        entropy_j_per_k=cast(float | None, mapping.get("entropy_j_per_k")),
         neutral_reference=_neutral_reference_from_mapping(mapping.get("neutral_reference")),
     )
 
