@@ -44,12 +44,13 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
     return result
 
 
-def _choice(families: Sequence[object], kind: str, allowed: set[str], default: str | None = None) -> str:
+def _choice(families: Sequence[object], kind: str, default: str | None = None) -> str:
+    """The declared choice of one family kind; build_parameters owns the admissible choices."""
     choices = [record.get("choice") for record in (_mapping(item, "model_families") for item in families) if record.get("kind") == kind]
     if len(choices) > 1:
         raise _core.ParameterError(f"duplicate model choice {kind}")
     found = choices[0] if choices else default
-    if not isinstance(found, str) or found not in allowed:
+    if not isinstance(found, str):
         raise _core.ParameterError(f"unknown {kind} model choice {found}")
     return found
 
@@ -224,11 +225,11 @@ class Parameters:
             kind = _mapping(item, "model_families").get("kind")
             if kind not in ("base", "association", "electrolyte", "permittivity", "polar"):
                 raise _core.ParameterError(f"unknown model family kind {kind}")
-        electrolyte = _choice(families, "electrolyte", {"none", "fully-dissociated-debye-huckel", "born"})
-        permittivity = _choice(families, "permittivity", {"none", "solvent-only", "ion-fraction-suppression", "ion-specific-suppression", "component-permittivity-mixing", "solvent-density-temperature", "dipolar-perturbation"})
-        base = _choice(families, "base", {"pc-saft"})
-        association = _choice(families, "association", {"none", "general-site"})
-        polar = _choice(families, "polar", {"none", "dipole-dipole"}, "none")  # optional family (ADR 0011)
+        electrolyte = _choice(families, "electrolyte")
+        permittivity = _choice(families, "permittivity")
+        base = _choice(families, "base")
+        association = _choice(families, "association")
+        polar = _choice(families, "polar", "none")  # optional family (ADR 0011)
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
         if electrolyte == "born":
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
