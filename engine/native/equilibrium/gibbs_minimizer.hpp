@@ -69,6 +69,16 @@ struct DriverLimits final {
     bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
 };
+// The driver internals the stability search (phase_stability.cpp) shares.
+void clear_state(EquilibriumResult& result);
+double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
+std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point);
+EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
+EquilibriumResult run_driver(
+    const HelmholtzModel& model, const CompiledSystem& compiled,
+    std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr
+);
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EquilibriumResult solve_equilibrium_from_coordinates(

@@ -1,7 +1,10 @@
 #include "equilibrium/stoichiometry.hpp"
 
 #include "core/physical_constants.hpp"
+#include "core/trace.hpp"
 #include "properties/thermochemistry.hpp"
+
+#include <Highs.h>
 
 #include <Eigen/Dense>
 
@@ -155,6 +158,138 @@ void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<boo
         row = std::move(state);
     }
     compiled.conserves_total_moles = conserves_total_moles(basis);
+}
+
+std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
+    const std::vector<std::size_t>& indices, bool fraction, double floor) {
+    core::Scope scope("inventory_bounds");
+    const std::size_t n = c.n_feed.size(), width = n + fraction;
+    std::vector<double> lower(width, 0.0), upper(width, 0.0);
+    for (const auto& phase : c.problem.phases)
+        for (const auto i : phase.support) upper[i] = kHighsInf;
+    const auto count = std::count(upper.begin(), upper.end(), kHighsInf);
+    if (!std::isfinite(floor) || floor < 0.0 || count * floor > 1.0 || (!fraction && floor != 0.0))
+        throw std::invalid_argument("invalid conserved-inventory fraction floor");
+    for (const auto i : indices) if (i >= n) throw std::invalid_argument("inventory species out of range");
+    for (std::size_t i = 0; i < n; ++i) if (upper[i] != 0.0 && fraction) lower[i] = floor;
+    if (fraction) upper[n] = kHighsInf;
+    Highs lp;
+    lp.setOptionValue("output_flag", false);
+    lp.setOptionValue("threads", 1);
+    bool assembled = lp.addVars(static_cast<HighsInt>(width), lower.data(), upper.data()) != HighsStatus::kError;
+    // Solve in q=tau_scale*tau: a tiny nonzero inventory must not be dropped by HiGHS.
+    double tau_scale = 1.0;
+    if (fraction) for (const double value : c.balance)
+        if (value != 0.0) tau_scale = std::min(tau_scale, std::abs(value / c.feed_total));
+    std::vector<HighsInt> columns(width);
+    std::iota(columns.begin(), columns.end(), 0);
+    for (std::size_t k = 0; k < c.rank; ++k) {
+        auto row = c.B[k];
+        const double rhs = c.balance[k] / c.feed_total;
+        if (fraction) row.push_back(-rhs / tau_scale);
+        assembled = lp.addRow(fraction ? 0.0 : rhs, fraction ? 0.0 : rhs,
+            static_cast<HighsInt>(width), columns.data(), row.data()) != HighsStatus::kError && assembled;
+    }
+    if (fraction) {
+        std::vector<double> row(width, 1.0);
+        row[n] = 0.0;
+        assembled = lp.addRow(1.0, 1.0, static_cast<HighsInt>(width), columns.data(), row.data())
+            != HighsStatus::kError && assembled;
+    }
+    lp.changeObjectiveSense(ObjSense::kMaximize);
+    const auto run = [&]() {
+        if (!assembled) return std::string("numerical_failure");
+        const auto outcome = lp.run();
+        const auto status = lp.getModelStatus();
+        if (outcome == HighsStatus::kError) return std::string("numerical_failure");
+        if (status == HighsModelStatus::kOptimal) return std::string("optimal");
+        if (status == HighsModelStatus::kInfeasible) return std::string("infeasible_inventory");
+        if (status == HighsModelStatus::kUnbounded) return std::string("unbounded_amount");
+        if (status == HighsModelStatus::kTimeLimit || status == HighsModelStatus::kIterationLimit)
+            return std::string("exhausted_work");
+        return std::string("numerical_failure");
+    };
+    const auto diagnose = [&](InventoryBound& r, const std::vector<double>& x) {
+        r.witness = x;
+        if (x.size() != width || !std::all_of(x.begin(), x.end(), [](double v) { return std::isfinite(v); }))
+            return false;
+        r.balance_residual = r.normalization_residual = r.lower_bound_residual = 0.0;
+        for (std::size_t k = 0; k < c.rank; ++k) {
+            const double value = std::inner_product(c.B[k].begin(), c.B[k].end(), x.begin(), 0.0);
+            r.balance_residual = std::max(r.balance_residual,
+                std::abs(value - c.balance[k] / c.feed_total * (fraction ? x[n] : 1.0)));
+        }
+        if (fraction) r.normalization_residual = std::abs(std::accumulate(x.begin(), x.begin() + n, 0.0) - 1.0);
+        for (std::size_t j = 0; j < width; ++j)
+            r.lower_bound_residual = std::max(r.lower_bound_residual,
+                std::max(lower[j] - x[j], upper[j] == 0.0 ? std::abs(x[j]) : 0.0));
+        return std::max({r.balance_residual, r.normalization_residual, r.lower_bound_residual})
+            <= policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    };
+    InventoryBound finite;
+    std::string feasibility = "optimal", feasibility_cause;
+    if (fraction) {
+        lp.changeColCost(static_cast<HighsInt>(n), 1.0);
+        feasibility = run();
+        finite.lp_error = lp.getInfo().max_primal_infeasibility;
+        feasibility_cause = lp.modelStatusToString(lp.getModelStatus());
+        if (feasibility == "optimal" || feasibility == "unbounded_amount") {
+            auto x = lp.getSolution().col_value;
+            if (feasibility == "unbounded_amount") {
+                bool has_ray = false;
+                std::vector<double> ray(width);
+                lp.getPrimalRay(has_ray, ray.data());
+                if (has_ray && ray[n] > 0.0) for (std::size_t j = 0; j < width; ++j) x[j] += ray[j];
+            }
+            x[n] /= tau_scale;
+            const bool valid = diagnose(finite, x);
+            feasibility = !valid ? "numerical_failure" : x[n] > 0.0 ? "optimal"
+                : feasibility == "optimal" ? "infeasible_inventory" : "numerical_failure";
+        }
+        lp.changeColCost(static_cast<HighsInt>(n), 0.0);
+    }
+    std::vector<InventoryBound> results;
+    for (const auto i : indices) {
+        InventoryBound r = finite;
+        r.species = i;
+        r.supported = upper[i] != 0.0;
+        r.floor = floor;
+        r.finite_witness = feasibility == "optimal" ? finite.witness : std::vector<double>{};
+        r.feasibility_termination = feasibility_cause;
+        r.finite_residual = std::max({finite.balance_residual, finite.normalization_residual, finite.lower_bound_residual});
+        r.status = feasibility;
+        r.termination = feasibility_cause;
+        if (feasibility == "optimal") {
+            lp.changeColCost(static_cast<HighsInt>(i), 1.0);
+            r.status = run();
+            r.termination = lp.modelStatusToString(lp.getModelStatus());
+            r.lp_error = lp.getInfo().max_primal_infeasibility;
+            if (r.status == "optimal") {
+                auto x = lp.getSolution().col_value;
+                if (fraction) x[n] /= tau_scale;
+                if (!diagnose(r, x)) r.status = "numerical_failure";
+                else {
+                    r.maximum = x[i] * (fraction ? 1.0 : c.feed_total);
+                    if (fraction && x[i] > 0.0) r.log_fraction = std::log(x[i]);
+                    if (!fraction) r.feed_normalized_amount = x[i];
+                    if (!fraction && x[i] == 0.0) {
+                        r.conserved_functional.assign(n, 0.0);
+                        const auto& dual = lp.getSolution().row_dual;
+                        for (std::size_t k = 0; k < c.rank; ++k)
+                            for (std::size_t j = 0; j < n; ++j)
+                                r.conserved_functional[j] += dual[k] * c.B[k][j];
+                    }
+                    r.limiting = fraction && x[n] == 0.0;
+                    if (!r.limiting) for (std::size_t j = 0; j < n; ++j)
+                        r.amounts_mol.push_back(x[j] * c.feed_total / (fraction ? x[n] : 1.0));
+                    if (upper[i] == 0.0) r.status = "structural_zero";
+                }
+            }
+            lp.changeColCost(static_cast<HighsInt>(i), 0.0);
+        }
+        results.push_back(std::move(r));
+    }
+    return results;
 }
 
 std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& feed) {
