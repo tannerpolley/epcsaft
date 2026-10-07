@@ -101,6 +101,17 @@ current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence. Regression checks join the gate when that capability exists.
 
+Develop and debug on native programs alone: `tools/native-run` rebuilds one program
+in the checkout's Meson build directory and runs it, whole or for one case, without
+building or installing the wheel. New studies can be small C++ drivers that write
+CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
+cover the installed wheel and the Python API, before review.
+
+```bash
+tools/native-run equilibrium_checks --list
+tools/heavy tools/native-run equilibrium_checks caloric-admission
+```
+
 Native C++ changes use the explicit owner commands:
 
 ```bash
