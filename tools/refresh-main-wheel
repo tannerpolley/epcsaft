@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Restore or rebuild main's wheel in the main checkout, compare its key-solve work with
+# the previous build/wheels/main-current/, and replace main-current with it (#319).
+# Run as: tools/heavy tools/refresh-main-wheel
+set -euo pipefail
+cd "$(git -C "$(dirname "${BASH_SOURCE[0]}")" worktree list --porcelain | sed -n '1s/^worktree //p')"
+[[ "$(git branch --show-current)" == main && -z "$(git status --porcelain --untracked-files=no)" ]] \
+    || { echo "the main checkout must be a clean main branch: $PWD" >&2; exit 1; }
+bash .codex/environments/setup.sh
+commit="$(git rev-parse --short=8 HEAD)"
+wheel="$(find build/environment-wheel -maxdepth 1 -name 'epcsaft-*.whl')"
+current=build/wheels/main-current
+previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
+out="build/wheels/key-solves-$commit-$(date +%Y%m%dT%H%M%S)"
+tools/time-key-solves "${previous:-$wheel}" "$wheel" --pairs 1 --out "$out"
+# The previous wheel stays with the comparison that used it.
+[[ -z "$previous" ]] || mv "$current" "$out/previous-main-current"
+mkdir -p "$current"
+cp "$wheel" "$current/"
+.venv/bin/python - "$out/summary.json" "$commit" >"$current/README" <<'PY'
+import json, sys
+summary = json.load(open(sys.argv[1]))
+a, b = summary["wheels"]["A"], summary["wheels"]["B"]
+print(f"Wheel built from main {sys.argv[2]}, sha256 {b['sha256']}.")
+print(f"Key-solve work (iterations/evaluations/Hessian calls) from time-key-solves --pairs 1 against sha256 {a['sha256']}:")
+for case, row in summary["cases"].items():
+    note = "identical" if row["work_identical"] else f"WORK DIFFERENCE from {'/'.join(map(str, row['work_A'].values()))}"
+    print(f"- {case}: {'/'.join(map(str, row['work_B'].values()))} ({note}; max relative state difference {row['max_relative_state_difference']:.3g})")
+print(f"Evidence: {sys.argv[1].rsplit('/', 1)[0]}/")
+PY
+cat "$current/README"

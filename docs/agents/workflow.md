@@ -24,6 +24,13 @@ issue into child issues that merge independently.
 
 Reviewers apply `CODING_STANDARDS.md`.
 
+## Gates
+
+Run the full gate (`check-affected.sh` and `check-all.sh`) once per delivery
+state. After merging main, gate again only when the merge touched code the slice
+depends on. Reporting-only fixes get focused checks. Work counts are the
+key-solve gate; run `time-key-solves --pairs` above 1 only for a timing claim.
+
 ## Acceptance
 
 The lead checks reviewer findings against source and evidence; a build,

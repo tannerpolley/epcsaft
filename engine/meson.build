@@ -43,20 +43,25 @@ cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
 
-highs_project = subproject(
-  'highs',
-  default_options: [
-    'default_library=static',
-    'do_install=false',
-    'fast_build=true',
-    'highsint64=false',
-    'use_zlib=disabled',
-    'with_pybind11=false',
-    'with_tests=false',
-  ],
-)
-highs_dep = highs_project.get_variable('highs_dep')
-highs_conf_file = highs_project.get_variable('highs_conf_file')
+# tools/ensure-engine-wheel.sh supplies a shared HiGHS build with these options (#319).
+highs_dep = dependency('epcsaft-highs', method: 'pkg-config', required: false)
+highs_conf_file = []
+if not highs_dep.found()
+  highs_project = subproject(
+    'highs',
+    default_options: [
+      'default_library=static',
+      'do_install=false',
+      'fast_build=true',
+      'highsint64=false',
+      'use_zlib=disabled',
+      'with_pybind11=false',
+      'with_tests=false',
+    ],
+  )
+  highs_dep = highs_project.get_variable('highs_dep')
+  highs_conf_file = highs_project.get_variable('highs_conf_file')
+endif
 
 # One include root. A layer names its neighbours by path ("properties/density.hpp"),
 # which is what makes the include direction checkable.
@@ -166,6 +171,7 @@ contributions_checks = executable(
   dependencies: [eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
   install: false,
+  build_by_default: false,
 )
 test('contributions', contributions_checks)
 
@@ -177,6 +183,7 @@ properties_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('properties', properties_checks)
 
@@ -188,6 +195,7 @@ diagnostics_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('diagnostics', diagnostics_checks)
 
@@ -199,6 +207,7 @@ properties_floor = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test(
   'properties_floor', properties_floor,
@@ -215,8 +224,14 @@ equilibrium_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
-test('equilibrium', equilibrium_checks, timeout: 600)
+# One test per case, named from the case table, so the slow group runs in parallel.
+equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').split('{{"native.equilibrium.')
+foreach index : range(1, equilibrium_cases.length())
+  case = equilibrium_cases[index].split('"')[0]
+  test('equilibrium/' + case, equilibrium_checks, args: ['native.equilibrium.' + case], timeout: 600)
+endforeach
 
 # A Python-free caller of the native interface; it includes no test support header.
 surface_example = executable(
@@ -227,6 +242,7 @@ surface_example = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('surface_example', surface_example)
 
@@ -238,6 +254,7 @@ boundary_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('boundary', boundary_checks, timeout: 600)
 
@@ -249,6 +266,7 @@ regression_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
@@ -262,6 +280,7 @@ specification_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('specification', specification_checks)
 
@@ -273,6 +292,7 @@ association_comparison_checks = executable(
   include_directories: native_inc,
   link_with: epcsaft_native,
   install: false,
+  build_by_default: false,
 )
 test('association-comparison', association_comparison_checks, timeout: 600)
 

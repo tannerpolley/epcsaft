@@ -8,12 +8,13 @@ cd "$repo_root"
 # shell selects the same cache key.
 export LC_ALL=C
 
-build_jobs="${EPCSAFT_BUILD_JOBS:-$(nproc)}"
+# nproc --all: plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
+build_jobs="${EPCSAFT_BUILD_JOBS:-$(nproc --all)}"
 if [[ ! "$build_jobs" =~ ^[1-9][0-9]*$ ]]; then
     echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2
     exit 2
 fi
-((build_jobs <= $(nproc))) || build_jobs="$(nproc)"
+((build_jobs <= $(nproc --all))) || build_jobs="$(nproc --all)"
 
 prepare_native_build="${EPCSAFT_PREPARE_NATIVE_BUILD:-0}"
 if [[ "$prepare_native_build" != 0 && "$prepare_native_build" != 1 ]]; then
@@ -54,6 +55,42 @@ check_native_dependency() {
 
 check_native_dependency ipopt 3.11.9
 check_native_dependency eigen3 3.4
+
+# HiGHS compiles once per toolchain into a shared static build (#319). engine/meson.build
+# falls back to the subproject without it; these options repeat the subproject's.
+highs_wrap=engine/build/subprojects/highs.wrap
+highs_source="$(sed -n 's/^directory = //p' "$highs_wrap")"
+highs_options=(--buildtype=release -Db_ndebug=if-release -Ddefault_library=static -Ddo_install=false
+    -Dfast_build=true -Dhighsint64=false -Duse_zlib=disabled -Dwith_pybind11=false -Dwith_tests=false)
+highs_key="$({
+    cat "$highs_wrap"
+    printf '%s\n' "${highs_options[*]}" "${cc_command[*]}" "${cxx_command[*]}" \
+        "${CPPFLAGS-}" "${CFLAGS-}" "${CXXFLAGS-}" "${LDFLAGS-}"
+    meson --version
+    for compiler in "${cc_command[0]}" "${cxx_command[0]}"; do
+        sha256sum "$(readlink -f "$(command -v "$compiler")")"
+    done
+} | sha256sum | cut -c 1-16)"
+highs_prefix="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/${highs_source,,}-$highs_key"
+highs_library="$highs_prefix/build/highs/libhighs.a"
+mkdir -p "$(dirname "$highs_prefix")"
+exec {highs_lock_fd}>"$highs_prefix.lock"
+flock "$highs_lock_fd"
+if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" ]]; then
+    rm -rf -- "$highs_prefix"
+    meson subprojects download --sourcedir engine highs >/dev/null
+    mkdir -p "$highs_prefix/pkgconfig"
+    cp -r "engine/build/subprojects/$highs_source" "$highs_prefix/src"
+    meson setup "${highs_options[@]}" "$highs_prefix/build" "$highs_prefix/src" >/dev/null
+    meson compile -C "$highs_prefix/build" -j "$build_jobs" >/dev/null
+    s="$highs_prefix/src"
+    printf '%s\n' 'Name: epcsaft-highs' 'Description: HiGHS for the Engine wheel' \
+        "Version: ${highs_source#HiGHS-}" "Libs: $highs_library" \
+        "Cflags: -I$s/extern -I$s/extern/catch -I$s/extern/pdqsort -I$(dirname "$highs_library") -I$s/highs" \
+        >"$highs_prefix/pkgconfig/epcsaft-highs.pc"
+fi
+flock -u "$highs_lock_fd"
+highs_setup_arg="-Dpkg_config_path=$highs_prefix/pkgconfig"
 
 # Reuse CMake's compiler detection, but resolve packages afresh each time.
 ceres_probe_key="$({
@@ -263,6 +300,7 @@ PY
     done
     fingerprint_tree eigen-headers "$(pkg-config --variable=prefix eigen3)/include/eigen3/Eigen"
     fingerprint_tree ipopt-headers "$(pkg-config --variable=includedir ipopt)"
+    printf 'highs-library=%s:%s\n' "$highs_library" "$(sha256sum "$highs_library" | cut -d ' ' -f 1)"
     printf 'ceres-imported-target=%s\n' "$(sha256sum "$ceres_identity" | cut -d ' ' -f 1)"
     printf 'ceres-version=%s\n' "$ceres_version"
     printf 'ceres-packages=%s\n' "$({
@@ -314,10 +352,10 @@ flock "$wheelhouse_lock_fd"
 
 ensure_compile_database() {
     if [[ ! -f "$build_dir/meson-info/meson-info.json" ]]; then
-        meson setup "$build_dir" engine
+        meson setup "$highs_setup_arg" "$build_dir" engine
     elif [[ ! -f "$configured_database_stamp" ]] \
         || [[ "$(<"$configured_database_stamp")" != "$wheel_fingerprint" ]]; then
-        meson setup --reconfigure "$build_dir" engine
+        meson setup --reconfigure "$highs_setup_arg" "$build_dir" engine
     fi
     printf '%s\n' "$wheel_fingerprint" >"$configured_database_stamp"
     printf '%s\n' "$build_dir" >"$build_dir_stamp"
@@ -418,6 +456,7 @@ if [[ "$cache_valid" == true ]]; then
             --no-build-isolation \
             --out-dir "$wheelhouse" \
             --config-setting="build-dir=$build_dir" \
+            --config-setting="setup-args=$highs_setup_arg" \
             --config-setting="compile-args=-j$build_jobs" \
             engine
         mapfile -t built_wheels < <(
@@ -446,10 +485,10 @@ uv pip install --python "$python" --no-deps --reinstall-package epcsaft "$wheel"
 uv pip check --python "$python"
 "$python" tools/verify-installed-wheel.py --wheel "$wheel"
 if [[ "$prepare_native_build" == 1 || -f "$configured_build_stamp" || "$wheel_origin" == rebuilt ]]; then
-    # Wheel creation can update the extension without compiling Meson's test
-    # executables.  Always pass through the configured-build check after a
-    # wheel install, and keep an existing configured tree current even when
-    # the caller did not request a native test preparation.
+    # A restored wheel leaves the Meson tree uncompiled; native tests and the
+    # architecture check need its archive (run-native-tests.sh compiles the test
+    # programs). Keep an existing configured tree current even when the caller
+    # did not request a native test preparation.
     ensure_configured_build
 else
     ensure_compile_database

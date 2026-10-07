@@ -75,7 +75,7 @@ m = importlib.import_module("project-map")
 rules = m.declaration()["rules"]
 print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
-        slow_tests+=(equilibrium boundary)
+        slow_tests+=('equilibrium/*' boundary)
     fi
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
         slow_tests+=(regression_fit)
@@ -86,7 +86,7 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|README.md|pyproject.toml|u
     bash tools/check-all.sh
     check_declarations
     if ((${#slow_tests[@]})); then
-        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        MESON_TESTTHREADS=4 EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
     exit 0
 fi
@@ -118,10 +118,10 @@ if grep -q '^engine/' <<<"$paths"; then
         (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml=../build/test-results/pytest.xml)
     fi
 if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
-        # The native preparation above already built the test executables.
+        # run-native-tests.sh compiles the programs it runs; slow cases run four at a time.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
-            EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+            MESON_TESTTHREADS=4 EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
