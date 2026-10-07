@@ -317,6 +317,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
 
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
     if constexpr (std::is_same_v<Scalar, double>) {
+        // EqID: close_packing_fraction
         if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {
             throw std::invalid_argument("packing fraction is at or above close packing");
         }

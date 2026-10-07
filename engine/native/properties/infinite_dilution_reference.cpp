@@ -41,6 +41,7 @@ std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std:
             require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
 }
 
+// EqID: reference_molality_sequence; the fifth rung is the convergence witness.
 constexpr std::array<double, 5> REFERENCE_MOLALITIES = {
     policy::REFERENCE_MOLALITY_ONE.value,
     policy::REFERENCE_MOLALITY_TWO.value,

@@ -51,12 +51,14 @@ IdealMixtureValue<Scalar> evaluate_ideal_mixture(
         const auto thermal = evaluate_ideal_correlation(
             correlations[i], temperature, pressure);
         result.enthalpy += mole_fractions[i] * thermal.h;
+        // EqID: ideal_heat_capacity_cp
         result.isobaric_heat_capacity += mole_fractions[i] * thermal.cp;
         if (supported[i]) result.entropy += mole_fractions[i] * (thermal.s
             - gas_constant * scalar_log(mole_fractions[i] * molar_density
                 * gas_constant * temperature / Scalar(pressure)));
     }
     result.internal_energy = result.enthalpy - gas_constant * temperature;
+    // EqID: ideal_heat_capacity_cv
     result.isochoric_heat_capacity = result.isobaric_heat_capacity - gas_constant;
     return result;
 }
@@ -73,6 +75,7 @@ struct ReactionLogPolynomial final {
 };
 // One scalar/AD expression owns the source law and its raw thermal derivatives.
 template <typename Scalar>
+// EqID: reaction_constant_ln_polynomial
 Scalar reaction_log_value(const ReactionLogPolynomial& law, const Scalar& temperature,
                           std::size_t thermal_order = 0) {
     if (thermal_order == 0)

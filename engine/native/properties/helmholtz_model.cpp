@@ -1129,6 +1129,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     }
     double coefficient = 0.0;
     if (repeated.has_value()) {
+        // EqID: repeated_direction_energy_third
         // [t^5](F(p+v*t+u*t^3)-F(p+v*t-u*t^3)) = D3F[u,v,v].
         // The sparse paths avoid subtracting the singular pure-u third derivative
         // from an otherwise regular mixed response at dilute ionic states.
@@ -1782,6 +1783,7 @@ State HelmholtzModel::state(
     // EqID: residual_heat_capacity_cv
     result.residual_isochoric_heat_capacity = GAS_CONSTANT_J_PER_MOL_K * cv_over_r;
     if (std::isfinite(dpressure_drho) && dpressure_drho > 0.0) {
+        // EqID: residual_heat_capacity_cp
         const double cp = result.residual_isochoric_heat_capacity
             - temperature * dpressure_dt * dpressure_dt
                 / dpressure_dv - GAS_CONSTANT_J_PER_MOL_K;
@@ -1802,9 +1804,11 @@ State HelmholtzModel::state(
             result.total_internal_energy = ideal.value->internal_energy
                 + result.residual_internal_energy;
             result.total_entropy = ideal.value->entropy + result.residual_entropy;
+            // EqID: total_heat_capacity_cv
             result.total_isochoric_heat_capacity = ideal.value->isochoric_heat_capacity
                 + result.residual_isochoric_heat_capacity;
             if (result.residual_isobaric_heat_capacity.has_value()) {
+                // EqID: total_heat_capacity_cp
                 result.total_isobaric_heat_capacity = ideal.value->isobaric_heat_capacity
                     + *result.residual_isobaric_heat_capacity;
             }
@@ -1862,6 +1866,7 @@ double HelmholtzModel::molar_density_upper_bound(
     core::Scope scope("molar_density_upper_bound");
     const double coefficient = packing_fraction_coefficient(temperature, mole_fractions);
     require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
+    // EqID: density_upper_bound
     return policy::CLOSE_PACKING_FRACTION.value / coefficient;
 }
 

@@ -605,6 +605,7 @@ DensityRoot solve_density(
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
     model.validate_composition(mole_fractions);
+    // EqID: ideal_gas_density
     const double ideal_density = pressure
         / (GAS_CONSTANT_J_PER_MOL_K * temperature);
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
