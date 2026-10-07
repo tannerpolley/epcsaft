@@ -52,8 +52,8 @@ std::string weighted_hessian_context(
     for (const auto& phase : problem.phases) {
         if (!phase_definition.empty()) phase_definition += ',';
         phase_definition += phase.name + ":"
-            + epcsaft::equilibrium::phase_kind_name(phase.kind) + ":"
-            + epcsaft::equilibrium::amount_kind_name(phase.amount.kind) + ":"
+            + equilibrium_support::phase_kind_name(phase.kind) + ":"
+            + equilibrium_support::amount_kind_name(phase.amount.kind) + ":"
             + recording_support::number(phase.amount.fraction)
             + ":support=" + std::to_string(phase.support.size()) + ":guess=";
         for (std::size_t index = 0; index < phase.composition_guess.size(); ++index) {
@@ -83,7 +83,7 @@ std::string weighted_hessian_context(
             recording_support::field("temperature", problem.temperature.value),
             recording_support::field("pressure", problem.pressure.value),
             recording_support::field("feed_kind",
-                                     epcsaft::equilibrium::feed_kind_name(problem.feed.kind)),
+                                     equilibrium_support::feed_kind_name(problem.feed.kind)),
             recording_support::field("feed", problem.feed.values),
             recording_support::field("phase_definition", phase_definition),
             recording_support::field("reaction_definition", reaction_definition),
@@ -91,9 +91,9 @@ std::string weighted_hessian_context(
     }
     const auto& parameters = model->parameters();
     std::string row_names;
-    for (const auto& name : compiled.row_names) {
+    for (const auto& row : compiled.rows) {
         if (!row_names.empty()) row_names += ',';
-        row_names += name;
+        row_names += epcsaft::equilibrium::row_kind_name(row.kind);
     }
     return recording_support::fields({
         recording_support::field("temperature", problem.temperature.value),
@@ -103,7 +103,7 @@ std::string weighted_hessian_context(
         recording_support::field("pressure_free", problem.pressure.free ? 1U : 0U),
         recording_support::field("pressure_absent", problem.pressure.absent ? 1U : 0U),
         recording_support::field("feed_kind",
-                                 epcsaft::equilibrium::feed_kind_name(problem.feed.kind)),
+                                 equilibrium_support::feed_kind_name(problem.feed.kind)),
         recording_support::field("feed", problem.feed.values),
         recording_support::field("feed_solvent_count", problem.feed.solvent.size()),
         recording_support::field("feed_solvent_mass_kg", problem.feed.solvent_mass_kg),
@@ -117,7 +117,6 @@ std::string weighted_hessian_context(
         recording_support::field("compiled_free_intensive_count", compiled.free_intensive_count),
         recording_support::field("compiled_charge_row_count", compiled.charge_row_count),
         recording_support::field("compiled_rows", compiled.rows.size()),
-        recording_support::field("compiled_rows_minus_unknowns", compiled.rows_minus_unknowns),
         recording_support::field("compiled_generic_nullity", compiled.generic_nullity),
         recording_support::field("compiled_jacobian_rank", compiled.jacobian_rank),
         recording_support::field("compiled_n_feed", compiled.n_feed),
@@ -2374,7 +2373,7 @@ void check_s11() {
         {"isomerisation", {-1.0, 1.0, 0.0}, 2.0, std::nullopt}
     };
     const auto standard = epcsaft::equilibrium::standard_state(300.0, 3, reactions, {});
-    const auto affinity = epcsaft::equilibrium::reaction_affinities(reactions, standard);
+    const auto affinity = equilibrium_support::reaction_affinities(reactions, standard);
     const double affinity_reference = -epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0 * std::log(2.0);
     recording_support::compare(
         "standard-affinity", "reaction_affinity", "J/mol", affinity.front(), affinity_reference,
@@ -3031,7 +3030,7 @@ void check_e2_solve() {
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, *item);
         const auto id = std::string("e2-6/all-pinned-not-run/") + std::to_string(item->phases.size());
         CHECK(record_bool(id.c_str(), "e2-6-solve", "nonreactive all-pinned declaration returns the exact pre-solve NOT_RUN record",
-            compiled.is_square() && compiled.generic_nullity > 0 && not_run_record(result, compiled),
+            compiled.generic_nullity > 0 && not_run_record(result, compiled),
             recording_support::fields({recording_support::field("phases", item->phases.size()),
                 recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
                 recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
@@ -4518,7 +4517,7 @@ void check_e5_refusals() {
     auto other = fixture.problem; other.temperature.value = 181.0;
     const auto other_compiled = epcsaft::equilibrium::compile_problem(model, other);
     const auto other_batch = epcsaft::equilibrium::solved_state_actions(other_compiled, central, base);
-    const double other_rows = other_compiled.evaluate(central.coordinates).residual_norm();
+    const double other_rows = epcsaft::equilibrium::maximum_abs(other_compiled.evaluate(central.coordinates).values);
     all_ok = (record_bool("e5-8/typed/defining-equations", "e5-8", "an accepted result of another same-layout problem is typed defining_equations_not_satisfied with its mapped value retained",
         other_rows > 1.0e-10 && other_batch.results[0].status == SolvedStateActionStatus::DefiningEquationsNotSatisfied
             && other_batch.results[0].value.has_value() && !other_batch.results[0].action.has_value(),
@@ -5089,7 +5088,7 @@ void check_tangent_plane_admission() {
     std::size_t physical_trials = 0;
     for (std::size_t i = 0; i < report.trials.size(); ++i) {
         const auto& item = report.trials[i];
-        const auto definition = recording_support::fields({recording_support::field("label", phase_kind_name(item.phase.kind)),
+        const auto definition = recording_support::fields({recording_support::field("label", equilibrium_support::phase_kind_name(item.phase.kind)),
             recording_support::field("support", std::vector<int>(item.phase.support.begin(), item.phase.support.end())), recording_support::field("seed", item.seed),
             recording_support::field("evidence", item.evidence), recording_support::field("composition", item.composition),
             recording_support::field("association_floor", item.quantities.count("gradient_floor_max_si_columns")
@@ -5136,7 +5135,7 @@ void check_tangent_plane_admission() {
         for (auto species : phase.support) CHECK(item.composition[species] > 0.0);
         tpd_compare("support/absent-first-phase-charge/" + std::to_string(i), item.composition[1] - item.composition[2], 0.0, 1e-12,
             recording_support::fields({recording_support::field("composition", item.composition), recording_support::field("seed", item.seed),
-                recording_support::field("label", phase_kind_name(item.phase.kind)), recording_support::field("support", std::vector<int>{0, 1, 2})}));
+                recording_support::field("label", equilibrium_support::phase_kind_name(item.phase.kind)), recording_support::field("support", std::vector<int>{0, 1, 2})}));
     }
     CHECK(positive_trials > 0);
     const auto charged_parameters = equilibrium_support::permute_parameters(parameters, {1, 2, 0});

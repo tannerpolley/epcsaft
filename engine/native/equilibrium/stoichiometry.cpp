@@ -37,6 +37,7 @@ void require_unit_sum(const std::vector<double>& values, const char* name) {
     }
 }
 
+// Callers validate the set first (validate_reaction_set).
 Eigen::MatrixXd reaction_matrix(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 ) {
@@ -44,12 +45,7 @@ Eigen::MatrixXd reaction_matrix(
         static_cast<Eigen::Index>(reactions.size()), static_cast<Eigen::Index>(components)
     );
     for (std::size_t row = 0; row < reactions.size(); ++row) {
-        if (reactions[row].stoichiometry.size() != components) {
-            throw std::invalid_argument("stoichiometry size does not match components");
-        }
         const auto& values = reactions[row].stoichiometry;
-        if (!std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); }))
-            throw std::invalid_argument("invalid stoichiometry");
         matrix.row(static_cast<Eigen::Index>(row)) = Eigen::Map<const Eigen::VectorXd>(
             values.data(), static_cast<Eigen::Index>(components)).transpose();
     }
@@ -69,18 +65,6 @@ Eigen::Index numerical_rank(const Eigen::MatrixXd& matrix) {
         if (singular > scale) ++rank;
     }
     return rank;
-}
-
-void validate_basis_shape(
-    const std::vector<std::vector<double>>& basis, std::size_t components
-) {
-    for (const auto& row : basis) {
-        if (row.size() != components) throw std::logic_error("balance basis width");
-        if (!std::all_of(row.begin(), row.end(),
-                         [](double value) { return std::isfinite(value); })) {
-            throw std::logic_error("balance basis is not finite");
-        }
-    }
 }
 
 }  // namespace
@@ -254,7 +238,6 @@ std::vector<std::vector<double>> balance_basis(
     if (rank == 0) {
         std::vector<std::vector<double>> result(components, std::vector<double>(components, 0.0));
         for (std::size_t i = 0; i < components; ++i) result[i][i] = 1.0;
-        validate_basis_shape(result, components);
         return result;
     }
     // Reduce the SVD null space to echelon form: each row is one conserved moiety with a unit
@@ -289,7 +272,6 @@ std::vector<std::vector<double>> balance_basis(
                 std::abs(value) > std::sqrt(std::numeric_limits<double>::epsilon()) ? value : 0.0;
         }
     }
-    validate_basis_shape(result, components);
     return result;
 }
 
@@ -325,6 +307,22 @@ std::vector<std::vector<double>> reaction_target_series(
         }
     }
     return result;
+}
+
+std::optional<std::size_t> thermal_reference_missing(
+    double temperature, const std::vector<ReactionSpec>& reactions, const std::vector<double>& supplied
+) {
+    if (supplied.empty() || reactions.empty()) return std::nullopt;
+    const auto targets = reaction_target_series(temperature, reactions, 3);
+    for (std::size_t row = 0; row < reactions.size(); ++row) {
+        const double scale = std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, std::abs(targets[0][row]));
+        double power = 1.0;
+        for (std::size_t k = 1; k <= 3; ++k) {
+            power *= temperature;
+            if (std::abs(targets[k][row]) * power > scale) return row;
+        }
+    }
+    return std::nullopt;
 }
 
 std::vector<std::vector<double>> standard_state_series(
@@ -387,7 +385,6 @@ std::vector<double> standard_state(
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
     if (basis.empty()) throw std::invalid_argument("empty balance basis");
     const std::size_t components = basis.front().size();
-    validate_basis_shape(basis, components);
     Eigen::MatrixXd extended(static_cast<Eigen::Index>(basis.size() + 1),
                              static_cast<Eigen::Index>(components));
     for (std::size_t row = 0; row < basis.size(); ++row) {
@@ -398,6 +395,15 @@ bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
         1.0 / std::sqrt(static_cast<double>(components)));
     return numerical_rank(extended) == numerical_rank(extended.topRows(
         static_cast<Eigen::Index>(basis.size())));
+}
+
+std::vector<bool> reaction_participants(std::size_t components, const std::vector<ReactionSpec>& reactions) {
+    std::vector<bool> result(components, false);
+    for (const auto& reaction : reactions) {
+        if (reaction.stoichiometry.size() != components) throw std::invalid_argument("stoichiometry size");
+        for (std::size_t i = 0; i < components; ++i) result[i] = result[i] || reaction.stoichiometry[i] != 0.0;
+    }
+    return result;
 }
 
 std::vector<double> matvec(
@@ -413,27 +419,6 @@ std::vector<double> matvec(
 
 double vector_norm(const std::vector<double>& values) {
     return std::accumulate(values.begin(), values.end(), 0.0);
-}
-
-double feed_total(const std::vector<double>& feed) {
-    if (feed.empty()) throw std::invalid_argument("empty feed");
-    if (!std::all_of(feed.begin(), feed.end(), [](double value) {
-            return std::isfinite(value) && value >= 0.0;
-        })) {
-        throw std::invalid_argument("invalid feed");
-    }
-    const double total = vector_norm(feed);
-    if (!(std::isfinite(total) && total > 0.0)) {
-        throw std::invalid_argument("feed has zero total");
-    }
-    return total;
-}
-
-std::vector<double> normalized_feed(const std::vector<double>& feed) {
-    const double total = feed_total(feed);
-    std::vector<double> result = feed;
-    for (double& value : result) value /= total;
-    return result;
 }
 
 std::string reaction_name(const ReactionSpec& reaction, std::size_t index) {
@@ -477,24 +462,6 @@ std::size_t reaction_rank(
 ) {
     validate_reaction_set(components, reactions);
     return static_cast<std::size_t>(numerical_rank(reaction_matrix(components, reactions)));
-}
-
-std::vector<double> reaction_affinities(
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& standard_gibbs
-) {
-    if (standard_gibbs.empty()) return std::vector<double>(reactions.size(), 0.0);
-    std::vector<double> result;
-    result.reserve(reactions.size());
-    for (const auto& reaction : reactions) {
-        if (reaction.stoichiometry.size() != standard_gibbs.size()) {
-            throw std::invalid_argument("stoichiometry size does not match standard state");
-        }
-        result.push_back(std::inner_product(
-            reaction.stoichiometry.begin(), reaction.stoichiometry.end(),
-            standard_gibbs.begin(), 0.0));
-    }
-    return result;
 }
 
 bool all_numeric(const std::vector<double>& values) {

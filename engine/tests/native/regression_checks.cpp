@@ -3094,7 +3094,7 @@ void check_inventory_boundary(const HelmholtzModel& model, const EquilibriumProb
     const auto point = compiled.prepare(result.coordinates);
     const auto values = compiled.jacobian(result.coordinates);
     const Eigen::Index size = static_cast<Eigen::Index>(result.coordinates.size());
-    CHECK(compiled.is_square() && values.size() == static_cast<std::size_t>(size * size));
+    CHECK(values.size() == static_cast<std::size_t>(size * size));
     const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(values.data(), size, size);
     const Eigen::JacobiSVD<Eigen::MatrixXd> svd(jacobian);
     const double condition = svd.singularValues()(0) / svd.singularValues()(size - 1);

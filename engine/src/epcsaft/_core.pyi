@@ -653,7 +653,6 @@ class CompiledSystem:
     rank: int
     charge_row_count: int
     primal_size: int
-    rows_minus_unknowns: int
     generic_nullity: int
     feed_total: float
     has_ions: bool

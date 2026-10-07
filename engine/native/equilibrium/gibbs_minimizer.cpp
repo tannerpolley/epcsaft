@@ -42,23 +42,6 @@ double polish_forward_bound(const std::vector<double>& jacobian, const std::vect
 }
 namespace {
 
-double maximum_abs(const std::vector<double>& values) {
-    double result = 0.0;
-    for (const double value : values) {
-        const double magnitude = std::abs(value);
-        if (!std::isfinite(magnitude)) return std::numeric_limits<double>::infinity();
-        result = std::max(result, magnitude);
-    }
-    return result;
-}
-
-double specified_amount(const PhaseSpec& phase, const std::vector<double>& feed) {
-    if (phase.amount.kind == AmountKind::Free) return 1.0;
-    double total = 0.0;
-    for (const double value : feed) total += value;
-    return phase.amount.fraction * total;
-}
-
 // EqID reduced_hessian_stability on the balance nullspace. `minimum` is the smallest eigenvalue in the solved
 // chart. The decision reads the congruent equilibration D = diag(S)^-1/2, S = |objective| + |weighted constraint|
 // curvature, whose inertia is the same, against the rounding band eps (n ||DSD|| + 2 kappa(AD) ||DHD||)
@@ -509,14 +492,14 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
-    // Pinned square cells impose chemical equality, so their box is the representability limit. Other
+    // Feasibility cells impose chemical equality, so their box is the representability limit. Other
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
     // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
     // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
     const std::size_t species = compiled_.n_feed.size();
-    const bool square = compiled_.feasibility_cell() && compiled_.is_square();
-    std::vector<double> box(species, square ? std::numeric_limits<double>::min() : policy::STABILITY_COMPOSITION_FLOOR.value);
-    if (!square) {
+    const bool feasibility = compiled_.feasibility_cell();
+    std::vector<double> box(species, feasibility ? std::numeric_limits<double>::min() : policy::STABILITY_COMPOSITION_FLOOR.value);
+    if (!feasibility) {
         if (limits_ && limits_->expired()) return false;
         for (std::size_t i = 0; i < species; ++i)
             box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
@@ -578,23 +561,18 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
     std::vector<double> candidate(x, x + n);
     if (!prepared_.has_value() || prepared_->point != candidate) {
-        try {
-            prepared_ = compiled_.prepare(candidate, true);
-        } catch (const std::exception& error) {
-            prepared_.reset();
-            rows_.reset();
-            jacobian_.reset();
-            gradient_.reset();
-            objective_hessian_.reset();
-            constraint_hessian_.reset();
-            preparation_error_ = error.what();
-            throw;
-        }
         rows_.reset();
         jacobian_.reset();
         gradient_.reset();
         objective_hessian_.reset();
         constraint_hessian_.reset();
+        try {
+            prepared_ = compiled_.prepare(candidate, true);
+        } catch (const std::exception& error) {
+            prepared_.reset();
+            preparation_error_ = error.what();
+            throw;
+        }
         ++work_.prepared_points;
     }
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
@@ -812,9 +790,9 @@ EquilibriumResult run_driver(
 ) {
     const double row_tolerance = compiled.problem.row_tolerance;
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
-    // A square feasibility cell has a constant objective and is Newton-polished below, so it stops there.
+    // A feasibility cell has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
-        * (compiled.feasibility_cell() && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
+        * (compiled.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
@@ -878,7 +856,7 @@ EquilibriumResult run_driver(
     std::string rejected_preparation = nlp->preparation_error().value_or("");
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
-    if (non_error && !expired() && compiled.is_square()) {
+    if (non_error && !expired()) {
         auto at = compiled.prepare(full, true);
         ++polish_evaluations;
         if (audit) audit->convergence.evaluations = ++audit->evaluations;
@@ -1085,37 +1063,23 @@ EquilibriumResult run_driver(
     }
     result.message = core::describe(convergence);
     scope.finish(convergence);
-    const auto offsets = compiled.phase_offsets();
-    std::vector<std::vector<double>> compositions;
-    std::vector<double> amounts;
     std::vector<double> volumes;
     std::size_t intensive_offset = compiled.primal_size - compiled.free_intensive_count;
     const double candidate_temperature = compiled.problem.temperature.free
         ? full[intensive_offset] : compiled.problem.temperature.value;
     bool topology_ok = true;
     std::string topology_failure;
+    // Preparation above admitted every composition with a positive total.
     const auto topology = check_topology(compiled, full);
+    const auto& compositions = topology.compositions;
+    const auto& amounts = topology.amounts;
     result.topology_event = topology.event;
     result.topology_phase = topology.phase;
     result.topology_pair = topology.pair;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
-        std::vector<double> composition(model.parameters().component_count(), 0.0);
-        double total = 0.0;
-        for (std::size_t i = 0; i < spec.support.size(); ++i) {
-            const double value = std::exp(full[offsets[phase] + i]);
-            composition[spec.support[i]] = value;
-            total += value;
-        }
-        if (!(total > 0.0)) topology_ok = false;
-        for (double& value : composition) value /= std::max(total, std::numeric_limits<double>::min());
-        compositions.push_back(composition);
-        std::size_t cursor = offsets[phase] + spec.support.size();
-        const double amount = spec.amount.kind == AmountKind::Free
-            ? full[cursor++] : specified_amount(spec, compiled.n_feed);
-        amounts.push_back(amount);
         volumes.push_back(model.packing_fraction_coefficient(
-            candidate_temperature, composition) / std::exp(full[cursor]));
+            candidate_temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
@@ -1250,7 +1214,6 @@ EquilibriumResult run_driver(
     }
     if (expired()) { result.message = "elapsed work budget exhausted";
         reject_elapsed(result, scope); return result; }
-    result.rows = compiled.rows;
     require_solution_shape(result, compiled.problem.phases.size(),
                            model.parameters().component_count());
     scope.probe("reduced_hessian_minimum", result.reduced_hessian_minimum);
@@ -1261,9 +1224,6 @@ EquilibriumResult run_driver(
     scope.probe("rows", static_cast<double>(result.rows.size()));
     scope.probe("multipliers", static_cast<double>(result.multipliers.size()));
     scope.probe("amount_total", std::accumulate(result.amounts.begin(), result.amounts.end(), 0.0));
-    scope.probe("topology_ok", topology_ok ? 1.0 : 0.0);
-    scope.probe("feasible", compiled.feasible ? 1.0 : 0.0);
-    scope.probe("square", compiled.is_square() ? 1.0 : 0.0);
     return result;
 }
 
@@ -1321,7 +1281,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
     present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(), zero_amount), present.phases.end());
     if (!compiled.has_reaction || !problem.pressure.free || problem.temperature.free || present.phases.empty()
         || present.phases.size() == problem.phases.size()) return std::nullopt;
-    present.pressure = FreeValue::fixed(problem.pressure.seed_or(1.0e5));
+    present.pressure = FreeValue::fixed(compiled.seed_pressure());
     try {
         const auto solved = solve_equilibrium(*compiled.model, present);
         if (!solved.success) return std::nullopt;
@@ -1348,8 +1308,7 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
     if (full.size() < compiled.primal_size) return result;
     const std::size_t components = compiled.model->parameters().component_count();
     const auto offsets = compiled.phase_offsets();
-    std::vector<std::vector<double>> compositions;
-    std::vector<std::size_t> eta_index;
+    auto& compositions = result.compositions;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         const auto& spec = compiled.problem.phases[phase];
         std::vector<double> composition(components, 0.0);
@@ -1361,8 +1320,9 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
         for (double& value : composition) value /= std::max(total, std::numeric_limits<double>::min());
         std::size_t cursor = offsets[phase] + spec.support.size();
         const double amount = spec.amount.kind == AmountKind::Free
-            ? full[cursor++] : specified_amount(spec, compiled.n_feed);
-        eta_index.push_back(cursor);
+            ? full[cursor++] : compiled.phase_amount(spec);
+        result.amounts.push_back(amount);
+        result.log_packing.push_back(full[cursor]);
         compositions.push_back(std::move(composition));
         if (spec.amount.kind == AmountKind::Free
             && amount / compiled.feed_total <= policy::STABILITY_PHASE_AMOUNT_FLOOR.value
@@ -1374,7 +1334,7 @@ TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<d
     for (std::size_t left = 0; left + 1 < compositions.size(); ++left) {
         for (std::size_t right = left + 1; right < compositions.size(); ++right) {
             const double distance = std::max(
-                std::abs(full[eta_index[left]] - full[eta_index[right]]),
+                std::abs(result.log_packing[left] - result.log_packing[right]),
                 largest_difference(compositions[left], compositions[right]));
             result.distances.push_back(distance);
             if (distance <= policy::PHASE_COINCIDENCE_DISTANCE.value
@@ -1537,7 +1497,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         check(!phase.packing_guess || admitted_packing_fraction(*phase.packing_guess),
                               "packing for phase " + phase.name + " is outside the admitted range");
                         if (!seed.amounts.empty() && (!std::isfinite(seed.amounts[p]) || seed.amounts[p] < 0.0
-                            || (phase.is_pinned() && seed.amounts[p] != specified_amount(phase, compiled.n_feed))))
+                            || (phase.is_pinned() && seed.amounts[p] != compiled.phase_amount(phase))))
                             throw std::invalid_argument("amount for phase " + phase.name + " is nonfinite, negative or conflicts with its pin");
                         complete = complete && phase.packing_guess.has_value();
                     }
@@ -1662,13 +1622,8 @@ void count_driver(Quantities& work, const EquilibriumResult& result, const char*
     work["hessian_calls"] += result.hessian_calls;
 }
 
-DensityRoot stability_root(const HelmholtzModel& model, double T, double P,
-    const std::vector<double>& w, PhaseKind kind, Quantities& work) {
-    ++work["root_calls"];
-    const auto root = solve_density(model, T, P, w, kind == PhaseKind::Liquid
-        ? DensityBranch::Liquid : DensityBranch::Vapor, std::nullopt);
-    work["root_evaluations"] += root.convergence.evaluations;
-    return root;
+DensityRoot stability_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& w, PhaseKind kind) {
+    return solve_density(model, T, P, w, kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor, std::nullopt);
 }
 
 void packing_admission(double eta) {
@@ -1681,7 +1636,6 @@ Quantities phase_energy(const HelmholtzModel& model, double T, double P, double 
     const std::vector<double>& w, const std::vector<double>& standard, Quantities& work,
     HelmholtzDerivatives* retained = nullptr) {
     packing_admission(model.packing_fraction_coefficient(T, w) / v);
-    ++work["energy_evaluations"];
     auto d = model.evaluate(T, v, w, DerivativeOrder::IsothermalPhaseHessian);
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
     const double ideal = ideal_mechanical_helmholtz(w, v, 1.0);
@@ -1724,11 +1678,9 @@ double energy_estimate(const Quantities& q) {
 std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const StabilityOptions& options) {
     const auto& z = c.model->parameters().charge_number;
     std::vector<std::size_t> united, zero_charge;
-    for (std::size_t i = 0; i < c.n_feed.size(); ++i) {
-        bool participant = c.n_feed[i] > 0.0;
-        for (const auto& reaction : c.problem.reactions) participant |= reaction.stoichiometry[i] != 0.0;
-        if (participant) { united.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i); }
-    }
+    const auto participant = reaction_participants(c.n_feed.size(), c.problem.reactions);
+    for (std::size_t i = 0; i < c.n_feed.size(); ++i)
+        if (c.n_feed[i] > 0.0 || participant[i]) { united.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i); }
     std::vector<PhaseSpec> phases;
     if (options.trials) phases = *options.trials;
     else {
@@ -1796,7 +1748,6 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     Candidate candidate;
     auto& at = candidate.physical;
     at = c.prepare(result.coordinates);
-    report.work["energy_evaluations"] += at.composition.size();
     const auto raw = c.evaluate_at(at);
     if (raw.values != result.residuals) throw std::invalid_argument("stability result/input identity mismatch");
     report.standard_over_rt = at.standard.derivative[0];
@@ -2086,7 +2037,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 double eta;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
-                    const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind, report.work);
+                    const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
                 }
                 packing_admission(eta);
@@ -2117,7 +2068,6 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 }
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
                 const auto raw = compiled.prepare(trial.raw_coordinates, true);
-                report.work["energy_evaluations"] += 1.0;
                 trial.raw_residuals = compiled.evaluate_at(raw).values;
                 trial.composition = reconstruct_trial_composition(raw.composition[0], phase.support, z);
                 ++report.work["reconstruction_evaluations"];
@@ -2171,9 +2121,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
     core::Scope scope("stability_test");
     core::Capture capture;
-    auto report = test_snapshot(c, result, options, {}, capture.trace());
-    count_stability_work(report.work, capture.trace());
-    return report;
+    return test_snapshot(c, result, options, {}, capture.trace());
 }
 
 // The event belongs solely to check_topology. Merge finite inventories and extensive volumes,
@@ -2225,7 +2173,9 @@ std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(
         double volume = p == *recipient ? merged_volume / amount : at.volume[p];
         packing_admission(c.model->packing_fraction_coefficient(at.temperature, w) / volume);
         if (p == *recipient) {
-            const auto root = stability_root(*c.model, at.temperature, at.pressure, w, c.problem.phases[p].kind, work);
+            const auto root = stability_root(*c.model, at.temperature, at.pressure, w, c.problem.phases[p].kind);
+            ++work["root_calls"];
+            work["root_evaluations"] += root.convergence.evaluations;
             volume = 1.0 / root.molar_density;
         }
         seed.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature, w) / volume));
@@ -2252,14 +2202,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     const auto& z = model.parameters().charge_number;
     std::vector<std::size_t> united;
     bool has_charge = false;
-    for (std::size_t i = 0; i < feed.size(); ++i) {
-        bool participant = feed[i] > 0.0;
-        for (const auto& reaction : request.reactions) {
-            if (reaction.stoichiometry.size() != feed.size()) throw std::invalid_argument("stoichiometry size");
-            participant |= reaction.stoichiometry[i] != 0.0;
-        }
-        if (participant) { united.push_back(i); has_charge |= z[i] != 0.0; }
-    }
+    const auto participant = reaction_participants(feed.size(), request.reactions);
+    for (std::size_t i = 0; i < feed.size(); ++i)
+        if (feed[i] > 0.0 || participant[i]) { united.push_back(i); has_charge |= z[i] != 0.0; }
     auto record = std::make_shared<DiscoveryRecord>();
     EquilibriumProblem declaration = request;
     declaration.discovery.reset(); declaration.topology_declared = true;

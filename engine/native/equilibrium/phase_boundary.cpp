@@ -50,16 +50,6 @@ void seed_composition(const CompiledSystem& compiled, std::size_t phase,
         point[offset + i] = std::log(point[offset + i] / total);
 }
 
-double seed_temperature(const CompiledSystem& compiled) {
-    return compiled.problem.temperature.is_positive()
-        ? compiled.problem.temperature.value : 300.0;
-}
-
-double seed_pressure(const CompiledSystem& compiled) {
-    return compiled.problem.pressure.is_positive()
-        ? compiled.problem.pressure.value : 1.0e5;
-}
-
 void validate_density_seed(const DensityRoot& root) {
     if (!(std::isfinite(root.molar_density) && root.molar_density > 0.0)) {
         throw std::runtime_error("boundary seed has invalid density");
@@ -93,8 +83,8 @@ std::vector<std::vector<double>> start_compositions(
             + compiled.problem.phases[0].name + " and "
             + compiled.problem.phases[1].name + " require composition guesses");
     }
-    const double temperature = seed_temperature(compiled);
-    const double pressure = seed_pressure(compiled);
+    const double temperature = compiled.seed_temperature();
+    const double pressure = compiled.seed_pressure();
     DensityRoot liquid_root;
     const auto vapor_root = solve_density(
         *compiled.model, temperature, pressure, compiled.feed_composition,
@@ -171,7 +161,7 @@ std::vector<std::vector<double>> start_compositions(
 double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
                             const std::vector<std::size_t>& phase_offsets, core::Scope& scope) {
     const auto& problem = compiled.problem;
-    const double seed = seed_pressure(compiled);
+    const double seed = compiled.seed_pressure();
     // Pure saturation keeps its coexistence-root start.
     if (!problem.pressure.free || problem.temperature.free || problem.phases.size() != 2
         || problem.phases[0].kind == problem.phases[1].kind
@@ -186,7 +176,7 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
         for (std::size_t i = 0; i < support.size(); ++i)
             x[phase][support[i]] = std::exp(point[phase_offsets[phase] + i]);
     }
-    const double temperature = seed_temperature(compiled);
+    const double temperature = compiled.seed_temperature();
     try {
         const auto liquid = compiled.model->state_at_pressure(
             temperature, seed, x[1 - vapor], DensityBranch::Liquid);
@@ -274,7 +264,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
                                                                std::vector<double> composition, core::Scope& scope) {
     const auto& phase = compiled.problem.phases.front();
     const std::size_t m = phase.support.size();
-    const double t = seed_temperature(compiled), p = seed_pressure(compiled);
+    const double t = compiled.seed_temperature(), p = compiled.seed_pressure();
     std::vector<std::vector<double>> B(compiled.rank, std::vector<double>(m));
     for (std::size_t k = 0; k < compiled.rank; ++k)
         for (std::size_t j = 0; j < m; ++j) B[k][j] = compiled.B[k][phase.support[j]];
@@ -329,7 +319,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         // The declared T and density at the feed, P there, and u declared or the lowest mode of M (the
         // mode rows' u columns at this point).
         const auto& z = compiled.feed_composition;
-        const double t = seed_temperature(compiled), rho = compiled.problem.critical->density_guess_mol_per_m3;
+        const double t = compiled.seed_temperature(), rho = compiled.problem.critical->density_guess_mol_per_m3;
         const std::size_t c = z.size(), mode = compiled.mode_offset();
         seed_composition(compiled, 0, z, point, phase_offsets[0]);
         point[phase_offsets[0] + c] = compiled.feed_total;
@@ -355,7 +345,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         seed_problem.entropy_j_per_k.reset();
         const bool pure = compiled.model->parameters().component_count() == 1 && seed_problem.phases.size() == 2;
         if (pure) seed_problem.phases[1].amount = AmountSpec::pinned(0.0);
-        else seed_problem.temperature = FreeValue::fixed(seed_temperature(compiled));
+        else seed_problem.temperature = FreeValue::fixed(compiled.seed_temperature());
         const auto source = compile_problem(*compiled.model, seed_problem);
         const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits), nullptr, limits);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
@@ -407,11 +397,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     for (const auto& phase : compiled.problem.phases) {
         if (phase.amount.kind == AmountKind::Free) ++free_phases;
     }
-    double feed_total = 0.0;
-    for (const double value : compiled.n_feed) feed_total += value;
+    const double feed_total = compiled.feed_total;
     std::optional<double> speciated_density;
-    double free_amount = compiled.n_feed.empty() ? 1.0
-        : feed_total / static_cast<double>(std::max<std::size_t>(1, free_phases));
+    double free_amount = feed_total / static_cast<double>(std::max<std::size_t>(1, free_phases));
     scope.probe("free_phases", static_cast<double>(free_phases));
     scope.probe("feed_total", feed_total);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
@@ -419,7 +407,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = limits ? seed_pressure(compiled) : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
+    const double p = limits ? compiled.seed_pressure() : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -429,7 +417,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
                 ? feed_total * (compiled.problem.phases[phase].kind == PhaseKind::Vapor
                     ? *vapor_fraction : 1.0 - *vapor_fraction) : free_amount;
         }
-        const double t = seed_temperature(compiled);
+        const double t = compiled.seed_temperature();
         std::vector<double> composition(compiled.model->parameters().component_count(), 0.0);
         for (std::size_t i = 0; i < compiled.problem.phases[phase].support.size(); ++i) {
             composition[compiled.problem.phases[phase].support[i]] =
@@ -478,13 +466,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     return point;
 }
 
-// Boundary seeds remain ordinary equilibrium coordinates; no second driver is introduced.
-
-}  // namespace epcsaft::equilibrium
-
 // ---------------------------------------------------------------- continuation
 
-namespace epcsaft::equilibrium {
 namespace {
 
 struct Attempt final {
@@ -546,7 +529,7 @@ std::string layout_difference(const CompiledSystem& a, const CompiledSystem& b) 
     if (a.rows.size() != b.rows.size()) return "row count differs";
     for (std::size_t r = 0; r < a.rows.size(); ++r)
         if (a.rows[r].kind != b.rows[r].kind || a.rows[r].phase != b.rows[r].phase
-            || a.rows[r].index != b.rows[r].index || std::string(a.rows[r].eqid) != b.rows[r].eqid)
+            || a.rows[r].index != b.rows[r].index)
             return "row " + std::to_string(r) + " identity differs";
     if (a.primal_size != b.primal_size || a.unknown_count() != b.unknown_count() || a.rank != b.rank
         || a.charge_row_count != b.charge_row_count || a.pinned_count != b.pinned_count
@@ -574,15 +557,15 @@ struct Path final {
         return problem;
     }
 
-    std::vector<double> lever(std::size_t width) const {
-        std::vector<double> result(width, 0.0);
+    std::vector<double> lever(const CompiledSystem& compiled) const {
+        std::vector<double> result(compiled.control_width(), 0.0);
         result[0] = base.temperature.free ? 0.0 : t1 - t0;
         result[1] = base.pressure.free ? 0.0 : p1 - p0;
         for (std::size_t i = 0; i < feed_start.size(); ++i) result[2 + i] = feed_target[i] - feed_start[i];
         for (std::size_t i = 0; i < parameter_target.size(); ++i)
             result[2 + feed_start.size() + i] = parameter_target[i] - parameter_start[i];
         if (!base.enthalpy_j && !base.entropy_j_per_k) return result;
-        result.resize(width + 4 * base.reactions.size() + 2, 0.0);
+        result.resize(compiled.extended_control_width(), 0.0);
         result[result.size() - 2] = base.enthalpy_j ? h1 - *base.enthalpy_j : 0.0;
         result.back() = base.entropy_j_per_k ? s1 - *base.entropy_j_per_k : 0.0;
         return result;
@@ -611,34 +594,6 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
     return true;
 }
 
-// Per-phase normalised composition and log packing read from the coordinate chart.
-struct PhaseSignature final {
-    std::vector<double> composition;
-    double log_eta = 0.0;
-};
-
-std::vector<PhaseSignature> signatures(const CompiledSystem& compiled, const std::vector<double>& y) {
-    const auto phase_offsets = compiled.phase_offsets();
-    const std::size_t components = compiled.model->parameters().component_count();
-    std::vector<PhaseSignature> result;
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        const auto& spec = compiled.problem.phases[phase];
-        PhaseSignature item;
-        item.composition.assign(components, 0.0);
-        double total = 0.0;
-        for (std::size_t i = 0; i < spec.support.size(); ++i) {
-            item.composition[spec.support[i]] = std::exp(y[phase_offsets[phase] + i]);
-            total += item.composition[spec.support[i]];
-        }
-        for (double& value : item.composition) value /= total;
-        std::size_t cursor = phase_offsets[phase] + spec.support.size();
-        if (spec.amount.kind == AmountKind::Free) ++cursor;
-        item.log_eta = y[cursor];
-        result.push_back(std::move(item));
-    }
-    return result;
-}
-
 // Passage through a critical point between consecutive accepted states swaps a pair's
 // identities: every nonzero component of the inter-phase difference vector (delta ln eta and
 // each delta x_i) changes sign while both states pass the coincidence predicate. That is the
@@ -646,15 +601,16 @@ std::vector<PhaseSignature> signatures(const CompiledSystem& compiled, const std
 std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
     const CompiledSystem& compiled, const std::vector<double>& before, const std::vector<double>& after
 ) {
-    const auto a = signatures(compiled, before);
-    const auto b = signatures(compiled, after);
-    for (std::size_t left = 0; left + 1 < a.size(); ++left) {
-        for (std::size_t right = left + 1; right < a.size(); ++right) {
-            std::vector<double> before_delta{a[left].log_eta - a[right].log_eta};
-            std::vector<double> after_delta{b[left].log_eta - b[right].log_eta};
-            for (std::size_t i = 0; i < a[left].composition.size(); ++i) {
-                before_delta.push_back(a[left].composition[i] - a[right].composition[i]);
-                after_delta.push_back(b[left].composition[i] - b[right].composition[i]);
+    // Accepted states only: every chart composition has a positive total.
+    const auto a = check_topology(compiled, before);
+    const auto b = check_topology(compiled, after);
+    for (std::size_t left = 0; left + 1 < a.compositions.size(); ++left) {
+        for (std::size_t right = left + 1; right < a.compositions.size(); ++right) {
+            std::vector<double> before_delta{a.log_packing[left] - a.log_packing[right]};
+            std::vector<double> after_delta{b.log_packing[left] - b.log_packing[right]};
+            for (std::size_t i = 0; i < a.compositions[left].size(); ++i) {
+                before_delta.push_back(a.compositions[left][i] - a.compositions[right][i]);
+                after_delta.push_back(b.compositions[left][i] - b.compositions[right][i]);
             }
             bool informative = false, swapped = true;
             for (std::size_t i = 0; i < before_delta.size(); ++i) {
@@ -741,9 +697,10 @@ ContinuationStop stop_of(const EquilibriumResult& result, bool& terminal) {
     }
 }
 
+// `supplied`: a caller's result; the driver's own results already carry this problem's classified rows.
 Attempt admit_result(
     const HelmholtzModel& model, const CompiledSystem& compiled, EquilibriumResult result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, bool supplied = false
 ) {
     Attempt outcome;
     outcome.convergence = result.convergence;
@@ -755,7 +712,8 @@ Attempt admit_result(
         outcome.result = std::move(result);
         return outcome;
     }
-    const double recomputed = compiled.classified_residual_norm(result.coordinates);
+    const double recomputed = supplied ? compiled.classified_residual_norm(result.coordinates)
+        : maximum_abs(result.classified_residuals);
     if (!(result.requested_tolerance_met.value_or(false)) || !(recomputed <= compiled.problem.row_tolerance)) {
         outcome.stop = ContinuationStop::stalled;
         outcome.message = "available state misses the caller row tolerance: " + result.message;
@@ -855,19 +813,19 @@ void coalesced(Attempt& attempt, const CompiledSystem& compiled, std::pair<std::
 }
 
 // J dy/ds = -dF/ds of an envelope cell, dF/ds = -1 on its condition row (the last row).
-std::vector<double> envelope_tangent(const CompiledSystem& compiled, const std::vector<double>& y) {
+std::vector<double> envelope_tangent(const CompiledSystem& compiled, const PhasePoint& prepared) {
     std::vector<double> rows(compiled.rows.size(), 0.0);
     rows.back() = -1.0;
-    return solve_implicit(compiled, y, rows);
+    return solve_implicit(compiled, prepared, rows);
 }
 
 // Value and d/ds of ln T, ln P, ln rho of phases 0 and 1, then ln K_i = ln x_i^inc - ln x_i^feed on the
 // shared support, from the geometry owner's first Taylor coefficient along the tangent.
-std::vector<std::array<double, 2>> envelope_coordinates(const CompiledSystem& compiled, const std::vector<double>& y,
+std::vector<std::array<double, 2>> envelope_coordinates(const CompiledSystem& compiled, const PhasePoint& prepared,
                                                         const std::vector<double>& tangent) {
-    const auto prepared = compiled.prepare(y);
+    const auto& y = prepared.point;
     const auto series = compiled.row_series(prepared, {y, tangent},
-        std::vector<double>(2 + compiled.n_feed.size() + compiled.model->active_parameters().size(), 0.0), 1);
+        std::vector<double>(compiled.control_width(), 0.0), 1);
     std::vector<std::array<double, 2>> result{{std::log(series.temperature[0]), series.temperature[1] / series.temperature[0]},
                                               {std::log(series.pressure[0]), series.pressure[1] / series.pressure[0]}};
     for (const auto& phase : series.phase) {
@@ -942,10 +900,11 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     bool passed = false, closing = false;
     std::size_t local_retries = 0;
     while (result.accepted_steps < options.max_steps) {
-        auto tangent = envelope_tangent(current, y);
+        const auto at = current.prepare(y);
+        auto tangent = envelope_tangent(current, at);
         if (tangent.empty())
             return finish(std::move(result), ContinuationStop::singular_jacobian, "envelope tangent is unavailable at the accepted state");
-        auto c = envelope_coordinates(current, y, tangent);
+        auto c = envelope_coordinates(current, at, tangent);
         // R4: orientation by continuity of the dimensionless (d ln T, d ln P, d ln K)/ds.
         std::vector<double> heading = {c[0][1], c[1][1]};
         for (std::size_t k = 4; k < c.size(); ++k) heading.push_back(c[k][1]);
@@ -1016,9 +975,10 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
                 attempt.message = "requested ln K sign change produced no identity swap";
             } else if (straddle) {
                 // Both endpoint tangents in the same s; cubic Hermite values at s = 0 seed the critical cell.
-                const auto far = envelope_tangent(compiled, attempt.result->coordinates);
+                const auto passed_at = compiled.prepare(attempt.result->coordinates);
+                const auto far = envelope_tangent(compiled, passed_at);
                 if (far.empty()) return finish(std::move(result), ContinuationStop::singular_jacobian, "passage tangent unavailable");
-                const auto there = envelope_coordinates(compiled, attempt.result->coordinates, far);
+                const auto there = envelope_coordinates(compiled, passed_at, far);
                 const std::array<double, 3> seed{hermite(s, s_try, c[0], there[0]), hermite(s, s_try, c[1], there[1]),
                     0.5 * (hermite(s, s_try, c[2], there[2]) + hermite(s, s_try, c[3], there[3]))};
                 result.critical_seeds.push_back({seed.begin(), seed.end()});
@@ -1159,7 +1119,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
                 return finish(std::move(result), ContinuationStop::invalid_path, "supplied start result layout differs");
             }
             admitted = admit_result(model, start, parameter_path
-                ? solve_equilibrium_from_coordinates(model, request.start_problem, supplied.coordinates) : supplied, anchors, true, initial);
+                ? solve_equilibrium_from_coordinates(model, request.start_problem, supplied.coordinates) : supplied, anchors, true, initial,
+                !parameter_path);
         } else {
             admitted = admit_result(model, start,
                 solve_equilibrium_from_coordinates(model, request.start_problem, boundary_start(start)),
@@ -1195,7 +1156,7 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
         Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&] {
-            return sensitivity(current, y_current, path.lever(2 + model.parameters().component_count() + model.active_parameters().size()));
+            return sensitivity(current, y_current, path.lever(current));
         }, q_try - q, anchors, attempt_scope);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);

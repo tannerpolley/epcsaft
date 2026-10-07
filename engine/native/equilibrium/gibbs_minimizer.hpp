@@ -34,7 +34,10 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
+// It owns the chart reading: normalized phase compositions, phase amounts and ln eta.
 struct TopologyCheck final {
+    std::vector<std::vector<double>> compositions;
+    std::vector<double> amounts, log_packing;
     TopologyEvent event = TopologyEvent::None;
     std::optional<std::size_t> phase;
     std::optional<std::pair<std::size_t, std::size_t>> pair;
@@ -154,9 +157,10 @@ ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
+// J dy = -F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
-    const std::vector<double>& point,
+    const PhasePoint& prepared,
     const std::vector<double>& parameter_rows
 );
 
