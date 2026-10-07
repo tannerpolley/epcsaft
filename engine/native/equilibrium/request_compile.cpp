@@ -424,6 +424,33 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
         }
 }
 
+// Critical and envelope cells: one condition, neutral, nonreactive, T and P free (issue #224 B).
+void admit_conditions(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    if (!p.critical && !p.envelope) return;
+    if ((p.critical && p.envelope) || compiled.has_caloric_condition() || !p.temperature.free || !p.pressure.free
+        || p.discovery || compiled.has_ions || compiled.has_reaction || p.source_reference)
+        throw std::invalid_argument("critical and envelope cells require one neutral nonreactive condition with free T and P");
+    const auto& support = p.phases[0].support;
+    if (p.critical) {
+        const auto& c = *p.critical;
+        if (p.phases.size() != 1 || !p.phases[0].is_free() || support.size() != compiled.n_feed.size()
+            || !(std::isfinite(c.density_guess_mol_per_m3) && c.density_guess_mol_per_m3 > 0.0)
+            || (!c.mode_guess.empty() && c.mode_guess.size() != support.size())
+            || std::any_of(compiled.feed_composition.begin(), compiled.feed_composition.end(), [](double z) { return !(z > 0.0); }))
+            throw std::invalid_argument("critical cell requires one free phase on a positive full support and a density seed");
+        return;
+    }
+    const auto& e = *p.envelope;
+    if (p.phases.size() != 2 || compiled.pinned_count != 1 || !std::isfinite(e.target) || p.phases[1].support != support
+        || std::none_of(p.phases.begin(), p.phases.end(), [](const PhaseSpec& x) { return x.is_pinned() && x.amount.fraction == 0.0; })
+        || (e.kind == EnvelopeCoordinate::LogK && std::find(support.begin(), support.end(), e.component) == support.end()))
+        throw std::invalid_argument("envelope requires a free feed phase and a zero-pinned incipient phase on one support");
+}
+
+// Caloric, critical and envelope rows: analytic in record_geometry, completed by row_series.
+bool condition_row(RowKind kind) { return kind >= RowKind::Enthalpy; }
+
 template<class Scalar>
 IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::size_t phase,
     const Scalar& T, const Scalar& volume, const std::vector<Scalar>& x, double center) {
@@ -442,6 +469,7 @@ IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::siz
 }
 
 std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double);
+std::vector<double> critical_hessian(const CompiledSystem&, const PhasePoint&, const std::vector<double>&);
 
 std::vector<double> pinned_hessian(
     const CompiledSystem& compiled, const PhasePoint& prepared,
@@ -572,6 +600,16 @@ std::vector<double> pinned_hessian(
         const auto caloric = caloric_hessian(compiled, prepared, multipliers.back());
         for (std::size_t i = 0; i < result.size(); ++i) result[i] += caloric[i];
     }
+    if (problem.critical) {
+        const auto critical = critical_hessian(compiled, prepared, multipliers);
+        for (std::size_t i = 0; i < result.size(); ++i) result[i] += critical[i];
+    }
+    // EqID envelope_local_condition: d2 ln q/dq2 = -1/q^2 for q = T or P; a ln K difference is affine.
+    if (problem.envelope && problem.envelope->kind != EnvelopeCoordinate::LogK) {
+        const std::size_t i = problem.envelope->kind == EnvelopeCoordinate::LogTemperature ? temperature_index
+            : compiled.primal_size - 1;
+        result[i * n + i] -= multipliers.back() / (point[i] * point[i]);
+    }
     return result;
 }
 
@@ -641,9 +679,23 @@ CppAD::ADFun<double> record_geometry(
             output.push_back(h ? -weight * T * T : -weight * T);
             output.push_back(h ? -weight * T * volume : AD(0.0));
         }
+        if (problem.critical) {
+            // EqID critical_equations at n = x: D = diag(sqrt(z)) of the moving feed, w = D u, ideal
+            // Q_ii = 1/n_i and F_iii = -1/n_i^2; row_series adds the residual F_nn w and F_nnn[w,w,w].
+            const std::size_t mode = compiled.rows.size() - components - 2;
+            row_values[mode + components] = AD(-1.0);
+            for (std::size_t i = 0; i < components; ++i) {
+                const AD u_i = u[compiled.mode_offset() + i], d = CppAD::sqrt(u[n + 2 + i] / feed_total), w = d * u_i;
+                output.push_back(d);
+                output.push_back(w);
+                row_values[mode + i] = d * w / x[i];
+                row_values[mode + components] += u_i * u_i;
+                row_values[mode + components + 1] -= w * w * w / (x[i] * x[i]);
+            }
+        }
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
             const auto& item = compiled.rows[row];
-            if (item.kind == RowKind::Enthalpy || item.kind == RowKind::Entropy) continue;
+            if (condition_row(item.kind)) continue;
             if (item.kind == RowKind::Moiety) {
                 for (std::size_t species = 0; species < components; ++species)
                     row_values[row] += amount * compiled.B[item.index][species] * x[species];
@@ -697,6 +749,16 @@ CppAD::ADFun<double> record_geometry(
         const bool h = problem.enthalpy_j.has_value();
         row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
             / (feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0)));
+    }
+    if (problem.envelope) {
+        // EqID envelope_local_condition; both phases share one support and the incipient phase is the zero pin.
+        const auto& e = *problem.envelope;
+        const std::size_t pin = problem.phases[0].is_pinned() ? 0 : 1;
+        const auto& support = problem.phases[0].support;
+        const std::size_t local = static_cast<std::size_t>(std::find(support.begin(), support.end(), e.component) - support.begin());
+        row_values.back() = (e.kind == EnvelopeCoordinate::LogTemperature ? CppAD::log(T)
+            : e.kind == EnvelopeCoordinate::LogPressure ? CppAD::log(P)
+            : u[prepared.shape[pin].x[local]] - u[prepared.shape[1 - pin].x[local]]) - e.target;
     }
     output.insert(output.end(), row_values.begin(), row_values.end());
     return CppAD::ADFun<double>(u, output);
@@ -770,6 +832,37 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
             }
     }
     for (auto& v : result) v *= weight;
+    return result;
+}
+
+// Weighted critical-row curvature by exact polarization of second Taylor coefficients from the one row
+// owner: H_ab = c2(e_a + e_b) - c2(e_a) - c2(e_b), c2(d) = sum_r m_r [t^2] r(y + t d) (E4 and E5).
+// ponytail: primal(primal+1)/2 order-2 series, critical cells only; a pullback if C1-C3 cost matters.
+std::vector<double> critical_hessian(const CompiledSystem& compiled, const PhasePoint& prepared,
+                                     const std::vector<double>& multipliers) {
+    const std::size_t n = prepared.point.size(), first = compiled.rows.size() - compiled.mode_count - 2;
+    std::vector<double> result(n * n, 0.0), diagonal(compiled.primal_size, 0.0);
+    if (std::all_of(multipliers.begin() + static_cast<std::ptrdiff_t>(first), multipliers.end(),
+                    [](double m) { return m == 0.0; })) return result;
+    std::vector<std::vector<double>> state(3, std::vector<double>(n, 0.0));
+    state[0] = prepared.point;
+    const std::vector<double> control(2 + compiled.n_feed.size() + compiled.model->active_parameters().size(), 0.0);
+    const auto c2 = [&] {
+        const auto rows = compiled.row_series(prepared, state, control, 2).rows[2];
+        return std::inner_product(rows.begin() + static_cast<std::ptrdiff_t>(first), rows.end(),
+                                  multipliers.begin() + static_cast<std::ptrdiff_t>(first), 0.0);
+    };
+    for (std::size_t a = 0; a < compiled.primal_size; ++a) {
+        state[1][a] = 1.0;
+        diagonal[a] = c2();
+        result[a * n + a] = 2.0 * diagonal[a];
+        for (std::size_t b = 0; b < a; ++b) {
+            state[1][b] = 1.0;
+            result[a * n + b] = result[b * n + a] = c2() - diagonal[a] - diagonal[b];
+            state[1][b] = 0.0;
+        }
+        state[1][a] = 0.0;
+    }
     return result;
 }
 
@@ -1184,7 +1277,8 @@ static CompiledSystem compile_with_basis(
     }
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
-    if (compiled.free_intensive_count != compiled.pinned_count + caloric_count) {
+    admit_conditions(compiled);
+    if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
         if (compiled.free_intensive_count < compiled.pinned_count) {
             std::string phase_name;
@@ -1254,11 +1348,19 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({kind, 0, 0, row_kind_name(kind)});
         compiled.row_names.emplace_back(row_kind_name(kind));
     }
+    // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
+    compiled.mode_count = request.critical ? components : 0;
+    for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.envelope.has_value(); ++i) {
+        const auto kind = request.envelope ? RowKind::EnvelopeCondition : i < components ? RowKind::CriticalMode
+            : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
+        compiled.rows.push_back({kind, 0, i, row_kind_name(kind)});
+        compiled.row_names.emplace_back(row_kind_name(kind));
+    }
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
-    compiled.primal_size += compiled.free_intensive_count;
-    compiled.rows_minus_unknowns = static_cast<long>(compiled.pinned_count + caloric_count)
+    compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
+    compiled.rows_minus_unknowns = static_cast<long>(compiled.pinned_count + compiled.condition_count())
         - static_cast<long>(compiled.free_intensive_count);
     compiled.generic_nullity = 1;
     compiled.feasible = false;
@@ -1376,6 +1478,8 @@ std::vector<double> CompiledSystem::generic_point() const {
         if (shape[phase].amount.has_value()) point[*shape[phase].amount] = 1.0;
         point[shape[phase].volume] = std::log(0.25 + 0.05 * static_cast<double>(phase));
     }
+    for (std::size_t i = 0; i < mode_count; ++i)  // a generic mode direction, aligned with no axis
+        point[mode_offset() + i] = (1.0 + 0.29 * static_cast<double>(i)) / static_cast<double>(mode_count + 1);
     std::size_t offset = primal_size - free_intensive_count;
     if (problem.temperature.free) point[offset++] = problem.temperature.seed_or(300.0);
     if (problem.pressure.free) point[offset++] = problem.pressure.seed_or(1.0e5);
@@ -1461,6 +1565,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
     for (const auto& item : rows) {
         if (item.kind == RowKind::Electro) phase_phi[item.phase] = phi_index++;
     }
+    std::vector<double> series;  // every condition row from one zeroth coefficient
     for (const auto& row : rows) {
         double value = 0.0;
         if (row.kind == RowKind::Chemical) {
@@ -1489,8 +1594,10 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
             value = (value - balance[row.index]) / feed_total;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
-        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
-            value = row_series(prepared, {point}, std::vector<double>(2 + components + model->active_parameters().size()), 0).rows[0].back();
+        } else if (condition_row(row.kind)) {
+            if (series.empty())
+                series = row_series(prepared, {point}, std::vector<double>(2 + components + model->active_parameters().size()), 0).rows[0];
+            value = series[result.values.size()];
         } else {
             for (const std::size_t species : problem.phases[row.phase].support) value += x[row.phase][species];
             value -= 1.0;
@@ -1567,6 +1674,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
     auto at = [&](std::size_t row, std::size_t column) -> double& {
         return result[row * n + column];
     };
+    std::vector<std::vector<double>> columns;  // one first coefficient per coordinate serves every condition row
     for (std::size_t row_index = 0; row_index < rows.size(); ++row_index) {
         const auto& row = rows[row_index];
         if (row.kind == RowKind::Chemical) {
@@ -1632,14 +1740,15 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                 at(row_index, shape[row.phase].x[local]) =
                     z[problem.phases[row.phase].support[local]]
                     * compositions[row.phase][problem.phases[row.phase].support[local]];
-        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
+        } else if (condition_row(row.kind)) {
             std::vector<std::vector<double>> state = {point, std::vector<double>(n, 0.0)};
             const std::vector<double> control(2 + n_feed.size() + model->active_parameters().size(), 0.0);
-            for (std::size_t c = 0; c < n; ++c) {
+            for (std::size_t c = columns.size(); c < n; ++c) {
                 state[1][c] = 1.0;
-                at(row_index, c) = row_series(prepared, state, control, 1).rows[1].back();
+                columns.push_back(row_series(prepared, state, control, 1).rows[1]);
                 state[1][c] = 0.0;
             }
+            for (std::size_t c = 0; c < n; ++c) at(row_index, c) = columns[c][row_index];
         } else {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
                 at(row_index, shape[row.phase].x[local]) =
@@ -1829,7 +1938,7 @@ RowSeries CompiledSystem::row_series(
     if (state.size() != order + 1 ||
         (control.size() != width && control.size() != width + 4 * problem.reactions.size() &&
          control.size() != width + 4 * problem.reactions.size() + 2) ||
-        order > 3)
+        order > (problem.critical ? 2u : 3u))  // a third critical coefficient needs E6
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
@@ -1864,7 +1973,7 @@ RowSeries CompiledSystem::row_series(
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
-    const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0);
+    const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (problem.critical ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
         std::vector<double> input(n + width + (has_caloric_condition() ? 2 : 0), 0.0);
@@ -2014,6 +2123,38 @@ RowSeries CompiledSystem::row_series(
                         + output[j][offset + 1] * series.gradient[k - j][0]
                         + output[j][offset + 2] * series.gradient[k - j][1];
                 }
+        }
+        if (problem.critical) {
+            // Residual parts of EqID critical_equations through order 2: d_i [F_nn(p) w]_i (E2-E4) and
+            // F_nnn(p)[w,w,w] (E3-E5) along p(t), w(t), d(t); a zero direction contributes exactly zero.
+            const std::size_t offset = phase * stride + width + 2, mode = rows.size() - components - 2;
+            std::vector<std::vector<double>> d(order + 1, std::vector<double>(components)),
+                w(order + 1, std::vector<double>(width, 0.0));
+            for (std::size_t k = 0; k <= order; ++k)
+                for (std::size_t i = 0; i < components; ++i) {
+                    d[k][i] = output[k][offset + 2 * i];
+                    w[k][2 + i] = output[k][offset + 2 * i + 1];
+                }
+            const auto& p = series.point;
+            const auto F = [&](const std::vector<std::vector<double>>& v, std::optional<std::size_t> j = std::nullopt) {
+                const bool zero = std::any_of(v.begin(), v.end(), [](const std::vector<double>& a) {
+                    return std::all_of(a.begin(), a.end(), [](double x) { return x == 0.0; }); });
+                return zero ? 0.0 : contraction(v, j);
+            };
+            for (std::size_t i = 0; i < components; ++i) {
+                std::vector<double> g(order + 1, 0.0);
+                for (std::size_t k = 0; k <= order; ++k)
+                    for (std::size_t j = 0; j < width; ++j) g[k] += derivative.hessian[(2 + i) * width + j] * w[k][j];
+                if (order > 0) g[1] += F({p[1], w[0]}, 2 + i);
+                if (order > 1) g[2] += F({p[1], w[1]}, 2 + i) + F({p[2], w[0]}, 2 + i) + 0.5 * F({p[1], p[1], w[0]}, 2 + i);
+                for (std::size_t k = 0; k <= order; ++k)
+                    for (std::size_t j = 0; j <= k; ++j) result.rows[k][mode + i] += d[j][i] * g[k - j];
+            }
+            std::array<double, 3> c{F({w[0], w[0], w[0]}), 0.0, 0.0};
+            if (order > 0) c[1] = 3.0 * F({w[0], w[0], w[1]}) + F({w[0], w[0], w[0], p[1]});
+            if (order > 1) c[2] = 3.0 * F({w[0], w[0], w[2]}) + 3.0 * F({w[0], w[1], w[1]}) + 3.0 * F({w[0], w[0], w[1], p[1]})
+                + F({w[0], w[0], w[0], p[2]}) + 0.5 * F({w[0], w[0], w[0], p[1], p[1]});
+            for (std::size_t k = 0; k <= order; ++k) result.rows[k][mode + components + 1] += c[k];
         }
         for (std::size_t k = 0; k <= order; ++k) {
             for (std::size_t row = 0; row < rows.size(); ++row) {

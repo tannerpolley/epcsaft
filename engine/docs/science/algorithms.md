@@ -6,7 +6,8 @@ These methods consume the [equation definitions](../equations.md),
 Algorithm IDs below are stable references. Current implementation and required
 numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT/issues).
 No section claims that all required actions currently exist. The implementation
-plan owns current versus deferred scope. PH/PS uses the neutral caloric specifications below; UV remains future work. The
+plan owns current versus deferred scope. PH/PS uses the neutral caloric specifications below; neutral critical-equation
+candidates and phase envelopes use ALG-EQUILIBRIUM; UV remains future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
 admitted ionic/reacting cases, supported by the independent delivered review
@@ -789,8 +790,9 @@ coefficient along the lever at the fixed state, the directional series of
 ALG-ACTIONS, so source references carry their T/P chains), corrects with the same Ipopt driver seeded by the
 full predicted coordinate vector (a predicted free amount below zero is
 projected onto its bound, the disappearance boundary the bound-constrained
-corrector then reports; every other coordinate outside its domain is a
-rejected left-domain step), and accepts a state only when the driver
+corrector then reports; a log mole fraction above zero is projected onto its
+corrector bound zero; every other coordinate outside its
+domain is a rejected left-domain step), and accepts a state only when the driver
 accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
 shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
@@ -810,6 +812,80 @@ A partial prefix is never target success, a step or budget limit
 is never a topology event, and every attempt is retained by the existing Core
 trace scopes. Reusing only an initial seed is not continuation. The result is
 a declared local branch, not a discovery or global-stability certificate.
+
+### Critical-equation candidates and phase envelopes
+
+A critical cell (EqID: `critical_equations`, issue #224 B) declares one free
+neutral phase on a positive full support, free T and P, a density seed and an
+optional mode seed; reactions, ions, source references, discovery and caloric
+rows are refused. Its unknowns add u between the phase block and the free
+intensives: f = 2, k = 0, e = 2. It is a feasibility cell of the one driver
+with constant objective. The geometry tape carries D of the moving feed, w = D u
+and the ideal parts; the row owner adds d_i [F_nn(p) w]_i and F_nnn(p)[w,w,w]
+along the path through Taylor order two (E2–E5). The weighted curvature of the
+critical rows is the exact polarization H_ab = c2(e_a + e_b) − c2(e_a) − c2(e_b)
+of their second Taylor coefficients, confined to critical cells; there is no
+dense tensor or second row evaluator. The seed takes T and density from the
+declaration, P from the state there and, without a mode seed, the lowest
+eigenvector of M read from the mode rows' u columns.
+
+Admission replaces the positive-slope density-root rule only for a critical
+cell (a pure-fluid root has P_rho = 0; a mixture root generally does not):
+the augmented Jacobian must have full rank, and
+M (again the u-column block) must have one lowest eigenvalue within
+|lambda| <= ||M u||/||u|| + C eps ||M|| at the solved point, above no resolved
+negative one (the second eigenvalue exceeds that band). The record keeps the
+spectrum, mode, cubic value, band, rank, condition estimate and a backward error
+either way. The result is a critical-equation candidate, not a stability
+certificate. Its first solved-state actions use E4; second and third orders,
+which need E5 and E6 of the critical rows, are refused as
+`energy_order_unavailable` with central values kept. A one-species candidate's
+isobaric heat capacities divide by its zero P_rho and are unavailable
+(`pressure_singular`); a mixture candidate's follow the ordinary pressure-slope
+admission.
+
+An envelope (EqID: `envelope_local_condition`) declares a free feed phase and a
+zero-pinned incipient phase on one support, free T and P and one selected
+condition: k = 1, f = 2, e = 1, raw T/P chart (Michelsen 1980, pp. 2–4). Its
+continuation (`continue_equilibrium` with an envelope start problem) takes s, the
+condition target, as the path parameter and first increases the declared
+coordinate. At each accepted state the tangent solves J dy/ds = e (the condition
+row has dF/ds = −1); the geometry owner's first Taylor coefficient along it gives
+d ln T, d ln P, d ln rho_p and d ln K_i per ds. The largest of the dimensionless
+|d ln T|, |d ln P| and |d ln K_i| selects the condition; a switch rescales the same
+tangent and restarts s at the current coordinate value, held per accepted state
+so a rejected attempt keeps its coordinate. The direction keeps the sign of the
+dimensionless tangent (d ln T, d ln P, d ln K)/ds from the previous step, not the
+raw chart product. The Euler predictor step is the caller's maximum log step,
+at most 0.9 W / max_p |d ln rho_p/ds| with W = `DENSITY_ANCHOR_LOG_WINDOW` (a
+larger fraction lets the predictor's curvature leave the anchored window), and
+the same driver corrects with the carried anchors. A rejected step halves from
+the attempted step down to the caller's minimum step and retry allowance.
+
+A mixture passes its critical point once, by a straddle in ln K. When the selected
+ln K_k is decreasing in magnitude (s times the step sign is negative), an ordinary
+step lands at most at the same-sign threshold; from |s| <= threshold the straddle
+requests -s, never s = 0. That attempt already expects the feed on the other
+density branch: the phase kinds and the feed and incipient anchors are swapped.
+It passes only with two distinct accepted states whose pair identities swap.
+Both endpoint tangents in the same s give cubic Hermite values of ln T, ln P
+and both ln rho at s = 0; their mean log density and the common-volume
+displacement u = D^-1 dn, dn = V*(rho_inc x_inc - rho_feed x_feed), seed the
+critical cell solved by the same driver (retained in `critical_points`, seeds in
+`critical_seeds`). After the passage an accepted step that brackets the initial
+pressure is followed by a same-driver corrector at that pressure on the other
+branch: closure. An identity swap without a requested straddle is terminal
+coalescence, and a refused straddle, closing corrector, passage tangent or
+candidate ends the trace as a diagnosed prefix.
+
+A pure fluid has ln K = 0 and no straddle. Its saturation trace bounds each
+predictor step by (3/8) g/|dg/ds|, g = |ln rho_L - ln rho_V|, and stops at the
+first accepted state with g <= 4 W: below about 2 W the anchored window refuses
+both roots. The critical cell seeded there (T, P, mean log density and the
+displacement mode) ends the trace as `critical_endpoint`, with the last
+distinct saturation state retained; it is not closure on another branch.
+Liquid–liquid, reactive, charged, three-phase and disconnected envelopes,
+critical stability and E6 remain outside this method.
 
 ## ALG-STABILITY
 
@@ -1224,7 +1300,7 @@ three) with the model's residual gradient coefficients G_1 = H z_1,
 G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 + D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
 (E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
-owner). The central Jacobian is equilibrated once to A = R J C with exact
+owner; it also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised; each
 coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
 accumulated in double-double (FMA TwoProduct and TwoSum, the compensated dot

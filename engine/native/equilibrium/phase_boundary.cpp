@@ -7,7 +7,9 @@
 #include <Eigen/Dense>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
@@ -323,6 +325,30 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
     const auto phase_offsets = compiled.phase_offsets();
+    if (compiled.problem.critical) {
+        // The declared T and density at the feed, P there, and u declared or the lowest mode of M (the
+        // mode rows' u columns at this point).
+        const auto& z = compiled.feed_composition;
+        const double t = seed_temperature(compiled), rho = compiled.problem.critical->density_guess_mol_per_m3;
+        const std::size_t c = z.size(), mode = compiled.mode_offset();
+        seed_composition(compiled, 0, z, point, phase_offsets[0]);
+        point[phase_offsets[0] + c] = compiled.feed_total;
+        point[phase_offsets[0] + c + 1] = std::log(compiled.model->packing_fraction_coefficient(t, z) * rho);
+        point[compiled.primal_size - 2] = t;
+        point[compiled.primal_size - 1] = compiled.model->state(t, rho, z).pressure;
+        auto u = compiled.problem.critical->mode_guess;
+        if (u.empty()) {
+            const auto jacobian = compiled.jacobian(point);
+            Eigen::MatrixXd M(c, c);
+            for (std::size_t i = 0; i < c; ++i)
+                for (std::size_t j = 0; j < c; ++j) M(i, j) = jacobian[(compiled.rows.size() - c - 2 + i) * point.size() + mode + j];
+            const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(M);
+            u.assign(eigen.eigenvectors().col(0).data(), eigen.eigenvectors().col(0).data() + c);
+        }
+        const double norm = std::sqrt(std::inner_product(u.begin(), u.end(), u.begin(), 0.0));
+        for (std::size_t i = 0; i < c; ++i) point[mode + i] = u[i] / norm;
+        return point;
+    }
     if (compiled.has_caloric_condition()) {
         auto seed_problem = compiled.problem;
         seed_problem.enthalpy_j.reset();
@@ -565,14 +591,16 @@ struct Path final {
 
 // A predicted free amount below zero is projected onto its bound rather than rejected: the
 // amount bound is the disappearance boundary itself, and only the bound-constrained corrector
-// can report the typed event there (counted in `projected`). Every other coordinate outside
-// its domain is rejected.
+// can report the typed event there (counted in `projected`). A log mole fraction above zero is
+// projected onto its corrector bound zero. Every other coordinate outside its domain is rejected.
 bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::size_t& projected) {
     if (!std::all_of(y.begin(), y.end(), [](double v) { return std::isfinite(v); })) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled.problem.phases) {
-        for (std::size_t i = 0; i < phase.support.size(); ++i, ++offset)
-            if (y[offset] < std::log(policy::STABILITY_COMPOSITION_FLOOR.value) || y[offset] > 0.0) return false;
+        for (std::size_t i = 0; i < phase.support.size(); ++i, ++offset) {
+            if (y[offset] < std::log(policy::STABILITY_COMPOSITION_FLOOR.value)) return false;
+            if (y[offset] > 0.0) { y[offset] = 0.0; ++projected; }
+        }
         if (phase.amount.kind == AmountKind::Free) {
             if (y[offset] < 0.0) { y[offset] = 0.0; ++projected; }
             ++offset;
@@ -758,7 +786,7 @@ Attempt admit_result(
 
 ContinuationResult finish(ContinuationResult result, ContinuationStop stop, std::string message) {
     result.stop = stop;
-    result.success = stop == ContinuationStop::reached_target;
+    result.success = stop == ContinuationStop::reached_target || stop == ContinuationStop::critical_endpoint;
     result.message = std::string(continuation_stop_name(stop)) + (message.empty() ? "" : ": " + message);
     return result;
 }
@@ -773,6 +801,267 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
         result.event_phase = attempt.result->topology_phase;
         result.event_pair = attempt.result->topology_pair;
     }
+}
+
+// One predictor-corrector attempt shared by the straight path and the envelope: generated layout and
+// rank, the Euler predictor over `delta` along the implicit tangent at the accepted state, the admitted
+// domain and the same-driver corrector with carried anchors.
+Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
+                const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
+                const std::function<std::vector<double>()>& tangent_at, double delta,
+                const std::vector<double>& anchors, core::Scope& scope) {
+    Attempt attempt;
+    attempt.terminal = true;
+    std::vector<double> tangent;
+    if (const std::string generated = layout_difference(start, compiled); !generated.empty()) {
+        attempt.stop = ContinuationStop::invalid_path;
+        attempt.message = generated;
+    } else if (!compiled.feasible) {
+        // Same layout, generic-point rank loss at the generated problem.
+        attempt.stop = ContinuationStop::singular_jacobian;
+        attempt.message = "generated problem loses generic rank (nullity " + std::to_string(compiled.generic_nullity) + ")";
+    } else if ((tangent = tangent_at()).empty()) {
+        // A state-local tangent cannot change by halving the step: singular is terminal
+        // (owner decision 2026-09-16), the branch end at that accepted state.
+        const auto jacobian = current.jacobian(y);
+        const bool numeric = std::all_of(jacobian.begin(), jacobian.end(), [](double v) { return std::isfinite(v); });
+        const auto info = inspect_sensitivity(current, y, {});
+        attempt.stop = numeric ? ContinuationStop::singular_jacobian : ContinuationStop::nonfinite;
+        attempt.message = numeric
+            ? "implicit tangent is unavailable at the accepted state (rank " + std::to_string(info.rank) + " of "
+                + std::to_string(y.size()) + ", condition estimate " + std::to_string(info.condition_estimate) + ")"
+            : "nonfinite operands in the implicit tangent";
+    } else {
+        std::vector<double> predicted = y;
+        for (std::size_t i = 0; i < predicted.size(); ++i) predicted[i] += delta * tangent[i];
+        std::size_t projected = 0;
+        const bool inside = inside_domain(compiled, predicted, projected);
+        scope.probe("predictor_projected", static_cast<double>(projected));
+        if (inside) return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted),
+                                        anchors, false, scope);
+        attempt.terminal = false;
+        attempt.stop = ContinuationStop::left_domain;
+        attempt.message = "predicted coordinates leave the admitted domain";
+    }
+    return attempt;
+}
+
+// An identity swap between accepted states without a requested ln K sign change is the pair's coalescence.
+void coalesced(Attempt& attempt, const CompiledSystem& compiled, std::pair<std::size_t, std::size_t> pair) {
+    attempt.accepted = false;
+    attempt.terminal = true;
+    attempt.stop = ContinuationStop::phases_coalesced;
+    attempt.result->topology_event = TopologyEvent::PhasesCoalesced;
+    attempt.result->topology_pair = pair;
+    attempt.message = "phases " + compiled.problem.phases[pair.first].name + " and " + compiled.problem.phases[pair.second].name
+        + " swapped identity between accepted states: passage through a critical point";
+}
+
+// J dy/ds = -dF/ds of an envelope cell, dF/ds = -1 on its condition row (the last row).
+std::vector<double> envelope_tangent(const CompiledSystem& compiled, const std::vector<double>& y) {
+    std::vector<double> rows(compiled.rows.size(), 0.0);
+    rows.back() = -1.0;
+    return solve_implicit(compiled, y, rows);
+}
+
+// Value and d/ds of ln T, ln P, ln rho of phases 0 and 1, then ln K_i = ln x_i^inc - ln x_i^feed on the
+// shared support, from the geometry owner's first Taylor coefficient along the tangent.
+std::vector<std::array<double, 2>> envelope_coordinates(const CompiledSystem& compiled, const std::vector<double>& y,
+                                                        const std::vector<double>& tangent) {
+    const auto prepared = compiled.prepare(y);
+    const auto series = compiled.row_series(prepared, {y, tangent},
+        std::vector<double>(2 + compiled.n_feed.size() + compiled.model->active_parameters().size(), 0.0), 1);
+    std::vector<std::array<double, 2>> result{{std::log(series.temperature[0]), series.temperature[1] / series.temperature[0]},
+                                              {std::log(series.pressure[0]), series.pressure[1] / series.pressure[0]}};
+    for (const auto& phase : series.phase) {
+        double n0 = 0.0, n1 = 0.0;  // rho = sum(x)/V on the unnormalized log-composition chart
+        for (std::size_t i = 0; i < compiled.n_feed.size(); ++i) { n0 += phase.point[0][2 + i]; n1 += phase.point[1][2 + i]; }
+        result.push_back({std::log(n0 / phase.point[0][1]), n1 / n0 - phase.point[1][1] / phase.point[0][1]});
+    }
+    const std::size_t pin = compiled.problem.phases[0].is_pinned() ? 0 : 1;  // the zero-pinned phase
+    const auto &pinned = prepared.shape[pin].x, &feed = prepared.shape[1 - pin].x;
+    for (std::size_t i = 0; i < feed.size(); ++i)
+        result.push_back({y[pinned[i]] - y[feed[i]], tangent[pinned[i]] - tangent[feed[i]]});
+    return result;
+}
+
+// Cubic Hermite value at s = 0 from (value, d/ds) at s0 and s1 in one coordinate.
+double hermite(double s0, double s1, const std::array<double, 2>& a, const std::array<double, 2>& b) {
+    const double h = s1 - s0, t = -s0 / h;
+    return (2 * t * t * t - 3 * t * t + 1) * a[0] + (t * t * t - 2 * t * t + t) * h * a[1]
+        + (-2 * t * t * t + 3 * t * t) * b[0] + (t * t * t - t * t) * h * b[1];
+}
+
+// The feed's critical cell seeded at (ln T, ln P, ln rho*) with u = D^-1 dn of the common-volume displacement
+// dn = V*(rho_inc x_inc - rho_feed x_feed) at `state` (V* scales out; orientation kept).
+EquilibriumResult critical_candidate(const HelmholtzModel& model, const CompiledSystem& compiled,
+                                     const EquilibriumResult& state, const std::array<double, 3>& seed) {
+    const std::size_t c = compiled.n_feed.size(), pin = compiled.problem.phases[0].is_pinned() ? 0 : 1;
+    EquilibriumProblem cell = compiled.problem;
+    cell.envelope.reset();
+    cell.phases = {compiled.problem.phases[1 - pin]};
+    cell.temperature = FreeValue::variable(std::exp(seed[0]));
+    cell.pressure = FreeValue::variable(std::exp(seed[1]));
+    cell.critical = CriticalDeclaration{std::exp(seed[2]), std::vector<double>(c)};
+    for (std::size_t i = 0; i < c; ++i)
+        cell.critical->mode_guess[i] = (state.molar_densities[pin] * state.mole_fractions[pin * c + i]
+            - state.molar_densities[1 - pin] * state.mole_fractions[(1 - pin) * c + i])
+            / std::sqrt(compiled.feed_composition[i]);
+    return solve_equilibrium(model, cell);
+}
+
+// Envelope mode of continue_equilibrium (ALG-EQUILIBRIUM; Michelsen 1980 local parametrization in the raw T/P
+// chart): the condition target s is the path parameter and the trace first increases the declared
+// coordinate. A mixture closes at the initial pressure on the other branch after one accepted ln K straddle;
+// a pure fluid stops at its separately solved critical candidate. Anything else is a diagnosed prefix.
+ContinuationResult trace_envelope(const HelmholtzModel& model, const ContinuationRequest& request) {
+    core::Scope scope("equilibrium_envelope");
+    ContinuationResult result;
+    const auto& options = request.options;
+    const double window = policy::DENSITY_ANCHOR_LOG_WINDOW.value, straddle_band = options.envelope_straddle;
+    // R1 (issue #224): a pure trace ends within 4 W of coalescence; below about 2 W the window refuses both roots.
+    const double coalescence_gap = 4.0 * window;
+    if (!(options.envelope_max_log_step > 0.0) || !(straddle_band > 0.0)
+        || !(straddle_band + straddle_band <= options.envelope_max_log_step)  // the straddle jump fits one step
+        || !(options.minimum_step > 0.0) || options.max_steps == 0)
+        throw std::invalid_argument("invalid envelope options");
+    EquilibriumProblem base = request.start_problem;
+    const CompiledSystem start = compile_problem(model, base);
+    if (!start.feasible) return finish(std::move(result), ContinuationStop::invalid_path, "envelope cell is not full rank");
+    const bool pure = start.n_feed.size() == 1;
+    auto admitted = admit_result(model, start, solve_equilibrium_from_coordinates(model, base,
+        request.start_result ? request.start_result->coordinates : boundary_start(start)), {}, true, scope);
+    if (!admitted.accepted) {
+        reject(result, admitted, base.envelope->target);
+        return finish(std::move(result), ContinuationStop::initial_failure, admitted.message);
+    }
+    CompiledSystem current = start;
+    std::vector<double> y = admitted.result->coordinates, anchors = admitted.result->molar_densities, motion;
+    const double closing_pressure = std::log(admitted.result->pressure[0]);
+    result.states.push_back(std::move(*admitted.result));
+    result.path_values.push_back(base.envelope->target);
+    result.conditions.push_back(*base.envelope);
+    double step = options.envelope_max_log_step;
+    bool passed = false, closing = false;
+    std::size_t local_retries = 0;
+    while (result.accepted_steps < options.max_steps) {
+        auto tangent = envelope_tangent(current, y);
+        if (tangent.empty())
+            return finish(std::move(result), ContinuationStop::singular_jacobian, "envelope tangent is unavailable at the accepted state");
+        auto c = envelope_coordinates(current, y, tangent);
+        // R4: orientation by continuity of the dimensionless (d ln T, d ln P, d ln K)/ds.
+        std::vector<double> heading = {c[0][1], c[1][1]};
+        for (std::size_t k = 4; k < c.size(); ++k) heading.push_back(c[k][1]);
+        if (motion.empty()) motion = heading;
+        double sign = std::inner_product(heading.begin(), heading.end(), motion.begin(), 0.0) < 0.0 ? -1.0 : 1.0;
+        for (double& v : heading) v *= sign;
+        // The largest dimensionless tangent component selects the coordinate (Michelsen 1980, Eq. 18); the
+        // closing corrector holds ln P. A switch rescales the same tangent and restarts s at the current value.
+        std::size_t selected = 1;
+        for (std::size_t k = 0; !closing && k < c.size(); ++k)
+            if (k != 2 && k != 3 && std::abs(c[k][1]) > std::abs(c[selected][1])) selected = k;
+        // The accepted state's own condition: a rejected attempt leaves it, and the tangent, unchanged.
+        EnvelopeCondition active = *current.problem.envelope;
+        const EnvelopeCondition condition{selected == 0 ? EnvelopeCoordinate::LogTemperature
+            : selected == 1 ? EnvelopeCoordinate::LogPressure : EnvelopeCoordinate::LogK,
+            selected < 4 ? 0 : current.problem.phases[0].support[selected - 4], c[selected][0]};
+        if (condition.kind != active.kind || condition.component != active.component) {
+            const double slope = c[selected][1];
+            for (double& v : tangent) v /= slope;
+            for (auto& v : c) v[1] /= slope;
+            sign *= slope < 0.0 ? -1.0 : 1.0;
+            active = condition;
+            scope.probe("condition_switch", static_cast<double>(selected));
+        }
+        const double s = active.target, gap = c[2][0] - c[3][0];
+        if (pure && std::abs(gap) <= coalescence_gap) {
+            // R1: the first accepted state within 4 W of coalescence ends the saturation trace at the separately
+            // solved critical candidate seeded there; the last distinct saturation state is retained.
+            const std::array<double, 3> seed{c[0][0], c[1][0], 0.5 * (c[2][0] + c[3][0])};
+            result.critical_seeds.push_back({seed.begin(), seed.end()});
+            auto candidate = critical_candidate(model, current, result.states.back(), seed);
+            if (!candidate.success) return finish(std::move(result), ContinuationStop::stalled, "pure critical candidate: " + candidate.message);
+            result.critical_points.push_back(std::move(candidate));
+            return finish(std::move(result), ContinuationStop::critical_endpoint, "last distinct saturation state retained");
+        }
+        // R3: a small ln K decreasing in magnitude (s sign < 0) is approached at the same-sign threshold; only the
+        // straddle to -s crosses zero, and s = 0 is never a target.
+        const bool toward_zero = active.kind == EnvelopeCoordinate::LogK && !passed && s * sign < 0.0;
+        const bool straddle = toward_zero && std::abs(s) <= straddle_band;
+        double s_try = closing ? closing_pressure : -s;
+        if (!closing && !straddle) {
+            // Predictor inside the anchored density window (0.9 W keeps its curvature from refusing the
+            // anchored root), and for a pure fluid within R1's gap bound.
+            double delta = std::min(step, 0.9 * window / std::max(std::abs(c[2][1]), std::abs(c[3][1])));
+            if (pure) delta = std::min(delta, 0.375 * std::abs(gap / (c[2][1] - c[3][1])));
+            s_try = s + sign * delta;
+            if (toward_zero && (std::abs(s_try) < straddle_band || s_try * s <= 0.0)) s_try = std::copysign(straddle_band, s);
+        }
+        auto problem = base;
+        problem.envelope = active;
+        problem.envelope->target = s_try;
+        auto expected = anchors;
+        if (straddle) {  // R2: the attempt itself expects the feed on the other density branch
+            for (auto& phase : problem.phases) phase.kind = phase.kind == PhaseKind::Liquid ? PhaseKind::Vapor : PhaseKind::Liquid;
+            std::swap(expected[0], expected[1]);
+        }
+        ++result.attempts;
+        core::Scope attempt_scope("equilibrium_envelope_attempt");
+        attempt_scope.probe("path_value", s_try);
+        CompiledSystem compiled = compile_problem(model, problem);
+        auto attempt = advance(model, start, current, y, compiled, problem, [&] { return tangent; }, s_try - s, expected, attempt_scope);
+        if (attempt.accepted) {
+            const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
+            if (pair && !straddle) coalesced(attempt, compiled, *pair);
+            else if (straddle && !pair) {
+                attempt.accepted = false;
+                attempt.stop = ContinuationStop::stalled;
+                attempt.message = "requested ln K sign change produced no identity swap";
+            } else if (straddle) {
+                // Both endpoint tangents in the same s; cubic Hermite values at s = 0 seed the critical cell.
+                const auto far = envelope_tangent(compiled, attempt.result->coordinates);
+                if (far.empty()) return finish(std::move(result), ContinuationStop::singular_jacobian, "passage tangent unavailable");
+                const auto there = envelope_coordinates(compiled, attempt.result->coordinates, far);
+                const std::array<double, 3> seed{hermite(s, s_try, c[0], there[0]), hermite(s, s_try, c[1], there[1]),
+                    0.5 * (hermite(s, s_try, c[2], there[2]) + hermite(s, s_try, c[3], there[3]))};
+                result.critical_seeds.push_back({seed.begin(), seed.end()});
+                auto candidate = critical_candidate(model, compiled, *attempt.result, seed);
+                if (!candidate.success) return finish(std::move(result), ContinuationStop::stalled, "critical candidate: " + candidate.message);
+                result.critical_points.push_back(std::move(candidate));
+                passed = true;
+            }
+        }
+        attempt_scope.probe("accepted", attempt.accepted ? 1.0 : 0.0);
+        if (attempt.convergence.has_value()) attempt_scope.finish(*attempt.convergence);
+        if (attempt.accepted) {
+            const bool closed = closing;
+            // The mixture closes when an accepted step after the passage brackets the initial pressure.
+            closing = passed && (c[1][0] - closing_pressure) * (std::log(attempt.result->pressure[0]) - closing_pressure) <= 0.0;
+            ++result.accepted_steps;
+            local_retries = 0;
+            step = options.envelope_max_log_step;
+            motion = heading;
+            y = attempt.result->coordinates;
+            anchors = attempt.result->molar_densities;
+            base = problem;
+            current = std::move(compiled);
+            result.path_values.push_back(s_try);
+            result.conditions.push_back(*base.envelope);
+            result.reached_path = s_try;
+            result.states.push_back(std::move(*attempt.result));
+            if (closed) return finish(std::move(result), ContinuationStop::reached_target, "");
+            continue;
+        }
+        reject(result, attempt, s_try);
+        // A straddle or closing target cannot change by halving: its refusal ends the trace as a prefix.
+        if (attempt.terminal || straddle || closing) return finish(std::move(result), attempt.stop, attempt.message);
+        step = std::abs(s_try - s) / 2.0;
+        if (step < options.minimum_step) return finish(std::move(result), ContinuationStop::step_too_small, attempt.message);
+        if (local_retries++ >= options.max_retries_per_step)
+            return finish(std::move(result), ContinuationStop::budget_exhausted, attempt.message);
+        ++result.retries;
+    }
+    return finish(std::move(result), ContinuationStop::budget_exhausted, "max_steps reached before the envelope closed");
 }
 
 }  // namespace
@@ -792,12 +1081,14 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
     case ContinuationStop::stalled: return "stalled";
     case ContinuationStop::step_too_small: return "step_too_small";
     case ContinuationStop::budget_exhausted: return "budget_exhausted";
+    case ContinuationStop::critical_endpoint: return "critical_endpoint";
     }
     return "unknown";
 }
 
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
     core::Scope scope("continue_equilibrium");
+    if (request.start_problem.envelope) return trace_envelope(model, request);
     ContinuationResult result;
     const auto& options = request.options;
     if (!std::isfinite(options.initial_step) || options.initial_step <= 0.0 || options.initial_step > 1.0
@@ -902,64 +1193,15 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
         ++result.attempts;
         core::Scope attempt_scope("equilibrium_continuation_attempt");
         attempt_scope.probe("path_value", q_try);
-        Attempt attempt;
         const EquilibriumProblem problem = path.at(q_try);
         auto trial_model = parameter_model(q_try);
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
-        const std::string generated = layout_difference(start, compiled);
-        if (!generated.empty()) {
-            attempt.stop = ContinuationStop::invalid_path;
-            attempt.terminal = true;
-            attempt.message = generated;
-        } else if (!compiled.feasible) {
-            // Same layout, generic-point rank loss at the generated problem.
-            attempt.stop = ContinuationStop::singular_jacobian;
-            attempt.terminal = true;
-            attempt.message = "generated problem loses generic rank (nullity "
-                + std::to_string(compiled.generic_nullity) + ")";
-        } else {
-            const auto jacobian = current.jacobian(y_current);
-            const auto tangent = sensitivity(current, y_current, path.lever(2 + model.parameters().component_count() + model.active_parameters().size()));
-            if (tangent.empty()) {
-                // A state-local tangent cannot change by halving the step: singular is terminal
-                // (owner decision 2026-09-16), the branch end at that accepted state.
-                const bool numeric = std::all_of(jacobian.begin(), jacobian.end(), [](double v) { return std::isfinite(v); });
-                const auto info = inspect_sensitivity(current, y_current, {});
-                attempt.stop = numeric ? ContinuationStop::singular_jacobian : ContinuationStop::nonfinite;
-                attempt.terminal = true;
-                attempt.message = numeric
-                    ? "implicit tangent is unavailable at the accepted state (rank "
-                        + std::to_string(info.rank) + " of " + std::to_string(y_current.size())
-                        + ", condition estimate " + std::to_string(info.condition_estimate) + ")"
-                    : "nonfinite operands in the implicit tangent";
-            } else {
-                std::vector<double> predicted = y_current;
-                for (std::size_t i = 0; i < predicted.size(); ++i) predicted[i] += (q_try - q) * tangent[i];
-                std::size_t projected = 0;
-                const bool inside = inside_domain(compiled, predicted, projected);
-                attempt_scope.probe("predictor_projected", static_cast<double>(projected));
-                if (!inside) {
-                    attempt.stop = ContinuationStop::left_domain;
-                    attempt.message = "predicted coordinates leave the admitted domain";
-                } else {
-                    attempt = admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted),
-                                           anchors, false, attempt_scope);
-                    if (attempt.accepted) {
-                        if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) {
-                            attempt.accepted = false;
-                            attempt.terminal = true;
-                            attempt.stop = ContinuationStop::phases_coalesced;
-                            attempt.result->topology_event = TopologyEvent::PhasesCoalesced;
-                            attempt.result->topology_pair = pair;
-                            attempt.message = "phases " + compiled.problem.phases[pair->first].name + " and "
-                                + compiled.problem.phases[pair->second].name
-                                + " swapped identity between accepted states: passage through a critical point";
-                        }
-                    }
-                }
-            }
-        }
+        Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&] {
+            return sensitivity(current, y_current, path.lever(2 + model.parameters().component_count() + model.active_parameters().size()));
+        }, q_try - q, anchors, attempt_scope);
+        if (attempt.accepted)
+            if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
         if (!attempt.result.has_value()) attempt_scope.probe("driver_result_present", 0.0);
         attempt_scope.probe("accepted", attempt.accepted ? 1.0 : 0.0);
         attempt_scope.probe(continuation_stop_name(attempt.accepted ? ContinuationStop::reached_target : attempt.stop), 1.0);

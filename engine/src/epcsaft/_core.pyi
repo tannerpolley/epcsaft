@@ -556,6 +556,31 @@ class DiscoveryRecord:
 def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
                    options: StabilityOptions = ...) -> StabilityReport: ...
 
+class CriticalDeclaration:
+    density_guess_mol_per_m3: float
+    mode_guess: list[float]
+    def __init__(self) -> None: ...
+
+class EnvelopeCoordinate:
+    LogTemperature: EnvelopeCoordinate
+    LogPressure: EnvelopeCoordinate
+    LogK: EnvelopeCoordinate
+
+class EnvelopeCondition:
+    kind: EnvelopeCoordinate
+    component: int
+    target: float
+    def __init__(self) -> None: ...
+
+class CriticalRecord:
+    eigenvalues: list[float]
+    mode: list[float]
+    cubic: float
+    zero_band: float
+    condition_estimate: float
+    backward_error: float
+    rank: int
+
 class EquilibriumProblem:
     discovery: Optional[StabilityOptions]
     phases: list[PhaseSpec]
@@ -568,6 +593,8 @@ class EquilibriumProblem:
     row_tolerance: float
     enthalpy_j: float | None
     entropy_j_per_k: float | None
+    critical: Optional[CriticalDeclaration]
+    envelope: Optional[EnvelopeCondition]
     neutral_reference: Optional[NeutralReferenceDeclaration]
     def __init__(self) -> None: ...
 
@@ -602,6 +629,10 @@ class RowKind:
     Normalization: RowKind
     Enthalpy: RowKind
     Entropy: RowKind
+    CriticalMode: RowKind
+    CriticalNormalization: RowKind
+    CriticalCubic: RowKind
+    EnvelopeCondition: RowKind
 
 class Row:
     kind: RowKind
@@ -670,6 +701,7 @@ class EquilibriumResult:
     topology_event: TopologyEvent
     topology_phase: Optional[int]
     topology_pair: Optional[tuple[int, int]]
+    critical: Optional[CriticalRecord]
 
 class TopologyEvent:
     None_: TopologyEvent
@@ -690,12 +722,15 @@ class ContinuationStop:
     stalled: ContinuationStop
     step_too_small: ContinuationStop
     budget_exhausted: ContinuationStop
+    critical_endpoint: ContinuationStop
 
 class ContinuationOptions:
     initial_step: float
     minimum_step: float
     max_steps: int
     max_retries_per_step: int
+    envelope_max_log_step: float
+    envelope_straddle: float
     def __init__(self) -> None: ...
 
 class ContinuationRequest:
@@ -724,6 +759,9 @@ class ContinuationResult:
     cause_stop: Optional[ContinuationStop]
     cause_convergence: Optional[Convergence]
     cause_message: Optional[str]
+    conditions: list[EnvelopeCondition]
+    critical_points: list[EquilibriumResult]
+    critical_seeds: list[list[float]]
 
 def continue_equilibrium(model: HelmholtzModel, request: ContinuationRequest) -> ContinuationResult: ...
 

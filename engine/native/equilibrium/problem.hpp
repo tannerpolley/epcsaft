@@ -130,6 +130,21 @@ struct StabilityOptions final {
 };
 struct DiscoveryRecord;
 
+// Critical-equation cell seeds (EqID critical_equations): molar density [mol/m^3] and an optional
+// unnormalized amount-perturbation direction u; empty u selects the lowest mode of M at the seed.
+struct CriticalDeclaration final {
+    double density_guess_mol_per_m3 = 0.0;
+    std::vector<double> mode_guess;
+};
+
+// EqID envelope_local_condition: ln(T/1 K) - s, ln(P/1 Pa) - s or ln x_k^inc - ln x_k^feed - s.
+enum class EnvelopeCoordinate { LogTemperature, LogPressure, LogK };
+struct EnvelopeCondition final {
+    EnvelopeCoordinate kind = EnvelopeCoordinate::LogPressure;
+    std::size_t component = 0;
+    double target = 0.0;
+};
+
 struct EquilibriumProblem final {
     std::vector<PhaseSpec> phases;
     FreeValue temperature;
@@ -142,6 +157,8 @@ struct EquilibriumProblem final {
     std::optional<StabilityOptions> discovery;
     std::optional<double> enthalpy_j;
     std::optional<double> entropy_j_per_k;
+    std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
+    std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
     // Caller row criterion for the solve; the named policy value is the only default.
     double row_tolerance = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
 
@@ -150,7 +167,10 @@ struct EquilibriumProblem final {
     }
 };
 
-enum class RowKind { Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy };
+enum class RowKind {
+    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy,
+    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition
+};
 
 inline const char* row_kind_name(RowKind kind) noexcept {
     switch (kind) {
@@ -161,6 +181,9 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::Normalization: return "phase_normalization";
     case RowKind::Enthalpy: return "extensive_enthalpy_specification";
     case RowKind::Entropy: return "extensive_entropy_specification";
+    case RowKind::CriticalMode: case RowKind::CriticalNormalization: case RowKind::CriticalCubic:
+        return "critical_equations";
+    case RowKind::EnvelopeCondition: return "envelope_local_condition";
     }
     return "unknown";
 }
@@ -269,6 +292,7 @@ struct CompiledSystem final {
     std::vector<std::vector<std::size_t>> declared_supports;
     std::vector<Row> rows;
     std::size_t pinned_count = 0;
+    std::size_t mode_count = 0;  // critical eigenvector coordinates u, just before the free intensives
     std::size_t free_intensive_count = 0;
     std::size_t rank = 0;
     std::size_t charge_row_count = 0;
@@ -317,7 +341,7 @@ struct CompiledSystem final {
     std::vector<double> constraint_hessian_at(
         const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
     ) const;
-    // Row and physical Taylor coefficients through `order` (at most 3) along the state
+    // Row and physical Taylor coefficients through `order` (at most 3; 2 in a critical cell) along the state
     // coefficients `state` (state[0] is the prepared point) and the control direction.
     RowSeries row_series(
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
@@ -335,8 +359,15 @@ struct CompiledSystem final {
     }
 
     bool feasibility_cell() const noexcept {
-        return pinned_count != 0 || has_caloric_condition();
+        return pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
     }
+
+    // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
+    std::size_t condition_count() const noexcept {
+        return has_caloric_condition() + 2 * problem.critical.has_value() + problem.envelope.has_value();
+    }
+
+    std::size_t mode_offset() const noexcept { return primal_size - free_intensive_count - mode_count; }
 
     bool is_square() const noexcept { return rows_minus_unknowns == 0; }
 };
@@ -365,6 +396,14 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compiled,
 // Candidate-topology outcome of the existing producer loop: the first vanished free phase
 // in declaration order, else the first coincident pair in lexicographic ordinal order.
 enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
+
+// Spectrum of M, the cubic form and the augmented-Jacobian diagnostics of a critical-equation
+// candidate; it certifies no stability.
+struct CriticalRecord final {
+    std::vector<double> eigenvalues, mode;
+    double cubic = NAN, zero_band = NAN, condition_estimate = NAN, backward_error = NAN;
+    std::size_t rank = 0;
+};
 
 struct EquilibriumResult final {
     const HelmholtzModel* model_identity = nullptr;
@@ -403,6 +442,7 @@ struct EquilibriumResult final {
     std::optional<std::size_t> topology_phase;
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
+    std::optional<CriticalRecord> critical;
 
     bool has_state() const noexcept {
         return success && !temperature.empty() && !pressure.empty()

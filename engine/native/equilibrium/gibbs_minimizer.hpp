@@ -105,7 +105,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
 enum class ContinuationStop {
     reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
     phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
-    step_too_small, budget_exhausted
+    step_too_small, budget_exhausted, critical_endpoint
 };
 
 const char* continuation_stop_name(ContinuationStop stop) noexcept;
@@ -115,6 +115,9 @@ struct ContinuationOptions final {
     double minimum_step = 0.0;
     std::size_t max_steps = 0;
     std::size_t max_retries_per_step = 0;
+    // Envelope mode: largest |delta s| of the local coordinate and the near-critical |ln K| straddle threshold.
+    double envelope_max_log_step = 0.0;
+    double envelope_straddle = 0.0;
 };
 
 struct ContinuationRequest final {
@@ -143,10 +146,14 @@ struct ContinuationResult final {
     std::optional<ContinuationStop> cause_stop;
     std::optional<core::Convergence> cause_convergence;
     std::optional<std::string> cause_message;
+    std::vector<EnvelopeCondition> conditions;        // envelope: the selected condition at each accepted state
+    std::vector<EquilibriumResult> critical_points;   // envelope: critical-equation candidates in trace order
+    std::vector<std::vector<double>> critical_seeds;  // their seeds: ln(T/1 K), ln(P/1 Pa), ln(rho/(1 mol/m^3))
 };
 
 // Declared-branch continuation along a straight path in fixed intensives and resolved feed
-// amounts, with a tangent predictor and the one Ipopt driver as corrector.
+// amounts, with a tangent predictor and the one Ipopt driver as corrector. A start problem with an
+// envelope condition traces that envelope instead (ALG-EQUILIBRIUM); its target problem is unused.
 ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );

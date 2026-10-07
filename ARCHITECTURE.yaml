@@ -48,7 +48,7 @@ code_budgets: {
   "equilibrium": [
     5000,
     8000,
-    8800
+    8843
   ],
   "regression": [
     800,
@@ -68,7 +68,7 @@ code_budgets: {
   "python": [
     1350,
     1600,
-    2850
+    2892
   ],
   "total": [
     12300,

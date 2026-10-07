@@ -32,6 +32,9 @@ InventoryBound = _core.InventoryBound
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
+CriticalDeclaration = _core.CriticalDeclaration
+EnvelopeCondition = _core.EnvelopeCondition
+EnvelopeCoordinate = _core.EnvelopeCoordinate
 ReactionLogPolynomial = _core.ReactionLogPolynomial
 ReactionReference = _core.ReactionReference
 ReferenceSourceBasis = _core.ReferenceSourceBasis
@@ -61,6 +64,9 @@ __all__ = (
     "Continuation",
     "ContinuationResult",
     "ContinuationStop",
+    "CriticalDeclaration",
+    "EnvelopeCondition",
+    "EnvelopeCoordinate",
     "Discover",
     "EOS_STANDARD_STATE_ID",
     "EquilibriumResult",

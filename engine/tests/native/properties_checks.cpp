@@ -4951,6 +4951,49 @@ void energy_action_ladders() {
     }
 }
 
+// C4 (issue #224 B): exact E5 F5[w,w,w,a,b] against the centered difference of exact E4 F4[w,w,w,a] along b,
+// w = (0, 0, sqrt(n0), -sqrt(n1)); directions scaled by T, V and each amount, plus one mixed pair.
+void energy_e5_ladder() {
+    struct Case { const char* name; epcsaft::Parameters parameters; double temperature; std::vector<double> n; };
+    for (const auto& item : std::vector<Case>{{"nonassociating", properties_support::neutral_binary(), 260.0, {0.27, 0.73}},
+                                              {"associating", properties_support::associating_binary(), 376.88, {0.1385, 0.8615}}}) {
+        const epcsaft::HelmholtzModel model(item.parameters);
+        const double T = item.temperature, V = 1.0e-4;
+        const std::vector<double> w = {0, 0, std::sqrt(item.n[0]), -std::sqrt(item.n[1])};
+        std::vector<std::vector<double>> axes = {{T, 0, 0, 0}, {0, V, 0, 0}, {0, 0, item.n[0], 0}, {0, 0, 0, item.n[1]}};
+        std::vector<std::pair<std::vector<double>, std::vector<double>>> pairs;
+        for (std::size_t a = 0; a < 4; ++a) for (std::size_t b = a; b < 4; ++b) pairs.push_back({axes[a], axes[b]});
+        pairs.push_back({{0.3 * T, 0.2 * V, 0.5 * item.n[0], -0.4 * item.n[1]}, {-0.2 * T, 0.4 * V, -0.3 * item.n[0], 0.6 * item.n[1]}});
+        const auto E = [&](const std::vector<std::vector<double>>& d, double t, const std::vector<double>& b) {
+            std::vector<double> n = {item.n[0] + t * b[2], item.n[1] + t * b[3]};
+            return model.residual_energy_action(T + t * b[0], V + t * b[1], n, d);
+        };
+        for (std::size_t k = 0; k < pairs.size(); ++k) {
+            const auto& [a, b] = pairs[k];
+            const auto exact = E({w, w, w, a, b}, 0.0, b);
+            CHECK(exact.action.has_value());
+            double magnitude = 0.0;  // fixed chart sub-direction contractions, the scale near a zero action
+            for (std::size_t i = 0; i < 4; ++i) {
+                auto unit = std::vector<double>(4, 0.0);
+                unit[i] = b[i];
+                if (b[i] != 0.0) magnitude += std::abs(E({w, w, w, a, unit}, 0.0, b).action.value());
+            }
+            const double scale = std::max(std::abs(*exact.action), magnitude);
+            std::vector<double> errors;
+            for (const double h : {1e-2, 3e-3, 1e-3, 3e-4, 1e-4, 3e-5, 1e-5})
+                errors.push_back(std::abs(*exact.action - (E({w, w, w, a}, h, b).action.value() - E({w, w, w, a}, -h, b).action.value()) / (2 * h)) / scale);
+            const double best = *std::min_element(errors.begin(), errors.end());
+            const std::string id = std::string("C4/") + item.name + "/" + std::to_string(k);
+            recording_support::compare_custom(id.c_str(), "e5_energy_action", "extensive residual scalar", *exact.action, scale,
+                recording_support::fields({recording_support::field("errors_over_scale", errors), recording_support::field("error", best),
+                    recording_support::field("criterion", 1e-5), recording_support::field("site_residual", exact.diagnostics.association_residual)}),
+                "Relationship", "issue-224", "E5 equals the centered difference of exact E4", "action or sub-direction magnitude",
+                best <= 1e-5, "critical-envelope", id.c_str());
+            CHECK(best <= 1e-5);
+        }
+    }
+}
+
 // Copied anchor compositions from 2026-born-unavailable-states/inputs, reordered
 // CO2/MEA/water -> properties_support's water/MEA/CO2. EqIDs own the radial work.
 void born_parameter_columns() {
@@ -5444,6 +5487,7 @@ int main(int argc, char** argv) {
         {{"native.properties.m9", "Cache_invariance", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "value/*,gradient/*,hessian/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "M9", "value/*:2,gradient/*:10,hessian/*:50"}, cache_invariance},
         {{"native.properties.issue26", "Modular_permittivity_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/pressure/*,issue26/branch/*,issue26/action/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26", "issue26/pressure/*:4,issue26/branch/*:48,issue26/action/*:72"}, modular_permittivity_actions},
         {{"native.properties.electrolyte-coordinates", "Electrolyte_parameter_actions", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "electrolyte-coordinate/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "ElectrolyteCoordinates"}, electrolyte_parameter_actions},
+        {{"native.properties.e5-ladder", "Energy_E5_ladder", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "issue-224", "C4/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "C4"}, energy_e5_ladder},
         {{"native.properties.issue26e", "Energy_action_ladders", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "issue26/energy/*", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue26E", "issue26/energy/*:15"}, energy_action_ladders},
         {{"native.properties.issue10", "Neutral_property_pressure_hessian", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P4", "pressure,value,gradient,hessian", "engine/tests/native/properties_checks.cpp", "properties_checks", "Issue10", "issue10-pressure/:2,issue10-hessian/:2"}, neutral_property_pressure_hessian},
     });
