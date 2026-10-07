@@ -245,7 +245,7 @@ def code_budgets(root=None) -> int:
     if any(budgets["total"][i] > sum(v[i] for k, v in budgets.items() if k != "total") for i in range(3)):
         raise ValueError("total budget must not exceed the sum of layer budgets")
     counts = dict.fromkeys(expected, 0)
-    suffixes = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".tpp", ".py", ".pyi", ".pyx", ".pxd"}
+    suffixes = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".tpp", ".py", ".pyx", ".pxd"}
     for folder in (root / "engine/native", root / "engine/src/epcsaft"):
         if folder.is_symlink():
             raise ValueError(f"runtime root symlink bypasses source accounting: {folder}")
@@ -261,7 +261,8 @@ def code_budgets(root=None) -> int:
             if layer not in expected - {"total", "python"} and folder.name != "epcsaft":
                 raise ValueError(f"unclassified native source: {path}")
             if path.suffix not in suffixes:
-                if path.name not in {".gitkeep", "py.typed", "AGENTS.md", "README.md"}:
+                # The extension's type stub declares native types; the architecture check owns its names.
+                if path.name not in {".gitkeep", "py.typed", "AGENTS.md", "README.md", "_core.pyi"}:
                     raise ValueError(f"unclassified runtime file: {path}")
                 continue
             counts[layer] += len(path.read_text(encoding="utf-8").splitlines())

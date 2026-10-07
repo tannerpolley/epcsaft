@@ -24,8 +24,8 @@ plan:
   acceptance: engine/tests/oracle
   historical_evidence: docs/scientific/reviews
 
-# Physical source lines, including comments/blanks/stubs, across the complete
-# working tree (tracked and untracked). Engineering targets, not mathematical
+# Physical source lines, including comments/blanks, across the complete working
+# tree (tracked and untracked), except the _core.pyi type stub. Engineering targets, not mathematical
 # lower bounds. See docs/scientific/code-budgets.md for rationale and amendment.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
 # Amendment rationale: docs/scientific/code-budgets.md#amendments.
