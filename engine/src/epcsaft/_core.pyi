@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union, overload
 
 GAS_CONSTANT_J_PER_MOL_K: float
 EOS_STANDARD_STATE_ID: str
@@ -731,7 +731,11 @@ class ContinuationOptions:
     max_retries_per_step: int
     envelope_max_log_step: float
     envelope_straddle: float
+    @overload
     def __init__(self) -> None: ...
+    @overload
+    def __init__(self, *, initial_step: float, minimum_step: float, max_steps: int, max_retries_per_step: int,
+                 envelope_max_log_step: float = 0.0, envelope_straddle: float = 0.0) -> None: ...
 
 class ContinuationRequest:
     start_problem: EquilibriumProblem

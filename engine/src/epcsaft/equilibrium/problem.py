@@ -465,14 +465,7 @@ def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) 
 solved_state_actions = _core.solved_state_actions
 
 
-@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
-class Continuation:
-    initial_step: float
-    minimum_step: float
-    max_steps: int
-    max_retries_per_step: int
-    envelope_max_log_step: float = 0.0
-    envelope_straddle: float = 0.0
+Continuation = _core.ContinuationOptions
 
 
 def continue_equilibrium(
@@ -489,12 +482,7 @@ def continue_equilibrium(
     request.target_problem = target._native(model)
     request.start_result = start_result
     request.parameter_targets = () if parameter_targets is None else parameter_targets
-    request.options.initial_step = options.initial_step
-    request.options.minimum_step = options.minimum_step
-    request.options.max_steps = options.max_steps
-    request.options.max_retries_per_step = options.max_retries_per_step
-    request.options.envelope_max_log_step = options.envelope_max_log_step
-    request.options.envelope_straddle = options.envelope_straddle
+    request.options = options
     return _core.continue_equilibrium(model._model, request)
 
 
