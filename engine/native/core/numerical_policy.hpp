@@ -384,11 +384,8 @@ inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
 // references (2026-09-23), the worst relative errors of chi and its first and second
 // Taylor derivatives are 3e-14, 7e-13 and 1.1e-11 on either side of 0.2; the former
 // switch at 1e-3 with six series terms left the closed form's second derivative wrong
-// by a factor of 3.3 just above it.
-//
-// It is also a recording-time predicate: the branch taken is baked into a tape, so a tape
-// recorded on one side of it is wrong on the other. That is why the tape cache is keyed on
-// the predicate signature and not on topology alone.
+// by a factor of 3.3 just above it. Both branches are on the tape behind a conditional
+// expression, so one tape serves either side.
 inline constexpr Tolerance SCREENING_SERIES_SWITCH{"SCREENING_SERIES_SWITCH",
     0.2,
     Category::AlgorithmTolerance,

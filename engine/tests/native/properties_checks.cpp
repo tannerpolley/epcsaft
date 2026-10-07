@@ -2481,6 +2481,19 @@ void cache_invariance() {
             CHECK(hessian_ok);
         }
     }
+    // One tape serves both sides of SCREENING_SERIES_SWITCH: recorded at kappa*d = 0.087,
+    // reused at kappa*d = 0.40 against a fresh recording there. No recording on reuse
+    // shows the comparison exercises the reused tape.
+    epcsaft::HelmholtzModel crossing(properties_support::aqueous_electrolyte());
+    (void)crossing.evaluate(298.15, 1.0e-3, {0.98, 0.01, 0.01}, epcsaft::DerivativeOrder::Hessian);
+    crossing.reset_counters();
+    const auto reused = crossing.evaluate(298.15, 1.0e-3, {0.8, 0.1, 0.1}, epcsaft::DerivativeOrder::Hessian);
+    const auto recorded = epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()).evaluate(
+        298.15, 1.0e-3, {0.8, 0.1, 0.1}, epcsaft::DerivativeOrder::Hessian);
+    CHECK(crossing.counters().recordings == 0);
+    CHECK(close(reused.value, recorded.value, 1e-10));
+    for (std::size_t i = 0; i < recorded.gradient.size(); ++i) CHECK(close(reused.gradient[i], recorded.gradient[i], 1e-10));
+    for (std::size_t i = 0; i < recorded.hessian.size(); ++i) CHECK(close(reused.hessian[i], recorded.hessian[i], 1e-10));
 }
 
 void core_c2_parameter_coordinates() {

@@ -851,40 +851,10 @@ void HelmholtzModel::validate_point(
 }
 
 detail::PredicateSignature HelmholtzModel::predicate_signature(
-    double temperature,
-    double density,
-    const std::vector<double>& composition, bool residual, bool ideal
+    double temperature, const std::vector<double>& composition, bool ideal
 ) const {
     detail::PredicateSignature result;
     for (const auto fraction : composition) result.push_back(fraction > 0.0);
-    if (residual) {
-    double charge_square_sum = 0.0;
-    for (std::size_t component = 0; component < composition.size(); ++component) {
-        if (!dielectric_solvent_component(component, parameters_)) {
-            const double charge = parameters_.charge_number[component];
-            charge_square_sum += composition[component] * charge * charge;
-        }
-    }
-    result.push_back(charge_square_sum == 0.0 ? 1 : 0);
-    if (charge_square_sum != 0.0) {
-        const double permittivity = bulk_relative_permittivity(
-            temperature, density, composition, parameters_
-        );
-        const double kappa = std::sqrt(
-            density * AVOGADRO_PER_MOL * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
-            * charge_square_sum /
-            (VACUUM_PERMITTIVITY_F_PER_M * permittivity
-             * BOLTZMANN_J_PER_K * temperature)
-        );
-        for (std::size_t component = 0; component < composition.size(); ++component) {
-            if (parameters_.charge_number[component] == 0) continue;
-            result.push_back(
-                kappa * ANGSTROM_M * parameters_.debye_huckel_diameter_angstrom[component]
-                    < policy::SCREENING_SERIES_SWITCH.value ? 1 : 0
-            );
-        }
-    }
-    }
     if (ideal && thermochemistry_.has_value()) {
         for (const auto& intervals : thermochemistry_->component_intervals) {
             for (const auto& interval : intervals)
@@ -949,7 +919,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
     for (const double value : active_parameter_values()) point.push_back(value);
-    const auto signature = predicate_signature(temperature, density, composition);
+    const auto signature = predicate_signature(temperature, composition);
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
     });
@@ -1167,7 +1137,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     const double density = total / volume;
     std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
     result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
-        predicate_signature(temperature, density, composition), {}, 0.0, true) ? 1 : 0;
+        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     result.status = PropertyActionStatus::Available;
     const auto factorization = association_factorization(parameters_, temperature, density,
         refreshed.site_fractions, composition, result.status, result.diagnostics);
@@ -1263,7 +1233,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     for (double& v : motion) v /= norm;
     std::lock_guard<std::mutex> lock(mutex_);
     result.diagnostics.recordings = ensure_tape(point, central.site_fractions,
-        predicate_signature(temperature, 1.0 / volume, composition), {}, 0.0, true) ? 1 : 0;
+        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     tape_->site_values = central.site_fractions;
     const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
         central.site_fractions, composition, result.status, result.diagnostics);
@@ -1404,7 +1374,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
     }
-    const auto signature = predicate_signature(temperature, molar_density, mole_fractions, need_residual, ideal_available);
+    const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
     PropertyActionBatch result;
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},

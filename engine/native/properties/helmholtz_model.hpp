@@ -383,10 +383,7 @@ private:
     ) const;
     void validate_composition(const std::vector<double>& composition) const;
     detail::PredicateSignature predicate_signature(
-        double temperature,
-        double density,
-        const std::vector<double>& composition,
-        bool residual = true, bool ideal = false
+        double temperature, const std::vector<double>& composition, bool ideal = false
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
