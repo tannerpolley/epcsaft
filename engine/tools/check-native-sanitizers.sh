@@ -100,7 +100,6 @@ UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" \
 PYTHONNOUSERSITE=1 \
 EPCSAFT_PYTEST_RESULTS="$run_root/pytest-results.json" \
     "$run_root/venv/bin/python" -m pytest -q \
-        -m "slow or not slow" \
         tests/eos/test_activity.py \
         tests/eos/test_diagnostics.py \
         tests/equilibrium/test_problem.py

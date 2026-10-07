@@ -274,6 +274,7 @@ regression_checks = executable(
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
+test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 
 specification_checks = executable(
   'specification_checks',
