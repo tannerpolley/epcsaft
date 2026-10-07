@@ -1,8 +1,8 @@
 {
   "rows": 580,
-  "recorded_at_revision": "c95e93500977ae106816cbef32fde0ed0815a618",
-  "build_fingerprint": "9b6e51988e124755b25fb3944c93df7eafc25f18448493006970cff776a8d650",
-  "wheel_sha256": "726a6f529d4cd9c624f6ef5e5ce61c7649ee811d8637b2dd68a525697248a0e8",
+  "recorded_at_revision": "fbe0d1ec540253a73a94f35217960d41d2614559",
+  "build_fingerprint": "d0757d7e83399626f90957160674f2fd9126ad214a9af9e1cb08fd29bd3dcf82",
+  "wheel_sha256": "b6e46ba58c15b9d20677cca7f58719422bf43c5a2697d7c2bc7e22215b53d101",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -57,5 +57,5 @@
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
   "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
   "previous_recording_wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
-  "refresh_cause": "#314: ln eta unbounded in Gibbs minimizations moves solved states within the solver tolerance. 286 of 575 rows moved; of the 64 moved by more than 1e-10 relative, 41 are S2 frozen-state and re-solved action rows (at most 5.9e-8 relative), 21 are near-zero identities (|value| <= 4.2e-11) and 2 are R2-J2 recovery costs near 1e-27. Every native comparison passes its unchanged criterion."
+  "refresh_cause": "#314: ln eta is unbounded for single-phase Gibbs minimizations. Against a recording of the same tree with the bounds on everywhere (main's optimizer path), 118 rows move, all in single-phase cases (S2 87, E5-5 19, E5-3 6, E5-7 6). The 41 that move by more than 1e-10 relative are S2 rows: 39 frozen-state F4/F5 rows, higher-order values that are small differences of larger terms (largest absolute move 1.3e-10 J/mol; F4/frozen-hP/8 moved 7.1e-16 m3/mol, about 1e-12 relative to its cancelling terms per the #314 review), and 2 enthalpy-reaction reaction-b/resolve rows carrying re-solve tolerance noise (at most 1.2e-8 relative). The previous main file also differs from main's own code in 199 rows (E5-1, E5-3, E5-7, E5-8, S2, R2-J2, surface) unrelated to #314; this recording refreshes those too. Every native comparison passes its unchanged criterion."
 }

@@ -316,112 +316,112 @@ equilibrium_checks S2	reference-calorics/enthalpy-reaction/I/fixed/reaction-b/re
 equilibrium_checks S2	reference-calorics/enthalpy-reaction/I/fixed/reaction-b/resolve/omission-discrimination	J per native parameter unit	0.0008998121998139198
 equilibrium_checks E5-1	e5-1/neutral-ternary/temperature/A1	K	0.2
 equilibrium_checks E5-1	e5-1/neutral-ternary/pressure/A1	Pa	2000
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A1	mol	-0.014007181230956366
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A1	m^3	-0.0003433002829077461
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A1	mol/m^3	1.3123444090916647
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A1	1	3.120264817514097e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A1	Pa	1999.9999999999989
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A1	mol	-0.01061784699849298
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A1	1	-0.002438498386702091
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A1	1	-0.0007753233923812287
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A1	1	0.014953495020583825
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A1	mol	-0.002695889599416386
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A1	1	0.0029392436456398825
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A1	1	-0.0009887811081494276
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A1	1	0.028381352449779733
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A1	mol	-0.0006934446330469985
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A1	1	-0.000500745258937791
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A1	1	-0.0014322230201186115
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A1	1	0.002433378354010273
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A1	mol	0.014007181230956367
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A1	m^3	8.420792460895013e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A1	mol/m^3	22.346950095567863
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A1	1	-0.00036297585662613453
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A1	Pa	1999.9999999970853
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A1	mol	0.0006178469984929819
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A1	1	0.0006878231417956706
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A1	1	-0.023506099187940104
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A1	1	0.014953495020583808
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A1	mol	0.008695889599416386
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A1	1	0.00674403478982565
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A1	1	0.008755621541813833
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A1	1	0.028381352449779757
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A1	mol	0.004693444633046999
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A1	1	-0.00743185793162132
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A1	1	0.013178003399651778
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A1	1	0.0024333783540102607
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A1	mol	-0.014007181230956412
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A1	m^3	-0.0003433002829077464
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A1	mol/m^3	1.3123444090916652
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A1	1	3.1202648175140965e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A1	Pa	2000
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A1	mol	-0.010617846998492993
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A1	1	-0.0024384983867020153
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A1	1	-0.0007753233923812278
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A1	1	0.014953495020583947
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A1	mol	-0.0026958895994164257
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A1	1	0.0029392436456397975
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A1	1	-0.0009887811081494256
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A1	1	0.028381352449779487
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A1	mol	-0.0006934446330469945
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A1	1	-0.0005007452589377824
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A1	1	-0.0014322230201186093
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A1	1	0.002433378354010519
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A1	mol	0.014007181230956412
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A1	m^3	8.420792460895026e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A1	mol/m^3	22.34695009556801
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A1	1	-0.000362975856626135
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A1	Pa	1999.9999999991724
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A1	mol	0.0006178469984929913
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A1	1	0.000687823141795681
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A1	1	-0.023506099187940156
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A1	1	0.014953495020583967
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A1	mol	0.008695889599416425
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A1	1	0.006744034789825656
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A1	1	0.008755621541813648
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A1	1	0.028381352449779552
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A1	mol	0.004693444633046996
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A1	1	-0.007431857931621337
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A1	1	0.013178003399652064
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A1	1	0.002433378354010507
 equilibrium_checks E5-1	e5-1/neutral-ternary/temperature/A2	K	0
 equilibrium_checks E5-1	e5-1/neutral-ternary/pressure/A2	Pa	0
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A2	mol	6.87573998505617e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A2	m^3	-4.46286683760395e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A2	mol/m^3	0.0010309616312099263
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A2	1	2.44980482362989e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A2	Pa	-1.2572865709025648e-14
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A2	mol	-4.3241359422796885e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A2	1	-2.3684451333933228e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A2	1	-1.5990930756582325e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A2	1	0.00017563328823817377
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A2	mol	8.183449904857571e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A2	1	3.470611118940458e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A2	1	-1.6511983294386065e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A2	1	0.00040675943394387045
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A2	mol	-8.752963255734323e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A2	1	-1.1021659855471353e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A2	1	-1.6100331762962319e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A2	1	4.754609297426593e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A2	mol	-6.87573998505617e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A2	m^3	-3.7864784027557856e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A2	mol/m^3	0.20995601220907142
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A2	1	-1.0852343768944433e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A2	Pa	-4.2483562213145463e-11
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A2	mol	4.324135942279697e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A2	1	1.047380250895237e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A2	1	-0.00011149867558652664
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A2	1	0.0001756332882381736
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A2	mol	-8.183449904857571e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A2	1	5.793097619406705e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A2	1	-2.7115073955047897e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A2	1	0.0004067594339438704
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A2	mol	8.75296325573433e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A2	1	-6.840477870301943e-05
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A2	1	8.394388644124374e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A2	1	4.754609297426013e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A2	mol	6.875739985056205e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A2	m^3	-4.4628668376039505e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A2	mol/m^3	0.0010309616312099473
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A2	1	2.449804823631346e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A2	Pa	9.211522929603165e-15
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A2	mol	-4.324135942279637e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A2	1	-2.3684451333935014e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A2	1	-1.5990930756582797e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A2	1	0.00017563328823817073
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A2	mol	8.183449904857582e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A2	1	3.4706111189406155e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A2	1	-1.6511983294386982e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A2	1	0.0004067594339438732
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A2	mol	-8.75296325573413e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A2	1	-1.102165985547114e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A2	1	-1.6100331762963596e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A2	1	4.754609297427834e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A2	mol	-6.875739985056205e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A2	m^3	-3.786478402755803e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A2	mol/m^3	0.20995601220907717
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A2	1	-1.08523437689444e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A2	Pa	3.440597138685004e-11
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A2	mol	4.324135942279632e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A2	1	1.0473802508952367e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A2	1	-0.00011149867558652658
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A2	1	0.0001756332882381714
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A2	mol	-8.183449904857582e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A2	1	5.793097619406844e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A2	1	-2.711507395504925e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A2	1	0.00040675943394387386
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A2	mol	8.752963255734139e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A2	1	-6.840477870302081e-05
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A2	1	8.394388644128266e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A2	1	4.754609297428772e-06
 equilibrium_checks E5-1	e5-1/neutral-ternary/temperature/A3	K	0
 equilibrium_checks E5-1	e5-1/neutral-ternary/pressure/A3	Pa	0
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A3	mol	4.217401928325788e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A3	m^3	5.622833935271557e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A3	mol/m^3	-7.326260624923246e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A3	1	-1.1036106152770664e-12
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A3	Pa	-1.8340706161308688e-16
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A3	mol	3.432848233246245e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A3	1	-9.900601748637038e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A3	1	-1.694699203255712e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A3	1	-2.0567356560643735e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A3	mol	3.094665405796369e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A3	1	-3.6637923645091484e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A3	1	6.23240632568572e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A3	1	-2.456397755787447e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A3	mol	7.79451699204793e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A3	1	1.3564394113146186e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A3	1	1.9008457218615866e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A3	1	6.107201108252759e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A3	mol	-4.21740192832579e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A3	m^3	-2.4694018090440423e-11
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A3	mol/m^3	0.0005694108681831447
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A3	1	-1.124872601366905e-09
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A3	Pa	1.1667099493246487e-14
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A3	mol	-3.432848233246243e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A3	1	-5.0678274402837475e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A3	1	1.45586137350837e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A3	1	-2.056735656064374e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A3	mol	-3.094665405796371e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A3	1	1.136733855974225e-07
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A3	1	1.6367702127454165e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A3	1	-2.4563977557874475e-06
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A3	mol	-7.794516992047942e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A3	1	-6.299511119458502e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A3	1	-6.934847119165539e-08
-equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107201108252375e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount/A3	mol	4.217401928325926e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].volume/A3	m^3	5.62283393527157e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].molar_density/A3	mol/m^3	-7.326260624921893e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].packing_fraction/A3	1	-1.1036106152601799e-12
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].pressure/A3	Pa	-6.881087937311738e-17
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[0]/A3	mol	3.432848233246236e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[0]/A3	1	-9.900601748637721e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[0]/A3	1	-1.6946992032559472e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[0]/A3	1	-2.0567356560643905e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[1]/A3	mol	3.0946654057965257e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[1]/A3	1	-3.663792364508165e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[1]/A3	1	6.2324063256850404e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[1]/A3	1	-2.4563977557874246e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].amount[2]/A3	mol	7.794516992047763e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].mole_fraction[2]/A3	1	1.3564394113145887e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].residual_chemical_potential_over_rt[2]/A3	1	1.900845721860884e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[0].log_activity[2]/A3	1	6.107201108251438e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount/A3	mol	-4.217401928325926e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].volume/A3	m^3	-2.4694018090441133e-11
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].molar_density/A3	mol/m^3	0.0005694108681831997
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].packing_fraction/A3	1	-1.124872601367031e-09
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].pressure/A3	Pa	-9.960192386519901e-14
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[0]/A3	mol	-3.432848233246236e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[0]/A3	1	-5.0678274402837554e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[0]/A3	1	1.4558613735084643e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[0]/A3	1	-2.0567356560643905e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[1]/A3	mol	-3.094665405796527e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[1]/A3	1	1.1367338559743379e-07
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[1]/A3	1	1.6367702127472422e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[1]/A3	1	-2.456397755787426e-06
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].amount[2]/A3	mol	-7.794516992047756e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].mole_fraction[2]/A3	1	-6.299511119459625e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].residual_chemical_potential_over_rt[2]/A3	1	-6.934847119165343e-08
+equilibrium_checks E5-1	e5-1/neutral-ternary/phase[1].log_activity[2]/A3	1	6.107201108251537e-08
 equilibrium_checks E5-3	e5-3/isomerisation/A1	1/K^k	-0.0014784580498870947
 equilibrium_checks E5-3	e5-3/isomerisation/A2	1/K^k	8.4348805281819e-06
 equilibrium_checks E5-3	e5-3/isomerisation/rescaled/A2	1/K^k	8.434880528181902e-06
@@ -483,20 +483,20 @@ equilibrium_checks E5-8	e5-8/forward-bound/rung12	1	3.722372550027135e-15
 equilibrium_checks E5-8	e5-8/forward-bound/rung13	1	3.722372550027134e-15
 equilibrium_checks E5-8	e5-8/forward-bound/rung14	1	8.673617379884035e-17
 equilibrium_checks E5-8	e5-8/forward-bound/rung15	1	4.368030427697499e-15
-equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	-1.5987211554602254e-14
-equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	1.0658141036401503e-14
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	-1.3010426069826053e-18
-equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	4.336808689942018e-19
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-1.191563598549987e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	-1.60864092771211e-15
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.016874139366160598
-equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.016874139366160612
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038295
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151038144
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173944798e-06
-equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173945136e-06
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	-2.653754223747723e-17
-equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	9.623797764290228e-17
+equilibrium_checks E5-10	e5-10/manifold/value/phase0	1	-3.1086244689504383e-15
+equilibrium_checks E5-10	e5-10/manifold/value/phase1	1	-1.2434497875801753e-14
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase0	1	-4.336808689942018e-19
+equilibrium_checks E5-10	e5-10/manifold/pressure/phase1	1	-1.3010426069826053e-18
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase0	1	-8.34111459643936e-17
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature/phase1	1	8.162365233580285e-16
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase0	1	-0.016874139366160612
+equilibrium_checks E5-10	e5-10/manifold/temperature/phase1	1	-0.016874139366160543
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase0	1	0.00011319228151038512
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature/phase1	1	0.00011319228151038664
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase0	1	-1.1389463173945069e-06
+equilibrium_checks E5-10	e5-10/manifold/temperature-temperature-temperature/phase1	1	-1.1389463173938157e-06
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase0	1	1.4867334048444293e-17
+equilibrium_checks E5-10	e5-10/manifold/pressure-temperature-temperature/phase1	1	7.673462051589839e-17
 regression_checks R2-J2	r4/recovery/epsilon	K	152.0000000000013
 regression_checks R2-J2	r4/recovery/kij	1	-0.01999999999999411
 regression_checks R2-J2	r4/recovery/final_cost	1	6.901150296038339e-27
@@ -555,27 +555,27 @@ surface_example	action/density/1	J/(mol K)	0.045871714702273955
 surface_example	action/density/2	J/(mol K)	0.0019976645122072182
 surface_example	action/density/3	J/(mol K)	-3.2211423356347338e-06
 surface_example	bubble/pressure	Pa	30936.816033816514
-surface_example	flash/amounts/0	mol	0.45701296529333951
-surface_example	flash/amounts/1	mol	0.54298703470666054
-surface_example	flash/mole_fractions/0	1	0.49278463704329251
-surface_example	flash/mole_fractions/1	1	0.50721536295670755
-surface_example	flash/mole_fractions/2	1	0.045656765611790003
-surface_example	flash/mole_fractions/3	1	0.95434323438821
-surface_example	flash/multipliers/0	1	-1.2878437705797376
-surface_example	flash/multipliers/1	1	1.7608110095231233
-surface_example	flash/constraint_multipliers/0	1	1.2878437705797376
-surface_example	flash/constraint_multipliers/1	1	-1.7608110095231233
+surface_example	flash/amounts/0	mol	0.45701296529333613
+surface_example	flash/amounts/1	mol	0.54298703470666387
+surface_example	flash/mole_fractions/0	1	0.49278463704329462
+surface_example	flash/mole_fractions/1	1	0.50721536295670544
+surface_example	flash/mole_fractions/2	1	0.045656765611790988
+surface_example	flash/mole_fractions/3	1	0.95434323438820901
+surface_example	flash/multipliers/0	1	-1.2878437705797159
+surface_example	flash/multipliers/1	1	1.7608110095231226
+surface_example	flash/constraint_multipliers/0	1	1.2878437705797159
+surface_example	flash/constraint_multipliers/1	1	-1.7608110095231226
 surface_example	flash/constraint_multipliers/2	1	0
 surface_example	flash/constraint_multipliers/3	1	0
-surface_example	solved/thermal/0	mol	-0.018884589385214146
-surface_example	solved/radial/0	mol	0.23180399706718235
-surface_example	solved/thermal/1	1	-0.0077792789010149481
+surface_example	solved/thermal/0	mol	-0.018884589385214208
+surface_example	solved/radial/0	mol	0.23180399706717969
+surface_example	solved/thermal/1	1	-0.0077792789010150487
 surface_example	solved/radial/1	1	0
-surface_example	solved/thermal/2	1	-0.016319143831975167
+surface_example	solved/thermal/2	1	-0.016319143831975334
 surface_example	solved/radial/2	1	0
-surface_example	solved/thermal/3	J/mol	-126.93949786518354
+surface_example	solved/thermal/3	J/mol	-126.93949786518097
 surface_example	solved/radial/3	J/mol	0
-surface_example	solved/thermal/4	mol/m^3	-481.75993780547947
+surface_example	solved/thermal/4	mol/m^3	-481.75993780548129
 surface_example	solved/radial/4	mol/m^3	0
-surface_example	solved/condition	1	42.10438798252887
+surface_example	solved/condition	1	42.104387982528742
 surface_example	floor/residual	1	8.8817841970012523e-16
