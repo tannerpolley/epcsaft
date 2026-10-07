@@ -316,6 +316,7 @@ class State:
     residual_helmholtz: float
     compressibility_factor: float
     pressure: float
+    # None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
     residual_chemical_potential_over_rt: list[Optional[float]]
     log_fugacity_coefficient: Optional[list[Optional[float]]]
     component_property_status: list[PropertyActionStatus]

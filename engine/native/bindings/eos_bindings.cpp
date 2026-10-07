@@ -238,6 +238,7 @@ void register_eos(py::module_& module) {
         .def_readonly("residual_helmholtz", &epcsaft::State::residual_helmholtz)
         .def_readonly("compressibility_factor", &epcsaft::State::compressibility_factor)
         .def_readonly("pressure", &epcsaft::State::pressure)
+        // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
         .def_readonly("residual_chemical_potential_over_rt", &epcsaft::State::residual_chemical_potential_over_rt)
         .def_readonly("component_property_status", &epcsaft::State::component_property_status)
         .def_readonly("log_fugacity_coefficient", &epcsaft::State::log_fugacity_coefficient)
