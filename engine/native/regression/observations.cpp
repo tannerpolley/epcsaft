@@ -265,19 +265,9 @@ Prediction predict(
     };
     const auto close = [&](const auto& x, const State* old) {
         const auto anchor = prior(old, x, x, observation.branch);
-        if (anchor) try {
-            auto state = model.state_at_pressure(observation.temperature, observation.pressure, x, observation.branch, anchor);
-            if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) {
-                accepted(state, old, anchor);
-                return state;
-            }
-            if (state.density_convergence) density_scope.finish(*state.density_convergence);
-            density_scope.probe("anchor_failure", {*anchor}, 0, "target density regularity unavailable or exceeds w/100");
-        } catch (const std::runtime_error& error) {
-            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) density_scope.finish(failure->record);
-            density_scope.probe("anchor_failure", {*anchor}, 0, error.what());
-        }
-        return model.state_at_pressure(observation.temperature, observation.pressure, x, observation.branch);
+        auto state = properties::close_density(model, observation.temperature, observation.pressure, x, observation.branch, anchor);
+        accepted(state, old, anchor);
+        return state;
     };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
@@ -619,16 +609,20 @@ PredictionGradient differentiate(
             ? std::optional<double>(center->molar_density) : std::nullopt;
         auto batch = model.pressure_actions(observation.temperature, observation.pressure,
             observation.composition, observation.branch, observables, directions, anchor);
+        const auto cause = [&] {
+            std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
+            return batch.density_message.empty() ? name : name + ": " + batch.density_message;
+        };
         if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
             || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
             if (batch.density_convergence) scope.finish(*batch.density_convergence);
-            scope.probe("anchor_failure", {*anchor}, 0, batch.density_message.empty()
-                ? "target density regularity unavailable or exceeds w/100" : batch.density_message.c_str());
+            scope.probe("anchor_failure", {*anchor}, 0, batch.density_status == PropertyActionStatus::Available
+                ? "target density regularity unavailable or exceeds w/100" : !batch.density_message.empty() ? batch.density_message.c_str()
+                : equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
             batch = model.pressure_actions(observation.temperature, observation.pressure,
                 observation.composition, observation.branch, observables, directions);
         }
-        if (batch.density_status != PropertyActionStatus::Available)
-            return unavailable(batch.density_message);
+        if (batch.density_status != PropertyActionStatus::Available) return unavailable(cause());
         if (caloric && batch.results[0].status != PropertyActionStatus::Available)
             return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)

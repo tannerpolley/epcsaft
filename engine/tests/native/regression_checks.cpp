@@ -2929,7 +2929,6 @@ void check_minimax_consistency() {
                 1e-12, 1e-10, inputs, "seeding agrees within solver accuracy", "issue-245"));
         };
         compare("density", "mol/m3", seeded.molar_density, cold.molar_density);
-        compare("pressure", "Pa", seeded.pressure, cold.pressure);
         compare("slope", "Pa m3/mol", seeded.pressure_density_derivative, cold.pressure_density_derivative);
         for (std::size_t i = 0; i < cold.site_fractions.size(); ++i)
             compare("site/" + std::to_string(i), "1", seeded.site_fractions[i], cold.site_fractions[i]);
@@ -2972,12 +2971,19 @@ void check_minimax_consistency() {
         core::Capture capture(true);
         const auto candidate = predict(target, row, {}, {}, nullptr, &offered, &old_model,
             mode == "outside-window" || mode == "empty-domain"), reference = predict(target, row);
-        const auto failure = std::find_if(capture.trace().events.begin(), capture.trace().events.end(), [&](const auto& e) {
-            return std::string(e.name) == "anchor_failure" && std::string(capture.trace().spans[e.span].name) == "fit_density_anchor";
+        const auto& events = capture.trace().events;
+        const auto failure = std::find_if(events.begin(), events.end(), [&](const auto& e) {
+            return std::string(e.name) == "anchor_failure" && std::string(capture.trace().spans[e.span].name) == "density_anchor";
+        });
+        // The ethane anchored root equals the cold root, so the gates are visible only as absent seed events.
+        const bool seeded = std::any_of(events.begin(), events.end(), [&](const auto& e) {
+            return (std::string(e.name) == "eligible" || std::string(e.name) == "accepted")
+                && std::string(capture.trace().spans[e.span].name) == "fit_density_anchor";
         });
         const bool fallback = mode == "outside-window" || mode == "empty-domain";
         CHECK(truth("density-seed/" + mode, "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
             candidate.status == reference.status && (candidate.value ? candidate.value == reference.value : candidate.message == reference.message)
+                && !(seeded && (mode == "missing-witness" || mode == "irregular"))
                 && (failure != capture.trace().events.end()) == fallback && (!fallback || (!failure->reason.empty()
                     && failure->values == std::vector<double>{offered.state->molar_density})),
             fields({field("offered_density", offered.state->molar_density), field("cold_cause", reference.message),

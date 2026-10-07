@@ -1462,9 +1462,13 @@ recomputed. A caught optional-anchor failure is recorded before exactly one cold
 retry; a final cold refusal keeps its complete cause and publishes no trial seed.
 The witness identifies the physical extreme in the admitted single-loop domain;
 agreement with the bounded cold search is a qualification result, not a proof.
+Since #275 a cold scan with a failed grid node refuses a sole root, while a
+witnessed anchor can still close; such a seeded state has no cold comparator.
 Qualification compares matched returned observables, densities, sites and exact
 columns within 1e-10 relative, with an absolute floor of 1e-12 near zero. The
-independent pressure-slope derivative check uses 1e-6 max(1, abs(reference)).
+osmotic coefficient carries the ln a_w floor as max(1e-10 abs(phi), 1e-12/s),
+s = M_w sum(nu) m, which grows as 1/m. The independent pressure-slope
+derivative check uses 1e-6 max(1, abs(reference)).
 Qualification uses independent same-point cold replays; the fitting controller
 adds neither a per-trial nor an endpoint-only cold comparison.
 

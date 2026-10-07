@@ -15,15 +15,12 @@
 
 namespace epcsaft {
 
-namespace {
-
-// Retry only an externally supplied density; later reference rungs keep their existing failure meaning.
-State close_density(const HelmholtzModel& model, double temperature, double pressure,
-                    const std::vector<double>& composition, std::optional<double> prior_density) {
+State properties::close_density(const HelmholtzModel& model, double temperature, double pressure,
+                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density) {
     if (prior_density) {
-        core::Scope scope("reference_density_anchor");
+        core::Scope scope("density_anchor");
         try {
-            auto state = model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, prior_density);
+            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
             if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
             if (state.density_convergence) scope.finish(*state.density_convergence);
             scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds w/100");
@@ -32,8 +29,10 @@ State close_density(const HelmholtzModel& model, double temperature, double pres
             scope.probe("anchor_failure", {*prior_density}, 0, error.what());
         }
     }
-    return model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid);
+    return model.state_at_pressure(temperature, pressure, composition, branch);
 }
+
+namespace {
 
 std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
     if (!state.log_fugacity_coefficient.has_value())
@@ -864,7 +863,7 @@ InfiniteDilutionReference infinite_dilution_reference(
             || std::any_of(result.parameter_convergence_error.begin(), result.parameter_convergence_error.end(), failed_column))) break;
         const auto composition = formula_composition(solvent_fractions, model.parameters(),
             ion_indices, stoichiometry, molalities[index]);
-        auto state = index == 0 ? close_density(model, temperature, pressure, composition, first_rung_density)
+        auto state = index == 0 ? properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, first_rung_density)
             : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
         const auto current = ion_log_fugacity(state, ion_indices);
         // EqID: reference_limit_terminal_pair; the witness never replaces terminal values or columns.
@@ -904,7 +903,7 @@ InfiniteDilutionReference infinite_dilution_reference(
         const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
         std::vector<double> pure(solvent_fractions.size(), 0.0);
         pure[solvent] = 1.0;
-        result.pure_solvent_state = close_density(model, temperature, pressure, pure, pure_solvent_density);
+        result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, pure_solvent_density);
         if (result.pure_solvent_state->log_fugacity_coefficient)
             result.pure_solvent_log_fugacity = (*result.pure_solvent_state->log_fugacity_coefficient)[solvent];
     }
@@ -930,7 +929,7 @@ ElectrolyteActivity electrolyte_activity(
         molality
     );
     ElectrolyteActivity result;
-    result.state = close_density(model, temperature, pressure, composition, finite_density);
+    result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
     const auto& state = result.state;
     const auto log_fugacity = ion_log_fugacity(state, ion_indices);
     // EqID: single_ion_activity_coefficient

@@ -508,6 +508,9 @@ ElectrolyteActivity electrolyte_activity(
 
 namespace properties {
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
+// Anchored closure, regularity-checked; a failed anchor is traced and retried once cold on the same branch.
+State close_density(const HelmholtzModel& model, double temperature, double pressure,
+                    const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
 }  // namespace properties
 
 }  // namespace epcsaft

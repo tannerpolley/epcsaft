@@ -183,14 +183,10 @@ struct ObservationEvaluator::Impl final {
                 scope.probe("observation", static_cast<double>(i));
                 scope.probe("anchor", static_cast<double>(g));
                 scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                const Observation* old = seed ? &seed->observations[i] : nullptr;
-                const bool identity = old && observation.temperature == old->temperature && observation.pressure == old->pressure
-                    && observation.composition == old->composition && observation.branch == old->branch
-                    && observation.ion_indices == old->ion_indices && observation.stoichiometry == old->stoichiometry
-                    && observation.molality == old->molality && observation.reference_composition == old->reference_composition;
+                // Coordinates change only reaction constants, so a row's state declaration matches the seed's row.
                 prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
-                    identity ? &seed->centers[g] : nullptr, identity ? seed->model.get() : nullptr,
-                    identity && trial.chart.physical == seed->chart.physical);
+                    seed ? &seed->centers[g] : nullptr, seed ? seed->model.get() : nullptr,
+                    seed && trial.chart.physical == seed->chart.physical);
                 if (prediction.status != ObservationStatus::Available && starts_[g])
                     prediction = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
             } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
