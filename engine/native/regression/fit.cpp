@@ -446,9 +446,11 @@ void validate_checks(const FitRequest& request) {
 std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final) {
     validate_checks(request);
     std::vector<bool> selected(request.observations.size(), false);
+    const auto refreshed = [&](std::size_t i) {
+        return final && (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0));
+    };
     for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
-    if (final) for (std::size_t i = 0; i < selected.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) selected[i] = true;
+    for (std::size_t i = 0; i < selected.size(); ++i) if (refreshed(i)) selected[i] = true;
     const auto predictions = [&](const HelmholtzModel& owner) {
         std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
@@ -460,8 +462,7 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     };
     const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
-    if (final) for (std::size_t i = 0; i < candidate.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) {
+    for (std::size_t i = 0; i < candidate.size(); ++i) if (refreshed(i)) {
         final->predictions[i] = candidate[i].value.value_or(NAN);
         final->residuals[i] = candidate[i].residual.value_or(NAN);
         final->statuses[i] = candidate[i].status;
@@ -477,9 +478,9 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
             const auto& row = request.observations[i];
             const auto unit = group.metric == CheckMetric::AbsoluteLog10Ratio ? "decade" : candidate[i].unit;
             out.unit = unit;
-            const double e = check_error(group.metric, row, candidate[i].value.value_or(NAN)).first;
+            const auto [e, slope] = check_error(group.metric, row, candidate[i].value.value_or(NAN));
             out.errors.push_back(e);
-            out.slopes.push_back(check_error(group.metric, row, candidate[i].value.value_or(NAN)).second);
+            out.slopes.push_back(slope);
             if (!candidate[i].residual || !std::isfinite(e)) { out.status = "unavailable"; out.failed_rows.push_back(i); }
             if (std::abs(e) > out.maximum) { out.maximum = std::abs(e); out.argmax = i; }
             out.mean += std::abs(e);
@@ -664,7 +665,7 @@ FitResult fit(const FitRequest& request) {
         if (summary.termination_type != ceres::CONVERGENCE && summary.termination_type != ceres::USER_SUCCESS) break;
     }
     result.termination = settled ? "convergence" : exhausted ? "no_convergence" : termination_name(summary.termination_type);
-    result.iterations = result.iteration_costs.size();
+    result.iterations = result.iteration_costs.empty() ? 0 : result.iteration_costs.size() - 1;  // entry 0 is the start
     result.message = all_held ? "every coordinate is held at an active bound"
         : exhausted ? (remaining <= 0 ? "iteration limit reached" : "time limit reached") : summary.message;
     result.status = settled ? "converged" : summary.termination_type == ceres::FAILURE
@@ -683,7 +684,9 @@ FitResult fit(const FitRequest& request) {
     if (result.usable) {
         covariance(result, request, n);
         finish_checks(result, request);
-        for (std::size_t c = 0; c < width; ++c)
+        // A limit stop leaves the round-start gradient stale; this is a cache hit on the final evaluation.
+        if (!evaluator.gradient_at(optimizer, gradient)) result.covariance.projected_gradient_norm = NAN;
+        else for (std::size_t c = 0; c < width; ++c)
             result.covariance.projected_gradient_norm = std::max(result.covariance.projected_gradient_norm,
                 std::abs(optimizer[c] - std::clamp(optimizer[c] - gradient[c], lower[c], upper[c])));
     }

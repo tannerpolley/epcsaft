@@ -299,6 +299,11 @@ void register_equilibrium(py::module_& module) {
     }
     py::class_<ContinuationOptions>(module, "ContinuationOptions")
         .def(py::init<>())
+        .def(py::init([](double initial_step, double minimum_step, std::size_t max_steps, std::size_t max_retries_per_step,
+                         double envelope_max_log_step, double envelope_straddle) {
+            return ContinuationOptions{initial_step, minimum_step, max_steps, max_retries_per_step, envelope_max_log_step, envelope_straddle};
+        }), py::kw_only(), py::arg("initial_step"), py::arg("minimum_step"), py::arg("max_steps"), py::arg("max_retries_per_step"),
+            py::arg("envelope_max_log_step") = 0.0, py::arg("envelope_straddle") = 0.0)
         .def_readwrite("initial_step", &ContinuationOptions::initial_step)
         .def_readwrite("minimum_step", &ContinuationOptions::minimum_step)
         .def_readwrite("max_steps", &ContinuationOptions::max_steps)
@@ -360,7 +365,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("budget_exhausted", &EquilibriumStartsResult::budget_exhausted);
     module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
     module.def("continue_equilibrium", &continue_equilibrium, py::arg("model"), py::arg("request"));
-    // E5 solved-state actions: the existing native records and owner, transported unchanged.
+    // Solved-state actions: the existing native records and owner, transported unchanged.
     py::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
         .value("Temperature", SolvedStateObservableKind::Temperature)
         .value("Pressure", SolvedStateObservableKind::Pressure)

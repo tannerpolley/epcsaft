@@ -157,13 +157,8 @@ class Reaction:
         reference: _core.ReactionReference | None = None,
     ) -> None:
         """Exactly one target; source-basis correlations also require an explicit reference."""
-        targets = sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation))
-        if targets == 0:
-            raise TypeError("Reaction requires equilibrium_constant, affinity_j_per_mol or correlation")
-        if targets != 1:
-            raise _core.ParameterError(
-                "reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation"
-            )
+        if sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation)) != 1:
+            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
         name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
@@ -421,8 +416,6 @@ def _feed_from_mapping(value: object) -> Feed:
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
-    if not {"equilibrium_constant", "affinity_j_per_mol", "correlation"} & set(value):
-        raise _core.ParameterError("missing equilibrium_constant, affinity_j_per_mol or correlation")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
@@ -447,9 +440,9 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
     kind = phase.kind
     if kind is None:
         raise _core.ParameterError(f"phase {phase.name} requires an explicit kind (liquid or vapor)")
-    if kind.lower() in {"vapor", "gas"}:
+    if kind == "vapor":
         return _core.PhaseKind.Vapor
-    if kind.lower() == "liquid":
+    if kind == "liquid":
         return _core.PhaseKind.Liquid
     raise _core.ParameterError(f"unknown phase kind {kind}")
 
@@ -472,14 +465,7 @@ def compile_problem(model: _Model, problem: Problem | _core.EquilibriumProblem) 
 solved_state_actions = _core.solved_state_actions
 
 
-@dataclass(slots=True, eq=False, repr=False, match_args=False, kw_only=True)
-class Continuation:
-    initial_step: float
-    minimum_step: float
-    max_steps: int
-    max_retries_per_step: int
-    envelope_max_log_step: float = 0.0
-    envelope_straddle: float = 0.0
+Continuation = _core.ContinuationOptions
 
 
 def continue_equilibrium(
@@ -496,12 +482,7 @@ def continue_equilibrium(
     request.target_problem = target._native(model)
     request.start_result = start_result
     request.parameter_targets = () if parameter_targets is None else parameter_targets
-    request.options.initial_step = options.initial_step
-    request.options.minimum_step = options.minimum_step
-    request.options.max_steps = options.max_steps
-    request.options.max_retries_per_step = options.max_retries_per_step
-    request.options.envelope_max_log_step = options.envelope_max_log_step
-    request.options.envelope_straddle = options.envelope_straddle
+    request.options = options
     return _core.continue_equilibrium(model._model, request)
 
 
@@ -525,30 +506,6 @@ def dew_point(*, vapor: Phase, T: float, feed: Feed, reactions: Sequence[Reactio
         feed=feed,
         reactions=reactions,
     )
-
-
-__all__ = (
-    "Amounts",
-    "Continuation",
-    "Discover",
-    "Feed",
-    "Free",
-    "MassFractions",
-    "Molalities",
-    "MoleFractions",
-    "NeutralReference",
-    "Pinned",
-    "Phase",
-    "Problem",
-    "Reaction",
-    "bubble_point",
-    "compile_problem",
-    "continue_equilibrium",
-    "dew_point",
-    "problem_from_mapping",
-    "solve_equilibrium",
-    "solved_state_actions",
-)
 
 
 def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_core.EquilibriumStart],
