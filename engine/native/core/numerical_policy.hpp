@@ -220,7 +220,7 @@ inline constexpr Tolerance REFERENCE_HEAT_CAPACITY_TOLERANCE{"REFERENCE_HEAT_CAP
 // step regulariser of the log chart: a trace coordinate's Gibbs contribution vanishes with x_i,
 // so without the barrier the line search takes steps of order 1e4 in ln x and lands in another
 // basin (the E5-3 corner solves coalesce; the S6 single-phase solve aborts). It is not the
-// domain: the Newton polish carries a trace solution below it, down to STABILITY_COMPOSITION_FLOOR.
+// domain: the Newton polish carries a trace solution below it to any positive root (#266).
 inline constexpr Tolerance EQUILIBRIUM_COMPOSITION_BOX{"EQUILIBRIUM_COMPOSITION_BOX",
     1.0e-8,
     Category::AlgorithmTolerance,
@@ -234,15 +234,15 @@ inline constexpr Tolerance EQUILIBRIUM_BOX_INVENTORY_FRACTION{"EQUILIBRIUM_BOX_I
     Category::AlgorithmTolerance,
     "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound",
 };
-// Structural-absence cutoff for a composition coordinate: continuation admission, solved-
-// state differentiability and the Newton polish treat x_i at or below it as a vanished
-// species. Aqueous ions consumed by the applications reach x ~ 1e-12 (hydronium at pH 10
-// in water), so the cutoff sits far below any consumed trace; the analytic trace solution
-// x_B = K/(1+K) at K = 1e-8 lies below the optimizer box and above this cutoff.
+// Structural-absence cutoff for a composition coordinate: continuation admission and solved-
+// state differentiability treat x_i at or below it as a vanished species; the Newton polish
+// does not (#266): neutral CO2 in 1e-6-loaded MEA (318.15 K) has its root at x = 1.1e-21, and
+// x_B = K/(1+K) is 1e-24 at K = 1e-24. Hydronium at pH 10 in water is x ~ 1e-12; the analytic
+// trace solution at K = 1e-8 lies below the optimizer box and above this cutoff.
 inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
     1.0e-20,
     Category::AlgorithmTolerance,
-    "dimensionless x_i cutoff for continuation admission, action differentiability and the polish domain; not an accuracy bound",
+    "dimensionless x_i cutoff for continuation admission and action differentiability; not a polish domain or accuracy bound",
 };
 inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
     1.0e-8,
@@ -334,7 +334,7 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     3.0,
     Category::AlgorithmTolerance,
-    "raw-contracting Newton steps in the composition cutoff, more while raw rows exceed the caller "
+    "raw-contracting Newton steps at positive compositions, more while raw rows exceed the caller "
     "criterion; return the lowest classified residual among the optimizer start and accepted steps",
 };
 

@@ -157,6 +157,23 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
          claim="large-feed reduced curvature has the analytic trace-amount scale")
 
 
+def test_trace_isomerisation_below_the_composition_cutoff(evidence: Any) -> None:
+    """#266: the A <=> B declaration above at K = 1e-24 puts x_B below STABILITY_COMPOSITION_FLOOR (1e-20). The
+    polish rejected every positive trial below that cutoff, so main stalled at raw rows 9.21; Newton reaches
+    K/(1+K) to 2.4e-14 relative."""
+    model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
+    temperature, k = 350.0, 1e-24
+    a = math.log(k) - 1200 / temperature - 0.4 * math.log(temperature / 300) - 0.002 * temperature
+    law = ReactionLogPolynomial(a, 1200, 0.4, 0.002, 300, 250, 450, EOS_STANDARD_STATE_ID)
+    result = solve_equilibrium(model, Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=2e5,
+                                              feed=Amounts({"s0": 0.5, "s1": 0.5}), row_tolerance=1e-10,
+                                              reactions=[Reaction({"s0": -1.0, "s1": 1.0}, correlation=law)]))
+    assert result.mole_fractions, result.message
+    same(evidence, "trace/1e-24/x_B", result.mole_fractions[1], k / (1 + k), atol=0.0, rtol=1e-9, unit="1",
+         inputs={"K": k, "feed_mol": 1.0, "T_K": temperature, "P_Pa": 2e5, "message": result.message},
+         basis="Identity", method="logistic-analytic", claim="the polish reaches a positive root below the cutoff")
+
+
 @pytest.mark.parametrize("inventory", [1e-9, 1e-12])
 def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: float) -> None:
     """#172: identical ethanes, 1 mol inert s0 and s1 <=> s2 (K(350 K) = 3) fed as `inventory` mol s1, so
@@ -356,6 +373,21 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
     first, second = solve_equilibrium(model, problem), solve_equilibrium(model, problem)
     assert first.success and second.success, first.message
     assert first.mole_fractions == second.mole_fractions and first.mole_fractions[0] < 1e-12
+
+
+def test_mea_liquid_reaches_carbon_dioxide_root_below_the_cutoff() -> None:
+    """#266: packet-3 MEA liquid at loading 1e-6, 318.15 K and 8877.7929 Pa has neutral CO2 at x = 1.1e-21, below
+    STABILITY_COMPOSITION_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
+    half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68."""
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
+                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
+    result = solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=8877.7929,
+                                              row_tolerance=1e-10, reactions=reactions,
+                                              feed=Amounts({"carbon-dioxide": 1e-6 * 9.7292821,
+                                                            "monoethanolamine": 9.7292821, "water": 76.9751925})))
+    assert result.success and result.requested_tolerance_met, result.message
+    assert max(abs(value) for value in result.residuals) <= 1e-10 and 0.0 < result.mole_fractions[0] < 1e-20
 
 
 @pytest.mark.parametrize("k_ij, temperature", [(0.2, 200.0), (0.5, 150.0)])
