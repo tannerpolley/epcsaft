@@ -445,11 +445,6 @@ NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzM
     return column;
 }
 
-bool supported_reference_basis(ReferenceSourceBasis basis) {
-    return basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
-        || basis == ReferenceSourceBasis::RawMoleFractionInfiniteDilution;
-}
-
 NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     const HelmholtzModel& model,
     double temperature,
@@ -735,11 +730,6 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
         auto& diagnostic = result[row];
         const auto& reference = references[row];
-        if (!supported_reference_basis(reference.source_basis)) {
-            diagnostic.status = NeutralReferenceStatus::UnsupportedSourceBasis;
-            diagnostic.message = "unsupported neutral reference source basis";
-            continue;
-        }
         try {
             validate_neutral_reference_declaration(
                 model.parameters(), declaration, stoichiometries[row]);
