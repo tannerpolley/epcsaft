@@ -1649,20 +1649,32 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Chemical-potential equality on the density standard and the dilute molality-to-mole-fraction identity
-- Description: Charge-neutral reaction contraction at a declared pure neutral solvent reference. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
-- Change note: The implemented contraction is a qualified finite terminal estimate at 1e-14 mol/kg, not an exact infinite-dilution limit. The two last ladder differences are observed diagnostics, not rigorous error bounds. Pressure jets and the first temperature and parameter derivatives differentiate this terminal state; caloric reference values are not implied.
+- Description: Charge-neutral reaction contraction with a declared neutral solvent and optional per-species pure-liquid, pure-vapor or infinite-dilution references. Products have positive stoichiometry; solvent molar mass is in kg/mol and the molality standard in mol/kg. The source basis is explicit.
+- Change note: The solvent's default pure-liquid reference keeps the near-pure terminal liquid realization at 1e-14 mol/kg. Other pure selections require neutral species and a native positive-slope pressure root on the declared side of the pure isotherm's mechanical loop; a single root on an isotherm whose finite ALG-DENSITY scan finds no loop (in practice above the EOS critical temperature) serves either declared branch. Unsuperscripted C_r means C_r^b under the declared map. Dilute contributions use the same finite terminal estimate; both last changes qualify the final mixed contraction, without bounding infinite-dilution bias. Nondefault mixed common-molality declarations are refused. Uyan (2015), Eqs. 22–23 and accompanying text, specify pure water and all other species at infinite dilution; Eq. 18 does not select a CO2 vapor branch. Pure CO2 vapor is the historical generator's declaration at e12a5ff8, not an unambiguous paper attribution (issue #274). The per-species activities use raw mole fractions; existing uniform common molality retains A_r. Declarations and reference compositions stay fixed under system composition actions. Fixed-source system-pressure derivatives are exact zeros. Ionic references qualify charge-neutral contractions only, with no absolute single-ion standard implied.
 
 $$
 \Lambda_i^\rho=\ln(\rho/\rho_0)+\mu_i^{res}/(RT)
 =\ln\phi_i+\ln(P/(RT\rho_0)),\quad
-C_r=\sum_i\nu_{ri}\Lambda_i^\rho,\quad \sum_i\nu_{ri}z_i=0,\\
+L_i^{b_i}=\begin{cases}
+\Lambda_i^\rho(T,P_{src},\mathbf e_i;\mathrm{liquid}),&b_i=\mathrm{pure\ liquid},\\
+\Lambda_i^\rho(T,P_{src},\mathbf e_i;\mathrm{vapor}),&b_i=\mathrm{pure\ gas},\\
+\lim_{m\to0}\Lambda_i^\rho(T,P_{src},\mathbf x^s(m);\mathrm{liquid}),&b_i=\mathrm{infinite\ dilution},
+\end{cases}\\
+\mu_i^{\circ,b}=g_i^\rho+RT L_i^{b_i},\qquad
+\ln a_i^b=\ln x_i+\Lambda_i^\rho-L_i^{b_i},\qquad
+C_r^b=\sum_i\nu_{ri}L_i^{b_i},\quad \sum_i\nu_{ri}z_i=0,\\
+\delta_i=L_i^{c_i}-L_i^{b_i},\qquad
+\ln K_{c,r}=\ln K_{b,r}-\sum_i\nu_{ri}\delta_i,\qquad
+\ln K_{c,r}+C_r^c=\ln K_{b,r}+C_r^b,\\
 A_r=\left(\sum_{i\ne s}\nu_{ri}\right)\ln(M_s m^\circ),\qquad
 \ln K_{\rho,r}=\begin{cases}
-\ln K_{m,r}+A_r+C_r,&\text{common molality source},\\
-\ln K_{x,r}+C_r,&\text{raw mole-fraction source},
+\ln K_{m,r}+A_r+C_r^b,&\text{common molality source},\\
+\ln K_{x,r}+C_r^b,&\text{raw mole-fraction source},
 \end{cases}\\
 n_s=1/M_s,\quad n_i=m r_i\ (i\ne s),\quad \sum_i z_i r_i=0,\quad
 \mathcal M=\{10^{-6},10^{-8},10^{-10},10^{-12},10^{-14}\}\,\mathrm{mol\,kg^{-1}},\\
+\left.\partial_T L_i\right|_{P_{src}}=-\frac{h_i^{res}+RT}{RT^2},\qquad \partial_{P_{src}}L_i=\frac{v_i}{RT}\quad\text{(pure neutral species)},\\
+L_i-\ln[P_{src}/(RT\rho_0)]\to0,\quad T L_{i,T}+1\to0,\quad P_{src}L_{i,P}-1\to0\quad(P_{src}\to0,\mathrm{pure\ gas}),\\
 \widehat C_r=C_r(10^{-14}),\qquad
 e_r=\max\{|C_r(10^{-14})-C_r(10^{-12})|,|C_r(10^{-12})-C_r(10^{-10})|\}\le 5\times10^{-5}.
 $$
@@ -1673,7 +1685,7 @@ $$
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure and the neutral reaction reference contraction at fixed temperature and composition
 - Description: First and second pressure derivatives of the finite terminal reference. The extensive residual potential is psi=Ares/(RT), the terminal state uses N=1 mol and V=1/rho, and DeltaNu is the stoichiometric mole change.
-- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed partials; no runtime finite differences are used. Higher source-pressure derivatives are supplied by `reference_mixed_temperature_pressure_derivatives` in Properties; downstream use is separately qualified. The first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
+- Change note: Derivatives follow the same regular positive-slope density branch as the value. A reference at fixed source pressure has zero derivatives with respect to system pressure. E2 and E3 provide the displayed single-state partials; for mixed references, sum the masked dilution contribution and each selected pure-state contribution through `reference_single_insertion_taylor`. No runtime finite differences are used. Higher source-pressure derivatives are supplied by `reference_mixed_temperature_pressure_derivatives` in Properties; downstream use is separately qualified. The first temperature and parameter derivatives are `standard_state_transfer_temperature_derivative` and `standard_state_transfer_parameter_derivative`, and the mixed temperature-pressure derivative is `standard_state_transfer_temperature_pressure_derivative`.
 
 $$
 C=-\Delta\nu\ln(V\rho_0)+\sum_i\nu_i\psi_{n_i},\qquad
@@ -1798,7 +1810,7 @@ $$
 - Status: Exact derivation
 - Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure; issue #225, section 3
 - Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. Orders one and two also supply the lower reference slopes. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
-- Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
+- Change note: The same central site Jacobian eliminates association through degree nine. Ordinary Taylor coefficients retain their factorials until mixed partial extraction. Physical increments and temperature/pressure/coordinate normalization are restored separately. For mixed references, mask pure-selected neutral species out of the dilution insertion and add their single-species insertions at their resolved pure states; the remaining ionic insertion stays charge neutral. The displayed C(t) applies to each such state contribution and their sum. Fixed-source system-pressure derivatives are analytic zeros; derivatives with respect to source pressure are still evaluated for qualification.
 
 $$
 z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{1,2,3,4\},\qquad

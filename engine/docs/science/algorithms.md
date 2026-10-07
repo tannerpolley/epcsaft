@@ -1375,6 +1375,24 @@ this is not a physical liquid/vapor classification. Subsequent anchored roots
 retain the requested branch. Require finite
 states, positive pressure slope, branch continuity and both last contraction
 changes within 5e-5. Retain the terminal contraction and observed change.
+An optional `species_reference` map assigns `InfiniteDilution`, `PureLiquid`
+or `PureGas` independently. Omitted species retain solvent liquid and all
+solute infinite-dilution references. Empty and full explicit default maps use
+the original calculation directly, with no pure-state allocation or EOS call.
+The solvent's default liquid selection retains the terminal near-pure state.
+For each effective pure override, resolve one neutral pure-component State per
+source-pressure trace on the declared native liquid or vapor branch. A single
+stable root is admitted only when the pure isotherm's ALG-DENSITY scan finds no
+mechanical loop (above the EOS critical temperature it serves either declared
+branch) or the root lies on the declared side of the loop. A failed or absent
+root retains its species index and native cause. Check both terminal changes
+of the final mixed contraction, rather than first admitting an unused dilute
+contribution. Every consumed derivative masks those pure species out of the
+dilution insertion and adds their pure-state insertions through the existing
+single-insertion Taylor owner, reusing the resolved States. Fixed-source
+system-pressure columns remain analytic zeros. Nondefault mixed declarations
+with `CommonMolalityInfiniteDilution` are refused with a source-basis cause;
+raw mole fractions are the qualified mixed basis in issue #274.
 Do not extrapolate this sequence: electrolyte terms can scale as sqrt(m).
 Qualify the finite estimate against a second charge-neutral dilution path;
 agreement is an observed domain check, not a universal limit-error certificate.

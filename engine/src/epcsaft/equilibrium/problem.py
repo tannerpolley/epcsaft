@@ -113,19 +113,27 @@ class Molalities(Feed):
 
 class NeutralReference:
     """Pure neutral solvent and an explicit charge-neutral molality dilution path."""
-    __slots__ = ("solvent", "solute_molality_ratios", "standard_molality_mol_per_kg")
+    __slots__ = ("solvent", "solute_molality_ratios", "standard_molality_mol_per_kg", "species_reference")
 
     def __init__(self, *, solvent: str, solute_molality_ratios: Mapping[str, float],
-                 standard_molality_mol_per_kg: float) -> None:
+                 standard_molality_mol_per_kg: float,
+                 species_reference: Mapping[str, _core.SpeciesReference] | None = None) -> None:
         self.solvent = solvent
         self.solute_molality_ratios = dict(solute_molality_ratios)
         self.standard_molality_mol_per_kg = standard_molality_mol_per_kg
+        self.species_reference = dict(species_reference or {})
 
     def _native(self, model: _Species) -> _core.NeutralReferenceDeclaration:
         item = _core.NeutralReferenceDeclaration()
         item.solvent_index = _index(model.component_ids, self.solvent)
         item.solute_molality_ratios = _vector(self.solute_molality_ratios, model.component_ids)
         item.standard_molality_mol_per_kg = self.standard_molality_mol_per_kg
+        if self.species_reference:
+            choices = [_core.SpeciesReference.InfiniteDilution] * len(model.component_ids)
+            choices[item.solvent_index] = _core.SpeciesReference.PureLiquid
+            for species, choice in self.species_reference.items():
+                choices[_index(model.component_ids, species)] = choice
+            item.species_reference = choices
         return item
 
 
@@ -335,7 +343,8 @@ def _neutral_reference_from_mapping(value: object) -> NeutralReference | None:
     if not isinstance(solvent, str) or not isinstance(ratios, Mapping) or "standard_molality_mol_per_kg" not in record:
         raise _core.ParameterError("neutral_reference requires solvent, solute_molality_ratios and standard_molality_mol_per_kg")
     return NeutralReference(solvent=solvent, solute_molality_ratios=ratios,
-                            standard_molality_mol_per_kg=cast(float, record["standard_molality_mol_per_kg"]))
+                            standard_molality_mol_per_kg=cast(float, record["standard_molality_mol_per_kg"]),
+                            species_reference=cast(Mapping[str, _core.SpeciesReference] | None, record.get("species_reference")))
 
 
 def _reaction_reference_from_mapping(value: object) -> _core.ReactionReference | None:
