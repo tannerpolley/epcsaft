@@ -5082,6 +5082,17 @@ void check_tangent_plane_admission() {
     const auto compiled = compile_problem(model, problem);
     const auto report = stability_test(compiled, candidate);
     check_supplied_tangent_plane(compiled, candidate, report, "supplied/charged");
+    // One declared-state owner (#341): stability now also refuses a compiled system whose row tolerance or
+    // phase name differs from the result's declaration; both left the state and its rows unchanged.
+    for (const auto& [name, changed] : std::vector<std::pair<std::string, EquilibriumProblem>>{
+             {"row-tolerance", [&] { auto p = problem; p.row_tolerance = 1e-9; return p; }()},
+             {"phase-name", [&] { auto p = problem; p.phases[0].name = "L2"; return p; }()}}) {
+        std::string refusal;
+        try { (void)stability_test(compile_problem(model, changed), candidate); }
+        catch (const std::invalid_argument& error) { refusal = error.what(); }
+        tpd_compare("declared-state/" + name, refusal.rfind("stability result/declaration mismatch", 0) == 0 ? 1.0 : 0.0, 1.0, 0.0,
+            recording_support::fields({recording_support::field("refusal", refusal)}));
+    }
     CHECK(!report.trials.empty());
     for (std::size_t p = 0; p < report.present_phases.size(); ++p)
         tpd_compare("witness/present-phase/" + std::to_string(p), report.present_phases[p].at("present_identity_defect_over_rt"), 0.0, 1e-10);

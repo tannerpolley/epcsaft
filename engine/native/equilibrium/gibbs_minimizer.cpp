@@ -1450,11 +1450,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             const auto& old = *seed.previous;
             if (!old.declaration || old.model_identity != &model)
                 throw std::invalid_argument("previous start model/parameters or declaration differs");
-            auto difference = declaration_difference(*old.declaration, compiled.problem, false);
-            if (old.declaration->feed.values != compiled.problem.feed.values) difference = "feed values differ";
-            if (!problem.temperature.free && old.declaration->temperature.value != problem.temperature.value) difference = "fixed temperature differs";
-            if (!problem.pressure.free && old.declaration->pressure.value != problem.pressure.value) difference = "fixed pressure differs";
-            if (!difference.empty()) throw std::invalid_argument("previous start: " + difference);
+            if (const auto difference = declared_state_difference(*old.declaration, compiled.problem); !difference.empty())
+                throw std::invalid_argument("previous start: " + difference);
         }
         for (std::size_t i = 0; i < starts.size(); ++i) {
             if (exhausted() || (limits.attempts && i >= *limits.attempts)) { out.budget_exhausted = true; break; }
@@ -1729,22 +1726,8 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     StabilityReport& report) {
     if (!result.has_state() || result.model_identity != c.model || !result.declaration)
         throw std::invalid_argument("stability test requires this model's accepted declared result");
-    const auto& original = *result.declaration;
-    if (original.phases.size() != c.problem.phases.size() || original.feed.kind != c.problem.feed.kind
-        || original.feed.values != c.problem.feed.values || original.reactions.size() != c.problem.reactions.size()
-        || original.standard_gibbs_j_per_mol != c.problem.standard_gibbs_j_per_mol
-        || original.temperature.free != c.problem.temperature.free || original.pressure.free != c.problem.pressure.free
-        || (!original.temperature.free && original.temperature.value != c.problem.temperature.value)
-        || (!original.pressure.free && original.pressure.value != c.problem.pressure.value))
-        throw std::invalid_argument("stability result/declaration mismatch");
-    for (std::size_t p = 0; p < original.phases.size(); ++p) {
-        const auto& a = original.phases[p]; const auto& b = c.problem.phases[p];
-        if (a.support != b.support || a.kind != b.kind || a.amount.kind != b.amount.kind
-            || a.amount.fraction != b.amount.fraction) throw std::invalid_argument("stability phase declaration mismatch");
-    }
-    for (std::size_t r = 0; r < original.reactions.size(); ++r)
-        if (!same_reaction(original.reactions[r], c.problem.reactions[r]))
-            throw std::invalid_argument("stability reaction declaration mismatch");
+    if (const auto difference = declared_state_difference(*result.declaration, c.problem); !difference.empty())
+        throw std::invalid_argument("stability result/declaration mismatch: " + difference);
     Candidate candidate;
     auto& at = candidate.physical;
     at = c.prepare(result.coordinates);

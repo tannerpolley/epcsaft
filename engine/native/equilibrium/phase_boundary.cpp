@@ -521,6 +521,14 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     return "";
 }
 
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    auto difference = declaration_difference(a, b, false);
+    if (a.feed.values != b.feed.values) difference = "feed values differ";
+    if (!b.temperature.free && a.temperature.value != b.temperature.value) difference = "fixed temperature differs";
+    if (!b.pressure.free && a.pressure.value != b.pressure.value) difference = "fixed pressure differs";
+    return difference;
+}
+
 namespace {
 std::string layout_difference(const CompiledSystem& a, const CompiledSystem& b) {
     for (std::size_t p = 0; p < a.problem.phases.size(); ++p)

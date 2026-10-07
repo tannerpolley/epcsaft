@@ -31,6 +31,9 @@ struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool same_seeds = true);
+// The same declared thermodynamic state: declaration_difference without seeds, plus feed values and
+// fixed T and P. Empty when equal; shared by previous-result starts and stability tests.
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
