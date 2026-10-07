@@ -3998,8 +3998,9 @@ void check_e5_reactive() {
     const double a = moderate_isomerisation_a(), T = 350.0;
     const double L1 = -1200.0 / (T * T) + 0.4 / T + 0.002, L2 = 2.0 * 1200.0 / (T * T * T) - 0.4 / (T * T), L3 = -6.0 * 1200.0 / (T * T * T * T) + 2.0 * 0.4 / (T * T * T);
     const double ln_k = a + 1200.0 / T + 0.4 * std::log(T) + 0.002 * T, p = std::exp(ln_k) / (1.0 + std::exp(ln_k));
-    const double analytic[3] = {p * (1.0 - p) * L1, p * (1.0 - p) * (L2 + (1.0 - 2.0 * p) * L1 * L1),
-        p * (1.0 - p) * (L3 + 3.0 * (1.0 - 2.0 * p) * L1 * L2 + (1.0 - 6.0 * p + 6.0 * p * p) * L1 * L1 * L1)};
+    const auto logistic = [&](double p) { return std::array<double, 3>{p * (1.0 - p) * L1, p * (1.0 - p) * (L2 + (1.0 - 2.0 * p) * L1 * L1),
+        p * (1.0 - p) * (L3 + 3.0 * (1.0 - 2.0 * p) * L1 * L2 + (1.0 - 6.0 * p + 6.0 * p * p) * L1 * L1 * L1)}; };
+    const auto analytic = logistic(p);
     const double expected[3] = {-1.4784580498866213e-3, 8.4348805281749936e-6, -2.7304974653104138e-9};
     for (const double total : {1.0, 2.0}) {
         auto fixture_t = isomerisation_case(total, a);
@@ -4156,6 +4157,78 @@ void check_e5_reactive() {
             return item.component == 1 ? total * y : total * (1.0 - y);
         };
         all_ok = (qualify(f, "e5-3")) && all_ok;
+    }
+    {
+        // #322: x_B = K/(1+K) below STABILITY_COMPOSITION_FLOOR (1e-20). Main refused the actions and the
+        // declared seeds there, stopped continuation at x_B = 1.0e-20 and left the square bubble cell infeasible.
+        const auto model = isomerisation_case(1.0, a).model();
+        const auto isomer = [&](double k, double t, double b, double c, double d) {  // K(350 K) = k
+            auto problem = isomerisation_case(1.0, a).problem;
+            problem.temperature = FreeValue::fixed(t);
+            problem.row_tolerance = 1.0e-10;
+            problem.reactions[0].correlation = epcsaft::ReactionLogPolynomial{std::log(k) - b / T - c * std::log(T / 300.0) - d * T,
+                b, c, d, 300.0, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
+            return problem;
+        };
+        const auto row = [&](const std::string& id, double model_value, double reference, const char* claim, const std::string& inputs) {
+            const bool ok = recording_support::compare(id.c_str(), "value", "1", model_value, reference, inputs, "Relationship",
+                "analytic-correlation", claim, "reference_scale", 0.0, 1.0e-9, std::abs(model_value - reference) <= 1.0e-9 * std::abs(reference), "e5-3", id.c_str());
+            all_ok = ok && all_ok;
+        };
+        const double k = 1.0e-24;
+        auto trace = isomerisation_case(1.0, a);
+        trace.problem = isomer(k, T, 1200.0, 0.4, 0.002);
+        const auto central = epcsaft::equilibrium::solve_equilibrium(model, trace.problem);
+        const auto reference = logistic(k / (1.0 + k));
+        for (std::size_t order = 1; order <= 3; ++order) {
+            const auto batch = actions(trace, model, central, trace.observables, order);
+            row("e5-3/sub-cutoff/A" + std::to_string(order), batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()),
+                reference[order - 1], "x_B thermal actions below the cutoff equal the analytic logistic derivatives",
+                recording_support::fields({recording_support::field("status", status_field(batch, 0))}));
+        }
+        for (const char* form : {"previous", "coordinates", "composition"}) {
+            epcsaft::equilibrium::EquilibriumStart start;
+            if (form == std::string("previous")) start.previous = central;
+            else if (form == std::string("coordinates")) start.coordinates = central.coordinates;
+            else start.compositions = {{1.0 - k, k}};
+            const auto seeded = epcsaft::equilibrium::solve_equilibrium_starts(model, trace.problem, {start}, {});
+            row(std::string("e5-3/sub-cutoff/seed/") + form, seeded.selected ? seeded.results[0]->mole_fractions[1] : std::numeric_limits<double>::quiet_NaN(),
+                k / (1.0 + k), "a declared seed below the cutoff converges to the analytic root", recording_support::fields({recording_support::field("cause", seeded.causes[0])}));
+        }
+        // ln K = ln(1e-16) - 40000 (1/T - 1/450 K): the path 450 -> 350 K crosses the cutoff near 408 K.
+        epcsaft::equilibrium::ContinuationRequest path;
+        const double k_cross = 1.0e-16 * std::exp(-40000.0 * (1.0 / T - 1.0 / 450.0));
+        path.start_problem = isomer(k_cross, 450.0, -40000.0, 0.0, 0.0);
+        path.target_problem = isomer(k_cross, T, -40000.0, 0.0, 0.0);
+        path.options = {0.25, 1.0e-3, 50, 8};
+        const auto traced = epcsaft::equilibrium::continue_equilibrium(model, path);
+        double worst = traced.success ? 0.0 : std::numeric_limits<double>::quiet_NaN();
+        for (const auto& state : traced.states) {
+            const double kt = 1.0e-16 * std::exp(-40000.0 * (1.0 / state.temperature.front() - 1.0 / 450.0));
+            worst = std::max(worst, std::abs(state.mole_fractions[1] / (kt / (1.0 + kt)) - 1.0));
+        }
+        row("e5-3/sub-cutoff/continuation", 1.0 + worst, 1.0, "every continuation state through the cutoff is the analytic root",
+            recording_support::fields({recording_support::field("stop", epcsaft::equilibrium::continuation_stop_name(traced.stop)),
+                recording_support::field("accepted", traced.accepted_steps), recording_support::field("states", traced.states.size())}));
+        // Square bubble cell at 260 K: the trace limit is linear in K, so K = 1e-24 is 1e-12 times K = 1e-12.
+        std::array<double, 2> y{}, slope{};
+        for (std::size_t i = 0; i < 2; ++i) {
+            auto bubble = equilibrium_support::boundary();
+            bubble.temperature = FreeValue::fixed(260.0);
+            bubble.pressure = FreeValue::variable();
+            bubble.row_tolerance = 1.0e-10;
+            bubble.feed.values = {0.5, 0.5};
+            bubble.reactions = isomer(i == 0 ? 1.0e-12 : k, T, 1200.0, 0.4, 0.002).reactions;
+            const auto solved = epcsaft::equilibrium::solve_equilibrium(model, bubble);
+            y[i] = slope[i] = std::numeric_limits<double>::quiet_NaN();
+            if (!solved.success) continue;
+            const auto batch = epcsaft::equilibrium::solved_state_actions(epcsaft::equilibrium::compile_problem(model, bubble), solved,
+                {{obs(Kind::PhaseMoleFraction, 1, 1)}, {direction(1.0, 0.0, {0.0, 0.0})}});
+            y[i] = solved.mole_fractions[3];
+            slope[i] = batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()) / y[i];
+        }
+        row("e5-3/sub-cutoff/bubble/y_B", y[1], 1.0e-12 * y[0], "the square bubble cell reaches the trace root below the cutoff", recording_support::fields({}));
+        row("e5-3/sub-cutoff/bubble/dlny_B/dT", slope[1], slope[0], "d ln y_B/dT below the cutoff equals its K = 1e-12 value", recording_support::fields({}));
     }
     CHECK(all_ok);
 }
