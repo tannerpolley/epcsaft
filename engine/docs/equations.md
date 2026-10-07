@@ -984,36 +984,6 @@ $$
 \mu_{p,i}-\mu_{q,i}=z_i\,(\varphi_p-\varphi_q).
 $$
 
-## `ion_fraction_suppressed_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations
-- Status: Bounded empirical relation
-- Source: [Figiel2025], Eq.~(11)
-- Description: Figiel-family ion-suppressed bulk relative permittivity.
-- Change note: The suppression coefficient is an explicit resolved model record.
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-\frac{\epsilon_{r,\mathrm{sf}}}
-{1+C_\epsilon x_{\mathrm{ion}}},
-\qquad
-x_{\mathrm{ion}}=\sum_{i\in\mathcal{I}}x_i.
-$$
-
-## `ion_specific_suppressed_bulk_permittivity`
-
-- Section: Electrolyte dielectric and Debye--Huckel relations
-- Status: Bounded empirical relation
-- Source: Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
-- Description: Zuber single-solvent ion-specific dielectric suppression.
-- Change note: Each ion-solvent suppression coefficient is an explicit resolved record.
-
-$$
-\epsilon_{r,\mathrm{bulk}}=
-\frac{\epsilon_{r,s}(T)}
-{1+\sum_{i\in\mathcal{I}}\alpha_{i,s}x_i}.
-$$
-
 ## `ion_suppressed_bulk_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
