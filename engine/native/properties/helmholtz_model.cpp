@@ -1894,6 +1894,7 @@ State HelmholtzModel::state_at_pressure(
     result.density_convergence = root.convergence;
     result.density_branch = root.branch;
     result.stable_root_count = root.stable_root_count;
+    result.negative_slope_density = root.negative_slope_density;
     scope.finish(root.convergence);
     return result;
 }
