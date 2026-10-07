@@ -213,9 +213,7 @@ Scalar dipolar_helmholtz(
     const std::vector<Scalar>& sigma, const std::vector<Scalar>& epsilon
 ) {
     const std::size_t size = x.size();
-    constexpr double scale = DEBYE_C_M * DEBYE_C_M
-        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K
-           * ANGSTROM_M * ANGSTROM_M * ANGSTROM_M);
+    constexpr double scale = DEBYE_SQUARED_J_ANGSTROM3 / BOLTZMANN_J_PER_K;
     std::vector<Scalar> q(size, Scalar(0.0));
     std::vector<std::size_t> polar;
     for (std::size_t i = 0; i < size; ++i) {

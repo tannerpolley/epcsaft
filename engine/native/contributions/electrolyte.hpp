@@ -116,7 +116,7 @@ Scalar bulk_relative_permittivity(
         effective_dipolar_density += number_density_angstrom3 * fraction
             * (
                 parameters.dipole_scaling_debye2[component]
-                    * 1.0e-19 / (BOLTZMANN_J_PER_K * temperature)
+                    * DEBYE_SQUARED_J_ANGSTROM3 / (BOLTZMANN_J_PER_K * temperature)
                 + 3.0 * parameters.polarizability_scaling_angstrom3[component]
             );
         // EqID: dipolar_correlation_integral

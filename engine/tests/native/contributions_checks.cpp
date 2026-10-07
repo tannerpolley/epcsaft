@@ -863,7 +863,9 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         const double number_density = rho * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3;
         double sum = 0.0, correlation = 0.0;
         for (std::size_t i = 0; i < x.size(); ++i) {
-            sum += x[i] * (dipolar.dipole_scaling_debye2[i] * 1.0e-19
+            // Debye^2 in J A^3 from the SI Debye, epsilon_0 and the angstrom.
+            sum += x[i] * (dipolar.dipole_scaling_debye2[i] * std::pow(epcsaft::DEBYE_C_M, 2)
+                / (4.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M * 1.0e-30)
                 / (epcsaft::BOLTZMANN_J_PER_K * temperature)
                 + 3.0 * dipolar.polarizability_scaling_angstrom3[i]);
             correlation += x[i] * dipolar.correlation_integral_parameter[i];
