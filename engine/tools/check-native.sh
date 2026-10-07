@@ -19,9 +19,10 @@ fi
 
 build_root="$workspace_root/build/native-quality"
 extension_suffix="$($workspace_root/.venv/bin/python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')"
+# The tree is always the Clang debug build, so a warm tree reconfigures instead of rebuilding.
 setup_args=()
 if [[ -f "$build_root/meson-private/coredata.dat" ]]; then
-    setup_args+=(--wipe)
+    setup_args+=(--reconfigure)
 elif [[ -d "$build_root" ]]; then
     rm -rf -- "$build_root"
 fi

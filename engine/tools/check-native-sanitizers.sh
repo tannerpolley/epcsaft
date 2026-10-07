@@ -19,11 +19,8 @@ fi
 
 run_root="$workspace_root/build/native-sanitizers"
 wheelhouse="$run_root/wheelhouse"
-cleanup() {
-    rm -rf -- "$run_root"
-}
-trap cleanup EXIT
-rm -rf -- "$run_root"
+# The sanitizer Meson tree ($run_root/build) stays between runs; the wheel and its venv do not.
+rm -rf -- "$wheelhouse" "$run_root/venv"
 mkdir -p "$wheelhouse"
 
 CC=clang-18 CXX=clang++-18 \
