@@ -868,7 +868,7 @@ EquilibriumResult run_driver(
     if (point.empty()) point = limits ? std::move(fallback) : boundary_start(compiled);
     std::vector<double> full = !compiled.feasibility_cell() ? add_multipliers(compiled, point) : point;
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
-    // Exact Newton steps contract raw rows inside the physical composition cutoff.
+    // Exact Newton steps contract raw rows at any positive supported composition.
     // Curvature may raise classified rows temporarily; return the best classified
     // point visited, including the optimizer start, rather than the last step.
     std::size_t polish_evaluations = 0;
@@ -966,7 +966,7 @@ EquilibriumResult run_driver(
             if (correction_stop) { stop("scaled correction"); break; }
 
             bool accepted = false;
-            // Bounded damping retains raw contraction and the physical cutoff.
+            // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
             for (const double alpha : {1.0, 0.5, 0.25}) {
@@ -986,21 +986,17 @@ EquilibriumResult run_driver(
                 } catch (const std::exception& error) {
                     rejected_preparation = error.what();
                     if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
-                        NAN, NAN, alpha, 0.0, extension ? 1.0 : 0.0, ratio, NAN,
+                        NAN, NAN, alpha, 0.0, extension ? 1.0 : 0.0, ratio,
                         static_cast<double>(trial_index)}, step, error.what());
                     continue;
                 }
-                bool inside = true;
-                for (const auto& phase : at_candidate.composition)
-                    for (const double x : phase)
-                        inside = inside && (x == 0.0 || x >= policy::STABILITY_COMPOSITION_FLOOR.value);
                 const double after = maximum_abs(rows_after);
                 const double classified_after = maximum_abs(compiled.classified_residuals(at_candidate, rows_after));
-                const bool admit = inside && after < (extension ? ratio : 1.0) * defect;
+                const bool admit = after < (extension ? ratio : 1.0) * defect;
                 if (detailed) scope.probe("polish_trial", {correction, control, defect, classified_before,
                     after, classified_after, alpha, admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, ratio,
-                    inside ? 1.0 : 0.0, static_cast<double>(trial_index)}, step,
-                    admit ? "raw_contraction" : !inside ? "composition cutoff" : extension ? "extension ratio" : "raw noncontraction");
+                    static_cast<double>(trial_index)}, step,
+                    admit ? "raw_contraction" : extension ? "extension ratio" : "raw noncontraction");
                 else scope.probe("polish_step", {defect, after, classified_before, classified_after, alpha},
                     static_cast<std::uint32_t>(step));
                 if (!admit) continue;
