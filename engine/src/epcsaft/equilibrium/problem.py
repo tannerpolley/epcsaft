@@ -440,9 +440,9 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
     kind = phase.kind
     if kind is None:
         raise _core.ParameterError(f"phase {phase.name} requires an explicit kind (liquid or vapor)")
-    if kind.lower() in {"vapor", "gas"}:
+    if kind == "vapor":
         return _core.PhaseKind.Vapor
-    if kind.lower() == "liquid":
+    if kind == "liquid":
         return _core.PhaseKind.Liquid
     raise _core.ParameterError(f"unknown phase kind {kind}")
 
