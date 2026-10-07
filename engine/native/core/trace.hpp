@@ -142,7 +142,6 @@ public:
 
     void probe(const char* name, const double* values, std::size_t count,
                std::uint32_t iteration = 0) noexcept {
-        if (trace_ == nullptr) return;
         observe([&] { trace_->events.push_back({
             name, *index_, iteration, std::vector<double>(values, values + count), {}
         }); });
@@ -150,12 +149,10 @@ public:
 
     void probe(const char* name, const std::vector<double>& values,
                std::uint32_t iteration = 0) noexcept {
-        if (trace_ == nullptr) return;
         observe([&] { trace_->events.push_back({name, *index_, iteration, values, {}}); });
     }
 
     void finish(const Convergence& record) noexcept {
-        if (trace_ == nullptr) return;
         observe([&] { trace_->spans[*index_].convergence = record; });
     }
 

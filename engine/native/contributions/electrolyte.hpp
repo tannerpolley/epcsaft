@@ -79,7 +79,7 @@ Scalar bulk_relative_permittivity(
     const std::vector<Scalar>& mole_fractions,
     const ParameterSet& parameters
 ) {
-    const auto evaluated_relative_permittivity = component_relative_permittivities(temperature, parameters);
+    const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
     Scalar solvent_mass = Scalar(0.0);
     Scalar dielectric_mass = Scalar(0.0);
     Scalar solvent_fraction = Scalar(0.0);
@@ -87,14 +87,6 @@ Scalar bulk_relative_permittivity(
     Scalar dielectric_volume = Scalar(0.0);
     Scalar dielectric_temperature = Scalar(0.0);
     Scalar ion_suppression = Scalar(0.0);
-    Scalar effective_dipolar_density = Scalar(0.0);
-    Scalar dipolar_correlation = Scalar(0.0);
-
-    const Scalar number_density_angstrom3 =
-        molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-    const auto relative_permittivity = [&](std::size_t component) {
-        return evaluated_relative_permittivity[component];
-    };
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Scalar& fraction = mole_fractions[component];
         const int charge = parameters.charge_number[component];
@@ -102,29 +94,34 @@ Scalar bulk_relative_permittivity(
             solvent_fraction += fraction;
             const Scalar mass = fraction * parameters.molar_mass_kg_per_mol[component];
             solvent_mass += mass;
-            dielectric_mass += mass * relative_permittivity(component);
+            dielectric_mass += mass * relative_permittivity[component];
             dielectric_volume += fraction
                 * parameters.dielectric_volume_m3_per_mol[component];
             dielectric_temperature += fraction
                 * parameters.dielectric_temperature_k[component];
         } else if (charge != 0) {
-            ion_dielectric += fraction * relative_permittivity(component);
+            ion_dielectric += fraction * relative_permittivity[component];
             ion_suppression += fraction
                 * parameters.ion_suppression_coefficient[component];
         }
-        // EqID: effective_dipolar_density
-        effective_dipolar_density += number_density_angstrom3 * fraction
-            * (
-                parameters.dipole_scaling_debye2[component]
-                    * DEBYE_SQUARED_J_ANGSTROM3 / (BOLTZMANN_J_PER_K * temperature)
-                + 3.0 * parameters.polarizability_scaling_angstrom3[component]
-            );
-        // EqID: dipolar_correlation_integral
-        dipolar_correlation += fraction
-            * parameters.correlation_integral_parameter[component];
     }
 
     if (parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)) {
+        const Scalar number_density_angstrom3 = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
+        Scalar effective_dipolar_density = Scalar(0.0), dipolar_correlation = Scalar(0.0);
+        for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+            const Scalar& fraction = mole_fractions[component];
+            // EqID: effective_dipolar_density
+            effective_dipolar_density += number_density_angstrom3 * fraction
+                * (
+                    parameters.dipole_scaling_debye2[component]
+                        * DEBYE_SQUARED_J_ANGSTROM3 / (BOLTZMANN_J_PER_K * temperature)
+                    + 3.0 * parameters.polarizability_scaling_angstrom3[component]
+                );
+            // EqID: dipolar_correlation_integral
+            dipolar_correlation += fraction
+                * parameters.correlation_integral_parameter[component];
+        }
         // EqID: effective_dipolar_density
         const Scalar y_effective = (4.0 * PI / 9.0)
             * effective_dipolar_density;
@@ -149,23 +146,16 @@ Scalar bulk_relative_permittivity(
     }
 
     if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
-        const bool has_neutral_component = std::any_of(
-            parameters.charge_number.begin(),
-            parameters.charge_number.end(),
-            [](int charge) { return charge == 0; }
-        );
-        if (!has_neutral_component) {
-            // EqID: component_mixed_bulk_permittivity
+        // EqID: component_mixed_bulk_permittivity
+        if (std::none_of(parameters.charge_number.begin(), parameters.charge_number.end(),
+                         [](int charge) { return charge == 0; }))
             return ion_dielectric;
-        }
+        // EqID: salt_free_solvent_permittivity
+        return dielectric_mass / solvent_mass * solvent_fraction + ion_dielectric;
     }
 
     // EqID: salt_free_solvent_permittivity
     const Scalar salt_free_permittivity = dielectric_mass / solvent_mass;
-    if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
-        // EqID: component_mixed_bulk_permittivity
-        return salt_free_permittivity * solvent_fraction + ion_dielectric;
-    }
     if (parameters.permittivity_form.is(PermittivityForm::IonSuppression)) {
         // EqID: ion_suppressed_bulk_permittivity
         // Covers ion-specific suppression directly, ion-fraction

@@ -68,32 +68,13 @@ std::vector<Scalar> association_delta_values(
     return delta;
 }
 
-template <typename Scalar>
 // EqExclude: scalar utility dispatch
-std::vector<Scalar> association_delta(
-    const Scalar& temperature,
-    const Scalar& molar_density,
-    const std::vector<Scalar>& mole_fractions,
-    const Parameters& parameters,
-    const std::vector<Scalar>& sigma,
-    const std::vector<Scalar>& diameter
+inline std::vector<double> association_delta(
+    double temperature, double molar_density, const std::vector<double>& mole_fractions,
+    const Parameters& parameters, const std::vector<double>& sigma, const std::vector<double>& diameter
 ) {
-    return association_delta_values(
-        temperature,
-        molar_density,
-        mole_fractions,
-        parameters,
-        sigma,
-        diameter,
-        std::vector<Scalar>(
-            parameters.association_energy_over_k.begin(),
-            parameters.association_energy_over_k.end()
-        ),
-        std::vector<Scalar>(
-            parameters.association_volume.begin(),
-            parameters.association_volume.end()
-        )
-    );
+    return association_delta_values(temperature, molar_density, mole_fractions, parameters, sigma, diameter,
+        parameters.association_energy_over_k, parameters.association_volume);
 }
 
 // B_a = sum_b x_c(b) n_b X_b Delta_ab, the bonded density of every site a.
@@ -204,16 +185,7 @@ inline std::vector<double> solve_site_fractions(
         return {};
     }
     core::Scope scope("association_newton");
-    const auto delta = association_delta_values(
-        temperature,
-        molar_density,
-        mole_fractions,
-        parameters,
-        sigma,
-        diameter,
-        parameters.association_energy_over_k,
-        parameters.association_volume
-    );
+    const auto delta = association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter);
     const double number_density =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::vector<double> fractions(sites, 1.0);

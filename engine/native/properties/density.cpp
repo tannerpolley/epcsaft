@@ -267,10 +267,9 @@ std::vector<DensityRoot> scan_roots(
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
         } catch (const std::exception& error) {
-            if (scope.diagnostics_on()) scope.probe(association_failure(error)
-                ? "density_scan_skip" : "density_scan_failure",
-                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             const bool association = association_failure(error);
+            if (scope.diagnostics_on()) scope.probe(association ? "density_scan_skip" : "density_scan_failure",
+                {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             if (!association && interruptions.empty()) throw;
             interruptions += "node " + std::to_string(index) + " rho "
                 + core::optional_number(density) + ": " + error.what() + "\n";
@@ -279,11 +278,8 @@ std::vector<DensityRoot> scan_roots(
             linked = false;
             continue;
         }
-        if (scope.diagnostics_on()) scope.probe("density_scan_point",
-            {density, points.back().point.residual, points.back().point.slope, linked ? 1.0 : 0.0},
-            static_cast<std::uint32_t>(index));
-        else scope.probe("density_scan_point", {density, points.back().point.residual,
-                    points.back().point.slope}, static_cast<std::uint32_t>(index));
+        scope.probe("density_scan_point", {density, points.back().point.residual,
+            points.back().point.slope, linked ? 1.0 : 0.0}, static_cast<std::uint32_t>(index));
         linked = true;
     }
     if (!interruptions.empty())

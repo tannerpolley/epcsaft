@@ -910,6 +910,8 @@ ElectrolyteActivity electrolyte_activity(
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
     ) / coefficient_sum;
+    const auto solvent = std::distance(solvent_fractions.begin(),
+        std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
     double solvent_mass = 0.0;
     for (std::size_t component = 0; component < solvent_fractions.size(); ++component) {
         solvent_mass += solvent_fractions[component]
@@ -926,8 +928,6 @@ ElectrolyteActivity electrolyte_activity(
         if (molality < policy::OSMOTIC_MOLALITY_FLOOR.value) {
             result.osmotic_coefficient = core::Stop::converged_to_floor;
         } else {
-            const auto solvent = std::distance(solvent_fractions.begin(),
-                std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             const auto& pure = *reference.pure_solvent_state;
             const double s = coefficient_sum * molality * solvent_mass;
             // Extensive Helmholtz Euler identity, with the prescribed pressure in Z.
@@ -952,7 +952,6 @@ ElectrolyteActivity electrolyte_activity(
             ? result.mean_ionic_molality_scale * (stoichiometry[0] * (g(ion_indices[0]) - *ref[0])
                 + stoichiometry[1] * (g(ion_indices[1]) - *ref[1])) / coefficient_sum : NAN);
         if (result.osmotic_coefficient && std::holds_alternative<double>(*result.osmotic_coefficient)) {
-            const auto solvent = std::distance(solvent_fractions.begin(), std::max_element(solvent_fractions.begin(), solvent_fractions.end()));
             result.osmotic_parameter_derivative.push_back(-(g(solvent)
                 - require_component_property(reference.pure_solvent_state->log_fugacity_parameter_derivative.at(solvent * columns + a)))
                 / (coefficient_sum * molality * solvent_mass));

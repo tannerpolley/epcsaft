@@ -393,12 +393,13 @@ bool zero_direction(const ActionDirection& direction) {
         && std::all_of(direction.parameter.begin(), direction.parameter.end(),
             [](double value) { return value == 0.0; });
 }
+// The tape's independent point (T, V, n, theta).
 std::vector<double> action_point(
-    const HelmholtzModel& model, double temperature, double rho,
-    const std::vector<double>& composition
+    const HelmholtzModel& model, double temperature, double volume,
+    const std::vector<double>& amounts
 ) {
-    std::vector<double> point = {temperature, 1.0 / rho};
-    point.insert(point.end(), composition.begin(), composition.end());
+    std::vector<double> point = {temperature, volume};
+    point.insert(point.end(), amounts.begin(), amounts.end());
     for (const double value : model.active_parameter_values()) point.push_back(value);
     return point;
 }
@@ -896,9 +897,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         scope.probe("declared_choices", declared_choices);
     });
-    std::vector<double> point = {temperature, volume};
-    point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const double value : active_parameter_values()) point.push_back(value);
+    const auto point = action_point(*this, temperature, volume, amounts);
     const auto signature = predicate_signature(temperature, composition);
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
@@ -1099,9 +1098,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
     if ((result.status = support_status(*this, amounts, inserted)) != PropertyActionStatus::Available) return result;
-    std::vector<double> point = {temperature, volume};
-    point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const double value : active_parameter_values()) point.push_back(value);
+    const auto point = action_point(*this, temperature, volume, amounts);
     std::vector<double> norms(order);
     std::vector<std::vector<double>> normalized(directions);
     for (std::size_t direction = 0; direction < order; ++direction) {
@@ -1185,10 +1182,8 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (result.status != PropertyActionStatus::Available) return result;
     const auto central = evaluate(temperature, volume, composition, DerivativeOrder::Hessian);
     const std::size_t width = central.gradient.size(), components = composition.size();
-    std::vector<double> point{temperature, volume}, motion(width, 0.0);
-    point.insert(point.end(), composition.begin(), composition.end());
-    const auto values = active_parameter_values();
-    point.insert(point.end(), values.begin(), values.end());
+    const auto point = action_point(*this, temperature, volume, composition);
+    std::vector<double> motion(width, 0.0);
     motion[0] = direction.temperature;
     for (const auto& parameter : direction.parameter) {
         require(std::isfinite(parameter.value), "reference parameter direction");
@@ -1325,7 +1320,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             direction.composition, project_parameters(*this, direction.parameter)});
     const bool pressure_chain = root != nullptr && (observables.empty() || plan.ideal[2]
         || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; }));
-    const auto point = action_point(*this, temperature, molar_density, mole_fractions);
+    const auto point = action_point(*this, temperature, 1.0 / molar_density, mole_fractions);
     const bool need_ideal = std::any_of(plan.ideal.begin(), plan.ideal.end(), [](bool value) { return value; });
     bool need_residual = pressure_chain || std::any_of(plan.residual.begin(), plan.residual.end(), [](bool value) { return value; });
     bool endpoint = false;
@@ -1731,8 +1726,9 @@ State HelmholtzModel::state(
     result.pressure = pressure;
     result.residual_chemical_potential_over_rt.resize(mole_fractions.size());
     result.component_property_status.assign(mole_fractions.size(), PropertyActionStatus::Available);
+    const bool charged = detail::charged_support(mole_fractions, parameters_);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-        if (!detail::charged_support(mole_fractions, parameters_) && parameters_.charge_number[component] != 0) {
+        if (!charged && parameters_.charge_number[component] != 0) {
             result.component_property_status[component] = PropertyActionStatus::IonicInsertion;
             continue;
         }
