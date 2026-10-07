@@ -561,6 +561,44 @@ box-limited start with raw rows near 10, the nominally unloaded MEA liquid (COâ‚
 need no further polishing. Each step must reduce the raw row maximum and keep
 every composition above the structural cutoff `STABILITY_COMPOSITION_FLOOR`,
 below the optimizer box when the solution lies there (#87, 2026-09-21).
+Before evaluating a trial, a fresh undamped correction may terminate polishing
+when the current point is the stored best point, its classified maximum is within
+the unchanged caller criterion, and every free phase amount is positive (#272).
+Let $D$ be diagonal with positive free phase amounts in mol, free $T$ in K,
+free $P$ in Pa, and unity for log compositions, log packing fractions and
+multipliers in RT units. The numerical-policy owner sets
+$\varepsilon_x =$ `EQUILIBRIUM_POLISH_CORRECTION` $=10^{-12}$.
+The scaled correction must satisfy $\|D^{-1}\delta\|_\infty\le\varepsilon_x$.
+The original Newton factorization must have full numerical rank and finite
+$\delta$. With $A=JD$, the transpose factorization must also have full
+numerical rank, and its Eigen reciprocal-condition estimate $\widehat{rcond}_\infty(A)$
+must give a finite positive denominator in
+
+$$
+\|D^{-1}\delta\|_\infty +
+\frac{\|J\delta+r\|_\infty}
+{\widehat{rcond}_\infty(A)\,\|A\|_\infty}
+\le \varepsilon_x.
+$$
+
+Here $J\delta=-r$; the matrix norm is the induced infinity norm. Eigen's
+1-norm estimate on $A^T$ supplies the infinity-norm condition estimate.
+The solve-admission calculation runs only when the correction-size guards
+would permit the shortcut. A nonpositive free phase amount disables it;
+amounts are scaled by their own phase amount, never by feed total.
+Detailed `polish_correction` capture records the scaled infinity norm, its
+controlling chart coordinate, maximum feed-relative free-amount correction,
+forward estimate, classified maximum, current-best and positive-amount guards,
+checked Newton rank (âˆ’1 when not checked), and shortcut decision. The scaled
+norm includes each free amount relative to its own phase. Payloads are built
+inside `Scope::observe`; `polish_stop` names a successful correction stop.
+This local estimate does not certify total state error or every raw row within
+the caller criterion. Normalizing compositions and converting packing to density
+can amplify a chart correction, the condition number is estimated, and later
+Newton corrections are not bounded by the current correction. Paired installed-wheel
+comparisons qualify state preservation only on their stated inputs.
+If any guard fails, the existing polish trials and best-point selection continue.
+
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
 admissible raw contraction; a rejected direction ends polishing. Among the
 optimizer start and accepted physical iterates, return the point with the lowest

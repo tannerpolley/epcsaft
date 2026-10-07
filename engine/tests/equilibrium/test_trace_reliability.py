@@ -78,8 +78,10 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
     assert len(constraint_rows) == len(central.constraint_multipliers)
     kkt = max(abs(gradient[i] + sum(mu * jacobian[row * n + i] for mu, row in zip(central.constraint_multipliers, constraint_rows)))
               for i in range(compiled.primal_size))
-    same(evidence, f"{label}/kkt_residual", kkt, 0.0, atol=1e-12, rtol=0.0, unit="1",
-         inputs={**inputs, "objective_gradient_max": max(abs(value) for value in gradient)}, basis="Identity",
+    # equivalence standard, CODING_STANDARDS.md, PR #311: scale by the extensive objective gradient.
+    objective_scale = max(abs(value) for value in gradient)
+    same(evidence, f"{label}/kkt_residual", kkt, 0.0, atol=max(1e-12, 1e-10 * objective_scale), rtol=0.0, unit="1",
+         inputs={**inputs, "objective_gradient_max": objective_scale}, basis="Identity",
          method="objective-gradient-plus-jacobian",
          claim="the returned constraint multipliers make the extensive objective stationary on the constraint rows")
     # Stationarity and curvature at the returned point, with the standard-state gauge made explicit so
@@ -179,6 +181,12 @@ def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: flo
     same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-6,
          unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
          claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
+    if inventory == 1e-12:
+        # #272: pin the unchanged-polish trace state; a norm-wide residual band omitted a 1.38% correction.
+        same(evidence, "trace-inventory/polish-masking/x_s2", result.mole_fractions[2],
+             7.500000035072494e-13, atol=0.0, rtol=1e-10, unit="1", inputs=inputs,
+             basis="Numerical", method="unchanged-polish-comparison",
+             claim="the fresh-correction stop preserves the trace state of unchanged polishing")
     item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
         [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
     assert item.status == SolvedStateActionStatus.Available, item.status

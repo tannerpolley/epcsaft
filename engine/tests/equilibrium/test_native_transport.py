@@ -180,7 +180,9 @@ def test_two_phase_actions_match_the_cpp_example(evidence: Any) -> None:
     radial = actions(surface_model(), surface_flash(1.8e4), observables, [(0.0, 0.0, [0.25, 0.75])])
     for index, unit in enumerate(("mol", "1", "1", "J/mol", "mol/m^3")):
         assert thermal.results[index].unit == unit
-        same(evidence, f"solved/thermal/{index}", thermal.results[index].action)
+        # equivalence standard, CODING_STANDARDS.md, PR #311; retain the absolute floor near zero.
+        name = f"solved/thermal/{index}"
+        same(evidence, name, thermal.results[index].action, ROWS[name], max(1e-12, 1e-10 * abs(ROWS[name])), 0.0)
         same(evidence, f"solved/radial/{index}", radial.results[index].action)
     same(evidence, "solved/condition", thermal.diagnostics.condition_estimate)
     amount, activity = radial.results[0], radial.results[1]  # Euler: D n_i[n_feed] = n_i and D ln a_i[n_feed] = 0
@@ -259,7 +261,9 @@ def test_active_parameter_and_thermal_actions_match_native(evidence: Any) -> Non
         steps = [(20.0, 0.0, [0.0]), (-10.0, 0.0, [0.0]), (5.0, 0.0, [0.0])][:order]
         batch = actions(vapor, Problem(phases=[Phase("V", kind="vapor")], T=320.0, P=1.0e5, feed=Amounts({"s0": 1.0})), calorics, steps)
         for name, result in zip(caloric_names, batch.results):
-            same(evidence, f"e5-7/thermal-320/phase[0].property/{name}/A{order}", result.action)
+            # equivalence standard, CODING_STANDARDS.md, PR #311; retain the absolute floor near zero.
+            row = f"e5-7/thermal-320/phase[0].property/{name}/A{order}"
+            same(evidence, row, result.action, ROWS[row], max(1e-12, 1e-10 * abs(ROWS[row])), 0.0)
     for temperature, status in ((250.0, SolvedStateActionStatus.ThermalBoundary), (249.0, SolvedStateActionStatus.OutsideInterval)):
         edge = actions(vapor, Problem(phases=[Phase("V", kind="vapor")], T=temperature, P=1.0e5, feed=Amounts({"s0": 1.0})),
                        calorics, [(20.0, 0.0, [0.0])]).results

@@ -331,10 +331,6 @@ inline constexpr Tolerance EQUILIBRIUM_INNER_TOLERANCE_FACTOR{"EQUILIBRIUM_INNER
     "constr_viol_tol and the objective-normalized dual stop; the caller criterion classifies rows",
 };
 
-// The optimizer bounds a trace row only by tau N_feed/(N_p x_i) (#87, 2026-09-21).
-// Three exact-Jacobian steps, more while raw rows exceed the caller criterion (#261), contract them.
-// Return the visited point with lowest classified residual, including the optimizer
-// start; transient classified increases do not discard a useful direction (#66).
 inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     3.0,
     Category::AlgorithmTolerance,
@@ -342,6 +338,10 @@ inline constexpr Tolerance EQUILIBRIUM_POLISH_STEPS{"EQUILIBRIUM_POLISH_STEPS",
     "criterion; return the lowest classified residual among the optimizer start and accepted steps",
 };
 
+inline constexpr Tolerance EQUILIBRIUM_POLISH_CORRECTION{"EQUILIBRIUM_POLISH_CORRECTION",
+    1.0e-12, Category::AlgorithmTolerance,
+    "#272 scaled undamped Newton correction and forward-error estimate; local termination, not a state-error certificate",
+};
 // A reacting one-phase start is the ideal-solution speciation of its feed with frozen nonideal terms
 // (ALG-EQUILIBRIUM, #154/#157); its element-potential Newton iteration stops when every log-amount step,
 // trace species included, is below this. The frozen terms bound the start's accuracy, not this value.
@@ -428,7 +428,7 @@ inline constexpr const Tolerance* ENTRIES[] = {
     &STABILITY_PHASE_AMOUNT_FLOOR, &FIT_FUNCTION_TOLERANCE, &FIT_GRADIENT_TOLERANCE, &FIT_PARAMETER_TOLERANCE, &FIT_ACTIVE_BOUND_DISTANCE,
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
-    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
+    &EQUILIBRIUM_POLISH_STEPS, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_MAX_ITERATIONS, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
     &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 }  // namespace epcsaft::policy

@@ -18,6 +18,10 @@
 namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
+// ALG-EQUILIBRIUM: scaled fresh-Newton solve admission, infinity if unresolved.
+double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
+    const std::vector<double>& delta, const std::vector<double>& scale);
+
 enum class PhaseKind { Liquid, Vapor };
 enum class AmountKind { Free, Pinned };
 enum class FeedKind { MoleFractions, Amounts, MassFractions, Molalities };
