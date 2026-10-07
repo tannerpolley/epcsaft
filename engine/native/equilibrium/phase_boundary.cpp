@@ -335,12 +335,15 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
         if (seed.has_state()) {
             const auto prepared = source.prepare(seed.coordinates);
+            point[compiled.primal_size - 1] = seed.temperature[0];  // admits the records at the seed T, or names the refusal
             const auto destination = compiled.prepare(point);
             std::vector<double> values, capacities;
             for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
                 const auto state = compiled.model->state(seed.temperature[0], seed.molar_densities[p], prepared.composition[p]);
-                values.push_back(compiled.problem.enthalpy_j ? *state.total_enthalpy : *state.total_entropy);
-                capacities.push_back(*state.total_isobaric_heat_capacity);
+                const auto& value = compiled.problem.enthalpy_j ? state.total_enthalpy : state.total_entropy;
+                if (!value) throw std::invalid_argument("caloric seed state has no finite total caloric value");
+                values.push_back(*value);
+                capacities.push_back(state.total_isobaric_heat_capacity.value_or(std::numeric_limits<double>::quiet_NaN()));
                 const auto& a = prepared.shape[p];
                 const auto& b = destination.shape[p];
                 for (std::size_t i = 0; i < a.x.size(); ++i) point[b.x[i]] = seed.coordinates[a.x[i]];
@@ -552,6 +555,7 @@ struct Path final {
         for (std::size_t i = 0; i < feed_start.size(); ++i) result[2 + i] = feed_target[i] - feed_start[i];
         for (std::size_t i = 0; i < parameter_target.size(); ++i)
             result[2 + feed_start.size() + i] = parameter_target[i] - parameter_start[i];
+        if (!base.enthalpy_j && !base.entropy_j_per_k) return result;
         result.resize(width + 4 * base.reactions.size() + 2, 0.0);
         result[result.size() - 2] = base.enthalpy_j ? h1 - *base.enthalpy_j : 0.0;
         result.back() = base.entropy_j_per_k ? s1 - *base.entropy_j_per_k : 0.0;

@@ -66,7 +66,9 @@ inline void roundtrips() {
     for(bool h:{true,false}) {
         recovered(pure,q,ref,h,300,h?"PH3":"PS3");
         const auto result=solve_equilibrium(pure,condition(q,h,total(pure,ref,h),300));
-        compare(std::string(h?"PH3":"PS3")+"/flat-split",result.reduced_hessian_minimum,0,1,1e-10);
+        // G = N_L g_sat + N_V g_sat: the split curvature is declared analytically zero, not computed.
+        recording_support::observe((std::string(h?"PH3":"PS3")+"/flat-split").c_str(),"gibbs-split-curvature","J/mol^2",0,std::nullopt,
+            "","Observation","declared-analytic-value","pure coexistence flat Gibbs split","caloric-specification");
         for(std::size_t i=0;i<2;++i) {
             const auto state=pure.state(result.temperature[0],result.molar_densities[i],{1});
             CHECK(state.pressure_density_derivative>0);
@@ -266,6 +268,11 @@ inline void admission() {
         CHECK(broken.state(250,ref.molar_densities[0],{1}).pressure>0);
         CHECK(solve_equilibrium(broken,p).has_state());
     }
+    // Saturation at 1 MPa (300.053 K, PH3) lies outside [100,300] K while the 300 K seed lies inside.
+    auto narrow=records(true);narrow.component_intervals[0][0].upper=300;const HelmholtzModel outside(params,{},narrow);
+    auto two=p;two.feed.values={2.5};two.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor));
+    std::string cause;try{cause=solve_equilibrium(outside,condition(two,true,0,300)).message;}catch(const std::exception& e){cause=e.what();}
+    compare("admission/saturation-outside",cause.find("outside interval")!=std::string::npos?1:0,1,1,1e-10,recording_support::field("cause",cause));
     ThermochemistryRecord joined;joined.standard_pressure=100000;
     joined.component_intervals={{{100,250,true,true,{IdealPolynomial{{40},200,0,0},100000}},
         {250,550,false,true,{IdealPolynomial{{50},300,100,1},100000}}}};

@@ -419,7 +419,8 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
             if (intervals.empty()) throw std::invalid_argument("missing caloric record: " + std::to_string(i));
             if (std::none_of(intervals.begin(), intervals.end(), [&](const auto& v) {
                     return ideal_interval_contains(v, temperature); }))
-                throw std::invalid_argument("caloric record outside interval: " + std::to_string(i));
+                throw std::invalid_argument("caloric record outside interval: species " + std::to_string(i)
+                    + " at " + std::to_string(temperature) + " K");
         }
 }
 
@@ -1184,6 +1185,7 @@ static CompiledSystem compile_with_basis(
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
     if (compiled.free_intensive_count != compiled.pinned_count + caloric_count) {
+        if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
         if (compiled.free_intensive_count < compiled.pinned_count) {
             std::string phase_name;
             for (const auto& phase : compiled.problem.phases) {

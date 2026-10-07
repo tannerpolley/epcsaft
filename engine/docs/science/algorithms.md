@@ -640,8 +640,8 @@ classifies the recomputed rows; the Ipopt `tol`, `acceptable_tol` and
 `constr_viol_tol` settings are the smaller of the request
 and the default, times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
-hair when both coincide. A pinned square system (constant objective, followed
-by the exact Newton polish) stops at the criterion itself; the polish, not an
+hair when both coincide. A square feasibility cell (pinned amount or caloric
+condition: constant objective, followed by the exact Newton polish) stops at the criterion itself; the polish, not an
 inner decade, removes the overshoot (owner decision 2026-09-23).
 The shared Ipopt option owner sets the absolute unscaled `dual_inf_tol` to
 that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
@@ -719,14 +719,14 @@ coordinates. The initial value sweep and the association implicit chain remain
 unchanged; a separate no-site first-order reverse sweep is unnecessary.
 Standard-state terms carry exact value, first and second temperature
 derivatives from the reaction target owner; no affine shortcut is assumed.
-For an unpinned cell the chemical rows are not optimizer constraints: they are
+For an ordinary free-amount cell the chemical rows are not optimizer constraints: they are
 recovered from the objective gradient `N x_i mu_i` through least-squares balance
 multipliers, so their unscaled residual is bounded only by the dual tolerance
 divided by `N x_i` and diverges where a phase or a fraction vanishes. The driver
 therefore classifies the free-amount route by the KKT-scaled stationarity
 residuals `N_p x_i mu_i / N_feed` and `N_p / N_feed` times the pressure row (the
 first-order conditions in the solved chart; owner decision 2026-09-16), keeps
-the unscaled rows in `residuals` as diagnostics, and classifies a pinned cell by
+the unscaled rows in `residuals` as diagnostics, and classifies a feasibility cell by
 its unscaled rows, which are its constraints. Species thermochemistry attached to a
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.

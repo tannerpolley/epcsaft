@@ -790,7 +790,7 @@ EquilibriumResult run_driver(
 ) {
     const double row_tolerance = compiled.problem.row_tolerance;
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
-    // A pinned square system has a constant objective and is Newton-polished below, so it stops there.
+    // A square feasibility cell has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = std::min(row_tolerance, policy::EQUILIBRIUM_ROW_RESIDUAL.value)
         * (compiled.feasibility_cell() && compiled.is_square() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
     const auto expired = [&] { return limits && limits->expired(); };
