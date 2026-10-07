@@ -248,16 +248,12 @@ IdealThermalValue<Scalar> evaluate_ideal_correlation(
     return result;
 }
 
-// EqExclude: source-declared interval admission and derivative availability
-inline const IdealInterval& ideal_interval(const std::vector<IdealInterval>& intervals, double T) {
-    validate_ideal_intervals(intervals);
+// EqExclude: source-declared interval selection over intervals admitted by validate_ideal_intervals
+inline const IdealInterval* ideal_interval(const std::vector<IdealInterval>& intervals, double T) {
     const IdealInterval* selected = nullptr;
-    for (std::size_t i = 0; i < intervals.size(); ++i) {
-        const auto& a = intervals[i];
-        if (ideal_interval_contains(a, T)) selected = &a;
-    }
-    if (selected == nullptr) throw std::invalid_argument("temperature outside ideal intervals");
-    return *selected;
+    for (const auto& interval : intervals)
+        if (ideal_interval_contains(interval, T)) selected = &interval;
+    return selected;
 }
 
 } // namespace epcsaft

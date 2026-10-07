@@ -43,11 +43,6 @@ void validate_correlation_temperature(const ReactionLogPolynomial& correlation, 
     if (!std::isfinite(temperature) || temperature < correlation.temperature_min || temperature > correlation.temperature_max)
         throw std::invalid_argument("temperature outside reaction correlation");
 }
-bool contains_temperature(const std::vector<IdealInterval>& intervals, double temperature) {
-    return std::any_of(intervals.begin(), intervals.end(), [temperature](const IdealInterval& interval) {
-        return ideal_interval_contains(interval, temperature);
-    });
-}
 ReactionProperties make_reaction_properties(
     double ln_k, double derivative, double enthalpy, const std::string& identity,
     double second_derivative, double third_derivative
@@ -77,7 +72,8 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
     const ThermochemistryRecord& record, double temperature, double molar_density,
     const std::vector<double>& mole_fractions
 ) {
-    validate_thermochemistry(record, mole_fractions.size());
+    if (record.component_intervals.size() != mole_fractions.size())
+        throw std::invalid_argument("thermochemistry component order");
     if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(molar_density) || molar_density <= 0.0)
         throw std::invalid_argument("invalid ideal state");
     validate_composition(mole_fractions);
@@ -85,7 +81,7 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
                     [](const auto& intervals) { return intervals.empty(); }))
         return {std::nullopt, ThermochemistryStatus::MissingRecord};
     if (std::any_of(record.component_intervals.begin(), record.component_intervals.end(),
-                    [temperature](const auto& intervals) { return !contains_temperature(intervals, temperature); }))
+                    [temperature](const auto& intervals) { return ideal_interval(intervals, temperature) == nullptr; }))
         return {std::nullopt, ThermochemistryStatus::OutsideInterval};
 
     try {
@@ -94,8 +90,7 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
         correlations.reserve(mole_fractions.size());
         supported.reserve(mole_fractions.size());
         for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
-            correlations.push_back(ideal_interval(
-                record.component_intervals[component], temperature).correlation);
+            correlations.push_back(ideal_interval(record.component_intervals[component], temperature)->correlation);
             supported.push_back(mole_fractions[component] > 0.0);
         }
         const auto value = evaluate_ideal_mixture(
@@ -131,10 +126,9 @@ std::optional<ReactionThermochemistry> reaction_thermochemistry_density(
     double delta_nu = 0.0;
     for (std::size_t i = 0; i < stoichiometry.size(); ++i) {
         if (stoichiometry[i] == 0.0) continue;
-        if (!contains_temperature(record.component_intervals[i], temperature)) return std::nullopt;
-        const auto thermal = evaluate_ideal_correlation(
-            ideal_interval(record.component_intervals[i], temperature).correlation,
-            temperature, record.standard_pressure);
+        const auto* interval = ideal_interval(record.component_intervals[i], temperature);
+        if (interval == nullptr) return std::nullopt;
+        const auto thermal = evaluate_ideal_correlation(interval->correlation, temperature, record.standard_pressure);
         pressure_basis.gibbs += stoichiometry[i] * (thermal.h - temperature * thermal.s);
         pressure_basis.enthalpy += stoichiometry[i] * thermal.h;
         pressure_basis.heat_capacity += stoichiometry[i] * thermal.cp;

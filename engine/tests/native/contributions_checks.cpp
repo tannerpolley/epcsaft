@@ -1491,7 +1491,7 @@ void ideal_intervals_require_owned_endpoints() {
         {epcsaft::IdealPolynomial{{20.0}, 350.0, 0.0, 0.0}, 1.0e5}};
     const std::vector<epcsaft::IdealInterval> intervals = {left, right};
     const auto owned = [](const std::vector<epcsaft::IdealInterval>& set, double T) {
-        return epcsaft::evaluate_ideal_correlation(epcsaft::ideal_interval(set, T).correlation, T, 1.0e5);
+        return epcsaft::evaluate_ideal_correlation(epcsaft::ideal_interval(set, T)->correlation, T, 1.0e5);
     };
     const auto boundary = owned(intervals, 300.0);
     const auto left_interior = owned(intervals, 250.0);
@@ -1542,9 +1542,9 @@ void ideal_intervals_require_owned_endpoints() {
     const auto open_gap = std::vector<epcsaft::IdealInterval>{
         {200.0, 300.0, true, false, left.correlation},
         {300.0, 400.0, false, true, right.correlation}};
-    CHECK(rejects([&] { epcsaft::ideal_interval(gap, 250.0); }));
-    CHECK(rejects([&] { epcsaft::ideal_interval(overlap, 250.0); }));
-    CHECK(rejects([&] { epcsaft::ideal_interval(open_gap, 250.0); }));
+    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(gap); }));
+    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(overlap); }));
+    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(open_gap); }));
 }
 
 void ideal_polynomial_tape_reuses_smooth_interval() {

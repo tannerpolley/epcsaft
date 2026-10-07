@@ -516,10 +516,7 @@ std::vector<IdealCorrelation> selected_ideal_correlations(
     std::vector<IdealCorrelation> result;
     result.reserve(record->component_intervals.size());
     for (const auto& intervals : record->component_intervals) {
-        const IdealInterval* selected = nullptr;
-        for (const auto& interval : intervals) {
-            if (ideal_interval_contains(interval, temperature)) selected = &interval;
-        }
+        const auto* selected = ideal_interval(intervals, temperature);
         if (selected == nullptr) return {};
         endpoint = endpoint || temperature == selected->lower || temperature == selected->upper;
         result.push_back(selected->correlation);
@@ -1712,9 +1709,7 @@ State HelmholtzModel::state(
     const auto derivatives = evaluate(temperature, volume, amounts, DerivativeOrder::Hessian);
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    const auto sites = solve_site_fractions(
-        temperature, molar_density, mole_fractions, parameters_, sigma, diameter
-    );
+    const auto& sites = derivatives.site_fractions;
     const auto [electro, born] = detail::supported_electrostatics(
         temperature, molar_density,
         mole_fractions, mole_fractions, parameters_
