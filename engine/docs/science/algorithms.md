@@ -377,8 +377,7 @@ Detailed capture emits `polish_direction` (undamped correction infinity norm,
 controlling coordinate, raw/classified defects before, extension, prior accepted
 contraction ratio) and `polish_coordinate` (coordinate, phase, component, value),
 whose reason names its chart quantity and units. `polish_trial` adds raw/classified
-defects after, damping, acceptance, extension, prior ratio, composition admission
-and trial index, retaining the actual rejection or preparation cause. Missing
+defects after, damping, acceptance, extension, prior ratio and trial index, retaining the actual rejection or preparation cause. Missing
 trial quantities are NaN. `polish_stop` retains raw/classified defects, step and
 the exit cause. Ordinary capture keeps the existing `polish_step` records.
 
@@ -1839,10 +1838,8 @@ use the structural cutoff for every species, so chemical equalities can reach tr
 `STABILITY_COMPOSITION_FLOOR` is the structural-absence
 cutoff for continuation admission and solved-state differentiability. The
 Newton polish carries a trace solution below the box to any positive root (#87,
-2026-09-21; #266, 2026-10-07). The polish returns positive roots below
-`STABILITY_COMPOSITION_FLOOR`; solved-state actions there are refused by the
-cutoff gate with `PhaseBoundaryNotDifferentiable`, which names vanishing, not a
-trace root (follow-up #322). Continuation admission and action availability
+2026-09-21; #266, 2026-10-07); actions at such roots are refused as stated under
+action admission (follow-up #322). Continuation admission and action availability
 between 1e-12 and the cutoff are unexercised and remain a qualification limit. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
