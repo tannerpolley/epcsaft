@@ -84,7 +84,7 @@ and canonical wheel build and installation guidance.
 Run the affected-area gate during normal development:
 
 ```bash
-bash tools/check-affected.sh
+bash tools/check-affected.sh [base]
 ```
 
 Run the fast installed-wheel gate with:
@@ -93,16 +93,18 @@ Run the fast installed-wheel gate with:
 bash tools/check-all.sh
 ```
 
-`check-affected.sh` selects checks from the changed paths. Data, analysis, or
+`check-affected.sh` selects checks from the paths changed since `base` (default: the
+merge base with `origin/main`, printed first) plus uncommitted files. Data, analysis, or
 documentation-only changes can stop at readiness checks without building or
 installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence. Parameter-fitting checks join the gate when that capability exists.
-`check-affected.sh` runs the Explicit equilibrium cases (16 binary128 reactive-caloric
-and reactive-cp cases and 2 envelope traces) only when their code changes; request them with
-`tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*'`.
+`check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
+and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
+changes; request them with
+`tools/heavy bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
 
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
