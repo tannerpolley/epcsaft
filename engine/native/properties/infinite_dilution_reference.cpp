@@ -427,8 +427,11 @@ std::optional<double> admit_ladder(NeutralReferenceReactionDiagnostic::Derivativ
 }
 
 // Scale is T^a P^b max(1, |theta|). Columns that enter ln K and its first slopes admit at
-// REFERENCE_CONVERGENCE_TOLERANCE; d2C/dT2 and the higher columns (reference order >= 2) enter
-// the reaction heat capacity and its derivatives, so they admit at REFERENCE_HEAT_CAPACITY_TOLERANCE / R.
+// REFERENCE_CONVERGENCE_TOLERANCE; d2C/dT2 and the temperature-bearing higher columns (reference
+// order >= 2) enter the reaction heat capacity and its derivatives, so they admit at
+// REFERENCE_HEAT_CAPACITY_TOLERANCE / R. Pure-pressure higher columns are volume and compressibility
+// quantities that share that tolerance by convention; their scaled changes are 1e-21 to 2e-17 in the
+// reference-limits case, against 1.2e-3.
 NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
     std::optional<std::size_t> parameter, double scale, double tolerance, std::optional<double>* observed = nullptr) {
