@@ -80,7 +80,7 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
-- 2026-10-07, #341 owner decision: the Python layer and the total no longer count the 1,225-line `_core.pyi` type stub; the architecture check compares its names with the extension instead. No ceiling changes.
+- 2026-10-07, #341 owner decision: the Python layer and the total no longer count the 1,225-line `_core.pyi` type stub; the architecture check compares its names and class members with the extension instead. The owner then lowered both hard ceilings by those 1,225 lines (`_core.pyi` at base `5cc1001d`): Python **2,892 → 1,667** and total **25,000 → 23,775**. Floor and soft targets are unchanged.
 - 2026-10-06, #224 slice B owner decision: raise the Equilibrium hard ceiling (up to about 9,200 approved) and the Python hard ceiling (up to 2,900 approved) only to the measured slice B counts, Equilibrium **8,800 → 8,843** and Python **2,850 → 2,892**, for the critical-equation rows, admission and the native envelope controller and their transport; no other ceiling changes.
 - 2026-10-06, #245: the owner approved Regression hard ceiling 2478 → 2550.
   The successful evaluator trial owns density initialization for fitting and
