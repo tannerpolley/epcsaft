@@ -446,9 +446,11 @@ void validate_checks(const FitRequest& request) {
 std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final) {
     validate_checks(request);
     std::vector<bool> selected(request.observations.size(), false);
+    const auto refreshed = [&](std::size_t i) {
+        return final && (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0));
+    };
     for (const auto& group : request.checks) for (const auto i : group.rows) selected[i] = true;
-    if (final) for (std::size_t i = 0; i < selected.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) selected[i] = true;
+    for (std::size_t i = 0; i < selected.size(); ++i) if (refreshed(i)) selected[i] = true;
     const auto predictions = [&](const HelmholtzModel& owner) {
         std::vector<Prediction> result(request.observations.size());
         ReferenceCache references;
@@ -460,8 +462,7 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
     };
     const auto candidate = predictions(HelmholtzModel(stored, {}, request.thermochemistry));
     // Checks use stored parameters; objective rows retain their accepted warm-start evaluation.
-    if (final) for (std::size_t i = 0; i < candidate.size(); ++i)
-        if (final->statuses[i] == ObservationStatus::NotEvaluated || (!request.weights.empty() && request.weights[i] == 0.0)) {
+    for (std::size_t i = 0; i < candidate.size(); ++i) if (refreshed(i)) {
         final->predictions[i] = candidate[i].value.value_or(NAN);
         final->residuals[i] = candidate[i].residual.value_or(NAN);
         final->statuses[i] = candidate[i].status;
@@ -477,9 +478,9 @@ std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parame
             const auto& row = request.observations[i];
             const auto unit = group.metric == CheckMetric::AbsoluteLog10Ratio ? "decade" : candidate[i].unit;
             out.unit = unit;
-            const double e = check_error(group.metric, row, candidate[i].value.value_or(NAN)).first;
+            const auto [e, slope] = check_error(group.metric, row, candidate[i].value.value_or(NAN));
             out.errors.push_back(e);
-            out.slopes.push_back(check_error(group.metric, row, candidate[i].value.value_or(NAN)).second);
+            out.slopes.push_back(slope);
             if (!candidate[i].residual || !std::isfinite(e)) { out.status = "unavailable"; out.failed_rows.push_back(i); }
             if (std::abs(e) > out.maximum) { out.maximum = std::abs(e); out.argmax = i; }
             out.mean += std::abs(e);
