@@ -1180,8 +1180,9 @@ static SolvedStateActionBatch evaluate_action(
     if (gate == SolvedStateActionStatus::Available && !zero && thermal
         && thermal_reference_missing(center.prepared.temperature, problem.reactions, problem.standard_gibbs_j_per_mol))
         gate = SolvedStateActionStatus::MissingThermochemistry;
-    // Critical actions are first order: orders two and three need E5 and E6 of the critical rows.
-    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 1)
+    // A critical cell's row series reaches Taylor order two (five-direction energy contractions);
+    // a third-order action needs order three of the critical rows, which needs six-direction ones.
+    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 2)
         gate = SolvedStateActionStatus::EnergyOrderUnavailable;
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.

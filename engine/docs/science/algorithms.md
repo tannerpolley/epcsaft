@@ -862,9 +862,11 @@ M (again the u-column block) must have one lowest eigenvalue within
 negative one (the second eigenvalue exceeds that band). The record keeps the
 spectrum, mode, cubic value, band, rank, condition estimate and a backward error
 either way. The result is a critical-equation candidate, not a stability
-certificate. Its first solved-state actions use E4; second and third orders,
-which need E5 and E6 of the critical rows, are refused as
-`energy_order_unavailable` with central values kept. A one-species candidate's
+certificate. Its first solved-state actions use E4 and its second-order actions the
+order-two critical rows (E5); third order needs order three of the critical rows (E6) and is
+refused as `energy_order_unavailable` with central values kept. Second actions of T, P and
+density along a feed direction match Richardson-refined central differences of first actions
+at re-solved critical points within 4.1e-11 relative (C3 binary, #341). A one-species candidate's
 isobaric heat capacities divide by its zero P_rho and are unavailable
 (`pressure_singular`); a mixture candidate's follow the ordinary pressure-slope
 admission.
