@@ -69,10 +69,10 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
-The [native conversion evidence](../../analyses/README.md#native-conversion-evidence)
-records the completed mapped conversions and retirements, changed comparison
-claims, and the remaining Wangler source-reference calculation.
-The layout check's absence of `scipy.optimize` is a lexical result, not a physical validation claim.
+The [analysis index](../../analyses/README.md#analysis-index) names each leaf's
+question and status; the #234 native conversions and retirements are recorded in
+the leaves they changed. A zero `scipy.optimize` count is a lexical result, not a
+physical validation claim.
 
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 [native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
@@ -416,79 +416,7 @@ source/data adoption: zotero
 
 ## Analysis workflow choice
 
-The owner confirmed deferred Snakemake adoption for these populated analyses
-on 2026-09-29. Existing study commands remain in use; a later adoption needs
-confirmation.
-
-| Analysis | Snakemake adoption |
-|---|---|
-| `analyses/2026-association-native-comparison` | Deferred |
-| `analyses/2026-binary-methane-ethane-bubble-point` | Deferred |
-| `analyses/2026-binary-methane-ethane-tp-flash` | Deferred |
-| `analyses/2026-density-closure-diagnosis` | Deferred |
-| `analyses/2026-dielectric-alternatives` | Deferred |
-| `analyses/2026-fitting-state-reuse` | Deferred |
-| `analyses/2026-fixed-pressure-anchor` | Deferred |
-| `analyses/2026-grepe-hard-cut` | Deferred |
-| `analyses/2026-idaes-asl-adapter` | Deferred |
-| `analyses/2026-initialization-diagnosis` | Deferred |
-| `analyses/2026-khudaida-idaes-settler` | Deferred |
-| `analyses/2026-khudaida-lineage-diagnosis` | Deferred |
-| `analyses/2026-mea-association-diameter` | Deferred |
-| `analyses/2026-mea-grepe-regression` | Deferred |
-| `analyses/2026-mea-parameter-estimation` | Deferred |
-| `analyses/2026-mea-reactive-fit-timing` | Deferred |
-| `analyses/2026-mea-recovered-state-actions` | Deferred |
-| `analyses/2026-neutral-pcsaft-equilibrium-comparison` | Deferred |
-| `analyses/2026-open-source-equilibrium-comparison` | Deferred |
-| `analyses/2026-polar-dipole` | Deferred |
-| `analyses/2026-pure-saturation-regression` | Deferred |
-| `analyses/2026-reacting-mixed-actions` | Deferred |
-| `analyses/2026-reactive-electrolyte-driver` | Deferred |
-| `analyses/2026-reactive-liquid-cold-start` | Deferred |
-| `analyses/2026-shared-derivative-qualification` | Deferred |
-| `analyses/2026-stability-noise-band` | Deferred |
-| `analyses/2026-trace-action-diagnosis` | Deferred |
-| `analyses/2026-wolbach-sandler-requalification` | Deferred |
-| `analyses/phase-stability-cutover` | Deferred |
-| `analyses/reproduction/1989-esteso` | Deferred |
-| `analyses/reproduction/1998-chase` | Deferred |
-| `analyses/reproduction/2001-gross` | Deferred |
-| `analyses/reproduction/2002-gross` | Deferred |
-| `analyses/reproduction/2004-glos` | Deferred |
-| `analyses/reproduction/2005-cameretti` | Deferred |
-| `analyses/reproduction/2008-held` | Deferred |
-| `analyses/reproduction/2010-nasrifar-mdea` | Deferred |
-| `analyses/reproduction/2012-held` | Deferred |
-| `analyses/reproduction/2013-pahlavanzadeh-mdea` | Deferred |
-| `analyses/reproduction/2014-held` | Deferred |
-| `analyses/reproduction/2015-baygi` | Deferred |
-| `analyses/reproduction/2015-may` | Deferred |
-| `analyses/reproduction/2015-uyan` | Deferred |
-| `analyses/reproduction/2018-iapws` | Deferred |
-| `analyses/reproduction/2018-wangler` | Deferred |
-| `analyses/reproduction/2019-bulow` | Deferred |
-| `analyses/reproduction/2019-iapws` | Deferred |
-| `analyses/reproduction/2020-bulow` | Deferred |
-| `analyses/reproduction/2020-cleeton` | Deferred |
-| `analyses/reproduction/2020-haslam` | Deferred |
-| `analyses/reproduction/2021-bulow` | Deferred |
-| `analyses/reproduction/2021-bulow-sour-gas` | Deferred |
-| `analyses/reproduction/2022-ascani` | Deferred |
-| `analyses/reproduction/2023-ascani` | Deferred |
-| `analyses/reproduction/2023-belov` | Deferred |
-| `analyses/reproduction/2023-schick` | Deferred |
-| `analyses/reproduction/2024-hubach` | Deferred |
-| `analyses/reproduction/2024-yu` | Deferred |
-| `analyses/reproduction/2025-figiel` | Deferred |
-| `analyses/reproduction/2025-figiel-engine-crosswalk` | Deferred |
-| `analyses/reproduction/2025-pakravesh` | Deferred |
-| `analyses/reproduction/2025-perdomo` | Deferred |
-| `analyses/reproduction/2025-rezaee` | Deferred |
-| `analyses/reproduction/2026-09-03-stage-05-repair` | Deferred |
-| `analyses/reproduction/2026-eos-literature-handoff` | Deferred |
-| `analyses/reproduction/2026-khudaida` | Deferred |
-| `analyses/reproduction/2026-rezaee` | Deferred |
+The owner deferred Snakemake adoption for all analyses on 2026-09-29; existing study commands remain in use, and a later adoption needs confirmation.
 
 Declared equilibrium starts means caller-supplied initial physical guesses or full
 compiled coordinates for one unchanged thermodynamic problem (ALG-EQUILIBRIUM).
