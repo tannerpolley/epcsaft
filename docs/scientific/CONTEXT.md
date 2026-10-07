@@ -72,7 +72,7 @@ reactive Lithium by implication.
 The [native conversion evidence](../../analyses/README.md#native-conversion-evidence)
 records the completed mapped conversions and retirements, changed comparison
 claims, and the remaining Wangler source-reference calculation.
-An empty SciPy allowlist is a lexical result, not a physical validation claim.
+The layout check's absence of `scipy.optimize` is a lexical result, not a physical validation claim.
 
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 [native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
