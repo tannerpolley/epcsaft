@@ -9,7 +9,9 @@ cd "$repo_root"
 export LC_ALL=C
 
 # Four jobs: a cold build peaks at 4.2 GiB (#319). The cap is the CPUs this process
-# may use; plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1.
+# may use; plain nproc follows OMP_NUM_THREADS, which tools/heavy sets to 1. The
+# resolved count is written to build/environment-wheel/build-jobs for the native-test
+# and native-run compiles.
 build_jobs="${EPCSAFT_BUILD_JOBS:-4}"
 if [[ ! "$build_jobs" =~ ^[1-9][0-9]*$ ]]; then
     echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2
@@ -361,6 +363,7 @@ ensure_compile_database() {
     fi
     printf '%s\n' "$wheel_fingerprint" >"$configured_database_stamp"
     printf '%s\n' "$build_dir" >"$build_dir_stamp"
+    printf '%s\n' "$build_jobs" >"$wheelhouse/build-jobs"
     bash "$repo_root/tools/prepare-serena-cpp.sh"
 }
 
@@ -419,10 +422,10 @@ if [[ "$wheel_current" == true ]]; then
         else
             ensure_compile_database
         fi
-    uv pip check --python "$python"
-    printf '%s\n' "$verification_output"
-    assert_source_unchanged
-    record_preparation_binding "$wheel"
+        uv pip check --python "$python"
+        printf '%s\n' "$verification_output"
+        assert_source_unchanged
+        record_preparation_binding "$wheel"
         echo "Engine wheel is current; native rebuild skipped"
         exit 0
     fi
@@ -447,9 +450,9 @@ if [[ "$wheel_current" != true ]]; then
         fi
     fi
 
-if [[ "$cache_valid" == true ]]; then
-    assert_source_unchanged
-    cp "${cached_wheels[0]}" "$wheelhouse/"
+    if [[ "$cache_valid" == true ]]; then
+        assert_source_unchanged
+        cp "${cached_wheels[0]}" "$wheelhouse/"
         wheel_origin="cache"
     else
         uv build \
@@ -468,8 +471,8 @@ if [[ "$cache_valid" == true ]]; then
             echo "expected exactly one Engine wheel, found ${#built_wheels[@]}" >&2
             exit 1
         fi
-    assert_source_unchanged
-    rm -rf -- "$cache_entry"
+        assert_source_unchanged
+        rm -rf -- "$cache_entry"
         mkdir -p "$cache_entry"
         cp "${built_wheels[0]}" "$cache_entry/"
         sha256sum "${built_wheels[0]}" | cut -d ' ' -f 1 >"$cache_entry/wheel.sha256"

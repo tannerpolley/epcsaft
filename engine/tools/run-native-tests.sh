@@ -18,7 +18,7 @@ mapfile -t programs < <(.venv/bin/meson introspect "$build_dir" --tests | .venv/
 import fnmatch, json, os, sys
 tests = json.load(sys.stdin)
 print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmatch(t["name"], p) for p in sys.argv[1:])}), sep="\n")' "${tests[@]}")
-.venv/bin/meson compile -C "$build_dir" -j "${EPCSAFT_BUILD_JOBS:-2}" "${programs[@]}"
+.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"
 .venv/bin/meson test -C "$build_dir" "${tests[@]}" --print-errorlogs --no-rebuild --logbase "$logbase"
