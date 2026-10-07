@@ -30,6 +30,9 @@ SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse")
 
 def main() -> None:
     preparation = json.loads((ROOT / "build/environment-wheel/preparation.json").read_text())
+    # Test programs are not built by default (#319): build the runners recorded here (#326).
+    subprocess.run([str(ROOT / ".venv/bin/meson"), "compile", "-C", str(ROOT / preparation["build_dir"]),
+                    *sorted({runner for runner, _, _ in CASES})], check=True)
     lines, failures, commands = ["source\tid\tunit\tvalue"], [], []
     for runner, case, prefixes in CASES:
         command = [str(ROOT / preparation["build_dir"] / runner)] + ([case] if case else [])
