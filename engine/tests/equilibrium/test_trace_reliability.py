@@ -378,16 +378,22 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
 def test_mea_liquid_reaches_carbon_dioxide_root_below_the_cutoff() -> None:
     """#266: packet-3 MEA liquid at loading 1e-6, 318.15 K and 8877.7929 Pa has neutral CO2 at x = 1.1e-21, below
     STABILITY_COMPOSITION_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
-    half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68."""
+    half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68. #322: the action there was
+    refused by that cutoff; the carbon amounts move with the CO2 feed, sum_C dn_i/d ln n_CO2 = n_CO2."""
     model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
                  EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
-    result = solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=8877.7929,
-                                              row_tolerance=1e-10, reactions=reactions,
-                                              feed=Amounts({"carbon-dioxide": 1e-6 * 9.7292821,
-                                                            "monoethanolamine": 9.7292821, "water": 76.9751925})))
+    carbon_dioxide = 1e-6 * 9.7292821
+    problem = Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=8877.7929, row_tolerance=1e-10, reactions=reactions,
+                      feed=Amounts({"carbon-dioxide": carbon_dioxide, "monoethanolamine": 9.7292821, "water": 76.9751925}))
+    result = solve_equilibrium(model, problem)
     assert result.success and result.requested_tolerance_met, result.message
     assert max(abs(value) for value in result.residuals) <= 1e-10 and 0.0 < result.mole_fractions[0] < 1e-20
+    items = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
+        [SolvedStateObservable(Kind.PhaseComponentAmount, 0, i) for i in (0, 4, 5, 6)],
+        [SolvedStateActionDirection(0.0, 0.0, [carbon_dioxide] + [0.0] * 8, [])])).results
+    carbon = [item.action for item in items if item.status == SolvedStateActionStatus.Available and item.action is not None]
+    assert len(carbon) == 4 and math.isclose(sum(carbon), carbon_dioxide, rel_tol=1e-10, abs_tol=0.0), items[0].status
 
 
 @pytest.mark.parametrize("k_ij, temperature", [(0.2, 200.0), (0.5, 150.0)])

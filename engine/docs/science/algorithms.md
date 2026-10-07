@@ -626,9 +626,16 @@ so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the messag
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A square feasibility cell carries chemical and pressure rows as optimizer equality
-constraints. Its log-composition bounds therefore use the
-structural cutoff directly: the all-free optimizer box would exclude valid
-trace roots before a successful optimizer stop can reach polishing. In all-free cells a warm start below the box
+constraints. Its log-composition lower bound is therefore the representability limit,
+the smallest normal double (#322): the all-free optimizer box or a composition cutoff would exclude valid
+trace roots before a successful optimizer stop can reach polishing (a reactive bubble point
+whose trace root lies at 2.4e-24 stopped `infeasible` under the former 1e-20 bound). That bound
+moves square-cell values at rounding level, with no work change: state values and envelope gaps by at most 2.6e-9
+relative, envelope Hermite seeds by 9.7e-9, and a 6.2e-5 K boundary gap by 1.2e-11 K. Near the e4-d
+mixture critical point the solves are conditioning-limited (condition about 1e8) and move
+more: the last accepted state (265.9 K) by 1.9e-5 in phase distance with an identical
+1.776e-15 residual, and the rejected post-swap trial (266 K) by 19% in sign product and
+step change. Neither bound is demonstrably closer to the root. In all-free cells a warm start below the box
 is pulled back into it by the optimizer's bound push and re-recovered by the polish.
 The retained MEA 050 case exercises rejection of a full step and acceptance of
 a half step without relaxing the requested tolerance. The returned extensive-objective constraint multipliers are
@@ -1304,11 +1311,13 @@ Solved-state actions (E5) are evaluated by one native owner,
 owner never re-solves, compiles or mutates. Admission requires the central
 classified residual, the quantity the driver certifies (owner decision
 2026-09-16), at or below `min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL)`; no
-candidate-topology event and every supported composition above
-`STABILITY_COMPOSITION_FLOOR`. The polish returns positive roots below
-`STABILITY_COMPOSITION_FLOOR`; solved-state actions there are refused by the
-cutoff gate with `PhaseBoundaryNotDifferentiable`, which names vanishing, not a
-trace root (follow-up #322). Admission also requires a finite square full-rank row Jacobian,
+candidate-topology event. No composition cutoff applies (#322): in log coordinates a trace
+species' column has a unit entry in its own stationarity row and O(x) entries elsewhere,
+so rank, conditioning and actions do not depend on x (identical-ethane isomer actions
+match the analytic values within 9e-14 for K = 1e-21 to 1e-100, condition 11.94 at every K).
+Trace accuracy is bounded instead by the balance-row resolution of the state itself
+(ALG-TERMINATION): a relative trace action carries the state's closure, 2.77e-6 for CO₂ at
+MEA loading 1e-6 and 2.5e-3 at loading 1e-8 with row tolerance 1e-10. Admission also requires a finite square full-rank row Jacobian,
 factorised once; and, for a thermal direction, a reaction target whose
 temperature dependence is not frozen by a point-only supplied Gibbs vector
 (`missing_thermochemistry`). A mixed action of order k is the half-sign
@@ -1781,7 +1790,7 @@ point without optimizing or publishing a stationarity certificate.
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
 $\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the
 optimizer subproblem: its barrier regularises the log chart's trace steps and
-is not a solution domain. Species $i$ has the box
+is not a solution domain. Species $i$ has the box in all-free cells
 
 $$
 x_i \ge \max\!\left(x_{\mathrm{cut}},\ \min\!\left(\beta,\ \varepsilon\,\frac{u_i}{N_{\mathrm{feed}}}\right)\right),
@@ -1851,13 +1860,19 @@ moiety row $(Bn-b)/N_{\mathrm{feed}}$ resolves an inventory to its achieved resi
 caller's row tolerance and after the polish near rounding, $\epsilon N_{\mathrm{feed}}$ (trace
 isomers fed at 1e-10, 1e-12 and 1e-14 mol in 1 mol return their amount to 4e-8, 5e-9 and 9e-3
 relative; the orthonormal basis gave 8e-6, 3e-4 and a factor 4). Square pinned equation systems
-use the structural cutoff for every species, so chemical equalities can reach trace roots.
-`STABILITY_COMPOSITION_FLOOR` is the structural-absence
-cutoff for continuation admission and solved-state differentiability. The
+use the smallest normal double for every species, so chemical equalities can reach trace roots.
+$x_{\mathrm{cut}}$ is only the finite lower bound of the all-free box. It binds below an
+attainable inventory of 1e-18 $N_{\mathrm{feed}}$, where trace values are already unresolved
+(below about 1e-15 $N_{\mathrm{feed}}$); lowering it changes those values, so it stays. The
 Newton polish carries a trace solution below the box to any positive root (#87,
-2026-09-21; #266, 2026-10-07); actions at such roots are refused as stated under
-action admission (follow-up #322). Continuation admission and action availability
-between 1e-12 and the cutoff are unexercised and remain a qualification limit. Free-phase
+2026-09-21; #266, 2026-10-07). No composition cutoff applies to actions, continuation or
+declared seeds (#322): continuation from $K$ = 1e-16 to 9.3e-28 follows $K/(1+K)$ within 4e-14,
+19 states below 1e-20. A declared seed needs positive finite compositions; its log
+coordinates have no upper test, since the solver's own majority $\ln x$ returns up to 2.6e-13
+above zero within the normalization residual. Grossly invalid declared log coordinates are
+projected onto the optimizer bounds rather than refused; that this happens before any evaluation
+is inferred, not tested. The lower limits are representability (a positive normal double) and
+the solve's own acceptance: the stability decision is indeterminate at $K \le$ 1e-200. Free-phase
 disappearance compares the dimensionless amount ratio
 `n_phase / sum(n_feed)` with the provisional `STABILITY_PHASE_AMOUNT_FLOOR`;
 that topology rejection is not a stability or accuracy conclusion. Packing
