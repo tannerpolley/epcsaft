@@ -71,7 +71,7 @@ reactive Lithium by implication.
 
 The [native conversion evidence](../../analyses/README.md#native-conversion-evidence)
 records the completed mapped conversions and retirements, changed comparison
-claims, and the remaining source-reference and recovered-state calculations.
+claims, and the remaining Wangler source-reference calculation.
 An empty SciPy allowlist is a lexical result, not a physical validation claim.
 
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
