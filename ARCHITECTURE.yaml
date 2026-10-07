@@ -205,9 +205,6 @@ python:
   # arithmetic: a frontend call is agnostic to what it is solving.
   numerics: forbidden
   capabilities: [eos, equilibrium, regression]
-  exports:
-    epcsaft: 11
-    epcsaft.equilibrium: 9
 
 formulation:
   document: engine/docs/equilibrium/formulation.md
