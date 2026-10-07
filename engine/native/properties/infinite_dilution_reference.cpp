@@ -41,7 +41,7 @@ std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std:
             require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
 }
 
-constexpr std::array<double, 5> NEUTRAL_REFERENCE_MOLALITIES = {
+constexpr std::array<double, 5> REFERENCE_MOLALITIES = {
     policy::REFERENCE_MOLALITY_ONE.value,
     policy::REFERENCE_MOLALITY_TWO.value,
     policy::REFERENCE_MOLALITY_THREE.value,
@@ -182,8 +182,8 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
 struct NeutralReferenceTrace final {
     double pressure = 0.0;
     double solvent_mass = 0.0;
-    std::array<std::vector<double>, NEUTRAL_REFERENCE_MOLALITIES.size()> composition;
-    std::array<State, NEUTRAL_REFERENCE_MOLALITIES.size()> state;
+    std::array<std::vector<double>, REFERENCE_MOLALITIES.size()> composition;
+    std::array<State, REFERENCE_MOLALITIES.size()> state;
     std::vector<std::optional<State>> pure_state;
     std::optional<HelmholtzDerivatives> terminal_derivatives;
     std::size_t temperature_order = 0;
@@ -228,9 +228,9 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         // A known liquid solvent density is tried first as a locally unique anchor; any failure
         // falls back to the cold scan and its branch admission.
         std::optional<double> anchor = solvent_anchor;
-        for (std::size_t point = 0; point < NEUTRAL_REFERENCE_MOLALITIES.size(); ++point) {
+        for (std::size_t point = 0; point < REFERENCE_MOLALITIES.size(); ++point) {
             trace.composition[point] = neutral_reference_composition(
-                declaration, solvent_mass, NEUTRAL_REFERENCE_MOLALITIES[point]);
+                declaration, solvent_mass, REFERENCE_MOLALITIES[point]);
             try {
                 try {
                     trace.state[point] = model.state_at_pressure(
@@ -426,7 +426,7 @@ NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzM
     for (std::size_t point = 0; point < 3; ++point) {
         try {
             const auto partial = reference_partial_from_trace(model, temperature, trace,
-                NEUTRAL_REFERENCE_MOLALITIES.size() - 3 + point, stoichiometry, a, b, parameter);
+                REFERENCE_MOLALITIES.size() - 3 + point, stoichiometry, a, b, parameter);
             column.ladder[point] = partial.action;
             if (!partial.action) {
                 column.action_status = partial.status;
@@ -457,7 +457,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     NeutralReferenceReactionDiagnostic result;
     result.reference_pressure_pa = trace.pressure;
     try {
-        std::array<double, NEUTRAL_REFERENCE_MOLALITIES.size()> contractions{};
+        std::array<double, REFERENCE_MOLALITIES.size()> contractions{};
         for (std::size_t point = 0; point < contractions.size(); ++point) {
             const auto& state = trace.state[point];
             const double log_density = std::log(state.molar_density / 1.0);
@@ -832,13 +832,6 @@ InfiniteDilutionReference infinite_dilution_reference(
     std::optional<double> first_rung_density, std::optional<double> pure_solvent_density
 ) {
     core::Scope scope("infinite_dilution_reference");
-    const std::array<double, 5> molalities = {
-        policy::REFERENCE_MOLALITY_ONE.value,
-        policy::REFERENCE_MOLALITY_TWO.value,
-        policy::REFERENCE_MOLALITY_THREE.value,
-        policy::REFERENCE_MOLALITY_FOUR.value,
-        policy::REFERENCE_CONVERGENCE_WITNESS.value,
-    };
     InfiniteDilutionReference result;
     std::optional<double> anchor;
     std::array<double, 2> previous{};
@@ -847,15 +840,15 @@ InfiniteDilutionReference infinite_dilution_reference(
     result.parameter_convergence_error.assign(columns, 0.0);
     result.parameter_derivative.resize(columns);
     const auto values = model.active_parameter_values();
-    for (std::size_t index = 0; index < molalities.size(); ++index) {
-        const bool witness = index + 1 == molalities.size();
+    for (std::size_t index = 0; index < REFERENCE_MOLALITIES.size(); ++index) {
+        const bool witness = index + 1 == REFERENCE_MOLALITIES.size();
         const auto failed_column = [&](double e) {
             return !std::isfinite(e) || e > policy::REFERENCE_CONVERGENCE_TOLERANCE.value;
         };
         if (witness && !(result.convergence_error > policy::REFERENCE_CONVERGENCE_TOLERANCE.value
             || std::any_of(result.parameter_convergence_error.begin(), result.parameter_convergence_error.end(), failed_column))) break;
         const auto composition = formula_composition(solvent_fractions, model.parameters(),
-            ion_indices, stoichiometry, molalities[index]);
+            ion_indices, stoichiometry, REFERENCE_MOLALITIES[index]);
         auto state = index == 0 ? properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, first_rung_density)
             : model.state_at_pressure(temperature, pressure, composition, DensityBranch::Liquid, anchor);
         const auto current = ion_log_fugacity(state, ion_indices);
@@ -869,8 +862,8 @@ InfiniteDilutionReference infinite_dilution_reference(
         } else {
             if (index) result.convergence_error = error;
             result.log_fugacity = current;
-            result.molality = molalities[index];
-            scope.probe("reference_ladder_point", {molalities[index], current[0], current[1]}, static_cast<std::uint32_t>(index));
+            result.molality = REFERENCE_MOLALITIES[index];
+            scope.probe("reference_ladder_point", {REFERENCE_MOLALITIES[index], current[0], current[1]}, static_cast<std::uint32_t>(index));
         }
         for (std::size_t a = 0; a < columns; ++a) {
             std::array<double, 2> column;
