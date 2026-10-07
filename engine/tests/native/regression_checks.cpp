@@ -2919,6 +2919,97 @@ void check_hydration_failures() {
 
 // B3 selects the actual native electrolyte evaluator and complete nonunit tied chart.
 void check_minimax_consistency() {
+    // EqIDs: density_residual, pressure_density_derivative; #245 independent cold closures.
+    const auto compare_state = [&](const HelmholtzModel& model, const State& seeded, const State& cold,
+                                   double temperature, const std::vector<double>& x, const std::string& id) {
+        const auto inputs = fields({field("T_K", temperature), field("x", x),
+            field("seed_closure", core::describe(*seeded.density_convergence)), field("cold_closure", core::describe(*cold.density_convergence))});
+        const auto compare = [&](const std::string& quantity, const char* unit, double value, double reference) {
+            CHECK(agree(id + "/" + quantity, quantity.c_str(), unit, value, reference,
+                1e-12, 1e-10, inputs, "seeding agrees within solver accuracy", "issue-245"));
+        };
+        compare("density", "mol/m3", seeded.molar_density, cold.molar_density);
+        compare("slope", "Pa m3/mol", seeded.pressure_density_derivative, cold.pressure_density_derivative);
+        for (std::size_t i = 0; i < cold.site_fractions.size(); ++i)
+            compare("site/" + std::to_string(i), "1", seeded.site_fractions[i], cold.site_fractions[i]);
+        const double h = cold.molar_density * 1e-5;
+        const double slope = (model.state(temperature, cold.molar_density + h, x).pressure
+            - model.state(temperature, cold.molar_density - h, x).pressure) / (2 * h);
+        CHECK(agree(id + "/slope-derivative", "P_rho", "Pa m3/mol", cold.pressure_density_derivative,
+            slope, 1e-6 * std::max(1.0, std::abs(slope)), 0.0, inputs, "independent central pressure derivative", "issue-245"));
+    };
+    auto ethane = properties_support::ethane();
+    Observation density; density.kind = ObservationKind::Density;
+    density.temperature = 200; density.pressure = 217800.69494692178;
+    density.composition = {1}; density.branch = DensityBranch::Liquid;
+    FitRequest density_request; density_request.parameters = ethane; density_request.observations = {density};
+    density_request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 0, 1, 100, 250}};
+    const auto u0 = density_request.coordinates.start(ethane);
+    auto u1 = u0; u1[0] = 191.43;
+    FitResult density_failures; ObservationEvaluator sequence(density_request, density_failures, {0});
+    ObservationEvaluation first, density_seeded, density_promoted, density_cold;
+    core::Capture trace(true);
+    CHECK(sequence.evaluate(u0, true, first) && sequence.evaluate(u1, false, density_seeded)
+        && sequence.evaluate(u1, true, density_promoted));
+    FitResult fresh_failures; ObservationEvaluator density_fresh(density_request, fresh_failures, {0});
+    CHECK(density_fresh.evaluate(u1, true, density_cold));
+    CHECK(agree("density-seed/column", "density_column", "native", density_promoted.gradient[0], density_cold.gradient[0],
+        1e-12, 1e-10, "u0 to u1 then promotion", "independent cold density column", "issue-245"));
+    CHECK(std::any_of(trace.trace().events.begin(), trace.trace().events.end(),
+        [](const auto& e) { return std::string(e.name) == "accepted"; }));
+    HelmholtzModel old_model(first.chart.parameters), target(density_promoted.chart.parameters);
+    const auto previous = predict(old_model, density);
+    const auto prediction = predict(target, density, std::nullopt, std::nullopt, nullptr, &previous, &old_model, false);
+    compare_state(target, *prediction.state, *predict(target, density).state, 200, {1}, "density-seed/ethane");
+    for (const std::string mode : {"missing-witness", "wrong-side", "irregular", "outside-window", "empty-domain"}) {
+        auto offered = previous; auto row = density;
+        if (mode == "missing-witness") offered.state->negative_slope_density.reset();
+        if (mode == "wrong-side") row.branch = DensityBranch::Vapor;
+        if (mode == "irregular") offered.state->density_convergence->amplification = 1e20;
+        if (mode == "outside-window") offered.state->molar_density *= 1.02;
+        if (mode == "empty-domain") row.pressure = 1e18;
+        core::Capture capture(true);
+        const auto candidate = predict(target, row, {}, {}, nullptr, &offered, &old_model,
+            mode == "outside-window" || mode == "empty-domain"), reference = predict(target, row);
+        const auto& events = capture.trace().events;
+        const auto failure = std::find_if(events.begin(), events.end(), [&](const auto& e) {
+            return std::string(e.name) == "anchor_failure" && std::string(capture.trace().spans[e.span].name) == "density_anchor";
+        });
+        // The ethane anchored root equals the cold root, so the gates are visible only as absent seed events.
+        const bool seeded = std::any_of(events.begin(), events.end(), [&](const auto& e) {
+            return (std::string(e.name) == "eligible" || std::string(e.name) == "accepted")
+                && std::string(capture.trace().spans[e.span].name) == "fit_density_anchor";
+        });
+        const bool fallback = mode == "outside-window" || mode == "empty-domain";
+        CHECK(truth("density-seed/" + mode, "ineligible offers stay cold; one failed anchor retains its cause through cold recovery or refusal",
+            candidate.status == reference.status && (candidate.value ? candidate.value == reference.value : candidate.message == reference.message)
+                && !(seeded && (mode == "missing-witness" || mode == "irregular"))
+                && (failure != capture.trace().events.end()) == fallback && (!fallback || (!failure->reason.empty()
+                    && failure->values == std::vector<double>{offered.state->molar_density})),
+            fields({field("offered_density", offered.state->molar_density), field("cold_cause", reference.message),
+                field("anchor_cause", failure != capture.trace().events.end() ? failure->reason : "ineligible")}), "issue-245"));
+    }
+    auto refused = u1; refused[0] = -1;
+    CHECK(!sequence.evaluate(refused, true, density_seeded) && sequence.evaluate(u1, true, density_cold));
+    CHECK(density_cold.predictions == density_promoted.predictions && density_cold.gradient == density_promoted.gradient
+        && density_cold.chart.physical == density_promoted.chart.physical && density_cold.optimizer_gradient == density_promoted.optimizer_gradient);
+    // The inherited same-liquid 130 -> 140 K candidate must still expose the new upper branch.
+    auto lower_parameters = ethane; lower_parameters.dispersion_energy_over_k[0] = 130;
+    auto upper_parameters = ethane; upper_parameters.dispersion_energy_over_k[0] = 140;
+    HelmholtzModel lower(lower_parameters), upper(upper_parameters);
+    const auto lower_result = predict(lower, density), upper_cold = predict(upper, density);
+    CHECK(lower_result.stable_root_count == 1 && upper_cold.stable_root_count && *upper_cold.stable_root_count > 1);
+    CHECK(predict(upper, density, {}, {}, nullptr, &lower_result, &lower, false).value == upper_cold.value);
+    auto alcohol = properties_support::parameters(2);
+    alcohol.segment_count = {2.3827, 2.3316}; alcohol.sigma_constant = {3.1771, 3.7086};
+    alcohol.dispersion_energy_over_k = {198.24, 222.88}; alcohol.molar_mass_kg_per_mol = {.04606844, .0581222};
+    alcohol.k_ij = {0, .028, .028, 0}; alcohol.site_component = {0, 0}; alcohol.site_multiplicity = {1, 1};
+    alcohol.association_active = {0, 1, 1, 0}; alcohol.association_energy_over_k = {0, 2653.4, 2653.4, 0};
+    alcohol.association_volume = {0, .032384, .032384, 0};
+    HelmholtzModel alcohol_model(alcohol);
+    const auto alcohol_cold = alcohol_model.state_at_pressure(45, 1e-4, {.5, .5}, DensityBranch::Vapor);
+    compare_state(alcohol_model, alcohol_model.state_at_pressure(45, 1e-4, {.5, .5}, DensityBranch::Vapor,
+        alcohol_cold.molar_density), alcohol_cold, 45, {.5, .5}, "density-seed/natural-275");
     auto parameters = properties_support::aqueous_electrolyte();
     Observation energy;
     energy.kind = ObservationKind::SolvationGibbsEnergy; energy.temperature = 298.15; energy.pressure = 1e5;
@@ -2944,6 +3035,25 @@ void check_minimax_consistency() {
     request.minimax = MinimaxRequest{{0, 1}, {.02, 1, 1000}, .02, 1e-10, 1e-6, .1};
     FitResult failures; ObservationEvaluator evaluator(request, failures, {0, 1, 2, 3}); ObservationEvaluation a;
     CHECK(evaluator.evaluate(u, true, a));
+    auto shifted = u; shifted[0] += .001;
+    ObservationEvaluation seeded, promoted, cold;
+    FitResult independent_failures;
+    ObservationEvaluator fresh(request, independent_failures, {0, 1, 2, 3});
+    CHECK(evaluator.evaluate(shifted, false, seeded) && evaluator.evaluate(shifted, true, promoted) && fresh.evaluate(shifted, true, cold));
+    for (const auto& pair : {std::pair{promoted.predictions, cold.predictions}, std::pair{promoted.gradient, cold.gradient}, std::pair{promoted.optimizer_gradient, cold.optimizer_gradient}})
+        for (std::size_t i = 0; i < pair.first.size(); ++i)
+            CHECK(agree("density-seed/electrolyte/" + std::to_string(i), "value_or_column", "native", pair.first[i], pair.second[i],
+                1e-12, 1e-10, "held aqueous changed point and promotion", "fresh-point identity", "issue-245"));
+    HelmholtzModel source_model(a.chart.parameters), shifted_model(promoted.chart.parameters);
+    const auto prior = predict(source_model, gamma);
+    const auto warm = predict(shifted_model, gamma, {}, {}, nullptr, &prior, &source_model, false);
+    const auto independent = predict(shifted_model, gamma);
+    compare_state(shifted_model, warm.reference->first_rung_state, independent.reference->first_rung_state, gamma.temperature,
+        formula_composition(gamma.composition, promoted.chart.parameters, gamma.ion_indices, gamma.stoichiometry, policy::REFERENCE_MOLALITY_ONE.value), "density-seed/first-rung");
+    compare_state(shifted_model, *warm.reference->pure_solvent_state, *independent.reference->pure_solvent_state,
+        gamma.temperature, gamma.composition, "density-seed/pure-solvent");
+    compare_state(shifted_model, warm.activity->state, independent.activity->state, gamma.temperature,
+        formula_composition(gamma.composition, promoted.chart.parameters, gamma.ion_indices, gamma.stoichiometry, gamma.molality), "density-seed/activity");
     const auto b = fit_minimax(request, u);
     CHECK(b.minimax && b.minimax->availability == "values_only");
     std::size_t quantity = 0;
@@ -3749,7 +3859,7 @@ int main(int argc, char** argv) {
         {{"native.regression.d86", "Regression_D86_density_actions", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "D86", "d86/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "D86", "d86/*:25"}, check_d86, "R1"},
         {{"native.regression.r2-j1", "Regression_R2_J1", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j1/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J1", "r2-j1/*:84"}, check_j1, "R2"},
         {{"native.regression.r2-j2", "Regression_R2_J2", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-j2/*,r4/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-J2", "r2-j2/*:15"}, check_j2, "R2"},
-        {{"native.regression.r2-minimax-consistency", "Minimax_same_point_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "minimax-consistency/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "minimax-consistency"}, check_minimax_consistency, "R2"},
+        {{"native.regression.r2-minimax-consistency", "Minimax_same_point_columns", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "minimax-consistency/*,density-seed/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "minimax-consistency"}, check_minimax_consistency, "R2"},
         {{"native.regression.r2-d7-minimax-analytic", "Regression_R2_D7_Analytic_Minimax", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "r2-d7-b1/*,r2-d7-b2/*", "engine/tests/native/regression_checks.cpp", "regression_checks", "R2-D7", "r2-d7/*"}, check_d7_minimax, "R2"},
         {{"native.regression.reaction-derivatives", "Reaction_constant_derivatives", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-a*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-derivatives"}, check_reaction_derivatives, "R2"},
         {{"native.regression.reaction-recovery", "Reaction_constant_recovery", "Numerical", "Regression", "Explicit", "Numerical", nullptr, "R2", "reaction-b*", "engine/tests/native/regression_checks.cpp", "regression_checks", "reaction-recovery"}, check_reaction_recovery, "R2"},

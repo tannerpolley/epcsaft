@@ -359,6 +359,13 @@ void register_eos(py::module_& module) {
         .def_readonly("mean_ionic_log_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_log_molality_scale)
         .def_readonly("mean_ionic_molality_scale", &epcsaft::ElectrolyteActivity::mean_ionic_molality_scale)
         .def_readonly("osmotic_coefficient", &epcsaft::ElectrolyteActivity::osmotic_coefficient);
-    module.def("infinite_dilution_reference", &epcsaft::infinite_dilution_reference);
-    module.def("electrolyte_activity", &epcsaft::electrolyte_activity);
+    module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+        const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
+        return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);
+    });
+    module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
+        const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
+        double molality, const epcsaft::InfiniteDilutionReference& reference) {
+        return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference);
+    });
 }

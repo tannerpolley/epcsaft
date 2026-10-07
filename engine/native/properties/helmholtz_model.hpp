@@ -170,6 +170,7 @@ struct State final {
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
+    std::optional<double> negative_slope_density;  // mol/m3, sampled cold mechanical-loop witness
 };
 
 struct DensityRoot final {
@@ -180,6 +181,7 @@ struct DensityRoot final {
     std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
+    std::optional<double> negative_slope_density;  // no new EOS evaluation
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
@@ -460,6 +462,7 @@ struct InfiniteDilutionReference final {
     std::optional<State> pure_solvent_state;
     std::vector<std::array<std::optional<double>, 2>> parameter_derivative;
     std::vector<double> parameter_convergence_error;
+    State first_rung_state;
 };
 
 struct ElectrolyteActivity final {
@@ -469,6 +472,7 @@ struct ElectrolyteActivity final {
     double mean_ionic_molality_scale = 0.0;
     std::optional<std::variant<double, core::Stop>> osmotic_coefficient;
     std::vector<double> mean_ionic_parameter_derivative, osmotic_parameter_derivative;
+    State state;
 };
 
 std::vector<double> formula_composition(
@@ -485,7 +489,9 @@ InfiniteDilutionReference infinite_dilution_reference(
     double pressure,
     const std::vector<double>& solvent_fractions,
     const std::array<std::size_t, 2>& ion_indices,
-    const std::array<int, 2>& stoichiometry
+    const std::array<int, 2>& stoichiometry,
+    std::optional<double> first_rung_density = std::nullopt,
+    std::optional<double> pure_solvent_density = std::nullopt
 );
 
 ElectrolyteActivity electrolyte_activity(
@@ -496,7 +502,15 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<std::size_t, 2>& ion_indices,
     const std::array<int, 2>& stoichiometry,
     double molality,
-    const InfiniteDilutionReference& reference
+    const InfiniteDilutionReference& reference,
+    std::optional<double> finite_density = std::nullopt
 );
+
+namespace properties {
+bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
+// Anchored closure, regularity-checked; a failed anchor is traced and retried once cold on the same branch.
+State close_density(const HelmholtzModel& model, double temperature, double pressure,
+                    const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
+}  // namespace properties
 
 }  // namespace epcsaft
