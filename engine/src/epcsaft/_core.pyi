@@ -1009,6 +1009,8 @@ class FitControls:
     parameter_tolerance: float
     maximum_iterations: int
     maximum_elapsed_time_seconds: float
+    def __init__(self, *, maximum_iterations: int, maximum_elapsed_time_seconds: float, function_tolerance: float = 0.0,
+                 gradient_tolerance: float = 0.0, parameter_tolerance: float = 0.0) -> None: ...
 
 class TrialFailure:
     trial: int
