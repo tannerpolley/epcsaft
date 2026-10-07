@@ -4,7 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-base_ref="${1:-HEAD~1}"
+# Select from every change since the base: by default the merge base with origin/main.
+base_ref="${1:-$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null || true)}"
 source_only="${EPCSAFT_CHECK_SOURCE_ONLY:-0}"
 if [[ "$source_only" != 0 && "$source_only" != 1 ]]; then
     echo "EPCSAFT_CHECK_SOURCE_ONLY must be 0 or 1" >&2
@@ -13,6 +14,7 @@ fi
 if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
     base_ref="HEAD"
 fi
+echo "check-affected base: $base_ref ($(git rev-parse --short "$base_ref"))"
 mapfile -t changed < <(
     {
         git diff --name-only "$base_ref" HEAD
@@ -43,12 +45,29 @@ if grep -Eq '^(analyses/|docs/|engine/|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; 
 fi
 
 declarations_affected=false
-if grep -Eq '^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-analysis-declarations\.py|analysis-declarations-excluded\.tsv|tests/test-analysis-checks\.py))' <<<"$paths"; then
+analysis_checkers='^tools/(check-analysis-declarations\.py|analysis-declarations-excluded\.tsv|check-notebook-numbers\.py|tests/test-analysis-checks\.py)'
+if grep -Eq "^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/)|$analysis_checkers" <<<"$paths"; then
     declarations_affected=true
 fi
 check_declarations() {
     if [[ "$source_only" == 0 && "$declarations_affected" == true ]]; then
-        .venv/bin/python tools/check-analysis-declarations.py
+        if grep -Eq "$analysis_checkers" <<<"$paths"; then
+            # Runs the full declaration check, then the checkers' known-failure examples.
+            .venv/bin/python tools/tests/test-analysis-checks.py
+        else
+            .venv/bin/python tools/check-analysis-declarations.py
+        fi
+    fi
+}
+
+check_tools() {
+    grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
+    for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
+    if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
+    if [[ "$source_only" == 0 ]] && grep -q '^tools/render-notebook\.py' <<<"$paths"; then
+        # The reader self-test reads a native JUnit report; contributions writes one in about a second.
+        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh contributions
+        python3 tools/render-notebook.py --self-test
     fi
 }
 
@@ -60,7 +79,7 @@ while IFS= read -r path; do
     esac
 done <<<"$paths"
 if [[ "$docs_only" == true ]]; then
-    bash -n tools/check-affected.sh tools/check-all.sh
+    for script in tools/check-affected.sh tools/check-all.sh; do bash -n "$script"; done
     echo "documentation readiness passed; no wheel build or numerical tests ran"
     exit 0
 fi
@@ -74,26 +93,31 @@ import importlib, sys
 m = importlib.import_module("project-map")
 rules = m.declaration()["rules"]
 print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
-    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/(equilibrium|boundary)_' <<<"$paths"; then
+    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/((equilibrium|boundary)_|.*\.hpp$)' <<<"$paths"; then
         slow_tests+=('equilibrium/Automatic*' boundary)
     fi
-    # The 16 binary128 reactive-caloric and reactive-cp cases (Explicit) run only when
-    # the code they verify changes, or on request: run-native-tests.sh 'equilibrium/Explicit/*'.
-    if grep -Eq '^engine/(native/equilibrium/implicit_sensitivity\.cpp|native/properties/thermochemistry\.|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
-        slow_tests+=('equilibrium/Explicit/reactive-*')
+    # The 16 binary128 reactive-caloric and reactive-cp cases and the reacting Cp fit (Explicit)
+    # run only when the code they verify changes, or on request:
+    # run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'.
+    if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|native/regression/observations\.(cpp|hpp)|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
+        slow_tests+=('equilibrium/Explicit/reactive-*' 'regression/Explicit/reactive-cp')
     fi
     # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
-    if grep -Eq '^engine/(native/equilibrium/phase_boundary\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
+    if grep -Eq '^engine/(native/equilibrium/(phase_boundary|implicit_sensitivity)\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/envelope-*')
     fi
-    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
+    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -Eq '^engine/tests/native/(regression_checks|.*\.hpp$)' <<<"$paths"; then
         slow_tests+=(regression_fit)
+    fi
+    if grep -Eq '^engine/(native/contributions/association\.hpp|tests/native/association_comparison_checks\.cpp)' <<<"$paths"; then
+        slow_tests+=(association-comparison)
     fi
 fi
 
-if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|README.md|pyproject.toml|uv.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$paths"; then
     bash tools/check-all.sh
     check_declarations
+    check_tools
     if ((${#slow_tests[@]})); then
         MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
@@ -101,10 +125,10 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^(AGENTS.md|README.md|pyproject.toml|u
 fi
 
 prepare_native_build=0
-if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py))' <<<"$paths"; then
+if [[ "$source_only" == 0 ]] && grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
     prepare_native_build=1
 fi
-if [[ "$source_only" == 0 ]] && { [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; }; then
+if [[ "$source_only" == 0 ]] && { [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; }; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 
@@ -135,8 +159,9 @@ if [[ "$source_only" == 0 ]] && grep -Eq '^engine/(native/|tests/native/|build/s
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
     grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
-    grep -q '^engine/tools/' <<<"$paths" && bash -n engine/tools/*.sh
 fi
+
+check_tools
 
 if grep -q '^analyses/' <<<"$paths"; then
     bash -n tools/run-slice.sh

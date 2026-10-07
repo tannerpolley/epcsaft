@@ -2,14 +2,11 @@
 import math
 from typing import Any
 
-import pytest
-
 from epcsaft import Mixture, _core, regression
 from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction, solve_equilibrium
 from ..native_inputs import ETHANE, parameters
 
 
-@pytest.mark.slow
 def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) -> None:
     # Six identical neutral ethane pseudo-species. Two fixed-support liquids have
     # separate conserved solvents; A and B exchange independently between them.

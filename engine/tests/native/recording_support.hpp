@@ -448,6 +448,7 @@ inline bool compare(
     if (verdict != asserted_verdict)
         throw std::logic_error(
             std::string("recorded criterion disagrees with assertion: ") + comparison_id);
+    if (!verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
     return verdict;
 }
 
@@ -466,6 +467,7 @@ inline bool compare_custom(
         comparison_group_id, point_id, quantity_latex, inputs_latex, relationship_latex,
         coordinates, rule
     );
+    if (!asserted_verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
     return asserted_verdict;
 }
 
