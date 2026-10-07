@@ -64,7 +64,7 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
-    if grep -q '^tools/render-notebook\.py' <<<"$paths"; then
+    if [[ "$source_only" == 0 ]] && grep -q '^tools/render-notebook\.py' <<<"$paths"; then
         # The reader self-test reads a native JUnit report; contributions writes one in about a second.
         EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh contributions
         python3 tools/render-notebook.py --self-test
