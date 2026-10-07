@@ -6,6 +6,7 @@
 #include "core/physical_constants.hpp"
 #include "core/scalar.hpp"
 #include "core/trace.hpp"
+#include "contributions/helmholtz.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -34,19 +35,8 @@ std::vector<Scalar> association_delta_values(
 ) {
     const std::size_t components = parameters.segment_count.size();
     const std::size_t sites = parameters.site_component.size();
-    const Scalar number_density =
-        molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-    Scalar zeta_2 = Scalar(0.0);
-    Scalar zeta_3 = Scalar(0.0);
-    for (std::size_t component = 0; component < components; ++component) {
-        const Scalar weight = mole_fractions[component]
-            * parameters.segment_count[component];
-        zeta_2 += PI / 6.0 * number_density * weight
-            * diameter[component] * diameter[component];
-        zeta_3 += PI / 6.0 * number_density * weight
-            * diameter[component] * diameter[component] * diameter[component];
-    }
-    const Scalar one_minus_eta = Scalar(1.0) - zeta_3;
+    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
+    const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
 
     std::vector<Scalar> delta(sites * sites, Scalar(0.0));
     for (std::size_t a = 0; a < sites; ++a) {
@@ -57,15 +47,9 @@ std::vector<Scalar> association_delta_values(
                 continue;
             }
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
-            const Scalar reduced_diameter =
-                diameter[i] * diameter[j] / (diameter[i] + diameter[j]);
             // EqID: association_contact
-            const Scalar contact =
-                Scalar(1.0) / one_minus_eta
-                + 3.0 * reduced_diameter * zeta_2
-                    / (one_minus_eta * one_minus_eta)
-                + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
-                    / (one_minus_eta * one_minus_eta * one_minus_eta);
+            const Scalar contact = hard_sphere_contact(
+                diameter[i] * diameter[j] / (diameter[i] + diameter[j]), zeta[2], one_minus_eta);
             // Wolbach--Sandler pairs (active == 2): the Gross2002 Eq. 3 size
             // factor times sigma_ij^3 is the geometric-mean diameter cubed.
             const Scalar size_ij = (parameters.association_active[pair] == 2

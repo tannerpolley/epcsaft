@@ -180,6 +180,40 @@ Scalar packing_fraction_from_geometry(
     return (PI / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
 }
 
+// EqID: packing_moments
+// zeta_3 comes from packing_fraction_from_geometry, the owner of the density bound.
+template <typename Scalar, typename ParameterSet>
+std::array<Scalar, 4> packing_moments(
+    const Scalar& molar_density,
+    const std::vector<Scalar>& mole_fractions,
+    const ParameterSet& parameters,
+    const std::vector<Scalar>& diameter
+) {
+    const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
+    std::array<Scalar, 4> zeta;
+    for (std::size_t order = 0; order < 3; ++order) {
+        Scalar moment = Scalar(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+            Scalar power = Scalar(1.0);
+            for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
+            moment += mole_fractions[i] * parameters.segment_count[i] * power;
+        }
+        zeta[order] = (PI / 6.0) * number_density * moment;
+    }
+    zeta[3] = packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
+    return zeta;
+}
+
+// EqID: hard_sphere_contact
+// Contact value at reduced diameter d_i d_j/(d_i + d_j); d_i/2 for a like pair.
+template <typename Scalar>
+Scalar hard_sphere_contact(const Scalar& reduced_diameter, const Scalar& zeta_2, const Scalar& one_minus_eta) {
+    return Scalar(1.0) / one_minus_eta
+        + 3.0 * reduced_diameter * zeta_2 / (one_minus_eta * one_minus_eta)
+        + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
+            / (one_minus_eta * one_minus_eta * one_minus_eta);
+}
+
 template <typename Scalar>
 // EqID: dipolar_integrals
 // Coefficient a_n(m) = t0 + (m-1)/m t1 + (m-1)(m-2)/m^2 t2 with m capped at 2.
@@ -280,28 +314,7 @@ HelmholtzResult<Scalar> residual_helmholtz(
         mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
     }
 
-    // EqID: packing_moments
-    std::array<Scalar, 4> zeta = {
-        Scalar(0.0), Scalar(0.0), Scalar(0.0), Scalar(0.0),
-    };
-    const std::size_t moment_count =
-        size == 1 ? zeta.size() : zeta.size() - 1;
-    for (std::size_t order = 0; order < moment_count; ++order) {
-        Scalar moment = Scalar(0.0);
-        for (std::size_t i = 0; i < size; ++i) {
-            Scalar power = Scalar(1.0);
-            for (std::size_t exponent = 0; exponent < order; ++exponent) {
-                power *= diameter[i];
-            }
-            moment += mole_fractions[i] * parameters.segment_count[i] * power;
-        }
-        zeta[order] = (PI / 6.0) * number_density * moment;
-    }
-    if (size != 1) {
-        zeta[3] = packing_fraction_from_geometry(
-            molar_density, mole_fractions, parameters, diameter
-        );
-    }
+    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
     if constexpr (std::is_same_v<Scalar, double>) {
         if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {
             throw std::invalid_argument("packing fraction is at or above close packing");
@@ -321,16 +334,8 @@ HelmholtzResult<Scalar> residual_helmholtz(
     // EqID: hard_chain_helmholtz
     Scalar hard_chain = mean_segment_count * hard_sphere;
     for (std::size_t i = 0; i < size; ++i) {
-        const Scalar contact_diameter = diameter[i] / Scalar(2.0);
-        // EqID: hard_sphere_contact
-        const Scalar contact =
-            Scalar(1.0) / one_minus_eta +
-            contact_diameter * 3.0 * zeta[2] /
-                (one_minus_eta * one_minus_eta) +
-            contact_diameter * contact_diameter * 2.0 * zeta[2] * zeta[2] /
-                (one_minus_eta * one_minus_eta * one_minus_eta);
         hard_chain -= mole_fractions[i] * (parameters.segment_count[i] - 1.0) *
-            scalar_log(contact);
+            scalar_log(hard_sphere_contact(diameter[i] / Scalar(2.0), zeta[2], one_minus_eta));
     }
 
     // EqID: dispersion_chain_coefficients
