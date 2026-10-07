@@ -533,6 +533,7 @@ bool GibbsMinimizer::get_bounds_info(
         x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
         x_u[offset++] = std::log(policy::PACKING_FRACTION_CEILING.value);
     }
+    offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
     std::fill(g_l, g_l + m, 0.0);
@@ -1267,6 +1268,46 @@ EquilibriumResult run_driver(
     return result;
 }
 
+// Direct admission of a critical-equation candidate (EqID critical_equations) in place of the density-root
+// rule, which refuses P_rho = 0: a regular augmented Jacobian and one lowest zero eigenvalue of M, read from the
+// mode rows' u columns, within |lambda| <= ||M u||/||u|| + C eps ||M||, above no resolved negative one. No
+// stability certificate; the record is retained either way.
+BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& result) {
+    using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    const auto n = static_cast<Eigen::Index>(result.coordinates.size()), c = static_cast<Eigen::Index>(compiled.mode_count);
+    const auto jacobian = compiled.jacobian(result.coordinates);
+    const Eigen::Map<const Dense> J(jacobian.data(), n, n);
+    const Eigen::MatrixXd M = J.block(static_cast<Eigen::Index>(compiled.rows.size()) - c - 2,
+                                      static_cast<Eigen::Index>(compiled.mode_offset()), c, c);
+    const Eigen::Map<const Eigen::VectorXd> u(result.coordinates.data() + compiled.mode_offset(), c);
+    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> spectrum(M, Eigen::EigenvaluesOnly);
+    const auto lu = J.fullPivLu();
+    const Eigen::VectorXd right = Eigen::VectorXd::Ones(n), solution = lu.solve(right);
+    const auto singular = J.jacobiSvd().singularValues();
+    CriticalRecord record;
+    record.eigenvalues.assign(spectrum.eigenvalues().data(), spectrum.eigenvalues().data() + c);
+    record.mode.assign(u.data(), u.data() + c);
+    record.cubic = result.residuals.back();
+    record.zero_band = (M * u).norm() / u.norm() + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * M.norm();
+    record.rank = static_cast<std::size_t>(lu.rank());
+    record.condition_estimate = singular(0) / singular(n - 1);
+    record.backward_error = (J * solution - right).cwiseAbs().maxCoeff()
+        / (J.cwiseAbs().rowwise().sum().maxCoeff() * solution.cwiseAbs().maxCoeff() + 1.0);
+    result.critical = record;
+    BranchCheck outcome;
+    if (record.rank != static_cast<std::size_t>(n) || spectrum.info() != Eigen::Success)
+        outcome.message = "augmented critical Jacobian is singular (rank " + std::to_string(record.rank) + ")";
+    else if (!(std::abs(record.eigenvalues[0]) <= record.zero_band))
+        outcome.message = "lowest eigenvalue of M is not a resolved zero";
+    else if (c > 1 && !(record.eigenvalues[1] > record.zero_band))
+        outcome.message = "second eigenvalue of M is not resolved positive";
+    else {
+        outcome.accepted = true;
+        result.message += "; critical-equation candidate, no stability certificate";
+    }
+    return outcome;
+}
+
 bool zero_amount(const PhaseSpec& phase) {
     return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
 }
@@ -1409,7 +1450,8 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         if (!result.success) continue;
         BranchCheck branches;
         try {
-            branches = check_density_branches(model, compiled, result, {}, true, scope);
+            branches = compiled.problem.critical ? admit_critical(compiled, result)
+                : check_density_branches(model, compiled, result, {}, true, scope);
         } catch (const std::exception& error) {
             branches.message = std::string("density branch admission failed: ") + error.what();
         }
@@ -1536,7 +1578,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     reject_elapsed(result, scope); }
                 if (result.success) {
                     BranchCheck branch;
-                    try { branch = check_density_branches(model, compiled, result, {}, true, scope, &work); }
+                    try { branch = compiled.problem.critical ? admit_critical(compiled, result)
+                              : check_density_branches(model, compiled, result, {}, true, scope, &work); }
                     catch (const std::exception& error) { branch.message = error.what(); }
                     if (!branch.accepted || work.expired()) {
                         result.success = false;

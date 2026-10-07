@@ -77,6 +77,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-06, #224 slice B owner decision: raise the Equilibrium hard ceiling (up to about 9,200 approved) and the Python hard ceiling (up to 2,900 approved) only to the measured slice B counts, Equilibrium **8,800 → 8,843** and Python **2,850 → 2,892**, for the critical-equation rows, admission and the native envelope controller and their transport; no other ceiling changes.
+
 - 2026-10-06, #283 owner decision: amend Core, Contributions, Properties and aggregate ceilings to leave room for required thermodynamic work; low-risk deletions preserve numerical behavior, and Equilibrium retains its hard ceiling; the lead corrected the aggregate soft ceiling to the layer sum required by the counting rule.
 
 - 2026-10-05, #240 straight physical-parameter continuation, measured against

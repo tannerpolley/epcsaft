@@ -307,8 +307,8 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order
     ) const;
-    // Mixed contraction of the extensive residual Helmholtz scalar with three or four
-    // directions of width 2 + C + A in [T, V, n, active parameters]: E3 or E4.
+    // Mixed contraction of the extensive residual Helmholtz scalar with three to five
+    // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,

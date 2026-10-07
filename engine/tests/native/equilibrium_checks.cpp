@@ -5120,6 +5120,7 @@ void check_normalized_reaction_affinity() {
 }  // namespace
 
 #include "caloric_specification_checks.hpp"
+#include "critical_envelope_checks.hpp"
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
@@ -5128,6 +5129,11 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.caloric-curvature", "Caloric_specification_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-curvature"}, caloric_specification_checks::curvature, "caloric-specification"},
         {{"native.equilibrium.caloric-roundtrips", "Caloric_specification_roundtrips", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-roundtrips"}, caloric_specification_checks::roundtrips, "caloric-specification"},
         {{"native.equilibrium.caloric-reactions", "Caloric_reaction_consistency", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-reactions"}, caloric_specification_checks::reactions, "caloric-specification"},
+        {{"native.equilibrium.critical-pure", "Critical_pure_C1_C2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-pure"}, critical_envelope_checks::pure_critical, "critical-envelope"},
+        {{"native.equilibrium.critical-binary", "Critical_binary_C3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-binary"}, critical_envelope_checks::binary_critical, "critical-envelope"},
+        {{"native.equilibrium.critical-curvature", "Critical_envelope_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-curvature"}, critical_envelope_checks::curvature, "critical-envelope"},
+        {{"native.equilibrium.envelope-mixture", "Envelope_mixture_E1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "envelope-mixture"}, critical_envelope_checks::mixture, "critical-envelope"},
+        {{"native.equilibrium.envelope-pure", "Envelope_pure_E3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "envelope-pure"}, critical_envelope_checks::pure, "critical-envelope"},
         {{"native.equilibrium.removal", "Phase_removal_inventory", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_phase_removal_inventory},
         {{"native.equilibrium.plane-curvature", "Tangent_plane_curvature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "Tangent_plane_admission", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_admission},

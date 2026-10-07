@@ -1126,7 +1126,13 @@ static SolvedStateActionBatch evaluate_action(
                 auto& item = batch.results[property_rows[phase][i]];
                 item.value = chain.value[i];
                 item.property_diagnostics = chain.diagnostics;
-                if (chain.status[i] != SolvedStateActionStatus::Available) {
+                // A critical-equation candidate has P_rho = 0: its isobaric heat capacities are pressure-closed.
+                const auto property = item.observable.property;
+                if (problem.critical && (property == PropertyObservable::ResidualIsobaricHeatCapacity
+                                         || property == PropertyObservable::TotalIsobaricHeatCapacity)) {
+                    item.status = SolvedStateActionStatus::PressureSingular;
+                    item.value.reset();
+                } else if (chain.status[i] != SolvedStateActionStatus::Available) {
                     item.status = chain.status[i];
                     item.diagnostic_message = chain.message[i].empty()
                         ? std::string("phase_property dependency: ") + solved_state_status_name(item.status) : chain.message[i];
@@ -1222,6 +1228,9 @@ static SolvedStateActionBatch evaluate_action(
         std::any_of(controls.begin(), controls.end(), [](const auto &c) { return c[0] != 0.0; });
     if (gate == SolvedStateActionStatus::Available && !zero && thermal && thermal_reference_missing(compiled, center.prepared.temperature))
         gate = SolvedStateActionStatus::MissingThermochemistry;
+    // Critical actions are first order: orders two and three need E5 and E6 of the critical rows.
+    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 1)
+        gate = SolvedStateActionStatus::EnergyOrderUnavailable;
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.
     const auto apply_state_gate = [&](SolvedStateActionStatus status,

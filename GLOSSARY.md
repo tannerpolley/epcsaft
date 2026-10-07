@@ -66,6 +66,14 @@ Source: equilibrium formulation
 A justified bound or theorem for the stated domain; finite search without a witness is insufficient.
 Source: equilibrium formulation
 
+**Critical-equation candidate**:
+A solved state of the necessary Heidemann–Khalil conditions M u = 0, u'u = 1 and c = 0 with one lowest zero eigenvalue of M; it certifies neither stability nor a unique critical point.
+Source: EqID `critical_equations`; Heidemann and Khalil (1980); Michelsen (1980)
+
+**Envelope cell**:
+A free feed phase with an incipient phase pinned at zero amount, T and P free and one selected ln T, ln P or ln K condition; its continuation passes a mixture critical point by one ln K straddle.
+Source: EqID `envelope_local_condition`; Michelsen (1980), pp. 2–4
+
 **Component**:
 A major responsibility with an implementation or records owner: Engine, Data, Analyses, Applications, Tooling or Documentation.
 Source: `ARCHITECTURE.yaml` project map
