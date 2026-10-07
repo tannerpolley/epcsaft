@@ -5,7 +5,8 @@
 # Run as: tools/heavy tools/refresh-main-wheel
 set -euo pipefail
 cd "$(git -C "$(dirname "${BASH_SOURCE[0]}")" worktree list --porcelain | sed -n '1s/^worktree //p')"
-[[ "$(git branch --show-current)" == main && -z "$(git status --porcelain --untracked-files=no)" ]] \
+# IDE configuration under .serena/ is not part of the wheel, so its edits do not block a refresh.
+[[ "$(git branch --show-current)" == main && -z "$(git status --porcelain --untracked-files=no -- . ':!.serena')" ]] \
     || { echo "the main checkout must be a clean main branch: $PWD" >&2; exit 1; }
 bash .codex/environments/setup.sh
 commit="$(git rev-parse --short=8 HEAD)"
