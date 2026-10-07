@@ -49,6 +49,16 @@ constexpr std::array<double, 5> REFERENCE_MOLALITIES = {
     policy::REFERENCE_CONVERGENCE_WITNESS.value,
 };
 
+// A declaration whose solvent, pure reference species, solute ratios or reaction carry net charge.
+struct NonNeutralDeclaration final : std::invalid_argument {
+    using std::invalid_argument::invalid_argument;
+};
+
+NeutralReferenceStatus declaration_status(const std::invalid_argument& error) {
+    return dynamic_cast<const NonNeutralDeclaration*>(&error) != nullptr
+        ? NeutralReferenceStatus::NonNeutralDeclaration : NeutralReferenceStatus::InvalidDeclaration;
+}
+
 double validate_neutral_reference_declaration(
     const Parameters& parameters,
     const NeutralReferenceDeclaration& declaration,
@@ -72,12 +82,12 @@ double validate_neutral_reference_declaration(
                 && choice != SpeciesReference::PureGas)
                 throw std::invalid_argument("species reference convention");
             if (choice != SpeciesReference::InfiniteDilution && parameters.charge_number[i] != 0)
-                throw std::invalid_argument("pure reference species is charged");
+                throw NonNeutralDeclaration("pure reference species is charged");
         }
     }
     const std::size_t solvent = *declaration.solvent_index;
     if (parameters.charge_number[solvent] != 0) {
-        throw std::invalid_argument("neutral reference solvent is charged");
+        throw NonNeutralDeclaration("neutral reference solvent is charged");
     }
     const auto& molar_masses = parameters.molar_mass_kg_per_mol;
     const double solvent_mass = molar_masses[solvent];
@@ -100,10 +110,10 @@ double validate_neutral_reference_declaration(
         reaction_charge += coefficient * static_cast<double>(parameters.charge_number[component]);
     }
     if (!std::isfinite(charge) || charge != 0.0) {
-        throw std::invalid_argument("neutral reference solute ratios are not charge neutral");
+        throw NonNeutralDeclaration("neutral reference solute ratios are not charge neutral");
     }
     if (!std::isfinite(reaction_charge) || reaction_charge != 0.0) {
-        throw std::invalid_argument("neutral reference reaction is not charge neutral");
+        throw NonNeutralDeclaration("neutral reference reaction is not charge neutral");
     }
     return solvent_mass;
 }
@@ -352,12 +362,8 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        result.status = message.find("charged") != std::string::npos
-                || message.find("charge neutral") != std::string::npos
-            ? NeutralReferenceStatus::NonNeutralDeclaration
-            : NeutralReferenceStatus::InvalidDeclaration;
-        result.message = message;
+        result.status = declaration_status(error);
+        result.message = error.what();
         return result;
     } catch (const std::exception& error) {
         result.status = NeutralReferenceStatus::Nonfinite;
@@ -588,12 +594,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        result.status = message.find("charged") != std::string::npos
-                || message.find("charge neutral") != std::string::npos
-            ? NeutralReferenceStatus::NonNeutralDeclaration
-            : NeutralReferenceStatus::InvalidDeclaration;
-        result.message = message;
+        result.status = declaration_status(error);
+        result.message = error.what();
         return result;
     } catch (const std::exception& error) {
         result.status = NeutralReferenceStatus::Nonfinite;
@@ -742,12 +744,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             validate_neutral_reference_declaration(
                 model.parameters(), declaration, stoichiometries[row]);
         } catch (const std::invalid_argument& error) {
-            const std::string message = error.what();
-            diagnostic.status = message.find("charged") != std::string::npos
-                    || message.find("charge neutral") != std::string::npos
-                ? NeutralReferenceStatus::NonNeutralDeclaration
-                : NeutralReferenceStatus::InvalidDeclaration;
-            diagnostic.message = message;
+            diagnostic.status = declaration_status(error);
+            diagnostic.message = error.what();
             continue;
         }
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
