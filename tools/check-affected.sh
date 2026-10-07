@@ -96,10 +96,11 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] || grep -Eq '^engine/tests/native/((equilibrium|boundary)_|.*\.hpp$)' <<<"$paths"; then
         slow_tests+=('equilibrium/Automatic*' boundary)
     fi
-    # The 16 binary128 reactive-caloric and reactive-cp cases (Explicit) run only when
-    # the code they verify changes, or on request: run-native-tests.sh 'equilibrium/Explicit/*'.
-    if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
-        slow_tests+=('equilibrium/Explicit/reactive-*')
+    # The 16 binary128 reactive-caloric and reactive-cp cases and the reacting Cp fit (Explicit)
+    # run only when the code they verify changes, or on request:
+    # run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'.
+    if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|native/regression/observations\.(cpp|hpp)|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
+        slow_tests+=('equilibrium/Explicit/reactive-*' 'regression/Explicit/reactive-cp')
     fi
     # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
     if grep -Eq '^engine/(native/equilibrium/(phase_boundary|implicit_sensitivity)\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
