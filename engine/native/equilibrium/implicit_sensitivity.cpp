@@ -1170,11 +1170,6 @@ static SolvedStateActionBatch evaluate_action(
                 shared->central_gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
             else if (topology.event == TopologyEvent::PhasesCoalesced)
                 shared->central_gate = SolvedStateActionStatus::NonuniqueCoalescedPhases;
-            for (std::size_t phase = 0; phase < problem.phases.size()
-                 && shared->central_gate == SolvedStateActionStatus::Available; ++phase)
-                for (const std::size_t species : problem.phases[phase].support)
-                    if (center.prepared.composition[phase][species] <= policy::STABILITY_COMPOSITION_FLOOR.value)
-                        shared->central_gate = SolvedStateActionStatus::PhaseBoundaryNotDifferentiable;
         }
         shared->topology_checked = true;
     }

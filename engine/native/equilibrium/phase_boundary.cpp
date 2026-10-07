@@ -598,7 +598,6 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
     std::size_t offset = 0;
     for (const auto& phase : compiled.problem.phases) {
         for (std::size_t i = 0; i < phase.support.size(); ++i, ++offset) {
-            if (y[offset] < std::log(policy::STABILITY_COMPOSITION_FLOOR.value)) return false;
             if (y[offset] > 0.0) { y[offset] = 0.0; ++projected; }
         }
         if (phase.amount.kind == AmountKind::Free) {

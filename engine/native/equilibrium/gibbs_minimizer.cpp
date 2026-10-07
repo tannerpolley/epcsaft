@@ -509,13 +509,14 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
-    // Pinned square cells impose chemical equality and need the full physical support. Other
+    // Pinned square cells impose chemical equality, so their box is the representability limit. Other
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
     // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
     // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
     const std::size_t species = compiled_.n_feed.size();
-    std::vector<double> box(species, policy::STABILITY_COMPOSITION_FLOOR.value);
-    if (!compiled_.feasibility_cell() || !compiled_.is_square()) {
+    const bool square = compiled_.feasibility_cell() && compiled_.is_square();
+    std::vector<double> box(species, square ? std::numeric_limits<double>::min() : policy::STABILITY_COMPOSITION_FLOOR.value);
+    if (!square) {
         if (limits_ && limits_->expired()) return false;
         for (std::size_t i = 0; i < species; ++i)
             box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
@@ -1531,7 +1532,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
                         for (const double x : phase.composition_guess)
-                            check(std::isfinite(x) && x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0,
+                            check(std::isfinite(x) && x > 0.0 && x <= 1.0,
                                   "composition for phase " + phase.name + " is outside the admitted range");
                         check(!phase.packing_guess || admitted_packing_fraction(*phase.packing_guess),
                               "packing for phase " + phase.name + " is outside the admitted range");
@@ -1562,7 +1563,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     const auto& phase = compiled.problem.phases[p]; auto cursor = offsets[p];
                     for (std::size_t j = 0; j < phase.support.size(); ++j) {
                         const double x = std::exp(initial[cursor++]);
-                        check(x >= policy::STABILITY_COMPOSITION_FLOOR.value && x <= 1.0);
+                        check(x > 0.0);
                     }
                     if (phase.is_free()) check(initial[cursor++] >= 0.0);
                     check(admitted_packing_fraction(std::exp(initial[cursor])));

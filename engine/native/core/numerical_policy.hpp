@@ -234,15 +234,14 @@ inline constexpr Tolerance EQUILIBRIUM_BOX_INVENTORY_FRACTION{"EQUILIBRIUM_BOX_I
     Category::AlgorithmTolerance,
     "largest fraction of a species' attainable inventory held by the composition box; not an accuracy bound",
 };
-// Structural-absence cutoff for a composition coordinate: continuation admission and solved-
-// state differentiability treat x_i at or below it as a vanished species; the Newton polish
-// does not (#266): neutral CO2 in 1e-6-loaded MEA (318.15 K) has its root at x = 1.1e-21, and
-// x_B = K/(1+K) is 1e-24 at K = 1e-24. Hydronium at pH 10 in water is x ~ 1e-12; the analytic
-// trace solution at K = 1e-8 lies below the optimizer box and above this cutoff.
+// Lower bound of the inventory-scaled box of all-free cells: it binds only below an attainable
+// inventory of 1e-18 N_feed, under the balance rows' rounding resolution. No root, action,
+// continuation step or seed is cut at it (#266, #322): x_B = K/(1+K) = 1e-24 solves, has exact
+// actions and continues. Square pinned cells are bounded by the smallest normal double instead.
 inline constexpr Tolerance STABILITY_COMPOSITION_FLOOR{"STABILITY_COMPOSITION_FLOOR",
     1.0e-20,
     Category::AlgorithmTolerance,
-    "dimensionless x_i cutoff for continuation admission and action differentiability; not a polish domain or accuracy bound",
+    "dimensionless lower bound of the all-free optimizer log-composition box; not a solution domain or accuracy bound",
 };
 inline constexpr Tolerance STABILITY_PHASE_AMOUNT_FLOOR{"STABILITY_PHASE_AMOUNT_FLOOR",
     1.0e-8,
