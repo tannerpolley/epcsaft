@@ -56,10 +56,8 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         }
     } else if (expected == "dimensionless" && entry.unit == "dimensionless") {
         return 1.0;
-    } else if ((expected == "kelvin" || expected == "length")
-               && (entry.unit == "kelvin" || entry.unit == "angstrom")) {
-        if ((expected == "kelvin" && entry.unit == "kelvin")
-            || (expected == "length" && entry.unit == "angstrom")) return 1.0;
+    } else if ((expected == "kelvin" && entry.unit == "kelvin") || (expected == "length" && entry.unit == "angstrom")) {
+        return 1.0;
     } else if (expected == "charge" && entry.unit == "elementary-charge") {
         return 1.0;
     } else if (expected == "reciprocal temperature" && entry.unit == "1 / kelvin") {
