@@ -296,18 +296,13 @@ Parameters build_parameters(const ParameterDocument& document) {
             if (entry.index[0] >= sigma_term_components.size() + 1 || entry.index[1] >= components) {
                 reject("sigma term index out of range for " + where(entry));
             }
-            const auto [term, component] = std::pair{entry.index[0], entry.index[1]};
-            sigma_term_components[term] = component;
-            if (entry.field == "sigma_term_amplitude") {
-                factor = unit_factor(entry, "length");
-            } else factor = unit_factor(entry, "reciprocal temperature");
+            sigma_term_components[entry.index[0]] = entry.index[1];  // units are converted in the term pass below
         } else if (entry.field == "permittivity_term_coefficient") {
             require_index(entry, 3, "permittivity term index");
             if (entry.index[0] >= permittivity_term_components.size() + 1 || entry.index[1] >= components) {
                 reject("permittivity term index out of range for " + where(entry));
             }
             permittivity_term_components[entry.index[0]] = entry.index[1];
-            factor = unit_factor(entry, static_cast<int>(entry.index[2]));
         } else if (entry.field == "permittivity_reference_temperature") {
             const auto i = component_index(entry, components);
             component_fields.emplace(entry.field, i);
