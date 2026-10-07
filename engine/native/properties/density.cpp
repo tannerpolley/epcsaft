@@ -19,6 +19,12 @@
 namespace epcsaft {
 namespace {
 
+// The diagnostic scan's evaluation or time budget ran out; it ends the scan instead of
+// becoming one sample's cause.
+struct DiagnosticBudgetExhausted final : std::runtime_error {
+    DiagnosticBudgetExhausted() : std::runtime_error("density diagnostic budget exhausted") {}
+};
+
 // 2 - phi: the golden-section interior fraction, a mathematical constant.
 constexpr double GOLDEN_SECTION = 0.3819660112501051;
 
@@ -409,7 +415,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (result.evaluations >= max_evaluations
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
-            throw std::runtime_error("density diagnostic budget exhausted");
+            throw DiagnosticBudgetExhausted();
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
         auto point = at_density(*this, temperature, pressure, composition, rho, result.evaluations, order);
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
@@ -478,8 +484,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 result.declared_crossings = result.declared_brackets.size();
                 points.push_back({rho, point, linked});
                 linked = true;
+            } catch (const DiagnosticBudgetExhausted&) { throw;
             } catch (const std::runtime_error& error) {
-                if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                 DensityDiagnosticPoint sample;
                 sample.molar_density = sample.lower = sample.upper = rho;
                 sample.cause = error.what();
@@ -553,8 +559,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 hi = std::min(2.0 * lo, cap);
                 result.finite_domain->upper = hi;
                 try { evaluate(hi, evaluation_order); lo = hi; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     result.finite_domain->cause = error.what(); unavailable = true; break;
                 }
                 result.finite_domain->lower = lo;
@@ -562,8 +568,8 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             while (unavailable && std::nextafter(lo, hi) < hi) {
                 const double rho = lo + 0.5 * (hi - lo);
                 try { evaluate(rho, evaluation_order); lo = rho; }
+                catch (const DiagnosticBudgetExhausted&) { throw; }
                 catch (const std::runtime_error& error) {
-                    if (std::string(error.what()) == "density diagnostic budget exhausted") throw;
                     hi = rho; result.finite_domain->cause = error.what();
                 }
                 result.finite_domain->lower = lo; result.finite_domain->upper = hi;
