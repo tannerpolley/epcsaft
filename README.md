@@ -84,7 +84,7 @@ and canonical wheel build and installation guidance.
 Run the affected-area gate during normal development:
 
 ```bash
-bash tools/check-affected.sh
+bash tools/check-affected.sh [base]
 ```
 
 Run the fast installed-wheel gate with:
@@ -93,7 +93,8 @@ Run the fast installed-wheel gate with:
 bash tools/check-all.sh
 ```
 
-`check-affected.sh` selects checks from the changed paths. Data, analysis, or
+`check-affected.sh` selects checks from the paths changed since `base` (default: the
+merge base with `origin/main`, printed first) plus uncommitted files. Data, analysis, or
 documentation-only changes can stop at readiness checks without building or
 installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
