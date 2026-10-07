@@ -188,14 +188,14 @@ def differentiate(model: Mixture | Pure, item: Observation) -> PredictionGradien
 
 @overload
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
-        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None, minimax: MinimaxRequest | None = None) -> FitResult: ...
 
 
 @overload
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
-        weights: Sequence[float] | None = None, controls: FitControls | None = None,
+        weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
@@ -209,8 +209,10 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
         shared_seconds: float | None = None, minimax: MinimaxRequest | None = None) -> FitResult | list[FitResult]:
     """Native least squares, or declared guarded minimax, over the held chart (ALG-FIT)."""
+    if controls is None:
+        raise ParameterError("fit requires controls: the iteration and time budgets are scientific inputs (ALG-FIT)")
     return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
-                     FitControls() if controls is None else controls, list(holds or ()), list(checks or ()),
+                     controls, list(holds or ()), list(checks or ()),
                      None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax)
 
 

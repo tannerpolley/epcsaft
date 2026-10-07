@@ -10,7 +10,7 @@ from epcsaft import (
 )
 from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
 
-from ..native_inputs import ETHANE, ROWS, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
+from ..native_inputs import ETHANE, ROWS, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -53,7 +53,7 @@ def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
     """The same manufactured request through epcsaft.regression reproduces regression_checks R2-J2 (r4/*)."""
     _, observations = manufactured()
     start = neutral_binary(148.0, 0.0)
-    result = regression.fit(start, coordinates(start), observations)
+    result = regression.fit(start, coordinates(start), observations, controls=budget())
     assert result.status == "converged" and result.usable and result.trial_failures == 0
     assert result.residuals == result.weighted_residuals  # unit weights: one accepted objective evaluation
     same(evidence, "r4/recovery/epsilon", result.physical[0])
@@ -209,19 +209,19 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     assert state.density_branch == DensityBranch.Unspecified and state.stable_root_count == 1  # one stable root at 5 MPa
     _, observations = manufactured()
     observations.append(regression.density(p, 200.0, 1.0e10, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
-    result = regression.fit(p, coordinates(p), observations)
+    result = regression.fit(p, coordinates(p), observations, controls=budget())
     assert result.status == "initial_evaluation_failed" and not result.usable and result.predictions == []
     assert [(item.trial, item.observation, item.status) for item in result.failures] == [(1, 5, regression.ObservationStatus.DensityUnavailable)]
-    refused = regression.fit(p, coordinates(p), [observations[0], observations[-1], observations[0]], weights=[0, 1, 1])
+    refused = regression.fit(p, coordinates(p), [observations[0], observations[-1], observations[0]], weights=[0, 1, 1], controls=budget())
     assert refused.statuses == [regression.ObservationStatus.NotEvaluated, regression.ObservationStatus.DensityUnavailable, regression.ObservationStatus.NotEvaluated]
-    single = regression.fit(p, coordinates(p), observations[:1])
+    single = regression.fit(p, coordinates(p), observations[:1], controls=budget())
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
     # Three finite rows whose accumulated objective overflows: typed at the second row, no infinite cost.
     y = Pure(parameters((ETHANE,))).state(200.0, P=1.0e5, phase="liquid").molar_density
     pe = parameters((ETHANE,))
     steep = [regression.density(pe, 200.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=y - 1.0, form="difference", scale=1.0 / 1.2e154, mass_basis=False) for _ in range(3)]
     epsilon = [regression.coordinate(pe, [("dispersion_energy_over_k", "s0", 1)], origin=191.42, scale=10.0, bounds=(150.0, 260.0))]
-    overflowed = regression.fit(pe, epsilon, steep)
+    overflowed = regression.fit(pe, epsilon, steep, controls=budget())
     assert overflowed.status == "initial_evaluation_failed" and not overflowed.usable and overflowed.initial_cost == 0.0
     assert [(f.observation, f.status, f.message) for f in overflowed.failures] == [(1, regression.ObservationStatus.Nonfinite, "accumulated weighted cost not finite")]
     one = regression.FitControls()
@@ -339,7 +339,7 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         ob.form = regression.ResidualForm.Difference
         ob.scale = 1
     exact_data = _core.observations_at(chart.parameters, [], [], [], templates, [0] * 6)
-    exact = regression.fit(stored, cs, exact_data, holds=holds)
+    exact = regression.fit(stored, cs, exact_data, holds=holds, controls=budget())
     assert exact.final_cost <= 1e-24
     for c in range(3):
         step = 1e-4 * max(abs(truth[c]), 1)
@@ -373,6 +373,7 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         observations + checks_data,
         holds=holds,
         checks=[group],
+        controls=budget(),
         weights=[1] * 6 + [0, 0],
     )
     check = final.checks[0]
@@ -384,6 +385,7 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
         cs,
         exact_data,
         holds=holds,
+        controls=budget(),
         starts=[truth, truth],
         shared_iterations=20,
         shared_seconds=20,
