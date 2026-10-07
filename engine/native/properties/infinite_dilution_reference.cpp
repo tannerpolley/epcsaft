@@ -23,7 +23,7 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
             auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
             if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
             if (state.density_convergence) scope.finish(*state.density_convergence);
-            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds w/100");
+            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
         } catch (const std::runtime_error& error) {
             if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
             scope.probe("anchor_failure", {*prior_density}, 0, error.what());

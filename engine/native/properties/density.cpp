@@ -588,7 +588,7 @@ bool properties::regular_density(double density, double slope, const std::option
         && *c.floor >= 0.0 && std::isfinite(*c.floor)
         && *c.amplification > 0.0 && std::isfinite(*c.amplification)
         && (policy::DENSITY_ROOT_RESIDUAL.value + *c.floor) * *c.amplification / density
-            <= policy::DENSITY_ANCHOR_LOG_WINDOW.value / 100.0;
+            <= policy::DENSITY_ANCHOR_REGULARITY.value;
 }
 
 
