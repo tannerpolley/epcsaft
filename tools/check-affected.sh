@@ -82,6 +82,10 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     if grep -Eq '^engine/(native/equilibrium/implicit_sensitivity\.cpp|native/properties/thermochemistry\.|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/*')
     fi
+    # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
+    if grep -Eq '^engine/(native/equilibrium/phase_boundary\.cpp|tests/native/critical_envelope_checks\.hpp)' <<<"$paths"; then
+        slow_tests+=('equilibrium/Explicit/envelope-*')
+    fi
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -q '^engine/tests/native/regression_checks' <<<"$paths"; then
         slow_tests+=(regression_fit)
     fi
