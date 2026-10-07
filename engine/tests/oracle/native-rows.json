@@ -1,8 +1,8 @@
 {
   "rows": 580,
-  "recorded_at_revision": "fbe0d1ec540253a73a94f35217960d41d2614559",
-  "build_fingerprint": "d0757d7e83399626f90957160674f2fd9126ad214a9af9e1cb08fd29bd3dcf82",
-  "wheel_sha256": "b6e46ba58c15b9d20677cca7f58719422bf43c5a2697d7c2bc7e22215b53d101",
+  "recorded_at_revision": "2428781bd8f5f9b24c3b5aa6017b74117fcee4fa",
+  "build_fingerprint": "584a9cbca4782315d785893de77096897d6bc9cc2076adead34b3f77972c200e",
+  "wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -56,6 +56,19 @@
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
   "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
-  "previous_recording_wheel_sha256": "fdf3fbb51244eb4991f0743a6acd377dc0296d5909b77e896d050c6e36fdf57c",
-  "refresh_cause": "#314: ln eta is unbounded for single-phase Gibbs minimizations. Against a recording of the same tree with the bounds on everywhere (main's optimizer path), 118 rows move, all in single-phase cases (S2 87, E5-5 19, E5-3 6, E5-7 6). The 41 that move by more than 1e-10 relative are S2 rows: 39 frozen-state F4/F5 rows, higher-order values that are small differences of larger terms (largest absolute move 1.3e-10 J/mol; F4/frozen-hP/8 moved 7.1e-16 m3/mol, about 1e-12 relative to its cancelling terms per the #314 review), and 2 enthalpy-reaction reaction-b/resolve rows carrying re-solve tolerance noise (at most 1.2e-8 relative). The previous main file also differs from main's own code in 199 rows (E5-1, E5-3, E5-7, E5-8, S2, R2-J2, surface) unrelated to #314; this recording refreshes those too. Every native comparison passes its unchanged criterion."
+  "previous_branch_wheel_sha256": "93c105d2101a73f836b5ee8eeab7119ecf04342b8946bf9eb8ca57df4d41c6c2",
+  "previous_main_recording_wheel_sha256": "835d9bc27b243acb6d2288f4911828be973f07dc0d20766f397538065a9368b0",
+  "current_main_wheel_sha256": "ae3d960f3b310d88c83468e361c390392a8b58b6e5dafbead662f42e0e7fd8d3",
+  "pre_scaling_wheel_sha256": "47535cab611b6243509c57bca9c96bb08e49337084afe80bc533ce16768301de",
+  "refresh_cause": "Integrated pressure-closest density endpoint selection/publication and central-temperature auxiliary scaling. Every moved value passes its independent native comparison or discrimination; original criteria are unchanged.",
+  "movement_classification": "analyses/2026-reactive-caloric-actions/results/main-integration/native-row-movements.tsv",
+  "row_requalification": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/provenance.json",
+  "issue_314_refresh": {
+    "rows_replaced": 123,
+    "recorded_at_revision": "e49c5c6bf9c828b001764099ddf539d2ae47cc1c",
+    "build_fingerprint": "e751512564ca3cfb92cc77d4143e2c2ab1c5f2d33b5081273d7e21ee2c6c594d",
+    "wheel_sha256": "4181cdf3d1b0f918709ddb8e6a4c5f117f963e9cd7f153099867ea5110e2cff6",
+    "failed_native_comparisons": [],
+    "cause": "ln eta is unbounded for single-phase Gibbs minimizations. Only rows that move against a recording of the same tree with the bounds on everywhere (main's optimizer path) are replaced (123 lines, all single-phase: S2 92, E5-3 6, E5-5 19, E5-7 6). The 41 that move by more than 1e-10 relative are S2 rows: frozen-state F4/F5 rows, higher-order values that are small differences of larger terms (F4/frozen-hP/8 moved 7.1e-16 m3/mol, about 1e-12 relative to its cancelling terms per the #314 review), and enthalpy-reaction reaction-b/resolve rows carrying re-solve tolerance noise. Every native comparison passes its unchanged criterion."
+  }
 }

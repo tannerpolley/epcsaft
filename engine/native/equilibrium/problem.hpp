@@ -367,6 +367,8 @@ struct CompiledSystem final {
     bool feasibility_cell() const noexcept {
         return pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
     }
+    // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
+    bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
 
     // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
     std::size_t condition_count() const noexcept {

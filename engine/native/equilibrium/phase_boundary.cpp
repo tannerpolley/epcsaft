@@ -605,9 +605,7 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
             if (y[offset] < 0.0) { y[offset] = 0.0; ++projected; }
             ++offset;
         }
-        if (y[offset] < std::log(policy::PACKING_FRACTION_FLOOR.value)
-            || y[offset] > std::log(policy::PACKING_FRACTION_CEILING.value)) return false;
-        ++offset;
+        if (!admitted_packing_fraction(std::exp(y[offset++]))) return false;
     }
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
     if (compiled.problem.pressure.free && !(y[offset++] > 0.0)) return false;
