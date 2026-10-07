@@ -157,13 +157,8 @@ class Reaction:
         reference: _core.ReactionReference | None = None,
     ) -> None:
         """Exactly one target; source-basis correlations also require an explicit reference."""
-        targets = sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation))
-        if targets == 0:
-            raise TypeError("Reaction requires equilibrium_constant, affinity_j_per_mol or correlation")
-        if targets != 1:
-            raise _core.ParameterError(
-                "reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation"
-            )
+        if sum(item is not None for item in (equilibrium_constant, affinity_j_per_mol, correlation)) != 1:
+            raise _core.ParameterError("reaction target must be one of equilibrium_constant or affinity_j_per_mol or correlation")
         name = "" if name is None else name
         self.name = name
         self.stoichiometry = stoichiometry
@@ -421,8 +416,6 @@ def _feed_from_mapping(value: object) -> Feed:
 
 
 def _reaction_from_mapping(value: Mapping[str, object]) -> Reaction:
-    if not {"equilibrium_constant", "affinity_j_per_mol", "correlation"} & set(value):
-        raise _core.ParameterError("missing equilibrium_constant, affinity_j_per_mol or correlation")
     return Reaction(
         cast(Mapping[str, float], value.get("stoichiometry")),
         name=str(value.get("name", "")),
