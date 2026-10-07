@@ -120,7 +120,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
         result.push_back((first - coordinate.origin) / coordinate.scale);
     }
     require(within_bounds(result), "start outside bounds");
-    (void)HelmholtzModel(parameters, active_parameters());
     return result;
 }
 
@@ -207,6 +206,7 @@ void validate(const CoordinateSet& set, const Parameters& parameters, const std:
               const std::optional<ThermochemistryRecord>& thermochemistry) {
     require(!set.coordinates.empty(), "set is empty");
     (void)set.start(parameters, observations, thermochemistry);
+    (void)HelmholtzModel(parameters, set.active_parameters(), thermochemistry);
 }
 
 EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
