@@ -175,7 +175,7 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("kind", &Row::kind)
         .def_readonly("phase", &Row::phase)
         .def_readonly("index", &Row::index)
-        .def_readonly("eqid", &Row::eqid);
+        .def_property_readonly("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     py::class_<PointEvaluation>(module, "PointEvaluation")
         .def_readonly("values", &PointEvaluation::values)
         .def_readonly("jacobian", &PointEvaluation::jacobian)
@@ -188,7 +188,6 @@ void register_equilibrium(py::module_& module) {
         .def_readonly("rank", &CompiledSystem::rank)
         .def_readonly("charge_row_count", &CompiledSystem::charge_row_count)
         .def_readonly("primal_size", &CompiledSystem::primal_size)
-        .def_readonly("rows_minus_unknowns", &CompiledSystem::rows_minus_unknowns)
         .def_readonly("generic_nullity", &CompiledSystem::generic_nullity)
         .def_readonly("feed_total", &CompiledSystem::feed_total)
         .def_readonly("has_ions", &CompiledSystem::has_ions)

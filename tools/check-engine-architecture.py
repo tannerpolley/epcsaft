@@ -42,7 +42,7 @@ CONSTANTS_HOME = "core/physical_constants.hpp"
 
 # Phase stability is reachable from equilibrium, never from a parameter fit: a
 # fit runs against declared phases so its residuals stay differentiable.
-STABILITY_SYMBOLS = ("phase_stability.hpp", "find_phases", "Discover")
+STABILITY_SYMBOLS = ("stability_test", "discover_phases", "StabilityOptions")
 
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
 # Unanchored on purpose: a constexpr sharing a name across two translation

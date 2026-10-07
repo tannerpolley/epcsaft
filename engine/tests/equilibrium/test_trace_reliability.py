@@ -158,7 +158,7 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
 
 
 def test_trace_isomerisation_below_the_composition_cutoff(evidence: Any) -> None:
-    """#266: the A <=> B declaration above at K = 1e-24 puts x_B below STABILITY_COMPOSITION_FLOOR (1e-20). The
+    """#266: the A <=> B declaration above at K = 1e-24 puts x_B below EQUILIBRIUM_BOX_FLOOR (1e-20). The
     polish rejected every positive trial below that cutoff, so main stalled at raw rows 9.21; Newton reaches
     K/(1+K) to 2.4e-14 relative."""
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
@@ -377,7 +377,7 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
 
 def test_mea_liquid_reaches_carbon_dioxide_root_below_the_cutoff() -> None:
     """#266: packet-3 MEA liquid at loading 1e-6, 318.15 K and 8877.7929 Pa has neutral CO2 at x = 1.1e-21, below
-    STABILITY_COMPOSITION_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
+    EQUILIBRIUM_BOX_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
     half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68. #322: the action there was
     refused by that cutoff; the carbon amounts move with the CO2 feed, sum_C dn_i/d ln n_CO2 = n_CO2."""
     model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))

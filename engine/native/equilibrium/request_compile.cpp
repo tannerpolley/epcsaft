@@ -48,11 +48,6 @@ std::vector<std::size_t> complete_support(
     return result;
 }
 
-double phase_amount(const PhaseSpec& phase, const std::vector<double>& feed) {
-    if (phase.amount.kind == AmountKind::Free) return 1.0;
-    return phase.amount.fraction * vector_norm(feed);
-}
-
 std::size_t count_rows(const CompiledSystem& compiled, RowKind kind) {
     std::size_t result = 0;
     for (const auto& row : compiled.rows) result += row.kind == kind;
@@ -292,14 +287,13 @@ StandardTerm standard_term(
             result.derivative[0][species] = gibbs[species] / rt;
         // One slope of s_r = g_r/(RT) per row, mapped to species by the same linear minimum-norm
         // owner as s. A referenced row has s_r = -ln K_rho, so its slope is -(source slope + slope
-        // of C); an unadmitted slope of C refuses the direction.
-        const auto species_slope = [&](std::vector<double> values, const auto& slope_of, const std::string& name,
-                                       std::size_t source_order, std::size_t a = 0, std::size_t b = 0,
-                                       std::optional<std::size_t> parameter = std::nullopt) {
-            if (source_order) a = source_order;
+        // of C); an unadmitted slope of C refuses the direction. Only pure T slopes move the source.
+        const auto species_slope = [&](std::vector<double> values, const std::string& name, std::size_t a,
+                                       std::size_t b = 0, std::optional<std::size_t> parameter = std::nullopt) {
+            const std::size_t source_order = !parameter && b == 0 ? a : 0;
             for (const auto& diagnostic : diagnostics) {
                 const std::size_t row = diagnostic.reaction_index;
-                const std::optional<double> slope = slope_of(diagnostic);
+                const std::optional<double> slope = diagnostic.derivative_value(a, b, parameter);
                 if (!slope) {
                     const auto cause = diagnostic.derivative_cause(a, b, parameter);
                     throw std::invalid_argument("reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
@@ -312,7 +306,6 @@ StandardTerm standard_term(
             }
             return species_standard_slopes(temperature, components, reactions, values);
         };
-        using Diagnostic = NeutralReferenceReactionDiagnostic;
         const std::vector<double> zero(reactions.size(), 0.0);
         // EqIDs: standard_state_transfer_temperature_(second_)derivative. Unreferenced rows keep
         // s' = (t' - t/T)/(RT) and s'' = t''/(RT) - 2 s'/T.
@@ -323,10 +316,8 @@ StandardTerm standard_term(
             first[row] = (targets[1][row] - targets[0][row] / temperature) / rt;
             if (thermal > 1) second[row] = targets[2][row] / rt - 2.0 * first[row] / temperature;
         }
-        if (thermal > 0) result.derivative[1] = species_slope(first, [](const Diagnostic& d) {
-            return d.terminal_contraction_temperature_derivative; }, "temperature derivative", 1);
-        if (thermal > 1) result.derivative[2] = species_slope(second, [](const Diagnostic& d) {
-            return d.terminal_contraction_temperature_second_derivative; }, "second temperature derivative", 2);
+        if (thermal > 0) result.derivative[1] = species_slope(first, "temperature derivative", 1);
+        if (thermal > 1) result.derivative[2] = species_slope(second, "second temperature derivative", 2);
         // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a
         // (EqID: standard_state_transfer_parameter_derivative).
         if (parameter_jets) {
@@ -338,39 +329,17 @@ StandardTerm standard_term(
         }
         for (std::size_t a = 0; parameter_jets && a < active_control.size(); ++a) {
             if (active_control[a] == 0.0) continue;
-            result.parameter_derivative[a] = species_slope(zero, [a](const Diagnostic& d) {
-                return a < d.terminal_contraction_parameter_derivative.size()
-                    ? d.terminal_contraction_parameter_derivative[a] : std::nullopt; }, "parameter derivative", 0, 0, 0, a);
-            if (order > 1) {
-                if (temperature_jets) result.temperature_parameter_derivative[a] = species_slope(
-                    zero,
-                    [a](const Diagnostic &d) {
-                        return a < d.terminal_contraction_temperature_parameter_derivative.size()
-                                   ? d.terminal_contraction_temperature_parameter_derivative[a]
-                                   : std::nullopt;
-                    },
-                    "T parameter derivative", 0, 1, 0, a);
-                if (pressure_jets)
-                    result.pressure_parameter_derivative[a] = species_slope(
-                        zero,
-                        [a](const Diagnostic &d) -> std::optional<double> {
-                            for (const auto &column : d.derivatives)
-                                if (column.temperature_order == 0 && column.pressure_order == 1 &&
-                                    column.parameter == a)
-                                    return column.value;
-                            return std::nullopt;
-                        },
-                        "P parameter derivative", 0, 0, 1, a);
-            }
+            result.parameter_derivative[a] = species_slope(zero, "parameter derivative", 0, 0, a);
+            if (order > 1 && temperature_jets)
+                result.temperature_parameter_derivative[a] = species_slope(zero, "T parameter derivative", 1, 0, a);
+            if (order > 1 && pressure_jets)
+                result.pressure_parameter_derivative[a] = species_slope(zero, "P parameter derivative", 0, 1, a);
         }
         // EqIDs: neutral_reaction_reference_pressure_jet, standard_state_transfer_temperature_pressure_derivative.
         if (pressure_jets) {
-            result.pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_pressure_derivative; }, "pressure derivative", 0, 0, 1);
-            result.pressure_second_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_pressure_second_derivative; }, "second pressure derivative", 0, 0, 2);
-            if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, [](const Diagnostic& d) {
-                return d.terminal_contraction_temperature_pressure_derivative; }, "temperature-pressure derivative", 0, 1, 1);
+            result.pressure_derivative = species_slope(zero, "pressure derivative", 0, 1);
+            result.pressure_second_derivative = species_slope(zero, "second pressure derivative", 0, 2);
+            if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, "temperature-pressure derivative", 1, 1);
         }
         return result;
     }
@@ -424,7 +393,7 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
         }
 }
 
-// Critical and envelope cells: one condition, neutral, nonreactive, T and P free (issue #224 B).
+// Critical and envelope cells: one condition, neutral, nonreactive, T and P free.
 void admit_conditions(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!p.critical && !p.envelope) return;
@@ -516,7 +485,7 @@ std::vector<double> pinned_hessian(
         const AD volume = packing_fraction_from_geometry(AD(1.0), x, parameters, diameter)
             / CppAD::exp(q[shape[phase].volume]);
         const AD amount = shape[phase].amount.has_value() ? q[*shape[phase].amount]
-            : AD(phase_amount(problem.phases[phase], compiled.n_feed));
+            : AD(compiled.phase_amount(problem.phases[phase]));
         AD simple = pressure_weight * (AD(1.0) - P * volume / (GAS_CONSTANT_J_PER_MOL_K * T));
         for (std::size_t local = 0; local < shape[phase].x.size(); ++local) {
             const std::size_t species = problem.phases[phase].support[local];
@@ -613,6 +582,22 @@ std::vector<double> pinned_hessian(
     return result;
 }
 
+// The record_geometry inputs at the prepared point: y, T, P, n_feed, active parameters, then H and S
+// in a caloric cell.
+std::vector<double> controls(const CompiledSystem& compiled, const PhasePoint& prepared) {
+    std::vector<double> result = prepared.point;
+    result.push_back(prepared.temperature);
+    result.push_back(prepared.pressure);
+    result.insert(result.end(), compiled.n_feed.begin(), compiled.n_feed.end());
+    const auto theta = compiled.model->active_parameter_values();
+    result.insert(result.end(), theta.begin(), theta.end());
+    if (compiled.has_caloric_condition()) {
+        result.push_back(compiled.problem.enthalpy_j.value_or(0.0));
+        result.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
+    }
+    return result;
+}
+
 // The geometry map and every analytic row term as one CppAD function of (y, controls) with
 // controls [T, P, n_feed, active parameters]: outputs per phase [T, v, x (C), active (A),
 // N, eta], then the analytic part of each row (the residual gradient terms are added by the
@@ -626,16 +611,10 @@ CppAD::ADFun<double> record_geometry(
     const auto& parameters = model.parameters();
     const std::size_t components = parameters.component_count();
     const std::size_t n = prepared.point.size();
-    std::vector<AD> u(prepared.point.begin(), prepared.point.end());
-    u.push_back(prepared.temperature);
-    u.push_back(prepared.pressure);
-    for (const double amount : compiled.n_feed) u.push_back(amount);
-    const auto theta_center = model.active_parameter_values();
-    for (const double value : theta_center) u.push_back(value);
-    if (compiled.has_caloric_condition()) {
-        u.push_back(problem.enthalpy_j.value_or(0.0));
-        u.push_back(problem.entropy_j_per_k.value_or(0.0));
-    }
+    const auto center = controls(compiled, prepared);
+    std::vector<AD> u(center.begin(), center.end());
+    const std::vector<double> theta_center(center.begin() + static_cast<std::ptrdiff_t>(n + 2 + components),
+        center.begin() + static_cast<std::ptrdiff_t>(n + compiled.control_width()));
     CppAD::Independent(u);
     const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
     const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
@@ -768,30 +747,27 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
     const std::size_t n = prepared.point.size();
     std::vector<double> result(n * n, 0.0);
     if (weight == 0.0) return result;
-    const std::size_t width = 2 + compiled.n_feed.size() + compiled.model->active_parameters().size();
+    const std::size_t width = compiled.control_width();
     const std::size_t stride = width + 5;
     auto geometry = record_geometry(compiled, prepared, prepared.standard);
     using AD = CppAD::AD<double>;
     std::vector<AD> q(prepared.point.begin(), prepared.point.end());
     CppAD::Independent(q);
+    const auto center = controls(compiled, prepared);
     std::vector<AD> input = q;
-    input.push_back(prepared.temperature);
-    input.push_back(prepared.pressure);
-    for (auto v : compiled.n_feed) input.push_back(v);
-    for (auto v : compiled.model->active_parameter_values()) input.push_back(v);
-    input.push_back(compiled.problem.enthalpy_j.value_or(0.0));
-    input.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
+    input.insert(input.end(), center.begin() + static_cast<std::ptrdiff_t>(n), center.end());
+    const std::vector<double> theta(center.begin() + static_cast<std::ptrdiff_t>(n + 2 + compiled.n_feed.size()),
+                                    center.begin() + static_cast<std::ptrdiff_t>(n + width));
     auto active_geometry = geometry.base2ad();
     const auto mapped = active_geometry.Forward(0, input);
     AD value = mapped.back();
     for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
         const auto& d = prepared.derivative[p];
-        std::vector<double> center = {prepared.temperature, prepared.volume[p]};
-        center.insert(center.end(), prepared.composition[p].begin(), prepared.composition[p].end());
-        const auto theta = compiled.model->active_parameter_values();
-        center.insert(center.end(), theta.begin(), theta.end());
+        std::vector<double> phase_center = {prepared.temperature, prepared.volume[p]};
+        phase_center.insert(phase_center.end(), prepared.composition[p].begin(), prepared.composition[p].end());
+        phase_center.insert(phase_center.end(), theta.begin(), theta.end());
         std::vector<AD> delta(width);
-        for (std::size_t i = 0; i < width; ++i) delta[i] = mapped[p * stride + i] - center[i];
+        for (std::size_t i = 0; i < width; ++i) delta[i] = mapped[p * stride + i] - phase_center[i];
         AD energy = d.value, gt = d.gradient[0], gv = d.gradient[1];
         for (std::size_t i = 0; i < width; ++i) {
             energy += d.gradient[i] * delta[i];
@@ -805,14 +781,6 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
     }
     CppAD::ADFun<double> pullback(q, std::vector<AD>{value});
     result = pullback.Hessian(prepared.point, 0);
-    std::vector<double> center(prepared.point);
-    center.push_back(prepared.temperature);
-    center.push_back(prepared.pressure);
-    center.insert(center.end(), compiled.n_feed.begin(), compiled.n_feed.end());
-    const auto theta = compiled.model->active_parameter_values();
-    center.insert(center.end(), theta.begin(), theta.end());
-    center.push_back(compiled.problem.enthalpy_j.value_or(0.0));
-    center.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
     const auto values = geometry.Forward(0, center);
     const auto jac = geometry.Jacobian(center);
     for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
@@ -846,7 +814,7 @@ std::vector<double> critical_hessian(const CompiledSystem& compiled, const Phase
                     [](double m) { return m == 0.0; })) return result;
     std::vector<std::vector<double>> state(3, std::vector<double>(n, 0.0));
     state[0] = prepared.point;
-    const std::vector<double> control(2 + compiled.n_feed.size() + compiled.model->active_parameters().size(), 0.0);
+    const std::vector<double> control(compiled.control_width(), 0.0);
     const auto c2 = [&] {
         const auto rows = compiled.row_series(prepared, state, control, 2).rows[2];
         return std::inner_product(rows.begin() + static_cast<std::ptrdiff_t>(first), rows.end(),
@@ -1020,29 +988,6 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
                                   pressure_slope, std::nullopt, std::min(derivative_order, std::size_t(2)),
                                   parameter_slopes, derivative_order);
-    const auto partial = [](const NeutralReferenceReactionDiagnostic &d, std::size_t a, std::size_t b,
-                            std::optional<std::size_t> p) -> std::optional<double> {
-        if (p && a + b == 0)
-            return d.terminal_contraction_parameter_derivative[*p];
-        if (p && a == 1 && b == 0)
-            return d.terminal_contraction_temperature_parameter_derivative[*p];
-        if (!p && a + b == 0)
-            return d.terminal_contraction;
-        if (!p && a == 1 && b == 0)
-            return d.terminal_contraction_temperature_derivative;
-        if (!p && a == 2 && b == 0)
-            return d.terminal_contraction_temperature_second_derivative;
-        if (!p && a == 0 && b == 1)
-            return d.terminal_contraction_pressure_derivative;
-        if (!p && a == 0 && b == 2)
-            return d.terminal_contraction_pressure_second_derivative;
-        if (!p && a == 1 && b == 1)
-            return d.terminal_contraction_temperature_pressure_derivative;
-        for (const auto &column : d.derivatives)
-            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p)
-                return column.value;
-        return std::nullopt;
-    };
     for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
         for (std::size_t a = 0; a + c <= derivative_order; ++a)
             for (std::size_t b = 0; a + b + c <= derivative_order; ++b) {
@@ -1060,8 +1005,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                     for (std::size_t r = 0; r < rows; ++r)
                         right(r) = !b && !c ? thermal[a][components + r] : 0.0;
                     for (std::size_t r = 0; r < diagnostics.size(); ++r) {
-                        const auto upper = partial(diagnostics[r], a, b, entry.parameter);
-                        const auto lower = a ? partial(diagnostics[r], a - 1, b, entry.parameter)
+                        const auto upper = diagnostics[r].derivative_value(a, b, entry.parameter);
+                        const auto lower = a ? diagnostics[r].derivative_value(a - 1, b, entry.parameter)
                                              : std::optional<double>(0.0);
                         if (!upper || !lower) {
                             column.status = SolvedStateActionStatus::ReferenceUnavailable;
@@ -1122,22 +1067,25 @@ static CompiledSystem compile_with_basis(
     compiled.model = &model;
     compiled.problem = request;
     compiled.n_feed = resolve_feed(model, request.feed);
-    compiled.feed_total = feed_total(compiled.n_feed);
+    compiled.feed_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
     compiled.has_reaction = !request.reactions.empty();
     const auto& z = model.parameters().charge_number;
     double net_z = 0.0;
     for (std::size_t i = 0; i < components; ++i) net_z += z[i] * compiled.n_feed[i];
     if (std::abs(net_z) > std::sqrt(std::numeric_limits<double>::epsilon())
-        * std::max(1.0, vector_norm(compiled.n_feed))) {
+        * std::max(1.0, compiled.feed_total)) {
         throw std::invalid_argument("feed carries net z");
     }
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");
-        double total = 0.0;
-        for (std::size_t i = 0; i < components; ++i) total += z[i] * nu[i];
-        if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon())
-            * std::max(1.0, vector_norm(nu))) {
+        // The charge defect is judged against the stoichiometric scale ||nu||_1.
+        double total = 0.0, scale = 0.0;
+        for (std::size_t i = 0; i < components; ++i) {
+            total += z[i] * nu[i];
+            scale += std::abs(nu[i]);
+        }
+        if (std::abs(total) > std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale)) {
             throw std::invalid_argument("reaction " + reaction_name(request.reactions[row], row)
                                         + " violates z");
         }
@@ -1145,8 +1093,8 @@ static CompiledSystem compile_with_basis(
     compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions);
     compiled.rank = compiled.B.size();
     compiled.conserves_total_moles = conserves_total_moles(compiled.B);
-    const double temperature_guess = request.temperature.seed_or(300.0);
-    const double pressure_guess = request.pressure.seed_or(1.0e5);
+    const double temperature_guess = compiled.seed_temperature();
+    const double pressure_guess = compiled.seed_pressure();
     const auto central_reactions = central_reference_reactions(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
@@ -1155,31 +1103,15 @@ static CompiledSystem compile_with_basis(
         has_reaction_reference(request) ? std::vector<double>{}
                                         : request.standard_gibbs_j_per_mol
     );
-    if (request.temperature.free && !request.standard_gibbs_j_per_mol.empty()) {
-        // A constant supplied vector admits a free temperature only for constant targets.
-        const auto targets = reaction_target_series(temperature_guess, request.reactions, 3);
-        for (std::size_t row = 0; row < request.reactions.size(); ++row) {
-            const double scale = std::sqrt(std::numeric_limits<double>::epsilon())
-                * std::max(1.0, std::abs(targets[0][row]));
-            double power = 1.0;
-            for (std::size_t k = 1; k <= 3; ++k) {
-                power *= temperature_guess;
-                if (std::abs(targets[k][row]) * power > scale) {
-                    throw std::invalid_argument(
-                        "temperature-dependent standard state required for reaction "
-                        + reaction_name(request.reactions[row], row));
-                }
-            }
-        }
-    }
-    compiled.feed_composition = normalized_feed(compiled.n_feed);
+    if (request.temperature.free)
+        if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol))
+            throw std::invalid_argument("temperature-dependent standard state required for reaction "
+                                        + reaction_name(request.reactions[*row], *row));
+    compiled.feed_composition = compiled.n_feed;
+    for (double& value : compiled.feed_composition) value /= compiled.feed_total;
     compiled.balance = matvec(compiled.B, compiled.n_feed);
     std::vector<bool> covered(components, false);
-    std::vector<bool> participant(components, false);
-    for (const auto& item : request.reactions) {
-        for (std::size_t i = 0; i < components; ++i)
-            participant[i] = participant[i] || item.stoichiometry[i] != 0.0;
-    }
+    const auto participant = reaction_participants(components, request.reactions);
     for (auto& phase : compiled.problem.phases) {
         if (phase.support_declared && phase.support.empty())
             throw std::invalid_argument("empty support in phase " + phase.name);
@@ -1304,13 +1236,9 @@ static CompiledSystem compile_with_basis(
         );
     }
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        for (const std::size_t index : compiled.problem.phases[phase].support) {
-        compiled.rows.push_back({RowKind::Chemical, phase, index,
-                                 "chemical_potential_stationarity"});
-            compiled.row_names.emplace_back(row_kind_name(RowKind::Chemical));
-        }
-        compiled.rows.push_back({RowKind::Pressure, phase, 0, "pressure_equality"});
-        compiled.row_names.emplace_back(row_kind_name(RowKind::Pressure));
+        for (const std::size_t index : compiled.problem.phases[phase].support)
+            compiled.rows.push_back({RowKind::Chemical, phase, index});
+        compiled.rows.push_back({RowKind::Pressure, phase, 0});
     }
     std::vector<std::size_t> ion_phases;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
@@ -1331,39 +1259,25 @@ static CompiledSystem compile_with_basis(
     }
     for (const std::size_t phase : ion_phases) {
         if (rowless.has_value() && phase == *rowless) continue;
-        compiled.rows.push_back({RowKind::Electro, phase, 0, "phase_electroneutrality"});
-        compiled.row_names.emplace_back(row_kind_name(RowKind::Electro));
+        compiled.rows.push_back({RowKind::Electro, phase, 0});
         ++compiled.charge_row_count;
     }
-    for (std::size_t row = 0; row < compiled.B.size(); ++row) {
-        compiled.rows.push_back({RowKind::Moiety, 0, row, "material_balance"});
-        compiled.row_names.emplace_back(row_kind_name(RowKind::Moiety));
-    }
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        compiled.rows.push_back({RowKind::Normalization, phase, 0, "phase_normalization"});
-        compiled.row_names.emplace_back(row_kind_name(RowKind::Normalization));
-    }
-    if (caloric_count) {
-        const auto kind = request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy;
-        compiled.rows.push_back({kind, 0, 0, row_kind_name(kind)});
-        compiled.row_names.emplace_back(row_kind_name(kind));
-    }
+    for (std::size_t row = 0; row < compiled.B.size(); ++row)
+        compiled.rows.push_back({RowKind::Moiety, 0, row});
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
+        compiled.rows.push_back({RowKind::Normalization, phase, 0});
+    if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
     compiled.mode_count = request.critical ? components : 0;
     for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.envelope.has_value(); ++i) {
         const auto kind = request.envelope ? RowKind::EnvelopeCondition : i < components ? RowKind::CriticalMode
             : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
-        compiled.rows.push_back({kind, 0, i, row_kind_name(kind)});
-        compiled.row_names.emplace_back(row_kind_name(kind));
+        compiled.rows.push_back({kind, 0, i});
     }
     const auto shape = layouts(compiled);
     compiled.primal_size = 0;
     for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
-    compiled.rows_minus_unknowns = static_cast<long>(compiled.pinned_count + compiled.condition_count())
-        - static_cast<long>(compiled.free_intensive_count);
-    compiled.generic_nullity = 1;
-    compiled.feasible = false;
     scope.probe("chemical_rows", static_cast<double>(count_rows(compiled, RowKind::Chemical)));
     scope.probe("pressure_rows", static_cast<double>(count_rows(compiled, RowKind::Pressure)));
     scope.probe("balance_rows", static_cast<double>(count_rows(compiled, RowKind::Moiety)));
@@ -1371,31 +1285,21 @@ static CompiledSystem compile_with_basis(
                 static_cast<double>(count_rows(compiled, RowKind::Normalization)));
     scope.probe("removed_species", static_cast<double>(compiled.removed_species.size()));
     scope.probe("conserves_total_moles", compiled.conserves_total_moles ? 1.0 : 0.0);
-    if (compiled.is_square()) {
-        const auto point = compiled.generic_point();
-        compiled.F_y = compiled.jacobian(point);
-        Eigen::MatrixXd matrix(
-            static_cast<Eigen::Index>(compiled.rows.size()),
-            static_cast<Eigen::Index>(point.size()));
-        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
-            for (std::size_t column = 0; column < point.size(); ++column) {
-                matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
-                    compiled.F_y[row * point.size() + column];
-            }
-        }
-        compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
-        compiled.generic_nullity = point.size() > compiled.jacobian_rank
-            ? point.size() - compiled.jacobian_rank : 0;
-        compiled.feasible = compiled.generic_nullity == 0;
-    }
-    if (compiled.row_names.size() != compiled.rows.size()) {
-        throw std::logic_error("row labels and rows disagree");
-    }
-    for (const auto& row : compiled.rows) {
-        if (row.eqid == nullptr || std::string(row.eqid).empty()) {
-            throw std::logic_error("equilibrium row has no EqID");
+    const auto point = compiled.generic_point();
+    const auto jacobian = compiled.jacobian(point);
+    Eigen::MatrixXd matrix(
+        static_cast<Eigen::Index>(compiled.rows.size()),
+        static_cast<Eigen::Index>(point.size()));
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+        for (std::size_t column = 0; column < point.size(); ++column) {
+            matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(column)) =
+                jacobian[row * point.size() + column];
         }
     }
+    compiled.jacobian_rank = static_cast<std::size_t>(matrix.fullPivLu().rank());
+    compiled.generic_nullity = point.size() > compiled.jacobian_rank
+        ? point.size() - compiled.jacobian_rank : 0;
+    compiled.feasible = compiled.generic_nullity == 0;
     scope.probe("jacobian_rank", static_cast<double>(compiled.jacobian_rank));
     scope.probe("unknowns", static_cast<double>(compiled.unknown_count()));
     scope.probe("constraints", static_cast<double>(compiled.constraint_count()));
@@ -1481,8 +1385,8 @@ std::vector<double> CompiledSystem::generic_point() const {
     for (std::size_t i = 0; i < mode_count; ++i)  // a generic mode direction, aligned with no axis
         point[mode_offset() + i] = (1.0 + 0.29 * static_cast<double>(i)) / static_cast<double>(mode_count + 1);
     std::size_t offset = primal_size - free_intensive_count;
-    if (problem.temperature.free) point[offset++] = problem.temperature.seed_or(300.0);
-    if (problem.pressure.free) point[offset++] = problem.pressure.seed_or(1.0e5);
+    if (problem.temperature.free) point[offset++] = seed_temperature();
+    if (problem.pressure.free) point[offset++] = seed_pressure();
     return point;
 }
 
@@ -1522,7 +1426,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
             throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");
         result.volume.push_back(result.packing.back().coefficient / result.eta.back());
         result.amount.push_back(layout.amount.has_value()
-            ? point[*layout.amount] : phase_amount(problem.phases[phase], n_feed));
+            ? point[*layout.amount] : phase_amount(problem.phases[phase]));
         const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
             ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
         result.derivative.push_back(model->evaluate(
@@ -1598,7 +1502,7 @@ PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& prepared) const {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
         } else if (condition_row(row.kind)) {
             if (series.empty())
-                series = row_series(prepared, {point}, std::vector<double>(2 + components + model->active_parameters().size()), 0).rows[0];
+                series = row_series(prepared, {point}, std::vector<double>(control_width()), 0).rows[0];
             value = series[result.values.size()];
         } else {
             for (const std::size_t species : problem.phases[row.phase].support) value += x[row.phase][species];
@@ -1636,12 +1540,7 @@ std::vector<double> CompiledSystem::classified_residuals(
 
 double CompiledSystem::classified_residual_norm(const std::vector<double>& point) const {
     const auto prepared = prepare(point);
-    double result = 0.0;
-    for (const double value : classified_residuals(prepared, evaluate_at(prepared).values)) {
-        if (!std::isfinite(value)) return std::numeric_limits<double>::infinity();
-        result = std::max(result, std::abs(value));
-    }
-    return result;
+    return maximum_abs(classified_residuals(prepared, evaluate_at(prepared).values));
 }
 
 std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) const {
@@ -1744,7 +1643,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& prepared) cons
                     * compositions[row.phase][problem.phases[row.phase].support[local]];
         } else if (condition_row(row.kind)) {
             std::vector<std::vector<double>> state = {point, std::vector<double>(n, 0.0)};
-            const std::vector<double> control(2 + n_feed.size() + model->active_parameters().size(), 0.0);
+            const std::vector<double> control(control_width(), 0.0);
             for (std::size_t c = columns.size(); c < n; ++c) {
                 state[1][c] = 1.0;
                 columns.push_back(row_series(prepared, state, control, 1).rows[1]);
@@ -1770,7 +1669,7 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
     }
     auto prepared = prepare(point);
     prepared.point.resize(std::max(prepared.point.size(), unknown_count()), 0.0);
-    const std::size_t width = 2 + model->parameters().component_count() + model->active_parameters().size();
+    const std::size_t width = control_width();
     std::vector<double> result(rows.size() * width), control(width);
     std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(prepared.point.size())};
     for (std::size_t column = 0; column < width; ++column) {
@@ -1869,56 +1768,45 @@ std::vector<double> CompiledSystem::hessian_at(
         const auto& derivative = prepared.derivative[phase];
         const std::size_t width = derivative.gradient.size();
         const double sum_x = std::accumulate(x.begin(), x.end(), 0.0);
-        const double physical_v_gradient = phase_amount_value * (
-            derivative.gradient[1] - sum_x / physical_volume + P / rt);
+        // Per-mole chemical potentials and pressure gradient; the extensive ones are N_p times them.
+        const double pressure_gradient = derivative.gradient[1] - sum_x / physical_volume + P / rt;
+        const double physical_v_gradient = phase_amount_value * pressure_gradient;
         const double physical_vv = phase_amount_value * (
             derivative.hessian[width + 1] + sum_x / (physical_volume * physical_volume));
+        std::vector<double> mu(spec.support.size()), h_xv(spec.support.size());
+        for (std::size_t i = 0; i < spec.support.size(); ++i) {
+            const std::size_t si = spec.support[i];
+            mu[i] = derivative.gradient[2 + si]
+                + std::log(std::max(x[si] / physical_volume, std::numeric_limits<double>::min()))
+                + standard_value[si];
+            h_xv[i] = phase_amount_value * (derivative.hessian[(2 + si) * width + 1] - 1.0 / physical_volume);
+        }
         for (std::size_t i = 0; i < spec.support.size(); ++i) {
             const std::size_t si = spec.support[i];
             const double dv_i = packing.component[si] / eta;
-            const double physical_x_gradient = phase_amount_value * (
-                derivative.gradient[2 + si]
-                + std::log(std::max(x[si] / physical_volume,
-                                    std::numeric_limits<double>::min()))
-                + standard_value[si]);
             for (std::size_t j = 0; j < spec.support.size(); ++j) {
                 const std::size_t sj = spec.support[j];
                 const double dv_j = packing.component[sj] / eta;
                 const double h_xx = phase_amount_value * (
                     derivative.hessian[(2 + si) * width + (2 + sj)]
                     + (si == sj ? 1.0 / x[si] : 0.0));
-                const double h_xv_i = phase_amount_value * (
-                    derivative.hessian[(2 + si) * width + 1] - 1.0 / physical_volume);
-                const double h_xv_j = phase_amount_value * (
-                    derivative.hessian[(2 + sj) * width + 1] - 1.0 / physical_volume);
                 put(layout.x[i], layout.x[j],
-                    x[si] * x[sj] * h_xx + x[si] * h_xv_i * dv_j
-                    + dv_i * h_xv_j * x[sj] + dv_i * physical_vv * dv_j
-                    + (si == sj ? physical_x_gradient * x[si]
+                    x[si] * x[sj] * h_xx + x[si] * h_xv[i] * dv_j
+                    + dv_i * h_xv[j] * x[sj] + dv_i * physical_vv * dv_j
+                    + (si == sj ? phase_amount_value * mu[i] * x[si]
                                       + physical_v_gradient * dv_i : 0.0));
             }
-            const double h_xv = phase_amount_value * (
-                derivative.hessian[(2 + si) * width + 1] - 1.0 / physical_volume);
             put(layout.x[i], volume,
-                -physical_volume * (x[si] * h_xv + dv_i * physical_vv)
+                -physical_volume * (x[si] * h_xv[i] + dv_i * physical_vv)
                 - physical_v_gradient * dv_i);
         }
         put(volume, volume, physical_volume * physical_volume * physical_vv
             + physical_v_gradient * physical_volume);
         if (layout.amount.has_value()) {
-            for (std::size_t i = 0; i < spec.support.size(); ++i) {
-                const std::size_t species = spec.support[i];
-                const double mu = derivative.gradient[2 + species]
-                    + std::log(std::max(x[species] / physical_volume,
-                                        std::numeric_limits<double>::min()))
-                    + standard_value[species];
-                const double pressure_gradient = derivative.gradient[1]
-                    - sum_x / physical_volume + P / rt;
-                put(*layout.amount, layout.x[i], mu * x[species]
-                    + pressure_gradient * packing.component[species] / eta);
-            }
-            put(*layout.amount, volume, -physical_volume * (
-                derivative.gradient[1] - sum_x / physical_volume + P / rt));
+            for (std::size_t i = 0; i < spec.support.size(); ++i)
+                put(*layout.amount, layout.x[i], mu[i] * x[spec.support[i]]
+                    + pressure_gradient * packing.component[spec.support[i]] / eta);
+            put(*layout.amount, volume, -physical_volume * pressure_gradient);
         }
     }
     if (!constraint_multipliers.empty()) {
@@ -1936,10 +1824,9 @@ RowSeries CompiledSystem::row_series(
     core::Scope scope("equilibrium_row_series");
     const std::size_t n = prepared.point.size();
     const std::size_t components = model->parameters().component_count();
-    const std::size_t width = 2 + components + model->active_parameters().size();
+    const std::size_t width = control_width(), extended = extended_control_width();
     if (state.size() != order + 1 ||
-        (control.size() != width && control.size() != width + 4 * problem.reactions.size() &&
-         control.size() != width + 4 * problem.reactions.size() + 2) ||
+        (control.size() != width && control.size() != extended - 2 && control.size() != extended) ||
         order > (problem.critical ? 2u : 3u))  // a third critical coefficient needs E6
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
@@ -1978,22 +1865,11 @@ RowSeries CompiledSystem::row_series(
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (problem.critical ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
-        std::vector<double> input(n + width + (has_caloric_condition() ? 2 : 0), 0.0);
+        auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(n + width + (has_caloric_condition() ? 2 : 0), 0.0);
         std::copy(state[k].begin(), state[k].end(), input.begin());
-        if (k == 0) {
-            input[n] = prepared.temperature;
-            input[n + 1] = prepared.pressure;
-            std::copy(n_feed.begin(), n_feed.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2));
-            const auto values = model->active_parameter_values();
-            std::copy(values.begin(), values.end(), input.begin() + static_cast<std::ptrdiff_t>(n + 2 + components));
-        } else if (k == 1) {
+        if (k == 1) {
             std::copy_n(control.begin(), width, input.begin() + static_cast<std::ptrdiff_t>(n));
-        }
-        if (has_caloric_condition()) {
-            if (k == 0) {
-                input[n + width] = problem.enthalpy_j.value_or(0.0);
-                input[n + width + 1] = problem.entropy_j_per_k.value_or(0.0);
-            } else if (k == 1 && control.size() == width + 4 * problem.reactions.size() + 2) {
+            if (has_caloric_condition() && control.size() == extended) {
                 input[n + width] = control[control.size() - 2];
                 input[n + width + 1] = control.back();
             }
