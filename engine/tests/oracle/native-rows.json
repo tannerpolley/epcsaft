@@ -64,11 +64,11 @@
   "movement_classification": "analyses/2026-reactive-caloric-actions/results/main-integration/native-row-movements.tsv",
   "row_requalification": "analyses/2026-reactive-caloric-actions/results/main-2026-10-06/provenance.json",
   "issue_314_refresh": {
-    "rows_replaced": 123,
-    "recorded_at_revision": "e49c5c6bf9c828b001764099ddf539d2ae47cc1c",
+    "rows_replaced": 115,
+    "recorded_at_revision": "97aa04fdc8ba683f69b4fee35c05b33f8a279d28 (working tree recorded before commit)",
     "build_fingerprint": "e751512564ca3cfb92cc77d4143e2c2ab1c5f2d33b5081273d7e21ee2c6c594d",
     "wheel_sha256": "4181cdf3d1b0f918709ddb8e6a4c5f117f963e9cd7f153099867ea5110e2cff6",
     "failed_native_comparisons": [],
-    "cause": "ln eta is unbounded for single-phase Gibbs minimizations. Only rows that move against a recording of the same tree with the bounds on everywhere (main's optimizer path) are replaced (123 lines, all single-phase: S2 92, E5-3 6, E5-5 19, E5-7 6). The 41 that move by more than 1e-10 relative are S2 rows: frozen-state F4/F5 rows, higher-order values that are small differences of larger terms (F4/frozen-hP/8 moved 7.1e-16 m3/mol, about 1e-12 relative to its cancelling terms per the #314 review), and enthalpy-reaction reaction-b/resolve rows carrying re-solve tolerance noise. Every native comparison passes its unchanged criterion."
+    "cause": "ln eta is unbounded for single-phase Gibbs minimizations. Against main the committed change is 115 lines, all single-phase: S2 90, E5-5 19, E5-3 6. The comparison baseline was a recording of the pre-97aa04fd tree with the bounds on everywhere (the preparation refusal still applied to all solves), so it was close to, not exactly, main's optimizer path; 6 E5-7 rows and 2 S2 rows moved against that baseline but equal main's stored values and were left unchanged. The 41 rows that move by more than 1e-10 relative are S2: frozen-state F4/F5 rows, small differences of larger terms (F4/frozen-hP/8 moved 7.1e-16 m3/mol, about 1e-12 relative to its cancelling terms), and reaction-b/resolve rows carrying re-solve tolerance noise. Every native comparison passes its unchanged criterion."
   }
 }

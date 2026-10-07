@@ -670,7 +670,11 @@ trust region on liquid density, and without it mid-dome methane/ethane flashes
 fall to the trivial solution or exhaust the iteration budget, and the envelope's
 critical-straddle corrector lands on the trivial solution. Those solves can
 still show the barrier bias near a liquid spinodal; a near-critical declared
-liquid inside a multi-phase declaration is not covered.
+liquid inside a multi-phase declaration is not covered. Removing the barrier
+changes some single-phase outcomes: identical-isomer isomerisation started at its
+symmetric stationary point (a Gibbs maximum along the reaction) now refuses as not
+positive definite instead of escaping to a minimum through the barrier's
+perturbation, the outcome the #159 test already designates.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
