@@ -1497,6 +1497,10 @@ s = M_w sum(nu) m, which grows as 1/m. The independent pressure-slope
 derivative check uses 1e-6 max(1, abs(reference)).
 Qualification uses independent same-point cold replays; the fitting controller
 adds neither a per-trial nor an endpoint-only cold comparison.
+Seeded residuals differ from cold ones within these floors and depend on which
+trial seeded them. Once a fit's cost reaches that level, seeded and cold fits
+can accept different steps and stop at different points; tighter stopping
+tolerances do not remove this endpoint difference (#245 round 4).
 
 
 Fits use exact Engine derivatives under the
