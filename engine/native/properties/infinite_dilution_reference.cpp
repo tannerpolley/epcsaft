@@ -786,11 +786,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                             for (std::size_t k = 0; k < 3; ++k) {
                                 const std::size_t rung = NEUTRAL_REFERENCE_MOLALITIES.size()-3+k;
                                 try {
-                                    const auto partial = trace.pure_state.empty()
-                                        ? reference_partial(model, temperature, pressure, trace.composition[rung],
-                                            stoichiometries[row], a, b, column.parameter, trace.state[rung].molar_density)
-                                        : reference_partial_from_trace(model, temperature, trace, rung,
-                                            stoichiometries[row], a, b, column.parameter);
+                                    const auto partial = reference_partial_from_trace(model, temperature, trace, rung,
+                                        stoichiometries[row], a, b, column.parameter);
                                     column.ladder[k] = partial.action;
                                     if (!partial.action) column.message = "reference action status " + std::to_string(int(partial.status));
                                 } catch (const std::exception& error) { column.message = error.what(); }
