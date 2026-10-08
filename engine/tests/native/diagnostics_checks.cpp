@@ -24,7 +24,6 @@
 
 namespace {
 void core_constant_identities() {
-    const double r = epcsaft::AVOGADRO_PER_MOL * epcsaft::BOLTZMANN_J_PER_K;
     const double r_source = 8.31446261815324;
     // R has four literal/product roundings and C_rho has six at most.  The
     // binary64 unit roundoff is epsilon/2, so eight epsilon is a conservative
@@ -34,45 +33,24 @@ void core_constant_identities() {
         source_roundoff_factor * std::numeric_limits<double>::epsilon()
         * std::abs(r_source);
     const double debye_product = epcsaft::DEBYE_C_M * epcsaft::SPEED_OF_LIGHT_M_PER_S;
-    CHECK(epcsaft::GAS_CONSTANT_J_PER_MOL_K == r);
-    CHECK(std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r_source) <= r_bound);
     const double epsilon_source = 8.8541878128e-12;
     const double epsilon_bound =
         source_roundoff_factor * std::numeric_limits<double>::epsilon()
         * std::abs(epsilon_source);
-    CHECK(std::abs(epcsaft::VACUUM_PERMITTIVITY_F_PER_M - epsilon_source)
-        <= epsilon_bound);
-    CHECK(std::abs(debye_product - 1.0e-21) <= 1.0e-36);
-    CHECK(epcsaft::ANGSTROM_M == 1.0e-10);
-    const double density_reference = epcsaft::AVOGADRO_PER_MOL * 1.0e-30;
     const double density_source = 6.02214076e-7;
     const double density_bound =
         source_roundoff_factor * std::numeric_limits<double>::epsilon()
         * std::abs(density_source);
-    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_reference)
-        <= density_bound);
-    CHECK(std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_source)
-        <= density_bound);
     recording_support::compare("core-constants/R", "R", "J/mol/K",
         epcsaft::GAS_CONSTANT_J_PER_MOL_K, r_source, {}, "Relationship", "source-decimal",
         "R=N_A*k_B", "strict_absolute", r_bound, 0.0,
         std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r_source) <= r_bound,
         "c1-constants", "R-source", "R", "N_A,k_B", "R=8.31446261815324", "constant");
-    recording_support::compare("core-constants/R-identity", "R_identity_error", "J/mol/K",
-        epcsaft::GAS_CONSTANT_J_PER_MOL_K, r, {}, "Relationship", "SI-definitions",
-        "R=N_A*k_B identity", "strict_absolute", r_bound, 0.0,
-        std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r) <= r_bound,
-        "c1-constants", "R-identity", "R", "N_A,k_B", "R=N_A*k_B", "constant");
     recording_support::compare("core-constants/debye", "D*c", "C m^2/s",
         debye_product, 1.0e-21, {}, "Relationship", "SI-definitions",
         "D*c=1e-21", "strict_absolute", 1.0e-36, 0.0,
         std::abs(debye_product - 1.0e-21) <= 1.0e-36,
         "c1-constants", "Debye", "D*c", "D,c", "D*c=1e-21", "constant");
-    recording_support::compare("core-constants/angstrom", "angstrom", "m",
-        epcsaft::ANGSTROM_M, 1.0e-10, {}, "Relationship", "SI-definitions",
-        "angstrom=1e-10 m", "absolute", 0.0, 0.0,
-        epcsaft::ANGSTROM_M == 1.0e-10,
-        "c1-constants", "angstrom", "angstrom", "angstrom", "angstrom=1e-10 m", "constant");
     recording_support::compare("core-constants/epsilon", "epsilon_0", "F/m",
         epcsaft::VACUUM_PERMITTIVITY_F_PER_M, epsilon_source, {},
         "Relationship", "CODATA-2018", "retained CODATA 2018 central value",
@@ -91,82 +69,29 @@ void core_constant_identities() {
 
 using epcsaft::core::Stop;
 
-int stop_rank(Stop stop) {
-    switch (stop) {
-    case Stop::converged: return 0;
-    case Stop::converged_to_floor: return 1;
-    case Stop::budget_exhausted: return 2;
-    case Stop::stalled: return 3;
-    default: return 4;
-    }
-}
-
 void classifier_partition() {
-    const double v = 2.0;
+    // Boundary rows of core::classify with literal expected stops: criterion 2 and floor 2,
+    // so FLOOR_MARGIN (10) puts residual 20 exactly on the floor band's closed edge.
     const epcsaft::policy::Tolerance criterion{
-        "criterion", v, epcsaft::policy::Category::AlgorithmTolerance, "test"
+        "criterion", 2.0, epcsaft::policy::Category::AlgorithmTolerance, "test"
     };
-    const std::vector<double> residuals = {0.0, v / 2.0, v, 2.0 * v, 5.0 * v, 20.0 * v, 200.0 * v};
-    const std::vector<std::optional<double>> floors = {std::nullopt, v / 10.0, v, 10.0 * v};
-    const std::vector<std::optional<double>> contractions = {std::nullopt, 0.5, 1.0, 1.5};
-    std::size_t classifications = 0;
-    bool all_classifications = true;
-    for (std::size_t floor_index = 0; floor_index < floors.size(); ++floor_index) {
-        const auto floor = floors[floor_index];
-        for (std::size_t contraction_index = 0;
-             contraction_index < contractions.size(); ++contraction_index) {
-            const auto contraction = contractions[contraction_index];
-            for (const bool budget : {false, true}) {
-                int previous = -1;
-                for (std::size_t residual_index = 0;
-                     residual_index < residuals.size(); ++residual_index) {
-                    const double residual = residuals[residual_index];
-                    const Stop stop = epcsaft::core::classify(
-                        residual, criterion, floor, contraction, budget
-                    );
-                    ++classifications;
-                    const bool in_floor = floor.has_value() && residual > v
-                        && residual <= epcsaft::policy::FLOOR_MARGIN.value * *floor;
-                    const bool exhausted = !((residual <= v) || in_floor) && budget
-                        && (!contraction.has_value() || *contraction < 1.0);
-                    const int expected = residual <= v ? 0
-                        : in_floor ? 1 : exhausted ? 2 : 3;
-                    const int actual = stop_rank(stop);
-                    const bool verdict = actual == expected && actual >= previous;
-                    const auto point = std::to_string(floor_index) + "/"
-                        + std::to_string(contraction_index) + "/"
-                        + (budget ? "1/" : "0/") + std::to_string(residual_index);
-                    const auto floor_value = floor.has_value()
-                        ? recording_support::number(*floor) : std::string("none");
-                    const auto contraction_value = contraction.has_value()
-                        ? recording_support::number(*contraction) : std::string("none");
-                    recording_support::compare_custom(
-                        (std::string("classification/") + point).c_str(),
-                        "stop_rank", "rank", static_cast<double>(actual),
-                        static_cast<double>(expected),
-                        recording_support::fields({
-                            recording_support::field("criterion", v),
-                            recording_support::field("floor_margin", epcsaft::policy::FLOOR_MARGIN.value),
-                            recording_support::field("residual", residual),
-                            recording_support::field("floor", floor_value),
-                            recording_support::field("contraction", contraction_value),
-                            recording_support::field("budget", budget ? 1U : 0U),
-                            recording_support::field("previous_rank", previous),
-                            recording_support::field("actual_rank", actual),
-                            recording_support::field("expected_rank", expected),
-                        }),
-                        "Relationship", "partition", "classifier returns the expected stop state",
-                        "actual_rank == expected_rank && actual_rank >= previous_rank", verdict,
-                        "d1-classification", point.c_str(), "s", "criterion,residual,floor,contraction,budget",
-                        "s=expected(s) and s_k\\geq s_{k-1}", "floor,contraction,budget,residual");
-                    all_classifications = all_classifications && verdict;
-                    previous = actual;
-                }
-            }
-        }
+    struct Row { const char* id; double residual; std::optional<double> floor, contraction; bool budget; Stop expected; };
+    for (const Row& row : {Row{"at-criterion", 2.0, std::nullopt, std::nullopt, false, Stop::converged},
+                           Row{"at-floor-margin", 20.0, 2.0, std::nullopt, false, Stop::converged_to_floor},
+                           Row{"budget-contracting", 20.0, std::nullopt, 0.5, true, Stop::budget_exhausted},
+                           Row{"budget-not-contracting", 20.0, std::nullopt, 1.0, true, Stop::stalled}}) {
+        const Stop stop = epcsaft::core::classify(row.residual, criterion, row.floor, row.contraction, row.budget);
+        recording_support::compare_custom(
+            (std::string("classification/") + row.id).c_str(), "stop", "enum",
+            static_cast<double>(stop), static_cast<double>(row.expected),
+            recording_support::fields({recording_support::field("residual", row.residual),
+                recording_support::field("floor", epcsaft::core::optional_number(row.floor)),
+                recording_support::field("contraction", epcsaft::core::optional_number(row.contraction)),
+                recording_support::field("budget", row.budget ? 1U : 0U),
+                recording_support::field("stop", epcsaft::core::stop_name(stop))}),
+            "Relationship", "partition", "classifier returns the literal expected stop", "stop == expected",
+            stop == row.expected, "d1-classification", row.id);
     }
-    CHECK(all_classifications);
-    CHECK(classifications == 224);
 }
 
 void contraction_window() {

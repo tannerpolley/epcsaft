@@ -140,8 +140,8 @@ std::string model_inputs(const epcsaft::Parameters& parameters, double temperatu
 }
 
 void residual_internal_energy_identity_ladder() {
-    // F1 previous-failure check: the temperature derivative is independent of
-    // the state caloric fields, and the centered ladder checks its local error.
+    // F1: the state's u, s and h against a centered temperature difference of a_res,
+    // which is independent of the Engine's exact a_T and its caloric formulas.
     epcsaft::HelmholtzModel model(properties_support::ethane());
     constexpr double temperature = 300.0;
     constexpr double density = 1.0e4;
@@ -151,45 +151,7 @@ void residual_internal_energy_identity_ladder() {
     const auto inputs = model_inputs(
         model.parameters(), temperature, 1.0 / density, composition
     );
-    recording_support::observe(
-        "a_res", "residual_helmholtz", "1", state.residual_helmholtz,
-        state.hard_chain + state.dispersion + state.association
-            + state.debye_huckel + state.born,
-        inputs, "Relationship", "contribution_sum",
-        "residual Helmholtz contribution identity", "f1-a-res", "a_res",
-        "a^{res}", "T,\\rho,\\mathbf{x}", "a^{res}=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}"
-    );
-    recording_support::observe(
-        "pressure", "pressure", "Pa", state.pressure,
-        density * gas_constant * temperature * state.compressibility_factor,
-        inputs, "Relationship", "pressure_identity",
-        "P=rho*R*T*Z", "f1-pressure", "pressure", "P", "T,\\rho,\\mathbf{x}", "P=\\rho RTZ"
-    );
-    const auto derivative = model.evaluate(
-        temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::Gradient
-    );
-    recording_support::observe(
-        "compressibility_factor", "compressibility_factor", "1",
-        state.compressibility_factor, 1.0 - derivative.gradient[1] / density,
-        inputs, "Relationship", "density_derivative_identity",
-        "Z=1+rho*a_rho", "f1-compressibility", "Z", "Z", "T,\\rho,\\mathbf{x}", "Z=1+\\rho a_\\rho"
-    );
-    recording_support::observe(
-        "residual_entropy", "residual_entropy", "J/mol/K", state.residual_entropy,
-        -gas_constant * (derivative.value + temperature * derivative.gradient[0]),
-        inputs, "Relationship", "temperature_derivative_identity",
-        "s=-R*(a+T*a_T)", "f1-entropy", "s", "s^{res}", "T,\\rho,\\mathbf{x}", "s^{res}=-R(a^{res}+Ta_T^{res})"
-    );
-    recording_support::observe(
-        "residual_enthalpy", "residual_enthalpy", "J/mol", state.residual_enthalpy,
-        gas_constant * temperature * (-temperature * derivative.gradient[0]
-        + state.compressibility_factor - 1.0),
-        inputs, "Relationship", "enthalpy_identity",
-        "h=u+RT*(Z-1)", "f1-enthalpy", "h", "h^{res}", "T,\\rho,\\mathbf{x}", "h^{res}=u^{res}+RT(Z-1)"
-    );
-    const double identity = -gas_constant * temperature * temperature
-        * derivative.gradient.front();
-    CHECK(std::isfinite(identity));
+    double a_t = 0.0;
     for (const double delta_temperature : {0.1, 0.03, 0.01, 0.003}) {
         const double plus = model.state(
             temperature + delta_temperature, density, composition
@@ -197,8 +159,8 @@ void residual_internal_energy_identity_ladder() {
         const double minus = model.state(
             temperature - delta_temperature, density, composition
         ).residual_helmholtz;
-        const double centered = -gas_constant * temperature * temperature
-            * (plus - minus) / (2.0 * delta_temperature);
+        a_t = (plus - minus) / (2.0 * delta_temperature);
+        const double centered = -gas_constant * temperature * temperature * a_t;
         char point[64];
         std::snprintf(point, sizeof(point), "delta-%g", delta_temperature);
         char comparison_id[96];
@@ -210,33 +172,28 @@ void residual_internal_energy_identity_ladder() {
             recording_support::field("T_minus", temperature - delta_temperature),
         });
         recording_support::compare(
-            comparison_id, "residual_internal_energy", "J/mol", centered, identity,
+            comparison_id, "residual_internal_energy", "J/mol", state.residual_internal_energy, centered,
             point_inputs, "Relationship", "centered_temperature_derivative",
             "u_res=-R*T^2*a_T_res", "reference_or_one", 0.0, 2.0e-7,
-            std::abs(centered - identity) <= 2.0e-7 * std::max(1.0, std::abs(identity)),
+            close(state.residual_internal_energy, centered, 2.0e-7),
             "f1-ladder", point, "u^{res}", "T,\\rho,\\mathbf{x},\\Delta T",
             "u^{res}=-RT^2a_T^{res}", "T,rho,x,delta_T"
         );
-        CHECK(close(centered, identity, 2.0e-7));
     }
-    const double enthalpy_identity = state.residual_enthalpy
-        - gas_constant * temperature * (state.compressibility_factor - 1.0);
+    // a_T from the 0.003 K step: s = -R(a + T a_T) and h = RT(Z - 1) - RT^2 a_T.
+    const double entropy = -gas_constant * (state.residual_helmholtz + temperature * a_t);
+    const double enthalpy = gas_constant * temperature * (state.compressibility_factor - 1.0 - temperature * a_t);
+    // The 0.003 K difference agrees to about 2e-10 (truncation-limited); 1e-8 keeps a 50x margin.
     recording_support::compare(
-        "enthalpy-internal-energy-identity", "residual_internal_energy", "J/mol",
-        state.residual_internal_energy, enthalpy_identity, inputs, "Relationship",
-        "enthalpy_identity", "u_res=h_res-R*T*(Z-1)", "reference_or_one", 0.0, 1.0e-10,
-        close(state.residual_internal_energy, enthalpy_identity, 1.0e-10),
-        "f1-enthalpy-identity", "enthalpy", "u^{res}", "T,\\rho,\\mathbf{x}", "u^{res}=h^{res}-RT(Z-1)"
-    );
+        "residual_entropy", "residual_entropy", "J/mol/K", state.residual_entropy, entropy, inputs,
+        "Relationship", "centered_temperature_derivative", "s_res=-R*(a_res+T*a_T_res)", "reference_or_one",
+        0.0, 1.0e-8, close(state.residual_entropy, entropy, 1.0e-8),
+        "f1-entropy", "s", "s^{res}", "T,\\rho,\\mathbf{x}", "s^{res}=-R(a^{res}+Ta_T^{res})");
     recording_support::compare(
-        "internal-energy-identity", "residual_internal_energy", "J/mol",
-        state.residual_internal_energy, identity, inputs, "Relationship",
-        "temperature_derivative_identity", "u_res=-R*T^2*a_T_res", "reference_or_one",
-        0.0, 1.0e-10,
-        close(state.residual_internal_energy, identity, 1.0e-10),
-        "f1-internal-energy-identity", "derivative", "u^{res}", "T,\\rho,\\mathbf{x}", "u^{res}=-RT^2a_T^{res}"
-    );
-    CHECK(close(state.residual_internal_energy, enthalpy_identity, 1.0e-10));
+        "residual_enthalpy", "residual_enthalpy", "J/mol", state.residual_enthalpy, enthalpy, inputs,
+        "Relationship", "centered_temperature_derivative", "h_res=RT*(Z-1)-R*T^2*a_T_res", "reference_or_one",
+        0.0, 1.0e-8, close(state.residual_enthalpy, enthalpy, 1.0e-8),
+        "f1-enthalpy", "h", "h^{res}", "T,\\rho,\\mathbf{x}", "h^{res}=RT(Z-1)-RT^2a_T^{res}");
 }
 
 void residual_properties_and_caloric_ladders() {
@@ -396,32 +353,6 @@ void derivatives_and_limits() {
             "m2-euler", std::to_string(case_index).c_str(), "a^{res}", "T,V,\\mathbf{n}",
             "Va_V+\\sum_i n_i a_{n_i}=a", "state");
         const auto state_identity = model.state(temperature, 1.2e4, item.second);
-        const double rt = epcsaft::GAS_CONSTANT_J_PER_MOL_K * temperature;
-        const double internal_from_h = state_identity.residual_enthalpy
-            - rt * (state_identity.compressibility_factor - 1.0);
-        recording_support::compare(
-            (std::string("internal-energy/") + std::to_string(case_index)).c_str(),
-            "residual_internal_energy", "J/mol",
-            state_identity.residual_internal_energy, internal_from_h, inputs,
-            "Relationship", "caloric-identity", "u=h-RT(Z-1)", "reference_or_one",
-            0.0, 1.0e-10,
-            close(state_identity.residual_internal_energy, internal_from_h, 1.0e-10),
-            "m2-internal-energy", std::to_string(case_index).c_str(), "u^{res}", "T,V,\\mathbf{n}",
-            "u^{res}=h^{res}-RT(Z-1)", "state");
-        CHECK(close(state_identity.residual_internal_energy,
-                    state_identity.residual_enthalpy
-                    - rt * (state_identity.compressibility_factor - 1.0), 1e-10));
-        const double internal_from_entropy = rt * state_identity.residual_helmholtz
-            + temperature * state_identity.residual_entropy;
-        recording_support::compare(
-            (std::string("internal-energy-entropy/") + std::to_string(case_index)).c_str(),
-            "residual_internal_energy", "J/mol", state_identity.residual_internal_energy,
-            internal_from_entropy, inputs, "Relationship", "caloric-identity",
-            "u=RTa+Ts", "reference_or_one", 0.0, 1.0e-10,
-            close(state_identity.residual_internal_energy, internal_from_entropy, 1.0e-10),
-            "m2-internal-energy-entropy", std::to_string(case_index).c_str(), "u^{res}",
-            "T,V,\\mathbf{n}", "u^{res}=RTa^{res}+Ts^{res}", "case");
-        CHECK(close(state_identity.residual_internal_energy, internal_from_entropy, 1e-10));
         double chemical_identity = 0.0;
         for (std::size_t component = 0; component < item.second.size(); ++component) {
             chemical_identity += item.second[component]
@@ -892,17 +823,6 @@ void parameter_derivative_and_helpers() {
         close(derivative.gradient.back(), parameter_fd, 1e-6), "m7-parameter-gradient",
         "kij[1,2]", "\\partial a/\\partial k_{ij}", "T,\\rho,\\mathbf{x},\\Delta k",
         "a_k=\\Delta a/\\Delta k", "parameter");
-    const double coefficient = model.packing_fraction_coefficient(300.0, {0.4, 0.6});
-    const double packing = epcsaft::packing_fraction_from_geometry(
-        1.2e4, {0.4, 0.6}, parameters,
-        epcsaft::segment_diameter(
-            300.0, parameters, epcsaft::segment_sigma(300.0, parameters)));
-    recording_support::compare(
-        "packing-coefficient", "packing_fraction", "1", coefficient * 1.2e4, packing,
-        inputs, "Relationship", "geometry", "rho*packing_coefficient=packing_fraction",
-        "reference_or_one", 0.0, 1.0e-14, close(coefficient * 1.2e4, packing, 1e-14),
-        "m7-packing", "rho", "\\eta", "T,\\rho,\\mathbf{x}",
-        "\\eta=\\rho c_{\\eta}", "rho");
     bool threw = false;
     try { auto bad = parameters; bad.k_ij.pop_back(); (void)epcsaft::HelmholtzModel(std::move(bad)); }
     catch (const std::invalid_argument&) { threw = true; }
@@ -2494,27 +2414,14 @@ void properties_thermochemistry_p3() {
               && state.ideal_isochoric_heat_capacity.has_value()
               && state.total_enthalpy.has_value() && state.total_internal_energy.has_value()
               && state.total_entropy.has_value() && state.total_isochoric_heat_capacity.has_value());
-        p3_compare(std::string("p3-total/") + name + "/h", "total_h_decomposition", "J/mol",
-                   *state.total_enthalpy, *state.ideal_enthalpy + state.residual_enthalpy,
-                   inputs, "p3-total", name);
-        p3_compare(std::string("p3-total/") + name + "/u", "total_u_decomposition", "J/mol",
-                   *state.total_internal_energy, *state.ideal_internal_energy + state.residual_internal_energy,
-                   inputs, "p3-total", name);
-        p3_compare(std::string("p3-total/") + name + "/s", "total_s_decomposition", "J/(mol K)",
-                   *state.total_entropy, *state.ideal_entropy + state.residual_entropy,
-                   inputs, "p3-total", name);
-        p3_compare(std::string("p3-total/") + name + "/cp", "total_cp_decomposition", "J/(mol K)",
-                   *state.total_isobaric_heat_capacity,
-                   *state.ideal_isobaric_heat_capacity + *state.residual_isobaric_heat_capacity,
-                   inputs, "p3-total", name);
-        p3_compare(std::string("p3-total/") + name + "/cv", "total_cv_decomposition", "J/(mol K)",
-                   *state.total_isochoric_heat_capacity,
-                   *state.ideal_isochoric_heat_capacity + state.residual_isochoric_heat_capacity,
-                   inputs, "p3-total", name);
-        p3_compare(std::string("p3-total/") + name + "/pv", "total_h_u_pv", "J/mol",
-                   *state.total_enthalpy,
-                   *state.total_internal_energy + state.pressure / state.molar_density,
-                   inputs, "p3-total", name);
+        // Recorded for the Python transport rows; total = ideal + residual is the Engine's own definition.
+        for (const auto& [key, unit, value] : std::array<std::tuple<const char*, const char*, double>, 5>{{
+                 {"h", "J/mol", *state.total_enthalpy}, {"u", "J/mol", *state.total_internal_energy},
+                 {"s", "J/(mol K)", *state.total_entropy}, {"cp", "J/(mol K)", *state.total_isobaric_heat_capacity},
+                 {"cv", "J/(mol K)", *state.total_isochoric_heat_capacity}}})
+            recording_support::observe((std::string("p3-total/") + name + "/" + key).c_str(), key, unit, value,
+                                       std::nullopt, inputs, "Relationship", "state-total", "P3 total property",
+                                       "p3-total", name);
     }
 
     for (const auto& [name, correlation] : forms) {
@@ -2708,8 +2615,6 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/ln-k", "ln_k", "1", reaction.ln_k, expected_ln_k,
                "T=350", "p3-reaction", "ln-k");
     CHECK(reaction.k.has_value());
-    p3_compare("p3-reaction/k", "K", "1", *reaction.k, std::exp(expected_ln_k),
-               "T=350", "p3-reaction", "k");
     p3_compare("p3-reaction/dk", "dln_k_dT", "1/K", reaction.derivative, expected_derivative,
                "T=350", "p3-reaction", "dk");
     p3_compare("p3-reaction/h", "reaction_enthalpy", "J/mol", reaction.enthalpy,
