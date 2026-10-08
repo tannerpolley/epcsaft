@@ -457,8 +457,11 @@ fugacity step to the wrong liquid's bubble pressure and the solve into feasibili
 restoration). A caller start skips this seed. If the sub-solve, the seeding, the
 seeded solve or its density-branch admission fails or throws, the caller's own
 start runs unchanged; only the final attempt's diagnostics are returned. The
-reported iterations, evaluations and Hessian calls add the work of every sub-solve
-and failed attempt, including the caloric seed's sub-solve, to the final solve's (#350). A reacting
+reported iterations, evaluations and Hessian calls add the work of the sub-solves
+and of a failed seeded attempt, including the caloric seed's sub-solve, to the final solve's (#350).
+Work that ends in an exception is not counted: a seeded attempt or a speciation sub-solve
+that throws. Nor are the seed solves of the starts inside continuation, the stability
+search and the no-solution fallback. A reacting
 declaration of one free-amount phase, including that finite-phase sub-solve, starts
 from the ideal-solution speciation of the feed balances $Bn=b$ unless a previous
 successful result supplies its composition. Each chemical row's residual potential, $-\ln v$
