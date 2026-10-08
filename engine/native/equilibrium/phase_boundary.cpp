@@ -56,9 +56,56 @@ void validate_density_seed(const DensityRoot& root) {
     }
 }
 
-std::vector<std::vector<double>> start_compositions(
-    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction
-) {
+// A start's compositions in declared phase order and, after a split, its free amounts; vapor_density anchors the
+// true-species split's vapor root.
+struct PhaseStart final {
+    std::vector<std::vector<double>> compositions;
+    std::vector<double> amounts;
+    double vapor_density = 0.0;
+};
+
+// The Rachford-Rice split of `total` mol of composition z: beta is the interior root of
+// sum_i z_i (K_i - 1)/(1 - beta + beta K_i) by bisection; x_i = z_i/(1 - beta + beta K_i), y_i = K_i x_i,
+// N_L = total (1 - beta) and N_V = total beta. K_i = 0 marks a liquid-confined species; its positive inventory makes
+// the right end -infinity. Empty without a bracket, below PHASE_DISAPPEARANCE_AMOUNT of the feed or at a
+// nonpositive fraction.
+std::optional<PhaseStart> rachford_rice(const CompiledSystem& compiled, const std::vector<double>& z,
+                                        const std::vector<double>& k, double total, core::Scope& scope) {
+    const auto balance = [&](double beta) {
+        double value = 0.0;
+        for (std::size_t i = 0; i < z.size(); ++i)
+            if (z[i] > 0.0) value += z[i] * (k[i] - 1.0) / ((1.0 - beta) + beta * k[i]);
+        return value;
+    };
+    const double left = balance(0.0), right = balance(1.0);
+    if (!(std::isfinite(left) && left > 0.0 && right < 0.0)) return std::nullopt;
+    double lower = 0.0, upper = 1.0;
+    for (int step = 0; step < std::numeric_limits<double>::digits; ++step) {
+        const double beta = 0.5 * (lower + upper);
+        if (balance(beta) > 0.0) lower = beta;
+        else upper = beta;
+    }
+    const double beta = 0.5 * (lower + upper), share = total / compiled.feed_total;
+    if (!(share * beta > policy::PHASE_DISAPPEARANCE_AMOUNT.value
+          && share * (1.0 - beta) > policy::PHASE_DISAPPEARANCE_AMOUNT.value)) return std::nullopt;
+    std::vector<double> x(z.size(), 0.0), y(z.size(), 0.0);
+    for (std::size_t i = 0; i < z.size(); ++i) {
+        if (!(z[i] > 0.0)) continue;
+        x[i] = z[i] / ((1.0 - beta) + beta * k[i]);
+        y[i] = k[i] * x[i];
+        if (!(std::isfinite(x[i]) && x[i] > 0.0 && std::isfinite(y[i]) && (k[i] == 0.0 || y[i] > 0.0))) return std::nullopt;
+    }
+    PhaseStart start;
+    for (const auto& phase : compiled.problem.phases) {
+        const bool vapor = phase.kind == PhaseKind::Vapor;
+        start.compositions.push_back(vapor ? y : x);
+        start.amounts.push_back(total * (vapor ? beta : 1.0 - beta));
+    }
+    scope.probe("vapor_fraction_seed", beta);
+    return start;
+}
+
+PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<std::vector<double>> result(phases, compiled.feed_composition);
@@ -72,10 +119,10 @@ std::vector<std::vector<double>> start_compositions(
                 result[phase][spec.support[i]] = spec.composition_guess[i];
         }
     }
-    if (phases == 1) return result;
+    if (phases == 1) return {result};
     if (guessed) {
         scope.probe("start_rule", 1.0);
-        return result;
+        return {result};
     }
     if (phases != 2 || compiled.problem.phases[0].kind == compiled.problem.phases[1].kind) {
         scope.probe("start_rule", 3.0);
@@ -114,44 +161,14 @@ std::vector<std::vector<double>> start_compositions(
         x_total += x[i]; y_total += y[i];
     }
     for (std::size_t i = 0; i < components; ++i) { x[i] /= x_total; y[i] /= y_total; }
+    scope.probe("start_rule", 2.0);
     if (supports_split_seed(compiled)
-        && std::all_of(k_values.begin(), k_values.end(), [](double k) { return std::isfinite(k) && k > 0.0; })) {
-        const auto balance = [&](double beta) {
-            double value = 0.0;
-            for (std::size_t i = 0; i < components; ++i)
-                value += compiled.feed_composition[i] * (k_values[i] - 1.0)
-                    / ((1.0 - beta) + beta * k_values[i]);
-            return value;
-        };
-        const double left = balance(0.0), right = balance(1.0);
-        if (std::isfinite(left) && std::isfinite(right) && left > 0.0 && right < 0.0) {
-            double lower = 0.0, upper = 1.0;
-            for (int step = 0; step < std::numeric_limits<double>::digits; ++step) {
-                const double beta = 0.5 * (lower + upper);
-                if (balance(beta) > 0.0) lower = beta;
-                else upper = beta;
-            }
-            const double beta = 0.5 * (lower + upper);
-            std::vector<double> trial_x(components), trial_y(components);
-            bool usable = beta > policy::PHASE_DISAPPEARANCE_AMOUNT.value
-                && 1.0 - beta > policy::PHASE_DISAPPEARANCE_AMOUNT.value;
-            for (std::size_t i = 0; i < components; ++i) {
-                trial_x[i] = compiled.feed_composition[i] / ((1.0 - beta) + beta * k_values[i]);
-                trial_y[i] = k_values[i] * trial_x[i];
-                usable = usable && std::isfinite(trial_x[i]) && trial_x[i] > 0.0
-                    && std::isfinite(trial_y[i]) && trial_y[i] > 0.0;
-            }
-            if (usable) {
-                vapor_fraction = beta;
-                x = std::move(trial_x); y = std::move(trial_y);
-                scope.probe("vapor_fraction_seed", beta);
-            }
-        }
-    }
+        && std::all_of(k_values.begin(), k_values.end(), [](double k) { return std::isfinite(k) && k > 0.0; }))
+        if (auto split = rachford_rice(compiled, compiled.feed_composition, k_values, compiled.feed_total, scope))
+            return std::move(*split);
     for (std::size_t phase = 0; phase < phases; ++phase)
         result[phase] = compiled.problem.phases[phase].kind == PhaseKind::Vapor ? y : x;
-    scope.probe("start_rule", 2.0);
-    return result;
+    return {result};
 }
 
 // A mixture liquid with a vapor pinned at zero amount, at free pressure and fixed temperature:
@@ -260,10 +277,15 @@ bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vect
 // species without restoring force and the optimizer cycles. Zero guesses enter at the optimizer box; a
 // failed sweep keeps the last speciation.
 // Returns the speciated amount and the last sweep's density root, which seeds the start's packing.
+// `index` selects the speciated phase; its chemical rows alone supply c_j, so other phases' coordinates stay as given.
 std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSystem& compiled, std::vector<double>& point,
-                                                               std::vector<double> composition, core::Scope& scope) {
-    const auto& phase = compiled.problem.phases.front();
-    const std::size_t m = phase.support.size();
+                                                               std::vector<double> composition, core::Scope& scope,
+                                                               std::size_t index = 0) {
+    const auto& phase = compiled.problem.phases[index];
+    const std::size_t m = phase.support.size(), offset = compiled.phase_offsets()[index];
+    std::vector<std::size_t> chemical;  // phase `index`'s chemical rows, in support order
+    for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+        if (compiled.rows[row].kind == RowKind::Chemical && compiled.rows[row].phase == index) chemical.push_back(row);
     const double t = compiled.seed_temperature(), p = compiled.seed_pressure();
     std::vector<std::vector<double>> B(compiled.rank, std::vector<double>(m));
     for (std::size_t k = 0; k < compiled.rank; ++k)
@@ -286,13 +308,13 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
                 if (!density) throw;
                 density = root(std::nullopt);
             }
-            for (std::size_t j = 0; j < m; ++j) trial[j] = std::log(composition[phase.support[j]]);
-            trial[m] = compiled.feed_total;
-            trial[m + 1] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
+            for (std::size_t j = 0; j < m; ++j) trial[offset + j] = std::log(composition[phase.support[j]]);
+            trial[offset + m] = compiled.feed_total;
+            trial[offset + m + 1] = std::log(compiled.model->packing_fraction_coefficient(t, composition) * *density);
             std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
             const auto rows = compiled.evaluate_at(compiled.prepare(trial, true)).values;
             std::vector<double> c(m);
-            for (std::size_t j = 0; j < m; ++j) c[j] = rows[j] - trial[j];  // chemical rows lead, in support order
+            for (std::size_t j = 0; j < m; ++j) c[j] = rows[chemical[j]] - trial[offset + j];
             if (!ideal_speciation(B, compiled.balance, c, n)) break;
             speciated = n;
             speciated_density = density;
@@ -303,9 +325,73 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
     if (speciated.empty()) return std::nullopt;
     n = speciated;
     const double total = std::accumulate(n.begin(), n.end(), 0.0);
-    for (std::size_t j = 0; j < m; ++j) point[j] = std::log(n[j] / total);
+    for (std::size_t j = 0; j < m; ++j) point[offset + j] = std::log(n[j] / total);
     scope.probe("speciated_amount", total);
     return std::make_pair(total, *speciated_density);
+}
+
+// ALG-EQUILIBRIUM true-species split: a reacting flash of one free liquid and one free uncharged vapor at fixed T and P
+// starts from the ideal speciation (z*, N*) of the feed as that liquid, frozen and split by Rachford-Rice with
+// K_i = phi_i^L(z*)/phi_i^V(y) on the vapor support and K_i = 0 on liquid-confined species. y only estimates phi^V:
+// two substitution passes y ~ z* phi^L/phi^V; the split's vapor is K_i x_i. The split conserves N* z*, so its charge
+// and, to the speciation's accuracy, B n = b. Empty outside that domain or without an interior split: the
+// apparent-species start follows, before the one solve.
+std::optional<PhaseStart> true_species_split(
+    const CompiledSystem& compiled, core::Scope& scope, const DriverLimits* limits) {
+    const auto& problem = compiled.problem;
+    if (!compiled.has_reaction || compiled.feasibility_cell() || problem.temperature.free || problem.pressure.free
+        || problem.phases.size() != 2 || problem.phases[0].kind == problem.phases[1].kind) return std::nullopt;
+    const std::size_t liquid = problem.phases[0].kind == PhaseKind::Liquid ? 0 : 1, vapor = 1 - liquid;
+    for (const auto& phase : problem.phases)
+        if (!phase.is_free() || !phase.composition_guess.empty()) return std::nullopt;
+    const auto& ls = problem.phases[liquid].support;
+    const auto& vs = problem.phases[vapor].support;
+    const auto& charges = compiled.model->parameters().charge_number;
+    const auto in_liquid = [&](std::size_t i) { return std::find(ls.begin(), ls.end(), i) != ls.end(); };
+    for (std::size_t i = 0; i < compiled.inventory_upper_bounds.size(); ++i)
+        if (compiled.inventory_upper_bounds[i] > 0.0 && !in_liquid(i)) return std::nullopt;
+    for (const std::size_t i : vs)
+        if (!in_liquid(i) || charges[i] != 0.0) return std::nullopt;
+    const std::size_t components = compiled.model->parameters().component_count();
+    std::vector<double> z(components, 0.0), k(components, 0.0), y(components, 0.0), ln_phi_vapor(components, 0.0);
+    double total = 0.0, vapor_density = 0.0;
+    try {
+        auto point = compiled.generic_point();
+        const auto speciated = speciate_single_phase(compiled, point, compiled.feed_composition, scope, liquid);
+        if (limits) limits->check();
+        if (!speciated) return std::nullopt;
+        total = speciated->first;
+        for (std::size_t j = 0; j < ls.size(); ++j) z[ls[j]] = std::exp(point[compiled.phase_offsets()[liquid] + j]);
+        const double t = compiled.seed_temperature(), p = compiled.seed_pressure();
+        const auto liquid_state = compiled.model->state_at_pressure(t, p, z, DensityBranch::Liquid);
+        if (!liquid_state.log_fugacity_coefficient) return std::nullopt;
+        const auto& ln_phi_liquid = *liquid_state.log_fugacity_coefficient;
+        for (int pass = 0; pass < 2; ++pass) {
+            double sum = 0.0;
+            for (const std::size_t i : vs) sum += y[i] = z[i] * std::exp(require_component_property(ln_phi_liquid[i]) - ln_phi_vapor[i]);
+            for (const std::size_t i : vs) y[i] /= sum;
+            const auto gas = [&] {  // the first pass's root continues to the second y; outside its window, a new scan
+                if (pass > 0) try { return compiled.model->state_at_pressure(t, p, y, DensityBranch::Vapor, vapor_density); }
+                    catch (const std::exception&) {}
+                return compiled.model->state_at_pressure(t, p, y, DensityBranch::Vapor);
+            }();
+            if (!gas.log_fugacity_coefficient) return std::nullopt;
+            vapor_density = gas.molar_density;
+            for (const std::size_t i : vs) ln_phi_vapor[i] = require_component_property((*gas.log_fugacity_coefficient)[i]);
+        }
+        for (const std::size_t i : vs) {
+            k[i] = std::exp(require_component_property(ln_phi_liquid[i]) - ln_phi_vapor[i]);
+            if (!(std::isfinite(k[i]) && k[i] > 0.0)) return std::nullopt;
+        }
+    } catch (const std::exception&) {  // an exhausted budget stops the start; any other failure keeps the fallback
+        if (limits) limits->check();
+        return std::nullopt;
+    }
+    auto split = rachford_rice(compiled, z, k, total, scope);
+    if (!split) return std::nullopt;
+    split->vapor_density = vapor_density;
+    scope.probe("start_rule", 4.0);
+    return split;
 }
 
 }  // namespace
@@ -393,8 +479,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             return point;
         }
     }
-    std::optional<double> vapor_fraction;
-    const auto compositions = start_compositions(compiled, scope, vapor_fraction);
+    auto start = true_species_split(compiled, scope, limits);
+    if (!start) start = start_compositions(compiled, scope);
+    const auto& compositions = start->compositions;
     std::size_t free_phases = 0;
     for (const auto& phase : compiled.problem.phases) {
         if (phase.amount.kind == AmountKind::Free) ++free_phases;
@@ -415,9 +502,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (limits) limits->check();
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
         if (compiled.problem.phases[phase].amount.kind == AmountKind::Free) {
-            point[cursor++] = vapor_fraction.has_value()
-                ? feed_total * (compiled.problem.phases[phase].kind == PhaseKind::Vapor
-                    ? *vapor_fraction : 1.0 - *vapor_fraction) : free_amount;
+            point[cursor++] = start->amounts.empty() ? free_amount : start->amounts[phase];
         }
         const double t = compiled.seed_temperature();
         std::vector<double> composition(compiled.model->parameters().component_count(), 0.0);
@@ -443,7 +528,11 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             ? DensityBranch::Vapor : DensityBranch::Liquid;
         DensityRoot root;
         try {
-            root = solve_density(*compiled.model, t, p, composition, branch, std::nullopt);
+            const auto unanchored = [&] { return solve_density(*compiled.model, t, p, composition, branch, std::nullopt); };
+            if (start->vapor_density > 0.0 && branch == DensityBranch::Vapor) try {  // the phi^V estimate's root continues
+                root = solve_density(*compiled.model, t, p, composition, branch, start->vapor_density);
+            } catch (const std::exception&) { root = unanchored(); }
+            else root = unanchored();
         } catch (const std::runtime_error& error) {
             throw std::runtime_error(
                 std::string("boundary seed has no density root: ") + error.what()
