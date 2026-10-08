@@ -60,7 +60,7 @@ void validate_density_seed(const DensityRoot& root) {
 // true-species split's vapor root.
 struct PhaseStart final {
     std::vector<std::vector<double>> compositions;
-    std::vector<double> amounts;
+    std::vector<double> amounts{};
     double vapor_density = 0.0;
 };
 
