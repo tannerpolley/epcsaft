@@ -24,7 +24,7 @@ historical evidence, not a current-code pass.
 
 ### F1 residual internal energy
 
-`engine/tests/native/properties_checks.cpp` evaluates the Gross 2001 revision-2
+`engine/tests/native/properties_p1_m3_checks.cpp` evaluates the Gross 2001 revision-2
 ethane packet at `T=300 K`, `rho=10000 mol/m^3`, `x=(1)`. At fixed density and
 composition it compares the state field with the independent relation
 
@@ -42,7 +42,7 @@ separately with its wheel and executable identity.
 
 ### F5 weighted Hessian and gradient
 
-`engine/tests/native/equilibrium_checks.cpp` differentiates the full weighted
+`engine/tests/native/equilibrium_s6_e2_checks.cpp` differentiates the full weighted
 gradient independently of the callback Hessian for both a named `regular`
 two-phase neutral ternary problem and a named `pinned`/free-intensive neutral
 binary boundary problem. For every full primal coordinate, including embedded

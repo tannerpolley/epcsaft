@@ -12,7 +12,7 @@ caller's source files and build directory are never touched; the temporary tree 
       on no common rows, or when either run exits non-zero.
 
 The working tree is HEAD plus the caller's uncommitted and untracked files.
-Run as: tools/heavy tools/native-isolated falsify equilibrium_checks e5-neutral plant.diff"""
+Run as: tools/heavy tools/native-isolated falsify equilibrium_checks E5-1 plant.diff"""
 import json, math, os, re, shutil, signal, subprocess, sys, tempfile, time
 from pathlib import Path
 

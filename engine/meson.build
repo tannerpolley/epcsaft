@@ -178,7 +178,12 @@ test('contributions', contributions_checks)
 
 properties_checks = executable(
   'properties_checks',
-  'tests/native/properties_checks.cpp',
+  files('tests/native/properties_checks.cpp',
+        'tests/native/properties_p1_m3_checks.cpp',
+        'tests/native/properties_m4_c2_checks.cpp',
+        'tests/native/properties_p2_checks.cpp',
+        'tests/native/properties_p3_f9_checks.cpp',
+        'tests/native/properties_p4_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
@@ -202,7 +207,14 @@ test('diagnostics', diagnostics_checks)
 
 equilibrium_checks = executable(
   'equilibrium_checks',
-  'tests/native/equilibrium_checks.cpp',
+  files('tests/native/equilibrium_checks.cpp',
+        'tests/native/equilibrium_s1_s2_checks.cpp',
+        'tests/native/equilibrium_s6_e2_checks.cpp',
+        'tests/native/equilibrium_e5_checks.cpp',
+        'tests/native/equilibrium_tpd_checks.cpp',
+        'tests/native/equilibrium_caloric_specification_checks.cpp',
+        'tests/native/equilibrium_critical_envelope_checks.cpp',
+        'tests/native/equilibrium_reactive_caloric_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,
@@ -247,7 +259,10 @@ test('boundary', boundary_checks, timeout: 600)
 
 regression_checks = executable(
   'regression_checks',
-  'tests/native/regression_checks.cpp',
+  files('tests/native/regression_checks.cpp',
+        'tests/native/regression_f1_j1_checks.cpp',
+        'tests/native/regression_j2_inventory_checks.cpp',
+        'tests/native/regression_reaction_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,

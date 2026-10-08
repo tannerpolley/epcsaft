@@ -1,4 +1,4 @@
-#pragma once
+#include "reactive_caloric_shared.hpp"
 #include "binary128_support.hpp"
 #include "equilibrium_support.hpp"
 
@@ -491,15 +491,6 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
     }
 }
 
-inline double gibbs_contraction(const ReferenceCalorics& ref,std::size_t component,
-                               std::size_t a,std::size_t b,std::optional<std::size_t> parameter) {
-    for(const auto& term:ref.gibbs) if(term.temperature_order==a&&term.pressure_order==b&&term.parameter==parameter) {
-        if(term.column.status!=SolvedStateActionStatus::Available) throw std::runtime_error(term.column.message);
-        return term.column.values.at(component);
-    }
-    throw std::runtime_error("missing frozen Gibbs contraction");
-}
-
 // Frozen-composition oracle: P4 with complete declared A records supplies only
 // the EOS/ideal mixing chain. Subtract those density standards and insert the
 // already qualified anchored raw Gibbs columns; no equilibrium path is used.
@@ -645,42 +636,6 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
     }
 }
 
-struct OracleOutsideChart : std::runtime_error { using std::runtime_error::runtime_error; };
-inline bool scalar_ladder(const std::string& id,const Quantity& q,double exact,double step,const std::string& inputs,
-                          double relative,const std::function<double(double)>& centered) {
-    auto evaluate=[&](double h)->std::optional<double> {
-        try { return centered(h); }
-        catch(const OracleOutsideChart& error) {
-            const auto key=id+"/outside-chart/"+recording_support::number(h);
-            recording_support::observe(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,std::nullopt,
-                recording_support::fields({inputs,recording_support::field("requested_step",h),
-                    recording_support::field("resolved",0),recording_support::field("cause",error.what())}),
-                "Refinement","native-independent-value-difference","No derivative reference outside the positive-pressure chart; halve the prescribed step","reactive-caloric");
-            return std::nullopt;
-        }
-    };
-    auto coarse_value=evaluate(step);bool good=false;
-    for(std::size_t rung=0;rung<6;++rung) {
-        const double h=std::ldexp(step,-int(rung+1));const auto fine_value=evaluate(h);
-        if(!coarse_value||!fine_value) {coarse_value=fine_value;continue;}
-        const double coarse=*coarse_value,fine=*fine_value,rich=(4*fine-coarse)/3,refinement=std::abs(fine-coarse)/3;
-        const double sigma=std::abs(exact),target=q.atol+relative*std::max(std::abs(rich),sigma);
-        const bool resolved=refinement<=target/4;good=resolved&&std::abs(exact-rich)<=target;
-        const auto row=recording_support::fields({inputs,recording_support::field("coarse_step",2*h),recording_support::field("fine_step",h),
-            recording_support::field("D_h",coarse),recording_support::field("D_h2",fine),recording_support::field("Richardson",rich),
-            recording_support::field("refinement",refinement),recording_support::field("sigma",sigma),recording_support::field("target",target),
-            recording_support::field("error",std::abs(exact-rich)),recording_support::field("error_over_target",std::abs(exact-rich)/target),
-            recording_support::field("resolved",resolved)});
-        const auto key=id+"/rung-"+std::to_string(rung);
-        if(!resolved&&rung<5) recording_support::observe(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,rich,row,
-            "Refinement","native-independent-value-difference","Coarse unresolved step retained and refined","reactive-caloric");
-        else recording_support::compare_custom(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,rich,row,
-            "Relationship","native-independent-value-difference","Independent Gibbs or fixed-volume verification",
-            "abs(exact-R)<=atol+relative*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric");
-        if(resolved) break;coarse_value=fine_value;
-    }
-    return good;
-}
 inline bool inversion(const Case& c,const HelmholtzModel& model,const CompiledSystem& compiled,const Sample& center,
                       const std::vector<Quantity>& q,const std::string& inputs,double exact_cv) {
     const double T=center.solved.temperature[0],P=center.solved.pressure[0],targetVolume=center.phase.v;
@@ -757,7 +712,7 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
     return result;
 }
 
-inline void run(bool ionic,bool fixed) {
+void run(bool ionic,bool fixed) {
     const auto c=input(ionic,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     if(!solved.has_state()) throw std::runtime_error(c.name+" center: "+solved.message);
@@ -809,7 +764,7 @@ inline std::vector<double> composition_action(const Case& c,const std::vector<Di
             out[i]+=std::pow(-1.0,int(k-1))*(factorial/k)*ds[j].feed_amounts_mol[i]*product/std::pow(N,int(k));}
     }return out;
 }
-inline void unreactive() {
+void unreactive() {
     const auto c=input(false,false,true);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     CHECK(solved.has_state());const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
@@ -1074,7 +1029,7 @@ inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,co
     }
 }
 
-inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
+void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     const auto c=boundary_input(nonidentical,free_temperature,fixed);
     HelmholtzModel model(c.parameters,c.active,c.records);
     const auto solve=[&](const EquilibriumProblem& problem,const char* label) {
@@ -1153,7 +1108,7 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     }
 }
 
-inline void cheap() {
+void cheap() {
     dependency_checks();
     volume_partial_values();
     isothermal_row_columns();
