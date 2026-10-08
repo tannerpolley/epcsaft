@@ -1,4 +1,4 @@
-#include "equilibrium_checks_shared.hpp"
+#include "reactive_caloric_shared.hpp"
 #include "binary128_support.hpp"
 #include "equilibrium_support.hpp"
 

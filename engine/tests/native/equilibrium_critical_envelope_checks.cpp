@@ -2,6 +2,7 @@
 // methane/ethane packets; numerical verification only.
 #include "equilibrium_checks_shared.hpp"
 #include "caloric_specification_inputs.hpp"
+#include "caloric_specification_shared.hpp"
 namespace critical_envelope_checks {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;

@@ -1,5 +1,5 @@
 // S1 and S2: synthetic flash, bubble and reference-reaction solves.
-#include "equilibrium_checks_shared.hpp"
+#include "reactive_caloric_shared.hpp"
 
 namespace equilibrium_checks {
 

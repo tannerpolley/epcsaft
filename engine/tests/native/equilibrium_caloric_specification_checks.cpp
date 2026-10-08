@@ -1,6 +1,7 @@
 // Issue 224: manufactured calorics on the Gross (2001) methane/ethane and propane packets.
 #include "equilibrium_checks_shared.hpp"
 #include "caloric_specification_inputs.hpp"
+#include "caloric_specification_shared.hpp"
 namespace caloric_specification_checks {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
