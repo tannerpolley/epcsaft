@@ -141,7 +141,8 @@ numerical thread when memory allows. A warm `check-all.sh` takes about 20–40 s
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
 After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's
 wheel in the main checkout, compares its key-solve work with the previous
-`build/wheels/main-current/`, and replaces that directory and its README.
+`build/wheels/main-current/`, replaces that directory and its README, and keeps
+`build/wheels/main-<commit>/`, the applications' stable pin.
 There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:
