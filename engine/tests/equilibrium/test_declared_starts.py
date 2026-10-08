@@ -205,6 +205,29 @@ def test_feed_start_regrows_the_vapor_at_the_356_point() -> None:
         assert all(abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14) for x, y in zip(state, reference, strict=True))
 
 
+def test_true_species_split_ignores_an_unfed_spectator() -> None:
+    """#356: a reacting flash s0 -> s1 (K = 2) at 200 K and 50 kPa with an unfed, nonreacting s3. Default supports and
+    supports declared without s3 compile to the same effective supports, so both take the true-species split with the
+    same work and state; the supports without s3 took the apparent-K start (18/50/19 vs 9/14/10)."""
+    heavy = (*ETHANE[:3], 2 * ETHANE[3])
+    model = Mixture(parameters((ETHANE, ETHANE, heavy, ETHANE), [("k_ij", (i, j), 0.) for i in range(4) for j in range(i + 1, 4)]))
+
+    def solve(support: Any) -> Any:
+        return eq.solve_equilibrium(model, eq.Problem(
+            T=200., P=5e4, feed=eq.Amounts({"s0": 1., "s2": 1.}),
+            phases=[eq.Phase("L", kind="liquid", support=support), eq.Phase("V", kind="vapor", support=support)],
+            reactions=[eq.Reaction({"s0": -1., "s1": 1.}, equilibrium_constant=2.)]))
+
+    default, declared = solve(None), solve(("s0", "s1", "s2"))
+    for result in (default, declared):
+        assert result.success, result.message
+    work = ("iterations", "evaluations", "hessian_calls")
+    assert [getattr(declared, k) for k in work] == [getattr(default, k) for k in work]
+    for key in ("amounts", "mole_fractions", "molar_densities"):
+        for x, y in zip(getattr(default, key), getattr(declared, key), strict=True):
+            assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
+
+
 def test_supplied_packings_need_no_boundary_density_root() -> None:
     """#350: Born case 1 of analyses/2026-born-unavailable-states, the stable liquid at c_dielectric 0.33 (archive
     member fine/case1-continuation-0.330000-state.csv of results/retired-charts.tar.gz) moved by a water-reaction

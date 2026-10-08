@@ -347,11 +347,10 @@ std::optional<PhaseStart> true_species_split(
     const auto& ls = problem.phases[liquid].support;
     const auto& vs = problem.phases[vapor].support;
     const auto& charges = compiled.model->parameters().charge_number;
-    const auto in_liquid = [&](std::size_t i) { return std::find(ls.begin(), ls.end(), i) != ls.end(); };
-    for (std::size_t i = 0; i < compiled.inventory_upper_bounds.size(); ++i)
-        if (compiled.inventory_upper_bounds[i] > 0.0 && !in_liquid(i)) return std::nullopt;
+    // Compilation puts every fed or reacting, non-absent species on an effective support; vapor inside liquid
+    // then puts each on the liquid support.
     for (const std::size_t i : vs)
-        if (!in_liquid(i) || charges[i] != 0.0) return std::nullopt;
+        if (std::find(ls.begin(), ls.end(), i) == ls.end() || charges[i] != 0.0) return std::nullopt;
     const std::size_t components = compiled.model->parameters().component_count();
     std::vector<double> z(components, 0.0), k(components, 0.0), y(components, 0.0), ln_phi_vapor(components, 0.0);
     double total = 0.0, vapor_density = 0.0;

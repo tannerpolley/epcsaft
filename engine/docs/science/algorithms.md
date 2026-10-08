@@ -435,10 +435,11 @@ and equal-amount seed. No new phase search or equilibrium driver is introduced.
 A reacting fixed-TP declaration of one liquid and one vapor, identified by kind in
 either order, with both amounts free and no composition guess, starts instead from a
 true-species split (#350). Its predicates use the compiled effective supports, which
-keep zero-feed reaction products: every species with positive attainable inventory
-is on the liquid support, and the vapor support lies inside it with charge number
-zero on every species (compilation admits a vapor support holding both charge signs,
-so this check is needed). The single-liquid speciation below, evaluated on the
+keep zero-feed reaction products and drop absent and unfed nonreacting species, and
+compilation refuses a fed or reacting species on no support: the vapor support
+lies inside the liquid support, so every potentially present species is on the
+liquid support, with charge number zero on every vapor species (compilation admits
+a vapor support holding both charge signs, so this check is needed). The single-liquid speciation below, evaluated on the
 two-phase compiled system's liquid chemical rows and keeping its last successful
 sweep, gives the true-species fractions $z^*$ and total $N^*$. Then
 $K_i=\phi_i^L(T,P,z^*)/\phi_i^V(T,P,y)$ on the vapor support and $K_i=0$ on
