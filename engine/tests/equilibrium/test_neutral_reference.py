@@ -460,6 +460,7 @@ def test_refused_temperature_slope_keeps_value_and_feed_direction(pure_solvent: 
     thermal, feed = solved_state_first_actions(compiled, result, observable, [
         SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0, 0.0], []), feed_direction])
     alone = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [feed_direction]))
+    # Refused by the sqrt(m) ladder gate, not a missing limit; the method change is #353.
     assert thermal.results[0].status == Status.ReferenceUnavailable and thermal.results[0].action is None
     assert feed.results[0].status == Status.Available and feed.results[0].action is not None
     assert feed.results[0].action == alone.results[0].action  # the refused sibling leaves it unchanged
