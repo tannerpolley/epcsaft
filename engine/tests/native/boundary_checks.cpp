@@ -659,51 +659,14 @@ std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
     return rows;
 }
 
-EquilibriumProblem boundary_at(double temperature) {
-    auto problem = equilibrium_support::boundary();
-    problem.feed.values = {0.5, 0.5};
-    problem.temperature = FreeValue::fixed(temperature);
-    return problem;
-}
-
-struct Interior final {
-    double bubble_pressure = 0.0;
-    std::vector<double> feed;
-    EquilibriumProblem problem;
-    EquilibriumResult start;
-};
-
-// The E4-C interior two-free start at half the bubble pressure; the recorded coordinate seed
-// from the issue is used only if a cold solve of the same problem is not accepted.
-Interior interior(const epcsaft::HelmholtzModel& model) {
-    Interior result;
-    const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, boundary_at(180.0));
-    CHECK(bubble.success);
-    result.bubble_pressure = bubble.pressure.front();
-    result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
-                   0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
-    result.problem = boundary_at(180.0);
-    result.problem.feed.values = result.feed;
-    result.problem.phases[1].amount = AmountSpec::free();
-    result.problem.pressure = FreeValue::fixed(0.5 * result.bubble_pressure);
-    result.start = epcsaft::equilibrium::solve_equilibrium(model, result.problem);
-    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
-        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
-            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
-            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
-        result.start = epcsaft::equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
-    }
-    return result;
-}
-
 }  // namespace e4
 
 void check_e4_a() {
     using namespace e4;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     ContinuationRequest request;
-    request.start_problem = boundary_at(180.0);
-    request.target_problem = boundary_at(181.0);
+    request.start_problem = equilibrium_support::bubble_at(180.0);
+    request.target_problem = equilibrium_support::bubble_at(181.0);
     request.options = options(0.25, 0.25, 4, 2);
     epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
@@ -713,7 +676,7 @@ void check_e4_a() {
     record_bool("e4-a/path", "e4-a", "declared bubble branch reaches 181 K at the declared path values",
   path_ok && !result.event_phase.has_value() && !result.event_pair.has_value(), summary(result));
     for (std::size_t k = 0; k < 5; ++k) {
-        const auto cold = epcsaft::equilibrium::solve_equilibrium(model, boundary_at(180.0 + expected[k]));
+        const auto cold = epcsaft::equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0 + expected[k]));
         const auto& state = result.states[k];
         const double pressure_error = std::abs(state.pressure.front() / cold.pressure.front() - 1.0);
         double composition_error = 0.0;
@@ -735,7 +698,7 @@ void check_e4_a() {
 void check_e4_b() {
     using namespace e4;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    const auto start = interior(model);
+    const auto start = equilibrium_support::interior(model);
     CHECK(start.start.success && start.start.requested_tolerance_met.value_or(false));
     const std::vector<double> x_l = {start.start.mole_fractions[0], start.start.mole_fractions[1]};
     const std::vector<double> x_v = {start.start.mole_fractions[2], start.start.mole_fractions[3]};
@@ -784,8 +747,7 @@ void check_e4_b() {
 void check_e4_c() {
     using namespace e4;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    const auto start = interior(model);
-    CHECK(start.start.success);
+    const auto start = equilibrium_support::interior(model);
     ContinuationRequest request;
     request.start_problem = start.problem;
     request.target_problem = start.problem;
@@ -811,8 +773,8 @@ void check_e4_d() {
     using namespace e4;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     ContinuationRequest request;
-    request.start_problem = boundary_at(180.0);
-    request.target_problem = boundary_at(280.0);
+    request.start_problem = equilibrium_support::bubble_at(180.0);
+    request.target_problem = equilibrium_support::bubble_at(280.0);
     request.options = options(0.001, 0.0000625, 20000, 4);
     epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
@@ -852,7 +814,7 @@ void check_e4_d() {
     // distance, corrected slopes and densities.
     if (!result.states.empty()) {
         const auto& last = result.states.back();
-        const auto compiled = epcsaft::equilibrium::compile_problem(model, boundary_at(180.0 + 100.0 * result.reached_path));
+        const auto compiled = epcsaft::equilibrium::compile_problem(model, equilibrium_support::bubble_at(180.0 + 100.0 * result.reached_path));
         const auto topology = epcsaft::equilibrium::check_topology(compiled, last.coordinates);
         std::vector<double> slopes;
         for (std::size_t phase = 0; phase < 2; ++phase) {
@@ -943,8 +905,8 @@ void check_e4_paths() {
       && result.states.empty() && result.attempts == 0 && result.message.find(phrase) != std::string::npos, summary(result));
     };
     ContinuationRequest base;
-    base.start_problem = boundary_at(180.0);
-    base.target_problem = boundary_at(181.0);
+    base.start_problem = equilibrium_support::bubble_at(180.0);
+    base.target_problem = equilibrium_support::bubble_at(181.0);
     auto swapped = base; std::swap(swapped.target_problem.phases[0], swapped.target_problem.phases[1]);
     expect_invalid("e4-paths/phase-order", swapped, "identity differs");
     auto support = base; support.target_problem.phases[0].support = {0};

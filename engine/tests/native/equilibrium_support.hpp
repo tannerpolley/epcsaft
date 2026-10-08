@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/trace.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/problem.hpp"
 #include "properties_support.hpp"
 #include "recording_support.hpp"
@@ -129,6 +130,46 @@ inline epcsaft::equilibrium::EquilibriumProblem boundary() {
               epcsaft::equilibrium::AmountSpec::pinned(0.0)),
     };
     result.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
+    return result;
+}
+
+// The neutral-binary bubble problem at T: L free, V pinned 0, equimolar feed, P free from 1e5 Pa.
+inline epcsaft::equilibrium::EquilibriumProblem bubble_at(double temperature) {
+    auto problem = boundary();
+    problem.feed.values = {0.5, 0.5};
+    problem.temperature = epcsaft::equilibrium::FreeValue::fixed(temperature);
+    return problem;
+}
+
+// The E4-B interior tie line: neutral binary at 180 K, feed at the mean of the bubble
+// compositions, both amounts free at half the bubble pressure; the recorded coordinate seed
+// is used only if the cold solve of the same problem is not accepted.
+struct Interior final {
+    epcsaft::equilibrium::EquilibriumProblem problem;
+    epcsaft::equilibrium::EquilibriumResult start;
+    double bubble_pressure = 0.0;
+    std::vector<double> feed;
+};
+
+inline Interior interior(const epcsaft::HelmholtzModel& model) {
+    Interior result;
+    const auto bubble = epcsaft::equilibrium::solve_equilibrium(model, bubble_at(180.0));
+    recording_support::check(bubble.success, __FILE__, __LINE__, "bubble.success");
+    result.bubble_pressure = bubble.pressure.front();
+    result.feed = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
+                   0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
+    result.problem = bubble_at(180.0);
+    result.problem.feed.values = result.feed;
+    result.problem.phases[1].amount = epcsaft::equilibrium::AmountSpec::free();
+    result.problem.pressure = epcsaft::equilibrium::FreeValue::fixed(0.5 * result.bubble_pressure);
+    result.start = epcsaft::equilibrium::solve_equilibrium(model, result.problem);
+    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
+        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
+            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
+            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
+        result.start = epcsaft::equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
+    }
+    recording_support::check(result.start.success, __FILE__, __LINE__, "result.start.success");
     return result;
 }
 

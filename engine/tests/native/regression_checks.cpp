@@ -86,13 +86,6 @@ EquilibriumProblem pure_saturation(double temperature, double guess, bool dew = 
     return problem;
 }
 
-EquilibriumProblem bubble_at(double temperature) {
-    auto problem = equilibrium_support::boundary();
-    problem.feed.values = {0.5, 0.5};
-    problem.temperature = FreeValue::fixed(temperature);
-    return problem;
-}
-
 Observation solved(ObservationKind kind, const EquilibriumProblem& problem, std::size_t phase = 0,
                    std::vector<std::size_t> species = {}, bool mass = false) {
     Observation result;
@@ -117,30 +110,6 @@ Observation density(double temperature, double pressure, std::vector<double> com
     result.mass_basis = mass;
     result.observed = 1.0;
     result.form = ResidualForm::LogRatio;
-    return result;
-}
-
-// The E4-B interior tie line: neutral binary at 180 K, feed at the mean of the bubble compositions,
-// both amounts free at half the bubble pressure; the recorded seed only if the cold solve is refused.
-struct Interior final { EquilibriumProblem problem; EquilibriumResult start; double bubble_pressure = 0.0; };
-Interior interior(const HelmholtzModel& model) {
-    Interior result;
-    const auto bubble = equilibrium::solve_equilibrium(model, bubble_at(180.0));
-    CHECK(bubble.success);
-    result.bubble_pressure = bubble.pressure.front();
-    result.problem = bubble_at(180.0);
-    result.problem.feed.values = {0.5 * (bubble.mole_fractions[0] + bubble.mole_fractions[2]),
-                                  0.5 * (bubble.mole_fractions[1] + bubble.mole_fractions[3])};
-    result.problem.phases[1].amount = AmountSpec::free();
-    result.problem.pressure = FreeValue::fixed(0.5 * result.bubble_pressure);
-    result.start = equilibrium::solve_equilibrium(model, result.problem);
-    if (!(result.start.success && result.start.requested_tolerance_met.value_or(false))) {
-        const std::vector<double> seed = {-1.4805904749125276, -0.25812755981945695, 0.25979825064587636,
-            -0.9468581761373848, -0.10102638484899645, -2.342461524948757, 0.7402017493541235,
-            -4.6620373689869785, 6.106829374848107, 3.7251308960023377};
-        result.start = equilibrium::solve_equilibrium_from_coordinates(model, result.problem, seed);
-    }
-    CHECK(result.start.success);
     return result;
 }
 
@@ -324,7 +293,7 @@ void check_f3_f4() {
 // ---- R1 F5 and F6: pressure/temperature specifications and the pure saturation identity.
 void check_f5_f6() {
     const HelmholtzModel model(properties_support::neutral_binary());
-    const auto bubble = bubble_at(180.0);
+    const auto bubble = equilibrium_support::bubble_at(180.0);
     const auto direct = equilibrium::solve_equilibrium(model, bubble);
     const auto pressure = predict(model, solved(ObservationKind::EquilibriumPressure, bubble));
     CHECK(pressure.status == ObservationStatus::Available && direct.success);
@@ -380,7 +349,7 @@ void check_f5_f6() {
 // ---- R1 F7 and F8: phase fractions on the E4-B tie line; aggregate compositions on May row 001.
 void check_f7_f8() {
     const HelmholtzModel model(properties_support::neutral_binary());
-    const auto tie = interior(model);
+    const auto tie = equilibrium_support::interior(model);
     std::vector<double> beta(2), fraction(4);
     for (std::size_t phase = 0; phase < 2; ++phase) {
         const auto b = predict(model, solved(ObservationKind::PhaseFraction, tie.problem, phase), tie.start);
@@ -429,7 +398,7 @@ void check_f7_f8() {
           "the retained E6 vapor composition is reproduced", "r1-f8");
     // A mass basis is defined only for the two density kinds: a two-phase flash whose mole-basis
     // phase fraction differs from the physical mass fraction is refused by name, never reinterpreted.
-    auto two = bubble_at(180.0);
+    auto two = equilibrium_support::bubble_at(180.0);
     two.phases[1].amount = AmountSpec::free();
     two.pressure = FreeValue::fixed(1.0e6);
     const auto liquid_fraction = predict(model, solved(ObservationKind::PhaseFraction, two, 0));
@@ -469,7 +438,7 @@ std::string summary(const FitResult& result);
 // ---- R1 F9 and F10: preserved failure causes and the residual forms.
 void check_f9_f10() {
     const HelmholtzModel model(properties_support::neutral_binary());
-    auto unattainable = bubble_at(180.0);
+    auto unattainable = equilibrium_support::bubble_at(180.0);
     unattainable.row_tolerance = 1.0e-18;
     const auto floor = predict(model, solved(ObservationKind::EquilibriumPressure, unattainable));
     truth("r1-f9/unmet_tolerance", "a floor-limited rejected solve keeps its cause and returns no value",
@@ -822,7 +791,7 @@ void check_d86() {
     agree("d86/pressure", "drho_dP", "mol/(m^3 Pa)", thermal.density_action[1], 1.0 / central.pressure_density_derivative, 0.0, 1.0e-12,
           field("dP_drho", central.pressure_density_derivative), "drho/dP is the reciprocal pressure slope", "d86");
     const HelmholtzModel binary(properties_support::neutral_binary());
-    const double Tb = 180.0, Pb = 2.0 * equilibrium::solve_equilibrium(binary, bubble_at(180.0)).pressure.front();
+    const double Tb = 180.0, Pb = 2.0 * equilibrium::solve_equilibrium(binary, equilibrium_support::bubble_at(180.0)).pressure.front();
     const auto mixed = binary.pressure_actions(Tb, Pb, {0.5, 0.5}, DensityBranch::Liquid, {}, {{0.0, 0.0, {0.01, -0.01}, {}}});
     CHECK(mixed.density_status == PropertyActionStatus::Available);
     const auto over_x = [&](double shift) {
@@ -898,8 +867,8 @@ void check_j1() {
     const auto set = binary_coordinates();
     validate(set, parameters);
     const HelmholtzModel model(parameters, set.active_parameters());
-    const auto tie = interior(model);
-    const auto bubble = bubble_at(180.0);
+    const auto tie = equilibrium_support::interior(model);
+    const auto bubble = equilibrium_support::bubble_at(180.0);
     const auto bubble_solve = equilibrium::solve_equilibrium(model, bubble);
     const double P_bubble = bubble_solve.pressure.front();
     auto free_t = bubble;
@@ -1005,7 +974,7 @@ void check_j1() {
     grouped.parameters = parameters;
     grouped.coordinates.coordinates = {set.coordinates.front()};
     grouped.observations = {solved(ObservationKind::PhaseFraction, declared, 0),
-        solved(ObservationKind::EquilibriumPressure, bubble_at(190.0)),
+        solved(ObservationKind::EquilibriumPressure, equilibrium_support::bubble_at(190.0)),
         solved(ObservationKind::PhaseMoleFraction, declared, 0, {0, 1}),
         solved(ObservationKind::PartialPressure, declared, 1, {0}),
         solved(ObservationKind::PhaseDensity, declared, 0),
@@ -1052,12 +1021,12 @@ Truth manufactured() {
     result.parameters.dispersion_energy_over_k[0] = 152.0;
     result.parameters.k_ij[1] = result.parameters.k_ij[2] = -0.02;
     const HelmholtzModel model(result.parameters);
-    for (const double T : {170.0, 180.0, 190.0}) result.observations.push_back(solved(ObservationKind::EquilibriumPressure, bubble_at(T)));
-    auto y = solved(ObservationKind::PhaseMoleFraction, bubble_at(180.0), 1, {0});
+    for (const double T : {170.0, 180.0, 190.0}) result.observations.push_back(solved(ObservationKind::EquilibriumPressure, equilibrium_support::bubble_at(T)));
+    auto y = solved(ObservationKind::PhaseMoleFraction, equilibrium_support::bubble_at(180.0), 1, {0});
     y.form = ResidualForm::Difference;
     y.scale = 0.01;
     result.observations.push_back(y);
-    const double P_bubble = equilibrium::solve_equilibrium(model, bubble_at(180.0)).pressure.front();
+    const double P_bubble = equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0)).pressure.front();
     result.observations.push_back(density(180.0, 2.0 * P_bubble, {0.5, 0.5}, DensityBranch::Liquid, true));
     for (auto& observation : result.observations) observation.observed = *predict(model, observation).value;
     return result;
@@ -1411,7 +1380,7 @@ void check_r3() {
           "doubling every weight doubles the cost", "r3");
     // A zero weight removes a row from the objective but not from the report.
     auto zero = recovery_request(truth_case, 148.0, 0.0);
-    auto inconsistent = solved(ObservationKind::EquilibriumPressure, bubble_at(175.0));
+    auto inconsistent = solved(ObservationKind::EquilibriumPressure, equilibrium_support::bubble_at(175.0));
     inconsistent.observed = 1.5 * *predict(HelmholtzModel(truth_case.parameters), inconsistent).value;
     zero.observations.push_back(inconsistent);
     zero.weights.assign(zero.observations.size(), 1.0);
@@ -1561,7 +1530,7 @@ FitResult reaction_columns(const std::string& id, FitRequest request) {
 }
 
 EquilibriumProblem reacting_bubble(const HelmholtzModel& model) {
-    auto problem = bubble_at(180.0);
+    auto problem = equilibrium_support::bubble_at(180.0);
     const auto center = equilibrium::solve_equilibrium(model, problem);
     CHECK(center.success && center.topology_event == equilibrium::TopologyEvent::None);
     const auto compiled = equilibrium::compile_problem(model, problem);

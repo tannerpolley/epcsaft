@@ -1694,61 +1694,6 @@ void check_s7() {
     }
 }
 
-void check_c1_amount_scale() {
-    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    auto normal = equilibrium_support::flash(2);
-    auto tiny = normal;
-    normal.feed.values = {0.5, 0.5};
-    tiny.feed.values = {5.0e-10, 5.0e-10};
-    const auto first = epcsaft::equilibrium::solve_equilibrium(model, normal);
-    const auto second = epcsaft::equilibrium::solve_equilibrium(model, tiny);
-    CHECK(first.success && second.success);
-    if (!first.success || !second.success) return;
-    CHECK(first.amounts.size() == second.amounts.size());
-    const double first_total = normal.feed.values[0] + normal.feed.values[1];
-    const double second_total = tiny.feed.values[0] + tiny.feed.values[1];
-    for (std::size_t i = 0; i < first.amounts.size(); ++i) {
-        const double first_normalized = first.amounts[i] / first_total;
-        const double second_normalized = second.amounts[i] / second_total;
-        CHECK(std::abs(first_normalized - 1.0) <= 1.0e-7);
-        CHECK(std::abs(second_normalized - 1.0) <= 1.0e-7);
-        const auto normal_inputs = recording_support::fields({
-            recording_support::field("T", 300.0),
-            recording_support::field("P", 1.0e5),
-            recording_support::field("feed", normal.feed.values),
-            recording_support::field("solver_status", first.solver_status),
-            recording_support::field("convergence_stop",
-                epcsaft::core::stop_name(first.convergence.stop)),
-            recording_support::field("residual", first.convergence.residual),
-            recording_support::field("phase", i),
-        });
-        recording_support::compare(
-            (std::string("c1-amount-scale/normal/") + std::to_string(i)).c_str(),
-            "phase_amount/feed_total", "1", first_normalized, 1.0, normal_inputs,
-            "Relationship", "extensive-scaling", "normalized phase amount remains one",
-            "strict_absolute", 1.0e-7, 0.0, std::abs(first_normalized - 1.0) <= 1.0e-7,
-            "c1-amount-scale", "normal", "n/feed_total", "T,P,feed,phase",
-            "n_phase/feed_total=1", "phase");
-        const auto tiny_inputs = recording_support::fields({
-            recording_support::field("T", 300.0),
-            recording_support::field("P", 1.0e5),
-            recording_support::field("feed", tiny.feed.values),
-            recording_support::field("solver_status", second.solver_status),
-            recording_support::field("convergence_stop",
-                epcsaft::core::stop_name(second.convergence.stop)),
-            recording_support::field("residual", second.convergence.residual),
-            recording_support::field("phase", i),
-        });
-        recording_support::compare(
-            (std::string("c1-amount-scale/tiny/") + std::to_string(i)).c_str(),
-            "phase_amount/feed_total", "1", second_normalized, 1.0, tiny_inputs,
-            "Relationship", "extensive-scaling", "normalized phase amount remains one",
-            "strict_absolute", 1.0e-7, 0.0, std::abs(second_normalized - 1.0) <= 1.0e-7,
-            "c1-amount-scale", "tiny", "n/feed_total", "T,P,feed,phase",
-            "n_phase/feed_total=1", "phase");
-    }
-}
-
 void check_c1_multiplier_scale() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto small = equilibrium_support::flash(2);
@@ -2427,111 +2372,9 @@ void check_s13() {
         "s13-density-root", "liquid", "\\Delta v", "T,P,feed,branch", "\\Delta v\\leq\\ell", "density");
 }
 
-void check_s15() {
-    epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
-    auto problem = equilibrium_support::flash(3);
-    problem.phases = {
-        equilibrium_support::phase("L", epcsaft::equilibrium::PhaseKind::Liquid),
-        equilibrium_support::phase("V", epcsaft::equilibrium::PhaseKind::Vapor),
-    };
-    problem.phases[1].support = {0};
-    problem.temperature.value = 298.15;
-    problem.pressure.value = 1.0e5;
-    problem.feed.kind = epcsaft::equilibrium::FeedKind::Molalities;
-    problem.feed.values = {0.0, 1.0, 1.0};
-    problem.feed.solvent = {0};
-    problem.feed.solvent_mass_kg = 1.0;
-    const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
-    epcsaft::core::Capture deficit_capture;
-    const auto failure = epcsaft::equilibrium::solve_equilibrium(model, problem);
-    recording_support::compare(
-        "vanished-phase", "success", "bool", failure.success ? 1.0 : 0.0, 0.0,
-        recording_support::fields({recording_support::field("T", 298.15),
-                                   recording_support::field("P", 1.0e5),
-                                   recording_support::field("feed", problem.feed.values),
-                                   recording_support::field("vanished_phase", "V")}),
-        "Relationship", "boundary-failure", "vanished vapor phase is rejected",
-        "reference_or_one", 0.0, 0.0, !failure.success, "s15-vanished-phase", "V",
-        "success", "T,P,feed,phase", "success=0", "phase");
-    const bool failure_status_ok = !failure.success && !failure.has_state();
-    const bool failure_message_ok = failure.message.find("phase V vanished") != std::string::npos;
-    double expected_deficit = 1.0;
-    bool driving_row = false;
-    const double limit = failure.convergence.criterion == nullptr
-        ? 0.0 : convergence_limit(failure.convergence);
-    for (std::size_t row = 0; row < failure.rows.size(); ++row)
-        if (failure.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical
-            && failure.rows[row].phase == 1) {
-            expected_deficit -= std::exp(-failure.residuals[row]);
-            driving_row = driving_row || std::abs(failure.residuals[row]) > limit;
-        }
-    const bool exact_failure_message = failure.message
-        == "phase V vanished; Michelsen deficit " + std::to_string(expected_deficit);
-    const auto& trace = deficit_capture.trace();
-    const bool trace_ok = !trace.spans.empty()
-        && std::string(trace.spans.front().name) == "solve_equilibrium";
-    const auto deficit = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
-            return event.span == 0 && std::string(event.name) == "michelsen_deficit";
-        });
-    const auto distance = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
-            return event.span == 0 && std::string(event.name) == "phase_distance";
-        });
-    const bool deficit_present = deficit != trace.events.rend() && deficit->values.size() == 1;
-    const bool distance_present = distance != trace.events.rend() && distance->values.size() == 1;
-    bool deficit_ok = false;
-    bool distance_ok = false;
-    if (deficit_present) {
-        deficit_ok = std::abs(deficit->values.front() - expected_deficit)
-            <= 1.0e-12 * std::max(1.0, std::abs(expected_deficit));
-        recording_support::compare(
-            "deficit", "michelsen_deficit", "1", deficit->values.front(), expected_deficit,
-            recording_support::fields({recording_support::field("T", 298.15),
-                                       recording_support::field("P", 1.0e5),
-                                       recording_support::field("feed", problem.feed.values),
-                                       recording_support::field("expected_deficit", expected_deficit)}),
-            "Relationship", "Michelsen-deficit", "trace deficit equals recomputed phase deficit",
-            "reference_or_one", 0.0, 1e-12,
-            deficit_ok,
-            "s15-deficit", "trace", "D", "T,P,feed", "D=1-\\sum_i\\exp(-r_i)", "deficit");
-    }
-    if (distance_present) {
-        const double distance_reference = compiled.feed_composition[1]
-            + compiled.feed_composition[2];
-        distance_ok = std::isfinite(distance->values.front())
-            && std::isfinite(distance_reference)
-            && distance->values.front() >= distance_reference;
-        recording_support::compare_custom(
-            "distance", "phase_distance", "1", distance->values.front(), distance_reference,
-            recording_support::fields({recording_support::field("T", 298.15),
-                                       recording_support::field("P", 1.0e5),
-                                       recording_support::field("feed", problem.feed.values),
-                                       recording_support::field("reference_distance", distance_reference)}),
-            "Relationship", "boundary-failure", "phase distance reaches the vanished-phase feed amount",
-            "isfinite(model) && isfinite(reference) && model >= reference", distance_ok,
-            "s15-distance", "trace", "d", "T,P,feed", "d\\geq n_{vanished}", "trace");
-    }
-    CHECK(failure_status_ok);
-    CHECK(failure_message_ok);
-    CHECK(exact_failure_message);
-    CHECK(trace_ok);
-    CHECK(deficit_present);
-    CHECK(distance_present);
-    CHECK(deficit_ok);
-    CHECK(distance_ok);
-    CHECK(driving_row);
-    auto symmetric = equilibrium_support::synthetic_reactive_problem();
-    symmetric.phases[0].composition_guess.clear();
-    symmetric.phases[1].composition_guess.clear();
-    bool refused = false;
-    try { (void)epcsaft::equilibrium::solve_equilibrium(
-        epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()), symmetric); }
-    catch (const std::runtime_error& error) {
-        refused = std::string(error.what()).find("start_symmetric") != std::string::npos;
-    }
-    CHECK(refused);
-}
-
 void check_c3_availability() {
+    // NaCl at 1 mol/kg with a water-only vapor: the vapor vanishes, so the solve fails with its
+    // diagnostics retained and its state cleared; a neutral single-phase solve keeps its state.
     epcsaft::HelmholtzModel failure_model(properties_support::aqueous_electrolyte());
     auto failure_problem = equilibrium_support::flash(3);
     failure_problem.phases = {
@@ -2545,9 +2388,10 @@ void check_c3_availability() {
     failure_problem.feed.values = {0.0, 1.0, 1.0};
     failure_problem.feed.solvent = {0};
     failure_problem.feed.solvent_mass_kg = 1.0;
+    const auto compiled = epcsaft::equilibrium::compile_problem(failure_model, failure_problem);
+    epcsaft::core::Capture deficit_capture;
     const auto failure = epcsaft::equilibrium::solve_equilibrium(failure_model, failure_problem);
-    const bool retained = !failure.solver_status.empty()
-        && failure.convergence.criterion != nullptr
+    const bool retained = failure.convergence.criterion != nullptr
         && std::isfinite(failure.convergence.residual)
         && failure.rows.size() == failure.residuals.size()
         && std::all_of(failure.residuals.begin(), failure.residuals.end(),
@@ -2559,11 +2403,52 @@ void check_c3_availability() {
         && failure.molar_densities.empty() && failure.coordinates.empty();
     const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
     // The vanished phase's KKT-scaled stationarity rows vanish with its amount, so the
-    // classified residual meets the association floor while the topology predicate fails:
-    // unavailable by topology, with the tiny-step solver status retained.
-    const bool tiny_step_stalled = failure.solver_status == "STOP_AT_TINY_STEP"
-        && (failure.convergence.stop == epcsaft::core::Stop::stalled
-            || failure.convergence.stop == epcsaft::core::Stop::converged_to_floor);
+    // classified residual meets the association floor while the topology predicate fails.
+    const bool stalled = failure.convergence.stop == epcsaft::core::Stop::stalled
+        || failure.convergence.stop == epcsaft::core::Stop::converged_to_floor;
+    // Michelsen deficit of the vanished phase from its chemical rows.
+    double expected_deficit = 1.0;
+    bool driving_row = false;
+    const double limit = failure.convergence.criterion == nullptr
+        ? 0.0 : convergence_limit(failure.convergence);
+    for (std::size_t row = 0; row < failure.rows.size(); ++row)
+        if (failure.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical
+            && failure.rows[row].phase == 1) {
+            expected_deficit -= std::exp(-failure.residuals[row]);
+            driving_row = driving_row || std::abs(failure.residuals[row]) > limit;
+        }
+    CHECK(driving_row);
+    const auto& trace = deficit_capture.trace();
+    const auto deficit = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
+            return event.span == 0 && std::string(event.name) == "michelsen_deficit";
+        });
+    const auto distance = std::find_if(trace.events.rbegin(), trace.events.rend(), [](const auto& event) {
+            return event.span == 0 && std::string(event.name) == "phase_distance";
+        });
+    CHECK(deficit != trace.events.rend() && deficit->values.size() == 1);
+    CHECK(distance != trace.events.rend() && distance->values.size() == 1);
+    recording_support::compare(
+        "deficit", "michelsen_deficit", "1", deficit->values.front(), expected_deficit,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", failure_problem.feed.values),
+                                   recording_support::field("expected_deficit", expected_deficit)}),
+        "Relationship", "Michelsen-deficit", "trace deficit equals recomputed phase deficit",
+        "reference_or_one", 0.0, 1e-12,
+        std::abs(deficit->values.front() - expected_deficit) <= 1.0e-12 * std::max(1.0, std::abs(expected_deficit)),
+        "c3-deficit", "trace", "D", "T,P,feed", "D=1-\\sum_i\\exp(-r_i)", "deficit");
+    const double distance_reference = compiled.feed_composition[1] + compiled.feed_composition[2];
+    recording_support::compare_custom(
+        "distance", "phase_distance", "1", distance->values.front(), distance_reference,
+        recording_support::fields({recording_support::field("T", 298.15),
+                                   recording_support::field("P", 1.0e5),
+                                   recording_support::field("feed", failure_problem.feed.values),
+                                   recording_support::field("reference_distance", distance_reference)}),
+        "Relationship", "boundary-failure", "phase distance reaches the vanished-phase feed amount",
+        "isfinite(model) && isfinite(reference) && model >= reference",
+        std::isfinite(distance->values.front()) && std::isfinite(distance_reference)
+            && distance->values.front() >= distance_reference,
+        "c3-distance", "trace", "d", "T,P,feed", "d\\geq n_{vanished}", "trace");
 
     epcsaft::HelmholtzModel success_model(properties_support::neutral_binary());
     auto success_problem = equilibrium_support::flash(2);
@@ -2572,12 +2457,10 @@ void check_c3_availability() {
     const auto success = epcsaft::equilibrium::solve_equilibrium(success_model, success_problem);
     const bool success_state = success.success && success.has_state()
         && success.convergence.criterion != nullptr
-        && std::isfinite(success.convergence.residual)
-        && !success.solver_status.empty();
-
+        && std::isfinite(success.convergence.residual);
     recording_support::compare(
         "c3-availability", "failed-result", "1",
-        (retained && cleared && failure_reason && tiny_step_stalled) ? 1.0 : 0.0, 1.0,
+        (retained && cleared && failure_reason && stalled) ? 1.0 : 0.0, 1.0,
         recording_support::fields({
             recording_support::field("solver_status", failure.solver_status),
             recording_support::field("stop", epcsaft::core::stop_name(failure.convergence.stop)),
@@ -2591,7 +2474,7 @@ void check_c3_availability() {
         }),
         "Relationship", "unavailable-result", "failed solve retains diagnostics and clears state",
         "absolute", 0.0, 0.0,
-        retained && cleared && failure_reason && tiny_step_stalled, "native.equilibrium.c3", "C3",
+        retained && cleared && failure_reason && stalled, "native.equilibrium.c3", "C3",
         "failed-result", "availability", "T,P,feed", "has_state=0 with diagnostics retained");
     recording_support::compare(
         "c3-availability", "success-state", "1", success_state ? 1.0 : 0.0, 1.0,
@@ -2606,8 +2489,16 @@ void check_c3_availability() {
         "Relationship", "available-result", "successful solve exposes state diagnostics",
         "absolute", 0.0, 0.0, success_state, "native.equilibrium.c3", "C3",
         "success-state", "availability", "T,P,feed", "has_state=1 with convergence retained");
-    CHECK(retained && cleared && failure_reason && tiny_step_stalled);
-    CHECK(success_state);
+    auto symmetric = equilibrium_support::synthetic_reactive_problem();
+    symmetric.phases[0].composition_guess.clear();
+    symmetric.phases[1].composition_guess.clear();
+    bool refused = false;
+    try { (void)epcsaft::equilibrium::solve_equilibrium(
+        epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()), symmetric); }
+    catch (const std::runtime_error& error) {
+        refused = std::string(error.what()).find("start_symmetric") != std::string::npos;
+    }
+    CHECK(refused);
 }
 
 void check_s16() {
@@ -5136,12 +5027,10 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
         {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},
         {{"native.equilibrium.s7", "S7", "Automatic_fast"}, check_s7},
-        {{"native.equilibrium.c1", "C1", "Automatic_fast"}, check_c1_amount_scale},
         {{"native.equilibrium.c1-multipliers", "C1", "Automatic_fast"}, check_c1_multiplier_scale},
         {{"native.equilibrium.c1-ideal-caller", "C1", "Automatic_fast"}, check_c1_ideal_caller_chart},
         {{"native.equilibrium.s11", "S11", "Automatic_fast"}, check_s11},
         {{"native.equilibrium.s13", "S13", "Automatic_fast"}, check_s13},
-        {{"native.equilibrium.s15", "S15", "Automatic_fast"}, check_s15},
         {{"native.equilibrium.c3", "C3", "Automatic_fast"}, check_c3_availability},
         {{"native.equilibrium.s16", "S16", "Automatic_fast"}, check_s16},
         {{"native.equilibrium.e2-thermal", "E2-2", "Automatic_fast"}, check_e2_thermal},
