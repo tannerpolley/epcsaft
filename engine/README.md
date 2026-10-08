@@ -185,9 +185,8 @@ convergence record and the stopping cause remain, and the candidate state vector
 cleared: in Python, `success` (equivalently non-empty state vectors) is the availability
 predicate, the native `has_state()`.
 
-Create and install wheels only through root setup. When the root environment is
-already synced, `bash tools/ensure-engine-wheel.sh` owns the canonical cached
-wheel build and installation.
+Root setup installs this package editable; `tools/build-engine.sh` owns every
+Engine build, including the wheels for application pins and A/B timing.
 
 ## Native dependency graph
 

@@ -8,7 +8,7 @@ if [[ "${1:-}" != "khudaida" ]]; then
     echo "usage: $0 khudaida" >&2
     exit 2
 fi
-EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
+bash .codex/environments/setup.sh
 .venv/bin/python data/tools/validate_packets.py
 candidate_dir="$(mktemp -d /tmp/epcsaft-khudaida.XXXXXX)"
 qualification_dir="$(mktemp -d /tmp/epcsaft-khudaida-qualification.XXXXXX)"

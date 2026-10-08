@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Restore or rebuild main's wheel in the main checkout, compare its key-solve work with
-# the previous build/wheels/main-current/, and replace main-current with it (#319).
+# Build main's wheel in the main checkout, compare its key-solve work with the previous
+# build/wheels/main-current/, and replace main-current with it (#319).
 # It also keeps build/wheels/main-<commit>/, the applications' stable pin.
 # An unchanged wheel is left in place; a first run copies it without a comparison.
 # Run as: tools/heavy tools/refresh-main-wheel
@@ -11,7 +11,10 @@ cd "$(git -C "$(dirname "${BASH_SOURCE[0]}")" worktree list --porcelain | sed -n
     || { echo "the main checkout must be a clean main branch: $PWD" >&2; exit 1; }
 bash .codex/environments/setup.sh
 commit="$(git rev-parse --short=8 HEAD)"
-wheel="$(find build/environment-wheel -maxdepth 1 -name 'epcsaft-*.whl')"
+staging="build/wheels/.staging-$commit"
+rm -rf "$staging"
+wheel="$(bash tools/build-engine.sh --wheel "$staging")"
+trap 'rm -rf "$staging"' EXIT
 current=build/wheels/main-current
 previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
 sha="$(sha256sum "$wheel" | cut -d ' ' -f 1)"

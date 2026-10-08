@@ -9,4 +9,4 @@ if [[ ! -x .venv/bin/python ]]; then
     echo "environment: missing (run bash .codex/environments/setup.sh)"
     exit 0
 fi
-.venv/bin/python -c 'import epcsaft; print("epcsaft wheel: %s\nsha256: %s" % epcsaft.installed_wheel())'
+.venv/bin/python -c 'import epcsaft; print("epcsaft provenance: %s %s" % epcsaft.provenance())'

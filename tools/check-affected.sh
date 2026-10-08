@@ -63,7 +63,7 @@ check_tools() {
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
     if grep -q '^tools/render-notebook\.py' <<<"$paths"; then
         # The reader self-test reads a native JUnit report; contributions writes one in about a second.
-        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh contributions
+        bash engine/tools/run-native-tests.sh contributions
         python3 tools/render-notebook.py --self-test
     fi
 }
@@ -77,7 +77,7 @@ while IFS= read -r path; do
 done <<<"$paths"
 if [[ "$docs_only" == true ]]; then
     for script in tools/check-affected.sh tools/check-all.sh; do bash -n "$script"; done
-    echo "affected checks passed: documentation readiness only, no wheel build or numerical tests, base $base"
+    echo "affected checks passed: documentation readiness only, no Engine build or numerical tests, base $base"
     exit 0
 fi
 
@@ -119,29 +119,19 @@ if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$path
     check_declarations
     check_tools
     if ((${#slow_tests[@]})); then
-        MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+        MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
     fi
     echo "affected checks passed (base $base)"
     exit 0
 fi
 
-prepare_native_build=0
-if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
-    prepare_native_build=1
-fi
-if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
-    EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
+if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh|render-notebook\.py))' <<<"$paths"; then
+    bash .codex/environments/setup.sh
 fi
 
 check_declarations
-if [[ "$prepare_native_build" == 1 ]]; then
-    build_dir="$(<build/environment-wheel/meson-build-dir)"
-    mapfile -t engine_wheels < <(find build/environment-wheel -maxdepth 1 -type f -name 'epcsaft-*.whl' -print)
-    if ((${#engine_wheels[@]} != 1)); then
-        echo "expected exactly one Engine wheel, found ${#engine_wheels[@]}" >&2
-        exit 1
-    fi
-    .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --wheel "${engine_wheels[0]}"
+if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh|render-notebook\.py))' <<<"$paths"; then
+    .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)"
 fi
 
 if grep -q '^engine/' <<<"$paths"; then
@@ -153,9 +143,9 @@ if grep -q '^engine/' <<<"$paths"; then
     fi
     if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
-        EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh
+        bash engine/tools/run-native-tests.sh
         if ((${#slow_tests[@]})); then
-            MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" EPCSAFT_NATIVE_BUILD_READY=1 bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+            MESON_TESTTHREADS="${MESON_TESTTHREADS:-2}" bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)

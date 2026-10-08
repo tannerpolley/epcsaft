@@ -1,7 +1,7 @@
-"""Record the C++ reference rows of the installed-wheel binding checks (#59).
+"""Record the C++ reference rows of the binding checks (#59).
 
 Runs the Python-free native checks of the prepared build and keeps their full-precision
-`model` values once, in native-rows.tsv, with the build and wheel identity beside them.
+`model` values once, in native-rows.tsv, with the commit and whether engine/ was clean beside them.
 Run after `bash .codex/environments/setup.sh`: `.venv/bin/python engine/tests/oracle/record_native_rows.py`.
 """
 import json
@@ -31,13 +31,13 @@ SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse", "/p
 
 
 def main() -> None:
-    preparation = json.loads((ROOT / "build/environment-wheel/preparation.json").read_text())
+    build = Path((ROOT / "build/environment-wheel/meson-build-dir").read_text().strip())
     # Test programs are not built by default (#319): build the runners recorded here (#326).
-    subprocess.run([str(ROOT / ".venv/bin/meson"), "compile", "-C", str(ROOT / preparation["build_dir"]),
+    subprocess.run([str(ROOT / ".venv/bin/meson"), "compile", "-C", str(build),
                     *sorted({runner for runner, _, _ in CASES})], check=True)
     lines, failures, commands = ["source\tid\tunit\tvalue"], [], []
     for runner, case, prefixes in CASES:
-        command = [str(ROOT / preparation["build_dir"] / runner)] + ([case] if case else [])
+        command = [str(build / runner)] + ([case] if case else [])
         done = subprocess.run(command, capture_output=True, text=True, check=False)
         source = runner if case is None else f"{runner} {case}"
         commands.append({"command": source, "exit": done.returncode})
@@ -57,11 +57,11 @@ def main() -> None:
         raise SystemExit(f"repeated row ids; rows not recorded: {repeated}")
     (HERE / "native-rows.tsv").write_text("\n".join(lines) + "\n")
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
+    changes = subprocess.run(["git", "status", "--porcelain", "--", "engine"], cwd=ROOT, capture_output=True, text=True, check=True)
     (HERE / "native-rows.json").write_text(json.dumps({
         "rows": len(lines) - 1,
         "recorded_at_revision": revision.stdout.strip(),
-        "build_fingerprint": preparation["build_fingerprint"],
-        "wheel_sha256": preparation["wheel_sha256"],
+        "engine_clean": not changes.stdout,
         "commands": commands,
         "failed_native_comparisons": failures,
         "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
