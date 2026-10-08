@@ -151,6 +151,9 @@ py.extension_module(
         'native/bindings/equilibrium_bindings.cpp',
         'native/bindings/regression_bindings.cpp'),
   cpp_args: native_warnings,
+  # pybind11 glue only; the calculations are in epcsaft_native at -O3. -O1 cuts the
+  # largest binding file's compile from 37 s to 28 s.
+  override_options: ['optimization=1'],
   dependencies: [
     pybind11_dep,
     ipopt_dep,
