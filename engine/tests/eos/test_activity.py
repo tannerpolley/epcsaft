@@ -1,3 +1,4 @@
+import csv
 import hashlib
 import json
 import math
@@ -5,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from epcsaft import Mixture, Parameters, Stop
-from tests.packets import ORACLE, parameters_json
+from tests.packets import parameters_json
 
 # Figiel, Yu & Held 2025 SI S2: retained NaBr candidates require AARD < 10%.
 SOURCE_ADEQUACY_AARD = 0.10
@@ -19,6 +20,14 @@ FIGIEL_DIGITIZED = (
     / "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv"
 )
 HAMER_WU_TABLES = {"LiCl": 9, "LiBr": 10, "NaCl": 16, "NaBr": 17, "KCl": 28, "KBr": 29}
+HAMER_WU_IONS = {
+    "LiCl": ("lithium-cation", "chloride-anion"),
+    "LiBr": ("lithium-cation", "bromide-anion"),
+    "KCl": ("potassium-cation", "chloride-anion"),
+    "KBr": ("potassium-cation", "bromide-anion"),
+}
+HAMER_WU_MOLALITIES = (0.001, 0.01, 0.1, 0.5, 1.0, 2.0)
+TEMPERATURE_K, PRESSURE_PA = 298.15, 100000.0
 
 
 def _file_identity(path: Path) -> dict[str, Any]:
@@ -71,7 +80,6 @@ def _hamer_wu_reference(salt: str) -> dict[str, Any]:
             "packet": _file_identity(HAMER_WU_PACKET / "packet.toml"),
             "observations": _file_identity(HAMER_WU_OBSERVATIONS),
             "source_metadata": _file_identity(HAMER_WU_SOURCE),
-            "retained_case_owner": _file_identity(ORACLE),
         },
     }
 
@@ -96,7 +104,6 @@ def _figiel_model_reference() -> dict[str, Any]:
         "equation_matching_established": False,
         "owner_files": {
             "digitized_curve": _file_identity(FIGIEL_DIGITIZED),
-            "retained_case_owner": _file_identity(ORACLE),
         },
     }
 
@@ -115,28 +122,27 @@ def _aard_criterion(
     }
 
 
-_AQUEOUS_ACTIVITY_ROWS: list[dict[str, Any]] = json.loads(ORACLE.read_text())["cases"]["aqueous_alkali_halide_activity"]
+def _csv_rows(path: Path) -> list[dict[str, float | str]]:
+    with path.open(newline="") as stream:
+        return [
+            {key: value if key == "salt" else float(value) for key, value in row.items()}
+            for row in csv.DictReader(stream)
+        ]
+
+
 _AQUEOUS_ACTIVITY_GROUPS: dict[str, list[dict[str, Any]]] = {}
-for _row in _AQUEOUS_ACTIVITY_ROWS:
-    _AQUEOUS_ACTIVITY_GROUPS.setdefault(_row["salt"], []).append(_row)
-_PUBLISHED_MODEL_ROWS: list[dict[str, Any]] = json.loads(ORACLE.read_text())["cases"]["aqueous_lithium_bromide_published_model"]
+for _row in _csv_rows(HAMER_WU_OBSERVATIONS):
+    if _row["salt"] in HAMER_WU_IONS and _row["molality_mol_kg"] in HAMER_WU_MOLALITIES:
+        _AQUEOUS_ACTIVITY_GROUPS.setdefault(str(_row["salt"]), []).append(_row)
+_PUBLISHED_MODEL_ROWS = _csv_rows(FIGIEL_DIGITIZED)
 
 
 def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
     for salt, salt_rows in _AQUEOUS_ACTIVITY_GROUPS.items():
-        assert len(salt_rows) == 6
-        first = salt_rows[0]
-        assert all(row["temperature_k"] == first["temperature_k"] for row in salt_rows)
-        assert all(row["pressure_pa"] == first["pressure_pa"] for row in salt_rows)
-        cation = str(first["cation"])
-        anion = str(first["anion"])
+        assert len(salt_rows) == len(HAMER_WU_MOLALITIES)
+        cation, anion = HAMER_WU_IONS[salt]
         components = ("water", cation, anion)
-        temperature_value = first["temperature_k"]
-        pressure_value = first["pressure_pa"]
-        assert isinstance(temperature_value, (int, float))
-        assert isinstance(pressure_value, (int, float))
-        temperature = float(temperature_value)
-        pressure = float(pressure_value)
+        temperature, pressure = TEMPERATURE_K, PRESSURE_PA
         solvent_fractions: tuple[float, float, float] = (1.0, 0.0, 0.0)
         ions: tuple[str, str] = (cation, anion)
         stoichiometry: tuple[int, int] = (1, 1)
@@ -161,11 +167,8 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
         deviations: list[float] = []
         for row in salt_rows:
             molality = row["molality_mol_kg"]
-            measured_value = row["measured_mean_ionic_activity_coefficient"]
-            assert isinstance(molality, (int, float))
-            assert isinstance(measured_value, (int, float))
-            calculated = reference.activity(float(molality)).mean_ionic_molality_scale
-            measured = float(measured_value)
+            calculated = reference.activity(molality).mean_ionic_molality_scale
+            measured = row["gamma_pm_m"]
             evidence.observe(
                 f"activity_row/{salt}/{len(deviations)}",
                 quantity="mean ionic activity coefficient",
@@ -231,10 +234,8 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
     """
     rows = _PUBLISHED_MODEL_ROWS
     assert len(rows) == 27
-    first = rows[0]
     components = ("water", "lithium-cation", "bromide-anion")
-    temperature = float(first["temperature_k"])
-    pressure = float(first["pressure_pa"])
+    temperature, pressure = TEMPERATURE_K, PRESSURE_PA
     solvent_fractions: tuple[float, float, float] = (1.0, 0.0, 0.0)
     ions: tuple[str, str] = ("lithium-cation", "bromide-anion")
     stoichiometry: tuple[int, int] = (1, 1)
@@ -260,7 +261,7 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
     uncertainty_ratios: list[float] = []
     for row in rows:
         calculated = reference.activity(row["molality_mol_kg"]).mean_ionic_molality_scale
-        published = row["published_mean_ionic_activity_coefficient"]
+        published = row["gamma_pm_m"]
         uncertainty = row["digitization_uncertainty"]
         deviation = abs(calculated / published - 1.0)
         deviations.append(deviation)
@@ -290,7 +291,7 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
         print(row["molality_mol_kg"], published, calculated, uncertainty_ratios[-1])
     actual = sum(deviations) / len(deviations)
     expected = sum(
-        row["digitization_uncertainty"] / row["published_mean_ionic_activity_coefficient"]
+        row["digitization_uncertainty"] / row["gamma_pm_m"]
         for row in rows
     ) / len(rows)
     evidence.compare(
@@ -326,13 +327,24 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
 
 def test_trace_osmotic_debye_limit_and_reporting_floor() -> None:
     # #214, Held packet 3: numerical Debye asymptote, not physical validation.
-    path = REPOSITORY_ROOT / "analyses/2026-divalent-chloride-activity/inputs/held-2008/3/parameters/parameters.json"
+    path = parameters_json("held-cameretti-sadowski-2008", 3)
     mixture = Mixture(Parameters.from_json(path, components=["water", "sodium-cation", "chloride-anion"]))
     reference = mixture.reference(298.15, 100000.0, solvent_fractions=[1, 0, 0],
                                   ions=("sodium-cation", "chloride-anion"), stoichiometry=(1, 1))
-    phi = reference.activity(1e-8).osmotic_coefficient
+    # Limiting law 1 - phi = A sqrt(m) / 3 from the model's own water density and
+    # permittivity; at 1e-6 mol/kg the next Debye-Hueckel term, about 1.5 kappa a,
+    # is 1.5e-3 of it, so 3e-3 bounds it twice over.
+    pure = mixture.state(298.15, P=100000.0, x=[1, 0, 0], phase="liquid")
+    e, eps0, kb, na, mw = 1.602176634e-19, 8.8541878128e-12, 1.380649e-23, 6.02214076e23, 0.0180153
+    eps = eps0 * pure.bulk_relative_permittivity
+    a = e * e / (8 * math.pi * eps * kb * 298.15) * math.sqrt(
+        2 * e * e * na * pure.molar_density * mw / (eps * kb * 298.15)
+    )
+    phi = reference.activity(1e-6).osmotic_coefficient
     assert isinstance(phi, float)
-    assert abs(phi - 0.9999606345027382) <= 1e-4
+    limit = a * math.sqrt(1e-6) / 3
+    assert abs((1 - phi) - limit) <= 3e-3 * limit
+    assert isinstance(reference.activity(1e-8).osmotic_coefficient, float)
     for molality in (1e-9, 1e-10, 1e-12):
         activity = reference.activity(molality)
         assert activity.osmotic_coefficient == Stop.converged_to_floor
