@@ -33,7 +33,7 @@ An input-requirements checkpoint does not authorize numerical-kernel implementat
 application adoption or qualification.
 
 All numerical work consumes one explicitly identified, non-editable Engine wheel.
-Record its path and SHA-256 with `epcsaft.installed_wheel()`, and retain the inputs and claim limits. Pin
+Record its path and SHA-256 with `epcsaft.provenance()`, and retain the inputs and claim limits. Pin
 `build/wheels/main-<commit>/epcsaft-*.whl` in the main Engine checkout:
 `tools/refresh-main-wheel` keeps one copy per refreshed main commit and never
 replaces it. Never pin `~/.cache/epcsaft` or `build/<task>/`; both are scratch.
