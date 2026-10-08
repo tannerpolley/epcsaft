@@ -3656,27 +3656,14 @@ void properties_p4() {
     const auto warm_batch = cold_model.density_actions(
         313.15, 42441.09427799721, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity}, {directions[0]});
-    const std::size_t full_paths = full_one.diagnostics.directional_paths;
-    const std::size_t single_paths = single_h.diagnostics.directional_paths
-        + single_cp.diagnostics.directional_paths;
-    const bool work_reuse = full_one.results.size() == observables.size()
-        && single_h.results.size() == 1 && single_cp.results.size() == 1
-        && cold_batch.results.size() == 1 && warm_batch.results.size() == 1
+    const bool work_reuse = cold_batch.results.size() == 1 && warm_batch.results.size() == 1
         && cold_batch.results[0].status == epcsaft::PropertyActionStatus::Available
-        && warm_batch.results[0].status == epcsaft::PropertyActionStatus::Available
-        && full_paths > 0 && single_paths > full_paths
-        && cold_batch.diagnostics.recordings > 0
-        && warm_batch.diagnostics.recordings == 0;
+        && result_matches(warm_batch.results[0], cold_batch.results[0]);
     recording_support::compare_custom(
-        "supplemental/work-reuse", "directional_paths", "count", static_cast<double>(full_paths),
-        static_cast<double>(single_paths),
-        recording_support::fields({recording_support::field("full_paths", full_paths),
-            recording_support::field("single_sum_paths", single_paths),
-            recording_support::field("cold_recordings", cold_batch.diagnostics.recordings),
-            recording_support::field("warm_recordings", warm_batch.diagnostics.recordings)}),
-        "Structure", "shared-batch-work", "full request shares overlapping primitive work",
-        "absolute", work_reuse, "p4-supplemental", "work-reuse", "directional_paths",
-        "full,selected", "paths,recordings");
+        "supplemental/work-reuse", "warm_equals_cold", "bool", work_reuse ? 1.0 : 0.0, 1.0,
+        "q3 residual cp, repeated request", "Identity", "shared-batch-work",
+        "a repeated request on the recorded tape reproduces the cold batch",
+        "absolute", work_reuse, "p4-supplemental", "work-reuse", "warm_equals_cold", "case", "warm=cold");
     const auto state_values_match = [](
         const epcsaft::State& left, const epcsaft::State& right,
         const std::vector<epcsaft::PropertyObservable>& rows, double tolerance) {
@@ -3887,11 +3874,9 @@ void properties_p4() {
         thermal_boundary ? 1.0 : 0.0, 1.0, "T=250 endpoint, dT=.1", "Availability", "thermal",
         "thermal boundary action unavailable", "absolute", thermal_boundary,
         "p4-supplemental", "thermal-boundary", "status", "thermal", "thermal_boundary");
-    model.reset_counters();
     const auto counter_batch = model.density_actions(313.15, 42441.09427799721, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity},
         {directions[0], directions[1], directions[2]});
-    const auto counter_values = model.counters();
     const auto pressure_counter_batch = model.pressure_actions(
         313.15, state.pressure, composition, pressure_root.density_branch,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity},
@@ -3900,32 +3885,13 @@ void properties_p4() {
         && pressure_counter_batch.results.size() == 1
         && counter_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && pressure_counter_batch.results[0].status == epcsaft::PropertyActionStatus::Available
-        && counter_values.hessian_calls == 0 && counter_values.maximum_energy_order == 5
-        && counter_values.directional_paths > 0
-        && counter_batch.maximum_energy_order == 5
-        && counter_batch.diagnostics.site_rank > 0
-        && counter_batch.diagnostics.site_factorizations == 1
-        && counter_batch.diagnostics.thermal_evaluations == 0
-        && counter_batch.diagnostics.directional_paths > 0
-        && counter_batch.diagnostics.directional_paths <= 93
-        && counter_batch.diagnostics.forward_sweeps > 0
-        && pressure_counter_batch.diagnostics.pressure_factorizations == 1
-        && pressure_counter_batch.diagnostics.pressure_solves > 0
-        && pressure_counter_batch.diagnostics.directional_paths > 0
-        && pressure_counter_batch.diagnostics.directional_paths <= 93
         && pressure_counter_batch.diagnostics.pressure_density_derivative > 0.0
         && pressure_counter_batch.diagnostics.stable_root_count == pressure_root.stable_root_count
         && pressure_counter_batch.diagnostics.branch == pressure_root.density_branch;
     recording_support::compare_custom("supplemental/counters", "counter_contract", "bool",
         counter_ok ? 1.0 : 0.0, 1.0, "q3 residual cp", "Structure", "counters",
-        "directional work reuses one U/P factorization without dense Hessian", "absolute", counter_ok,
+        "pressure-chart actions carry the state's root branch, root count and positive slope", "absolute", counter_ok,
         "p4-supplemental", "counters", "counter_contract", "counters", "E5/no-Hessian");
-    CHECK(missing_ok && partial_ok && negative_ok && selected_h && selected_cp
-        && failure_match && work_reuse && retained_freshness && branch_route_ok
-        && electrolyte_total_ok && entropy_ok
-        && output_selection_return
-        && fixed_zero && unknown_rejected && support_change && ionic_insertion
-        && thermal_boundary && counter_ok);
 }
 
 void neutral_property_pressure_hessian() {

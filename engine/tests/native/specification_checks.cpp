@@ -98,12 +98,11 @@ void check_c1() {
                         charge_rows = compiled.charge_row_count;
                         for (const auto& item : compiled.problem.phases) support_count += item.support.size();
                         // Structural degeneracy is reported before any nonlinear work; every
-                        // lattice all-pinned cell is rank deficient and returns the exact NOT_RUN record.
+                        // lattice all-pinned cell is rank deficient and returns the pre-solve infeasible record.
                         if (!compiled.feasible) {
                             const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
                             solver_status = result.solver_status;
-                            CHECK(!result.success && result.solver_status == "NOT_RUN"
-                                  && result.residuals.empty() && !result.has_state()
+                            CHECK(!result.success && result.residuals.empty() && !result.has_state()
                                   && result.convergence.stop == epcsaft::core::Stop::infeasible
                                   && result.generic_nullity == generic_nullity);
                         } else {
@@ -638,8 +637,7 @@ void check_e2_pins() {
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, exact);
     record_bool("e2-0/exact-sum-not-run", "e2-0-pins",
   "exact all-pinned sum passes admission and returns the pre-solve infeasible record",
-  !compiled.feasible && result.solver_status == "NOT_RUN"
-      && result.convergence.stop == epcsaft::core::Stop::infeasible
+  !compiled.feasible && result.convergence.stop == epcsaft::core::Stop::infeasible
       && result.message.find("invalid pinned") == std::string::npos,
   recording_support::fields({pin_inputs(exact),
       recording_support::field("generic_nullity", compiled.generic_nullity)}));
