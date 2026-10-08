@@ -22,6 +22,7 @@ void cp_column(const std::string& id,double exact,double sigma,double step,
 }
 void check_reactive_cp() {
     FitRequest request;request.parameters=addition_parameters();request.thermochemistry=addition_record();
+    request.controls.maximum_iterations=100;request.controls.maximum_elapsed_time_seconds=600.0;
     auto epsilon=addition_coordinates().coordinates[1];epsilon.origin=191.42;epsilon.scale=2;epsilon.lower=180;epsilon.upper=200;
     auto b=reaction_coordinate("2A=B",ReactionCoefficient::B);b.origin=200;b.scale=10;b.lower=100;b.upper=300;
     request.coordinates.coordinates={epsilon,b};

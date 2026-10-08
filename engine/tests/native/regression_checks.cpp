@@ -518,6 +518,7 @@ void check_f9_f10() {
           kept.status == ObservationStatus::Nonfinite && kept.value.has_value() && !kept.residual.has_value() && !kept.message.empty(),
           fields({field("status", observation_status_name(kept.status)), field("value", kept.value.value_or(-1.0))}), "r1-f10");
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = properties_support::ethane();
     request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 10.0, 150.0, 260.0}};
     request.observations = {overflow, overflow, overflow};
@@ -717,6 +718,7 @@ void check_coupled_columns() {
 }
 void check_coupled_recovery() {
     FitRequest request; request.parameters = coupled_lengths(3.0); request.coordinates = coupled_coordinate();
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.holds = {coupled_hold()}; request.observations = coupled_observations();
     const HelmholtzModel truth_model(coupled_lengths(3.2));
     for (auto& ob : request.observations) ob.observed = *predict(truth_model,ob).value;
@@ -935,6 +937,7 @@ void check_j1() {
     shared.coordinates = {{{{ParameterFamily::SigmaConstant, {0}}, {ParameterFamily::SigmaConstant, {1}}}, 3.6, 0.1, 3.0, 4.0},
                           {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 130.0, 170.0}};
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = tied;
     request.coordinates = shared;
     request.observations = {solved(ObservationKind::EquilibriumPressure, bubble),
@@ -1031,6 +1034,7 @@ Truth manufactured() {
 
 FitRequest recovery_request(const Truth& truth_case, double epsilon, double kij, double upper = 170.0) {
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = properties_support::neutral_binary();
     request.parameters.dispersion_energy_over_k[0] = epsilon;
     request.parameters.k_ij[1] = request.parameters.k_ij[2] = kij;
@@ -1183,6 +1187,7 @@ void check_cp_derivatives() {
 
 void check_cp_recovery() {
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = water_parameters();
     request.coordinates = water_coordinates();
     request.thermochemistry = constant_cp(1);
@@ -1426,6 +1431,7 @@ void check_r3() {
     // A declared bound the model itself refuses (m = 0) is a typed trial failure, not an exception: an
     // unattainable target (pressures fifty times the truth) drives the optimizer onto that bound.
     FitRequest inadmissible;
+    inadmissible.controls.maximum_iterations = 100; inadmissible.controls.maximum_elapsed_time_seconds = 600.0;
     inadmissible.parameters = properties_support::neutral_binary();
     inadmissible.parameters.dispersion_energy_over_k[0] = 148.0;
     inadmissible.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 140.0, 170.0},
@@ -1814,6 +1820,7 @@ void check_d7_minimax() {
 
 void check_reaction_derivatives() {
     FitRequest a1;
+    a1.controls.maximum_iterations = 100; a1.controls.maximum_elapsed_time_seconds = 600.0;
     a1.parameters = equilibrium_support::synthetic_reactive_ternary();
     auto liquids = equilibrium_support::synthetic_reactive_problem();
     liquids.standard_gibbs_j_per_mol.clear();
@@ -1837,6 +1844,7 @@ void check_reaction_derivatives() {
     }
     for (const auto source_pressure : {std::optional<double>{}, std::optional<double>{2.0e5}}) {
         FitRequest a2;
+        a2.controls.maximum_iterations = 100; a2.controls.maximum_elapsed_time_seconds = 600.0;
         a2.parameters = properties_support::aqueous_electrolyte();
         a2.observations = {solved(ObservationKind::PhaseMoleFraction, referenced_formula(source_pressure), 0, {1})};
         a2.coordinates.coordinates = {reaction_coordinate("H2O=Na++Cl-"),
@@ -1849,6 +1857,7 @@ void check_reaction_derivatives() {
               "rewriting the native coefficient retains the declared source reference", "reaction-fit");
     }
     FitRequest a3;
+    a3.controls.maximum_iterations = 100; a3.controls.maximum_elapsed_time_seconds = 600.0;
     a3.parameters = properties_support::neutral_binary();
     const auto bubble = reacting_bubble(HelmholtzModel(a3.parameters));
     a3.observations = {solved(ObservationKind::EquilibriumPressure, bubble), solved(ObservationKind::PartialPressure, bubble, 1, {0})};
@@ -1907,6 +1916,7 @@ void recover_reactions(const std::string& id, const FitRequest& request, const s
 
 void check_reaction_recovery() {
     FitRequest b1;
+    b1.controls.maximum_iterations = 100; b1.controls.maximum_elapsed_time_seconds = 600.0;
     b1.parameters = equilibrium_support::synthetic_reactive_ternary();
     auto problem = equilibrium_support::synthetic_reactive_problem();
     problem.standard_gibbs_j_per_mol.clear();
@@ -1921,6 +1931,7 @@ void check_reaction_recovery() {
     for (auto& row : b1.observations) row.problem.reactions[0].equilibrium_constant = 1.0;
     recover_reactions("reaction-b1", b1, {0.05, 0.1});
     FitRequest b2;
+    b2.controls.maximum_iterations = 100; b2.controls.maximum_elapsed_time_seconds = 600.0;
     b2.parameters = properties_support::neutral_binary();
     const auto bubble = reacting_bubble(HelmholtzModel(b2.parameters));
     const double a_truth = bubble.reactions[0].correlation->a;
@@ -1935,6 +1946,7 @@ void check_reaction_recovery() {
     for (auto& row : b2.observations) { row.problem.reactions[0].correlation->a += 0.1; row.problem.reactions[0].correlation->b -= 20.0; }
     recover_reactions("reaction-b2", b2, {a_truth, 300.0});
     FitRequest b3;
+    b3.controls.maximum_iterations = 100; b3.controls.maximum_elapsed_time_seconds = 600.0;
     b3.parameters = properties_support::neutral_ternary();
     auto vapor = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
         equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
@@ -1955,6 +1967,7 @@ void check_reaction_recovery() {
     // A large affine offset loses the supplied 0.1 ln K during resolution. Validation's
     // compiled problem is therefore stale even though its EOS active-value key is empty.
     FitRequest preparation;
+    preparation.controls.maximum_iterations = 100; preparation.controls.maximum_elapsed_time_seconds = 600.0;
     preparation.parameters = equilibrium_support::synthetic_reactive_ternary();
     auto source = equilibrium_support::synthetic_reactive_problem();
     source.standard_gibbs_j_per_mol.clear();
@@ -1980,6 +1993,7 @@ void check_reaction_recovery() {
 
 void check_reaction_rejections() {
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = properties_support::neutral_ternary();
     auto problem = equilibrium_support::lattice_problem(equilibrium_support::PhaseSet::OneVapor,
         equilibrium_support::AmountPattern::AllFree, equilibrium_support::IntensivePattern::BothFixed,
@@ -2085,6 +2099,7 @@ void check_log_constant() {
           "T=350 K", "scalar K is observed as ln K", "ln-k");
 
     FitRequest request;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.parameters = properties_support::neutral_binary();
     const auto bubble = reacting_bubble(HelmholtzModel(request.parameters));
     const auto law = *bubble.reactions[0].correlation;
@@ -2104,6 +2119,7 @@ void check_log_constant() {
 
     // Observation admission must reject fixed targets even when only an EOS coordinate is fitted.
     FitRequest rejected;
+    rejected.controls.maximum_iterations = 100; rejected.controls.maximum_elapsed_time_seconds = 600.0;
     rejected.parameters = parameters;
     rejected.coordinates.coordinates = {{{{ParameterFamily::SegmentCount, {0}}}, 0.0, 1.0}};
     rejected.observations = {log_constant(problem, "reaction_a")};
@@ -2700,6 +2716,7 @@ void check_addition_enthalpy() {
     }
 
     FitRequest recovery;
+    recovery.controls.maximum_iterations = 100; recovery.controls.maximum_elapsed_time_seconds = 600.0;
     auto truth_parameters = parameters;
     truth_parameters.dispersion_energy_over_k = {191.42, 191.42};
     const HelmholtzModel truth_model(truth_parameters, {}, record);
@@ -2963,6 +2980,7 @@ void check_minimax_consistency() {
     energy.composition = {1, 0, 0}; energy.ion_indices = {1, 2}; energy.stoichiometry = {1, 1};
     energy.species = {1}; energy.branch = DensityBranch::Liquid; energy.observed = -381930;
     FitRequest request; request.parameters = parameters;
+    request.controls.maximum_iterations = 100; request.controls.maximum_elapsed_time_seconds = 600.0;
     request.coordinates.coordinates = {{{{ParameterFamily::Kij, {1, 3}}}, 0, .2, -1, 1},
         {{{ParameterFamily::IonSuppressionCoefficient, {1}}, {ParameterFamily::IonSuppressionCoefficient, {2}}}, 0, .5, 0, 20}};
     request.holds = {{energy, 1, 8, 1e-6, 1e-10, 50}};
