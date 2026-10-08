@@ -61,11 +61,6 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
-    if grep -q '^tools/render-notebook\.py' <<<"$paths"; then
-        # The reader self-test reads a native JUnit report; contributions writes one in about a second.
-        bash engine/tools/run-native-tests.sh contributions
-        python3 tools/render-notebook.py --self-test
-    fi
 }
 
 docs_only=true
@@ -125,12 +120,12 @@ if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/check-all\.sh)' <<<"$path
     exit 0
 fi
 
-if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh|render-notebook\.py))' <<<"$paths"; then
+if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
     bash .codex/environments/setup.sh
 fi
 
 check_declarations
-if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh|render-notebook\.py))' <<<"$paths"; then
+if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
     .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)"
 fi
 
@@ -139,7 +134,10 @@ if grep -q '^engine/' <<<"$paths"; then
     grep -Eq '^engine/(native/|src/|tests/|data/|build/subprojects/|meson\.build|pyproject\.toml)' <<<"$paths" && test_paths=(tests)
     if ((${#test_paths[@]})); then
         mkdir -p build/test-results
-        (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml=../build/test-results/pytest.xml)
+        xml=build/test-results/pytest.xml s=0
+        (cd engine && ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml="../$xml.tmp") || s=$?
+        mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
+        ((s == 0)) || exit "$s"
     fi
     if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
         # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.

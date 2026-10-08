@@ -3,6 +3,8 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+# The report reads whatever records exist, pass or fail; it never changes this gate's status.
+trap 'python3 tools/report.py || true' EXIT
 
 /usr/bin/time -f 'readiness: %e s' bash -e -c '
 python3 engine/scripts/docs/sync_equation_registry.py --check
@@ -33,9 +35,10 @@ run_check() {
 native_pid=$!
 
 run_check packets .venv/bin/python data/tools/validate_packets.py
-run_check python-tests bash -c \
-    'cd "$1/engine" && ../.venv/bin/python -m pytest -q --junitxml=../build/test-results/pytest.xml' \
-    _ "$repo_root"
+# JUnit goes to a temporary file first, so a reader never sees a partial report.
+run_check python-tests bash -c 'cd "$1/engine" && s=0 && xml=../build/test-results/pytest.xml
+    ../.venv/bin/python -m pytest -q --junitxml="$xml.tmp" || s=$?
+    mv "$xml.tmp" "$xml" && python3 ../tools/report.py --stamp "$xml"; exit "$s"' _ "$repo_root"
 run_check ruff bash -c 'cd "$1/engine" && ../.venv/bin/ruff check --select E4,E7,E9,F src tests' _ "$repo_root"
 run_check mypy bash -c 'cd "$1/engine" && ../.venv/bin/mypy' _ "$repo_root"
 run_check architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir"
