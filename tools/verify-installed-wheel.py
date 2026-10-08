@@ -1,4 +1,7 @@
-"""Fail closed unless the active interpreter uses the declared unified Engine wheel."""
+"""Fail closed unless the active interpreter uses the declared unified Engine wheel.
+
+Keep it working on older wheels: time-key-solves and refresh-main-wheel verify wheels from
+earlier commits, so use only the wheel's files and metadata, not newer epcsaft functions."""
 
 from __future__ import annotations
 

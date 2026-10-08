@@ -96,7 +96,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     # The 16 binary128 reactive-caloric and reactive-cp cases and the reacting Cp fit (Explicit)
     # run only when the code they verify changes, or on request:
     # run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'.
-    if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|native/regression/observations\.(cpp|hpp)|tests/native/(reactive_|quad_base\.hpp))' <<<"$paths"; then
+    if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|native/regression/observations\.(cpp|hpp)|tests/native/(reactive_|quad_base\.hpp|binary128_support\.hpp))' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/reactive-*' 'regression/Explicit/reactive-cp')
     fi
     # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
@@ -126,7 +126,7 @@ prepare_native_build=0
 if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|verify-installed-wheel\.py|ensure-engine-wheel\.sh|render-notebook\.py))' <<<"$paths"; then
     prepare_native_build=1
 fi
-if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|README\.md|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
+if [[ "$declarations_affected" == true || "$prepare_native_build" == 1 ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/)' <<<"$paths"; then
     EPCSAFT_PREPARE_NATIVE_BUILD="$prepare_native_build" bash .codex/environments/setup.sh
 fi
 
@@ -156,7 +156,7 @@ if grep -q '^engine/' <<<"$paths"; then
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
-    grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
+    grep -Eq '^engine/(src/|tests/.*\.py$|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
 fi
 
 check_tools

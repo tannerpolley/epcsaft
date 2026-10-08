@@ -1,8 +1,11 @@
 #pragma once
+#include "binary128_support.hpp"
+#include "equilibrium_support.hpp"
 
-#include <map>
-#include <numeric>
 #include <chrono>
+#include <map>
+#include <memory>
+#include <numeric>
 
 // Issue #225 F1/F3/F4/F5/F6. The oracles are native value calculations, except the F6
 // free-intensive pair ladders, which difference centered exact first actions.
@@ -12,6 +15,10 @@ using namespace epcsaft::equilibrium;
 using Direction = SolvedStateActionDirection;
 using Observable = SolvedStateObservable;
 constexpr double R = GAS_CONSTANT_J_PER_MOL_K;
+using binary128_support::NamedDirection;
+using binary128_support::Quantity;
+using binary128_support::Wide;
+using binary128_support::WideIonic;
 
 struct Case {
     std::string name;
@@ -58,13 +65,6 @@ inline Case input(bool ionic, bool fixed, bool unreactive = false) {
     return c;
 }
 
-struct NamedDirection {
-    std::string name;
-    double step;
-    Direction value;
-    std::vector<Direction> chart; // Feasible chart sub-directions, including both tied EOS slots.
-    bool parameter = false;
-};
 inline Direction zero(const Case& c) {
     Direction d;
     d.feed_amounts_mol.assign(c.problem.feed.values.size(), 0.0);
@@ -99,7 +99,6 @@ inline std::vector<NamedDirection> directions(const Case& c) {
     return result;
 }
 
-struct Quantity { std::string name, unit; double atol; Observable observable; };
 inline std::vector<Quantity> quantities(std::size_t n) {
     std::vector<Quantity> q;
     auto put=[&](const char* name,const char* unit,double atol,SolvedStateObservableKind kind,std::size_t component=0) {
@@ -364,7 +363,6 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     return sample;
 }
 #include "reactive_caloric_wide.hpp"
-#include "reactive_caloric_wide_ionic.hpp"
 struct Difference {
     std::vector<Wide> value;
     std::vector<double> rounding;
@@ -388,7 +386,7 @@ inline Difference difference(const Case& c,const std::vector<NamedDirection>& ds
             out.site_residual=std::max(out.site_residual,std::abs(sample.phase.diagnostics.association_residual));
             out.minimum_v=std::min(out.minimum_v,sample.phase.v);out.maximum_vp=std::max(out.maximum_vp,sample.phase.vp);
         }
-        const auto precise=wide?wide->values(q,ds,factor,mask,sample):ionic?ionic->values(q,ds,factor,mask,sample)
+        const auto precise=wide?wide->values(q,ds,factor,mask,sample):ionic?ionic->values(q,ds,factor,mask,sample.solved,sample.phase.rho)
             :std::vector<Wide>(sample.values.begin(),sample.values.end());
         out.precise_pressure_residual=std::max(out.precise_pressure_residual,ionic?ionic->pressure_residual():wide?wide->pressure_residual():0.0);
         out.precise_pressure_floor=std::max(out.precise_pressure_floor,ionic?ionic->pressure_limit():wide?wide->pressure_limit():0.0);
@@ -769,8 +767,8 @@ inline void run(bool ionic,bool fixed) {
     const auto exact=actions.get({});
     // Order 0 against the binary128 oracle, which shares only the EOS kernels with production; one tape per case.
     std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic_oracle;
-    if(ionic) ionic_oracle=std::make_unique<WideIonic>(c,center);else wide=std::make_unique<WideNeutral>(c);
-    const auto oracle=ionic?ionic_oracle->values(q,{},1,0,center):wide->values(q,{},1,0,center);
+    if(ionic) ionic_oracle=std::make_unique<WideIonic>(c.parameters,c.records,c.problem,center.solved.mole_fractions[1]);else wide=std::make_unique<WideNeutral>(c);
+    const auto oracle=ionic?ionic_oracle->values(q,{},1,0,center.solved,center.phase.rho):wide->values(q,{},1,0,center);
     for(std::size_t i=0;i<q.size();++i) compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],double(oracle[i]),inputs,1e-10,"binary128-values");
     if(ionic||fixed) identities(c,model,compiled,actions,q,center,inputs);  // E-sys identities run in cheap()
     // A ladder whose every step leaves the chart records no comparison; it must still fail.

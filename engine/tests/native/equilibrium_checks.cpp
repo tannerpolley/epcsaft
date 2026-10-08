@@ -7,6 +7,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 #include "recording_support.hpp"
+#include "reactive_caloric_checks.hpp"
 #include <Eigen/Dense>
 #include <fpu_control.h>
 
@@ -43,8 +44,6 @@ double centered_step(double value) {
     return std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(std::abs(value), 1.0);
 }
-
-#include "reactive_caloric_checks.hpp"
 
 // Old normalized correlation ln K = a + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
 // implicit 1 K reference through its legacy normalization at 300 K on [250, 450] K.
