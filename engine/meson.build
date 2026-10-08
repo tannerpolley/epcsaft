@@ -15,6 +15,8 @@ project(
 py = import('python').find_installation('python3', pure: false)
 cpp = meson.get_compiler('cpp')
 native_warnings = cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
+# Pinned alignment keeps key-solve timing robust to code placement at no measurable cost, +1.2% .text (#356; build/issue-356/alignment).
+add_project_arguments(cpp.get_supported_arguments('-falign-functions=64'), language: 'cpp')
 release_link_args = get_option('buildtype') == 'release' \
   ? cpp.get_supported_link_arguments('-s') \
   : []
