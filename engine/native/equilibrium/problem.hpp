@@ -490,8 +490,7 @@ EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt
 );
-// The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given;
-// `limits` bounds a nested seed solve.
+// The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 struct DriverLimits;
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr);
