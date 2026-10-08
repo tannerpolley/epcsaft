@@ -33,8 +33,9 @@ inline void cp_f1(bool ionic_case,bool fixed) {
         const double exact=value?*item.value:*item.action;
         const double feed_d=std::accumulate(d.feed_amounts_mol.begin(),d.feed_amounts_mol.end(),0.0);
         const double h_td=value?h_t:old.get({thermal,d})[H],coupling=value?0.0:h_t*feed_d/feed;
-        // 1e-10 of the terms, with a floor of 1e-12 c_p for actions that nearly vanish (reaction-a: 7e-8 of c_p).
-        const double reference=(h_td-coupling)/feed,target=(1e-10*(std::abs(h_td)+std::abs(coupling))+1e-12*std::abs(h_t))/feed;
+        // 1e-10 of the terms, with a floor of 1e-16 c_p (the largest error seen is 4e-18 c_p). The floor binds only
+        // on reaction-a, whose action is 1e-9 of c_p, so that row is held to about 1e-7 of its action.
+        const double reference=(h_td-coupling)/feed,target=(1e-10*(std::abs(h_td)+std::abs(coupling))+1e-16*std::abs(h_t))/feed;
         cp_record("F1/"+c.name+"/apparent-Cp/"+(value?"value":ds[test-1].name),exact,reference,target,
             recording_support::fields({recording_support::field("H_T",h_t),recording_support::field("H_Td",h_td),
                 recording_support::field("N_f_mol",feed),recording_support::field("dN_f_mol",feed_d),
