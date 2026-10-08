@@ -1,7 +1,7 @@
-#pragma once
 // Issue 224 B: critical-equation candidates and phase envelopes on the Gross (2001) propane and
 // methane/ethane packets; numerical verification only.
-#include "caloric_specification_checks.hpp"
+#include "equilibrium_checks_shared.hpp"
+#include "caloric_specification_inputs.hpp"
 namespace critical_envelope_checks {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
@@ -40,7 +40,7 @@ inline void same_state(const std::string& id,const EquilibriumResult& a,const Eq
 }
 // C1/C2: the pure propane candidate is admitted directly; pressure-closed cp is unavailable while T, P and
 // density survive; P_rho/(RT) and rho P_rhorho/(RT) from pressure_state_hessian vanish within a derived floor.
-inline void pure_critical() {
+void pure_critical() {
     const HelmholtzModel m(caloric_specification_checks::propane_parameters());
     const auto p=critical_cell({1},375,5000);const auto r=solved(m,p,"C1");const auto c=compile_problem(m,p);
     const auto actions=solved_state_actions(c,r,{{{SolvedStateObservableKind::Temperature},{SolvedStateObservableKind::PhaseMolarDensity},
@@ -72,7 +72,7 @@ inline void pure_critical() {
 // C3: binary candidates and the first composition action along (0.1, -0.1) against Richardson-refined
 // differences of central critical solves; the second action against differences of first actions; residual and total
 // cp (P_rho > 0 off a pure fluid) equal the HelmholtzModel::state route.
-inline void binary_critical() {
+void binary_critical() {
     const HelmholtzModel m(properties_support::neutral_binary(),{},caloric_specification_checks::records());
     for(const double z0:{0.5,0.27}) {
         const std::string id="C3/"+std::to_string(z0);
@@ -138,7 +138,7 @@ inline void off_solution(const HelmholtzModel& m,const EquilibriumProblem& p,con
     std::vector<double> scale(y.size(),1);scale[t]=y[t];scale[t+1]=y[t+1];
     caloric_specification_checks::ladder(c,y,scale,id,{0.});
 }
-inline void curvature() {
+void curvature() {
     const HelmholtzModel m(properties_support::neutral_binary()),a(properties_support::associating_binary());
     off_solution(m,critical_cell({0.27,0.73},260,6000),"B/critical");
     off_solution(a,critical_cell({0.1385,0.8615},376.88,5000),"B/critical-associating");
@@ -147,7 +147,7 @@ inline void curvature() {
 }
 // E1: bubble at 0.1 MPa through the passage to dew at 0.1 MPa: closure on the other branch and the candidate
 // against C3.
-inline void mixture() {
+void mixture() {
     const HelmholtzModel m(properties_support::neutral_binary());
     const auto start=envelope_cell({0.5,0.5},120,1e5,{EnvelopeCoordinate::LogPressure,0,std::log(1e5)});
     auto dew=envelope_cell({0.5,0.5},170,1e5,{});dew.envelope.reset();dew.pressure=FreeValue::fixed(1e5);
@@ -175,7 +175,7 @@ inline void mixture() {
 }
 // E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint:
 // last state 2W < g <= 4W and the candidate equal to C1.
-inline void pure() {
+void pure() {
     const HelmholtzModel m(caloric_specification_checks::propane_parameters());
     const auto start=envelope_cell({1},250,1e5,{EnvelopeCoordinate::LogTemperature,0,std::log(250.)});
     for(const auto [t,seed]:std::vector<std::pair<double,double>>{{250.,2e5},{300.,1e6},{350.,2.5e6}}) {  // P seeds in the two-root region

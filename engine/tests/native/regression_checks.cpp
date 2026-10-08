@@ -12,7 +12,7 @@
 #include "properties/helmholtz_tape.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
-#include "reactive_caloric_checks.hpp"
+#include "binary128_support.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>

@@ -202,7 +202,14 @@ test('diagnostics', diagnostics_checks)
 
 equilibrium_checks = executable(
   'equilibrium_checks',
-  'tests/native/equilibrium_checks.cpp',
+  files('tests/native/equilibrium_checks.cpp',
+        'tests/native/equilibrium_s1_s2_checks.cpp',
+        'tests/native/equilibrium_s6_e2_checks.cpp',
+        'tests/native/equilibrium_e5_checks.cpp',
+        'tests/native/equilibrium_tpd_checks.cpp',
+        'tests/native/equilibrium_caloric_specification_checks.cpp',
+        'tests/native/equilibrium_critical_envelope_checks.cpp',
+        'tests/native/equilibrium_reactive_caloric_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,

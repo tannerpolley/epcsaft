@@ -18,7 +18,7 @@ inline SolvedStateActionBatch cp_batch(const CompiledSystem& compiled,const Equi
 }
 // F1: c_p = H_T/N_f by definition, so its action along d is (H_Td - H_T N_f,d/N_f)/N_f. The H actions
 // are the ones the E/I ladders qualify against binary128 values at the same centres.
-inline void cp_f1(bool ionic_case,bool fixed) {
+void cp_f1(bool ionic_case,bool fixed) {
     const auto c=input(ionic_case,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);CHECK(solved.success);
     const auto q=quantities(c.problem.feed.values.size());const std::size_t H=index(q,"H");
@@ -45,7 +45,7 @@ inline void cp_f1(bool ionic_case,bool fixed) {
         CHECK(compare("preservation/"+c.name+"/H/"+std::to_string(test),q[H],value?*h.value:*h.action,reference_h,"",1e-10));
     }
 }
-inline void cp_f3() {
+void cp_f3() {
     const auto c=input(false,false,true);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);CHECK(solved.success);
     std::vector<double> x=solved.mole_fractions;const auto ds=directions(c);
@@ -74,7 +74,7 @@ inline std::vector<std::pair<double,double>> cp_gauss(std::size_t n) {
     }
     return result;
 }
-inline void cp_f2() {
+void cp_f2() {
     for(bool ionic:{false,true}) for(bool fixed:{false,true}) {
         auto c=input(ionic,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
         const auto q=quantities(c.problem.feed.values.size());const double left=ionic?288.15:250,right=ionic?308.15:275;

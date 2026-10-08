@@ -42,7 +42,7 @@ separately with its wheel and executable identity.
 
 ### F5 weighted Hessian and gradient
 
-`engine/tests/native/equilibrium_checks.cpp` differentiates the full weighted
+`engine/tests/native/equilibrium_s6_e2_checks.cpp` differentiates the full weighted
 gradient independently of the callback Hessian for both a named `regular`
 two-phase neutral ternary problem and a named `pinned`/free-intensive neutral
 binary boundary problem. For every full primal coordinate, including embedded
