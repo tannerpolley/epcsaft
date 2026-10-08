@@ -9,4 +9,8 @@ export CCACHE_BASEDIR="$root"
 # Build output goes to stderr, so an import-time rebuild cannot write into a script's stdout.
 # Queries keep stdout: the editable loader's dry run (-n), and Meson's --version and -t compdb.
 case " $* " in *" -n "* | *" -t "* | *" --version "*) ;; *) exec >&2 ;; esac
+# A ninja started under the lock (Meson's regenerate step runs $NINJA --version) is already
+# serialized by its parent; locking again would wait on the parent forever.
+[[ -n "${EPCSAFT_NINJA_LOCKED:-}" ]] && exec ninja "$@"
+export EPCSAFT_NINJA_LOCKED=1
 exec flock "$root/build/engine-meson/ninja.lock" ninja "$@"
