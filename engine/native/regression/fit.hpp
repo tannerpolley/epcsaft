@@ -12,14 +12,14 @@
 namespace epcsaft::regression {
 
 // Ceres trust-region controls; a zero tolerance selects its named policy default. The
-// iteration and time budgets are caller inputs, not policy (ALG-FIT): the 100-iteration,
-// 600 s member values serve native requests that set none; Python `regression.fit` requires controls.
+// iteration and time budgets are caller inputs with no default (ALG-FIT): a fit refuses its
+// request until the caller sets both.
 struct FitControls final {
     double function_tolerance = 0.0;
     double gradient_tolerance = 0.0;
     double parameter_tolerance = 0.0;
-    int maximum_iterations = 100;
-    double maximum_elapsed_time_seconds = 600.0;
+    int maximum_iterations = 0;
+    double maximum_elapsed_time_seconds = 0.0;
 };
 
 enum class CheckMetric { AbsoluteDifference, AbsoluteLog10Ratio };

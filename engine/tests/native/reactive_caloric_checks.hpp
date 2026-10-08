@@ -342,7 +342,8 @@ public:
     }
 };
 
-inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Quantity>& q,const EquilibriumResult& anchor,const Direction* first_action=nullptr) {
+// A binary128 oracle rebuilds its own values; it reads only the solved state and density (rebuilt=false).
+inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Quantity>& q,const EquilibriumResult& anchor,const Direction* first_action=nullptr,bool rebuilt=true) {
     auto p=c.parameters;auto problem=c.problem;
     problem.temperature.value+=delta.temperature_k;problem.pressure.value+=delta.pressure_pa;
     for(std::size_t i=0;i<problem.feed.values.size();++i) {problem.feed.values[i]+=delta.feed_amounts_mol[i];CHECK(problem.feed.values[i]>=0);}
@@ -357,6 +358,7 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     const auto compiled=compile_problem(model,problem);
     const auto solved=solve_compiled(compiled,anchor);
     if(!solved.has_state()) throw std::runtime_error(c.name+" oracle solve: "+solved.message+" residual="+recording_support::number(solved.residual_norm()));
+    if(!rebuilt) {Sample sample;sample.solved=solved;sample.phase.rho=solved.molar_densities[0];return sample;}
     auto sample=values(model,compiled,solved,q);
     if(first_action) {Actions actions(compiled,solved,q);sample.values=actions.get({*first_action});}
     return sample;
@@ -380,10 +382,12 @@ inline Difference difference(const Case& c,const std::vector<NamedDirection>& ds
     for(std::size_t mask=0;mask<(1U<<perturbed.size());++mask) {
         auto delta=zero(c);int sign=1;
         for(std::size_t k=0;k<perturbed.size();++k) {const double s=(mask>>k)&1?1:-1;sign*=int(s);delta=add(delta,perturbed[k].value,s*perturbed[k].step*factor);}
-        const auto sample=shifted(c,delta,q,anchor,first_difference?&ds.front().value:nullptr);out.residual=std::max(out.residual,sample.solved.residual_norm());
-        out.pressure_residual=std::max(out.pressure_residual,std::abs(sample.phase.diagnostics.pressure_residual));
-        out.site_residual=std::max(out.site_residual,std::abs(sample.phase.diagnostics.association_residual));
-        out.minimum_v=std::min(out.minimum_v,sample.phase.v);out.maximum_vp=std::max(out.maximum_vp,sample.phase.vp);
+        const auto sample=shifted(c,delta,q,anchor,first_difference?&ds.front().value:nullptr,!wide&&!ionic);out.residual=std::max(out.residual,sample.solved.residual_norm());
+        if(!wide&&!ionic) {
+            out.pressure_residual=std::max(out.pressure_residual,std::abs(sample.phase.diagnostics.pressure_residual));
+            out.site_residual=std::max(out.site_residual,std::abs(sample.phase.diagnostics.association_residual));
+            out.minimum_v=std::min(out.minimum_v,sample.phase.v);out.maximum_vp=std::max(out.maximum_vp,sample.phase.vp);
+        }
         const auto precise=wide?wide->values(q,ds,factor,mask,sample):ionic?ionic->values(q,ds,factor,mask,sample)
             :std::vector<Wide>(sample.values.begin(),sample.values.end());
         out.precise_pressure_residual=std::max(out.precise_pressure_residual,ionic?ionic->pressure_residual():wide?wide->pressure_residual():0.0);
@@ -402,7 +406,8 @@ inline std::vector<double> scale(Actions& actions,const std::vector<NamedDirecti
     };visit(0);return sigma;
 }
 inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirection>& ds,
-                   const std::vector<Quantity>& q,const Sample& center,const std::string& inputs) {
+                   const std::vector<Quantity>& q,const Sample& center,const std::string& inputs,
+                   WideNeutral* wide=nullptr,WideIonic* ionic=nullptr) {
     std::vector<Direction> request;std::string label;
     std::string literal_directions;
     for(const auto& d:ds) {
@@ -420,9 +425,8 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
     }
     const auto exact=actions.get(request);const auto diagnostics=actions.diagnostics;
     const auto sigma=scale(actions,ds,q.size());
-    std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic;
     const bool free_chart=c.problem.temperature.free||c.problem.pressure.free;
-    if(c.ionic) ionic=std::make_unique<WideIonic>(c,center);else if(!free_chart) wide=std::make_unique<WideNeutral>(c);
+    CHECK(free_chart==(!wide&&!ionic));
     std::vector<std::vector<NamedDirection>> orders{ds};
     if(free_chart&&ds.size()==2&&ds[0].name!=ds[1].name) orders.push_back({ds[1],ds[0]});
     struct Reference {double rich=0,refinement=0,target=0;std::size_t rung=0;bool resolved=false;std::string row;};
@@ -431,10 +435,10 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
         +std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);};
     const char* method=free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values";
     for(std::size_t order=0;order<orders.size();++order) {
-        auto coarse=difference(c,orders[order],1.0,q,center.solved,wide.get(),ionic.get());
+        auto coarse=difference(c,orders[order],1.0,q,center.solved,wide,ionic);
         for(std::size_t rung=0;rung<6;++rung) {
             const double factor=std::ldexp(1.0,-int(rung+1));
-            const auto fine=difference(c,orders[order],factor,q,center.solved,wide.get(),ionic.get());
+            const auto fine=difference(c,orders[order],factor,q,center.solved,wide,ionic);
             for(std::size_t i=0;i<q.size();++i) if(!references[order][i].resolved) {
                 const double rich=double((4*fine.value[i]-coarse.value[i])/3),refinement=double(CppAD::abs(fine.value[i]-coarse.value[i])/3);
                 const double target=q[i].atol+1e-6*std::max(std::abs(rich),sigma[i]);
@@ -446,11 +450,11 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
                     recording_support::field("atol",q[i].atol),recording_support::field("target",target),
                     recording_support::field("resolved",resolved),
                     recording_support::field("rounding_over_step",fine.rounding[i]),recording_support::field("oracle_residual",fine.residual),
-                    recording_support::field("oracle_pressure_residual",fine.pressure_residual),
-                    recording_support::field("oracle_site_residual",fine.site_residual),
-                    recording_support::field("wide_pressure_residual_Pa",fine.precise_pressure_residual),
-                    recording_support::field("wide_pressure_closure_limit_Pa",fine.precise_pressure_floor),
-                    recording_support::field("oracle_minimum_v_G",fine.minimum_v),recording_support::field("oracle_maximum_v_G_P",fine.maximum_vp),
+                    free_chart?recording_support::fields({recording_support::field("oracle_pressure_residual",fine.pressure_residual),
+                        recording_support::field("oracle_site_residual",fine.site_residual),
+                        recording_support::field("oracle_minimum_v_G",fine.minimum_v),recording_support::field("oracle_maximum_v_G_P",fine.maximum_vp)})
+                    :recording_support::fields({recording_support::field("wide_pressure_residual_Pa",fine.precise_pressure_residual),
+                        recording_support::field("wide_pressure_closure_limit_Pa",fine.precise_pressure_floor)}),
                     recording_support::field("oracle_residual_over_step_product",fine.residual/fine.denominator),
                     recording_support::field("condition_times_residual_over_step_product",diagnostics.condition_estimate.value_or(0)*fine.residual/fine.denominator),
                     recording_support::field("action_condition",diagnostics.condition_estimate.value_or(0)),
@@ -760,17 +764,19 @@ inline void run(bool ionic,bool fixed) {
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     if(!solved.has_state()) throw std::runtime_error(c.name+" center: "+solved.message);
     const auto q=quantities(c.parameters.component_count());const auto basis=directions(c);
-    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
     Actions actions(compiled,solved,q);
     const auto exact=actions.get({});
-    // Order 0 against the binary128 oracle, which shares only the EOS kernels with production.
-    const auto oracle=ionic?WideIonic(c,center).values(q,{},1,0,center):WideNeutral(c).values(q,{},1,0,center);
+    // Order 0 against the binary128 oracle, which shares only the EOS kernels with production; one tape per case.
+    std::unique_ptr<WideNeutral> wide;std::unique_ptr<WideIonic> ionic_oracle;
+    if(ionic) ionic_oracle=std::make_unique<WideIonic>(c,center);else wide=std::make_unique<WideNeutral>(c);
+    const auto oracle=ionic?ionic_oracle->values(q,{},1,0,center):wide->values(q,{},1,0,center);
     for(std::size_t i=0;i<q.size();++i) compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],double(oracle[i]),inputs,1e-10,"binary128-values");
     if(ionic||fixed) identities(c,model,compiled,actions,q,center,inputs);  // E-sys identities run in cheap()
     // A ladder whose every step leaves the chart records no comparison; it must still fail.
     CHECK(inversion(c,model,compiled,center,q,inputs,exact[index(q,"total-cv_G")]));
     for(const auto& request:requests(c,basis)) {
-        ladder(c,actions,request,q,center,inputs);
+        ladder(c,actions,request,q,center,inputs,wide.get(),ionic_oracle.get());
         product_identities(c,actions,request,q,inputs);
         if(!ionic&&!fixed) {
             const bool zero_pressure=request.size()==1&&request[0].name=="P";
@@ -809,8 +815,8 @@ inline void unreactive() {
     const auto c=input(false,false,true);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     CHECK(solved.has_state());const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
-    const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
-    Actions actions(compiled,solved,q);auto basis=directions(c);
+    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    Actions actions(compiled,solved,q);auto basis=directions(c);WideNeutral wide(c);
     auto checks=requests(c,basis);checks.insert(checks.begin(),{});
     const std::vector<PropertyObservable> os={PropertyObservable::IdealEnthalpy,PropertyObservable::IdealInternalEnergy,PropertyObservable::IdealEntropy,
         PropertyObservable::IdealIsobaricHeatCapacity,PropertyObservable::IdealIsochoricHeatCapacity,
@@ -843,7 +849,7 @@ inline void unreactive() {
         const auto id=std::to_string(row++);
         for(std::size_t i=0;i<os.size();++i) compare("F3/U/P4/"+id+"/"+names[i],q[index(q,names[i])],exact[index(q,names[i])],oracle[i],inputs,1e-10,"native-P4-curved-composition-chain");
         product_identities(c,actions,requested,q,inputs);
-        if(!requested.empty()) ladder(c,actions,requested,q,center,inputs);
+        if(!requested.empty()) ladder(c,actions,requested,q,center,inputs,&wide);
     }
     const auto& base=actions.get({});
     compare("F3/U/v_G",q[index(q,"v_G")],base[index(q,"v_G")],1/center.phase.rho,inputs,1e-10);
@@ -938,7 +944,7 @@ inline void volume_partial_values() {
         CHECK(refused.results[k].status==PropertyActionStatus::SupportChange && !refused.results[k].action);
         Quantity q{k==0?"vT":"vP",k==0?"m^3/(mol K)":"m^3/(mol Pa)",k==0?1e-12:1e-18,{}};
         compare("reference-calorics/dependencies/retained-"+q.name,q,*refused.results[k].value,*center.results[k].value,
-      "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
+            "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
     }
 }
 inline void isothermal_row_columns() {
@@ -966,8 +972,9 @@ inline void isothermal_row_columns() {
         [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
     CHECK(consumed_entry!=calorics.gibbs.end());
     const auto& consumed=*consumed_entry;
+    // Refused by the sqrt(m) ladder gate, not a missing limit; the method change is #353.
     CHECK(consumed.column.status==SolvedStateActionStatus::ReferenceUnavailable);
-    const auto inputs=recording_support::fields({weighted_hessian_context(compiled),
+    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
         recording_support::field("dielectric_T_slope_per_K",1e10),
         recording_support::field("born_direction_angstrom",1),recording_support::field("water_feed_direction_mol",1),
         recording_support::field("C_theta",*diagnostics[0].terminal_contraction_parameter_derivative[0]),
@@ -977,9 +984,9 @@ inline void isothermal_row_columns() {
         recording_support::field("caloric_completion_cause",consumed.column.message)});
     Quantity theta{"C_theta","1/angstrom",1e-10,{}},change{"C_Ttheta_scaled_change","1",0,{}};
     compare("reference-calorics/dependencies/lower-column/available-theta",theta,
-  *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
+        *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
     compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
-  lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
+        lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
     const auto shifted_rows=[&](double delta) {
         auto p=c.parameters;auto problem=c.problem;p.born_diameter_angstrom[1]+=delta;problem.feed.values[0]+=delta;
         HelmholtzModel shifted_model(p,c.active);const auto shifted_compiled=compile_problem(shifted_model,problem);
@@ -1098,7 +1105,7 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     vapor.erase(vapor.begin(),vapor.begin()+2); // T/P are common controls/outputs.
     for(auto& quantity:vapor) {quantity.name+="-V";quantity.observable.phase=1;}
     q.insert(q.end()-4,vapor.begin(),vapor.end());
-    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
     for(std::size_t phase=0;phase<center.phases.size();++phase) {
         const auto& local=center.phases[phase];const auto id="F6/"+c.name+"/volume-chart/"+std::to_string(phase);
         recording_support::observe(id.c_str(),"v_G","m^3/mol",local.v,std::nullopt,
@@ -1144,7 +1151,7 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     for(const auto& name:std::vector<std::string>{"rho","x-0","total-h"}) {
         const auto k=index(liquid_quantities,name);
         compare("F6/"+c.name+"/fixed-center/"+name,liquid_quantities[k],center.values[index(q,name)],
-      fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
+            fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
     }
 }
 

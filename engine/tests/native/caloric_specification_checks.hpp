@@ -196,8 +196,10 @@ inline void actions() {
     compare("PS4/saturation-tangent",action(pc,pr,{sp}),tangent,std::abs(tangent),1e-8);
 }
 // Assembled off-solution Jacobian and weighted-Hessian ladder (F5): centered row and weighted-gradient
-// differences, the alternating weights and each condition row alone, objective factors 0, 0.5 and 1.
-inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const std::vector<double>& scale,const std::string& id) {
+// differences, the alternating weights and each condition row alone, objective factors 0, 0.5 and 1
+// (only 0 for a feasibility cell, whose objective gradient is zero).
+inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const std::vector<double>& scale,const std::string& id,
+                   const std::vector<double>& objectives={0.,0.5,1.}) {
     const std::size_t n=y.size(),m=c.rows.size();
     std::vector<std::vector<double>> weights(1,std::vector<double>(m));
     for(std::size_t j=0;j<m;++j)weights[0][j]=(j%2?-1:1)*(0.3+0.07*j);
@@ -207,7 +209,7 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
         "Observation","off-solution-chart","declared callback coordinates and independent chemical duals","caloric-specification");
     const auto J=c.jacobian(y);std::vector<std::vector<double>> H;
     for(const auto& w:weights)H.push_back(c.hessian(y,w));  // feasibility objective is constant for every factor
-    const std::vector<double> objectives{0.,0.5,1.};const std::size_t sets=weights.size()*objectives.size();
+    const std::size_t sets=weights.size()*objectives.size();
     for(std::size_t column=0;column<n;++column) {
         std::vector<double> bestJ(m,1e100),previous_change(sets,0),largest(sets,0),noise(sets,0);
         std::vector<std::vector<double>> bestH(sets,std::vector<double>(n,1e100)),previousH(sets);std::vector<bool> refinement(sets,false);

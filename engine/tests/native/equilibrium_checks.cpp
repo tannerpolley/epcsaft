@@ -44,157 +44,6 @@ double centered_step(double value) {
         * std::max(std::abs(value), 1.0);
 }
 
-std::string weighted_hessian_context(
-    const epcsaft::equilibrium::CompiledSystem& compiled
-) {
-    const auto& problem = compiled.problem;
-    std::string phase_definition;
-    for (const auto& phase : problem.phases) {
-        if (!phase_definition.empty()) phase_definition += ',';
-        phase_definition += phase.name + ":"
-            + equilibrium_support::phase_kind_name(phase.kind) + ":"
-            + equilibrium_support::amount_kind_name(phase.amount.kind) + ":"
-            + recording_support::number(phase.amount.fraction)
-            + ":support=" + std::to_string(phase.support.size()) + ":guess=";
-        for (std::size_t index = 0; index < phase.composition_guess.size(); ++index) {
-            if (index != 0) phase_definition += ',';
-            phase_definition += recording_support::number(phase.composition_guess[index]);
-        }
-        if (phase.packing_guess.has_value())
-            phase_definition += ":packing=" + recording_support::number(*phase.packing_guess);
-    }
-    std::string reaction_definition;
-    for (const auto& reaction : problem.reactions) {
-        if (!reaction_definition.empty()) reaction_definition += ',';
-        reaction_definition += reaction.name + ":K="
-            + (reaction.equilibrium_constant.has_value()
-               ? recording_support::number(*reaction.equilibrium_constant)
-               : reaction.affinity_j_per_mol.has_value() ? "A=" + recording_support::number(*reaction.affinity_j_per_mol)
-               : std::string("correlation")) + ":nu=";
-        for (std::size_t index = 0; index < reaction.stoichiometry.size(); ++index) {
-            if (index != 0) reaction_definition += ',';
-            reaction_definition += recording_support::number(reaction.stoichiometry[index]);
-        }
-    }
-    const auto* model = compiled.model;
-    if (model == nullptr) {
-        return recording_support::fields({
-            recording_support::field("compiled_model", "missing"),
-            recording_support::field("temperature", problem.temperature.value),
-            recording_support::field("pressure", problem.pressure.value),
-            recording_support::field("feed_kind",
-                                     equilibrium_support::feed_kind_name(problem.feed.kind)),
-            recording_support::field("feed", problem.feed.values),
-            recording_support::field("phase_definition", phase_definition),
-            recording_support::field("reaction_definition", reaction_definition),
-        });
-    }
-    const auto& parameters = model->parameters();
-    std::string row_names;
-    for (const auto& row : compiled.rows) {
-        if (!row_names.empty()) row_names += ',';
-        row_names += epcsaft::equilibrium::row_kind_name(row.kind);
-    }
-    return recording_support::fields({
-        recording_support::field("temperature", problem.temperature.value),
-        recording_support::field("temperature_free", problem.temperature.free ? 1U : 0U),
-        recording_support::field("temperature_absent", problem.temperature.absent ? 1U : 0U),
-        recording_support::field("pressure", problem.pressure.value),
-        recording_support::field("pressure_free", problem.pressure.free ? 1U : 0U),
-        recording_support::field("pressure_absent", problem.pressure.absent ? 1U : 0U),
-        recording_support::field("feed_kind",
-                                 equilibrium_support::feed_kind_name(problem.feed.kind)),
-        recording_support::field("feed", problem.feed.values),
-        recording_support::field("feed_solvent_count", problem.feed.solvent.size()),
-        recording_support::field("feed_solvent_mass_kg", problem.feed.solvent_mass_kg),
-        recording_support::field("phase_definition", phase_definition),
-        recording_support::field("reaction_definition", reaction_definition),
-        recording_support::field("standard_gibbs", problem.standard_gibbs_j_per_mol),
-        recording_support::field("topology_declared", problem.topology_declared ? 1U : 0U),
-        recording_support::field("compiled_primal_size", compiled.primal_size),
-        recording_support::field("compiled_rank", compiled.rank),
-        recording_support::field("compiled_pinned_count", compiled.pinned_count),
-        recording_support::field("compiled_free_intensive_count", compiled.free_intensive_count),
-        recording_support::field("compiled_charge_row_count", compiled.charge_row_count),
-        recording_support::field("compiled_rows", compiled.rows.size()),
-        recording_support::field("compiled_generic_nullity", compiled.generic_nullity),
-        recording_support::field("compiled_jacobian_rank", compiled.jacobian_rank),
-        recording_support::field("compiled_n_feed", compiled.n_feed),
-        recording_support::field("compiled_feed_composition", compiled.feed_composition),
-        recording_support::field("compiled_balance", compiled.balance),
-        recording_support::field("compiled_feed_total", compiled.feed_total),
-        recording_support::field("compiled_feasible", compiled.feasible ? 1U : 0U),
-        recording_support::field("compiled_has_ions", compiled.has_ions ? 1U : 0U),
-        recording_support::field("compiled_has_reaction", compiled.has_reaction ? 1U : 0U),
-        recording_support::field("compiled_row_names", row_names),
-        recording_support::field("model_component_count", parameters.component_count()),
-        recording_support::field("model_segment_count", parameters.segment_count),
-        recording_support::field("model_sigma_constant", parameters.sigma_constant),
-        recording_support::field("model_sigma_term_component", parameters.sigma_term_component),
-        recording_support::field("model_sigma_term_amplitude", parameters.sigma_term_amplitude),
-        recording_support::field("model_sigma_term_exponent", parameters.sigma_term_exponent),
-        recording_support::field("model_dispersion_energy_over_k", parameters.dispersion_energy_over_k),
-        recording_support::field("model_molar_mass_kg_per_mol", parameters.molar_mass_kg_per_mol),
-        recording_support::field("model_k_ij", parameters.k_ij),
-        recording_support::field("model_k_ij_reciprocal_temperature_slope",
-                                 parameters.k_ij_reciprocal_temperature_slope),
-        recording_support::field("model_k_ij_reference_temperature_k",
-                                 parameters.k_ij_reference_temperature_k),
-        recording_support::field("model_l_ij", parameters.l_ij),
-        recording_support::field("model_site_component", parameters.site_component),
-        recording_support::field("model_site_multiplicity", parameters.site_multiplicity),
-        recording_support::field("model_association_active", parameters.association_active),
-        recording_support::field("model_association_energy_over_k", parameters.association_energy_over_k),
-        recording_support::field("model_association_volume", parameters.association_volume),
-        recording_support::field("model_charge_number", parameters.charge_number),
-        recording_support::field("model_packing_diameter_angstrom", parameters.packing_diameter_angstrom),
-        recording_support::field("model_debye_huckel_diameter_angstrom", parameters.debye_huckel_diameter_angstrom),
-        recording_support::field("model_born_diameter_angstrom", parameters.born_diameter_angstrom),
-        recording_support::field("model_solvation_factor", parameters.solvation_factor),
-        recording_support::field("model_ionic_region_relative_permittivity",
-                                 parameters.ionic_region_relative_permittivity),
-        recording_support::field("model_born_c_shell", parameters.born_c_shell),
-        recording_support::field("model_born_c_dielectric", parameters.born_c_dielectric),
-        recording_support::field("model_electrolyte_form_declared",
-                                 parameters.electrolyte_form.declared() ? 1U : 0U),
-        recording_support::field("model_electrolyte_form",
-                                 parameters.electrolyte_form.declared()
-                                     ? static_cast<int>(parameters.electrolyte_form.require("electrolyte_form"))
-                                     : -1),
-        recording_support::field("model_ionic_dispersion_declared",
-                                 parameters.ionic_dispersion.declared() ? 1U : 0U),
-        recording_support::field("model_ionic_dispersion",
-                                 parameters.ionic_dispersion.declared()
-                                     ? static_cast<int>(parameters.ionic_dispersion.require("ionic_dispersion"))
-                                     : -1),
-        recording_support::field("model_relative_permittivity", parameters.relative_permittivity),
-        recording_support::field("model_permittivity_term_component",
-                                 parameters.permittivity_term_component),
-        recording_support::field("model_permittivity_term_coefficient",
-                                 parameters.permittivity_term_coefficient),
-        recording_support::field("model_permittivity_term_power",
-                                 parameters.permittivity_term_power),
-        recording_support::field("model_permittivity_reference_temperature_k",
-                                 parameters.permittivity_reference_temperature_k),
-        recording_support::field("model_ion_suppression_coefficient", parameters.ion_suppression_coefficient),
-        recording_support::field("model_permittivity_form_declared",
-                                 parameters.permittivity_form.declared() ? 1U : 0U),
-        recording_support::field("model_permittivity_form",
-                                 parameters.permittivity_form.declared()
-                                     ? static_cast<int>(parameters.permittivity_form.require("permittivity_form"))
-                                     : -1),
-        recording_support::field("model_dielectric_volume_m3_per_mol",
-                                 parameters.dielectric_volume_m3_per_mol),
-        recording_support::field("model_dielectric_temperature_k",
-                                 parameters.dielectric_temperature_k),
-        recording_support::field("model_dipole_scaling_debye2", parameters.dipole_scaling_debye2),
-        recording_support::field("model_polarizability_scaling_angstrom3",
-                                 parameters.polarizability_scaling_angstrom3),
-        recording_support::field("model_correlation_integral_parameter",
-                                 parameters.correlation_integral_parameter),
-    });
-}
-
 #include "reactive_caloric_checks.hpp"
 
 // Old normalized correlation ln K = a + 1200/T + 0.4 ln T + 0.002 T; P3 carries the
@@ -214,7 +63,7 @@ void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& compile
                              const std::vector<double>& point) {
     const auto analytic = compiled.jacobian(point);
     const auto base = compiled.evaluate(point).values;
-    const auto context = weighted_hessian_context(compiled);
+    const auto context = equilibrium_support::weighted_hessian_context(compiled);
     CHECK(analytic.size() == base.size() * point.size());
     for (std::size_t column = 0; column < point.size(); ++column) {
         auto plus = point;
@@ -312,7 +161,7 @@ void check_weighted_hessian_gradient_ladder(
 
     const auto objective_factors = {0.0, 0.5, 1.0};
     const auto step_factors = {10.0, 3.0, 1.0};
-    const auto context = weighted_hessian_context(compiled);
+    const auto context = equilibrium_support::weighted_hessian_context(compiled);
 
     std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(hessian_entries));
     std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(hessian_entries));
@@ -2115,7 +1964,7 @@ void check_f5() {
                 - weighted_gradient(compiled, minus, weights, 0.0)[t_index]) / (2.0 * tt_step);
             const bool tt_ok = close_with_tolerance(h_tt, h_tt_centered, 1.0e-9);
             recording_support::compare("correlated-jacobian/hessian-TT", "weighted_lagrangian_hessian", "coordinate",
-                h_tt, h_tt_centered, recording_support::fields({weighted_hessian_context(compiled),
+                h_tt, h_tt_centered, recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
                     recording_support::field("point", callback_point), recording_support::field("step", tt_step)}),
                 "Relationship", "weighted_hessian_gradient_finite_difference",
                 "correlated standard-state T,T curvature is exact beyond the affine shortcut",
@@ -2140,7 +1989,7 @@ void check_f5() {
                         || close(levers[row * lever_width], centered));
                 const auto id = std::string("correlated-jacobian/") + std::to_string(row);
                 recording_support::compare(id.c_str(), "equilibrium_jacobian", "1", analytic, centered,
-                    recording_support::fields({weighted_hessian_context(compiled),
+                    recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
                         recording_support::field("point", full), recording_support::field("row", row),
                         recording_support::field("lever_column", levers[row * lever_width]),
                         recording_support::field("delta_T", step)}),
@@ -2669,15 +2518,15 @@ void check_e2_thermal() {
     try { (void)epcsaft::equilibrium::compile_problem(thermal, unconverted); }
     catch (const std::invalid_argument& error) { mismatch = error.what(); }
     record_bool("e2-2/a-to-2b/reference-basis-mismatch", "e2-2-thermal", "reference-basis-mismatch",
-  mismatch.find("reference-basis-mismatch") != std::string::npos,
-  recording_support::fields({recording_support::field("identity", pressure_law.standard_state_id), recording_support::field("message", mismatch)}));
+        mismatch.find("reference-basis-mismatch") != std::string::npos,
+        recording_support::fields({recording_support::field("identity", pressure_law.standard_state_id), recording_support::field("message", mismatch)}));
     epcsaft::HelmholtzModel mismatched(identical_ethane_pair(), {}, species_record(30.0, 21.0));
     std::string inconsistency;
     try { (void)epcsaft::equilibrium::compile_problem(mismatched, doubling); }
     catch (const std::invalid_argument& error) { inconsistency = error.what(); }
     record_bool("e2-2/a-to-2b/heat-capacity-inconsistency", "e2-2-thermal", "reference inconsistency",
-  inconsistency.find("reference inconsistency") != std::string::npos,
-  recording_support::fields({recording_support::field("cp_B", 21.0), recording_support::field("message", inconsistency)}));
+        inconsistency.find("reference inconsistency") != std::string::npos,
+        recording_support::fields({recording_support::field("cp_B", 21.0), recording_support::field("message", inconsistency)}));
     // Solved charged reaction with a manufactured consistent standard state at an admitted EOS state.
     const std::vector<double> x_star = {0.98, 0.01, 0.01};
     const std::vector<double> nu = {2.0, -1.0, -1.0};
@@ -2745,11 +2594,11 @@ void check_e2_solve() {
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, *item);
         const auto id = std::string("e2-6/all-pinned-not-run/") + std::to_string(item->phases.size());
         record_bool(id.c_str(), "e2-6-solve", "nonreactive all-pinned declaration returns the exact pre-solve NOT_RUN record",
-      compiled.generic_nullity > 0 && not_run_record(result, compiled),
-      recording_support::fields({recording_support::field("phases", item->phases.size()),
-          recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
-          recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
-          recording_support::field("message", result.message)}));
+            compiled.generic_nullity > 0 && not_run_record(result, compiled),
+            recording_support::fields({recording_support::field("phases", item->phases.size()),
+                recording_support::field("rows", compiled.rows.size()), recording_support::field("unknowns", compiled.unknown_count()),
+                recording_support::field("jacobian_rank", compiled.jacobian_rank), recording_support::field("generic_nullity", compiled.generic_nullity),
+                recording_support::field("message", result.message)}));
     }
     // Positive pin in both orientations, then the count-deficient fixed-T/fixed-P form.
     epcsaft::HelmholtzModel ternary(properties_support::neutral_ternary());
@@ -2785,8 +2634,8 @@ void check_e2_solve() {
     try { (void)epcsaft::equilibrium::compile_problem(ternary, overdetermined); }
     catch (const std::invalid_argument& error) { message = error.what(); }
     record_bool("e2-6/positive-pin/fixed-T-fixed-P", "e2-6-solve", "positive pin with fixed T and P is a named structural rejection",
-  message.find("pinned") != std::string::npos && message.find("free T or P") != std::string::npos,
-  recording_support::fields({recording_support::field("message", message)}));
+        message.find("pinned") != std::string::npos && message.find("free T or P") != std::string::npos,
+        recording_support::fields({recording_support::field("message", message)}));
     // E2-7: explicit kind under a renamed phase, the single pure vapor phase, and the caller criterion.
     auto named = equilibrium_support::flash(2);
     auto renamed = named;
@@ -2794,9 +2643,9 @@ void check_e2_solve() {
     const auto named_result = epcsaft::equilibrium::solve_equilibrium(model, named);
     const auto renamed_result = epcsaft::equilibrium::solve_equilibrium(model, renamed);
     record_bool("e2-7/rename", "e2-7-criterion", "renaming an explicitly typed phase changes nothing physical",
-  named_result.success && renamed_result.success && named_result.mole_fractions == renamed_result.mole_fractions
-      && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
-  solve_inputs(renamed, renamed_result));
+        named_result.success && renamed_result.success && named_result.mole_fractions == renamed_result.mole_fractions
+            && named_result.molar_densities == renamed_result.molar_densities && named_result.rows.size() == renamed_result.rows.size(),
+        solve_inputs(renamed, renamed_result));
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     auto vapor = equilibrium_support::flash(1);
     vapor.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
@@ -2862,10 +2711,10 @@ void check_e2_solve() {
         && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
                                    copied->amplification) == copied->stop;
     record_bool("e2-7/owned-criterion-lifetime", "e2-7-criterion",
-  "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
-  recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
-      recording_support::field("floor", copied ? epcsaft::core::optional_number(copied->floor) : "absent"),
-      recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")}));
+        "a copied convergence record classifies identically after the producing result is destroyed", lifetime_ok,
+        recording_support::fields({recording_support::field("residual", copied ? copied->residual : std::numeric_limits<double>::quiet_NaN()),
+            recording_support::field("floor", copied ? epcsaft::core::optional_number(copied->floor) : "absent"),
+            recording_support::field("stop", copied ? epcsaft::core::stop_name(copied->stop) : "absent")}));
 }
 
 void check_e2_reuse() {

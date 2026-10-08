@@ -329,6 +329,7 @@ def test_trace_osmotic_debye_limit_and_reporting_floor() -> None:
     limit = a * math.sqrt(1e-6) / 3
     assert abs((1 - phi) - limit) <= 3e-3 * limit
     assert isinstance(reference.activity(1e-8).osmotic_coefficient, float)
+    # Below the #214 floor the difference route loses phi to cancellation; the direct route is #353.
     for molality in (1e-9, 1e-10, 1e-12):
         activity = reference.activity(molality)
         assert activity.osmotic_coefficient == Stop.converged_to_floor

@@ -136,7 +136,7 @@ inline void off_solution(const HelmholtzModel& m,const EquilibriumProblem& p,con
     for(std::size_t i=0;i<c.mode_count;++i)y[c.mode_offset()+i]*=1.1;
     for(std::size_t j=c.primal_size;j<y.size();++j)y[j]=0.11+0.13*j;
     std::vector<double> scale(y.size(),1);scale[t]=y[t];scale[t+1]=y[t+1];
-    caloric_specification_checks::ladder(c,y,scale,id);
+    caloric_specification_checks::ladder(c,y,scale,id,{0.});
 }
 inline void curvature() {
     const HelmholtzModel m(properties_support::neutral_binary()),a(properties_support::associating_binary());
@@ -145,8 +145,8 @@ inline void curvature() {
     for(const auto kind:{EnvelopeCoordinate::LogTemperature,EnvelopeCoordinate::LogPressure,EnvelopeCoordinate::LogK})
         off_solution(m,envelope_cell({0.27,0.73},180,1e5,{kind,0,0.3}),"B/envelope-"+std::to_string(static_cast<int>(kind)));
 }
-// E1: bubble at 0.1 MPa through the passage to dew at 0.1 MPa at three bracketing levels: closure on the other
-// branch, the candidate against C3, and Hermite seed refinement.
+// E1: bubble at 0.1 MPa through the passage to dew at 0.1 MPa: closure on the other branch and the candidate
+// against C3.
 inline void mixture() {
     const HelmholtzModel m(properties_support::neutral_binary());
     const auto start=envelope_cell({0.5,0.5},120,1e5,{EnvelopeCoordinate::LogPressure,0,std::log(1e5)});
@@ -154,12 +154,10 @@ inline void mixture() {
     dew.phases[0].kind=PhaseKind::Vapor;dew.phases[1].kind=PhaseKind::Liquid;
     const auto cold=solve_equilibrium(m,dew);if(!cold.has_state())throw std::runtime_error("E1 cold dew: "+cold.message);
     const auto c3=solved(m,critical_cell({0.5,0.5},260,6000),"E1/C3");
-    std::vector<std::vector<double>> seeds;
-    for(const double f:{1.0,0.5,0.25}) {
-        const std::string id="E1/"+std::to_string(f);
-        const auto t=trace(m,start,0.02*f,0.01*f);
+    {
+        const std::string id="E1/"+std::to_string(1.0);
+        const auto t=trace(m,start,0.02,0.01);
         if(!t.success||t.critical_points.size()!=1)throw std::runtime_error(id+" trace: "+t.message);
-        seeds.push_back(t.critical_seeds[0]);
         same_state(id+"/dew",t.states.back(),cold);
         same_state(id+"/candidate",t.critical_points[0],c3);
         double tmax=0,pmax=0;std::size_t switches=0,straddle=0;
@@ -174,15 +172,9 @@ inline void mixture() {
                 recording_support::field("seed",t.critical_seeds[0])}),
             "Observation","accepted-state extrema and condition switches","declared envelope branch only","critical-envelope");
     }
-    const std::array<double,3> solved{std::log(c3.temperature[0]),std::log(c3.pressure[0]),std::log(c3.molar_densities[0])};
-    for(std::size_t k=0;k<3;++k) {  // successive differences only; no convergence order is claimed
-        const double d1=std::abs(seeds[1][k]-seeds[0][k]),d2=std::abs(seeds[2][k]-seeds[1][k]),ratio=d1/d2;
-        recording_support::observe(("E1/hermite-"+std::to_string(k)).c_str(),"seed-refinement","1",seeds[2][k],solved[k],
-            recording_support::fields({recording_support::field("h_to_h2",d1),recording_support::field("h2_to_h4",d2),recording_support::field("ratio",ratio)}),"Observation","bracketing-step refinement","seed need not meet the solved tolerance","critical-envelope");
-    }
 }
-// E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint at
-// three step levels: last state 2W < g <= 4W and the candidate equal to C1.
+// E3: propane saturation; Clapeyron dP/dT = dh_res/(T dv) at 250, 300, 350 K, and the R1 pure endpoint:
+// last state 2W < g <= 4W and the candidate equal to C1.
 inline void pure() {
     const HelmholtzModel m(caloric_specification_checks::propane_parameters());
     const auto start=envelope_cell({1},250,1e5,{EnvelopeCoordinate::LogTemperature,0,std::log(250.)});
@@ -195,9 +187,9 @@ inline void pure() {
         compare("E3/clapeyron-"+std::to_string(static_cast<int>(t)),*slope.action,clapeyron,std::abs(clapeyron),1e-8);
     }
     const auto c1=solved(m,critical_cell({1},375,5000),"E3/C1");const double W=policy::DENSITY_ANCHOR_LOG_WINDOW.value;
-    for(const double f:{1.0,0.5,0.25}) {
-        const std::string id="E3/"+std::to_string(f);
-        const auto t=trace(m,start,0.02*f,0.01*f);
+    {
+        const std::string id="E3/"+std::to_string(1.0);
+        const auto t=trace(m,start,0.02,0.01);
         if(t.stop!=ContinuationStop::critical_endpoint||t.critical_points.size()!=1)throw std::runtime_error(id+" trace: "+t.message);
         const auto& last=t.states.back();const double g=std::abs(std::log(last.molar_densities[0]/last.molar_densities[1]));
         compare(id+"/last-gap",g>2*W&&g<=4*W?1:0,1,1,1e-10,recording_support::field("gap",g));

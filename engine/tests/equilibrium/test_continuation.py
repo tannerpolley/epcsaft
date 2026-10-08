@@ -32,6 +32,7 @@ def test_bubble_branch_follows_the_cold_solve() -> None:
     model = mixture()
     # A 0.5 K step moves the incipient vapor density beyond the 1% anchored-root window
     # (branch_lost, then step_too_small); the quarter step follows the branch.
+    # minimum_step = initial_step = 0.5 forbids halving, so this refusal is the branch-identity safeguard working.
     lost = continue_equilibrium(
         model, bubble(180.0), bubble(181.0),
         Continuation(initial_step=0.5, minimum_step=0.5, max_steps=2, max_retries_per_step=1),

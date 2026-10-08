@@ -1,4 +1,6 @@
-"""Issue #275: the retained cryogenic mass-action failure must resolve without a skip."""
+"""Issue #275: the liquid-branch density scan of equimolar ethanol/butane at 45 K and 1e-4 Pa.
+One scan node, 2709.49 mol/m3, once failed the ethanol association mass action; its site
+fractions must equal Chapman's closed form, and the scan must return its density root."""
 import math
 from typing import Any
 
