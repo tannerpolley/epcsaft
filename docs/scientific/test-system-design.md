@@ -3,7 +3,7 @@
 The status report answers three questions from existing owners:
 
 1. **What exists?** `ARCHITECTURE.yaml` owns components, Engine layers, path
-   ownership, and artifact roles. `tools/project-map.py` resolves only files
+   ownership, and file roles. `tools/project-map.py` resolves only files
    that exist in the checkout and reports unmapped or ambiguous paths.
 2. **What remains?** The
    [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones)
