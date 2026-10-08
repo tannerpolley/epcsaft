@@ -783,6 +783,14 @@ void check_e4_d() {
         problem.phases[1].composition_guess = {0.585, 0.415};
         return problem;
     };
+    // #352: this pressure guess reached the trivial state (5.414 MPa, x_L = x_V = 0.5) as a success; its bulk
+    // phase has local lowest eigenvalue -5.2e-5 and is refused, which does not say no bubble point exists.
+    auto trivial = equilibrium_support::bubble_at(260.0);
+    trivial.pressure = FreeValue::variable(2.02606e6);
+    const auto refused = epcsaft::equilibrium::solve_equilibrium(model, trivial);
+    record_bool("e4-d/trivial", "e4-d", "the trivial state from a 2.02606 MPa guess at 260 K is refused as locally unstable",
+        !refused.success && refused.message.find("local phase instability") != std::string::npos,
+        recording_support::fields({recording_support::field("message", refused.message)}));
     request.start_problem = seeded(260.0);
     request.target_problem = seeded(280.0);
     request.options = options(0.005, 0.0003125, 20000, 4);
