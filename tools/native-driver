@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Compile an analysis C++ driver with a native test program's flags and link it against that
-# program's libraries (#341), then print the executable path. The driver may include the test
-# program's source with main renamed. Run as: tools/native-driver regression_checks <driver.cpp>
+# program's libraries (#341), then print the executable path. The program's own test objects are
+# left out, so the driver includes the test sources it needs (one family file or a *_shared.hpp
+# header) and defines main. Run as: tools/native-driver regression_checks <driver.cpp>
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export PATH="$PWD/.venv/bin:$PATH"
@@ -19,6 +20,8 @@ args = shlex.split(entry["command"]); args[args.index("-o") + 1] = f"{out}/drive
 subprocess.run(args + [f"-I{tests}"], cwd=entry["directory"], check=True)
 link = shlex.split(subprocess.check_output(["ninja", "-C", build, "-t", "commands", program], text=True).splitlines()[-1])
 link[link.index("-o") + 1] = f"{out}/driver"
-subprocess.run([f"{out}/driver.o" if a.endswith(f"tests_native_{program}.cpp.o") else a for a in link], cwd=build, check=True)
+own = [i for i, a in enumerate(link) if a.startswith(f"{program}.p/tests_native_")]
+link[own[0]:own[-1] + 1] = [f"{out}/driver.o"]
+subprocess.run(link, cwd=build, check=True)
 PY
 echo "$out/driver"
