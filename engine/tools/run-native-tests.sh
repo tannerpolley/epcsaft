@@ -4,11 +4,9 @@ set -euo pipefail
 engine_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 workspace_root="$(dirname "$engine_root")"
 cd "$workspace_root"
-export PATH="$PWD/.venv/bin:$PATH"  # Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
-
-if [[ "${EPCSAFT_NATIVE_BUILD_READY:-0}" != 1 ]]; then
-    EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh
-fi
+# Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
+export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
+[[ -f build/environment-wheel/meson-build-dir ]] || bash .codex/environments/setup.sh
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 tests=("$@")
 if ((${#tests[@]} == 0)); then

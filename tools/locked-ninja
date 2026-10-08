@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Ninja, one at a time per checkout: imports of the editable install, native tests and
+# wheels share build/engine-meson/shared, and two ninjas in one tree corrupt its logs.
+# tools/build-engine.sh sets NINJA to this file; Meson and meson-python both run $NINJA.
+exec flock "$(dirname "${BASH_SOURCE[0]}")/../build/engine-meson/ninja.lock" ninja "$@"

@@ -43,7 +43,7 @@ cppad_project = subproject('cppad')
 cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
 cppad_temp_file = cppad_project.get_variable('cppad_temp_file')
 
-# tools/ensure-engine-wheel.sh supplies a shared HiGHS build with these options (#319).
+# tools/build-engine.sh supplies a shared HiGHS build with these options (#319).
 highs_dep = dependency('epcsaft-highs', method: 'pkg-config', required: false)
 highs_conf_file = []
 if not highs_dep.found()
