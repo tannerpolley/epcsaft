@@ -776,6 +776,37 @@ its unscaled rows, which are its constraints. Species thermochemistry attached t
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
+A feasibility cell has a constant objective and no reduced-Hessian certificate.
+For a neutral nonreacting liquid/vapor pair with an incipient phase pinned at
+zero amount, the driver applies each phase's necessary local stability
+condition to a state it would otherwise accept (#352). This is the Gibbs
+criterion in the Helmholtz form of the `critical_equations` sources
+(Heidemann–Khalil 1980; Michelsen 1980). The bulk and incipient phases are both
+checked, each at unit amount, so the pinned zero amount never weights the
+matrix. With `Q = F_nn` at (T, V), the ideal `delta_ij/n_i` plus the prepared
+residual Hessian, `D = diag(sqrt x)` on the phase's support, and `C` its
+supported species count, the state is refused as `local phase instability`
+(naming the phase, `lambda_min` and `b`) when
+
+$$
+\lambda_{\min}(DQD)<-b,\qquad b=\lVert DQD\,v-\lambda_{\min}v\rVert_2+C\,\varepsilon\,\lVert DQD\rVert_F ,
+$$
+
+with `v` the normalized eigenvector. A value inside the band is unresolved and
+admitted; no positive margin is required. The check follows the convergence
+and `phases_coincide` classification on every route through the driver: plain
+and explicit starts and continuation correctors. Charged and reacting cells need their
+admissible perturbation subspaces first and are not checked. Positive curvature
+certifies neither global stability nor another solution's absence, and a
+refusal does not say that no bubble point exists. Evidence (equimolar neutral
+binary, `bubble_at`, #352 design review): of 155 recorded successful returns
+from caller pressure guesses and seeds, the 58 near-trivial states (phase
+distance 7.5e-6 to 1.5e-3) each have `lambda_min` between -2.6e-4 and
+-9.8e-7 in one phase. That is at least 5.5e8 times its band. The 95 genuine
+bubbles and the 266.5 K dew state have `lambda_min >= +3.2e-7` (265.95 K),
+against bands below 1.1e-14. E4-D pins the 260 K, 2.02606 MPa guess, which
+returned the trivial state at 5.414 MPa as a success.
+
 PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
 Its objective is constant; all chemical, pressure, material and caloric rows
 are constraints, with exact optimizer-weighted curvature. Actual pins retain

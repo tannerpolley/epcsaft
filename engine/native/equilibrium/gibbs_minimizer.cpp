@@ -88,9 +88,9 @@ bool zero_amount(const PhaseSpec& phase) {
     return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
 }
 
-// EqID local_phase_stability (#352) for a neutral nonreacting liquid/vapor pair with an incipient zero-amount
-// phase: every phase's M = D Q D, Q = F_nn + diag(1/n) at unit amount (EqID critical_equations), D = diag sqrt(x)
-// on its support, may hold no resolved negative eigenvalue, lambda < -(||M v - lambda v|| + C eps ||M||_F).
+// Local phase stability (ALG-EQUILIBRIUM, #352) of a neutral nonreacting liquid/vapor pair with an incipient
+// zero-amount phase: every phase's M = D Q D, Q = F_nn at unit amount as in EqID critical_equations, D = diag
+// sqrt(x) on its support, may hold no resolved negative eigenvalue, lambda < -(||M v - lambda v|| + C eps ||M||_F).
 // Returns the refusal, empty when admitted or outside that domain.
 std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
     const auto& phases = compiled.problem.phases;
