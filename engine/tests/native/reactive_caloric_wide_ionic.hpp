@@ -72,6 +72,14 @@ class WideIonic {
             -2*j[14]+j[15]+j[16]+j[13]*vy,{f[3],f[4],f[5]},f[1]};
     }
 public:
+    // Solvent molar enthalpy at the declared (T, P): the reference tape at its 1e-14 mol/kg trace state
+    // (ion fraction 1.8e-16) with the record's ideal-gas enthalpy.
+    Wide solvent_enthalpy(double anchor) {
+        const Wide T=c.problem.temperature.value,mass=c.parameters.molar_mass_kg_per_mol[0],m=Wide(1e-14);
+        const auto s=state(reference,T,Wide(c.problem.pressure.value),Wide(c.parameters.dispersion_energy_over_k[0]),mass*m/(1+2*mass*m),Wide(anchor));
+        const auto thermal=evaluate_ideal_correlation(c.records.component_intervals[0][0].correlation,CppAD::AD<Wide>(T),1e5);
+        return CppAD::Value(thermal.h)-Wide(R)*T*T*s.at-Wide(R)*T*s.v*s.av;
+    }
     double pressure_residual() const {return double(max_pressure_residual);}
     double pressure_limit() const {return double(max_pressure_floor);}
     WideIonic(const Case& source,const Sample& center):c(source) {
@@ -96,12 +104,14 @@ public:
         }
         CHECK(feed[1]==feed[2]);
         const Wide mass=c.parameters.molar_mass_kg_per_mol[0],m=Wide(1e-14);
-        const Wide ys=mass*m/(1+2*mass*m);const bool fixed=c.problem.reactions[0].reference->reference_pressure_pa.has_value();
-        const Wide sourceP=fixed?Wide(*c.problem.reactions[0].reference->reference_pressure_pa):P;
+        const Wide ys=mass*m/(1+2*mass*m);const auto& source=*c.problem.reactions[0].reference;const bool fixed=source.reference_pressure_pa.has_value();
+        const Wide sourceP=fixed?Wide(*source.reference_pressure_pa):P;
         const auto src=state(reference,T,sourceP,epsilon,ys,production.phase.rho);
         const Wide lnK=coeff[0]+coeff[1]/T+coeff[2]*CppAD::log(T/Wide(law.reference_temperature))+coeff[3]*T;
         const Wide lnKT=-coeff[1]/(T*T)+coeff[2]/T+coeff[3],lnKTT=2*coeff[1]/(T*T*T)-coeff[2]/(T*T);
-        const Wide scale=2*CppAD::log(mass),target=lnK+scale+src.C;
+        // The raw mole-fraction basis has no common-molality scale 2 ln M_w.
+        const Wide scale=source.source_basis==ReferenceSourceBasis::RawMoleFractionInfiniteDilution?Wide(0):2*CppAD::log(mass);
+        const Wide target=lnK+scale+src.C;
         Wide y=production.solved.mole_fractions[1];State sys{};
         Wide chemical=0;
         for(std::size_t iteration=0;iteration<8;++iteration) {

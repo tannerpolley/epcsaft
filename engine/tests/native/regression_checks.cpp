@@ -1,6 +1,7 @@
 // Numerical falsifiers of the regression layer: observations, fits and their exact columns
 // (#46 R1, #86 density actions, #47 R2, #48 R3 and later issues), and the native rows the
 // public R4 transport reproduces (#49).
+#include "quad_base.hpp"
 #include "regression/fit.hpp"
 
 #include "equilibrium/gibbs_minimizer.hpp"
@@ -10,6 +11,8 @@
 #include "surface/parameter_builder.hpp"
 #include "properties/helmholtz_tape.hpp"
 #include "equilibrium/stoichiometry.hpp"
+#include "properties/thermochemistry.hpp"
+#include "reactive_caloric_checks.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -2402,44 +2405,47 @@ void check_ionic_addition_enthalpy() {
   std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
       field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
+    using reactive_caloric_checks::Wide;
+    const std::vector<reactive_caloric_checks::Quantity> enthalpy{{"H", "J", 0.0, {}}};
     for (std::size_t column = 0; column < 2; ++column) {
+        // Delta h_add composed in binary128: WideIonic re-solves each endpoint's density and
+        // dissociation and the added water's state from the EOS kernels; the double solves only
+        // seed and check it, so no double endpoint rounding (~7e-10 J/mol) enters the differences.
         const auto composed = [&](double shift) {
             auto u = start;
             u[column] += shift;
             auto changed = std::vector<Observation>{row};
             coordinates.apply(changed, u);
-            const HelmholtzModel rebuilt(coordinates.apply(parameters, u), coordinates.active_parameters(), record);
-            return (endpoint(rebuilt, changed[0].final_problem, 0.0, true)
-                - endpoint(rebuilt, changed[0].problem, 0.0, true)) / amount;
+            reactive_caloric_checks::Case c{"ionic-addition", coordinates.apply(parameters, u), {}, record, {}, true};
+            const HelmholtzModel rebuilt(c.parameters, coordinates.active_parameters(), record);
+            Wide h[2], feed = 0;
+            for (std::size_t k = 0; k < 2; ++k) {
+                c.problem = k ? changed[0].final_problem : changed[0].problem;
+                reactive_caloric_checks::Sample sample;
+                sample.solved = equilibrium::solve_equilibrium(rebuilt, c.problem);
+                CHECK(sample.solved.success);
+                sample.phase.rho = sample.solved.molar_densities[0];
+                reactive_caloric_checks::WideIonic oracle(c, sample);
+                h[k] = oracle.values(enthalpy, {}, 1.0, 0, sample)[0];
+                if (k) feed = oracle.solvent_enthalpy(sample.phase.rho);
+            }
+            return (h[1] - h[0]) / Wide(amount) - feed;
         };
-        // 0.0025 segment-count nodes amplify endpoint/root rounding above
-        // 4e-8; use 0.04/0.02/0.01 and require Richardson resolution below it.
-        // The B optimizer coordinate has scale T=298.15 K; 0.02 means
-        // 5.963/2.9815/1.49075 K, not the unresolved 298/149/74.5 K ladder.
-        const double step = column == 0 ? 0.04 : 0.02;
-        const auto rungs = ladder(composed, step);
-        const double finer = ladder(composed, step * 0.5).fine;
-        const double R1 = (4.0 * rungs.fine - rungs.coarse) / 3.0;
-        const double R2 = (4.0 * finer - rungs.fine) / 3.0;
+        const auto central = [&](double h) { return (composed(h) - composed(-h)) / Wide(2.0 * h); };
+        const double step = 0.02;
+        const Wide d1 = central(step), d2 = central(step / 2), d4 = central(step / 4);
         const double scale = coordinates.coordinates[column].scale;
+        const double R1 = double((4 * d2 - d1) / 3) / scale, reference = double((4 * d4 - d2) / 3) / scale;
         const double action = exact.value[column];
-        const double reference = R2 / scale;
         const double tolerance = 1.0e-6 * std::abs(reference);
-        const double uncertainty = std::abs(R2 - R1) / scale;
-        // Endpoint rounding: each composed point carries delta = DBL_EPSILON (|H_i| + |H_f|) / n_add
-        // (7.0e-10 J/mol here; a rounding-only change moved points by 6e-10 to 1.2e-9, and the
-        // conserved-basis value above differs by 2.8e-10). R2 weights c(+-s/4) by 8/(3s) and
-        // c(+-s/2) by 1/(3s), so it carries at most 6 delta / (s scale).
-        const double rounding = 6.0 * std::numeric_limits<double>::epsilon()
-            * (std::abs(H_initial) + std::abs(H_final)) / amount / (step * scale);
-        truth("addition-ionic/column-refinement/" + std::to_string(column), "the rebuilt endpoint/feed derivative is resolved below its criterion",
-      uncertainty <= tolerance && std::abs(reference) > tolerance,
-      fields({field("coarse", rungs.coarse / scale), field("middle", rungs.fine / scale), field("fine", finer / scale),
-          field("uncertainty", uncertainty), field("allowance", tolerance)}), "addition-ionic");
+        const double uncertainty = std::abs(reference - R1);
+        truth("addition-ionic/column-refinement/" + std::to_string(column), "the binary128 endpoint/feed derivative is resolved to 1e-7",
+      uncertainty <= 1.0e-7 * std::abs(reference),
+      fields({field("coarse", double(d1) / scale), field("middle", double(d2) / scale), field("fine", double(d4) / scale),
+          field("uncertainty", uncertainty), field("relative_uncertainty", uncertainty / std::abs(reference))}), "addition-ionic");
         agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
-      tolerance + rounding, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty),
-          field("rounding", rounding)}),
-      "one EOS and one source-law column agree with rebuilt composed endpoint/feed differences", "addition-ionic");
+      tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
+      "one EOS and one source-law column agree with binary128 composed endpoint/feed differences", "addition-ionic");
     }
 }
 
