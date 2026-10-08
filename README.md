@@ -118,7 +118,7 @@ tools/heavy tools/native-run equilibrium_checks caloric-admission
 tools/heavy tools/native-run equilibrium/Automatic_fast/e5-neutral
 ```
 
-Find a claim's case with `grep -n '"<claim>/' engine/tests/native/*.cpp`, or with
+Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.cpp`, or with
 `--list`, which prints each case's test id, arguments and alias; `native-run` also
 takes the Meson test name that `run-native-tests.sh` prints.
 

@@ -21,6 +21,7 @@ application source, clone its GitHub repository into `downstream/<application>`.
 The original `codex/greenfield-migration-draft` clones contain retained local edits.
 Preserve them and their `copy-provenance.json` record. Their `origin` remotes point
 to the main local application checkouts; do not fetch, pull or push those remotes.
+Their `github` remote is the GitHub repository; fetch it to read current application `main`.
 A fresh direct GitHub clone can use its normal `origin` remote. Do not reset a
 retained draft to make it match a newer base.
 
@@ -32,7 +33,7 @@ An input-requirements checkpoint does not authorize numerical-kernel implementat
 application adoption or qualification.
 
 All numerical work consumes one explicitly identified, non-editable Engine wheel.
-Record its SHA-256 and retain the inputs and claim limits. Pin
+Record its path and SHA-256 with `epcsaft.installed_wheel()`, and retain the inputs and claim limits. Pin
 `build/wheels/main-<commit>/epcsaft-*.whl` in the main Engine checkout:
 `tools/refresh-main-wheel` keeps one copy per refreshed main commit and never
 replaces it. Never pin `~/.cache/epcsaft` or `build/<task>/`; both are scratch.

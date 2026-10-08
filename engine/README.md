@@ -115,7 +115,7 @@ fugacity = math.exp(row.value) * GAS_CONSTANT_J_PER_MOL_K * central.temperature[
 ```
 
 `solve_equilibrium` has no time limit; `solve_equilibrium_starts` tries declared
-starts in order under shared work limits and selects the first that meets the criterion:
+starts in order under shared work limits and stops at the first that succeeds with its requested tolerance met:
 
 ```python
 limits = equilibrium.EquilibriumWorkLimits(seconds=60.0, attempt_seconds=20.0)
@@ -123,8 +123,9 @@ tried = equilibrium.solve_equilibrium_starts(model, problem, [equilibrium.Equili
 result = None if tried.selected is None else tried.results[tried.selected]  # tried.causes says why not
 ```
 
-A default `EquilibriumStart` skips the speciated seed that `solve_equilibrium` tries
-first, so it can take a different path and work count to the same state; it does not replay `solve_equilibrium`.
+A default `EquilibriumStart` begins from the feed composition, without the K-factor estimate, pressure
+seed or speciated seed that `solve_equilibrium` uses where they apply, so it can take a different path and work count to the
+same state (#350); it does not replay `solve_equilibrium`.
 
 Invalid declarations and inputs raise `ParameterError` (a `ValueError`) before iterating. A
 solve that runs reports non-convergence, structural infeasibility and rejected density
