@@ -738,7 +738,7 @@ iterations in both phase orders, the neutral liquid case 42 to 50, the neutral v
 case 120 to 113, and E4-C reaches the same 0.6075 with 2,172 to 2,181 optimizer
 callbacks. Over the 58 MEA family points accepted by both starts, 12 need more of
 some work component (worst 49/69/50 to 145/446/144) while the sums fall from
-2735/4331/2791 to 1847/3437/1902. The qualification trace found the identified base
+2778/4388/2835 to 1866/3479/1922. The qualification trace found the identified base
 and active bound at all 16,161 admissions over 2,540 callbacks, including restoration
 and watchdog rollback. The value 0.1 is provisional (#356). The rule reads Ipopt
 3.11.9 internals (the TNLP adapter's ordering, the current iterate and the active
