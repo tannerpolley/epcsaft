@@ -84,6 +84,42 @@ Curvature reduced_curvature_at(
             std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm())};
 }
 
+bool zero_amount(const PhaseSpec& phase) {
+    return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
+}
+
+// EqID local_phase_stability (#352) for a neutral nonreacting liquid/vapor pair with an incipient zero-amount
+// phase: every phase's M = D Q D, Q = F_nn + diag(1/n) at unit amount (EqID critical_equations), D = diag sqrt(x)
+// on its support, may hold no resolved negative eigenvalue, lambda < -(||M v - lambda v|| + C eps ||M||_F).
+// Returns the refusal, empty when admitted or outside that domain.
+std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
+    const auto& phases = compiled.problem.phases;
+    if (compiled.has_ions || compiled.has_reaction || phases.size() != 2 || phases[0].kind == phases[1].kind
+        || std::none_of(phases.begin(), phases.end(), zero_amount)) return {};
+    for (std::size_t phase = 0; phase < phases.size(); ++phase) {
+        const auto& support = phases[phase].support;
+        const auto& x = prepared.composition[phase];
+        const auto& derivative = prepared.derivative[phase];
+        const std::size_t width = derivative.gradient.size();
+        const auto c = static_cast<Eigen::Index>(support.size());
+        Eigen::MatrixXd M(c, c);
+        for (Eigen::Index a = 0; a < c; ++a)
+            for (Eigen::Index b = 0; b < c; ++b)
+                M(a, b) = std::sqrt(x[support[a]] * x[support[b]]) * derivative.hessian[(2 + support[a]) * width + 2 + support[b]]
+                    + (a == b ? 1.0 : 0.0);
+        const std::string name = "local phase instability: phase " + phases[phase].name;
+        if (!M.allFinite()) return name + " stability matrix is not finite";
+        const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(M);
+        if (eigen.info() != Eigen::Success) return name + " stability eigensolve failed";
+        const double lowest = eigen.eigenvalues()(0);
+        const Eigen::VectorXd v = eigen.eigenvectors().col(0);
+        const double band = (M * v - lowest * v).norm() + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * M.norm();
+        if (lowest < -band) return name + " has lowest eigenvalue " + core::optional_number(lowest)
+            + " below the rounding band -" + core::optional_number(band);
+    }
+    return {};
+}
+
 double michelsen_deficit(
     const CompiledSystem& compiled,
     const std::vector<double>& composition,
@@ -968,8 +1004,12 @@ EquilibriumResult run_driver(
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
-    const bool accepted = !expired() && non_error && topology_ok && (result.convergence.stop == core::Stop::converged
+    bool accepted = !expired() && non_error && topology_ok && (result.convergence.stop == core::Stop::converged
         || (result.convergence.stop == core::Stop::converged_to_floor && status == Ipopt::SUCCESS));
+    if (accepted) {
+        topology_failure = local_phase_instability(compiled, prepared);
+        topology_ok = accepted = topology_failure.empty();
+    }
     if (!accepted) {
         result.success = false;
         if (!topology_ok) result.message = topology_failure;
@@ -1136,10 +1176,6 @@ BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& re
         result.message += "; critical-equation candidate, no stability certificate";
     }
     return outcome;
-}
-
-bool zero_amount(const PhaseSpec& phase) {
-    return phase.amount.kind == AmountKind::Pinned && phase.amount.fraction == 0.0;
 }
 
 // A cold reactive boundary at fixed T and free P: the phases present (nonzero amount) alone, in reaction
