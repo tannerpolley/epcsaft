@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from epcsaft import DensityActionDirection, Mixture, Parameters, PropertyActionStatus, PropertyObservable, Pure
-from tests.eos.test_actions import _mixed_difference
+from tests.native_inputs import mixed_difference
 from tests.packets import parameters_json
 
 ROWS = Path(__file__).resolve().parents[3] / "analyses/2026-polar-dipole/results/teqp-dipolar-rows.csv"
@@ -117,8 +117,8 @@ def test_dipolar_derivative_actions_and_identities() -> None:
         result = batch.results[0]
         assert result.status == PropertyActionStatus.Available and result.action is not None
         step = 0.2
-        coarse = _mixed_difference(enthalpy, temperature, density, x, raw[:order], step)
-        fine = _mixed_difference(enthalpy, temperature, density, x, raw[:order], step / 2)
+        coarse = mixed_difference(enthalpy, temperature, density, x, raw[:order], step)
+        fine = mixed_difference(enthalpy, temperature, density, x, raw[:order], step / 2)
         reference = (4.0 * fine - coarse) / 3.0
         assert abs(result.action - reference) <= tolerance * abs(reference), (order, result.action, reference)
         without = nonpolar.density_actions(temperature, density, x=x,

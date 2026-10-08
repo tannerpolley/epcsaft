@@ -3,7 +3,7 @@ from typing import Any
 
 from epcsaft import ActiveParameter, Mixture, ParameterFamily, _core
 from epcsaft import equilibrium as eq
-from ..native_inputs import ETHANE, parameters, same
+from tests.native_inputs import ETHANE, parameters, same
 
 
 def test_dispersion_path_preserves_exchange_amounts_and_compositions(evidence: Any) -> None:

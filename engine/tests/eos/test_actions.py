@@ -1,4 +1,3 @@
-import itertools
 import math
 from collections.abc import Callable, Sequence
 from typing import Any, cast
@@ -15,37 +14,8 @@ from epcsaft import (
     PropertyObservable,
     Pure,
 )
-from tests.native_inputs import packet_metadata
+from tests.native_inputs import mixed_difference, packet_metadata
 from tests.packets import parameters_json
-
-
-def _mixed_difference(
-    evaluate: Callable[[float, float, tuple[float, ...]], float],
-    temperature: float,
-    coordinate: float,
-    composition: tuple[float, ...],
-    directions: Sequence[tuple[float, float, tuple[float, ...]]],
-    step: float,
-) -> float:
-    total = 0.0
-    for signs in itertools.product((-1.0, 1.0), repeat=len(directions)):
-        varied_temperature = temperature + step * sum(
-            sign * direction[0] for sign, direction in zip(signs, directions)
-        )
-        varied_coordinate = coordinate + step * sum(
-            sign * direction[1] for sign, direction in zip(signs, directions)
-        )
-        varied_composition = tuple(
-            value + step * sum(
-                sign * direction[2][index]
-                for sign, direction in zip(signs, directions)
-            )
-            for index, value in enumerate(composition)
-        )
-        total += math.prod(signs) * evaluate(
-            varied_temperature, varied_coordinate, varied_composition
-        )
-    return total / (2.0 * step) ** len(directions)
 
 
 def test_public_residual_actions_match_independent_stencils(evidence: Any) -> None:
@@ -123,7 +93,7 @@ def test_public_residual_actions_match_independent_stencils(evidence: Any) -> No
             assert math.isclose(result.value, central.residual_enthalpy, rel_tol=1e-12)
             steps = (0.2, 0.1) if chart == "density" else (0.1, 0.05)
             for step in steps:
-                reference = _mixed_difference(
+                reference = mixed_difference(
                     evaluate, temperature, coordinate, composition, raw[:order], step,
                 )
                 evidence.compare(

@@ -6,7 +6,7 @@ import pytest
 
 from epcsaft import Mixture, Pure
 from epcsaft import equilibrium as eq
-from ..native_inputs import ETHANE, parameters
+from tests.native_inputs import ETHANE, parameters
 
 
 def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -> None:

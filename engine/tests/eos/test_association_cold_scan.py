@@ -4,7 +4,7 @@ from typing import Any
 
 from epcsaft import Mixture, trace
 
-from ..native_inputs import parameters, same
+from tests.native_inputs import parameters, same
 
 
 def test_ethanol_butane_cold_scan_resolves_pinned_node(evidence: Any) -> None:

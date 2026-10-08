@@ -106,7 +106,7 @@ def _aard_criterion(
     }
 
 
-def _csv_rows(path: Path) -> list[dict[str, float | str]]:
+def _csv_rows(path: Path) -> list[dict[str, Any]]:
     with path.open(newline="") as stream:
         return [
             {key: value if key == "salt" else float(value) for key, value in row.items()}

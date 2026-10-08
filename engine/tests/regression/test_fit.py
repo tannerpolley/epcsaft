@@ -8,9 +8,9 @@ from epcsaft import (
     DensityBranch, Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
     regression,
 )
-from epcsaft.equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem, asl_record, solve_equilibrium
+from epcsaft.equilibrium import Amounts, Discover, Phase, Problem, asl_record, solve_equilibrium
 
-from ..native_inputs import ETHANE, ROWS, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
+from tests.native_inputs import ETHANE, ROWS, bubble, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -19,12 +19,6 @@ BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
 def neutral_binary(epsilon: float = 150.03, kij: float = 0.0) -> Any:
     """properties_support::neutral_binary() with the R2-J2 truth or start values."""
     return parameters(((METHANE[0], METHANE[1], METHANE[2], epsilon), ETHANE), pairs=[("k_ij", (0, 1), kij)])
-
-
-def bubble(T: float) -> Problem:
-    """equilibrium_support::boundary(): L free, V pinned 0, P free from 1e5 Pa, equimolar amounts."""
-    return Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
-                   T=T, P=Free(1.0e5), feed=Amounts({"s0": 0.5, "s1": 0.5}))
 
 
 def manufactured() -> tuple[Any, list[Any]]:
@@ -239,7 +233,7 @@ def test_asl_record_rejects_fitted_parameters_early() -> None:
 
 def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     """#219 compact F2/F5/F6: one salt, an identifiable held chart, final native metrics."""
-    from ..packets import parameters_json
+    from tests.packets import parameters_json
 
     p = Parameters.from_json(
         parameters_json("figiel-2025-reference-electrolytes", 4),

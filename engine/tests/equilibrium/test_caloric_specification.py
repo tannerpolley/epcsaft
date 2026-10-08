@@ -3,11 +3,11 @@ import pytest
 from typing import Any
 from epcsaft.equilibrium import Amounts, Free, Phase, Problem, solve_equilibrium
 from epcsaft.equilibrium import SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind, compile_problem, solved_state_actions
-from .test_reference_calorics import _model, A_RECORD
+from tests.native_inputs import A_RECORD, twin_ethane
 
 @pytest.mark.parametrize("field,quantity", [("enthalpy_j", "total_enthalpy"), ("entropy_j_per_k", "total_entropy")])
 def test_caloric_transport(field: str, quantity: str) -> None:
-    model = _model(A_RECORD, A_RECORD)
+    model = twin_ethane(A_RECORD, A_RECORD)
     target = getattr(model.state(300.0, P=1.0e6, x=[1.0, 0.0], phase="liquid"), quantity)
     problem = Problem(T=Free(280.0), P=1.0e6, feed=Amounts({"s0": 1.0, "s1": 0.0}), phases=[Phase("L", kind="liquid")], row_tolerance=1e-11, **{field: target})
     result = solve_equilibrium(model, problem)
