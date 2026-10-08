@@ -2,4 +2,8 @@
 # Ninja, one at a time per checkout: imports of the editable install, native tests and
 # wheels share build/engine-meson/shared, and two ninjas in one tree corrupt its logs.
 # tools/build-engine.sh sets NINJA to this file; Meson and meson-python both run $NINJA.
-exec flock "$(dirname "${BASH_SOURCE[0]}")/../build/engine-meson/ninja.lock" ninja "$@"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# ccache hashes paths under the checkout (the .venv's pybind11 headers) relative to the build
+# directory, so a new worktree reuses another checkout's objects.
+export CCACHE_BASEDIR="$root"
+exec flock "$root/build/engine-meson/ninja.lock" ninja "$@"
