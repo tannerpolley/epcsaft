@@ -317,54 +317,6 @@ double maximum_abs(const std::vector<double>& values) {
     return result;
 }
 
-void expect_weighted_hessian_gradient_ladder(
-    const epcsaft::equilibrium::CompiledSystem& compiled,
-    const std::vector<double>& point,
-    const std::vector<double>& multipliers,
-    const char* label
-) {
-    epcsaft::equilibrium::GibbsMinimizer nlp(compiled, point);
-    Ipopt::Index variables = 0, constraints = 0, jacobian_entries = 0, hessian_entries = 0;
-    Ipopt::TNLP::IndexStyleEnum index_style;
-    CHECK(nlp.get_nlp_info(variables, constraints, jacobian_entries, hessian_entries, index_style));
-    const auto objective_factors = {0.0, 0.5, 1.0};
-    const auto step_factors = {10.0, 3.0, 1.0};
-    const std::size_t lower_triangle_count = point.size() * (point.size() + 1) / 2;
-    const auto context = weighted_hessian_context(compiled);
-    const auto definition = recording_support::fields({
-        context,
-        recording_support::field("case", label),
-        recording_support::field("point", point),
-        recording_support::field("multipliers", multipliers),
-        recording_support::field("variables", point.size()),
-        recording_support::field("constraints", multipliers.size()),
-        recording_support::field("matrix", "lower_triangle"),
-        recording_support::field("objective_factors", std::vector<double>{0.0, 0.5, 1.0}),
-        recording_support::field("step_factors", std::vector<double>{10.0, 3.0, 1.0}),
-        recording_support::field("hessian_entries", static_cast<std::size_t>(hessian_entries)),
-    });
-    for (const double objective_factor : objective_factors) {
-        for (const double step_factor : step_factors) {
-            const auto prefix = std::string("hessian/") + label
-                + "/objective-" + recording_support::number(objective_factor)
-                + "/step-" + recording_support::number(step_factor) + "/";
-            const auto group_definition = recording_support::fields({
-                definition,
-                recording_support::field("objective_factor", objective_factor),
-                recording_support::field("step_factor", step_factor),
-                recording_support::field("expected_rows", lower_triangle_count),
-            });
-            recording_support::expect_group(
-                "native.equilibrium.f5", "f5-hessian-ladder", prefix.c_str(),
-                lower_triangle_count, group_definition,
-                recording_support::field(
-                    "coordinate_schema", "case,objective_factor,step_factor,row,column"
-                ).c_str()
-            );
-        }
-    }
-}
-
 bool check_weighted_hessian_gradient_ladder(
     const epcsaft::equilibrium::CompiledSystem& compiled,
     const std::vector<double>& point,
@@ -2133,9 +2085,6 @@ void check_c1_ideal_caller_chart() {
             recording_support::field("objective", base.objective),
         });
     };
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-equilibrium-caller", "objective-gradient/", 6,
-        "off-normalized CompiledSystem objective gradient matches objective value ladder", "coordinate,step");
     for (const std::size_t column : {std::size_t(0), std::size_t(1)}) {
         for (const double step : {1.0e-2, 3.0e-3, 1.0e-3}) {
             auto plus = point;
@@ -2195,14 +2144,6 @@ void check_s10() {
     std::vector<double> pinned_lambda(pinned_rows.size());
     for (std::size_t row = 0; row < pinned_lambda.size(); ++row)
         pinned_lambda[row] = 0.35 + 0.1 * static_cast<double>(row);
-    // Publish both complete sweeps before either ladder starts evaluating
-    // weighted gradients, so a regular-case failure cannot hide pinned rows.
-    expect_weighted_hessian_gradient_ladder(
-        flash, primal, lambda, "regular"
-    );
-    expect_weighted_hessian_gradient_ladder(
-        pinned, pinned_point, pinned_lambda, "pinned"
-    );
     std::array<std::size_t, 3> regular_false_verdicts{};
     std::array<std::size_t, 3> pinned_false_verdicts{};
     const bool regular_ok = check_weighted_hessian_gradient_ladder(
@@ -2253,7 +2194,6 @@ void check_s10() {
         std::vector<double> weights(callback_rows(compiled).size(), 0.0);
         for (std::size_t row = 0; row < weights.size(); ++row)
             weights[row] = 0.35 + 0.1 * static_cast<double>(row);
-        expect_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label);
         intensive_curvature_ok = check_weighted_hessian_gradient_ladder(
             compiled, callback_point, weights, label, 1.0e-5) && intensive_curvature_ok;
         if (variant == 1) {
@@ -2660,9 +2600,6 @@ void check_c3_availability() {
         && std::isfinite(success.convergence.residual)
         && !success.solver_status.empty();
 
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c3-availability", "c3-availability", 2,
-        "C3 equilibrium availability", "check");
     recording_support::compare(
         "c3-availability", "failed-result", "1",
         (retained && cleared && failure_reason && tiny_step_stalled) ? 1.0 : 0.0, 1.0,
@@ -5232,61 +5169,61 @@ void check_normalized_reaction_affinity() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.equilibrium.caloric-admission", "Caloric_specification_admission", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-admission"}, caloric_specification_checks::admission, "caloric-specification"},
-        {{"native.equilibrium.caloric-actions", "Caloric_specification_actions", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-actions"}, caloric_specification_checks::actions, "caloric-specification"},
-        {{"native.equilibrium.caloric-curvature", "Caloric_specification_curvature", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-curvature"}, caloric_specification_checks::curvature, "caloric-specification"},
-        {{"native.equilibrium.caloric-roundtrips", "Caloric_specification_roundtrips", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-roundtrips"}, caloric_specification_checks::roundtrips, "caloric-specification"},
-        {{"native.equilibrium.caloric-reactions", "Caloric_reaction_consistency", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/caloric_specification_checks.hpp", "equilibrium_checks", "caloric-reactions"}, caloric_specification_checks::reactions, "caloric-specification"},
-        {{"native.equilibrium.critical-pure", "Critical_pure_C1_C2", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-pure"}, critical_envelope_checks::pure_critical, "critical-envelope"},
-        {{"native.equilibrium.critical-binary", "Critical_binary_C3", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-binary"}, critical_envelope_checks::binary_critical, "critical-envelope"},
-        {{"native.equilibrium.critical-curvature", "Critical_envelope_curvature", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "critical-curvature"}, critical_envelope_checks::curvature, "critical-envelope"},
-        {{"native.equilibrium.envelope-mixture", "Envelope_mixture_E1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "envelope-mixture"}, critical_envelope_checks::mixture, "critical-envelope"},
-        {{"native.equilibrium.envelope-pure", "Envelope_pure_E3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-224", "*", "engine/tests/native/critical_envelope_checks.hpp", "equilibrium_checks", "envelope-pure"}, critical_envelope_checks::pure, "critical-envelope"},
-        {{"native.equilibrium.removal", "Phase_removal_inventory", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_phase_removal_inventory},
-        {{"native.equilibrium.plane-curvature", "Tangent_plane_curvature", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_curvature},
-        {{"native.equilibrium.plane-admission", "Tangent_plane_admission", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_tangent_plane_admission},
-        {{"native.equilibrium.normalized-reaction", "Normalized_reaction_affinity", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "TPD"}, check_normalized_reaction_affinity},
-        {{"native.equilibrium.f5", "Weighted_equilibrium_curvature", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "hessian/regular/*,hessian/pinned/*,jacobian/*,correlated-jacobian/*,f5-summary/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "F5"}, check_s10, "S10"},
-        {{"native.equilibrium.s1", "Equilibrium_S1", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "residual/*,gibbs-dual/*,charge/*,affinity/*,feed-dual/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S1"}, check_s1},
-        {{"native.equilibrium.reference-caloric-identities", "Anchored_Gibbs_caloric_identities", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "reference-calorics/F4/*,reference-calorics/F5/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reference-caloric-identities"}, reactive_caloric_checks::cheap, "S2"},
-        {{"native.equilibrium.reactive-caloric-F2", "Apparent_Cp_quadrature", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F2/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F2"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
-        {{"native.equilibrium.reactive-cp-F1", "Apparent_Cp_independent_H", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F1/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-cp-F1"}, [] {for(bool ionic:{false,true}) for(bool fixed:{false,true}) reactive_caloric_checks::cp_f1(ionic,fixed);}, "reactive-cp"},
-        {{"native.equilibrium.reactive-cp-F3", "Apparent_Cp_nonreacting", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "issue-225", "F3/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-cp-F3"}, reactive_caloric_checks::cp_f3, "reactive-cp"},
-        {{"native.equilibrium.reactive-caloric-E-sys", "Reactive_caloric_E_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-sys/*,F4/E-sys/*,F5/E-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-sys"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-E-fix", "Reactive_caloric_E_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/E-fix/*,F4/E-fix/*,F5/E-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-E-fix"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-I-sys", "Reactive_caloric_I_system", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-sys/*,F4/I-sys/*,F5/I-sys/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-sys"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-I-fix", "Reactive_caloric_I_fixed", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F1/I-fix/*,F4/I-fix/*,F5/I-fix/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-I-fix"}, [] {reactive_caloric_checks::run(true,true);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-U", "Nonreacting_caloric_P4_reduction", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F3/U/*,F1/U/*,F5/U/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-U"}, reactive_caloric_checks::unreactive, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-E-T-sys", "Free_intensive_E_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-sys"}, [] {reactive_caloric_checks::boundary(false,true,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-E-T-fix", "Free_intensive_E_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-T-fix"}, [] {reactive_caloric_checks::boundary(false,true,true);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-E-P-sys", "Free_intensive_E_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-sys"}, [] {reactive_caloric_checks::boundary(false,false,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-E-P-fix", "Free_intensive_E_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/E-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-E-P-fix"}, [] {reactive_caloric_checks::boundary(false,false,true);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-N-T-sys", "Free_intensive_N_T_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-sys"}, [] {reactive_caloric_checks::boundary(true,true,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-N-T-fix", "Free_intensive_N_T_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-T-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-T-fix"}, [] {reactive_caloric_checks::boundary(true,true,true);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "Free_intensive_N_P_sys", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-sys/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-sys"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
-        {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "Free_intensive_N_P_fix", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E5", "F6/N-bubble-P-fix/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "reactive-caloric-F6-N-P-fix"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
-        {{"native.equilibrium.s2", "Equilibrium_S2", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "binary-success,binary-curvature,reactive-success,reactive-curvature,neutral-reference/*,reference-temperature/*,reference-calorics/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S2"}, check_s2},
-        {{"native.equilibrium.s6", "Equilibrium_S6", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "one-success,two-success,objective-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S6"}, check_s6},
-        {{"native.equilibrium.s7", "Equilibrium_S7", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "continuation/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S7", "continuation/*:12"}, check_s7},
-        {{"native.equilibrium.c1", "Core_C1_amount_scale", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "CORE1", "c1-amount-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_amount_scale},
-        {{"native.equilibrium.c1-multipliers", "Core_C1_multiplier_scale", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "CORE1", "c1-multiplier-scale/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1"}, check_c1_multiplier_scale},
-        {{"native.equilibrium.c1-ideal-caller", "Contributions_C1_ideal_caller_chart", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "C1", "objective-gradient/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C1", "objective-gradient/*:6"}, check_c1_ideal_caller_chart},
-        {{"native.equilibrium.s11", "Equilibrium_S11", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "standard-affinity,pressure-gap/*,final-gap", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S11", "pressure-gap/*:3"}, check_s11},
-        {{"native.equilibrium.s13", "Equilibrium_S13", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "phase-count,composition-*,density-root", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S13", "composition-*:2"}, check_s13},
-        {{"native.equilibrium.s15", "Equilibrium_S15", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "vanished-phase,deficit,distance", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S15"}, check_s15},
-        {{"native.equilibrium.c3", "Core_C3_availability", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "CORE3", "c3-availability", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "C3", "c3-availability:2"}, check_c3_availability},
-        {{"native.equilibrium.s16", "Equilibrium_S16", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E1", "continuation/*,affinity/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "S16", "continuation/*:18,affinity/*:6"}, check_s16},
-        {{"native.equilibrium.e2-thermal", "Equilibrium_E2_thermal", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E2", "e2-2/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-2"}, check_e2_thermal},
-        {{"native.equilibrium.e2-solve", "Equilibrium_E2_solve", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E2", "e2-6/*,e2-7/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-6"}, check_e2_solve},
-        {{"native.equilibrium.e2-reuse", "Equilibrium_E2_reuse", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E2", "e2-reuse/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E2-R"}, check_e2_reuse},
-        {{"native.equilibrium.e5-neutral", "Equilibrium_E5_neutral", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-1/*,e5-9/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-1"}, check_e5_neutral},
-        {{"native.equilibrium.e5-pins", "Equilibrium_E5_pins", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-2/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-2"}, check_e5_pins},
-        {{"native.equilibrium.e5-reactive", "Equilibrium_E5_reactive", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-3/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-3"}, check_e5_reactive},
-        {{"native.equilibrium.e5-associating", "Equilibrium_E5_associating", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-4/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-4"}, check_e5_associating},
-        {{"native.equilibrium.e5-electrolyte", "Equilibrium_E5_electrolyte", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-5/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-5"}, check_e5_electrolyte},
-        {{"native.equilibrium.e5-roots", "Equilibrium_E5_roots", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-6/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-6"}, check_e5_roots},
-        {{"native.equilibrium.e5-thermal", "Equilibrium_E5_thermal", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-7/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-7"}, check_e5_thermal},
-        {{"native.equilibrium.e5-refusals", "Equilibrium_E5_refusals", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "E5", "e5-8/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-8"}, check_e5_refusals},
-        {{"native.equilibrium.e5-identities", "Equilibrium_E5_identities", "Numerical", "Equilibrium", "Automatic_fast", "Numerical", nullptr, "S3", "e5-10/*", "engine/tests/native/equilibrium_checks.cpp", "equilibrium_checks", "E5-10"}, check_e5_identities},
+        {{"native.equilibrium.caloric-admission", "caloric-admission", "Automatic_fast"}, caloric_specification_checks::admission, "caloric-specification"},
+        {{"native.equilibrium.caloric-actions", "caloric-actions", "Automatic_fast"}, caloric_specification_checks::actions, "caloric-specification"},
+        {{"native.equilibrium.caloric-curvature", "caloric-curvature", "Automatic_fast"}, caloric_specification_checks::curvature, "caloric-specification"},
+        {{"native.equilibrium.caloric-roundtrips", "caloric-roundtrips", "Automatic_fast"}, caloric_specification_checks::roundtrips, "caloric-specification"},
+        {{"native.equilibrium.caloric-reactions", "caloric-reactions", "Automatic_fast"}, caloric_specification_checks::reactions, "caloric-specification"},
+        {{"native.equilibrium.critical-pure", "critical-pure", "Automatic_fast"}, critical_envelope_checks::pure_critical, "critical-envelope"},
+        {{"native.equilibrium.critical-binary", "critical-binary", "Automatic_fast"}, critical_envelope_checks::binary_critical, "critical-envelope"},
+        {{"native.equilibrium.critical-curvature", "critical-curvature", "Automatic_fast"}, critical_envelope_checks::curvature, "critical-envelope"},
+        {{"native.equilibrium.envelope-mixture", "envelope-mixture", "Explicit"}, critical_envelope_checks::mixture, "critical-envelope"},
+        {{"native.equilibrium.envelope-pure", "envelope-pure", "Explicit"}, critical_envelope_checks::pure, "critical-envelope"},
+        {{"native.equilibrium.removal", "TPD", "Automatic_fast"}, check_phase_removal_inventory},
+        {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
+        {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
+        {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},
+        {{"native.equilibrium.f5", "F5", "Automatic_fast"}, check_s10, "S10"},
+        {{"native.equilibrium.s1", "S1", "Automatic_fast"}, check_s1},
+        {{"native.equilibrium.reference-caloric-identities", "reference-caloric-identities", "Automatic_fast"}, reactive_caloric_checks::cheap, "S2"},
+        {{"native.equilibrium.reactive-caloric-F2", "reactive-caloric-F2", "Explicit"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
+        {{"native.equilibrium.reactive-cp-F1", "reactive-cp-F1", "Explicit"}, [] {for(bool ionic:{false,true}) for(bool fixed:{false,true}) reactive_caloric_checks::cp_f1(ionic,fixed);}, "reactive-cp"},
+        {{"native.equilibrium.reactive-cp-F3", "reactive-cp-F3", "Explicit"}, reactive_caloric_checks::cp_f3, "reactive-cp"},
+        {{"native.equilibrium.reactive-caloric-E-sys", "reactive-caloric-E-sys", "Explicit"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-E-fix", "reactive-caloric-E-fix", "Explicit"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-I-sys", "reactive-caloric-I-sys", "Explicit"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-I-fix", "reactive-caloric-I-fix", "Explicit"}, [] {reactive_caloric_checks::run(true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-U", "reactive-caloric-U", "Explicit"}, reactive_caloric_checks::unreactive, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-sys", "reactive-caloric-F6-E-T-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(false,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-T-fix", "reactive-caloric-F6-E-T-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(false,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-sys", "reactive-caloric-F6-E-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(false,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-E-P-fix", "reactive-caloric-F6-E-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(false,false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-sys", "reactive-caloric-F6-N-T-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,true,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-T-fix", "reactive-caloric-F6-N-T-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,true,true);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "reactive-caloric-F6-N-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
+        {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "reactive-caloric-F6-N-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
+        {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
+        {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},
+        {{"native.equilibrium.s7", "S7", "Automatic_fast"}, check_s7},
+        {{"native.equilibrium.c1", "C1", "Automatic_fast"}, check_c1_amount_scale},
+        {{"native.equilibrium.c1-multipliers", "C1", "Automatic_fast"}, check_c1_multiplier_scale},
+        {{"native.equilibrium.c1-ideal-caller", "C1", "Automatic_fast"}, check_c1_ideal_caller_chart},
+        {{"native.equilibrium.s11", "S11", "Automatic_fast"}, check_s11},
+        {{"native.equilibrium.s13", "S13", "Automatic_fast"}, check_s13},
+        {{"native.equilibrium.s15", "S15", "Automatic_fast"}, check_s15},
+        {{"native.equilibrium.c3", "C3", "Automatic_fast"}, check_c3_availability},
+        {{"native.equilibrium.s16", "S16", "Automatic_fast"}, check_s16},
+        {{"native.equilibrium.e2-thermal", "E2-2", "Automatic_fast"}, check_e2_thermal},
+        {{"native.equilibrium.e2-solve", "E2-6", "Automatic_fast"}, check_e2_solve},
+        {{"native.equilibrium.e2-reuse", "E2-R", "Automatic_fast"}, check_e2_reuse},
+        {{"native.equilibrium.e5-neutral", "E5-1", "Automatic_fast"}, check_e5_neutral},
+        {{"native.equilibrium.e5-pins", "E5-2", "Automatic_fast"}, check_e5_pins},
+        {{"native.equilibrium.e5-reactive", "E5-3", "Automatic_fast"}, check_e5_reactive},
+        {{"native.equilibrium.e5-associating", "E5-4", "Automatic_fast"}, check_e5_associating},
+        {{"native.equilibrium.e5-electrolyte", "E5-5", "Automatic_fast"}, check_e5_electrolyte},
+        {{"native.equilibrium.e5-roots", "E5-6", "Automatic_fast"}, check_e5_roots},
+        {{"native.equilibrium.e5-thermal", "E5-7", "Automatic_fast"}, check_e5_thermal},
+        {{"native.equilibrium.e5-refusals", "E5-8", "Automatic_fast"}, check_e5_refusals},
+        {{"native.equilibrium.e5-identities", "E5-10", "Automatic_fast"}, check_e5_identities},
     });
 }

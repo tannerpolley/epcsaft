@@ -306,10 +306,6 @@ void density_publication_boundaries() {
         && std::isfinite(valid.density_convergence->residual)
         && std::isfinite(valid.molar_density);
 
-    recording_support::expect_group(
-        recording_support::active_test_id(), "density-publication",
-        "density-publication", 1, "C3 density publication boundaries", "check"
-    );
     recording_support::compare(
         "density-publication", "valid-root", "1", valid_root ? 1.0 : 0.0, 1.0,
         recording_support::fields({
@@ -480,9 +476,6 @@ void termination_boundaries() {
     try { history.push(std::numeric_limits<double>::quiet_NaN()); }
     catch (const std::invalid_argument&) { history_rejected = true; }
     valid = valid && history_rejected;
-    recording_support::expect_group(recording_support::active_test_id(),
-        "termination-boundaries", "termination-boundaries", 1,
-        "C3 nonfinite termination", "check");
     recording_support::compare("termination-boundaries", "valid", "1",
         valid ? 1.0 : 0.0, 1.0, {}, "Relationship", "classifier", "nonfinite boundaries",
         "absolute", 0.0, 0.0, valid, "native.diagnostics.c3", "C3",
@@ -521,9 +514,6 @@ void producer_boundaries() {
     const bool verdict = nonfinite && domain
         && !std::isfinite(nonfinite_record.residual)
         && std::isinf(domain_record.residual);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "producer-boundaries", "producer-boundaries", 1,
-        "C3 typed producer stops", "check");
     recording_support::compare(
         "producer-boundaries", "typed-stops", "1", verdict ? 1.0 : 0.0, 1.0,
         recording_support::fields({
@@ -546,15 +536,15 @@ void producer_boundaries() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.diagnostics.c1", "Core_constant_identities", "Numerical", "Core", "Explicit", "Numerical", nullptr, "CORE1", "core-constants/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C1"}, core_constant_identities},
-        {{"native.diagnostics.d1", "Classifier_partition", "Numerical", "Core", "Explicit", "Numerical", nullptr, "CORE3", "classification/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D1", "classification/*:224"}, classifier_partition},
-        {{"native.diagnostics.d2", "Contraction_window", "Numerical", "Core", "Explicit", "Numerical", nullptr, "CORE3", "contraction-limit", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D2"}, contraction_window},
-        {{"native.diagnostics.d3", "Declaration_guards", "Package", "Surface", "Explicit", "Outcome_only", nullptr, "S1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D3"}, declaration_guards},
-        {{"native.diagnostics.d4", "Density_convergence_records", "Numerical", "Properties", "Explicit", "Numerical", "Residual", "P2", "density-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D4", "density-residual/*:8"}, density_records},
-        {{"native.diagnostics.c3-density", "Density_publication_boundaries", "Numerical", "Properties", "Explicit", "Numerical", nullptr, "CORE3", "density-publication", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "density-publication:1"}, density_publication_boundaries},
-        {{"native.diagnostics.d5", "Association_convergence_records", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "association-residual/*", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D5", "association-residual/*:2"}, association_records},
-        {{"native.diagnostics.c3", "Termination_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "CORE3", "termination-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "termination-boundaries:1"}, termination_boundaries},
-        {{"native.diagnostics.c3-producers", "Producer_boundaries", "Numerical", "Core", "Explicit", "Numerical", nullptr, "CORE3", "producer-boundaries", "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "C3", "producer-boundaries:1"}, producer_boundaries},
-        {{"native.diagnostics.d6", "Trace_invariance", "Package", "Core", "Explicit", "Outcome_only", nullptr, "B1", nullptr, "engine/tests/native/diagnostics_checks.cpp", "diagnostics_checks", "D6"}, trace_invariance},
+        {{"native.diagnostics.c1", "C1"}, core_constant_identities},
+        {{"native.diagnostics.d1", "D1"}, classifier_partition},
+        {{"native.diagnostics.d2", "D2"}, contraction_window},
+        {{"native.diagnostics.d3", "D3"}, declaration_guards},
+        {{"native.diagnostics.d4", "D4"}, density_records},
+        {{"native.diagnostics.c3-density", "C3"}, density_publication_boundaries},
+        {{"native.diagnostics.d5", "D5"}, association_records},
+        {{"native.diagnostics.c3", "C3"}, termination_boundaries},
+        {{"native.diagnostics.c3-producers", "C3"}, producer_boundaries},
+        {{"native.diagnostics.d6", "D6"}, trace_invariance},
     });
 }

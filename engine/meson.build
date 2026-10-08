@@ -215,8 +215,8 @@ equilibrium_checks = executable(
 equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').split('{{"native.equilibrium.')
 foreach index : range(1, equilibrium_cases.length())
   fields = equilibrium_cases[index].split('"')
-  assert(fields[8] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
-  test('equilibrium/' + fields[8] + '/' + fields[0], equilibrium_checks,
+  assert(fields[4] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
+  test('equilibrium/' + fields[4] + '/' + fields[0], equilibrium_checks,
     args: ['native.equilibrium.' + fields[0]], timeout: 600)
 endforeach
 

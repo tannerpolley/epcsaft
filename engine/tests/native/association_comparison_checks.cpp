@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <limits>
 #include <optional>
@@ -27,6 +28,30 @@
 namespace {
 
 using AD = CppAD::AD<double>;
+
+// The association-comparison analysis reads these expected keys and group counts
+// (EPCSAFT_EXPECT_JSON) to confirm that every comparison it needs was recorded.
+void expect_keys() {
+    std::printf("EPCSAFT_EXPECT_JSON {\"schema_version\":1,\"test_id\":\"native.association.comparison\","
+                "\"expected_comparison_keys\":[\"site-fraction/*\",\"candidate-residual/*\",\"reference-residual/*\","
+                "\"association-energy/*\",\"residual-energy/*\",\"association-gradient/*\",\"residual-gradient/*\","
+                "\"association-hessian/*\",\"residual-hessian/*\",\"reference-quality/*\",\"centered-gradient/*\","
+                "\"centered-hessian/*\",\"centered-mixed/*\",\"analytic-control/*\",\"k-residual-identity/*\","
+                "\"production-weighted-hessian/*\",\"extensive-scaling/*\",\"failure-continuation\"]}\n");
+}
+
+void expect_group(const char* test_id, const char* comparison_group_id, const char* comparison_id_prefix,
+                  std::size_t expected_count, const std::string& definition, const char* coordinates) {
+    using recording_support::json_string;
+    std::printf("EPCSAFT_EXPECT_JSON {\"schema_version\":1,\"test_id\":%s,\"comparison_group_id\":%s,"
+                "\"comparison_id_prefix\":%s,\"expected_count\":%zu,\"coordinates\":%s,\"definition\":%s}\n",
+                json_string(test_id).c_str(), json_string(comparison_group_id).c_str(),
+                json_string(comparison_id_prefix).c_str(), expected_count,
+                recording_support::json_fields_object(coordinates).c_str(),
+                recording_support::json_fields_object(definition).c_str());
+    std::fflush(stdout);
+}
+
 using Parameters = epcsaft::Parameters;
 constexpr std::array<std::size_t, 4> DEPTHS = {8, 16, 24, 32};
 constexpr std::size_t QUALIFYING_DEPTH = 16;
@@ -1270,6 +1295,7 @@ bool failure_continuation(const TestCase& valid_case) {
 }
 
 void association_comparison() {
+    expect_keys();
     CppAD::ErrorHandler error_handler(cppad_error_handler);
     const auto cases = test_cases();
     const std::string selector = campaign_selector();
@@ -1298,7 +1324,7 @@ void association_comparison() {
         std::size_t count, const char* coordinates) {
         for (const std::size_t depth : depths) {
             const std::string prefix = depth_prefix(depth, group);
-            recording_support::expect_group(recording_support::active_test_id(), group,
+            expect_group(recording_support::active_test_id(), group,
                 prefix.c_str(), count, definition, coordinates);
         }
     };
@@ -1313,21 +1339,21 @@ void association_comparison() {
     expect_depth_group("residual-hessian", "scaled residual Hessian", hessian_entries, "case,row,column");
     expect_depth_group("k-residual-identity", "shared K and residual identity", sites, "case,site");
     expect_depth_group("analytic-control", "pure 2B and 3B controls", analytic_sites, "case,site");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-quality", "reference-quality/", selected.size(), "reference condition diagnostics", "case");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-first-sensitivity", "reference-first-sensitivity/", selected.size(), "reference first sensitivity diagnostics", "coordinate");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-second-sensitivity", "reference-second-sensitivity/", selected.size(), "reference second sensitivity diagnostics", "row,column");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-sensitivity-proxy", "reference-sensitivity-proxy/", selected.size(), "reference sensitivity error proxy", "case");
-    recording_support::expect_group(recording_support::active_test_id(), "reference-newton-defect", "reference-newton-defect/", selected.size(), "reference Newton defect", "case");
+    expect_group(recording_support::active_test_id(), "reference-quality", "reference-quality/", selected.size(), "reference condition diagnostics", "case");
+    expect_group(recording_support::active_test_id(), "reference-first-sensitivity", "reference-first-sensitivity/", selected.size(), "reference first sensitivity diagnostics", "coordinate");
+    expect_group(recording_support::active_test_id(), "reference-second-sensitivity", "reference-second-sensitivity/", selected.size(), "reference second sensitivity diagnostics", "row,column");
+    expect_group(recording_support::active_test_id(), "reference-sensitivity-proxy", "reference-sensitivity-proxy/", selected.size(), "reference sensitivity error proxy", "case");
+    expect_group(recording_support::active_test_id(), "reference-newton-defect", "reference-newton-defect/", selected.size(), "reference Newton defect", "case");
     const bool full_campaign = selector == "all";
     if (full_campaign) {
         constexpr std::size_t centered_coordinates = 31;
         constexpr std::size_t centered_mixed = 10;
-        recording_support::expect_group(recording_support::active_test_id(), "centered-gradient", "centered-gradient/", 8 * centered_coordinates, "candidate and reference finite-difference gradients at two steps", "source,energy,case,step,coordinate");
-        recording_support::expect_group(recording_support::active_test_id(), "centered-hessian", "centered-hessian/", 8 * centered_coordinates, "candidate and reference finite-difference Hessians at two steps", "source,energy,case,step,coordinate");
-        recording_support::expect_group(recording_support::active_test_id(), "centered-mixed", "centered-mixed/", 8 * centered_mixed, "candidate and reference finite-difference mixed Hessians at two steps", "source,energy,case,step,row,column");
-        recording_support::expect_group(recording_support::active_test_id(), "production-weighted-hessian", "production-weighted-hessian/", 1, "known exact-zero production limitation", "case");
-        recording_support::expect_group(recording_support::active_test_id(), "extensive-scaling", "extensive-scaling/", 1, "extensive Helmholtz scaling", "case");
-        recording_support::expect_group(recording_support::active_test_id(), "failure-continuation", "failure-continuation", 1, "failed case followed by valid case", "case");
+        expect_group(recording_support::active_test_id(), "centered-gradient", "centered-gradient/", 8 * centered_coordinates, "candidate and reference finite-difference gradients at two steps", "source,energy,case,step,coordinate");
+        expect_group(recording_support::active_test_id(), "centered-hessian", "centered-hessian/", 8 * centered_coordinates, "candidate and reference finite-difference Hessians at two steps", "source,energy,case,step,coordinate");
+        expect_group(recording_support::active_test_id(), "centered-mixed", "centered-mixed/", 8 * centered_mixed, "candidate and reference finite-difference mixed Hessians at two steps", "source,energy,case,step,row,column");
+        expect_group(recording_support::active_test_id(), "production-weighted-hessian", "production-weighted-hessian/", 1, "known exact-zero production limitation", "case");
+        expect_group(recording_support::active_test_id(), "extensive-scaling", "extensive-scaling/", 1, "extensive Helmholtz scaling", "case");
+        expect_group(recording_support::active_test_id(), "failure-continuation", "failure-continuation", 1, "failed case followed by valid case", "case");
     }
     bool passed = true;
     for (const TestCase* test_case : selected) {
@@ -1400,6 +1426,6 @@ void association_comparison() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.association.comparison", "Fixed_depth_native_association_comparison", "Numerical", "Contributions/Properties", "Explicit", "Numerical", "Association", "P2/M4", "site-fraction/*,candidate-residual/*,reference-residual/*,association-energy/*,residual-energy/*,association-gradient/*,residual-gradient/*,association-hessian/*,residual-hessian/*,reference-quality/*,centered-gradient/*,centered-hessian/*,centered-mixed/*,analytic-control/*,k-residual-identity/*,production-weighted-hessian/*,extensive-scaling/*,failure-continuation", "engine/tests/native/association_comparison_checks.cpp", "association_comparison_checks", "association-comparison", ""}, association_comparison}
+        {{"native.association.comparison", "association-comparison"}, association_comparison}
     });
 }

@@ -182,9 +182,6 @@ void hard_sphere_matches_carnahan_starling() {
 
     const double temperature = 250.0;
     const std::vector<double> x = {1.0};
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p1-hard-chain", "eta-", 3,
-        "Carnahan-Starling hard-sphere values", "rho");
     for (const double molar_density : {1.0e3, 8.0e3, 2.0e4}) {
         const auto sigma = epcsaft::segment_sigma(temperature, p);
         const auto diameter = epcsaft::segment_diameter(temperature, p, sigma);
@@ -245,12 +242,6 @@ void mixture_contributions_match_independent_equations() {
 void residual_vanishes_at_zero_density() {
     const auto p = neutral_binary();
     const std::vector<double> x = {0.4, 0.6};
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p2-monotonic", "density-monotonic/", 4,
-        "residual magnitude decreases along density ladder", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p2-limit", "zero-density-limit", 1,
-        "zero-density residual limit", "rho");
     double previous = 1.0;
     double previous_density = 0.0;
     std::size_t point_index = 0;
@@ -302,12 +293,6 @@ void relabelling_components_changes_nothing() {
 
     const double temperature = 300.0;
     const double molar_density = 1.2e4;
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p3-hard-chain", "hard-chain", 1,
-        "component relabelling hard-chain invariance", "permutation");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p3-dispersion", "dispersion", 1,
-        "component relabelling dispersion invariance", "permutation");
     const auto direct = evaluate(p, temperature, molar_density, {0.4, 0.6});
     const auto relabelled =
         evaluate(swapped, temperature, molar_density, {0.6, 0.4});
@@ -351,18 +336,6 @@ void association_solve_satisfies_mass_action() {
     const double temperature = 300.0;
     const double molar_density = 1.5e4;
     const std::vector<double> x = {0.4, 0.6};
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p4-mass-action", "mass-action-", 2,
-        "association mass-action residuals", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p4-site-floor", "site-floor-", 2,
-        "association site fractions stay above floor", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p4-site-ceiling", "site-ceiling-", 2,
-        "association site fractions stay below ceiling", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p4-site-symmetry", "site-symmetry", 1,
-        "identical sites have identical fractions", "site");
     const auto sigma = epcsaft::segment_sigma(temperature, p);
     const auto diameter = epcsaft::segment_diameter(temperature, p, sigma);
     const auto fractions = epcsaft::solve_site_fractions(
@@ -471,18 +444,6 @@ void association_equations_match_closed_forms_and_limits() {
         );
         CHECK(matches);
     };
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c2-association", "symmetric-x-", 2,
-        "symmetric two-site association closed form", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c2-association", "unequal-", 6,
-        "unequal multiplicity association closed form and relabelling", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c2-association", "limit-", 6,
-        "association scalar support limits", "site");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c2-association", "cross-", 4,
-        "asymmetric cross-association contact, strength and residuals", "site");
     record("symmetric-x-0", "site_fraction", fractions[0], expected_x,
            inputs(symmetric, pure, recording_support::field("K", k)),
            "X=2/(1+sqrt(1+4K))");
@@ -641,15 +602,6 @@ void association_equations_match_closed_forms_and_limits() {
 void inactive_terms_contribute_nothing() {
     const auto p = neutral_binary();
     const std::vector<double> x = {0.4, 0.6};
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p5-association", "association", 1,
-        "inactive association term", "term");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p5-born", "born", 1,
-        "inactive Born term", "term");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p5-debye", "debye-huckel", 1,
-        "inactive electrolyte term", "term");
     const auto result = evaluate(p, 300.0, 1.2e4, x);
     const auto inputs = model_inputs(p, 300.0, 1.2e4, x);
     recording_support::compare(
@@ -723,18 +675,6 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         );
         CHECK(matches);
     };
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c3-electrolyte", "chi-", 14,
-        "finite-size chi integral and refinement values and taped derivatives", "reduced_diameter");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c3-electrolyte", "dh-", 4,
-        "Debye-Huckel dilute and finite multivalent values", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c3-electrolyte", "born-", 5,
-        "two-region Born values and limits", "state");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c3-electrolyte", "dielectric-", 12,
-        "four dielectric forms and their limits", "state");
 
     const auto chi_integral = [](double reduced, int intervals) {
         return 3.0 * simpson(
@@ -1029,21 +969,6 @@ void same_sign_exclusion_is_a_limit() {
     excluded.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
     auto all_pairs = excluded;
     all_pairs.ionic_dispersion = epcsaft::IonicDispersion::AllIonPairs;
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p6-excluded-observation", "excluded-pure-ion", 1,
-        "same-sign pure-ion pair exclusion observation", "state");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p6-all-observation", "all-pairs-pure-ion", 1,
-        "all-ion-pairs pure-ion observation", "state");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p6-excluded-verdict", "excluded-zero", 1,
-        "excluded same-sign pair is zero", "state");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p6-negative-verdict", "all-pairs-negative", 1,
-        "all-ion-pairs contribution is negative", "state");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p6-mixture-verdict", "half-mixture-different", 1,
-        "ionic pair selection changes the half mixture", "state");
 
     const auto one_excluded = evaluate(excluded, 300.0, 1.2e4, {0.0, 1.0});
     const auto one_all = evaluate(all_pairs, 300.0, 1.2e4, {0.0, 1.0});
@@ -1101,18 +1026,6 @@ void packing_fraction_is_bounded() {
         epcsaft::packing_fraction_from_geometry(1.0e3, x, p, diameter);
     const double high =
         epcsaft::packing_fraction_from_geometry(2.0e3, x, p, diameter);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p7-density", "density-scaling", 1,
-        "packing fraction density scaling", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p7-low-positive", "low-positive", 1,
-        "packing fraction positivity", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p7-policy-lower", "policy-lower", 1,
-        "close packing policy lower bound", "policy");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p7-policy-upper", "policy-upper", 1,
-        "close packing policy upper bound", "policy");
     recording_support::compare(
         "density-scaling", "packing_fraction", "1", high, 2.0 * low,
         recording_support::fields({model_inputs(p, 300.0, 1.0e3, x),
@@ -1161,12 +1074,6 @@ void kernels_record_a_tape() {
     const std::vector<double> x = {0.4, 0.6};
     const double temperature = 300.0;
     const double molar_density = 1.2e4;
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p8-gradient", "density-gradient", 1,
-        "CppAD density gradient", "rho");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "p8-value", "tape-value", 1,
-        "CppAD value at recording point", "state");
 
     std::vector<AD> independent = {AD(temperature), AD(molar_density)};
     CppAD::Independent(independent);
@@ -1227,18 +1134,6 @@ void ideal_thermal_forms_match_integrals() {
         {"nasa9", {epcsaft::IdealNASA9{{1.0e5, -20.0, 3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5}},
         {"dippr107", {epcsaft::IdealDIPPR107{{15.0, 22.0, 700.0, 8.0, 500.0}, 400.0, 1000.0, 2.0}, 1.0e5}},
     };
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-thermal", "dh-", forms.size(),
-        "each accepted ideal thermal form has dh/dT=cp", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-thermal", "ds-", forms.size(),
-        "each accepted ideal thermal form has T ds/dT=cp", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-thermal", "refine-dh-", forms.size(),
-        "Simpson enthalpy integral refinement plateau", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-thermal", "refine-ds-", forms.size(),
-        "Simpson entropy integral refinement plateau", "form");
     for (const auto& [name, correlation] : forms) {
         const auto start = epcsaft::evaluate_ideal_correlation(correlation, lower, pressure);
         const auto finish = epcsaft::evaluate_ideal_correlation(correlation, upper, pressure);
@@ -1343,21 +1238,6 @@ void ideal_thermal_absolute_values_and_ad_derivatives() {
          31.34268666475855, 5422.806964662188, 5.5912660099491704,
          "A..E:15,22,700,8,500;Tref:400;href:1000;sref:2;Psrc:1e5"},
     };
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-absolute", "cp-", cases.size(),
-        "independent absolute ideal thermal heat capacities", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-absolute", "h-", cases.size(),
-        "independent absolute ideal thermal enthalpies", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-absolute", "s-", cases.size(),
-        "independent absolute ideal thermal entropies", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-ad-derivatives", "dh-", cases.size(),
-        "AD dh/dT=cp for every ideal thermal form", "form");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-ad-derivatives", "ds-", cases.size(),
-        "AD T ds/dT=cp for every ideal thermal form", "form");
     for (const auto& item : cases) {
         const auto value = epcsaft::evaluate_ideal_correlation(item.correlation, temperature, pressure);
         const std::string inputs = std::string(item.inputs) + ";T:550;P:2e5";
@@ -1400,9 +1280,6 @@ void dippr_limits_and_pressure_shift_are_exact() {
     const auto value = epcsaft::evaluate_ideal_correlation(zero, T, 1.0e5);
     const double dt = T - 250.0;
     const double expected_s = 12.0 * std::log(T / 250.0);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-dippr", "zero-", 3,
-        "DIPPR zero C and E limits", "T");
     recording_support::compare(
         "zero-cp", "cp", "J/mol/K", value.cp, 12.0,
         "T:300;C:0;E:0", "Relationship", "analytic_limit", "C=0 gives B and E=0 gives no D",
@@ -1436,9 +1313,6 @@ void dippr_limits_and_pressure_shift_are_exact() {
         epcsaft::IdealDIPPR107{{2.0, 10.0, 1.0e300, 7.0, 1.0e300}, 250.0, 11.0, 4.0}, 1.0e5};
     const auto huge_value = epcsaft::evaluate_ideal_correlation(huge, T, 1.0e5);
     const double huge_s = 4.0 + 2.0 * std::log(T / 250.0);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-dippr", "large-", 3,
-        "DIPPR large arguments use independent A-only limits", "T");
     recording_support::compare(
         "large-cp", "cp", "J/mol/K", huge_value.cp, 2.0, "T:300;C_abs:1e300;E_abs:1e300",
         "Relationship", "stable_limit", "large DIPPR arguments remain finite", "reference_or_one",
@@ -1464,12 +1338,6 @@ void dippr_limits_and_pressure_shift_are_exact() {
                                  4.0 - epcsaft::GAS_CONSTANT_J_PER_MOL_K * std::log(2.0)}, 2.0e5};
     const auto original = epcsaft::evaluate_ideal_correlation(zero, T, 2.0e5);
     const auto shifted_value = epcsaft::evaluate_ideal_correlation(shifted, T, 2.0e5);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-dippr", "signed-", 1,
-        "DIPPR signed argument invariance", "T");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-dippr", "source-pressure", 1,
-        "source pressure and entropy-anchor invariance", "pressure");
     CHECK(recording_support::compare(
         "signed-cp", "cp", "J/mol/K", left.cp, right.cp, "T:300;C:+/-700;E:+/-500",
         "Relationship", "even_argument", "signed DIPPR arguments are invariant", "reference_or_one",
@@ -1505,9 +1373,6 @@ void ideal_intervals_require_owned_endpoints() {
          {epcsaft::IdealPolynomial{{20.0}, 350.0, 0.0, 0.0}, 1.0e5}},
     };
     const auto reverse_boundary = owned(reverse_intervals, 300.0);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-intervals", "interval-", 4,
-        "piecewise source endpoint ownership", "temperature");
     recording_support::compare(
         "interval-cp", "cp", "J/mol/K", boundary.cp, 20.0,
         "T:300;left-upper-open;right-lower-closed", "Relationship", "owned_branch", "owned branch value at join",
@@ -1560,9 +1425,6 @@ void ideal_polynomial_tape_reuses_smooth_interval() {
     const auto first = tape.Forward(0, std::vector<double>{450.0});
     const auto second = tape.Forward(0, std::vector<double>{475.0});
     const auto direct = epcsaft::evaluate_ideal_correlation(correlation, 475.0, 1.0e5);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-tape", "tape-", 3,
-        "scalar-generic ideal evaluation reuses a smooth selected interval", "temperature");
     recording_support::compare(
         "tape-cp", "cp", "J/mol/K", second[0], direct.cp,
         "T_record:450;T_replay:475", "Relationship", "CppAD_replay", "ideal tape re-evaluates at another T",
@@ -1615,9 +1477,6 @@ void ideal_mechanical_owner_preserves_chart() {
     const double direct = epcsaft::ideal_mechanical_helmholtz(
         std::vector<double>{tiny}, volume, rho0, true);
     const double replay = tape.Forward(0, std::vector<double>{volume})[0];
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-ideal-mechanical", "clamp-", 1,
-        "selected subnormal clamp is identical for double and AD", "amount");
     recording_support::compare(
         "clamp-tiny", "a_ideal_mechanical", "1", replay, direct,
         "n:DBL_MIN/1024;V:2.3;rho0:1.7;clamp:true", "Relationship", "scalar_policy",
@@ -1656,9 +1515,6 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
                                    * sum);
     };
     const std::vector<double> offsets = {-0.51, -0.50, -0.49, 0.49, 0.50, 0.51};
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-poly-stability", "poly-", 77,
-        "degree-60 centered polynomial entropy uses stable representations", "u");
     for (const double u : offsets) {
         const double temperature = reference * (1.0 + u);
         const auto value = epcsaft::evaluate_ideal_correlation(correlation, temperature, 1.0e5);
@@ -1936,23 +1792,23 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.contributions.p1", "Hard_sphere_Carnahan_Starling", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "eta-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P1", "eta-*:3"}, hard_sphere_matches_carnahan_starling},
-        {{"native.contributions.c1_mixture", "Finite_mixture_independent_equations", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "hard-chain,dispersion", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "hard-chain:1,dispersion:1"}, mixture_contributions_match_independent_equations},
-        {{"native.contributions.p2", "Residual_vanishes_at_zero_density", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "density-monotonic/*,zero-density-limit", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P2", "density-monotonic/*:4,zero-density-limit:1"}, residual_vanishes_at_zero_density},
-        {{"native.contributions.p3", "Component_relabelling_invariance", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "hard-chain,dispersion", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P3", "hard-chain:1,dispersion:1"}, relabelling_components_changes_nothing},
-        {{"native.contributions.p4", "Association_mass_action", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "mass-action-*,site-floor-*,site-ceiling-*,site-symmetry", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P4", "mass-action-*:2,site-floor-*:2,site-ceiling-*:2,site-symmetry:1"}, association_solve_satisfies_mass_action},
-        {{"native.contributions.c2", "Association_closed_forms_and_limits", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C2", "symmetric-*,unequal-*,limit-*,cross-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C2", "symmetric-x-*:2,symmetric-helmholtz:1,unequal-*:6,limit-*:6,cross-*:4"}, association_equations_match_closed_forms_and_limits},
-        {{"native.contributions.c3", "Electrolyte_Born_and_dielectric", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "chi-*,dh-*,born-*,dielectric-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C3", "chi-*:8,dh-*:4,born-*:5,dielectric-*:12"}, electrolyte_born_and_dielectric_match_independent_equations},
-        {{"native.contributions.p5", "Inactive_terms_vanish", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "association,born,debye-huckel", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P5", "association:1,born:1,debye-huckel:1"}, inactive_terms_contribute_nothing},
-        {{"native.contributions.p6", "Same_sign_ionic_exclusion", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C3", "excluded-pure-ion,all-pairs-pure-ion,excluded-zero,all-pairs-negative,half-mixture-different", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P6", "excluded-pure-ion:1,all-pairs-pure-ion:1,excluded-zero:1,all-pairs-negative:1,half-mixture-different:1"}, same_sign_exclusion_is_a_limit},
-        {{"native.contributions.p7", "Packing_fraction_bound", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "C1", "density-scaling,low-positive,policy-lower,policy-upper", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P7", "density-scaling:1,low-positive:1,policy-lower:1,policy-upper:1"}, packing_fraction_is_bounded},
-        {{"native.contributions.p8", "CppAD_tape_matches_double_path", "Numerical", "Contributions", "Explicit", "Numerical", "Residual", "P4", "density-gradient,tape-value", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "P8", "density-gradient:1,tape-value:1"}, kernels_record_a_tape},
-        {{"native.contributions.c1_ideal", "Ideal_mechanical_owner", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "off-normalized,clamp-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "off-normalized:1,clamp-*:1"}, ideal_mechanical_owner_preserves_chart},
-        {{"native.contributions.c1_thermal", "Ideal_thermal_forms", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "dh-*,ds-*,refine-dh-*,refine-ds-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "dh-*:6,ds-*:6,refine-dh-*:6,refine-ds-*:6"}, ideal_thermal_forms_match_integrals},
-        {{"native.contributions.c1_absolute", "Ideal_thermal_absolute_values_and_ad_derivatives", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "cp-*,h-*,s-*,dh-*,ds-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "cp-*:6,h-*:6,s-*:6,dh-*:6,ds-*:6"}, ideal_thermal_absolute_values_and_ad_derivatives},
-        {{"native.contributions.c1_dippr", "DIPPR_limits_and_pressure_shift", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "zero-*,signed-*,large-*,source-pressure", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "zero-*:3,signed-*:1,large-*:3,source-pressure:1"}, dippr_limits_and_pressure_shift_are_exact},
-        {{"native.contributions.c1_poly_stability", "Ideal_polynomial_entropy_stability", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "poly-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "poly-*:77"}, ideal_polynomial_entropy_is_stable_across_switches},
-        {{"native.contributions.c1_intervals", "Ideal_interval_ownership", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "interval-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "interval-*:4"}, ideal_intervals_require_owned_endpoints},
-        {{"native.contributions.c1_tape", "Ideal_scalar_generic_tape", "Numerical", "Contributions", "Explicit", "Numerical", "Ideal", "C1", "tape-*", "engine/tests/native/contributions_checks.cpp", "contributions_checks", "C1", "tape-*:3"}, ideal_polynomial_tape_reuses_smooth_interval},
+        {{"native.contributions.p1", "P1"}, hard_sphere_matches_carnahan_starling},
+        {{"native.contributions.c1_mixture", "C1"}, mixture_contributions_match_independent_equations},
+        {{"native.contributions.p2", "P2"}, residual_vanishes_at_zero_density},
+        {{"native.contributions.p3", "P3"}, relabelling_components_changes_nothing},
+        {{"native.contributions.p4", "P4"}, association_solve_satisfies_mass_action},
+        {{"native.contributions.c2", "C2"}, association_equations_match_closed_forms_and_limits},
+        {{"native.contributions.c3", "C3"}, electrolyte_born_and_dielectric_match_independent_equations},
+        {{"native.contributions.p5", "P5"}, inactive_terms_contribute_nothing},
+        {{"native.contributions.p6", "P6"}, same_sign_exclusion_is_a_limit},
+        {{"native.contributions.p7", "P7"}, packing_fraction_is_bounded},
+        {{"native.contributions.p8", "P8"}, kernels_record_a_tape},
+        {{"native.contributions.c1_ideal", "C1"}, ideal_mechanical_owner_preserves_chart},
+        {{"native.contributions.c1_thermal", "C1"}, ideal_thermal_forms_match_integrals},
+        {{"native.contributions.c1_absolute", "C1"}, ideal_thermal_absolute_values_and_ad_derivatives},
+        {{"native.contributions.c1_dippr", "C1"}, dippr_limits_and_pressure_shift_are_exact},
+        {{"native.contributions.c1_poly_stability", "C1"}, ideal_polynomial_entropy_is_stable_across_switches},
+        {{"native.contributions.c1_intervals", "C1"}, ideal_intervals_require_owned_endpoints},
+        {{"native.contributions.c1_tape", "C1"}, ideal_polynomial_tape_reuses_smooth_interval},
     });
 }

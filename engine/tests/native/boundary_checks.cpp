@@ -1069,19 +1069,19 @@ void check_e4_paths() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.boundary.s3", "Boundary_S3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pressure-roundtrip,composition-roundtrip/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S3"}, check_s3},
-        {{"native.boundary.s4", "Boundary_S4", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-ladder/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S4", "temperature-ladder/*:2"}, check_s4},
-        {{"native.boundary.s5", "Boundary_S5", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "temperature-roundtrip", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S5"}, check_s5},
-        {{"native.boundary.s9", "Boundary_S9", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "sensitivity/*,pinned-sensitivity/*,reactive-jacobian/*,reactive-lever/*,parameter-sensitivity/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S9"}, check_s9},
-        {{"native.boundary.ionic-packing-derivative", "Ionic_packing_derivative", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "ionic-packing-derivative/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "packing-derivative", "ionic-packing-derivative/*:8"}, check_ionic_packing_derivative},
-        {{"native.boundary.s10", "Boundary_S10", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S10"}, check_s10},
-        {{"native.boundary.s14", "Boundary_S14", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "pinned-pressure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S14"}, check_s14},
-        {{"native.boundary.s15c", "Boundary_S15c", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "coincident-failure", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "S15c"}, check_s15c},
-        {{"native.boundary.e4-a", "Boundary_E4_A", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-a/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-A"}, check_e4_a},
-        {{"native.boundary.e4-b", "Boundary_E4_B", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-b/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-B"}, check_e4_b},
-        {{"native.boundary.e4-c", "Boundary_E4_C", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-c/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-C"}, check_e4_c},
-        {{"native.boundary.e4-d", "Boundary_E4_D", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-d/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-D"}, check_e4_d},
-        {{"native.boundary.e4-e", "Boundary_E4_E", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-e/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-E"}, check_e4_e},
-        {{"native.boundary.e4-paths", "Boundary_E4_paths", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E4", "e4-paths/*", "engine/tests/native/boundary_checks.cpp", "boundary_checks", "E4-P"}, check_e4_paths},
+        {{"native.boundary.s3", "S3"}, check_s3},
+        {{"native.boundary.s4", "S4"}, check_s4},
+        {{"native.boundary.s5", "S5"}, check_s5},
+        {{"native.boundary.s9", "S9"}, check_s9},
+        {{"native.boundary.ionic-packing-derivative", "packing-derivative"}, check_ionic_packing_derivative},
+        {{"native.boundary.s10", "S10"}, check_s10},
+        {{"native.boundary.s14", "S14"}, check_s14},
+        {{"native.boundary.s15c", "S15c"}, check_s15c},
+        {{"native.boundary.e4-a", "E4-A"}, check_e4_a},
+        {{"native.boundary.e4-b", "E4-B"}, check_e4_b},
+        {{"native.boundary.e4-c", "E4-C"}, check_e4_c},
+        {{"native.boundary.e4-d", "E4-D"}, check_e4_d},
+        {{"native.boundary.e4-e", "E4-E"}, check_e4_e},
+        {{"native.boundary.e4-paths", "E4-P"}, check_e4_paths},
     });
 }

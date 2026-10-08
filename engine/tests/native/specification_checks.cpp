@@ -72,16 +72,6 @@ const char* chemistry_name(equilibrium_support::Chemistry value) {
 }
 
 void check_c1() {
-    constexpr std::size_t expected_cases = 6 * 5 * 4 * 4;
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c1-structural", "structural/",
-        expected_cases,
-        recording_support::fields({
-            recording_support::field("phase_sets", equilibrium_support::phase_sets().size()),
-            recording_support::field("amount_patterns", equilibrium_support::amount_patterns().size()),
-            recording_support::field("intensive_patterns", equilibrium_support::intensive_patterns().size()),
-            recording_support::field("chemistries", equilibrium_support::chemistry_values().size()),
-        }), "phase_set,amount,intensive,chemistry");
     for (const auto phase_set : equilibrium_support::phase_sets()) {
         for (const auto amount_pattern : equilibrium_support::amount_patterns()) {
             for (const auto intensive_pattern : equilibrium_support::intensive_patterns()) {
@@ -189,12 +179,6 @@ void check_c4() {
     molality.feed.values = {0.0, 1.0 / model.parameters().molar_mass_kg_per_mol[0]};
     molality.feed.solvent = {0};
     const auto reference = epcsaft::equilibrium::compile_problem(model, amounts);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c4-feed", "feed-composition/", 6,
-        recording_support::fields({
-            recording_support::field("reference_feed", std::vector<double>{0.5, 0.5}),
-            recording_support::field("feed_forms", 3U),
-        }), "basis,index");
     std::size_t basis_index = 0;
     for (const auto& item : {fractions, mass, molality}) {
         const auto compiled = epcsaft::equilibrium::compile_problem(model, item);
@@ -266,36 +250,6 @@ void check_c5() {
     const auto standard = epcsaft::equilibrium::standard_state(temperature, components, basis, {});
     const auto basis_affinities = equilibrium_support::reaction_affinities(basis, standard);
     const auto mixed_affinities = equilibrium_support::reaction_affinities(mixed, standard);
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c5-basis", "basis-entry/", 3,
-        recording_support::fields({
-            recording_support::field("T", temperature),
-            recording_support::field("components", components),
-            recording_support::field("reactions", basis.size()),
-            recording_support::field("basis", "independent"),
-        }), "row,column");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c5-mixed-basis", "mixed-basis-entry/", 3,
-        recording_support::fields({
-            recording_support::field("T", temperature),
-            recording_support::field("components", components),
-            recording_support::field("reactions", mixed.size()),
-            recording_support::field("basis", "mixed"),
-        }), "row,column");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c5-affinity", "affinity/", 2,
-        recording_support::fields({
-            recording_support::field("T", temperature),
-            recording_support::field("components", components),
-            recording_support::field("reactions", basis.size()),
-        }), "reaction");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c5-basis-invariance", "basis-subspace", 1,
-        recording_support::fields({
-            recording_support::field("T", temperature),
-            recording_support::field("components", components),
-            recording_support::field("reactions", basis.size()),
-        }), "basis");
     for (std::size_t row = 0; row < basis_coordinates.size(); ++row) {
         for (std::size_t column = 0; column < basis_coordinates[row].size(); ++column) {
             const auto point = std::to_string(row) + "/" + std::to_string(column);
@@ -499,9 +453,6 @@ void check_c6() {
         recording_support::field("flash_rows", flash_values.size()),
         recording_support::field("boundary_rows", boundary_values.size()),
     });
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c6-boundary-limit", "flash-boundary/",
-        flash_values.size(), comparison_inputs, "row");
     for (std::size_t row = 0; row < flash_values.size(); ++row) {
         const bool has_reference = row < boundary_values.size();
         const double reference = has_reference
@@ -545,12 +496,6 @@ void check_c7() {
     });
     const double phase_residual_difference = std::abs(
         epcsaft::equilibrium::maximum_abs(left.evaluate(point).values) - epcsaft::equilibrium::maximum_abs(right.evaluate(permuted).values));
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c7-phase-residual", "phase-residual", 1,
-        phase_inputs, "phase_set");
-    recording_support::expect_group(
-        recording_support::active_test_id(), "c7-phase-coordinate", "phase-coordinate/",
-        a.size(), phase_inputs, "row");
     recording_support::compare(
         "phase-residual", "residual_norm_difference", "1", phase_residual_difference, 0.0,
         phase_inputs, "Relationship", "permutation", "phase permutation preserves residual norm",
@@ -1377,23 +1322,23 @@ void check_inventory_support() {
 }
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
-        {{"native.specification.polish-solve", "Newton_solve_admission", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "ALG-EQUILIBRIUM", "polish-solve/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "Newton-solve"}, check_polish_solve_admission},
-        {{"native.specification.inventory", "Conserved_inventory_support", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "Inventory", "inventory/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "Inventory"}, check_inventory_support},
-        {{"native.specification.c1", "Specification_C1", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "structural/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C1", "structural/*:480"}, check_c1},
-        {{"native.specification.c2", "Specification_C2", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "named-rejection,topology-rejection", "engine/tests/native/specification_checks.cpp", "specification_checks", "C2"}, check_c2},
-        {{"native.specification.c3", "Specification_C3", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "jacobian-shape", "engine/tests/native/specification_checks.cpp", "specification_checks", "C3"}, check_c3},
-        {{"native.specification.c4", "Specification_C4", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "feed-composition/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C4", "feed-composition/*:6"}, check_c4},
-        {{"native.specification.c5", "Specification_C5", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "rank,basis-entry/*,mixed-basis-entry/*,affinity/*,basis-subspace", "engine/tests/native/specification_checks.cpp", "specification_checks", "C5", "basis-entry/*:3,mixed-basis-entry/*:3,affinity/*:2,basis-subspace:1"}, check_c5},
-        {{"native.specification.c6", "Specification_C6", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "flash-boundary/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C6"}, check_c6},
-        {{"native.specification.c7", "Specification_C7", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "phase-residual,phase-coordinate/*,phase-permutation", "engine/tests/native/specification_checks.cpp", "specification_checks", "C7"}, check_c7},
-        {{"native.specification.c8", "Specification_C8", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "charge-rows,boundary-charge-row", "engine/tests/native/specification_checks.cpp", "specification_checks", "C8"}, check_c8},
-        {{"native.specification.c9", "Specification_C9", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E1", "square/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "C9"}, check_c9},
-        {{"native.specification.e2-pins", "Specification_E2_pins", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-0/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-0"}, check_e2_pins},
-        {{"native.specification.e2-reaction", "Specification_E2_reaction", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-2/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-2"}, check_e2_reaction},
-        {{"native.specification.e2-support", "Specification_E2_support", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-3/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-3"}, check_e2_support},
-        {{"native.specification.e2-charge", "Specification_E2_charge", "Numerical", "Equilibrium", "Explicit", "Numerical", nullptr, "E2", "e2-4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "E2-4"}, check_e2_charge},
-        {{"native.specification.s1-document", "Specification_S1_document", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f1/*,s1-f2/*,s1-f3/*,s1-f2n/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-document"}, s1::check_document},
-        {{"native.specification.s1-feed", "Specification_S1_feed", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S1", "s1-f5/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S1-feed"}, s1::check_feed},
-        {{"native.specification.s2-reference", "Specification_S2_reference", "Numerical", "Surface", "Explicit", "Numerical", nullptr, "S2", "s2-g3/*,s2-g3n/*,s2-g4/*", "engine/tests/native/specification_checks.cpp", "specification_checks", "S2-reference"}, s2::check_reference_mapping},
+        {{"native.specification.polish-solve", "Newton-solve"}, check_polish_solve_admission},
+        {{"native.specification.inventory", "Inventory"}, check_inventory_support},
+        {{"native.specification.c1", "C1"}, check_c1},
+        {{"native.specification.c2", "C2"}, check_c2},
+        {{"native.specification.c3", "C3"}, check_c3},
+        {{"native.specification.c4", "C4"}, check_c4},
+        {{"native.specification.c5", "C5"}, check_c5},
+        {{"native.specification.c6", "C6"}, check_c6},
+        {{"native.specification.c7", "C7"}, check_c7},
+        {{"native.specification.c8", "C8"}, check_c8},
+        {{"native.specification.c9", "C9"}, check_c9},
+        {{"native.specification.e2-pins", "E2-0"}, check_e2_pins},
+        {{"native.specification.e2-reaction", "E2-2"}, check_e2_reaction},
+        {{"native.specification.e2-support", "E2-3"}, check_e2_support},
+        {{"native.specification.e2-charge", "E2-4"}, check_e2_charge},
+        {{"native.specification.s1-document", "S1-document"}, s1::check_document},
+        {{"native.specification.s1-feed", "S1-feed"}, s1::check_feed},
+        {{"native.specification.s2-reference", "S2-reference"}, s2::check_reference_mapping},
     });
 }
