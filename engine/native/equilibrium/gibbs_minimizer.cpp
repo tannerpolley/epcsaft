@@ -336,7 +336,8 @@ std::vector<double> add_multipliers(
 GibbsMinimizer::GibbsMinimizer(
     const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope, const DriverLimits* limits
 )
-    : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits) {}
+    : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits),
+      consumed_before_(limits ? limits->consumed : 0) {}
 
 bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
@@ -586,7 +587,7 @@ bool GibbsMinimizer::intermediate_callback(
     const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
 ) {
     iterations_ = static_cast<std::size_t>(iter);
-    if (limits_) limits_->consumed = std::max(limits_->consumed, iterations_);
+    if (limits_) limits_->consumed = std::max(limits_->consumed, consumed_before_ + iterations_);
     regularization_size_ = regularization_size;
     if (scope_ != nullptr) scope_->probe("ipopt_iteration",
         {inf_pr, inf_du, mu, d_norm, regularization_size,
@@ -687,7 +688,7 @@ EquilibriumResult run_driver(
     };
     const auto [initialized, returned] = [&] {
         try { return run_ipopt(nlp, inner_tolerance,
-            static_cast<int>(limits ? std::min(limits->iterations,
+            static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / compiled.feed_total);
@@ -1145,8 +1146,9 @@ bool zero_amount(const PhaseSpec& phase) {
 // A cold reactive boundary at fixed T and free P: the phases present (nonzero amount) alone, in reaction
 // equilibrium at the pressure seed, are the solution's present phases up to their pressure dependence. Their
 // compositions replace the caller's guesses before the ordinary boundary start, and an unguessed zero-amount
-// phase starts from the first present phase on its support (#152); none if any of it fails.
-std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled) {
+// phase starts from the first present phase on its support (#152); none if any of it fails. The sub-solve spends
+// `limits` and its work, failed or not, enters `stages`.
+std::optional<std::vector<double>> speciated_start(const CompiledSystem& compiled, const DriverLimits* limits, StageWork& stages) {
     const auto& problem = compiled.problem;
     EquilibriumProblem present = problem;
     present.phases.erase(std::remove_if(present.phases.begin(), present.phases.end(), zero_amount), present.phases.end());
@@ -1154,7 +1156,8 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
         || present.phases.size() == problem.phases.size()) return std::nullopt;
     present.pressure = FreeValue::fixed(compiled.seed_pressure());
     try {
-        const auto solved = solve_equilibrium(*compiled.model, present);
+        const auto solved = solve_compiled(compile_problem(*compiled.model, present), std::nullopt, nullptr, limits);
+        stages.add(solved);
         if (!solved.success) return std::nullopt;
         const std::size_t components = compiled.model->parameters().component_count();
         CompiledSystem seeded = compiled;
@@ -1166,7 +1169,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             phase.composition_guess.clear();
             for (const std::size_t i : phase.support) phase.composition_guess.push_back(solved.mole_fractions[source * components + i]);
         }
-        return boundary_start(seeded);
+        return boundary_start(seeded, true, limits, &stages);
     } catch (const std::exception&) {
         return std::nullopt;
     }
@@ -1250,7 +1253,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
 }
 
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
-                                 core::Scope* outer) {
+                                 core::Scope* outer, const DriverLimits* limits) {
     std::optional<core::Scope> own;
     auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
     const auto& model = *compiled.model;
@@ -1260,19 +1263,22 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
-    auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled);
+    StageWork stages;
+    auto seeded = start.has_value() ? std::nullopt : speciated_start(compiled, limits, stages);
     EquilibriumResult result;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
+    // A speciated seed's sub-solve leaves no other phase pinned at zero, so a bounded nested solve never retries.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
+        stages.add(result);  // a failed seeded attempt
         std::vector<double> initial;
         if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied);
+            initial = use_start ? compiled.generic_point() : boundary_start(compiled, !copied, limits, &stages);
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
         }
         try {
-            result = run_driver(model, compiled, std::move(initial), structural, scope);
+            result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, nullptr, limits);
         } catch (const std::exception&) {
             if (attempt == 0) continue;  // the seeded attempt's exception falls back to the declared start
             throw;
@@ -1281,7 +1287,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         BranchCheck branches;
         try {
             branches = compiled.problem.critical ? admit_critical(compiled, result)
-                : check_density_branches(model, compiled, result, {}, true, scope);
+                : check_density_branches(model, compiled, result, {}, true, scope, limits);
         } catch (const std::exception& error) {
             branches.message = std::string("density branch admission failed: ") + error.what();
         }
@@ -1291,6 +1297,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
             clear_state(result);
         }
     }
+    stages.report(result);
     return result;
 }
 
@@ -1335,6 +1342,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 std::min(deadline, deadline_at(Clock::now(), limits.attempt_seconds))};
             if (work.iterations == 0 || work.expired()) { out.causes[i] = "attempt budget exhausted"; continue; }
             std::optional<EquilibriumResult> audit;
+            StageWork stages;
             try {
                 auto initial = seed.coordinates;
                 const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
@@ -1348,16 +1356,20 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     check(seed.compositions.empty() || seed.compositions.size() == compiled.problem.phases.size());
                     check(seed.packing_fractions.empty() || seed.packing_fractions.size() == compiled.problem.phases.size());
                     check(seed.amounts.empty() || seed.amounts.size() == compiled.problem.phases.size());
-                    bool complete = true;
+                    // Complete: the seed supplies every coordinate the cold start would generate.
+                    bool complete = (!seed.amounts.empty() || compiled.problem.phases.size() == compiled.pinned_count)
+                        && (seed.temperature || !problem.temperature.free) && (seed.pressure || !problem.pressure.free);
+                    const auto composed = [&](std::size_t p) { return !seed.compositions.empty() && !seed.compositions[p].empty(); };
+                    const auto packed = [&](std::size_t p) { return !seed.packing_fractions.empty() && seed.packing_fractions[p]; };
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         auto& phase = seeded.problem.phases[p];
-                        if (!seed.compositions.empty() && !seed.compositions[p].empty()) {
+                        if (composed(p)) {
                             check(seed.compositions[p].size() == compiled.declared_supports[p].size()
                                   && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }));
                             phase.composition_guess = seed.compositions[p];
                             restrict_composition_guess(phase, compiled.declared_supports[p]);
                         }
-                        if (!seed.packing_fractions.empty() && seed.packing_fractions[p]) phase.packing_guess = seed.packing_fractions[p];
+                        if (packed(p)) phase.packing_guess = seed.packing_fractions[p];
                         check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
                         for (const double x : phase.composition_guess)
                             check(std::isfinite(x) && x > 0.0 && x <= 1.0,
@@ -1367,24 +1379,32 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         if (!seed.amounts.empty() && (!std::isfinite(seed.amounts[p]) || seed.amounts[p] < 0.0
                             || (phase.is_pinned() && seed.amounts[p] != compiled.phase_amount(phase))))
                             throw std::invalid_argument("amount for phase " + phase.name + " is nonfinite, negative or conflicts with its pin");
-                        complete = complete && phase.packing_guess.has_value();
+                        complete = complete && composed(p) && packed(p);
                     }
                     if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
                     if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
                     if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
-                    initial = complete ? seeded.generic_point() : boundary_start(seeded, false, &work);
+                    // The plain solve's cold start generates what the seed omits; a supplied composition is not speciated over.
+                    const bool uncomposed = std::none_of(seed.compositions.begin(), seed.compositions.end(),
+                        [](const auto& x) { return !x.empty(); });
+                    std::optional<std::vector<double>> speciated;
+                    if (!complete && uncomposed) speciated = speciated_start(seeded, &work, stages);
+                    initial = complete ? seeded.generic_point()
+                        : speciated ? std::move(*speciated) : boundary_start(seeded, uncomposed, &work, &stages);
                     const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];
-                        for (std::size_t j = 0; j < phase.composition_guess.size(); ++j) initial[offsets[p] + j] = std::log(phase.composition_guess[j]);
+                        if (composed(p)) for (std::size_t j = 0; j < phase.composition_guess.size(); ++j)
+                            initial[offsets[p] + j] = std::log(phase.composition_guess[j]);
                         auto cursor = offsets[p] + phase.support.size();
                         if (phase.is_free()) { if (!seed.amounts.empty()) initial[cursor] = seed.amounts[p]; ++cursor; }
-                        if (phase.packing_guess) initial[cursor] = std::log(*phase.packing_guess);
+                        if (packed(p)) initial[cursor] = std::log(*phase.packing_guess);
                     }
                     auto cursor = compiled.primal_size - compiled.free_intensive_count;
-                    if (problem.temperature.free) { if (seed.temperature || !problem.temperature.absent) initial[cursor] = seeded.problem.temperature.value; ++cursor; }
-                    if (problem.pressure.free && (seed.pressure || !problem.pressure.absent)) initial[cursor] = seeded.problem.pressure.value;
+                    if (problem.temperature.free) { if (seed.temperature) initial[cursor] = *seed.temperature; ++cursor; }
+                    if (problem.pressure.free && seed.pressure) initial[cursor] = *seed.pressure;
                 }
+                if (work.consumed >= work.iterations) throw std::runtime_error("iteration budget exhausted by the seed solves");
                 check(initial.size() == compiled.unknown_count() && all_numeric(initial));
                 const auto offsets = compiled.phase_offsets();
                 for (std::size_t p = 0; p < offsets.size(); ++p) {
@@ -1401,6 +1421,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
                 auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
                                                 : *audit;
+                stages.report(result);
                 if (work.expired()) { result.message += "; elapsed work budget exhausted";
                     reject_elapsed(result, scope); }
                 if (result.success) {
@@ -1420,7 +1441,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             } catch (const std::exception& error) {
                 out.causes[i] = std::string(audit ? "driver/post-driver: " : "initialization: ") + error.what();
                 if (work.expired()) out.causes[i] += "; elapsed deadline exhausted";
-                if (audit) { audit->message = out.causes[i];
+                if (audit) { audit->message = out.causes[i]; stages.report(*audit);
                     if (work.expired()) reject_elapsed(*audit, scope); else clear_state(*audit);
                     out.results[i] = std::move(audit); }
             }

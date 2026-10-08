@@ -57,7 +57,7 @@ void validate_density_seed(const DensityRoot& root) {
 }
 
 std::vector<std::vector<double>> start_compositions(
-    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction, const DriverLimits* limits
+    const CompiledSystem& compiled, core::Scope& scope, std::optional<double>& vapor_fraction
 ) {
     const std::size_t phases = compiled.problem.phases.size();
     const std::size_t components = compiled.model->parameters().component_count();
@@ -72,7 +72,7 @@ std::vector<std::vector<double>> start_compositions(
                 result[phase][spec.support[i]] = spec.composition_guess[i];
         }
     }
-    if (limits || phases == 1) return result;  // explicit starts fill missing compositions from the generic feed
+    if (phases == 1) return result;
     if (guessed) {
         scope.probe("start_rule", 1.0);
         return result;
@@ -310,7 +310,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
 
 }  // namespace
 
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits) {
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages) {
     core::Scope scope("boundary_start");
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
@@ -347,7 +347,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (pure) seed_problem.phases[1].amount = AmountSpec::pinned(0.0);
         else seed_problem.temperature = FreeValue::fixed(compiled.seed_temperature());
         const auto source = compile_problem(*compiled.model, seed_problem);
-        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits), nullptr, limits);
+        const auto seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, boundary_start(source, true, limits, stages), nullptr, limits);
+        if (stages) stages->add(seed);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
         if (seed.has_state()) {
             const auto prepared = source.prepare(seed.coordinates);
@@ -392,7 +393,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         }
     }
     std::optional<double> vapor_fraction;
-    const auto compositions = start_compositions(compiled, scope, vapor_fraction, limits);
+    const auto compositions = start_compositions(compiled, scope, vapor_fraction);
     std::size_t free_phases = 0;
     for (const auto& phase : compiled.problem.phases) {
         if (phase.amount.kind == AmountKind::Free) ++free_phases;
@@ -407,7 +408,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = limits ? compiled.seed_pressure() : fugacity_pressure_seed(compiled, point, phase_offsets, scope);
+    const double p = fugacity_pressure_seed(compiled, point, phase_offsets, scope);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -423,7 +424,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             composition[compiled.problem.phases[phase].support[i]] =
                 std::exp(point[phase_offsets[phase] + i]);
         }
-        if ((limits || supports_split_seed(compiled)) && compiled.problem.phases[phase].packing_guess.has_value()) {
+        if (supports_split_seed(compiled) && compiled.problem.phases[phase].packing_guess.has_value()) {
             const double packing = *compiled.problem.phases[phase].packing_guess;
             if (!admitted_packing_fraction(packing)) {
                 throw std::invalid_argument("packing guess is outside the admitted range");

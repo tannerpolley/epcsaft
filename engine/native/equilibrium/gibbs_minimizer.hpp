@@ -26,9 +26,11 @@ struct EvaluationWork final {
     std::size_t constraint_hessians = 0;
 };
 
-// `speciate` false: a previous result replaces the start's compositions, so a reacting phase is not speciated.
+// `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 struct DriverLimits;
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr);
+struct StageWork;
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
+                                   StageWork* stages = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
@@ -62,12 +64,23 @@ BranchCheck check_density_branches(
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
 );
 
+// One attempt's iteration budget and deadline, shared by its nested seed solves: `consumed` sums their iterations.
 struct DriverLimits final {
     std::size_t iterations;
     std::chrono::steady_clock::time_point deadline;
     mutable std::size_t consumed = 0;
     bool expired() const { return std::chrono::steady_clock::now() >= deadline; }
     void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
+};
+// Work of the nested solves that seed a solve, failed ones included; added to its reported work.
+struct StageWork final {
+    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
+    void add(const EquilibriumResult& stage) {
+        iterations += stage.iterations; evaluations += stage.evaluations; hessian_calls += stage.hessian_calls;
+    }
+    void report(EquilibriumResult& result) const {
+        result.iterations += iterations; result.evaluations += evaluations; result.hessian_calls += hessian_calls;
+    }
 };
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
@@ -281,6 +294,7 @@ private:
     core::Scope* scope_ = nullptr;
     double regularization_size_ = 0.0;
     const DriverLimits* limits_ = nullptr;
+    std::size_t consumed_before_ = 0;  // earlier stages' iterations in limits_
 };
 
 }  // namespace epcsaft::equilibrium
