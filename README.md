@@ -100,7 +100,8 @@ installing the wheel; selected Engine checks run setup first.
 `check-all.sh` is the full fast installed-wheel gate: it always installs the
 current wheel, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence.
+numerical evidence. Both gates run strict mypy over `engine/src` and `engine/tests`, so
+pytest alone misses type errors in a test edit.
 `check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
 and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
 changes; request them with
@@ -144,7 +145,9 @@ only when the changed scientific claim requires that evidence.
 
 Each checkout has its own `.venv` from setup with one non-editable Engine wheel.
 Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
-numerical thread when memory allows. A warm `check-all.sh` takes about 20–40 s
+numerical thread when memory allows. It stops the whole command after `HEAVY_TIMEOUT`
+(default 30m); set `HEAVY_TIMEOUT=2h` for a long chain such as a series of falsify runs.
+A warm `check-all.sh` takes about 20–40 s
 (24.0 s measured in #319). `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
 After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's

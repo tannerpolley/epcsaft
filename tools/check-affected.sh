@@ -156,7 +156,7 @@ if grep -q '^engine/' <<<"$paths"; then
         fi
     fi
     grep -Eq '^engine/(src/|tests/)' <<<"$paths" && (cd engine && ../.venv/bin/ruff check --select E4,E7,E9,F src tests)
-    grep -Eq '^engine/(src/|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
+    grep -Eq '^engine/(src/|tests/.*\.py$|pyproject\.toml$)' <<<"$paths" && (cd engine && ../.venv/bin/mypy)
 fi
 
 check_tools
