@@ -64,6 +64,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const auto options = app->Options();
     const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
     admit(options->SetIntegerValue("print_level", 0));
+    admit(options->SetStringValue("sb", "yes"));  // no banner on stdout; an ipopt.opt file still overrides both
     admit(options->SetStringValue("nlp_scaling_method", "none"));
     admit(options->SetNumericValue("obj_scaling_factor", objective_factor));
     admit(options->SetStringValue("hessian_approximation", exact ? "exact" : "limited-memory"));
@@ -77,7 +78,6 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds));
     if (!exact) {
         admit(options->SetStringValue("limited_memory_update_type", "bfgs"));
-        admit(options->SetStringValue("sb", "yes"));
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
         admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
