@@ -53,8 +53,7 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
         assert abs(ratio-target) <= 1e-8
         evidence.compare(f"declared-starts/ratio/{a}", model=ratio, reference=target, unit="1",
                          criterion={"rule": "symmetric_close", "atol": 1e-8})
-    for form in ("coordinates", "previous"):
-        replay = eq.EquilibriumStart(**{form: result.coordinates if form == "coordinates" else result})
+    for replay in (eq.EquilibriumStart(coordinates=result.coordinates), eq.EquilibriumStart(previous=result)):
         restored = eq.solve_equilibrium_starts(model, problem, [replay], eq.EquilibriumWorkLimits())
         assert restored.selected == 0 and restored.results[0] is not None
         assert max(map(abs, restored.results[0].residuals)) <= 1e-10
