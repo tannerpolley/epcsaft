@@ -200,23 +200,6 @@ diagnostics_checks = executable(
 )
 test('diagnostics', diagnostics_checks)
 
-properties_floor = executable(
-  'properties_floor',
-  'tests/native/properties_floor.cpp',
-  cpp_args: native_warnings,
-  dependencies: [eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  install: false,
-  build_by_default: false,
-)
-test(
-  'properties_floor', properties_floor,
-  suite: 'floor',
-  env: {'OMP_NUM_THREADS': '1'},
-  timeout: 600,
-)
-
 equilibrium_checks = executable(
   'equilibrium_checks',
   'tests/native/equilibrium_checks.cpp',

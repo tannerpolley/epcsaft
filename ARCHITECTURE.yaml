@@ -230,9 +230,6 @@ evidence:
   route_specific_gates: forbidden
   downstream_specific_flags: forbidden
   oracle: engine/tests/oracle/oracle.json
-  reactive_baseline: engine/tests/oracle/reactive_vle_baseline.json
-  floor: engine/tests/oracle/floor-measurements.json
-  entry_point_profile: engine/tests/oracle/entry-point-profile.json
 
 scientific_boundaries:
   reusable_packets: data

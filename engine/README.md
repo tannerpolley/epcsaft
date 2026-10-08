@@ -35,8 +35,7 @@ installation boundary.
 `contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
 and `regression`; name other tests to run them. `tools/check-affected.sh` selects
 the equilibrium, boundary, Explicit and `association-comparison` tests when their
-code changes (root [`README.md`](../README.md) "Checks"); `properties_floor` runs
-only by name.
+code changes (root [`README.md`](../README.md) "Checks").
 
 ## C++ usage and debugging
 
