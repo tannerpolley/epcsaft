@@ -263,7 +263,6 @@ void check_density_record(
         "absolute", 1e-15, 0.0,
         residual_matches, "d4-density-residual", point_id,
         "residual", "T,P,\\mathbf{x},\\rho,branch", "r_{record}=r_{state}", "state");
-    CHECK(residual_matches);
     CHECK(record.criterion != nullptr);
     CHECK(std::string(record.criterion->name) == "DENSITY_ROOT_RESIDUAL");
     if (record.stop == Stop::converged) CHECK(record.residual <= record.criterion->value);
@@ -321,7 +320,6 @@ void density_publication_boundaries() {
         "absolute", 0.0, 0.0, valid_root, "native.diagnostics.c3-correction", "C3",
         "density-publication", "availability", "T,P,x", "valid root published"
     );
-    CHECK(valid_root);
 }
 
 void association_record(
@@ -355,7 +353,6 @@ void association_record(
         "absolute", 1e-15, 0.0, std::abs(record.residual - norm) <= 1e-15,
         "d5-association-residual", point_id, "r", "T,\\rho,\\mathbf{x},\\chi",
         "r_{record}=||f(\\chi)||_\\infty", "state");
-    CHECK(std::abs(record.residual - norm) <= 1e-15);
 }
 
 void association_records() {

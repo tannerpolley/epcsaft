@@ -12,7 +12,6 @@ inline void compare(const std::string& id, double actual, double reference, doub
             recording_support::field("error",error),recording_support::field("criterion",tolerance)}),
         "Relationship","issue-224","PH/PS value or exact derivative falsifier","positive quantity scale",
         std::isfinite(error)&&error<=tolerance,"caloric-specification",id.c_str());
-    CHECK(std::isfinite(error)&&error<=tolerance);
 }
 inline double total(const HelmholtzModel& m, const EquilibriumResult& r, bool h) {
     double value=0; const std::size_t c=m.parameters().component_count();

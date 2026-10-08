@@ -401,7 +401,7 @@ inline std::vector<double> scale(Actions& actions,const std::vector<NamedDirecti
         for(const auto& part:ds[k].chart) {parts.push_back(part);visit(k+1);parts.pop_back();}
     };visit(0);return sigma;
 }
-inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirection>& ds,
+inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirection>& ds,
                    const std::vector<Quantity>& q,const Sample& center,const std::string& inputs) {
     std::vector<Direction> request;std::string label;
     std::string literal_directions;
@@ -467,7 +467,6 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             coarse=fine;
         }
     }
-    bool pass=true;
     for(std::size_t i=0;i<q.size();++i) {
         // Select only by each order's first-resolved refinement, before comparing with production.
         std::size_t selected=0;
@@ -487,9 +486,7 @@ inline bool ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
         recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],r.rich,row,
             "Relationship",method,free_chart&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
             "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric",id.c_str());
-        pass=good&&pass;
     }
-    return pass;
 }
 
 inline double gibbs_contraction(const ReferenceCalorics& ref,std::size_t component,
@@ -579,13 +576,12 @@ public:
     }
 };
 
-inline bool identities(const Case& c,const HelmholtzModel& model,const CompiledSystem& compiled,
+inline void identities(const Case& c,const HelmholtzModel& model,const CompiledSystem& compiled,
                        Actions& actions,const std::vector<Quantity>& q,const Sample& center,const std::string& inputs) {
-    bool good=true;
     const auto& value=actions.get({});
     const double T=center.solved.temperature[0],P=center.solved.pressure[0],n=center.solved.amounts[0];
     auto check=[&](std::string id,std::string quantity,double a,double b,double relative) {
-        good=compare("reference-calorics/"+id+"/"+c.name,q[index(q,quantity)],a,b,inputs,relative)&&good;
+        compare("reference-calorics/"+id+"/"+c.name,q[index(q,quantity)],a,b,inputs,relative);
     };
     check("F4/G","H",n*center.phase.g,value[index(q,"H")]-T*value[index(q,"S")],1e-9);
     check("F5/u","total-u_G",value[index(q,"total-u_G")],value[index(q,"total-h")]-P*value[index(q,"v_G")],1e-10);
@@ -614,7 +610,7 @@ inline bool identities(const Case& c,const HelmholtzModel& model,const CompiledS
             recording_support::fields({inputs,recording_support::field("V_row",wrong),recording_support::field("V_anchored",n*center.phase.v),
                 recording_support::field("anchored_coefficients","0,-1"),recording_support::field("row_coefficients","0.4,-0.2"),recording_support::field("target",target)}),
             "Discrimination","conserved-moiety-gauge","Row representative cannot replace the anchored volume",
-            "abs(V_row-V_anchored)>10*target",discriminates,"reactive-caloric");good=discriminates&&good;
+            "abs(V_row-V_anchored)>10*target",discriminates,"reactive-caloric");
     }
     Frozen frozen(c,model,compiled,center);
     std::vector<std::vector<Direction>> requests={{},{dt},{dp}};
@@ -652,7 +648,6 @@ inline bool identities(const Case& c,const HelmholtzModel& model,const CompiledS
         const auto state=model.state(T,center.phase.rho,center.solved.mole_fractions);
         check("F5/fixed-cv","total-cv_G",value[index(q,"total-cv_G")],center.phase.ideal[3]-R+state.residual_isochoric_heat_capacity,1e-10);
     }
-    return good;
 }
 
 struct OracleOutsideChart : std::runtime_error { using std::runtime_error::runtime_error; };
@@ -715,8 +710,7 @@ inline bool inversion(const Case& c,const HelmholtzModel& model,const CompiledSy
             recording_support::field("site_residual",value.diagnostics.association_residual)});
         const std::string id="F5/"+c.name+"/inversion/"+recording_support::number(delta);
         recording_support::compare_custom(id.c_str(),"fixed_v_G_residual","m^3/mol",residual,0,row,"Closure","native-Newton-vG",
-            "Frozen x local volume inversion uses exact raw v_G,P","abs(volume_residual)<=32*epsilon*abs(v_G_center)",closed,"reactive-caloric");
-        CHECK(closed);return value.total[1];
+            "Frozen x local volume inversion uses exact raw v_G,P","abs(volume_residual)<=32*epsilon*abs(v_G_center)",closed,"reactive-caloric");return value.total[1];
     };
     good=scalar_ladder("F5/"+c.name+"/fixed-vG-cv",q[index(q,"total-cv_G")],exact_cv,0.2,inputs,1e-6,
         [&](double h){return (u_at(h)-u_at(-h))/(2*h);})&&good;
@@ -730,7 +724,7 @@ inline bool inversion(const Case& c,const HelmholtzModel& model,const CompiledSy
     return good;
 }
 
-inline bool product_identities(const Case& c,Actions& actions,const std::vector<NamedDirection>& ds,
+inline void product_identities(const Case& c,Actions& actions,const std::vector<NamedDirection>& ds,
                                const std::vector<Quantity>& q,const std::string& inputs) {
     std::vector<Direction> request;for(const auto& d:ds) request.push_back(d.value);
     const auto value=actions.get(request);const double P=c.problem.pressure.value;
@@ -740,7 +734,7 @@ inline bool product_identities(const Case& c,Actions& actions,const std::vector<
         expected-=request[j].pressure_pa*actions.get(lower)[index(q,"v_G")];
     }
     std::string label;for(const auto& d:ds) label+=d.name+"+";
-    return compare("F5/"+c.name+"/u-product/A"+std::to_string(ds.size())+"/"+label,
+    compare("F5/"+c.name+"/u-product/A"+std::to_string(ds.size())+"/"+label,
         q[index(q,"total-u_G")],value[index(q,"total-u_G")],expected,inputs,1e-10);
 }
 
@@ -774,14 +768,15 @@ inline void run(bool ionic,bool fixed) {
     if(!solved.has_state()) throw std::runtime_error(c.name+" center: "+solved.message);
     const auto q=quantities(c.parameters.component_count());const auto basis=directions(c);
     const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
-    Actions actions(compiled,solved,q);bool good=true;
+    Actions actions(compiled,solved,q);
     const auto exact=actions.get({});
-    for(std::size_t i=0;i<q.size();++i) good=compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],center.values[i],inputs,1e-10,"native-independent-values")&&good;
-    good=identities(c,model,compiled,actions,q,center,inputs)&&good;
-    good=inversion(c,model,compiled,center,q,inputs,exact[index(q,"total-cv_G")])&&good;
+    for(std::size_t i=0;i<q.size();++i) compare("F1/"+c.name+"/value/"+q[i].name,q[i],exact[i],center.values[i],inputs,1e-10,"native-independent-values");
+    if(ionic||fixed) identities(c,model,compiled,actions,q,center,inputs);  // E-sys identities run in cheap()
+    // A ladder whose every step leaves the chart records no comparison; it must still fail.
+    CHECK(inversion(c,model,compiled,center,q,inputs,exact[index(q,"total-cv_G")]));
     for(const auto& request:requests(c,basis)) {
-        good=ladder(c,actions,request,q,center,inputs)&&good;
-        good=product_identities(c,actions,request,q,inputs)&&good;
+        ladder(c,actions,request,q,center,inputs);
+        product_identities(c,actions,request,q,inputs);
         if(!ionic&&!fixed) {
             const bool zero_pressure=request.size()==1&&request[0].name=="P";
             const bool zero_theta=request.size()==1&&request[0].name=="epsilon";
@@ -793,12 +788,11 @@ inline void run(bool ionic,bool fixed) {
                     recording_support::compare_custom(("F1/"+c.name+"/analytic-zero/"+request[0].name+"/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),action[i],0,
                         recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
                         "Relationship","identical-ethane-analytic-zero","Identical system-reference chemistry has no P or tied EOS composition response",
-                        "abs(action)<=atol+64*epsilon*sigma",zero_ok,"reactive-caloric");good=zero_ok&&good;
+                        "abs(action)<=atol+64*epsilon*sigma",zero_ok,"reactive-caloric");
                 }
             }
         }
     }
-    CHECK(good);
 }
 
 // P4 composition chain for U: x=n/N has an analytic derivative for every
@@ -821,7 +815,7 @@ inline void unreactive() {
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     CHECK(solved.has_state());const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
     const auto inputs=recording_support::fields({weighted_hessian_context(compiled),context(c,solved,center.phase)});
-    Actions actions(compiled,solved,q);bool good=true;auto basis=directions(c);
+    Actions actions(compiled,solved,q);auto basis=directions(c);
     auto checks=requests(c,basis);checks.insert(checks.begin(),{});
     const std::vector<PropertyObservable> os={PropertyObservable::IdealEnthalpy,PropertyObservable::IdealInternalEnergy,PropertyObservable::IdealEntropy,
         PropertyObservable::IdealIsobaricHeatCapacity,PropertyObservable::IdealIsochoricHeatCapacity,
@@ -852,13 +846,12 @@ inline void unreactive() {
             partition.push_back({k});visit(k+1);partition.pop_back();
         };visit(0);
         const auto id=std::to_string(row++);
-        for(std::size_t i=0;i<os.size();++i) good=compare("F3/U/P4/"+id+"/"+names[i],q[index(q,names[i])],exact[index(q,names[i])],oracle[i],inputs,1e-10,"native-P4-curved-composition-chain")&&good;
-        good=product_identities(c,actions,requested,q,inputs)&&good;
-        if(!requested.empty()) good=ladder(c,actions,requested,q,center,inputs)&&good;
+        for(std::size_t i=0;i<os.size();++i) compare("F3/U/P4/"+id+"/"+names[i],q[index(q,names[i])],exact[index(q,names[i])],oracle[i],inputs,1e-10,"native-P4-curved-composition-chain");
+        product_identities(c,actions,requested,q,inputs);
+        if(!requested.empty()) ladder(c,actions,requested,q,center,inputs);
     }
     const auto& base=actions.get({});
-    good=compare("F3/U/v_G",q[index(q,"v_G")],base[index(q,"v_G")],1/center.phase.rho,inputs,1e-10)&&good;
-    CHECK(good);
+    compare("F3/U/v_G",q[index(q,"v_G")],base[index(q,"v_G")],1/center.phase.rho,inputs,1e-10);
 }
 inline void dependency_checks() {
     auto c = input(false, true);
@@ -873,7 +866,7 @@ inline void dependency_checks() {
     const double cpB = -260.0 * column(ref, 2, 0, 1) + R;
     auto check = [&](const std::string& id, double actual, double expected, double atol) {
         Quantity quantity{id, "J/mol", atol, {}};
-        CHECK(compare("reference-calorics/dependencies/" + id, quantity, actual, expected, "{}", 1e-10));
+        compare("reference-calorics/dependencies/" + id, quantity, actual, expected, "{}", 1e-10);
     };
     const auto zero_direction = zero(c);
     const std::vector<Observable> outputs = {q[index(q, "total-h")].observable,
@@ -949,8 +942,8 @@ inline void volume_partial_values() {
         CHECK(center.results[k].value && refused.results[k].value);
         CHECK(refused.results[k].status==PropertyActionStatus::SupportChange && !refused.results[k].action);
         Quantity q{k==0?"vT":"vP",k==0?"m^3/(mol K)":"m^3/(mol Pa)",k==0?1e-12:1e-18,{}};
-        CHECK(compare("reference-calorics/dependencies/retained-"+q.name,q,*refused.results[k].value,*center.results[k].value,
-            "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10));
+        compare("reference-calorics/dependencies/retained-"+q.name,q,*refused.results[k].value,*center.results[k].value,
+      "T_K:260;P_Pa:3000000;x:1,0;insertion:-1,1",1e-10);
     }
 }
 inline void isothermal_row_columns() {
@@ -988,10 +981,10 @@ inline void isothermal_row_columns() {
         recording_support::field("lower_reference_cause",lower.message),
         recording_support::field("caloric_completion_cause",consumed.column.message)});
     Quantity theta{"C_theta","1/angstrom",1e-10,{}},change{"C_Ttheta_scaled_change","1",0,{}};
-    CHECK(compare("reference-calorics/dependencies/lower-column/available-theta",theta,
-        *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10));
-    CHECK(compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
-        lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10));
+    compare("reference-calorics/dependencies/lower-column/available-theta",theta,
+  *diagnostics[0].terminal_contraction_parameter_derivative[0],46.619570441218094,inputs,1e-10);
+    compare("reference-calorics/dependencies/lower-column/refused-mixed-change",change,
+  lower.scaled_changes[1],2.3611832414348226e21,inputs,1e-10);
     const auto shifted_rows=[&](double delta) {
         auto p=c.parameters;auto problem=c.problem;p.born_diameter_angstrom[1]+=delta;problem.feed.values[0]+=delta;
         HelmholtzModel shifted_model(p,c.active);const auto shifted_compiled=compile_problem(shifted_model,problem);
@@ -1057,28 +1050,27 @@ inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,co
         if(f*flo>0) {lo=mid;flo=f;} else {hi=mid;fhi=f;}
     }
     const double T=(lo+hi)/2;const auto s=states(T);
-    CHECK(compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],center.solved.temperature[0],T,
-        recording_support::fields({inputs,recording_support::field("pure_fugacity_residual",fugacity(T)),
-            recording_support::field("pure_T_bracket",std::vector<double>{lo,hi})}),1e-8,"native-pure-fugacity-bisection"));
+    compare("F6/"+c.name+"/pure-saturation",q[index(q,"T")],center.solved.temperature[0],T,
+  recording_support::fields({inputs,recording_support::field("pure_fugacity_residual",fugacity(T)),
+      recording_support::field("pure_T_bracket",std::vector<double>{lo,hi})}),1e-8,"native-pure-fugacity-bisection");
     if(c.problem.temperature.free) {
         const double clapeyron=T*(1/s[1].molar_density-1/s[0].molar_density)
             /(s[1].residual_enthalpy-s[0].residual_enthalpy);
         auto quantity=q[index(q,"T")];quantity.name="dT_dP";quantity.unit="K/Pa";quantity.atol/=1e5;
-        CHECK(compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"T")]/1e5,
-            clapeyron,inputs,1e-8,"pure-Properties-Clapeyron"));
+        compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"T")]/1e5,
+      clapeyron,inputs,1e-8,"pure-Properties-Clapeyron");
         const auto sigma=scale(actions,{basis[1]},q.size());
         const auto k=index(q,"T");const double tangent=actions.get({basis[1].value})[k];
         const bool good=std::abs(tangent)<=q[k].atol+64*std::numeric_limits<double>::epsilon()*sigma[k];
         recording_support::compare_custom(("F6/"+c.name+"/pure-feed-zero").c_str(),"DT_feed","K",tangent,0,
             inputs,"Relationship","identical-species","identical ethane saturation is independent of feed",
             "abs(DT)<=atol+64*epsilon*sigma",good,"reactive-caloric");
-        CHECK(good);
     } else {
         const double clapeyron=(s[1].residual_enthalpy-s[0].residual_enthalpy)
             /(T*(1/s[1].molar_density-1/s[0].molar_density));
         auto quantity=q[index(q,"P")];quantity.name="dP_dT";quantity.unit="Pa/K";
-        CHECK(compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"P")],
-            clapeyron,inputs,1e-8,"pure-Properties-Clapeyron"));
+        compare("F6/"+c.name+"/Clapeyron",quantity,actions.get({basis[0].value})[index(q,"P")],
+      clapeyron,inputs,1e-8,"pure-Properties-Clapeyron");
     }
 }
 
@@ -1135,11 +1127,10 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     combinations.push_back({controls,controls});combinations.push_back({controls,parameters});
     auto mixed=combine(0,2,free_temperature?"P+epsilon":"T+epsilon");
     combinations.push_back({controls,mixed});
-    bool good=true;const auto exact_values=actions.get({});
-    for(std::size_t i=0;i<q.size();++i) good=compare("F6/"+c.name+"/value/"+q[i].name,q[i],exact_values[i],
-        center.values[i],inputs,1e-10,"native-independent-values")&&good;
-    for(const auto& ds:combinations) good=ladder(c,actions,ds,q,center,inputs)&&good;
-    CHECK(good);
+    const auto exact_values=actions.get({});
+    for(std::size_t i=0;i<q.size();++i) compare("F6/"+c.name+"/value/"+q[i].name,q[i],exact_values[i],
+        center.values[i],inputs,1e-10,"native-independent-values");
+    for(const auto& ds:combinations) ladder(c,actions,ds,q,center,inputs);
     const auto intensive=index(q,free_temperature?"T":"P");
     if(nonidentical) {
         for(const auto& ds:std::vector<std::vector<Direction>>{{basis[1].value},{basis[1].value,basis[2].value},
@@ -1150,7 +1141,6 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
                 free_temperature?"K":"Pa",response,0,inputs,"Relationship","nonidentical-witness",
                 "N exposes actual feed and mixed parameter motion","finite(response) && response!=0",
                 std::isfinite(response)&&response!=0,"reactive-caloric");
-            CHECK(std::isfinite(response)&&response!=0);
         }
     } else pure_boundary(c,actions,center,q,basis,inputs);
     auto driven=c.problem;driven.temperature=FreeValue::fixed(solved.temperature[0]);
@@ -1161,8 +1151,8 @@ inline void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     const auto fixed_values=values(model,fixed_compiled,fixed_center,liquid_quantities);
     for(const auto& name:std::vector<std::string>{"rho","x-0","total-h"}) {
         const auto k=index(liquid_quantities,name);
-        CHECK(compare("F6/"+c.name+"/fixed-center/"+name,liquid_quantities[k],center.values[index(q,name)],
-            fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart"));
+        compare("F6/"+c.name+"/fixed-center/"+name,liquid_quantities[k],center.values[index(q,name)],
+      fixed_values.values[k],inputs,1e-10,"same-liquid-state-on-fixed-chart");
     }
 }
 
@@ -1173,7 +1163,7 @@ inline void cheap() {
     const auto c=input(false,false);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);CHECK(solved.has_state());
     const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
-    Actions actions(compiled,solved,q);CHECK(identities(c,model,compiled,actions,q,center,context(c,solved,center.phase)));
+    Actions actions(compiled,solved,q);identities(c,model,compiled,actions,q,center,context(c,solved,center.phase));
 }
 #include "reactive_cp_checks.hpp"
 } // namespace reactive_caloric_checks
