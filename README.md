@@ -122,6 +122,14 @@ Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.
 `--list`, which prints each case's test id, arguments and alias; `native-run` also
 takes the Meson test name that `run-native-tests.sh` prints.
 
+`tools/native-isolated` builds one program in a temporary detached worktree with its own
+Meson build directory, leaving this checkout's source and build directory free:
+
+```bash
+tools/heavy tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only if the planted case fails
+tools/heavy tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
+```
+
 Native C++ changes use the explicit owner commands:
 
 ```bash
