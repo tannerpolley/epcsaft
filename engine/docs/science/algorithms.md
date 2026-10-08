@@ -776,7 +776,7 @@ its unscaled rows, which are its constraints. Species thermochemistry attached t
 model is compared with every target kind, including scalar `K` and affinity,
 and the comparison is skipped where the temperature leaves a species interval.
 
-A feasibility cell has a constant objective and no reduced-Hessian certificate.
+A converged state carries no certificate that each phase is locally stable.
 For a neutral nonreacting liquid/vapor pair with an incipient phase pinned at
 zero amount, the driver applies each phase's necessary local stability
 condition to a state it would otherwise accept (#352). This is the Gibbs
@@ -793,7 +793,12 @@ $$
 $$
 
 with `v` the normalized eigenvector. A value inside the band is unresolved and
-admitted; no positive margin is required. The check follows the convergence
+admitted; no positive margin is required. The band covers eigenvalue rounding
+only, not error in the returned state or the equation of state. Associating
+mixtures are admitted with this band alone: the 12 MEA–water bubble and dew
+states checked have `lambda_min` 0.88 to 1.28, but near-critical associating
+states, where `|lambda_min|` approaches the association residual floor, are
+untested. The check follows the convergence
 and `phases_coincide` classification on every route through the driver: plain
 and explicit starts and continuation correctors. Charged and reacting cells need their
 admissible perturbation subspaces first and are not checked. Positive curvature
