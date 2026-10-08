@@ -567,9 +567,10 @@ void validate_fit_request(const FitRequest& request) {
     const auto& controls = request.controls;
     require(std::isfinite(controls.function_tolerance) && controls.function_tolerance >= 0.0
         && std::isfinite(controls.gradient_tolerance) && controls.gradient_tolerance >= 0.0
-        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0
-        && controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
-        && controls.maximum_elapsed_time_seconds > 0.0, "controls");
+        && std::isfinite(controls.parameter_tolerance) && controls.parameter_tolerance >= 0.0, "controls");
+    require(controls.maximum_iterations > 0 && std::isfinite(controls.maximum_elapsed_time_seconds)
+        && controls.maximum_elapsed_time_seconds > 0.0,
+        "controls: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
 }
 
 FitResult fit(const FitRequest& request) {

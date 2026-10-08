@@ -22,7 +22,8 @@ public:
         require(u_ > 0 && start.size() == request.coordinates.coordinates.size(), "minimax start width");
         require(!spec_.targets.empty() && positive(spec_.q) && positive(spec_.tolerance)
             && positive(spec_.activity_distance) && positive(spec_.margin), "minimax controls");
-        require(request.controls.maximum_iterations > 0 && positive(request.controls.maximum_elapsed_time_seconds), "minimax budgets");
+        require(request.controls.maximum_iterations > 0 && positive(request.controls.maximum_elapsed_time_seconds),
+            "minimax budgets: maximum_iterations and maximum_elapsed_time_seconds must be set and positive");
         require(frozen.size() == request.checks.size() && spec_.group_scales.size() == frozen.size(), "minimax groups/scales");
         std::tie(out.lower, out.upper) = request.coordinates.optimizer_bounds();
         out.point = start;
