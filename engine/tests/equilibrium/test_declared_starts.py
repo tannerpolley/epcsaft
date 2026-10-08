@@ -146,24 +146,25 @@ def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None
         assert refused.selected is None and refused.results[0] is None and refused.iterations == 0
 
 
-def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -> None:
-    """#350: packet-3 MEA at loading 0.2556 and 318.15 K. A default start runs the plain solve's cold start (the
-    two-phase K-factor estimate, the single-liquid speciation, the bubble's liquid pre-solve at its pressure seed and
-    fugacity pressure step) under its work limits, so it returns the same state and summed work. The bubble reports
-    that pre-solve's work, and a budget below it stops before the bubble solve."""
-    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+def _mea_flash(pressure: Any, *vapor: eq.Phase) -> eq.Problem:
+    """Packet-3 MEA at loading 0.2556 and 318.15 K: a liquid and the declared vapor phases."""
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450., EOS_STANDARD_STATE_ID))
                  for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), strict=True)]
     feed = eq.Amounts({"carbon-dioxide": .25557798094241313 * 9.7292821, "monoethanolamine": 9.7292821,
                        "water": 76.9751925})
+    return eq.Problem(T=318.15, P=pressure, phases=[eq.Phase("L", kind="liquid"), *vapor], feed=feed,
+                      reactions=reactions, row_tolerance=1e-10)
 
-    def problem(pressure: Any, *vapor: eq.Phase) -> eq.Problem:
-        return eq.Problem(T=318.15, P=pressure, phases=[eq.Phase("L", kind="liquid"), *vapor], feed=feed,
-                          reactions=reactions, row_tolerance=1e-10)
 
-    bubble = problem(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Pinned(0.)))
+def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -> None:
+    """#350: packet-3 MEA at loading 0.2556 and 318.15 K. A default start runs the plain solve's cold start (the
+    true-species split, the single-liquid speciation, the bubble's liquid pre-solve at its pressure seed and
+    fugacity pressure step) under its work limits, so it returns the same state and summed work. The bubble reports
+    that pre-solve's work, and a budget below it stops before the bubble solve."""
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    bubble = _mea_flash(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Pinned(0.)))
     work = ("iterations", "evaluations", "hessian_calls")
-    for declared in (bubble, problem(5918.5286, eq.Phase("V", kind="vapor", support=_MEA[:3])), problem(8877.7929)):
+    for declared in (bubble, _mea_flash(5918.5286, eq.Phase("V", kind="vapor", support=_MEA[:3])), _mea_flash(8877.7929)):
         plain = eq.solve_equilibrium(model, declared)
         started = eq.solve_equilibrium_starts(model, declared, [eq.EquilibriumStart()], eq.EquilibriumWorkLimits())
         result = started.results[0]
@@ -173,13 +174,35 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
         for key in ("pressure", "amounts", "mole_fractions", "molar_densities"):
             for x, y in zip(getattr(plain, key), getattr(result, key), strict=True):
                 assert abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14), key
-    presolve = eq.solve_equilibrium(model, problem(7398.16))
+    presolve = eq.solve_equilibrium(model, _mea_flash(7398.16))
     plain = eq.solve_equilibrium(model, bubble)
     assert all(getattr(plain, k) > getattr(presolve, k) for k in work)
     stopped = eq.solve_equilibrium_starts(model, bubble, [eq.EquilibriumStart()],
                                           eq.EquilibriumWorkLimits(iterations=presolve.iterations - 1))
     assert stopped.selected is None and stopped.results[0] is None and stopped.iterations == presolve.iterations - 1
     assert "iteration budget" in stopped.causes[0], stopped.causes
+
+
+def test_feed_start_regrows_the_vapor_at_the_356_point() -> None:
+    """#356: the MEA flash at 3699.0803800848512 Pa. From the feed start (both phases at the feed composition, unfed
+    liquid species at 1/9 of the feed before normalization, equal amounts) one step nearly emptied the liquid on main
+    7fa511b6, and the solve ended "phase V vanished"; the amount step rule refuses that step. That start and the
+    generated true-species split both reach main's apparent-K state within 1e-10."""
+    model = Mixture(Parameters.from_json(parameters_json("mea-co2-h2o-nine-species-estimation", 3), components=_MEA))
+    problem = _mea_flash(3699.0803800848512, eq.Phase("V", kind="vapor", support=_MEA[:3]))
+    z = [.25557798094241313 * 9.7292821, 9.7292821, 76.9751925]
+    liquid = z + [sum(z) / 9] * 6
+    feed = eq.EquilibriumStart(compositions=[[v / sum(liquid) for v in liquid], [v / sum(z) for v in z]],
+                               amounts=[sum(z) / 2] * 2)
+    started = eq.solve_equilibrium_starts(model, problem, [feed], eq.EquilibriumWorkLimits()).results[0]
+    reference = [27.345065157988326, 59.35940946171173, 2.0609303345668776e-14, .1313557341458005, .5828610304006816,
+                 .18833784813341686, 4.0587181258156585e-05, 5.054849860062213e-07, .0908926915858919,
+                 1.1538627774106781e-07, .00651148768166661, 3.318679391441496e-10, .01661287421506598,
+                 .9833871254530661, 0., 0., 0., 0., 0., 0., 42120.183730573895, 1.4010589629129806]
+    for result in (eq.solve_equilibrium(model, problem), started):
+        assert result is not None and result.success, result and result.message
+        state = [*result.amounts, *result.mole_fractions, *result.molar_densities]
+        assert all(abs(x - y) <= 1e-10 * max(abs(x), abs(y), 1e-14) for x, y in zip(state, reference, strict=True))
 
 
 def test_supplied_packings_need_no_boundary_density_root() -> None:
