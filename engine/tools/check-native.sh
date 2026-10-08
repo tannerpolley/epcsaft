@@ -18,6 +18,8 @@ if [[ ! -x "$workspace_root/.venv/bin/python" ]]; then
 fi
 
 build_root="$workspace_root/build/native-quality"
+# The checkout's build-job count bounds compile and clang-tidy processes, so the sweep fits tools/heavy's memory cap.
+jobs="$(cat "$workspace_root/build/environment-wheel/build-jobs" 2>/dev/null || echo 2)"
 extension_suffix="$($workspace_root/.venv/bin/python -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')"
 # The tree is always the Clang debug build, so a warm tree reconfigures instead of rebuilding.
 setup_args=()
@@ -31,11 +33,12 @@ CC=clang-18 CXX=clang++-18 meson setup \
     --buildtype=debug \
     "$build_root" \
     "$engine_root"
-meson compile -C "$build_root" \
+meson compile -C "$build_root" -j "$jobs" \
     "_core$extension_suffix"
 
 run-clang-tidy-18 \
     -clang-tidy-binary clang-tidy-18 \
     -p "$build_root" \
+    -j "$jobs" \
     -quiet \
     'engine/(native|tests/native)/.*\.cpp$'

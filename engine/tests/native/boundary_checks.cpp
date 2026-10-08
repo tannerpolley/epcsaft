@@ -767,6 +767,18 @@ void check_e4_c() {
             recording_support::field("states", result.states.size())}));
     branch_rows("e4-c", "prefix", model, start.problem, result);
     attempt_rows("e4-c", capture.trace());
+    // #356: below the dew pressure the liquid genuinely vanishes. The amount step rule measured on the amount instead
+    // of its distance to Ipopt's relaxed bound refuses every step into (l, 0) and stops at the iteration budget.
+    auto dew = start.problem;
+    dew.phases[0].amount = AmountSpec::pinned(0.0);
+    dew.pressure = FreeValue::variable(0.5 * start.bubble_pressure);
+    const auto dew_point = epcsaft::equilibrium::solve_equilibrium(model, dew);
+    auto below = start.problem;
+    below.pressure = FreeValue::fixed(0.8 * dew_point.pressure.at(0));
+    const auto vanished = epcsaft::equilibrium::solve_equilibrium(model, below);
+    record_bool("e4-c/liquid", "e4-c", "the liquid vanishes at 0.8 times the dew pressure",
+        dew_point.success && !vanished.success && vanished.message.rfind("phase L vanished", 0) == 0,
+        recording_support::fields({recording_support::field("message", vanished.message)}));
 }
 
 void check_e4_d() {

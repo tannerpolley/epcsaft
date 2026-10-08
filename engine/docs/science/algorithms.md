@@ -432,6 +432,40 @@ $y_i=K_i x_i$, $N_V=\beta N_{feed}$ and $N_L=(1-\beta)N_{feed}$, assigning
 by declared phase kind. Nonfinite/nonpositive coordinates or fractions at the
 existing phase-disappearance floor retain the original normalized $z/K,zK$
 and equal-amount seed. No new phase search or equilibrium driver is introduced.
+A reacting fixed-TP declaration of one liquid and one vapor, identified by kind in
+either order, with both amounts free and no composition guess, starts instead from a
+true-species split (#350). Its predicates use the compiled effective supports, which
+keep zero-feed reaction products and drop absent and unfed nonreacting species, and
+compilation refuses a fed or reacting species on no support: the vapor support
+lies inside the liquid support, so every potentially present species is on the
+liquid support, with charge number zero on every vapor species (compilation admits
+a vapor support holding both charge signs, so this check is needed). The single-liquid speciation below, evaluated on the
+two-phase compiled system's liquid chemical rows and keeping its last successful
+sweep, gives the true-species fractions $z^*$ and total $N^*$. Then
+$K_i=\phi_i^L(T,P,z^*)/\phi_i^V(T,P,y)$ on the vapor support and $K_i=0$ on
+liquid-confined species, whose inventory makes $F(1)=-\infty$. Here $y$ only
+estimates $\phi^V$, by two substitution passes $y\propto z^*\phi^L/\phi^V$ from
+$\phi^V=1$; the split's vapor is $K_ix_i$. The same Rachford–Rice bisection
+(Rachford and Rice, 1952; one owner for both splits) gives $\beta$,
+$x_i=z_i^*/(1-\beta+\beta K_i)$, $y_i=K_ix_i$, $N_L=N^*(1-\beta)$ and $N_V=N^*\beta$.
+$N^*z^*$ is conserved, so the seed carries the speciation's charge, and $Bn=b$ holds
+only to the speciation's accuracy (at most 5.6e-6 mol over the qualification family):
+this is an initializer with frozen reaction inventory, not a reaction and phase
+equilibrium. The second $\phi^V$ pass and the split vapor's density root continue
+the previous vapor root (ALG-DENSITY anchor); when the new composition moves the
+root out of the anchor's window, the unanchored scan solves it. Outside this domain,
+or after a failed speciation, nonfinite or nonpositive $K_i$, no bracket, a phase
+below `PHASE_DISAPPEARANCE_AMOUNT` of the feed or a nonpositive fraction, the
+apparent-species start above follows before the one solve; an exhausted budget
+propagates and nothing retries after the solve. Supplied compositions skip the
+split; supplied amounts and packings replace its coordinates. Evidence (#350/#356
+build; MEA case-7 declaration at 3 temperatures, 8 loadings and 3 pressures plus
+the key flash, 73 points): together with the amount step rule below, 72 are accepted
+against 58 from the apparent-species start, none of the 58 is lost and states agree
+within 1.5e-11; the key flash goes 43/57/44 to 19/42/20. Without the rule the split
+loses 9 of the 58, each ending on a vanished phase. Over 180 further MEA points
+(313–393 K, 2 kPa–1 MPa, loadings 0.01–0.5), 17 are newly accepted and none of the
+32 accepted ones is lost (states within 4.0e-11).
 Only this non-associating neutral TP domain may use a bounded caller packing seed or skip
 redundant density initialization for a previous successful result with compatible
 positive coordinates. A multicomponent bubble declaration (fixed temperature, free
@@ -663,6 +697,55 @@ changes some single-phase outcomes: identical-isomer isomerisation started at it
 symmetric stationary point (a Gibbs maximum along the reaction) now refuses as not
 positive definite instead of escaping to a minimum through the barrier's
 perturbation, the outcome the #159 test already designates.
+
+Phase amounts enter the Gibbs objective linearly. At fixed composition and density
+the amount–amount second derivative is zero, so only the amount–composition,
+amount–density and constraint couplings of the full Newton system limit how much
+material one step moves between phases. At the #356 MEA point (loading 0.2556,
+318.15 K, 3699.08 Pa) one step from the feed start moved 140 mol into the vapor
+against an 86.7 mol feed. Ipopt's own fraction-to-boundary rule ($\tau\ge0.99$;
+Wächter and Biegler, 2006) left 1% of the liquid, its composition drained to an
+ion-bearing state and the solve ended "phase V vanished". Every optimizer trial
+point is therefore refused unless, for each free phase amount with $b-l>0$,
+
+$$x-l\ge\kappa_N\,(b-l),\qquad \kappa_N=\texttt{EQUILIBRIUM\_AMOUNT\_STEP\_RETENTION}=0.1 .$$
+
+Here $b$ is the amount at the base of the direction being searched (Ipopt's current
+iterate, which a watchdog rollback restores; in restoration the original-variable
+block of the restoration iterate), $l$ the active search problem's relaxed lower
+bound (restoration's own during restoration; Ipopt relaxes the zero bound to about
+$-10^{-8}$ mol) and $x$ the trial amount, all unscaled, in mol. Along one shrinking
+direction $d$ this is $\alpha\le(1-\kappa_N)(b-l)/(-d)$: a fraction-to-boundary rule
+with $\tau_N=0.9$ on the free amounts only, the tighter of Ipopt's $\tau$ and 0.9
+applying to a shrinking amount. It adds no constraint, bound or amount floor and
+starts no solve. Interior stationary points are unchanged, but the basin a solve
+reaches can change. A refusal is an evaluation error, not an exact step cap:
+ordinary backtracking halves the step, soft restoration repeats the refused point up
+to three times before full restoration, and a refusal can suppress a second-order
+correction or end a watchdog attempt. Refused objective callbacks count as
+evaluations; refused constraint callbacks do not. The rule keeps the distance from
+the relaxed bound positive, not the amount: with $b=10^{-9}$ and $l=-10^{-8}$ mol,
+$x=-8.9\times10^{-9}$ mol is admitted, and the topology, balance and density checks
+still decide the returned state. Measured on the amount itself ($x\ge\kappa_N b$) the
+rule refuses every step toward the barrier optimum, which lies between the relaxed
+bound and zero: the neutral binary liquid at 0.8 times its dew pressure then stops
+at the 200-iteration budget instead of "phase L vanished" (E4-C pin). Along accepted steps with one fixed $l$ and no rollback,
+$N_m-l\ge\kappa_N^m(N_0-l)$, so reaching $q=\epsilon_N N_{feed}$ with $l<q<N_0$ takes
+at least $\lceil\log[(q-l)/(N_0-l)]/\log\kappa_N\rceil$ accepted steps. That is a lower
+bound on steps; the added iterations have no upper bound. Genuine disappearances keep
+their classification at a cost: C3 (NaCl liquid, water-only vapor) 27 to 97
+iterations in both phase orders, the neutral liquid case 42 to 50, the neutral vapor
+case 120 to 113, and E4-C reaches the same 0.6075 with 2,172 to 2,181 optimizer
+callbacks. Over the 58 MEA family points accepted by both starts, 12 need more of
+some work component (worst 49/69/50 to 145/446/144) while the sums fall from
+2778/4388/2835 to 1866/3479/1922. The qualification trace found the identified base
+and active bound at all 16,161 admissions over 2,540 callbacks, including restoration
+and watchdog rollback. The value 0.1 is provisional (#356). The rule reads Ipopt
+3.11.9 internals (the TNLP adapter's ordering, the current iterate and the active
+problem's bounds; IpBacktrackingLineSearch.cpp, IpRestoIpoptNLP.cpp). A missing
+mapping or variable scaling stops the solve with a named error, and a compile-time
+check refuses another Ipopt release, which must requalify the rule (3.14's
+`get_curr_iterate` returns iterates, not these relaxed bounds).
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.

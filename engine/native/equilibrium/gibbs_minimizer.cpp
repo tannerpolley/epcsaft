@@ -8,7 +8,12 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 
+#include <IpCompoundVector.hpp>
 #include <IpIpoptApplication.hpp>
+#include <IpIpoptCalculatedQuantities.hpp>
+#include <IpOrigIpoptNLP.hpp>
+#include <IpTNLPAdapter.hpp>
+#include <IpoptConfig.h>
 
 #include <Eigen/Dense>
 
@@ -372,7 +377,11 @@ std::vector<double> add_multipliers(
 GibbsMinimizer::GibbsMinimizer(
     const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope, const DriverLimits* limits
 )
-    : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits) {}
+    : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits) {
+    const auto offsets = compiled_.phase_offsets();
+    for (std::size_t p = 0; p < offsets.size(); ++p)
+        if (compiled_.problem.phases[p].is_free()) amount_columns_.push_back(offsets[p] + compiled_.problem.phases[p].support.size());
+}
 
 bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
@@ -395,6 +404,7 @@ bool GibbsMinimizer::get_bounds_info(
     const double infinity = 1.0e19;
     std::fill(x_l, x_l + n, -infinity);
     std::fill(x_u, x_u + n, infinity);
+    lower_.assign(static_cast<std::size_t>(n), -infinity);  // the amount step rule's bounds, read at each callback
     // Feasibility cells impose chemical equality, so their box is the representability limit. Other
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
     // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
@@ -460,8 +470,33 @@ std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
     return result;
 }
 
+static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 11 && IPOPT_VERSION_RELEASE == 9,
+    "the amount step rule reads Ipopt 3.11.9 internals (ALG-EQUILIBRIUM): requalify it on an Ipopt upgrade");
+
+// Ipopt's current iterate in TNLP order; in restoration, the original block of the restoration iterate.
+// Cached by Ipopt's vector tag, so a callback at an unchanged base costs one tag comparison.
+const std::vector<double>& GibbsMinimizer::search_base() {
+    const Ipopt::Vector* current = Ipopt::GetRawPtr(search_->curr()->x());
+    if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(current)) current = Ipopt::GetRawPtr(compound->GetComp(0));
+    if (base_.empty() || current->GetTag() != base_tag_) {
+        base_.resize(lower_.size());
+        adapter_->ResortX(*current, base_.data());
+        base_tag_ = current->GetTag();
+    }
+    return base_;
+}
+
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
     if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
+    // ALG-EQUILIBRIUM: a trial point keeps at least kappa_N of each free amount's distance to its relaxed lower bound.
+    if (Ipopt::IsValid(search_)) {
+        const auto& base = search_base();
+        bool refused = false;
+        for (const std::size_t i : amount_columns_)
+            refused = refused || (base[i] > lower_[i]
+                && x[i] - lower_[i] < policy::EQUILIBRIUM_AMOUNT_STEP_RETENTION.value * (base[i] - lower_[i]));
+        if (refused) throw std::domain_error("amount step");
+    }
     std::vector<double> candidate(x, x + n);
     if (!prepared_.has_value() || prepared_->point != candidate) {
         rows_.reset();
@@ -619,8 +654,29 @@ bool GibbsMinimizer::intermediate_callback(
     Ipopt::Number inf_pr, Ipopt::Number inf_du, Ipopt::Number mu,
     Ipopt::Number d_norm, Ipopt::Number regularization_size,
     Ipopt::Number alpha_du, Ipopt::Number alpha_pr, Ipopt::Index ls_trials,
-    const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
+    const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
+    // Ipopt adjusts bounds only when it accepts a point, before this callback, so the active problem's bound read
+    // here holds for every search until the next callback; in restoration that is restoration's own bound block, whose
+    // original-variable part restoration does not update when it adjusts the original problem's bounds.
+    if (!amount_columns_.empty()) {  // without free amounts the rule keeps nothing: no search base, no bound reads
+        Ipopt::IpoptNLP& active = *ip_cq->GetIpoptNLP();
+        if (adapter_ == nullptr) {  // the first callback is regular mode, before any search
+            auto* original = dynamic_cast<Ipopt::OrigIpoptNLP*>(&active);
+            adapter_ = original ? dynamic_cast<Ipopt::TNLPAdapter*>(Ipopt::GetRawPtr(original->nlp())) : nullptr;
+            if (adapter_ == nullptr) step_rule_error_ = "amount step rule: Ipopt's TNLP adapter is not reachable";
+        }
+        if (!step_rule_error_ && active.NLP_scaling()->have_x_scaling())
+            step_rule_error_ = "amount step rule: Ipopt scales the variables, so amounts and bounds are not in mol";
+        if (step_rule_error_) return false;
+        Ipopt::SmartPtr<const Ipopt::Vector> lower = active.x_L();
+        if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(Ipopt::GetRawPtr(lower))) lower = compound->GetComp(0);
+        if (lower->GetTag() != lower_tag_) {  // Ipopt relaxed or adjusted the bounds since the last callback
+            adapter_->ResortBnds(*lower, lower_.data(), *lower, nullptr);
+            lower_tag_ = lower->GetTag();
+        }
+        search_ = ip_data;
+    }
     iterations_ = static_cast<std::size_t>(iter);
     if (limits_) limits_->consumed = std::max(limits_->consumed, consumed_before_ + iterations_);
     regularization_size_ = regularization_size;
@@ -730,6 +786,7 @@ EquilibriumResult run_driver(
         } catch (...) { capture_driver(); throw; }
     }();
     capture_driver();
+    if (nlp->step_rule_error()) throw std::logic_error(*nlp->step_rule_error());
     const Ipopt::SolverReturn status = nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
     const bool fatal = initialized != Ipopt::Solve_Succeeded
