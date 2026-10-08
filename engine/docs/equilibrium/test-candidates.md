@@ -24,7 +24,7 @@ historical evidence, not a current-code pass.
 
 ### F1 residual internal energy
 
-`engine/tests/native/properties_checks.cpp` evaluates the Gross 2001 revision-2
+`engine/tests/native/properties_p1_m3_checks.cpp` evaluates the Gross 2001 revision-2
 ethane packet at `T=300 K`, `rho=10000 mol/m^3`, `x=(1)`. At fixed density and
 composition it compares the state field with the independent relation
 

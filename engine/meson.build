@@ -178,7 +178,12 @@ test('contributions', contributions_checks)
 
 properties_checks = executable(
   'properties_checks',
-  'tests/native/properties_checks.cpp',
+  files('tests/native/properties_checks.cpp',
+        'tests/native/properties_p1_m3_checks.cpp',
+        'tests/native/properties_m4_c2_checks.cpp',
+        'tests/native/properties_p2_checks.cpp',
+        'tests/native/properties_p3_f9_checks.cpp',
+        'tests/native/properties_p4_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
   include_directories: native_inc,
