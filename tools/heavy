@@ -4,4 +4,5 @@
 # environment lock is needed.
 set -euo pipefail
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
+command -v agent-heavy >/dev/null || { echo "tools/heavy: agent-heavy not on PATH; running without memory admission" >&2; exec "$@"; }
 exec agent-heavy --timeout "${HEAVY_TIMEOUT:-30m}" --max "${HEAVY_MAX:-8G}" "$@"
