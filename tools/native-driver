@@ -5,7 +5,7 @@
 # header) and defines main. Run as: tools/native-driver regression_checks <driver.cpp>
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-export PATH="$PWD/.venv/bin:$PATH"
+export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 (($# == 2)) || { echo "usage: tools/native-driver <program> <driver.cpp>" >&2; exit 2; }
 program=$1 source=$(realpath "$2")
 build_dir="$(<build/environment-wheel/meson-build-dir)"

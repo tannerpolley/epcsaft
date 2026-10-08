@@ -10,4 +10,4 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 uv sync --python 3.13 --all-packages --no-install-workspace --locked --inexact
-bash tools/ensure-engine-wheel.sh
+bash tools/build-engine.sh

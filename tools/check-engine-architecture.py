@@ -4,7 +4,7 @@
 C++ is organised by dependency layer because include direction is the only
 structural fact a checker can enforce. Each rule is a cheap stdlib reading named
 in main()'s check table. The Python-free archive rule needs a built archive and
-reports "skipped" without one; the wheel and stub rules run only with --wheel.
+reports "skipped" without one; the stub rule, which imports the extension, runs only with --build-dir.
 """
 
 from __future__ import annotations
@@ -104,23 +104,6 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
     if leaked:
         return [f"{found[0].name} exports Python symbols: {leaked[:5]}"], True
     return [], True
-
-
-def verify_identified_wheel(wheel: Path) -> list[str]:
-    wheel = wheel.resolve()
-    if wheel.suffix != ".whl" or not wheel.is_file():
-        return [f"Engine wheel does not exist: {wheel}"]
-    verifier = ROOT / "tools" / "verify-installed-wheel.py"
-    completed = subprocess.run(
-        [sys.executable, str(verifier), "--wheel", str(wheel)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if completed.returncode:
-        detail = (completed.stderr or completed.stdout).strip()
-        return [f"installed-wheel verification failed ({completed.returncode}): {detail}"]
-    return []
 
 
 def rule_include_direction() -> list[str]:
@@ -497,10 +480,7 @@ def rule_stub_matches_extension() -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path)
-    parser.add_argument("--wheel", type=Path)
     arguments = parser.parse_args()
-    if (arguments.build_dir is None) != (arguments.wheel is None):
-        parser.error("--build-dir and --wheel must be supplied together")
 
     archive_findings, archive_built = rule_archive_is_python_free(arguments.build_dir)
     checks = [
@@ -524,8 +504,7 @@ def main() -> int:
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
-    if arguments.wheel is not None:
-        checks.append(("identified installed wheel", verify_identified_wheel(arguments.wheel)))
+    if arguments.build_dir is not None:
         checks.append(("type stub matches the extension", rule_stub_matches_extension()))
     failed = 0
     for name, findings in checks:

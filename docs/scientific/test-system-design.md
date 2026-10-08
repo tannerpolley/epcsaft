@@ -61,8 +61,8 @@ or incomplete. Missing and corrupt records are warnings, not empty green rows.
 
 Rendering does not build or install the Engine, execute tests, collect pytest,
 launch native executables, rerun calculations, or continuously certify the
-compiler and dependency environment. Build provenance remains in
-`build/environment-wheel/preparation.json`; scientific physical inputs remain
+compiler and dependency environment. Build provenance is `epcsaft.provenance()`
+(and `build/environment-wheel/preparation.json` after an installed wheel); scientific physical inputs remain
 in the numerical rows and retained analysis owners.
 
 ## Operation

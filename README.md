@@ -60,24 +60,28 @@ tools/heavy bash .codex/environments/setup.sh
 bash tools/status.sh
 ```
 
-Setup syncs the locked root `.venv`, builds `engine/` through meson-python,
-writes one verified wheel under `build/environment-wheel/`, and installs that
-wheel non-editably. Re-running setup reuses checkout-local Ninja state,
-`ccache`, and the content-addressed machine-local wheel cache when the wheel
-fingerprint (wheel inputs and toolchain, not native test sources) matches.
-
-Python consumers use the installed package and do not invoke Meson:
+Setup syncs the locked root `.venv` and installs `engine/` editable through
+meson-python, building into `build/engine-meson/shared` with `ccache` and the
+shared HiGHS.
+`import epcsaft` then rebuilds whatever native sources changed (Ninja's incremental
+build, printed to stderr when there is work); a Python edit needs no rebuild and no setup.
+Re-run setup after a lock change. Setup rebuilds the tree from scratch after a compiler
+or HiGHS change; after another system library upgrade, delete `build/engine-meson/shared`
+and re-run setup.
 
 ```python
 import epcsaft
 from epcsaft import equilibrium
 ```
 
-Do not use an editable install or add `engine/src` to `PYTHONPATH`. Downstream
-applications install an explicitly identified wheel and record its SHA-256.
-
-See [`engine/README.md`](engine/README.md) for direct Meson compile diagnostics
-and canonical wheel build and installation guidance.
+`tools/build-engine.sh` owns every Engine build. Wheels exist only where an exact
+wheel file and its SHA-256 are recorded: `tools/build-engine.sh --wheel <dir>` for application pins
+and A/B timing, and `tools/build-engine.sh --install-wheel` for an analysis that
+records an installed wheel (re-run setup afterwards to return to the editable
+install). `epcsaft.provenance()` identifies the running Engine: the commit and
+whether `engine/` is clean for the editable install, the wheel path and SHA-256
+for a wheel. Downstream applications install an explicitly identified wheel and
+record its SHA-256.
 
 ## Checks
 
@@ -87,7 +91,7 @@ Run the affected-area gate during normal development:
 tools/heavy bash tools/check-affected.sh [base]
 ```
 
-Run the fast installed-wheel gate with:
+Run the fast full gate with:
 
 ```bash
 tools/heavy bash tools/check-all.sh
@@ -95,10 +99,9 @@ tools/heavy bash tools/check-all.sh
 
 `check-affected.sh` selects checks from the paths changed since `base` (default: the
 merge base with `origin/main`, printed first) plus uncommitted files. Data, analysis, or
-documentation-only changes can stop at readiness checks without building or
-installing the wheel; selected Engine checks run setup first.
-`check-all.sh` is the full fast installed-wheel gate: it always installs the
-current wheel, then covers the default EOS, equilibrium, static,
+documentation-only changes can stop at readiness checks without building the
+Engine; selected Engine checks run setup first.
+`check-all.sh` is the full fast gate: it runs setup, which rebuilds what changed, then covers the default EOS, equilibrium, static,
 and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence. Both gates run strict mypy over `engine/src` and `engine/tests`, so
 pytest alone misses type errors in a test edit.
@@ -109,9 +112,9 @@ changes; request them with
 
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
-building or installing the wheel. New studies can be small C++ drivers that write
+Python. New studies can be small C++ drivers that write
 CSV rows; plots read the CSV. Run `check-all.sh` and `check-affected.sh`, which
-cover the installed wheel and the Python interface, before review.
+cover the Python interface too, before review.
 
 ```bash
 tools/heavy tools/native-run equilibrium_checks --list
@@ -146,14 +149,15 @@ clang-tidy sweep. The second builds a separate debug ASan/UBSan wheel and runs
 its compact numerical tests. Run slow Engine tests or an analysis reproduction
 only when the changed scientific claim requires that evidence.
 
-Each checkout has its own `.venv` from setup with one non-editable Engine wheel.
+Each checkout has its own `.venv` from setup with an editable Engine install.
 Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
 numerical thread when memory allows. It stops the whole command after `HEAVY_TIMEOUT`
 (default 30m); set `HEAVY_TIMEOUT=2h` for a long chain such as a series of falsify runs.
 A warm `check-all.sh` takes about 20–40 s
 (24.0 s measured in #319). `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
-the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
-After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's
+the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times; build the
+checkout's side with `tools/heavy bash tools/build-engine.sh --wheel build/wheels/<name>`.
+After merges, `tools/heavy tools/refresh-main-wheel` builds main's
 wheel in the main checkout, compares its key-solve work with the previous
 `build/wheels/main-current/`, replaces that directory and its README, and keeps
 `build/wheels/main-<commit>/`, the applications' stable pin.

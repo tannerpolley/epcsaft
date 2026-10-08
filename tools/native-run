@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Rebuild one native program in this checkout's Meson build directory and run it,
-# whole or for one case (#317). No wheel is built or installed; check-all.sh still
-# gates review. Run as: tools/heavy tools/native-run equilibrium_checks caloric-admission
+# whole or for one case (#317). Python is not involved; check-all.sh still gates review.
+# Run as: tools/heavy tools/native-run equilibrium_checks caloric-admission
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-export PATH="$PWD/.venv/bin:$PATH"  # Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
+# Meson regeneration finds python3 on PATH; it needs the .venv one with pybind11.
+export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 (($# >= 1 && $# <= 2)) || { echo "usage: tools/native-run <program> [case|--list] | <meson test name>" >&2; exit 2; }
-[[ -f build/environment-wheel/build-jobs ]] || EPCSAFT_PREPARE_NATIVE_BUILD=1 bash .codex/environments/setup.sh >&2
+[[ -f build/environment-wheel/build-jobs ]] || bash .codex/environments/setup.sh >&2
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 if (($# == 1)); then
     # A Meson test name as run-native-tests.sh prints it (equilibrium/Automatic_fast/e5-neutral) runs that test's program and arguments.
