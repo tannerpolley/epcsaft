@@ -32,9 +32,10 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
     void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; }
 };
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
+// A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 struct DriverLimits;
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
-                                   StageWork* stages = nullptr);
+                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {});
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values

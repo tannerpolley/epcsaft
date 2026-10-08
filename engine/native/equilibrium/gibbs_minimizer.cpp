@@ -1383,7 +1383,10 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
                     if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
                     auto speciated = complete || !uncomposed ? std::nullopt : speciated_start(seeded, &work, stages);
-                    initial = complete ? seeded.generic_point() : speciated ? std::move(*speciated) : boundary_start(seeded, uncomposed, &work, &stages);
+                    std::vector<bool> packings(seeded.problem.phases.size());
+                    for (std::size_t p = 0; p < packings.size(); ++p) packings[p] = packed(p);
+                    initial = complete ? seeded.generic_point() : speciated ? std::move(*speciated)
+                        : boundary_start(seeded, uncomposed, &work, &stages, packings);
                     const auto offsets = compiled.phase_offsets();
                     for (std::size_t p = 0; p < seeded.problem.phases.size(); ++p) {
                         const auto& phase = seeded.problem.phases[p];

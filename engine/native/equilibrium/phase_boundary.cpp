@@ -310,7 +310,8 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
 
 }  // namespace
 
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages) {
+std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages,
+                                   const std::vector<bool>& packed) {
     core::Scope scope("boundary_start");
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
@@ -424,7 +425,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             composition[compiled.problem.phases[phase].support[i]] =
                 std::exp(point[phase_offsets[phase] + i]);
         }
-        if (supports_split_seed(compiled) && compiled.problem.phases[phase].packing_guess.has_value()) {
+        if ((supports_split_seed(compiled) || (phase < packed.size() && packed[phase]))
+            && compiled.problem.phases[phase].packing_guess.has_value()) {
             const double packing = *compiled.problem.phases[phase].packing_guess;
             if (!admitted_packing_fraction(packing)) {
                 throw std::invalid_argument("packing guess is outside the admitted range");

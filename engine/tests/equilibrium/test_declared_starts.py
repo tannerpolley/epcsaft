@@ -1,5 +1,7 @@
 """Ordered declared starts: analytic exchange amounts, a shared work quota (#238) and the shared cold start (#350)."""
+import importlib.util
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -178,3 +180,29 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
                                           eq.EquilibriumWorkLimits(iterations=presolve.iterations - 1))
     assert stopped.selected is None and stopped.results[0] is None and stopped.iterations == presolve.iterations - 1
     assert "iteration budget" in stopped.causes[0], stopped.causes
+
+
+def test_supplied_packings_need_no_boundary_density_root() -> None:
+    """#350: Born case 1 of analyses/2026-born-unavailable-states, the stable liquid at c_dielectric 0.33 moved by a
+    water-reaction extent of 0.2. The start supplies both compositions, both packing fractions and the pressure but
+    no amounts. The liquid has no density root at the boundary pressure seed; the supplied packing replaces it, so
+    the start reaches the driver instead of being refused at initialization."""
+    script = Path(__file__).resolve().parents[3] / "analyses/2026-born-unavailable-states/scripts/reproduce.py"
+    spec = importlib.util.spec_from_file_location("born_reproduce", script)
+    assert spec is not None and spec.loader is not None
+    born = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(born)
+    mapping, request, anchor = born.load_case(1)
+    problem = born.problem_from_request(request, anchor)
+    stable = [4.3156821899964646e-13, .06744004970829823, .8601794757184709, .04476857189213988, 1.02472867796729e-05,
+              2.0895783143159884e-06, .017157150074218773, 2.404313692039684e-07, .010442175309977538]
+    water = request["reaction_system"]["reaction_matrix"][0]
+    start = eq.EquilibriumStart()
+    start.compositions = [[x + .2 * nu for x, nu in zip(stable, water, strict=True)],
+                          list(problem.phases[1].composition_guess)]
+    start.packing_fractions = [.4468151338619424, 2.0279177672656488e-05]
+    start.pressure = anchor["pressure_pa"]
+    model = Mixture(Parameters.from_mapping(mapping))
+    tried = eq.solve_equilibrium_starts(model, problem, [start], eq.EquilibriumWorkLimits(iterations=1))
+    assert not tried.causes[0].startswith("initialization"), tried.causes
+    assert tried.results[0] is not None and tried.iterations == 1
