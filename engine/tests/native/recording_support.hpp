@@ -296,10 +296,11 @@ inline bool scalar_verdict(double model, double reference, const char* criterion
     return error <= atol + rtol * std::max(1.0, std::abs(reference));
 }
 
-inline void print(const Declaration& declaration) {
+inline void print(const Declaration& declaration, const char* alias) {
     std::printf("EPCSAFT_DECL schema_version=1 test_id=%s arguments=%s", declaration.test_id, declaration.arguments);
     if (declaration.execution_policy != nullptr)
         std::printf(" execution_policy=%s", declaration.execution_policy);
+    if (alias != nullptr) std::printf(" alias=%s", alias);
     std::putchar('\n');
     std::fflush(stdout);
 }
@@ -404,10 +405,13 @@ inline bool selected(const Case& item, const std::string& argument) {
 
 inline int run(int argc, char** argv, std::initializer_list<Case> cases) {
     if (listing(argc, argv)) {
-        for (const auto& item : cases) print(item.declaration);
+        for (const auto& item : cases) print(item.declaration, item.alias);
         return 0;
     }
-    if (argc > 2) return 2;
+    if (argc > 2) {
+        std::fprintf(stderr, "expected one case selector; --list shows test ids, arguments and aliases\n");
+        return 2;
+    }
     int status = 0;
     if (argc == 2) {
         // A test id or argument selects one case; an alias shared by several cases runs them all.
@@ -418,6 +422,7 @@ inline int run(int argc, char** argv, std::initializer_list<Case> cases) {
             any = true;
             status |= run_case(item);
         }
+        if (!any) std::fprintf(stderr, "no case matches %s; --list shows test ids, arguments and aliases\n", argument.c_str());
         return any ? status : 2;
     }
     for (const auto& item : cases) status |= run_case(item);
