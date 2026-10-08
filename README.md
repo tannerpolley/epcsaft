@@ -64,9 +64,10 @@ Setup syncs the locked root `.venv` and installs `engine/` editable through
 meson-python, building into `build/engine-meson/shared` with `ccache` and the
 shared HiGHS.
 `import epcsaft` then rebuilds whatever native sources changed (Ninja's incremental
-build, printed when there is work); a Python edit needs no rebuild and no setup.
-Re-run setup after a lock change. After a compiler or system library upgrade,
-delete `build/engine-meson/shared` and re-run setup.
+build, printed to stderr when there is work); a Python edit needs no rebuild and no setup.
+Re-run setup after a lock change. Setup rebuilds the tree from scratch after a compiler
+or HiGHS change; after another system library upgrade, delete `build/engine-meson/shared`
+and re-run setup.
 
 ```python
 import epcsaft

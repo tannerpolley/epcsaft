@@ -22,3 +22,5 @@ above the CPUs available to the process are capped, and setup records the
 resolved count in `build/environment-wheel/build-jobs`. For example, `EPCSAFT_BUILD_JOBS=1 bash tools/check-all.sh`
 uses one job.
 The setting changes build scheduling without changing compiler optimization.
+Import-time rebuilds keep the job count fixed when setup installed the editable build;
+`EPCSAFT_BUILD_JOBS` does not change them.
