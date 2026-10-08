@@ -659,22 +659,24 @@ bool GibbsMinimizer::intermediate_callback(
     // Ipopt adjusts bounds only when it accepts a point, before this callback, so the active problem's bound read
     // here holds for every search until the next callback; in restoration that is restoration's own bound block, whose
     // original-variable part restoration does not update when it adjusts the original problem's bounds.
-    Ipopt::IpoptNLP& active = *ip_cq->GetIpoptNLP();
-    if (adapter_ == nullptr) {  // the first callback is regular mode, before any search
-        auto* original = dynamic_cast<Ipopt::OrigIpoptNLP*>(&active);
-        adapter_ = original ? dynamic_cast<Ipopt::TNLPAdapter*>(Ipopt::GetRawPtr(original->nlp())) : nullptr;
-        if (adapter_ == nullptr) step_rule_error_ = "amount step rule: Ipopt's TNLP adapter is not reachable";
+    if (!amount_columns_.empty()) {  // without free amounts the rule keeps nothing: no search base, no bound reads
+        Ipopt::IpoptNLP& active = *ip_cq->GetIpoptNLP();
+        if (adapter_ == nullptr) {  // the first callback is regular mode, before any search
+            auto* original = dynamic_cast<Ipopt::OrigIpoptNLP*>(&active);
+            adapter_ = original ? dynamic_cast<Ipopt::TNLPAdapter*>(Ipopt::GetRawPtr(original->nlp())) : nullptr;
+            if (adapter_ == nullptr) step_rule_error_ = "amount step rule: Ipopt's TNLP adapter is not reachable";
+        }
+        if (!step_rule_error_ && active.NLP_scaling()->have_x_scaling())
+            step_rule_error_ = "amount step rule: Ipopt scales the variables, so amounts and bounds are not in mol";
+        if (step_rule_error_) return false;
+        Ipopt::SmartPtr<const Ipopt::Vector> lower = active.x_L();
+        if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(Ipopt::GetRawPtr(lower))) lower = compound->GetComp(0);
+        if (lower->GetTag() != lower_tag_) {  // Ipopt relaxed or adjusted the bounds since the last callback
+            adapter_->ResortBnds(*lower, lower_.data(), *lower, nullptr);
+            lower_tag_ = lower->GetTag();
+        }
+        search_ = ip_data;
     }
-    if (!step_rule_error_ && active.NLP_scaling()->have_x_scaling())
-        step_rule_error_ = "amount step rule: Ipopt scales the variables, so amounts and bounds are not in mol";
-    if (step_rule_error_) return false;
-    Ipopt::SmartPtr<const Ipopt::Vector> lower = active.x_L();
-    if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(Ipopt::GetRawPtr(lower))) lower = compound->GetComp(0);
-    if (lower->GetTag() != lower_tag_) {  // Ipopt relaxed or adjusted the bounds since the last callback
-        adapter_->ResortBnds(*lower, lower_.data(), *lower, nullptr);
-        lower_tag_ = lower->GetTag();
-    }
-    search_ = ip_data;
     iterations_ = static_cast<std::size_t>(iter);
     if (limits_) limits_->consumed = std::max(limits_->consumed, consumed_before_ + iterations_);
     regularization_size_ = regularization_size;
