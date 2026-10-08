@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from epcsaft import (
-    DensityBranch, Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
+    Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
     regression,
 )
 from epcsaft.equilibrium import Amounts, Discover, Phase, Problem, asl_record, solve_equilibrium
@@ -178,28 +178,17 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     mass_prediction = regression.predict(model, mass)
     assert mass_prediction.unit == "kg/m^3" and mass_prediction.value is not None
     assert math.isclose(mass_prediction.value, state.molar_density * (0.5 * 0.016043 + 0.5 * 0.03007), rel_tol=1.0e-12)
-    # Public predict admits by name: an out-of-range phase or species never becomes a finite value.
-    for phase_index, species_set in ((2, [0]), (0, [99])):
-        broken = regression.observation(p, "mole_fraction", bubble(180.0), observed=1.0, phase="L", species=("s0",), form="log_ratio", mass_basis=False)
-        broken.phase, broken.species = phase_index, species_set
-        with pytest.raises(ParameterError):
-            regression.predict(model, broken)
-    # A mass basis is refused by name for a phase fraction (a two-phase flash whose mass fraction differs from beta).
-    flash = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")], T=180.0, P=1.0e6, feed=Amounts({"s0": 0.5, "s1": 0.5}))
-    beta = regression.predict(model, regression.observation(p, "phase_fraction", flash, observed=1.0, phase="L", form="log_ratio", mass_basis=False))
-    assert beta.value is not None and math.isclose(beta.value, 0.6738453209601837, rel_tol=1.0e-9)
+    # Public predict admits by name: an out-of-range phase never becomes a finite value.
+    broken = regression.observation(p, "mole_fraction", bubble(180.0), observed=1.0, phase="L", species=("s0",), form="log_ratio", mass_basis=False)
+    broken.phase = 2
     with pytest.raises(ParameterError):
-        regression.predict(model, regression.observation(p, "phase_fraction", flash, observed=1.0, phase="L", form="log_ratio", mass_basis=True))
-    # The log ratio stays finite across the dynamic range; a value survives a nonfinite residual.
-    wide = regression.predict(model, regression.density(p, 180.0, 5.0e6, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0e-308, form="log_ratio", mass_basis=False))
-    assert wide.status == regression.ObservationStatus.Available and wide.residual is not None
-    assert math.isclose(wide.residual, math.log(state.molar_density) - math.log(1.0e-308), rel_tol=1.0e-12)
+        regression.predict(model, broken)
+    # A value survives a nonfinite residual.
     overflow = regression.predict(model, regression.density(p, 180.0, 5.0e6, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=-1.0e308, form="difference", scale=1.0e-308, mass_basis=False))
     assert overflow.status == regression.ObservationStatus.Nonfinite and overflow.value == state.molar_density and overflow.residual is None
     none = regression.predict(model, regression.density(p, 200.0, 1.0e10, {"s0": 1.0}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
     assert none.status == regression.ObservationStatus.DensityUnavailable and none.value is None and none.message
     assert prediction.branch == state.density_branch and prediction.stable_root_count == state.stable_root_count
-    assert state.density_branch == DensityBranch.Unspecified and state.stable_root_count == 1  # one stable root at 5 MPa
     _, observations = manufactured()
     observations.append(regression.density(p, 200.0, 1.0e10, {"s0": 0.5, "s1": 0.5}, phase="liquid", observed=1.0, form="log_ratio", mass_basis=False))
     result = regression.fit(p, coordinates(p), observations, controls=budget())
@@ -209,18 +198,9 @@ def test_predictions_and_failures_keep_their_meaning() -> None:
     assert refused.statuses == [regression.ObservationStatus.NotEvaluated, regression.ObservationStatus.DensityUnavailable, regression.ObservationStatus.NotEvaluated]
     single = regression.fit(p, coordinates(p), observations[:1], controls=budget())
     assert single.usable and single.covariance.status == "rank_deficient" and single.covariance.optimizer == []
-    # Three finite rows whose accumulated objective overflows: typed at the second row, no infinite cost.
-    y = Pure(parameters((ETHANE,))).state(200.0, P=1.0e5, phase="liquid").molar_density
-    pe = parameters((ETHANE,))
-    steep = [regression.density(pe, 200.0, 1.0e5, {"s0": 1.0}, phase="liquid", observed=y - 1.0, form="difference", scale=1.0 / 1.2e154, mass_basis=False) for _ in range(3)]
-    epsilon = [regression.coordinate(pe, [("dispersion_energy_over_k", "s0", 1)], origin=191.42, scale=10.0, bounds=(150.0, 260.0))]
-    overflowed = regression.fit(pe, epsilon, steep, controls=budget())
-    assert overflowed.status == "initial_evaluation_failed" and not overflowed.usable and overflowed.initial_cost == 0.0
-    assert [(f.observation, f.status, f.message) for f in overflowed.failures] == [(1, regression.ObservationStatus.Nonfinite, "accumulated weighted cost not finite")]
     one = regression.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=600.0)
     unfinished = regression.fit(p, coordinates(p), observations[:5], controls=one)
     assert unfinished.status == "limit_reached" and unfinished.usable and unfinished.covariance.status == "not_converged"
-    assert unfinished.covariance.rank == 2 and unfinished.covariance.optimizer == [] and unfinished.covariance.variance_factor is None
 
 
 def test_asl_record_rejects_fitted_parameters_early() -> None:

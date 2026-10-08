@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from epcsaft import DensityBranch, Mixture, ParameterError, Parameters, Pure
-from tests.native_inputs import packet_metadata
+from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -28,16 +28,6 @@ _MEA_ORDER = (
 
 def close(left: float, right: float, relative: float) -> None:
     assert math.isclose(left, right, rel_tol=relative, abs_tol=relative)
-
-
-SYMMETRIC_STATE_CRITERION = {
-    "type": "scalar",
-    "rule": "symmetric_close",
-    "atol": 1e-12,
-    "rtol": 1e-12,
-    "scale": "max(abs(model), abs(reference))",
-    "combining_rule": "max(atol, rtol*scale)",
-}
 
 
 def test_relabelling_and_state_identities(evidence: Any) -> None:
@@ -76,196 +66,32 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
         "fugacity_available": fugacity_available,
         "_parameters": parameter_metadata,
     }
-    criterion = dict(SYMMETRIC_STATE_CRITERION)
-    for key, quantity, left, right, latex in (
-        ("pressure", "pressure", first.pressure, second.pressure, "P"),
-        ("residual_helmholtz", "residual Helmholtz energy", first.residual_helmholtz, second.residual_helmholtz, "a^{res}"),
-        ("compressibility_factor", "compressibility factor", first.compressibility_factor, second.compressibility_factor, "Z"),
-        ("relative_permittivity", "bulk relative permittivity", first.bulk_relative_permittivity, second.bulk_relative_permittivity, "\\varepsilon_r"),
-    ):
-        evidence.compare(
-            f"state_identity/{key}", quantity=quantity, model=float(left), reference=float(right),
-            unit="1" if key not in {"pressure"} else "Pa", inputs=inputs,
-            criterion=criterion, basis="Relationship", method="component relabelling",
-            claim="The scalar state quantity is invariant under component relabelling.",
-            relationship_latex=fr"{latex}(x_1,\ldots,x_n) = {latex}(x_n,\ldots,x_1)",
-            quantity_latex=latex,
-            inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
-        )
+
+    def identity(name: str, left: float | None, right: float | None, atol: float, rtol: float, **more: Any) -> None:
+        same(evidence, f"state_identity/{name}", left, right, atol, rtol, inputs={**inputs, **more}, basis="Relationship")
+
+    # Relabelling invariance of the scalar state and reversal of the component vectors.
+    for key in ("pressure", "residual_helmholtz", "compressibility_factor", "bulk_relative_permittivity"):
+        identity(key, getattr(first, key), getattr(second, key), 1e-12, 1e-12)
+    assert (first_fugacity is None) == (second_fugacity is None)
     euler_terms = []
     for index, component in enumerate(order):
-        reverse_index = len(order) - index - 1
-        first_potential = first.residual_chemical_potential_over_rt[index]
-        second_potential = second.residual_chemical_potential_over_rt[reverse_index]
-        assert first_potential is not None and second_potential is not None
+        mirror = len(order) - index - 1
+        potential = first.residual_chemical_potential_over_rt[index]
+        assert potential is not None
         if x[index] != 0:
-            euler_terms.append(x[index] * first_potential)
-        evidence.compare(
-            f"state_identity/residual_chemical_potential/{index}",
-            quantity="residual chemical potential over RT",
-            model=float(first_potential),
-            reference=float(second_potential),
-            unit="1",
-            inputs={**inputs, "component": component, "relabelled_component": reverse[reverse_index]},
-            coordinates={"component_index": index, "relabelled_index": reverse_index},
-            criterion=criterion,
-            basis="Relationship",
-            method="component relabelling",
-            claim="The residual chemical potential vector reverses with the component labels.",
-            comparison_group_id="state_identity/residual_chemical_potential",
-            point_id=component,
-            relationship_latex=r"\mu_{i,\mathrm{first}}^{res}/RT = \mu_{n-1-i,\mathrm{relabelled}}^{res}/RT",
-            quantity_latex=r"\mu_i^{res}/RT",
-            inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
-        )
+            euler_terms.append(x[index] * potential)
+        identity(f"residual_chemical_potential/{index}", potential,
+                 second.residual_chemical_potential_over_rt[mirror], 1e-12, 1e-12, component=component)
         if first_fugacity is not None and second_fugacity is not None:
-            first_coefficient, second_coefficient = first_fugacity[index], second_fugacity[reverse_index]
-            assert first_coefficient is not None and second_coefficient is not None
-            evidence.compare(
-                f"state_identity/log_fugacity_coefficient/{index}",
-                quantity="log fugacity coefficient",
-                model=float(first_coefficient),
-                reference=float(second_coefficient),
-                unit="1",
-                inputs={**inputs, "component": component, "relabelled_component": reverse[reverse_index]},
-                coordinates={"component_index": index, "relabelled_index": reverse_index},
-                criterion=criterion,
-                basis="Relationship",
-                method="component relabelling",
-                claim="The log fugacity coefficient vector reverses with the component labels.",
-                comparison_group_id="state_identity/log_fugacity_coefficient",
-                point_id=component,
-                relationship_latex=r"\ln\phi_{i,\mathrm{first}} = \ln\phi_{n-1-i,\mathrm{relabelled}}",
-                quantity_latex=r"\ln\phi_i",
-                inputs_latex=r"T,\rho,\mathbf{x},\mathrm{components}",
-            )
-    euler_left = sum(euler_terms)
-    euler_right = first.residual_helmholtz + first.compressibility_factor - 1.0
-    evidence.compare(
-        "state_identity/euler_identity",
-        quantity="Euler residual identity",
-        model=float(euler_left),
-        reference=float(euler_right),
-        unit="1",
-        inputs={**inputs, "identity": "sum(x_i * mu_i^res/RT) = a^res + Z - 1"},
-        criterion=criterion,
-        basis="Relationship",
-        method="residual Euler identity",
-        claim="The composition-weighted residual chemical potential identity equals a^res + Z - 1.",
-        relationship_latex=r"\sum_i x_i\mu_i^{res}/RT = a^{res} + Z - 1",
-        quantity_latex=r"\sum_i x_i\mu_i^{res}/RT",
-        inputs_latex=r"T,\rho,\mathbf{x}",
-    )
-    gas_constant = 8.31446261815324
-    codata_pressure = first.compressibility_factor * first.molar_density * gas_constant * temperature
-    evidence.compare(
-        "state_identity/codata_pressure",
-        quantity="pressure from CODATA gas constant",
-        model=float(first.pressure),
-        reference=float(codata_pressure),
-        unit="Pa",
-        inputs={**inputs, "gas_constant_J_mol_K": gas_constant, "gas_constant_basis": "CODATA 2018 exact value"},
-        criterion={
-            "type": "scalar",
-            "rule": "symmetric_close",
-            "atol": 0.0,
-            "rtol": 1e-12,
-            "scale": "max(abs(model), abs(reference))",
-            "combining_rule": "max(atol, rtol*scale)",
-        },
-        basis="Relationship",
-        method="pressure equation of state identity",
-        claim="Pressure equals Z times molar density, the CODATA gas constant, and temperature.",
-        relationship_latex=r"P = Z\rho RT",
-        quantity_latex="P",
-        inputs_latex=r"T,\rho,Z,R",
-    )
-    evidence.compare(
-        "state_identity/pressure_anchor",
-        quantity="pressure anchor",
-        model=float(state.pressure),
-        reference=pressure_target,
-        unit="Pa",
-        inputs={**inputs, "resolved_density_mol_m3": float(state.molar_density)},
-        criterion={
-            "type": "scalar",
-            "rule": "symmetric_close",
-            "atol": 1e-9,
-            "rtol": 1e-9,
-            "scale": "max(abs(model), abs(reference))",
-            "combining_rule": "max(atol, rtol*scale)",
-        },
-        basis="Relationship",
-        method="fixed-pressure state solve",
-        claim="The pressure-specified state returns the requested pressure anchor.",
-        relationship_latex=r"P(T,P_{target},x) = P_{target}",
-        quantity_latex="P",
-        inputs_latex=r"T,P_{target},\mathbf{x},\mathrm{phase}",
-    )
-    evidence.compare(
-        "state_identity/anchored_density",
-        quantity="anchored molar density",
-        model=float(anchored.molar_density),
-        reference=float(state.molar_density),
-        unit="mol/m^3",
-        inputs={
-            **inputs,
-            "anchor": "state",
-            "resolved_density_mol_m3": float(anchored.molar_density),
-            "anchor_density_mol_m3": float(state.molar_density),
-        },
-        criterion={
-            "type": "scalar",
-            "rule": "symmetric_close",
-            "atol": 1e-10,
-            "rtol": 1e-10,
-            "scale": "max(abs(model), abs(reference))",
-            "combining_rule": "max(atol, rtol*scale)",
-        },
-        basis="Relationship",
-        method="anchored fixed-pressure state solve",
-        claim="Reusing the converged state as an anchor preserves its molar density.",
-        relationship_latex=r"\rho(T,P,x;\mathrm{anchor}=s) = \rho(s)",
-        quantity_latex=r"\rho",
-        inputs_latex=r"T,P,\mathbf{x},\mathrm{phase},\mathrm{anchor}",
-    )
-    for field in ("pressure", "residual_helmholtz", "compressibility_factor", "bulk_relative_permittivity"):
-        close(getattr(first, field), getattr(second, field), 1e-12)
-    assert (first.log_fugacity_coefficient is None) == (second.log_fugacity_coefficient is None)
-    euler_terms = []
-    for index in range(len(order)):
-        reverse_index = len(order) - index - 1
-        first_potential = first.residual_chemical_potential_over_rt[index]
-        second_potential = second.residual_chemical_potential_over_rt[reverse_index]
-        assert first_potential is not None and second_potential is not None
-        if x[index] != 0:
-            euler_terms.append(x[index] * first_potential)
-        close(
-            first_potential,
-            second_potential,
-            1e-12,
-        )
-        if first_fugacity is not None and second_fugacity is not None:
-            first_coefficient, second_coefficient = first_fugacity[index], second_fugacity[reverse_index]
-            assert first_coefficient is not None and second_coefficient is not None
-            close(
-                first_coefficient,
-                second_coefficient,
-                1e-12,
-            )
-    assert math.isclose(
-        sum(euler_terms),
-        first.residual_helmholtz + first.compressibility_factor - 1.0,
-        rel_tol=1e-12,
-        abs_tol=1e-12,
-    )
-    assert math.isclose(
-        first.pressure,
-        first.compressibility_factor * first.molar_density * 8.31446261815324 * temperature,
-        rel_tol=1e-12,
-    )
-    close(state.pressure, pressure_target, 1e-9)
-    close(anchored.molar_density, state.molar_density, 1e-10)
+            identity(f"log_fugacity_coefficient/{index}", first_fugacity[index], second_fugacity[mirror],
+                     1e-12, 1e-12, component=component)
+    identity("euler_identity", sum(euler_terms), first.residual_helmholtz + first.compressibility_factor - 1.0,
+             1e-12, 1e-12, identity="sum(x_i * mu_i^res/RT) = a^res + Z - 1")
+    identity("codata_pressure", first.pressure,
+             first.compressibility_factor * first.molar_density * 8.31446261815324 * temperature, 0.0, 1e-12)
+    identity("pressure_anchor", state.pressure, pressure_target, 1e-9, 1e-9)
+    identity("anchored_density", anchored.molar_density, state.molar_density, 1e-10, 1e-10)
 
 
 def test_pure_is_one_component_mixture(evidence: Any) -> None:
