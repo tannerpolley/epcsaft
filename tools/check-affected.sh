@@ -103,7 +103,7 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     if grep -Eq '^engine/(native/equilibrium/(phase_boundary|implicit_sensitivity)\.cpp|tests/native/equilibrium_(critical_envelope_checks\.cpp|checks_shared\.hpp))' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/envelope-*')
     fi
-    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -Eq '^engine/tests/native/(regression_checks|.*\.hpp$)' <<<"$paths"; then
+    if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium|regression)\  ]] || grep -Eq '^engine/tests/native/(regression_|.*\.hpp$)' <<<"$paths"; then
         slow_tests+=(regression_fit)
     fi
     if grep -Eq '^engine/(native/contributions/association\.hpp|tests/native/association_comparison_checks\.cpp)' <<<"$paths"; then

@@ -259,7 +259,10 @@ test('boundary', boundary_checks, timeout: 600)
 
 regression_checks = executable(
   'regression_checks',
-  'tests/native/regression_checks.cpp',
+  files('tests/native/regression_checks.cpp',
+        'tests/native/regression_f1_j1_checks.cpp',
+        'tests/native/regression_j2_inventory_checks.cpp',
+        'tests/native/regression_reaction_checks.cpp'),
   cpp_args: native_warnings,
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep, cpp.find_library('quadmath')],
   include_directories: native_inc,

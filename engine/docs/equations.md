@@ -827,7 +827,7 @@ $$
 - Status: Exact derivation
 - Source: Composition of `fixed_pressure_total_derivative`, `total_heat_capacity_cp` and `residual_heat_capacity_cp`
 - Description: First parameter derivative of total molar isobaric heat capacity at fixed T, P and normalized composition on a regular declared density branch. The ideal-gas thermochemistry coefficients are fixed inputs independent of the residual-EOS parameters. Parameter regression calls the Properties pressure-chart action once per parameter direction; the common energy order is three, including the implicit association-site chain (ALG-ACTIONS).
-- Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
+- Change note: Qualified by the total-value, derivative-ladder and density-lift checks in `engine/tests/native/regression_j2_inventory_checks.cpp` and the retained `analyses/2026-heat-capacity-fitting/` evidence. No parameter Hessian or reacting-equilibrium heat-capacity derivative is claimed.
 
 $$
 \left.\frac{dc_p}{d\theta}\right|_{T,P,\mathbf{x}}

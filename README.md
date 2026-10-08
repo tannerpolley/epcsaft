@@ -121,10 +121,10 @@ tools/heavy tools/native-run equilibrium/Automatic_fast/e5-neutral
 
 Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.cpp`, or with
 `--list`, which prints each case's test id, arguments and alias; `native-run` also
-takes the Meson test name that `run-native-tests.sh` prints. `equilibrium_checks` and
-`properties_checks` are each built from several `<program>_*_checks.cpp` units with shared helpers
-in `<program>_shared.hpp`; `<program>.cpp` holds only the case registry, so an edit to one case
-family recompiles one unit.
+takes the Meson test name that `run-native-tests.sh` prints. `equilibrium_checks`,
+`properties_checks` and `regression_checks` are each built from one unit per case family
+(e.g. `equilibrium_e5_checks.cpp`) with shared helpers in `<program>_shared.hpp`;
+`<program>.cpp` holds only the case registry, so an edit to one case recompiles one unit.
 
 `tools/native-isolated` builds one program in a temporary detached worktree with its own
 Meson build directory, leaving this checkout's source and build directory free:
