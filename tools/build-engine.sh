@@ -69,7 +69,9 @@ config=(-C "build-dir=$build_dir" -C "setup-args=-Dpkg_config_path=$highs_prefix
     -C "compile-args=-j$build_jobs")
 
 build_wheel() {
-    uv build --python "$python" --wheel --no-build-isolation --out-dir "$1" "${config[@]}" engine >&2
+    # Commit-time member timestamps: the same commit and bytes give the same wheel SHA-256,
+    # which tools/refresh-main-wheel reads as "unchanged".
+    SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git log -1 --format=%ct)}" uv build --python "$python" --wheel --no-build-isolation --out-dir "$1" "${config[@]}" engine >&2
     find "$1" -maxdepth 1 -name 'epcsaft-*.whl'
 }
 
