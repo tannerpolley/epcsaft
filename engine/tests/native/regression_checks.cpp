@@ -307,23 +307,17 @@ void check_f5_f6() {
     const auto temperature = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
     truth("r1-f5/bubble_temperature_status", "the cold pinned-zero free-T solve from above is accepted",
           temperature.status == ObservationStatus::Available, field("status", observation_status_name(temperature.status)), "r1-f5");
-    if (temperature.status == ObservationStatus::Available) {
-        agree("r1-f5/bubble_temperature", "temperature", "K", *temperature.value, 180.0, 1.0e-6, 0.0,
-              fields({field("P_Pa", *pressure.value), field("T_guess", 190.0)}),
-              "the round trip P(T) -> T(P) returns 180 K within 1e-6 K (observed 1e-11 K)", "r1-f5");
-    }
+    agree("r1-f5/bubble_temperature", "temperature", "K", *temperature.value, 180.0, 1.0e-6, 0.0,
+          fields({field("P_Pa", *pressure.value), field("T_guess", 190.0)}),
+          "the round trip P(T) -> T(P) returns 180 K within 1e-6 K (observed 1e-11 K)", "r1-f5");
+    // The cold start from below reaches the same bubble state; no refusal is admitted.
     free_t.temperature = FreeValue::variable(170.0);
     const auto below = predict(model, solved(ObservationKind::EquilibriumTemperature, free_t));
-    if (below.status == ObservationStatus::Available) {
-        agree("r1-f5/bubble_temperature_from_below", "temperature", "K", *below.value, 180.0, 1e-6, 0.0,
-              field("T_guess", 170.0), "an available cold result recovers the declared bubble state", "r1-f5");
-    } else {
-        truth("r1-f5/bubble_temperature_from_below", "an unrecovered cold start retains its cause and no value",
-              (below.status == ObservationStatus::TopologyEvent
-                  || below.status == ObservationStatus::CentralSolveUnavailable) && !below.value.has_value(),
-              fields({field("status", observation_status_name(below.status)), field("message", below.message),
-                      field("T_guess", 170.0)}), "r1-f5");
-    }
+    truth("r1-f5/bubble_temperature_from_below_status", "the cold pinned-zero free-T solve from below is accepted",
+          below.status == ObservationStatus::Available,
+          fields({field("status", observation_status_name(below.status)), field("message", below.message)}), "r1-f5");
+    agree("r1-f5/bubble_temperature_from_below", "temperature", "K", *below.value, 180.0, 1e-6, 0.0,
+          field("T_guess", 170.0), "the cold start from below recovers the declared bubble state", "r1-f5");
     auto dew = bubble;
     dew.phases[0].amount = AmountSpec::pinned(0.0);
     dew.phases[1].amount = AmountSpec::free();
