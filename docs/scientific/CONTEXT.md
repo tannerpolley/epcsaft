@@ -341,7 +341,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Parameter regression observation and fit meaning | [parameter regression formulation](../../engine/docs/regression/science/pure-saturation-regression.md) and [reproduction classes](../../engine/docs/regression/science/literature-reproduction-contract.md) |
 | Current implementation plan, prerequisites and acceptance | [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) |
 | Current code owners and required scientific evidence | This scientific context, canonical Engine documents, tests, analyses and dated reviews |
-| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), shown live in the companion Map view |
+| Project structure: components, Engine layers, path ownership and file roles | `ARCHITECTURE.yaml` (`project_map`), resolved by `tools/project-map.py` |
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [decisions/](decisions/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |

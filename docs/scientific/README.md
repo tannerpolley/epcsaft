@@ -46,20 +46,11 @@ stable IDs stay in [equations.md](../../engine/docs/equations.md); Companion
 `implementation_reference` records point to them. Citation keys used by the
 Engine docs are listed in `engine/docs/latex/cited_keys.txt`.
 
-## Live companion
+## Status report
 
-The root Quarto project presents the current map, a link to the GitHub roadmap,
-ordinary check reports, and retained thermodynamic comparisons as one read-only
-local website. Start it with
-`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`.
-Quarto owns rendering, navigation, watching, serving, and reload. Its
-presentation reader only reads current owners and completed records; it never
-builds, collects, tests, calculates, or mirrors issue status. GitHub issues own
-roadmap state; repository evidence owns scientific qualification. The
-[test-system design](test-system-design.md) defines the one-way result and freshness
-and discovery behavior. Its [notebook-cutover record](reviews/notebook-cutover-2026-09-09.md)
-retains the bounded presentation checks and numerical-evidence preservation
-observations; these do not establish current numerical agreement.
+`tools/report` writes `build/report.html` from retained test, key-solve and analysis
+records; the [test-system design](test-system-design.md) defines its one-way flow and
+freshness flags.
 
 ## Maintaining agreement
 

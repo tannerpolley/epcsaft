@@ -18,27 +18,9 @@ records its reuse decision, acceptance and evidence links. Repository scientific
 records distinguish required capability from implemented and numerically
 qualified behavior.
 
-For the live Map, Roadmap and Results website, run
-`quarto preview . --host 127.0.0.1 --port 8766 --no-browser --render all --no-execute`
-and open the
-[Quarto companion](http://127.0.0.1:8766/). The companion links to the GitHub
-roadmap and renders the local project map, ordinary check reports, and retained
-numerical results. Starting or refreshing it never builds the Engine, collects
-tests, or runs a scientific calculation.
-
-To keep the companion running for the main checkout (the unit's working directory), install the user service and
-enable it:
-
-```bash
-install -Dm644 tools/systemd/epcsaft-companion.service \
-  "$HOME/.config/systemd/user/epcsaft-companion.service"
-loginctl enable-linger "$USER"  # start the user service at boot without login
-systemctl --user daemon-reload
-systemctl --user enable --now epcsaft-companion.service
-```
-
-Check it with `systemctl --user status epcsaft-companion.service`.
-The unit serves from the main checkout root and restarts after a service failure.
+`build/report.html` shows the latest test results, key-solve work and wall-time trend per
+main commit, and the analysis index, each with the commit and time of its data. `check-all`
+writes it, `tools/report` rewrites it on demand, and `xdg-open build/report.html` opens it.
 
 ## Prerequisites
 
