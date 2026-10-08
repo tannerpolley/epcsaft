@@ -52,7 +52,8 @@ provenance last.
 
 Read the nearest subtree `AGENTS.md`, the current GitHub leaf issue and only the
 equations, decisions and evidence it points to; change only the demonstrated
-gap. The leaf issue, not `engine/docs/`, says what the installed Engine
+gap. For domain terms and decisions, read the list in `docs/agents/domain.md`.
+The leaf issue, not `engine/docs/`, says what the installed Engine
 implements. Activate Serena at the exact checkout root. `README.md` "Checks"
 owns the per-checkout `.venv` and the `tools/heavy` rule for builds and Engine
 calculations.
@@ -75,6 +76,6 @@ are exempt. [ALG-FIT](engine/docs/science/algorithms.md#alg-fit) owns fitting me
 - **Checks and the no-slowdown gate:** `README.md` "Checks".
 - **Code budgets:** `docs/scientific/code-budgets.md`.
 - **Application work:** `downstream/README.md`.
-- **Agent skills:** `docs/agents/`.
+- **Skill configuration** (domain docs, issue tracker, triage labels): `docs/agents/`.
 
 CSE execution mode: direct.
