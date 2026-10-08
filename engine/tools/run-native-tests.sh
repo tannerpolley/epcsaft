@@ -35,5 +35,6 @@ else
 EOF
 fi
 mv "$report" build/test-results/native.xml
+python3 tools/report.py --stamp build/test-results/native.xml
 rm -f "$build_dir/meson-logs/${logbase}."*
 exit "$meson_status"
