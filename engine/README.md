@@ -124,7 +124,8 @@ result = None if tried.selected is None else tried.results[tried.selected]  # tr
 ```
 
 A default `EquilibriumStart` runs the cold start of `solve_equilibrium`. If the limits are not exhausted, it
-reaches the same state with the same work (#350). A partial start generates only what it omits. Seed solves,
+reaches the same state with the same work (#350), except where the plain solve's speciated seeded attempt fails:
+`solve_equilibrium` then retries from its own start and the bounded start does not. A partial start generates only what it omits. Seed solves,
 such as a reacting bubble's liquid pre-solve, spend the same limits, and both functions include their work in
 the reported counts.
 
