@@ -1208,7 +1208,10 @@ class EquilibriumStart:
     temperature: Optional[float]
     pressure: Optional[float]
     previous: Optional[EquilibriumResult]
-    def __init__(self) -> None: ...
+    def __init__(self, *, coordinates: Sequence[float] = ..., amounts: Sequence[float] = ...,
+                 compositions: Sequence[Sequence[float]] = ..., packing_fractions: Sequence[Optional[float]] = ...,
+                 temperature: Optional[float] = None, pressure: Optional[float] = None,
+                 previous: Optional[EquilibriumResult] = None) -> None: ...
 
 class EquilibriumWorkLimits:
     attempts: Optional[int]
@@ -1216,7 +1219,9 @@ class EquilibriumWorkLimits:
     attempt_iterations: Optional[int]
     seconds: Optional[float]
     attempt_seconds: Optional[float]
-    def __init__(self) -> None: ...
+    def __init__(self, *, attempts: Optional[int] = None, iterations: Optional[int] = None,
+                 attempt_iterations: Optional[int] = None, seconds: Optional[float] = None,
+                 attempt_seconds: Optional[float] = None) -> None: ...
 
 class EquilibriumStartsResult:
     selected: Optional[int]

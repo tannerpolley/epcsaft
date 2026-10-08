@@ -83,7 +83,7 @@ def coordinate(parameters: Parameters, targets: Sequence[tuple[str, object, floa
     rows = []
     for family, name, coefficient in targets:
         if family not in _FAMILIES:
-            raise ParameterError(f"unknown parameter family {family}")
+            raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
         target = CoordinateTarget()
         target.family, target.indices, target.coefficient = _FAMILIES[family], _slot(parameters, family, name), coefficient
         rows.append(target)
@@ -97,7 +97,7 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
                         bounds: tuple[float, float] | None = None) -> Coordinate:
     """Fit a/ln K (1), b (K), c (1) or d (1/K), tied on the named source-basis reaction."""
     if coefficient not in ("a", "b", "c", "d"):
-        raise ParameterError(f"unknown reaction coefficient {coefficient}")
+        raise ParameterError(f"unknown reaction coefficient {coefficient}; expected a, b, c or d")
     target = _core.ReactionCoordinate()
     target.name, target.coefficient = name, getattr(_core.ReactionCoefficient, coefficient.upper())
     result = Coordinate()
@@ -108,7 +108,7 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
 
 def _finish(result: Observation, observed: float, form: str, scale: float | None, mass_basis: bool) -> Observation:
     if form not in _FORMS:
-        raise ParameterError(f"unknown residual form {form}")
+        raise ParameterError(f"unknown residual form {form}; expected one of {', '.join(_FORMS)}")
     if (scale is None) != (form == "log_ratio"):
         raise ParameterError("a difference residual needs its scale; a log_ratio residual has none")
     result.observed, result.form, result.mass_basis = observed, _FORMS[form], mass_basis

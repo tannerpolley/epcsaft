@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Restore or rebuild main's wheel in the main checkout, compare its key-solve work with
 # the previous build/wheels/main-current/, and replace main-current with it (#319).
+# It also keeps build/wheels/main-<commit>/, the applications' stable pin.
 # An unchanged wheel is left in place; a first run copies it without a comparison.
 # Run as: tools/heavy tools/refresh-main-wheel
 set -euo pipefail
@@ -14,6 +15,8 @@ wheel="$(find build/environment-wheel -maxdepth 1 -name 'epcsaft-*.whl')"
 current=build/wheels/main-current
 previous="$(find "$current" -maxdepth 1 -name 'epcsaft-*.whl' 2>/dev/null || true)"
 sha="$(sha256sum "$wheel" | cut -d ' ' -f 1)"
+# The per-commit copy is the stable pin for applications; no refresh replaces or deletes it.
+mkdir -p "build/wheels/main-$commit" && cp --update=none "$wheel" "build/wheels/main-$commit/"
 if [[ -n "$previous" && "$(sha256sum "$previous" | cut -d ' ' -f 1)" == "$sha" ]]; then
     echo "main-current unchanged: main $commit builds the same wheel, sha256 $sha"
     exit 0

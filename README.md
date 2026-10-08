@@ -46,8 +46,8 @@ The supported development environment is Linux with Git, Python 3.13, `uv`, a
 C and C++ compiler, Ninja, CMake, pkg-config, and `flock`. The locked root
 environment supplies Meson, meson-python, pybind11, and `patchelf`. The native
 graph also needs the environment-provided Ipopt and Eigen development
-packages. The first build needs network access for the four
-checksum-pinned Meson subproject archives. The native owner checks additionally
+packages. The first build needs network access for the two
+checksum-pinned Meson subproject archives (CppAD and HiGHS). The native owner checks additionally
 require `clang-18`, `clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file`,
 and `nm`. `ccache` is optional.
 
@@ -115,7 +115,12 @@ cover the installed wheel and the Python interface, before review.
 ```bash
 tools/heavy tools/native-run equilibrium_checks --list
 tools/heavy tools/native-run equilibrium_checks caloric-admission
+tools/heavy tools/native-run equilibrium/Automatic_fast/e5-neutral
 ```
+
+Find a claim's case by its prefix, e.g. `grep -n '"e5-9/' engine/tests/native/*.cpp`, or with
+`--list`, which prints each case's test id, arguments and alias; `native-run` also
+takes the Meson test name that `run-native-tests.sh` prints.
 
 Native C++ changes use the explicit owner commands:
 
@@ -131,12 +136,13 @@ only when the changed scientific claim requires that evidence.
 
 Each checkout has its own `.venv` from setup with one non-editable Engine wheel.
 Run builds and Engine calculations as `tools/heavy <cmd>`, which admits one
-numerical thread when memory allows. The warm `check-all.sh` target is below
-sixteen seconds. `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
+numerical thread when memory allows. A warm `check-all.sh` takes about 20–40 s
+(24.0 s measured in #319). `tools/heavy tools/time-key-solves <wheel-A> <wheel-B>` reports work counts,
 the no-slowdown gate for ionic LLE and the MEA flash, with paired wall times.
 After merges, `tools/heavy tools/refresh-main-wheel` restores or rebuilds main's
 wheel in the main checkout, compares its key-solve work with the previous
-`build/wheels/main-current/`, and replaces that directory and its README.
+`build/wheels/main-current/`, replaces that directory and its README, and keeps
+`build/wheels/main-<commit>/`, the applications' stable pin.
 There is no scientific CI/CD.
 
 Run a canonical end-to-end workflow with:
